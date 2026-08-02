@@ -49,7 +49,10 @@ except Exception: print("")' 2>/dev/null)"
 [ -f "$GUARD" ] || allow
 command -v python3 >/dev/null 2>&1 || allow
 
-report="$(python3 "$GUARD" 2>/dev/null)"
+# Stated explicitly rather than inherited from the guard's CLI default: the
+# ceiling is a decision, and leaving it implicit means a change to that default
+# silently moves it. The user set 90.
+report="$(python3 "$GUARD" --threshold 0.90 2>/dev/null)"
 status=$?
 
 # 1 means over the ceiling. 0 means under. Anything else could not measure.
