@@ -111,7 +111,7 @@ Treat these as standing instructions, not one-off remarks.
 | 3     | BFF + Audiobookshelf client                             | done        |
 | 4     | Web shell + Docker image                                | done        |
 | 5     | Audiobooks experience + player                          | in progress |
-| 5a    | Android build skeleton + APK pipeline                   | in progress |
+| 5a    | Android build skeleton + APK pipeline                   | done        |
 | 6–11  | Requests, podcasts, music, Android app, polish, F-Droid | not started |
 
 **Phase 5 is half-landed.** Done: Home shelves, library browse with filter and sort, typed
@@ -123,9 +123,12 @@ search results, and the player's whole _logic_ layer — `features/player/playba
 start playback, and no progress sync is wired to `api.syncSession`. That UI is the remaining
 work in phase 5.
 
-**Phase 5a is committed but unproven** — its premise is that nothing on this machine can
-compile Android, so the phase is only done when the `Android` workflow has gone green and
-produced a debug APK artifact.
+**Phase 5a closed on 2026-08-03.** Its first CI run went green and uploaded a 12 MB
+`auralis-debug-apk`, which is the proof the phase existed to get: blind-written Compose
+compiles, the Android Auto manifest merges, and the committed Gradle wrapper passes
+`gradle/actions/wrapper-validation`. Phase 7 has a working pipeline to build on. Still no
+JDK/SDK/Gradle on this machine, so CI is the only place Android compiles — check the
+`Android` workflow after any `apps/android` change, since you cannot build it locally.
 
 Green as of `07ce0c3`: `pnpm typecheck`, `pnpm lint`, **354 unit tests**, **181 Playwright
 tests** (156 UI + 25 app end-to-end), and `pnpm test:docker` (the container smoke test).

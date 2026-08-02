@@ -10,7 +10,7 @@ self-contained, tested increment.
 | 3   | Server BFF core + Audiobookshelf client                         | done        |
 | 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
 | 5   | Audiobooks experience + player                                  | in progress |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | in progress |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
 | 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned     |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned     |
 | 8   | Podcast client (web + Android)                                  | planned     |
@@ -130,10 +130,16 @@ The deliverable is not a feature — it is proof that a machine which cannot rea
 SDK can still produce an installable APK. Getting that wrong later, with a real app on top
 of it, is far more expensive.
 
-**5a stays "in progress" until CI has actually run it green.** The code and the workflow are
-committed, but nothing here has ever compiled them — that is the entire premise of the
-phase, so "written" is not "done". Flip it to done once the `Android` workflow has produced
-a debug APK artifact, and not before.
+**Closed on 2026-08-03, on the evidence rather than on the code being written.** The first
+`Android` workflow run against `07ce0c3` went green and uploaded a 12 MB
+`auralis-debug-apk` artifact. That is what the phase was for: blind-written Compose sources
+compile, the Android Auto manifest plumbing merges without a manifest-merger failure, and
+`gradle/actions/wrapper-validation` accepts the committed wrapper jar. There is now a known
+-good pipeline for phase 7 to build on.
+
+Still true, and worth keeping: **no JDK, Android SDK or Gradle is installed on the
+development machine**, so CI remains the only place `apps/android` compiles. Installing a
+JDK would demote it to a second opinion and make the edit-build loop local.
 
 ### 6 — Book requests
 
