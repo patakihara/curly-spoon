@@ -112,6 +112,11 @@ module structure, Material 3 theme wired to dynamic colour, and a single screen.
 `.github/workflows/android.yml`, which assembles a debug APK and uploads it as an artifact
 on every push.
 
+It also scaffolds the **Android Auto manifest plumbing** — `automotive_app_desc.xml`, the
+`com.google.android.gms.car.application` meta-data, and an empty `MediaLibraryService` — so
+that CI proves the Auto declarations compile and merge correctly before phase 7 depends on
+them. Manifest-merger failures are a miserable thing to debug blind.
+
 The deliverable is not a feature — it is proof that a machine which cannot reach the Android
 SDK can still produce an installable APK. Getting that wrong later, with a real app on top
 of it, is far more expensive.
@@ -128,15 +133,48 @@ that phase 7 builds against.
 The priority-1 experience, natively:
 
 - Jetpack Compose with Material 3 Expressive and dynamic colour from wallpaper and artwork.
-- Media3 `ExoPlayer` behind a `MediaSessionService` for background playback that survives
-  the app being swept away, with lock-screen and notification controls.
+- **Media3 `ExoPlayer` behind a `MediaLibraryService`** — see "Android Auto is a design
+  constraint" below; this is not the same choice as a plain `MediaSessionService`.
 - Offline downloads with resumable transfers, so a commute without signal still works.
 - Progress synced through the same BFF, so a book continued on the phone resumes correctly
   in the browser and vice versa.
-- Android Auto support, because a meaningful share of audiobook listening happens driving.
 - The request flow from phase 6, so a book can be asked for from the phone.
 
 Podcast and music screens follow in phases 8 and 9 as their APIs land.
+
+#### Android Auto is a design constraint, not a feature toggle
+
+Auto does not render the app's UI. It renders **its own templated UI** from a browse tree
+the app publishes, so the playback layer has to be built as a
+`MediaLibraryService` (`MediaSessionService` + a browsable hierarchy) from the first commit.
+Bolting a browse tree onto a session-only player later means restructuring playback, which
+is precisely the sort of rework this roadmap is ordered to avoid.
+
+What that implies concretely:
+
+- **A shallow, driving-safe browse tree.** Auto caps how many items it will show and how
+  deep a user may navigate while moving. The root is therefore intent-shaped, not
+  library-shaped: _Continue_, _Downloaded_, _Books_, _Series_, _Podcasts_, _Music_ — with
+  "Continue" first, because in a car it is almost always the right answer.
+- **Chapters are the skip target.** In the car, "next" must mean *next chapter*, not next
+  file or next book. Audiobook chapter boundaries drive `seekToNext`/`seekToPrevious`, and
+  the media metadata advertises chapter titles so the head unit displays something useful.
+- **Voice.** `onPlayFromSearch` / `onSearch` wired so "play <title>" and "resume my book"
+  work without touching the screen — the only genuinely safe interaction while driving.
+- **Playback resumption.** Auto asks for a recent-items root after a reboot so playback can
+  resume from the head unit before the phone is unlocked.
+- **Offline matters more here.** Signal is worst exactly where cars go, so downloads are a
+  prerequisite for Auto being usable, not an optional extra.
+- **Manifest plumbing:** `automotive_app_desc.xml` plus the
+  `com.google.android.gms.car.application` meta-data, and an intent filter for
+  `MediaBrowserService` compatibility. Scaffolded in 5a so CI validates it early.
+
+**Two honest caveats.** First, Android Auto cannot be tested here or on CI — verification
+needs the Desktop Head Unit on a real machine, or an actual car. It will be on the user to
+confirm, and phase 7 will ship a written test script for doing so. Second, because Auralis
+is sideloaded rather than Play Store distributed, it will not appear in Auto until
+**"Unknown sources" is enabled in Android Auto's developer settings** on the phone; that
+step will be documented, since without it the app simply never shows up and looks broken.
 
 ### 8 — Podcasts
 
