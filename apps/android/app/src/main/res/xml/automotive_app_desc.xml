@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Declares this app to Android Auto as a media app. Phase 7 is what actually makes the
+     MediaLibraryService below browsable; this file plus the manifest meta-data pointing at
+     it is the minimum needed for the manifest merge to succeed and for Auto tooling to
+     recognise the app at all. -->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>

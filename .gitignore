@@ -35,6 +35,9 @@ apps/android/.gradle/
 apps/android/local.properties
 apps/android/**/build/
 apps/android/.cxx/
+# Kotlin compile-daemon session files, written under the module root by any
+# Gradle invocation — never source, and noisy in `git status`.
+apps/android/.kotlin/
 *.keystore
 
 # python bytecode from scripts/

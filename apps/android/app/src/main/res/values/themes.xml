@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The actual palette (including dynamic colour) is applied in Kotlin by
+         ui/theme/Theme.kt's AuralisTheme composable. This XML theme only needs to be a
+         no-action-bar Material3 base so the system window chrome doesn't draw a second,
+         unstyled app bar underneath the Compose Scaffold's TopAppBar. -->
+    <!-- Deliberately a platform theme, not Theme.Material3.*: that style lives in
+         com.google.android.material, an XML/View-system artifact this project doesn't
+         depend on (androidx.compose.material3 has no XML styles at all). ComponentActivity
+         doesn't require an AppCompat-derived theme either, so the platform NoActionBar
+         theme is both sufficient and dependency-free. -->
+    <style name="Theme.Auralis" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
