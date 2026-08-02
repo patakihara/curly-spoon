@@ -66,6 +66,14 @@ COPY --from=prod-deps --chown=auralis:auralis /app/packages/core/package.json ./
 COPY --from=prod-deps --chown=auralis:auralis /app/packages/core/src ./packages/core/src
 COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/package.json ./packages/abs-client/package.json
 COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/src ./packages/abs-client/src
+# pnpm's layout is isolated, not hoisted: a workspace package's dependencies are
+# reachable only through its *own* node_modules, which holds relative symlinks
+# into the root `.pnpm` store. Copying the root node_modules is therefore not
+# enough — without this line `packages/abs-client/src/client.ts` cannot resolve
+# `zod` and the container exits on its first import. Any workspace package that
+# gains an external dependency needs the same line; `packages/core` has none
+# today, and pnpm creates no node_modules for it at all, so COPY would fail.
+COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/node_modules ./packages/abs-client/node_modules
 COPY --chown=auralis:auralis apps/server/package.json ./apps/server/package.json
 COPY --chown=auralis:auralis apps/server/src ./apps/server/src
 

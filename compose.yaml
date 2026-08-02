@@ -9,8 +9,12 @@ services:
   auralis:
     build: .
     image: ghcr.io/patakihara/auralis:latest
+    # Host port is overridable because 8787 is a popular choice — Readarr and
+    # its forks use it — so a self-hoster running Auralis next to one of those
+    # would otherwise have to edit a tracked file to boot. The container port
+    # stays fixed; only the published side moves.
     ports:
-      - '8787:8787'
+      - '${AURALIS_PORT:-8787}:8787'
     environment:
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET — see docs/SELF_HOSTING.md}
       DATA_DIR: /data
