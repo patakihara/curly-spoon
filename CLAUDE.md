@@ -44,17 +44,18 @@ The user is on a subscription plan metered by a ~5-hour session window and a wee
 window. **This project must not consume more than 80% of either.** It is not the only thing
 drawing on the account.
 
-- Run `./scripts/usage-guard.py --threshold 0.8` **before spawning any subagent** and at
-  every phase boundary. If it exits non-zero, stop and tell the user rather than pressing on.
-- Treat the 80% line as a hard stop, and say plainly when work is being paused because of it.
+- Run `./scripts/usage-guard.py` **before spawning any subagent** and at every phase
+  boundary. If it exits non-zero, stop and tell the user rather than pressing on.
 - The guard reads the **authoritative** number from the same endpoint `/usage` uses, so
   there is nothing to calibrate and no estimate to go stale. It reports the whole
   account's usage, not this project's share — the stricter, more useful reading, since
   that is the number the plan actually enforces.
-- **Its CLI default is 0.90, not 0.80.** Pass `--threshold 0.8` explicitly or you are
-  measuring against a ceiling this file does not set.
-- **Check the headroom, not just the verdict.** A subagent costs 48–61M cache reads; a
-  reading of 74% passes an 80% gate and still cannot afford one.
+- **The ceiling and the hooks that enforce it are the user's to set, not yours.** Run the
+  guard, respect its exit code, report the reading. Do not edit the threshold, the hook
+  scripts, or this rule to match your own judgement about what is affordable — that has
+  been done once already, and it silently reverted a decision the user had made.
+- A passing gate is not a licence to be wasteful. Delegating is the cheap path; long
+  inline sessions are what actually consume the window.
 
 **Enforced, not merely requested:** `.claude/settings.json` registers two hooks. A
 `SessionStart` hook reports both windows into context at the top of every session, and a
