@@ -80,16 +80,35 @@ def rates_for(model: str) -> tuple[float, float]:
     return best or PRICES["claude-opus-5"]
 
 
-def weight(model: str, usage: dict) -> float:
-    """Cost-equivalent weight of one turn, in USD, used as the usage proxy."""
+def family(model: str) -> str:
+    """Coarse model family, matching how /usage reports its breakdown."""
+    for name in ("opus", "sonnet", "haiku", "fable"):
+        if name in model:
+            return name
+    return "other"
+
+
+def weight(model: str, usage: dict, multipliers: dict[str, float] | None = None) -> float:
+    """
+    Plan-consumption weight of one turn.
+
+    Published prices are the starting proxy, but plan allowance is *not* metered
+    in dollars and weights the model families differently — measured against
+    /usage, Opus counts roughly three times what its price ratio implies. The
+    per-family multipliers correct for that and are derived from the breakdown
+    /usage prints, via --calibrate-mix.
+    """
     rate_in, rate_out = rates_for(model)
     per_in = rate_in / 1_000_000
-    return (
+    base = (
         (usage.get("input_tokens") or 0) * per_in
         + (usage.get("output_tokens") or 0) * (rate_out / 1_000_000)
         + (usage.get("cache_read_input_tokens") or 0) * per_in * CACHE_READ_MULTIPLIER
         + (usage.get("cache_creation_input_tokens") or 0) * per_in * CACHE_WRITE_MULTIPLIER
     )
+    if multipliers:
+        base *= multipliers.get(family(model), 1.0)
+    return base
 
 
 def parse_time(value: str | None) -> datetime | None:
@@ -101,7 +120,9 @@ def parse_time(value: str | None) -> datetime | None:
         return None
 
 
-def collect(project: str) -> list[tuple[datetime, str, float, int]]:
+def collect(
+    project: str, multipliers: dict[str, float] | None = None
+) -> list[tuple[datetime, str, float, int]]:
     """(timestamp, model, weight, raw_tokens) for every turn we can see."""
     slug = os.path.abspath(project).replace("/", "-")
     patterns = [
@@ -148,7 +169,7 @@ def collect(project: str) -> list[tuple[datetime, str, float, int]]:
                         "cache_creation_input_tokens",
                     )
                 )
-                turns.append((when, model, weight(model, usage), raw))
+                turns.append((when, model, weight(model, usage, multipliers), raw))
     turns.sort(key=lambda item: item[0])
     return turns
 
@@ -215,19 +236,59 @@ def main() -> int:
         metavar="PCT",
         help="Percentage /usage currently reports for the weekly window.",
     )
+    parser.add_argument(
+        "--calibrate-mix",
+        metavar="SPEC",
+        help='Model split /usage reports, e.g. "opus=59,sonnet=41". Derives per-family '
+        "multipliers so the proxy matches how the plan actually meters each model.",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
     project = os.path.abspath(args.project)
     now = datetime.now(timezone.utc)
-    turns = collect(project)
+    state = load_state(project)
+
+    if args.calibrate_mix:
+        try:
+            target = {
+                k.strip().lower(): float(v)
+                for k, v in (part.split("=") for part in args.calibrate_mix.split(","))
+            }
+        except ValueError:
+            print('Bad --calibrate-mix; expected e.g. "opus=59,sonnet=41".')
+            return 2
+        observed: dict[str, float] = {}
+        for _, model, value, _ in collect(project):
+            observed[family(model)] = observed.get(family(model), 0.0) + value
+        total_observed = sum(observed.get(k, 0.0) for k in target)
+        total_target = sum(target.values())
+        if total_observed <= 0 or total_target <= 0:
+            print("Not enough observed usage to calibrate the mix.")
+            return 2
+        multipliers = {}
+        for fam, share in target.items():
+            seen = observed.get(fam, 0.0)
+            if seen <= 0:
+                continue
+            multipliers[fam] = (share / total_target) / (seen / total_observed)
+        # Normalise so the smallest multiplier is 1 — only ratios matter.
+        floor = min(multipliers.values())
+        state["family_multipliers"] = {k: round(v / floor, 4) for k, v in multipliers.items()}
+        save_state(project, state)
+        print("Calibrated model mix against /usage:")
+        for fam, mult in sorted(state["family_multipliers"].items(), key=lambda kv: -kv[1]):
+            print(f"  {fam:<8} counts {mult:.2f}x per proxy unit")
+        print()
+
+    multipliers = state.get("family_multipliers")
+    turns = collect(project, multipliers)
     if not turns:
         print("No usage found for this project.")
         return 0
 
     session_used, session_raw, session_models = window_totals(turns, SESSION_WINDOW, now)
     weekly_used, weekly_raw, _ = window_totals(turns, WEEKLY_WINDOW, now)
-    state = load_state(project)
 
     if args.calibrate_session is not None:
         if args.calibrate_session <= 0:
