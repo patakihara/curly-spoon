@@ -29,6 +29,9 @@ function preinstalledChromium(): string | undefined {
 const executablePath = preinstalledChromium();
 const launchOptions = executablePath ? { executablePath } : {};
 
+/** Fixed port `packages/ui/gallery/vite.config.ts` also uses — see that file's comment. */
+const GALLERY_URL = 'http://localhost:5174';
+
 /**
  * Two projects:
  *  - `ui`    — component and design-system tests, rendered from static fixtures.
@@ -36,6 +39,11 @@ const launchOptions = executablePath ? { executablePath } : {};
  *
  * Mobile and desktop viewports are both exercised because the shell is adaptive:
  * the navigation and Now Playing layouts genuinely differ between them.
+ *
+ * `ui-desktop`/`ui-mobile` get a `baseURL` pointing at the `@auralis/ui` gallery, which
+ * `webServer` boots below — so specs there can `page.goto('/')`. `harness.spec.ts`
+ * doesn't need any of that (it renders fixtures via `page.setContent`), and keeps
+ * working unchanged alongside a configured baseURL.
  */
 export default defineConfig({
   testDir: './e2e',
@@ -56,6 +64,12 @@ export default defineConfig({
       animations: 'disabled',
     },
   },
+  webServer: {
+    command: 'pnpm --filter @auralis/ui dev',
+    url: GALLERY_URL,
+    reuseExistingServer: !CI,
+    timeout: 60_000,
+  },
   use: {
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -67,12 +81,17 @@ export default defineConfig({
     {
       name: 'ui-desktop',
       testDir: './e2e/ui',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 }, launchOptions },
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        launchOptions,
+        baseURL: GALLERY_URL,
+      },
     },
     {
       name: 'ui-mobile',
       testDir: './e2e/ui',
-      use: { ...devices['Pixel 7'], launchOptions },
+      use: { ...devices['Pixel 7'], launchOptions, baseURL: GALLERY_URL },
     },
   ],
 });
