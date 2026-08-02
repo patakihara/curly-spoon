@@ -34,4 +34,3 @@ apps/android/**/build/
 apps/android/.cxx/
 *.keystore
 ops/auralis-agent.env
-.auralis-usage.json
