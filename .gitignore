@@ -33,4 +33,3 @@ apps/android/local.properties
 apps/android/**/build/
 apps/android/.cxx/
 *.keystore
-ops/auralis-agent.env
