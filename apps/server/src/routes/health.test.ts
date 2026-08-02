@@ -7,7 +7,10 @@ describe('GET /api/v1/health', () => {
     const response = await app.inject({ method: 'GET', url: '/api/v1/health' });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: 'ok', upstream: { configured: false, reachable: false } });
+    expect(response.json()).toEqual({
+      status: 'ok',
+      upstream: { configured: false, reachable: false },
+    });
   });
 
   it('reports the upstream as reachable when settings point at a live (fake) server', async () => {

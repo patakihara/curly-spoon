@@ -42,7 +42,11 @@ export const NavigationBar = forwardRef<HTMLElement, NavigationSharedProps>(func
                 else itemRefs.current.delete(item.key);
               }}
               type="button"
-              className={clsx('m3-nav-bar__item', 'm3-state-layer', selected && 'm3-nav-bar__item--active')}
+              className={clsx(
+                'm3-nav-bar__item',
+                'm3-state-layer',
+                selected && 'm3-nav-bar__item--active',
+              )}
               aria-current={selected ? 'page' : undefined}
               onClick={() => onActiveChange(item.key)}
             >

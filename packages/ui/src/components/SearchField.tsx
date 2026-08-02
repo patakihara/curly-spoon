@@ -3,14 +3,7 @@
  * (docs/DESIGN.md: "one field, typed results"). Wired as a proper ARIA combobox so
  * screen readers and keyboards get the same experience as a native search-and-select.
  */
-import {
-  forwardRef,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react';
+import { forwardRef, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { Icon } from './Icon.js';
 import { mergeRefs } from '../internal/mergeRefs.js';
@@ -128,12 +121,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
           </button>
         ) : null}
       </div>
-      <ul
-        id={listboxId}
-        role="listbox"
-        className="m3-search-field__suggestions"
-        hidden={!showList}
-      >
+      <ul id={listboxId} role="listbox" className="m3-search-field__suggestions" hidden={!showList}>
         {suggestions.map((suggestion, index) => (
           <li
             key={suggestion.id}

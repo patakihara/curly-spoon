@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { sourceColorFromImageData } from './artwork.js';
 
 /** Builds a synthetic RGBA buffer of `width`x`height` filled with one solid colour. */
-function solidImage(width: number, height: number, [r, g, b]: [number, number, number]): Uint8ClampedArray {
+function solidImage(
+  width: number,
+  height: number,
+  [r, g, b]: [number, number, number],
+): Uint8ClampedArray {
   const data = new Uint8ClampedArray(width * height * 4);
   for (let i = 0; i < width * height; i++) {
     data[i * 4] = r;

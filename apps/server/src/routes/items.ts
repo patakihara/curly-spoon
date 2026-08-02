@@ -10,16 +10,17 @@ export function registerItemRoutes(app: FastifyInstance): void {
   app.get('/items/:id', { preHandler: requireSession }, async (request, reply) => {
     const params = parseInput(reply, idParamSchema, request.params);
     const query = parseInput(reply, getItemQuerySchema, request.query);
-    if (!params || !query) return;
+    if (!params || !query) return undefined;
     try {
       const client = app.abs.forUser(request.userId!);
       const item = await client.getItem(params.id, {
         expanded: query.expanded,
         includeProgress: query.include === 'progress',
       });
-      reply.send({ item });
+      return reply.send({ item });
     } catch (err) {
       handleUpstreamError(reply, err);
+      return undefined;
     }
   });
 }

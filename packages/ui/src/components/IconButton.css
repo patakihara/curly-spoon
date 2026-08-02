@@ -66,6 +66,8 @@
 .m3-icon-button--toggle.m3-icon-button--selected .m3-icon-button__glyph {
   transform: scale(1.15);
 }
-.m3-icon-button--toggle:not(.m3-icon-button--filled):not(.m3-icon-button--tonal).m3-icon-button--selected {
+.m3-icon-button--toggle:not(.m3-icon-button--filled):not(
+    .m3-icon-button--tonal
+  ).m3-icon-button--selected {
   color: var(--m3-primary);
 }

@@ -62,10 +62,7 @@
    `animateWave` is set (i.e. actually playing) — a still wave otherwise. */
 .m3-slider--wavy .m3-slider__active {
   background-image:
-    repeating-linear-gradient(
-      var(--m3-primary),
-      var(--m3-primary)
-    ),
+    repeating-linear-gradient(var(--m3-primary), var(--m3-primary)),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16' viewBox='0 0 28 16'%3E%3Cpath d='M0 8 Q7 0 14 8 T28 8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E");
   background-blend-mode: destination-out;
   background-repeat: repeat-x;

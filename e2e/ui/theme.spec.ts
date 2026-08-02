@@ -10,7 +10,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('ThemeProvider', () => {
-  test('renders in dark mode by default with the amber fallback source colour', async ({ page }) => {
+  test('renders in dark mode by default with the amber fallback source colour', async ({
+    page,
+  }) => {
     await expect(page.getByTestId('mode-dark')).toBeVisible();
     const primaryText = await page.getByTestId('current-primary-value').textContent();
     expect(primaryText).toMatch(/#[0-9a-f]{6}/);
@@ -18,44 +20,61 @@ test.describe('ThemeProvider', () => {
 
   test('changing the source colour repaints --m3-primary on the theme root', async ({ page }) => {
     const root = page.locator('.auralis-theme-root');
-    const before = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--m3-primary').trim());
+    const before = await root.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--m3-primary').trim(),
+    );
 
     await page.getByTestId('color-blue').click();
     // Cross-fade takes ~500ms (spring.slow); wait past it before asserting the resting value.
     await page.waitForTimeout(700);
 
-    const after = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--m3-primary').trim());
+    const after = await root.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--m3-primary').trim(),
+    );
     expect(after).not.toBe(before);
-    expect(after).toMatch(/^#[0-9a-f]{6}$/);
+    // Registering --m3-* as a `<color>` custom property (so it can cross-fade) makes the
+    // browser normalise its computed value to rgb(...) rather than echoing back the hex
+    // we set it to — that normalisation is itself proof the property registered correctly.
+    expect(after).toMatch(/^rgba?\(/);
   });
 
   test('switching mode toggles data-theme and repaints --m3-surface', async ({ page }) => {
     const root = page.locator('.auralis-theme-root');
     await expect(root).toHaveAttribute('data-theme', 'dark');
-    const darkSurface = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--m3-surface').trim());
+    const darkSurface = await root.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--m3-surface').trim(),
+    );
 
     await page.getByTestId('mode-light').click();
     await page.waitForTimeout(700);
 
     await expect(root).toHaveAttribute('data-theme', 'light');
-    const lightSurface = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--m3-surface').trim());
+    const lightSurface = await root.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--m3-surface').trim(),
+    );
     expect(lightSurface).not.toBe(darkSurface);
 
     // restore for other tests sharing this worker's page context
     await page.getByTestId('mode-dark').click();
   });
 
-  test('is deterministic: the same source colour always repaints to the same value', async ({ page }) => {
+  test('is deterministic: the same source colour always repaints to the same value', async ({
+    page,
+  }) => {
     const root = page.locator('.auralis-theme-root');
     await page.getByTestId('color-green').click();
     await page.waitForTimeout(700);
-    const first = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--m3-primary').trim());
+    const first = await root.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--m3-primary').trim(),
+    );
 
     await page.getByTestId('color-amber').click();
     await page.waitForTimeout(700);
     await page.getByTestId('color-green').click();
     await page.waitForTimeout(700);
-    const second = await root.evaluate((el) => getComputedStyle(el).getPropertyValue('--m3-primary').trim());
+    const second = await root.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--m3-primary').trim(),
+    );
 
     expect(second).toBe(first);
   });

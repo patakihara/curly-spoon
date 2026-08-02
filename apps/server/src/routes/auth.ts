@@ -16,12 +16,17 @@ export function registerAuthRoutes(app: FastifyInstance): void {
 
   app.post('/auth/login', { preHandler: rateLimitLogin }, async (request, reply) => {
     const body = parseInput(reply, loginBodySchema, request.body);
-    if (!body) return;
+    if (!body) return undefined;
 
     const settings = getSettings(app.db);
     if (!settings) {
-      sendError(reply, 409, 'not_configured', 'Audiobookshelf connection has not been configured yet');
-      return;
+      sendError(
+        reply,
+        409,
+        'not_configured',
+        'Audiobookshelf connection has not been configured yet',
+      );
+      return undefined;
     }
 
     try {
@@ -34,13 +39,14 @@ export function registerAuthRoutes(app: FastifyInstance): void {
         session.token,
         sessionCookieOptions(cookieSecure, session.expiresAt - Date.now()),
       );
-      reply.send({ user: { id: session.userId, username: session.username } });
+      return reply.send({ user: { id: session.userId, username: session.username } });
     } catch (err) {
       if (isAbsError(err) && err.code === 'auth') {
         sendError(reply, 401, 'invalid_credentials', 'Incorrect username or password');
-        return;
+        return undefined;
       }
       handleUpstreamError(reply, err);
+      return undefined;
     }
   });
 
@@ -48,16 +54,17 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     const token = request.cookies[SESSION_COOKIE_NAME];
     if (token) endSession(app.db, token);
     reply.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
-    reply.send({ ok: true });
+    return reply.send({ ok: true });
   });
 
   app.get('/auth/me', { preHandler: requireSession }, async (request, reply) => {
     try {
       const client = app.abs.forUser(request.userId!);
       const me = await client.getMe();
-      reply.send({ user: me });
+      return reply.send({ user: me });
     } catch (err) {
       handleUpstreamError(reply, err);
+      return undefined;
     }
   });
 }

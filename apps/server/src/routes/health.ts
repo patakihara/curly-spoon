@@ -8,20 +8,19 @@ export function registerHealthRoutes(app: FastifyInstance): void {
   app.get('/health', async (request, reply) => {
     const settings = getSettings(app.db);
     if (!settings) {
-      reply.send({ status: 'ok', upstream: { configured: false, reachable: false } });
-      return;
+      return reply.send({ status: 'ok', upstream: { configured: false, reachable: false } });
     }
 
     try {
       const client = app.abs.forSetup(settings.baseUrl);
       const probe = await client.probe();
-      reply.send({
+      return reply.send({
         status: 'ok',
         upstream: { configured: true, reachable: true, serverVersion: probe.serverVersion },
       });
     } catch (err) {
       request.log.warn({ err }, 'upstream health probe failed');
-      reply.send({ status: 'ok', upstream: { configured: true, reachable: false } });
+      return reply.send({ status: 'ok', upstream: { configured: true, reachable: false } });
     }
   });
 }

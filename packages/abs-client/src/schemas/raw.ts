@@ -359,9 +359,7 @@ export const rawSearchResponseSchema = z
   .object({
     book: z.array(rawSearchItemMatchSchema).optional(),
     podcast: z.array(rawSearchItemMatchSchema).optional(),
-    series: z
-      .array(z.object({ series: rawSeriesSchema }).passthrough())
-      .optional(),
+    series: z.array(z.object({ series: rawSeriesSchema }).passthrough()).optional(),
     authors: z.array(rawAuthorSchema).optional(),
   })
   .passthrough() as unknown as z.ZodType<RawSearchResponse>;

@@ -15,7 +15,10 @@ const envSchema = z.object({
   // 32 chars is a floor, not a recommendation; operators should use a generated random value.
   SESSION_SECRET: z
     .string()
-    .min(32, 'SESSION_SECRET must be at least 32 characters — it derives the encryption key for stored upstream credentials'),
+    .min(
+      32,
+      'SESSION_SECRET must be at least 32 characters — it derives the encryption key for stored upstream credentials',
+    ),
   AURALIS_FAKE_UPSTREAMS: z
     .enum(['0', '1'])
     .default('0')

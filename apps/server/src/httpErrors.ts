@@ -12,7 +12,12 @@ export interface ApiErrorBody {
   error: { code: string; message: string };
 }
 
-export function sendError(reply: FastifyReply, status: number, code: string, message: string): void {
+export function sendError(
+  reply: FastifyReply,
+  status: number,
+  code: string,
+  message: string,
+): void {
   reply.code(status).send({ error: { code, message } } satisfies ApiErrorBody);
 }
 

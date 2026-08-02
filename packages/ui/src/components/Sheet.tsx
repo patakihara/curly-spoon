@@ -6,7 +6,6 @@
  * to wherever it settles rather than snapping.
  */
 import {
-  useEffect,
   useId,
   useRef,
   useState,
@@ -17,6 +16,12 @@ import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { useFocusTrap } from '../internal/useFocusTrap.js';
 import './Sheet.css';
+
+/**
+ * How far the handle must travel before a drag counts as a decision rather than a
+ * twitch. Roughly the distance a thumb moves without meaning to.
+ */
+const DETENT_COMMIT_PX = 24;
 
 export interface SheetProps {
   open: boolean;
@@ -74,26 +79,34 @@ export function Sheet({
   const handlePointerUp = () => {
     if (!dragging) return;
     setDragging(false);
-    const finalHeight = dragHeightPx ?? currentHeightPx;
 
+    const startHeight = dragStateRef.current?.startHeight ?? currentHeightPx;
+    const finalHeight = dragHeightPx ?? startHeight;
+    dragStateRef.current = null;
+    setDragHeightPx(null);
+
+    // Dragged so far down that the sheet is mostly gone: dismiss, whichever detent
+    // the gesture started from.
     if (finalHeight < smallestDetentPx * 0.5) {
       onOpenChange(false);
-      setDragHeightPx(null);
       return;
     }
 
-    // Snap to whichever detent the release height is closest to.
-    let nearestIndex = 0;
-    let nearestDistance = Infinity;
-    detents.forEach((fraction, index) => {
-      const distance = Math.abs(detentPx(fraction) - finalHeight);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = index;
-      }
-    });
-    setActiveDetent(nearestIndex);
-    setDragHeightPx(null);
+    const travel = finalHeight - startHeight; // positive = dragged upward, i.e. taller
+
+    // Short gestures read as a nudge rather than an intent — settle back where we were.
+    if (Math.abs(travel) < DETENT_COMMIT_PX) return;
+
+    // Direction beats proximity. Snapping to the *nearest* detent ignores what the
+    // user was doing: a deliberate upward drag that stops short of the midpoint would
+    // fall back to where it started, which feels like the sheet fighting the gesture.
+    // One decisive drag moves exactly one detent, the way the YouTube Music queue does.
+    const nextIndex = activeDetent + (travel > 0 ? 1 : -1);
+    if (nextIndex < 0) {
+      onOpenChange(false);
+      return;
+    }
+    setActiveDetent(Math.min(nextIndex, detents.length - 1));
   };
 
   return createPortal(

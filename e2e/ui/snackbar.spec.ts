@@ -22,7 +22,9 @@ test.describe('Snackbar', () => {
     await expect(snackbar).toHaveCount(0);
   });
 
-  test('a second enqueue while one is showing queues rather than replacing it', async ({ page }) => {
+  test('a second enqueue while one is showing queues rather than replacing it', async ({
+    page,
+  }) => {
     await page.getByTestId('snackbar-trigger').click();
     await page.getByTestId('snackbar-trigger').click();
     // Still only ever one snackbar element on screen at a time.

@@ -11,7 +11,9 @@ function json(body: unknown, status = 200): Response {
 }
 
 /** A router-shaped fake so each test only states the routes it cares about. */
-function router(routes: Record<string, (req: { url: URL; init?: RequestInit }) => Response>): FetchLike {
+function router(
+  routes: Record<string, (req: { url: URL; init?: RequestInit }) => Response>,
+): FetchLike {
   return async (input, init) => {
     const url = new URL(input);
     const key = `${init?.method ?? 'GET'} ${url.pathname}`;
@@ -61,7 +63,11 @@ describe('AbsClient.probe', () => {
     const fetchFn: FetchLike = async () => {
       throw new Error('ENOTFOUND');
     };
-    const client = new AbsClient({ baseUrl: 'http://nowhere.invalid', fetch: fetchFn, maxRetries: 0 });
+    const client = new AbsClient({
+      baseUrl: 'http://nowhere.invalid',
+      fetch: fetchFn,
+      maxRetries: 0,
+    });
     const err = await client.probe().catch((e: unknown) => e);
     expect((err as AbsError).code).toBe('network');
   });
@@ -72,7 +78,13 @@ describe('AbsClient.login', () => {
     const fetchFn = router({
       'POST /login': () =>
         json({
-          user: { id: 'user-1', username: 'kara', token: 'fresh-token', mediaProgress: [], bookmarks: [] },
+          user: {
+            id: 'user-1',
+            username: 'kara',
+            token: 'fresh-token',
+            mediaProgress: [],
+            bookmarks: [],
+          },
           userDefaultLibraryId: 'lib-1',
         }),
     });
@@ -93,7 +105,9 @@ describe('AbsClient.login', () => {
   });
 
   it('never retries a failed login', async () => {
-    const fetchFn = vi.fn(async () => new Response('down', { status: 503 })) as unknown as FetchLike;
+    const fetchFn = vi.fn(
+      async () => new Response('down', { status: 503 }),
+    ) as unknown as FetchLike;
     const client = new AbsClient({
       baseUrl: 'http://abs.local',
       fetch: fetchFn,
@@ -142,7 +156,12 @@ describe('AbsClient.getLibraryItems', () => {
     });
     const client = makeClient(fetchFn);
 
-    const page = await client.getLibraryItems('lib-1', { limit: 20, page: 0, sort: 'addedAt', desc: true });
+    const page = await client.getLibraryItems('lib-1', {
+      limit: 20,
+      page: 0,
+      sort: 'addedAt',
+      desc: true,
+    });
 
     expect(page.total).toBe(1);
     expect(page.items).toHaveLength(1);
@@ -154,8 +173,7 @@ describe('AbsClient.getLibraryItems', () => {
 
   it('normalises expanded items with tracks and chapters populated', async () => {
     const fetchFn = router({
-      'GET /api/libraries/lib-1/items': () =>
-        json({ results: [expandedBookItem], total: 1 }),
+      'GET /api/libraries/lib-1/items': () => json({ results: [expandedBookItem], total: 1 }),
     });
     const client = makeClient(fetchFn);
 
@@ -185,7 +203,12 @@ describe('AbsClient.getLibraryHome (personalized shelves)', () => {
     const fetchFn = router({
       'GET /api/libraries/lib-1/personalized': () =>
         json([
-          { id: 'shelf-1', label: 'Continue Listening', type: 'book', entities: [minifiedBookItem] },
+          {
+            id: 'shelf-1',
+            label: 'Continue Listening',
+            type: 'book',
+            entities: [minifiedBookItem],
+          },
           { id: 'shelf-2', label: 'Recently Added', type: 'book', entities: [expandedBookItem] },
         ]),
     });
@@ -321,7 +344,10 @@ describe('AbsClient.fetchCover / fetchAudioTrack (raw proxy passthrough)', () =>
     const fetchFn = router({
       'GET /api/items/item-1/cover': ({ url }) => {
         seenQuery = url.searchParams;
-        return new Response('binarydata', { status: 200, headers: { 'Content-Type': 'image/jpeg' } });
+        return new Response('binarydata', {
+          status: 200,
+          headers: { 'Content-Type': 'image/jpeg' },
+        });
       },
     });
     const client = makeClient(fetchFn);
@@ -386,7 +412,9 @@ describe('AbsClient.playItem / playEpisode', () => {
   });
 
   it('never retries a failed play request even on a 5xx', async () => {
-    const fetchFn = vi.fn(async () => new Response('down', { status: 503 })) as unknown as FetchLike;
+    const fetchFn = vi.fn(
+      async () => new Response('down', { status: 503 }),
+    ) as unknown as FetchLike;
     const client = new AbsClient({
       baseUrl: 'http://abs.local',
       fetch: fetchFn,
@@ -400,7 +428,9 @@ describe('AbsClient.playItem / playEpisode', () => {
 
 describe('AbsClient.syncSession / closeSession', () => {
   it('posts sync data and never retries even on failure', async () => {
-    const fetchFn = vi.fn(async () => new Response('down', { status: 503 })) as unknown as FetchLike;
+    const fetchFn = vi.fn(
+      async () => new Response('down', { status: 503 }),
+    ) as unknown as FetchLike;
     const client = new AbsClient({
       baseUrl: 'http://abs.local',
       fetch: fetchFn,
@@ -414,7 +444,9 @@ describe('AbsClient.syncSession / closeSession', () => {
   });
 
   it('closes a session successfully', async () => {
-    const fetchFn = router({ 'POST /api/session/sess-1/close': () => new Response(null, { status: 200 }) });
+    const fetchFn = router({
+      'POST /api/session/sess-1/close': () => new Response(null, { status: 200 }),
+    });
     const client = makeClient(fetchFn);
     await expect(client.closeSession('sess-1')).resolves.toBeUndefined();
   });
@@ -466,7 +498,9 @@ describe('AbsClient.getProgress / updateProgress', () => {
   });
 
   it('patches progress and never retries', async () => {
-    const fetchFn = vi.fn(async () => new Response('down', { status: 503 })) as unknown as FetchLike;
+    const fetchFn = vi.fn(
+      async () => new Response('down', { status: 503 }),
+    ) as unknown as FetchLike;
     const client = new AbsClient({
       baseUrl: 'http://abs.local',
       fetch: fetchFn,

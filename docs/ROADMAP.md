@@ -3,18 +3,18 @@
 Delivery is phase by phase; each phase lands on `claude/media-client-app-k7v9by` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status      |
-| --- | --------------------------------------------------------------- | ----------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | in progress |
-| 3   | Server BFF core + Audiobookshelf client                         | in progress |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | planned     |
-| 5   | Audiobooks experience + player                                  | planned     |
-| 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned     |
-| 7   | Podcast client                                                  | planned     |
-| 8   | Music client (Jellyfin) + lyrics + requests                     | planned     |
-| 9   | Android app (Compose + Media3)                                  | planned     |
-| 10  | Release polish — performance budgets, a11y audit                | planned     |
+| #   | Phase                                                           | Status  |
+| --- | --------------------------------------------------------------- | ------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
+| 3   | Server BFF core + Audiobookshelf client                         | done    |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | next    |
+| 5   | Audiobooks experience + player                                  | planned |
+| 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned |
+| 7   | Podcast client                                                  | planned |
+| 8   | Music client (Jellyfin) + lyrics + requests                     | planned |
+| 9   | Android app (Compose + Media3)                                  | planned |
+| 10  | Release polish — performance budgets, a11y audit                | planned |
 
 ## Target surfaces
 

@@ -168,17 +168,17 @@ textarea {
  * nothing in its place (docs/DESIGN.md § Accessibility).
  * ------------------------------------------------------------------------------- */
 :where(
-    .m3-focus-ring,
-    button,
-    [role='button'],
-    [role='slider'],
-    [role='tab'],
-    [role='switch'],
-    [role='checkbox'],
-    a,
-    input,
-    [tabindex]
-  ):focus-visible {
+  .m3-focus-ring,
+  button,
+  [role='button'],
+  [role='slider'],
+  [role='tab'],
+  [role='switch'],
+  [role='checkbox'],
+  a,
+  input,
+  [tabindex]
+):focus-visible {
   outline: 3px solid var(--m3-secondary, currentColor);
   outline-offset: 3px;
 }

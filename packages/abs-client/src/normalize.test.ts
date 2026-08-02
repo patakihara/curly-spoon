@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rawLibraryItemSchema, rawShelfSchema, rawSearchResponseSchema } from './schemas/raw.js';
-import {
-  normalizeLibraryItem,
-  normalizeShelf,
-  normalizeSearchResults,
-} from './normalize.js';
+import { normalizeLibraryItem, normalizeShelf, normalizeSearchResults } from './normalize.js';
 
 const minifiedBook = {
   id: 'item-1',
@@ -74,7 +70,9 @@ describe('normalizeLibraryItem — books', () => {
     expect(item.media.title).toBe('The Fellowship of the Ring');
     expect(item.media.authors).toEqual([{ id: 'J.R.R. Tolkien', name: 'J.R.R. Tolkien' }]);
     expect(item.media.narrator).toBe('Rob Inglis');
-    expect(item.media.series).toEqual([{ id: 'series-1', name: 'The Lord of the Rings', sequence: '1' }]);
+    expect(item.media.series).toEqual([
+      { id: 'series-1', name: 'The Lord of the Rings', sequence: '1' },
+    ]);
     expect(item.media.tracks).toBeUndefined();
     expect(item.media.chapters).toBeUndefined();
     expect(item.coverPath).toBe('/covers/item-1.jpg');

@@ -45,7 +45,12 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(function TopApp
   return (
     <header
       ref={ref}
-      className={clsx('m3-top-app-bar', `m3-top-app-bar--${variant}`, isLarge && 'm3-top-app-bar--expanded', className)}
+      className={clsx(
+        'm3-top-app-bar',
+        `m3-top-app-bar--${variant}`,
+        isLarge && 'm3-top-app-bar--expanded',
+        className,
+      )}
     >
       <div className="m3-top-app-bar__row">
         {leading ? <div className="m3-top-app-bar__leading">{leading}</div> : null}

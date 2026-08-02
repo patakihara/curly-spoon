@@ -19,7 +19,16 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { variant = 'standard', selected, onSelectedChange, onClick, disabled, className, children, ...rest },
+  {
+    variant = 'standard',
+    selected,
+    onSelectedChange,
+    onClick,
+    disabled,
+    className,
+    children,
+    ...rest
+  },
   ref,
 ) {
   const isToggle = selected !== undefined;

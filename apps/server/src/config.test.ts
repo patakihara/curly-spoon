@@ -23,7 +23,11 @@ describe('loadConfig', () => {
   });
 
   it('reads DATA_DIR and NODE_ENV', () => {
-    const config = loadConfig({ ...validEnv, DATA_DIR: '/var/lib/auralis', NODE_ENV: 'production' });
+    const config = loadConfig({
+      ...validEnv,
+      DATA_DIR: '/var/lib/auralis',
+      NODE_ENV: 'production',
+    });
     expect(config.dataDir).toBe('/var/lib/auralis');
     expect(config.nodeEnv).toBe('production');
   });

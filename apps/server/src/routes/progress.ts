@@ -11,9 +11,10 @@ export function registerProgressRoutes(app: FastifyInstance): void {
     try {
       const client = app.abs.forUser(request.userId!);
       const me = await client.getMe();
-      reply.send({ progress: me.mediaProgress });
+      return reply.send({ progress: me.mediaProgress });
     } catch (err) {
       handleUpstreamError(reply, err);
+      return undefined;
     }
   });
 
@@ -21,13 +22,14 @@ export function registerProgressRoutes(app: FastifyInstance): void {
     const params = parseInput(reply, itemIdParamSchema, request.params);
     const query = parseInput(reply, progressQuerySchema, request.query);
     const body = parseInput(reply, updateProgressBodySchema, request.body);
-    if (!params || !query || !body) return;
+    if (!params || !query || !body) return undefined;
     try {
       const client = app.abs.forUser(request.userId!);
       const progress = await client.updateProgress(params.itemId, query.episodeId, body);
-      reply.send({ progress });
+      return reply.send({ progress });
     } catch (err) {
       handleUpstreamError(reply, err);
+      return undefined;
     }
   });
 }

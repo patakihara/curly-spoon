@@ -8,7 +8,10 @@ test.describe('NavigationBar', () => {
   test('marks the active destination with aria-current', async ({ page }) => {
     const bar = page.getByTestId('nav-bar');
     await expect(bar.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
-    await expect(bar.getByRole('button', { name: 'Library' })).not.toHaveAttribute('aria-current', 'page');
+    await expect(bar.getByRole('button', { name: 'Library' })).not.toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   test('clicking a destination moves the active-indicator pill', async ({ page }) => {
@@ -21,7 +24,10 @@ test.describe('NavigationBar', () => {
 
     const after = await indicator.evaluate((el) => getComputedStyle(el).transform);
     expect(after).not.toBe(before);
-    await expect(bar.getByRole('button', { name: 'Podcasts' })).toHaveAttribute('aria-current', 'page');
+    await expect(bar.getByRole('button', { name: 'Podcasts' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   test('every destination is keyboard reachable and meets the touch target', async ({ page }) => {
@@ -50,6 +56,9 @@ test.describe('NavigationRail', () => {
   test('activating an item updates aria-current and the indicator', async ({ page }) => {
     const rail = page.getByTestId('nav-rail-collapsed');
     await rail.getByRole('button', { name: 'Settings' }).click();
-    await expect(rail.getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
+    await expect(rail.getByRole('button', { name: 'Settings' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 });

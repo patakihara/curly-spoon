@@ -1,9 +1,24 @@
 {
   "lib-books": [
-    { "id": "shelf-continue-listening", "label": "Continue Listening", "type": "book", "entityIds": ["item-fellowship"] },
-    { "id": "shelf-recently-added", "label": "Recently Added", "type": "book", "entityIds": ["item-fellowship", "item-dune", "item-hobbit"] }
+    {
+      "id": "shelf-continue-listening",
+      "label": "Continue Listening",
+      "type": "book",
+      "entityIds": ["item-fellowship"]
+    },
+    {
+      "id": "shelf-recently-added",
+      "label": "Recently Added",
+      "type": "book",
+      "entityIds": ["item-fellowship", "item-dune", "item-hobbit"]
+    }
   ],
   "lib-podcasts": [
-    { "id": "shelf-new-episodes", "label": "Newest Episodes", "type": "episode", "entityIds": ["item-dailytech"] }
+    {
+      "id": "shelf-new-episodes",
+      "label": "Newest Episodes",
+      "type": "episode",
+      "entityIds": ["item-dailytech"]
+    }
   ]
 }

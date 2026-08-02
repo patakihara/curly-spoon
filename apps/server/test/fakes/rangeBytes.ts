@@ -10,7 +10,10 @@ export interface RangeResult {
   body: Uint8Array | null;
 }
 
-function parseRange(rangeHeader: string, total: number): { start: number; end: number } | 'unsatisfiable' {
+function parseRange(
+  rangeHeader: string,
+  total: number,
+): { start: number; end: number } | 'unsatisfiable' {
   const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
   if (!match) return 'unsatisfiable';
   const [, startStr, endStr] = match;

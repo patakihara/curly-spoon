@@ -32,6 +32,10 @@ test.describe('Sheet', () => {
 
   test('dragging the handle down past the dismiss threshold closes the sheet', async ({ page }) => {
     await page.getByTestId('sheet-open').click();
+    const panel = page.getByRole('dialog', { name: 'Queue' });
+    // Wait for the spring entrance animation to settle — the panel starts translated
+    // fully off-screen, and a mid-animation boundingBox() would give bogus coordinates.
+    await expect(panel).toHaveCSS('transform', 'none');
     const handle = page.locator('.m3-sheet-handle-area');
     const box = await handle.boundingBox();
     if (!box) throw new Error('handle not visible');
@@ -48,9 +52,12 @@ test.describe('Sheet', () => {
     await expect(page.getByRole('dialog', { name: 'Queue' })).toHaveCount(0);
   });
 
-  test('dragging the handle up a little snaps to the taller detent instead of dismissing', async ({ page }) => {
+  test('dragging the handle up a little snaps to the taller detent instead of dismissing', async ({
+    page,
+  }) => {
     await page.getByTestId('sheet-open').click();
     const panel = page.getByRole('dialog', { name: 'Queue' });
+    await expect(panel).toHaveCSS('transform', 'none');
     const heightBefore = (await panel.boundingBox())!.height;
 
     const handle = page.locator('.m3-sheet-handle-area');

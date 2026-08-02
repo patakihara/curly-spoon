@@ -21,10 +21,15 @@ test.describe('Button', () => {
     await button.focus();
     await expect(button).toBeFocused();
     await button.evaluate((el) =>
-      el.addEventListener('click', () => ((window as unknown as { __clicked: boolean }).__clicked = true)),
+      el.addEventListener(
+        'click',
+        () => ((window as unknown as { __clicked: boolean }).__clicked = true),
+      ),
     );
     await page.keyboard.press('Enter');
-    const clicked = await page.evaluate(() => (window as unknown as { __clicked?: boolean }).__clicked ?? false);
+    const clicked = await page.evaluate(
+      () => (window as unknown as { __clicked?: boolean }).__clicked ?? false,
+    );
     expect(clicked).toBe(true);
   });
 
@@ -46,10 +51,15 @@ test.describe('Button', () => {
     await expect(button).toBeDisabled();
   });
 
-  test('morphs its corner radius on press (shape morph, not a scale transform)', async ({ page }) => {
+  test('morphs its corner radius on press (shape morph, not a scale transform)', async ({
+    page,
+  }) => {
     const button = page.getByTestId('button-filled');
     const restRadius = await button.evaluate((el) => getComputedStyle(el).borderRadius);
 
+    // Raw page.mouse coordinates are viewport-relative and don't auto-scroll, unlike
+    // locator actions such as .click() — so the element must be brought into view first.
+    await button.scrollIntoViewIfNeeded();
     const box = await button.boundingBox();
     if (!box) throw new Error('button not visible');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

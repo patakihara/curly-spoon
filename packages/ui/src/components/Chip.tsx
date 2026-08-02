@@ -17,17 +17,34 @@ export interface ChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>,
   icon?: ReactNode;
   /** Only meaningful for `input` chips — renders a trailing remove control. */
   onRemove?: () => void;
+  /** Applied to the wrapper (the chip's public root), not the inner button. */
+  'data-testid'?: string;
   children: ReactNode;
 }
 
 export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
-  { variant = 'assist', selected, onSelectedChange, icon, onRemove, onClick, className, children, ...rest },
+  {
+    variant = 'assist',
+    selected,
+    onSelectedChange,
+    icon,
+    onRemove,
+    onClick,
+    className,
+    children,
+    // Pulled out and applied to the *wrapper* rather than the inner button: the wrapper
+    // is the chip's public root (it may also contain the remove control), so a test hook
+    // or DOM id aimed at "the chip" should resolve there, not to one of its two buttons.
+    'data-testid': dataTestId,
+    id,
+    ...rest
+  },
   ref,
 ) {
   const isFilter = variant === 'filter';
 
   return (
-    <span className={clsx('m3-chip-wrapper', className)}>
+    <span className={clsx('m3-chip-wrapper', className)} data-testid={dataTestId} id={id}>
       <button
         ref={ref}
         type="button"

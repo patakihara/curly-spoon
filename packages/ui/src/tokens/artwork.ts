@@ -7,7 +7,12 @@
  * `<img>`/`<canvas>` element, unlike the upstream `sourceColorFromImage` helper, so it
  * is unit-testable with synthetic buffers and usable from a Web Worker.
  */
-import { QuantizerCelebi, Score, argbFromRgb, hexFromArgb } from '@material/material-color-utilities';
+import {
+  QuantizerCelebi,
+  Score,
+  argbFromRgb,
+  hexFromArgb,
+} from '@material/material-color-utilities';
 import { AURALIS_SOURCE_COLOR } from './color.js';
 
 /** How many distinct colours the quantizer is allowed to bucket pixels into. */

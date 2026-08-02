@@ -271,7 +271,9 @@ export function normalizePlaybackSession(
   };
 }
 
-export function normalizeSearchResults(raw: z.infer<typeof rawSearchResponseSchema>): SearchResults {
+export function normalizeSearchResults(
+  raw: z.infer<typeof rawSearchResponseSchema>,
+): SearchResults {
   return {
     books: raw.book?.map((m) => normalizeLibraryItem(m.libraryItem)) ?? [],
     podcasts: raw.podcast?.map((m) => normalizeLibraryItem(m.libraryItem)) ?? [],

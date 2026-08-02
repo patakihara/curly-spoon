@@ -19,7 +19,9 @@ test.describe('Marquee', () => {
     expect(animationName).toBe('none');
   });
 
-  test('honours prefers-reduced-motion by not scrolling even when it overflows', async ({ page }) => {
+  test('honours prefers-reduced-motion by not scrolling even when it overflows', async ({
+    page,
+  }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.reload();
     const text = page.getByTestId('marquee-overflowing').locator('.m3-marquee__text');

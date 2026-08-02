@@ -32,8 +32,7 @@ export function setUpstreamToken(
 /** `null` when this user has no stored credential (never logged in, or it was deleted). */
 export function getUpstreamToken(db: Db, userId: string, sessionSecret: string): string | null {
   const row = db.prepare('SELECT ciphertext FROM secrets WHERE user_id = ?').get(userId) as
-    | SecretRow
-    | undefined;
+    SecretRow | undefined;
   if (!row) return null;
   return decryptSecret(row.ciphertext, sessionSecret);
 }

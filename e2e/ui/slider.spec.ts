@@ -37,6 +37,8 @@ test.describe('Slider', () => {
 
   test('dragging the track with the pointer changes the value', async ({ page }) => {
     const slider = page.locator('[data-testid="slider-basic"] [role="slider"]');
+    // Raw page.mouse coordinates don't auto-scroll like locator actions do.
+    await slider.scrollIntoViewIfNeeded();
     const box = await slider.boundingBox();
     if (!box) throw new Error('slider not visible');
 
@@ -55,6 +57,7 @@ test.describe('Slider', () => {
   test('the track thickens while dragging and settles back on release', async ({ page }) => {
     const wrapper = page.locator('[data-testid="slider-basic"] .m3-slider');
     const track = page.locator('[data-testid="slider-basic"] .m3-slider__track');
+    await track.scrollIntoViewIfNeeded();
     const box = await track.boundingBox();
     if (!box) throw new Error('slider not visible');
 
@@ -88,11 +91,15 @@ test.describe('Slider', () => {
 
   test('the wavy track only animates while the wave is set to animate', async ({ page }) => {
     const animatingActive = page.locator('[data-testid="slider-wavy"] .m3-slider__active');
-    const animationName = await animatingActive.evaluate((el) => getComputedStyle(el).animationName);
+    const animationName = await animatingActive.evaluate(
+      (el) => getComputedStyle(el).animationName,
+    );
     expect(animationName).not.toBe('none');
 
     const staticActive = page.locator('[data-testid="slider-basic"] .m3-slider__active');
-    const staticAnimationName = await staticActive.evaluate((el) => getComputedStyle(el).animationName);
+    const staticAnimationName = await staticActive.evaluate(
+      (el) => getComputedStyle(el).animationName,
+    );
     expect(staticAnimationName).toBe('none');
   });
 });

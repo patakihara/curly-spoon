@@ -6,7 +6,9 @@ describe('openDatabase', () => {
   it('creates every table on a fresh in-memory database', () => {
     const db = openDatabase(':memory:');
     const tables = (
-      db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as Array<{
+      db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+        .all() as Array<{
         name: string;
       }>
     ).map((row) => row.name);

@@ -21,7 +21,9 @@ test.describe('SearchField', () => {
     await expect(field.getByRole('option')).toHaveCount(3);
   });
 
-  test('ArrowDown moves aria-activedescendant through suggestions, Enter selects', async ({ page }) => {
+  test('ArrowDown moves aria-activedescendant through suggestions, Enter selects', async ({
+    page,
+  }) => {
     const field = page.getByTestId('search-field');
     const input = field.locator('input');
     await input.fill('a');

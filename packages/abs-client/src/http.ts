@@ -114,11 +114,7 @@ export class HttpClient {
   }
 
   /** Retry loop shared by JSON and raw requests: only for retryable requests, on network/timeout/5xx. */
-  private async withRetries(
-    url: string,
-    init: RequestInit,
-    retryable: boolean,
-  ): Promise<Response> {
+  private async withRetries(url: string, init: RequestInit, retryable: boolean): Promise<Response> {
     let attempt = 0;
     for (;;) {
       try {
@@ -130,7 +126,8 @@ export class HttpClient {
         }
         return response;
       } catch (err) {
-        const retryableFailure = err instanceof AbsError && (err.code === 'network' || err.code === 'timeout');
+        const retryableFailure =
+          err instanceof AbsError && (err.code === 'network' || err.code === 'timeout');
         if (retryable && retryableFailure && attempt < this.maxRetries) {
           attempt += 1;
           await sleep(this.retryBaseDelayMs * 2 ** (attempt - 1));

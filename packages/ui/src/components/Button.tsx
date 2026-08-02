@@ -42,7 +42,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       type="button"
-      className={clsx('m3-button', `m3-button--${variant}`, `m3-button--${size}`, 'm3-state-layer', className)}
+      className={clsx(
+        'm3-button',
+        `m3-button--${variant}`,
+        `m3-button--${size}`,
+        'm3-state-layer',
+        className,
+      )}
       disabled={isDisabled}
       aria-busy={loading || undefined}
       aria-describedby={loading ? spinnerId : undefined}
@@ -53,7 +59,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ) : leadingIcon ? (
         <span className="m3-button__icon m3-button__icon--leading">{leadingIcon}</span>
       ) : null}
-      {loading ? <span id={spinnerId} className="m3-visually-hidden">Loading</span> : null}
+      {loading ? (
+        <span id={spinnerId} className="m3-visually-hidden">
+          Loading
+        </span>
+      ) : null}
       {children ? <span className="m3-button__label">{children}</span> : null}
       {!loading && trailingIcon ? (
         <span className="m3-button__icon m3-button__icon--trailing">{trailingIcon}</span>

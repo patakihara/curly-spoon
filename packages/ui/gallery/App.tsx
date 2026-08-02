@@ -133,7 +133,12 @@ function IconButtonGallery() {
   return (
     <Section title="IconButton">
       {variants.map((variant) => (
-        <IconButton key={variant} variant={variant} aria-label={variant} data-testid={`icon-button-${variant}`}>
+        <IconButton
+          key={variant}
+          variant={variant}
+          aria-label={variant}
+          data-testid={`icon-button-${variant}`}
+        >
           <Icon name="play" />
         </IconButton>
       ))}
@@ -183,7 +188,11 @@ function ListItemGallery() {
   return (
     <Section title="ListItem">
       <ListItem headline="One line" data-testid="list-item-1-line" />
-      <ListItem headline="Two line" supportingText="Supporting text" data-testid="list-item-2-line" />
+      <ListItem
+        headline="Two line"
+        supportingText="Supporting text"
+        data-testid="list-item-2-line"
+      />
       <ListItem
         overline="Overline"
         headline="Three line"
@@ -203,10 +212,23 @@ function SliderGallery() {
   return (
     <Section title="Slider">
       <div style={{ width: 320 }} data-testid="slider-basic">
-        <Slider aria-label="Playback position" value={value} min={0} max={100} onChange={setValue} />
+        <Slider
+          aria-label="Playback position"
+          value={value}
+          min={0}
+          max={100}
+          onChange={setValue}
+        />
       </div>
       <div style={{ width: 320 }} data-testid="slider-buffered">
-        <Slider aria-label="Playback position, buffered" value={20} buffered={60} min={0} max={100} onChange={() => {}} />
+        <Slider
+          aria-label="Playback position, buffered"
+          value={20}
+          buffered={60}
+          min={0}
+          max={100}
+          onChange={() => {}}
+        />
       </div>
       <div style={{ width: 320 }} data-testid="slider-wavy">
         <Slider
@@ -220,7 +242,14 @@ function SliderGallery() {
         />
       </div>
       <div style={{ width: 320 }} data-testid="slider-disabled">
-        <Slider aria-label="Playback position, disabled" value={50} min={0} max={100} onChange={() => {}} disabled />
+        <Slider
+          aria-label="Playback position, disabled"
+          value={50}
+          min={0}
+          max={100}
+          onChange={() => {}}
+          disabled
+        />
       </div>
     </Section>
   );
@@ -255,12 +284,25 @@ function TopAppBarGallery() {
   return (
     <Section title="TopAppBar">
       <div style={{ width: 320 }} data-testid="top-app-bar-small">
-        <TopAppBar variant="small" title="Library" leading={<IconButton aria-label="Back"><Icon name="chevron_left" /></IconButton>} />
+        <TopAppBar
+          variant="small"
+          title="Library"
+          leading={
+            <IconButton aria-label="Back">
+              <Icon name="chevron_left" />
+            </IconButton>
+          }
+        />
       </div>
       <div
         ref={scrollRef}
         data-testid="top-app-bar-large-scroll-container"
-        style={{ width: 320, height: 200, overflowY: 'auto', border: '1px solid var(--m3-outline-variant)' }}
+        style={{
+          width: 320,
+          height: 200,
+          overflowY: 'auto',
+          border: '1px solid var(--m3-outline-variant)',
+        }}
       >
         <TopAppBar variant="large" title="Audiobooks" scrollContainerRef={scrollRef} />
         <div style={{ height: 600, padding: 16 }}>Scroll me to collapse the bar above.</div>
@@ -295,7 +337,12 @@ function ChipGallery() {
       <Chip variant="assist" icon={<Icon name="download" />} data-testid="chip-assist">
         Download
       </Chip>
-      <Chip variant="filter" selected={selected} onSelectedChange={setSelected} data-testid="chip-filter">
+      <Chip
+        variant="filter"
+        selected={selected}
+        onSelectedChange={setSelected}
+        data-testid="chip-filter"
+      >
         Audiobooks
       </Chip>
       <Chip variant="input" onRemove={() => {}} data-testid="chip-input">
@@ -312,7 +359,13 @@ function SheetGallery() {
       <Button data-testid="sheet-open" onClick={() => setOpen(true)}>
         Open sheet
       </Button>
-      <Sheet open={open} onOpenChange={setOpen} title="Queue" detents={[0.4, 0.9]} aria-label="Queue">
+      <Sheet
+        open={open}
+        onOpenChange={setOpen}
+        title="Queue"
+        detents={[0.4, 0.9]}
+        aria-label="Queue"
+      >
         <div data-testid="sheet-panel-content">
           <p>Drag the handle up or down, or press Escape to close.</p>
           <Button onClick={() => setOpen(false)} data-testid="sheet-close">

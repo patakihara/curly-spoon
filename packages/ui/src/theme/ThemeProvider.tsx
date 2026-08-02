@@ -21,7 +21,12 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { AURALIS_SOURCE_COLOR, createScheme, schemeToCssVars, type M3Scheme } from '../tokens/color.js';
+import {
+  AURALIS_SOURCE_COLOR,
+  createScheme,
+  schemeToCssVars,
+  type M3Scheme,
+} from '../tokens/color.js';
 import {
   REDUCED_MOTION_DURATION_MS,
   SPRINGS,
@@ -131,7 +136,8 @@ export function ThemeProvider({
     ownMode === 'system' ? (systemPrefersDark ? 'dark' : 'light') : ownMode;
 
   const scheme = useMemo(
-    () => createScheme({ sourceColor: ownSourceColor, dark: resolvedMode === 'dark', contrastLevel }),
+    () =>
+      createScheme({ sourceColor: ownSourceColor, dark: resolvedMode === 'dark', contrastLevel }),
     [ownSourceColor, resolvedMode, contrastLevel],
   );
 
@@ -147,7 +153,9 @@ export function ThemeProvider({
       registerColorProperty(name, value);
     }
 
-    const duration = reducedMotion ? REDUCED_MOTION_DURATION_MS : springSettleDuration(SPRINGS.slow);
+    const duration = reducedMotion
+      ? REDUCED_MOTION_DURATION_MS
+      : springSettleDuration(SPRINGS.slow);
     const easing = reducedMotion ? 'linear' : springToLinearEasing(SPRINGS.slow);
     el.style.transition = Object.keys(vars)
       .map((name) => `${name} ${Math.round(duration)}ms ${easing}`)
@@ -162,7 +170,14 @@ export function ThemeProvider({
   const setMode = useCallback((next: ThemeMode) => setOwnMode(next), []);
 
   const contextValue = useMemo<ThemeContextValue>(
-    () => ({ scheme, mode: ownMode, resolvedMode, sourceColor: ownSourceColor, setSourceColor, setMode }),
+    () => ({
+      scheme,
+      mode: ownMode,
+      resolvedMode,
+      sourceColor: ownSourceColor,
+      setSourceColor,
+      setMode,
+    }),
     [scheme, ownMode, resolvedMode, ownSourceColor, setSourceColor, setMode],
   );
 

@@ -10,7 +10,9 @@ test.describe('TopAppBar', () => {
     await expect(bar.getByText('Library')).toBeVisible();
   });
 
-  test('large variant starts expanded and collapses once its container scrolls', async ({ page }) => {
+  test('large variant starts expanded and collapses once its container scrolls', async ({
+    page,
+  }) => {
     const container = page.getByTestId('top-app-bar-large-scroll-container');
     const largeTitle = container.locator('.m3-top-app-bar__title--large');
     await expect(largeTitle).toBeVisible();

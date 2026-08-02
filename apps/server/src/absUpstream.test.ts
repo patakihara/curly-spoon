@@ -32,7 +32,7 @@ describe('AbsUpstreamFactory.forUser', () => {
     expect(() => factory.forUser('some-user')).toThrow(NoCredentialsError);
   });
 
-  it('builds a client bound to the shared base URL and the user\'s decrypted token', () => {
+  it("builds a client bound to the shared base URL and the user's decrypted token", () => {
     const db = openDatabase(':memory:');
     setSettings(db, 'https://abs.example.com');
     const user = upsertUser(db, { username: 'kara', upstreamUserId: 'u1' });

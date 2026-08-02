@@ -19,7 +19,11 @@ export interface CreatedSession {
   expiresAt: number;
 }
 
-export function createSession(db: Db, userId: string, ttlMs: number = SESSION_TTL_MS): CreatedSession {
+export function createSession(
+  db: Db,
+  userId: string,
+  ttlMs: number = SESSION_TTL_MS,
+): CreatedSession {
   const token = randomBytes(32).toString('base64url');
   const now = Date.now();
   const expiresAt = now + ttlMs;

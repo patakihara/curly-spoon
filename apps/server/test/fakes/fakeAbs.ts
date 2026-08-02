@@ -25,7 +25,11 @@ import { serveRangeableBytes } from './rangeBytes.js';
 /** The only host this fake answers for — anything else simulates a DNS/connection failure. */
 export const FAKE_BASE_URL = 'http://fake.abs.local';
 export const FAKE_CREDENTIALS = { username: 'kara', password: 'hunter2' };
-export const FAKE_ITEM_IDS = { dune: 'item-dune', fellowship: 'item-fellowship', hobbit: 'item-hobbit' };
+export const FAKE_ITEM_IDS = {
+  dune: 'item-dune',
+  fellowship: 'item-fellowship',
+  hobbit: 'item-hobbit',
+};
 export const FAKE_PODCAST_ITEM_ID = 'item-dailytech';
 
 // -----------------------------------------------------------------------------
@@ -128,7 +132,9 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
     return `${userId}:${itemId}:${episodeId ?? ''}`;
   }
 
-  function userFromAuth(headers: Headers): { id: string; username: string; permissions: Record<string, boolean> } | null {
+  function userFromAuth(
+    headers: Headers,
+  ): { id: string; username: string; permissions: Record<string, boolean> } | null {
     const auth = headers.get('authorization');
     if (!auth?.startsWith('Bearer ')) return null;
     const token = auth.slice('Bearer '.length);
@@ -166,7 +172,8 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
     const headers = new Headers(init?.headers);
     const path = url.pathname;
     const parts = path.split('/').filter(Boolean);
-    const body = (): JsonRecord => (init?.body ? (JSON.parse(String(init.body)) as JsonRecord) : {});
+    const body = (): JsonRecord =>
+      init?.body ? (JSON.parse(String(init.body)) as JsonRecord) : {};
 
     // ---- Unauthenticated ----
     if (method === 'GET' && path === '/status') {
@@ -220,9 +227,10 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
       }
 
       if (method === 'GET' && sub === 'personalized') {
-        const shelves = (shelvesFixture as Record<string, Array<JsonRecord & { entityIds: string[] }>>)[
-          libraryId
-        ] ?? [];
+        const shelves =
+          (shelvesFixture as Record<string, Array<JsonRecord & { entityIds: string[] }>>)[
+            libraryId
+          ] ?? [];
         return json(
           shelves.map((shelf) => ({
             id: shelf.id,
@@ -237,9 +245,9 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
       }
 
       if (method === 'GET' && sub === 'series') {
-        const list = (seriesFixture as Record<string, Array<JsonRecord & { bookIds: string[] }>>)[
-          libraryId
-        ] ?? [];
+        const list =
+          (seriesFixture as Record<string, Array<JsonRecord & { bookIds: string[] }>>)[libraryId] ??
+          [];
         return json({
           results: list.map((series) => ({
             id: series.id,
@@ -252,9 +260,10 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
       }
 
       if (method === 'GET' && sub === 'collections') {
-        const list = (collectionsFixture as Record<string, Array<JsonRecord & { bookIds: string[] }>>)[
-          libraryId
-        ] ?? [];
+        const list =
+          (collectionsFixture as Record<string, Array<JsonRecord & { bookIds: string[] }>>)[
+            libraryId
+          ] ?? [];
         return json({
           collections: list.map((collection) => ({
             id: collection.id,
@@ -303,7 +312,9 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
         const expanded = url.searchParams.get('expanded') === '1';
         const includeProgress = url.searchParams.get('include') === 'progress';
         const shaped = expanded ? item : stripToMinified(item);
-        const progress = includeProgress ? progressByKey.get(progressKey(user.id, itemId)) : undefined;
+        const progress = includeProgress
+          ? progressByKey.get(progressKey(user.id, itemId))
+          : undefined;
         return json(withProgress(shaped, progress));
       }
 
@@ -317,7 +328,11 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
         const buffer = audioBuffers.get(fileId);
         if (!buffer) return notFound();
         const meta = AUDIO_FILES[fileId]!;
-        const result = serveRangeableBytes(buffer, headers.get('range') ?? undefined, meta.mimeType);
+        const result = serveRangeableBytes(
+          buffer,
+          headers.get('range') ?? undefined,
+          meta.mimeType,
+        );
         return new Response(method === 'HEAD' ? null : result.body, {
           status: result.status,
           headers: result.headers,
@@ -332,7 +347,9 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
         const media = item.media as JsonRecord;
 
         if (episodeId) {
-          const episode = (media.episodes as JsonRecord[] | undefined)?.find((e) => e.id === episodeId);
+          const episode = (media.episodes as JsonRecord[] | undefined)?.find(
+            (e) => e.id === episodeId,
+          );
           if (!episode) return notFound();
           const track = episode.audioTrack as JsonRecord;
           sessions.set(sessionId, {

@@ -18,7 +18,10 @@ declare module 'fastify' {
 }
 
 export function createRequireSession(db: Db, cookieSecure: boolean) {
-  return async function requireSession(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  return async function requireSession(
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> {
     const token = request.cookies[SESSION_COOKIE_NAME];
     if (!token) {
       sendError(reply, 401, 'unauthenticated', 'Sign in required');

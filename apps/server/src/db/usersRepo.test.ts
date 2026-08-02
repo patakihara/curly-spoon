@@ -29,8 +29,16 @@ describe('usersRepo', () => {
 
   it('treats the same upstream user id on different upstreams as different local users', () => {
     const db = openDatabase(':memory:');
-    const abs = upsertUser(db, { username: 'kara', upstreamUserId: 'user-1', upstream: 'audiobookshelf' });
-    const jelly = upsertUser(db, { username: 'kara', upstreamUserId: 'user-1', upstream: 'jellyfin' });
+    const abs = upsertUser(db, {
+      username: 'kara',
+      upstreamUserId: 'user-1',
+      upstream: 'audiobookshelf',
+    });
+    const jelly = upsertUser(db, {
+      username: 'kara',
+      upstreamUserId: 'user-1',
+      upstream: 'jellyfin',
+    });
     expect(abs.id).not.toBe(jelly.id);
   });
 

@@ -5,7 +5,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Icon', () => {
-  test('renders every named icon as inline SVG (no icon font, no network image)', async ({ page }) => {
+  test('renders every named icon as inline SVG (no icon font, no network image)', async ({
+    page,
+  }) => {
     const grid = page.getByTestId('icon-grid');
     const svgCount = await grid.locator('svg').count();
     expect(svgCount).toBeGreaterThanOrEqual(29);

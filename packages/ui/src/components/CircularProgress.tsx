@@ -27,7 +27,10 @@ export function CircularProgress({
 
   return (
     <svg
-      className={clsx('m3-circular-progress', indeterminate && 'm3-circular-progress--indeterminate')}
+      className={clsx(
+        'm3-circular-progress',
+        indeterminate && 'm3-circular-progress--indeterminate',
+      )}
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}

@@ -191,19 +191,26 @@ export class AbsClient {
     return raw.libraries.map(normalizeLibrary);
   }
 
-  async getLibraryItems(libraryId: string, query: LibraryItemsQuery = {}): Promise<LibraryItemsPage> {
-    const raw = await this.http.requestJson(`/api/libraries/${encodeURIComponent(libraryId)}/items`, {
-      schema: rawLibraryItemsResponseSchema,
-      query: {
-        limit: query.limit,
-        page: query.page,
-        sort: query.sort,
-        desc: query.desc !== undefined ? (query.desc ? 1 : 0) : undefined,
-        filter: query.filter,
-        minified: query.minified !== undefined ? (query.minified ? 1 : 0) : undefined,
-        collapseseries: query.collapseseries !== undefined ? (query.collapseseries ? 1 : 0) : undefined,
+  async getLibraryItems(
+    libraryId: string,
+    query: LibraryItemsQuery = {},
+  ): Promise<LibraryItemsPage> {
+    const raw = await this.http.requestJson(
+      `/api/libraries/${encodeURIComponent(libraryId)}/items`,
+      {
+        schema: rawLibraryItemsResponseSchema,
+        query: {
+          limit: query.limit,
+          page: query.page,
+          sort: query.sort,
+          desc: query.desc !== undefined ? (query.desc ? 1 : 0) : undefined,
+          filter: query.filter,
+          minified: query.minified !== undefined ? (query.minified ? 1 : 0) : undefined,
+          collapseseries:
+            query.collapseseries !== undefined ? (query.collapseseries ? 1 : 0) : undefined,
+        },
       },
-    });
+    );
     return {
       items: raw.results.map(normalizeLibraryItem),
       total: raw.total,
@@ -224,10 +231,13 @@ export class AbsClient {
     libraryId: string,
     query: { limit?: number; page?: number } = {},
   ): Promise<SeriesPage> {
-    const raw = await this.http.requestJson(`/api/libraries/${encodeURIComponent(libraryId)}/series`, {
-      schema: rawSeriesResponseSchema,
-      query: { limit: query.limit, page: query.page },
-    });
+    const raw = await this.http.requestJson(
+      `/api/libraries/${encodeURIComponent(libraryId)}/series`,
+      {
+        schema: rawSeriesResponseSchema,
+        query: { limit: query.limit, page: query.page },
+      },
+    );
     return { series: raw.results.map(normalizeSeries), total: raw.total ?? raw.results.length };
   }
 
@@ -244,7 +254,11 @@ export class AbsClient {
       `/api/libraries/${encodeURIComponent(libraryId)}/playlists`,
       { schema: rawPlaylistsResponseSchema },
     );
-    return raw.playlists.map((p) => ({ id: p.id, name: p.name, description: p.description ?? null }));
+    return raw.playlists.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description ?? null,
+    }));
   }
 
   async getLibraryAuthors(libraryId: string): Promise<Author[]> {
@@ -264,10 +278,13 @@ export class AbsClient {
   }
 
   async searchLibrary(libraryId: string, q: string, limit?: number): Promise<SearchResults> {
-    const raw = await this.http.requestJson(`/api/libraries/${encodeURIComponent(libraryId)}/search`, {
-      schema: rawSearchResponseSchema,
-      query: { q, limit },
-    });
+    const raw = await this.http.requestJson(
+      `/api/libraries/${encodeURIComponent(libraryId)}/search`,
+      {
+        schema: rawSearchResponseSchema,
+        query: { q, limit },
+      },
+    );
     return normalizeSearchResults(raw);
   }
 

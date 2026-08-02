@@ -78,9 +78,7 @@ describe('HttpClient.requestJson', () => {
     const fetchFn = fakeFetch(async () => new Response('missing', { status: 404 }));
     const client = new HttpClient({ baseUrl: 'http://abs.local', fetch: fetchFn });
 
-    const err = await client
-      .requestJson('/api/items/ghost', { schema })
-      .catch((e: unknown) => e);
+    const err = await client.requestJson('/api/items/ghost', { schema }).catch((e: unknown) => e);
     expect((err as AbsError).code).toBe('not_found');
   });
 
@@ -94,7 +92,11 @@ describe('HttpClient.requestJson', () => {
 
   it('maps invalid JSON body to a schema_mismatch AbsError', async () => {
     const fetchFn = fakeFetch(
-      async () => new Response('not json{{{', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+      async () =>
+        new Response('not json{{{', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
     );
     const client = new HttpClient({ baseUrl: 'http://abs.local', fetch: fetchFn });
 

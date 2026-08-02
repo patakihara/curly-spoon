@@ -1,6 +1,18 @@
 {
   "libraries": [
-    { "id": "lib-books", "name": "Audiobooks", "mediaType": "book", "icon": "audiobook", "displayOrder": 1 },
-    { "id": "lib-podcasts", "name": "Podcasts", "mediaType": "podcast", "icon": "podcast", "displayOrder": 2 }
+    {
+      "id": "lib-books",
+      "name": "Audiobooks",
+      "mediaType": "book",
+      "icon": "audiobook",
+      "displayOrder": 1
+    },
+    {
+      "id": "lib-podcasts",
+      "name": "Podcasts",
+      "mediaType": "podcast",
+      "icon": "podcast",
+      "displayOrder": 2
+    }
   ]
 }

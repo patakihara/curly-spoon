@@ -6,12 +6,12 @@ only needs to be able to reach it.
 
 ## What you need
 
-| Requirement                | Why                                             |
-| -------------------------- | ----------------------------------------------- |
-| Audiobookshelf             | Audiobooks and podcasts (priority 1 and 2)      |
-| Jellyfin                   | Music (priority 3) — optional                   |
-| A torrent client           | Book requests — qBittorrent or Transmission     |
-| A slskd instance           | Music requests — optional                       |
+| Requirement      | Why                                         |
+| ---------------- | ------------------------------------------- |
+| Audiobookshelf   | Audiobooks and podcasts (priority 1 and 2)  |
+| Jellyfin         | Music (priority 3) — optional               |
+| A torrent client | Book requests — qBittorrent or Transmission |
+| A slskd instance | Music requests — optional                   |
 
 Everything except Audiobookshelf is optional; features whose backing service is not
 configured are hidden rather than shown broken.
@@ -73,12 +73,12 @@ book without being able to fill your disk.
 
 ## Environment variables
 
-| Variable                | Default | Meaning                                            |
-| ----------------------- | ------- | -------------------------------------------------- |
-| `PORT`                  | `8787`  | HTTP listen port                                   |
-| `DATA_DIR`              | `/data` | SQLite database and cache location                 |
-| `SESSION_SECRET`        | —       | **Required.** Session signing + secret encryption   |
-| `AURALIS_FAKE_UPSTREAMS`| `0`     | Boot against built-in fakes; for development only  |
+| Variable                 | Default | Meaning                                           |
+| ------------------------ | ------- | ------------------------------------------------- |
+| `PORT`                   | `8787`  | HTTP listen port                                  |
+| `DATA_DIR`               | `/data` | SQLite database and cache location                |
+| `SESSION_SECRET`         | —       | **Required.** Session signing + secret encryption |
+| `AURALIS_FAKE_UPSTREAMS` | `0`     | Boot against built-in fakes; for development only |
 
 ## Android
 

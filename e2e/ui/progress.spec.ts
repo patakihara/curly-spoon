@@ -18,7 +18,9 @@ test.describe('LinearProgress', () => {
     expect(animationName).not.toBe('none');
   });
 
-  test('wavy indeterminate uses a wave background distinct from the plain bar', async ({ page }) => {
+  test('wavy indeterminate uses a wave background distinct from the plain bar', async ({
+    page,
+  }) => {
     const wavyFill = page
       .getByTestId('linear-progress-wavy')
       .locator('.m3-linear-progress__indeterminate');
@@ -39,7 +41,9 @@ test.describe('CircularProgress', () => {
   });
 
   test('indeterminate spins continuously', async ({ page }) => {
-    const ring = page.getByTestId('circular-progress-indeterminate').locator('[role="progressbar"]');
+    const ring = page
+      .getByTestId('circular-progress-indeterminate')
+      .locator('[role="progressbar"]');
     await expect(ring).not.toHaveAttribute('aria-valuenow');
     const animationName = await ring.evaluate((el) => getComputedStyle(el).animationName);
     expect(animationName).not.toBe('none');

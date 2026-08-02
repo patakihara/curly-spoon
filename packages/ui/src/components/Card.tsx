@@ -7,6 +7,7 @@ import {
   forwardRef,
   type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
+  type HTMLAttributes,
   type ReactNode,
   type Ref,
 } from 'react';
@@ -21,12 +22,14 @@ interface CardBaseProps {
   className?: string;
 }
 
-export interface StaticCardProps extends CardBaseProps {
+export interface StaticCardProps
+  extends CardBaseProps, Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'className'> {
   interactive?: false;
 }
 
 export interface InteractiveCardProps
-  extends CardBaseProps,
+  extends
+    CardBaseProps,
     Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'className'>,
     Pick<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
   interactive: true;
@@ -36,7 +39,12 @@ export type CardProps = StaticCardProps | InteractiveCardProps;
 
 export const Card = forwardRef<HTMLElement, CardProps>(function Card(props, ref) {
   const { variant = 'elevated', children, className } = props;
-  const classes = clsx('m3-card', `m3-card--${variant}`, props.interactive && 'm3-card--interactive', className);
+  const classes = clsx(
+    'm3-card',
+    `m3-card--${variant}`,
+    props.interactive && 'm3-card--interactive',
+    className,
+  );
 
   if (props.interactive) {
     const { interactive: _interactive, variant: _variant, href, ...rest } = props;
@@ -64,8 +72,16 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(props, ref)
     );
   }
 
+  const {
+    interactive: _interactive,
+    variant: _variant,
+    children: _children,
+    className: _className,
+    ...divRest
+  } = props as StaticCardProps;
+
   return (
-    <div ref={ref as Ref<HTMLDivElement>} className={classes}>
+    <div ref={ref as Ref<HTMLDivElement>} className={classes} {...divRest}>
       {children}
     </div>
   );

@@ -5,7 +5,12 @@
 
 import type { LoginResult } from '@auralis/abs-client';
 import type { Db } from '../db/connection.js';
-import { createSession, deleteSession, rotateSession, validateSession } from '../db/sessionsRepo.js';
+import {
+  createSession,
+  deleteSession,
+  rotateSession,
+  validateSession,
+} from '../db/sessionsRepo.js';
 import { setUpstreamToken } from '../db/secretsRepo.js';
 import { upsertUser } from '../db/usersRepo.js';
 
@@ -24,7 +29,12 @@ export function completeLogin(db: Db, sessionSecret: string, loginResult: LoginR
   });
   setUpstreamToken(db, user.id, loginResult.token, sessionSecret);
   const session = createSession(db, user.id);
-  return { token: session.token, expiresAt: session.expiresAt, userId: user.id, username: user.username };
+  return {
+    token: session.token,
+    expiresAt: session.expiresAt,
+    userId: user.id,
+    username: user.username,
+  };
 }
 
 export interface ResolvedSession {

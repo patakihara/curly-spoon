@@ -5,19 +5,18 @@
  * this component just also drops the sliding gradient position so it doesn't flash).
  */
 import clsx from 'clsx';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, HTMLAttributes } from 'react';
 import './Skeleton.css';
 
 export type SkeletonShape = 'text' | 'circular' | 'rectangular';
 
-export interface SkeletonProps {
+export interface SkeletonProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'style'> {
   shape?: SkeletonShape;
   width?: number | string;
   height?: number | string;
-  className?: string;
 }
 
-export function Skeleton({ shape = 'text', width, height, className }: SkeletonProps) {
+export function Skeleton({ shape = 'text', width, height, className, ...rest }: SkeletonProps) {
   const style: CSSProperties = {
     width,
     height: height ?? (shape === 'text' ? '1em' : undefined),
@@ -28,6 +27,7 @@ export function Skeleton({ shape = 'text', width, height, className }: SkeletonP
       className={clsx('m3-skeleton', `m3-skeleton--${shape}`, className)}
       style={style}
       aria-hidden="true"
+      {...rest}
     />
   );
 }
