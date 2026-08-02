@@ -50,6 +50,8 @@ pnpm test:e2e     # end-to-end + UI (Playwright)
 - [Design language](docs/DESIGN.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Self-hosting](docs/SELF_HOSTING.md)
+- [Upstream integrations](docs/INTEGRATIONS.md)
+- [Handover](docs/HANDOVER.md) — context for a Claude instance picking this up
 
 ## Licence
 
