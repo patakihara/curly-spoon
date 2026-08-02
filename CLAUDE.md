@@ -38,6 +38,30 @@ the code. Nothing worth keeping lives only in the conversation.
 
 Compact mid-phase too if context is clearly filling before the phase ends.
 
+## Plan usage — stay under 80% of both windows
+
+The user is on a subscription plan metered by a ~5-hour session window and a weekly
+window. **This project must not consume more than 80% of either.** It is not the only thing
+drawing on the account.
+
+- Run `./scripts/usage-guard.py` **before spawning any subagent** and at every phase
+  boundary. If it exits non-zero, stop and tell the user rather than pressing on.
+- Nothing in a session can enforce this — the guard is a gauge. Treat its 80% line as a
+  hard stop anyway, and say plainly when work is being paused because of it.
+- Ask the user to re-run `/usage` and re-calibrate when the estimate looks stale; the
+  calibration drifts as other work lands on the account.
+
+**Subagents are the expensive path.** Measured on this project, Sonnet subagents accounted
+for roughly two-thirds of consumption, almost entirely in cache reads — every cold spawn
+re-reads the repo to orient itself. So:
+
+- Prefer **one agent per phase** over several agents per phase; each extra spawn re-pays
+  the whole orientation cost.
+- Prefer `SendMessage` to an existing agent over a fresh `Agent` call — it keeps context
+  and skips the re-read.
+- Do small, well-understood fixes **inline**. Delegating a one-line fix costs orders of
+  magnitude more than doing it.
+
 ## Autonomy
 
 Work autonomously. Make ordinary decisions, state them, keep moving. Escalate only what
