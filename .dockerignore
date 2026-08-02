@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies — reinstalled inside the image, never copied in from the host
+# (a host-platform node_modules, e.g. a macOS build of better-sqlite3, would
+# silently break on the image's linux/musl runtime otherwise).
+node_modules
+**/node_modules
+
+# Build output — the image produces its own (apps/web/dist is built inside the
+# `build` stage; nothing else in this repo has build output to begin with).
+**/dist
+**/build
+**/coverage
+
+# Test output and reports
+playwright-report
+test-results
+**/test-results
+.last-run.json
+
+# Editor/OS cruft
+.DS_Store
+*.log
+.vscode
+.idea
+
+# Local env files — never bake secrets into an image layer
+.env
+.env.*
+!.env.example
+
+# Local dev data (SQLite files if anyone runs the server against a real DATA_DIR locally)
+data
+apps/server/data
+
+# Android app — not part of this image
+apps/android
+
+# Ops scripts / operator docs — not part of the runtime image
+ops
+docs

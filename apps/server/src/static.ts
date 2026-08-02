@@ -44,8 +44,13 @@ function isIndexHtml(path: string): boolean {
  * is considered ready. Without that, a request arriving right at startup could
  * race this function's own async setup and see the wrong 404 shape.
  */
-export function registerStaticServing(app: FastifyInstance, config: AppConfig): Promise<void> {
-  return app.register(async (instance) => {
+export async function registerStaticServing(
+  app: FastifyInstance,
+  config: AppConfig,
+): Promise<void> {
+  // `register` resolves to the Fastify instance, not void, so it is awaited and
+  // discarded rather than returned — callers only care that boot has settled.
+  await app.register(async (instance) => {
     let serving = false;
 
     if (config.serveWeb !== false) {

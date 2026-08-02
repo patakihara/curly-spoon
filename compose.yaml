@@ -1,0 +1,28 @@
+# One container, one port, one volume — see docs/SELF_HOSTING.md.
+#
+# `SESSION_SECRET` is deliberately not given a default: it derives the
+# encryption key for stored upstream credentials (apps/server/src/config.ts),
+# so it must come from the environment, not be baked into this file. Generate
+# one with e.g. `openssl rand -hex 32` and export it before `docker compose up`,
+# or put it in a sibling `.env` file that stays out of version control.
+services:
+  auralis:
+    build: .
+    image: ghcr.io/patakihara/auralis:latest
+    ports:
+      - '8787:8787'
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET — see docs/SELF_HOSTING.md}
+      DATA_DIR: /data
+    volumes:
+      - auralis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8787/api/v1/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  auralis-data:
