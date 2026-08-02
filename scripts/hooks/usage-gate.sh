@@ -58,7 +58,13 @@ status=$?
 # 1 means over the ceiling. 0 means under. Anything else could not measure.
 [ "$status" -eq 0 ] || [ "$status" -eq 1 ] || allow
 
-windows="$(printf '%s\n' "$report" | grep -E '^(Session|Weekly) {2,}')"
+# The bar is stripped, not merely cosmetic waste: measured against the token
+# counter it is 21 of the 53 tokens in each injected report, and injected
+# context is re-read on every later turn, so it is paid hundreds of times over a
+# session. It carries no information the adjacent percentage does not, and the
+# only reader here is a model. The terminal output keeps its bars — the guard is
+# untouched; this strips them on the way into context.
+windows="$(printf '%s\n' "$report" | grep -E '^(Session|Weekly) {2,}' | sed -E 's/\[[^]]*\] +//')"
 [ -n "$windows" ] || allow
 
 emit() {
