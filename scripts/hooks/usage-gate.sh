@@ -117,15 +117,34 @@ if mode == "deny":
             "systemMessage": "Plan usage at or over the ceiling — tool call blocked.",
         }
 elif mode == "warn":
+    # Said in full the first time, tersely afterwards. The warning repeats on
+    # every tool call in the band, and each injection accumulates in context and
+    # is re-read on every later turn — so the full text, at 107 tokens, would
+    # add tens of thousands of tokens across a busy band, inflating context at
+    # exactly the moment the budget is tightest. The instruction only has to
+    # land once; after that a nudge is enough to keep it in view.
     out = {
         "hookSpecificOutput": {
             "hookEventName": event,
             "additionalContext": (
                 f"Plan usage — approaching the ceiling:\n{windows}\n"
-                "Land your work NOW: commit and push what exists, and write anything "
-                "unfinished into docs/HANDOVER.md. Past the ceiling every tool call is "
-                "blocked, including the ones needed to do that, so this is the last "
-                "chance to hand off cleanly. Do not start anything new."
+                "Hand off NOW, in this order:\n"
+                "1. Update docs/HANDOVER.md: what you were doing, what is half-finished "
+                "and in which files, and the exact next step. Whatever replaces you is a "
+                "FRESH session with no memory of this one — it reads only what is on "
+                "disk, so anything you do not write down is lost.\n"
+                "2. Commit and push.\n"
+                "Past the ceiling every tool call is blocked, including these. "
+                "Start nothing new."
+            ),
+        }
+    }
+elif mode == "warn-again":
+    out = {
+        "hookSpecificOutput": {
+            "hookEventName": event,
+            "additionalContext": (
+                f"{windows}\nStill in the hand-off band: HANDOVER.md, then commit and push."
             ),
         }
     }
@@ -150,10 +169,25 @@ fi
 # throttle exists to keep a routine status line from being repeated; this is not
 # routine, and a session that sees it once at the start of a long turn may be
 # fifty tool calls past it by the time the ceiling lands.
+#
+# The full instruction lands once; after that it is a one-line nudge, because
+# every injection accumulates in context and is re-read on every later turn.
+WARN_STAMP="${XDG_CACHE_HOME:-$HOME/.cache}/auralis-usage-warned"
 if [ "$warn" = "1" ]; then
-  emit warn
+  if [ -f "$WARN_STAMP" ]; then
+    emit warn-again
+  else
+    mkdir -p "$(dirname "$WARN_STAMP")" 2>/dev/null
+    : >"$WARN_STAMP" 2>/dev/null
+    emit warn
+  fi
   exit 0
 fi
+
+# Below the band: clear the marker, so a window that resets and climbs again
+# gets the full instruction rather than a nudge referring to something this
+# session never saw.
+rm -f "$WARN_STAMP" 2>/dev/null
 
 # Under the ceiling. Report on SessionStart always, and on other events only
 # once per REPORT_EVERY seconds.

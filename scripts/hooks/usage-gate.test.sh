@@ -168,7 +168,8 @@ else
 fi
 
 # The warning must repeat on every call — a session fifty tool calls into a turn
-# has long since scrolled past a throttled one.
+# has long since scrolled past a throttled one — but the *full* instruction only
+# lands once, because every injection is re-read on every later turn.
 cache="$(mktemp -d)"
 w1="$(printf '{"hook_event_name":"PreToolUse"}' |
   CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" "$HOOK" 2>/dev/null)"
@@ -179,6 +180,17 @@ if [ -n "$w1" ] && [ -n "$w2" ]; then
   ok "warning band ignores the report throttle"
 else
   fail "warning should repeat every call (w1='$w1' w2='$w2')"
+fi
+
+if printf '%s' "$w1" | grep -q "FRESH session" && ! printf '%s' "$w2" | grep -q "FRESH session"; then
+  ok "full hand-off instruction lands once, then a short nudge"
+else
+  fail "expected the full text once then a nudge (w1='$w1' w2='$w2')"
+fi
+if printf '%s' "$w2" | grep -q "HANDOVER.md"; then
+  ok "the nudge still names HANDOVER.md"
+else
+  fail "the short nudge must still name the file: $w2"
 fi
 rm -rf "$dir"
 

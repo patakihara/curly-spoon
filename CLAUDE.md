@@ -173,5 +173,18 @@ the host's `CLAUDE.md` for container names and ports. Writing outside it is not.
 
 ## Context
 
-`docs/HANDOVER.md` is the orientation document — read it first in a fresh session.
-`docs/ROADMAP.md`, `ARCHITECTURE.md`, `DESIGN.md` and `INTEGRATIONS.md` are the spec.
+`docs/HANDOVER.md` is the orientation document. It is `@`-imported below rather than left
+as an instruction to read it, because the sessions that most need it are the ones least
+likely to follow that instruction: an autonomous session started by `auralis-autorun` after
+a usage window resets begins with no memory of what came before, and a handover it forgets
+to open is a handover that does not exist. Importing costs nothing extra — a session that
+follows the instruction reads the same tokens, plus a tool call.
+
+`docs/ROADMAP.md`, `ARCHITECTURE.md`, `DESIGN.md` and `INTEGRATIONS.md` are the spec. They
+are deliberately _not_ imported: they are large, and they are reference material to consult
+for the phase in hand rather than orientation every session needs.
+
+Keep `HANDOVER.md` short enough to justify that. It is loaded into every session in this
+repo, so anything stale in it is paid for repeatedly.
+
+@docs/HANDOVER.md
