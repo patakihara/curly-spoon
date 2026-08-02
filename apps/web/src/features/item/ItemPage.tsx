@@ -21,13 +21,12 @@ export function ItemPage() {
     );
   }
 
-  if (itemQuery.isError) {
-    return (
-      <div className="auralis-page" data-testid="item-page">
-        <p role="alert">Couldn't load this item: {itemQuery.error.message}</p>
-      </div>
-    );
-  }
+  // Unlike list pages (which degrade to an inline message so the rest of the
+  // page stays usable), a detail page with no data has nothing else useful to
+  // show — throwing hands it to this route's `errorComponent`
+  // (`RouteErrorBoundary`), the real "something broke, try again" surface
+  // rather than a bare inline message.
+  if (itemQuery.isError) throw itemQuery.error;
 
   const item = itemQuery.data?.item;
   if (!item) return null;
