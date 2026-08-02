@@ -38,14 +38,14 @@ the code. Nothing worth keeping lives only in the conversation.
 
 Compact mid-phase too if context is clearly filling before the phase ends.
 
-## Plan usage — stay under 80% of both windows
+## Plan usage — stop at 90% of either window
 
 The user is on a subscription plan metered by a ~5-hour session window and a weekly
-window. **This project must not consume more than 80% of either.** It is not the only thing
-drawing on the account.
+window. **Work on this project stops at 90% of either.** It is not the only thing drawing
+on the account.
 
-- Run `./scripts/usage-guard.py` **before spawning any subagent** and at every phase
-  boundary. If it exits non-zero, stop and tell the user rather than pressing on.
+- Run `./scripts/usage-guard.py` whenever you want the reading; the hooks below run it for
+  you. If it exits non-zero, stop and tell the user rather than pressing on.
 - The guard reads the **authoritative** number from the same endpoint `/usage` uses, so
   there is nothing to calibrate and no estimate to go stale. It reports the whole
   account's usage, not this project's share — the stricter, more useful reading, since
@@ -53,15 +53,36 @@ drawing on the account.
 - **The ceiling and the hooks that enforce it are the user's to set, not yours.** Run the
   guard, respect its exit code, report the reading. Do not edit the threshold, the hook
   scripts, or this rule to match your own judgement about what is affordable — that has
-  been done once already, and it silently reverted a decision the user had made.
+  been done once already, and it silently reverted a decision the user had made. The
+  current bounds, 90% and 85%, were set by the user directly.
 - A passing gate is not a licence to be wasteful. Delegating is the cheap path; long
   inline sessions are what actually consume the window.
 
-**Enforced, not merely requested:** `.claude/settings.json` registers two hooks. A
-`SessionStart` hook reports both windows into context at the top of every session, and a
-`PreToolUse` hook on `Agent|Task` runs the guard and **denies the spawn** past the
-threshold. Both fail open — silent when they cannot measure — so neither blocks work it
-has no reading for. `scripts/hooks/pre-subagent-usage-check.test.sh` covers that contract.
+**Enforced, not merely requested.** `.claude/settings.json` puts one script,
+`scripts/hooks/usage-gate.sh`, on three events:
+
+| Event              | Under 85%                         | 85–90%                 | At or over 90%          |
+| ------------------ | --------------------------------- | ---------------------- | ----------------------- |
+| `SessionStart`     | reports both windows into context | urges landing the work | denies                  |
+| `UserPromptSubmit` | silent                            | urges landing the work | refuses the instruction |
+| `PreToolUse` (`*`) | reports every ~10 min of activity | urges, on every call   | denies every tool call  |
+
+The matcher is `*` deliberately. An earlier version gated only `Agent|Task`, on the theory
+that subagents were the expensive thing — and the orchestrating session then became the
+largest consumer on the account while being the one thing the gate did not watch. A session
+that cannot call tools cannot spend, which is where the cap has to live.
+
+**The 85% band exists because the hard stop blocks the tools needed to stop well.** Past the
+ceiling every call is denied, including the `Bash` and `Edit` calls needed to commit, push,
+or write state into `docs/HANDOVER.md` — and the autorun restart starts a _fresh_ session
+rather than resuming, so anything unwritten is lost. In the band: commit, push, write down
+what is unfinished, start nothing new.
+
+When the gate denies, **stop**. Do not retry, and do not reach for a different tool — every
+tool is gated. Say where usage stands and when the window resets, then end the turn.
+
+Everything fails open: no credential, expired token, changed response shape, network down —
+all allow, and say why on stderr. `scripts/hooks/usage-gate.test.sh` pins that contract.
 
 **Start sessions from the repo root, or the hooks are not on.** Claude Code walks _up_ from
 the session's working directory to find `CLAUDE.md` and `.claude/settings.json`, so a
