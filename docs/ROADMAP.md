@@ -10,12 +10,13 @@ self-contained, tested increment.
 | 3   | Server BFF core + Audiobookshelf client                         | done        |
 | 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
 | 5   | Audiobooks experience + player                                  | in progress |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | next        |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | in progress |
 | 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned     |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned     |
 | 8   | Podcast client (web + Android)                                  | planned     |
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
 | 10  | Release polish — performance budgets, a11y audit                | planned     |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
 
 ### Why Android sits at 7 rather than last
 
@@ -34,15 +35,23 @@ Media Session lock-screen controls. It is a good stopgap, not a replacement.
 
 ### Why 5a exists
 
-The build environment used for development has no network access to `dl.google.com`, so the
-Android SDK and Google's Maven repository are unreachable: **Android code cannot be compiled
-or run locally at all.** It is written blind and validated only by CI, which does have
-access.
+Android was written **blind** — not compiled or run once — so the pipeline that builds it is
+itself the risk. 5a therefore lands a minimal Compose app that does nothing but build, plus
+the workflow that produces a sideloadable debug APK, well before there is real code
+depending on it. It runs in parallel with phase 5 because `apps/android/` and `apps/web/`
+are disjoint.
 
-That makes the pipeline itself a risk. 5a therefore lands a minimal Compose app that does
-nothing but build, plus the workflow that produces a sideloadable debug APK, well before
-there is real code depending on it. It runs in parallel with phase 5 because `apps/android/`
-and `apps/web/` are disjoint.
+**Why it was written blind is worth correcting, because the inherited reason was wrong.**
+Earlier drafts of this file said `dl.google.com` was unreachable and Google's Maven
+repository blocked. That was true of the ephemeral **cloud container** phases 1–4 were built
+in; it was never checked against the machine development actually moved to. Measured there
+on 2026-08-02: `dl.google.com`, `maven.google.com` and `services.gradle.org` all resolve and
+respond, and the real AGP 8.7.3 POM downloads fine.
+
+The actual blocker is duller and fixable: that machine has **no JDK, no Android SDK and no
+Gradle installed**. So local Android builds are an install away, not a network wall — and
+until someone does that install, CI remains the first place `apps/android` is compiled.
+Do not propagate the network claim any further; check it before repeating it.
 
 ## Target surfaces
 
@@ -121,6 +130,11 @@ The deliverable is not a feature — it is proof that a machine which cannot rea
 SDK can still produce an installable APK. Getting that wrong later, with a real app on top
 of it, is far more expensive.
 
+**5a stays "in progress" until CI has actually run it green.** The code and the workflow are
+committed, but nothing here has ever compiled them — that is the entire premise of the
+phase, so "written" is not "done". Flip it to done once the `Android` workflow has produced
+a debug APK artifact, and not before.
+
 ### 6 — Book requests
 
 Pluggable indexers (AudiobookBay scraper, Prowlarr), pluggable download clients
@@ -193,3 +207,45 @@ web and Android together.
 Performance budgets enforced in CI (bundle size, Lighthouse on the desktop and mobile
 layouts), a full accessibility audit, multi-arch image publishing (amd64 + arm64, so it
 runs on a Pi or a NAS as happily as on a desktop), and release automation.
+
+### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
+
+Sideloading an APK from a CI artifact is fine for the person who builds it and hostile to
+everyone else — no update notifications, no signature continuity, no discovery. The goal of
+this phase is that Auralis is installable and **updatable** from a normal F-Droid client
+(Droid-ify, Neo Store, F-Droid itself), which all speak the same repository format.
+
+**Start this phase by delegating an investigation**, not an implementation. The requirements
+are exacting, they change, and getting them wrong is expensive in a way that is hard to
+reverse — a signing key, in particular, is a one-way door. The agent's first deliverable is
+a written findings document naming which distribution route to take and what the repo must
+change to satisfy it; only then does anything get built.
+
+What that investigation must settle:
+
+- **Which route.** Roughly three, in ascending order of effort and reach: publish our own
+  F-Droid repository (fully under our control, users add a URL — `fdroidserver` or one of
+  the GitHub-Actions repo generators); submit to **IzzyOnDroid**, which indexes APKs from
+  GitHub releases and is already enabled in most Droid-ify installs; or submit to the
+  **official F-Droid** repo, the widest reach and the strictest bar, since they build from
+  source on their own infrastructure. These are not exclusive.
+- **Whether we can meet the FOSS bar.** F-Droid proper refuses proprietary dependencies.
+  Audit what `apps/android` actually pulls in — note that the Android Auto plumbing is only
+  a `com.google.android.gms.car.application` meta-data _string_ and an XML descriptor, not a
+  Play Services dependency, so it is very likely fine; confirm rather than assume. Anything
+  that genuinely needs a proprietary library has to become a build flavour.
+- **Reproducible builds**, which the official repo wants and which our current
+  `assembleDebug` pipeline does not attempt. This is the item most likely to force real
+  changes to the Gradle config.
+- **Signing.** A release keystore, kept out of git, in CI as a secret. Decide the key and
+  the `applicationId` **once** — F-Droid identifies an app by package name plus signature,
+  and changing either later means users cannot update, they must uninstall and reinstall,
+  losing their data. Treat this as irreversible.
+- **`versionCode` discipline and release automation** — a monotonic code derived from tags,
+  signed release APKs attached to GitHub releases, and a changelog in the layout F-Droid
+  metadata expects (`metadata/en-US/changelogs/<versionCode>.txt`), plus store listing text,
+  screenshots and an icon.
+
+**Do not start this before phase 7 ships a real Android app.** Everything here is packaging
+around a working artifact, and the irreversible decisions above should be made once the app
+they identify actually exists.

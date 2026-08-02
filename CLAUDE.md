@@ -8,6 +8,12 @@ user directly; treat them as ongoing, not one-off remarks.
 **The orchestrating instance specs, reviews and integrates. Sonnet subagents write the
 code.** Do not implement phases yourself when they can be delegated.
 
+**Pass `model: "sonnet"` on every single `Agent` call.** There is no default that does this
+for you — omit the parameter and the agent silently inherits the orchestrator's model, which
+is Opus. Nothing in the spawn result says which model it got, so the mistake is invisible
+until it shows up on the bill; it has already happened once here. "Sonnet subagents" is the
+rule, and that one parameter is the entire mechanism enforcing it.
+
 What makes this work:
 
 - Write a **long, precise spec** per agent: the exact files, the exact API surface, the
