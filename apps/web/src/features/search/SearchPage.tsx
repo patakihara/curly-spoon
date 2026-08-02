@@ -26,7 +26,9 @@ export function SearchPage() {
     inputRef.current?.focus();
   }, [searchFocusToken]);
 
-  const results = [...(searchQuery.data?.books ?? []), ...(searchQuery.data?.podcasts ?? [])];
+  const books = searchQuery.data?.books ?? [];
+  const podcasts = searchQuery.data?.podcasts ?? [];
+  const hasResults = books.length > 0 || podcasts.length > 0;
 
   return (
     <div className="auralis-page" data-testid="search-page">
@@ -46,20 +48,55 @@ export function SearchPage() {
         <p>Start typing to search titles, authors and narrators.</p>
       ) : searchQuery.isLoading ? (
         <p>Searching…</p>
-      ) : results.length === 0 ? (
-        <p>No results for "{query}".</p>
+      ) : !hasResults ? (
+        <p>No matches for "{query}".</p>
       ) : (
-        <div className="auralis-card-grid" data-testid="search-results">
-          {results.map((item) => (
-            <Card
-              key={item.id}
-              interactive
-              variant="elevated"
-              onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: item.id } })}
-            >
-              <h2>{item.media.title}</h2>
-            </Card>
-          ))}
+        <div data-testid="search-results">
+          <section data-testid="search-results-books">
+            <h2>Books</h2>
+            {books.length === 0 ? (
+              <p>No book matches.</p>
+            ) : (
+              <div className="auralis-card-grid">
+                {books.map((item) => (
+                  <Card
+                    key={item.id}
+                    interactive
+                    variant="elevated"
+                    data-testid={`search-result-${item.id}`}
+                    onClick={() =>
+                      void navigate({ to: '/item/$itemId', params: { itemId: item.id } })
+                    }
+                  >
+                    <h3>{item.media.title}</h3>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section data-testid="search-results-podcasts">
+            <h2>Podcasts</h2>
+            {podcasts.length === 0 ? (
+              <p>No podcast matches.</p>
+            ) : (
+              <div className="auralis-card-grid">
+                {podcasts.map((item) => (
+                  <Card
+                    key={item.id}
+                    interactive
+                    variant="elevated"
+                    data-testid={`search-result-${item.id}`}
+                    onClick={() =>
+                      void navigate({ to: '/item/$itemId', params: { itemId: item.id } })
+                    }
+                  >
+                    <h3>{item.media.title}</h3>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       )}
     </div>

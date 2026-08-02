@@ -74,10 +74,13 @@ test('connecting, signing in and skipping the extras lands on a working Home', a
 
   await expect(page).toHaveURL('/');
   await expect(page.getByTestId('home-page')).toBeVisible();
-  // Home is only meaningfully "working" if the libraries call behind it
-  // succeeded, which is what puts real cards on the page.
-  await expect(page.getByTestId('library-card-lib-books')).toBeVisible();
-  await expect(page.getByTestId('library-card-lib-podcasts')).toBeVisible();
+  // Home is only meaningfully "working" if the calls behind it succeeded, which
+  // is what puts real cards on the page. Phase 5 turned Home from a grid of
+  // library cards into shelves, so this asserts a shelf and one of its items:
+  // rendering a shelf at all proves both the libraries call (which picks the
+  // book library) and the personalized-shelves call for it came back.
+  await expect(page.getByTestId('shelf-shelf-recently-added')).toBeVisible();
+  await expect(page.getByTestId('shelf-item-item-dune')).toBeVisible();
 
   // Hand the resulting signed-in cookie to the rest of the suite (the `app`
   // project's `storageState`). This is here rather than in a fourth test

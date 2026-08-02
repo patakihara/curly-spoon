@@ -44,6 +44,31 @@ export interface AuthorRef {
   name: string;
 }
 
+/** Chapter markers, in seconds from the start of the whole book/episode. */
+export interface Chapter {
+  id: number;
+  start: number;
+  end: number;
+  title: string;
+}
+
+/**
+ * One audio file within a multi-file book. `startOffset` is where this track begins
+ * within the *whole* item's timeline (seconds), so a global `currentTime` can be
+ * mapped onto (track, offset-within-track) without the player needing to know how
+ * many files a book was split into.
+ */
+export interface AudioTrack {
+  index: number;
+  startOffset: number;
+  duration: number;
+  title: string | null;
+  /** Upstream-relative path, e.g. `/api/items/:itemId/file/:fileId` — the last
+   *  segment is the `fileId` `api.audioTrackUrl` needs. */
+  contentUrl: string | null;
+  mimeType: string | null;
+}
+
 export interface MediaSummary {
   kind: 'book' | 'podcast';
   title: string;
@@ -53,6 +78,28 @@ export interface MediaSummary {
   narrator?: string | null;
   description?: string | null;
   duration?: number;
+  /** Only present on an *expanded* fetch (`?expanded=1`) — absent, not `[]`, otherwise. */
+  tracks?: AudioTrack[];
+  chapters?: Chapter[];
+}
+
+/**
+ * What `POST /items/:id/play` hands back. Unlike `MediaSummary.tracks`/`chapters`
+ * (only present when the item was fetched expanded), a session's `audioTracks` and
+ * `chapters` are always populated — the BFF's `playItem` always returns the full
+ * shape, per `packages/abs-client`'s `normalizePlaybackSession`. `currentTime` is
+ * the resume point the server already knows about.
+ */
+export interface PlaybackSession {
+  id: string;
+  libraryItemId: string;
+  episodeId: string | null;
+  mediaType: 'book' | 'podcast';
+  displayTitle: string;
+  duration: number;
+  currentTime: number;
+  audioTracks: AudioTrack[];
+  chapters: Chapter[];
 }
 
 export interface LibraryItem {

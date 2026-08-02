@@ -1,20 +1,74 @@
 /**
- * Library browse. Phase 5 adds filter/sort/series grouping; this phase renders
- * the plain item list so the route, the BFF call and the loading/error/empty
- * states are all real and exercised end-to-end.
+ * Library browse: filter, sort, and (later) series grouping over one library's
+ * items. Sorting and filtering are pure functions in `sorting.ts` — this
+ * component is just the control bar and the query wiring around them.
  */
+import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { Card, Skeleton } from '@auralis/ui';
+import { Card, Chip, Skeleton } from '@auralis/ui';
 import { useLibraryItemsQuery } from '../../api/queries.js';
+import { filterItems, sortItems, type SortKey } from './sorting.js';
+
+const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
+  { key: 'title', label: 'Title' },
+  { key: 'author', label: 'Author' },
+  { key: 'duration', label: 'Duration' },
+  { key: 'added', label: 'Recently added' },
+];
 
 export function LibraryPage() {
   const { libraryId } = useParams({ from: '/library/$libraryId' });
   const navigate = useNavigate();
   const itemsQuery = useLibraryItemsQuery(libraryId);
 
+  const [sortKey, setSortKey] = useState<SortKey>('title');
+  const [query, setQuery] = useState('');
+  const [hideFinished, setHideFinished] = useState(false);
+
+  const items = itemsQuery.data?.items ?? [];
+  const visibleItems = sortItems(filterItems(items, { query, hideFinished }), sortKey);
+
   return (
     <div className="auralis-page" data-testid="library-page">
       <h1>Library</h1>
+
+      <div
+        data-testid="sort-controls"
+        role="group"
+        aria-label="Sort by"
+        style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
+      >
+        {SORT_OPTIONS.map((option) => (
+          <Chip
+            key={option.key}
+            variant="filter"
+            selected={sortKey === option.key}
+            onSelectedChange={() => setSortKey(option.key)}
+            data-testid={`sort-${option.key}`}
+          >
+            {option.label}
+          </Chip>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="search"
+          aria-label="Filter this library by title or author"
+          placeholder="Filter by title or author"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          data-testid="library-filter-input"
+        />
+        <Chip
+          variant="filter"
+          selected={hideFinished}
+          onSelectedChange={setHideFinished}
+          data-testid="filter-finished"
+        >
+          Finished
+        </Chip>
+      </div>
 
       {itemsQuery.isLoading ? (
         <div className="auralis-card-grid">
@@ -24,11 +78,13 @@ export function LibraryPage() {
         </div>
       ) : itemsQuery.isError ? (
         <p role="alert">Couldn't load this library: {itemsQuery.error.message}</p>
-      ) : itemsQuery.data && itemsQuery.data.items.length === 0 ? (
+      ) : items.length === 0 ? (
         <p>This library is empty.</p>
+      ) : visibleItems.length === 0 ? (
+        <p>No items match your filters.</p>
       ) : (
         <div className="auralis-card-grid" data-testid="library-item-cards">
-          {itemsQuery.data?.items.map((item) => (
+          {visibleItems.map((item) => (
             <Card
               key={item.id}
               interactive
@@ -39,8 +95,9 @@ export function LibraryPage() {
               <h2>{item.media.title}</h2>
               {item.media.authors?.length ? (
                 <p>{item.media.authors.map((a) => a.name).join(', ')}</p>
+              ) : item.media.author ? (
+                <p>{item.media.author}</p>
               ) : null}
-              {item.media.author ? <p>{item.media.author}</p> : null}
             </Card>
           ))}
         </div>

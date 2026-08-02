@@ -12,6 +12,7 @@ import type {
   LibraryItemsPage,
   Library,
   LoginResponse,
+  PlaybackSession,
   SearchResults,
   Shelf,
   SetupResult,
@@ -161,6 +162,36 @@ export class ApiClient {
       query: { expanded: true, include: 'progress' },
       signal,
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Playback
+  // ---------------------------------------------------------------------
+
+  playItem(itemId: string, signal?: AbortSignal): Promise<{ session: PlaybackSession }> {
+    return this.request(`/items/${encodeURIComponent(itemId)}/play`, {
+      method: 'POST',
+      signal,
+    });
+  }
+
+  /**
+   * `timeListened`/`duration` are required by the BFF's `syncBodySchema` (not
+   * optional, despite how loosely the route is often described) — always send all
+   * three or the request 400s.
+   */
+  syncSession(
+    sessionId: string,
+    body: { currentTime: number; timeListened: number; duration: number },
+  ): Promise<{ ok: true }> {
+    return this.request(`/sessions/${encodeURIComponent(sessionId)}/sync`, {
+      method: 'POST',
+      body,
+    });
+  }
+
+  closeSession(sessionId: string): Promise<{ ok: true }> {
+    return this.request(`/sessions/${encodeURIComponent(sessionId)}/close`, { method: 'POST' });
   }
 
   // ---------------------------------------------------------------------
