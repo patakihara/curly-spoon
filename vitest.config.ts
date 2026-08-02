@@ -13,7 +13,10 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['packages/*/src/**', 'apps/server/src/**', 'apps/web/src/**'],
-      exclude: ['**/*.test.ts', '**/index.ts', '**/*.d.ts'],
+      // `testSupport/` is the harness itself (the fake Audiobookshelf and the
+      // test app builder), not product code — counting it would inflate the
+      // number with lines that exist only to exercise other lines.
+      exclude: ['**/*.test.ts', '**/index.ts', '**/*.d.ts', '**/testSupport/**'],
     },
   },
 });

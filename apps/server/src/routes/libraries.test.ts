@@ -87,6 +87,24 @@ describe('GET /api/v1/libraries/:id/items', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  // A library id can arrive from a stale bookmark, a link shared after the
+  // library was deleted, or a hand-typed URL. Audiobookshelf answers those with
+  // a 404, and the BFF must pass that through as one rather than inventing an
+  // empty (or worse, a *different* library's) result — a page that silently
+  // shows the wrong library's books is harder to notice than one that says the
+  // library is gone.
+  it('passes an unknown library through as 404', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-does-not-exist/items',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().error.code).toBe('not_found');
+  });
 });
 
 describe('GET /api/v1/libraries/:id/series', () => {

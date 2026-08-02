@@ -8,8 +8,8 @@ self-contained, tested increment.
 | 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
 | 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
 | 3   | Server BFF core + Audiobookshelf client                         | done        |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | in progress |
-| 5   | Audiobooks experience + player                                  | next        |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
+| 5   | Audiobooks experience + player                                  | in progress |
 | 5a  | Android build skeleton + APK pipeline (parallel with 5)         | next        |
 | 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned     |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned     |

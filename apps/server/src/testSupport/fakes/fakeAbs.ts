@@ -49,6 +49,11 @@ function findItem(id: string): JsonRecord | undefined {
   return booksById.get(id) ?? podcastsById.get(id);
 }
 
+/** Every library this fake serves — anything else 404s, as a real server would. */
+const KNOWN_LIBRARY_IDS = new Set(
+  (librariesFixture as { libraries: Array<{ id: string }> }).libraries.map((l) => l.id),
+);
+
 // Deterministic audio bytes per file id, sized loosely after each track's duration.
 const AUDIO_FILES: Record<string, { size: number; mimeType: string }> = {
   'file-dune-1': { size: 6300, mimeType: 'audio/mp4' },
@@ -211,6 +216,15 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
     if (parts[0] === 'api' && parts[1] === 'libraries' && parts[2]) {
       const libraryId = parts[2];
       const sub = parts[3];
+
+      // A real Audiobookshelf 404s an unknown library id. Without this the fake
+      // fell through to the books catalog for *any* id, so a stale bookmark or a
+      // deleted library would look like a working library holding someone else's
+      // books — which is exactly the class of bug a fake is supposed to expose,
+      // not hide.
+      if (!KNOWN_LIBRARY_IDS.has(libraryId)) {
+        return json({ error: 'Library not found' }, 404);
+      }
 
       if (method === 'GET' && sub === 'items' && parts.length === 4) {
         const catalog = libraryId === 'lib-podcasts' ? podcastsFixture : booksFixture;

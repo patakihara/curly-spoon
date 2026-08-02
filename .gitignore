@@ -10,6 +10,9 @@ playwright-report/
 test-results/
 blob-report/
 .playwright/
+# A signed-in browser state, written by e2e/app/onboarding.spec.ts for the rest
+# of the suite. Regenerated every run; committing it would commit a session cookie.
+e2e/.auth/
 
 # runtime data
 *.sqlite
@@ -33,3 +36,7 @@ apps/android/local.properties
 apps/android/**/build/
 apps/android/.cxx/
 *.keystore
+
+# python bytecode from scripts/
+__pycache__/
+*.pyc

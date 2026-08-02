@@ -15,7 +15,7 @@ import {
   FAKE_BASE_URL,
   FAKE_CREDENTIALS,
   type FakeAbsUpstream,
-} from '../../test/fakes/fakeAbs.js';
+} from './fakes/fakeAbs.js';
 
 export interface TestAppContext {
   app: FastifyInstance;

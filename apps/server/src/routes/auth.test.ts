@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
-import { FAKE_CREDENTIALS } from '../../test/fakes/fakeAbs.js';
+import { FAKE_CREDENTIALS } from '../testSupport/fakes/fakeAbs.js';
 
 describe('POST /api/v1/auth/login', () => {
   it('signs in with valid credentials and sets an httpOnly session cookie', async () => {

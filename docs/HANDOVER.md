@@ -11,9 +11,10 @@ installed — actually build the Android app.
 
 **Two standing instructions carried over from the end of that session:**
 
-1. **Do not spawn subagents** until the user says otherwise. They asked for this directly.
-   The `PreToolUse` hook in `.claude/settings.json` enforces a usage ceiling, but the
-   instruction is broader than the ceiling — it is a pause, not a budget.
+1. ~~Do not spawn subagents.~~ **Lifted on 2026-08-02** — the user asked for delegation to
+   Sonnet agents to resume, on token-consumption grounds. `CLAUDE.md`'s delegation rules
+   apply again in full; the `PreToolUse` usage ceiling in `.claude/settings.json` is the
+   only remaining gate.
 2. **Keep plan usage under 80%** of the session and weekly windows. See §5.
 
 Read this file first, then `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md` and
@@ -55,41 +56,47 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                   | Status                         |
-| ----- | ------------------------------------------------------ | ------------------------------ |
-| 1     | Monorepo, tooling, CI, test harness                    | done                           |
-| 2     | `@auralis/ui` — Material 3 Expressive design system    | done                           |
-| 3     | BFF + Audiobookshelf client                            | done                           |
-| 4     | Web shell + Docker image                               | **partially done — see below** |
-| 5–10  | Audiobooks, requests, podcasts, music, Android, polish | not started                    |
+| Phase | What                                                   | Status      |
+| ----- | ------------------------------------------------------ | ----------- |
+| 1     | Monorepo, tooling, CI, test harness                    | done        |
+| 2     | `@auralis/ui` — Material 3 Expressive design system    | done        |
+| 3     | BFF + Audiobookshelf client                            | done        |
+| 4     | Web shell + Docker image                               | done        |
+| 5–10  | Audiobooks, requests, podcasts, music, Android, polish | not started |
 
-Green at handover: `pnpm typecheck`, `pnpm lint`, **307 unit tests**, **156 browser tests**.
+Green: `pnpm typecheck`, `pnpm lint`, **308 unit tests**, **156 UI browser tests + 18 app
+end-to-end tests**, and `pnpm test:docker` (the container smoke test).
 
 `docs/ROADMAP.md` is the source of truth for status. Everything is on the branch
 **`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.
 
-### Phase 4 — precisely what is left
+### Phase 4 — what closing it changed
 
-**Done:** React shell (TanStack Router + Query), typed BFF client that parses the server's
-error envelope into typed errors, adaptive navigation driven by a single `useBreakpoint`
-hook rather than scattered media queries, onboarding and login, error boundaries, keyboard
-shortcuts, PWA wiring, Fastify static serving with SPA fallback, and an `app` Playwright
-project configured to boot the real BFF serving the real built web app against the fakes.
+The three open items are closed. Two of them turned up things worth knowing:
 
-**Not done — the phase is open until all three are closed:**
+1. **`e2e/app` now has 18 specs** across onboarding, navigation, session and errors. The
+   structural thing to understand before adding more: the `app` project's BFF is
+   **single-tenant and stateful** — `POST /api/v1/setup` configures it for the whole
+   process — so `fullyParallel` would race "assert the unconfigured state" against "sign
+   in". `onboarding.spec.ts` is therefore its own Playwright project that everything else
+   `dependencies` on, and it also writes the `storageState` the rest of the suite starts
+   signed in from. That second part is not an optimisation: `POST /auth/login` is rate
+   limited to **10/min per IP** and all workers share one, so a suite that signed in per
+   test 429s partway through. `playwright.config.ts` says all of this in place.
+2. **The container is built, booted and covered by CI.** `scripts/docker-smoke.sh`
+   (`pnpm test:docker`, and the `container` job in CI) builds the image, waits on its own
+   HEALTHCHECK, asserts the SPA/asset/API-404 split, authenticates end to end against
+   `AURALIS_FAKE_UPSTREAMS=1`, and times `docker stop`.
 
-1. **`e2e/app` has helpers but no specs**, so that Playwright project boots a web server and
-   runs zero tests. Write the flows: onboarding end to end, a bad server URL producing a
-   _specific_ error, login failure and success, navigation adapting at 480px and 1400px, a
-   hidden destination for an unconfigured service, 401 redirecting to login, and the error
-   boundary catching a failed route.
-2. **The container has never been built.** `Dockerfile`, `.dockerignore` and `compose.yaml`
-   exist but Docker was unavailable in the cloud container, so none of it is verified. Build
-   it, boot it against `AURALIS_FAKE_UPSTREAMS=1`, confirm the app loads and authenticates,
-   and add a CI job that does the same. This is the phase's stated exit criterion — it is
-   also the first point at which the user can open the app and judge it, so prioritise it.
-3. `apps/server`'s `start` runs `tsx` against TypeScript sources, which is why `tsx` is a
-   production dependency. Fine as-is; if the image is slimmed later, compile instead.
+   Closing it moved the fake upstream from `apps/server/test/fakes` to
+   **`apps/server/src/testSupport/fakes`**. `AURALIS_FAKE_UPSTREAMS` is a runtime flag the
+   _shipped_ server parses alongside `PORT`, so the code it loads has to be in the image;
+   a `test/` sibling is not copied in, and that mode died on an unresolvable import inside
+   the container while working perfectly outside it.
+
+3. `apps/server`'s `start` still runs `tsx` against TypeScript sources, which is why `tsx`
+   is a production dependency. Left as-is deliberately; if the image is slimmed later,
+   compile instead.
 
 ---
 
@@ -143,7 +150,7 @@ shapes. It has never spoken to a real server. Before building more on top of it:
 
 1. Ask the user for their Audiobookshelf URL and a credential, or find the container.
 2. Record the **actual** responses for the endpoints in `docs/INTEGRATIONS.md` and diff
-   them against `apps/server/test/fakes/fixtures/*.json`.
+   them against `apps/server/src/testSupport/fakes/fixtures/*.json`.
 3. Where reality differs, fix the fixtures **and** the zod schemas, and add a regression
    test. Audiobookshelf payloads vary by version and by `minified`/`expanded` mode — this
    is the single most likely source of "works in tests, breaks on the real server".
@@ -194,9 +201,8 @@ way. Write the failing test first. Tests read as behaviour descriptions, not as
 _why_, not _what_; zod parsing at every upstream boundary so shape drift surfaces as a
 typed error instead of `undefined` deep in a component; no `any` used to dodge a type error.
 
-**Delegation — currently paused.** The user asked that no further subagents run until they
-say otherwise. When it resumes, `CLAUDE.md` has the full rules; the two that matter most,
-both learned the hard way:
+**Delegation — active again since 2026-08-02.** `CLAUDE.md` has the full rules; the two
+that matter most, both learned the hard way:
 
 - **Agent cost is quadratic in turns per agent**, because every turn re-reads the whole
   accumulated context. Measured here: ~300 turns each, context growing 63k → 275k tokens,

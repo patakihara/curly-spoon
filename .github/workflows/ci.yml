@@ -67,3 +67,21 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # Phase 4's exit criterion: the container is covered by CI, not by hope. Every
+  # phase from here on leaves `docker compose up` working, so this job failing is
+  # a release blocker, not a packaging detail to sort out at the end.
+  #
+  # Deliberately no `needs:` — it shares no build output with the jobs above and
+  # is the slowest thing here, so serialising it behind them would just add its
+  # duration to the critical path.
+  container:
+    name: Docker image builds & boots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # No `docker/setup-buildx-action` on purpose: its default `docker-container`
+      # driver does not load the built image into the local daemon, so the
+      # `docker run` inside the script would not find it. The runner's own Docker
+      # is BuildKit-enabled already, which is all the Dockerfile's cache mounts need.
+      - run: scripts/docker-smoke.sh auralis:ci

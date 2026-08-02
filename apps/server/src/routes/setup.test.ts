@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTestApp } from '../testSupport/buildTestApp.js';
-import { FAKE_BASE_URL } from '../../test/fakes/fakeAbs.js';
+import { FAKE_BASE_URL } from '../testSupport/fakes/fakeAbs.js';
 
 describe('GET /api/v1/setup', () => {
   it('reports unconfigured before /setup has ever succeeded', async () => {

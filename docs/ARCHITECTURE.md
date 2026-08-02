@@ -84,6 +84,6 @@ Implementation notes live in [`docs/DESIGN.md`](./DESIGN.md).
 | Full flows               | Playwright | Onboarding → browse → play → request       |
 
 Tests are written **before** the implementation of each unit of behaviour. Upstream
-services are replaced by fixture-backed fakes (`apps/server/test/fakes`), which double as
+services are replaced by fixture-backed fakes (`apps/server/src/testSupport/fakes`), which double as
 the offline development environment: `pnpm dev:fake` boots the whole app with no media
 server present.

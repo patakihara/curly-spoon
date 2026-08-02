@@ -17,7 +17,13 @@ if (config.fakeUpstreams) {
   // Dynamic import so the fake (and its fixtures) are never pulled into a real
   // deployment's module graph unless AURALIS_FAKE_UPSTREAMS=1 is set — this is the
   // "offline dev mode" ARCHITECTURE.md describes, sharing the same fake the tests use.
-  const { createFakeAbsUpstream } = await import('../test/fakes/fakeAbs.js');
+  //
+  // It lives under `src/`, not a sibling `test/`, precisely because of this line:
+  // `AURALIS_FAKE_UPSTREAMS` is a runtime flag parsed by config.ts alongside PORT
+  // and DATA_DIR, so the *shipped* server can be asked to load this at boot. A
+  // `test/` directory is not copied into the Docker image, which made that mode
+  // exit on an unresolvable import in the container while working fine locally.
+  const { createFakeAbsUpstream } = await import('./testSupport/fakes/fakeAbs.js');
   fetchImpl = createFakeAbsUpstream().fetch;
 }
 

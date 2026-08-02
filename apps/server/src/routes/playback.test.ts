@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
-import { FAKE_PODCAST_ITEM_ID } from '../../test/fakes/fakeAbs.js';
+import { FAKE_PODCAST_ITEM_ID } from '../testSupport/fakes/fakeAbs.js';
 
 describe('POST /api/v1/items/:id/play', () => {
   it('requires authentication', async () => {
