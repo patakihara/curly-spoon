@@ -13,9 +13,12 @@ installed — actually build the Android app.
 
 1. ~~Do not spawn subagents.~~ **Lifted on 2026-08-02** — the user asked for delegation to
    Sonnet agents to resume, on token-consumption grounds. `CLAUDE.md`'s delegation rules
-   apply again in full; the `PreToolUse` usage ceiling in `.claude/settings.json` is the
-   only remaining gate.
-2. **Keep plan usage under 80%** of the session and weekly windows. See §5.
+   apply again in full; the usage gate in `.claude/settings.json` is the only remaining
+   gate.
+2. **Work stops at 90%** of the session or weekly window, with a hand-off band from 85%.
+   Both numbers are the user's, set on 2026-08-02. `scripts/hooks/usage-gate.sh` enforces
+   them on `SessionStart`, `UserPromptSubmit` and every `PreToolUse` — so past 90% you
+   cannot commit, push or write this file. Hand off in the band, not after it. See §5.
 
 Read this file first, then `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md` and
 `docs/INTEGRATIONS.md`. Those four are the spec; this file is the context around them.
@@ -220,15 +223,17 @@ that matter most, both learned the hard way:
   from running `pnpm install` or committing. Concurrent agents corrupt the lockfile.
 
 **Plan usage.** `scripts/usage-guard.py` reads the account's real utilisation from the same
-endpoint `/usage` uses, and fails open on every error path. `.claude/settings.json`
-registers a `SessionStart` hook that reports both windows into context, and a `PreToolUse`
-hook that denies subagent spawns past 80%.
+endpoint `/usage` uses, and fails open on every error path. `.claude/settings.json` runs
+`scripts/hooks/usage-gate.sh` on `SessionStart`, `UserPromptSubmit` and every `PreToolUse`
+— reporting under 85%, urging a hand-off between 85 and 90, denying **every tool call**
+past 90.
 
 Two things to know before trusting a reading:
 
-- **The CLI default threshold is 0.90, not 0.80.** The hook passes `--threshold 0.8`
-  explicitly for exactly that reason; a bare invocation gates ten points looser than this
-  project's stated ceiling.
+- **Hand off inside the 85–90 band.** Past the ceiling the denial covers the tools you
+  would need to hand off with — no commit, no push, no edit to this file — and whatever
+  replaces you is a fresh session that reads only what is on disk. Unlaunched subagent
+  specs go to `docs/agent-specs/` and get listed here as the next TODO.
 - **A passing gate is not the same as affordable.** The number is whole-account, and one
   Sonnet subagent runs 48–61M cache reads. At 74% the gate says go and a subagent still
   does not fit in the remaining 6 points.
