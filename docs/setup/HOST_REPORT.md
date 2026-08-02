@@ -49,9 +49,14 @@ Media lives on a 932 G btrfs volume at `/data/media`, ~466 G free.
 ## Container runtime
 
 ```
-docker:  Docker CE, compose v2
-compose: /home/mediaserver/docker/arr/docker-compose.yml   (23 services)
+docker:  Docker version 26.1.5+dfsg1, build a72d7cd
+compose: v2.26.1-4
+stack:   /home/mediaserver/docker/arr/docker-compose.yml   (21 services)
 ```
+
+GPU: `Intel Corporation 3rd Gen Core processor Graphics Controller` (Ivy Bridge iGPU),
+`/dev/dri/renderD128` present — so QSV-capable hardware exists, though Jellyfin is not
+currently configured to use it.
 
 Three stacks live on the box; only `arr` is relevant to Auralis. The other two are a DNS
 resolver and an unrelated proxy, and are deliberately not documented here.

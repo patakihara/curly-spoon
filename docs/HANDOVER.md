@@ -8,6 +8,9 @@ Audiobookshelf and Jellyfin, inspect the real library layout, and run Docker.
 Read this file first, then `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md` and
 `docs/INTEGRATIONS.md`. Those four are the spec; this file is the context around them.
 
+**Then read `docs/setup/MY_SETUP.md`** — the real server's details, filled in from the box
+itself. It answers most of section 4 below and contradicts several assumptions in this file.
+
 ---
 
 ## 1. What the user asked for, in their words

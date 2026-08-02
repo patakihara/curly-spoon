@@ -34,7 +34,7 @@ itself. Companion to [`HOST_REPORT.md`](./HOST_REPORT.md) (raw facts) and
 | Version                                              | **10.11.8**, startup wizard completed. (Server name omitted — it echoes the public domain.) |
 | Is music its own library? Name and rough track count | Yes — **"Music"**, one of four libraries (Books, Movies, Music, Shows). **~548 tracks, 36 albums, 12 artists.** Small; do not design around a large collection. |
 | Host path the music library maps to                  | **`/data/media/Music`** (native service, so host path = real path, no container mapping). |
-| Transcoding available (is ffmpeg configured)?        | ffmpeg ships with the Jellyfin server package and the box plays back fine, but **hardware transcoding is not set up** — this is a 4-core CPU-only machine with no GPU. Assume direct play/stream for music and avoid designing anything that leans on server-side transcode. |
+| Transcoding available (is ffmpeg configured)?        | ffmpeg ships with the Jellyfin server package, so software transcoding works. **Hardware acceleration is available but switched off**: the box has an Intel Ivy Bridge iGPU with `/dev/dri/renderD128` present, but `/etc/jellyfin/encoding.xml` has `<HardwareAccelerationType>none</HardwareAccelerationType>`. So transcodes today are CPU-bound on 4 cores that are already busy. Assume direct play/stream for music and avoid anything that leans on server-side transcode; QSV could be enabled later if it ever matters. |
 
 ### Download client
 
@@ -119,7 +119,14 @@ Narrowed to this box, per the template's promise.
   SQLite DB. ⚠️ **Host port `8787` is already taken** by the `bookshelf` container (a
   Readarr fork). Either pick another host port or — better, matching how everything else
   here works — publish nothing and put it behind Caddy on its own vhost. `5173` is free.
-  Internally the BFF can keep listening on `8787`; only the host publish conflicts.
+  Inside a container the BFF can still listen on `8787`; only the host publish conflicts.
+
+  ⚠️ **This bites at development time too, before any deployment.** `README.md` and
+  `HANDOVER.md` §5 both document `pnpm dev` as "BFF on :8787", and that binds on the
+  **host** — so running the documented dev command on this box fails immediately with
+  `EADDRINUSE`. It is the very first thing a session here will type. Make the port
+  configurable (e.g. `PORT`/`SERVER_PORT` in the BFF config, which `apps/server/src/config.ts`
+  is the natural home for) and pick a free one such as `8788` when working on this machine.
 - **A `SESSION_SECRET`.** Generate on the box with `openssl rand -base64 48`, keep it out
   of git. ⚠️ The existing stack has secrets **inline in `docker-compose.yml`** rather than
   in the `.env` it already has. Do not copy that habit for Auralis — put its secret in the
