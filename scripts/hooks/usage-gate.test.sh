@@ -192,6 +192,13 @@ if printf '%s' "$w2" | grep -q "HANDOVER.md"; then
 else
   fail "the short nudge must still name the file: $w2"
 fi
+for text in "$w1" "$w2"; do
+  printf '%s' "$text" | grep -q "docs/agent-specs/" ||
+    fail "hand-off text must point unlaunched specs at docs/agent-specs/: $text"
+done
+printf '%s' "$w1" | grep -q "docs/agent-specs/" &&
+  printf '%s' "$w2" | grep -q "docs/agent-specs/" &&
+  ok "both warnings route unlaunched subagent specs to docs/agent-specs/"
 rm -rf "$dir"
 
 # --- anything other than exit 1 allows, silently -------------------------------

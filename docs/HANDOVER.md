@@ -70,6 +70,12 @@ end-to-end tests**, and `pnpm test:docker` (the container smoke test).
 `docs/ROADMAP.md` is the source of truth for status. Everything is on the branch
 **`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.
 
+**Check `docs/agent-specs/`.** Subagent specs written but never launched — usually because
+the usage gate closed first — are parked there, and each one that exists should be listed
+below as a TODO. Empty but for its README means there is nothing queued.
+
+<!-- pending specs: none -->
+
 ### Phase 4 — what closing it changed
 
 The three open items are closed. Two of them turned up things worth knowing:

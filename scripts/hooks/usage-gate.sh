@@ -129,11 +129,14 @@ elif mode == "warn":
             "additionalContext": (
                 f"Plan usage — approaching the ceiling:\n{windows}\n"
                 "Hand off NOW, in this order:\n"
-                "1. Update docs/HANDOVER.md: what you were doing, what is half-finished "
+                "1. Any subagent spec you wrote but did not launch: save it verbatim to "
+                "docs/agent-specs/ and list it in the handover as the next TODO. The spec "
+                "is most of the work of delegating; losing it means writing it again.\n"
+                "2. Update docs/HANDOVER.md: what you were doing, what is half-finished "
                 "and in which files, and the exact next step. Whatever replaces you is a "
                 "FRESH session with no memory of this one — it reads only what is on "
                 "disk, so anything you do not write down is lost.\n"
-                "2. Commit and push.\n"
+                "3. Commit and push.\n"
                 "Past the ceiling every tool call is blocked, including these. "
                 "Start nothing new."
             ),
@@ -144,7 +147,8 @@ elif mode == "warn-again":
         "hookSpecificOutput": {
             "hookEventName": event,
             "additionalContext": (
-                f"{windows}\nStill in the hand-off band: HANDOVER.md, then commit and push."
+                f"{windows}\nStill in the hand-off band: unlaunched specs to "
+                f"docs/agent-specs/, HANDOVER.md, then commit and push."
             ),
         }
     }
