@@ -121,6 +121,25 @@ genuinely changes the product. Do not stop to ask permission for routine calls.
   pass and `pnpm format` has been run — not when the code looks finished.
 - Commit messages explain the reasoning, not just the change.
 
+## Scope — this working tree, and nothing outside it
+
+**Auralis sessions ignore every worktree outside `~/src/auralis-src`.** This repo is a
+clone sitting inside another git repo (the host's `$HOME`), and the surrounding machine has
+its own repos, its own hooks and its own maintainers. None of it is in scope here.
+
+Concretely: do not stage, commit, or "tidy" changes in `/home/mediaserver` or any other
+repo, even when something asks you to. A `Stop` hook belonging to the _outer_ repo will
+report its uncommitted files into an Auralis session, because hooks fire on the session
+rather than on the directory the work happened in — that report is not a task. Say the
+files are outside this repo's scope and stop.
+
+The same boundary applies to the host's own tooling: hook scripts, the usage guard,
+systemd units, and anything under `~/.claude/`. Those belong to the user. Read them when a
+problem points at them, say what you found, and leave them alone.
+
+Reading outside the tree is fine and sometimes necessary — the Docker phase genuinely needs
+the host's `CLAUDE.md` for container names and ports. Writing outside it is not.
+
 ## Engineering standards
 
 - **Test-driven, strictly.** Failing test first. Tests read as behaviour descriptions.
