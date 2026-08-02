@@ -1,9 +1,20 @@
 # Handover
 
 You are picking up **Auralis** from a session that ran in an ephemeral cloud container with
-no access to the user's actual media server. You are (presumably) running **on that media
-server**, which means you can do things the previous session could not: talk to the real
-Audiobookshelf and Jellyfin, inspect the real library layout, and run Docker.
+no access to the user's actual media server. Development moved to a **local machine** at
+commit `108ae0e`, because the container's limits had become the binding constraint: no
+Docker, no Android SDK (`dl.google.com` was blocked), and an ephemeral disk.
+
+You can therefore do things the previous session could not: talk to the real Audiobookshelf
+and Jellyfin, inspect the real library layout, run Docker, and — if the Android SDK is
+installed — actually build the Android app.
+
+**Two standing instructions carried over from the end of that session:**
+
+1. **Do not spawn subagents** until the user says otherwise. They asked for this directly.
+   The `PreToolUse` hook in `.claude/settings.json` enforces a usage ceiling, but the
+   instruction is broader than the ceiling — it is a pause, not a budget.
+2. **Keep plan usage under 80%** of the session and weekly windows. See §5.
 
 Read this file first, then `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md` and
 `docs/INTEGRATIONS.md`. Those four are the spec; this file is the context around them.
@@ -44,15 +55,41 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                                       | Status                |
-| ----- | -------------------------------------------------------------------------- | --------------------- |
-| 1     | Monorepo, tooling, CI, test harness                                        | done                  |
-| 2     | `@auralis/ui` — Material 3 Expressive design system                        | see `docs/ROADMAP.md` |
-| 3     | BFF + Audiobookshelf client                                                | see `docs/ROADMAP.md` |
-| 4–10  | Web shell + Docker, audiobooks, requests, podcasts, music, Android, polish | planned               |
+| Phase | What                                                   | Status                         |
+| ----- | ------------------------------------------------------ | ------------------------------ |
+| 1     | Monorepo, tooling, CI, test harness                    | done                           |
+| 2     | `@auralis/ui` — Material 3 Expressive design system    | done                           |
+| 3     | BFF + Audiobookshelf client                            | done                           |
+| 4     | Web shell + Docker image                               | **partially done — see below** |
+| 5–10  | Audiobooks, requests, podcasts, music, Android, polish | not started                    |
 
-`docs/ROADMAP.md` is the source of truth for status and is kept current. Everything is on
-the branch **`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.
+Green at handover: `pnpm typecheck`, `pnpm lint`, **307 unit tests**, **156 browser tests**.
+
+`docs/ROADMAP.md` is the source of truth for status. Everything is on the branch
+**`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.
+
+### Phase 4 — precisely what is left
+
+**Done:** React shell (TanStack Router + Query), typed BFF client that parses the server's
+error envelope into typed errors, adaptive navigation driven by a single `useBreakpoint`
+hook rather than scattered media queries, onboarding and login, error boundaries, keyboard
+shortcuts, PWA wiring, Fastify static serving with SPA fallback, and an `app` Playwright
+project configured to boot the real BFF serving the real built web app against the fakes.
+
+**Not done — the phase is open until all three are closed:**
+
+1. **`e2e/app` has helpers but no specs**, so that Playwright project boots a web server and
+   runs zero tests. Write the flows: onboarding end to end, a bad server URL producing a
+   _specific_ error, login failure and success, navigation adapting at 480px and 1400px, a
+   hidden destination for an unconfigured service, 401 redirecting to login, and the error
+   boundary catching a failed route.
+2. **The container has never been built.** `Dockerfile`, `.dockerignore` and `compose.yaml`
+   exist but Docker was unavailable in the cloud container, so none of it is verified. Build
+   it, boot it against `AURALIS_FAKE_UPSTREAMS=1`, confirm the app loads and authenticates,
+   and add a CI job that does the same. This is the phase's stated exit criterion — it is
+   also the first point at which the user can open the app and judge it, so prioritise it.
+3. `apps/server`'s `start` runs `tsx` against TypeScript sources, which is why `tsx` is a
+   production dependency. Fine as-is; if the image is slimmed later, compile instead.
 
 ---
 
@@ -157,12 +194,37 @@ way. Write the failing test first. Tests read as behaviour descriptions, not as
 _why_, not _what_; zod parsing at every upstream boundary so shape drift surfaces as a
 typed error instead of `undefined` deep in a component; no `any` used to dodge a type error.
 
-**Delegation pattern that has been working**: the orchestrator writes a long, precise spec
-naming the exact files, the exact API surface, the test assertions required, and an
-explicit "do not touch" list, then spawns Sonnet agents in parallel on **disjoint
-directories**. Pre-install dependencies and pre-create `package.json`/`tsconfig.json`
-before spawning, and tell agents not to run `pnpm install` or commit — otherwise concurrent
-agents corrupt the lockfile. Review their work, run the full suite, then commit.
+**Delegation — currently paused.** The user asked that no further subagents run until they
+say otherwise. When it resumes, `CLAUDE.md` has the full rules; the two that matter most,
+both learned the hard way:
+
+- **Agent cost is quadratic in turns per agent**, because every turn re-reads the whole
+  accumulated context. Measured here: ~300 turns each, context growing 63k → 275k tokens,
+  48–61M cache reads apiece, and the user's own usage report attributed **81% of
+  consumption to requests above 150k context**. So scope agents _small_ — under ~150 turns —
+  and write specs precise enough that they never explore. Bigger agent tasks are **not**
+  cheaper.
+- **Pre-install dependencies and pre-create manifests before spawning**, and forbid agents
+  from running `pnpm install` or committing. Concurrent agents corrupt the lockfile.
+
+**Plan usage.** `scripts/usage-guard.py` measures this project's share of the session and
+weekly windows; `.claude/settings.json` registers a `PreToolUse` hook that denies subagent
+spawns past 80%. The session window is calibrated (from the cloud session's transcripts);
+**the weekly window is not and fails open**. Re-calibrate both against the local machine:
+
+```bash
+./scripts/usage-guard.py --calibrate-session <pct> --calibrate-weekly <pct>
+```
+
+Model weighting was calibrated against the usage UI's breakdown: the plan meters Opus at
+about **2.7× what the published price ratio implies**, which the stored multipliers correct
+for.
+
+**Verify agent output — do not trust it.** Two real defects reached the branch and passed a
+glance-level review: bottom-sheet detents snapped to the _nearest_ detent, silently fighting
+the user's drag direction, and `registerStaticServing` declared a return type it did not
+return. An agent that stopped has not necessarily finished; run the full suite and read the
+diff. And never commit a red tree — CI builds this branch and the `ops/` loop can pull it.
 
 **Commits**: descriptive body explaining the reasoning, `Co-Authored-By: Claude Opus 5` and
 the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses current.
