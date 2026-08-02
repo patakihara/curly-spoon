@@ -25,6 +25,51 @@ Read this file first, then `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DESI
 
 ---
 
+## 0. Read this before you touch the working tree (2026-08-03)
+
+**The clone at `~/src/auralis-src` has a dirty working tree whose contents are already
+committed and pushed.** Do not try to finish that work — it is done. On 2026-08-03 a session
+found ~1,300 lines of uncommitted phase 5 / 5a work left behind by a session that was cut
+off mid-phase, fixed it (the tree did not typecheck and the e2e gate spec was broken),
+and committed it as `4dcbeb5`, `3675b24`, `07ce0c3` on
+`origin/claude/media-client-app-k7v9by`. The files still sitting dirty in that checkout are
+the _pre-fix_ copies. Reconcile before doing anything else:
+
+```bash
+cd ~/src/auralis-src
+git fetch origin
+git status                     # confirm nothing here is newer than origin
+git reset --hard origin/claude/media-client-app-k7v9by
+git clean -fd                  # drops the now-redundant untracked copies
+```
+
+**Why it was left dirty rather than reconciled automatically:** discarding a user's working
+tree is destructive and was not something to do unattended.
+
+**Background sessions cannot edit that checkout at all.** A harness guard rejects every
+`Edit`/`Write` in the shared clone until the session isolates into a git worktree, and the
+documented way to disable it is itself an edit — so there is no in-place path. Do not burn
+turns rediscovering this. Instead create a worktree **based on the current branch HEAD**,
+not on `origin/main`, which is what the `EnterWorktree` tool does by default and is a base
+these branch-derived changes cannot apply onto:
+
+```bash
+git worktree add -b <name> .claude/worktrees/<name> HEAD
+pnpm install --frozen-lockfile        # a new worktree has no node_modules
+```
+
+then `EnterWorktree` with that `path`. Push with an explicit refspec — the worktree branch
+has no upstream:
+
+```bash
+git push origin <name>:claude/media-client-app-k7v9by
+```
+
+`.claude/worktrees/` is gitignored as of `07ce0c3`; git does not auto-ignore a nested
+worktree, and untracked it reads as a mountain of phantom work.
+
+---
+
 ## 1. What the user asked for, in their words
 
 > "a web app + android app, in a material U style, that serves as three things"
@@ -59,16 +104,31 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                   | Status      |
-| ----- | ------------------------------------------------------ | ----------- |
-| 1     | Monorepo, tooling, CI, test harness                    | done        |
-| 2     | `@auralis/ui` — Material 3 Expressive design system    | done        |
-| 3     | BFF + Audiobookshelf client                            | done        |
-| 4     | Web shell + Docker image                               | done        |
-| 5–10  | Audiobooks, requests, podcasts, music, Android, polish | not started |
+| Phase | What                                                    | Status      |
+| ----- | ------------------------------------------------------- | ----------- |
+| 1     | Monorepo, tooling, CI, test harness                     | done        |
+| 2     | `@auralis/ui` — Material 3 Expressive design system     | done        |
+| 3     | BFF + Audiobookshelf client                             | done        |
+| 4     | Web shell + Docker image                                | done        |
+| 5     | Audiobooks experience + player                          | in progress |
+| 5a    | Android build skeleton + APK pipeline                   | in progress |
+| 6–11  | Requests, podcasts, music, Android app, polish, F-Droid | not started |
 
-Green: `pnpm typecheck`, `pnpm lint`, **308 unit tests**, **156 UI browser tests + 18 app
-end-to-end tests**, and `pnpm test:docker` (the container smoke test).
+**Phase 5 is half-landed.** Done: Home shelves, library browse with filter and sort, typed
+search results, and the player's whole _logic_ layer — `features/player/playback.ts`
+(chapter/track lookup, seek clamping, rate stepping, sleep-timer maths, skip intervals),
+`state/playerStore.ts`, `state/settingsStore.ts`, and the `useAudioElement` /
+`useMediaSession` hooks. Not done: **any player UI at all**. Nothing imports those hooks yet,
+`components/NowPlayingPanel.tsx` is still the Phase 4 placeholder, `ItemPage` has no way to
+start playback, and no progress sync is wired to `api.syncSession`. That UI is the remaining
+work in phase 5.
+
+**Phase 5a is committed but unproven** — its premise is that nothing on this machine can
+compile Android, so the phase is only done when the `Android` workflow has gone green and
+produced a debug APK artifact.
+
+Green as of `07ce0c3`: `pnpm typecheck`, `pnpm lint`, **354 unit tests**, **181 Playwright
+tests** (156 UI + 25 app end-to-end), and `pnpm test:docker` (the container smoke test).
 
 `docs/ROADMAP.md` is the source of truth for status. Everything is on the branch
 **`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.

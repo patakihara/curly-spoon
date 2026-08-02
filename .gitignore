@@ -24,6 +24,10 @@ data/
 .env.*
 !.env.example
 
+# Claude Code worktrees live inside the repo and git does not auto-ignore a
+# nested worktree — untracked, it reads as a mountain of phantom work.
+.claude/worktrees/
+
 # editors / os
 .DS_Store
 .idea/
