@@ -51,16 +51,48 @@ drawing on the account.
 - Ask the user to re-run `/usage` and re-calibrate when the estimate looks stale; the
   calibration drifts as other work lands on the account.
 
-**Subagents are the expensive path.** Measured on this project, Sonnet subagents accounted
-for roughly two-thirds of consumption, almost entirely in cache reads — every cold spawn
-re-reads the repo to orient itself. So:
+**Enforced, not merely requested:** `.claude/settings.json` registers a `PreToolUse` hook on
+`Agent|Task` that runs the guard and **denies the spawn** past the threshold. It fails open
+when uncalibrated, so it never blocks work it cannot measure.
 
-- Prefer **one agent per phase** over several agents per phase; each extra spawn re-pays
-  the whole orientation cost.
-- Prefer `SendMessage` to an existing agent over a fresh `Agent` call — it keeps context
-  and skips the re-read.
-- Do small, well-understood fixes **inline**. Delegating a one-line fix costs orders of
-  magnitude more than doing it.
+### What actually drives subagent cost
+
+Measured on this project's three agents — do not re-derive this by guessing:
+
+|                               |                               |
+| ----------------------------- | ----------------------------- |
+| Turns per agent               | ~300                          |
+| Context at turn 10 / 50 / 95% | 63k → 180k → 275k tokens      |
+| Cache reads per agent         | 48–61M                        |
+| Share of total consumption    | Sonnet subagents ≈ two-thirds |
+
+**Every turn re-reads the agent's entire accumulated context.** Cost is therefore roughly
+the sum of context size across turns — **quadratic in turns per agent**, not linear. An
+agent that takes 300 turns costs about four times one that takes 150, not twice.
+
+This inverts the obvious advice. **Bigger agent tasks are not cheaper.** The cold-start cost
+of an extra spawn is a small constant; the quadratic is what dominates. Splitting a
+600-turn job into two 300-turn agents costs roughly half.
+
+### Rules
+
+1. **Scope each agent to something completable in well under ~150 turns.** If a spec cannot
+   be done in that, split it along a file boundary and run the parts as separate agents.
+2. **Spend orchestrator effort on the spec so the agent never explores.** Name the exact
+   files to create, the exact files to read, the exact API surface, and the decisions
+   already made. Exploration is what inflates context early, and it is paid for on every
+   subsequent turn.
+3. **Tell agents to keep context small**, explicitly, in the spec: use `Grep` over reading
+   whole files, read with offset/limit, never re-read a file they wrote, never `cat` a
+   directory, and run **targeted** tests rather than the full suite on every iteration —
+   each suite run's output lands in context and is re-read forever after.
+4. **Pre-install dependencies and pre-create manifests** so no agent spends turns on
+   toolchain setup.
+5. **`SendMessage` to an existing agent** for a follow-up instead of a fresh `Agent` call —
+   but only when its context is still small; a long-running agent is the expensive thing to
+   keep talking to.
+6. **Do small, well-understood fixes inline.** The sheet-detent fix cost cents done
+   directly; delegating it would have cost dollars.
 
 ## Autonomy
 
