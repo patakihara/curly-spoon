@@ -216,14 +216,22 @@ walking _up_ from the session's working directory, and files transcripts under a
 derived from it. A session started elsewhere loads no hooks and is invisible to the guard,
 silently in both cases. The guard diagnoses this itself when it finds no transcripts.
 
-The session window's calibration is inherited from the cloud session; **the weekly window is
-not calibrated and fails open**. Both need re-running against real local usage — the guard
-now refuses to calibrate against an empty window rather than storing a zero that reads back
-as "not calibrated" forever, so run this only once sessions have accumulated here:
+**The inherited calibration is not merely stale — it is in different units, and the guard
+currently under-reads.** `session_per_percent` was derived in the cloud container, where
+Auralis was effectively all of the account's traffic. Locally the numerator covers only
+sessions rooted in this repo; anything started elsewhere on the machine is invisible to the
+slug and therefore uncounted, while the denominator it was fitted against is still the whole
+plan. So the real windows are always **at least** what this reports, and under-reading is
+the dangerous direction: the gate cannot fire on consumption it cannot see. Treat the
+reading as a floor until it is re-fitted here:
 
 ```bash
 ./scripts/usage-guard.py --calibrate-session <pct> --calibrate-weekly <pct>
 ```
+
+Take both percentages from a fresh `/usage`. The guard now refuses to calibrate against a
+window with no observed usage rather than storing a zero that reads back as "not
+calibrated" forever, so run it only once sessions have accumulated here.
 
 Model weighting was calibrated against the usage UI's breakdown: the plan meters Opus at
 about **2.7× what the published price ratio implies**, which the stored multipliers correct
