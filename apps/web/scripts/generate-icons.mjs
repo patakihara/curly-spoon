@@ -25,7 +25,7 @@ const CREAM = [0xfb, 0xf1, 0xe8];
 
 function crc32(buf) {
   let c;
-  const table = crc32.table ??= (() => {
+  const table = (crc32.table ??= (() => {
     const t = new Uint32Array(256);
     for (let n = 0; n < 256; n++) {
       c = n;
@@ -33,7 +33,7 @@ function crc32(buf) {
       t[n] = c >>> 0;
     }
     return t;
-  })();
+  })());
   let crc = 0xffffffff;
   for (let i = 0; i < buf.length; i++) crc = table[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
@@ -84,15 +84,7 @@ function encodePng(size, paint) {
 }
 
 /** Simple 5x7 block-letter "A" glyph, drawn as filled cells scaled to the icon. */
-const GLYPH_A = [
-  '..XXX..',
-  '.X...X.',
-  'X.....X',
-  'X.....X',
-  'XXXXXXX',
-  'X.....X',
-  'X.....X',
-];
+const GLYPH_A = ['..XXX..', '.X...X.', 'X.....X', 'X.....X', 'XXXXXXX', 'X.....X', 'X.....X'];
 
 function paintIcon({ size, maskable }) {
   // Maskable icons need a "safe zone": content inside the centre ~80% so OS
@@ -111,8 +103,10 @@ function paintIcon({ size, maskable }) {
   return (x, y) => {
     if (!maskable) {
       // Rounded-square background — outside the rounded rect is transparent.
-      const cx = x < cornerRadius ? cornerRadius : x > size - cornerRadius ? size - cornerRadius : x;
-      const cy = y < cornerRadius ? cornerRadius : y > size - cornerRadius ? size - cornerRadius : y;
+      const cx =
+        x < cornerRadius ? cornerRadius : x > size - cornerRadius ? size - cornerRadius : x;
+      const cy =
+        y < cornerRadius ? cornerRadius : y > size - cornerRadius ? size - cornerRadius : y;
       const dx = x - cx;
       const dy = y - cy;
       if (dx * dx + dy * dy > cornerRadius * cornerRadius) return [0, 0, 0, 0];

@@ -22,7 +22,6 @@ export class AppBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-     
     console.error('Auralis failed to start', error, info.componentStack);
   }
 

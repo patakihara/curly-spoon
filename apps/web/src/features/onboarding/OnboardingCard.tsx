@@ -10,7 +10,13 @@ export interface OnboardingCardProps {
 }
 
 /** The shared full-bleed layout every onboarding step (setup/login/services) sits in. */
-export function OnboardingCard({ step, totalSteps, title, subtitle, children }: OnboardingCardProps) {
+export function OnboardingCard({
+  step,
+  totalSteps,
+  title,
+  subtitle,
+  children,
+}: OnboardingCardProps) {
   return (
     <div className="auralis-onboarding" data-testid="onboarding-card">
       <Card variant="elevated" className="auralis-onboarding__card">

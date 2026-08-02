@@ -6,7 +6,13 @@
  */
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { Icon, NavigationBar, NavigationRail, type IconName, type NavigationItem } from '@auralis/ui';
+import {
+  Icon,
+  NavigationBar,
+  NavigationRail,
+  type IconName,
+  type NavigationItem,
+} from '@auralis/ui';
 import { useBreakpoint } from '../hooks/useBreakpoint.js';
 import { useLibrariesQuery, useSetupQuery } from '../api/queries.js';
 import { lookupLibraries, visibleDestinations, type DestinationKey } from './destinations.js';
@@ -41,9 +47,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const activeDestination =
     destinations.find((d) => d.to === location.pathname) ??
-    destinations
-      .filter((d) => d.to !== '/')
-      .find((d) => location.pathname.startsWith(d.to));
+    destinations.filter((d) => d.to !== '/').find((d) => location.pathname.startsWith(d.to));
   const activeKey = activeDestination?.key ?? 'home';
 
   const handleActiveChange = (key: string) => {
@@ -63,7 +67,11 @@ export function Shell({ children }: { children: ReactNode }) {
             {children}
           </main>
           <div data-testid="nav-bar">
-            <NavigationBar items={navItems} activeKey={activeKey} onActiveChange={handleActiveChange} />
+            <NavigationBar
+              items={navItems}
+              activeKey={activeKey}
+              onActiveChange={handleActiveChange}
+            />
           </div>
         </>
       ) : (

@@ -156,7 +156,7 @@ What that implies concretely:
   deep a user may navigate while moving. The root is therefore intent-shaped, not
   library-shaped: _Continue_, _Downloaded_, _Books_, _Series_, _Podcasts_, _Music_ — with
   "Continue" first, because in a car it is almost always the right answer.
-- **Chapters are the skip target.** In the car, "next" must mean *next chapter*, not next
+- **Chapters are the skip target.** In the car, "next" must mean _next chapter_, not next
   file or next book. Audiobook chapter boundaries drive `seekToNext`/`seekToPrevious`, and
   the media metadata advertises chapter titles so the head unit displays something useful.
 - **Voice.** `onPlayFromSearch` / `onSearch` wired so "play <title>" and "resume my book"

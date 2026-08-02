@@ -44,7 +44,9 @@ export function ItemPage() {
         <div>
           <h1>{item.media.title}</h1>
           {item.media.subtitle ? <p>{item.media.subtitle}</p> : null}
-          {item.media.authors?.length ? <p>{item.media.authors.map((a) => a.name).join(', ')}</p> : null}
+          {item.media.authors?.length ? (
+            <p>{item.media.authors.map((a) => a.name).join(', ')}</p>
+          ) : null}
           {item.media.narrator ? <p>Narrated by {item.media.narrator}</p> : null}
         </div>
       </div>

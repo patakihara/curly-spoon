@@ -11,7 +11,12 @@ export function UpdateBanner() {
   return (
     <div className="auralis-update-banner" role="status" data-testid="update-banner">
       <span>A new version of Auralis is available.</span>
-      <Button variant="tonal" size="sm" onClick={() => applyUpdate?.()} data-testid="update-banner-reload">
+      <Button
+        variant="tonal"
+        size="sm"
+        onClick={() => applyUpdate?.()}
+        data-testid="update-banner-reload"
+      >
         Reload to update
       </Button>
     </div>

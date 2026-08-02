@@ -23,7 +23,9 @@ const memoryFallback = new Map<string, string>();
 
 const storage: StateStorage = {
   getItem: (name) =>
-    typeof window !== 'undefined' ? window.localStorage.getItem(name) : (memoryFallback.get(name) ?? null),
+    typeof window !== 'undefined'
+      ? window.localStorage.getItem(name)
+      : (memoryFallback.get(name) ?? null),
   setItem: (name, value) => {
     if (typeof window !== 'undefined') window.localStorage.setItem(name, value);
     else memoryFallback.set(name, value);

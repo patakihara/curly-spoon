@@ -32,7 +32,12 @@ export function SearchPage() {
     <div className="auralis-page" data-testid="search-page">
       <h1>Search</h1>
       <div data-testid="search-field">
-        <SearchField ref={inputRef} value={query} onChange={setQuery} placeholder="Search your library" />
+        <SearchField
+          ref={inputRef}
+          value={query}
+          onChange={setQuery}
+          placeholder="Search your library"
+        />
       </div>
 
       {!configured ? (

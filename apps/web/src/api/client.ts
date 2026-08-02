@@ -174,7 +174,10 @@ export class ApiClient {
   }
 
   audioTrackUrl(itemId: string, fileId: string): string {
-    return buildUrl(this.baseUrl, `/media/${encodeURIComponent(itemId)}/track/${encodeURIComponent(fileId)}`);
+    return buildUrl(
+      this.baseUrl,
+      `/media/${encodeURIComponent(itemId)}/track/${encodeURIComponent(fileId)}`,
+    );
   }
 }
 

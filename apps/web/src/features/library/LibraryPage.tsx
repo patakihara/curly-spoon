@@ -37,7 +37,9 @@ export function LibraryPage() {
               onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: item.id } })}
             >
               <h2>{item.media.title}</h2>
-              {item.media.authors?.length ? <p>{item.media.authors.map((a) => a.name).join(', ')}</p> : null}
+              {item.media.authors?.length ? (
+                <p>{item.media.authors.map((a) => a.name).join(', ')}</p>
+              ) : null}
               {item.media.author ? <p>{item.media.author}</p> : null}
             </Card>
           ))}

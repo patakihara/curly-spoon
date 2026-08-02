@@ -8,7 +8,9 @@ function fakeFetch(handler: (url: string, init?: RequestInit) => Response) {
 
 describe('ApiClient', () => {
   it('builds the request against /api/v1 by default, with credentials included', async () => {
-    const fetchFn = fakeFetch(() => new Response(JSON.stringify({ configured: false, baseUrl: null }), { status: 200 }));
+    const fetchFn = fakeFetch(
+      () => new Response(JSON.stringify({ configured: false, baseUrl: null }), { status: 200 }),
+    );
     const client = new ApiClient({ fetch: fetchFn });
 
     await client.getSetupState();
@@ -21,7 +23,10 @@ describe('ApiClient', () => {
 
   it('parses a successful JSON response', async () => {
     const fetchFn = fakeFetch(
-      () => new Response(JSON.stringify({ configured: true, baseUrl: 'http://fake.abs.local' }), { status: 200 }),
+      () =>
+        new Response(JSON.stringify({ configured: true, baseUrl: 'http://fake.abs.local' }), {
+          status: 200,
+        }),
     );
     const client = new ApiClient({ fetch: fetchFn });
 
@@ -46,7 +51,10 @@ describe('ApiClient', () => {
 
   it('serialises query parameters, dropping undefined values', async () => {
     const fetchFn = fakeFetch(
-      () => new Response(JSON.stringify({ items: [], total: 0, limit: null, page: null }), { status: 200 }),
+      () =>
+        new Response(JSON.stringify({ items: [], total: 0, limit: null, page: null }), {
+          status: 200,
+        }),
     );
     const client = new ApiClient({ fetch: fetchFn });
 
@@ -59,9 +67,12 @@ describe('ApiClient', () => {
   it('throws a typed ApiError with the BFF error code on a non-2xx response', async () => {
     const fetchFn = fakeFetch(
       () =>
-        new Response(JSON.stringify({ error: { code: 'unauthenticated', message: 'Sign in required' } }), {
-          status: 401,
-        }),
+        new Response(
+          JSON.stringify({ error: { code: 'unauthenticated', message: 'Sign in required' } }),
+          {
+            status: 401,
+          },
+        ),
     );
     const client = new ApiClient({ fetch: fetchFn });
 
@@ -88,7 +99,9 @@ describe('ApiClient', () => {
     const client = new ApiClient({ fetch: fetchFn });
 
     expect(client.coverUrl('item-dune')).toBe('/api/v1/media/item-dune/cover');
-    expect(client.coverUrl('item-dune', { width: 400 })).toBe('/api/v1/media/item-dune/cover?width=400');
+    expect(client.coverUrl('item-dune', { width: 400 })).toBe(
+      '/api/v1/media/item-dune/cover?width=400',
+    );
     expect(client.audioTrackUrl('item-dune', 'file-dune-1')).toBe(
       '/api/v1/media/item-dune/track/file-dune-1',
     );

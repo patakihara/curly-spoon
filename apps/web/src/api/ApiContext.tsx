@@ -16,7 +16,10 @@ export interface ApiProviderProps {
 }
 
 export function ApiProvider({ children, client }: ApiProviderProps) {
-  const value = useMemo(() => client ?? new ApiClient({ fetch: window.fetch.bind(window) }), [client]);
+  const value = useMemo(
+    () => client ?? new ApiClient({ fetch: window.fetch.bind(window) }),
+    [client],
+  );
   return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;
 }
 

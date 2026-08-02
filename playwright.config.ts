@@ -88,7 +88,8 @@ export default defineConfig({
       // `pnpm --filter @auralis/web build` + real server pairing the Dockerfile
       // uses, just with the fixture-backed fake upstream instead of a real
       // Audiobookshelf (apps/server/test/fakes/fakeAbs.ts).
-      command: 'pnpm --filter @auralis/web build && pnpm --filter @auralis/server exec tsx src/main.ts',
+      command:
+        'pnpm --filter @auralis/web build && pnpm --filter @auralis/server exec tsx src/main.ts',
       url: `${APP_URL}/api/v1/health`,
       reuseExistingServer: !CI,
       timeout: 120_000,

@@ -19,9 +19,7 @@ describe('describeSetupError', () => {
   });
 
   it('distinguishes a TLS failure', () => {
-    const diag = describeSetupError(
-      upstreamUnreachable('unable to verify the first certificate'),
-    );
+    const diag = describeSetupError(upstreamUnreachable('unable to verify the first certificate'));
     expect(diag.heading.toLowerCase()).toMatch(/tls|certificate/);
   });
 

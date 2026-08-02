@@ -12,7 +12,8 @@ import { ApiError } from '../../api/errors.js';
 import { OnboardingCard } from './OnboardingCard.js';
 
 function describeLoginError(err: ApiError): string {
-  if (err.isNetworkError) return "Couldn't reach the Auralis server. Check it's running and try again.";
+  if (err.isNetworkError)
+    return "Couldn't reach the Auralis server. Check it's running and try again.";
   if (err.code === 'invalid_credentials') return 'Incorrect username or password.';
   if (err.code === 'not_configured') return 'Setup was reset — go back and reconnect your server.';
   return err.message || 'Something went wrong signing in.';
@@ -34,7 +35,8 @@ export function LoginPage() {
       await navigate({ to: '/setup/services' });
     } catch (err) {
       setPassword('');
-      const apiError = err instanceof ApiError ? err : new ApiError('unknown_error', String(err), 0);
+      const apiError =
+        err instanceof ApiError ? err : new ApiError('unknown_error', String(err), 0);
       setError(describeLoginError(apiError));
     }
   };

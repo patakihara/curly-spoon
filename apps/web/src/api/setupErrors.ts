@@ -72,7 +72,8 @@ export function describeSetupError(err: ApiError): SetupDiagnosis {
     case 'upstream_timeout':
       return {
         heading: 'Timed out',
-        detail: 'The server took too long to respond. It may be overloaded, or the address may be wrong.',
+        detail:
+          'The server took too long to respond. It may be overloaded, or the address may be wrong.',
       };
     case 'not_found':
       return {
