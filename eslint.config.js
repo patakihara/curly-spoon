@@ -30,5 +30,24 @@ export default tseslint.config(
       eqeqeq: ['error', 'always', { null: 'ignore' }],
     },
   },
+  {
+    // Build-time scripts run under Node, not in a browser, and printing progress
+    // is their whole point — so they get Node globals and an unrestricted console.
+    files: ['**/scripts/**/*.{js,mjs,cjs,ts}'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+        console: 'readonly',
+        process: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
   prettier,
 );

@@ -14,6 +14,8 @@ describe('loadConfig', () => {
       sessionSecret: 'a'.repeat(32),
       fakeUpstreams: false,
       nodeEnv: 'development',
+      serveWeb: true,
+      webDistDir: undefined,
     });
   });
 
@@ -56,6 +58,18 @@ describe('loadConfig', () => {
 
   it('rejects an invalid AURALIS_FAKE_UPSTREAMS value', () => {
     expect(() => loadConfig({ ...validEnv, AURALIS_FAKE_UPSTREAMS: 'yes' })).toThrow(ConfigError);
+  });
+
+  it('defaults AURALIS_SERVE_WEB to enabled', () => {
+    expect(loadConfig(validEnv).serveWeb).toBe(true);
+  });
+
+  it('turns AURALIS_SERVE_WEB=0 into serveWeb:false', () => {
+    expect(loadConfig({ ...validEnv, AURALIS_SERVE_WEB: '0' }).serveWeb).toBe(false);
+  });
+
+  it('reads an explicit WEB_DIST_DIR override', () => {
+    expect(loadConfig({ ...validEnv, WEB_DIST_DIR: '/srv/web' }).webDistDir).toBe('/srv/web');
   });
 
   it('reports every issue at once rather than only the first', () => {

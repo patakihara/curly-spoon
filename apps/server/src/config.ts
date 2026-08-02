@@ -24,6 +24,18 @@ const envSchema = z.object({
     .default('0')
     .transform((v) => v === '1'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  // Serves apps/web/dist from this same process/port (see static.ts). Left on by
+  // default: the effective gate is "does a build exist on disk", so `pnpm dev`
+  // (which never runs `vite build`) needs no special-casing here — this flag is
+  // the explicit escape hatch for the rarer case of wanting it off regardless.
+  AURALIS_SERVE_WEB: z
+    .enum(['0', '1'])
+    .default('1')
+    .transform((v) => v === '1'),
+  // Override for where the built web app lives — defaults to ../../web/dist
+  // relative to this package (see static.ts's DEFAULT_WEB_DIST_DIR). The
+  // Docker image sets this explicitly rather than relying on relative layout.
+  WEB_DIST_DIR: z.string().min(1).optional(),
 });
 
 export interface AppConfig {
@@ -32,6 +44,9 @@ export interface AppConfig {
   sessionSecret: string;
   fakeUpstreams: boolean;
   nodeEnv: 'development' | 'production' | 'test';
+  /** Whether the BFF should attempt to serve the built web app. Treat `undefined` as enabled — only tests explicitly set this to `false`. */
+  serveWeb?: boolean;
+  webDistDir?: string;
 }
 
 /** Raised when the environment fails validation; `.message` is safe to log or print as-is. */
@@ -58,5 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionSecret: parsed.data.SESSION_SECRET,
     fakeUpstreams: parsed.data.AURALIS_FAKE_UPSTREAMS,
     nodeEnv: parsed.data.NODE_ENV,
+    serveWeb: parsed.data.AURALIS_SERVE_WEB,
+    webDistDir: parsed.data.WEB_DIST_DIR,
   };
 }

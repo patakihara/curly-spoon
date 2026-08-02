@@ -16,6 +16,7 @@ import { createAbsUpstreamFactory, type AbsUpstreamFactory } from './absUpstream
 import { RateLimiter } from './auth/rateLimit.js';
 import { sendError } from './httpErrors.js';
 import { registerRoutes } from './routes/index.js';
+import { registerStaticServing } from './static.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -59,8 +60,9 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
   app.decorate('loginRateLimiter', new RateLimiter({ windowMs: 60_000, max: 10 }));
 
   void app.register(cookiePlugin);
-  // No other origin is wired up yet (the web app isn't part of this phase) — deny
-  // cross-origin by default rather than reflecting an arbitrary Origin back.
+  // The web app is served from this same origin (see static.ts) — there is no
+  // legitimate cross-origin caller, so deny by default rather than reflecting
+  // an arbitrary Origin back.
   void app.register(corsPlugin, { origin: false });
 
   void app.register(
@@ -70,9 +72,10 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
     { prefix: '/api/v1' },
   );
 
-  app.setNotFoundHandler((_request, reply) => {
-    sendError(reply, 404, 'not_found', 'No such route');
-  });
+  // Also owns the app's one 404 handler (both the JSON `/api/*` shape and the
+  // SPA fallback for everything else) — see static.ts for why those two are
+  // one concern, not two.
+  void registerStaticServing(app, deps.config);
 
   app.setErrorHandler((err: FastifyError, request, reply) => {
     request.log.error({ err }, 'unhandled error');

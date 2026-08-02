@@ -34,6 +34,10 @@ export function buildTestApp(options: { configured?: boolean } = {}): TestAppCon
     sessionSecret,
     fakeUpstreams: true,
     nodeEnv: 'test',
+    // Route tests exercise `/api/v1/**` only and must not depend on whether
+    // `apps/web/dist` happens to exist on the machine running them — see
+    // static.ts for the real (default-on) behaviour.
+    serveWeb: false,
   };
 
   if (options.configured !== false) {
