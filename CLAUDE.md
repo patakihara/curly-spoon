@@ -51,9 +51,18 @@ drawing on the account.
 - Ask the user to re-run `/usage` and re-calibrate when the estimate looks stale; the
   calibration drifts as other work lands on the account.
 
-**Enforced, not merely requested:** `.claude/settings.json` registers a `PreToolUse` hook on
-`Agent|Task` that runs the guard and **denies the spawn** past the threshold. It fails open
-when uncalibrated, so it never blocks work it cannot measure.
+**Enforced, not merely requested:** `.claude/settings.json` registers two hooks. A
+`SessionStart` hook reports both windows into context at the top of every session, and a
+`PreToolUse` hook on `Agent|Task` runs the guard and **denies the spawn** past the
+threshold. Both fail open — silent when they cannot measure — so neither blocks work it
+has no reading for. `scripts/hooks/pre-subagent-usage-check.test.sh` covers that contract.
+
+**Start sessions from the repo root, or none of this is on.** Claude Code walks _up_ from
+the session's working directory to find `CLAUDE.md` and `.claude/settings.json`, and files
+transcripts under a slug derived from that same directory. A session started one level up
+therefore loads no hooks _and_ is invisible to the guard, which reads those transcripts —
+and both failures are silent. If `./scripts/usage-guard.py` prints "no transcripts found",
+that is the diagnosis, and it says so.
 
 ### What actually drives subagent cost
 

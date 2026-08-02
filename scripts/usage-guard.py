@@ -120,10 +120,16 @@ def parse_time(value: str | None) -> datetime | None:
         return None
 
 
-def collect(
-    project: str, multipliers: dict[str, float] | None = None
-) -> list[tuple[datetime, str, float, int]]:
-    """(timestamp, model, weight, raw_tokens) for every turn we can see."""
+def transcript_paths(project: str) -> list[str]:
+    """
+    Every transcript file that belongs to this project.
+
+    Claude Code files transcripts under a slug derived from the session's
+    *working directory*, so this only sees sessions actually started in the
+    repo. A session started somewhere else — the parent directory, say — files
+    its transcripts elsewhere and is invisible here, which is also why the
+    project's `.claude/settings.json` hooks would not have loaded for it.
+    """
     slug = os.path.abspath(project).replace("/", "-")
     patterns = [
         os.path.expanduser(f"~/.claude/projects/{slug}/**/*.jsonl"),
@@ -135,6 +141,14 @@ def collect(
         for match in glob.glob(pattern, recursive=True):
             if match not in paths:
                 paths.append(match)
+    return paths
+
+
+def collect(
+    project: str, multipliers: dict[str, float] | None = None
+) -> list[tuple[datetime, str, float, int]]:
+    """(timestamp, model, weight, raw_tokens) for every turn we can see."""
+    paths = transcript_paths(project)
 
     turns: list[tuple[datetime, str, float, int]] = []
     for path in paths:
@@ -192,9 +206,19 @@ def load_state(project: str) -> dict:
     path = os.path.join(project, STATE_FILE)
     try:
         with open(path) as handle:
-            return json.load(handle)
+            state = json.load(handle)
     except (OSError, json.JSONDecodeError):
         return {}
+    if not isinstance(state, dict):
+        return {}
+    # A non-positive divisor is a poisoned calibration, not a calibration: it
+    # would make every reading either a division by zero or an absurd
+    # percentage. Drop it so the guard reports "not calibrated" and fails open.
+    for key in ("session_per_percent", "weekly_per_percent"):
+        value = state.get(key)
+        if not isinstance(value, (int, float)) or value <= 0:
+            state.pop(key, None)
+    return state
 
 
 def save_state(project: str, state: dict) -> None:
@@ -206,6 +230,28 @@ def save_state(project: str, state: dict) -> None:
 def bar(fraction: float, width: int = 40) -> str:
     filled = max(0, min(width, round(width * fraction)))
     return "█" * filled + "·" * (width - filled)
+
+
+def explain_no_usage(project: str) -> None:
+    """
+    Why the guard sees nothing — the failure it is most likely to hit.
+
+    "No usage found" reads like a bug in the guard, but the usual cause is that
+    sessions are being started from a different working directory. That also
+    means this project's `.claude/settings.json` never loaded, so the PreToolUse
+    hook that calls this script is not registered either: the guard is not
+    merely blind, it is disconnected. Both are fixed by the same thing.
+    """
+    slug = os.path.abspath(project).replace("/", "-")
+    print()
+    print(f"No transcripts found under ~/.claude/projects/{slug}/")
+    print()
+    print("Claude Code files transcripts under a slug derived from the session's working")
+    print("directory, and loads a project's .claude/settings.json only when that directory")
+    print("is the project root. So this almost always means sessions are being started")
+    print("somewhere else — in which case the PreToolUse hook is not registered either.")
+    print()
+    print(f"Start sessions from the repo root:  cd {project} && claude")
 
 
 def render(name: str, used: float, per_percent: float | None, threshold: float) -> bool:
@@ -283,27 +329,35 @@ def main() -> int:
 
     multipliers = state.get("family_multipliers")
     turns = collect(project, multipliers)
-    if not turns:
-        print("No usage found for this project.")
-        return 0
-
     session_used, session_raw, session_models = window_totals(turns, SESSION_WINDOW, now)
     weekly_used, weekly_raw, _ = window_totals(turns, WEEKLY_WINDOW, now)
 
+    def calibrate(window: str, pct: float, used: float, key: str, span: str) -> int:
+        """Store units-per-percent for one window, or explain why it can't be."""
+        if pct <= 0:
+            print("Calibration percentage must be greater than zero.")
+            return 2
+        if used <= 0:
+            # Dividing zero observed usage by the reported percentage would
+            # store 0.0, which reads back as "not calibrated" — a silent no-op
+            # that looks like success. Say what is actually wrong instead.
+            print(f"No {window} usage observed for this project, so there is nothing to")
+            print(f"calibrate against. Work in this directory first, then re-run.")
+            explain_no_usage(project)
+            return 2
+        state[key] = used / pct
+        save_state(project, state)
+        print(f"Calibrated: {pct}% of the {window} window ≈ this project's last {span}.")
+        return 0
+
     if args.calibrate_session is not None:
-        if args.calibrate_session <= 0:
-            print("Calibration percentage must be greater than zero.")
-            return 2
-        state["session_per_percent"] = session_used / args.calibrate_session
-        save_state(project, state)
-        print(f"Calibrated: {args.calibrate_session}% of the session window ≈ this project's last 5h.")
+        code = calibrate("session", args.calibrate_session, session_used, "session_per_percent", "5h")
+        if code:
+            return code
     if args.calibrate_weekly is not None:
-        if args.calibrate_weekly <= 0:
-            print("Calibration percentage must be greater than zero.")
-            return 2
-        state["weekly_per_percent"] = weekly_used / args.calibrate_weekly
-        save_state(project, state)
-        print(f"Calibrated: {args.calibrate_weekly}% of the weekly window ≈ this project's last 7d.")
+        code = calibrate("weekly", args.calibrate_weekly, weekly_used, "weekly_per_percent", "7d")
+        if code:
+            return code
     if args.calibrate_session is not None or args.calibrate_weekly is not None:
         print()
 
@@ -313,6 +367,8 @@ def main() -> int:
     if args.json:
         payload = {
             "threshold": args.threshold,
+            "transcripts": len(transcript_paths(project)),
+            "turns": len(turns),
             "session": {
                 "raw_tokens": session_raw,
                 "percent_of_plan": (session_used / session_per) if session_per else None,
@@ -343,6 +399,10 @@ def main() -> int:
         busiest = sorted(session_models.items(), key=lambda kv: -kv[1])
         share = ", ".join(f"{m.split('-2')[0]} {v / session_used * 100:.0f}%" for m, v in busiest[:3])
         print(f"Session mix — {share}")
+
+    if not turns:
+        explain_no_usage(project)
+        return 0
 
     if not (session_per and weekly_per):
         print()

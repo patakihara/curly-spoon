@@ -208,9 +208,18 @@ both learned the hard way:
   from running `pnpm install` or committing. Concurrent agents corrupt the lockfile.
 
 **Plan usage.** `scripts/usage-guard.py` measures this project's share of the session and
-weekly windows; `.claude/settings.json` registers a `PreToolUse` hook that denies subagent
-spawns past 80%. The session window is calibrated (from the cloud session's transcripts);
-**the weekly window is not and fails open**. Re-calibrate both against the local machine:
+weekly windows. `.claude/settings.json` registers a `SessionStart` hook that reports both
+windows into context, and a `PreToolUse` hook that denies subagent spawns past 80%.
+
+**Work from the repo root.** Claude Code resolves `CLAUDE.md` and `.claude/settings.json` by
+walking _up_ from the session's working directory, and files transcripts under a slug
+derived from it. A session started elsewhere loads no hooks and is invisible to the guard,
+silently in both cases. The guard diagnoses this itself when it finds no transcripts.
+
+The session window's calibration is inherited from the cloud session; **the weekly window is
+not calibrated and fails open**. Both need re-running against real local usage — the guard
+now refuses to calibrate against an empty window rather than storing a zero that reads back
+as "not calibrated" forever, so run this only once sessions have accumulated here:
 
 ```bash
 ./scripts/usage-guard.py --calibrate-session <pct> --calibrate-weekly <pct>
@@ -224,7 +233,7 @@ for.
 glance-level review: bottom-sheet detents snapped to the _nearest_ detent, silently fighting
 the user's drag direction, and `registerStaticServing` declared a return type it did not
 return. An agent that stopped has not necessarily finished; run the full suite and read the
-diff. And never commit a red tree — CI builds this branch and the `ops/` loop can pull it.
+diff. And never commit a red tree — CI builds this branch.
 
 **Commits**: descriptive body explaining the reasoning, `Co-Authored-By: Claude Opus 5` and
 the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses current.

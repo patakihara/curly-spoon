@@ -35,7 +35,7 @@ status=$?
 [ "$status" -eq 1 ] || allow
 
 # Collapse the report to the two window lines so the reason stays readable.
-detail="$(printf '%s\n' "$report" | grep -E '^(Session|Weekly)' | tr '\n' ' ')"
+detail="$(printf '%s\n' "$report" | grep -E '^(Session|Weekly) {2,}' | tr '\n' ' ')"
 
 cat <<EOF
 {
