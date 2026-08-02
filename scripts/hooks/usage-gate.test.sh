@@ -134,6 +134,54 @@ else
 fi
 rm -rf "$dir"
 
+# --- the warning band: under the ceiling, over the warn line -------------------
+#
+# The band matters because the hard stop blocks the very tools needed to commit
+# and write a handover. A stub that answers "under" at 0.90 and "over" at 0.85
+# is exactly a session sitting between the two.
+
+dir="$(mktemp -d)"
+mkdir -p "$dir/scripts"
+cat >"$dir/scripts/usage-guard.py" <<EOF
+import sys
+threshold = 0.90
+for i, a in enumerate(sys.argv):
+    if a == "--threshold" and i + 1 < len(sys.argv):
+        threshold = float(sys.argv[i + 1])
+sys.stdout.write("""$REPORT""")
+sys.exit(1 if 87.0 >= threshold * 100 else 0)
+EOF
+
+out="$(run_hook "$dir" PreToolUse)"
+status=$?
+if [ "$status" -eq 0 ] && printf '%s' "$out" | python3 -c '
+import json, sys
+hs = json.load(sys.stdin)["hookSpecificOutput"]
+ctx = hs["additionalContext"]
+assert "permissionDecision" not in hs, "warning band must not deny"
+assert "HANDOVER" in ctx, ctx
+assert "NOW" in ctx, ctx
+' 2>/dev/null; then
+  ok "warning band urges a handoff without blocking"
+else
+  fail "expected a non-blocking warn payload, got (status=$status): $out"
+fi
+
+# The warning must repeat on every call — a session fifty tool calls into a turn
+# has long since scrolled past a throttled one.
+cache="$(mktemp -d)"
+w1="$(printf '{"hook_event_name":"PreToolUse"}' |
+  CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" "$HOOK" 2>/dev/null)"
+w2="$(printf '{"hook_event_name":"PreToolUse"}' |
+  CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" "$HOOK" 2>/dev/null)"
+rm -rf "$cache"
+if [ -n "$w1" ] && [ -n "$w2" ]; then
+  ok "warning band ignores the report throttle"
+else
+  fail "warning should repeat every call (w1='$w1' w2='$w2')"
+fi
+rm -rf "$dir"
+
 # --- anything other than exit 1 allows, silently -------------------------------
 
 for code in 2 3; do

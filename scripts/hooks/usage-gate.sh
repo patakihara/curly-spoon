@@ -52,11 +52,28 @@ command -v python3 >/dev/null 2>&1 || allow
 # Stated explicitly rather than inherited from the guard's CLI default: the
 # ceiling is a decision, and leaving it implicit means a change to that default
 # silently moves it. The user set 90.
-report="$(python3 "$GUARD" --threshold 0.90 2>/dev/null)"
+CEILING="${AURALIS_USAGE_CEILING:-0.90}"
+WARN_AT="${AURALIS_USAGE_WARN:-0.85}"
+
+report="$(python3 "$GUARD" --threshold "$CEILING" 2>/dev/null)"
 status=$?
 
 # 1 means over the ceiling. 0 means under. Anything else could not measure.
 [ "$status" -eq 0 ] || [ "$status" -eq 1 ] || allow
+
+# The warning band exists because the hard stop blocks the tools needed to stop
+# *well*. Past the ceiling every call is denied — including the Bash and Edit
+# calls required to commit, push, or write state into docs/HANDOVER.md. A
+# session gated mid-task therefore cannot record what it was doing, and the
+# fresh session that replaces it starts blind. So there is a band below the
+# ceiling where work is still permitted but the session is told, on every tool
+# call, to land what it has now. Losing an hour of uncommitted work to a limit
+# is a worse outcome than stopping a few minutes early.
+warn=0
+if [ "$status" -eq 0 ]; then
+  warn="$(python3 "$GUARD" --threshold "$WARN_AT" >/dev/null 2>&1 || echo 1)"
+  [ "$warn" = "1" ] || warn=0
+fi
 
 # The bar is stripped, not merely cosmetic waste: measured against the token
 # counter it is 21 of the 53 tokens in each injected report, and injected
@@ -99,6 +116,19 @@ if mode == "deny":
             },
             "systemMessage": "Plan usage at or over the ceiling — tool call blocked.",
         }
+elif mode == "warn":
+    out = {
+        "hookSpecificOutput": {
+            "hookEventName": event,
+            "additionalContext": (
+                f"Plan usage — approaching the ceiling:\n{windows}\n"
+                "Land your work NOW: commit and push what exists, and write anything "
+                "unfinished into docs/HANDOVER.md. Past the ceiling every tool call is "
+                "blocked, including the ones needed to do that, so this is the last "
+                "chance to hand off cleanly. Do not start anything new."
+            ),
+        }
+    }
 else:
     out = {
         "hookSpecificOutput": {
@@ -113,6 +143,15 @@ PY
 
 if [ "$status" -eq 1 ]; then
   emit deny
+  exit 0
+fi
+
+# In the warning band, speak on every call rather than on the throttle. The
+# throttle exists to keep a routine status line from being repeated; this is not
+# routine, and a session that sees it once at the start of a long turn may be
+# fifty tool calls past it by the time the ceiling lands.
+if [ "$warn" = "1" ]; then
+  emit warn
   exit 0
 fi
 
