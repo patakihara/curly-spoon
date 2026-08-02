@@ -1,0 +1,10 @@
+{
+  "lib-books": [
+    {
+      "id": "collection-favourites",
+      "name": "Favourites",
+      "description": "Books worth a re-listen.",
+      "bookIds": ["item-dune", "item-hobbit"]
+    }
+  ]
+}

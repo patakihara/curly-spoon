@@ -1,0 +1,188 @@
+/**
+ * The theme runtime: resolves a dynamic M3 scheme from a source colour (usually the
+ * current artwork) and applies it as CSS custom properties on a wrapper element.
+ *
+ * Colour changes cross-fade rather than snap (docs/DESIGN.md § Colour: "colour is
+ * animated, not swapped"). We get this from the CSS engine itself, at zero JS-per-frame
+ * cost: every `--m3-*` colour property is registered via `CSS.registerProperty` with
+ * `syntax: '<color>'`, which makes browsers treat it as animatable, and the wrapper
+ * carries a `transition` for exactly those properties using `spring.slow` — the same
+ * spring docs/DESIGN.md assigns to "Sheets, Now Playing expansion", i.e. the shell's
+ * slowest, calmest motion.
+ */
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
+import { AURALIS_SOURCE_COLOR, createScheme, schemeToCssVars, type M3Scheme } from '../tokens/color.js';
+import {
+  REDUCED_MOTION_DURATION_MS,
+  SPRINGS,
+  motionCssVars,
+  springSettleDuration,
+  springToLinearEasing,
+} from '../tokens/motion.js';
+import { typographyCssVars } from '../tokens/typography.js';
+import { shapeCssVars } from '../tokens/shape.js';
+import { elevationCssVars } from '../tokens/elevation.js';
+import { spacingCssVars } from '../tokens/spacing.js';
+import { prefersReducedMotion, watchReducedMotion } from './reducedMotion.js';
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface ThemeProviderProps {
+  /** Source colour to build the scheme from. Defaults to the Auralis warm-amber fallback. */
+  sourceColor?: string;
+  /** `system` (default) follows `prefers-color-scheme`; `light`/`dark` pin it. */
+  mode?: ThemeMode;
+  /** -1..1, standard is 0. */
+  contrastLevel?: number;
+  children?: ReactNode;
+}
+
+interface ThemeContextValue {
+  /** The resolved M3 role set for the current source colour and light/dark mode. */
+  scheme: M3Scheme;
+  /** What the caller asked for (`light` | `dark` | `system`). */
+  mode: ThemeMode;
+  /** What `system` resolved to, or the pinned mode — always concrete. */
+  resolvedMode: 'light' | 'dark';
+  sourceColor: string;
+  /** Re-themes the shell from a new source colour (e.g. freshly extracted artwork). */
+  setSourceColor: (hex: string) => void;
+  setMode: (mode: ThemeMode) => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+function useSystemPrefersDark(): boolean {
+  const [dark, setDark] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : true,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => setDark(mql.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+  return dark;
+}
+
+const registeredColorProperties = new Set<string>();
+
+/** Registers a custom property as an animatable `<color>`, once per name, document-wide. */
+function registerColorProperty(name: string, initialValue: string): void {
+  if (registeredColorProperties.has(name)) return;
+  registeredColorProperties.add(name);
+  const registrar = (globalThis as { CSS?: { registerProperty?: (options: unknown) => void } }).CSS;
+  if (!registrar?.registerProperty) return; // unsupported browser: falls back to an instant swap
+  try {
+    registrar.registerProperty({ name, syntax: '<color>', inherits: true, initialValue });
+  } catch {
+    // A previous ThemeProvider instance (or hot-reload) already registered this name.
+  }
+}
+
+/**
+ * Applies every non-colour token scale once — these never cross-fade, they're static
+ * design constants (spacing, shape, elevation, type, spring durations/easings).
+ */
+function useStaticTokenVars(): CSSProperties {
+  return useMemo(
+    () =>
+      ({
+        ...motionCssVars(),
+        ...typographyCssVars(),
+        ...shapeCssVars(),
+        ...elevationCssVars(),
+        ...spacingCssVars(),
+      }) as CSSProperties,
+    [],
+  );
+}
+
+export function ThemeProvider({
+  sourceColor = AURALIS_SOURCE_COLOR,
+  mode = 'system',
+  contrastLevel = 0,
+  children,
+}: ThemeProviderProps) {
+  const systemPrefersDark = useSystemPrefersDark();
+  const [ownSourceColor, setOwnSourceColor] = useState(sourceColor);
+  const [ownMode, setOwnMode] = useState(mode);
+  const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
+
+  useEffect(() => watchReducedMotion(setReducedMotion), []);
+  // Controlled-prop usage: if the caller passes a new sourceColor/mode, follow it.
+  useEffect(() => setOwnSourceColor(sourceColor), [sourceColor]);
+  useEffect(() => setOwnMode(mode), [mode]);
+
+  const resolvedMode: 'light' | 'dark' =
+    ownMode === 'system' ? (systemPrefersDark ? 'dark' : 'light') : ownMode;
+
+  const scheme = useMemo(
+    () => createScheme({ sourceColor: ownSourceColor, dark: resolvedMode === 'dark', contrastLevel }),
+    [ownSourceColor, resolvedMode, contrastLevel],
+  );
+
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const staticVars = useStaticTokenVars();
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    const vars = schemeToCssVars(scheme);
+    for (const [name, value] of Object.entries(vars)) {
+      registerColorProperty(name, value);
+    }
+
+    const duration = reducedMotion ? REDUCED_MOTION_DURATION_MS : springSettleDuration(SPRINGS.slow);
+    const easing = reducedMotion ? 'linear' : springToLinearEasing(SPRINGS.slow);
+    el.style.transition = Object.keys(vars)
+      .map((name) => `${name} ${Math.round(duration)}ms ${easing}`)
+      .join(', ');
+
+    for (const [name, value] of Object.entries(vars)) {
+      el.style.setProperty(name, value);
+    }
+  }, [scheme, reducedMotion]);
+
+  const setSourceColor = useCallback((hex: string) => setOwnSourceColor(hex), []);
+  const setMode = useCallback((next: ThemeMode) => setOwnMode(next), []);
+
+  const contextValue = useMemo<ThemeContextValue>(
+    () => ({ scheme, mode: ownMode, resolvedMode, sourceColor: ownSourceColor, setSourceColor, setMode }),
+    [scheme, ownMode, resolvedMode, ownSourceColor, setSourceColor, setMode],
+  );
+
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      <div
+        ref={rootRef}
+        className="auralis-theme-root"
+        data-theme={resolvedMode}
+        style={staticVars}
+      >
+        {children}
+      </div>
+    </ThemeContext.Provider>
+  );
+}
+
+/** Reads the resolved scheme and mode, and exposes setters for re-theming at runtime. */
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be called within a <ThemeProvider>.');
+  return ctx;
+}

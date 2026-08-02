@@ -1,0 +1,54 @@
+.m3-snackbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 480px;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--m3-shape-xs);
+  background: var(--m3-inverse-surface);
+  color: var(--m3-inverse-on-surface);
+  box-shadow: var(--m3-elevation-3, 0 4px 12px rgba(0, 0, 0, 0.3));
+  animation: m3-snackbar-enter var(--m3-spring-default-duration) var(--m3-spring-default-easing);
+}
+
+@keyframes m3-snackbar-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.m3-snackbar__message {
+  flex: 1 1 auto;
+  font-size: var(--m3-type-body-medium-size);
+}
+
+.m3-snackbar__action {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--m3-inverse-primary);
+  font-size: var(--m3-type-label-large-size);
+  font-weight: var(--m3-type-label-large-weight);
+  cursor: pointer;
+  padding: 0 8px;
+  min-height: 36px;
+}
+
+.m3-snackbar__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}

@@ -1,0 +1,67 @@
+.m3-chip-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m3-chip {
+  --m3-state-layer-color: currentColor;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  min-height: var(--m3-touch-target-min);
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--m3-shape-sm);
+  background: var(--m3-surface-container-low);
+  color: var(--m3-on-surface-variant);
+  box-shadow: inset 0 0 0 1px var(--m3-outline-variant);
+  cursor: pointer;
+  font-size: var(--m3-type-label-large-size);
+  transition:
+    background-color var(--m3-spring-fast-duration) var(--m3-spring-fast-easing),
+    box-shadow var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+}
+
+.m3-chip--filter.m3-chip--selected {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+  box-shadow: none;
+}
+
+.m3-chip--input {
+  box-shadow: inset 0 0 0 1px var(--m3-outline);
+}
+
+.m3-chip__icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+.m3-chip__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.m3-chip__label {
+  white-space: nowrap;
+}
+
+.m3-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: -4px;
+  border: none;
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.m3-chip__remove svg {
+  width: 14px;
+  height: 14px;
+}

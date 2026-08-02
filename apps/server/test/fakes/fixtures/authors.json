@@ -1,0 +1,6 @@
+{
+  "lib-books": [
+    { "id": "author-herbert", "name": "Frank Herbert", "description": "American science fiction author.", "imagePath": null, "numBooks": 1 },
+    { "id": "author-tolkien", "name": "J.R.R. Tolkien", "description": "English writer and philologist.", "imagePath": null, "numBooks": 2 }
+  ]
+}

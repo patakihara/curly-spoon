@@ -1,0 +1,453 @@
+/**
+ * Global reset, type scale, and cross-cutting a11y/motion primitives shared by every
+ * @auralis/ui component. Component-specific rules live in each component's colocated
+ * .css file; this file only owns what would otherwise be duplicated everywhere.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'Inter Variable',
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/**
+ * Fallback token values so components render sensibly even if, for some reason, they
+ * are mounted outside a <ThemeProvider> (e.g. an isolated visual test of a single
+ * component). ThemeProvider overwrites every one of these on its wrapper element.
+ */
+:root {
+  color-scheme: light dark;
+  --m3-primary: #8b4f2f;
+  --m3-on-primary: #ffffff;
+  --m3-primary-container: #ffdbc7;
+  --m3-on-primary-container: #2e1500;
+  --m3-secondary: #77574a;
+  --m3-on-secondary: #ffffff;
+  --m3-secondary-container: #ffdbc7;
+  --m3-on-secondary-container: #2c150b;
+  --m3-surface: #fff8f6;
+  --m3-on-surface: #22190f;
+  --m3-surface-variant: #f2ded3;
+  --m3-on-surface-variant: #51443a;
+  --m3-surface-container-lowest: #ffffff;
+  --m3-surface-container-low: #fcf1ea;
+  --m3-surface-container: #f7ebe2;
+  --m3-surface-container-high: #f1e5dc;
+  --m3-surface-container-highest: #ebe0d6;
+  --m3-outline: #85746a;
+  --m3-outline-variant: #d7c3b6;
+  --m3-scrim: #000000;
+
+  --m3-spring-fast-duration: 240ms;
+  --m3-spring-fast-easing: ease-out;
+  --m3-spring-default-duration: 360ms;
+  --m3-spring-default-easing: ease-out;
+  --m3-spring-slow-duration: 520ms;
+  --m3-spring-slow-easing: ease-out;
+  --m3-spring-bouncy-duration: 480ms;
+  --m3-spring-bouncy-easing: ease-out;
+
+  --m3-shape-none: 0px;
+  --m3-shape-xs: 4px;
+  --m3-shape-sm: 8px;
+  --m3-shape-md: 12px;
+  --m3-shape-lg: 16px;
+  --m3-shape-xl: 28px;
+  --m3-shape-full: 9999px;
+
+  --m3-touch-target-min: 48px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --m3-surface: #17120c;
+    --m3-on-surface: #ede0d4;
+  }
+}
+
+/* ---------------------------------------------------------------------------------
+ * State layer: the M3 hover/focus/press overlay. A component opts in with
+ * `.m3-state-layer` on its interactive root (relative-positioned) and controls the
+ * overlay's colour with `--m3-state-layer-color` (defaults to currentColor).
+ * Opacities follow the M3 spec: hover 8%, focus 10%, pressed 12%, dragged 16%.
+ * ------------------------------------------------------------------------------- */
+.m3-state-layer {
+  position: relative;
+  isolation: isolate;
+}
+
+.m3-state-layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--m3-state-layer-color, currentColor);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  z-index: 0;
+}
+
+.m3-state-layer:hover::before {
+  opacity: 0.08;
+}
+
+.m3-state-layer:focus-visible::before {
+  opacity: 0.1;
+}
+
+.m3-state-layer.m3-pressed::before,
+.m3-state-layer:active::before {
+  opacity: 0.12;
+}
+
+.m3-state-layer.m3-dragging::before {
+  opacity: 0.16;
+}
+
+.m3-state-layer[aria-disabled='true']::before,
+.m3-state-layer:disabled::before {
+  opacity: 0 !important;
+}
+
+/* Every direct child of a state-layer root must render above the overlay. */
+.m3-state-layer > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------------
+ * Hit-slop: expands a visually-compact control's *hit area* to the 48px minimum
+ * without inflating its visual size — for controls (e.g. a chip's remove glyph) where
+ * a full 48px box would overwhelm the layout. The generated ::after overflows the
+ * element's own box but pointer events on it still target the real element.
+ * ------------------------------------------------------------------------------- */
+.m3-hit-slop {
+  position: relative;
+}
+.m3-hit-slop::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, var(--m3-touch-target-min));
+  height: max(100%, var(--m3-touch-target-min));
+  transform: translate(-50%, -50%);
+}
+
+/* ---------------------------------------------------------------------------------
+ * Focus ring: M3 secondary colour, 3px, always offset — never `outline: none` with
+ * nothing in its place (docs/DESIGN.md § Accessibility).
+ * ------------------------------------------------------------------------------- */
+:where(
+    .m3-focus-ring,
+    button,
+    [role='button'],
+    [role='slider'],
+    [role='tab'],
+    [role='switch'],
+    [role='checkbox'],
+    a,
+    input,
+    [tabindex]
+  ):focus-visible {
+  outline: 3px solid var(--m3-secondary, currentColor);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------------------
+ * Reduced motion: collapse to a near-instant settle everywhere, rather than assuming
+ * every component remembers to check the media query itself.
+ * ------------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------------
+ * Shared keyframes: shimmer (Skeleton) and wavy (Expressive LinearProgress / Slider).
+ * ------------------------------------------------------------------------------- */
+@keyframes m3-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes m3-wavy-scroll {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: -28px;
+  }
+}
+
+@keyframes m3-indeterminate-grow {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.2);
+  }
+}
+
+/* ---------------------------------------------------------------------------------
+ * Type scale utility classes — one per docs/DESIGN.md role, each reading its metrics
+ * from the `--m3-type-*` custom properties `typographyCssVars()` emits.
+ * ------------------------------------------------------------------------------- */
+.m3-type-display-large,
+.m3-type-display-large-emphasised,
+.m3-type-display-medium,
+.m3-type-display-medium-emphasised,
+.m3-type-display-small,
+.m3-type-display-small-emphasised,
+.m3-type-headline-large,
+.m3-type-headline-large-emphasised,
+.m3-type-headline-medium,
+.m3-type-headline-medium-emphasised,
+.m3-type-headline-small,
+.m3-type-headline-small-emphasised,
+.m3-type-title-large,
+.m3-type-title-large-emphasised,
+.m3-type-title-medium,
+.m3-type-title-medium-emphasised,
+.m3-type-title-small,
+.m3-type-title-small-emphasised,
+.m3-type-body-large,
+.m3-type-body-large-emphasised,
+.m3-type-body-medium,
+.m3-type-body-medium-emphasised,
+.m3-type-body-small,
+.m3-type-body-small-emphasised,
+.m3-type-label-large,
+.m3-type-label-large-emphasised,
+.m3-type-label-medium,
+.m3-type-label-medium-emphasised,
+.m3-type-label-small,
+.m3-type-label-small-emphasised {
+  font-size: var(--m3-type-role-size);
+  line-height: var(--m3-type-role-line-height);
+  font-weight: var(--m3-type-role-weight);
+  letter-spacing: var(--m3-type-role-tracking);
+}
+
+.m3-type-display-large {
+  --m3-type-role-size: var(--m3-type-display-large-size);
+  --m3-type-role-line-height: var(--m3-type-display-large-line-height);
+  --m3-type-role-weight: var(--m3-type-display-large-weight);
+  --m3-type-role-tracking: var(--m3-type-display-large-tracking);
+}
+.m3-type-display-large-emphasised {
+  --m3-type-role-size: var(--m3-type-display-large-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-display-large-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-display-large-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-display-large-emphasised-tracking);
+}
+.m3-type-display-medium {
+  --m3-type-role-size: var(--m3-type-display-medium-size);
+  --m3-type-role-line-height: var(--m3-type-display-medium-line-height);
+  --m3-type-role-weight: var(--m3-type-display-medium-weight);
+  --m3-type-role-tracking: var(--m3-type-display-medium-tracking);
+}
+.m3-type-display-medium-emphasised {
+  --m3-type-role-size: var(--m3-type-display-medium-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-display-medium-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-display-medium-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-display-medium-emphasised-tracking);
+}
+.m3-type-display-small {
+  --m3-type-role-size: var(--m3-type-display-small-size);
+  --m3-type-role-line-height: var(--m3-type-display-small-line-height);
+  --m3-type-role-weight: var(--m3-type-display-small-weight);
+  --m3-type-role-tracking: var(--m3-type-display-small-tracking);
+}
+.m3-type-display-small-emphasised {
+  --m3-type-role-size: var(--m3-type-display-small-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-display-small-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-display-small-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-display-small-emphasised-tracking);
+}
+.m3-type-headline-large {
+  --m3-type-role-size: var(--m3-type-headline-large-size);
+  --m3-type-role-line-height: var(--m3-type-headline-large-line-height);
+  --m3-type-role-weight: var(--m3-type-headline-large-weight);
+  --m3-type-role-tracking: var(--m3-type-headline-large-tracking);
+}
+.m3-type-headline-large-emphasised {
+  --m3-type-role-size: var(--m3-type-headline-large-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-headline-large-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-headline-large-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-headline-large-emphasised-tracking);
+}
+.m3-type-headline-medium {
+  --m3-type-role-size: var(--m3-type-headline-medium-size);
+  --m3-type-role-line-height: var(--m3-type-headline-medium-line-height);
+  --m3-type-role-weight: var(--m3-type-headline-medium-weight);
+  --m3-type-role-tracking: var(--m3-type-headline-medium-tracking);
+}
+.m3-type-headline-medium-emphasised {
+  --m3-type-role-size: var(--m3-type-headline-medium-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-headline-medium-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-headline-medium-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-headline-medium-emphasised-tracking);
+}
+.m3-type-headline-small {
+  --m3-type-role-size: var(--m3-type-headline-small-size);
+  --m3-type-role-line-height: var(--m3-type-headline-small-line-height);
+  --m3-type-role-weight: var(--m3-type-headline-small-weight);
+  --m3-type-role-tracking: var(--m3-type-headline-small-tracking);
+}
+.m3-type-headline-small-emphasised {
+  --m3-type-role-size: var(--m3-type-headline-small-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-headline-small-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-headline-small-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-headline-small-emphasised-tracking);
+}
+.m3-type-title-large {
+  --m3-type-role-size: var(--m3-type-title-large-size);
+  --m3-type-role-line-height: var(--m3-type-title-large-line-height);
+  --m3-type-role-weight: var(--m3-type-title-large-weight);
+  --m3-type-role-tracking: var(--m3-type-title-large-tracking);
+}
+.m3-type-title-large-emphasised {
+  --m3-type-role-size: var(--m3-type-title-large-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-title-large-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-title-large-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-title-large-emphasised-tracking);
+}
+.m3-type-title-medium {
+  --m3-type-role-size: var(--m3-type-title-medium-size);
+  --m3-type-role-line-height: var(--m3-type-title-medium-line-height);
+  --m3-type-role-weight: var(--m3-type-title-medium-weight);
+  --m3-type-role-tracking: var(--m3-type-title-medium-tracking);
+}
+.m3-type-title-medium-emphasised {
+  --m3-type-role-size: var(--m3-type-title-medium-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-title-medium-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-title-medium-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-title-medium-emphasised-tracking);
+}
+.m3-type-title-small {
+  --m3-type-role-size: var(--m3-type-title-small-size);
+  --m3-type-role-line-height: var(--m3-type-title-small-line-height);
+  --m3-type-role-weight: var(--m3-type-title-small-weight);
+  --m3-type-role-tracking: var(--m3-type-title-small-tracking);
+}
+.m3-type-title-small-emphasised {
+  --m3-type-role-size: var(--m3-type-title-small-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-title-small-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-title-small-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-title-small-emphasised-tracking);
+}
+.m3-type-body-large {
+  --m3-type-role-size: var(--m3-type-body-large-size);
+  --m3-type-role-line-height: var(--m3-type-body-large-line-height);
+  --m3-type-role-weight: var(--m3-type-body-large-weight);
+  --m3-type-role-tracking: var(--m3-type-body-large-tracking);
+}
+.m3-type-body-large-emphasised {
+  --m3-type-role-size: var(--m3-type-body-large-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-body-large-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-body-large-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-body-large-emphasised-tracking);
+}
+.m3-type-body-medium {
+  --m3-type-role-size: var(--m3-type-body-medium-size);
+  --m3-type-role-line-height: var(--m3-type-body-medium-line-height);
+  --m3-type-role-weight: var(--m3-type-body-medium-weight);
+  --m3-type-role-tracking: var(--m3-type-body-medium-tracking);
+}
+.m3-type-body-medium-emphasised {
+  --m3-type-role-size: var(--m3-type-body-medium-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-body-medium-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-body-medium-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-body-medium-emphasised-tracking);
+}
+.m3-type-body-small {
+  --m3-type-role-size: var(--m3-type-body-small-size);
+  --m3-type-role-line-height: var(--m3-type-body-small-line-height);
+  --m3-type-role-weight: var(--m3-type-body-small-weight);
+  --m3-type-role-tracking: var(--m3-type-body-small-tracking);
+}
+.m3-type-body-small-emphasised {
+  --m3-type-role-size: var(--m3-type-body-small-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-body-small-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-body-small-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-body-small-emphasised-tracking);
+}
+.m3-type-label-large {
+  --m3-type-role-size: var(--m3-type-label-large-size);
+  --m3-type-role-line-height: var(--m3-type-label-large-line-height);
+  --m3-type-role-weight: var(--m3-type-label-large-weight);
+  --m3-type-role-tracking: var(--m3-type-label-large-tracking);
+}
+.m3-type-label-large-emphasised {
+  --m3-type-role-size: var(--m3-type-label-large-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-label-large-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-label-large-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-label-large-emphasised-tracking);
+}
+.m3-type-label-medium {
+  --m3-type-role-size: var(--m3-type-label-medium-size);
+  --m3-type-role-line-height: var(--m3-type-label-medium-line-height);
+  --m3-type-role-weight: var(--m3-type-label-medium-weight);
+  --m3-type-role-tracking: var(--m3-type-label-medium-tracking);
+}
+.m3-type-label-medium-emphasised {
+  --m3-type-role-size: var(--m3-type-label-medium-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-label-medium-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-label-medium-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-label-medium-emphasised-tracking);
+}
+.m3-type-label-small {
+  --m3-type-role-size: var(--m3-type-label-small-size);
+  --m3-type-role-line-height: var(--m3-type-label-small-line-height);
+  --m3-type-role-weight: var(--m3-type-label-small-weight);
+  --m3-type-role-tracking: var(--m3-type-label-small-tracking);
+}
+.m3-type-label-small-emphasised {
+  --m3-type-role-size: var(--m3-type-label-small-emphasised-size);
+  --m3-type-role-line-height: var(--m3-type-label-small-emphasised-line-height);
+  --m3-type-role-weight: var(--m3-type-label-small-emphasised-weight);
+  --m3-type-role-tracking: var(--m3-type-label-small-emphasised-tracking);
+}

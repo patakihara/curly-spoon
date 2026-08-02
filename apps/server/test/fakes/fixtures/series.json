@@ -1,0 +1,11 @@
+{
+  "lib-books": [
+    { "id": "series-dune", "name": "Dune", "description": "The Dune saga.", "bookIds": ["item-dune"] },
+    {
+      "id": "series-lotr",
+      "name": "The Lord of the Rings",
+      "description": "The epic fantasy trilogy.",
+      "bookIds": ["item-fellowship"]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+[
+  {
+    "id": "item-dailytech",
+    "libraryId": "lib-podcasts",
+    "mediaType": "podcast",
+    "addedAt": 1700200000000,
+    "updatedAt": 1700200000000,
+    "size": 0,
+    "media": {
+      "metadata": {
+        "title": "Daily Tech Briefing",
+        "author": "Signal Media",
+        "description": "Five minutes of technology news every weekday.",
+        "feedUrl": "https://feeds.example.com/dailytech.xml",
+        "genres": ["Technology", "News"]
+      },
+      "coverPath": "/covers/item-dailytech.jpg",
+      "numEpisodes": 2,
+      "episodes": [
+        {
+          "id": "ep-dailytech-1",
+          "index": 1,
+          "season": null,
+          "episode": "1",
+          "title": "Pilot",
+          "subtitle": null,
+          "description": "The first episode.",
+          "pubDate": "2026-07-01",
+          "publishedAt": 1751328000000,
+          "duration": 300,
+          "audioTrack": {
+            "index": 0,
+            "startOffset": 0,
+            "duration": 300,
+            "contentUrl": "/api/items/item-dailytech/file/file-dailytech-ep1",
+            "mimeType": "audio/mpeg"
+          }
+        },
+        {
+          "id": "ep-dailytech-2",
+          "index": 2,
+          "season": null,
+          "episode": "2",
+          "title": "The One About Rust",
+          "subtitle": null,
+          "description": "Why everyone is rewriting everything.",
+          "pubDate": "2026-07-02",
+          "publishedAt": 1751414400000,
+          "duration": 360,
+          "audioTrack": {
+            "index": 0,
+            "startOffset": 0,
+            "duration": 360,
+            "contentUrl": "/api/items/item-dailytech/file/file-dailytech-ep2",
+            "mimeType": "audio/mpeg"
+          }
+        }
+      ]
+    }
+  }
+]

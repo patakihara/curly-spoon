@@ -1,0 +1,124 @@
+[
+  {
+    "id": "item-dune",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1700000000000,
+    "updatedAt": 1700000000000,
+    "size": 512000000,
+    "media": {
+      "metadata": {
+        "title": "Dune",
+        "subtitle": null,
+        "authorName": "Frank Herbert",
+        "authors": [{ "id": "author-herbert", "name": "Frank Herbert" }],
+        "narratorName": "Simon Vance",
+        "seriesName": "Dune",
+        "series": [{ "id": "series-dune", "name": "Dune", "sequence": "1" }],
+        "genres": ["Science Fiction"],
+        "publishedYear": "1965",
+        "description": "A story of politics, religion and ecology on the desert planet Arrakis.",
+        "isbn": "9780441013593"
+      },
+      "coverPath": "/covers/item-dune.jpg",
+      "duration": 1260,
+      "numTracks": 2,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 630,
+          "title": "Part One",
+          "contentUrl": "/api/items/item-dune/file/file-dune-1",
+          "mimeType": "audio/mp4"
+        },
+        {
+          "index": 1,
+          "startOffset": 630,
+          "duration": 630,
+          "title": "Part Two",
+          "contentUrl": "/api/items/item-dune/file/file-dune-2",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [
+        { "id": 1, "start": 0, "end": 630, "title": "Part One" },
+        { "id": 2, "start": 630, "end": 1260, "title": "Part Two" }
+      ]
+    }
+  },
+  {
+    "id": "item-fellowship",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1700100000000,
+    "updatedAt": 1700100000000,
+    "size": 480000000,
+    "media": {
+      "metadata": {
+        "title": "The Fellowship of the Ring",
+        "subtitle": null,
+        "authorName": "J.R.R. Tolkien",
+        "authors": [{ "id": "author-tolkien", "name": "J.R.R. Tolkien" }],
+        "narratorName": "Rob Inglis",
+        "seriesName": "The Lord of the Rings",
+        "series": [{ "id": "series-lotr", "name": "The Lord of the Rings", "sequence": "1" }],
+        "genres": ["Fantasy"],
+        "publishedYear": "1954",
+        "description": "The first volume of The Lord of the Rings.",
+        "isbn": "9780618346257"
+      },
+      "coverPath": "/covers/item-fellowship.jpg",
+      "duration": 720,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 720,
+          "title": "Book One",
+          "contentUrl": "/api/items/item-fellowship/file/file-fellowship-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 720, "title": "Book One" }]
+    }
+  },
+  {
+    "id": "item-hobbit",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1699900000000,
+    "updatedAt": 1699900000000,
+    "size": 300000000,
+    "media": {
+      "metadata": {
+        "title": "The Hobbit",
+        "subtitle": null,
+        "authorName": "J.R.R. Tolkien",
+        "authors": [{ "id": "author-tolkien", "name": "J.R.R. Tolkien" }],
+        "narratorName": "Rob Inglis",
+        "seriesName": null,
+        "series": [],
+        "genres": ["Fantasy"],
+        "publishedYear": "1937",
+        "description": "There and back again.",
+        "isbn": "9780618968633"
+      },
+      "coverPath": "/covers/item-hobbit.jpg",
+      "duration": 660,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 660,
+          "title": "Full text",
+          "contentUrl": "/api/items/item-hobbit/file/file-hobbit-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 660, "title": "There and Back Again" }]
+    }
+  }
+]

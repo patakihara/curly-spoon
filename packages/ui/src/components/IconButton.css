@@ -1,0 +1,71 @@
+.m3-icon-button {
+  --m3-state-layer-color: currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--m3-touch-target-min);
+  height: var(--m3-touch-target-min);
+  border: none;
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  cursor: pointer;
+  transition:
+    background-color var(--m3-spring-fast-duration) var(--m3-spring-fast-easing),
+    color var(--m3-spring-fast-duration) var(--m3-spring-fast-easing),
+    transform var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+}
+
+.m3-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.m3-icon-button__glyph {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+.m3-icon-button__glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+.m3-icon-button--standard {
+  color: var(--m3-on-surface-variant);
+}
+.m3-icon-button--filled {
+  background: var(--m3-primary);
+  color: var(--m3-on-primary);
+}
+.m3-icon-button--filled.m3-icon-button--selected {
+  background: var(--m3-primary);
+}
+.m3-icon-button--tonal {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+}
+.m3-icon-button--outlined {
+  box-shadow: inset 0 0 0 1px var(--m3-outline-variant);
+  color: var(--m3-on-surface-variant);
+}
+.m3-icon-button--outlined.m3-icon-button--selected {
+  background: var(--m3-inverse-surface);
+  color: var(--m3-inverse-on-surface);
+  box-shadow: none;
+}
+
+/* Toggle mode: the glyph itself springs (scale + rotate) on the selected transition,
+   giving the "springy selected transition" the shape asks for without JS driving it. */
+.m3-icon-button--toggle .m3-icon-button__glyph {
+  transition:
+    transform var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing),
+    color var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  transform: scale(1);
+}
+.m3-icon-button--toggle.m3-icon-button--selected .m3-icon-button__glyph {
+  transform: scale(1.15);
+}
+.m3-icon-button--toggle:not(.m3-icon-button--filled):not(.m3-icon-button--tonal).m3-icon-button--selected {
+  color: var(--m3-primary);
+}

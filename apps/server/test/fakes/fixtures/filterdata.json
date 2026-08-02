@@ -1,0 +1,13 @@
+{
+  "lib-books": {
+    "genres": ["Science Fiction", "Fantasy"],
+    "tags": [],
+    "series": ["Dune", "The Lord of the Rings"],
+    "authors": [
+      { "id": "author-herbert", "name": "Frank Herbert" },
+      { "id": "author-tolkien", "name": "J.R.R. Tolkien" }
+    ],
+    "narrators": ["Simon Vance", "Rob Inglis"],
+    "languages": ["English"]
+  }
+}

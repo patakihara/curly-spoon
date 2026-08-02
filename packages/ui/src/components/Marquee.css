@@ -1,0 +1,23 @@
+.m3-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.m3-marquee__text {
+  display: inline-block;
+}
+
+.m3-marquee__text--animating {
+  animation: m3-marquee-scroll var(--m3-marquee-duration) ease-in-out infinite alternate;
+  animation-delay: 1s;
+}
+
+@keyframes m3-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--m3-marquee-distance));
+  }
+}

@@ -1,0 +1,82 @@
+.m3-slider {
+  --m3-slider-height: 16px;
+  --m3-slider-height-dragging: 24px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+  /* The touch target extends well past the visible track via this padding. */
+  min-height: var(--m3-touch-target-min);
+}
+
+.m3-slider__track {
+  position: relative;
+  width: 100%;
+  height: var(--m3-slider-height);
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container-highest);
+  cursor: pointer;
+  touch-action: none;
+  /* The thickening + spring settle: height animates on `.m3-slider--dragging` toggling,
+     using the bouncy spring so release has a visible little overshoot ("settle"). */
+  transition: height var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
+}
+
+.m3-slider--dragging .m3-slider__track {
+  height: var(--m3-slider-height-dragging);
+}
+
+.m3-slider--disabled .m3-slider__track {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.m3-slider__buffered {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-on-surface-variant);
+  opacity: 0.32;
+}
+
+.m3-slider__active {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-primary);
+  transition: width var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+}
+
+/* No playhead dot (per docs/DESIGN.md) — just a small rounded gap between active and
+   remainder tracks, standing in for a thumb without drawing one. */
+.m3-slider__remainder {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 4px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface);
+  transform: translateX(-2px);
+}
+
+/* Wavy (M3 Expressive) active track: a repeating wave pattern that only scrolls while
+   `animateWave` is set (i.e. actually playing) — a still wave otherwise. */
+.m3-slider--wavy .m3-slider__active {
+  background-image:
+    repeating-linear-gradient(
+      var(--m3-primary),
+      var(--m3-primary)
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16' viewBox='0 0 28 16'%3E%3Cpath d='M0 8 Q7 0 14 8 T28 8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E");
+  background-blend-mode: destination-out;
+  background-repeat: repeat-x;
+  background-size: 28px 100%;
+}
+
+.m3-slider--wave-animating .m3-slider__active {
+  animation: m3-wavy-scroll 1s linear infinite;
+}
+
+.m3-slider__track:focus-visible {
+  outline: 3px solid var(--m3-secondary);
+  outline-offset: 3px;
+}

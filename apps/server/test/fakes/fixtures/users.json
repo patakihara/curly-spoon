@@ -1,0 +1,9 @@
+[
+  {
+    "id": "abs-user-kara",
+    "username": "kara",
+    "password": "hunter2",
+    "permissions": { "download": true, "upload": false, "delete": false },
+    "defaultLibraryId": "lib-books"
+  }
+]
