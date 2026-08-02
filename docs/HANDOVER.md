@@ -213,35 +213,29 @@ that matter most, both learned the hard way:
 - **Pre-install dependencies and pre-create manifests before spawning**, and forbid agents
   from running `pnpm install` or committing. Concurrent agents corrupt the lockfile.
 
-**Plan usage.** `scripts/usage-guard.py` measures this project's share of the session and
-weekly windows. `.claude/settings.json` registers a `SessionStart` hook that reports both
-windows into context, and a `PreToolUse` hook that denies subagent spawns past 80%.
+**Plan usage.** `scripts/usage-guard.py` reads the account's real utilisation from the same
+endpoint `/usage` uses, and fails open on every error path. `.claude/settings.json`
+registers a `SessionStart` hook that reports both windows into context, and a `PreToolUse`
+hook that denies subagent spawns past 80%.
+
+Two things to know before trusting a reading:
+
+- **The CLI default threshold is 0.90, not 0.80.** The hook passes `--threshold 0.8`
+  explicitly for exactly that reason; a bare invocation gates ten points looser than this
+  project's stated ceiling.
+- **A passing gate is not the same as affordable.** The number is whole-account, and one
+  Sonnet subagent runs 48–61M cache reads. At 74% the gate says go and a subagent still
+  does not fit in the remaining 6 points.
+
+The **estimating** version of this guard is gone, and the history is worth one line so it
+is not rebuilt: it projected usage from local transcript files, calibrated against a
+percentage a human read out of `/usage`, and was wrong by a factor of about thirty-three —
+transcripts are filed per working directory and it counted one of them. The lesson kept is
+"do not estimate", not "estimate better".
 
 **Work from the repo root.** Claude Code resolves `CLAUDE.md` and `.claude/settings.json` by
-walking _up_ from the session's working directory, and files transcripts under a slug
-derived from it. A session started elsewhere loads no hooks and is invisible to the guard,
-silently in both cases. The guard diagnoses this itself when it finds no transcripts.
-
-**The inherited calibration is not merely stale — it is in different units, and the guard
-currently under-reads.** `session_per_percent` was derived in the cloud container, where
-Auralis was effectively all of the account's traffic. Locally the numerator covers only
-sessions rooted in this repo; anything started elsewhere on the machine is invisible to the
-slug and therefore uncounted, while the denominator it was fitted against is still the whole
-plan. So the real windows are always **at least** what this reports, and under-reading is
-the dangerous direction: the gate cannot fire on consumption it cannot see. Treat the
-reading as a floor until it is re-fitted here:
-
-```bash
-./scripts/usage-guard.py --calibrate-session <pct> --calibrate-weekly <pct>
-```
-
-Take both percentages from a fresh `/usage`. The guard now refuses to calibrate against a
-window with no observed usage rather than storing a zero that reads back as "not
-calibrated" forever, so run it only once sessions have accumulated here.
-
-Model weighting was calibrated against the usage UI's breakdown: the plan meters Opus at
-about **2.7× what the published price ratio implies**, which the stored multipliers correct
-for.
+walking _up_ from the session's working directory. A session started elsewhere loads no
+hooks, silently — and unloaded hooks do not run the guard at all.
 
 **Verify agent output — do not trust it.** Two real defects reached the branch and passed a
 glance-level review: bottom-sheet detents snapped to the _nearest_ detent, silently fighting

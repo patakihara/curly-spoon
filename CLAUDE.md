@@ -44,12 +44,17 @@ The user is on a subscription plan metered by a ~5-hour session window and a wee
 window. **This project must not consume more than 80% of either.** It is not the only thing
 drawing on the account.
 
-- Run `./scripts/usage-guard.py` **before spawning any subagent** and at every phase
-  boundary. If it exits non-zero, stop and tell the user rather than pressing on.
-- Nothing in a session can enforce this — the guard is a gauge. Treat its 80% line as a
-  hard stop anyway, and say plainly when work is being paused because of it.
-- Ask the user to re-run `/usage` and re-calibrate when the estimate looks stale; the
-  calibration drifts as other work lands on the account.
+- Run `./scripts/usage-guard.py --threshold 0.8` **before spawning any subagent** and at
+  every phase boundary. If it exits non-zero, stop and tell the user rather than pressing on.
+- Treat the 80% line as a hard stop, and say plainly when work is being paused because of it.
+- The guard reads the **authoritative** number from the same endpoint `/usage` uses, so
+  there is nothing to calibrate and no estimate to go stale. It reports the whole
+  account's usage, not this project's share — the stricter, more useful reading, since
+  that is the number the plan actually enforces.
+- **Its CLI default is 0.90, not 0.80.** Pass `--threshold 0.8` explicitly or you are
+  measuring against a ceiling this file does not set.
+- **Check the headroom, not just the verdict.** A subagent costs 48–61M cache reads; a
+  reading of 74% passes an 80% gate and still cannot afford one.
 
 **Enforced, not merely requested:** `.claude/settings.json` registers two hooks. A
 `SessionStart` hook reports both windows into context at the top of every session, and a
@@ -57,12 +62,11 @@ drawing on the account.
 threshold. Both fail open — silent when they cannot measure — so neither blocks work it
 has no reading for. `scripts/hooks/pre-subagent-usage-check.test.sh` covers that contract.
 
-**Start sessions from the repo root, or none of this is on.** Claude Code walks _up_ from
-the session's working directory to find `CLAUDE.md` and `.claude/settings.json`, and files
-transcripts under a slug derived from that same directory. A session started one level up
-therefore loads no hooks _and_ is invisible to the guard, which reads those transcripts —
-and both failures are silent. If `./scripts/usage-guard.py` prints "no transcripts found",
-that is the diagnosis, and it says so.
+**Start sessions from the repo root, or the hooks are not on.** Claude Code walks _up_ from
+the session's working directory to find `CLAUDE.md` and `.claude/settings.json`, so a
+session started one level up loads neither, silently. (The guard itself no longer cares —
+it reads the account's real usage, not local transcripts — but the hooks that run it still
+have to be loaded to run.)
 
 ### What actually drives subagent cost
 
