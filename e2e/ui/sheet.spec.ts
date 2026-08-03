@@ -85,4 +85,67 @@ test.describe('Sheet', () => {
     const focused = await page.evaluate(() => document.activeElement?.getAttribute('data-testid'));
     expect(focused).toBe('sheet-close');
   });
+
+  // Same bug class the Mantine migration found and fixed in Dialog.tsx: `unstyled`
+  // on Modal stripped the default CSS that hides its always-mounted root while
+  // closed, leaving a permanent full-viewport click-blocker. `Sheet.tsx` uses a
+  // different Mantine primitive (`Drawer`, not `Modal`) and does not set
+  // `unstyled`, but that's "doesn't set the known trigger", not "verified
+  // absent" — Drawer's root wrapper (`Drawer.Root` → `ModalBase`'s outer `Box`)
+  // is unconditionally rendered by Mantine regardless of `opened`, so proving
+  // nothing is left behind needs an empirical check, not a grep.
+  test('closing the sheet leaves nothing behind that intercepts clicks', async ({ page }) => {
+    const trigger = page.getByTestId('sheet-open');
+    const dialog = page.getByRole('dialog', { name: 'Queue' });
+
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+
+    // 1. A real coordinate click, not the locator API's own `.click()` — that
+    // does its own actionability/interception checks first, which could
+    // silently route around exactly the leftover-overlay bug this is checking
+    // for. `page.mouse.click` has no such fallback: if something is on top of
+    // the trigger, the click lands on that something instead, and the sheet
+    // would never reopen.
+    const box = await trigger.boundingBox();
+    if (!box) throw new Error('trigger not visible');
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(dialog).toBeVisible();
+
+    // Back to closed for the second check.
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+
+    // 2. Direct `elementFromPoint` sweep. Mantine's `useStyles({ name: 'Drawer',
+    // ... })` (packages/@mantine/core's use-styles.ts) generates static classes
+    // as `mantine-${themeName}-${selector}` for every Drawer slot — root,
+    // overlay, content, inner, body — i.e. every one is `mantine-Drawer-*`
+    // (the same prefix `Sheet.css`'s header comment already relies on for
+    // `.mantine-Drawer-content`/`.mantine-Drawer-inner`). None of the sampled
+    // points should resolve to a node carrying that prefix once the sheet is
+    // closed.
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('no viewport');
+    const points: Array<[number, number]> = [
+      [viewport.width / 2, viewport.height / 2],
+      [viewport.width * 0.1, viewport.height * 0.1],
+      [viewport.width * 0.9, viewport.height * 0.1],
+      [viewport.width * 0.1, viewport.height * 0.9],
+      [viewport.width * 0.9, viewport.height * 0.9],
+    ];
+    const leftovers = await page.evaluate(
+      (pts) =>
+        pts
+          .map(([x, y]) => {
+            const el = document.elementFromPoint(x, y);
+            const drawerNode = el?.closest('[class*="mantine-Drawer-"]');
+            return drawerNode ? drawerNode.className : null;
+          })
+          .filter((v): v is string => v !== null),
+      points,
+    );
+    expect(leftovers).toEqual([]);
+  });
 });

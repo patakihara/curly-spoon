@@ -98,6 +98,38 @@ test('expanding the mini player opens Now Playing, and its close control dismiss
   await expect(page.getByTestId('now-playing')).toHaveCount(0);
 });
 
+test('closing Now Playing at compact width leaves nothing behind that blocks the mini player', async ({
+  page,
+}) => {
+  // Compact: < 600px (apps/web/src/hooks/breakpoint.ts). This is the real
+  // Sheet/Drawer path — `Shell.tsx` renders `<NowPlaying open={nowPlayingOpen}
+  // .../>` here, unlike the `expanded` breakpoint where `NowPlayingPanel`
+  // always passes `open` and there is no closed state to test at all.
+  await page.setViewportSize({ width: 480, height: 900 });
+  await startDune(page);
+
+  const expandButton = page.getByTestId('mini-player-expand');
+  await expandButton.click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('now-playing')).toHaveCount(0);
+
+  // The real regression check — the same bug class the Mantine migration found
+  // in Dialog.tsx (`unstyled` on Modal left a permanent full-viewport
+  // click-blocking overlay mounted while "closed"). A passing "the dialog is
+  // gone" assertion above would coexist with exactly that kind of invisible
+  // blocker underneath, so this drives a genuine click at the expand control's
+  // real screen coordinates (`page.mouse.click`, not the locator API's own
+  // `.click()`, which does its own actionability/interception checks that
+  // could silently route around the same bug) and confirms it actually reaches
+  // the button and reopens Now Playing.
+  const box = await expandButton.boundingBox();
+  if (!box) throw new Error('mini-player-expand not visible');
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+});
+
 test('clicking a chapter seeks: elapsed updates and the chapter list marks it current', async ({
   page,
 }) => {
@@ -189,4 +221,16 @@ test('a phone viewport docks the mini player above the bottom bar; a desktop vie
   await page.setViewportSize({ width: 1400, height: 900 });
   await expect(page.getByTestId('shell')).toHaveAttribute('data-breakpoint', 'expanded');
   await expect(page.getByTestId('now-playing-panel').getByTestId('now-playing')).toBeVisible();
+
+  // Cheap sanity check for the embedded path: `NowPlayingPanel` always passes
+  // `open` truthy, so there is no closed state to test here — but it's still
+  // worth confirming nothing from `Sheet`'s Mantine `Drawer` machinery leaks an
+  // overlay onto the nav rail sitting right next to it.
+  const navRailBox = await page.getByTestId('nav-rail-expanded').boundingBox();
+  if (!navRailBox) throw new Error('nav-rail-expanded not visible');
+  const navRailBlocked = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.closest('[class*="mantine-Drawer-"]') !== null,
+    { x: navRailBox.x + navRailBox.width / 2, y: navRailBox.y + navRailBox.height / 2 },
+  );
+  expect(navRailBlocked).toBe(false);
 });

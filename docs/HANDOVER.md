@@ -225,16 +225,32 @@ not just typechecked):
 **A real, high-risk bug was found and fixed**: Mantine's `unstyled` prop on `Modal` strips the
 CSS that hides its always-mounted root while closed, leaving a permanent full-viewport
 click-blocking overlay over the whole app. Fixed in `Dialog.tsx` by not setting `unstyled`.
-**This class of bug is NOT yet confirmed absent from `Sheet.tsx`** (Mantine `Drawer`, a
-different component, with an extra embedded-vs-modal mode `NowPlaying` depends on) — see below.
 
-**Incomplete, edits present but UNVERIFIED — do not trust as working**: Sheet, Snackbar,
-SearchField. The agent doing this migration was killed mid-verification (user request, not a
-failure) while checking `Sheet`'s mobile-width behavior. `git status` shows these three files
-modified, so implementation work happened, but no typecheck/test/screenshot pass completed
-after the last edit. **Before this can ship: a real browser check of `NowPlaying` in both its
-embedded and modal `Sheet` modes, specifically for the same always-mounted-overlay bug class
-Dialog had.**
+**This class of bug is now confirmed absent from `Sheet.tsx`** (Mantine `Drawer`, a different
+component from `Modal`, with an extra embedded-vs-modal mode `NowPlaying` depends on).
+`Sheet.tsx` never set `unstyled` in the first place, but "doesn't set the known trigger" isn't
+"verified absent" — Drawer's root wrapper (`Drawer.Root` → `ModalBase`'s outer `Box`) is
+unconditionally mounted by Mantine regardless of `opened`, so it needed the same kind of
+empirical check Dialog's bug was found with, not a grep. Two real-browser checks now do that:
+`e2e/ui/sheet.spec.ts`'s "closing the sheet leaves nothing behind that intercepts clicks" (the
+generic gallery `Sheet`) and `e2e/app/player.spec.ts`'s "closing Now Playing at compact width
+leaves nothing behind that blocks the mini player" (the real app integration, `NowPlaying` via
+`MiniPlayer`'s expand control — the compact breakpoint is the one where `Shell.tsx` gives
+`NowPlaying` an actual closed state; `NowPlayingPanel`'s embedded/`expanded`-breakpoint usage
+always passes `open` truthy, so it only got a cheap `elementFromPoint` check that nothing
+blocks the adjacent nav rail, added to the existing breakpoint test). Each does a real
+`page.mouse.click` at the trigger's actual screen coordinates after closing (not the locator
+API's own `.click()`, which does its own interception checks and could mask exactly this bug)
+plus an `elementFromPoint` sweep for any leftover node carrying Mantine's `mantine-Drawer-*`
+static classes (`use-styles.mjs`'s `getStaticClassNames`: `mantine-${themeName}-${selector}`).
+No bug found; no fix was needed. `pnpm typecheck` (per-package), `pnpm lint`, `pnpm test` (764
+unit tests) and the full `e2e/ui` + `e2e/app` suite (184 passed, 9 pre-existing failures — the
+same button/icon-button/browse.spec.ts set documented below, none newly broken) all pass.
+
+Snackbar and SearchField weren't in this check's scope. Both packages typecheck and their own
+`e2e/ui/snackbar.spec.ts`/`search-field.spec.ts` pass as part of the same full-suite run above,
+but neither got the same dedicated overlay-bug-class check Sheet just did — worth doing if
+either turns out to share this failure mode.
 
 **Chip/Progress/Skeleton e2e fixes and `respectReducedMotion` are done.** `e2e/ui/chip.spec.ts`,
 `progress.spec.ts` and `skeleton.spec.ts` now match Mantine's real DOM (chips are
