@@ -23,6 +23,13 @@ describe('AbsError', () => {
     expect(err.message).toContain('5000');
   });
 
+  it('builds a forbidden error distinct from auth, carrying a 403 status', () => {
+    const err = AbsError.forbidden(403);
+    expect(err.code).toBe('forbidden');
+    expect(err.status).toBe(403);
+    expect(err.code).not.toBe('auth');
+  });
+
   it('builds a not_found error carrying a 404 status', () => {
     const err = AbsError.notFound('/api/items/xyz');
     expect(err.code).toBe('not_found');

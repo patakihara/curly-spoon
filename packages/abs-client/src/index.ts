@@ -9,6 +9,8 @@ export type {
   SyncSessionBody,
   UpdateProgressBody,
   ServerProbe,
+  PodcastSubscribeMetadata,
+  SubscribePodcastParams,
 } from './client.js';
 export type { FetchLike } from './http.js';
 export { AbsError, isAbsError } from './errors.js';
@@ -18,6 +20,7 @@ export type { CoverUrlOptions } from './urls.js';
 
 export type {
   Library,
+  LibraryFolder,
   LibraryItem,
   Media,
   Book,
@@ -39,4 +42,8 @@ export type {
   UserProfile,
   LoginResult,
   PlaybackSession,
+  PodcastDirectoryResult,
+  PodcastFeedPreview,
+  PodcastFeedEpisode,
+  PodcastFeedChapter,
 } from './domain.js';

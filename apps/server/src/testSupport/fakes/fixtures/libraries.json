@@ -5,14 +5,30 @@
       "name": "Audiobooks",
       "mediaType": "book",
       "icon": "audiobook",
-      "displayOrder": 1
+      "displayOrder": 1,
+      "folders": [
+        {
+          "id": "folder-books",
+          "fullPath": "/data/audiobooks",
+          "libraryId": "lib-books",
+          "addedAt": 1700000000000
+        }
+      ]
     },
     {
       "id": "lib-podcasts",
       "name": "Podcasts",
       "mediaType": "podcast",
       "icon": "podcast",
-      "displayOrder": 2
+      "displayOrder": 2,
+      "folders": [
+        {
+          "id": "folder-podcasts",
+          "fullPath": "/data/podcasts",
+          "libraryId": "lib-podcasts",
+          "addedAt": 1700000000000
+        }
+      ]
     }
   ]
 }

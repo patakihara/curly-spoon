@@ -231,7 +231,9 @@ function makeFakeAbs(
   const fake = {
     getLibraries:
       overrides.getLibraries ??
-      (async () => [{ id: 'lib-books', name: 'Books', mediaType: 'book', icon: null }]),
+      (async () => [
+        { id: 'lib-books', name: 'Books', mediaType: 'book', icon: null, folders: [] },
+      ]),
     scanLibrary: overrides.scanLibrary ?? (async () => {}),
   };
   return fake as unknown as AbsClient;
@@ -992,7 +994,13 @@ describe('pollDownloads', () => {
           makeFakeAbs({
             // Only a podcast library exists — no `mediaType: 'book'` entry to scan.
             getLibraries: async () => [
-              { id: 'lib-podcasts', name: 'Podcasts', mediaType: 'podcast', icon: null },
+              {
+                id: 'lib-podcasts',
+                name: 'Podcasts',
+                mediaType: 'podcast',
+                icon: null,
+                folders: [],
+              },
             ],
             scanLibrary,
           }),

@@ -25,6 +25,9 @@ import { serveRangeableBytes } from './rangeBytes.js';
 /** The only host this fake answers for — anything else simulates a DNS/connection failure. */
 export const FAKE_BASE_URL = 'http://fake.abs.local';
 export const FAKE_CREDENTIALS = { username: 'kara', password: 'hunter2' };
+/** A signed-in, non-admin account — for exercising the 403 `isAdminOrUp` gate real
+ * Audiobookshelf applies to `POST /podcasts/feed` and `POST /podcasts`. */
+export const FAKE_NON_ADMIN_CREDENTIALS = { username: 'morty', password: 'password1' };
 export const FAKE_ITEM_IDS = {
   dune: 'item-dune',
   fellowship: 'item-fellowship',
@@ -53,6 +56,81 @@ function findItem(id: string): JsonRecord | undefined {
 const KNOWN_LIBRARY_IDS = new Set(
   (librariesFixture as { libraries: Array<{ id: string }> }).libraries.map((l) => l.id),
 );
+
+// -----------------------------------------------------------------------------
+// Podcast discovery — canned data
+//
+// Shapes verified against Audiobookshelf 2.36.0 source (see schemas/raw.ts's own note
+// on this). There's no per-fixture version convention elsewhere in this file (checked:
+// none of the ten JSON fixtures carry one) — recorded here as a comment instead of
+// inventing one.
+// -----------------------------------------------------------------------------
+
+/** Keyed by a lowercased substring of the search term — `GET /api/search/podcast`
+ * proxies iTunes, so a term that doesn't match anything real ABS just gets `[]` back,
+ * never a 404 or an error. */
+const PODCAST_DIRECTORY_RESULTS: Record<string, JsonRecord> = {
+  'daily tech': {
+    id: 987654321,
+    artistId: 123456,
+    title: 'The Daily Tech Digest',
+    artistName: 'Tech Media Collective',
+    description: 'A daily rundown of technology news.',
+    descriptionPlain: 'A daily rundown of technology news.',
+    releaseDate: '2020-01-01T08:00:00Z',
+    genres: ['Technology', 'News'],
+    cover: 'https://fake.abs.local/covers/daily-tech.jpg',
+    trackCount: 500,
+    feedUrl: 'https://feeds.fake.abs.local/daily-tech.xml',
+    pageUrl: 'https://podcasts.apple.com/podcast/id987654321',
+    explicit: false,
+  },
+};
+
+/** Keyed by the exact `rssFeed` URL a caller previews/subscribes with. */
+const PODCAST_FEEDS: Record<string, JsonRecord> = {
+  'https://feeds.fake.abs.local/daily-tech.xml': {
+    metadata: {
+      title: 'The Daily Tech Digest',
+      author: 'Tech Media Collective',
+      description: 'A daily rundown of technology news.',
+      descriptionPlain: 'A daily rundown of technology news.',
+      feedUrl: 'https://feeds.fake.abs.local/daily-tech.xml',
+      image: 'https://fake.abs.local/covers/daily-tech.jpg',
+      categories: ['Technology', 'News'],
+      language: 'en-us',
+      explicit: 'no',
+      type: 'episodic',
+      link: 'https://fake.abs.local/daily-tech',
+      pubDate: 'Mon, 01 Jan 2024 08:00:00 GMT',
+    },
+    episodes: [
+      {
+        title: 'Episode 1: Welcome',
+        subtitle: 'The first one',
+        description: 'An introduction to the show.',
+        descriptionPlain: 'An introduction to the show.',
+        pubDate: 'Mon, 01 Jan 2024 08:00:00 GMT',
+        publishedAt: 1704096000000,
+        episodeType: 'full',
+        season: '1',
+        episode: '1',
+        author: 'Tech Media Collective',
+        duration: '3600',
+        explicit: 'no',
+        enclosure: {
+          url: 'https://feeds.fake.abs.local/daily-tech/ep1.mp3',
+          type: 'audio/mpeg',
+          length: '28800000',
+        },
+        guid: 'daily-tech-ep1',
+        chaptersUrl: null,
+        chaptersType: null,
+      },
+    ],
+    numEpisodes: 1,
+  },
+};
 
 // Deterministic audio bytes per file id, sized loosely after each track's duration.
 const AUDIO_FILES: Record<string, { size: number; mimeType: string }> = {
@@ -126,6 +204,10 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
     password: string;
     permissions: Record<string, boolean>;
     defaultLibraryId: string;
+    /** Real Audiobookshelf types are 'root'/'admin'/'user'/'guest'; only the
+     * root/admin-vs-everyone-else split matters here — see `isAdminOrUp` below,
+     * mirroring `req.user.isAdminOrUp` in `PodcastController`. */
+    type?: string;
   }>;
   const tokens = new Map<string, string>(); // token -> userId
   const progressByKey = new Map<string, ProgressRecord>(); // `${userId}:${itemId}:${episodeId ?? ''}`
@@ -139,14 +221,27 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
 
   function userFromAuth(
     headers: Headers,
-  ): { id: string; username: string; permissions: Record<string, boolean> } | null {
+  ): { id: string; username: string; permissions: Record<string, boolean>; type: string } | null {
     const auth = headers.get('authorization');
     if (!auth?.startsWith('Bearer ')) return null;
     const token = auth.slice('Bearer '.length);
     const userId = tokens.get(token);
     if (!userId) return null;
     const user = users.find((u) => u.id === userId);
-    return user ? { id: user.id, username: user.username, permissions: user.permissions } : null;
+    return user
+      ? {
+          id: user.id,
+          username: user.username,
+          permissions: user.permissions,
+          type: user.type ?? 'user',
+        }
+      : null;
+  }
+
+  /** Mirrors real Audiobookshelf's `req.user.isAdminOrUp`, which `PodcastController`
+   * gates `create` (subscribe) and `getPodcastFeed` (preview) on. */
+  function isAdminOrUp(user: { type: string }): boolean {
+    return user.type === 'root' || user.type === 'admin';
   }
 
   function json(body: unknown, status = 200): Response {
@@ -158,6 +253,10 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
 
   function unauthorized(): Response {
     return json({ error: 'Unauthorized' }, 401);
+  }
+
+  function forbidden(): Response {
+    return json({ error: 'Forbidden' }, 403);
   }
 
   function notFound(): Response {
@@ -509,6 +608,66 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
           );
           return json({ ok: true });
         }
+      }
+    }
+
+    // /api/search/podcast — no admin gate upstream, unlike the two /api/podcasts* routes.
+    if (method === 'GET' && path === '/api/search/podcast') {
+      const term = (url.searchParams.get('term') ?? '').toLowerCase();
+      const match = Object.entries(PODCAST_DIRECTORY_RESULTS).find(([key]) => term.includes(key));
+      return json(match ? [match[1]] : []);
+    }
+
+    // /api/podcasts/feed and /api/podcasts — both require `isAdminOrUp` upstream.
+    if (parts[0] === 'api' && parts[1] === 'podcasts') {
+      if (method === 'POST' && parts[2] === 'feed') {
+        if (!isAdminOrUp(user)) return forbidden();
+        const { rssFeed } = body() as { rssFeed?: string };
+        const feed = rssFeed ? PODCAST_FEEDS[rssFeed] : undefined;
+        if (!feed) return notFound();
+        return json({ podcast: feed });
+      }
+
+      if (method === 'POST' && parts.length === 2) {
+        if (!isAdminOrUp(user)) return forbidden();
+        const {
+          libraryId,
+          path: itemPath,
+          media,
+        } = body() as {
+          libraryId?: string;
+          folderId?: string;
+          path?: string;
+          media?: { metadata?: JsonRecord; autoDownloadEpisodes?: boolean };
+        };
+        if (!libraryId || !KNOWN_LIBRARY_IDS.has(libraryId)) {
+          return json({ error: 'Library not found' }, 400);
+        }
+        const metadata = media?.metadata ?? {};
+        sessionSeq += 1;
+        const newItemId = `item-podcast-new-${sessionSeq}`;
+        return json({
+          id: newItemId,
+          libraryId,
+          mediaType: 'podcast',
+          addedAt: Date.now(),
+          updatedAt: Date.now(),
+          path: itemPath,
+          media: {
+            metadata: {
+              title: metadata.title ?? 'Untitled Podcast',
+              author: metadata.author ?? null,
+              description: metadata.description ?? null,
+              feedUrl: metadata.feedUrl ?? null,
+              genres: metadata.genres ?? [],
+              language: metadata.language ?? null,
+              explicit: metadata.explicit ?? false,
+            },
+            coverPath: null,
+            numEpisodes: 0,
+            episodes: [],
+          },
+        });
       }
     }
 

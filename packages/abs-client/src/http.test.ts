@@ -66,12 +66,13 @@ describe('HttpClient.requestJson', () => {
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
-  it('maps 403 to an auth AbsError', async () => {
+  it('maps 403 to a forbidden AbsError, distinct from auth', async () => {
     const fetchFn = fakeFetch(async () => new Response('forbidden', { status: 403 }));
     const client = new HttpClient({ baseUrl: 'http://abs.local', fetch: fetchFn });
 
     const err = await client.requestJson('/api/me', { schema }).catch((e: unknown) => e);
-    expect((err as AbsError).code).toBe('auth');
+    expect((err as AbsError).code).toBe('forbidden');
+    expect((err as AbsError).code).not.toBe('auth');
   });
 
   it('maps 404 to a not_found AbsError', async () => {

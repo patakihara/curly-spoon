@@ -28,6 +28,8 @@ import {
   rawItemsInProgressResponseSchema,
   rawBookmarkSchema,
   rawStatusResponseSchema,
+  rawPodcastDirectoryResultsSchema,
+  rawPodcastFeedPreviewSchema,
 } from './schemas/raw.js';
 import {
   normalizeLogin,
@@ -43,6 +45,8 @@ import {
   normalizeMediaProgress,
   normalizeUser,
   normalizeBookmark,
+  normalizePodcastDirectoryResult,
+  normalizePodcastFeedPreview,
 } from './normalize.js';
 import type {
   Library,
@@ -59,6 +63,8 @@ import type {
   UserProfile,
   Bookmark,
   LoginResult,
+  PodcastDirectoryResult,
+  PodcastFeedPreview,
 } from './domain.js';
 import { AbsError } from './errors.js';
 
@@ -121,6 +127,33 @@ export interface ServerProbe {
   reachable: true;
   isInit: boolean;
   serverVersion: string | null;
+}
+
+/** Fields real Audiobookshelf accepts on a new podcast's `media.metadata` when
+ * subscribing (`Podcast.createFromRequest`) — `title` and `feedUrl` are supplied
+ * separately by `SubscribePodcastParams` itself, not repeated here. */
+export interface PodcastSubscribeMetadata {
+  author?: string | null;
+  description?: string | null;
+  releaseDate?: string | null;
+  imageUrl?: string | null;
+  genres?: string[];
+  language?: string | null;
+  explicit?: boolean;
+  itunesPageUrl?: string | null;
+  itunesId?: number | null;
+}
+
+export interface SubscribePodcastParams {
+  libraryId: string;
+  folderId: string;
+  /** The folder's real filesystem path (`LibraryFolder.path`), used to build the new
+   * podcast's `path` per the `<folder path>/<sanitized title>` convention. */
+  folderPath: string;
+  rssFeed: string;
+  title: string;
+  metadata?: PodcastSubscribeMetadata;
+  autoDownloadEpisodes?: boolean;
 }
 
 const okSchema = z.unknown();
@@ -462,5 +495,83 @@ export class AbsClient {
       `/api/me/item/${encodeURIComponent(itemId)}/bookmark/${encodeURIComponent(String(time))}`,
       { method: 'DELETE', schema: okSchema, retryable: false },
     );
+  }
+
+  // ---------------------------------------------------------------------
+  // Podcast discovery — search directory, feed preview, subscribe
+  // ---------------------------------------------------------------------
+
+  /** iTunes-backed podcast directory search. Idempotent GET, so left retryable — the
+   * default GET retry policy applies. An empty result is normal (upstream swallows its
+   * own provider failures to `[]`), not surfaced as an error. */
+  async searchPodcastDirectory(term: string, country?: string): Promise<PodcastDirectoryResult[]> {
+    const raw = await this.http.requestJson('/api/search/podcast', {
+      schema: rawPodcastDirectoryResultsSchema,
+      query: { term, country },
+    });
+    return raw.map(normalizePodcastDirectoryResult);
+  }
+
+  /** Fetches and parses an RSS feed upstream before subscribing — expensive (a real
+   * network fetch + XML parse on the Audiobookshelf side), so never retried. */
+  async previewPodcastFeed(rssFeedUrl: string): Promise<PodcastFeedPreview> {
+    const raw = await this.http.requestJson('/api/podcasts/feed', {
+      method: 'POST',
+      body: { rssFeed: rssFeedUrl },
+      schema: rawPodcastFeedPreviewSchema,
+      retryable: false,
+    });
+    return normalizePodcastFeedPreview(raw);
+  }
+
+  /**
+   * Subscribes to a podcast, creating a new library item. Never retried — it has a
+   * real, non-idempotent side effect (a new item on disk and in Audiobookshelf's DB);
+   * retrying a timed-out attempt could create the same podcast twice.
+   *
+   * Builds `path` as `"<folder.path>/<sanitized title>"` (the convention Audiobookshelf
+   * needs to place a new podcast under an existing library folder) — the title is
+   * sanitized only enough to keep a literal `/` from escaping into an unintended path
+   * segment, and to keep a title of exactly `.` or `..` from resolving to the folder
+   * itself or its parent once it becomes a path segment; a full filesystem-safe-name
+   * sanitizer is out of scope here.
+   */
+  async subscribePodcast(params: SubscribePodcastParams): Promise<LibraryItem> {
+    const slashSanitized = params.title.replaceAll('/', '-');
+    // A title that is *only* dots survives the slash-stripping above unchanged (there is
+    // no '/' to replace) and would otherwise resolve as a `.`/`..` path segment — i.e. the
+    // folder itself or its parent — once concatenated onto folderPath below.
+    const sanitizedTitle = /^\.+$/.test(slashSanitized) ? `_${slashSanitized}` : slashSanitized;
+    const folderPath = params.folderPath.replace(/\/+$/, '');
+    const path = `${folderPath}/${sanitizedTitle}`;
+    const metadata = params.metadata ?? {};
+
+    const raw = await this.http.requestJson('/api/podcasts', {
+      method: 'POST',
+      body: {
+        libraryId: params.libraryId,
+        folderId: params.folderId,
+        path,
+        media: {
+          metadata: {
+            title: params.title,
+            feedUrl: params.rssFeed,
+            author: metadata.author,
+            description: metadata.description,
+            releaseDate: metadata.releaseDate,
+            imageUrl: metadata.imageUrl,
+            genres: metadata.genres,
+            language: metadata.language,
+            explicit: metadata.explicit,
+            itunesPageUrl: metadata.itunesPageUrl,
+            itunesId: metadata.itunesId,
+          },
+          autoDownloadEpisodes: params.autoDownloadEpisodes,
+        },
+      },
+      schema: rawLibraryItemSchema,
+      retryable: false,
+    });
+    return normalizeLibraryItem(raw);
   }
 }

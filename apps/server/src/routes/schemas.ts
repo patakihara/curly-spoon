@@ -138,3 +138,41 @@ export const requestSettingsBodySchema = z.object({
   bookSavePath: z.string().nullable().optional(),
   bookCategory: z.string().nullable().optional(),
 });
+
+// -----------------------------------------------------------------------------
+// Podcast discovery (routes/podcasts.ts) — search, feed preview, subscribe
+// -----------------------------------------------------------------------------
+
+export const searchPodcastDirectoryQuerySchema = z.object({
+  term: z.string().trim().min(1, 'term is required'),
+  country: z.string().trim().min(1).optional(),
+});
+
+export const previewPodcastFeedBodySchema = z.object({
+  rssFeed: z.string().url('rssFeed must be a valid absolute URL'),
+});
+
+/** Mirrors `AbsClient`'s `PodcastSubscribeMetadata` field-for-field — see
+ * `subscribePodcast` in `@auralis/abs-client` for how each field maps onto the
+ * upstream `media.metadata` Audiobookshelf expects when creating a podcast. */
+export const podcastSubscribeMetadataSchema = z.object({
+  author: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  releaseDate: z.string().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
+  genres: z.array(z.string()).optional(),
+  language: z.string().nullable().optional(),
+  explicit: z.boolean().optional(),
+  itunesPageUrl: z.string().nullable().optional(),
+  itunesId: z.number().nullable().optional(),
+});
+
+export const subscribePodcastBodySchema = z.object({
+  libraryId: z.string().min(1),
+  folderId: z.string().min(1),
+  folderPath: z.string().min(1),
+  rssFeed: z.string().url('rssFeed must be a valid absolute URL'),
+  title: z.string().trim().min(1, 'title is required'),
+  metadata: podcastSubscribeMetadataSchema.optional(),
+  autoDownloadEpisodes: z.boolean().optional(),
+});

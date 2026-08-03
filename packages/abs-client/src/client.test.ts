@@ -127,7 +127,40 @@ describe('AbsClient.getLibraries', () => {
     });
     const client = makeClient(fetchFn);
     const libs = await client.getLibraries();
-    expect(libs).toEqual([{ id: 'lib-1', name: 'Audiobooks', mediaType: 'book', icon: null }]);
+    expect(libs).toEqual([
+      { id: 'lib-1', name: 'Audiobooks', mediaType: 'book', icon: null, folders: [] },
+    ]);
+  });
+
+  it('defaults folders to [] when the payload carries none', async () => {
+    const fetchFn = router({
+      'GET /api/libraries': () =>
+        json({ libraries: [{ id: 'lib-1', name: 'Audiobooks', mediaType: 'book' }] }),
+    });
+    const client = makeClient(fetchFn);
+    const [lib] = await client.getLibraries();
+    expect(lib!.folders).toEqual([]);
+  });
+
+  it('normalises folders when the payload carries them', async () => {
+    const fetchFn = router({
+      'GET /api/libraries': () =>
+        json({
+          libraries: [
+            {
+              id: 'lib-1',
+              name: 'Podcasts',
+              mediaType: 'podcast',
+              folders: [
+                { id: 'folder-1', fullPath: '/data/podcasts', libraryId: 'lib-1', addedAt: 1000 },
+              ],
+            },
+          ],
+        }),
+    });
+    const client = makeClient(fetchFn);
+    const [lib] = await client.getLibraries();
+    expect(lib!.folders).toEqual([{ id: 'folder-1', path: '/data/podcasts' }]);
   });
 
   it('maps a missing/expired token (401) to an auth AbsError', async () => {
@@ -619,5 +652,395 @@ describe('AbsClient.withToken', () => {
     await rebound.getLibraries();
 
     expect(seenTokens).toEqual(['Bearer old', 'Bearer new']);
+  });
+});
+
+describe('AbsClient.searchPodcastDirectory', () => {
+  const itunesResult = {
+    id: 12345,
+    artistId: 678,
+    title: 'The Daily Tech',
+    artistName: 'Tech Media Co',
+    description: '<p>Tech news daily.</p>',
+    descriptionPlain: 'Tech news daily.',
+    releaseDate: '2020-01-01T08:00:00Z',
+    genres: ['Technology'],
+    cover: 'https://example.com/cover.jpg',
+    trackCount: 42,
+    feedUrl: 'https://example.com/feed.xml',
+    pageUrl: 'https://podcasts.apple.com/podcast/id12345',
+    explicit: false,
+  };
+
+  it('normalises a happy-path search into PodcastDirectoryResult[]', async () => {
+    const fetchFn = router({
+      'GET /api/search/podcast': () => json([itunesResult]),
+    });
+    const client = makeClient(fetchFn);
+
+    const results = await client.searchPodcastDirectory('daily tech', 'us');
+
+    expect(results).toEqual([
+      {
+        itunesId: 12345,
+        itunesArtistId: 678,
+        title: 'The Daily Tech',
+        artistName: 'Tech Media Co',
+        description: '<p>Tech news daily.</p>',
+        descriptionPlain: 'Tech news daily.',
+        releaseDate: '2020-01-01T08:00:00Z',
+        genres: ['Technology'],
+        cover: 'https://example.com/cover.jpg',
+        trackCount: 42,
+        feedUrl: 'https://example.com/feed.xml',
+        pageUrl: 'https://podcasts.apple.com/podcast/id12345',
+        explicit: false,
+      },
+    ]);
+  });
+
+  it('sends term and country as query params', async () => {
+    let capturedUrl: URL | undefined;
+    const fetchFn: FetchLike = async (input) => {
+      capturedUrl = new URL(input);
+      return json([]);
+    };
+    const client = makeClient(fetchFn);
+
+    await client.searchPodcastDirectory('daily tech', 'gb');
+
+    expect(capturedUrl?.pathname).toBe('/api/search/podcast');
+    expect(capturedUrl?.searchParams.get('term')).toBe('daily tech');
+    expect(capturedUrl?.searchParams.get('country')).toBe('gb');
+  });
+
+  it('treats an empty array as a normal, non-error result', async () => {
+    const fetchFn = router({ 'GET /api/search/podcast': () => json([]) });
+    const client = makeClient(fetchFn);
+
+    const results = await client.searchPodcastDirectory('no such podcast');
+    expect(results).toEqual([]);
+  });
+
+  it('throws a schema_mismatch AbsError when the payload is not an array of results', async () => {
+    const fetchFn = router({
+      'GET /api/search/podcast': () => json({ not: 'an array' }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.searchPodcastDirectory('x').catch((e: unknown) => e);
+    expect((err as AbsError).code).toBe('schema_mismatch');
+  });
+});
+
+describe('AbsClient.previewPodcastFeed', () => {
+  const feedResponseBody = {
+    podcast: {
+      metadata: {
+        title: 'The Daily Tech',
+        author: 'Tech Media Co',
+        description: '<p>Tech news daily.</p>',
+        descriptionPlain: 'Tech news daily.',
+        feedUrl: 'https://example.com/feed.xml',
+        image: 'https://example.com/cover.jpg',
+        categories: ['Technology'],
+        language: 'en-us',
+        explicit: 'no',
+        type: 'episodic',
+        link: 'https://example.com',
+        pubDate: 'Mon, 01 Jan 2024 08:00:00 GMT',
+      },
+      episodes: [
+        {
+          title: 'Episode 1',
+          subtitle: 'The first one',
+          description: 'A description',
+          descriptionPlain: 'A description',
+          pubDate: 'Mon, 01 Jan 2024 08:00:00 GMT',
+          publishedAt: 1704096000000,
+          episodeType: 'full',
+          season: '1',
+          episode: '1',
+          author: 'Tech Media Co',
+          duration: '3600',
+          durationSeconds: 3600,
+          explicit: 'yes',
+          enclosure: { url: 'https://example.com/ep1.mp3', type: 'audio/mpeg', length: '1200000' },
+          guid: 'guid-1',
+          chaptersUrl: null,
+          chaptersType: null,
+          chapters: [
+            { id: 0, title: 'Intro', start: 0, end: 120 },
+            { id: 1, title: 'Main segment', start: 120, end: 3600 },
+          ],
+        },
+      ],
+      numEpisodes: 1,
+    },
+  };
+
+  it('normalises a happy-path feed preview into PodcastFeedPreview', async () => {
+    const fetchFn = router({ 'POST /api/podcasts/feed': () => json(feedResponseBody) });
+    const client = makeClient(fetchFn);
+
+    const preview = await client.previewPodcastFeed('https://example.com/feed.xml');
+
+    expect(preview.title).toBe('The Daily Tech');
+    expect(preview.categories).toEqual(['Technology']);
+    expect(preview.explicit).toBe(false);
+    expect(preview.numEpisodes).toBe(1);
+    expect(preview.pubDate).toBe('Mon, 01 Jan 2024 08:00:00 GMT');
+    expect(preview.link).toBe('https://example.com');
+    expect(preview.episodes).toEqual([
+      {
+        title: 'Episode 1',
+        subtitle: 'The first one',
+        description: 'A description',
+        pubDate: 'Mon, 01 Jan 2024 08:00:00 GMT',
+        publishedAt: 1704096000000,
+        episodeType: 'full',
+        season: '1',
+        episodeNumber: '1',
+        author: 'Tech Media Co',
+        duration: '3600',
+        durationSeconds: 3600,
+        explicit: true,
+        enclosure: { url: 'https://example.com/ep1.mp3', type: 'audio/mpeg', length: '1200000' },
+        guid: 'guid-1',
+        chaptersUrl: null,
+        chapters: [
+          { id: 0, title: 'Intro', start: 0, end: 120 },
+          { id: 1, title: 'Main segment', start: 120, end: 3600 },
+        ],
+      },
+    ]);
+  });
+
+  it('defaults durationSeconds to null and chapters to [] when the feed omits them', async () => {
+    const bodyWithoutDurationOrChapters = {
+      podcast: {
+        metadata: { title: 'No Extras' },
+        episodes: [
+          {
+            title: 'Episode 1',
+            enclosure: { url: 'https://example.com/ep1.mp3' },
+          },
+        ],
+        numEpisodes: 1,
+      },
+    };
+    const fetchFn = router({
+      'POST /api/podcasts/feed': () => json(bodyWithoutDurationOrChapters),
+    });
+    const client = makeClient(fetchFn);
+
+    const preview = await client.previewPodcastFeed('https://example.com/feed.xml');
+
+    expect(preview.pubDate).toBeNull();
+    expect(preview.link).toBeNull();
+    expect(preview.episodes[0]?.durationSeconds).toBeNull();
+    expect(preview.episodes[0]?.chapters).toEqual([]);
+  });
+
+  it('never retries a failed feed preview (POST, non-idempotent upstream work)', async () => {
+    const fetchFn = vi.fn(
+      async () => new Response('down', { status: 503 }),
+    ) as unknown as FetchLike;
+    const client = new AbsClient({
+      baseUrl: 'http://abs.local',
+      fetch: fetchFn,
+      maxRetries: 3,
+      retryBaseDelayMs: 1,
+    });
+    await client.previewPodcastFeed('https://example.com/feed.xml').catch(() => undefined);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a 403 (non-admin account) to a forbidden AbsError, distinct from auth', async () => {
+    const fetchFn = router({
+      'POST /api/podcasts/feed': () => new Response('forbidden', { status: 403 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.previewPodcastFeed('https://example.com/feed.xml').catch((e) => e);
+    expect((err as AbsError).code).toBe('forbidden');
+    expect((err as AbsError).code).not.toBe('auth');
+  });
+
+  it('throws a schema_mismatch AbsError when the podcast field is missing', async () => {
+    const fetchFn = router({ 'POST /api/podcasts/feed': () => json({ nope: true }) });
+    const client = makeClient(fetchFn);
+
+    const err = await client.previewPodcastFeed('https://example.com/feed.xml').catch((e) => e);
+    expect((err as AbsError).code).toBe('schema_mismatch');
+  });
+});
+
+describe('AbsClient.subscribePodcast', () => {
+  const newPodcastItem = {
+    id: 'item-new-podcast',
+    libraryId: 'lib-podcasts',
+    mediaType: 'podcast',
+    media: {
+      metadata: {
+        title: 'The Daily Tech',
+        author: 'Tech Media Co',
+        feedUrl: 'https://example.com/feed.xml',
+      },
+      coverPath: null,
+    },
+  };
+
+  it('builds the path from folder path + sanitized title and normalises the created item', async () => {
+    let capturedBody: Record<string, unknown> | undefined;
+    const fetchFn: FetchLike = async (input, init) => {
+      const url = new URL(input);
+      if (url.pathname === '/api/podcasts' && init?.method === 'POST') {
+        capturedBody = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return json(newPodcastItem);
+      }
+      throw new Error(`unexpected request: ${url.pathname}`);
+    };
+    const client = makeClient(fetchFn);
+
+    const item = await client.subscribePodcast({
+      libraryId: 'lib-podcasts',
+      folderId: 'folder-1',
+      folderPath: '/data/podcasts',
+      rssFeed: 'https://example.com/feed.xml',
+      title: 'The Daily Tech',
+      metadata: { author: 'Tech Media Co' },
+    });
+
+    expect(capturedBody).toMatchObject({
+      libraryId: 'lib-podcasts',
+      folderId: 'folder-1',
+      path: '/data/podcasts/The Daily Tech',
+      media: {
+        metadata: {
+          title: 'The Daily Tech',
+          feedUrl: 'https://example.com/feed.xml',
+          author: 'Tech Media Co',
+        },
+      },
+    });
+    expect(item.id).toBe('item-new-podcast');
+    expect(item.media.kind).toBe('podcast');
+  });
+
+  it("strips a literal '/' out of the title so it cannot escape the path segment", async () => {
+    let capturedPath: string | undefined;
+    const fetchFn: FetchLike = async (_input, init) => {
+      capturedPath = (JSON.parse(String(init?.body)) as { path: string }).path;
+      return json(newPodcastItem);
+    };
+    const client = makeClient(fetchFn);
+
+    await client.subscribePodcast({
+      libraryId: 'lib-podcasts',
+      folderId: 'folder-1',
+      folderPath: '/data/podcasts',
+      rssFeed: 'https://example.com/feed.xml',
+      title: 'Weird/Title',
+    });
+
+    expect(capturedPath).toBe('/data/podcasts/Weird-Title');
+  });
+
+  it("does not let a title of exactly '..' resolve to the folder's parent", async () => {
+    let capturedPath: string | undefined;
+    const fetchFn: FetchLike = async (_input, init) => {
+      capturedPath = (JSON.parse(String(init?.body)) as { path: string }).path;
+      return json(newPodcastItem);
+    };
+    const client = makeClient(fetchFn);
+
+    await client.subscribePodcast({
+      libraryId: 'lib-podcasts',
+      folderId: 'folder-1',
+      folderPath: '/data/podcasts',
+      rssFeed: 'https://example.com/feed.xml',
+      title: '..',
+    });
+
+    expect(capturedPath).not.toBe('/data/podcasts/..');
+    expect(capturedPath).toBe('/data/podcasts/_..');
+  });
+
+  it("does not let a title of exactly '.' resolve to the folder itself", async () => {
+    let capturedPath: string | undefined;
+    const fetchFn: FetchLike = async (_input, init) => {
+      capturedPath = (JSON.parse(String(init?.body)) as { path: string }).path;
+      return json(newPodcastItem);
+    };
+    const client = makeClient(fetchFn);
+
+    await client.subscribePodcast({
+      libraryId: 'lib-podcasts',
+      folderId: 'folder-1',
+      folderPath: '/data/podcasts',
+      rssFeed: 'https://example.com/feed.xml',
+      title: '.',
+    });
+
+    expect(capturedPath).not.toBe('/data/podcasts/.');
+    expect(capturedPath).toBe('/data/podcasts/_.');
+  });
+
+  it('never retries a failed subscribe (POST, non-idempotent side effect)', async () => {
+    const fetchFn = vi.fn(
+      async () => new Response('down', { status: 503 }),
+    ) as unknown as FetchLike;
+    const client = new AbsClient({
+      baseUrl: 'http://abs.local',
+      fetch: fetchFn,
+      maxRetries: 3,
+      retryBaseDelayMs: 1,
+    });
+    await client
+      .subscribePodcast({
+        libraryId: 'lib-1',
+        folderId: 'folder-1',
+        folderPath: '/data',
+        rssFeed: 'https://example.com/feed.xml',
+        title: 'X',
+      })
+      .catch(() => undefined);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a 403 (non-admin account) to a forbidden AbsError, distinct from auth', async () => {
+    const fetchFn = router({
+      'POST /api/podcasts': () => new Response('forbidden', { status: 403 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client
+      .subscribePodcast({
+        libraryId: 'lib-1',
+        folderId: 'folder-1',
+        folderPath: '/data',
+        rssFeed: 'https://example.com/feed.xml',
+        title: 'X',
+      })
+      .catch((e) => e);
+    expect((err as AbsError).code).toBe('forbidden');
+    expect((err as AbsError).code).not.toBe('auth');
+  });
+
+  it('throws a schema_mismatch AbsError when the response is not a valid library item', async () => {
+    const fetchFn = router({ 'POST /api/podcasts': () => json({ nope: true }) });
+    const client = makeClient(fetchFn);
+
+    const err = await client
+      .subscribePodcast({
+        libraryId: 'lib-1',
+        folderId: 'folder-1',
+        folderPath: '/data',
+        rssFeed: 'https://example.com/feed.xml',
+        title: 'X',
+      })
+      .catch((e) => e);
+    expect((err as AbsError).code).toBe('schema_mismatch');
   });
 });

@@ -93,11 +93,22 @@ export interface LibraryItem {
   progress: MediaProgress | null;
 }
 
+export interface LibraryFolder {
+  id: string;
+  /** The real filesystem path Audiobookshelf watches for this folder — used to build
+   * the `path` a new podcast subscription is created under (see `subscribePodcast`). */
+  path: string;
+}
+
 export interface Library {
   id: string;
   name: string;
   mediaType: 'book' | 'podcast';
   icon: string | null;
+  /** `[]` when the source payload carried no folders (or predates this field) — never
+   * `undefined`, unlike the `tracks`/`chapters`/`episodes` minified/expanded split
+   * above: every `getLibraries()` call is already a "full" library listing. */
+  folders: LibraryFolder[];
 }
 
 export interface Shelf {
@@ -202,4 +213,80 @@ export interface PlaybackSession {
 export interface ServerPing {
   reachable: true;
   serverVersion: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Podcast discovery — search directory, feed preview, subscribe
+// ---------------------------------------------------------------------------
+
+/** One result from the iTunes-backed podcast directory search (`GET /search/podcast`).
+ * Not a library entity — `itunesId`/`itunesArtistId` are iTunes's own numeric ids, kept
+ * distinct from this codebase's own string entity ids so a caller can never mistake one
+ * for the other. */
+export interface PodcastDirectoryResult {
+  itunesId: number;
+  itunesArtistId: number | null;
+  title: string;
+  artistName: string | null;
+  description: string | null;
+  descriptionPlain: string | null;
+  releaseDate: string | null;
+  genres: string[];
+  cover: string | null;
+  trackCount: number;
+  feedUrl: string | null;
+  pageUrl: string | null;
+  explicit: boolean;
+}
+
+/** One `podcast:chapters` chapter, already parsed into seconds by Audiobookshelf itself
+ * before the feed-preview response reaches us — see `PodcastFeedEpisode.chapters`. */
+export interface PodcastFeedChapter {
+  id: number;
+  title: string;
+  start: number;
+  end: number;
+}
+
+/** One episode as it appears in an as-yet-unsubscribed RSS feed (`POST /podcasts/feed`) —
+ * not yet a library entity, so no `id`; `duration` stays the raw feed string rather than
+ * being parsed into seconds, since feeds format it inconsistently (`"3600"` vs `"1:00:00"`)
+ * and getting that wrong silently would be worse than passing it through unparsed.
+ * `durationSeconds` and `chapters`, unlike `duration`, are safe to carry as typed values:
+ * Audiobookshelf's own feed parser has already done that parsing server-side, so there is
+ * no parsing risk of our own to get wrong. */
+export interface PodcastFeedEpisode {
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  pubDate: string | null;
+  publishedAt: number | null;
+  episodeType: string | null;
+  season: string | null;
+  episodeNumber: string | null;
+  author: string | null;
+  duration: string | null;
+  durationSeconds: number | null;
+  explicit: boolean;
+  enclosure: { url: string; type: string | null; length: string | null } | null;
+  guid: string | null;
+  chaptersUrl: string | null;
+  chapters: PodcastFeedChapter[];
+}
+
+/** A previewed RSS feed, before subscribing — the response of `POST /podcasts/feed`. */
+export interface PodcastFeedPreview {
+  title: string | null;
+  author: string | null;
+  description: string | null;
+  descriptionPlain: string | null;
+  feedUrl: string | null;
+  image: string | null;
+  categories: string[];
+  language: string | null;
+  explicit: boolean;
+  numEpisodes: number;
+  episodes: PodcastFeedEpisode[];
+  pubDate: string | null;
+  link: string | null;
 }

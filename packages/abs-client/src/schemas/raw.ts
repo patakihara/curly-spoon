@@ -184,6 +184,15 @@ export type RawLibraryItem = z.infer<typeof rawLibraryItemSchema>;
 // Libraries
 // ---------------------------------------------------------------------------
 
+export const rawLibraryFolderSchema = z
+  .object({
+    id: z.string(),
+    fullPath: z.string(),
+    libraryId: z.string(),
+    addedAt: z.number(),
+  })
+  .passthrough();
+
 export const rawLibrarySchema = z
   .object({
     id: z.string(),
@@ -191,6 +200,10 @@ export const rawLibrarySchema = z
     mediaType: z.enum(['book', 'podcast']),
     icon: z.string().optional(),
     displayOrder: z.number().optional(),
+    // Optional: not every existing fixture/older-server response carries folders, and a
+    // library predating this field is still a valid library — just one normalizeLibrary
+    // treats as having none to subscribe a podcast into.
+    folders: z.array(rawLibraryFolderSchema).optional(),
   })
   .passthrough();
 
@@ -455,5 +468,123 @@ export const rawStatusResponseSchema = z
     isInit: z.boolean().optional(),
     language: z.string().optional(),
     version: z.string().optional(),
+  })
+  .passthrough();
+
+// ---------------------------------------------------------------------------
+// Podcast discovery — search directory, feed preview, subscribe
+//
+// Shapes verified against Audiobookshelf 2.36.0 source (advplyr/audiobookshelf):
+// `SearchController.findPodcasts` (GET /search/podcast, proxies iTunes, no admin
+// gate), `iTunesProvider.cleanPodcast` (the search result shape), and
+// `podcastUtils.js`'s `extractPodcastMetadata`/`cleanEpisodeData` (the feed-preview
+// shape returned by POST /podcasts/feed). Both `POST /podcasts/feed` and
+// `POST /podcasts` require `req.user.isAdminOrUp` upstream (403 for anyone else);
+// the search endpoint has no such check.
+// ---------------------------------------------------------------------------
+
+/** One iTunes search-result entry from `GET /api/search/podcast` — a bare array, not
+ * wrapped in an object; upstream swallows its own provider failures to `[]`. */
+export const rawItunesPodcastResultSchema = z
+  .object({
+    id: z.number(),
+    artistId: z.number().nullable().optional(),
+    title: z.string(),
+    artistName: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    descriptionPlain: z.string().nullable().optional(),
+    releaseDate: z.string().nullable().optional(),
+    genres: z.array(z.string()).optional(),
+    cover: z.string().nullable().optional(),
+    trackCount: z.number().nullable().optional(),
+    feedUrl: z.string().nullable().optional(),
+    pageUrl: z.string().nullable().optional(),
+    explicit: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const rawPodcastDirectoryResultsSchema = z.array(rawItunesPodcastResultSchema);
+
+/** One `podcast:chapters` chapter as Audiobookshelf's `podcastUtils.js` already parses
+ * it server-side (`extractEpisodeData`'s `psc:chapters` handling) — `start`/`end` are
+ * seconds, already computed from the chapter timestamps and the episode duration. */
+export const rawPodcastFeedChapterSchema = z
+  .object({
+    id: z.number(),
+    title: z.string(),
+    start: z.number(),
+    end: z.number(),
+  })
+  .passthrough();
+
+/** The RSS-episode shape `POST /api/podcasts/feed` returns — distinct from
+ * `rawPodcastEpisodeSchema` above, which is the shape of an episode already imported
+ * into a library. This one has no `id` (it isn't a library entity yet), and its
+ * `explicit`/`duration` come straight off the feed XML as loosely-typed strings rather
+ * than the normalised numbers/booleans a library episode carries. `durationSeconds` and
+ * `chapters`, unlike `duration`, are *not* raw feed text — Audiobookshelf's own
+ * `podcastUtils.js` already parses them server-side (`timestampToSeconds` and
+ * `psc:chapters` respectively) before this response is sent, so passing them through
+ * typed carries no parsing risk of our own. */
+export const rawPodcastFeedEpisodeSchema = z
+  .object({
+    title: z.string(),
+    subtitle: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    descriptionPlain: z.string().nullable().optional(),
+    pubDate: z.string().nullable().optional(),
+    publishedAt: z.number().nullable().optional(),
+    episodeType: z.string().nullable().optional(),
+    season: z.string().nullable().optional(),
+    episode: z.string().nullable().optional(),
+    author: z.string().nullable().optional(),
+    duration: z.string().nullable().optional(),
+    durationSeconds: z.number().nullable().optional(),
+    explicit: z.union([z.boolean(), z.string()]).nullable().optional(),
+    enclosure: z
+      .object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.string().optional(),
+      })
+      .nullable()
+      .optional(),
+    guid: z.string().nullable().optional(),
+    chaptersUrl: z.string().nullable().optional(),
+    chaptersType: z.string().nullable().optional(),
+    chapters: z.array(rawPodcastFeedChapterSchema).optional(),
+  })
+  .passthrough();
+
+/** Feed metadata as `POST /api/podcasts/feed` returns it — a different shape from
+ * `rawPodcastMetadataSchema` (a library item's metadata): straight off the RSS
+ * channel, so `explicit` is the raw feed string/boolean rather than a normalised
+ * boolean, and categories arrive as `categories`, not `genres`. */
+export const rawPodcastFeedMetadataSchema = z
+  .object({
+    title: z.string().nullable().optional(),
+    author: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    descriptionPlain: z.string().nullable().optional(),
+    feedUrl: z.string().nullable().optional(),
+    image: z.string().nullable().optional(),
+    categories: z.array(z.string()).optional(),
+    language: z.string().nullable().optional(),
+    explicit: z.union([z.boolean(), z.string()]).nullable().optional(),
+    type: z.string().nullable().optional(),
+    link: z.string().nullable().optional(),
+    pubDate: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+export const rawPodcastFeedPreviewSchema = z
+  .object({
+    podcast: z
+      .object({
+        metadata: rawPodcastFeedMetadataSchema,
+        episodes: z.array(rawPodcastFeedEpisodeSchema).optional(),
+        numEpisodes: z.number().optional(),
+      })
+      .passthrough(),
   })
   .passthrough();

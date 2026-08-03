@@ -4,6 +4,15 @@
     "username": "kara",
     "password": "hunter2",
     "permissions": { "download": true, "upload": false, "delete": false },
-    "defaultLibraryId": "lib-books"
+    "defaultLibraryId": "lib-books",
+    "type": "admin"
+  },
+  {
+    "id": "abs-user-morty",
+    "username": "morty",
+    "password": "password1",
+    "permissions": { "download": true, "upload": false, "delete": false },
+    "defaultLibraryId": "lib-books",
+    "type": "user"
   }
 ]

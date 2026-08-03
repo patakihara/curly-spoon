@@ -9,6 +9,7 @@ import type {
   rawAudioTrackSchema,
   rawChapterSchema,
   rawLibrarySchema,
+  rawLibraryFolderSchema,
   rawShelfSchema,
   rawSeriesSchema,
   rawAuthorSchema,
@@ -20,6 +21,9 @@ import type {
   rawPlaybackSessionSchema,
   rawPodcastEpisodeSchema,
   rawSearchResponseSchema,
+  rawItunesPodcastResultSchema,
+  rawPodcastFeedPreviewSchema,
+  rawPodcastFeedEpisodeSchema,
 } from './schemas/raw.js';
 import { rawLibraryItemSchema, rawMediaProgressSchema } from './schemas/raw.js';
 import type { z } from 'zod';
@@ -27,6 +31,7 @@ import type {
   AudioTrack,
   Chapter,
   Library,
+  LibraryFolder,
   LibraryItem,
   Media,
   Shelf,
@@ -41,6 +46,9 @@ import type {
   PlaybackSession,
   PodcastEpisode,
   SearchResults,
+  PodcastDirectoryResult,
+  PodcastFeedPreview,
+  PodcastFeedEpisode,
 } from './domain.js';
 
 export function normalizeAudioTrack(raw: z.infer<typeof rawAudioTrackSchema>): AudioTrack {
@@ -149,12 +157,17 @@ export function normalizeLibraryItem(raw: RawLibraryItem): LibraryItem {
   };
 }
 
+export function normalizeLibraryFolder(raw: z.infer<typeof rawLibraryFolderSchema>): LibraryFolder {
+  return { id: raw.id, path: raw.fullPath };
+}
+
 export function normalizeLibrary(raw: z.infer<typeof rawLibrarySchema>): Library {
   return {
     id: raw.id,
     name: raw.name,
     mediaType: raw.mediaType,
     icon: raw.icon ?? null,
+    folders: raw.folders?.map(normalizeLibraryFolder) ?? [],
   };
 }
 
@@ -279,5 +292,95 @@ export function normalizeSearchResults(
     podcasts: raw.podcast?.map((m) => normalizeLibraryItem(m.libraryItem)) ?? [],
     series: raw.series?.map((s) => normalizeSeries(s.series)) ?? [],
     authors: raw.authors?.map(normalizeAuthor) ?? [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Podcast discovery — search directory, feed preview
+// ---------------------------------------------------------------------------
+
+/** Feed-level `explicit` arrives as a raw RSS value (a boolean, or a string like
+ * `"yes"`/`"true"`/`"no"`) rather than the normalised boolean a library item's own
+ * metadata carries. Anything not recognisably truthy degrades to `false` rather than
+ * throwing — a podcast preview isn't the place to fail over an ambiguous tag. */
+function toExplicitBoolean(value: boolean | string | null | undefined): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return ['yes', 'true', '1'].includes(value.toLowerCase());
+  return false;
+}
+
+export function normalizePodcastDirectoryResult(
+  raw: z.infer<typeof rawItunesPodcastResultSchema>,
+): PodcastDirectoryResult {
+  return {
+    itunesId: raw.id,
+    itunesArtistId: raw.artistId ?? null,
+    title: raw.title,
+    artistName: raw.artistName ?? null,
+    description: raw.description ?? null,
+    descriptionPlain: raw.descriptionPlain ?? null,
+    releaseDate: raw.releaseDate ?? null,
+    genres: raw.genres ?? [],
+    cover: raw.cover ?? null,
+    trackCount: raw.trackCount ?? 0,
+    feedUrl: raw.feedUrl ?? null,
+    pageUrl: raw.pageUrl ?? null,
+    explicit: raw.explicit ?? false,
+  };
+}
+
+export function normalizePodcastFeedEpisode(
+  raw: z.infer<typeof rawPodcastFeedEpisodeSchema>,
+): PodcastFeedEpisode {
+  return {
+    title: raw.title,
+    subtitle: raw.subtitle ?? null,
+    description: raw.description ?? null,
+    pubDate: raw.pubDate ?? null,
+    publishedAt: raw.publishedAt ?? null,
+    episodeType: raw.episodeType ?? null,
+    season: raw.season ?? null,
+    episodeNumber: raw.episode ?? null,
+    author: raw.author ?? null,
+    duration: raw.duration ?? null,
+    durationSeconds: raw.durationSeconds ?? null,
+    explicit: toExplicitBoolean(raw.explicit),
+    enclosure: raw.enclosure
+      ? {
+          url: raw.enclosure.url,
+          type: raw.enclosure.type ?? null,
+          length: raw.enclosure.length ?? null,
+        }
+      : null,
+    guid: raw.guid ?? null,
+    chaptersUrl: raw.chaptersUrl ?? null,
+    chapters:
+      raw.chapters?.map((chapter) => ({
+        id: chapter.id,
+        title: chapter.title,
+        start: chapter.start,
+        end: chapter.end,
+      })) ?? [],
+  };
+}
+
+export function normalizePodcastFeedPreview(
+  raw: z.infer<typeof rawPodcastFeedPreviewSchema>,
+): PodcastFeedPreview {
+  const { metadata, episodes, numEpisodes } = raw.podcast;
+  return {
+    title: metadata.title ?? null,
+    author: metadata.author ?? null,
+    description: metadata.description ?? null,
+    descriptionPlain: metadata.descriptionPlain ?? null,
+    feedUrl: metadata.feedUrl ?? null,
+    image: metadata.image ?? null,
+    categories: metadata.categories ?? [],
+    language: metadata.language ?? null,
+    explicit: toExplicitBoolean(metadata.explicit),
+    numEpisodes: numEpisodes ?? episodes?.length ?? 0,
+    episodes: episodes?.map(normalizePodcastFeedEpisode) ?? [],
+    pubDate: metadata.pubDate ?? null,
+    link: metadata.link ?? null,
   };
 }

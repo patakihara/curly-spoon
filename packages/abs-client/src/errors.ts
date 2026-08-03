@@ -9,8 +9,13 @@ export type AbsErrorCode =
   | 'network'
   /** The request did not complete inside the configured timeout. */
   | 'timeout'
-  /** Upstream responded 401 or 403: the token is missing, wrong or expired. */
+  /** Upstream responded 401: the token is missing, wrong or expired. */
   | 'auth'
+  /** Upstream responded 403: the token is valid but the account lacks permission for
+   * this action (e.g. a non-admin user hitting an admin-only podcast route). Kept
+   * distinct from `auth` so callers don't treat "you're not allowed to do that" as
+   * "your session expired" and log the user out. */
+  | 'forbidden'
   /** Upstream responded 404. */
   | 'not_found'
   /** Upstream responded 5xx: it is up but failing. */
@@ -52,6 +57,14 @@ export class AbsError extends Error {
     return new AbsError('auth', 'Audiobookshelf rejected the credentials or session token', {
       status,
     });
+  }
+
+  static forbidden(status: number): AbsError {
+    return new AbsError(
+      'forbidden',
+      'Audiobookshelf rejected the request: this account does not have permission',
+      { status },
+    );
   }
 
   static notFound(path: string): AbsError {

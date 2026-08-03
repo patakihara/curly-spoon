@@ -141,7 +141,8 @@ export class HttpClient {
   /** Map a non-2xx status to the matching `AbsError`, reading the body for context. */
   private async errorFor(response: Response, path: string): Promise<AbsError> {
     const status = response.status;
-    if (status === 401 || status === 403) return AbsError.auth(status);
+    if (status === 401) return AbsError.auth(status);
+    if (status === 403) return AbsError.forbidden(status);
     if (status === 404) return AbsError.notFound(path);
     if (status >= 500) {
       const text = await response.text().catch(() => undefined);
