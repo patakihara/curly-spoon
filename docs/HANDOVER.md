@@ -123,7 +123,20 @@ Treat these as standing instructions, not one-off remarks.
 | 4     | Web shell + Docker image                                | done        |
 | 5     | Audiobooks experience + player                          | done        |
 | 5a    | Android build skeleton + APK pipeline                   | done        |
-| 6–11  | Requests, podcasts, music, Android app, polish, F-Droid | not started |
+| 6     | Book requests                                           | in progress |
+| 7–11  | Android app, podcasts, music, polish, F-Droid           | not started |
+
+**Work in phase 6 happens in a git worktree**, `.claude/worktrees/phase6` on branch
+`claude/phase6`, pushed to `claude/media-client-app-k7v9by`. There is also a leftover
+`.claude/worktrees/phase5`. Both are ordinary worktrees of this repo; `git worktree list`
+is the truth.
+
+**The shared checkout at `~/src/auralis-src` is stale, and its dirty files are a trap.** It
+sits on an older commit with a working tree full of modified and untracked files that are
+**already committed and pushed** — phase 5 and 5a were built in the phase-5 worktree, not
+there. Two sessions running have now spent time re-deriving that. Do not commit those
+files, do not "rescue" them: check `git log origin/claude/media-client-app-k7v9by` first,
+and work in a worktree.
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
@@ -159,7 +172,48 @@ tests** (156 UI + 25 app end-to-end), and `pnpm test:docker` (the container smok
 the usage gate closed first — are parked there, and each one that exists should be listed
 below as a TODO. Empty but for its README means there is nothing queued.
 
-<!-- pending specs: none -->
+<!-- pending specs: phase6-request-service.md, phase6-requests-web.md -->
+
+**Two phase-6 specs are parked and launchable**, in the order they must run:
+
+1. `docs/agent-specs/phase6-request-service.md` — the request state machine, the service
+   that drives it, `requestsRepo`, the `/requests` and `/providers` routes, and a
+   `scanLibrary` addition to the Audiobookshelf client.
+2. `docs/agent-specs/phase6-requests-web.md` — the web experience: ask for a book, watch it
+   download, configure providers in settings.
+
+Delete a spec in the same commit that launches it — this directory means _unlaunched_, and
+a launched one left here reads as a TODO that is already done.
+
+### Phase 6 — what is decided, so it is not re-litigated
+
+- **Prowlarr is the primary indexer; the AudiobookBay scraper is the fallback.** The
+  development machine already runs Prowlarr with AudioBook Bay, MyAnonamouse, EBookBay and
+  Knaben configured, plus `byparr` (a FlareSolverr-compatible solver). AudiobookBay is
+  behind Cloudflare, Prowlarr gets through by delegating to the solver, and a direct
+  BFF-side scrape cannot. `docs/ROADMAP.md` §6 has the full reasoning.
+- **Provider credentials are server-scoped, in `provider_configs`, not in `secrets`.** The
+  `secrets` table is keyed by `user_id` because an Audiobookshelf token belongs to whoever
+  signed in. A Prowlarr API key belongs to the installation. An undecryptable secret reads
+  as _unconfigured_ rather than erroring, so rotating `SESSION_SECRET` sends you to the
+  settings screen instead of 500ing every search.
+- **The download save path is a setting with no default.** The BFF and the download client
+  are different containers with different mounts — here, qBittorrent sees
+  `/data/media/Downloads` as `/data/Downloads` while Audiobookshelf sees `/data/media` as
+  `/data`. Guessing produces downloads that complete and are never imported, which is the
+  worst failure mode available because every component reports success.
+- **Approval defaults to automatic**, on the grounds that this is one person's own server.
+
+### Two things on the box worth asking the user about
+
+Neither changes phase 6; both are worth a sentence rather than a redesign.
+
+- **`shelfarr` is running**, and it overlaps what phase 6 builds (an \*arr-shaped request
+  pipeline feeding Audiobookshelf). Worth asking whether Auralis should drive it instead of
+  talking to Prowlarr and qBittorrent directly.
+- **`deemix` is running**, which cuts against the phase-9 decision to use slskd as the
+  reference music-request provider (§3). The provider interface is pluggable either way,
+  but the user evidently already has deemix working.
 
 ### Phase 4 — what closing it changed
 

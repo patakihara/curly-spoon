@@ -11,7 +11,7 @@ self-contained, tested increment.
 | 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
 | 5   | Audiobooks experience + player                                  | done    |
 | 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
-| 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | in progress |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned |
 | 8   | Podcast client (web + Android)                                  | planned |
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned |
@@ -143,10 +143,30 @@ JDK would demote it to a second opinion and make the edit-build loop local.
 
 ### 6 — Book requests
 
-Pluggable indexers (AudiobookBay scraper, Prowlarr), pluggable download clients
+Pluggable indexers (Prowlarr, AudiobookBay scraper), pluggable download clients
 (qBittorrent, Transmission), request queue with approval and status tracking, post-import
 Audiobookshelf scan trigger. Completes priority 1 on the web, and freezes the API surface
 that phase 7 builds against.
+
+**Prowlarr leads, and the scraper is the fallback** — the reverse of how earlier drafts of
+this file listed them. Checked against the development machine on 2026-08-03: Prowlarr is
+already running there with AudioBook Bay, MyAnonamouse, EBookBay and Knaben configured,
+and so is `byparr`, a FlareSolverr-compatible challenge solver. That last one is the whole
+argument. AudiobookBay sits behind Cloudflare; Prowlarr gets through it by delegating to
+the solver, and a BFF-side scraper hitting the site directly cannot. The scraper stays,
+because an install without Prowlarr should still work, but it is the degraded path and the
+settings screen says so.
+
+**The save path is a setting with no default, deliberately.** The BFF and the download
+client are different containers and do not see the same filesystem: on the development
+machine qBittorrent has `/data/media/Downloads` mounted at `/data/Downloads` while
+Audiobookshelf has `/data/media` at `/data`. A path that is correct for one is not
+generally correct for the other, and a wrong guess produces downloads that complete and are
+never imported — the most confusing possible failure, because every component reports
+success. So Auralis asks, and explains why in the field's help text.
+
+Approval defaults to automatic. The overwhelmingly common deployment is one person's own
+server, where a queue is a step that only ever approves; multi-user installs turn it on.
 
 ### 7 — Android: audiobooks + requests
 
