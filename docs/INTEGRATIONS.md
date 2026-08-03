@@ -135,3 +135,106 @@ implementation targets a **slskd** (Soulseek daemon) instance — `POST /api/v0/
 poll `GET /api/v0/searches/:id/responses`, then `POST /api/v0/transfers/downloads/:username`
 — because deemix is unmaintained and stream-ripping services are unreliable to depend on.
 Any provider that can accept "find this album, put the files here" satisfies the interface.
+
+---
+
+## Discovery layer (researched, not yet integrated)
+
+Research pass only — no code written, no decision made. The idea: a **discovery layer**
+decoupled from acquisition, the same separation Overseerr draws between TMDB (catalog
+browsing) and its indexers (finding a specific release). Everything in this section is a
+candidate for a future phase, documented now so the research isn't re-done from scratch.
+
+This also feeds the recommendations goal in `docs/HANDOVER.md` §1 ("Spotify... cleverly
+serve me audiobooks it thinks I will enjoy") — a recommender needs genre/similar-author/
+similar-artist metadata that the acquisition indexers don't carry, which is exactly what a
+discovery layer would supply.
+
+The three candidates are not equally clean: music and podcasts are straightforward adds;
+audiobooks are the case where "decoupled from acquisition" runs into real ToS exposure and
+reliability gaps, detailed below.
+
+### MusicBrainz (music catalog)
+
+Anonymous lookup/search/browse needs no API key, only a descriptive `User-Agent` (required
+by policy, not optional). Rate limit is a strict **1 req/s per IP average** — exceed it and
+the IP gets `503`-denied until it backs off; some allowlisted user-agents get 50 req/s, but
+nothing suggests Auralis would qualify without contacting MetaBrainz directly. Non-commercial
+use is free; commercial use needs a data license, which is not a concern for a self-hosted
+personal client.
+
+Cover art comes from the companion **Cover Art Archive** (`coverartarchive.org`), keyed by
+MusicBrainz release MBIDs. No rate limit currently enforced there, but its licensing is
+**not** a clean CC0/public-domain grant — it defers to Internet Archive's terms ("use at
+your own risk," "be respectful of artist/label rights"). Treat that as unconfirmed/murky,
+not resolved.
+
+Recommended client: **`musicbrainz-api`** (npm) over hand-rolled `fetch` calls — pure ESM,
+full TS types, and built-in throttling that respects the 1 req/s rule. That throttling is
+load-bearing here, not a convenience: violating the rate limit risks an IP ban, not just a
+slow response.
+
+### PodcastIndex.org (podcast catalog)
+
+Complements the iTunes search Auralis's podcast backend already uses (see the
+Audiobookshelf section above). Confirmed active and free as of 2026; mission-driven,
+non-commercial, co-founded by Adam Curry.
+
+Auth is four headers, no OAuth flow:
+
+| Header          | Value                                 |
+| --------------- | ------------------------------------- |
+| `User-Agent`    | descriptive string                    |
+| `X-Auth-Key`    | API key (free on signup)              |
+| `X-Auth-Date`   | unix timestamp, ~3 min validity       |
+| `Authorization` | `sha1(apiKey + apiSecret + unixTime)` |
+
+Endpoints: Search, Podcasts (by feed ID/URL/iTunes ID/GUID/tags/medium/trending/dead
+feeds), Episodes, Recent, Value (Value4Value/Lightning monetization metadata — iTunes has
+nothing equivalent), Stats/Categories, and a Hub for feed-change push notifications. It does
+**not** do full-text episode-content search — search is podcast/title/person-level, same
+class as iTunes. Its actual edge is independently indexing raw RSS, so better indie/
+self-hosted feed coverage than Apple's catalog admits.
+
+Verdict: worth adding **alongside** iTunes, not replacing it — complementary, not a superset.
+
+### Audiobooks (Audnexus) — the messiest of the three
+
+Hosted at `api.audnex.us` (not `bundlebutton.com` — that's a stale URL some older
+references use). Actively maintained (2,481+ commits, 210+ stars, ongoing PRs/issues as of
+this research), GPL-3.0.
+
+Exposes book/author/series metadata, chapters and narrator info via ASIN-based lookup,
+aggregated from multiple sources built on the `mkb79` Audible Python library. Rate limit is
+roughly 100 req/min per source by default. Known rough edge: non-US-region ASINs can `404`
+— lookups take no region parameter, and it's an open issue upstream.
+
+A fork, **AudiMeta** (Vito0912), exists specifically because Audnexus has historically
+thrown 500s and couldn't fetch series descriptions. AudiMeta doesn't error on 404, handles
+region automatically, and has more endpoints (series/author browsing) — worth naming as a
+fallback.
+
+**How Audiobookshelf itself sources Audible metadata, confirmed**: ABS calls Audible's own
+regional API/site directly to resolve ASINs, then queries Audnexus per-ASIN for enriched
+metadata. So Audnexus is exactly the layer ABS already depends on today, not a riskier
+alternative to something ABS does more safely in-house.
+
+**Legal/ToS risk, stated plainly**: Audible's Conditions of Use explicitly prohibit
+"collection and use of product listings, descriptions, or prices" and any "data mining,
+robots, or similar data gathering and extraction tools." Audnexus is squarely that. It is
+nonetheless an established, widely-tolerated pattern in the self-hosted community —
+Audiobookshelf ships it as a default metadata provider, and there is no reported
+enforcement action against either Audnexus or ABS. Read this as: technically against
+Audible's ToS, practically the community norm, zero observed enforcement — a decision for
+whoever owns product risk here, not something to wave away as fine.
+
+**Lower-risk alternative worth spiking first, not yet done**: Audiobookshelf's own API
+reference (`api.audiobookshelf.org`, itself marked "out of date, no longer maintained" by
+ABS) lists a "Search for Books" endpoint that appears to query external providers
+(including Audible/Audnexus) by free-text query — distinct from the per-owned-item
+`/api/items/{id}/match` endpoint. If its shape holds up, this would mean Auralis never
+needs a direct Audnexus integration at all — ABS would proxy the discovery query the same
+way it already proxies playback. But the exact request/response shape is **not confirmed**
+(the doc site is unmaintained), and it needs a real spike against the actual Audiobookshelf
+server (`docs/setup/MY_SETUP.md` has connection details) before anything is decided. This is
+the recommended next step, not a settled fact.
