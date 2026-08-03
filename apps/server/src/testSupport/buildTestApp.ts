@@ -6,6 +6,7 @@
 
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
+import type { FetchLike } from '@auralis/abs-client';
 import { buildServer } from '../app.js';
 import type { AppConfig } from '../config.js';
 import { openDatabase } from '../db/connection.js';
@@ -23,7 +24,18 @@ export interface TestAppContext {
   sessionSecret: string;
 }
 
-export function buildTestApp(options: { configured?: boolean } = {}): TestAppContext {
+export function buildTestApp(
+  options: {
+    configured?: boolean;
+    /**
+     * Handles any upstream call whose origin is not the ABS fake's (`FAKE_BASE_URL`) —
+     * request-provider tests (`routes/requests.test.ts`) use this to fake a Prowlarr or
+     * qBittorrent instance without touching the ABS fixtures. Calls to `FAKE_BASE_URL`
+     * still go to `fake.fetch` regardless, so `loginTestUser` keeps working unmodified.
+     */
+    providerFetch?: FetchLike;
+  } = {},
+): TestAppContext {
   const db = openDatabase(':memory:');
   const sessionSecret = randomBytes(32).toString('hex');
   const fake = createFakeAbsUpstream();
@@ -44,7 +56,15 @@ export function buildTestApp(options: { configured?: boolean } = {}): TestAppCon
     setSettings(db, FAKE_BASE_URL);
   }
 
-  const app = buildServer({ db, config, fetch: fake.fetch, logger: false, absRetryBaseDelayMs: 1 });
+  const providerFetch = options.providerFetch;
+  const fetchFn: FetchLike = providerFetch
+    ? async (input, init) => {
+        const url = new URL(input);
+        return url.origin === FAKE_BASE_URL ? fake.fetch(input, init) : providerFetch(input, init);
+      }
+    : fake.fetch;
+
+  const app = buildServer({ db, config, fetch: fetchFn, logger: false, absRetryBaseDelayMs: 1 });
   return { app, fake, sessionSecret };
 }
 

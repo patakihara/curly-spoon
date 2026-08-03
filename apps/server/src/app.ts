@@ -17,6 +17,7 @@ import { RateLimiter } from './auth/rateLimit.js';
 import { sendError } from './httpErrors.js';
 import { registerRoutes } from './routes/index.js';
 import { registerStaticServing } from './static.js';
+import { createRequestService, type RequestService } from './requests/requestService.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -24,6 +25,19 @@ declare module 'fastify' {
     config: AppConfig;
     abs: AbsUpstreamFactory;
     loginRateLimiter: RateLimiter;
+    requests: RequestService;
+    /**
+     * The same injected upstream `fetch` `abs` and `requests` are built from, exposed
+     * directly. `RequestService` deliberately has no "build me one arbitrary provider,
+     * enabled or not" method — `listIndexers`/`getDownloadClient` only return providers
+     * that are already enabled (see `buildProvider` in requestService.ts), and
+     * `getDownloadClient` isn't even addressable by id. `POST /providers/:id/test` needs
+     * exactly the thing those methods withhold: build *this* id's provider from its
+     * stored config regardless of `enabled`, so a user can verify credentials before
+     * flipping a provider on. Route layer builds that provider itself, straight from the
+     * registries, and needs the raw `fetch` to do it.
+     */
+    upstreamFetch: FetchLike;
   }
 }
 
@@ -58,6 +72,17 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
   // 10 attempts/minute/IP: generous for a genuine user mistyping a password a few
   // times, punishing for a credential-stuffing script.
   app.decorate('loginRateLimiter', new RateLimiter({ windowMs: 60_000, max: 10 }));
+  app.decorate(
+    'requests',
+    createRequestService({
+      db: deps.db,
+      sessionSecret: deps.config.sessionSecret,
+      fetch: deps.fetch,
+      absFor: (userId) => app.abs.forUser(userId),
+      logger: app.log,
+    }),
+  );
+  app.decorate('upstreamFetch', deps.fetch);
 
   void app.register(cookiePlugin);
   // The web app is served from this same origin (see static.ts) — there is no

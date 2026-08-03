@@ -1,6 +1,7 @@
 /** Zod schemas for the BFF's own request boundary (params/query/body) — see validation.ts. */
 
 import { z } from 'zod';
+import { REQUEST_STATUSES } from '../requests/requestStatus.js';
 
 // Query strings are always raw text, so a plain `z.boolean()` would reject `"true"`.
 // `Boolean("false")` is also `true`, so `z.coerce.boolean()` is wrong here too — accept
@@ -75,4 +76,65 @@ export const coverQuerySchema = z.object({
   width: z.coerce.number().int().positive().max(4000).optional(),
   height: z.coerce.number().int().positive().max(4000).optional(),
   format: z.enum(['jpeg', 'webp', 'png']).optional(),
+});
+
+// -----------------------------------------------------------------------------
+// Book requests (routes/requests.ts)
+// -----------------------------------------------------------------------------
+
+/** Mirrors `requests/types.ts`'s `Release` field-for-field — this is the boundary that
+ * turns an untyped "release the client picked" body into something `RequestService` can
+ * trust without re-validating it itself. */
+export const releaseSchema = z.object({
+  guid: z.string().min(1),
+  indexerId: z.string().min(1),
+  sourceName: z.string(),
+  title: z.string(),
+  sizeBytes: z.number().nullable(),
+  seeders: z.number(),
+  leechers: z.number(),
+  publishedAt: z.number().nullable(),
+  downloadUrl: z.string().nullable(),
+  magnetUri: z.string().nullable(),
+  categories: z.array(z.string()),
+  format: z.string().nullable(),
+});
+
+export const listRequestsQuerySchema = z.object({
+  status: z.enum(REQUEST_STATUSES).optional(),
+});
+
+export const createRequestBodySchema = z.object({
+  title: z.string().trim().min(1, 'title is required').max(500),
+  author: z.string().trim().min(1).optional(),
+  release: releaseSchema.optional(),
+});
+
+export const searchReleasesQuerySchema = z.object({
+  term: z.string().trim().min(1, 'term is required'),
+  author: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+
+// -----------------------------------------------------------------------------
+// Providers (indexers, download clients) — routes/requests.ts
+// -----------------------------------------------------------------------------
+
+export const providerConfigBodySchema = z.object({
+  enabled: z.boolean().optional(),
+  baseUrl: z.string().nullable().optional(),
+  options: z.record(z.unknown()).optional(),
+  /** Raw field values keyed by `SecretField.key` — see `assembleSecret` in requests.ts for
+   * how this turns into the single stored secret string. */
+  secret: z.record(z.string()).optional(),
+});
+
+// -----------------------------------------------------------------------------
+// Request-pipeline settings (routes/requests.ts)
+// -----------------------------------------------------------------------------
+
+export const requestSettingsBodySchema = z.object({
+  approvalPolicy: z.enum(['auto', 'manual']).optional(),
+  bookSavePath: z.string().nullable().optional(),
+  bookCategory: z.string().nullable().optional(),
 });
