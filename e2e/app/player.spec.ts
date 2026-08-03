@@ -162,7 +162,5 @@ test('a phone viewport docks the mini player above the bottom bar; a desktop vie
 
   await page.setViewportSize({ width: 1400, height: 900 });
   await expect(page.getByTestId('shell')).toHaveAttribute('data-breakpoint', 'expanded');
-  await expect(
-    page.getByTestId('now-playing-panel').getByTestId('now-playing'),
-  ).toBeVisible();
+  await expect(page.getByTestId('now-playing-panel').getByTestId('now-playing')).toBeVisible();
 });

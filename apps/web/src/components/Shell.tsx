@@ -19,6 +19,7 @@ import { MiniPlayer } from '../features/player/MiniPlayer.js';
 import { NowPlaying } from '../features/player/NowPlaying.js';
 import { useAudioElement } from '../features/player/useAudioElement.js';
 import { useMediaSession } from '../features/player/useMediaSession.js';
+import { useProgressSync } from '../features/player/useProgressSync.js';
 import { lookupLibraries, visibleDestinations, type DestinationKey } from './destinations.js';
 import { NowPlayingPanel } from './NowPlayingPanel.js';
 import { ShortcutSheet } from './ShortcutSheet.js';
@@ -38,12 +39,13 @@ export function Shell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
 
-  // The single shared `<audio>` element and the OS media-session integration —
-  // both take no arguments and read the player store directly, so they only
-  // ever need to be mounted once, here, where every signed-in route lives
-  // underneath.
+  // The single shared `<audio>` element, the OS media-session integration and
+  // progress sync — all three take no arguments and read the player store
+  // directly, so they only ever need to be mounted once, here, where every
+  // signed-in route lives underneath.
   useAudioElement();
   useMediaSession();
+  useProgressSync();
 
   const setupQuery = useSetupQuery();
   const audiobookshelfConfigured = setupQuery.data?.configured ?? false;

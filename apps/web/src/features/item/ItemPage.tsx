@@ -44,7 +44,8 @@ export function ItemPage() {
       usePlayerStore.getState().load(item, session);
       usePlayerStore.getState().play();
     } catch (err) {
-      const apiError = err instanceof ApiError ? err : new ApiError('unknown_error', String(err), 0);
+      const apiError =
+        err instanceof ApiError ? err : new ApiError('unknown_error', String(err), 0);
       setPlayError(
         apiError.isNetworkError
           ? "Couldn't reach the Auralis server. Try again."

@@ -93,9 +93,9 @@ export function useItemQuery(itemId: string) {
 
 /**
  * `sync`/`close` aren't wrapped as query hooks: they're fire-and-forget calls made
- * from a background interval and on unmount (see `Player.tsx`), never feed React
- * Query's cache, and nothing renders their result — a `useMutation` would add
- * machinery with no consumer. `play` is different: a button click awaits it
+ * from a background interval and on unmount (see `features/player/useProgressSync.ts`),
+ * never feed React Query's cache, and nothing renders their result — a `useMutation`
+ * would add machinery with no consumer. `play` is different: a button click awaits it
  * directly to seed the player, so it gets the usual hook.
  */
 export function usePlayItemMutation() {
