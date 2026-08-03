@@ -238,14 +238,17 @@ leaves nothing behind that blocks the mini player" (the real app integration, `N
 `MiniPlayer`'s expand control — the compact breakpoint is the one where `Shell.tsx` gives
 `NowPlaying` an actual closed state; `NowPlayingPanel`'s embedded/`expanded`-breakpoint usage
 always passes `open` truthy, so it only got a cheap `elementFromPoint` check that nothing
-blocks the adjacent nav rail, added to the existing breakpoint test). Each does a real
+blocks the adjacent nav rail, added to the existing breakpoint test). Both do a real
 `page.mouse.click` at the trigger's actual screen coordinates after closing (not the locator
-API's own `.click()`, which does its own interception checks and could mask exactly this bug)
-plus an `elementFromPoint` sweep for any leftover node carrying Mantine's `mantine-Drawer-*`
-static classes (`use-styles.mjs`'s `getStaticClassNames`: `mantine-${themeName}-${selector}`).
+API's own `.click()`, which does its own interception checks and could mask exactly this bug);
+`sheet.spec.ts`'s test additionally does an `elementFromPoint` sweep for any leftover node
+carrying Mantine's `mantine-Drawer-*` static classes (`use-styles.mjs`'s
+`getStaticClassNames`: `mantine-${themeName}-${selector}`) — the compact-width
+`player.spec.ts` test relies on the mouse-click check alone.
 No bug found; no fix was needed. `pnpm typecheck` (per-package), `pnpm lint`, `pnpm test` (764
 unit tests) and the full `e2e/ui` + `e2e/app` suite (184 passed, 9 pre-existing failures — the
-same button/icon-button/browse.spec.ts set documented below, none newly broken) all pass.
+button/icon-button/browse.spec.ts set documented below, none newly broken; the dialog.spec.ts
+Escape-focus flake documented separately below did not fail in this run) all pass.
 
 Snackbar and SearchField weren't in this check's scope. Both packages typecheck and their own
 `e2e/ui/snackbar.spec.ts`/`search-field.spec.ts` pass as part of the same full-suite run above,
