@@ -27,10 +27,40 @@ What makes this work:
 - Agents can be killed mid-flight (spend limits, API errors). Never assume an agent that
   stopped has finished: **run the full suite yourself** and read the diff before believing
   anything is done.
-- Review their output critically. They produce working code, but they also produce
-  plausible-looking logic that is subtly wrong — the sheet-detent snapping in
-  `packages/ui/src/components/Sheet.tsx` shipped as nearest-neighbour, which silently
-  fought the user's drag direction until a test caught it.
+- Their output must be reviewed critically — but **not by you directly**. See below.
+
+### Review is delegated too — the orchestrator does not read the code
+
+Implementation agents produce working code, but they also produce plausible-looking logic
+that is subtly wrong: the sheet-detent snapping in `packages/ui/src/components/Sheet.tsx`
+shipped as nearest-neighbour, which silently fought the user's drag direction until a test
+caught it. That has to be caught. It does not have to be caught by you.
+
+**Do not open the implementation agents' files yourself. Spawn a separate Sonnet subagent to
+read them and report back.** `model: "sonnet"`, same as every other `Agent` call here — the
+rule at the top of this section has no exception for review.
+
+- The reviewer is a **different agent from the one that wrote the code**. An agent reviewing
+  its own output re-reads context it already believes, which is both expensive and the least
+  likely to find the flaw.
+- Give the reviewer the same precision you give an implementer: the exact files, the exact
+  behaviour the code is supposed to have, and the specific failure modes worth hunting.
+  A reviewer told only "check this" explores, and exploration is what inflates context.
+- It reports **findings**, not file contents. What is wrong, where, and why — never a paste
+  of what it read. The whole point is that the bytes stay out of the orchestrator's context.
+- Reviewers **decide for themselves and keep moving.** Escalate to the orchestrator only
+  when genuinely in serious doubt — a real ambiguity about intended behaviour, a design
+  decision above the reviewer's pay grade, or a suspected fault the spec does not settle.
+  Routine judgement calls are the reviewer's to make and state. A reviewer that escalates
+  everything has just moved the reading back into the orchestrator, which is the thing this
+  rule exists to prevent.
+
+**Why.** Every turn re-reads the agent's entire accumulated context, so cost is roughly
+quadratic in turns (see the measurements below). Source files read into the _orchestrator's_
+context are the worst version of that: the orchestrator is the longest-lived session on the
+project, so anything it reads is paid for on every remaining turn of the phase. A reviewer
+subagent reads the same files once, in a context that is discarded when it finishes, and
+returns a paragraph. The orchestrator specs, integrates, and decides — it does not read.
 
 ## Compaction — compact at every phase boundary
 
@@ -144,9 +174,42 @@ genuinely changes the product. Do not stop to ask permission for routine calls.
 
 - Deliver **phase by phase**; keep `docs/ROADMAP.md` statuses current as you go.
 - Branch: `claude/media-client-app-k7v9by`. Do not push elsewhere without asking.
-- A phase is done when `pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e` all
-  pass and `pnpm format` has been run — not when the code looks finished.
 - Commit messages explain the reasoning, not just the change.
+
+### Definition of done — the heavy suites run on CI, never here
+
+**Run locally (cheap, safe):**
+
+```
+pnpm format && pnpm typecheck && pnpm lint && pnpm test
+```
+
+**Never run locally — these are blocked by a hook and will be denied:**
+
+`pnpm test:e2e` · `playwright test` · `playwright install` · `scripts/docker-smoke.sh` ·
+`pnpm test:docker` · `gradle` / `./gradlew`
+
+A phase is done when the cheap set passes **and the GitHub Actions run for the pushed
+commit is green** — `.github/workflows/ci.yml` runs lint, typecheck, unit, Playwright and
+the container smoke test; `android.yml` runs Gradle. So: commit, push, and read the run.
+
+`gh` is **not installed on this machine**, so there is no `gh run watch` to call. Report the
+pushed SHA and say the run needs checking on github.com; do not claim a phase is verified on
+the strength of the local subset alone, and do not install `gh` to get around this.
+
+If you want a signal faster than a push, run **one targeted spec** —
+`pnpm vitest run path/to/one.test.ts` — not a suite.
+
+**Why.** The development machine has **3.7 GiB of RAM** and runs a media stack beside this
+repo. On 2026-08-03 a session here ran `pnpm test:e2e --workers=2` and stalled the whole
+host for three hours — nothing is OOM-killed, the kernel just swaps and the box goes silent.
+Do not reassemble the suite from its pieces either (`playwright.config.ts`'s `webServer` is
+a `vite build` plus a server plus a browser); that costs the same.
+
+**The hook is the user's, not yours** — same standing as the plan-usage gate above, and it
+lives outside this repo so a session in here cannot edit it away. Do not modify it, do not
+reach for another tool when it denies, and do not set its `AURALIS_ALLOW_LOCAL_CI=1` escape
+hatch. When it denies: push, and say the run needs checking.
 
 ## Scope — this working tree, and nothing outside it
 
