@@ -3,20 +3,20 @@
 Delivery is phase by phase; each phase lands on `claude/media-client-app-k7v9by` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status      |
-| --- | --------------------------------------------------------------- | ----------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
-| 3   | Server BFF core + Audiobookshelf client                         | done        |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
-| 5   | Audiobooks experience + player                                  | in progress |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
-| 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned     |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned     |
-| 8   | Podcast client (web + Android)                                  | planned     |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
-| 10  | Release polish — performance budgets, a11y audit                | planned     |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
+| #   | Phase                                                           | Status  |
+| --- | --------------------------------------------------------------- | ------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
+| 3   | Server BFF core + Audiobookshelf client                         | done    |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
+| 5   | Audiobooks experience + player                                  | done    |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
+| 6   | Book requests — AudiobookBay, Prowlarr, torrents                | planned |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned |
+| 8   | Podcast client (web + Android)                                  | planned |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned |
+| 10  | Release polish — performance budgets, a11y audit                | planned |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned |
 
 ### Why Android sits at 7 rather than last
 

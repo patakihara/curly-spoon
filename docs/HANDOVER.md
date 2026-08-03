@@ -46,20 +46,31 @@ git clean -fd                  # drops the now-redundant untracked copies
 **Why it was left dirty rather than reconciled automatically:** discarding a user's working
 tree is destructive and was not something to do unattended.
 
-**Background sessions cannot edit that checkout at all.** A harness guard rejects every
-`Edit`/`Write` in the shared clone until the session isolates into a git worktree, and the
+**That `git status` on line 41 is a real check, not a formality.** On 2026-08-03 the dirty
+checkout turned out to hold a `CLAUDE.md` that was _newer_ than the branch's — two
+working-agreement sections the user had written there while the code was being committed
+from the worktree. A blind `reset --hard` would have destroyed them. They are on the branch
+now (`88c8501`), so the reconcile above is safe as written; the lesson is that the shared
+checkout is where the **user** edits, so it can lead as well as lag.
+
+**A worktree already exists — reuse it.** `.claude/worktrees/phase5` is on branch
+`claude/phase5`, tracks the tip of the work, and has `node_modules` installed. Just
+`EnterWorktree` with that `path`. Only build a new one if you want a genuinely separate line
+of work.
+
+**Background sessions cannot edit the shared checkout at all.** A harness guard rejects
+every `Edit`/`Write` there until the session isolates into a git worktree, and the
 documented way to disable it is itself an edit — so there is no in-place path. Do not burn
-turns rediscovering this. Instead create a worktree **based on the current branch HEAD**,
-not on `origin/main`, which is what the `EnterWorktree` tool does by default and is a base
-these branch-derived changes cannot apply onto:
+turns rediscovering this. A new worktree must be based on the current branch HEAD, not on
+`origin/main`, which is what the `EnterWorktree` tool does by default and is a base these
+branch-derived changes cannot apply onto:
 
 ```bash
 git worktree add -b <name> .claude/worktrees/<name> HEAD
 pnpm install --frozen-lockfile        # a new worktree has no node_modules
 ```
 
-then `EnterWorktree` with that `path`. Push with an explicit refspec — the worktree branch
-has no upstream:
+Push with an explicit refspec — a worktree branch has no upstream:
 
 ```bash
 git push origin <name>:claude/media-client-app-k7v9by
@@ -110,18 +121,26 @@ Treat these as standing instructions, not one-off remarks.
 | 2     | `@auralis/ui` — Material 3 Expressive design system     | done        |
 | 3     | BFF + Audiobookshelf client                             | done        |
 | 4     | Web shell + Docker image                                | done        |
-| 5     | Audiobooks experience + player                          | in progress |
+| 5     | Audiobooks experience + player                          | done        |
 | 5a    | Android build skeleton + APK pipeline                   | done        |
 | 6–11  | Requests, podcasts, music, Android app, polish, F-Droid | not started |
 
-**Phase 5 is half-landed.** Done: Home shelves, library browse with filter and sort, typed
-search results, and the player's whole _logic_ layer — `features/player/playback.ts`
-(chapter/track lookup, seek clamping, rate stepping, sleep-timer maths, skip intervals),
-`state/playerStore.ts`, `state/settingsStore.ts`, and the `useAudioElement` /
-`useMediaSession` hooks. Not done: **any player UI at all**. Nothing imports those hooks yet,
-`components/NowPlayingPanel.tsx` is still the Phase 4 placeholder, `ItemPage` has no way to
-start playback, and no progress sync is wired to `api.syncSession`. That UI is the remaining
-work in phase 5.
+**Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
+results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
+`state/settingsStore.ts`) and now its surface: `NowPlaying` (a `Sheet` under the `expanded`
+breakpoint, embedded directly above it), `MiniPlayer`, `ChapterList`, `BookmarkControls`,
+`SleepTimerControl`, and variable speed / ±skip transport. `Shell.tsx` mounts the three
+argument-free hooks — `useAudioElement`, `useMediaSession`, `useProgressSync` — once, for
+every signed-in route.
+
+Progress sync was the last gap and is the one piece worth knowing the reasoning behind:
+**`timeListened` is measured from wall-clock time spent playing, never from how far
+`currentTime` moved.** A seek, chapter jump or ±30s skip moves the position with nobody
+listening, and Audiobookshelf folds `timeListened` into permanent listening statistics.
+`features/player/progressSync.ts` holds that arithmetic as a pure, tested function;
+`useProgressSync.ts` schedules it every 15s and on `pagehide`, and syncs-then-closes on
+teardown (Audiobookshelf finalises a session on close, so the reverse order reports into a
+closed session).
 
 **Phase 5a closed on 2026-08-03.** Its first CI run went green and uploaded a 12 MB
 `auralis-debug-apk`, which is the proof the phase existed to get: blind-written Compose
