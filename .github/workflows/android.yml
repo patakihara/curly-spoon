@@ -41,24 +41,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # TEMPORARY (remove once the phase-7 wave B build failure is diagnosed): the
-      # development machine has no JDK/Gradle, so a red run here has never had a
-      # readable error before — the GitHub REST logs API 403s without an admin
-      # token, which this session doesn't have. `--stacktrace` plus teeing to a
-      # file we can actually upload (unlike raw job logs, artifacts download fine
-      # without elevated auth) is the only way to see what Gradle actually said.
       - name: Build and test
         working-directory: apps/android
-        run: |
-          set -o pipefail
-          ./gradlew test assembleDebug --stacktrace 2>&1 | tee "$GITHUB_WORKSPACE/gradle-output.log"
-
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: gradle-output-log
-          path: gradle-output.log
-          retention-days: 14
+        run: ./gradlew test assembleDebug
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
