@@ -4,7 +4,16 @@
  * component; it only arranges them (docs/DESIGN.md § Layout).
  */
 
-body {
+/*
+ * `html body` (not just `body`), deliberately: Mantine's shipped stylesheet
+ * (`@mantine/core/styles.css`, imported via `@auralis/ui/styles.css`) has its own
+ * equal-specificity `body, :host { background-color: var(--mantine-color-body); }`
+ * rule. Whichever import lands later in the cascade would otherwise win outright —
+ * an import-order footgun, not a deliberate choice. Adding the extra `html`
+ * ancestor bumps this rule's specificity so it always wins regardless of import
+ * order.
+ */
+html body {
   background: var(--m3-surface);
   color: var(--m3-on-surface);
   min-height: 100vh;
@@ -37,6 +46,12 @@ body {
   display: flex;
   align-items: stretch;
   min-height: 100vh;
+}
+
+/* Mantine spike: the `AppShell`-based rail (Shell.tsx) sizes itself from its
+ * content unless told to fill the flex row's stretched height explicitly. */
+.auralis-nav-rail-slot {
+  align-self: stretch;
 }
 
 .auralis-shell__content {

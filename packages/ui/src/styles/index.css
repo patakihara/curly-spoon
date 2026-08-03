@@ -2,7 +2,16 @@
  * Global reset, type scale, and cross-cutting a11y/motion primitives shared by every
  * @auralis/ui component. Component-specific rules live in each component's colocated
  * .css file; this file only owns what would otherwise be duplicated everywhere.
+ *
+ * Mantine spike: `@mantine/core`'s own stylesheet is imported here, once, rather
+ * than as a second `import '@mantine/core/styles.css'` in `apps/web/src/main.tsx` —
+ * `apps/web` has no direct dependency on `@mantine/core` (pnpm's strict layout only
+ * resolves it from this package, which owns the dependency; see `mantine.ts`), and a
+ * bare specifier in a `apps/web`-owned CSS file would fail to resolve for the same
+ * reason the JS import would. Bundling it into the umbrella `@auralis/ui/styles.css`
+ * apps/web already imports keeps "one styles.css import" true in practice.
  */
+@import '@mantine/core/styles.css';
 
 *,
 *::before,

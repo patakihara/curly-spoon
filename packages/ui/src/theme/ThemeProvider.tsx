@@ -21,12 +21,14 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
+import { MantineProvider } from '@mantine/core';
 import {
   AURALIS_SOURCE_COLOR,
   createScheme,
   schemeToCssVars,
   type M3Scheme,
 } from '../tokens/color.js';
+import { mantineTupleFromHex } from './mantineColors.js';
 import {
   REDUCED_MOTION_DURATION_MS,
   SPRINGS,
@@ -181,6 +183,20 @@ export function ThemeProvider({
     [scheme, ownMode, resolvedMode, ownSourceColor, setSourceColor, setMode],
   );
 
+  // Mantine spike (docs/HANDOVER.md): `scheme.primary` is already the resolved M3
+  // primary for the current source colour *and* mode, as a plain hex string (not
+  // just a CSS var) — reusing it here, rather than a fresh source-colour lookup,
+  // means Mantine's ramp always matches what the rest of the shell just painted.
+  // `theme.colors` values must come from a *string*, not `var(--m3-primary)`:
+  // ThemeProvider applies `--m3-*` via inline `style.setProperty` scoped to the
+  // `.auralis-theme-root` element below, but Mantine's own CSS variables (and any
+  // `theme.colors` consumers) resolve at `:root` — a raw CSS var reference there
+  // would resolve to nothing.
+  const mantineTheme = useMemo(
+    () => ({ colors: { auralis: mantineTupleFromHex(scheme.primary) }, primaryColor: 'auralis' }),
+    [scheme.primary],
+  );
+
   return (
     <ThemeContext.Provider value={contextValue}>
       <div
@@ -189,7 +205,12 @@ export function ThemeProvider({
         data-theme={resolvedMode}
         style={staticVars}
       >
-        {children}
+        {/* `forceColorScheme` takes `resolvedMode` — already collapsed from `system`
+            via `systemPrefersDark` above — so Mantine never disagrees with the rest
+            of the shell about light vs. dark, and never needs its own storage. */}
+        <MantineProvider theme={mantineTheme} forceColorScheme={resolvedMode}>
+          {children}
+        </MantineProvider>
       </div>
     </ThemeContext.Provider>
   );

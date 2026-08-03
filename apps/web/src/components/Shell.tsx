@@ -8,8 +8,9 @@ import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
+  MantineAppShell,
+  MantineNavLink,
   NavigationBar,
-  NavigationRail,
   type IconName,
   type NavigationItem,
 } from '@auralis/ui';
@@ -103,13 +104,47 @@ export function Shell({ children }: { children: ReactNode }) {
         </>
       ) : (
         <div className="auralis-shell__row">
-          <div data-testid={breakpoint === 'expanded' ? 'nav-rail-expanded' : 'nav-rail'}>
-            <NavigationRail
-              items={navItems}
-              activeKey={activeKey}
-              onActiveChange={handleActiveChange}
-              expanded={breakpoint === 'expanded'}
-            />
+          <div
+            data-testid={breakpoint === 'expanded' ? 'nav-rail-expanded' : 'nav-rail'}
+            className="auralis-nav-rail-slot"
+          >
+            {/*
+             * Mantine spike (docs/HANDOVER.md): the old `NavigationRail` is replaced
+             * with `AppShell` + `AppShell.Navbar` + `NavLink`. `mode="static"` is
+             * deliberate — Mantine's default `mode="fixed"` position:fixed's the
+             * navbar to the viewport, which would fight this flex row and the
+             * sibling `NowPlayingPanel`/`MiniPlayer` (one of which is itself
+             * position:fixed at the compact breakpoint); `static` keeps AppShell a
+             * normal-flow box that only sizes itself, leaving `.auralis-shell__row`
+             * in charge of the actual page layout, unchanged.
+             *
+             * `component="button"` + explicit `aria-current` on MantineNavLink:
+             * Mantine's default anchor rendering and `data-active` attribute would
+             * both break `e2e/app/navigation.spec.ts`'s
+             * `getByRole('button', { name: ... })` / `aria-current='page'`
+             * assertions, which this file must keep passing unmodified.
+             */}
+            <MantineAppShell
+              navbar={{ width: breakpoint === 'expanded' ? 220 : 80, breakpoint: 0 }}
+              mode="static"
+              padding={0}
+              style={{ height: '100%' }}
+            >
+              <MantineAppShell.Navbar p="xs" style={{ height: '100%' }}>
+                {navItems.map((item) => (
+                  <MantineNavLink
+                    key={item.key}
+                    component="button"
+                    type="button"
+                    label={item.label}
+                    leftSection={item.icon}
+                    active={item.key === activeKey}
+                    aria-current={item.key === activeKey ? 'page' : undefined}
+                    onClick={() => handleActiveChange(item.key)}
+                  />
+                ))}
+              </MantineAppShell.Navbar>
+            </MantineAppShell>
           </div>
           <main className="auralis-shell__content" data-testid="shell-content">
             {children}

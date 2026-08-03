@@ -8,7 +8,7 @@
  */
 import { useState, type CSSProperties } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Card, Icon, LinearProgress, Skeleton } from '@auralis/ui';
+import { Icon, LinearProgress, MantineImage, Skeleton } from '@auralis/ui';
 import { useLibrariesQuery, useLibraryHomeQuery, useSetupQuery } from '../../api/queries.js';
 import { useApi } from '../../api/ApiContext.js';
 import type { LibraryItem, Shelf } from '../../api/types.js';
@@ -24,6 +24,47 @@ const COLUMN_STYLE: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: 24,
+};
+
+/**
+ * Deliberately no card chrome — no border, background fill, shadow or
+ * padding box. Every reference cited for this app's grid tiles (Feishin,
+ * YouTube Music, Spotify, Symfonium) renders a bare square of cover art with
+ * title/subtitle floating directly beneath it on the page background, not
+ * boxed inside a container. A prior pass wrapped this in a Mantine `Card`
+ * (a generic bordered default) instead of matching that — this is the fix.
+ */
+const TILE_STYLE: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4,
+  width: 160,
+  flex: '0 0 auto',
+  textAlign: 'left',
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  font: 'inherit',
+  color: 'inherit',
+};
+
+const TITLE_STYLE: CSSProperties = {
+  margin: '8px 0 0',
+  fontSize: 14,
+  fontWeight: 700,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+const AUTHOR_STYLE: CSSProperties = {
+  margin: 0,
+  fontSize: 13,
+  color: 'var(--m3-on-surface-variant)',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 };
 
 /** Same box the cover `<img>` occupies, so a failed load doesn't reflow the card. */
@@ -66,36 +107,44 @@ function ShelfCard({ item }: { item: LibraryItem }) {
   const [coverFailed, setCoverFailed] = useState(false);
 
   return (
-    <Card
-      interactive
-      variant="elevated"
+    <button
+      type="button"
       data-testid={`shelf-item-${item.id}`}
-      style={{ minWidth: 160, maxWidth: 160, flex: '0 0 auto', textAlign: 'left' }}
+      style={TILE_STYLE}
       onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: item.id } })}
     >
+      {/*
+       * Mantine's `Image` has a `fallbackSrc` prop for the broken-cover case, but it
+       * only accepts a replacement *image URL* — this design wants a centred
+       * `Icon`, not another image, so that requirement doesn't cleanly fit
+       * `fallbackSrc`. Kept the existing `coverFailed` state/`onError` toggle
+       * (still needed to decide *which* element to render at all), and only
+       * use Mantine's `Image` in the success case, for its `fit` styling API.
+       */}
       {coverFailed ? (
         <div style={COVER_FALLBACK_STYLE} aria-hidden="true">
-          <Icon name="library_books" size={40} />
+          <Icon name="book" size={40} />
         </div>
       ) : (
-        <img
+        <MantineImage
           src={api.coverUrl(item.id, { width: 240 })}
           alt=""
           width={160}
           height={160}
+          fit="cover"
           style={COVER_STYLE}
           onError={() => setCoverFailed(true)}
         />
       )}
-      <h3>{item.media.title}</h3>
-      {author ? <p>{author}</p> : null}
+      <h3 style={TITLE_STYLE}>{item.media.title}</h3>
+      {author ? <p style={AUTHOR_STYLE}>{author}</p> : null}
       {item.progress ? (
         <LinearProgress
           value={item.progress.progress}
           aria-label={`${Math.round(item.progress.progress * 100)}% complete`}
         />
       ) : null}
-    </Card>
+    </button>
   );
 }
 
