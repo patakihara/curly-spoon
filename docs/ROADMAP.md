@@ -13,7 +13,7 @@ self-contained, tested increment.
 | 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
 | 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | in progress |
-| 8   | Podcast client (web + Android)                                  | planned     |
+| 8   | Podcast client (web + Android) — backend wave A done            | in progress |
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
 | 10  | Release polish — performance budgets, a11y audit                | planned     |
 | 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
@@ -268,9 +268,16 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
   `executeNoContent` for `DELETE /requests/:id`'s 204-with-no-body response. No Compose UI
   yet. Independent review checked it field-for-field against the server schema and found no
   defects.
-- **Wave D2a — request search + create UI: in progress.** An implementation workflow has
-  been dispatched for the search-and-request screen consuming wave D1's `ApiClient`.
-- **Wave D2b — request list + retry/delete UI: not started, spec ready.**
+- **Wave D2a — request search + create UI: done (`3b1aebe`, fixed `646850d`).**
+  `RequestsViewModel`/`RequestsScreen` — search AudiobookBay/indexer, request a release,
+  "request anyway" by title on empty results — mirroring web's `AskForBookPanel.tsx`.
+  Independent review caught two real defects before landing (a failed-search state had no
+  "request anyway" path; `submitSearch()` had no job cancellation, so a slower earlier search
+  could overwrite a faster later one), both fixed with regression tests. `646850d` then fixed
+  two of the wave's own tests that were wrong (an assertion expecting a serialized
+  `"release":null` when the field is correctly omitted; a test-ordering bug where a prior
+  test's un-awaited coroutine threw after teardown).
+- **Wave D2b — request list + retry/delete UI: not started, spec ready. Next up.**
 - **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
   see below for why this can't be bolted on after the fact.
 
@@ -313,6 +320,19 @@ step will be documented, since without it the app simply never shows up and look
 Podcast library browse, feed search and subscribe, episode lists with download state,
 new-episode shelf, podcast player affordances — on web and Android together, now that both
 shells exist.
+
+- **Wave A — podcast discovery backend: done (`87595f0`).** Three operations against
+  Audiobookshelf 2.36.0 (verified against real upstream source): `searchPodcastDirectory`
+  (proxies ABS's iTunes-backed podcast search), `previewPodcastFeed` (fetch+parse RSS before
+  subscribing), `subscribePodcast` (create library item). New BFF routes/schemas in
+  `apps/server/src/routes/podcasts.ts` + `schemas.ts`, plus matching `abs-client` additions
+  (`client.ts`, `domain.ts`, `normalize.ts`, `schemas/raw.ts`). Along the way fixed a
+  pre-existing bug where 403 and 401 both mapped to the same auth-error code, wrongly
+  logging non-admins out instead of returning "forbidden"; review also caught episode
+  duration/chapter data being silently dropped and a podcast title of exactly `".."`
+  defeating the folder-sanitizer, both fixed.
+- **No web or Android UI yet** — explicitly deferred to a later wave. Next: a UI wave
+  consuming this backend, on whichever surface makes sense to build first.
 
 ### 9 — Music
 

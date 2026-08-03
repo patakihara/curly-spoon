@@ -92,6 +92,9 @@ Later clarifications:
   enjoy." Personalized recommendations, not just library browsing, are part of the goal, not
   scope creep for a later phase to invent. No phase currently scopes this — treat it as an
   explicit requirement once the three media types are far enough along to reason over.
+  `docs/INTEGRATIONS.md` now has a researched-not-decided section on a MusicBrainz/
+  PodcastIndex/Audnexus metadata-catalog layer for this (`8e6866e`) — options and a named
+  risk (Audnexus builds on Audible-scraping against Audible's ToS), not a committed design.
 
 Treat these as standing instructions, not one-off remarks.
 
@@ -109,7 +112,8 @@ Treat these as standing instructions, not one-off remarks.
 | 5a    | Android build skeleton + APK pipeline               | done        |
 | 6     | Book requests                                       | done        |
 | 7     | Android — audiobooks + requests                     | in progress |
-| 8–11  | Podcasts, music, polish, F-Droid                    | not started |
+| 8     | Podcasts — backend wave A done, no UI yet           | in progress |
+| 9–11  | Music, polish, F-Droid                              | not started |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
@@ -126,10 +130,37 @@ OkHttp and kotlinx.serialization (no Retrofit), session-cookie auth persisted ac
 death. Written blind (still no JDK/SDK/Gradle on the development machine), reviewed by an
 independent subagent, two real defects caught and fixed before landing (see ROADMAP for what
 they were). CI (`./gradlew test assembleDebug`) passed clean on the first real compile.
-**Next: wave B** — onboarding + home/library Compose screens consuming this data layer. That
-will be the first Compose UI actually exercised by CI in this app (5a's screen was trivial),
-so give it the same scrutiny wave A got: independent review before it lands, not a rubber
-stamp.
+Waves B, B2, C1–C3 and D1 landed after that (Compose navigation/onboarding, home screen with
+real shelf data, playback data layer, real ExoPlayer + `MediaLibrarySession`, MediaController
+wiring + mini player, book-requests data layer — see `docs/ROADMAP.md` §7 for each one's
+detail and defects independent review caught). **Wave D2a (request search + create UI) is
+now done** (`3b1aebe`, fixed `646850d`) — this file previously said it was "in progress";
+it landed with two real defects caught and fixed by independent review before commit, then
+two of its own tests fixed afterward. **Next: wave D2b** — request list + retry/delete UI,
+spec ready, not yet dispatched.
+
+**Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
+against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
+— verified against real upstream source, not assumed. No web or Android UI yet; that's the
+next podcast wave, on whichever surface makes sense to build first. See `docs/ROADMAP.md` §8.
+
+### Open architecture question — needs the user's decision, not a guess
+
+**`adbcb2d` ("Mantine spike") landed real, committed, dependency-adding code that directly
+contradicts this project's standing "no animation library, hand-built Material 3
+Expressive" decision (§3 below).** `@mantine/core`/`@mantine/hooks`/`@mantine/notifications`
+are now real dependencies of `packages/ui`, with a real `MantineProvider` wired into
+`ThemeProvider.tsx` and a real theme adapter (`packages/ui/src/mantine.ts`,
+`packages/ui/src/theme/mantineColors.ts`). Scope is deliberately small — only `Shell.tsx`'s
+nav shell and `HomePage.tsx` use it; `Icon.tsx` and `Sheet.tsx` are untouched — and the commit
+message frames it as a spike "before committing to a full migration." But **no rationale doc
+exists anywhere** (not in `DESIGN.md`, not a new file) and no commit says which system wins.
+Right now `apps/web` has two competing component systems live at once with nothing written
+down about it. Do not build more UI on either path — web or a decision doc — without asking
+the user first: keep the hand-built system, migrate to Mantine, or something else. This is a
+product-shaping call, not a routine one, and it's why phase 8's UI wave and any further
+`apps/web` visual work is paused pending that answer. (Phase 7's Android work is unaffected
+— it shares no code with either web component system.)
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
