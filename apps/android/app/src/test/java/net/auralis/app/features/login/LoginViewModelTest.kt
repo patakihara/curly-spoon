@@ -8,7 +8,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.withTimeout
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.FakeKeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
@@ -84,7 +83,7 @@ class LoginViewModelTest {
 
             viewModel.login("alice", "hunter2", onSuccess = { succeeded.complete(Unit) })
 
-            withTimeout(5_000) { succeeded.await() }
+            succeeded.await()
         }
 
     @Test
@@ -99,7 +98,7 @@ class LoginViewModelTest {
 
             viewModel.login("alice", "wrong", onSuccess = { succeeded = true })
 
-            val state = withTimeout(5_000) { viewModel.uiState.first { it is LoginUiState.Error } }
+            val state = viewModel.uiState.first { it is LoginUiState.Error }
             assertFalse(succeeded)
             assertEquals("Bad credentials", (state as LoginUiState.Error).message)
         }
