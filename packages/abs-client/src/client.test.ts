@@ -302,6 +302,49 @@ describe('AbsClient.searchLibrary', () => {
   });
 });
 
+describe('AbsClient.scanLibrary', () => {
+  it('posts a scan request for the library', async () => {
+    const fetchFn = router({
+      'POST /api/libraries/lib-1/scan': () => new Response(null, { status: 200 }),
+    });
+    const client = makeClient(fetchFn);
+    await expect(client.scanLibrary('lib-1')).resolves.toBeUndefined();
+  });
+
+  it('appends force=1 only when force is requested', async () => {
+    let seenQuery: URLSearchParams | undefined;
+    const fetchFn = router({
+      'POST /api/libraries/lib-1/scan': ({ url }) => {
+        seenQuery = url.searchParams;
+        return new Response(null, { status: 200 });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await client.scanLibrary('lib-1', true);
+    expect(seenQuery?.get('force')).toBe('1');
+
+    await client.scanLibrary('lib-1');
+    expect(seenQuery?.has('force')).toBe(false);
+  });
+
+  it('resolves instead of throwing when the endpoint does not exist (older server)', async () => {
+    const fetchFn = router({
+      'POST /api/libraries/lib-1/scan': () => new Response('not found', { status: 404 }),
+    });
+    const client = makeClient(fetchFn);
+    await expect(client.scanLibrary('lib-1')).resolves.toBeUndefined();
+  });
+
+  it('propagates a 500 rather than swallowing it', async () => {
+    const fetchFn = router({
+      'POST /api/libraries/lib-1/scan': () => new Response('boom', { status: 500 }),
+    });
+    const client = makeClient(fetchFn);
+    await expect(client.scanLibrary('lib-1')).rejects.toThrow();
+  });
+});
+
 describe('AbsClient.getItem', () => {
   it('fetches and normalises a minified item by default', async () => {
     const fetchFn = router({

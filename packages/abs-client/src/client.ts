@@ -288,6 +288,27 @@ export class AbsClient {
     return normalizeSearchResults(raw);
   }
 
+  /**
+   * Kick off a library rescan. A 404 is swallowed rather than thrown: this endpoint was
+   * added to Audiobookshelf at a specific version, and failing an otherwise-successful
+   * import because a convenience "scan now" call is missing on an older server is worse
+   * than doing nothing and letting Audiobookshelf pick the new file up on its own next
+   * scheduled scan. Every other error (auth, 5xx, network) still propagates.
+   */
+  async scanLibrary(libraryId: string, force = false): Promise<void> {
+    try {
+      await this.http.requestJson(`/api/libraries/${encodeURIComponent(libraryId)}/scan`, {
+        method: 'POST',
+        schema: okSchema,
+        query: { force: force ? 1 : undefined },
+        retryable: false,
+      });
+    } catch (err) {
+      if (err instanceof AbsError && err.code === 'not_found') return;
+      throw err;
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Items
   // ---------------------------------------------------------------------
