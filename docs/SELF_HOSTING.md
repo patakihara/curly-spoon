@@ -39,6 +39,57 @@ your torrent client and your indexers.
 Credentials you enter are encrypted at rest with a key derived from `SESSION_SECRET` and
 are never returned by the API — not even to an authenticated admin client.
 
+## Joining an existing arr-stack compose file
+
+If you already run Audiobookshelf, Prowlarr, qBittorrent and friends in one big
+`docker-compose.yml` — the common "arr stack" pattern — you can add Auralis as another
+service in that same file instead of running it as a second, separate compose project.
+
+Two things differ from the standalone deploy above:
+
+- **Build from a checkout, not this repo's root.** `build: .` above assumes the compose
+  file lives in this repo. An arr stack's compose file usually lives elsewhere (e.g.
+  `~/docker/arr/docker-compose.yml`), so clone Auralis somewhere on the host (e.g.
+  `~/src/auralis-src`) and point `build:` at that path instead.
+- **No network configuration needed.** A typical arr-stack compose file has no explicit
+  top-level `networks:` block, which means every service in it already shares Compose's own
+  implicit default network (named `<directory-name>_default`). Adding Auralis to the same
+  file puts it on that network automatically — reach the other services by container name
+  and their _internal_ port (e.g. `http://audiobookshelf:80`, not whatever host port it
+  publishes), rather than a LAN IP. That's the main benefit of joining an existing stack
+  instead of running standalone: onboarding can point straight at `http://audiobookshelf:80`
+  instead of `192.168.x.x:13378`.
+
+Reuse the stack's existing `.env` for secrets rather than introducing a separate one for
+Auralis — reference `SESSION_SECRET` the same way the other services already reference
+their own secrets:
+
+```yaml
+# added to the arr stack's existing docker-compose.yml
+services:
+  # ...existing services (audiobookshelf, prowlarr, qbittorrent, etc.)...
+
+  auralis:
+    container_name: auralis
+    build: /home/you/src/auralis-src
+    restart: unless-stopped
+    environment:
+      SESSION_SECRET: ${AURALIS_SESSION_SECRET}
+      DATA_DIR: /data
+    volumes:
+      - ./auralis-data:/data
+    ports:
+      - '5173:8787'
+```
+
+`5173:8787` is just an example host port unlikely to collide with the rest of the stack —
+swap it for whatever's actually free against your own compose file's existing `ports:`
+entries.
+
+One thing _not_ to copy from the neighbouring services: Auralis doesn't need `PUID`/`PGID`.
+Those are a linuxserver.io-image convention; Auralis's container runs as its own baked-in
+non-root user, so setting them does nothing.
+
 ## Reverse proxy
 
 Auralis speaks plain HTTP and expects to sit behind your existing TLS terminator. It
