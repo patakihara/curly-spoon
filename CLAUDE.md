@@ -211,6 +211,27 @@ lives outside this repo so a session in here cannot edit it away. Do not modify 
 reach for another tool when it denies, and do not set its `AURALIS_ALLOW_LOCAL_CI=1` escape
 hatch. When it denies: push, and say the run needs checking.
 
+## Work in this checkout — do not create a worktree
+
+Sessions here have reached for `EnterWorktree` on their own initiative. Nothing asks for
+it, and on this host it costs more than it gives:
+
+- **The main checkout rots.** Every worktree session leaves `~/src/auralis-src` further
+  behind — it sat 17 commits behind while two worktrees held all the real work. A later
+  session that reads the main checkout is then reading stale code, and the trap is
+  invisible: every file is present, they are just old. Phase 6 hit this and wrote a commit
+  about it.
+- **Auto-memory is keyed per directory**, so each new worktree starts with an empty index
+  and re-derives whatever the last one had already learned.
+- **The runner that starts unattended sessions locates them by directory**, and worktree
+  paths broke that once already — it failed closed and silently declined to start anything.
+
+There is no parallelism to protect: only one session runs here at a time, and the runner
+skips while one is busy. So work on the branch in this checkout, commit, and push.
+
+If you find yourself in a worktree already, finish and push what you have there rather than
+migrating mid-task — the cost is in *creating* them, not in the one you are standing in.
+
 ## Scope — this working tree, and nothing outside it
 
 **Auralis sessions ignore every worktree outside `~/src/auralis-src`.** This repo is a
