@@ -4,17 +4,36 @@
  * resize between `detents`, or past the smallest one to dismiss; it always springs
  * (spring.slow, the same spring DESIGN.md assigns to "Sheets, Now Playing expansion")
  * to wherever it settles rather than snapping.
+ *
+ * Mantine migration: `Drawer.Root`/`Overlay`/`Content` supply the modal machinery —
+ * portal, scrim, focus trap, Escape-to-close, click-outside-to-close, scroll lock,
+ * return-focus-on-close — replacing this file's old hand-rolled `createPortal` +
+ * `useFocusTrap`. The detent/drag-to-resize gesture has no Mantine equivalent (Drawer
+ * only supports a fixed `size`), so it stays bespoke: `size` is re-passed on every
+ * pointer-move frame, and the drag math below is otherwise unchanged from before the
+ * migration.
+ *
+ * `transitionProps={{ duration: 0 }}` on both Root pieces disables Mantine's own
+ * enter/exit animation (a permanent inline `transform: translateY(0)`, which would
+ * both fight our spring easing and never compute back to `transform: none` the way
+ * `e2e/ui/sheet.spec.ts` expects) in favour of this file's own `Sheet.css` keyframes,
+ * which behave exactly as they did pre-migration.
+ *
+ * See `Sheet.css`'s header comment for a load-bearing gotcha this file's styling
+ * depends on: `Drawer.Content`'s `className`/`style` are applied by Mantine to *two*
+ * different DOM nodes, not one, and the panel-specific CSS rules are scoped
+ * accordingly so they don't leak onto the other one.
  */
 import {
   useId,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { useFocusTrap } from '../internal/useFocusTrap.js';
+import { Drawer } from '@mantine/core';
 import './Sheet.css';
 
 /**
@@ -52,11 +71,8 @@ export function Sheet({
   const [dragHeightPx, setDragHeightPx] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  useFocusTrap(open, panelRef, () => onOpenChange(false));
-
-  if (!open) return null;
-
-  const detentPx = (fraction: number) => fraction * window.innerHeight;
+  const detentPx = (fraction: number) =>
+    fraction * (typeof window !== 'undefined' ? window.innerHeight : 0);
   const smallestDetentPx = detentPx(Math.min(...detents));
   const currentHeightPx = dragHeightPx ?? detentPx(detents[activeDetent] ?? 1);
 
@@ -109,18 +125,29 @@ export function Sheet({
     setActiveDetent(Math.min(nextIndex, detents.length - 1));
   };
 
-  return createPortal(
-    <div className="m3-sheet-layer">
-      <div className="m3-sheet-scrim" onClick={() => onOpenChange(false)} aria-hidden="true" />
-      <div
+  return (
+    <Drawer.Root
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      position="bottom"
+      size={currentHeightPx}
+      transitionProps={{ duration: 0 }}
+      // `--drawer-justify: center`: Mantine's own value is unset (`flex-start`)
+      // for a bottom drawer, since a full-width drawer never needs centering —
+      // but this panel caps out at 720px (below), so it needs centering in the
+      // positioning row on wide viewports, the way the old
+      // `.m3-sheet-layer { justify-content: center }` wrapper did.
+      style={{ '--drawer-justify': 'center' } as CSSProperties}
+    >
+      <Drawer.Overlay
+        className="m3-sheet-scrim"
+        style={{ background: 'var(--m3-scrim)', opacity: 0.32 }}
+        transitionProps={{ duration: 0 }}
+      />
+      <Drawer.Content
         ref={panelRef}
         className={clsx('m3-sheet-panel', dragging && 'm3-sheet-panel--dragging')}
-        role="dialog"
-        aria-modal="true"
-        aria-label={ariaLabel}
-        aria-labelledby={!ariaLabel && title ? titleId : undefined}
-        tabIndex={-1}
-        style={{ height: `${currentHeightPx}px` }}
+        aria-label={ariaLabel ?? (typeof title === 'string' ? title : undefined)}
       >
         <div
           className="m3-sheet-handle-area"
@@ -137,8 +164,7 @@ export function Sheet({
           </h2>
         ) : null}
         <div className="m3-sheet-content">{children}</div>
-      </div>
-    </div>,
-    document.body,
+      </Drawer.Content>
+    </Drawer.Root>
   );
 }

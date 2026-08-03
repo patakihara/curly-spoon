@@ -5,7 +5,6 @@ export { Card, type CardProps, type CardVariant } from './Card.js';
 export { ListItem, type ListItemProps } from './ListItem.js';
 export { Slider, type SliderProps } from './Slider.js';
 export { NavigationBar } from './NavigationBar.js';
-export { NavigationRail, type NavigationRailProps } from './NavigationRail.js';
 export type { NavigationItem, NavigationSharedProps } from './navigationTypes.js';
 export { TopAppBar, type TopAppBarProps, type TopAppBarVariant } from './TopAppBar.js';
 export { SearchField, type SearchFieldProps, type SearchSuggestion } from './SearchField.js';

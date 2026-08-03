@@ -1,9 +1,15 @@
 /**
- * Circular progress — a determinate ring, or a spinning indeterminate one (a small
- * fixed arc, so it never reads as "stuck at 100%" the way a full-circle spinner can).
+ * Circular progress — thin wrapper around Mantine primitives, split by mode since
+ * Mantine doesn't have one component that does both: `Loader` (a spinner) for
+ * indeterminate — the only mode any current `apps/web` caller uses — and
+ * `RingProgress` (a single-section ring) for determinate.
+ *
+ * Both `size` props take raw pixels here (matching the old SVG's `size` prop), but
+ * Mantine's `Loader` converts a bare number to *rem*, not px — so it's passed as an
+ * explicit `px` string to keep `size={18}` meaning 18px, as every current caller
+ * (`LoginPage`, `SetupPage`) expects. `RingProgress`'s `size` is already plain px.
  */
-import clsx from 'clsx';
-import './CircularProgress.css';
+import { Loader, RingProgress } from '@mantine/core';
 
 export interface CircularProgressProps {
   value?: number;
@@ -20,45 +26,31 @@ export function CircularProgress({
   size = 40,
   'aria-label': ariaLabel,
 }: CircularProgressProps) {
-  const radius = (size - STROKE_WIDTH) / 2;
-  const circumference = 2 * Math.PI * radius;
+  if (indeterminate) {
+    return (
+      <Loader
+        type="oval"
+        size={`${size}px`}
+        role="progressbar"
+        aria-label={ariaLabel}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      />
+    );
+  }
+
   const percent = Math.min(1, Math.max(0, value ?? 0));
-  const dashOffset = indeterminate ? circumference * 0.75 : circumference * (1 - percent);
 
   return (
-    <svg
-      className={clsx(
-        'm3-circular-progress',
-        indeterminate && 'm3-circular-progress--indeterminate',
-      )}
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
+    <RingProgress
+      size={size}
+      thickness={STROKE_WIDTH}
+      sections={[{ value: percent * 100, color: 'auralis' }]}
       role="progressbar"
       aria-label={ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={indeterminate ? undefined : Math.round(percent * 100)}
-    >
-      <circle
-        className="m3-circular-progress__track"
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        strokeWidth={STROKE_WIDTH}
-        fill="none"
-      />
-      <circle
-        className="m3-circular-progress__fill"
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        strokeWidth={STROKE_WIDTH}
-        fill="none"
-        strokeDasharray={circumference}
-        strokeDashoffset={dashOffset}
-        strokeLinecap="round"
-      />
-    </svg>
+      aria-valuenow={Math.round(percent * 100)}
+    />
   );
 }

@@ -10,9 +10,10 @@ export interface IndicatorRect {
 /**
  * Tracks the on-screen rect of whichever navigation item is active, relative to its
  * container, so callers can position an absolutely-positioned "active indicator" pill
- * with a CSS transition and get it to spring smoothly between items — the same
- * mechanism `NavigationBar` and `NavigationRail` both use (docs/DESIGN.md: "shared item
- * model" — this hook is the shared part).
+ * with a CSS transition and get it to spring smoothly between items — the mechanism
+ * `NavigationBar` uses (docs/DESIGN.md: "shared item model" — this hook is the shared
+ * part; the desktop rail's equivalent is now Shell.tsx's inline `AppShell`/`NavLink`,
+ * which relies on Mantine's own active state instead of this hook).
  */
 export function useActiveIndicator(
   containerRef: RefObject<HTMLElement | null>,

@@ -1,10 +1,25 @@
 /**
- * Linear progress: a determinate bar, or an indeterminate one — optionally drawn as
- * M3 Expressive's undulating "wavy" indicator, which reads as motion even in a single
- * still frame (useful for screenshots/reduced-motion, where it simply doesn't scroll).
+ * Linear progress — thin wrapper around Mantine's `Progress`. The determinate path
+ * (the only one any current `apps/web` caller uses) maps directly onto Mantine's
+ * `Progress.Section` `value` (0-100 vs. this component's public 0..1).
+ *
+ * Mantine has no built-in indeterminate mode, so this uses `Progress.Root` +
+ * `Progress.Section` (rather than the `<Progress>` convenience wrapper, which
+ * requires a numeric `value` and derives `aria-valuenow` from it) so an
+ * indeterminate bar can carry `role="progressbar"` without ever claiming a fake
+ * numeric value: `withAria={false}` on the section drops both `role` and
+ * `aria-valuenow` there instead of reporting 100% complete, and `role="progressbar"`
+ * is added to the *root* only in that case — confirmed against the gallery that
+ * `Progress.Section`'s own `role="progressbar"` (its `withAria` default) would
+ * otherwise coexist with the root's, giving two matching nodes for one bar. The
+ * "still busy" motion comes from Mantine's own `animated`+`striped` scrolling
+ * stripes at full width, in place of the previous hand-rolled sliding-bar/wavy-SVG
+ * CSS animation.
+ *
+ * `wavy` (an M3 Expressive-only affordance — an undulating stroke — has no Mantine
+ * equivalent) now only thickens the bar; it no longer renders a distinct wave.
  */
-import clsx from 'clsx';
-import './LinearProgress.css';
+import { Progress } from '@mantine/core';
 
 export interface LinearProgressProps {
   /** 0..1. Omit (or set `indeterminate`) for an indeterminate bar. */
@@ -23,20 +38,19 @@ export function LinearProgress({
   const percent = Math.min(100, Math.max(0, (value ?? 0) * 100));
 
   return (
-    <div
-      className={clsx('m3-linear-progress', wavy && 'm3-linear-progress--wavy')}
-      role="progressbar"
-      aria-label={ariaLabel}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={indeterminate ? undefined : percent}
+    <Progress.Root
+      size={wavy ? 8 : 4}
+      radius="xl"
+      role={indeterminate ? 'progressbar' : undefined}
+      aria-label={indeterminate ? ariaLabel : undefined}
     >
-      <div className="m3-linear-progress__track" />
-      {indeterminate ? (
-        <div className="m3-linear-progress__indeterminate" />
-      ) : (
-        <div className="m3-linear-progress__fill" style={{ width: `${percent}%` }} />
-      )}
-    </div>
+      <Progress.Section
+        value={indeterminate ? 100 : percent}
+        withAria={!indeterminate}
+        animated={indeterminate}
+        striped={indeterminate}
+        aria-label={indeterminate ? undefined : ariaLabel}
+      />
+    </Progress.Root>
   );
 }

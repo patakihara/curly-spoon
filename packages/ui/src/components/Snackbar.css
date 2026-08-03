@@ -1,13 +1,13 @@
+/*
+ * Mantine migration: `Snackbar` now renders `@mantine/core`'s `<Notification>`,
+ * which supplies its own background, text colour, shadow, border-radius and
+ * close-button chrome — none of that is repeated here, or this "migration"
+ * would just be Mantine markup wearing the old M3 skin. What's left is layout
+ * glue for the one thing `Notification` doesn't model: an inline action button
+ * (e.g. "Undo") sitting next to the message, and the entrance motion, which is
+ * a motion-design detail rather than a colour/shape one.
+ */
 .m3-snackbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 480px;
-  padding: 8px 8px 8px 16px;
-  border-radius: var(--m3-shape-xs);
-  background: var(--m3-inverse-surface);
-  color: var(--m3-inverse-on-surface);
-  box-shadow: var(--m3-elevation-3, 0 4px 12px rgba(0, 0, 0, 0.3));
   animation: m3-snackbar-enter var(--m3-spring-default-duration) var(--m3-spring-default-easing);
 }
 
@@ -22,33 +22,24 @@
   }
 }
 
+.m3-snackbar__body-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .m3-snackbar__message {
   flex: 1 1 auto;
-  font-size: var(--m3-type-body-medium-size);
 }
 
 .m3-snackbar__action {
   flex: 0 0 auto;
   border: none;
   background: transparent;
-  color: var(--m3-inverse-primary);
+  color: var(--m3-inverse-primary, inherit);
   font-size: var(--m3-type-label-large-size);
   font-weight: var(--m3-type-label-large-weight);
   cursor: pointer;
   padding: 0 8px;
   min-height: 36px;
-}
-
-.m3-snackbar__close {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: var(--m3-shape-full);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
 }

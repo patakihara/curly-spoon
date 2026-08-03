@@ -2,6 +2,17 @@
  * M3 card container. `interactive` turns it into a real, keyboard-operable button
  * (or link, via `href`) rather than a `<div onClick>` — clickable cards must still be
  * reachable and activatable from the keyboard.
+ *
+ * Thin wrapper around Mantine's `Card` (itself a `Paper`): Mantine supplies the
+ * polymorphic `component`/ref plumbing (div/button/a), this file supplies the M3
+ * visuals via `Card.css`'s `.m3-card*` classes, same as before the migration.
+ * `NEUTRALIZE` below turns off every visual prop Mantine's `Paper` reads (shadow,
+ * radius, border, padding) so `.m3-card*` is the only thing painting the card —
+ * Paper's own CSS-module rule sets `box-shadow`/`border-radius`/`background-color`
+ * at the same specificity as `.m3-card--*`, and while `@auralis/ui/styles.css`
+ * imports Mantine's stylesheet ahead of this file's `Card.css` (so a cascade tie
+ * would resolve in our favour anyway), neutralizing the props directly means the
+ * result doesn't depend on that import order holding.
  */
 import {
   forwardRef,
@@ -11,6 +22,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
+import { Card as MantineCardPrimitive } from '@mantine/core';
 import clsx from 'clsx';
 import './Card.css';
 
@@ -37,6 +49,8 @@ export interface InteractiveCardProps
 
 export type CardProps = StaticCardProps | InteractiveCardProps;
 
+const NEUTRALIZE = { shadow: 'none', radius: 0, withBorder: false, padding: 16 } as const;
+
 export const Card = forwardRef<HTMLElement, CardProps>(function Card(props, ref) {
   const { variant = 'elevated', children, className } = props;
   const classes = clsx(
@@ -50,25 +64,29 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(props, ref)
     const { interactive: _interactive, variant: _variant, href, ...rest } = props;
     if (href !== undefined) {
       return (
-        <a
+        <MantineCardPrimitive
+          component="a"
           ref={ref as Ref<HTMLAnchorElement>}
           href={href}
           className={clsx(classes, 'm3-state-layer')}
+          {...NEUTRALIZE}
           {...(rest as AnchorHTMLAttributes<HTMLAnchorElement>)}
         >
           {children}
-        </a>
+        </MantineCardPrimitive>
       );
     }
     return (
-      <button
-        ref={ref as Ref<HTMLButtonElement>}
+      <MantineCardPrimitive
+        component="button"
         type="button"
+        ref={ref as Ref<HTMLButtonElement>}
         className={clsx(classes, 'm3-state-layer')}
+        {...NEUTRALIZE}
         {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
       >
         {children}
-      </button>
+      </MantineCardPrimitive>
     );
   }
 
@@ -81,8 +99,13 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(props, ref)
   } = props as StaticCardProps;
 
   return (
-    <div ref={ref as Ref<HTMLDivElement>} className={classes} {...divRest}>
+    <MantineCardPrimitive
+      ref={ref as Ref<HTMLDivElement>}
+      className={classes}
+      {...NEUTRALIZE}
+      {...divRest}
+    >
       {children}
-    </div>
+    </MantineCardPrimitive>
   );
 });

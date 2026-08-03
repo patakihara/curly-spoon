@@ -1,11 +1,26 @@
 /**
- * M3 Expressive button. Five emphasis variants (filled > tonal > elevated > outlined >
- * text) and three sizes. Pressing morphs the corner radius from `full` toward `md`
- * along `spring.bouncy` (docs/DESIGN.md § Shape) instead of scaling — the shape change
- * *is* the press feedback, on top of the usual state layer.
+ * M3 Expressive button, now a thin wrapper around Mantine's `Button`. Five emphasis
+ * variants (filled > tonal > elevated > outlined > text) and three sizes map onto
+ * Mantine's own `variant`/`size` props — `elevated` has no direct Mantine equivalent,
+ * so it rides Mantine's `default` variant plus an explicit box-shadow, matching the
+ * old M3 "surface + elevation" look (docs/DESIGN.md § Elevation) rather than a flat
+ * colour swap.
+ *
+ * `text` also gets a style override (`color: var(--m3-primary)`), verified empirically
+ * against a live render: Mantine's `subtle` variant defaults to text colour drawn from
+ * `theme.colors.auralis`'s shade-2 stop, which our tone-based ramp (`mantineColors.ts`)
+ * makes a near-white pastel at every hue — fine paired with `subtle`'s own dark-mode
+ * background assumption, but `subtle`/`text` renders on transparent, so it inherits
+ * whatever real surface it sits on. `var(--m3-primary)` is the token every other
+ * primary-coloured accent in this app already resolves against that surface, so it
+ * stays legible in both modes without depending on Mantine's colour-ramp guess.
+ *
+ * `loading` is Mantine's own built-in loader overlay (it also implicitly disables the
+ * button), and `leadingIcon`/`trailingIcon` map to Mantine's `leftSection`/`rightSection`
+ * — kept under their original M3 names here since that's this package's public API.
  */
-import { forwardRef, useId, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import clsx from 'clsx';
+import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
+import { Button as MantineButtonPrimitive, type ButtonVariant as MantineButtonVariant } from '@mantine/core';
 import './Button.css';
 
 export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'text' | 'elevated';
@@ -21,6 +36,26 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   children?: ReactNode;
 }
 
+/** M3 variant name -> Mantine `Button` variant. `elevated`/`text` also get a style override below. */
+const VARIANT_MAP: Record<ButtonVariant, MantineButtonVariant> = {
+  filled: 'filled',
+  tonal: 'light',
+  outlined: 'outline',
+  text: 'subtle',
+  elevated: 'default',
+};
+
+const VARIANT_STYLE_OVERRIDE: Partial<Record<ButtonVariant, CSSProperties>> = {
+  elevated: {
+    backgroundColor: 'var(--m3-surface-container-low)',
+    color: 'var(--m3-primary)',
+    boxShadow: 'var(--m3-elevation-1, 0 1px 3px rgba(0, 0, 0, 0.3))',
+  },
+  text: {
+    color: 'var(--m3-primary)',
+  },
+};
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'filled',
@@ -31,43 +66,26 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     trailingIcon,
     children,
     className,
+    style,
     ...rest
   },
   ref,
 ) {
-  const spinnerId = useId();
-  const isDisabled = disabled || loading;
-
   return (
-    <button
+    <MantineButtonPrimitive
       ref={ref}
       type="button"
-      className={clsx(
-        'm3-button',
-        `m3-button--${variant}`,
-        `m3-button--${size}`,
-        'm3-state-layer',
-        className,
-      )}
-      disabled={isDisabled}
-      aria-busy={loading || undefined}
-      aria-describedby={loading ? spinnerId : undefined}
+      variant={VARIANT_MAP[variant]}
+      size={size}
+      loading={loading}
+      disabled={disabled}
+      leftSection={leadingIcon}
+      rightSection={trailingIcon}
+      className={className}
+      style={{ ...VARIANT_STYLE_OVERRIDE[variant], ...style }}
       {...rest}
     >
-      {loading ? (
-        <span className="m3-button__spinner" aria-hidden="true" />
-      ) : leadingIcon ? (
-        <span className="m3-button__icon m3-button__icon--leading">{leadingIcon}</span>
-      ) : null}
-      {loading ? (
-        <span id={spinnerId} className="m3-visually-hidden">
-          Loading
-        </span>
-      ) : null}
-      {children ? <span className="m3-button__label">{children}</span> : null}
-      {!loading && trailingIcon ? (
-        <span className="m3-button__icon m3-button__icon--trailing">{trailingIcon}</span>
-      ) : null}
-    </button>
+      {children}
+    </MantineButtonPrimitive>
   );
 });

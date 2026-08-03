@@ -236,6 +236,35 @@ skips while one is busy. So work on the branch in this checkout, commit, and pus
 If you find yourself in a worktree already, finish and push what you have there rather than
 migrating mid-task — the cost is in _creating_ them, not in the one you are standing in.
 
+**Reinforced 2026-08-04, after a background-job orchestrator session repeated this exact
+mistake at larger scale.** Two things worth separating:
+
+- **A background job's own harness can force worktree isolation** before it may `Edit`/`Write`
+  anything — that is not the same as a session choosing `EnterWorktree` on its own initiative,
+  and is not what this section forbids. If it happens, treat it as a signal to delegate the
+  actual work to a subagent (`isolation: "worktree"` on the `Agent` call, if isolation is truly
+  needed) rather than doing hands-on edits yourself from inside it.
+- **The orchestrator itself should never call `EnterWorktree`.** Its job is coordination and
+  `docs/HANDOVER.md` upkeep — spec, dispatch, integrate, merge, push. Worktrees are for
+  subagents, when an agent genuinely needs an isolated copy to edit concurrently with others;
+  they are not a place for the orchestrator to go do the work personally.
+- **Exiting a worktree mid-task while subagents are still writing inside it breaks them.** The
+  shared-checkout write guard appears to key off the *orchestrating session's own* isolation
+  state, not the target path — exiting was observed rejecting an in-flight subagent's `Edit`
+  calls into that same worktree with "parent bg session hasn't isolated yet," dropping one
+  agent's pending edit. If subagents are still active in a worktree, stay parked in it (doing
+  no edits yourself) rather than exiting and re-entering.
+- Everything the earlier paragraphs warn about (main-checkout rot, per-directory auto-memory,
+  the autorun runner's directory-based lookup) held again, now at roughly double the earlier
+  incident's scale, plus a new failure mode: hooks registered in a worktree's own
+  `.claude/settings.json` are invisible to every other checkout and cannot arm in the user's
+  live session until the branch merges — a worktree is not just stale code, it can be a stale
+  *configuration* too.
+
+**If a session's own workflow or setup seems to be causing repeated problems like these, the
+priority is to ask the `advisor()` tool to review the workflow and setup and fix it — before
+continuing feature work.** See `docs/HANDOVER.md`'s top section.
+
 ## Scope — this working tree, and nothing outside it
 
 **Auralis sessions ignore every worktree outside `~/src/auralis-src`.** This repo is a

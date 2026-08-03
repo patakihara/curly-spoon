@@ -40,6 +40,22 @@ apps/server/data/
 # scripts/hooks/time-gate.sh. Never belongs in a public repo.
 .claude/deferred-prompts.jsonl
 
+# The doc-feedback pipeline's accumulation state, written by
+# scripts/hooks/doc-feedback-accumulate.sh and renamed by
+# scripts/hooks/doc-feedback-review.sh. Each line carries raw prompt text, same
+# reasoning as deferred-prompts.jsonl above — never belongs in a public repo. Both
+# names are listed: the in-review file is the one that exists (potentially for a
+# while, until a review is committed) during the window a `git add` is most likely.
+.claude/pending-doc-feedback.jsonl
+.claude/pending-doc-feedback.in-review.jsonl
+
+# The subagent-activity log's lockfile and crash-leftover temp files, written
+# by scripts/hooks/agent-log.sh around its read-modify-write of
+# docs/HANDOVER.md. Neither is meaningful content — the lock is empty, and a
+# .tmp.<pid> file only survives if the hook was killed mid-write.
+docs/.HANDOVER.md.lock
+docs/.HANDOVER.md.tmp.*
+
 # editors / os
 .DS_Store
 .idea/

@@ -19,7 +19,6 @@ import {
   ListItem,
   Marquee,
   NavigationBar,
-  NavigationRail,
   SearchField,
   Sheet,
   Skeleton,
@@ -257,23 +256,10 @@ function SliderGallery() {
 
 function NavigationGallery() {
   const [activeBar, setActiveBar] = useState('home');
-  const [activeRail, setActiveRail] = useState('library');
-  const [activeExpandedRail, setActiveExpandedRail] = useState('podcasts');
   return (
     <Section title="Navigation">
       <div data-testid="nav-bar" style={{ width: 360 }}>
         <NavigationBar items={NAV_ITEMS} activeKey={activeBar} onActiveChange={setActiveBar} />
-      </div>
-      <div data-testid="nav-rail-collapsed" style={{ height: 320 }}>
-        <NavigationRail items={NAV_ITEMS} activeKey={activeRail} onActiveChange={setActiveRail} />
-      </div>
-      <div data-testid="nav-rail-expanded" style={{ height: 320 }}>
-        <NavigationRail
-          items={NAV_ITEMS}
-          activeKey={activeExpandedRail}
-          onActiveChange={setActiveExpandedRail}
-          expanded
-        />
       </div>
     </Section>
   );

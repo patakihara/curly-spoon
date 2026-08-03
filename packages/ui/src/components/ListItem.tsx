@@ -1,8 +1,18 @@
 /**
  * M3 list item — the workhorse of every browse/queue/downloads screen. Supports
  * 1/2/3-line layouts and optional leading/trailing slots (art, icons, a switch, etc).
+ *
+ * Built on Mantine's `UnstyledButton` (interactive) and `Box` (static row) rather
+ * than Mantine's `NavLink`: `NavLink` hardcodes `component="a"` internally, has no
+ * slot for a 3-line `overline` layout, and its fixed label/description/section
+ * structure doesn't match this component's existing custom markup — `UnstyledButton`
+ * is itself the primitive `NavLink` is built on (bare polymorphic button, zero
+ * built-in visual opinions), which is exactly the "give me accessible interactive
+ * semantics, I'll supply the markup and CSS" fit this component needs. All visuals
+ * still come from `.m3-list-item*` (ListItem.css), unchanged.
  */
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { Box, UnstyledButton } from '@mantine/core';
 import clsx from 'clsx';
 import './ListItem.css';
 
@@ -55,14 +65,14 @@ export const ListItem = forwardRef<HTMLButtonElement, ListItemProps>(function Li
 
   if (!interactive) {
     return (
-      <div className={classes} aria-current={selected ? 'true' : undefined}>
+      <Box className={classes} aria-current={selected ? 'true' : undefined}>
         {content}
-      </div>
+      </Box>
     );
   }
 
   return (
-    <button
+    <UnstyledButton
       ref={ref}
       type="button"
       className={classes}
@@ -70,6 +80,6 @@ export const ListItem = forwardRef<HTMLButtonElement, ListItemProps>(function Li
       {...rest}
     >
       {content}
-    </button>
+    </UnstyledButton>
   );
 });

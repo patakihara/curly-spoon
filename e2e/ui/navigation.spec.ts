@@ -39,26 +39,3 @@ test.describe('NavigationBar', () => {
     expect(box?.height).toBeGreaterThanOrEqual(48);
   });
 });
-
-test.describe('NavigationRail', () => {
-  test('collapsed rail shows icons without visually cramping labels, expanded rail shows both', async ({
-    page,
-  }) => {
-    const collapsed = page.getByTestId('nav-rail-collapsed');
-    const expanded = page.getByTestId('nav-rail-expanded');
-    await expect(collapsed.locator('.m3-nav-rail__item').first()).toBeVisible();
-    await expect(expanded.locator('.m3-nav-rail__label').first()).toBeVisible();
-    const expandedBox = await expanded.locator('nav').boundingBox();
-    const collapsedBox = await collapsed.locator('nav').boundingBox();
-    expect(expandedBox!.width).toBeGreaterThan(collapsedBox!.width);
-  });
-
-  test('activating an item updates aria-current and the indicator', async ({ page }) => {
-    const rail = page.getByTestId('nav-rail-collapsed');
-    await rail.getByRole('button', { name: 'Settings' }).click();
-    await expect(rail.getByRole('button', { name: 'Settings' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-  });
-});

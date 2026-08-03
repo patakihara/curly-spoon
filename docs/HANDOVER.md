@@ -1,5 +1,23 @@
 # Handover
 
+## Priority, before any feature work: review the workflow itself
+
+The orchestrator has not been working well (2026-08-04): it repeatedly called `EnterWorktree`
+on its own initiative despite `CLAUDE.md` already forbidding exactly that; it exited a worktree
+mid-task while subagents were still writing inside it, which dropped at least one agent's
+pending edit; it spawned a fully autonomous `claude --bg` session with unsupervised authority
+to merge straight into `claude/media-client-app-k7v9by`, with no check-in; and it defaulted to
+a `gh pr create` workflow in a repo that has never used PRs. All of this cost real time and
+had to be corrected live by the user, repeatedly, in the same conversation.
+
+**Before picking up any roadmap phase or feature request, call `advisor()` with this session's
+actual workflow and setup as the subject — not a specific technical question — and fix what it
+finds first.** `CLAUDE.md`'s "do not create a worktree" section now has the specifics of what
+went wrong. Don't re-derive them; read that section, then ask the advisor to check whether the
+session is actually following it, before trusting your own judgement that it is.
+
+---
+
 You are picking up **Auralis** from a session that ran in an ephemeral cloud container with
 no access to the user's actual media server. Development moved to a **local machine** at
 commit `108ae0e`, because the container's limits had become the binding constraint: no
@@ -25,6 +43,47 @@ Read this file first, then `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DESI
 
 **Then read `docs/setup/MY_SETUP.md`** — the real server's details, filled in from the box
 itself. It answers most of section 4 below and contradicts several assumptions in this file.
+
+---
+
+## Background agent log (auto-maintained; most recent 15 entries)
+
+Written by `scripts/hooks/agent-log.sh` on `SubagentStart`/`SubagentStop` — see that
+script's header for the concurrency and fail-open design. Each entry: launch time (UTC),
+Agent ID, type, status (`running`/`ended`), and — once the agent finishes — the first ~150
+characters of its final message. If an entry still says `running` with no follow-up, the
+session that owned it may have been lost to compaction or crashed; check its transcript by
+Agent ID before assuming its work landed silently. Entries are pruned oldest-first past 15 —
+an agent's absence here only means a newer launch pushed it out, not that it never ran.
+
+**This section is per-checkout** — a session working in a git worktree (`.claude/
+worktrees/<name>/`) reads and writes only that worktree's own copy of this file. Treat it as
+"what a session in _this_ checkout was doing," not a global registry.
+
+**For the global view, read the shared log instead**: every event recorded here is _also_
+appended to `<git-common-dir>/auralis-agent-log.jsonl` — plain JSONL, one line per event,
+each line tagged with a `checkout` field naming which worktree it came from. All worktrees
+of one repo share a single
+physical `.git` directory (verified empirically: `git rev-parse --git-common-dir` resolves
+to the same absolute path from the main checkout and from every worktree of it), so that
+file is genuinely global across every concurrent session on this repo, regardless of which
+worktree each one runs in. It is never gitignored per branch and never a merge-conflict spot
+because nothing under `.git/` is tracked by any branch, ever — confirmed directly: `git
+status`/`git add` from any checkout cannot see or stage it. Find it from any checkout with:
+
+```bash
+cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.jsonl"
+```
+
+It is append-only and unbounded (unlike this section's 15-entry cap), so it is the place to
+check "what was running across every checkout," while this section stays the quick,
+in-context scan of the current one.
+
+<!-- AGENT_LOG_START -->
+
+_(no agents logged yet)_
+
+<!-- AGENT_LOG_END -->
 
 ---
 
@@ -144,20 +203,64 @@ against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS f
 — verified against real upstream source, not assumed. No web or Android UI yet; that's the
 next podcast wave, on whichever surface makes sense to build first. See `docs/ROADMAP.md` §8.
 
-### Mantine — decided, full migration in progress
+### Mantine — decided, full migration mostly landed, NOT yet merged to this branch
 
-**`adbcb2d` ("Mantine spike") landed real, committed, dependency-adding code** — the spike that
-first put `@mantine/core`/`@mantine/hooks`/`@mantine/notifications` into `packages/ui`, with a
-real `MantineProvider` wired into `ThemeProvider.tsx` and a theme adapter
-(`packages/ui/src/mantine.ts`, `packages/ui/src/theme/mantineColors.ts`). It intentionally
-contradicted the project's earlier "no animation library, hand-built Material 3 Expressive"
-decision (§3 below), and for a while sat undocumented — no commit or doc said which system
-should win, even though the user had already decided. **Confirmed by the user directly
-(2026-08-04): full migration to Mantine, not a partial/spike-only state.** The hand-built
-system (`Icon.tsx`, `Sheet.tsx`, `Card`, and the rest of `packages/ui`) is being migrated onto
-Mantine equivalents; `docs/DESIGN.md`/`docs/ARCHITECTURE.md` still describe only the old
-hand-rolled system as of this writing and need updating to match. (Phase 7's Android work is
-unaffected — it shares no code with either web component system.)
+**Full migration to Mantine is settled** (user confirmed 2026-08-04, not a partial/spike-only
+state). All of this work is sitting uncommitted in the worktree at
+`.claude/worktrees/mantine-full-migration` (branch `claude/mantine-full-migration`) as of this
+writing — it has not been merged into `claude/media-client-app-k7v9by`. Status, checked
+directly against that worktree's `git status`/`git diff`, not assumed:
+
+**Done and verified** (typecheck clean, unit tests pass, real dev-server screenshots inspected,
+not just typechecked):
+- Button, IconButton, Fab
+- Chip, LinearProgress, CircularProgress, Skeleton
+- Card, ListItem, Dialog
+- NavigationBar, TopAppBar (`NavigationRail` deleted — dead code, superseded by `Shell.tsx`'s
+  own inline Mantine `AppShell`/`NavLink` usage)
+- `docs/DESIGN.md`/`docs/ARCHITECTURE.md` updated to describe Mantine as the implementation
+  layer and to fix two unrelated stale claims (AudiobookBay-vs-Prowlarr priority,
+  a phantom `packages/jellyfin-client/`)
+
+**A real, high-risk bug was found and fixed**: Mantine's `unstyled` prop on `Modal` strips the
+CSS that hides its always-mounted root while closed, leaving a permanent full-viewport
+click-blocking overlay over the whole app. Fixed in `Dialog.tsx` by not setting `unstyled`.
+**This class of bug is NOT yet confirmed absent from `Sheet.tsx`** (Mantine `Drawer`, a
+different component, with an extra embedded-vs-modal mode `NowPlaying` depends on) — see below.
+
+**Incomplete, edits present but UNVERIFIED — do not trust as working**: Sheet, Snackbar,
+SearchField. The agent doing this migration was killed mid-verification (user request, not a
+failure) while checking `Sheet`'s mobile-width behavior. `git status` shows these three files
+modified, so implementation work happened, but no typecheck/test/screenshot pass completed
+after the last edit. **Before this can ship: a real browser check of `NowPlaying` in both its
+embedded and modal `Sheet` modes, specifically for the same always-mounted-overlay bug class
+Dialog had.**
+
+**Not done at all — a real CI blocker**: the e2e spec fixes (`e2e/ui/chip.spec.ts`,
+`progress.spec.ts`, `skeleton.spec.ts` — new Mantine DOM broke several locators) and setting
+`respectReducedMotion: true` on `MantineProvider` in `ThemeProvider.tsx`. An agent was
+dispatched for this and also killed before making any edits (`git status` confirms none of
+these files changed). Playwright will fail in CI on at least 7 known assertions until this is
+done.
+
+**Three new Claude Code hooks were built in this same worktree** (`scripts/hooks/agent-log.sh`,
+`doc-feedback-accumulate.sh`, `doc-feedback-review.sh`, `delegation-nudge.sh`) — logging
+subagent launches/ends (cross-worktree, via a shared file under `git rev-parse
+--git-common-dir`), accumulating documentation-relevant user feedback for later batch review,
+and a delegation nudge. All are registered in *this worktree's* `.claude/settings.json` only —
+they cannot arm in any live session until this branch merges, and none have been observed
+firing in a real conversation yet (only pipe-tested with synthesized stdin). `delegation-nudge`
+specifically should stay disabled/uncommitted even after merge: its live classification path
+(a nested headless `claude -p` call) has never succeeded in testing and measured close to a
+full timeout (5.66s/6s) on one real attempt — a synchronous hook with that latency risk and no
+proven success path is worse than no hook.
+
+Also left in the worktree: assorted untracked debug scripts (`debug-sheet*.mjs`, `inspect*.mjs`,
+`*-shot.mjs`) from agents' own screenshot/verification work — scratch, not meant to be committed,
+clean up before or during final integration.
+
+(Phase 7's Android work is unaffected by any of this — it shares no code with either web
+component system.)
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,

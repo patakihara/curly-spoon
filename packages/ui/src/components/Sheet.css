@@ -1,17 +1,17 @@
-.m3-sheet-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
+/*
+ * Mantine migration note, load-bearing: `Drawer.Content`'s `className`/`style` props
+ * are applied by Mantine to *two* different DOM nodes — the visible panel (Paper,
+ * carrying `.mantine-Drawer-content`) *and* the fixed, full-viewport positioning
+ * wrapper around it (carrying `.mantine-Drawer-inner`, not `.mantine-Drawer-content`).
+ * A bare `.m3-sheet-panel` rule would therefore apply to both, and since this
+ * stylesheet is unlayered CSS, it would beat Mantine's own `@layer mantine` rule that
+ * makes the inner wrapper `position: fixed` (unlayered always wins over layered,
+ * regardless of specificity) — silently turning the whole sheet into an inline block
+ * at the bottom of the page instead of a viewport overlay. Every rule below that
+ * shouldn't leak onto that wrapper is scoped with the compound selector
+ * `.mantine-Drawer-content.m3-sheet-panel`, which only the panel itself matches.
+ */
 .m3-sheet-scrim {
-  position: absolute;
-  inset: 0;
-  background: var(--m3-scrim);
-  opacity: 0.32;
   animation: m3-sheet-scrim-in var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
 }
 
@@ -21,8 +21,7 @@
   }
 }
 
-.m3-sheet-panel {
-  position: relative;
+.mantine-Drawer-content.m3-sheet-panel {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -33,11 +32,21 @@
   color: var(--m3-on-surface);
   box-shadow: var(--m3-elevation-3, 0 -4px 12px rgba(0, 0, 0, 0.3));
   overflow: hidden;
+  /* Mantine's own `--drawer-flex` for a bottom drawer is a *percentage* flex-basis
+   * (`calc(100% - offset*2)`), computed against this element's flex parent (the
+   * `inner` wrapper above) — empirically, in the nested indefinite-height chain that
+   * a `flex-direction: column` positioning wrapper creates, Chromium doesn't fall
+   * back to the item's own `height` the way an indefinite-main-size flex-basis
+   * "should" per spec; it renders at roughly half the intended height. `auto` here
+   * (an inline-equivalent longhand, so it wins over the shorthand `flex` from
+   * Mantine's own class) sidesteps the percentage and lets `height` win instead.
+   */
+  flex-basis: auto;
   transition: height var(--m3-spring-slow-duration) var(--m3-spring-slow-easing);
   animation: m3-sheet-enter var(--m3-spring-slow-duration) var(--m3-spring-slow-easing);
 }
 
-.m3-sheet-panel--dragging {
+.mantine-Drawer-content.m3-sheet-panel.m3-sheet-panel--dragging {
   transition: none;
 }
 

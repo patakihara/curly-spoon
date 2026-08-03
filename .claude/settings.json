@@ -21,6 +21,24 @@
             "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/usage-gate.sh\"",
             "timeout": 20,
             "statusMessage": "Checking plan usage"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/doc-feedback-accumulate.sh\"",
+            "timeout": 5,
+            "statusMessage": "Checking for doc/direction feedback"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/doc-feedback-review.sh\"",
+            "timeout": 10,
+            "statusMessage": "Checking accumulated doc feedback"
           }
         ]
       }
@@ -34,6 +52,32 @@
             "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/usage-gate.sh\"",
             "timeout": 20,
             "statusMessage": "Checking plan usage"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/agent-log.sh\"",
+            "timeout": 15,
+            "statusMessage": "Logging subagent launch"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/agent-log.sh\"",
+            "timeout": 15,
+            "statusMessage": "Logging subagent completion"
           }
         ]
       }

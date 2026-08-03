@@ -26,6 +26,40 @@ Spotify's. Note what's off in `docs/HANDOVER.md` rather than letting it sit unre
 is exactly the kind of feedback a screenshot surfaces faster than another phase of unreviewed
 code (see `docs/HANDOVER.md` §7's "get it in front of the user early").
 
+## Implementation layer
+
+Everything below this point — colour, type, shape, motion, layout, accessibility — is the
+**design language**: the target this project is aiming for, unchanged by what follows.
+
+The **component implementation** is migrating from a hand-built React component set
+(`packages/ui/src/components/*.tsx` — `Button`, `Card`, `Sheet`, `Icon`, and the rest) to
+[Mantine](https://mantine.dev) (`@mantine/core`), confirmed by the user as a full migration
+on 2026-08-04 (see `docs/HANDOVER.md`'s "Mantine" section). Mantine components replace the
+hand-rolled ones; they do not replace or loosen any token on this page — a migrated `Card`
+still has to be the same M3 shape, colour and motion as the one it replaces, just built on
+Mantine's primitive instead of a bespoke one.
+
+Theming is what bridges the two systems, and today only **colour** is fully wired:
+`packages/ui/src/theme/mantineColors.ts` takes the already-resolved M3 dynamic-scheme
+primary (`scheme.primary` — an artwork-derived hex, see "Colour" below) and resamples its
+HCT hue/chroma at the ten tone stops Mantine's own palettes expect
+(`[98, 95, 90, 80, 70, 60, 50, 40, 30, 20]`, lightest to darkest), producing a derived
+`MantineColorsTuple` rather than a hand-picked one — the same "never hand-pick, always
+derive" rule this page applies to every other M3 token.
+`packages/ui/src/theme/ThemeProvider.tsx` feeds that tuple into `MantineProvider` as `theme.colors.auralis` /
+`primaryColor: 'auralis'`, and pins `forceColorScheme` to the same resolved light/dark mode
+the rest of the shell uses, so Mantine never disagrees with the M3 CSS custom properties
+(`--m3-*`) painted onto `.auralis-theme-root`.
+
+Type, shape, motion and spacing tokens are, as of this writing, still applied only as those
+CSS custom properties on the theme root, independent of Mantine's own theme object — as the
+component migration proceeds they are expected to feed Mantine's theme (`fontFamily`,
+`radius`, `spacing`, etc.) the same way colour already does, not be replaced by Mantine's
+own defaults. `packages/ui/src/mantine.ts` re-exports the Mantine primitives already in use
+(`AppShell`, `NavLink`, `Card`, `Image`, prefixed `Mantine*`) so that `apps/web` keeps
+consuming UI only through `@auralis/ui`, the same way it consumes every hand-built
+component, rather than importing `@mantine/core` directly.
+
 ## Colour
 
 Auralis derives its entire palette at runtime with
