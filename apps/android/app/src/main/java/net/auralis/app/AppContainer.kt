@@ -22,7 +22,7 @@ class AppContainer(context: Context) {
     private val keyValueStore: KeyValueStore = DataStoreKeyValueStore(context)
     val serverConfigRepository = ServerConfigRepository(keyValueStore)
     val sessionCookieJar = SessionCookieJar(keyValueStore, CoroutineScope(SupervisorJob() + Dispatchers.IO))
-    private val httpClient = OkHttpClient.Builder().cookieJar(sessionCookieJar).build()
+    val httpClient = OkHttpClient.Builder().cookieJar(sessionCookieJar).build()
     val apiClient =
         ApiClient(httpClient, sessionCookieJar) {
             serverConfigRepository.getBaseUrl()
