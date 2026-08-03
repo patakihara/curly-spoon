@@ -71,7 +71,108 @@ const LISTING_PAGE = `
 </body></html>
 `;
 
+// A breadcrumb between each post's title and its metadata. WordPress templates emit links
+// like this on every post, and they point under `/audio-books/` just as post titles do —
+// which is exactly what makes them dangerous to a position-based scraper.
+const LISTING_PAGE_WITH_BREADCRUMBS = `
+<html><body>
+<div class="post">
+  <div class="postTitle"><h2><a href="/audio-books/the-great-book/" title="The Great Book">The Great Book</a></h2></div>
+  <p>Home &gt; <a href="/audio-books/">Audio Books</a> &gt; <a href="/audio-books/category/fiction/">Fiction</a></p>
+  <div class="postContent">
+    <p>Posted: January 1, 2026</p>
+    <p>Format: M4B</p>
+    <p>File Size: 1.2 GB</p>
+  </div>
+</div>
+<div class="post">
+  <div class="postTitle"><h2><a href="/audio-books/another-book/" title="Another Book">Another Book</a></h2></div>
+  <p>Home &gt; <a href="/audio-books/">Audio Books</a> &gt; <a href="/audio-books/category/fiction/">Fiction</a></p>
+  <div class="postContent">
+    <p>Posted: February 2, 2026</p>
+    <p>File Size: 700 MB</p>
+  </div>
+</div>
+</body></html>
+`;
+
 describe('createAudiobookBayIndexer.search', () => {
+  it('keeps each post’s own metadata when template links sit between title and body', async () => {
+    // Regression: with anchor-delimited windows a breadcrumb ended the real post early, so
+    // every post lost its size and date and every breadcrumb became a junk release holding
+    // the stolen values. Because the breadcrumb is templated, that corrupted the entire
+    // result set at once while still looking like a successful search.
+    const fetchFn = fakeFetch(async () => htmlResponse(LISTING_PAGE_WITH_BREADCRUMBS));
+    const provider = makeProvider(fetchFn);
+
+    const results = await provider.search({ term: 'book' });
+
+    expect(results.map((r) => r.title)).toEqual(['The Great Book', 'Another Book']);
+    expect(results[0]?.sizeBytes).toBe(Math.round(1.2 * 1024 * 1024 * 1024));
+    expect(results[0]?.publishedAt).toBe(Date.parse('January 1, 2026'));
+    expect(results[0]?.format).toBe('m4b');
+    expect(results[1]?.sizeBytes).toBe(700 * 1024 * 1024);
+    expect(results[1]?.publishedAt).toBe(Date.parse('February 2, 2026'));
+  });
+
+  it('reports a missing file size as null rather than inheriting a neighbour’s', async () => {
+    const page = `
+<html><body>
+<div class="post">
+  <div class="postTitle"><h2><a href="/audio-books/sized/" title="Sized Book">Sized Book</a></h2></div>
+  <div class="postContent"><p>File Size: 500 MB</p></div>
+</div>
+<div class="post">
+  <div class="postTitle"><h2><a href="/audio-books/unsized/" title="Unsized Book">Unsized Book</a></h2></div>
+  <div class="postContent"><p>Posted: March 3, 2026</p></div>
+</div>
+</body></html>`;
+    const fetchFn = fakeFetch(async () => htmlResponse(page));
+    const provider = makeProvider(fetchFn);
+
+    const results = await provider.search({ term: 'book' });
+
+    expect(results.find((r) => r.title === 'Unsized Book')?.sizeBytes).toBeNull();
+  });
+
+  it('does not emit a second entry for a post echoed in a related-posts list', async () => {
+    const page = `
+<html><body>
+<div class="post">
+  <div class="postTitle"><h2><a href="/audio-books/the-great-book/" title="The Great Book">The Great Book</a></h2></div>
+  <div class="postContent"><p>File Size: 1.2 GB</p></div>
+</div>
+<div class="post related">
+  <a href="/audio-books/the-great-book/" title="The Great Book">The Great Book</a>
+</div>
+</body></html>`;
+    const fetchFn = fakeFetch(async () => htmlResponse(page));
+    const provider = makeProvider(fetchFn);
+
+    const results = await provider.search({ term: 'great' });
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.sizeBytes).toBe(Math.round(1.2 * 1024 * 1024 * 1024));
+  });
+
+  it('falls back to anchor windows when the page has no post containers', async () => {
+    const page = `
+<html><body>
+<a href="/audio-books/plain-one/" title="Plain One">Plain One</a>
+<p>File Size: 300 MB</p>
+<a href="/audio-books/plain-two/" title="Plain Two">Plain Two</a>
+<p>File Size: 400 MB</p>
+</body></html>`;
+    const fetchFn = fakeFetch(async () => htmlResponse(page));
+    const provider = makeProvider(fetchFn);
+
+    const results = await provider.search({ term: 'plain' });
+
+    expect(results.map((r) => r.title)).toEqual(['Plain One', 'Plain Two']);
+    expect(results[0]?.sizeBytes).toBe(300 * 1024 * 1024);
+    expect(results[1]?.sizeBytes).toBe(400 * 1024 * 1024);
+  });
+
   it('extracts title, absolute detail URL, size in bytes, format and posted date', async () => {
     const fetchFn = fakeFetch(async () => htmlResponse(LISTING_PAGE));
     const provider = makeProvider(fetchFn);

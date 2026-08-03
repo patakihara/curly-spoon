@@ -110,6 +110,42 @@ describe('infoHashFromTorrentFile', () => {
 
     expect(infoHashFromTorrentFile(new Uint8Array(list))).toBeNull();
   });
+
+  it('degrades to null on a pathologically nested file instead of overflowing the stack', () => {
+    // Bencode costs one byte per nesting level, so a file small enough to fetch without
+    // suspicion can be thousands of lists deep. These bytes come from a third-party
+    // indexer's download URL, and a raw RangeError here would escape `add()` untyped.
+    const depth = 5000;
+    const nested = Buffer.concat([
+      Buffer.from('l'.repeat(depth), 'ascii'),
+      Buffer.from('e'.repeat(depth), 'ascii'),
+    ]);
+    const torrent = Buffer.concat([
+      Buffer.from('d', 'ascii'),
+      bStr('info'),
+      nested,
+      Buffer.from('e', 'ascii'),
+    ]);
+
+    expect(() => infoHashFromTorrentFile(new Uint8Array(torrent))).not.toThrow();
+    expect(infoHashFromTorrentFile(new Uint8Array(torrent))).toBeNull();
+  });
+
+  it('still hashes a torrent nested as deeply as a real one ever goes', () => {
+    // `info.files[].path[]` is the deepest legitimate structure — a handful of levels.
+    const info = bDict([
+      ['files', bList([bDict([['path', bList([bStr('a'), bStr('b.mp3')])]])])],
+      ['name', bStr('Book')],
+    ]);
+    const torrent = Buffer.concat([
+      Buffer.from('d', 'ascii'),
+      bStr('info'),
+      info,
+      Buffer.from('e', 'ascii'),
+    ]);
+
+    expect(infoHashFromTorrentFile(new Uint8Array(torrent))).toBe(sha1Hex(info));
+  });
 });
 
 describe('infoHashFromMagnet', () => {

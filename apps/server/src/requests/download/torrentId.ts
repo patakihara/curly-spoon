@@ -84,9 +84,20 @@ interface ScanResult {
  * recognises. Returns `null` when the bytes at `offset` are not a valid bencode value
  * (including running off the end of the buffer), so a truncated file degrades to `null`
  * instead of throwing.
+ *
+ * `depth` is a hard recursion limit, and it is load-bearing rather than defensive. These
+ * bytes come from a `.torrent` URL an indexer handed us — third-party content — and
+ * bencode nests one byte per level, so a file well under 10 KB can be thousands of lists
+ * deep. Without the limit that overflows the stack and throws a raw `RangeError` straight
+ * through `add()`, which both breaks this module's "degrades to null" contract and turns a
+ * hostile file into a downed request pipeline. No legitimate torrent nests anywhere near
+ * this far: the deepest real structure is `info.files[].path[]`, about four levels.
  */
-function scanValue(bytes: Uint8Array, offset: number): ScanResult | null {
+const MAX_BENCODE_DEPTH = 64;
+
+function scanValue(bytes: Uint8Array, offset: number, depth = 0): ScanResult | null {
   if (offset >= bytes.length) return null;
+  if (depth > MAX_BENCODE_DEPTH) return null;
   const marker = byteAt(bytes, offset);
 
   // Integer: i<digits>e
@@ -113,7 +124,7 @@ function scanValue(bytes: Uint8Array, offset: number): ScanResult | null {
   if (marker === 0x6c /* 'l' */) {
     let i = offset + 1;
     while (byteAt(bytes, i) !== 0x65 /* 'e' */ && i < bytes.length) {
-      const inner = scanValue(bytes, i);
+      const inner = scanValue(bytes, i, depth + 1);
       if (!inner) return null;
       i = inner.end;
     }
@@ -125,9 +136,9 @@ function scanValue(bytes: Uint8Array, offset: number): ScanResult | null {
   if (marker === 0x64 /* 'd' */) {
     let i = offset + 1;
     while (byteAt(bytes, i) !== 0x65 /* 'e' */ && i < bytes.length) {
-      const key = scanValue(bytes, i);
+      const key = scanValue(bytes, i, depth + 1);
       if (!key) return null;
-      const val = scanValue(bytes, key.end);
+      const val = scanValue(bytes, key.end, depth + 1);
       if (!val) return null;
       i = val.end;
     }

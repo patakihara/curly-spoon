@@ -137,52 +137,88 @@ function parsePublishedAt(window: string): number | null {
   return Number.isFinite(ms) ? ms : null;
 }
 
+/** The pre-container fallback: each post title anchor plus everything up to the next one. */
+function anchorWindows(html: string): string[] {
+  const anchors = [...html.matchAll(POST_ANCHOR_REGEX)].map((m) => m.index ?? 0);
+  return anchors.map((start, i) => html.slice(start, anchors[i + 1] ?? html.length));
+}
+
 function parseFormat(window: string, title: string): string | null {
   const match = window.match(FORMAT_REGEX);
   if (match) return match[1]!.toLowerCase();
   return detectFormat(title);
 }
 
-/** Splits the listing page into one post title anchor plus everything up to the next
- * anchor (or the end of the page), then extracts each post's metadata from that window.
- * This is a scraper, not a DOM parser, so "the next post starts here" is inferred from
- * anchor position rather than matched div nesting — good enough for a fallback provider,
- * and it degrades to fewer/no results rather than a crash when it guesses wrong. */
-function extractReleases(html: string, baseUrl: string): Release[] {
-  const anchors = [...html.matchAll(POST_ANCHOR_REGEX)];
-  const releases: Release[] = [];
+/**
+ * Cuts the page into one chunk per rendered post, using the container each result sits in.
+ *
+ * This exists because inferring post boundaries from *anchor* positions is wrong in a way
+ * that is easy to miss and expensive when it happens. AudiobookBay runs on WordPress, whose
+ * templates put ordinary links — a breadcrumb, a category tag, a "related" list — inside
+ * each post, between its title and its metadata. Every one of those also points under
+ * `/audio-books/`. With anchor-delimited windows, such a link ends the real post's window
+ * early, so the post loses its size and date *and* the stray link becomes an extra release
+ * that inherits them. It is a template element, so it happens on every post at once: the
+ * whole result set turns to junk while still looking like a successful search.
+ *
+ * Container boundaries do not have that failure. Returns `null` when the page has no
+ * recognisable containers, so the caller can fall back rather than reporting nothing.
+ */
+const POST_BLOCK_REGEX = /<div[^>]*\bclass="[^"]*\bpost\b[^"]*"[^>]*>/gi;
 
-  for (let i = 0; i < anchors.length; i += 1) {
-    const anchor = anchors[i]!;
+function splitPostBlocks(html: string): string[] | null {
+  const starts = [...html.matchAll(POST_BLOCK_REGEX)].map((m) => m.index ?? 0);
+  if (starts.length === 0) return null;
+  return starts.map((start, i) => html.slice(start, starts[i + 1] ?? html.length));
+}
+
+/** The first anchor in a block that looks like a post title, with its resolved URL. */
+function firstPostAnchor(block: string, baseUrl: string): { title: string; url: string } | null {
+  for (const anchor of block.matchAll(POST_ANCHOR_REGEX)) {
     const [, attrs, href, anchorText] = anchor;
-    const titleAttrMatch = attrs!.match(TITLE_ATTR_REGEX);
-    const title = (titleAttrMatch?.[1] ?? anchorText ?? '').trim();
+    const title = (attrs!.match(TITLE_ATTR_REGEX)?.[1] ?? anchorText ?? '').trim();
     if (!title) continue;
-
-    const windowStart = anchor.index ?? 0;
-    const windowEnd = anchors[i + 1]?.index ?? html.length;
-    const postWindow = html.slice(windowStart, windowEnd);
-
-    let detailUrl: string;
     try {
-      detailUrl = new URL(href!, baseUrl).toString();
+      return { title, url: new URL(href!, baseUrl).toString() };
     } catch {
-      continue; // Malformed href — skip this post rather than fail the whole search.
+      continue; // Malformed href — skip it rather than fail the whole search.
     }
+  }
+  return null;
+}
+
+/**
+ * Extracts one release per post. Prefers container-delimited blocks (see `splitPostBlocks`)
+ * and falls back to anchor-delimited windows when the markup has no recognisable containers
+ * — the fallback is the weaker heuristic, but a weaker guess beats no results from a
+ * provider that only exists for installs without Prowlarr.
+ */
+function extractReleases(html: string, baseUrl: string): Release[] {
+  const blocks = splitPostBlocks(html) ?? anchorWindows(html);
+  const releases: Release[] = [];
+  const seen = new Set<string>();
+
+  for (const block of blocks) {
+    const anchor = firstPostAnchor(block, baseUrl);
+    if (!anchor) continue;
+    // A post repeated across blocks (a "related" list echoing an earlier result) must not
+    // become a second entry for the same book.
+    if (seen.has(anchor.url)) continue;
+    seen.add(anchor.url);
 
     releases.push({
-      guid: detailUrl,
+      guid: anchor.url,
       indexerId: 'audiobookbay',
       sourceName: 'AudiobookBay',
-      title,
-      sizeBytes: parseSizeBytes(postWindow),
+      title: anchor.title,
+      sizeBytes: parseSizeBytes(block),
       seeders: 0,
       leechers: 0,
-      publishedAt: parsePublishedAt(postWindow),
+      publishedAt: parsePublishedAt(block),
       downloadUrl: null,
       magnetUri: null,
       categories: [],
-      format: parseFormat(postWindow, title),
+      format: parseFormat(block, anchor.title),
     });
   }
 
