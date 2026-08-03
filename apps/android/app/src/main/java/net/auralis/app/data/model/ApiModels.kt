@@ -198,3 +198,83 @@ data class ApiErrorDetail(
 data class ApiErrorBody(
     val error: ApiErrorDetail,
 )
+
+/**
+ * One release a search against the configured indexers turned up. Mirrors
+ * `apps/server/src/routes/schemas.ts`'s `releaseSchema` and `apps/web/src/api/types.ts`'s
+ * `Release` field-for-field. `sizeBytes`/`publishedAt` are `Long`, not `Double` like this
+ * file's playback-position fields — they are byte counts and epoch-millisecond timestamps,
+ * which can exceed `Int` range but have no fractional meaning.
+ */
+@Serializable
+data class Release(
+    val guid: String,
+    val indexerId: String,
+    val sourceName: String,
+    val title: String,
+    val sizeBytes: Long? = null,
+    val seeders: Int,
+    val leechers: Int,
+    val publishedAt: Long? = null,
+    val downloadUrl: String? = null,
+    val magnetUri: String? = null,
+    val categories: List<String>,
+    val format: String? = null,
+)
+
+/** One indexer's failure to answer a search — surfaced alongside partial `Release` results. */
+@Serializable
+data class SearchError(
+    val indexerId: String,
+    val kind: String,
+    val message: String,
+)
+
+/** GET /requests/search response envelope. */
+@Serializable
+data class RequestSearchResult(
+    val releases: List<Release>,
+    val errors: List<SearchError>,
+)
+
+/**
+ * A book request and its pipeline state. Mirrors `apps/web/src/api/types.ts`'s `BookRequest`.
+ * `status` is left as a plain `String` rather than a Kotlin enum so an upstream addition to
+ * the server's `RequestStatus` union decodes rather than throwing.
+ */
+@Serializable
+data class BookRequest(
+    val id: String,
+    val userId: String,
+    val title: String,
+    val author: String? = null,
+    val status: String,
+    val statusDetail: String? = null,
+    val release: Release? = null,
+    val indexerId: String? = null,
+    val clientId: String? = null,
+    val downloadHandle: String? = null,
+    val progress: Double,
+    val createdAt: Long,
+    val updatedAt: Long,
+)
+
+/** POST /requests request body. */
+@Serializable
+data class CreateRequestBody(
+    val title: String,
+    val author: String? = null,
+    val release: Release? = null,
+)
+
+/** GET /requests response envelope. */
+@Serializable
+data class RequestsResponse(
+    val requests: List<BookRequest>,
+)
+
+/** Envelope shared by every `{request}`-returning book-request endpoint. */
+@Serializable
+data class RequestResponse(
+    val request: BookRequest,
+)

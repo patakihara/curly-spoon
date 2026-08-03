@@ -7,6 +7,8 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.auralis.app.data.model.ApiErrorBody
 import net.auralis.app.data.model.AuthUser
+import net.auralis.app.data.model.BookRequest
+import net.auralis.app.data.model.CreateRequestBody
 import net.auralis.app.data.model.HomeResponse
 import net.auralis.app.data.model.Library
 import net.auralis.app.data.model.LibrariesResponse
@@ -16,6 +18,10 @@ import net.auralis.app.data.model.MeResponse
 import net.auralis.app.data.model.OkResponse
 import net.auralis.app.data.model.PlaybackSession
 import net.auralis.app.data.model.PlayResponse
+import net.auralis.app.data.model.Release
+import net.auralis.app.data.model.RequestResponse
+import net.auralis.app.data.model.RequestSearchResult
+import net.auralis.app.data.model.RequestsResponse
 import net.auralis.app.data.model.SetupRequestBody
 import net.auralis.app.data.model.SetupResult
 import net.auralis.app.data.model.SetupState
@@ -80,10 +86,57 @@ class ApiClient(
         fileId: String,
     ): String = apiUrl("/media/$itemId/track/$fileId").toString()
 
+    suspend fun searchReleases(
+        term: String,
+        author: String? = null,
+        limit: Int? = null,
+    ): RequestSearchResult {
+        val params =
+            buildMap {
+                put("term", term)
+                author?.let { put("author", it) }
+                limit?.let { put("limit", it.toString()) }
+            }
+        return get("/requests/search", params)
+    }
+
+    suspend fun listRequests(status: String? = null): List<BookRequest> {
+        val params = status?.let { mapOf("status" to it) } ?: emptyMap()
+        return get<RequestsResponse>("/requests", params).requests
+    }
+
+    suspend fun createRequest(
+        title: String,
+        author: String? = null,
+        release: Release? = null,
+    ): BookRequest = post<CreateRequestBody, RequestResponse>("/requests", CreateRequestBody(title, author, release)).request
+
+    suspend fun getRequest(id: String): BookRequest = get<RequestResponse>("/requests/$id").request
+
+    suspend fun approveRequest(id: String): BookRequest = postNoBody<RequestResponse>("/requests/$id/approve").request
+
+    suspend fun rejectRequest(id: String): BookRequest = postNoBody<RequestResponse>("/requests/$id/reject").request
+
+    suspend fun retryRequest(id: String): BookRequest = postNoBody<RequestResponse>("/requests/$id/retry").request
+
+    suspend fun grabRequest(id: String): BookRequest = postNoBody<RequestResponse>("/requests/$id/grab").request
+
+    suspend fun deleteRequest(id: String) {
+        executeNoContent(Request.Builder().url(apiUrl("/requests/$id")).delete().build())
+    }
+
     private suspend fun apiUrl(path: String): HttpUrl = "${baseUrl().trimEnd('/')}/api/v1$path".toHttpUrl()
 
-    private suspend inline fun <reified T> get(path: String): T =
-        execute(Request.Builder().url(apiUrl(path)).get().build())
+    private suspend inline fun <reified T> get(
+        path: String,
+        queryParams: Map<String, String> = emptyMap(),
+    ): T {
+        val url =
+            apiUrl(path).newBuilder().apply {
+                queryParams.forEach { (key, value) -> addQueryParameter(key, value) }
+            }.build()
+        return execute(Request.Builder().url(url).get().build())
+    }
 
     private suspend inline fun <reified B, reified T> post(
         path: String,
@@ -114,6 +167,24 @@ class ApiClient(
                 // A 2xx response whose body doesn't match the expected shape — same
                 // "unexpected_response" treatment as an undecodable non-2xx error body.
                 throw ApiException("unexpected_response", "Unexpected response from the server (HTTP $status)", status)
+            }
+        }
+
+    /**
+     * Like [execute], but for the one response with no body at all (`DELETE /requests/:id`'s
+     * 204) — decoding an empty string as JSON would throw, so this variant only checks the
+     * status and never calls into `auralisJson`.
+     */
+    private suspend fun executeNoContent(request: Request) =
+        withContext(Dispatchers.IO) {
+            try {
+                httpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw apiExceptionFromErrorBody(response.body?.string().orEmpty(), response.code)
+                    }
+                }
+            } catch (e: IOException) {
+                throw ApiException("network_error", "Could not reach the Auralis server: ${e.message}", 0)
             }
         }
 

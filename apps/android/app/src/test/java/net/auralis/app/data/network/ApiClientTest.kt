@@ -2,6 +2,7 @@ package net.auralis.app.data.network
 
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import net.auralis.app.data.model.Release
 import okhttp3.Cookie
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -292,5 +293,203 @@ class ApiClientTest {
             val url = apiClient.audioTrackUrl("item1", "file1")
 
             assertEquals("$baseUrl/api/v1/media/item1/track/file1", url)
+        }
+
+    // -----------------------------------------------------------------------------
+    // Book requests (wave D1)
+    // -----------------------------------------------------------------------------
+
+    /** Minimal valid `{request: BookRequest}` envelope — every field this class defaults
+     * to null is omitted, leaning on those defaults being exercised elsewhere. */
+    private fun sampleRequestJson(
+        id: String,
+        status: String,
+    ): String =
+        """{"request":{"id":"$id","userId":"u1","title":"Dune","status":"$status","progress":0.0,"createdAt":1690000000000,"updatedAt":1690000000000}}"""
+
+    @Test
+    fun `searchReleases sends term, author and limit as query parameters and decodes releases and errors`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"releases":[{"guid":"g1","indexerId":"idx1","sourceName":"Prowlarr","title":"Dune",
+                      "sizeBytes":123456,"seeders":10,"leechers":2,"publishedAt":1690000000000,
+                      "downloadUrl":"https://example.com/dl","magnetUri":null,"categories":["audiobook"],
+                      "format":"m4b"}],
+                     "errors":[{"indexerId":"idx2","kind":"unauthorized","message":"Bad API key"}]}
+                    """.trimIndent(),
+                ),
+            )
+
+            val result = apiClient.searchReleases("dune", author = "Frank", limit = 20)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("term=dune"))
+            assertTrue(recordedPath.contains("author=Frank"))
+            assertTrue(recordedPath.contains("limit=20"))
+            assertEquals(1, result.releases.size)
+            assertEquals("Dune", result.releases[0].title)
+            assertEquals(1, result.errors.size)
+            assertEquals("unauthorized", result.errors[0].kind)
+        }
+
+    @Test
+    fun `listRequests with no status omits the status query parameter`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"requests":[]}"""))
+
+            apiClient.listRequests()
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(!recordedPath.contains("status"))
+        }
+
+    @Test
+    fun `listRequests with a status includes it as a query parameter`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"requests":[]}"""))
+
+            apiClient.listRequests(status = "pending")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("status=pending"))
+        }
+
+    @Test
+    fun `createRequest sends title, author and release in the body and decodes the created request`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setResponseCode(201).setBody(sampleRequestJson("req1", "pending")),
+            )
+            val release =
+                Release(
+                    guid = "g1",
+                    indexerId = "idx1",
+                    sourceName = "Prowlarr",
+                    title = "Dune",
+                    sizeBytes = 123456,
+                    seeders = 10,
+                    leechers = 2,
+                    publishedAt = 1690000000000,
+                    downloadUrl = "https://example.com/dl",
+                    magnetUri = null,
+                    categories = listOf("audiobook"),
+                    format = "m4b",
+                )
+
+            val result = apiClient.createRequest("Dune", "Frank Herbert", release)
+
+            val recordedBody = mockWebServer.takeRequest().body.readUtf8()
+            assertTrue(recordedBody.contains(""""title":"Dune""""))
+            assertTrue(recordedBody.contains(""""author":"Frank Herbert""""))
+            assertTrue(recordedBody.contains(""""guid":"g1""""))
+            assertEquals("req1", result.id)
+            assertEquals("pending", result.status)
+        }
+
+    @Test
+    fun `getRequest decodes the request envelope`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody(sampleRequestJson("req1", "pending")))
+
+            val result = apiClient.getRequest("req1")
+
+            assertEquals("req1", result.id)
+            assertEquals("pending", result.status)
+        }
+
+    @Test
+    fun `getRequest throws ApiException with code not_found on a 404`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("""{"error":{"code":"not_found","message":"request \"missing\" not found"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.getRequest("missing")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("not_found", exception?.code)
+            assertEquals(404, exception?.httpStatus)
+        }
+
+    @Test
+    fun `approveRequest decodes the request envelope`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody(sampleRequestJson("req1", "approved")))
+
+            val result = apiClient.approveRequest("req1")
+
+            assertEquals("approved", result.status)
+        }
+
+    @Test
+    fun `approveRequest throws ApiException with code invalid_transition on a 409`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(409)
+                    .setBody(
+                        """{"error":{"code":"invalid_transition","message":"cannot move a request from \"completed\" to \"approved\""}}""",
+                    ),
+            )
+
+            val exception =
+                try {
+                    apiClient.approveRequest("req1")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("invalid_transition", exception?.code)
+            assertEquals(409, exception?.httpStatus)
+        }
+
+    @Test
+    fun `rejectRequest decodes the request envelope`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody(sampleRequestJson("req1", "rejected")))
+
+            val result = apiClient.rejectRequest("req1")
+
+            assertEquals("rejected", result.status)
+        }
+
+    @Test
+    fun `retryRequest decodes the request envelope`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody(sampleRequestJson("req1", "searching")))
+
+            val result = apiClient.retryRequest("req1")
+
+            assertEquals("searching", result.status)
+        }
+
+    @Test
+    fun `grabRequest decodes the request envelope`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody(sampleRequestJson("req1", "downloading")))
+
+            val result = apiClient.grabRequest("req1")
+
+            assertEquals("downloading", result.status)
+        }
+
+    @Test
+    fun `deleteRequest succeeds against a 204 response with an empty body`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+
+            apiClient.deleteRequest("req1")
         }
 }
