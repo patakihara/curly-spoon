@@ -14,12 +14,14 @@ blob-report/
 # of the suite. Regenerated every run; committing it would commit a session cookie.
 e2e/.auth/
 
-# runtime data
+# runtime data — anchored to apps/server specifically: a bare `data/` matches any
+# directory named `data` anywhere in the tree, which silently swallowed the Android
+# app's `net.auralis.app.data` package (phase 7 wave A) until this was caught.
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
-data/
+apps/server/data/
 .env
 .env.*
 !.env.example
