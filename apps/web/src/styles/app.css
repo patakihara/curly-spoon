@@ -316,6 +316,209 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+ * Mini player — docked above the bottom bar (compact) or at the foot of the
+ * rail (medium/expanded), per docs/DESIGN.md § Layout.
+ * ------------------------------------------------------------------------- */
+
+.auralis-mini-player {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--m3-space-sm);
+  padding: var(--m3-space-sm) var(--m3-space-md);
+  background: var(--m3-surface-container-high);
+  overflow: hidden;
+}
+
+.auralis-shell--compact .auralis-mini-player {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 80px; /* sits directly above the fixed bottom nav bar */
+  z-index: 9;
+}
+
+.auralis-shell:not(.auralis-shell--compact) .auralis-mini-player {
+  max-width: 360px;
+}
+
+.auralis-mini-player__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--m3-space-sm);
+  min-height: var(--m3-touch-target-min);
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.auralis-mini-player__cover {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--m3-shape-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--m3-surface-container);
+}
+
+.auralis-mini-player__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.auralis-mini-player__title {
+  display: block;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.auralis-mini-player__author {
+  color: var(--m3-on-surface-variant);
+  font-size: var(--m3-type-body-small-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auralis-mini-player__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Now Playing — full-screen sheet (compact), split view (medium), persistent
+ * side panel (expanded), per docs/DESIGN.md § Layout.
+ * ------------------------------------------------------------------------- */
+
+.auralis-now-playing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m3-space-md);
+  padding: var(--m3-space-md);
+}
+
+.auralis-now-playing--medium {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+
+.auralis-now-playing__header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auralis-now-playing__art {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+  border-radius: var(--m3-shape-lg);
+  object-fit: cover;
+  background: var(--m3-surface-container);
+  margin: 0 auto;
+}
+
+.auralis-now-playing__title {
+  font-size: var(--m3-type-headline-small-size);
+  margin: 0;
+}
+
+.auralis-now-playing__author {
+  color: var(--m3-on-surface-variant);
+  margin: var(--m3-space-xs) 0 0;
+}
+
+.auralis-now-playing__times {
+  display: flex;
+  justify-content: space-between;
+  color: var(--m3-on-surface-variant);
+  font-size: var(--m3-type-body-small-size);
+}
+
+.auralis-now-playing__transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--m3-space-lg);
+}
+
+.auralis-now-playing__transport button {
+  min-width: var(--m3-touch-target-min);
+  min-height: var(--m3-touch-target-min);
+}
+
+.auralis-now-playing__rate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--m3-space-sm);
+}
+
+.auralis-chapter-list,
+.auralis-bookmarks__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--m3-space-xs);
+}
+
+.auralis-bookmarks__row {
+  display: flex;
+  align-items: center;
+  gap: var(--m3-space-sm);
+}
+
+.auralis-bookmarks__row > *:first-child {
+  flex: 1;
+}
+
+.auralis-sleep-timer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--m3-space-xs);
+}
+
+.auralis-sleep-timer__menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--m3-surface-container-high);
+  border-radius: var(--m3-shape-md);
+  box-shadow: var(--m3-elevation-2);
+  padding: var(--m3-space-xs);
+  min-width: 160px;
+}
+
+.auralis-sleep-timer__menu button {
+  min-height: var(--m3-touch-target-min);
+  text-align: left;
+  border: none;
+  background: none;
+  color: inherit;
+  border-radius: var(--m3-shape-sm);
+  padding: 0 var(--m3-space-sm);
+  cursor: pointer;
+}
+
+.auralis-sleep-timer__menu button:hover {
+  background: var(--m3-surface-container-highest);
+}
+
+/* ---------------------------------------------------------------------------
  * PWA update banner
  * ------------------------------------------------------------------------- */
 

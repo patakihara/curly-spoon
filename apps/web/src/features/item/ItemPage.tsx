@@ -1,17 +1,23 @@
 /**
- * Item detail. Phase 5 adds the full player (chapters, speed, sleep timer,
- * bookmarks); this phase shows the metadata the BFF already returns, so the
- * route and its loading/error states are real.
+ * Item detail — metadata plus the entry point into playback. Starting playback
+ * needs a session (`POST /items/:id/play`), not just the item metadata already
+ * on this page, because only the session carries tracks/chapters/the resume
+ * point; the item alone is display chrome (see `playerStore.ts`'s header).
  */
+import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
-import { LinearProgress } from '@auralis/ui';
+import { Button, LinearProgress } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
-import { useItemQuery } from '../../api/queries.js';
+import { useItemQuery, usePlayItemMutation } from '../../api/queries.js';
+import { ApiError } from '../../api/errors.js';
+import { usePlayerStore } from '../../state/playerStore.js';
 
 export function ItemPage() {
   const { itemId } = useParams({ from: '/item/$itemId' });
   const api = useApi();
   const itemQuery = useItemQuery(itemId);
+  const playMutation = usePlayItemMutation();
+  const [playError, setPlayError] = useState<string | null>(null);
 
   if (itemQuery.isLoading) {
     return (
@@ -31,6 +37,22 @@ export function ItemPage() {
   const item = itemQuery.data?.item;
   if (!item) return null;
 
+  const handlePlay = async () => {
+    setPlayError(null);
+    try {
+      const { session } = await playMutation.mutateAsync(item.id);
+      usePlayerStore.getState().load(item, session);
+      usePlayerStore.getState().play();
+    } catch (err) {
+      const apiError = err instanceof ApiError ? err : new ApiError('unknown_error', String(err), 0);
+      setPlayError(
+        apiError.isNetworkError
+          ? "Couldn't reach the Auralis server. Try again."
+          : apiError.message || 'Could not start playback.',
+      );
+    }
+  };
+
   return (
     <div className="auralis-page" data-testid="item-page">
       <div className="auralis-item-header">
@@ -48,6 +70,18 @@ export function ItemPage() {
             <p>{item.media.authors.map((a) => a.name).join(', ')}</p>
           ) : null}
           {item.media.narrator ? <p>Narrated by {item.media.narrator}</p> : null}
+          <Button
+            data-testid="item-play"
+            loading={playMutation.isPending}
+            onClick={() => void handlePlay()}
+          >
+            {item.progress ? 'Resume' : 'Play'}
+          </Button>
+          {playError ? (
+            <p role="alert" data-testid="item-play-error">
+              {playError}
+            </p>
+          ) : null}
         </div>
       </div>
 

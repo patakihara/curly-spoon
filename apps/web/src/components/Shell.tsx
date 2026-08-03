@@ -4,7 +4,7 @@
  * Playing region above that — all driven by the one `useBreakpoint` hook, never
  * a component-local media query.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
@@ -15,6 +15,10 @@ import {
 } from '@auralis/ui';
 import { useBreakpoint } from '../hooks/useBreakpoint.js';
 import { useLibrariesQuery, useSetupQuery } from '../api/queries.js';
+import { MiniPlayer } from '../features/player/MiniPlayer.js';
+import { NowPlaying } from '../features/player/NowPlaying.js';
+import { useAudioElement } from '../features/player/useAudioElement.js';
+import { useMediaSession } from '../features/player/useMediaSession.js';
 import { lookupLibraries, visibleDestinations, type DestinationKey } from './destinations.js';
 import { NowPlayingPanel } from './NowPlayingPanel.js';
 import { ShortcutSheet } from './ShortcutSheet.js';
@@ -32,6 +36,14 @@ export function Shell({ children }: { children: ReactNode }) {
   const breakpoint = useBreakpoint();
   const location = useLocation();
   const navigate = useNavigate();
+  const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
+
+  // The single shared `<audio>` element and the OS media-session integration —
+  // both take no arguments and read the player store directly, so they only
+  // ever need to be mounted once, here, where every signed-in route lives
+  // underneath.
+  useAudioElement();
+  useMediaSession();
 
   const setupQuery = useSetupQuery();
   const audiobookshelfConfigured = setupQuery.data?.configured ?? false;
@@ -66,6 +78,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <main className="auralis-shell__content" data-testid="shell-content">
             {children}
           </main>
+          <MiniPlayer onExpand={() => setNowPlayingOpen(true)} />
           <div data-testid="nav-bar">
             <NavigationBar
               items={navItems}
@@ -90,6 +103,10 @@ export function Shell({ children }: { children: ReactNode }) {
           {breakpoint === 'expanded' ? <NowPlayingPanel /> : null}
         </div>
       )}
+      {breakpoint !== 'compact' ? <MiniPlayer onExpand={() => setNowPlayingOpen(true)} /> : null}
+      {breakpoint !== 'expanded' ? (
+        <NowPlaying open={nowPlayingOpen} onClose={() => setNowPlayingOpen(false)} />
+      ) : null}
       <ShortcutSheet />
     </div>
   );
