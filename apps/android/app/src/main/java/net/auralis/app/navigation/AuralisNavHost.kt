@@ -21,12 +21,14 @@ import net.auralis.app.features.login.LoginScreen
 import net.auralis.app.features.home.HomeScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
 import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.features.requests.RequestsScreen
 
 /** Route name constants for [AuralisNavHost]'s graph. */
 object Routes {
     const val ONBOARDING = "onboarding"
     const val LOGIN = "login"
     const val HOME = "home"
+    const val REQUESTS = "requests"
 }
 
 /**
@@ -67,7 +69,8 @@ fun AuralisNavHost(
             NavHost(navController = navController, startDestination = state.destination) {
                 composable(Routes.ONBOARDING) { OnboardingScreen(container, navController) }
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
-                composable(Routes.HOME) { HomeScreen(container, playerViewModel) }
+                composable(Routes.HOME) { HomeScreen(container, playerViewModel, navController) }
+                composable(Routes.REQUESTS) { RequestsScreen(container) }
             }
         }
     }

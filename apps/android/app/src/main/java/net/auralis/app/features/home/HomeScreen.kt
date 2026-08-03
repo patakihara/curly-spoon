@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,11 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import net.auralis.app.AppContainer
 import net.auralis.app.features.player.MiniPlayerBar
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.navigation.Routes
 
 /**
  * The signed-in landing screen: the first library's home shelves ("Continue listening",
@@ -47,6 +50,7 @@ import net.auralis.app.features.player.PlayerViewModel
 fun HomeScreen(
     container: AppContainer,
     playerViewModel: PlayerViewModel,
+    navController: NavHostController,
 ) {
     val viewModel: HomeViewModel =
         viewModel(
@@ -72,7 +76,17 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Auralis") })
+            TopAppBar(
+                title = { Text("Auralis") },
+                actions = {
+                    // A stock Material 3 icon set is not a confirmed dependency here — see
+                    // MiniPlayerBar.kt's header comment on why even icons believed to be in the
+                    // bundled core set were left unverified. A text action avoids that risk.
+                    TextButton(onClick = { navController.navigate(Routes.REQUESTS) }) {
+                        Text("Requests")
+                    }
+                },
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
