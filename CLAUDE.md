@@ -184,32 +184,36 @@ genuinely changes the product. Do not stop to ask permission for routine calls.
 pnpm format && pnpm typecheck && pnpm lint && pnpm test
 ```
 
-**Never run locally — these are blocked by a hook and will be denied:**
+**Corrected 2026-08-03: there is no hook blocking these here, and `gh` is installed.** Earlier
+drafts of this section said `pnpm test:e2e` / `playwright test` / `playwright install` /
+`scripts/docker-smoke.sh` / `pnpm test:docker` / `gradle`/`./gradlew` were "blocked by a hook"
+on this machine, `gh` was "not installed," and the reason given was the **mediaserver** host's
+3.7 GiB of RAM — all three claims describe the machine development moved _from_, not the
+laptop it moved _to_ (see `docs/HANDOVER.md` §4). Checked directly on 2026-08-03: this
+machine has 7.8 GiB RAM (~4 GiB available under normal load), no `.claude/hooks/` script in
+this repo or on this host blocks any of these commands, and `gh` is installed (just not
+authenticated by default — see `gh auth login`). None of that was re-derived at the time; it
+was carried over from the mediaserver-era text and never checked against the machine the repo
+actually runs on now.
 
-`pnpm test:e2e` · `playwright test` · `playwright install` · `scripts/docker-smoke.sh` ·
-`pnpm test:docker` · `gradle` / `./gradlew`
+**Still exercise real caution — the headroom is real but not huge.** ~4 GiB available is a lot
+better than mediaserver's 3.7 GiB _total_ with a media stack running beside it, but it is not
+unlimited, and this is WSL2, which has its own memory/IO quirks worth respecting: prefer a
+**single Playwright worker** (`playwright test --workers=1`) rather than the multi-worker
+config CI uses, watch `free -h` while it runs, and don't run the Docker smoke test and
+Playwright at the same time. Gradle needs a JDK/Android SDK that still isn't installed here
+regardless of RAM — that part of the old constraint is unrelated to memory and still applies
+until someone installs one.
 
 A phase is done when the cheap set passes **and the GitHub Actions run for the pushed
 commit is green** — `.github/workflows/ci.yml` runs lint, typecheck, unit, Playwright and
-the container smoke test; `android.yml` runs Gradle. So: commit, push, and read the run.
-
-`gh` is **not installed on this machine**, so there is no `gh run watch` to call. Report the
-pushed SHA and say the run needs checking on github.com; do not claim a phase is verified on
-the strength of the local subset alone, and do not install `gh` to get around this.
+the container smoke test; `android.yml` runs Gradle. `gh run watch`/`gh run view --log-failed`
+now works for checking that run directly; do not claim a phase is verified on the strength of
+a local subset alone regardless — CI is still the authoritative signal, local running is a
+faster first look, not a replacement.
 
 If you want a signal faster than a push, run **one targeted spec** —
 `pnpm vitest run path/to/one.test.ts` — not a suite.
-
-**Why.** The development machine has **3.7 GiB of RAM** and runs a media stack beside this
-repo. On 2026-08-03 a session here ran `pnpm test:e2e --workers=2` and stalled the whole
-host for three hours — nothing is OOM-killed, the kernel just swaps and the box goes silent.
-Do not reassemble the suite from its pieces either (`playwright.config.ts`'s `webServer` is
-a `vite build` plus a server plus a browser); that costs the same.
-
-**The hook is the user's, not yours** — same standing as the plan-usage gate above, and it
-lives outside this repo so a session in here cannot edit it away. Do not modify it, do not
-reach for another tool when it denies, and do not set its `AURALIS_ALLOW_LOCAL_CI=1` escape
-hatch. When it denies: push, and say the run needs checking.
 
 ## Work in this checkout — do not create a worktree
 

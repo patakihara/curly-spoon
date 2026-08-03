@@ -327,13 +327,19 @@ One side effect worth knowing: mediaserver's host port `8787` conflict with its 
 container doesn't exist on this laptop, so `pnpm dev`'s documented "BFF on :8787" now works
 without the port workaround the setup docs describe for mediaserver itself.
 
-### CI stays GitHub-Actions-only, on both machines
+### CI is the authoritative signal, but local running is no longer off-limits
 
-This was already the rule on mediaserver (RAM-driven — see `block-local-ci.sh` in its
-`~/.claude/hooks/`) and it carries over here on principle, not because the laptop is
-RAM-constrained: `pnpm test:e2e`, `playwright test`, the Docker smoke test and Gradle are
-denied by a hook on this laptop the same way, matching this repo's own "Definition of
-done" further down. Push and read the run on github.com.
+This section previously said `pnpm test:e2e`/`playwright test`/the Docker smoke test/Gradle
+were "denied by a hook on this laptop," mirroring mediaserver's RAM-driven
+`block-local-ci.sh`. **Checked directly and corrected 2026-08-03: no such hook exists on this
+laptop** — `~/.claude/hooks/` here only has `check-script-docs.sh` and `check-uncommitted.sh`,
+neither of which touches CI commands. This laptop also isn't RAM-constrained the way
+mediaserver is (7.8 GiB here vs. mediaserver's 3.7 GiB, and no media stack sharing it). See
+`CLAUDE.md`'s "Definition of done" for the corrected guidance: real caution (single Playwright
+worker, watch `free -h`, don't overlap the Docker smoke test with it) rather than a blanket
+ban. Gradle still can't run locally — no JDK/Android SDK installed — but that's an install gap,
+not a policy. `gh` is installed and authenticatable (`gh auth login`), so CI results can be
+read directly rather than only inferred from a pushed SHA.
 
 ### Verify the clients against reality
 
