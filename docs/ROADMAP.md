@@ -11,7 +11,7 @@ self-contained, tested increment.
 | 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
 | 5   | Audiobooks experience + player                                  | done        |
 | 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | in progress |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | awaiting CI |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned     |
 | 8   | Podcast client (web + Android)                                  | planned     |
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
@@ -167,6 +167,15 @@ success. So Auralis asks, and explains why in the field's help text.
 
 Approval defaults to automatic. The overwhelmingly common deployment is one person's own
 server, where a queue is a step that only ever approves; multi-user installs turn it on.
+
+**Where end-to-end coverage stops, and why.** `AURALIS_FAKE_UPSTREAMS` fakes Audiobookshelf
+and nothing else, so in CI a configured indexer is genuinely unreachable. The Playwright
+spec therefore covers configuring providers, the navigation gate, the unreachable-indexer
+notice, and creating a request from a title — but never a release-attached request, because
+no release is reachable in that environment. Closing that gap needs fake indexer and
+download-client upstreams, which is a follow-up rather than part of this phase: the fake
+lives under `src/` and ships in the image (see `main.ts`), so growing it is a change to the
+production module graph, not a test-only one.
 
 ### 7 — Android: audiobooks + requests
 

@@ -123,7 +123,7 @@ Treat these as standing instructions, not one-off remarks.
 | 4     | Web shell + Docker image                            | done        |
 | 5     | Audiobooks experience + player                      | done        |
 | 5a    | Android build skeleton + APK pipeline               | done        |
-| 6     | Book requests                                       | in progress |
+| 6     | Book requests                                       | awaiting CI |
 | 7–11  | Android app, podcasts, music, polish, F-Droid       | not started |
 
 **Work in phase 6 happens in a git worktree**, `.claude/worktrees/phase6` on branch
@@ -170,18 +170,44 @@ tests** (156 UI + 25 app end-to-end), and `pnpm test:docker` (the container smok
 the usage gate closed first — are parked there, and each one that exists should be listed
 below as a TODO. Empty but for its README means there is nothing queued.
 
-<!-- pending specs: phase6-request-service.md, phase6-requests-web.md -->
+<!-- pending specs: none -->
 
-**Two phase-6 specs are parked and launchable**, in the order they must run:
+Both phase-6 specs were launched and deleted in the commits that landed their work — this
+directory means _unlaunched_, and a spec left here after the fact reads as a TODO that is
+already done.
 
-1. `docs/agent-specs/phase6-request-service.md` — the request state machine, the service
-   that drives it, `requestsRepo`, the `/requests` and `/providers` routes, and a
-   `scanLibrary` addition to the Audiobookshelf client.
-2. `docs/agent-specs/phase6-requests-web.md` — the web experience: ask for a book, watch it
-   download, configure providers in settings.
+### Phase 6 — what is built, and what has not been verified
 
-Delete a spec in the same commit that launches it — this directory means _unlaunched_, and
-a launched one left here reads as a TODO that is already done.
+**Everything is written and every local gate is green: 729 unit tests, five packages
+typechecking, lint clean.** What follows is what that does _not_ cover, because the next
+session should spend its first minutes on the right thing.
+
+**No CI run has been read.** `gh` is not installed here, so the Actions run for the final
+commit needs checking on github.com. Two commits on this branch are expected **red**:
+`61889ba` and `5507467` caught subagent files mid-write, because `git add -A` does not know
+an agent is still typing. Everything from `958fbb5` onward should be green. If a run before
+that is red, that is why — do not go hunting.
+
+**`e2e/app/requests.spec.ts` has never executed.** Not "written and expected to pass" —
+never run, because Playwright is denied on this machine. It is the highest-risk artifact of
+the phase. If the first CI run is red, look there before looking at the providers. It runs
+in `serial` mode deliberately: unlike the rest of `e2e/app`, its tests build on each other's
+BFF state, and `fullyParallel` would race them.
+
+**The web wave's presentational layer is unreviewed.** `polling.ts`, `providerForm.ts`,
+`requestAnyway.ts`, `format.ts` and `destinations.ts` are pure, unit-tested, and their tests
+were read. The components around them were not reviewed, and CI is their first real check.
+The server side _was_ reviewed, twice, and both rounds found real defects.
+
+**Two product decisions worth a human's opinion**, neither a bug:
+
+- **`GET /requests` is unscoped by caller.** Any signed-in user sees — and can delete —
+  everyone's requests. That matches Overseerr and is right for one person's own server, but
+  combined with approval defaulting to automatic it means a shared install has no privacy
+  and no gate. Worth deciding before anyone else gets an account.
+- **`shelfarr` and `deemix` are already running on the development machine.** `shelfarr`
+  overlaps this phase's pipeline; `deemix` cuts against the phase-9 decision to use slskd.
+  Neither was designed around — worth asking the user rather than assuming.
 
 ### Phase 6 — what is decided, so it is not re-litigated
 
@@ -201,17 +227,6 @@ a launched one left here reads as a TODO that is already done.
   `/data`. Guessing produces downloads that complete and are never imported, which is the
   worst failure mode available because every component reports success.
 - **Approval defaults to automatic**, on the grounds that this is one person's own server.
-
-### Two things on the box worth asking the user about
-
-Neither changes phase 6; both are worth a sentence rather than a redesign.
-
-- **`shelfarr` is running**, and it overlaps what phase 6 builds (an \*arr-shaped request
-  pipeline feeding Audiobookshelf). Worth asking whether Auralis should drive it instead of
-  talking to Prowlarr and qBittorrent directly.
-- **`deemix` is running**, which cuts against the phase-9 decision to use slskd as the
-  reference music-request provider (§3). The provider interface is pluggable either way,
-  but the user evidently already has deemix working.
 
 ### Phase 4 — what closing it changed
 
