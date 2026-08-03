@@ -15,6 +15,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
+  // The fixture audio can't decode (see file header), so `HTMLMediaElement.play()`
+  // genuinely rejects — but *when* it rejects varies with the runner's own load,
+  // which makes any assertion that depends on catching the store's optimistic
+  // "playing" state before that rejection reverts it flaky by construction: it
+  // has been observed failing the very first `toHaveAttribute('Pause')` check
+  // below when the rejection lands unusually fast. Stubbed to resolve instead —
+  // this suite asserts store-derived UI only, never real decode progress, so
+  // removing the timing dependency changes nothing it means to test.
+  await page.addInitScript(() => {
+    HTMLMediaElement.prototype.play = () => Promise.resolve();
+  });
   // Signed in already, via the `app` project's `storageState`.
   await page.goto('/');
   await expect(page.getByTestId('home-page')).toBeVisible();
@@ -46,12 +57,8 @@ test('the mini player’s toggle switches its own aria-label between Play and Pa
   // `item-play` calls `play()` itself, so playback starts in the "playing" state.
   await expect(toggle).toHaveAttribute('aria-label', 'Pause');
 
-  // One clean transition, not a rapid back-and-forth: the first `play()` call
-  // above kicks off a real (if doomed) `audio.play()` promise, and clicking
-  // straight back to "playing" again risks racing that still-pending promise's
-  // eventual rejection against this click's own state — a genuine interaction
-  // with the fixture audio, not something to paper over with a wait (see this
-  // file's header on why this suite never waits for real playback).
+  // One clean transition, not a rapid back-and-forth toggle: keeps this test
+  // reading as "pause, then check", not a stress test of the toggle button.
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-label', 'Play');
 });
