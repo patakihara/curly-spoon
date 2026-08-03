@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -92,6 +93,16 @@ class PlayerViewModel(
                         if (current is PlayerUiState.Playing) {
                             _uiState.value = current.copy(isPlaying = isPlaying)
                         }
+                    }
+
+                    // setMediaItem/prepare/play() in playItem() are fire-and-forget: ExoPlayer's
+                    // own async pipeline (resolving the audio stream URL, decoding) can fail after
+                    // that point with nothing in this ViewModel's call stack to observe it. Without
+                    // this override, that failure never reverts PlayerUiState out of Playing, and
+                    // the UI is left claiming playback is happening when it silently is not.
+                    override fun onPlayerError(error: PlaybackException) {
+                        _uiState.value =
+                            PlayerUiState.Error("Playback failed: ${error.errorCodeName} — ${error.message}")
                     }
                 },
             )
