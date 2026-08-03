@@ -203,13 +203,12 @@ against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS f
 — verified against real upstream source, not assumed. No web or Android UI yet; that's the
 next podcast wave, on whichever surface makes sense to build first. See `docs/ROADMAP.md` §8.
 
-### Mantine — decided, full migration mostly landed, NOT yet merged to this branch
+### Mantine — decided, full migration landed on this branch (`2a0d2e0`)
 
 **Full migration to Mantine is settled** (user confirmed 2026-08-04, not a partial/spike-only
-state). All of this work is sitting uncommitted in the worktree at
-`.claude/worktrees/mantine-full-migration` (branch `claude/mantine-full-migration`) as of this
-writing — it has not been merged into `claude/media-client-app-k7v9by`. Status, checked
-directly against that worktree's `git status`/`git diff`, not assumed:
+state) **and merged**: `2a0d2e0` landed it directly on `claude/media-client-app-k7v9by`, so the
+`mantine-full-migration` worktree this section used to point to no longer holds anything not
+already on this branch. Status, reconciled against the actual branch history, not assumed:
 
 **Done and verified** (typecheck clean, unit tests pass, real dev-server screenshots inspected,
 not just typechecked):
@@ -249,6 +248,19 @@ and outside this scope — 3 assertions × 2 projects in `button.spec.ts` (touch
 `aria-busy` on the loading state, press corner-radius morph) and 1 × 2 in `icon-button.spec.ts`
 (`.m3-icon-button__glyph` no longer exists), the same class of stale-Mantine-DOM locator drift
 as chip/progress/skeleton had, just not in a file this pass touched.
+
+**The full `pnpm test:e2e` (190 tests: `e2e/ui` + `e2e/app`) has two more pre-existing
+failures beyond those 8**, both confirmed present already on `2a0d2e0`'s own CI run
+(`gh run view 30856458080 --log-failed`), not introduced here: `e2e/app/browse.spec.ts` ›
+"the Duration sort chip reorders the cards shortest to longest" — `LibraryPage.tsx`'s sort
+chips are the same `@auralis/ui` `Chip`, so this is the identical checkbox-not-button DOM
+drift `chip.spec.ts` had, just in an app-level spec, not a `packages/ui` one; and
+`e2e/ui/dialog.spec.ts` › "Escape closes it and restores focus to the trigger", which only
+failed on `ui-mobile` in CI's 2-worker run and did not reproduce locally under
+`--workers=1`, so it may be a parallelism-dependent flake rather than a deterministic DOM
+break — worth re-checking under CI's real worker count before assuming it's the same class
+of bug. Neither was in this pass's scope (chip/progress/skeleton, `e2e/ui` only); noted here
+so the next session doesn't have to re-run all of CI to rediscover them.
 
 Fixing the locators surfaced one real bug, not just stale selectors: Mantine's
 `respectReducedMotion` only disarms its JS-driven `Transition` machinery (`Modal`, `Drawer`,
