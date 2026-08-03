@@ -39,7 +39,7 @@ and one new spec at `e2e/app/requests.spec.ts`.
 2. **`/requests` route and destination.** `RequestsPage` lists requests newest first with
    status, progress and the failure reason when failed. The nav destination follows the
    existing "never show a section that will only error" rule in `destinations.ts`: hidden
-   unless at least one indexer *and* one download client are configured and enabled.
+   unless at least one indexer _and_ one download client are configured and enabled.
    Extend `DestinationContext` accordingly and test the new visibility rule.
 
 3. **Ask for a book.** A search field querying `GET /requests/search`, results showing
@@ -52,11 +52,15 @@ and one new spec at `e2e/app/requests.spec.ts`.
    pending request, and retry on a failed one.
 
 5. **Provider settings** in `SettingsPage.tsx`: list the descriptors from `GET /providers`,
-   configure base URL and secret, toggle enabled, and a "Test" button surfacing the typed
-   error. The secret field renders as a masked placeholder when `hasSecret` is true and
-   sends nothing unless the user actually types — that is what the repo's
-   "omit the secret to keep it" behaviour exists for. Plus the approval policy, save path
-   and category settings.
+   configure base URL and credentials, toggle enabled, and a "Test" button surfacing the
+   typed error. Plus the approval policy, save path and category settings.
+
+   **Render one input per `ProviderDescriptor.secretFields` entry**, not a single "secret"
+   box — Prowlarr needs one API key while qBittorrent needs a username and a password, and
+   a lone field cannot configure both. `kind: 'password'` masks. When `hasSecret` is true
+   the inputs show a placeholder and **send nothing unless the user actually types**, which
+   is what the repo's "omit the secret and the stored one is kept" behaviour exists for.
+   Submit `secret` as an object keyed by `key`; the BFF decides how to store it.
 
    The save-path field needs help text, because it is the single most common way this
    feature is misconfigured: the path is the one the **download client** sees, which is

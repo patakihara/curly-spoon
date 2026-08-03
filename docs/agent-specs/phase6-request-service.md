@@ -79,6 +79,7 @@ no `Date.now()` inside logic — inject a clock so tests are deterministic.
   `IndexerProvider` because only the AudiobookBay scraper defers its link; importing that
   provider's resolver directly into the service would put a provider-specific branch inside
   the generic pipeline, which is the one thing `types.ts` exists to prevent.
+
 - `pollDownloads()` — for every `downloading` request, read `status(handle)`; update
   `progress`; on `completed`/`seeding` move to `importing` and call `scanLibrary`; on
   `error` or `missing` move to `failed` with the reason. Idempotent: calling it twice must
@@ -97,23 +98,33 @@ than letting Audiobookshelf find the file on its own schedule. Test both paths.
 All behind `requireSession`, all bodies/queries parsed via `parseInput` with schemas added
 to `routes/schemas.ts`.
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| `GET` | `/requests` | optional `?status=` |
-| `POST` | `/requests` | `{ title, author?, release? }` → 201 |
-| `GET` | `/requests/:id` | 404 when absent |
-| `POST` | `/requests/:id/approve` \| `/reject` \| `/retry` | 409 on an illegal transition |
-| `DELETE` | `/requests/:id` | 204 |
-| `GET` | `/requests/search` | `?term=&author=&limit=` → `{ releases, errors }` |
-| `GET` | `/providers` | descriptors joined with configured state |
-| `PUT` | `/providers/:id` | 400 for an unknown id |
-| `POST` | `/providers/:id/test` | maps `ProviderError.kind` → 401/502/404/400 |
-| `DELETE` | `/providers/:id` | 204 |
-| `GET`/`PUT` | `/settings/requests` | approval policy, save path, category |
+| Method      | Path                                             | Notes                                            |
+| ----------- | ------------------------------------------------ | ------------------------------------------------ |
+| `GET`       | `/requests`                                      | optional `?status=`                              |
+| `POST`      | `/requests`                                      | `{ title, author?, release? }` → 201             |
+| `GET`       | `/requests/:id`                                  | 404 when absent                                  |
+| `POST`      | `/requests/:id/approve` \| `/reject` \| `/retry` | 409 on an illegal transition                     |
+| `DELETE`    | `/requests/:id`                                  | 204                                              |
+| `GET`       | `/requests/search`                               | `?term=&author=&limit=` → `{ releases, errors }` |
+| `GET`       | `/providers`                                     | descriptors joined with configured state         |
+| `PUT`       | `/providers/:id`                                 | 400 for an unknown id                            |
+| `POST`      | `/providers/:id/test`                            | maps `ProviderError.kind` → 401/502/404/400      |
+| `DELETE`    | `/providers/:id`                                 | 204                                              |
+| `GET`/`PUT` | `/settings/requests`                             | approval policy, save path, category             |
 
 **`GET /providers` and `PUT /providers/:id` must never return a stored secret** — report
 `hasSecret: boolean` instead, and have a test assert the plaintext appears nowhere in the
 response body. That test is the point of the endpoint pair.
+
+**Assembling the secret is the route layer's job**, because providers disagree about what
+one is: Prowlarr wants a bare API key, qBittorrent wants a username and a password.
+`ProviderDescriptor.secretFields` names the inputs. `PUT /providers/:id` accepts
+`secret: Record<string, string>` keyed by those `key`s and stores it by the rule the
+descriptor's doc comment states — **exactly one field is stored as its raw value; two or
+more are stored as `JSON.stringify` of the object**. That is not an arbitrary convention:
+`prowlarr.ts` reads `config.secret` verbatim and `qbittorrent.ts` parses it as JSON, so
+getting it wrong makes every provider fail authentication at once. Test both shapes, and
+test that omitting `secret` entirely leaves the stored one intact.
 
 Route tests go through `buildTestApp` + `fastify.inject()`, as every other route test does.
 

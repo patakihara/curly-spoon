@@ -4,10 +4,41 @@
  */
 
 import type { DownloadClientFactory, ProviderDescriptor } from '../types.js';
+import { createQbittorrentClient } from './qbittorrent.js';
+import { createTransmissionClient } from './transmission.js';
 
-export const downloadClientFactories: Record<string, DownloadClientFactory> = {};
+export const downloadClientFactories: Record<string, DownloadClientFactory> = {
+  qbittorrent: createQbittorrentClient,
+  transmission: createTransmissionClient,
+};
 
-export const downloadClientDescriptors: ProviderDescriptor[] = [];
+export const downloadClientDescriptors: ProviderDescriptor[] = [
+  {
+    id: 'qbittorrent',
+    displayName: 'qBittorrent',
+    kind: 'download',
+    requiresBaseUrl: true,
+    requiresSecret: true,
+    secretFields: [
+      { key: 'username', label: 'Username', kind: 'text' },
+      { key: 'password', label: 'Password', kind: 'password' },
+    ],
+    summary:
+      'The most common choice, and the one with categories. Needs a WebUI username and password.',
+  },
+  {
+    id: 'transmission',
+    displayName: 'Transmission',
+    kind: 'download',
+    requiresBaseUrl: true,
+    requiresSecret: false,
+    secretFields: [
+      { key: 'username', label: 'Username', kind: 'text' },
+      { key: 'password', label: 'Password', kind: 'password' },
+    ],
+    summary: 'Lighter, and usually runs unauthenticated on a LAN. Labels stand in for categories.',
+  },
+];
 
 export function describeDownloadClients(): ProviderDescriptor[] {
   return [...downloadClientDescriptors].sort((a, b) => a.id.localeCompare(b.id));

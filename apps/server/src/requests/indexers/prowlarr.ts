@@ -102,7 +102,11 @@ async function callProwlarr(
     throw new ProviderError('not_found', 'prowlarr', `Prowlarr has no such endpoint: ${url}`);
   }
   if (!response.ok) {
-    throw new ProviderError('rejected', 'prowlarr', `Prowlarr responded with HTTP ${response.status}.`);
+    throw new ProviderError(
+      'rejected',
+      'prowlarr',
+      `Prowlarr responded with HTTP ${response.status}.`,
+    );
   }
   return response;
 }

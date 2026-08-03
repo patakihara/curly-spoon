@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FetchLike } from '@auralis/abs-client';
-import { ProviderError, type ProviderFactoryDeps, type ResolvedProviderConfig } from '../types.js';
+import {
+  ProviderError,
+  type ProviderFactoryDeps,
+  type Release,
+  type ResolvedProviderConfig,
+} from '../types.js';
 import { createAudiobookBayIndexer, resolveAudiobookBayMagnet } from './audiobookbay.js';
 
 function fakeFetch(impl: FetchLike): FetchLike & ReturnType<typeof vi.fn> {
@@ -112,15 +117,19 @@ describe('createAudiobookBayIndexer.search', () => {
   });
 
   it('returns [] for a page with no posts, without throwing', async () => {
-    const fetchFn = fakeFetch(async () => htmlResponse('<html><body>No results found.</body></html>'));
+    const fetchFn = fakeFetch(async () =>
+      htmlResponse('<html><body>No results found.</body></html>'),
+    );
     const provider = makeProvider(fetchFn);
 
     await expect(provider.search({ term: 'nothing' })).resolves.toEqual([]);
   });
 
   it('returns [] for a page of unrelated markup, without throwing', async () => {
-    const fetchFn = fakeFetch(
-      async () => htmlResponse('<html><head><title>Some other site</title></head><body><nav>hi</nav></body></html>'),
+    const fetchFn = fakeFetch(async () =>
+      htmlResponse(
+        '<html><head><title>Some other site</title></head><body><nav>hi</nav></body></html>',
+      ),
     );
     const provider = makeProvider(fetchFn);
 
@@ -203,7 +212,9 @@ describe('resolveAudiobookBayMagnet', () => {
 
   it('builds a magnet URI with a lowercased hash and all four trackers', async () => {
     const fetchFn = fakeFetch(async () =>
-      htmlResponse(`<html><body><p>Torrent Info Hash: <span>${HASH.toUpperCase()}</span></p></body></html>`),
+      htmlResponse(
+        `<html><body><p>Torrent Info Hash: <span>${HASH.toUpperCase()}</span></p></body></html>`,
+      ),
     );
 
     const magnet = await resolveAudiobookBayMagnet(
@@ -212,16 +223,25 @@ describe('resolveAudiobookBayMagnet', () => {
     );
 
     expect(magnet).toContain(`xt=urn:btih:${HASH}`);
-    expect(magnet).toContain('tr=' + encodeURIComponent('udp://tracker.opentrackr.org:1337/announce'));
+    expect(magnet).toContain(
+      'tr=' + encodeURIComponent('udp://tracker.opentrackr.org:1337/announce'),
+    );
     expect(magnet).toContain('tr=' + encodeURIComponent('udp://open.demonii.com:1337/announce'));
     expect(magnet).toContain('tr=' + encodeURIComponent('udp://open.stealth.si:80/announce'));
-    expect(magnet).toContain('tr=' + encodeURIComponent('udp://tracker.torrent.eu.org:451/announce'));
+    expect(magnet).toContain(
+      'tr=' + encodeURIComponent('udp://tracker.torrent.eu.org:451/announce'),
+    );
   });
 
   it('tolerates an unwrapped hash with no markup around it', async () => {
-    const fetchFn = fakeFetch(async () => htmlResponse(`<html><body>Torrent Info Hash: ${HASH}</body></html>`));
+    const fetchFn = fakeFetch(async () =>
+      htmlResponse(`<html><body>Torrent Info Hash: ${HASH}</body></html>`),
+    );
 
-    const magnet = await resolveAudiobookBayMagnet('http://audiobookbay.test/audio-books/x/', fetchFn);
+    const magnet = await resolveAudiobookBayMagnet(
+      'http://audiobookbay.test/audio-books/x/',
+      fetchFn,
+    );
 
     expect(magnet).toContain(`xt=urn:btih:${HASH}`);
   });
@@ -233,5 +253,73 @@ describe('resolveAudiobookBayMagnet', () => {
       resolveAudiobookBayMagnet('http://audiobookbay.test/audio-books/x/', fetchFn),
       'not_found',
     );
+  });
+});
+
+describe('createAudiobookBayIndexer.resolveDownload', () => {
+  const HASH = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
+
+  function release(overrides: Partial<Release> = {}): Release {
+    return {
+      guid: 'http://audiobookbay.test/audio-books/the-great-book/',
+      indexerId: 'audiobookbay',
+      sourceName: 'AudiobookBay',
+      title: 'The Great Book',
+      sizeBytes: null,
+      seeders: 0,
+      leechers: 0,
+      publishedAt: null,
+      downloadUrl: null,
+      magnetUri: null,
+      categories: [],
+      format: null,
+      ...overrides,
+    };
+  }
+
+  it('fills in the magnet from the detail page, preferring the release title for dn', async () => {
+    const fetchFn = fakeFetch(async () =>
+      htmlResponse(
+        `<html><body><p>Torrent Info Hash: <span>${HASH.toUpperCase()}</span></p></body></html>`,
+      ),
+    );
+    const provider = makeProvider(fetchFn);
+    const input = release();
+
+    const result = await provider.resolveDownload!(input);
+
+    expect(result.magnetUri).toContain(`xt=urn:btih:${HASH}`);
+    expect(result.magnetUri).toContain(`dn=${encodeURIComponent('The Great Book')}`);
+  });
+
+  it('returns the release untouched and issues no fetch when a magnet is already present', async () => {
+    const fetchFn = fakeFetch(async () => htmlResponse('<html></html>'));
+    const provider = makeProvider(fetchFn);
+    const input = release({ magnetUri: 'magnet:?xt=urn:btih:already' });
+
+    const result = await provider.resolveDownload!(input);
+
+    expect(result).toBe(input);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('does not mutate the input release object', async () => {
+    const fetchFn = fakeFetch(async () =>
+      htmlResponse(`<html><body>Torrent Info Hash: ${HASH}</body></html>`),
+    );
+    const provider = makeProvider(fetchFn);
+    const input = release();
+    const snapshot = { ...input };
+
+    await provider.resolveDownload!(input);
+
+    expect(input).toEqual(snapshot);
+  });
+
+  it('propagates the not_found ProviderError when the detail page has no hash', async () => {
+    const fetchFn = fakeFetch(async () => htmlResponse('<html><body>nothing here</body></html>'));
+    const provider = makeProvider(fetchFn);
+
+    await expectKind(provider.resolveDownload!(release()), 'not_found');
   });
 });

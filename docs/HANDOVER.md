@@ -115,28 +115,26 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                    | Status      |
-| ----- | ------------------------------------------------------- | ----------- |
-| 1     | Monorepo, tooling, CI, test harness                     | done        |
-| 2     | `@auralis/ui` — Material 3 Expressive design system     | done        |
-| 3     | BFF + Audiobookshelf client                             | done        |
-| 4     | Web shell + Docker image                                | done        |
-| 5     | Audiobooks experience + player                          | done        |
-| 5a    | Android build skeleton + APK pipeline                   | done        |
-| 6     | Book requests                                           | in progress |
-| 7–11  | Android app, podcasts, music, polish, F-Droid           | not started |
+| Phase | What                                                | Status      |
+| ----- | --------------------------------------------------- | ----------- |
+| 1     | Monorepo, tooling, CI, test harness                 | done        |
+| 2     | `@auralis/ui` — Material 3 Expressive design system | done        |
+| 3     | BFF + Audiobookshelf client                         | done        |
+| 4     | Web shell + Docker image                            | done        |
+| 5     | Audiobooks experience + player                      | done        |
+| 5a    | Android build skeleton + APK pipeline               | done        |
+| 6     | Book requests                                       | in progress |
+| 7–11  | Android app, podcasts, music, polish, F-Droid       | not started |
 
 **Work in phase 6 happens in a git worktree**, `.claude/worktrees/phase6` on branch
 `claude/phase6`, pushed to `claude/media-client-app-k7v9by`. There is also a leftover
 `.claude/worktrees/phase5`. Both are ordinary worktrees of this repo; `git worktree list`
 is the truth.
 
-**The shared checkout at `~/src/auralis-src` is stale, and its dirty files are a trap.** It
-sits on an older commit with a working tree full of modified and untracked files that are
-**already committed and pushed** — phase 5 and 5a were built in the phase-5 worktree, not
-there. Two sessions running have now spent time re-deriving that. Do not commit those
-files, do not "rescue" them: check `git log origin/claude/media-client-app-k7v9by` first,
-and work in a worktree.
+The shared checkout is **still** stale and its dirty files are **still** already pushed —
+§0 has the reconcile. Two sessions have now spent time re-deriving that, so the check
+`git log origin/claude/media-client-app-k7v9by` before believing a dirty tree is real work
+is worth doing first, every time.
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,

@@ -7,10 +7,36 @@
  */
 
 import type { IndexerFactory, ProviderDescriptor } from '../types.js';
+import { createAudiobookBayIndexer } from './audiobookbay.js';
+import { createProwlarrIndexer } from './prowlarr.js';
 
-export const indexerFactories: Record<string, IndexerFactory> = {};
+export const indexerFactories: Record<string, IndexerFactory> = {
+  prowlarr: createProwlarrIndexer,
+  audiobookbay: createAudiobookBayIndexer,
+};
 
-export const indexerDescriptors: ProviderDescriptor[] = [];
+export const indexerDescriptors: ProviderDescriptor[] = [
+  {
+    id: 'prowlarr',
+    displayName: 'Prowlarr',
+    kind: 'indexer',
+    requiresBaseUrl: true,
+    requiresSecret: true,
+    secretFields: [{ key: 'apiKey', label: 'API key', kind: 'password' }],
+    summary:
+      'Searches every indexer Prowlarr is configured with, and solves Cloudflare challenges via FlareSolverr. The recommended source.',
+  },
+  {
+    id: 'audiobookbay',
+    displayName: 'AudiobookBay',
+    kind: 'indexer',
+    requiresBaseUrl: false,
+    requiresSecret: false,
+    secretFields: [],
+    summary:
+      'Scrapes AudiobookBay directly. No extra service to run, but it cannot pass Cloudflare and the site moves domain often.',
+  },
+];
 
 export function describeIndexers(): ProviderDescriptor[] {
   return [...indexerDescriptors].sort((a, b) => a.id.localeCompare(b.id));

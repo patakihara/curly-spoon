@@ -9,6 +9,11 @@ import { createHash } from 'node:crypto';
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
+/** `bytes[i]`, but `-1` past the end instead of `undefined` — keeps every comparison below a plain number check under `noUncheckedIndexedAccess`. */
+function byteAt(bytes: Uint8Array, i: number): number {
+  return i < bytes.length ? bytes[i]! : -1;
+}
+
 /**
  * Decodes RFC 4648 base32 (no padding required) into raw bytes. BitTorrent v1 magnets
  * encode the 20-byte info hash this way when they don't use hex, so a 32-character base32
@@ -50,7 +55,9 @@ export function infoHashFromMagnet(magnetUri: string): string | null {
   for (const xt of params.getAll('xt')) {
     const match = /^urn:btih:([A-Za-z0-9]+)$/u.exec(xt.trim());
     if (!match) continue;
-    const raw = match[1];
+    // The capture group is non-optional in the pattern above, so a successful match always
+    // has it.
+    const raw = match[1]!;
     if (/^[0-9A-Fa-f]{40}$/u.test(raw)) {
       return raw.toLowerCase();
     }
@@ -80,15 +87,15 @@ interface ScanResult {
  */
 function scanValue(bytes: Uint8Array, offset: number): ScanResult | null {
   if (offset >= bytes.length) return null;
-  const marker = bytes[offset];
+  const marker = byteAt(bytes, offset);
 
   // Integer: i<digits>e
   if (marker === 0x69 /* 'i' */) {
     let i = offset + 1;
-    if (bytes[i] === 0x2d /* '-' */) i += 1;
+    if (byteAt(bytes, i) === 0x2d /* '-' */) i += 1;
     const digitsStart = i;
-    while (i < bytes.length && bytes[i] >= 0x30 && bytes[i] <= 0x39) i += 1;
-    if (i === digitsStart || bytes[i] !== 0x65 /* 'e' */) return null;
+    while (byteAt(bytes, i) >= 0x30 && byteAt(bytes, i) <= 0x39) i += 1;
+    if (i === digitsStart || byteAt(bytes, i) !== 0x65 /* 'e' */) return null;
     return { end: i + 1 };
   }
 
@@ -105,7 +112,7 @@ function scanValue(bytes: Uint8Array, offset: number): ScanResult | null {
   // List: l...e
   if (marker === 0x6c /* 'l' */) {
     let i = offset + 1;
-    while (i < bytes.length && bytes[i] !== 0x65 /* 'e' */) {
+    while (byteAt(bytes, i) !== 0x65 /* 'e' */ && i < bytes.length) {
       const inner = scanValue(bytes, i);
       if (!inner) return null;
       i = inner.end;
@@ -117,7 +124,7 @@ function scanValue(bytes: Uint8Array, offset: number): ScanResult | null {
   // Dict: d...e, alternating key/value
   if (marker === 0x64 /* 'd' */) {
     let i = offset + 1;
-    while (i < bytes.length && bytes[i] !== 0x65 /* 'e' */) {
+    while (byteAt(bytes, i) !== 0x65 /* 'e' */ && i < bytes.length) {
       const key = scanValue(bytes, i);
       if (!key) return null;
       const val = scanValue(bytes, key.end);
@@ -138,8 +145,8 @@ function scanByteStringLength(
 ): { length: number; headerEnd: number } | null {
   let i = offset;
   const digitsStart = i;
-  while (i < bytes.length && bytes[i] >= 0x30 && bytes[i] <= 0x39) i += 1;
-  if (i === digitsStart || bytes[i] !== 0x3a /* ':' */) return null;
+  while (byteAt(bytes, i) >= 0x30 && byteAt(bytes, i) <= 0x39) i += 1;
+  if (i === digitsStart || byteAt(bytes, i) !== 0x3a /* ':' */) return null;
   const lengthStr = Buffer.from(bytes.slice(digitsStart, i)).toString('ascii');
   const length = Number.parseInt(lengthStr, 10);
   if (!Number.isFinite(length) || length < 0) return null;
@@ -153,10 +160,10 @@ function scanByteStringLength(
  * re-encode it, which is the classic way to produce a hash trackers silently reject.
  */
 export function infoHashFromTorrentFile(bytes: Uint8Array): string | null {
-  if (bytes.length === 0 || bytes[0] !== 0x64 /* must be a top-level dict */) return null;
+  if (bytes.length === 0 || byteAt(bytes, 0) !== 0x64 /* must be a top-level dict */) return null;
 
   let i = 1;
-  while (i < bytes.length && bytes[i] !== 0x65 /* 'e' */) {
+  while (i < bytes.length && byteAt(bytes, i) !== 0x65 /* 'e' */) {
     const key = scanValue(bytes, i);
     if (!key) return null;
     const val = scanValue(bytes, key.end);
@@ -164,10 +171,7 @@ export function infoHashFromTorrentFile(bytes: Uint8Array): string | null {
 
     // Is this key literally "4:info"?
     const keyBytes = bytes.slice(i, key.end);
-    if (
-      keyBytes.length === 6 &&
-      Buffer.from(keyBytes).toString('ascii') === '4:info'
-    ) {
+    if (keyBytes.length === 6 && Buffer.from(keyBytes).toString('ascii') === '4:info') {
       const infoSlice = bytes.slice(key.end, val.end);
       return createHash('sha1').update(infoSlice).digest('hex');
     }

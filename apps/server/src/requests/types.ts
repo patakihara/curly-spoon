@@ -199,6 +199,26 @@ export interface ProviderFactoryDeps {
 export type IndexerFactory = (deps: ProviderFactoryDeps) => IndexerProvider;
 export type DownloadClientFactory = (deps: ProviderFactoryDeps) => DownloadClientProvider;
 
+/**
+ * One input the settings screen must render to collect a provider's credential.
+ *
+ * Providers do not agree on what a "secret" is: Prowlarr wants a single API key, while
+ * qBittorrent wants a username and a password. A lone masked field cannot configure both,
+ * so the descriptor names the fields and the UI renders one input per entry.
+ *
+ * **Storage rule**, which the route layer owns: a provider with exactly one field stores
+ * that field's value as the raw secret string; a provider with several stores
+ * `JSON.stringify` of an object keyed by `key`. That is why `qbittorrent.ts` parses its
+ * secret as JSON and `prowlarr.ts` uses it verbatim.
+ */
+export interface SecretField {
+  /** Property name in the stored JSON, and the form field's name. */
+  key: string;
+  label: string;
+  /** `password` fields are masked, and are never echoed back by the API. */
+  kind: 'text' | 'password';
+}
+
 /** Static description of a provider, for the settings screen's "what can I add" list. */
 export interface ProviderDescriptor {
   id: string;
@@ -206,8 +226,14 @@ export interface ProviderDescriptor {
   kind: ProviderKind;
   /** Whether the provider needs a `baseUrl` — false for the fixed-site scraper. */
   requiresBaseUrl: boolean;
-  /** Whether the provider needs a secret — false for anonymous sources. */
+  /**
+   * Whether the provider is unusable without a credential. `false` with a non-empty
+   * `secretFields` means "optional" — Transmission commonly runs unauthenticated on a LAN,
+   * but accepts a username and password when it does not.
+   */
   requiresSecret: boolean;
+  /** The inputs to render, in order. Empty when the provider needs no credential at all. */
+  secretFields: SecretField[];
   /** One line explaining the trade-off, shown under the name in settings. */
   summary: string;
 }

@@ -1,0 +1,276 @@
+/**
+ * AudiobookBay indexer provider — the fallback for installs without Prowlarr.
+ *
+ * AudiobookBay has no API, so this scrapes its search-results HTML with regular
+ * expressions (no HTML parser is available in this codebase, and none should be added for
+ * one provider). That makes it inherently fragile — the site's markup and even its domain
+ * change without notice — so every extraction here degrades to "found nothing" rather than
+ * throwing. A throw here would read to the request pipeline as "the provider is broken",
+ * which is a much worse user experience than "no results today".
+ *
+ * Search deliberately does **not** resolve a magnet at result time: each result would need
+ * its own detail-page fetch, and AudiobookBay is a scraped, rate-limited site — an N+1
+ * fetch per search would be the first thing to get this IP blocked. Instead `search`
+ * returns the detail page URL as the release's `guid` with `downloadUrl`/`magnetUri` both
+ * `null`, and `resolveAudiobookBayMagnet` is called once, later, only for the single
+ * release the user actually picks.
+ */
+import { ProviderError } from '../types.js';
+import type {
+  IndexerFactory,
+  IndexerProvider,
+  IndexerSearchQuery,
+  ProviderFactoryDeps,
+  Release,
+} from '../types.js';
+import type { FetchLike } from '@auralis/abs-client';
+import { detectFormat } from './format.js';
+
+const DEFAULT_LIMIT = 50;
+
+/** AudiobookBay's domain changes often; this is only the last-resort fallback when the
+ * provider is enabled with no `baseUrl` configured. */
+const DEFAULT_BASE_URL = 'https://audiobookbay.lu';
+
+const TRACKERS = [
+  'udp://tracker.opentrackr.org:1337/announce',
+  'udp://open.demonii.com:1337/announce',
+  'udp://open.stealth.si:80/announce',
+  'udp://tracker.torrent.eu.org:451/announce',
+];
+
+/** A post's title anchor: `<a href="/audio-books/some-slug/" title="Some Title">…</a>`.
+ * Restricted to hrefs containing `/audio-books/` so nav chrome elsewhere on the page (menu
+ * links, pagination) is never mistaken for a search result. Captures the full attribute
+ * string (so the `title` attribute can be pulled out separately, since attribute order on
+ * the tag is not guaranteed), the href, and the anchor's own text as a fallback title. */
+const POST_ANCHOR_REGEX = /<a\s+([^>]*href="([^"]*\/audio-books\/[^"]*)"[^>]*)>([^<]*)<\/a>/gi;
+
+/** Pulls `title="…"` out of an anchor's attribute string, when present. */
+const TITLE_ATTR_REGEX = /title="([^"]*)"/i;
+
+/** `Posted: January 1, 2026` in a post's body. */
+const POSTED_REGEX = /Posted:\s*([^<\n]+)/i;
+
+/** `File Size: 1.2 GB` in a post's body — AudiobookBay reports 1024-based units. */
+const SIZE_REGEX = /File Size:\s*([\d.]+)\s*(GB|MB|KB)/i;
+
+/** `Format: M4B` in a post's body, when the uploader bothered to fill it in. */
+const FORMAT_REGEX = /Format:\s*([A-Za-z0-9]+)/i;
+
+/** `Torrent Info Hash: <span>ABCDEF…</span>` (or with no wrapping tag at all) on a detail
+ * page. Tolerant of one optional inline tag between the label and the hash, because
+ * AudiobookBay themes wrap it in a `<span>`/`<code>` inconsistently. */
+const HASH_REGEX = /Torrent Info Hash:\s*(?:<[^>]+>\s*)?([A-Fa-f0-9]{40})/i;
+
+/** `<title>Book Name - AudiobookBay</title>` on a detail page, used as the magnet's `dn`
+ * when it is present. */
+const DETAIL_TITLE_REGEX = /<title>([^<]*)<\/title>/i;
+
+const BYTES_PER_UNIT: Record<string, number> = {
+  GB: 1024 * 1024 * 1024,
+  MB: 1024 * 1024,
+  KB: 1024,
+};
+
+function resolveBaseUrl(config: ProviderFactoryDeps['config']): string {
+  const configured = config.baseUrl?.trim();
+  const base = configured && configured.length > 0 ? configured : DEFAULT_BASE_URL;
+  return base.replace(/\/+$/, '');
+}
+
+/** Shared transport/HTTP error mapping for every AudiobookBay request. A 403 gets its own
+ * message: the site sits behind Cloudflare, Prowlarr solves that via FlareSolverr, and a
+ * plain scraper cannot — so a 403 here is the single most useful diagnostic this provider
+ * can give, and a generic "rejected" would send the user hunting in the wrong direction. */
+async function fetchAudiobookBay(
+  fetchFn: FetchLike,
+  url: string,
+  signal?: AbortSignal,
+): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetchFn(url, { signal });
+  } catch (cause) {
+    throw new ProviderError('unreachable', 'audiobookbay', 'Could not reach AudiobookBay.', {
+      cause,
+    });
+  }
+  if (response.status === 401) {
+    throw new ProviderError('unauthorized', 'audiobookbay', 'AudiobookBay rejected the request.');
+  }
+  if (response.status === 403) {
+    throw new ProviderError(
+      'rejected',
+      'audiobookbay',
+      'AudiobookBay returned HTTP 403 — this is very likely a Cloudflare challenge, which ' +
+        'this scraper cannot solve (Prowlarr can, via FlareSolverr; consider it instead).',
+    );
+  }
+  if (response.status === 404) {
+    throw new ProviderError('not_found', 'audiobookbay', `AudiobookBay has no such page: ${url}`);
+  }
+  if (!response.ok) {
+    throw new ProviderError(
+      'rejected',
+      'audiobookbay',
+      `AudiobookBay responded with HTTP ${response.status}.`,
+    );
+  }
+  return response;
+}
+
+function parseSizeBytes(window: string): number | null {
+  const match = window.match(SIZE_REGEX);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]!);
+  const unit = match[2]!.toUpperCase();
+  const perUnit = BYTES_PER_UNIT[unit];
+  if (!Number.isFinite(value) || !perUnit) return null;
+  return Math.round(value * perUnit);
+}
+
+function parsePublishedAt(window: string): number | null {
+  const match = window.match(POSTED_REGEX);
+  if (!match) return null;
+  const ms = Date.parse(match[1]!.trim());
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function parseFormat(window: string, title: string): string | null {
+  const match = window.match(FORMAT_REGEX);
+  if (match) return match[1]!.toLowerCase();
+  return detectFormat(title);
+}
+
+/** Splits the listing page into one post title anchor plus everything up to the next
+ * anchor (or the end of the page), then extracts each post's metadata from that window.
+ * This is a scraper, not a DOM parser, so "the next post starts here" is inferred from
+ * anchor position rather than matched div nesting — good enough for a fallback provider,
+ * and it degrades to fewer/no results rather than a crash when it guesses wrong. */
+function extractReleases(html: string, baseUrl: string): Release[] {
+  const anchors = [...html.matchAll(POST_ANCHOR_REGEX)];
+  const releases: Release[] = [];
+
+  for (let i = 0; i < anchors.length; i += 1) {
+    const anchor = anchors[i]!;
+    const [, attrs, href, anchorText] = anchor;
+    const titleAttrMatch = attrs!.match(TITLE_ATTR_REGEX);
+    const title = (titleAttrMatch?.[1] ?? anchorText ?? '').trim();
+    if (!title) continue;
+
+    const windowStart = anchor.index ?? 0;
+    const windowEnd = anchors[i + 1]?.index ?? html.length;
+    const postWindow = html.slice(windowStart, windowEnd);
+
+    let detailUrl: string;
+    try {
+      detailUrl = new URL(href!, baseUrl).toString();
+    } catch {
+      continue; // Malformed href — skip this post rather than fail the whole search.
+    }
+
+    releases.push({
+      guid: detailUrl,
+      indexerId: 'audiobookbay',
+      sourceName: 'AudiobookBay',
+      title,
+      sizeBytes: parseSizeBytes(postWindow),
+      seeders: 0,
+      leechers: 0,
+      publishedAt: parsePublishedAt(postWindow),
+      downloadUrl: null,
+      magnetUri: null,
+      categories: [],
+      format: parseFormat(postWindow, title),
+    });
+  }
+
+  return releases;
+}
+
+export const createAudiobookBayIndexer: IndexerFactory = ({
+  config,
+  fetch: fetchFn,
+}: ProviderFactoryDeps): IndexerProvider => ({
+  id: 'audiobookbay',
+  displayName: 'AudiobookBay',
+
+  async search(query: IndexerSearchQuery, signal?: AbortSignal): Promise<Release[]> {
+    const baseUrl = resolveBaseUrl(config);
+    const term = (query.author ? `${query.term} ${query.author}` : query.term).trim();
+    const limit = query.limit && query.limit > 0 ? Math.trunc(query.limit) : DEFAULT_LIMIT;
+
+    const url = new URL(`${baseUrl}/`);
+    url.searchParams.set('s', term);
+
+    const response = await fetchAudiobookBay(fetchFn, url.toString(), signal);
+    const html = await response.text();
+
+    return extractReleases(html, baseUrl).slice(0, limit);
+  },
+
+  async testConnection(signal?: AbortSignal): Promise<void> {
+    const baseUrl = resolveBaseUrl(config);
+    await fetchAudiobookBay(fetchFn, `${baseUrl}/`, signal);
+  },
+
+  /**
+   * The `IndexerProvider.resolveDownload` hook: search results from this provider carry no
+   * `magnetUri` (see the module doc comment), so the request service calls this once, on
+   * the single release the user picked, to fill it in. A thin wrapper over
+   * `resolveAudiobookBayMagnet` — it does not re-fetch or re-derive the hash itself — that
+   * additionally prefers the listing's own title for the magnet's `dn`, since that is the
+   * title the user actually searched for and picked, over the detail page's `<title>` tag.
+   */
+  async resolveDownload(release: Release, signal?: AbortSignal): Promise<Release> {
+    if (release.magnetUri) return release;
+    const magnetUri = await resolveAudiobookBayMagnet(release.guid, fetchFn, signal);
+    return {
+      ...release,
+      magnetUri:
+        release.title.trim().length > 0 ? withDisplayName(magnetUri, release.title) : magnetUri,
+    };
+  },
+});
+
+/** Swaps a magnet URI's `dn=` value for a different display name, without touching the
+ * hash or trackers. Used by `resolveDownload` to prefer the listing title over the detail
+ * page's `<title>` tag, without `resolveAudiobookBayMagnet` needing to know about that
+ * preference. */
+function withDisplayName(magnet: string, displayName: string): string {
+  return magnet.replace(/dn=[^&]*/, `dn=${encodeURIComponent(displayName)}`);
+}
+
+/**
+ * Resolves one AudiobookBay detail page into a magnet URI. Deferred out of `search` (see
+ * the module doc comment above) so it costs exactly one request, made only when the user
+ * has actually chosen this release.
+ */
+export async function resolveAudiobookBayMagnet(
+  detailUrl: string,
+  fetchFn: FetchLike,
+  signal?: AbortSignal,
+): Promise<string> {
+  const response = await fetchAudiobookBay(fetchFn, detailUrl, signal);
+  const html = await response.text();
+
+  const hashMatch = html.match(HASH_REGEX);
+  if (!hashMatch) {
+    throw new ProviderError(
+      'not_found',
+      'audiobookbay',
+      `No torrent info hash found on ${detailUrl} — the page layout may have changed.`,
+    );
+  }
+  const hash = hashMatch[1]!.toLowerCase();
+
+  const titleMatch = html.match(DETAIL_TITLE_REGEX);
+  const displayName = titleMatch?.[1]?.trim() || hash;
+
+  const params = [`xt=urn:btih:${hash}`, `dn=${encodeURIComponent(displayName)}`];
+  for (const tracker of TRACKERS) {
+    params.push(`tr=${encodeURIComponent(tracker)}`);
+  }
+  return `magnet:?${params.join('&')}`;
+}
