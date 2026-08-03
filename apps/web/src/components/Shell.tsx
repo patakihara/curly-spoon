@@ -11,6 +11,7 @@ import {
   MantineAppShell,
   MantineNavLink,
   NavigationBar,
+  SearchField,
   type IconName,
   type NavigationItem,
 } from '@auralis/ui';
@@ -21,6 +22,7 @@ import { NowPlaying } from '../features/player/NowPlaying.js';
 import { useAudioElement } from '../features/player/useAudioElement.js';
 import { useMediaSession } from '../features/player/useMediaSession.js';
 import { useProgressSync } from '../features/player/useProgressSync.js';
+import { useUiStore } from '../state/uiStore.js';
 import {
   lookupLibraries,
   lookupProviders,
@@ -45,6 +47,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
+  const railSearchQuery = useUiStore((s) => s.query);
+  const setSearchQuery = useUiStore((s) => s.setSearchQuery);
 
   // The single shared `<audio>` element, the OS media-session integration and
   // progress sync — all three take no arguments and read the player store
@@ -80,6 +84,20 @@ export function Shell({ children }: { children: ReactNode }) {
   const handleActiveChange = (key: string) => {
     const destination = destinations.find((d) => d.key === key);
     if (destination) void navigate({ to: destination.to });
+  };
+
+  // The desktop rail's own destination list, without Search: Search is an
+  // always-visible input at the top of the rail instead of a nav destination
+  // there (Feishin's pattern), so it must not also appear as a duplicate link
+  // below it. The compact bottom bar is unaffected — `navItems` (unfiltered)
+  // still goes to `NavigationBar` below, where Search stays a normal tab.
+  const railNavItems = navItems.filter((item) => item.key !== 'search');
+
+  const handleRailSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (location.pathname !== '/search') {
+      void navigate({ to: '/search' });
+    }
   };
 
   return (
@@ -131,7 +149,14 @@ export function Shell({ children }: { children: ReactNode }) {
               style={{ height: '100%' }}
             >
               <MantineAppShell.Navbar p="xs" style={{ height: '100%' }}>
-                {navItems.map((item) => (
+                <div className="auralis-nav-rail-search" data-testid="nav-rail-search">
+                  <SearchField
+                    value={railSearchQuery}
+                    onChange={handleRailSearchChange}
+                    aria-label="Search"
+                  />
+                </div>
+                {railNavItems.map((item) => (
                   <MantineNavLink
                     key={item.key}
                     component="button"

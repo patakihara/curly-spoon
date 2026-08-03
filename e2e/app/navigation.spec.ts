@@ -71,9 +71,26 @@ test('Music is not offered while nothing serves it', async ({ page }) => {
   await expect(nav.getByRole('button', { name: 'Home' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Books' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Podcasts' })).toBeVisible();
-  await expect(nav.getByRole('button', { name: 'Search' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Settings' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Music' })).toHaveCount(0);
+  // Search is an always-visible input at the top of the rail (Feishin's
+  // pattern), not a destination link in this list — it must not appear as one.
+  await expect(nav.getByRole('button', { name: 'Search' })).toHaveCount(0);
+});
+
+test('the desktop rail has an always-visible search input, not a Search nav link', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  const nav = page.getByTestId('nav-rail-expanded');
+  const searchInput = nav.getByRole('combobox', { name: 'Search' });
+
+  await expect(searchInput).toBeVisible();
+  await expect(searchInput).toHaveAttribute('placeholder', 'Search');
+
+  await searchInput.fill('dune');
+  await expect(page).toHaveURL(/\/search$/);
+  await expect(page.getByTestId('search-field').getByRole('combobox')).toHaveValue('dune');
 });
 
 test('the Books destination goes to the library the server actually reported', async ({ page }) => {

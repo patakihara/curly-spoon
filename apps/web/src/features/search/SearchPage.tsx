@@ -4,14 +4,19 @@
  * phase wires the field, the `/` and `g h`/`g l` keyboard focus behaviour, and a
  * real search against whichever library the user has.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, SearchField } from '@auralis/ui';
 import { useLibrariesQuery, useLibrarySearchQuery, useSetupQuery } from '../../api/queries.js';
 import { useUiStore } from '../../state/uiStore.js';
 
 export function SearchPage() {
-  const [query, setQuery] = useState('');
+  // `query` lives in `uiStore`, not local state: the desktop rail's own
+  // always-visible search input (`Shell.tsx`) reads and writes the same value,
+  // so typing in either one keeps both in sync, regardless of which one a
+  // user reached `/search` from.
+  const query = useUiStore((s) => s.query);
+  const setQuery = useUiStore((s) => s.setSearchQuery);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const searchFocusToken = useUiStore((s) => s.searchFocusToken);

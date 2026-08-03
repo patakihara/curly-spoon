@@ -3,7 +3,7 @@ import { useUiStore } from './uiStore.js';
 
 describe('useUiStore', () => {
   beforeEach(() => {
-    useUiStore.setState({ shortcutSheetOpen: false, searchFocusToken: 0 });
+    useUiStore.setState({ shortcutSheetOpen: false, searchFocusToken: 0, query: '' });
   });
 
   it('starts with the shortcut sheet closed', () => {
@@ -22,5 +22,19 @@ describe('useUiStore', () => {
     useUiStore.getState().requestSearchFocus();
     useUiStore.getState().requestSearchFocus();
     expect(useUiStore.getState().searchFocusToken).toBe(before + 2);
+  });
+
+  it('starts with an empty search query', () => {
+    expect(useUiStore.getState().query).toBe('');
+  });
+
+  it('shares the search query across every reader of the store', () => {
+    // This is what keeps the desktop rail's search input (Shell.tsx) and
+    // SearchPage's own field in sync: both read `query` from this one store,
+    // so a write from either shows up to both.
+    useUiStore.getState().setSearchQuery('dune');
+    expect(useUiStore.getState().query).toBe('dune');
+    useUiStore.getState().setSearchQuery('');
+    expect(useUiStore.getState().query).toBe('');
   });
 });

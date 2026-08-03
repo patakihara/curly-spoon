@@ -54,6 +54,12 @@ html body {
   align-self: stretch;
 }
 
+/* The rail's always-visible search input (Shell.tsx), above the destination
+ * list — Feishin's pattern, not a nav destination among Home/Books/etc. */
+.auralis-nav-rail-search {
+  margin-bottom: var(--m3-space-sm);
+}
+
 .auralis-shell__content {
   flex: 1;
   min-width: 0;
