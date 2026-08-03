@@ -30,6 +30,16 @@ apps/server/data/
 # nested worktree — untracked, it reads as a mountain of phantom work.
 .claude/worktrees/
 
+# Personal, per-checkout Claude Code overrides — Claude Code's own convention
+# for local settings not meant to be committed to this public repo (unlike
+# .claude/settings.json, which is team-visible policy). Currently holds the
+# quiet-hours prompt-queuing hook, a personal habit-management preference,
+# not project policy.
+.claude/settings.local.json
+# The quiet-hours hook's queue: raw prompt text plus timestamps, written by
+# scripts/hooks/time-gate.sh. Never belongs in a public repo.
+.claude/deferred-prompts.jsonl
+
 # editors / os
 .DS_Store
 .idea/
