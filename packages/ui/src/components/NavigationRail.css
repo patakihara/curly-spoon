@@ -8,7 +8,7 @@
   /* Deliberate deviation from pure M3 spec (real nav rails are tonal-only):
      the surface-container/background contrast alone reads as too flat, so a
      mild level-1 shadow gives the rail real visual separation from content. */
-  box-shadow: var(--m3-elevation-1);
+  box-shadow: var(--m3-elevation-1, 0 1px 3px rgba(0, 0, 0, 0.3));
   transition: width var(--m3-spring-default-duration) var(--m3-spring-default-easing);
 }
 
