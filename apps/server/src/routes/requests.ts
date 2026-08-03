@@ -122,43 +122,61 @@ function toProviderEntry(descriptor: ProviderDescriptor, config: ResolvedProvide
  *   a settings form show a masked placeholder and submit without re-typing it).
  * - Otherwise, only the keys `descriptor.secretFields` actually declares are looked at —
  *   an unrelated key in the body is silently ignored, never stored.
- * - If every value among those known keys is `''` (including the vacuous case of zero
- *   known keys at all — `Array.prototype.every` on `[]` is `true`), the secret is cleared
- *   (`null`).
- * - Exactly one known key with a non-empty value → stored as that raw string (matches
- *   `prowlarr.ts`).
- * - Two or more → stored as `JSON.stringify` of `{ key: value, ... }` (matches
- *   `qbittorrent.ts`).
+ * - If every declared key the body supplies is `''`, the secret is cleared (`null`).
+ *
+ * **The stored format is decided by the descriptor, never by how many fields the body
+ * happened to send.** A one-field provider stores its value raw (`prowlarr.ts` reads it
+ * verbatim); a multi-field provider stores JSON (`qbittorrent.ts` parses it). Keying that
+ * off the submitted count instead meant a form that sent only the username wrote the bare
+ * string `"alice"` where a JSON object belonged — after which every call failed with
+ * "credentials are not valid JSON", an error describing neither what the user did nor how
+ * to undo it.
+ *
+ * A partial multi-field update therefore **merges over what is stored**, so filling in one
+ * field does not silently discard the other.
  */
+function parseStoredMultiSecret(stored: string | null, declared: string[]): Record<string, string> {
+  if (stored === null) return {};
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const record = parsed as Record<string, unknown>;
+    const result: Record<string, string> = {};
+    for (const key of declared) {
+      const value = record[key];
+      if (typeof value === 'string') result[key] = value;
+    }
+    return result;
+  } catch {
+    // A secret stored in an older or hand-edited shape is not a reason to fail the save —
+    // treat it as nothing to merge and let the new values stand on their own.
+    return {};
+  }
+}
+
 function assembleSecret(
   descriptor: ProviderDescriptor,
   secretBody: Record<string, string> | undefined,
+  storedSecret: string | null,
 ): string | null | undefined {
   if (secretBody === undefined) return undefined;
 
-  const known = descriptor.secretFields
-    .map((field) => field.key)
-    .filter((key) => secretBody[key] !== undefined);
+  const declared = descriptor.secretFields.map((field) => field.key);
+  const supplied = declared.filter((key) => secretBody[key] !== undefined);
 
-  if (known.every((key) => secretBody[key] === '')) return null;
+  // Nothing the descriptor recognises was sent: keep whatever is stored rather than
+  // clearing it on the strength of an unrelated key.
+  if (supplied.length === 0) return declared.length === 0 ? null : undefined;
 
-  if (known.length === 1) {
-    const key = known[0]!;
-    const value = secretBody[key];
-    // `known` was filtered to keys present in `secretBody`, so this is always a string —
-    // narrowed explicitly rather than trusting the index signature, since a widened
-    // `string | undefined` here would let `undefined` leak out and be mistaken for "keep
-    // the stored secret".
-    if (value === undefined) return null;
-    return value;
+  if (supplied.every((key) => secretBody[key] === '')) return null;
+
+  if (declared.length === 1) {
+    return secretBody[declared[0]!] ?? null;
   }
 
-  const assembled: Record<string, string> = {};
-  for (const key of known) {
-    const value = secretBody[key];
-    if (value !== undefined) assembled[key] = value;
-  }
-  return JSON.stringify(assembled);
+  const merged = parseStoredMultiSecret(storedSecret, declared);
+  for (const key of supplied) merged[key] = secretBody[key]!;
+  return JSON.stringify(merged);
 }
 
 export function registerRequestRoutes(app: FastifyInstance): void {
@@ -299,7 +317,7 @@ export function registerRequestRoutes(app: FastifyInstance): void {
     }
 
     const existing = getProviderConfig(app.db, params.id, app.config.sessionSecret);
-    const secret = assembleSecret(descriptor, body.secret);
+    const secret = assembleSecret(descriptor, body.secret, existing?.secret ?? null);
 
     const saved = setProviderConfig(
       app.db,

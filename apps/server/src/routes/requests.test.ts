@@ -300,6 +300,28 @@ describe('POST /api/v1/requests/:id/approve', () => {
   });
 });
 
+describe('POST /api/v1/requests/:id/retry', () => {
+  it('actually tries again rather than only resetting the status', async () => {
+    // `retry` on its own moves failed → searching and stops. If the handler ever loses its
+    // follow-up `grab`, the request parks in `searching` with nothing driving it forward and
+    // looks permanently busy. No providers are configured here, so the grab fails — which is
+    // the point: only a grab that ran can move the request out of `searching`.
+    const { app } = buildTestApp();
+    const cookie = await loginTestUser(app);
+    seedRequest(app, { id: 'r1', status: 'failed', userId: firstUserId(app) });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/requests/r1/retry',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().request.status).not.toBe('searching');
+    expect(response.json().request.statusDetail).toBeTruthy();
+  });
+});
+
 // -----------------------------------------------------------------------------
 // GET /requests/search
 // -----------------------------------------------------------------------------
@@ -513,6 +535,76 @@ describe('PUT /api/v1/providers/:id', () => {
     expect(response.body).not.toContain('hunter2');
     const stored = getProviderConfig(app.db, 'qbittorrent', sessionSecret);
     expect(JSON.parse(stored!.secret!)).toEqual({ username: 'kara', password: 'hunter2' });
+  });
+
+  it('keeps the other field when a multi-field secret is updated one field at a time', async () => {
+    // Regression: the stored format used to be chosen by how many fields the *body* sent,
+    // so a form submitting only the username wrote the bare string "kara" where JSON
+    // belonged — and every later call failed with "credentials are not valid JSON", an
+    // error describing neither what the user did nor how to undo it. The descriptor decides
+    // the format now, and a partial update merges over what is stored.
+    const { app, sessionSecret } = buildTestApp();
+    const cookie = await loginTestUser(app);
+
+    await app.inject({
+      method: 'PUT',
+      url: '/api/v1/providers/qbittorrent',
+      cookies: { auralis_session: cookie },
+      payload: {
+        enabled: true,
+        baseUrl: 'http://qbit.test',
+        secret: { username: 'kara', password: 'hunter2' },
+      },
+    });
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/providers/qbittorrent',
+      cookies: { auralis_session: cookie },
+      payload: { secret: { password: 'newpass' } },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const stored = getProviderConfig(app.db, 'qbittorrent', sessionSecret);
+    expect(JSON.parse(stored!.secret!)).toEqual({ username: 'kara', password: 'newpass' });
+  });
+
+  it('stores a lone multi-field value as JSON, not as a bare string', async () => {
+    const { app, sessionSecret } = buildTestApp();
+    const cookie = await loginTestUser(app);
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/providers/qbittorrent',
+      cookies: { auralis_session: cookie },
+      payload: { enabled: true, baseUrl: 'http://qbit.test', secret: { username: 'kara' } },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const stored = getProviderConfig(app.db, 'qbittorrent', sessionSecret);
+    expect(JSON.parse(stored!.secret!)).toEqual({ username: 'kara' });
+  });
+
+  it('keeps the stored secret when the body sends only keys the descriptor does not declare', async () => {
+    const { app, sessionSecret } = buildTestApp();
+    const cookie = await loginTestUser(app);
+
+    await app.inject({
+      method: 'PUT',
+      url: '/api/v1/providers/prowlarr',
+      cookies: { auralis_session: cookie },
+      payload: { enabled: true, baseUrl: 'http://prowlarr.test', secret: { apiKey: 'abc123' } },
+    });
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/providers/prowlarr',
+      cookies: { auralis_session: cookie },
+      payload: { secret: { nonsense: 'x' } },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(getProviderConfig(app.db, 'prowlarr', sessionSecret)?.secret).toBe('abc123');
   });
 
   it('omitting secret keeps the stored one', async () => {

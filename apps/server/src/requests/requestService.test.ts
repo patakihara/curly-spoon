@@ -8,6 +8,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AbsClient, FetchLike, Library } from '@auralis/abs-client';
+// Type-only, so these do not defeat the `vi.mock` calls below — they exist purely to give
+// `vi.importActual` a return type without an inline `import()` annotation.
+import type * as RealIndexerRegistry from './indexers/registry.js';
+import type * as RealDownloadRegistry from './download/registry.js';
 import { openDatabase, type Db } from '../db/connection.js';
 import { upsertUser } from '../db/usersRepo.js';
 import { setProviderConfig } from '../db/providerConfigRepo.js';
@@ -46,6 +50,40 @@ const downloadRegistry = vi.hoisted(() => ({
     { id: 'transmission', requiresSecret: false },
   ],
 }));
+
+// The mocked descriptors above hand-copy `requiresSecret` from the real registries, which
+// this file never imports. Without this guard, relaxing a real provider's credential
+// requirement would leave these tests passing against an assumption that is no longer
+// true — the failure mode where the suite is green and wrong at the same time.
+describe('mocked provider descriptors', () => {
+  it('still match the real registries they stand in for', async () => {
+    const realIndexers =
+      await vi.importActual<typeof RealIndexerRegistry>('./indexers/registry.js');
+    const realDownloads =
+      await vi.importActual<typeof RealDownloadRegistry>('./download/registry.js');
+    const real = new Map(
+      [...realIndexers.indexerDescriptors, ...realDownloads.downloadClientDescriptors].map((d) => [
+        d.id,
+        d.requiresSecret,
+      ]),
+    );
+
+    for (const fake of [...indexerRegistry.descriptors, ...downloadRegistry.descriptors]) {
+      // Ids invented purely for these tests have no real counterpart to drift from.
+      if (!real.has(fake.id)) continue;
+      expect(real.get(fake.id), `requiresSecret drifted for "${fake.id}"`).toBe(
+        fake.requiresSecret,
+      );
+    }
+    // Guard the guard: if the real ids are ever renamed, this catches that too.
+    expect([...real.keys()].sort()).toEqual([
+      'audiobookbay',
+      'prowlarr',
+      'qbittorrent',
+      'transmission',
+    ]);
+  });
+});
 
 vi.mock('./indexers/registry.js', () => ({
   getIndexerFactory: (id: string) => indexerRegistry.factories[id] ?? null,
