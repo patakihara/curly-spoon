@@ -58,6 +58,65 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: 2,
+    name: 'requests',
+    up: (db) => {
+      db.exec(`
+        -- Configuration for one request provider — an indexer (Prowlarr, AudiobookBay)
+        -- or a download client (qBittorrent, Transmission).
+        --
+        -- Deliberately NOT the \`secrets\` table: that one is keyed by user_id, because an
+        -- Audiobookshelf token belongs to the person who signed in. A Prowlarr API key or a
+        -- qBittorrent password belongs to the *installation* — it is the same credential
+        -- whoever is looking — so it is server-scoped and named instead.
+        CREATE TABLE IF NOT EXISTS provider_configs (
+          id         TEXT PRIMARY KEY,
+          kind       TEXT NOT NULL,
+          enabled    INTEGER NOT NULL DEFAULT 0,
+          base_url   TEXT,
+          -- Non-secret provider options as JSON (categories, save path, seed ratio...).
+          options    TEXT NOT NULL DEFAULT '{}',
+          -- AES-256-GCM (db/crypto.ts) over the provider's secret bundle. NULL when the
+          -- provider needs none.
+          ciphertext TEXT,
+          updated_at INTEGER NOT NULL
+        );
+
+        -- One book someone asked for, from the ask to the file landing in the library.
+        -- \`release_json\` freezes the chosen release at grab time: the indexer may stop
+        -- returning it, but the request still has to be able to explain what it grabbed.
+        CREATE TABLE IF NOT EXISTS requests (
+          id              TEXT PRIMARY KEY,
+          user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          title           TEXT NOT NULL,
+          author          TEXT,
+          status          TEXT NOT NULL,
+          -- Human-readable "why" for the current status; the failure message when failed.
+          status_detail   TEXT,
+          release_json    TEXT,
+          indexer_id      TEXT,
+          client_id       TEXT,
+          download_handle TEXT,
+          progress        REAL NOT NULL DEFAULT 0,
+          created_at      INTEGER NOT NULL,
+          updated_at      INTEGER NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_requests_user_id ON requests(user_id);
+        CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
+
+        -- Installation-wide preferences that are not tied to any one upstream or provider
+        -- (approval policy, the library path Audiobookshelf watches). A key/value table
+        -- rather than columns, so later phases add keys instead of migrations.
+        CREATE TABLE IF NOT EXISTS app_settings (
+          key        TEXT PRIMARY KEY,
+          value      TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

@@ -7,6 +7,7 @@ import { registerItemRoutes } from './items.js';
 import { registerPlaybackRoutes } from './playback.js';
 import { registerProgressRoutes } from './progress.js';
 import { registerMediaRoutes } from './media.js';
+import { registerRequestRoutes } from './requests.js';
 
 /** All `/api/v1` routes, in one place so app.ts stays a thin composition root. */
 export function registerRoutes(app: FastifyInstance): void {
@@ -18,4 +19,5 @@ export function registerRoutes(app: FastifyInstance): void {
   registerPlaybackRoutes(app);
   registerProgressRoutes(app);
   registerMediaRoutes(app);
+  registerRequestRoutes(app);
 }
