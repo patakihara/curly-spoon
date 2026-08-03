@@ -8,11 +8,18 @@
  */
 import { ApiError, apiErrorFromNetworkFailure, apiErrorFromResponse } from './errors.js';
 import type {
+  BookRequest,
   LibraryItem,
   LibraryItemsPage,
   Library,
   LoginResponse,
   PlaybackSession,
+  ProviderEntry,
+  ProviderUpdateBody,
+  Release,
+  RequestSearchResult,
+  RequestSettings,
+  RequestStatus,
   SearchResults,
   Shelf,
   SetupResult,
@@ -29,7 +36,7 @@ export interface ApiClientOptions {
 }
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
   signal?: AbortSignal;
@@ -209,6 +216,77 @@ export class ApiClient {
       this.baseUrl,
       `/media/${encodeURIComponent(itemId)}/track/${encodeURIComponent(fileId)}`,
     );
+  }
+
+  // ---------------------------------------------------------------------
+  // Book requests (Phase 6)
+  // ---------------------------------------------------------------------
+
+  getRequests(status?: RequestStatus, signal?: AbortSignal): Promise<{ requests: BookRequest[] }> {
+    return this.request('/requests', { query: { status }, signal });
+  }
+
+  createRequest(body: {
+    title: string;
+    author?: string;
+    release?: Release;
+  }): Promise<{ request: BookRequest }> {
+    return this.request('/requests', { method: 'POST', body });
+  }
+
+  getRequest(id: string, signal?: AbortSignal): Promise<{ request: BookRequest }> {
+    return this.request(`/requests/${encodeURIComponent(id)}`, { signal });
+  }
+
+  approveRequest(id: string): Promise<{ request: BookRequest }> {
+    return this.request(`/requests/${encodeURIComponent(id)}/approve`, { method: 'POST' });
+  }
+
+  rejectRequest(id: string): Promise<{ request: BookRequest }> {
+    return this.request(`/requests/${encodeURIComponent(id)}/reject`, { method: 'POST' });
+  }
+
+  retryRequest(id: string): Promise<{ request: BookRequest }> {
+    return this.request(`/requests/${encodeURIComponent(id)}/retry`, { method: 'POST' });
+  }
+
+  grabRequest(id: string): Promise<{ request: BookRequest }> {
+    return this.request(`/requests/${encodeURIComponent(id)}/grab`, { method: 'POST' });
+  }
+
+  deleteRequest(id: string): Promise<void> {
+    return this.request(`/requests/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  }
+
+  searchRequestReleases(
+    query: { term: string; author?: string; limit?: number },
+    signal?: AbortSignal,
+  ): Promise<RequestSearchResult> {
+    return this.request('/requests/search', { query, signal });
+  }
+
+  getProviders(signal?: AbortSignal): Promise<{ providers: ProviderEntry[] }> {
+    return this.request('/providers', { signal });
+  }
+
+  updateProvider(id: string, body: ProviderUpdateBody): Promise<{ provider: ProviderEntry }> {
+    return this.request(`/providers/${encodeURIComponent(id)}`, { method: 'PUT', body });
+  }
+
+  testProvider(id: string): Promise<{ ok: true }> {
+    return this.request(`/providers/${encodeURIComponent(id)}/test`, { method: 'POST' });
+  }
+
+  deleteProvider(id: string): Promise<void> {
+    return this.request(`/providers/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  }
+
+  getRequestSettings(signal?: AbortSignal): Promise<RequestSettings> {
+    return this.request('/settings/requests', { signal });
+  }
+
+  updateRequestSettings(body: Partial<RequestSettings>): Promise<RequestSettings> {
+    return this.request('/settings/requests', { method: 'PUT', body });
   }
 }
 

@@ -138,3 +138,110 @@ export interface SearchResults {
   books: LibraryItem[];
   podcasts: LibraryItem[];
 }
+
+// ---------------------------------------------------------------------
+// Book requests (Phase 6)
+// ---------------------------------------------------------------------
+
+/**
+ * `completed` and `rejected` are terminal — nothing moves a request out of them
+ * again. `failed` is *not* terminal: a `retry` action can revive it, but nothing
+ * progresses it on its own, which matters for `features/requests/polling.ts`'s
+ * decision about when to keep polling `GET /requests`.
+ */
+export type RequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'searching'
+  | 'downloading'
+  | 'importing'
+  | 'completed'
+  | 'failed';
+
+/** One release a search against the configured indexers turned up. */
+export interface Release {
+  guid: string;
+  indexerId: string;
+  sourceName: string;
+  title: string;
+  sizeBytes: number | null;
+  seeders: number;
+  leechers: number;
+  publishedAt: number | null;
+  downloadUrl: string | null;
+  magnetUri: string | null;
+  categories: string[];
+  format: string | null;
+}
+
+export interface BookRequest {
+  id: string;
+  userId: string;
+  title: string;
+  author: string | null;
+  status: RequestStatus;
+  /** Why it failed, when it failed. Null otherwise — nothing else populates it. */
+  statusDetail: string | null;
+  release: Release | null;
+  indexerId: string | null;
+  clientId: string | null;
+  downloadHandle: string | null;
+  /** 0..1. */
+  progress: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * `GET /requests/search`'s shape deliberately couples partial results with
+ * per-indexer failures in one response — see `AskForBookPanel`'s doc comment for
+ * why both have to render together rather than one hiding the other.
+ */
+export interface RequestSearchResult {
+  releases: Release[];
+  errors: Array<{ indexerId: string; kind: string; message: string }>;
+}
+
+export type ProviderKind = 'indexer' | 'download';
+
+export interface ProviderSecretField {
+  key: string;
+  label: string;
+  kind: 'text' | 'password';
+}
+
+export interface ProviderEntry {
+  id: string;
+  displayName: string;
+  kind: ProviderKind;
+  requiresBaseUrl: boolean;
+  requiresSecret: boolean;
+  secretFields: ProviderSecretField[];
+  summary: string;
+  configured: boolean;
+  enabled: boolean;
+  baseUrl: string | null;
+  /** True once a secret is stored — the API never returns the secret itself. */
+  hasSecret: boolean;
+}
+
+/** Body for `PUT /providers/:id`. `secret` is keyed by `ProviderSecretField.key`. */
+export interface ProviderUpdateBody {
+  enabled?: boolean;
+  baseUrl?: string;
+  options?: Record<string, unknown>;
+  secret?: Record<string, string>;
+}
+
+/**
+ * `approvalPolicy` is left as `string` rather than a narrow union: the BFF is the
+ * source of truth for what values it accepts, and this app only ever needs to
+ * distinguish `'manual'` from everything else (see `RequestsPage`'s approval
+ * affordances) rather than exhaustively model every policy.
+ */
+export interface RequestSettings {
+  approvalPolicy: string;
+  bookSavePath: string;
+  bookCategory: string;
+}

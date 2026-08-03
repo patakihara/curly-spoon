@@ -45,6 +45,16 @@ const searchRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+const requestsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/requests',
+  component: lazyRouteComponent(
+    () => import('../features/requests/RequestsPage.js'),
+    'RequestsPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -86,6 +96,7 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   libraryRoute,
   itemRoute,
+  requestsRoute,
   searchRoute,
   settingsRoute,
   setupRoute,

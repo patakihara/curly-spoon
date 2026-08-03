@@ -1,15 +1,18 @@
 /**
  * Settings: theme mode + demo source colour (Phase 5 will drive the real colour
- * from artwork instead), connection status, and sign-out. The "add this later"
- * services promised during onboarding surface here as clearly-labelled
- * not-yet-available entries, consistent with what Step 3 of onboarding told the
- * user to expect.
+ * from artwork instead), connection status, sign-out, and — as of Phase 6 —
+ * provider and book-request configuration. Jellyfin (music) is still the one
+ * "add this later" service promised during onboarding, surfaced as a
+ * clearly-labelled not-yet-available entry; the download-client slot that used
+ * to sit next to it is now the real thing, in `ProviderSettingsSection`.
  */
 import { useNavigate } from '@tanstack/react-router';
 import { AURALIS_SOURCE_COLOR, Button, Chip } from '@auralis/ui';
 import { useLogoutMutation, useSetupQuery } from '../../api/queries.js';
 import { useThemeStore } from '../../state/themeStore.js';
 import type { ThemeMode } from '@auralis/ui';
+import { ProviderSettingsSection } from '../requests/ProviderSettingsSection.js';
+import { RequestSettingsSection } from '../requests/RequestSettingsSection.js';
 
 const MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
@@ -85,11 +88,11 @@ export function SettingsPage() {
           <span>Jellyfin (Music)</span>
           <Chip variant="assist">Coming soon — you can add this later</Chip>
         </div>
-        <div className="auralis-service-row">
-          <span>Download client (Requests)</span>
-          <Chip variant="assist">Coming soon — you can add this later</Chip>
-        </div>
       </section>
+
+      <ProviderSettingsSection />
+
+      <RequestSettingsSection />
 
       <section>
         <Button variant="outlined" onClick={() => void handleSignOut()} data-testid="sign-out">

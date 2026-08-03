@@ -14,13 +14,18 @@ import {
   type NavigationItem,
 } from '@auralis/ui';
 import { useBreakpoint } from '../hooks/useBreakpoint.js';
-import { useLibrariesQuery, useSetupQuery } from '../api/queries.js';
+import { useLibrariesQuery, useProvidersQuery, useSetupQuery } from '../api/queries.js';
 import { MiniPlayer } from '../features/player/MiniPlayer.js';
 import { NowPlaying } from '../features/player/NowPlaying.js';
 import { useAudioElement } from '../features/player/useAudioElement.js';
 import { useMediaSession } from '../features/player/useMediaSession.js';
 import { useProgressSync } from '../features/player/useProgressSync.js';
-import { lookupLibraries, visibleDestinations, type DestinationKey } from './destinations.js';
+import {
+  lookupLibraries,
+  lookupProviders,
+  visibleDestinations,
+  type DestinationKey,
+} from './destinations.js';
 import { NowPlayingPanel } from './NowPlayingPanel.js';
 import { ShortcutSheet } from './ShortcutSheet.js';
 
@@ -29,6 +34,7 @@ const DESTINATION_ICONS: Record<DestinationKey, IconName> = {
   books: 'library_books',
   podcasts: 'podcasts',
   music: 'music_note',
+  requests: 'queue',
   search: 'search',
   settings: 'settings',
 };
@@ -51,8 +57,14 @@ export function Shell({ children }: { children: ReactNode }) {
   const audiobookshelfConfigured = setupQuery.data?.configured ?? false;
   const librariesQuery = useLibrariesQuery(audiobookshelfConfigured);
   const lookup = lookupLibraries(librariesQuery.data?.libraries ?? []);
+  const providersQuery = useProvidersQuery();
+  const providerLookup = lookupProviders(providersQuery.data?.providers ?? []);
 
-  const destinations = visibleDestinations({ audiobookshelfConfigured, ...lookup });
+  const destinations = visibleDestinations({
+    audiobookshelfConfigured,
+    ...lookup,
+    ...providerLookup,
+  });
   const navItems: NavigationItem[] = destinations.map((d) => ({
     key: d.key,
     label: d.label,

@@ -13,9 +13,15 @@
  * Music is served through Jellyfin, which this phase's BFF has no configuration
  * surface for at all (that lands in Phase 8) — so it is unconditionally hidden
  * for now, rather than shown pointing at a feature that doesn't exist yet.
+ *
+ * Requests (Phase 6) follows the same rule with its own condition: a request can
+ * be *created* the moment any indexer exists, but it can never be *fulfilled*
+ * without a download client too — so the destination stays hidden until both an
+ * indexer and a download client are configured and enabled, not just one.
  */
 
-export type DestinationKey = 'home' | 'books' | 'podcasts' | 'music' | 'search' | 'settings';
+export type DestinationKey =
+  'home' | 'books' | 'podcasts' | 'music' | 'requests' | 'search' | 'settings';
 
 export interface Destination {
   key: DestinationKey;
@@ -34,6 +40,10 @@ export interface LibraryLookup {
 export interface DestinationContext extends LibraryLookup {
   /** Whether the BFF reports an Audiobookshelf connection (`GET /api/v1/setup`). */
   audiobookshelfConfigured: boolean;
+  /** Whether at least one indexer provider is configured *and* enabled (`GET /api/v1/providers`). */
+  hasEnabledIndexer?: boolean;
+  /** Whether at least one download-client provider is configured *and* enabled. */
+  hasEnabledDownloadClient?: boolean;
 }
 
 /** The destinations to render in nav, in a fixed order, filtered by what's actually usable. */
@@ -52,6 +62,10 @@ export function visibleDestinations(ctx: DestinationContext): Destination[] {
   }
   // Music (Jellyfin) is never shown yet — see the module doc comment.
 
+  if (ctx.hasEnabledIndexer && ctx.hasEnabledDownloadClient) {
+    destinations.push({ key: 'requests', label: 'Requests', to: '/requests' });
+  }
+
   destinations.push({ key: 'search', label: 'Search', to: '/search' });
   destinations.push({ key: 'settings', label: 'Settings', to: '/settings' });
   return destinations;
@@ -64,5 +78,22 @@ export function lookupLibraries(
   return {
     bookLibraryId: libraries.find((l) => l.mediaType === 'book')?.id,
     podcastLibraryId: libraries.find((l) => l.mediaType === 'podcast')?.id,
+  };
+}
+
+/**
+ * Derives the two `DestinationContext` provider flags from `GET /api/v1/providers`.
+ * `configured` and `enabled` are independent on `ProviderEntry` (a provider can be
+ * enabled with nothing filled in yet, or configured but switched off) — both must
+ * hold for the provider to actually be usable.
+ */
+export function lookupProviders(
+  providers: Array<{ kind: 'indexer' | 'download'; configured: boolean; enabled: boolean }>,
+): Pick<DestinationContext, 'hasEnabledIndexer' | 'hasEnabledDownloadClient'> {
+  const usable = (kind: 'indexer' | 'download') =>
+    providers.some((p) => p.kind === kind && p.configured && p.enabled);
+  return {
+    hasEnabledIndexer: usable('indexer'),
+    hasEnabledDownloadClient: usable('download'),
   };
 }

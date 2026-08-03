@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lookupLibraries, visibleDestinations } from './destinations.js';
+import { lookupLibraries, lookupProviders, visibleDestinations } from './destinations.js';
 
 describe('visibleDestinations', () => {
   it('shows only Home, Search and Settings when Audiobookshelf is not configured', () => {
@@ -47,6 +47,78 @@ describe('visibleDestinations', () => {
     }).map((d) => d.key);
     expect(keys.indexOf('home')).toBeLessThan(keys.indexOf('search'));
     expect(keys.indexOf('search')).toBeLessThan(keys.indexOf('settings'));
+  });
+});
+
+describe('visibleDestinations — Requests', () => {
+  it('hides Requests when neither an indexer nor a download client is configured', () => {
+    const keys = visibleDestinations({ audiobookshelfConfigured: false }).map((d) => d.key);
+    expect(keys).not.toContain('requests');
+  });
+
+  it('hides Requests when only an indexer is enabled — a request could never be fulfilled', () => {
+    const keys = visibleDestinations({
+      audiobookshelfConfigured: false,
+      hasEnabledIndexer: true,
+      hasEnabledDownloadClient: false,
+    }).map((d) => d.key);
+    expect(keys).not.toContain('requests');
+  });
+
+  it('hides Requests when only a download client is enabled — nothing could ever be found', () => {
+    const keys = visibleDestinations({
+      audiobookshelfConfigured: false,
+      hasEnabledIndexer: false,
+      hasEnabledDownloadClient: true,
+    }).map((d) => d.key);
+    expect(keys).not.toContain('requests');
+  });
+
+  it('shows Requests once both an indexer and a download client are configured and enabled', () => {
+    const destinations = visibleDestinations({
+      audiobookshelfConfigured: false,
+      hasEnabledIndexer: true,
+      hasEnabledDownloadClient: true,
+    });
+    const requests = destinations.find((d) => d.key === 'requests');
+    expect(requests?.to).toBe('/requests');
+  });
+
+  it('does not require Audiobookshelf to be configured — requests are independent of it', () => {
+    const keys = visibleDestinations({
+      audiobookshelfConfigured: false,
+      hasEnabledIndexer: true,
+      hasEnabledDownloadClient: true,
+    }).map((d) => d.key);
+    expect(keys).toContain('requests');
+  });
+});
+
+describe('lookupProviders', () => {
+  it('is false for both flags with no providers at all', () => {
+    expect(lookupProviders([])).toEqual({
+      hasEnabledIndexer: false,
+      hasEnabledDownloadClient: false,
+    });
+  });
+
+  it('requires both configured and enabled — an enabled-but-unconfigured provider does not count', () => {
+    const result = lookupProviders([{ kind: 'indexer', configured: false, enabled: true }]);
+    expect(result.hasEnabledIndexer).toBe(false);
+  });
+
+  it('requires both configured and enabled — a configured-but-disabled provider does not count', () => {
+    const result = lookupProviders([{ kind: 'indexer', configured: true, enabled: false }]);
+    expect(result.hasEnabledIndexer).toBe(false);
+  });
+
+  it('is true once one provider of a kind is both configured and enabled, regardless of others', () => {
+    const result = lookupProviders([
+      { kind: 'indexer', configured: false, enabled: false },
+      { kind: 'indexer', configured: true, enabled: true },
+      { kind: 'download', configured: true, enabled: true },
+    ]);
+    expect(result).toEqual({ hasEnabledIndexer: true, hasEnabledDownloadClient: true });
   });
 });
 

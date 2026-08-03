@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiClient } from './client.js';
 import { ApiError } from './errors.js';
+import type { Release } from './types.js';
 
 function fakeFetch(handler: (url: string, init?: RequestInit) => Response) {
   return vi.fn(async (url: string, init?: RequestInit) => handler(url, init));
@@ -112,5 +113,152 @@ describe('ApiClient', () => {
     const fetchFn = fakeFetch(() => new Response('', { status: 200 }));
     const client = new ApiClient({ fetch: fetchFn });
     await expect(client.logout()).resolves.toBeUndefined();
+  });
+
+  describe('book requests (Phase 6)', () => {
+    it('drops the status filter from the query string when omitted', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ requests: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getRequests();
+
+      expect(fetchFn.mock.calls[0]![0]).toBe('/api/v1/requests');
+    });
+
+    it('sends the status filter when given one', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ requests: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getRequests('failed');
+
+      expect(fetchFn.mock.calls[0]![0]).toBe('/api/v1/requests?status=failed');
+    });
+
+    it('POSTs a new request with the release attached', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ request: { id: 'req-1' } }), { status: 201 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+      const release: Release = {
+        guid: 'g1',
+        indexerId: 'prowlarr',
+        sourceName: 'AudiobookBay',
+        title: 'Dune',
+        sizeBytes: 1024,
+        seeders: 5,
+        leechers: 1,
+        publishedAt: null,
+        downloadUrl: null,
+        magnetUri: 'magnet:?xt=urn:btih:g1',
+        categories: [],
+        format: 'm4b',
+      };
+
+      await client.createRequest({ title: 'Dune', release });
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/requests');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toMatchObject({ title: 'Dune' });
+    });
+
+    it('POSTs the approve/reject/retry/grab actions to their own sub-paths, with no body', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ request: { id: 'req-1' } }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.approveRequest('req-1');
+      await client.rejectRequest('req-1');
+      await client.retryRequest('req-1');
+      await client.grabRequest('req-1');
+
+      const urls = fetchFn.mock.calls.map((call) => call[0]);
+      expect(urls).toEqual([
+        '/api/v1/requests/req-1/approve',
+        '/api/v1/requests/req-1/reject',
+        '/api/v1/requests/req-1/retry',
+        '/api/v1/requests/req-1/grab',
+      ]);
+      for (const call of fetchFn.mock.calls) {
+        expect(call[1]?.method).toBe('POST');
+        expect(call[1]?.body).toBeUndefined();
+      }
+    });
+
+    it('DELETEs a request by id', async () => {
+      const fetchFn = fakeFetch(() => new Response(null, { status: 204 }));
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.deleteRequest('req-1');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/requests/req-1');
+      expect(init?.method).toBe('DELETE');
+    });
+
+    it('sends the search term, author and limit as query parameters', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ releases: [], errors: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.searchRequestReleases({ term: 'dune', author: 'herbert', limit: 10 });
+
+      expect(fetchFn.mock.calls[0]![0]).toBe(
+        '/api/v1/requests/search?term=dune&author=herbert&limit=10',
+      );
+    });
+  });
+
+  describe('providers (Phase 6)', () => {
+    it('sends a PUT with the given body to update a provider', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ provider: { id: 'prowlarr' } }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.updateProvider('prowlarr', { enabled: true, secret: { apiKey: 'k' } });
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/providers/prowlarr');
+      expect(init?.method).toBe('PUT');
+      expect(JSON.parse(String(init?.body))).toEqual({ enabled: true, secret: { apiKey: 'k' } });
+    });
+
+    it('POSTs to the test sub-path', async () => {
+      const fetchFn = fakeFetch(() => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.testProvider('prowlarr');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/providers/prowlarr/test');
+      expect(init?.method).toBe('POST');
+    });
+  });
+
+  describe('request settings (Phase 6)', () => {
+    it('sends a PUT to update request settings', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({ approvalPolicy: 'manual', bookSavePath: '/x', bookCategory: 'books' }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.updateRequestSettings({ bookSavePath: '/downloads/books' });
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/settings/requests');
+      expect(init?.method).toBe('PUT');
+      expect(JSON.parse(String(init?.body))).toEqual({ bookSavePath: '/downloads/books' });
+    });
   });
 });
