@@ -1,6 +1,7 @@
 package net.auralis.app
 
 import android.content.Context
+import coil.ImageLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,4 +28,12 @@ class AppContainer(context: Context) {
             serverConfigRepository.getBaseUrl()
                 ?: throw ApiException("server_not_configured", "No Auralis server configured", 0)
         }
+
+    /**
+     * Shared with [apiClient] via the same [httpClient] instance, so cover-art requests carry
+     * the session cookie [SessionCookieJar] attaches — Coil's default loader does not share
+     * OkHttp clients with anything else unless told to, and the BFF's cover endpoint requires
+     * authentication like every other route.
+     */
+    val imageLoader: ImageLoader = ImageLoader.Builder(context).okHttpClient(httpClient).build()
 }

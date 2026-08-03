@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)

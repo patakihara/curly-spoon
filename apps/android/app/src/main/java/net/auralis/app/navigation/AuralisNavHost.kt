@@ -17,8 +17,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import net.auralis.app.AppContainer
 import net.auralis.app.features.login.LoginScreen
+import net.auralis.app.features.home.HomeScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
-import net.auralis.app.ui.HomeScreen
 
 /** Route name constants for [AuralisNavHost]'s graph. */
 object Routes {
@@ -50,7 +50,7 @@ fun AuralisNavHost(
             NavHost(navController = navController, startDestination = state.destination) {
                 composable(Routes.ONBOARDING) { OnboardingScreen(container, navController) }
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
-                composable(Routes.HOME) { HomeScreen() }
+                composable(Routes.HOME) { HomeScreen(container) }
             }
         }
     }
