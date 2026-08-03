@@ -280,7 +280,14 @@ class RequestsViewModelTest {
             val body = mockWebServer.takeRequest().body.readUtf8()
             assertTrue(body.contains("\"title\":\"Missing Book\""))
             assertTrue(body.contains("\"author\":\"Some Author\""))
-            assertTrue(body.contains("\"release\":null"))
+            // `CreateRequestBody.release` defaults to null, and `auralisJson` doesn't set
+            // `encodeDefaults`, so a null release is omitted entirely rather than serialized as
+            // `"release":null`. That matters: the server's `createRequestBodySchema` declares
+            // `release: releaseSchema.optional()` (accepts the key being absent) with no
+            // `.nullable()`, so an explicit `"release":null` would actually fail zod validation
+            // against the real BFF. Omission is the correct wire behaviour, not a gap to paper
+            // over.
+            assertFalse(body.contains("\"release\""))
         }
 
     @Test
@@ -358,7 +365,22 @@ class RequestsViewModelTest {
             viewModel.onSearchTermChange("Missing Book Again")
             viewModel.submitSearch()
 
+            // titleRequestState resets synchronously, as part of submitSearch's own state
+            // update — this assertion doesn't need the network call below to have completed.
             assertEquals(TitleRequestState.Idle, viewModel.uiState.value.titleRequestState)
+
+            // Drain the search launched above before the test ends. Left un-awaited, its
+            // viewModelScope coroutine is still suspended in withContext(Dispatchers.IO) —
+            // real background-thread I/O against MockWebServer — when this test method
+            // returns. @After then calls Dispatchers.resetMain() and mockWebServer.shutdown()
+            // while that coroutine is still in flight; when it eventually resumes, dispatching
+            // back onto the now-reset Main dispatcher throws, uncaught, in a SupervisorJob-
+            // rooted scope with no handler — and kotlinx-coroutines-test attributes that to
+            // whichever test's runTest starts next, as UncaughtExceptionsBeforeTest. (Confirmed
+            // by JUnit4's MethodSorters.DEFAULT ordering: this test is the one that runs
+            // immediately before `requestRelease sends the submitted author...`, which is
+            // exactly the test that started failing with that exception.)
+            viewModel.uiState.first { it.searchState is SearchUiState.Results }
         }
 
     private fun sampleRelease(guid: String) =
