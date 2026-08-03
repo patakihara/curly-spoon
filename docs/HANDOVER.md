@@ -144,23 +144,20 @@ against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS f
 — verified against real upstream source, not assumed. No web or Android UI yet; that's the
 next podcast wave, on whichever surface makes sense to build first. See `docs/ROADMAP.md` §8.
 
-### Open architecture question — needs the user's decision, not a guess
+### Mantine — decided, full migration in progress
 
-**`adbcb2d` ("Mantine spike") landed real, committed, dependency-adding code that directly
-contradicts this project's standing "no animation library, hand-built Material 3
-Expressive" decision (§3 below).** `@mantine/core`/`@mantine/hooks`/`@mantine/notifications`
-are now real dependencies of `packages/ui`, with a real `MantineProvider` wired into
-`ThemeProvider.tsx` and a real theme adapter (`packages/ui/src/mantine.ts`,
-`packages/ui/src/theme/mantineColors.ts`). Scope is deliberately small — only `Shell.tsx`'s
-nav shell and `HomePage.tsx` use it; `Icon.tsx` and `Sheet.tsx` are untouched — and the commit
-message frames it as a spike "before committing to a full migration." But **no rationale doc
-exists anywhere** (not in `DESIGN.md`, not a new file) and no commit says which system wins.
-Right now `apps/web` has two competing component systems live at once with nothing written
-down about it. Do not build more UI on either path — web or a decision doc — without asking
-the user first: keep the hand-built system, migrate to Mantine, or something else. This is a
-product-shaping call, not a routine one, and it's why phase 8's UI wave and any further
-`apps/web` visual work is paused pending that answer. (Phase 7's Android work is unaffected
-— it shares no code with either web component system.)
+**`adbcb2d` ("Mantine spike") landed real, committed, dependency-adding code** — the spike that
+first put `@mantine/core`/`@mantine/hooks`/`@mantine/notifications` into `packages/ui`, with a
+real `MantineProvider` wired into `ThemeProvider.tsx` and a theme adapter
+(`packages/ui/src/mantine.ts`, `packages/ui/src/theme/mantineColors.ts`). It intentionally
+contradicted the project's earlier "no animation library, hand-built Material 3 Expressive"
+decision (§3 below), and for a while sat undocumented — no commit or doc said which system
+should win, even though the user had already decided. **Confirmed by the user directly
+(2026-08-04): full migration to Mantine, not a partial/spike-only state.** The hand-built
+system (`Icon.tsx`, `Sheet.tsx`, `Card`, and the rest of `packages/ui`) is being migrated onto
+Mantine equivalents; `docs/DESIGN.md`/`docs/ARCHITECTURE.md` still describe only the old
+hand-rolled system as of this writing and need updating to match. (Phase 7's Android work is
+unaffected — it shares no code with either web component system.)
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
