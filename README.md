@@ -52,6 +52,8 @@ pnpm test:e2e     # end-to-end + UI (Playwright)
 - [Self-hosting](docs/SELF_HOSTING.md)
 - [Upstream integrations](docs/INTEGRATIONS.md)
 - [Handover](docs/HANDOVER.md) — context for a Claude instance picking this up
+- [My setup](docs/setup/MY_SETUP.md) — the actual media server this plugs into, and
+  [host report](docs/setup/HOST_REPORT.md) / [stack excerpt](docs/setup/compose/arr-stack.excerpt.yml)
 
 ## Licence
 

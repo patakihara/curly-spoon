@@ -1,0 +1,176 @@
+# Excerpt of the media server's `arr` stack — the services Auralis has to interoperate
+# with. Trimmed from a 23-service compose file; Caddy, the *arr video services, the
+# dynamic-DNS updater and unrelated utilities are omitted.
+#
+# ⚠️  SCRUBBED FOR A PUBLIC REPO. Every credential below is a placeholder. The real file
+#     has VPN account credentials, a torrent WebUI password and API keys inline (not in
+#     an .env), so do not treat this as a copyable backup — it is documentation of shape.
+#
+# Reference only. Auralis does not need to modify this stack; it needs to reach it.
+
+services:
+  # ───────────────────────────────────────────────────────────────────────────
+  #  Priority 1 + 2 upstream
+  # ───────────────────────────────────────────────────────────────────────────
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest   # running 2.36.0
+    container_name: audiobookshelf
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Helsinki
+    volumes:
+      - ./audiobookshelf-config:/config
+      - ./audiobookshelf-metadata:/metadata
+      - /data/media:/data          # library root; the "Books" library is /data/Books
+    ports:
+      - 13378:80                   # NOTE: internal port is 80, not 13378
+
+  # ───────────────────────────────────────────────────────────────────────────
+  #  Download path — qBittorrent lives inside gluetun's network namespace
+  # ───────────────────────────────────────────────────────────────────────────
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add: [NET_ADMIN]
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=«REDACTED»
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=«REDACTED»
+      - OPENVPN_PASSWORD=«REDACTED»
+      - SERVER_COUNTRIES=«REDACTED»
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=«REDACTED»
+      # On port-forward assignment, pushes the new listen_port into qBittorrent's API.
+      - VPN_PORT_FORWARDING_UP_COMMAND=«omitted — sets qBittorrent listen_port»
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.100.0/24
+      - FIREWALL_INPUT_PORTS=8080,5000
+      - TZ=Europe/Helsinki
+    ports:
+      - 8080:8080   # qBittorrent WebUI, published through gluetun
+      - 5010:5010   # MAM cookie helper
+      - 5000:5000   # MAM search helper
+
+  qbittorrent:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent
+    restart: unless-stopped
+    network_mode: "service:gluetun"   # ← therefore NOT addressable as `qbittorrent`
+    depends_on: [gluetun]
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Helsinki
+      WEBUI_PORT: "8080"
+    volumes:
+      - ./qbit-config:/config
+      - /data/media/Downloads:/data/Downloads   # ← flat; NOT an ABS-watched folder
+
+  # ───────────────────────────────────────────────────────────────────────────
+  #  Indexers
+  # ───────────────────────────────────────────────────────────────────────────
+  # NOTE: this is *not* linuxserver/prowlarr. bitlessbyte/prowlarr is a drop-in fork
+  # that patches the User-Agent specifically so AudioBook Bay works as an indexer.
+  # Stock Prowlarr cannot scrape ABB. Do not "fix" this to the mainstream image.
+  prowlarr:
+    image: bitlessbyte/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Helsinki
+    volumes:
+      - ./prowlarr-config:/config
+    ports:
+      - 9696:9696
+
+  # Cloudflare challenge solver used by the indexers.
+  byparr:
+    image: ghcr.io/thephaseless/byparr:latest
+    container_name: byparr
+    restart: unless-stopped
+    ports:
+      - 8191:8191
+
+  # ───────────────────────────────────────────────────────────────────────────
+  #  Prior art — an existing audiobook/ebook request frontend.
+  #  Already does roughly the priority-1 pipeline: Prowlarr -> qBittorrent -> ABS.
+  #  Read this before designing the request flow; see MY_SETUP.md Part 3.
+  # ───────────────────────────────────────────────────────────────────────────
+  shelfarr:
+    image: ghcr.io/pedro-revez-silva/shelfarr:latest
+    container_name: shelfarr
+    restart: unless-stopped
+    depends_on: [prowlarr, qbittorrent, audiobookshelf]
+    environment:
+      SOLID_QUEUE_IN_PUMA: "1"
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      - ./shelfarr-data:/rails/storage
+      - /data/media:/data
+    ports:
+      - 5056:80
+
+  # ───────────────────────────────────────────────────────────────────────────
+  #  Music (priority 3)
+  # ───────────────────────────────────────────────────────────────────────────
+  # deemix IS already deployed, and writes straight into the Jellyfin music library.
+  # docs/HANDOVER.md picked slskd over deemix on the grounds that deemix is
+  # unmaintained — the user running it is the pushback that section anticipated.
+  deemix:
+    image: ghcr.io/bambanah/deemix:latest
+    container_name: deemix
+    restart: unless-stopped
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Helsinki
+      UMASK_SET: "022"
+      DEEMIX_SINGLE_USER: "true"
+    volumes:
+      - ./deemix-config:/config
+      - /data/media/Music:/downloads   # ← lands directly in the Jellyfin music library
+    ports:
+      - 6595:6595
+
+  # Existing Jellyfin music web client, for UI comparison.
+  feishin:
+    image: ghcr.io/jeffvli/feishin:latest
+    container_name: feishin
+    restart: unless-stopped
+    environment:
+      - SERVER_NAME=jellyfin
+      - SERVER_LOCK=true
+      - SERVER_TYPE=jellyfin
+      - SERVER_URL=http://192.168.100.34:8096   # host IP, because Jellyfin is not a container
+      - LEGACY_AUTHENTICATION=false
+      - ANALYTICS_DISABLED=true
+    ports:
+      - 9180:9180
+
+  # ───────────────────────────────────────────────────────────────────────────
+  #  ⚠️  Port conflict: this holds host port 8787, which is Auralis's default BFF port.
+  # ───────────────────────────────────────────────────────────────────────────
+  bookshelf:
+    image: ghcr.io/pennydreadful/bookshelf:hardcover   # a Readarr fork
+    container_name: bookshelf
+    restart: unless-stopped
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Helsinki
+    volumes:
+      - ./bookshelf-config:/config
+      - /data/media:/data
+    ports:
+      - 8787:8787
+
+# Omitted from this excerpt: caddy (reverse proxy, DNS-01 TLS, source-IP allowlist on
+# private vhosts), ddns, radarr, sonarr, lidarr, bazarr, seerr, fladder, filebrowser,
+# watchtower, and the MAM search/cookie helpers that share gluetun's namespace.
+#
+# Jellyfin does not appear here at all — it is a host systemd service, not a container.
