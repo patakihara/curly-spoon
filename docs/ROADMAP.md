@@ -3,20 +3,20 @@
 Delivery is phase by phase; each phase lands on `claude/media-client-app-k7v9by` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status  |
-| --- | --------------------------------------------------------------- | ------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
-| 3   | Server BFF core + Audiobookshelf client                         | done    |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
-| 5   | Audiobooks experience + player                                  | done    |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done    |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned |
-| 8   | Podcast client (web + Android)                                  | planned |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned |
-| 10  | Release polish — performance budgets, a11y audit                | planned |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned |
+| #   | Phase                                                           | Status      |
+| --- | --------------------------------------------------------------- | ----------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
+| 3   | Server BFF core + Audiobookshelf client                         | done        |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
+| 5   | Audiobooks experience + player                                  | done        |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | in progress |
+| 8   | Podcast client (web + Android)                                  | planned     |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
+| 10  | Release polish — performance budgets, a11y audit                | planned     |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
 
 ### Why Android sits at 7 rather than last
 
@@ -203,6 +203,26 @@ The priority-1 experience, natively:
 - The request flow from phase 6, so a book can be asked for from the phone.
 
 Podcast and music screens follow in phases 8 and 9 as their APIs land.
+
+**Delivered in waves, each a disjoint directory so review stays cheap:**
+
+- **Wave A — networking + settings data layer: done (`ca9ba61`).** `net.auralis.app.data.network`
+  (`ApiClient`, `SessionCookieJar`, `KeyValueStore`/`DataStoreKeyValueStore`, `ApiException`)
+  and `net.auralis.app.data.settings` (`ServerConfigRepository`), covering `/setup`,
+  `/auth/*` and `/libraries*` over session-cookie auth, persisted across process death via
+  DataStore. No Compose UI yet. Written blind (no local JDK/SDK), reviewed by an independent
+  subagent that caught two real defects before they landed — an uncaught
+  `SerializationException` on an undecodable 200 body, and a dropped OkHttp `hostOnly` cookie
+  flag that silently widened session-cookie matching after every persisted reload — both
+  fixed with regression tests. First real compiler check (`./gradlew test assembleDebug` on
+  CI) passed clean.
+- **Wave B — onboarding + home/library Compose screens.** Not started. Consumes wave A's
+  repositories; first real UI, first "does this actually run" moment for Compose in this app.
+- **Wave C — player**: Media3 `ExoPlayer` behind the `MediaLibraryService` scaffolded in 5a,
+  Now Playing / mini player surfaces, progress sync against the BFF.
+- **Wave D — requests**: the phase 6 request flow, native.
+- **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
+  see below for why this can't be bolted on after the fact.
 
 #### Android Auto is a design constraint, not a feature toggle
 

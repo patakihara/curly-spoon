@@ -102,7 +102,8 @@ Treat these as standing instructions, not one-off remarks.
 | 5     | Audiobooks experience + player                      | done        |
 | 5a    | Android build skeleton + APK pipeline               | done        |
 | 6     | Book requests                                       | done        |
-| 7–11  | Android app, podcasts, music, polish, F-Droid       | not started |
+| 7     | Android — audiobooks + requests                     | in progress |
+| 8–11  | Podcasts, music, polish, F-Droid                    | not started |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
@@ -110,6 +111,19 @@ now lives directly in `~/src/auralis-src`'s own checkout, per that project's own
 edit guard still needs one (see §0's "Background sessions cannot edit the shared checkout at
 all" — that reconcile procedure is still accurate); just don't leave it lying around once
 its work has landed and pushed.
+
+**Phase 7 is delivered in waves** (see `docs/ROADMAP.md` §7 for the full breakdown) — each a
+disjoint directory under `apps/android/app/src/{main,test}/java/net/auralis/app/`, so review
+stays scoped. **Wave A (networking + settings data layer) landed on `ca9ba61`**: `ApiClient`,
+`SessionCookieJar`, `KeyValueStore`/`DataStoreKeyValueStore`, `ServerConfigRepository`, using
+OkHttp and kotlinx.serialization (no Retrofit), session-cookie auth persisted across process
+death. Written blind (still no JDK/SDK/Gradle on the development machine), reviewed by an
+independent subagent, two real defects caught and fixed before landing (see ROADMAP for what
+they were). CI (`./gradlew test assembleDebug`) passed clean on the first real compile.
+**Next: wave B** — onboarding + home/library Compose screens consuming this data layer. That
+will be the first Compose UI actually exercised by CI in this app (5a's screen was trivial),
+so give it the same scrutiny wave A got: independent review before it lands, not a rubber
+stamp.
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
