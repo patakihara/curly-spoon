@@ -230,7 +230,7 @@ There is no parallelism to protect: only one session runs here at a time, and th
 skips while one is busy. So work on the branch in this checkout, commit, and push.
 
 If you find yourself in a worktree already, finish and push what you have there rather than
-migrating mid-task — the cost is in *creating* them, not in the one you are standing in.
+migrating mid-task — the cost is in _creating_ them, not in the one you are standing in.
 
 ## Scope — this working tree, and nothing outside it
 

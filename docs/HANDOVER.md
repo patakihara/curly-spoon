@@ -311,7 +311,7 @@ RAM-thrash stall (see mediaserver's own `~/CLAUDE.md`, "Out of RAM looks exactly
 outage"). The laptop has no such constraint and no competing services.
 
 **Mediaserver still runs the media stack** (Jellyfin, Audiobookshelf, qBittorrent, etc.) —
-only the *development* moved. Auralis now talks to it as a remote client instead of a
+only the _development_ moved. Auralis now talks to it as a remote client instead of a
 container sharing its Docker host.
 
 ### Network reachability changed

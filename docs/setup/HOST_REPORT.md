@@ -71,19 +71,19 @@ resolver and an unrelated proxy, and are deliberately not documented here.
 
 ### Running containers (relevant subset)
 
-| Container        | Image                                      | Host port     | Relevance |
-| ---------------- | ------------------------------------------ | ------------- | --------- |
-| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf:latest`    | `13378 -> 80` | **Priority 1 + 2 upstream** |
-| `qbittorrent`    | `linuxserver/qbittorrent:latest`           | via `gluetun` | download client |
-| `gluetun`        | `qmcgaw/gluetun:latest`                    | `8080`, `5000`, `5010` | VPN namespace owner |
-| `prowlarr`       | `bitlessbyte/prowlarr:latest`              | `9696`        | indexers — **see fork note** |
-| `shelfarr`       | `ghcr.io/pedro-revez-silva/shelfarr:latest`| `5056 -> 80`  | **existing book-request app — prior art** |
-| `bookshelf`      | `ghcr.io/pennydreadful/bookshelf:hardcover`| `8787`        | **occupies Auralis's default port** |
-| `deemix`         | `ghcr.io/bambanah/deemix:latest`           | `6595`        | music downloader, already wired to the library |
-| `lidarr`         | `linuxserver/lidarr:latest`                | `8686`        | music automation |
-| `feishin`        | `ghcr.io/jeffvli/feishin:latest`           | `9180`        | existing Jellyfin music client |
-| `byparr`         | `ghcr.io/thephaseless/byparr:latest`       | `8191`        | Cloudflare solver for indexers |
-| `caddy`          | custom build                               | `80`, `443`   | reverse proxy, DNS-01 TLS |
+| Container        | Image                                       | Host port              | Relevance                                      |
+| ---------------- | ------------------------------------------- | ---------------------- | ---------------------------------------------- |
+| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf:latest`     | `13378 -> 80`          | **Priority 1 + 2 upstream**                    |
+| `qbittorrent`    | `linuxserver/qbittorrent:latest`            | via `gluetun`          | download client                                |
+| `gluetun`        | `qmcgaw/gluetun:latest`                     | `8080`, `5000`, `5010` | VPN namespace owner                            |
+| `prowlarr`       | `bitlessbyte/prowlarr:latest`               | `9696`                 | indexers — **see fork note**                   |
+| `shelfarr`       | `ghcr.io/pedro-revez-silva/shelfarr:latest` | `5056 -> 80`           | **existing book-request app — prior art**      |
+| `bookshelf`      | `ghcr.io/pennydreadful/bookshelf:hardcover` | `8787`                 | **occupies Auralis's default port**            |
+| `deemix`         | `ghcr.io/bambanah/deemix:latest`            | `6595`                 | music downloader, already wired to the library |
+| `lidarr`         | `linuxserver/lidarr:latest`                 | `8686`                 | music automation                               |
+| `feishin`        | `ghcr.io/jeffvli/feishin:latest`            | `9180`                 | existing Jellyfin music client                 |
+| `byparr`         | `ghcr.io/thephaseless/byparr:latest`        | `8191`                 | Cloudflare solver for indexers                 |
+| `caddy`          | custom build                                | `80`, `443`            | reverse proxy, DNS-01 TLS                      |
 
 Not containerised: **Jellyfin runs as a host systemd service.**
 
@@ -139,12 +139,12 @@ drift between versions.
 
 This is non-uniform, and a session that assumes one mechanism will be wrong twice.
 
-| Upstream       | From a container on `arr_default` | Why |
-| -------------- | --------------------------------- | --- |
-| Audiobookshelf | `http://audiobookshelf:80`        | internal port is **80**; `13378` is only the host publish |
-| qBittorrent    | `http://gluetun:8080`             | it has `network_mode: service:gluetun`, so **`qbittorrent` is not a resolvable name** |
-| Prowlarr       | `http://prowlarr:9696`            | normal |
-| Jellyfin       | `http://host.docker.internal:8096` with `extra_hosts: ["host.docker.internal:host-gateway"]` | host service, **never** a container name |
+| Upstream       | From a container on `arr_default`                                                            | Why                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Audiobookshelf | `http://audiobookshelf:80`                                                                   | internal port is **80**; `13378` is only the host publish                             |
+| qBittorrent    | `http://gluetun:8080`                                                                        | it has `network_mode: service:gluetun`, so **`qbittorrent` is not a resolvable name** |
+| Prowlarr       | `http://prowlarr:9696`                                                                       | normal                                                                                |
+| Jellyfin       | `http://host.docker.internal:8096` with `extra_hosts: ["host.docker.internal:host-gateway"]` | host service, **never** a container name                                              |
 
 The `caddy` service already declares that `extra_hosts` line — copy the pattern.
 

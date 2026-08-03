@@ -13,7 +13,7 @@ services:
   #  Priority 1 + 2 upstream
   # ───────────────────────────────────────────────────────────────────────────
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf:latest   # running 2.36.0
+    image: ghcr.io/advplyr/audiobookshelf:latest # running 2.36.0
     container_name: audiobookshelf
     restart: unless-stopped
     environment:
@@ -21,9 +21,9 @@ services:
     volumes:
       - ./audiobookshelf-config:/config
       - ./audiobookshelf-metadata:/metadata
-      - /data/media:/data          # library root; the "Books" library is /data/Books
+      - /data/media:/data # library root; the "Books" library is /data/Books
     ports:
-      - 13378:80                   # NOTE: internal port is 80, not 13378
+      - 13378:80 # NOTE: internal port is 80, not 13378
 
   # ───────────────────────────────────────────────────────────────────────────
   #  Download path — qBittorrent lives inside gluetun's network namespace
@@ -49,24 +49,24 @@ services:
       - FIREWALL_INPUT_PORTS=8080,5000
       - TZ=Europe/Helsinki
     ports:
-      - 8080:8080   # qBittorrent WebUI, published through gluetun
-      - 5010:5010   # MAM cookie helper
-      - 5000:5000   # MAM search helper
+      - 8080:8080 # qBittorrent WebUI, published through gluetun
+      - 5010:5010 # MAM cookie helper
+      - 5000:5000 # MAM search helper
 
   qbittorrent:
     image: linuxserver/qbittorrent
     container_name: qbittorrent
     restart: unless-stopped
-    network_mode: "service:gluetun"   # ← therefore NOT addressable as `qbittorrent`
+    network_mode: 'service:gluetun' # ← therefore NOT addressable as `qbittorrent`
     depends_on: [gluetun]
     environment:
-      PUID: "1000"
-      PGID: "1000"
+      PUID: '1000'
+      PGID: '1000'
       TZ: Europe/Helsinki
-      WEBUI_PORT: "8080"
+      WEBUI_PORT: '8080'
     volumes:
       - ./qbit-config:/config
-      - /data/media/Downloads:/data/Downloads   # ← flat; NOT an ABS-watched folder
+      - /data/media/Downloads:/data/Downloads # ← flat; NOT an ABS-watched folder
 
   # ───────────────────────────────────────────────────────────────────────────
   #  Indexers
@@ -79,8 +79,8 @@ services:
     container_name: prowlarr
     restart: unless-stopped
     environment:
-      PUID: "1000"
-      PGID: "1000"
+      PUID: '1000'
+      PGID: '1000'
       TZ: Europe/Helsinki
     volumes:
       - ./prowlarr-config:/config
@@ -106,9 +106,9 @@ services:
     restart: unless-stopped
     depends_on: [prowlarr, qbittorrent, audiobookshelf]
     environment:
-      SOLID_QUEUE_IN_PUMA: "1"
-      PUID: "1000"
-      PGID: "1000"
+      SOLID_QUEUE_IN_PUMA: '1'
+      PUID: '1000'
+      PGID: '1000'
     volumes:
       - ./shelfarr-data:/rails/storage
       - /data/media:/data
@@ -126,14 +126,14 @@ services:
     container_name: deemix
     restart: unless-stopped
     environment:
-      PUID: "1000"
-      PGID: "1000"
+      PUID: '1000'
+      PGID: '1000'
       TZ: Europe/Helsinki
-      UMASK_SET: "022"
-      DEEMIX_SINGLE_USER: "true"
+      UMASK_SET: '022'
+      DEEMIX_SINGLE_USER: 'true'
     volumes:
       - ./deemix-config:/config
-      - /data/media/Music:/downloads   # ← lands directly in the Jellyfin music library
+      - /data/media/Music:/downloads # ← lands directly in the Jellyfin music library
     ports:
       - 6595:6595
 
@@ -146,7 +146,7 @@ services:
       - SERVER_NAME=jellyfin
       - SERVER_LOCK=true
       - SERVER_TYPE=jellyfin
-      - SERVER_URL=http://192.168.100.34:8096   # host IP, because Jellyfin is not a container
+      - SERVER_URL=http://192.168.100.34:8096 # host IP, because Jellyfin is not a container
       - LEGACY_AUTHENTICATION=false
       - ANALYTICS_DISABLED=true
     ports:
@@ -156,12 +156,12 @@ services:
   #  ⚠️  Port conflict: this holds host port 8787, which is Auralis's default BFF port.
   # ───────────────────────────────────────────────────────────────────────────
   bookshelf:
-    image: ghcr.io/pennydreadful/bookshelf:hardcover   # a Readarr fork
+    image: ghcr.io/pennydreadful/bookshelf:hardcover # a Readarr fork
     container_name: bookshelf
     restart: unless-stopped
     environment:
-      PUID: "1000"
-      PGID: "1000"
+      PUID: '1000'
+      PGID: '1000'
       TZ: Europe/Helsinki
     volumes:
       - ./bookshelf-config:/config
