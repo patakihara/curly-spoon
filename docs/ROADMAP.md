@@ -216,10 +216,24 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
   flag that silently widened session-cookie matching after every persisted reload — both
   fixed with regression tests. First real compiler check (`./gradlew test assembleDebug` on
   CI) passed clean.
-- **Wave B — onboarding + home/library Compose screens.** Not started. Consumes wave A's
-  repositories; first real UI, first "does this actually run" moment for Compose in this app.
+- **Wave B — composition root, navigation, onboarding + login: done.** `AuralisApplication`/
+  `AppContainer` (manual composition, no DI framework — not justified at this size),
+  `AuralisNavHost`, and the first-run flow (enter the Auralis server's own address → sign in)
+  ending at 5a's existing placeholder `HomeScreen`. First real Compose UI exercised by CI in
+  this app (5a's screen was trivial); reviewed by an independent subagent, one compile-breaking
+  defect caught before landing (`viewModelFactory` imported from the wrong package —
+  `androidx.lifecycle.viewmodel.compose` instead of `androidx.lifecycle.viewmodel`) and fixed.
+- **Wave B2 — home/library Compose screens with real data.** Not started. Replaces the
+  placeholder `HomeScreen` with real shelves/library data via wave A's `ApiClient`, needs an
+  image-loading dependency (Coil is the natural pick, not yet added) for cover art. **This is
+  the point where a visual comparison against YouTube Music / Symfonium first makes sense on
+  Android** — see `docs/DESIGN.md`'s reference table and the note just below it. Do that
+  comparison as part of closing this wave, not as an afterthought.
 - **Wave C — player**: Media3 `ExoPlayer` behind the `MediaLibraryService` scaffolded in 5a,
-  Now Playing / mini player surfaces, progress sync against the BFF.
+  Now Playing / mini player surfaces, progress sync against the BFF. **A second, more
+  important point for the same visual comparison** — the Now Playing surface is where the
+  YouTube Music reference (split-view, thickening progress bar) and the Symfonium reference
+  (artwork-derived theme colour) actually bite.
 - **Wave D — requests**: the phase 6 request flow, native.
 - **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
   see below for why this can't be bolted on after the fact.
@@ -275,6 +289,11 @@ web and Android together.
 Performance budgets enforced in CI (bundle size, Lighthouse on the desktop and mobile
 layouts), a full accessibility audit, multi-arch image publishing (amd64 + arm64, so it
 runs on a Pi or a NAS as happily as on a desktop), and release automation.
+
+A final holistic pass of the `docs/DESIGN.md` reference-app comparison belongs here too —
+not just the per-surface checks noted against phase 7's waves above, but the whole app,
+web and Android together, side by side with YouTube Music and Symfonium one more time before
+release.
 
 ### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
 

@@ -10,6 +10,20 @@
 | **Claude**        | Warm neutral surfaces, generous line-height, restrained accent use, quiet chrome.                                                                                                              |
 | **M3 Expressive** | Spring motion, shape morphing, larger type at the top of the hierarchy, high-emphasis containers.                                                                                              |
 
+**Verify against these references visually, not just from memory of this table** — but only
+once a surface has real content to compare, not a placeholder screen. A blank onboarding form
+or a single-item stub screen (e.g. Android's current placeholder `HomeScreen`) isn't a
+meaningful comparison point; a populated home shelf, a library grid, or the Now Playing surface
+is. Concretely: do this for **web** now that phases 4–6 have real shelves/library/player screens
+live, and for **Android** once wave B2 (real home/library data) and wave C (player) land — see
+`docs/ROADMAP.md` §7. Put the app and the reference (YouTube Music / Symfonium, run on a phone
+or their web equivalents) side by side and look for drift from the table above: is the Now
+Playing surface actually split-view with a thickening progress bar, does the theme colour
+actually derive from current artwork across the whole shell, does search actually go as deep as
+Spotify's. Note what's off in `docs/HANDOVER.md` rather than letting it sit unreviewed — this
+is exactly the kind of feedback a screenshot surfaces faster than another phase of unreviewed
+code (see `docs/HANDOVER.md` §7's "get it in front of the user early").
+
 ## Colour
 
 Auralis derives its entire palette at runtime with
