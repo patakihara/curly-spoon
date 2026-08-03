@@ -410,6 +410,14 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
 
 ## 6. Environment gotchas
 
+- **`pnpm typecheck` from the repo root did not complete on this machine**, across three
+  attempts on 2026-08-03; it runs five `tsc` processes in parallel. Typechecking one package
+  at a time — `npx tsc -p apps/server/tsconfig.json --noEmit`, and the same for `apps/web`,
+  `packages/core`, `packages/abs-client`, `packages/ui` — finished cleanly every time, and
+  is what phase 6 was verified with. The cause was **not** established: the box is memory-
+  tight, which makes a cap plausible, but each attempt also ended in a way that could have
+  been the harness rather than the kernel, and no OOM evidence was collected. Use the
+  per-package form; do not repeat the memory explanation as though it were measured.
 - **Playwright browsers**: the previous sandbox pre-installed Chromium under
   `PLAYWRIGHT_BROWSERS_PATH` at a build number that did not match the installed Playwright,
   and downloads were blocked. `playwright.config.ts` auto-detects and points at whatever
