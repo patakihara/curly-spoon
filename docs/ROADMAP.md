@@ -223,18 +223,54 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
   this app (5a's screen was trivial); reviewed by an independent subagent, one compile-breaking
   defect caught before landing (`viewModelFactory` imported from the wrong package —
   `androidx.lifecycle.viewmodel.compose` instead of `androidx.lifecycle.viewmodel`) and fixed.
-- **Wave B2 — home/library Compose screens with real data.** Not started. Replaces the
-  placeholder `HomeScreen` with real shelves/library data via wave A's `ApiClient`, needs an
-  image-loading dependency (Coil is the natural pick, not yet added) for cover art. **This is
-  the point where a visual comparison against YouTube Music / Symfonium first makes sense on
-  Android** — see `docs/DESIGN.md`'s reference table and the note just below it. Do that
-  comparison as part of closing this wave, not as an afterthought.
-- **Wave C — player**: Media3 `ExoPlayer` behind the `MediaLibraryService` scaffolded in 5a,
-  Now Playing / mini player surfaces, progress sync against the BFF. **A second, more
-  important point for the same visual comparison** — the Now Playing surface is where the
-  YouTube Music reference (split-view, thickening progress bar) and the Symfonium reference
-  (artwork-derived theme colour) actually bite.
-- **Wave D — requests**: the phase 6 request flow, native.
+- **Wave B2 — home screen with real shelf data and cover art: done (`19e8328`).** Replaces
+  5a's placeholder `HomeScreen` with the real thing: fetches the first library and its home
+  shelves via wave A's `ApiClient`, renders scrollable rows of cover art + title through Coil
+  (added this wave), sharing the same cookie-authenticated `OkHttpClient` the `ApiClient`
+  already uses — a separate image loader would have silently 401ed on cover requests with no
+  local way to notice. Reviewed by an independent subagent; nothing needed fixing.
+- **Wave C1 — playback API data layer: done (`4cea695`).** The data-only slice of the player
+  wave: `PlaybackSession`/`PlayResponse`/`SyncSessionBody` models, and
+  `ApiClient.playItem`/`syncSession`/`closeSession`/`audioTrackUrl`, plus
+  `fileIdFromContentUrl` (mirrors the web client's `playback.ts` exactly). No ExoPlayer or
+  Compose UI yet. Independent review caught one real defect: a test's own invented
+  trailing-slash-only edge case asserted the wrong expected value against otherwise-correct,
+  TS-mirrored logic — fixed and verified by hand-tracing all four test cases.
+- **Wave C2 — real ExoPlayer + MediaSession behind the service: done (`8ef4224`).** Gives
+  `AuralisMediaLibraryService` (a 5a no-op stub) a real player: ExoPlayer backed by an OkHttp
+  data source sharing the same cookie-authenticated `OkHttpClient`, wrapped in a
+  `MediaLibrarySession` rather than a plain `MediaSession` — deliberate, since Android Auto's
+  browse tree (wave E) needs that from the start. The session `Callback` has zero overrides;
+  Media3 1.5.1's defaults are correct until Auto actually builds a browse tree. Independent
+  review fetched Media3's tagged 1.5.1 source directly to verify this and found no defects.
+  No Compose UI or `MediaController` wiring yet, and runtime playback behaviour cannot be
+  verified in this environment — CI only proves it compiles.
+- **Wave C3 — MediaController wiring + mini player: done (`080c2ca`).** Wires Compose UI to
+  actual playback: `PlayerViewModel` owns the single `MediaController` connected to wave C2's
+  service, `HomeScreen` taps a shelf item to play it, and a `MiniPlayerBar` shows while
+  playing. Independent review caught two real defects before landing — an `Error` UI state
+  set but never rendered (fixed with a Snackbar), and `onCleared()` dropping an in-flight
+  `MediaController` connection attempt without cancelling it, leaking the eventual controller
+  — plus flagged the missing `FOREGROUND_SERVICE`/`FOREGROUND_SERVICE_MEDIA_PLAYBACK`
+  permissions and `foregroundServiceType="mediaPlayback"`, required at targetSdk 35, fixed
+  directly as a three-line manifest change. `gradlew test assembleDebug` confirmed green on
+  CI for this commit. Known gap left for later: no `Player.Listener.onPlayerError` handling,
+  so an ExoPlayer-side failure doesn't yet surface to the UI.
+- **The visual comparison against YouTube Music / Symfonium** flagged for waves B2 and C in
+  `docs/DESIGN.md`'s reference table has not happened for either. This environment has no
+  Android emulator or device — it can only happen once someone with a device builds and runs
+  the debug APK CI produces. Still an open gap.
+- **Wave D1 — book-requests API data layer: done (`d917a20`).** The data-only slice of phase
+  6's request pipeline, consumed natively: `Release`/`SearchError`/`RequestSearchResult`/
+  `BookRequest` models, and `ApiClient.searchReleases`/`listRequests`/`createRequest`/
+  `getRequest`/`approveRequest`/`rejectRequest`/`retryRequest`/`grabRequest`/`deleteRequest`.
+  Extends the private `get<T>` helper to accept optional query parameters and adds
+  `executeNoContent` for `DELETE /requests/:id`'s 204-with-no-body response. No Compose UI
+  yet. Independent review checked it field-for-field against the server schema and found no
+  defects.
+- **Wave D2a — request search + create UI: in progress.** An implementation workflow has
+  been dispatched for the search-and-request screen consuming wave D1's `ApiClient`.
+- **Wave D2b — request list + retry/delete UI: not started, spec ready.**
 - **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
   see below for why this can't be bolted on after the fact.
 
