@@ -32,7 +32,7 @@ import { ShortcutSheet } from './ShortcutSheet.js';
 
 const DESTINATION_ICONS: Record<DestinationKey, IconName> = {
   home: 'home',
-  books: 'library_books',
+  books: 'book_2',
   podcasts: 'podcasts',
   music: 'music_note',
   requests: 'queue',
