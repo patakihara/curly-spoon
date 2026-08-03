@@ -5,6 +5,10 @@
   padding: 12px 0;
   background: var(--m3-surface-container);
   border-right: 1px solid var(--m3-outline-variant);
+  /* Deliberate deviation from pure M3 spec (real nav rails are tonal-only):
+     the surface-container/background contrast alone reads as too flat, so a
+     mild level-1 shadow gives the rail real visual separation from content. */
+  box-shadow: var(--m3-elevation-1);
   transition: width var(--m3-spring-default-duration) var(--m3-spring-default-easing);
 }
 
@@ -24,7 +28,7 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  border-radius: var(--m3-shape-lg);
+  border-radius: var(--m3-shape-full);
   background: var(--m3-secondary-container);
   transition:
     transform var(--m3-spring-default-duration) var(--m3-spring-default-easing),
@@ -42,7 +46,10 @@
   margin: 0 12px;
   padding: 0 16px;
   border: none;
-  border-radius: var(--m3-shape-lg);
+  /* Matches the indicator's pill (--m3-shape-full): the hover state-layer and
+     the active indicator are the same shape family, so a hover next to an
+     active item doesn't clip square against the pill beside it. */
+  border-radius: var(--m3-shape-full);
   background: transparent;
   color: var(--m3-on-surface-variant);
   cursor: pointer;

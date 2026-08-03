@@ -6,9 +6,9 @@
  * (e2e/app/navigation.spec.ts), so the two never disagree about which
  * library "Books" means.
  */
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Card, LinearProgress, Skeleton } from '@auralis/ui';
+import { Card, Icon, LinearProgress, Skeleton } from '@auralis/ui';
 import { useLibrariesQuery, useLibraryHomeQuery, useSetupQuery } from '../../api/queries.js';
 import { useApi } from '../../api/ApiContext.js';
 import type { LibraryItem, Shelf } from '../../api/types.js';
@@ -26,6 +26,31 @@ const COLUMN_STYLE: CSSProperties = {
   gap: 24,
 };
 
+/** Same box the cover `<img>` occupies, so a failed load doesn't reflow the card. */
+const COVER_STYLE: CSSProperties = {
+  width: '100%',
+  aspectRatio: '1 / 1',
+  objectFit: 'cover',
+  borderRadius: 'var(--m3-shape-sm)',
+  display: 'block',
+};
+
+/** Tonal placeholder shown in place of a cover that 404s or otherwise fails to
+ * load — `api.coverUrl` (apps/web/src/api/client.ts) builds a URL from the
+ * item id alone with no way to know up front whether a cover actually
+ * exists, so the browser's native broken-image glyph is the alternative to
+ * this. */
+const COVER_FALLBACK_STYLE: CSSProperties = {
+  width: COVER_STYLE.width,
+  aspectRatio: COVER_STYLE.aspectRatio,
+  borderRadius: COVER_STYLE.borderRadius,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'var(--m3-surface-container-highest)',
+  color: 'var(--m3-on-surface-variant)',
+};
+
 /** `authors[]` is the richer, structured field and wins when present; `author`
  * is the free-text fallback some upstream shapes send instead. */
 function authorLabel(item: LibraryItem): string | null {
@@ -38,6 +63,7 @@ function ShelfCard({ item }: { item: LibraryItem }) {
   const api = useApi();
   const navigate = useNavigate();
   const author = authorLabel(item);
+  const [coverFailed, setCoverFailed] = useState(false);
 
   return (
     <Card
@@ -47,13 +73,20 @@ function ShelfCard({ item }: { item: LibraryItem }) {
       style={{ minWidth: 160, maxWidth: 160, flex: '0 0 auto', textAlign: 'left' }}
       onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: item.id } })}
     >
-      <img
-        src={api.coverUrl(item.id, { width: 240 })}
-        alt=""
-        width={160}
-        height={160}
-        style={{ width: '100%', height: 'auto', objectFit: 'cover', borderRadius: 8 }}
-      />
+      {coverFailed ? (
+        <div style={COVER_FALLBACK_STYLE} aria-hidden="true">
+          <Icon name="library_books" size={40} />
+        </div>
+      ) : (
+        <img
+          src={api.coverUrl(item.id, { width: 240 })}
+          alt=""
+          width={160}
+          height={160}
+          style={COVER_STYLE}
+          onError={() => setCoverFailed(true)}
+        />
+      )}
       <h3>{item.media.title}</h3>
       {author ? <p>{author}</p> : null}
       {item.progress ? (
