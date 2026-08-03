@@ -98,6 +98,20 @@ export interface IndexerProvider {
   readonly id: string;
   readonly displayName: string;
   search(query: IndexerSearchQuery, signal?: AbortSignal): Promise<Release[]>;
+  /**
+   * Fills in a link the indexer deliberately deferred, returning the completed release.
+   *
+   * The AudiobookBay scraper needs this: its listing page carries no magnet, and fetching
+   * every detail page during a search would be one request per result against a
+   * rate-limited site. So search stays cheap and the hash is resolved at the moment
+   * somebody actually picks something.
+   *
+   * Optional, because most indexers (Prowlarr among them) return a usable link the first
+   * time. The request service calls `provider.resolveDownload?.(release)` and falls back to
+   * the release as-is — which is what keeps "another indexer" one file, rather than another
+   * provider-specific branch inside the generic pipeline.
+   */
+  resolveDownload?(release: Release, signal?: AbortSignal): Promise<Release>;
   /** Credential/liveness check for the settings screen. Resolves on success, throws otherwise. */
   testConnection(signal?: AbortSignal): Promise<void>;
 }

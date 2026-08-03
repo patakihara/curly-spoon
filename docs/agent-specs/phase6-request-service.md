@@ -70,10 +70,15 @@ no `Date.now()` inside logic — inject a clock so tests are deterministic.
   `auto` policy and `pending` under `manual` (`getApprovalPolicy`).
 - `approve` / `reject` / `retry`, each validated through `canTransition`.
 - `grab(requestId)` — pick the release (the stored one, else the best search result),
-  resolve an AudiobookBay magnet through `resolveAudiobookBayMagnet` when the release has
-  neither magnet nor download URL, hand it to the download client, store the returned
-  handle, move to `downloading`. Any provider failure moves to `failed` with the
-  `ProviderError`'s message in `status_detail` — a request that fails must always say why.
+  complete it with `await provider.resolveDownload?.(release) ?? release`, hand it to the
+  download client, store the returned handle, move to `downloading`. Any provider failure
+  moves to `failed` with the `ProviderError`'s message in `status_detail` — a request that
+  fails must always say why.
+
+  **Call it generically, exactly as written above.** `resolveDownload` is optional on
+  `IndexerProvider` because only the AudiobookBay scraper defers its link; importing that
+  provider's resolver directly into the service would put a provider-specific branch inside
+  the generic pipeline, which is the one thing `types.ts` exists to prevent.
 - `pollDownloads()` — for every `downloading` request, read `status(handle)`; update
   `progress`; on `completed`/`seeding` move to `importing` and call `scanLibrary`; on
   `error` or `missing` move to `failed` with the reason. Idempotent: calling it twice must
