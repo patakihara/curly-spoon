@@ -86,6 +86,12 @@ Later clarifications:
   detailed specs and reviews/integrates; Sonnet subagents write the code. Keep doing this.
 - **"web app" includes desktop** — the browser app must be a real desktop experience and
   the whole thing must run **in Docker**.
+- **The actual goal is to replace Spotify.** In the user's own words (2026-08-03): "spotify
+  now very conveniently (tho sometimes intrusively) bundles together music, podcasts, and
+  audiobooks. one of the things that it does is cleverly serve me audiobooks it thinks i will
+  enjoy." Personalized recommendations, not just library browsing, are part of the goal, not
+  scope creep for a later phase to invent. No phase currently scopes this — treat it as an
+  explicit requirement once the three media types are far enough along to reason over.
 
 Treat these as standing instructions, not one-off remarks.
 
