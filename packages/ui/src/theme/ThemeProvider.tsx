@@ -193,7 +193,16 @@ export function ThemeProvider({
   // `theme.colors` consumers) resolve at `:root` — a raw CSS var reference there
   // would resolve to nothing.
   const mantineTheme = useMemo(
-    () => ({ colors: { auralis: mantineTupleFromHex(scheme.primary) }, primaryColor: 'auralis' }),
+    () => ({
+      colors: { auralis: mantineTupleFromHex(scheme.primary) },
+      primaryColor: 'auralis',
+      // `respectReducedMotion` lives on the theme object, not as a direct MantineProvider
+      // prop (see @mantine/core's `MantineThemeOverride`/`respectReducedMotion: boolean`).
+      // Without it Mantine's own transitions (Modal/Drawer open-close, Collapse, etc.)
+      // ignore `prefers-reduced-motion` entirely, unlike the rest of this shell's motion
+      // layer (see `reducedMotion.ts` / the `REDUCED_MOTION_DURATION_MS` handling above).
+      respectReducedMotion: true,
+    }),
     [scheme.primary],
   );
 

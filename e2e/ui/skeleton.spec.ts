@@ -14,8 +14,13 @@ test.describe('Skeleton', () => {
   });
 
   test('shimmers by default', async ({ page }) => {
+    // Mantine's `Skeleton` (see Skeleton.tsx's doc comment) applies the shimmer keyframes
+    // to the element's own `::after` pseudo-element, not the element itself — reading
+    // `animationName` off the element directly always reports the default 'none'.
     const skeleton = page.getByTestId('skeleton-text');
-    const animationName = await skeleton.evaluate((el) => getComputedStyle(el).animationName);
+    const animationName = await skeleton.evaluate(
+      (el) => getComputedStyle(el, '::after').animationName,
+    );
     expect(animationName).not.toBe('none');
   });
 
@@ -23,7 +28,9 @@ test.describe('Skeleton', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.reload();
     const skeleton = page.getByTestId('skeleton-text');
-    const animationName = await skeleton.evaluate((el) => getComputedStyle(el).animationName);
+    const animationName = await skeleton.evaluate(
+      (el) => getComputedStyle(el, '::after').animationName,
+    );
     expect(animationName).toBe('none');
   });
 });

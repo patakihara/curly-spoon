@@ -213,6 +213,7 @@ directly against that worktree's `git status`/`git diff`, not assumed:
 
 **Done and verified** (typecheck clean, unit tests pass, real dev-server screenshots inspected,
 not just typechecked):
+
 - Button, IconButton, Fab
 - Chip, LinearProgress, CircularProgress, Skeleton
 - Card, ListItem, Dialog
@@ -236,18 +237,43 @@ after the last edit. **Before this can ship: a real browser check of `NowPlaying
 embedded and modal `Sheet` modes, specifically for the same always-mounted-overlay bug class
 Dialog had.**
 
-**Not done at all — a real CI blocker**: the e2e spec fixes (`e2e/ui/chip.spec.ts`,
-`progress.spec.ts`, `skeleton.spec.ts` — new Mantine DOM broke several locators) and setting
-`respectReducedMotion: true` on `MantineProvider` in `ThemeProvider.tsx`. An agent was
-dispatched for this and also killed before making any edits (`git status` confirms none of
-these files changed). Playwright will fail in CI on at least 7 known assertions until this is
-done.
+**Chip/Progress/Skeleton e2e fixes and `respectReducedMotion` are done.** `e2e/ui/chip.spec.ts`,
+`progress.spec.ts` and `skeleton.spec.ts` now match Mantine's real DOM (chips are
+`<input type="checkbox">` + `<label>`, not `<button>`; progress fills carry the static class
+`mantine-Progress-section`; Skeleton's and CircularProgress's spin/shimmer animate on their
+`::after` pseudo-element, not the element itself — `getComputedStyle` needs the second
+argument to see it). `ThemeProvider.tsx`'s `MantineProvider` now gets
+`theme={{ ..., respectReducedMotion: true }}` (it's a theme property, not a direct
+`MantineProvider` prop). `e2e/ui` is 152 tests: **144 passed, 8 failed**, all 8 pre-existing
+and outside this scope — 3 assertions × 2 projects in `button.spec.ts` (touch-target height,
+`aria-busy` on the loading state, press corner-radius morph) and 1 × 2 in `icon-button.spec.ts`
+(`.m3-icon-button__glyph` no longer exists), the same class of stale-Mantine-DOM locator drift
+as chip/progress/skeleton had, just not in a file this pass touched.
+
+Fixing the locators surfaced one real bug, not just stale selectors: Mantine's
+`respectReducedMotion` only disarms its JS-driven `Transition` machinery (`Modal`, `Drawer`,
+`Collapse`, …) via a `[data-reduce-motion]` opt-in that, among Mantine's own components, only
+`Spoiler` ever sets — `Skeleton`'s shimmer is a plain CSS `@keyframes` animation and was
+**never** affected by the flag. `packages/ui/src/components/Skeleton.tsx` now drives its
+`animate` prop from the same `prefersReducedMotion`/`watchReducedMotion` `ThemeProvider`
+already uses, closing the gap directly rather than leaning on a Mantine mechanism that doesn't
+reach it. The same gap (untested) likely applies to `Loader`'s spin and `Progress`'s stripe
+scroll — worth a look if either grows a reduced-motion test later. The old hand-rolled
+`Skeleton.css` had equivalent handling and is now fully dead code (superseded by Mantine's
+`Skeleton`, left in place rather than deleted as part of this fix).
+
+Also worth a human look, not a bug: `LinearProgress`'s `wavy` mode no longer renders a
+distinct M3 Expressive wave — Mantine has no such primitive, so `wavy` now only thickens the
+bar (see `LinearProgress.tsx`'s doc comment). `progress.spec.ts`'s wavy test was rewritten to
+assert the real current behavior (thicker, not wave-shaped). No doc currently promises the
+wave visual, so nothing else needed correcting, but it's a visible regression against "the UI
+must be beautiful" worth a product decision.
 
 **Three new Claude Code hooks were built in this same worktree** (`scripts/hooks/agent-log.sh`,
 `doc-feedback-accumulate.sh`, `doc-feedback-review.sh`, `delegation-nudge.sh`) — logging
 subagent launches/ends (cross-worktree, via a shared file under `git rev-parse
 --git-common-dir`), accumulating documentation-relevant user feedback for later batch review,
-and a delegation nudge. All are registered in *this worktree's* `.claude/settings.json` only —
+and a delegation nudge. All are registered in _this worktree's_ `.claude/settings.json` only —
 they cannot arm in any live session until this branch merges, and none have been observed
 firing in a real conversation yet (only pipe-tested with synthesized stdin). `delegation-nudge`
 specifically should stay disabled/uncommitted even after merge: its live classification path

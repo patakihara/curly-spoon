@@ -12,11 +12,18 @@ test.describe('Chip', () => {
   });
 
   test('a filter chip is a selectable toggle', async ({ page }) => {
-    const chip = page.getByTestId('chip-filter').locator('button').first();
-    await expect(chip).toHaveAttribute('aria-pressed', 'true');
-    await chip.click();
-    await expect(chip).toHaveAttribute('aria-pressed', 'false');
-    await chip.click();
+    // Mantine's Chip is a styled checkbox (`<input type="checkbox">`), not a `<button>` —
+    // there is no `aria-pressed`; the toggle state is the input's checked state. The
+    // input itself is visually zero-size/opacity:0 (Mantine hides it and paints the
+    // sibling `<label>` instead), so Playwright's actionability check refuses to click
+    // it directly — click the label, same as a real pointer would, and assert state on
+    // the input.
+    const chip = page.getByTestId('chip-filter').locator('input').first();
+    const label = page.getByTestId('chip-filter').locator('label').first();
+    await expect(chip).toBeChecked();
+    await label.click();
+    await expect(chip).not.toBeChecked();
+    await label.click();
   });
 
   test('an input chip has a working remove control', async ({ page }) => {
@@ -28,7 +35,8 @@ test.describe('Chip', () => {
   });
 
   test('an assist chip is keyboard operable', async ({ page }) => {
-    const chip = page.getByTestId('chip-assist').locator('button').first();
+    // Same Mantine-checkbox DOM as above — the focusable control is the `<input>`.
+    const chip = page.getByTestId('chip-assist').locator('input').first();
     await chip.focus();
     await expect(chip).toBeFocused();
   });
