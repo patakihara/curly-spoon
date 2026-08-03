@@ -15,16 +15,35 @@
 import { expect, test, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  // The fixture audio can't decode (see file header), so `HTMLMediaElement.play()`
-  // genuinely rejects — but *when* it rejects varies with the runner's own load,
-  // which makes any assertion that depends on catching the store's optimistic
-  // "playing" state before that rejection reverts it flaky by construction: it
-  // has been observed failing the very first `toHaveAttribute('Pause')` check
-  // below when the rejection lands unusually fast. Stubbed to resolve instead —
-  // this suite asserts store-derived UI only, never real decode progress, so
-  // removing the timing dependency changes nothing it means to test.
+  // The fixture audio can't decode (see file header), and that produces *two*
+  // independent async reversions of the store's "playing" state, not one:
+  // `HTMLMediaElement.play()` rejects (useAudioElement.ts's `.catch()` calls
+  // `pause()`), and — separately — assigning `.src` starts the browser's own
+  // media-load pipeline, which fires a native `error` event on decode failure
+  // (`handleError`, also wired to `pause()`) regardless of whether `play()` was
+  // ever called. Either can land at any point, including inside this file's own
+  // assertions' polling windows, which is why stubbing only `play()` still left
+  // this suite flaky under CI load — sometimes the *first* `toHaveAttribute`
+  // check below failed, sometimes the one after the toggle click did, because
+  // the `error` event doesn't care which state it interrupts.
+  //
+  // Neutralising the element instead of racing it: `.src` becomes an inert
+  // instance property (nothing ever fetches or decodes it, so `error` can never
+  // fire), `play()` resolves, `pause()` no-ops. This suite asserts store-derived
+  // UI only, never real decode progress, so nothing it means to test is lost.
   await page.addInitScript(() => {
-    HTMLMediaElement.prototype.play = () => Promise.resolve();
+    const proto = HTMLMediaElement.prototype;
+    proto.play = () => Promise.resolve();
+    proto.pause = function () {};
+    Object.defineProperty(proto, 'src', {
+      configurable: true,
+      get(this: HTMLMediaElement & { _auralisSrc?: string }) {
+        return this._auralisSrc ?? '';
+      },
+      set(this: HTMLMediaElement & { _auralisSrc?: string }, value: string) {
+        this._auralisSrc = value;
+      },
+    });
   });
   // Signed in already, via the `app` project's `storageState`.
   await page.goto('/');
