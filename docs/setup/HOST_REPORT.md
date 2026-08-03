@@ -12,6 +12,14 @@ Collected 2026-08-02 on the media server itself, by a Claude session running on 
 > `192.168.100.0/24` addresses are kept because they are unroutable and the topology is
 > unreadable without them. Where a real value is omitted the placeholder says so.
 
+> **Updated 2026-08-03: Auralis development moved off this host**, onto a separate laptop
+> on the same Tailscale tailnet. Everything below is still an accurate snapshot of
+> mediaserver, which keeps serving the media stack (Jellyfin, Audiobookshelf, qBittorrent,
+> etc.) that Auralis talks to as a client — just not from this box anymore. The one section
+> that stops being directly actionable for the current dev loop is "How Auralis must
+> address each upstream" below, which was written for a container sharing this host's own
+> Docker network; see the note there.
+
 ---
 
 ## Host
@@ -140,10 +148,20 @@ This is non-uniform, and a session that assumes one mechanism will be wrong twic
 
 The `caddy` service already declares that `extra_hosts` line — copy the pattern.
 
+> **This table applies only to a container co-located on mediaserver's own Docker host** —
+> either the old dev setup or a future deployment back onto this box. The current dev loop
+> runs on a separate laptop and reaches every upstream as a plain host address instead:
+> `192.168.100.34:13378` (Audiobookshelf), `192.168.100.34:8096` (Jellyfin),
+> `192.168.100.34:8080` (qBittorrent) — reachable the same way over the private mesh VPN
+> mentioned in `MY_SETUP.md` (its own identity is deliberately not written here; this is a
+> public repo). See `MY_SETUP.md`'s reachability answers, which are kept current.
+
 ## Ports
 
 `8787`, the port `docs/HANDOVER.md` and the README use for the BFF, is **taken** by the
-`bookshelf` container. `5173` (the Vite dev port) is free.
+`bookshelf` container **on mediaserver** — not relevant to the current dev loop on a
+separate laptop, which has no such conflict. Would matter again only for a deployment back
+onto this box. `5173` (the Vite dev port) is free either way.
 
 ## Build constraints
 

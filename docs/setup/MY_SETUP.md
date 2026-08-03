@@ -11,6 +11,16 @@ itself. Companion to [`HOST_REPORT.md`](./HOST_REPORT.md) (raw facts) and
 > unreadable without them. Public domain names are written `«public domain»`; ask the
 > user, or read them from the Caddyfile on the box.
 
+> **Updated 2026-08-03: development moved off the media server**, onto a separate laptop
+> on the same Tailscale tailnet (see `docs/HANDOVER.md` §4). The facts below about what
+> exists on the media server (libraries, accounts, indexers, the save-path gap) are all
+> still accurate — mediaserver keeps serving the stack. What changed is *how Auralis
+> reaches it*: the dev loop is no longer a container sharing mediaserver's own Docker
+> network, so container-name addressing (`audiobookshelf:80`, `gluetun:8080`,
+> `host.docker.internal`) no longer resolves. The three "URL Auralis will use" answers
+> below are updated to the LAN/Tailscale addresses that now apply; everything else in this
+> document is unchanged.
+
 ---
 
 ## Part 1 — What I already have
@@ -19,7 +29,7 @@ itself. Companion to [`HOST_REPORT.md`](./HOST_REPORT.md) (raw facts) and
 
 | Question                                                       | Answer |
 | -------------------------------------------------------------- | ------ |
-| URL Auralis will use to reach it (container name or host:port) | `http://audiobookshelf:80` from a container on the `arr_default` network. **The internal port is 80** — `13378` is only the host publish. Host-side: `http://192.168.100.34:13378`. |
+| URL Auralis will use to reach it (container name or host:port) | **`http://192.168.100.34:13378`** — the dev loop runs on a separate laptop now, not a container on `arr_default`, so it uses the host-published port (reachable the same way over the private mesh VPN mentioned above; its own identity is deliberately not written here). The container-internal address (`http://audiobookshelf:80` on `arr_default`, internal port **80** — `13378` is only the host publish) still applies only if Auralis is ever deployed as a container back onto mediaserver itself. |
 | Version (web UI footer, or `GET /api/status`)                  | **2.36.0** (`GET /status` → `serverVersion`). Auth is local (`authMethods: ["local"]`). |
 | Libraries — name, type (book / podcast), rough item count      | Exactly one: **"Books"**, mediaType `book`, **231 items**, metadata provider `google`. **There is no podcast library.** |
 | Host path(s) each library folder maps to                       | Library folder is `/data/Books` inside the container = **`/data/media/Books`** on the host. Whole-media bind is `/data/media -> /data`. |
@@ -30,7 +40,7 @@ itself. Companion to [`HOST_REPORT.md`](./HOST_REPORT.md) (raw facts) and
 
 | Question                                             | Answer |
 | ---------------------------------------------------- | ------ |
-| URL Auralis will use                                 | **`http://host.docker.internal:8096`**, with `extra_hosts: ["host.docker.internal:host-gateway"]`. Jellyfin is a **host systemd service, not a container** — it is not on `arr_default` and has no container name. Listens on `0.0.0.0:8096`. The `caddy` service already uses this exact `extra_hosts` pattern; copy it. |
+| URL Auralis will use                                 | **`http://192.168.100.34:8096`** — reached directly now that Auralis runs on a separate laptop, so the `host.docker.internal` + `extra_hosts: host-gateway` pattern (needed only when a container shares mediaserver's own Docker host) no longer applies. Jellyfin is a **host systemd service, not a container**, and listens on `0.0.0.0:8096`, which is why the plain host address works. |
 | Version                                              | **10.11.8**, startup wizard completed. (Server name omitted — it echoes the public domain.) |
 | Is music its own library? Name and rough track count | Yes — **"Music"**, one of four libraries (Books, Movies, Music, Shows). **~548 tracks, 36 albums, 12 artists.** Small; do not design around a large collection. |
 | Host path the music library maps to                  | **`/data/media/Music`** (native service, so host path = real path, no container mapping). |
@@ -41,7 +51,7 @@ itself. Companion to [`HOST_REPORT.md`](./HOST_REPORT.md) (raw facts) and
 | Question                                                                                            | Answer |
 | --------------------------------------------------------------------------------------------------- | ------ |
 | Which one (qBittorrent / Transmission / Deluge / SABnzbd / none)                                    | **qBittorrent** (`linuxserver/qbittorrent`). |
-| WebUI URL                                                                                           | **`http://gluetun:8080`** from `arr_default` — **not** `http://qbittorrent:8080`. It runs with `network_mode: "service:gluetun"` so it has no network identity of its own. Host-side: `http://192.168.100.34:8080`. Credentials `«have it»`. |
+| WebUI URL                                                                                           | **`http://192.168.100.34:8080`** — the dev loop reaches it as a plain host address now. (Background: on `arr_default` it would be `gluetun:8080`, **not** `qbittorrent:8080`, since qBittorrent runs with `network_mode: "service:gluetun"` and has no network identity of its own — relevant again only if Auralis is deployed back onto mediaserver as a container.) Credentials `«have it»`. |
 | **Save path where completed audiobooks must land** (host + container view)                          | Today qBittorrent saves to **`/data/Downloads`** in-container = **`/data/media/Downloads`** on the host — one **flat** directory, 181 mixed entries (films, TV, music, books together). **Audiobookshelf does not watch it.** See the gap note below — this is the most important thing on the page. |
 | Categories / labels already in use                                                                  | Nothing category-based that the request pipeline can rely on; everything lands flat in `Downloads`. A dedicated `audiobooks` category is free to take. |
 | Is it routed through a VPN, and does that VPN's network namespace also reach the rest of the stack? | **Yes** — gluetun (commercial VPN provider `«redacted»`, OpenVPN, port forwarding on). gluetun sets `FIREWALL_OUTBOUND_SUBNETS=192.168.100.0/24` and `FIREWALL_INPUT_PORTS=8080,5000`, so the LAN and the published WebUI ports stay reachable while everything else egresses through the tunnel. gluetun itself is on `arr_default`, so a container there can reach the qBittorrent WebUI at `gluetun:8080`. **Auralis must not be put inside that namespace** — it needs to reach ABS and Jellyfin. |
@@ -94,7 +104,7 @@ fallback and should not be the default.
 | How do you reach the server from outside (VPN / Tailscale / reverse proxy + TLS / not at all)? | Both: a mesh VPN for private services, and **Caddy + TLS on public subdomains** for the user-facing ones. Details omitted — public repo. |
 | Reverse proxy in use (Caddy / nginx / Traefik / NPM / none)                                    | **Caddy**, custom-built image with a DNS-01 provider plugin, so certificates issue with **no inbound reachability required**. Pattern to copy: public vhosts are open; private vhosts are gated by a source-IP allowlist (LAN + the VPN's CGNAT range) and return 403 otherwise. |
 | Hostname you would want Auralis on                                                             | **Not yet decided — ask.** The stack's convention is one subdomain per service under a single apex. A new vhost is a short Caddyfile block. ⚠️ Operational note for whoever edits it: after changing the Caddyfile, **`caddy restart`, not `reload`** — the config is an atomically-replaced bind mount and reload orphans the old inode. |
-| Docker network(s) the media stack shares                                                       | **`arr_default`** — one user-defined bridge, every stack container on it. Auralis should join it and use container names. Jellyfin is the exception (host service). |
+| Docker network(s) the media stack shares                                                       | **`arr_default`** — one user-defined bridge, every stack container on it. Jellyfin is the exception (host service). **Not relevant to the current dev loop**: Auralis runs on a separate laptop and reaches everything over LAN/Tailscale instead of joining this network. Would matter again only for a container deployed back onto mediaserver itself. |
 | Does the box have outbound internet? (needed for AudiobookBay, LRCLIB lyrics)                  | **Yes**, unrestricted outbound. Note the box runs a **LAN-wide DNS filter** that every household device resolves through; a handful of social domains are blackholed. Nothing media-related is blocked, and LRCLIB/ABB are unaffected — but if a domain ever resolves to `0.0.0.0` from inside a container, that is the cause, not a bug in Auralis. |
 
 ### Usage
@@ -115,18 +125,18 @@ Narrowed to this box, per the template's promise.
 
 ### Always
 
-- **Somewhere to run the Auralis container.** Join `arr_default`, one volume for its
-  SQLite DB. ⚠️ **Host port `8787` is already taken** by the `bookshelf` container (a
-  Readarr fork). Either pick another host port or — better, matching how everything else
-  here works — publish nothing and put it behind Caddy on its own vhost. `5173` is free.
-  Inside a container the BFF can still listen on `8787`; only the host publish conflicts.
+- **Somewhere to run the Auralis container**, if and when it is deployed. Join
+  `arr_default`, one volume for its SQLite DB. ⚠️ **Host port `8787` is already taken** by
+  the `bookshelf` container (a Readarr fork) *on mediaserver*. Either pick another host
+  port or — better, matching how everything else here works — publish nothing and put it
+  behind Caddy on its own vhost. `5173` is free. Inside a container the BFF can still
+  listen on `8787`; only the host publish conflicts.
 
-  ⚠️ **This bites at development time too, before any deployment.** `README.md` and
-  `HANDOVER.md` §5 both document `pnpm dev` as "BFF on :8787", and that binds on the
-  **host** — so running the documented dev command on this box fails immediately with
-  `EADDRINUSE`. It is the very first thing a session here will type. Make the port
-  configurable (e.g. `PORT`/`SERVER_PORT` in the BFF config, which `apps/server/src/config.ts`
-  is the natural home for) and pick a free one such as `8788` when working on this machine.
+  **This no longer bites at development time** — that EADDRINUSE gotcha was specific to
+  running the dev server directly on mediaserver, which shared the host with the
+  `bookshelf` container. The dev loop is now a separate laptop with no such conflict, so
+  `pnpm dev`'s documented "BFF on :8787" works as written there. The port-8787 conflict
+  still applies if Auralis is ever *deployed* as a container back onto mediaserver.
 - **A `SESSION_SECRET`.** Generate on the box with `openssl rand -base64 48`, keep it out
   of git. ⚠️ The existing stack has secrets **inline in `docker-compose.yml`** rather than
   in the `.env` it already has. Do not copy that habit for Auralis — put its secret in the

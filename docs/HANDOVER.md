@@ -300,16 +300,57 @@ there is no separate nginx and no CORS configuration for the user to get wrong.
 
 ---
 
-## 4. What is different now that you are on the media server
+## 4. What is different now that you are on a laptop, talking to the media server remotely
 
-This is the main reason the session moved, so lead with it.
+**Updated 2026-08-03.** Development moved a second time: from an ephemeral cloud container
+(no real server access at all) to the media server itself (commit `108ae0e`), and now from
+the media server to a **separate laptop** (`SofiaThinkPad`) on the same Tailscale tailnet.
+Reason for this second move: the media server has 3.7 GiB of RAM and runs the whole media
+stack beside this repo, and unattended/CI-scale work here twice pushed it into a multi-hour
+RAM-thrash stall (see mediaserver's own `~/CLAUDE.md`, "Out of RAM looks exactly like an
+outage"). The laptop has no such constraint and no competing services.
+
+**Mediaserver still runs the media stack** (Jellyfin, Audiobookshelf, qBittorrent, etc.) —
+only the *development* moved. Auralis now talks to it as a remote client instead of a
+container sharing its Docker host.
+
+### Network reachability changed
+
+The previous setup (documented as it was found in `docs/setup/`) relied on Auralis's
+containers sharing mediaserver's own Docker daemon: `host.docker.internal` +
+`extra_hosts: host-gateway` for Jellyfin (a host service, not a container), and
+container-name DNS (`gluetun:8080`, `audiobookshelf:80`) over the `arr_default` network for
+the rest. None of that resolves from a separate machine. The dev loop now reaches every
+upstream as a plain host address instead:
+
+- Jellyfin: `192.168.100.34:8096`
+- Audiobookshelf: `192.168.100.34:13378`
+- qBittorrent WebUI: `192.168.100.34:8080`
+
+(Reachable equally over the LAN or the private mesh VPN mentioned in `docs/setup/MY_SETUP.md` — its own identity is deliberately not written here; this is a public repo.)
+
+`docs/setup/MY_SETUP.md` has the updated reachability answers per-service;
+`docs/setup/HOST_REPORT.md` keeps the mediaserver host facts as target-server reference,
+with a note on which parts (the container-network addressing) no longer apply directly.
+
+One side effect worth knowing: mediaserver's host port `8787` conflict with its `bookshelf`
+container doesn't exist on this laptop, so `pnpm dev`'s documented "BFF on :8787" now works
+without the port workaround the setup docs describe for mediaserver itself.
+
+### CI stays GitHub-Actions-only, on both machines
+
+This was already the rule on mediaserver (RAM-driven — see `block-local-ci.sh` in its
+`~/.claude/hooks/`) and it carries over here on principle, not because the laptop is
+RAM-constrained: `pnpm test:e2e`, `playwright test`, the Docker smoke test and Gradle are
+denied by a hook on this laptop the same way, matching this repo's own "Definition of
+done" further down. Push and read the run on github.com.
 
 ### Verify the clients against reality
 
 The Audiobookshelf client was written against **fixtures**, from documented endpoint
-shapes. It has never spoken to a real server. Before building more on top of it:
+shapes. Before building more on top of it:
 
-1. Ask the user for their Audiobookshelf URL and a credential, or find the container.
+1. Use the real Audiobookshelf URL and credentials from `docs/setup/MY_SETUP.md`.
 2. Record the **actual** responses for the endpoints in `docs/INTEGRATIONS.md` and diff
    them against `apps/server/src/testSupport/fakes/fixtures/*.json`.
 3. Where reality differs, fix the fixtures **and** the zod schemas, and add a regression
@@ -319,26 +360,30 @@ shapes. It has never spoken to a real server. Before building more on top of it:
 
 Do the same for Jellyfin before Phase 8.
 
-### Things you can now do that the previous session could not
+### Things you can now do
 
-- Run `docker compose up` and actually validate the image.
-- Point the app at real libraries and see real cover art, real chapter data, real
-  long-file seeking. Range-request behaviour in particular deserves a real-world check
-  against a multi-hour M4B, not just the synthetic byte-range test.
-- Measure performance on real library sizes. A user with 2,000 audiobooks will find
-  different problems than a fixture with twelve.
-- Possibly build the Android app, if the Android SDK is available (it was not before).
+- Point the app at real libraries over LAN/Tailscale and see real cover art, real chapter
+  data, real long-file seeking. Range-request behaviour in particular deserves a real-world
+  check against a multi-hour M4B, not just the synthetic byte-range test — though per
+  `docs/setup/MY_SETUP.md`, the real library is dominated by chaptered MP3, not M4B, so
+  weight that check accordingly.
+- Measure performance on real library sizes (231 items today — small; see
+  `docs/setup/MY_SETUP.md` Part 3 before assuming otherwise).
+- `docker compose up` to validate the image — not yet set up on this laptop (Docker Desktop
+  is on the Windows host but WSL integration isn't enabled for this distro). A separate ask
+  if/when needed; not part of this migration.
+- Building the Android app locally is still not possible — no Android SDK here either,
+  same as before the move. CI is still the only place it compiles.
 
-### Things to find out from the user or the box
+### Things already found out (were open questions here; now answered)
 
-- Audiobookshelf: URL, version, library names/types (book vs podcast), how many items.
-- Jellyfin: URL, version, whether music is a separate library.
-- Torrent client: which one, its WebUI URL, and **the exact save path Audiobookshelf
-  watches** — the request pipeline is worthless if downloads land somewhere unmonitored.
-- Whether they use Prowlarr already (if so, prefer it over the raw AudiobookBay scraper as
-  the default, and keep the scraper as a fallback).
-- Reverse proxy / TLS setup and the hostname they will actually use.
-- Whether anyone else uses the server, which decides whether request approval matters.
+Everything this section used to ask about the user's server is now recorded in
+`docs/setup/MY_SETUP.md` and `docs/setup/HOST_REPORT.md` — Audiobookshelf/Jellyfin URLs and
+versions, the torrent client and its WebUI, **the save-path gap** (Audiobookshelf does not
+watch qBittorrent's download folder — read that section, it is the most important thing in
+`MY_SETUP.md`), Prowlarr/indexer configuration, the reverse-proxy setup, and that the server
+is shared with family (so request approval is a real requirement, not hypothetical). Read
+those two docs rather than re-deriving any of this.
 
 ---
 
