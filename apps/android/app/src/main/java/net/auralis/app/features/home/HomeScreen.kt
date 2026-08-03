@@ -1,5 +1,6 @@
 package net.auralis.app.features.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +14,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -27,14 +32,22 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.compose.AsyncImage
 import net.auralis.app.AppContainer
+import net.auralis.app.features.player.MiniPlayerBar
+import net.auralis.app.features.player.PlayerUiState
+import net.auralis.app.features.player.PlayerViewModel
 
 /**
  * The signed-in landing screen: the first library's home shelves ("Continue listening",
- * "Recently added", etc.), each rendered as a horizontally-scrolling row of covers.
+ * "Recently added", etc.), each rendered as a horizontally-scrolling row of covers. Tapping a
+ * shelf item starts it playing via [playerViewModel]; a [MiniPlayerBar] renders at the bottom
+ * once something is playing.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(container: AppContainer) {
+fun HomeScreen(
+    container: AppContainer,
+    playerViewModel: PlayerViewModel,
+) {
     val viewModel: HomeViewModel =
         viewModel(
             factory =
@@ -43,10 +56,30 @@ fun HomeScreen(container: AppContainer) {
                 },
         )
     val uiState by viewModel.uiState.collectAsState()
+    val playerUiState by playerViewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Surfaces player-side failures (no playable track, a network error, a failed
+    // MediaController connection) as a snackbar. Without this, PlayerUiState.Error is set
+    // correctly by the ViewModel but nothing ever renders it, so a failed tap looks like
+    // nothing happened at all.
+    LaunchedEffect(playerUiState) {
+        val state = playerUiState
+        if (state is PlayerUiState.Error) {
+            snackbarHostState.showSnackbar(state.message)
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Auralis") })
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            val playing = playerUiState
+            if (playing is PlayerUiState.Playing) {
+                MiniPlayerBar(state = playing, onTogglePlayPause = playerViewModel::togglePlayPause)
+            }
         },
     ) { innerPadding ->
         when (val state = uiState) {
@@ -79,7 +112,8 @@ fun HomeScreen(container: AppContainer) {
                                         modifier =
                                             Modifier
                                                 .width(120.dp)
-                                                .padding(horizontal = 8.dp),
+                                                .padding(horizontal = 8.dp)
+                                                .clickable { playerViewModel.playItem(item.id) },
                                     ) {
                                         AsyncImage(
                                             model = item.coverUrl,

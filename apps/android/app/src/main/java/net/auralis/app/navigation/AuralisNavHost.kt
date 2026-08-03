@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
@@ -19,6 +20,7 @@ import net.auralis.app.AppContainer
 import net.auralis.app.features.login.LoginScreen
 import net.auralis.app.features.home.HomeScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
+import net.auralis.app.features.player.PlayerViewModel
 
 /** Route name constants for [AuralisNavHost]'s graph. */
 object Routes {
@@ -44,13 +46,28 @@ fun AuralisNavHost(
                     initializer { AppStartViewModel(container.serverConfigRepository, container.apiClient) }
                 },
         )
+    // Constructed once at the nav host's own scope — not per-screen — so the MediaController
+    // connection it owns survives navigating away from and back to Home rather than being torn
+    // down and rebuilt. `initializer` blocks run outside composition, so the Context has to be
+    // read here, during composition, and captured by the closure below. `applicationContext`
+    // rather than the raw `LocalContext.current`: this ViewModel's ViewModelStore is retained
+    // across configuration changes by the hosting Activity, so a raw Activity Context captured
+    // once would go stale (pointing at a destroyed Activity) after the first rotation.
+    val appContext = LocalContext.current.applicationContext
+    val playerViewModel: PlayerViewModel =
+        viewModel(
+            factory =
+                viewModelFactory {
+                    initializer { PlayerViewModel(appContext, container.apiClient) }
+                },
+        )
     when (val state = startViewModel.state.collectAsState().value) {
         is StartState.Loading -> LoadingScreen()
         is StartState.Ready -> {
             NavHost(navController = navController, startDestination = state.destination) {
                 composable(Routes.ONBOARDING) { OnboardingScreen(container, navController) }
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
-                composable(Routes.HOME) { HomeScreen(container) }
+                composable(Routes.HOME) { HomeScreen(container, playerViewModel) }
             }
         }
     }
