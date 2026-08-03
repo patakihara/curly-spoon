@@ -28,38 +28,13 @@ itself. It answers most of section 4 below and contradicts several assumptions i
 
 ---
 
-## 0. Read this before you touch the working tree (2026-08-03)
+## 0. Background sessions and the shared checkout
 
-**The clone at `~/src/auralis-src` has a dirty working tree whose contents are already
-committed and pushed.** Do not try to finish that work — it is done. On 2026-08-03 a session
-found ~1,300 lines of uncommitted phase 5 / 5a work left behind by a session that was cut
-off mid-phase, fixed it (the tree did not typecheck and the e2e gate spec was broken),
-and committed it as `4dcbeb5`, `3675b24`, `07ce0c3` on
-`origin/claude/media-client-app-k7v9by`. The files still sitting dirty in that checkout are
-the _pre-fix_ copies. Reconcile before doing anything else:
-
-```bash
-cd ~/src/auralis-src
-git fetch origin
-git status                     # confirm nothing here is newer than origin
-git reset --hard origin/claude/media-client-app-k7v9by
-git clean -fd                  # drops the now-redundant untracked copies
-```
-
-**Why it was left dirty rather than reconciled automatically:** discarding a user's working
-tree is destructive and was not something to do unattended.
-
-**That `git status` on line 41 is a real check, not a formality.** On 2026-08-03 the dirty
-checkout turned out to hold a `CLAUDE.md` that was _newer_ than the branch's — two
-working-agreement sections the user had written there while the code was being committed
-from the worktree. A blind `reset --hard` would have destroyed them. They are on the branch
-now (`88c8501`), so the reconcile above is safe as written; the lesson is that the shared
-checkout is where the **user** edits, so it can lead as well as lag.
-
-**A worktree already exists — reuse it.** `.claude/worktrees/phase5` is on branch
-`claude/phase5`, tracks the tip of the work, and has `node_modules` installed. Just
-`EnterWorktree` with that `path`. Only build a new one if you want a genuinely separate line
-of work.
+The dirty-tree incident earlier drafts of this section described (uncommitted phase 5/5a
+work left behind mid-phase) is long since reconciled — the checkout is clean and tracks
+`origin/claude/media-client-app-k7v9by`. The one durable lesson from it: **the shared
+checkout is where the user edits**, so a `git status` before any destructive git command
+(`reset --hard`, `clean -fd`) is a real check, not a formality — it can lead as well as lag.
 
 **Background sessions cannot edit the shared checkout at all.** A harness guard rejects
 every `Edit`/`Write` there until the session isolates into a git worktree, and the
@@ -126,18 +101,15 @@ Treat these as standing instructions, not one-off remarks.
 | 4     | Web shell + Docker image                            | done        |
 | 5     | Audiobooks experience + player                      | done        |
 | 5a    | Android build skeleton + APK pipeline               | done        |
-| 6     | Book requests                                       | awaiting CI |
+| 6     | Book requests                                       | done        |
 | 7–11  | Android app, podcasts, music, polish, F-Droid       | not started |
 
-**Work in phase 6 happens in a git worktree**, `.claude/worktrees/phase6` on branch
-`claude/phase6`, pushed to `claude/media-client-app-k7v9by`. There is also a leftover
-`.claude/worktrees/phase5`. Both are ordinary worktrees of this repo; `git worktree list`
-is the truth.
-
-The shared checkout is **still** stale and its dirty files are **still** already pushed —
-§0 has the reconcile. Two sessions have now spent time re-deriving that, so the check
-`git log origin/claude/media-client-app-k7v9by` before believing a dirty tree is real work
-is worth doing first, every time.
+The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
+now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
+("do not create a worktree"). A background session that hits the harness's shared-checkout
+edit guard still needs one (see §0's "Background sessions cannot edit the shared checkout at
+all" — that reconcile procedure is still accurate); just don't leave it lying around once
+its work has landed and pushed.
 
 **Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
 results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
@@ -179,28 +151,32 @@ Both phase-6 specs were launched and deleted in the commits that landed their wo
 directory means _unlaunched_, and a spec left here after the fact reads as a TODO that is
 already done.
 
-### Phase 6 — what is built, and what has not been verified
+### Phase 6 — closed 2026-08-03
 
-**Everything is written and every local gate is green: 729 unit tests, five packages
-typechecking, lint clean.** What follows is what that does _not_ cover, because the next
-session should spend its first minutes on the right thing.
+CI has now actually been read (it hadn't been, for two prior commits) and is green: lint/
+format/typecheck, 729 unit tests, Playwright 193/193 including `e2e/app/requests.spec.ts`
+(which had never executed before this), and the Docker smoke test. Getting there needed two
+follow-up fixes, both now on the branch:
 
-**No CI run has been read.** `gh` is not installed here, so the Actions run for the final
-commit needs checking on github.com. Two commits on this branch are expected **red**:
-`61889ba` and `5507467` caught subagent files mid-write, because `git add -A` does not know
-an agent is still typing. Everything from `958fbb5` onward should be green. If a run before
-that is red, that is why — do not go hunting.
+- `c9bee10` — three doc-only commits landed without running Prettier; reformatted, no
+  content changes.
+- `daa132b` + `29e9856` — `e2e/app/player.spec.ts` (a **pre-existing Phase 5 test**, nothing
+  phase 6 touched) failed intermittently under CI load. Root cause: the e2e fixture audio
+  can't decode, and that produces _two_ independent async paths that revert the player
+  store's "playing" state — `HTMLMediaElement.play()` rejecting, and, separately, assigning
+  `.src` triggering the browser's real media-load pipeline, which fires a native `error`
+  event on decode failure. Either could land inside the test's own assertions. Fixed by
+  neutralising the audio element in that spec file entirely (`.src` becomes an inert
+  instance property, `play()`/`pause()` no-op) rather than continuing to race a browser
+  behaviour the suite was never meant to depend on. If a _different_ player test starts
+  flaking later, re-read this — the same two paths are still there in production code,
+  correctly, and are what any future audio-related e2e spec will need to neutralise the
+  same way.
 
-**`e2e/app/requests.spec.ts` has never executed.** Not "written and expected to pass" —
-never run, because Playwright is denied on this machine. It is the highest-risk artifact of
-the phase. If the first CI run is red, look there before looking at the providers. It runs
-in `serial` mode deliberately: unlike the rest of `e2e/app`, its tests build on each other's
-BFF state, and `fullyParallel` would race them.
-
-**The web wave's presentational layer is unreviewed.** `polling.ts`, `providerForm.ts`,
-`requestAnyway.ts`, `format.ts` and `destinations.ts` are pure, unit-tested, and their tests
-were read. The components around them were not reviewed, and CI is their first real check.
-The server side _was_ reviewed, twice, and both rounds found real defects.
+The web wave's presentational layer (`polling.ts`, `providerForm.ts`, `requestAnyway.ts`,
+`format.ts`, `destinations.ts` and the components around them) is now covered by that green
+Playwright run, not just unit tests. The server side was reviewed twice during the phase and
+both rounds found real defects, since fixed.
 
 **Two product decisions worth a human's opinion**, neither a bug:
 

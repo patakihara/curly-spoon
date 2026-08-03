@@ -3,20 +3,20 @@
 Delivery is phase by phase; each phase lands on `claude/media-client-app-k7v9by` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status      |
-| --- | --------------------------------------------------------------- | ----------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
-| 3   | Server BFF core + Audiobookshelf client                         | done        |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
-| 5   | Audiobooks experience + player                                  | done        |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | awaiting CI |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned     |
-| 8   | Podcast client (web + Android)                                  | planned     |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
-| 10  | Release polish — performance budgets, a11y audit                | planned     |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
+| #   | Phase                                                           | Status  |
+| --- | --------------------------------------------------------------- | ------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
+| 3   | Server BFF core + Audiobookshelf client                         | done    |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
+| 5   | Audiobooks experience + player                                  | done    |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done    |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | planned |
+| 8   | Podcast client (web + Android)                                  | planned |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned |
+| 10  | Release polish — performance budgets, a11y audit                | planned |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned |
 
 ### Why Android sits at 7 rather than last
 
@@ -147,6 +147,19 @@ Pluggable indexers (Prowlarr, AudiobookBay scraper), pluggable download clients
 (qBittorrent, Transmission), request queue with approval and status tracking, post-import
 Audiobookshelf scan trigger. Completes priority 1 on the web, and freezes the API surface
 that phase 7 builds against.
+
+**Closed 2026-08-03, on a green CI run.** The run for the phase's own work (`958fbb5`
+onward) was never read until now; when it finally was, it was red — but at
+`e2e/app/player.spec.ts`, a _pre-existing_ Phase 5 test, not at anything phase 6 touched.
+Two real, independent bugs were behind it, both in `useAudioElement.ts`'s handling of the
+e2e fixture's undecodable audio: `play()` rejecting (asynchronously, timing-dependent) and,
+separately, assigning `.src` triggering the browser's own media-load pipeline, which fires
+a native `error` event on decode failure — also wired to `pause()`. Either could revert the
+store's optimistic "playing" state mid-assertion, so `player.spec.ts` neutralises the audio
+element outright (`play()`/`pause()` no-op, `.src` becomes an inert instance property)
+rather than continuing to race a browser behaviour the suite was never meant to depend on.
+See `daa132b` and `29e9856`. Once that was fixed, all four CI jobs passed cleanly:
+lint/format/typecheck, 729 unit tests, Playwright (193/193), and the Docker smoke test.
 
 **Prowlarr leads, and the scraper is the fallback** — the reverse of how earlier drafts of
 this file listed them. Checked against the development machine on 2026-08-03: Prowlarr is
