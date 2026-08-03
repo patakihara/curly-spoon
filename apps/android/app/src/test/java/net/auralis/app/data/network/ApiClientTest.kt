@@ -217,4 +217,80 @@ class ApiClientTest {
 
             assertNull(cookieJar.loadForRequest(mockWebServer.url("/")).firstOrNull())
         }
+
+    @Test
+    fun `playItem decodes a playback session including its nested tracks and chapters`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"session":{"id":"sess1","libraryItemId":"item1","mediaType":"book",
+                     "displayTitle":"Dune","duration":1800.0,"currentTime":0.0,
+                     "audioTracks":[{"index":0,"startOffset":0.0,"duration":900.0,"title":"Part One",
+                       "contentUrl":"/api/items/item1/file/file1","mimeType":"audio/mp4"}],
+                     "chapters":[{"id":1,"start":0.0,"end":900.0,"title":"Chapter One"}]}}
+                    """.trimIndent(),
+                ),
+            )
+
+            val session = apiClient.playItem("item1")
+
+            assertEquals("sess1", session.id)
+            assertEquals("Dune", session.displayTitle)
+            assertEquals("/api/items/item1/file/file1", session.audioTracks[0].contentUrl)
+            assertEquals("Chapter One", session.chapters[0].title)
+        }
+
+    @Test
+    fun `playItem throws ApiException on a 404 error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("""{"error":{"code":"not_found","message":"Item not found"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.playItem("missing")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("not_found", exception?.code)
+            assertEquals(404, exception?.httpStatus)
+        }
+
+    @Test
+    fun `syncSession sends currentTime, timeListened and duration in the request body`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"ok":true}"""))
+
+            apiClient.syncSession("sess1", 123.4, 56.7, 1800.0)
+
+            val recorded = mockWebServer.takeRequest().body.readUtf8()
+            assertTrue(recorded.contains("123.4"))
+            assertTrue(recorded.contains("56.7"))
+            assertTrue(recorded.contains("1800.0"))
+        }
+
+    @Test
+    fun `closeSession succeeds on a 200 ok response`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"ok":true}"""))
+
+            apiClient.closeSession("sess1")
+        }
+
+    @Test
+    fun `audioTrackUrl builds the exact track URL`() =
+        runTest {
+            val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+
+            val url = apiClient.audioTrackUrl("item1", "file1")
+
+            assertEquals("$baseUrl/api/v1/media/item1/track/file1", url)
+        }
 }

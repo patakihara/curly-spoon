@@ -159,6 +159,34 @@ data class HomeResponse(
     val shelves: List<Shelf>,
 )
 
+/** The nested `session` object returned by POST /items/{id}/play and read by the player. */
+@Serializable
+data class PlaybackSession(
+    val id: String,
+    val libraryItemId: String,
+    val episodeId: String? = null,
+    val mediaType: String,
+    val displayTitle: String,
+    val duration: Double,
+    val currentTime: Double,
+    val audioTracks: List<AudioTrack>,
+    val chapters: List<Chapter>,
+)
+
+/** POST /items/{id}/play response envelope. */
+@Serializable
+data class PlayResponse(
+    val session: PlaybackSession,
+)
+
+/** POST /sessions/{id}/sync request body. */
+@Serializable
+data class SyncSessionBody(
+    val currentTime: Double,
+    val timeListened: Double,
+    val duration: Double,
+)
+
 /** Shape every non-2xx BFF response uses. See apps/server/src/httpErrors.ts. */
 @Serializable
 data class ApiErrorDetail(

@@ -14,10 +14,13 @@ import net.auralis.app.data.model.LoginRequestBody
 import net.auralis.app.data.model.LoginResponse
 import net.auralis.app.data.model.MeResponse
 import net.auralis.app.data.model.OkResponse
+import net.auralis.app.data.model.PlaybackSession
+import net.auralis.app.data.model.PlayResponse
 import net.auralis.app.data.model.SetupRequestBody
 import net.auralis.app.data.model.SetupResult
 import net.auralis.app.data.model.SetupState
 import net.auralis.app.data.model.Shelf
+import net.auralis.app.data.model.SyncSessionBody
 import net.auralis.app.data.model.auralisJson
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -56,6 +59,26 @@ class ApiClient(
     suspend fun libraries(): List<Library> = get<LibrariesResponse>("/libraries").libraries
 
     suspend fun libraryHome(libraryId: String): List<Shelf> = get<HomeResponse>("/libraries/$libraryId/home").shelves
+
+    suspend fun playItem(itemId: String): PlaybackSession = postNoBody<PlayResponse>("/items/$itemId/play").session
+
+    suspend fun syncSession(
+        sessionId: String,
+        currentTime: Double,
+        timeListened: Double,
+        duration: Double,
+    ) {
+        post<SyncSessionBody, OkResponse>("/sessions/$sessionId/sync", SyncSessionBody(currentTime, timeListened, duration))
+    }
+
+    suspend fun closeSession(sessionId: String) {
+        postNoBody<OkResponse>("/sessions/$sessionId/close")
+    }
+
+    suspend fun audioTrackUrl(
+        itemId: String,
+        fileId: String,
+    ): String = apiUrl("/media/$itemId/track/$fileId").toString()
 
     private suspend fun apiUrl(path: String): HttpUrl = "${baseUrl().trimEnd('/')}/api/v1$path".toHttpUrl()
 
