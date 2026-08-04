@@ -6,7 +6,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from './ApiContext.js';
 import { shouldPollRequests, REQUEST_POLL_INTERVAL_MS } from '../features/requests/polling.js';
-import type { ProviderUpdateBody, Release, RequestSettings, RequestStatus } from './types.js';
+import type {
+  ProviderUpdateBody,
+  Release,
+  RequestSettings,
+  RequestStatus,
+  SubscribePodcastBody,
+} from './types.js';
 
 export const queryKeys = {
   setup: ['setup'] as const,
@@ -21,6 +27,7 @@ export const queryKeys = {
   requestSearch: (term: string, author: string) => ['requests', 'search', term, author] as const,
   providers: ['providers'] as const,
   requestSettings: ['settings', 'requests'] as const,
+  podcastDirectorySearch: (term: string) => ['podcasts', 'search', term] as const,
 };
 
 export function useSetupQuery() {
@@ -267,5 +274,52 @@ export function useUpdateRequestSettingsMutation() {
   return useMutation({
     mutationFn: (body: Partial<RequestSettings>) => api.updateRequestSettings(body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.requestSettings }),
+  });
+}
+
+// ---------------------------------------------------------------------
+// Podcast discovery (Phase 8)
+// ---------------------------------------------------------------------
+
+/**
+ * Search only runs on explicit submit (`AskForBookPanel`'s pattern, not
+ * `SearchField`'s live-filter one) — like requests, this fans out to a real
+ * upstream (iTunes, via Audiobookshelf) rather than filtering something local.
+ */
+export function usePodcastDirectorySearchQuery(term: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.podcastDirectorySearch(term),
+    queryFn: ({ signal }) => api.searchPodcastDirectory(term, signal),
+    enabled: term.trim().length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * A mutation, not a query: a feed preview is triggered by picking a specific search
+ * result or submitting a pasted RSS URL, not derived from a stable cache key the way
+ * a search term is — nothing else in the app ever wants "the preview for this URL"
+ * read back out of the cache.
+ */
+export function usePreviewPodcastFeedMutation() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: (rssFeed: string) => api.previewPodcastFeed(rssFeed),
+  });
+}
+
+/**
+ * Invalidates every `['libraries', ...]` query (React Query's default prefix
+ * matching), not just `queryKeys.libraries` itself — a new subscription changes
+ * that library's item list and home shelves too, and there's no single new item id
+ * to target more narrowly yet.
+ */
+export function useSubscribePodcastMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SubscribePodcastBody) => api.subscribePodcast(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['libraries'] }),
   });
 }

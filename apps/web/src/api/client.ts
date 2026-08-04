@@ -14,6 +14,8 @@ import type {
   Library,
   LoginResponse,
   PlaybackSession,
+  PodcastDirectoryResult,
+  PodcastFeedPreview,
   ProviderEntry,
   ProviderUpdateBody,
   Release,
@@ -24,6 +26,7 @@ import type {
   Shelf,
   SetupResult,
   SetupState,
+  SubscribePodcastBody,
 } from './types.js';
 
 /** Deliberately narrower than `typeof fetch` (matches `@auralis/abs-client`'s own `FetchLike`) — a real `fetch` satisfies this, and so does a simple test stub. */
@@ -287,6 +290,26 @@ export class ApiClient {
 
   updateRequestSettings(body: Partial<RequestSettings>): Promise<RequestSettings> {
     return this.request('/settings/requests', { method: 'PUT', body });
+  }
+
+  // ---------------------------------------------------------------------
+  // Podcast discovery (Phase 8)
+  // ---------------------------------------------------------------------
+
+  searchPodcastDirectory(
+    term: string,
+    signal?: AbortSignal,
+  ): Promise<{ results: PodcastDirectoryResult[] }> {
+    return this.request('/podcasts/search', { query: { term }, signal });
+  }
+
+  /** `POST /podcasts/feed` — parses an RSS feed so it can be shown before subscribing. */
+  previewPodcastFeed(rssFeed: string): Promise<{ preview: PodcastFeedPreview }> {
+    return this.request('/podcasts/feed', { method: 'POST', body: { rssFeed } });
+  }
+
+  subscribePodcast(body: SubscribePodcastBody): Promise<{ item: LibraryItem }> {
+    return this.request('/podcasts', { method: 'POST', body });
   }
 }
 

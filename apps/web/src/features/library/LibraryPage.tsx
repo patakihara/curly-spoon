@@ -5,8 +5,8 @@
  */
 import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { Card, Chip, Skeleton } from '@auralis/ui';
-import { useLibraryItemsQuery } from '../../api/queries.js';
+import { Button, Card, Chip, Skeleton } from '@auralis/ui';
+import { useLibrariesQuery, useLibraryItemsQuery } from '../../api/queries.js';
 import { filterItems, sortItems, type SortKey } from './sorting.js';
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
@@ -20,6 +20,13 @@ export function LibraryPage() {
   const { libraryId } = useParams({ from: '/library/$libraryId' });
   const navigate = useNavigate();
   const itemsQuery = useLibraryItemsQuery(libraryId);
+  // Only used to decide whether this is the podcast library, so "Add podcast" shows
+  // in the one place it's reachable from — see `PodcastDiscoverPage`'s doc comment
+  // for why discovery lives at its own route rather than nested under this one.
+  const librariesQuery = useLibrariesQuery(true);
+  const isPodcastLibrary = librariesQuery.data?.libraries.some(
+    (library) => library.id === libraryId && library.mediaType === 'podcast',
+  );
 
   const [sortKey, setSortKey] = useState<SortKey>('title');
   const [query, setQuery] = useState('');
@@ -30,7 +37,21 @@ export function LibraryPage() {
 
   return (
     <div className="auralis-page" data-testid="library-page">
-      <h1>Library</h1>
+      <div
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+      >
+        <h1>Library</h1>
+        {isPodcastLibrary ? (
+          <Button
+            variant="tonal"
+            size="sm"
+            onClick={() => void navigate({ to: '/podcasts/discover' })}
+            data-testid="add-podcast"
+          >
+            Add podcast
+          </Button>
+        ) : null}
+      </div>
 
       <div
         data-testid="sort-controls"

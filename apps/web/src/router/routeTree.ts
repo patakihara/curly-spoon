@@ -55,6 +55,20 @@ const requestsRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// A flat path rather than nested under `/library/$libraryId` — discovery isn't scoped
+// to a library id the user might not have yet (`PodcastDiscoverPage` looks up the
+// podcast library itself), and it's reached from a library page's "Add podcast" button,
+// not by browsing into one.
+const podcastDiscoverRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/podcasts/discover',
+  component: lazyRouteComponent(
+    () => import('../features/podcasts/PodcastDiscoverPage.js'),
+    'PodcastDiscoverPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -97,6 +111,7 @@ export const routeTree = rootRoute.addChildren([
   libraryRoute,
   itemRoute,
   requestsRoute,
+  podcastDiscoverRoute,
   searchRoute,
   settingsRoute,
   setupRoute,
