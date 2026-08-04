@@ -200,6 +200,35 @@ test('adding a bookmark lists it; removing it empties the list', async ({ page }
   await expect(page.getByTestId('bookmark-list')).toHaveCount(0);
 });
 
+test('the sleep timer control announces its popup state and is fully keyboard-operable', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 900 });
+  await startDune(page);
+  await page.getByTestId('mini-player-expand').click();
+
+  const trigger = page.getByTestId('sleep-timer');
+  // A screen reader user needs to know, before activating it, that this button
+  // opens a popup menu (`aria-haspopup`) and — once open — whether it already is
+  // (`aria-expanded`). Neither is optional: `aria-pressed`/toggle semantics would
+  // be wrong here since this isn't a two-state toggle, it's a disclosure.
+  await expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+  // Reachable and activatable from the keyboard alone, not just by mouse click.
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByTestId('sleep-timer-option-15')).toBeVisible();
+
+  // Escape closes it and returns focus to the trigger, the same contract every
+  // other overlay in this app (Sheet, Dialog) honours.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('sleep-timer-option-15')).toHaveCount(0);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(trigger).toBeFocused();
+});
+
 test('a phone viewport docks the mini player above the bottom bar; a desktop viewport puts Now Playing in the persistent side panel', async ({
   page,
 }) => {
