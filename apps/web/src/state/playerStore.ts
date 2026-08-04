@@ -19,6 +19,7 @@
 import { create } from 'zustand';
 import type { AudioTrack, Chapter, LibraryItem, PlaybackSession } from '../api/types.js';
 import { clampSeek } from '../features/player/playback.js';
+import type { PlaybackSource } from '../features/player/playbackSource.js';
 
 export interface Bookmark {
   id: string;
@@ -29,6 +30,17 @@ export interface Bookmark {
 export interface PlayerState {
   currentItem: LibraryItem | null;
   sessionId: string | null;
+  /**
+   * What actually plays the loaded item: how to report progress upstream and
+   * how to resolve a track into a URL `<audio>` can load. `null` only before
+   * the first `load()` — every call to `load()` sets `sessionId` and `source`
+   * together, so a truthy `sessionId` always implies a non-null `source`. See
+   * `features/player/playbackSource.ts` for why this exists: an Audiobookshelf
+   * session and a future non-session source (e.g. Jellyfin) disagree on both
+   * of these, and this is the seam that lets the rest of the player — this
+   * store, `useAudioElement`, `useProgressSync` — stay agnostic to which.
+   */
+  source: PlaybackSource | null;
   /** Non-null when the loaded session is one episode of `currentItem` (a podcast) rather
    *  than the item itself (a book) — mirrors `PlaybackSession.episodeId`. What the
    *  transport surfaces use to decide whether to show episode-vs-podcast title billing;
@@ -47,7 +59,7 @@ export interface PlayerState {
   /** Absolute epoch-ms deadline, or `null` when no sleep timer is running — read via `sleepTimerRemaining`. */
   sleepTimerEndsAt: number | null;
   bookmarks: Bookmark[];
-  load: (item: LibraryItem, session: PlaybackSession) => void;
+  load: (item: LibraryItem, session: PlaybackSession, source: PlaybackSource) => void;
   play: () => void;
   pause: () => void;
   seek: (time: number) => void;
@@ -64,6 +76,7 @@ export interface PlayerState {
 const INITIAL_STATE = {
   currentItem: null,
   sessionId: null,
+  source: null,
   episodeId: null,
   displayTitle: '',
   tracks: [],
@@ -98,10 +111,11 @@ function bookmarkId(): string {
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   ...INITIAL_STATE,
 
-  load: (item, session) =>
+  load: (item, session, source) =>
     set({
       currentItem: item,
       sessionId: session.id,
+      source,
       episodeId: session.episodeId,
       displayTitle: session.displayTitle,
       tracks: session.audioTracks,

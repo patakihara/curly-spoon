@@ -21,6 +21,7 @@ import { useItemQuery, useMyProgressQuery, usePlayEpisodeMutation } from '../../
 import { ApiError } from '../../api/errors.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { formatDuration } from '../player/playback.js';
+import { audiobookshelfSource } from '../player/playbackSource.js';
 import { sortEpisodes, type EpisodeOrder } from './episodeOrder.js';
 import { episodeProgressState, findEpisodeProgress } from './episodeProgress.js';
 
@@ -81,7 +82,7 @@ export function PodcastDetailPage() {
     setPendingEpisodeId(episodeId);
     try {
       const { session } = await playEpisodeMutation.mutateAsync({ itemId: item.id, episodeId });
-      usePlayerStore.getState().load(item, session);
+      usePlayerStore.getState().load(item, session, audiobookshelfSource(api, item.id, session.id));
       usePlayerStore.getState().play();
     } catch (err) {
       const apiError =

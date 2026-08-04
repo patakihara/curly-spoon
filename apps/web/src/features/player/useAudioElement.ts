@@ -15,11 +15,15 @@
  * fires) — every user-facing interaction this player supports (seek, skip,
  * chapters, speed, sleep timer, bookmarks) must work from store state alone,
  * never depend on the element actually decoding anything.
+ *
+ * Track resolution goes through `playerStore.source.resolveTrackUrl` rather
+ * than an Audiobookshelf-specific URL builder called directly here — this
+ * hook only ever deals in the resolved URL, never in how a source turns a
+ * track into one. See `features/player/playbackSource.ts`.
  */
 import { useEffect, useRef } from 'react';
-import { useApi } from '../../api/ApiContext.js';
 import { usePlayerStore } from '../../state/playerStore.js';
-import { fileIdFromContentUrl, trackAt } from './playback.js';
+import { trackAt } from './playback.js';
 
 /** How often a `timeupdate` may write into the store — one write a second is plenty for a label. */
 const TIME_SYNC_INTERVAL_MS = 1000;
@@ -51,13 +55,17 @@ function applyPreservesPitch(audio: PitchPreservingAudio): void {
 }
 
 export function useAudioElement(): void {
-  const api = useApi();
   const audioRef = useRef<PitchPreservingAudio | null>(null);
-  const loadedFileIdRef = useRef<string | null>(null);
+  /** The last URL actually assigned to `audio.src` — not a fileId, since a
+   *  non-Audiobookshelf source's tracks may not have one at all. Reassigning
+   *  `src` on every seek-within-a-track would restart the element's own
+   *  buffering, so this is what guards against that, not track identity. */
+  const loadedUrlRef = useRef<string | null>(null);
   const lastPushedTimeRef = useRef<number>(0);
 
   const currentItem = usePlayerStore((s) => s.currentItem);
   const tracks = usePlayerStore((s) => s.tracks);
+  const source = usePlayerStore((s) => s.source);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
@@ -104,15 +112,15 @@ export function useAudioElement(): void {
   // every seek-within-a-track would restart the element's own buffering.
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentItem) return;
+    if (!audio || !currentItem || !source) return;
     const match = trackAt(tracks, currentTime);
     if (!match) return;
-    const fileId = fileIdFromContentUrl(match.track.contentUrl);
-    if (!fileId) return;
+    const url = source.resolveTrackUrl(match.track);
+    if (!url) return;
 
-    if (loadedFileIdRef.current !== fileId) {
-      loadedFileIdRef.current = fileId;
-      audio.src = api.audioTrackUrl(currentItem.id, fileId);
+    if (loadedUrlRef.current !== url) {
+      loadedUrlRef.current = url;
+      audio.src = url;
     }
 
     // Only correct drift bigger than the timeupdate's own margin of error —
@@ -122,7 +130,7 @@ export function useAudioElement(): void {
     if (Math.abs(audio.currentTime - withinTrack) > 1.5) {
       audio.currentTime = withinTrack;
     }
-  }, [api, currentItem, tracks, currentTime]);
+  }, [currentItem, source, tracks, currentTime]);
 
   useEffect(() => {
     const audio = audioRef.current;
