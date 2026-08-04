@@ -87,6 +87,15 @@ class AppContainer(context: Context) {
      * Directory: `getExternalFilesDir(null)` (app-private, no permission required at this
      * project's minSdk 26) with a fallback to `filesDir` for the rare device that reports no
      * external storage — the same fallback Media3's own demo app uses.
+     *
+     * That fallback is silent by design in Media3's demo app, but worth flagging plainly here:
+     * `getExternalFilesDir(null)` can return `null` on a *later* launch than the one that first
+     * created this cache (external storage unmounted, removed, or simply not ready yet during
+     * boot), and `filesDir` is a different directory on disk. If that happens, every previously
+     * downloaded item becomes invisible — not corrupted, not deleted, just unreachable from the
+     * directory this instance is now pointed at — with nothing surfaced to the user or in logs.
+     * This app has no logging convention anywhere yet to route it through instead, so this
+     * comment is the signal for now; revisit if the app grows a logging story generally.
      */
     val downloadCache: Cache =
         SimpleCache(

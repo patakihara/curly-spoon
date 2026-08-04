@@ -1,6 +1,7 @@
 package net.auralis.app.data.downloads
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -53,5 +54,107 @@ class DownloadStateMappingTest {
     fun `a wildly out-of-range value degrades to FAILED rather than throwing`() {
         assertEquals(DownloadState.FAILED, downloadStateFromMedia3(-1))
         assertEquals(DownloadState.FAILED, downloadStateFromMedia3(999))
+    }
+}
+
+/**
+ * Pins [downloadedItemFrom] — the item-id filter and failure-message logic that used to live in
+ * [net.auralis.app.data.downloads.Media3DownloadEngine]'s `toDownloadedItemOrNull`, the one file
+ * in this package that can't be unit-tested (stub `android.jar`, no Robolectric). Moved here so
+ * it is.
+ */
+class DownloadedItemFromTest {
+    @Test
+    fun `resolves a matching id into a DownloadedItem`() {
+        val requestId = DownloadRequestId(itemId = "item-1", fileId = "file-2").encode()
+        val item =
+            downloadedItemFrom(
+                requestId = requestId,
+                itemId = "item-1",
+                state = 2, // STATE_DOWNLOADING
+                bytesDownloaded = 512L,
+                contentLength = 1024L,
+            )
+        assertEquals(
+            DownloadedItem(
+                itemId = "item-1",
+                fileId = "file-2",
+                state = DownloadState.DOWNLOADING,
+                bytesDownloaded = 512L,
+                totalBytes = 1024L,
+                failureReason = null,
+            ),
+            item,
+        )
+    }
+
+    @Test
+    fun `returns null when the requestId isn't one this app encoded`() {
+        assertNull(
+            downloadedItemFrom(
+                requestId = "not-one-of-ours",
+                itemId = "item-1",
+                state = 2,
+                bytesDownloaded = 0L,
+                contentLength = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun `returns null when the decoded itemId doesn't match the requested one`() {
+        val requestId = DownloadRequestId(itemId = "item-1", fileId = "file-2").encode()
+        assertNull(
+            downloadedItemFrom(
+                requestId = requestId,
+                itemId = "item-OTHER",
+                state = 2,
+                bytesDownloaded = 0L,
+                contentLength = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun `sets a failure reason when the state resolves to FAILED`() {
+        val requestId = DownloadRequestId(itemId = "item-1", fileId = "file-2").encode()
+        val item =
+            downloadedItemFrom(
+                requestId = requestId,
+                itemId = "item-1",
+                state = 4, // STATE_FAILED
+                bytesDownloaded = 0L,
+                contentLength = 0L,
+            )
+        assertEquals("Download failed", item?.failureReason)
+    }
+
+    @Test
+    fun `leaves the failure reason null for a non-failed state`() {
+        val requestId = DownloadRequestId(itemId = "item-1", fileId = "file-2").encode()
+        val item =
+            downloadedItemFrom(
+                requestId = requestId,
+                itemId = "item-1",
+                state = 3, // STATE_COMPLETED
+                bytesDownloaded = 1024L,
+                contentLength = 1024L,
+            )
+        assertNull(item?.failureReason)
+    }
+
+    @Test
+    fun `an unrecognised state also degrades to a failure reason, matching downloadStateFromMedia3`() {
+        val requestId = DownloadRequestId(itemId = "item-1", fileId = "file-2").encode()
+        val item =
+            downloadedItemFrom(
+                requestId = requestId,
+                itemId = "item-1",
+                state = 999,
+                bytesDownloaded = 0L,
+                contentLength = 0L,
+            )
+        assertEquals(DownloadState.FAILED, item?.state)
+        assertEquals("Download failed", item?.failureReason)
     }
 }

@@ -21,12 +21,12 @@ import java.io.IOException
  * Every Media3 type here is `@UnstableApi`, so — like
  * [net.auralis.app.playback.AuralisMediaLibraryService] — this class is deliberately kept out of
  * this project's unit-test surface: the stub `android.jar` these tests run against throws on any
- * real framework call, and there is no Robolectric harness to fake one. [DownloadRequestId] is
- * the one piece of genuinely decidable logic this class needs (the `String` id convention that
- * lets [downloadsFor] recover `itemId`/`fileId` from a Media3 `Download`), and it lives in the
- * framework-free layer instead, fully unit-tested there. This wave's real verification is the CI
- * compile (`./gradlew test assembleDebug`) plus a later on-device check — no device has ever
- * exercised the code below.
+ * real framework call, and there is no Robolectric harness to fake one. The genuinely decidable
+ * logic this class needs — the `String` id convention ([DownloadRequestId]) and resolving one
+ * `Download` row into a [DownloadedItem] ([downloadedItemFrom]) — lives in the framework-free
+ * layer instead, fully unit-tested there; this class stays a thin adapter over it. This wave's
+ * real verification is the CI compile (`./gradlew test assembleDebug`) plus a later on-device
+ * check — no device has ever exercised the code below.
  *
  * `enqueue`/`cancel` are routed through [DownloadService.sendAddDownload]/
  * [DownloadService.sendRemoveDownload] rather than calling [downloadManager] directly, so that
@@ -89,26 +89,18 @@ class Media3DownloadEngine(
 }
 
 /**
- * `null` when [Download.request]'s id isn't a [DownloadRequestId] this engine produced (see that
- * class's own doc comment), or belongs to a different item than [itemId] — [Media3DownloadEngine]
- * `.downloadsFor` filters by item id itself rather than pushing a per-item query down into
+ * Thin adapter over [downloadedItemFrom] (`DownloadStateMapping.kt`) — reads this `Download`'s
+ * fields and hands them to the framework-free, unit-tested function that actually decides the
+ * item-id filter and the failure message. [Media3DownloadEngine]`.downloadsFor` filters by item
+ * id itself (via [itemId] here) rather than pushing a per-item query down into
  * [androidx.media3.exoplayer.offline.DownloadIndex], which only supports filtering by state, not
  * by a substring of the id.
  */
-private fun Download.toDownloadedItemOrNull(itemId: String): DownloadedItem? {
-    val id = DownloadRequestId.decode(request.id) ?: return null
-    if (id.itemId != itemId) return null
-    return DownloadedItem(
-        itemId = id.itemId,
-        fileId = id.fileId,
-        state = downloadStateFromMedia3(state),
+private fun Download.toDownloadedItemOrNull(itemId: String): DownloadedItem? =
+    downloadedItemFrom(
+        requestId = request.id,
+        itemId = itemId,
+        state = state,
         bytesDownloaded = bytesDownloaded,
-        // Download.contentLength is C.LENGTH_UNSET (-1) when unknown, which DownloadedItem's own
-        // "<= 0 means unknown" convention already covers — see that field's doc comment.
-        totalBytes = contentLength,
-        // Media3's own Download.FailureReason has exactly two values, NONE and UNKNOWN
-        // (confirmed at the pinned 1.5.1 tag, Download.java) — there is no more specific message
-        // to surface, so this is the most honest string available rather than a fabricated one.
-        failureReason = if (state == Download.STATE_FAILED) "Download failed" else null,
+        contentLength = contentLength,
     )
-}

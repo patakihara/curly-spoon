@@ -1,7 +1,9 @@
 package net.auralis.app.playback
 
 import android.app.Notification
+import android.os.Build
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
@@ -33,16 +35,24 @@ import net.auralis.app.R
  * wave: `PlatformScheduler`'s own class doc (same tag) requires a manifest surface that has never
  * been exercised here — the `RECEIVE_BOOT_COMPLETED` permission plus an exported
  * `PlatformScheduler$PlatformSchedulerService` job-service component — on a device this project
- * has no way to test JobScheduler-driven restarts on. Per `DownloadService.getScheduler`'s own
- * doc (same tag): with no scheduler, a download whose requirements (network) aren't currently met
- * simply keeps this service running in the foreground rather than stopping itself to be woken
- * later by a scheduled job. Downloads already in flight are unaffected, and even an interrupted
- * one resumes automatically the next time anything restarts this service (opening the app,
- * enqueuing or cancelling another download) — [DownloadManager] persists its state to the on-disk
- * index regardless of whether a scheduler exists. The gap this leaves is narrow: a download that
+ * has no way to test JobScheduler-driven restarts on.
+ *
+ * This is not a deferred nice-to-have: `DownloadService.onCreate()` itself (same pinned tag)
+ * only ever consults [getScheduler] when `Util.SDK_INT < 31`, so on every device this app
+ * realistically ships to there is *no* scheduler fallback today regardless of what this method
+ * returns — returning a real [androidx.media3.exoplayer.scheduler.PlatformScheduler] here
+ * would be silently discarded on API 31+. With no scheduler, a download whose requirements
+ * (network) aren't currently met simply keeps this service running in the foreground instead of
+ * stopping itself to be woken later by a scheduled job — which is exactly how a stalled download
+ * can run this service long enough to hit the Android 15 `dataSync` timeout handled in
+ * [onTimeout] below. Downloads already in flight are unaffected, and even an interrupted one
+ * resumes automatically the next time anything restarts this service (opening the app, enqueuing
+ * or cancelling another download) — [DownloadManager] persists its state to the on-disk index
+ * regardless of whether a scheduler exists. The gap this leaves is narrow: a download that
  * stalls on lost connectivity while the process is fully evicted by the OS won't restart itself
  * in the background until something else wakes the app. Revisit with `PlatformScheduler` if that
- * gap turns out to matter in practice.
+ * gap turns out to matter in practice — building it would additionally need a real device to
+ * verify JobScheduler-driven restarts on, which this project still has no way to do.
  */
 @OptIn(UnstableApi::class)
 class AuralisDownloadService :
@@ -60,6 +70,52 @@ class AuralisDownloadService :
     override fun getDownloadManager(): DownloadManager = (applicationContext as AuralisApplication).container.downloadManager
 
     override fun getScheduler(): Scheduler? = null
+
+    /**
+     * Android 15 (API 35) caps `dataSync` foreground services at 6 cumulative hours per 24h
+     * and calls this when the budget runs out; [stopSelf] must run within a few seconds or the
+     * app takes a fatal `android.app.RemoteServiceException: "...did not stop within its
+     * timeout..."` (`developer.android.com/about/versions/15/behavior-changes-15`). [getScheduler]
+     * returning effectively-`null` on every real device (see its own doc above) is what lets a
+     * download stalled on lost connectivity pin this service in the foreground long enough to
+     * exhaust that budget instead of stopping itself to be rescheduled.
+     *
+     * Only the two-argument overload is implemented: `Service.onTimeout(int)` (API 34, one
+     * argument) fires for `FOREGROUND_SERVICE_TYPE_SHORT_SERVICE`, a type this service does not
+     * declare (its manifest entry, `AndroidManifest.xml`, is `dataSync`), so it would never be
+     * called here regardless of `minSdk`. `Service.onTimeout(int, int)` itself is `void`/`Unit`
+     * (JNI descriptor `(II)V`, confirmed against the platform reference), matching this override.
+     * `@RequiresApi` is needed because this two-argument overload — and the `super.onTimeout` call
+     * below — do not exist below API 35, and `minSdk` here is 26; the override is simply never
+     * invoked by the platform on lower API levels, so nothing else needs an SDK_INT guard.
+     *
+     * [getDownloadManager] `.pauseDownloads()` runs *before* [stopSelf], not just for good
+     * measure: a bare `stopSelf()` alone would fight itself. `stopSelf()` → `onDestroy()` detaches
+     * this instance from Media3's internal `DownloadManagerHelper` (`downloadService = null`,
+     * confirmed at the pinned 1.5.1 tag, `DownloadService.java`), and that same file's
+     * `onDownloadChanged` calls `restartService()` — a fresh attempt to start this very `dataSync`
+     * foreground service — whenever it sees a detached service and a download still in
+     * `STATE_DOWNLOADING`/`STATE_REMOVING`/`STATE_RESTARTING` (`needsStartedService`, same tag).
+     * Those are exactly the states an in-flight download is in when this callback fires, so
+     * without pausing first, `onTimeout` would immediately trigger a restart attempt against the
+     * budget the system just declared exhausted. `pauseDownloads()` moves every such download to
+     * `STATE_QUEUED` first (`DownloadManager.java`'s `syncTasks()`/`canDownloadsRun()`, same tag)
+     * — a state `needsStartedService` excludes — so that restart never fires. The pause is purely
+     * in-memory (never written to the on-disk index) and is unconditionally cleared by
+     * [DownloadManager.resumeDownloads], which `DownloadService.onCreate()` already calls on
+     * every service start (same tag) — so this doesn't change the resumability guarantee
+     * documented above on [getScheduler]: the download simply resumes, un-paused, the next time
+     * anything restarts this service.
+     */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    override fun onTimeout(
+        startId: Int,
+        fgsType: Int,
+    ) {
+        getDownloadManager().pauseDownloads()
+        stopSelf()
+        super.onTimeout(startId, fgsType)
+    }
 
     /**
      * `android.R.drawable.stat_sys_download` — a public Android framework resource, chosen so
