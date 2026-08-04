@@ -10,6 +10,7 @@ import { Button, LinearProgress } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
 import { useItemQuery, usePlayItemMutation } from '../../api/queries.js';
 import { ApiError } from '../../api/errors.js';
+import { audiobookshelfSource } from '../player/playbackSource.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 
 export function ItemPage() {
@@ -41,7 +42,7 @@ export function ItemPage() {
     setPlayError(null);
     try {
       const { session } = await playMutation.mutateAsync(item.id);
-      usePlayerStore.getState().load(item, session);
+      usePlayerStore.getState().load(item, session, audiobookshelfSource(api, item.id, session.id));
       usePlayerStore.getState().play();
     } catch (err) {
       const apiError =
