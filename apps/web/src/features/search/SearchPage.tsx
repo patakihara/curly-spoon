@@ -1,8 +1,9 @@
 /**
- * Search. Full cross-library, lyrics-aware search is Phase 8's job
- * (docs/ARCHITECTURE.md priority table + DESIGN.md's Spotify reference); this
- * phase wires the field, the `/` and `g h`/`g l` keyboard focus behaviour, and a
- * real search against whichever library the user has.
+ * Unified search: one field over every library the user has connected —
+ * Audiobookshelf's books and podcasts, and, once Jellyfin is configured,
+ * artists/albums/tracks too. Wires the field itself, the `/` and `g h`/`g l`
+ * keyboard focus behaviour, and fans one typed query out to whichever
+ * upstreams are actually available.
  *
  * Accessibility (phase-10 audit): the status line — "Start typing…", "Searching…",
  * "No matches for …" — is the only feedback a user gets after typing, and none of
@@ -11,13 +12,21 @@
  * `aria-live="polite"` so each state change is announced without moving focus off
  * the input. The result *cards* below stay outside the live region deliberately:
  * announcing every card's content on each keystroke would be noisy, and the
- * count captured in the status line is what a listener actually needs.
+ * count captured in the status line is what a listener actually needs. See
+ * `searchStatus.ts` for the wording logic itself.
  */
 import { useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, SearchField } from '@auralis/ui';
-import { useLibrariesQuery, useLibrarySearchQuery, useSetupQuery } from '../../api/queries.js';
+import {
+  useJellyfinConfigQuery,
+  useJellyfinSearchQuery,
+  useLibrariesQuery,
+  useLibrarySearchQuery,
+  useSetupQuery,
+} from '../../api/queries.js';
 import { useUiStore } from '../../state/uiStore.js';
+import { searchStatus } from './searchStatus.js';
 
 export function SearchPage() {
   // `query` lives in `uiStore`, not local state: the desktop rail's own
@@ -29,12 +38,20 @@ export function SearchPage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const searchFocusToken = useUiStore((s) => s.searchFocusToken);
+  const trimmedQuery = query.trim();
 
   const setupQuery = useSetupQuery();
-  const configured = setupQuery.data?.configured ?? false;
-  const librariesQuery = useLibrariesQuery(configured);
+  const absConfigured = setupQuery.data?.configured ?? false;
+  const librariesQuery = useLibrariesQuery(absConfigured);
   const libraryId = librariesQuery.data?.libraries[0]?.id;
   const searchQuery = useLibrarySearchQuery(libraryId, query);
+
+  // `useJellyfinSearchQuery` itself only gates on a non-empty term — it has no
+  // idea whether Jellyfin is even connected. Gating the call here too means an
+  // unconfigured Jellyfin never fires a doomed request on every keystroke.
+  const jellyfinConfigQuery = useJellyfinConfigQuery();
+  const jellyfinConfigured = jellyfinConfigQuery.data?.configured ?? false;
+  const jellyfinSearchQuery = useJellyfinSearchQuery(jellyfinConfigured ? query : '');
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -42,7 +59,11 @@ export function SearchPage() {
 
   const books = searchQuery.data?.books ?? [];
   const podcasts = searchQuery.data?.podcasts ?? [];
-  const hasResults = books.length > 0 || podcasts.length > 0;
+  const artists = jellyfinConfigured ? (jellyfinSearchQuery.data?.artists ?? []) : [];
+  const albums = jellyfinConfigured ? (jellyfinSearchQuery.data?.albums ?? []) : [];
+  const tracks = jellyfinConfigured ? (jellyfinSearchQuery.data?.tracks ?? []) : [];
+  const hasMusicResults = artists.length > 0 || albums.length > 0 || tracks.length > 0;
+  const hasResults = books.length > 0 || podcasts.length > 0 || hasMusicResults;
 
   // One status line covers every state — unconfigured, empty query, loading, no
   // matches, or a result count — so screen reader users get the same feedback a
@@ -50,15 +71,20 @@ export function SearchPage() {
   // conditionally mounted/unmounted) so the live region itself never has to be
   // inserted into the DOM at the same moment as its first announcement, which
   // some screen readers miss.
-  const statusMessage = !configured
-    ? 'Connect Audiobookshelf in Settings to search your library.'
-    : query.trim().length === 0
-      ? 'Start typing to search titles, authors and narrators.'
-      : searchQuery.isLoading
-        ? 'Searching…'
-        : !hasResults
-          ? `No matches for "${query}".`
-          : `${books.length} book${books.length === 1 ? '' : 's'}, ${podcasts.length} podcast${podcasts.length === 1 ? '' : 's'} found for "${query}".`;
+  const statusMessage = searchStatus({
+    absConfigured,
+    jellyfinConfigured,
+    trimmedQuery,
+    absLoading: searchQuery.isLoading,
+    jellyfinLoading: jellyfinSearchQuery.isLoading,
+    counts: {
+      books: books.length,
+      podcasts: podcasts.length,
+      artists: artists.length,
+      albums: albums.length,
+      tracks: tracks.length,
+    },
+  });
 
   return (
     <div className="auralis-page" data-testid="search-page">
@@ -123,6 +149,100 @@ export function SearchPage() {
               </div>
             )}
           </section>
+
+          {jellyfinConfigured ? (
+            <section data-testid="search-results-music">
+              <h2>Music</h2>
+
+              {artists.length > 0 ? (
+                <div data-testid="search-results-music-artists">
+                  <h3>Artists</h3>
+                  <div className="auralis-card-grid">
+                    {artists.map((artist) => (
+                      <Card
+                        key={artist.id}
+                        interactive
+                        variant="elevated"
+                        data-testid={`search-result-${artist.id}`}
+                        onClick={() =>
+                          void navigate({
+                            to: '/music/artist/$artistId',
+                            params: { artistId: artist.id },
+                          })
+                        }
+                      >
+                        <h4>{artist.name}</h4>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {albums.length > 0 ? (
+                <div data-testid="search-results-music-albums">
+                  <h3>Albums</h3>
+                  <div className="auralis-card-grid">
+                    {albums.map((album) => (
+                      <Card
+                        key={album.id}
+                        interactive
+                        variant="elevated"
+                        data-testid={`search-result-${album.id}`}
+                        onClick={() =>
+                          void navigate({
+                            to: '/music/album/$albumId',
+                            params: { albumId: album.id },
+                          })
+                        }
+                      >
+                        <h4>{album.name}</h4>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {tracks.length > 0 ? (
+                <div data-testid="search-results-music-tracks">
+                  <h3>Tracks</h3>
+                  <div className="auralis-card-grid">
+                    {tracks.map((track) =>
+                      // A track's search result carries no track list of its own to
+                      // build a playback queue from (see this file's module doc / the
+                      // wave spec's decision on this) — playing it needs the full
+                      // album, so the card navigates to the album instead of playing
+                      // directly. A track with no `albumId` has nowhere to navigate
+                      // to, so it renders inert rather than as a dead click target.
+                      track.albumId != null ? (
+                        <Card
+                          key={track.id}
+                          interactive
+                          variant="elevated"
+                          data-testid={`search-result-${track.id}`}
+                          onClick={() =>
+                            void navigate({
+                              to: '/music/album/$albumId',
+                              params: { albumId: track.albumId! },
+                            })
+                          }
+                        >
+                          <h4>{track.name}</h4>
+                        </Card>
+                      ) : (
+                        <Card
+                          key={track.id}
+                          variant="elevated"
+                          data-testid={`search-result-${track.id}`}
+                        >
+                          <h4>{track.name}</h4>
+                        </Card>
+                      ),
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
         </div>
       ) : null}
     </div>
