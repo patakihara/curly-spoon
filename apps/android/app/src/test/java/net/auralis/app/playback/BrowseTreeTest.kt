@@ -686,8 +686,16 @@ class BrowseTreeTest {
     fun `children of Downloaded includes a fully completed item, mapped like Books`() =
         runTest {
             withBaseUrlConfigured()
-            enqueueLibraries()
+            // enqueueLibraries() must be queued *after* keepOfflineAndComplete: that helper does
+            // its own synchronous POST /items/:id/play round trip immediately, and MockWebServer
+            // serves queued responses strictly FIFO by arrival order, not by matching URL/shape.
+            // Queuing the libraries response first would let that earlier POST consume it by
+            // mistake, shifting every response after it by one and making the real, later
+            // GET /libraries (fired inside repository.children() below) fail on a mismatched body
+            // — which BrowseTreeRepository.children()'s own try/catch silently turns into
+            // emptyList(), not an exception.
             keepOfflineAndComplete("item1")
+            enqueueLibraries()
             enqueue(
                 """
                 {"item":{"id":"item1","libraryId":"lib1","coverPath":null,
@@ -708,11 +716,14 @@ class BrowseTreeTest {
     fun `children of Downloaded windows completed items to pageSize, not the whole set`() =
         runTest {
             withBaseUrlConfigured()
-            enqueueLibraries()
             // Sorted by item id (BrowseTreeRepository's own tie-break) — item1 then item2 then item3.
+            // enqueueLibraries() is queued after these (see the sibling test's comment above for
+            // why): each keepOfflineAndComplete does its own immediate POST /items/:id/play, and
+            // MockWebServer's queue is strict FIFO by arrival, not by matching URL/shape.
             keepOfflineAndComplete("item1")
             keepOfflineAndComplete("item2")
             keepOfflineAndComplete("item3")
+            enqueueLibraries()
             enqueue("""{"item":{"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null}}""")
             enqueue("""{"item":{"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Second"},"progress":null}}""")
 
@@ -727,10 +738,12 @@ class BrowseTreeTest {
     fun `children of Downloaded at page 1 returns the second window, not the first repeated`() =
         runTest {
             withBaseUrlConfigured()
-            enqueueLibraries()
+            // enqueueLibraries() ordering: see the first Downloaded/keepOfflineAndComplete test's
+            // comment above.
             keepOfflineAndComplete("item1")
             keepOfflineAndComplete("item2")
             keepOfflineAndComplete("item3")
+            enqueueLibraries()
             enqueue("""{"item":{"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Third"},"progress":null}}""")
 
             val children = repository.children(BrowseIds.DOWNLOADED, page = 1, pageSize = 2)
