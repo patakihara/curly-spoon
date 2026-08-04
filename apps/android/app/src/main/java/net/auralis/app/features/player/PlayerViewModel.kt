@@ -4,8 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -17,10 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.guava.asDeferred
 import kotlinx.coroutines.launch
-import net.auralis.app.data.network.ApiClient
-import net.auralis.app.data.network.ApiException
-import net.auralis.app.data.network.fileIdFromContentUrl
 import net.auralis.app.playback.AuralisMediaLibraryService
+import net.auralis.app.playback.PlaybackItemResolver
 
 /** What the mini player (and, later, a full Now Playing surface) renders. */
 sealed interface PlayerUiState {
@@ -37,12 +33,20 @@ sealed interface PlayerUiState {
  * `AuralisNavHost`) so the controller — and the state it drives — survives navigation between
  * screens rather than being torn down and rebuilt per screen.
  *
- * This wave plays only the first track of an item (see [firstPlayableTrack]); multi-track
- * stitching, seek/skip, and scheduling progress syncs back to the BFF are later waves' jobs.
+ * Plays only the first track of an item (see [firstPlayableTrack], used inside
+ * [PlaybackItemResolver]); multi-track stitching, seek/skip, and scheduling progress syncs back
+ * to the BFF are later waves' jobs.
+ *
+ * [PlaybackItemResolver] — shared with [AuralisMediaLibraryService], via
+ * [net.auralis.app.AppContainer] — owns the whole BFF-session-to-`MediaItem` chain and its
+ * metadata, so this class no longer builds its own [androidx.media3.common.MediaItem]/
+ * [androidx.media3.common.MediaMetadata]: doing so here *and* in the service is what left phone
+ * playback showing a bare title with no artist or artwork before Wave E2b, since the two
+ * constructions could — and did — drift apart.
  */
 class PlayerViewModel(
     private val context: Context,
-    private val apiClient: ApiClient,
+    private val playbackItemResolver: PlaybackItemResolver,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Idle)
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
@@ -53,7 +57,7 @@ class PlayerViewModel(
      * The in-flight connection attempt, if one has already been started. Memoizing the
      * [Deferred] itself — not just the resolved [MediaController] — matters because
      * `buildAsync().await()` is a real suspension point: `playItem` is only ever reached after
-     * an `apiClient.playItem` network round trip, so two shelf taps in quick succession both
+     * a `playbackItemResolver.resolve` network round trip, so two shelf taps in quick succession both
      * observe `controller == null` and would otherwise each start their own
      * `MediaController.Builder`, leaking the loser's connection and listener. Assigning this
      * field happens synchronously, before the `await()` suspension point, and `viewModelScope`
@@ -112,36 +116,32 @@ class PlayerViewModel(
         return controller!!
     }
 
-    /** Starts playback of an item's first track. Called from a shelf item's onClick. */
+    /**
+     * Starts playback of an item's first track. Called from a shelf item's onClick.
+     *
+     * `PlaybackItemResolver.resolve` is itself a total function — it swallows `ApiException` and
+     * every other resolution failure (no playable track, an unresolvable file id, a `null`/
+     * malformed BFF response) and returns `null` for all of them, matching the same
+     * "browsable-but-not-playable" outcome the browse tree already treats as one case. That
+     * folds what used to be two distinct error messages here (a track-less item vs. a network/
+     * API failure) into one; the resolver has no way to tell this caller which failure occurred,
+     * and it shouldn't grow one just to preserve wording nobody could act on differently.
+     */
     fun playItem(itemId: String) {
         viewModelScope.launch {
             try {
-                val session = apiClient.playItem(itemId)
-                val track =
-                    firstPlayableTrack(session)
+                val mediaItem =
+                    playbackItemResolver.resolve(itemId)
                         ?: run {
                             _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
                             return@launch
                         }
-                val fileId =
-                    fileIdFromContentUrl(track.contentUrl)
-                        ?: run {
-                            _uiState.value = PlayerUiState.Error("Could not resolve an audio file for this item.")
-                            return@launch
-                        }
-                val url = apiClient.audioTrackUrl(itemId, fileId)
-                val mediaItem =
-                    MediaItem.Builder()
-                        .setUri(url)
-                        .setMediaMetadata(MediaMetadata.Builder().setTitle(session.displayTitle).build())
-                        .build()
                 val ctrl = connectedController()
                 ctrl.setMediaItem(mediaItem)
                 ctrl.prepare()
                 ctrl.play()
-                _uiState.value = PlayerUiState.Playing(title = session.displayTitle, isPlaying = true)
-            } catch (e: ApiException) {
-                _uiState.value = PlayerUiState.Error(e.message)
+                val title = mediaItem.mediaMetadata.title?.toString() ?: itemId
+                _uiState.value = PlayerUiState.Playing(title = title, isPlaying = true)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

@@ -11,6 +11,7 @@ import net.auralis.app.data.network.DataStoreKeyValueStore
 import net.auralis.app.data.network.KeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
 import net.auralis.app.data.settings.ServerConfigRepository
+import net.auralis.app.playback.PlaybackItemResolver
 import okhttp3.OkHttpClient
 
 /**
@@ -28,6 +29,15 @@ class AppContainer(context: Context) {
             serverConfigRepository.getBaseUrl()
                 ?: throw ApiException("server_not_configured", "No Auralis server configured", 0)
         }
+
+    /**
+     * Shared by [net.auralis.app.features.player.PlayerViewModel] (the phone UI's "tap a shelf
+     * item" path) and [net.auralis.app.playback.AuralisMediaLibraryService] (its own, separately
+     * constructed instance — a `MediaLibraryService` has no `ViewModelStore` to receive this one
+     * through), so both surfaces build the exact same enriched playback `MediaItem` instead of
+     * the two diverging constructions Wave E2b replaced.
+     */
+    val playbackItemResolver = PlaybackItemResolver(apiClient, serverConfigRepository)
 
     /**
      * Shared with [apiClient] via the same [httpClient] instance, so cover-art requests carry

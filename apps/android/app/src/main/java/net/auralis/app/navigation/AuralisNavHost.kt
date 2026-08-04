@@ -60,7 +60,7 @@ fun AuralisNavHost(
         viewModel(
             factory =
                 viewModelFactory {
-                    initializer { PlayerViewModel(appContext, container.apiClient) }
+                    initializer { PlayerViewModel(appContext, container.playbackItemResolver) }
                 },
         )
     when (val state = startViewModel.state.collectAsState().value) {
