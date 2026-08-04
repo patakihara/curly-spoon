@@ -175,18 +175,19 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                            | Status      |
-| ----- | --------------------------------------------------------------- | ----------- |
-| 1     | Monorepo, tooling, CI, test harness                             | done        |
-| 2     | `@auralis/ui` — Material 3 Expressive design system             | done        |
-| 3     | BFF + Audiobookshelf client                                     | done        |
-| 4     | Web shell + Docker image                                        | done        |
-| 5     | Audiobooks experience + player                                  | done        |
-| 5a    | Android build skeleton + APK pipeline                           | done        |
-| 6     | Book requests                                                   | done        |
-| 7     | Android — audiobooks, requests, Auto; downloads data layer done | in progress |
-| 8     | Podcasts — backend + web discovery UI done, no Android UI       | in progress |
-| 9–11  | Music, polish, F-Droid                                          | not started |
+| Phase | What                                                    | Status      |
+| ----- | ------------------------------------------------------- | ----------- |
+| 1     | Monorepo, tooling, CI, test harness                     | done        |
+| 2     | `@auralis/ui` — Material 3 Expressive design system     | done        |
+| 3     | BFF + Audiobookshelf client                             | done        |
+| 4     | Web shell + Docker image                                | done        |
+| 5     | Audiobooks experience + player                          | done        |
+| 5a    | Android build skeleton + APK pipeline                   | done        |
+| 6     | Book requests                                           | done        |
+| 7     | Android — audiobooks, requests, Auto, offline downloads | done        |
+| 8     | Podcasts — backend + web done, no Android UI            | in progress |
+| 9     | Music — Jellyfin client + BFF routes done, no UI yet    | in progress |
+| 10–11 | Polish, F-Droid                                         | not started |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
@@ -195,64 +196,23 @@ edit guard still needs one (see §0's "Background sessions cannot edit the share
 all" — that reconcile procedure is still accurate); just don't leave it lying around once
 its work has landed and pushed.
 
-**Phase 7 is delivered in waves** (see `docs/ROADMAP.md` §7 for the full breakdown) — each a
-disjoint directory under `apps/android/app/src/{main,test}/java/net/auralis/app/`, so review
-stays scoped. **Wave A (networking + settings data layer) landed on `ca9ba61`**: `ApiClient`,
-`SessionCookieJar`, `KeyValueStore`/`DataStoreKeyValueStore`, `ServerConfigRepository`, using
-OkHttp and kotlinx.serialization (no Retrofit), session-cookie auth persisted across process
-death. Written blind (still no JDK/SDK/Gradle on the development machine), reviewed by an
-independent subagent, two real defects caught and fixed before landing (see ROADMAP for what
-they were). CI (`./gradlew test assembleDebug`) passed clean on the first real compile.
-Waves B, B2, C1–C3 and D1 landed after that (Compose navigation/onboarding, home screen with
-real shelf data, playback data layer, real ExoPlayer + `MediaLibrarySession`, MediaController
-wiring + mini player, book-requests data layer — see `docs/ROADMAP.md` §7 for each one's
-detail and defects independent review caught). **Wave D2a (request search + create UI) is
-now done** (`3b1aebe`, fixed `646850d`) — this file previously said it was "in progress";
-it landed with two real defects caught and fixed by independent review before commit, then
-two of its own tests fixed afterward. **Wave D2b (request list + retry/delete UI) is now
-done** (`fabd6b1`, layout fix `c556d22`) — a "Your requests" section below the existing
-search form, fetched on screen entry and sorted newest-first, with per-request retry (when
-failed) and delete (always). Independent review caught one real defect before landing: the
-search-results branch's unweighted `Modifier.fillMaxSize()` consumed all remaining screen
-height the moment a search returned any release, squeezing the new list to zero height —
-this wave's entire deliverable invisible under its single most common trigger. Fixed by
-making both the results section and the request list weighted siblings in the same
-`Column` (`weight(1f, fill = false)` on results, so it shares space instead of hogging it;
-the request list's existing `weight(1f)` was unchanged).
-`./gradlew test assembleDebug` passed clean on the first real compile, six new
-`RequestsViewModelTest` cases included.
-**Wave E1 (Android Auto data layer prep) landed `7f887dd`** — `ApiClient`
-additions (`libraryItems`/`librarySeries`/`searchLibrary`/`libraryItem`) and matching
-models, reviewed against the real server source with no defects found. The browse tree
-itself (Wave E2) ships `Continue`/`Books`/`Series` only, deliberately without a
-`Downloaded` node — no offline-downloads feature exists yet anywhere in `apps/android`,
-confirmed by grep; see `docs/ROADMAP.md` §7 for the full reasoning. **Wave E2a (read-only
-browse tree) is done** (`785391e`, crash fix `316cc33`, merged `7365816`), **Wave E2b
-(browse items now actually playable) is done** (`371f48d`, fix `e05714a`), and **Wave E2c
-(voice search + playback resumption) is done** (`c79a1a7`, merged `f924c47`), with `CI` and
-`Android` green on `f924c47`. **This completes Wave E — Android Auto is feature-complete as
-scoped**, but unverified on real hardware: no Desktop Head Unit or car has exercised it, and
-neither can CI.
+**Phase 7 is done.** Delivered in waves (`docs/ROADMAP.md` §7 has the full breakdown, every
+commit sha and every defect independent review caught), each a disjoint directory under
+`apps/android/app/src/{main,test}/java/net/auralis/app/`. Audiobooks, requests, Android Auto
+and offline downloads all shipped. Two things worth carrying forward here because they
+aren't tied to one wave:
 
-**Two assumptions in the browse tree are unverified against a real server**, both flagged in
-the code's own comments: the continue-listening shelf is found by a case-insensitive
-`contains("continue")` match on the shelf's id or label, and it's unconfirmed whether the
-`/libraries/:id/series` listing populates each series' `books` array. Worth checking against
-the real Audiobookshelf when someone has a device.
+- **Two assumptions in the Android Auto browse tree are unverified against a real server**,
+  both flagged in the code's own comments: the continue-listening shelf is found by a
+  case-insensitive `contains("continue")` match on the shelf's id or label, and it's
+  unconfirmed whether `/libraries/:id/series` populates each series' `books` array.
+- **Android Auto is unverified on real hardware end to end** — no Desktop Head Unit or car
+  has exercised any of it, and CI cannot either.
 
-**Wave F1 (offline-downloads data layer) landed `eb211ef`, fix `66829da`** — the
-`DownloadState`/`DownloadRepository`/`DownloadEngine` layer behind `AppContainer`'s
-placeholder `UnavailableDownloadEngine`, framework-free by design so it unit-tests against
-the stub `android.jar`. Review caught and fixed a phantom-success defect in the placeholder
-path before it landed; see `docs/ROADMAP.md` §7 for detail. Remaining: Wave F2, the real
-Media3 `DownloadManager` engine and download UI.
-
-**Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
-against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
-— verified against real upstream source, not assumed. **Wave B (podcast discovery on web)
-landed `1079228`** — search → preview → subscribe consuming wave A's routes, entered from the
-podcast `LibraryPage`, verified in a real browser via `e2e/app/podcasts.spec.ts`. No Android
-UI yet; that's the next podcast wave. See `docs/ROADMAP.md` §8.
+**Phase 8 has a backend and a web UI; no Android UI yet.** Discovery (search the podcast
+directory, preview an RSS feed, subscribe) and detail/episode-list/playback are both done on
+web. The next podcast wave is Android, on whichever surface makes sense to build next. See
+`docs/ROADMAP.md` §8.
 
 **A real normalization bug is fixed (`7e57a78`):** minified library items — what every
 shelf/browse/personalized response returns — never carried `series`, only the flattened
@@ -267,167 +227,80 @@ the live/source/unverified breakdown; get a credential before re-deriving it.
 
 **Container images publish to GHCR** (`c1882d5`). CI's `publish` job pushes
 `ghcr.io/patakihara/auralis:latest` and `:<sha>` (linux/amd64) on every green build of this
-branch, gated to `push` events on this branch only. This closes the gap where
-`compose.yaml` referenced `:latest` but nothing had ever pushed it, so nothing could deploy.
-Multi-arch (arm64) remains phase 10; see §7 for a reconciliation gap this surfaced.
+branch, gated to `push` events on this branch only. Multi-arch (arm64) remains phase 10.
 
-### Mantine — decided, full migration landed on this branch (`2a0d2e0`)
+**Phase 9 has begun**: a typed `packages/jellyfin-client`, a per-user `jellyfin_secrets`
+credential store, and BFF routes for browse/search/proxied stream-and-artwork — no UI on
+either surface yet. `docs/ROADMAP.md` §9 has the detail.
 
-**Full migration to Mantine is settled** (user confirmed 2026-08-04, not a partial/spike-only
-state) **and merged**: `2a0d2e0` landed it directly on `claude/media-client-app-k7v9by`, so the
-`mantine-full-migration` worktree this section used to point to no longer holds anything not
-already on this branch. Status, reconciled against the actual branch history, not assumed:
+**Two latent bugs, neither fixed:**
 
-**Done and verified** (typecheck clean, unit tests pass, real dev-server screenshots inspected,
-not just typechecked):
+- `apps/server/src/db/secretsRepo.ts`'s `setUpstreamToken` takes an `upstream` parameter but
+  the table's primary key is `user_id` alone, so calling it twice for one user with different
+  upstreams silently clobbers the first token via `ON CONFLICT(user_id)`. Nothing calls it
+  that way today.
+- The Dockerfile enumerates workspace packages by hand. Every future package `apps/server`
+  depends on needs the same three-line addition — missing it produces exactly the `586742e`
+  failure mode (image builds, container dies on boot) rather than a build error.
 
-- Button, IconButton, Fab
-- Chip, LinearProgress, CircularProgress, Skeleton
-- Card, ListItem, Dialog
-- NavigationBar, TopAppBar (`NavigationRail` deleted — dead code, superseded by `Shell.tsx`'s
-  own inline Mantine `AppShell`/`NavLink` usage)
-- `docs/DESIGN.md`/`docs/ARCHITECTURE.md` updated to describe Mantine as the implementation
-  layer and to fix two unrelated stale claims (AudiobookBay-vs-Prowlarr priority,
-  a phantom `packages/jellyfin-client/`)
+### Mantine — full migration complete (`2a0d2e0`, follow-up fixes `2bea957`/`278e3fc`)
 
-**A real, high-risk bug was found and fixed**: Mantine's `unstyled` prop on `Modal` strips the
-CSS that hides its always-mounted root while closed, leaving a permanent full-viewport
-click-blocking overlay over the whole app. Fixed in `Dialog.tsx` by not setting `unstyled`.
+Every `@auralis/ui` component is on Mantine now: Button, IconButton, Fab, Chip,
+LinearProgress, CircularProgress, Skeleton, Card, ListItem, Dialog, NavigationBar, TopAppBar
+(`NavigationRail` deleted as dead code, superseded by `Shell.tsx`'s own inline
+`AppShell`/`NavLink` usage). `docs/DESIGN.md`/`ARCHITECTURE.md` describe Mantine as the
+implementation layer.
 
-**This class of bug is now confirmed absent from `Sheet.tsx`** (Mantine `Drawer`, a different
-component from `Modal`, with an extra embedded-vs-modal mode `NowPlaying` depends on).
-`Sheet.tsx` never set `unstyled` in the first place, but "doesn't set the known trigger" isn't
-"verified absent" — Drawer's root wrapper (`Drawer.Root` → `ModalBase`'s outer `Box`) is
-unconditionally mounted by Mantine regardless of `opened`, so it needed the same kind of
-empirical check Dialog's bug was found with, not a grep. Two real-browser checks now do that:
-`e2e/ui/sheet.spec.ts`'s "closing the sheet leaves nothing behind that intercepts clicks" (the
-generic gallery `Sheet`) and `e2e/app/player.spec.ts`'s "closing Now Playing at compact width
-leaves nothing behind that blocks the mini player" (the real app integration, `NowPlaying` via
-`MiniPlayer`'s expand control — the compact breakpoint is the one where `Shell.tsx` gives
-`NowPlaying` an actual closed state; `NowPlayingPanel`'s embedded/`expanded`-breakpoint usage
-always passes `open` truthy, so it only got a cheap `elementFromPoint` check that nothing
-blocks the adjacent nav rail, added to the existing breakpoint test). Both do a real
-`page.mouse.click` at the trigger's actual screen coordinates after closing (not the locator
-API's own `.click()`, which does its own interception checks and could mask exactly this bug);
-`sheet.spec.ts`'s test additionally does an `elementFromPoint` sweep for any leftover node
-carrying Mantine's `mantine-Drawer-*` static classes (`use-styles.mjs`'s
-`getStaticClassNames`: `mantine-${themeName}-${selector}`) — the compact-width
-`player.spec.ts` test relies on the mouse-click check alone.
-No bug found; no fix was needed. `pnpm typecheck` (per-package), `pnpm lint`, `pnpm test` (764
-unit tests) and the full `e2e/ui` + `e2e/app` suite (184 passed, 9 pre-existing failures — the
-button/icon-button/browse.spec.ts set documented below, none newly broken; the dialog.spec.ts
-Escape-focus flake documented separately below did not fail in this run) all pass.
+**Two real bugs were found and fixed** — worth knowing if a similar overlay or motion
+component gets touched next:
 
-Snackbar and SearchField weren't in this check's scope. Both packages typecheck and their own
-`e2e/ui/snackbar.spec.ts`/`search-field.spec.ts` pass as part of the same full-suite run above,
-but neither got the same dedicated overlay-bug-class check Sheet just did — worth doing if
-either turns out to share this failure mode.
+- Mantine's `unstyled` prop on `Modal` strips the CSS that hides its always-mounted root
+  while closed, leaving a permanent full-viewport click-blocking overlay. Fixed in
+  `Dialog.tsx` by not setting `unstyled`. `Sheet.tsx` (Mantine `Drawer`, a different
+  component) never had the same trigger, confirmed rather than assumed by two real-browser
+  tests (`e2e/ui/sheet.spec.ts`, `e2e/app/player.spec.ts`) that `page.mouse.click` through
+  where the closed overlay would sit, rather than trusting the locator API's own
+  interception checks.
+- Mantine's `respectReducedMotion` only disarms its JS-driven `Transition` machinery, not
+  the plain CSS `@keyframes` `Skeleton`'s shimmer uses. `Skeleton.tsx` now drives its
+  `animate` prop from `ThemeProvider`'s own `prefersReducedMotion` directly. The same gap is
+  untested but likely present in `Loader`'s spin and `Progress`'s stripe scroll.
 
-**Chip/Progress/Skeleton e2e fixes and `respectReducedMotion` are done.** `e2e/ui/chip.spec.ts`,
-`progress.spec.ts` and `skeleton.spec.ts` now match Mantine's real DOM (chips are
-`<input type="checkbox">` + `<label>`, not `<button>`; progress fills carry the static class
-`mantine-Progress-section`; Skeleton's and CircularProgress's spin/shimmer animate on their
-`::after` pseudo-element, not the element itself — `getComputedStyle` needs the second
-argument to see it). `ThemeProvider.tsx`'s `MantineProvider` now gets
-`theme={{ ..., respectReducedMotion: true }}` (it's a theme property, not a direct
-`MantineProvider` prop). `e2e/ui` is 152 tests: **144 passed, 8 failed**, all 8 pre-existing
-and outside this scope — 3 assertions × 2 projects in `button.spec.ts` (touch-target height,
-`aria-busy` on the loading state, press corner-radius morph) and 1 × 2 in `icon-button.spec.ts`
-(`.m3-icon-button__glyph` no longer exists), the same class of stale-Mantine-DOM locator drift
-as chip/progress/skeleton had, just not in a file this pass touched.
+Migration regressions, now fixed (`278e3fc`): `Button`'s default height (Mantine's 42px, below
+the 48px touch-target minimum), a missing `aria-busy` on `Button`'s loading state, the M3
+Expressive press corner-radius morph, and `IconButton`'s toggle-glyph spring animation.
+`LinearProgress`'s `wavy` mode no longer renders a distinct wave shape — Mantine has no such
+primitive, so `wavy` now only thickens the bar (`LinearProgress.tsx`'s doc comment); a
+visible, undocumented-elsewhere regression against "the UI must be beautiful," worth a
+product decision.
 
-**The full `pnpm test:e2e` (190 tests: `e2e/ui` + `e2e/app`) has two more pre-existing
-failures beyond those 8**, both confirmed present already on `2a0d2e0`'s own CI run
-(`gh run view 30856458080 --log-failed`), not introduced here: `e2e/app/browse.spec.ts` ›
-"the Duration sort chip reorders the cards shortest to longest" — `LibraryPage.tsx`'s sort
-chips are the same `@auralis/ui` `Chip`, so this is the identical checkbox-not-button DOM
-drift `chip.spec.ts` had, just in an app-level spec, not a `packages/ui` one; and
-`e2e/ui/dialog.spec.ts` › "Escape closes it and restores focus to the trigger", which only
-failed on `ui-mobile` in CI's 2-worker run and did not reproduce locally under
-`--workers=1`, so it may be a parallelism-dependent flake rather than a deterministic DOM
-break — worth re-checking under CI's real worker count before assuming it's the same class
-of bug. Neither was in this pass's scope (chip/progress/skeleton, `e2e/ui` only); noted here
-so the next session doesn't have to re-run all of CI to rediscover them.
+CI is green on `c556d22`. `pnpm typecheck` (per-package), `pnpm lint`, `pnpm test` and the
+full `e2e/ui` + `e2e/app` Playwright suite all pass.
 
-**Update 2026-08-04: both of the above, plus the button/icon-button failures from the
-paragraph before it, are now fixed.** `2bea957` reformatted the four files `format:check`
-was failing on (mechanical, no behavior change). `278e3fc` fixed the four real regressions:
-`Button`'s default height was Mantine's 42px (below the 48px minimum touch target, fixed
-with a `data-m3-size`-scoped `min-height` so `sm`/`lg` buttons elsewhere stay compact),
-Mantine's `Button` doesn't set `aria-busy` when `loading` (added explicitly), the M3
-Expressive corner-radius shape-morph on press was restored using the existing
-`--m3-shape-full`/`--m3-shape-md` tokens, and `IconButton`'s toggle-glyph spring animation
-was restored with a `.m3-icon-button__glyph` wrapper span. The same commit fixed
-`browse.spec.ts`'s stale `getByRole('button')` locator to match chip.spec.ts's existing
-checkbox+label pattern. CI is green on `c556d22` — verified directly via `gh run watch`,
-not inferred from the push.
-
-Fixing the locators surfaced one real bug, not just stale selectors: Mantine's
-`respectReducedMotion` only disarms its JS-driven `Transition` machinery (`Modal`, `Drawer`,
-`Collapse`, …) via a `[data-reduce-motion]` opt-in that, among Mantine's own components, only
-`Spoiler` ever sets — `Skeleton`'s shimmer is a plain CSS `@keyframes` animation and was
-**never** affected by the flag. `packages/ui/src/components/Skeleton.tsx` now drives its
-`animate` prop from the same `prefersReducedMotion`/`watchReducedMotion` `ThemeProvider`
-already uses, closing the gap directly rather than leaning on a Mantine mechanism that doesn't
-reach it. The same gap (untested) likely applies to `Loader`'s spin and `Progress`'s stripe
-scroll — worth a look if either grows a reduced-motion test later. The old hand-rolled
-`Skeleton.css` had equivalent handling and is now fully dead code (superseded by Mantine's
-`Skeleton`, left in place rather than deleted as part of this fix).
-
-Also worth a human look, not a bug: `LinearProgress`'s `wavy` mode no longer renders a
-distinct M3 Expressive wave — Mantine has no such primitive, so `wavy` now only thickens the
-bar (see `LinearProgress.tsx`'s doc comment). `progress.spec.ts`'s wavy test was rewritten to
-assert the real current behavior (thicker, not wave-shaped). No doc currently promises the
-wave visual, so nothing else needed correcting, but it's a visible regression against "the UI
-must be beautiful" worth a product decision.
-
-**Three new Claude Code hooks were built in this same worktree** (`scripts/hooks/agent-log.sh`,
-`doc-feedback-accumulate.sh`, `doc-feedback-review.sh`, `delegation-nudge.sh`) — logging
-subagent launches/ends (cross-worktree, via a shared file under `git rev-parse
---git-common-dir`), accumulating documentation-relevant user feedback for later batch review,
-and a delegation nudge. All are registered in _this worktree's_ `.claude/settings.json` only,
-which is invisible to sessions rooted in other checkouts until the branch merges — a session
-can arm its own hooks immediately, but only within the checkout that sees the settings file —
-and none have been observed firing in a real conversation yet (only pipe-tested with
-synthesized stdin). `delegation-nudge`
-specifically should stay disabled/uncommitted even after merge: its live classification path
-(a nested headless `claude -p` call) has never succeeded in testing and measured close to a
-full timeout (5.66s/6s) on one real attempt — a synchronous hook with that latency risk and no
-proven success path is worse than no hook.
-
-Also left in the worktree: assorted untracked debug scripts (`debug-sheet*.mjs`, `inspect*.mjs`,
-`*-shot.mjs`) from agents' own screenshot/verification work — scratch, not meant to be committed,
-clean up before or during final integration.
+Three Claude Code hooks live in `scripts/hooks/`: `agent-log.sh` (subagent launch/end
+logging, cross-worktree via a file under `git rev-parse --git-common-dir`),
+`doc-feedback-accumulate.sh` and `doc-feedback-review.sh` (documentation-feedback
+accumulation and batch review). `delegation-nudge.sh` also exists but should stay
+disabled/uncommitted: its live classification path (a nested headless `claude -p` call) has
+never succeeded in testing and measured close to a full timeout on its one real attempt — a
+synchronous hook with that latency risk and no proven success path is worse than no hook.
 
 (Phase 7's Android work is unaffected by any of this — it shares no code with either web
 component system.)
 
-**Phase 5 is complete.** Home shelves, library browse with filter and sort, typed search
-results, the player's logic layer (`features/player/playback.ts`, `state/playerStore.ts`,
-`state/settingsStore.ts`) and now its surface: `NowPlaying` (a `Sheet` under the `expanded`
-breakpoint, embedded directly above it), `MiniPlayer`, `ChapterList`, `BookmarkControls`,
-`SleepTimerControl`, and variable speed / ±skip transport. `Shell.tsx` mounts the three
-argument-free hooks — `useAudioElement`, `useMediaSession`, `useProgressSync` — once, for
-every signed-in route.
-
-Progress sync was the last gap and is the one piece worth knowing the reasoning behind:
-**`timeListened` is measured from wall-clock time spent playing, never from how far
-`currentTime` moved.** A seek, chapter jump or ±30s skip moves the position with nobody
+**Phase 5's progress-sync design is worth keeping in mind for any future player work:**
+`timeListened` is measured from wall-clock time spent playing, never from how far
+`currentTime` moved — a seek, chapter jump or ±30s skip moves the position with nobody
 listening, and Audiobookshelf folds `timeListened` into permanent listening statistics.
 `features/player/progressSync.ts` holds that arithmetic as a pure, tested function;
 `useProgressSync.ts` schedules it every 15s and on `pagehide`, and syncs-then-closes on
 teardown (Audiobookshelf finalises a session on close, so the reverse order reports into a
 closed session).
 
-**Phase 5a closed on 2026-08-03.** Its first CI run went green and uploaded a 12 MB
-`auralis-debug-apk`, which is the proof the phase existed to get: blind-written Compose
-compiles, the Android Auto manifest merges, and the committed Gradle wrapper passes
-`gradle/actions/wrapper-validation`. Phase 7 has a working pipeline to build on. Still no
-JDK/SDK/Gradle on this machine, so CI is the only place Android compiles — check the
-`Android` workflow after any `apps/android` change, since you cannot build it locally.
-
-Green as of `07ce0c3`: `pnpm typecheck`, `pnpm lint`, **354 unit tests**, **181 Playwright
-tests** (156 UI + 25 app end-to-end), and `pnpm test:docker` (the container smoke test).
+Phase 5a's Android pipeline (blind-written Compose, Android Auto manifest, committed Gradle
+wrapper) is what every phase 7 wave built on. Still no JDK/SDK/Gradle on this machine, so
+`apps/android` compiles on CI only — check the `Android` workflow after any `apps/android`
+change.
 
 `docs/ROADMAP.md` is the source of truth for status. Everything is on the branch
 **`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.
@@ -438,93 +311,54 @@ below as a TODO. Empty but for its README means there is nothing queued.
 
 <!-- pending specs: none -->
 
-Both phase-6 specs were launched and deleted in the commits that landed their work — this
-directory means _unlaunched_, and a spec left here after the fact reads as a TODO that is
-already done.
+### Phase 6 — lessons carried forward
 
-### Phase 6 — closed 2026-08-03
-
-CI has now actually been read (it hadn't been, for two prior commits) and is green: lint/
-format/typecheck, 729 unit tests, Playwright 193/193 including `e2e/app/requests.spec.ts`
-(which had never executed before this), and the Docker smoke test. Getting there needed two
-follow-up fixes, both now on the branch:
-
-- `c9bee10` — three doc-only commits landed without running Prettier; reformatted, no
-  content changes.
-- `daa132b` + `29e9856` — `e2e/app/player.spec.ts` (a **pre-existing Phase 5 test**, nothing
-  phase 6 touched) failed intermittently under CI load. Root cause: the e2e fixture audio
-  can't decode, and that produces _two_ independent async paths that revert the player
-  store's "playing" state — `HTMLMediaElement.play()` rejecting, and, separately, assigning
-  `.src` triggering the browser's real media-load pipeline, which fires a native `error`
-  event on decode failure. Either could land inside the test's own assertions. Fixed by
-  neutralising the audio element in that spec file entirely (`.src` becomes an inert
-  instance property, `play()`/`pause()` no-op) rather than continuing to race a browser
-  behaviour the suite was never meant to depend on. If a _different_ player test starts
-  flaking later, re-read this — the same two paths are still there in production code,
-  correctly, and are what any future audio-related e2e spec will need to neutralise the
-  same way.
-
-The web wave's presentational layer (`polling.ts`, `providerForm.ts`, `requestAnyway.ts`,
-`format.ts`, `destinations.ts` and the components around them) is now covered by that green
-Playwright run, not just unit tests. The server side was reviewed twice during the phase and
-both rounds found real defects, since fixed.
+**A pre-existing Phase 5 test lesson, not phase 6's own bug**: `e2e/app/player.spec.ts`
+failed intermittently under CI load because the e2e fixture audio can't decode, which
+produces two independent async paths that revert the player store's "playing" state —
+`HTMLMediaElement.play()` rejecting, and `.src` assignment triggering the browser's real
+media-load pipeline, which fires a native `error` event on decode failure. Fixed
+(`daa132b`/`29e9856`) by neutralising the audio element in that spec file entirely (`.src`
+inert, `play()`/`pause()` no-op). Both paths are still present, correctly, in production
+code — any future audio-related e2e spec needs the same neutralisation.
 
 **Two product decisions worth a human's opinion**, neither a bug:
 
 - **`GET /requests` is unscoped by caller.** Any signed-in user sees — and can delete —
-  everyone's requests. That matches Overseerr and is right for one person's own server, but
+  everyone's requests. Matches Overseerr and is right for one person's own server, but
   combined with approval defaulting to automatic it means a shared install has no privacy
-  and no gate. Worth deciding before anyone else gets an account.
+  and no gate.
 - **`shelfarr` and `deemix` are already running on the development machine.** `shelfarr`
   overlaps this phase's pipeline; `deemix` cuts against the phase-9 decision to use slskd.
   Neither was designed around — worth asking the user rather than assuming.
 
-### Phase 6 — what is decided, so it is not re-litigated
+**What is decided, not to be re-litigated:**
 
-- **Prowlarr is the primary indexer; the AudiobookBay scraper is the fallback.** The
-  development machine already runs Prowlarr with AudioBook Bay, MyAnonamouse, EBookBay and
-  Knaben configured, plus `byparr` (a FlareSolverr-compatible solver). AudiobookBay is
-  behind Cloudflare, Prowlarr gets through by delegating to the solver, and a direct
-  BFF-side scrape cannot. `docs/ROADMAP.md` §6 has the full reasoning.
-- **Provider credentials are server-scoped, in `provider_configs`, not in `secrets`.** The
-  `secrets` table is keyed by `user_id` because an Audiobookshelf token belongs to whoever
-  signed in. A Prowlarr API key belongs to the installation. An undecryptable secret reads
-  as _unconfigured_ rather than erroring, so rotating `SESSION_SECRET` sends you to the
-  settings screen instead of 500ing every search.
+- **Prowlarr is the primary indexer; the AudiobookBay scraper is the fallback** —
+  AudiobookBay is behind Cloudflare and only Prowlarr (via `byparr`, a
+  FlareSolverr-compatible solver) gets through; a direct BFF-side scrape cannot.
+  `docs/ROADMAP.md` §6 has the full reasoning.
+- **Provider credentials are server-scoped, in `provider_configs`, not in `secrets`** (which
+  is keyed by `user_id`, for per-account upstream tokens). An undecryptable secret reads as
+  _unconfigured_ rather than erroring.
 - **The download save path is a setting with no default.** The BFF and the download client
-  are different containers with different mounts — here, qBittorrent sees
-  `/data/media/Downloads` as `/data/Downloads` while Audiobookshelf sees `/data/media` as
-  `/data`. Guessing produces downloads that complete and are never imported, which is the
-  worst failure mode available because every component reports success.
+  are different containers with different mounts, so guessing produces downloads that
+  complete and are never imported — every component reports success while nothing lands.
 - **Approval defaults to automatic**, on the grounds that this is one person's own server.
 
-### Phase 4 — what closing it changed
+### Phase 4 — lessons carried forward
 
-The three open items are closed. Two of them turned up things worth knowing:
-
-1. **`e2e/app` now has 18 specs** across onboarding, navigation, session and errors. The
-   structural thing to understand before adding more: the `app` project's BFF is
-   **single-tenant and stateful** — `POST /api/v1/setup` configures it for the whole
-   process — so `fullyParallel` would race "assert the unconfigured state" against "sign
-   in". `onboarding.spec.ts` is therefore its own Playwright project that everything else
-   `dependencies` on, and it also writes the `storageState` the rest of the suite starts
-   signed in from. That second part is not an optimisation: `POST /auth/login` is rate
-   limited to **10/min per IP** and all workers share one, so a suite that signed in per
-   test 429s partway through. `playwright.config.ts` says all of this in place.
-2. **The container is built, booted and covered by CI.** `scripts/docker-smoke.sh`
-   (`pnpm test:docker`, and the `container` job in CI) builds the image, waits on its own
-   HEALTHCHECK, asserts the SPA/asset/API-404 split, authenticates end to end against
-   `AURALIS_FAKE_UPSTREAMS=1`, and times `docker stop`.
-
-   Closing it moved the fake upstream from `apps/server/test/fakes` to
-   **`apps/server/src/testSupport/fakes`**. `AURALIS_FAKE_UPSTREAMS` is a runtime flag the
-   _shipped_ server parses alongside `PORT`, so the code it loads has to be in the image;
-   a `test/` sibling is not copied in, and that mode died on an unresolvable import inside
-   the container while working perfectly outside it.
-
-3. `apps/server`'s `start` still runs `tsx` against TypeScript sources, which is why `tsx`
-   is a production dependency. Left as-is deliberately; if the image is slimmed later,
-   compile instead.
+- **`e2e/app`'s BFF is single-tenant and stateful** — `POST /api/v1/setup` configures it for
+  the whole process, so `fullyParallel` would race "assert unconfigured" against "sign in".
+  `onboarding.spec.ts` is its own Playwright project everything else `dependencies` on, and
+  writes the `storageState` the rest of the suite starts signed in from — not an
+  optimisation: `POST /auth/login` is rate-limited to 10/min per IP, shared across all
+  workers.
+- **The container's fake-upstream mode lives in `apps/server/src/testSupport/fakes`, not a
+  `test/` sibling** — `AURALIS_FAKE_UPSTREAMS` is a runtime flag the shipped server parses,
+  so the code it loads has to ship in the image; a `test/` directory isn't copied in.
+- `apps/server`'s `start` still runs `tsx` against TypeScript sources (a production
+  dependency), left as-is deliberately; compile instead if the image is ever slimmed.
 
 ---
 
@@ -606,11 +440,12 @@ without the port workaround the setup docs describe for mediaserver itself.
 
 ### Local verification
 
-Playwright (`pnpm test:e2e`, `playwright test`, `playwright install`) and the Docker smoke
-test both run fine on this laptop — use them to check UI work directly instead of inferring
-from a pushed SHA. `gh` is installed and authenticatable (`gh auth login`), so CI results can
-be read directly too. Gradle is the exception: no JDK or Android SDK here, so `apps/android`
-compiles on CI only.
+Playwright (`pnpm test:e2e`, `playwright test`, `playwright install`) runs fine on this
+laptop — use it to check UI work directly instead of inferring from a pushed SHA. `gh` is
+installed and authenticatable (`gh auth login`), so CI results can be read directly too.
+`pnpm test:docker` does **not** run here — Docker isn't installed (Docker Desktop is on the
+Windows host, WSL integration isn't enabled for this distro) — and neither does Gradle: no
+JDK or Android SDK here. Both are CI-only.
 
 CI stays the authoritative signal for calling a phase done; local running is the faster first
 look, not a replacement.
