@@ -111,6 +111,16 @@ data class AudioTrack(
     val mimeType: String? = null,
 )
 
+/** Nested in a Book's `media.series` field — never present on a podcast. Mirrors
+ * `packages/abs-client/src/domain.ts`'s `SeriesSequence` (a smaller shape than the
+ * top-level `Series` object below, hence the distinct name). */
+@Serializable
+data class SeriesSequence(
+    val id: String,
+    val name: String,
+    val sequence: String? = null,
+)
+
 @Serializable
 data class MediaSummary(
     val kind: String,
@@ -123,6 +133,57 @@ data class MediaSummary(
     val duration: Double? = null,
     val tracks: List<AudioTrack>? = null,
     val chapters: List<Chapter>? = null,
+    val series: List<SeriesSequence>? = null,
+)
+
+/** A series and the books in it. Mirrors `packages/abs-client/src/domain.ts`'s `Series`. */
+@Serializable
+data class Series(
+    val id: String,
+    val name: String,
+    val description: String? = null,
+    val books: List<LibraryItem> = emptyList(),
+)
+
+/** One author entry from GET /libraries/{id}/search. */
+@Serializable
+data class Author(
+    val id: String,
+    val name: String,
+    val description: String? = null,
+    val imagePath: String? = null,
+    val numBooks: Int = 0,
+)
+
+/** GET /libraries/{id}/items response — unwrapped, the object itself. */
+@Serializable
+data class LibraryItemsPage(
+    val items: List<LibraryItem>,
+    val total: Int,
+    val limit: Int? = null,
+    val page: Int? = null,
+)
+
+/** GET /libraries/{id}/series response — unwrapped, the object itself. */
+@Serializable
+data class SeriesPage(
+    val series: List<Series>,
+    val total: Int,
+)
+
+/** GET /libraries/{id}/search response — unwrapped, the object itself. */
+@Serializable
+data class SearchResults(
+    val books: List<LibraryItem> = emptyList(),
+    val podcasts: List<LibraryItem> = emptyList(),
+    val series: List<Series> = emptyList(),
+    val authors: List<Author> = emptyList(),
+)
+
+/** GET /items/{id} response envelope. */
+@Serializable
+data class LibraryItemResponse(
+    val item: LibraryItem,
 )
 
 @Serializable

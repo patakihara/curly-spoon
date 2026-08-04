@@ -492,4 +492,234 @@ class ApiClientTest {
 
             apiClient.deleteRequest("req1")
         }
+
+    // -----------------------------------------------------------------------------
+    // Android Auto data-layer prep (wave E1)
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `libraryItems decodes items, total, limit and page`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"items":[
+                      {"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"book","title":"Dune"},"progress":null}
+                    ],"total":42,"limit":50,"page":0}
+                    """.trimIndent(),
+                ),
+            )
+
+            val result = apiClient.libraryItems("lib1")
+
+            assertEquals(1, result.items.size)
+            assertEquals("Dune", result.items[0].media.title)
+            assertEquals(42, result.total)
+            assertEquals(50, result.limit)
+            assertEquals(0, result.page)
+        }
+
+    @Test
+    fun `libraryItems with no arguments sends no query parameters beyond the path`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0}"""))
+
+            apiClient.libraryItems("lib1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertEquals("/api/v1/libraries/lib1/items", recordedPath)
+        }
+
+    @Test
+    fun `libraryItems sends page, limit, sort, desc and filter as query parameters when provided`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0}"""))
+
+            apiClient.libraryItems("lib1", page = 2, limit = 25, sort = "addedAt", desc = true, filter = "series.abc")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("page=2"))
+            assertTrue(recordedPath.contains("limit=25"))
+            assertTrue(recordedPath.contains("sort=addedAt"))
+            assertTrue(recordedPath.contains("desc=true"))
+            assertTrue(recordedPath.contains("filter=series.abc"))
+        }
+
+    @Test
+    fun `libraryItems decodes a null limit and page when the server omits them`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"limit":null,"page":null}"""))
+
+            val result = apiClient.libraryItems("lib1")
+
+            assertNull(result.limit)
+            assertNull(result.page)
+        }
+
+    @Test
+    fun `librarySeries decodes series and total, including empty and populated book lists`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"series":[
+                      {"id":"s1","name":"The Expanse","description":null,"books":[]},
+                      {"id":"s2","name":"Dune Saga","description":"desc","books":[
+                        {"id":"item1","libraryId":"lib1","coverPath":null,
+                         "media":{"kind":"book","title":"Dune"},"progress":null}
+                      ]}
+                    ],"total":2}
+                    """.trimIndent(),
+                ),
+            )
+
+            val result = apiClient.librarySeries("lib1")
+
+            assertEquals(2, result.total)
+            assertEquals("The Expanse", result.series[0].name)
+            assertTrue(result.series[0].books.isEmpty())
+            assertEquals("Dune Saga", result.series[1].name)
+            assertEquals(1, result.series[1].books.size)
+            assertEquals("Dune", result.series[1].books[0].media.title)
+        }
+
+    @Test
+    fun `librarySeries sends page and limit as query parameters when provided`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"series":[],"total":0}"""))
+
+            apiClient.librarySeries("lib1", page = 1, limit = 10)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("page=1"))
+            assertTrue(recordedPath.contains("limit=10"))
+        }
+
+    @Test
+    fun `searchLibrary decodes books, podcasts, series and authors, including empty arrays`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"books":[
+                      {"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"book","title":"Dune"},"progress":null}
+                    ],"podcasts":[],
+                     "series":[{"id":"s1","name":"The Expanse","description":null,"books":[]}],
+                     "authors":[{"id":"a1","name":"Frank Herbert","description":null,"imagePath":null,"numBooks":3}]}
+                    """.trimIndent(),
+                ),
+            )
+
+            val result = apiClient.searchLibrary("lib1", "dune")
+
+            assertEquals(1, result.books.size)
+            assertEquals("Dune", result.books[0].media.title)
+            assertTrue(result.podcasts.isEmpty())
+            assertEquals(1, result.series.size)
+            assertEquals("The Expanse", result.series[0].name)
+            assertEquals(1, result.authors.size)
+            assertEquals("Frank Herbert", result.authors[0].name)
+            assertEquals(3, result.authors[0].numBooks)
+        }
+
+    @Test
+    fun `searchLibrary sends q and limit as query parameters`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"books":[],"podcasts":[],"series":[],"authors":[]}"""))
+
+            apiClient.searchLibrary("lib1", "dune", limit = 15)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("q=dune"))
+            assertTrue(recordedPath.contains("limit=15"))
+        }
+
+    @Test
+    fun `libraryItem decodes the wrapped item envelope`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"book","title":"Dune"},"progress":null}}""",
+                ),
+            )
+
+            val result = apiClient.libraryItem("item1")
+
+            assertEquals("item1", result.id)
+            assertEquals("Dune", result.media.title)
+        }
+
+    @Test
+    fun `libraryItem with no arguments sends neither expanded nor include`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"book","title":"Dune"},"progress":null}}""",
+                ),
+            )
+
+            apiClient.libraryItem("item1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertEquals("/api/v1/items/item1", recordedPath)
+        }
+
+    @Test
+    fun `libraryItem sends expanded=true and include=progress only when requested`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"book","title":"Dune"},"progress":null}}""",
+                ),
+            )
+
+            apiClient.libraryItem("item1", expanded = true, includeProgress = true)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("expanded=true"))
+            assertTrue(recordedPath.contains("include=progress"))
+        }
+
+    @Test
+    fun `a MediaSummary with a series field decodes SeriesSequence entries including a null sequence`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"book","title":"Dune",
+                         "series":[{"id":"s1","name":"Dune Saga","sequence":"3"},
+                                   {"id":"s2","name":"Untitled Series","sequence":null}]},
+                       "progress":null}}""",
+                ),
+            )
+
+            val result = apiClient.libraryItem("item1")
+
+            val series = result.media.series
+            assertNotNull(series)
+            assertEquals(2, series?.size)
+            assertEquals("Dune Saga", series?.get(0)?.name)
+            assertEquals("3", series?.get(0)?.sequence)
+            assertNull(series?.get(1)?.sequence)
+        }
+
+    @Test
+    fun `a MediaSummary with no series key decodes series as null`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item1","libraryId":"lib1","coverPath":null,
+                       "media":{"kind":"podcast","title":"A Podcast"},"progress":null}}""",
+                ),
+            )
+
+            val result = apiClient.libraryItem("item1")
+
+            assertNull(result.media.series)
+        }
 }

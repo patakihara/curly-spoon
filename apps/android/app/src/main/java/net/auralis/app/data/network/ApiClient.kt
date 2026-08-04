@@ -12,6 +12,9 @@ import net.auralis.app.data.model.CreateRequestBody
 import net.auralis.app.data.model.HomeResponse
 import net.auralis.app.data.model.Library
 import net.auralis.app.data.model.LibrariesResponse
+import net.auralis.app.data.model.LibraryItem
+import net.auralis.app.data.model.LibraryItemResponse
+import net.auralis.app.data.model.LibraryItemsPage
 import net.auralis.app.data.model.LoginRequestBody
 import net.auralis.app.data.model.LoginResponse
 import net.auralis.app.data.model.MeResponse
@@ -22,6 +25,8 @@ import net.auralis.app.data.model.Release
 import net.auralis.app.data.model.RequestResponse
 import net.auralis.app.data.model.RequestSearchResult
 import net.auralis.app.data.model.RequestsResponse
+import net.auralis.app.data.model.SearchResults
+import net.auralis.app.data.model.SeriesPage
 import net.auralis.app.data.model.SetupRequestBody
 import net.auralis.app.data.model.SetupResult
 import net.auralis.app.data.model.SetupState
@@ -65,6 +70,72 @@ class ApiClient(
     suspend fun libraries(): List<Library> = get<LibrariesResponse>("/libraries").libraries
 
     suspend fun libraryHome(libraryId: String): List<Shelf> = get<HomeResponse>("/libraries/$libraryId/home").shelves
+
+    /** GET /libraries/{id}/items — used by Android Auto's browse tree (a later wave) to
+     * list a library's items page by page. */
+    suspend fun libraryItems(
+        libraryId: String,
+        page: Int? = null,
+        limit: Int? = null,
+        sort: String? = null,
+        desc: Boolean? = null,
+        filter: String? = null,
+    ): LibraryItemsPage {
+        val params =
+            buildMap {
+                page?.let { put("page", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+                sort?.let { put("sort", it) }
+                desc?.let { put("desc", it.toString()) }
+                filter?.let { put("filter", it) }
+            }
+        return get("/libraries/$libraryId/items", params)
+    }
+
+    /** GET /libraries/{id}/series — used by Android Auto's browse tree (a later wave) to
+     * list a library's series. */
+    suspend fun librarySeries(
+        libraryId: String,
+        page: Int? = null,
+        limit: Int? = null,
+    ): SeriesPage {
+        val params =
+            buildMap {
+                page?.let { put("page", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+            }
+        return get("/libraries/$libraryId/series", params)
+    }
+
+    /** GET /libraries/{id}/search — used by Android Auto's browse tree (a later wave) for
+     * voice/text search within a library. */
+    suspend fun searchLibrary(
+        libraryId: String,
+        query: String,
+        limit: Int? = null,
+    ): SearchResults {
+        val params =
+            buildMap {
+                put("q", query)
+                limit?.let { put("limit", it.toString()) }
+            }
+        return get("/libraries/$libraryId/search", params)
+    }
+
+    /** GET /items/{id} — used by Android Auto's browse tree (a later wave) to resolve a
+     * single item, optionally expanded (tracks/chapters) and/or with playback progress. */
+    suspend fun libraryItem(
+        itemId: String,
+        expanded: Boolean = false,
+        includeProgress: Boolean = false,
+    ): LibraryItem {
+        val params =
+            buildMap {
+                if (expanded) put("expanded", "true")
+                if (includeProgress) put("include", "progress")
+            }
+        return get<LibraryItemResponse>("/items/$itemId", params).item
+    }
 
     suspend fun playItem(itemId: String): PlaybackSession = postNoBody<PlayResponse>("/items/$itemId/play").session
 
