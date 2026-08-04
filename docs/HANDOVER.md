@@ -175,18 +175,18 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                | Status      |
-| ----- | --------------------------------------------------- | ----------- |
-| 1     | Monorepo, tooling, CI, test harness                 | done        |
-| 2     | `@auralis/ui` — Material 3 Expressive design system | done        |
-| 3     | BFF + Audiobookshelf client                         | done        |
-| 4     | Web shell + Docker image                            | done        |
-| 5     | Audiobooks experience + player                      | done        |
-| 5a    | Android build skeleton + APK pipeline               | done        |
-| 6     | Book requests                                       | done        |
-| 7     | Android — audiobooks + requests                     | in progress |
-| 8     | Podcasts — backend wave A done, no UI yet           | in progress |
-| 9–11  | Music, polish, F-Droid                              | not started |
+| Phase | What                                                            | Status      |
+| ----- | --------------------------------------------------------------- | ----------- |
+| 1     | Monorepo, tooling, CI, test harness                             | done        |
+| 2     | `@auralis/ui` — Material 3 Expressive design system             | done        |
+| 3     | BFF + Audiobookshelf client                                     | done        |
+| 4     | Web shell + Docker image                                        | done        |
+| 5     | Audiobooks experience + player                                  | done        |
+| 5a    | Android build skeleton + APK pipeline                           | done        |
+| 6     | Book requests                                                   | done        |
+| 7     | Android — audiobooks, requests, Auto; downloads data layer done | in progress |
+| 8     | Podcasts — backend + web discovery UI done, no Android UI       | in progress |
+| 9–11  | Music, polish, F-Droid                                          | not started |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
@@ -240,10 +240,30 @@ the code's own comments: the continue-listening shelf is found by a case-insensi
 `/libraries/:id/series` listing populates each series' `books` array. Worth checking against
 the real Audiobookshelf when someone has a device.
 
+**Wave F1 (offline-downloads data layer) landed `eb211ef`, fix `66829da`** — the
+`DownloadState`/`DownloadRepository`/`DownloadEngine` layer behind `AppContainer`'s
+placeholder `UnavailableDownloadEngine`, framework-free by design so it unit-tests against
+the stub `android.jar`. Review caught and fixed a phantom-success defect in the placeholder
+path before it landed; see `docs/ROADMAP.md` §7 for detail. Remaining: Wave F2, the real
+Media3 `DownloadManager` engine and download UI.
+
 **Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
 against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
-— verified against real upstream source, not assumed. No web or Android UI yet; that's the
-next podcast wave, on whichever surface makes sense to build first. See `docs/ROADMAP.md` §8.
+— verified against real upstream source, not assumed. **Wave B (podcast discovery on web)
+landed `1079228`** — search → preview → subscribe consuming wave A's routes, entered from the
+podcast `LibraryPage`, verified in a real browser via `e2e/app/podcasts.spec.ts`. No Android
+UI yet; that's the next podcast wave. See `docs/ROADMAP.md` §8.
+
+**A real normalization bug is fixed (`7e57a78`):** minified library items — what every
+shelf/browse/personalized response returns — never carried `series`, only the flattened
+`seriesName` string, so every book in a series silently lost its series membership on every
+card. Fixed with a `seriesName` fallback mirroring the existing `authorName` one, plus the
+identical gap in the fake server's `stripToMinified`, which is why no test had caught it.
+**Reconciling the ABS client against a live server is still blocked: no Audiobookshelf
+credential is available to a session** (`docs/setup/MY_SETUP.md` names it as the first ask).
+Everything beyond the two unauthenticated endpoints (`/status`, `/ping`) is source-derived,
+not live-verified — `docs/INTEGRATIONS.md`'s "Fixture/schema reconciliation pass" section has
+the live/source/unverified breakdown; get a credential before re-deriving it.
 
 **Container images publish to GHCR** (`c1882d5`). CI's `publish` job pushes
 `ghcr.io/patakihara/auralis:latest` and `:<sha>` (linux/amd64) on every green build of this
