@@ -560,19 +560,16 @@ One side effect worth knowing: mediaserver's host port `8787` conflict with its 
 container doesn't exist on this laptop, so `pnpm dev`'s documented "BFF on :8787" now works
 without the port workaround the setup docs describe for mediaserver itself.
 
-### CI is the authoritative signal, but local running is no longer off-limits
+### Local verification
 
-This section previously said `pnpm test:e2e`/`playwright test`/the Docker smoke test/Gradle
-were "denied by a hook on this laptop," mirroring mediaserver's RAM-driven
-`block-local-ci.sh`. **Checked directly and corrected 2026-08-03: no such hook exists on this
-laptop** — `~/.claude/hooks/` here only has `check-script-docs.sh` and `check-uncommitted.sh`,
-neither of which touches CI commands. This laptop also isn't RAM-constrained the way
-mediaserver is (7.8 GiB here vs. mediaserver's 3.7 GiB, and no media stack sharing it). See
-`CLAUDE.md`'s "Definition of done" for the corrected guidance: real caution (single Playwright
-worker, watch `free -h`, don't overlap the Docker smoke test with it) rather than a blanket
-ban. Gradle still can't run locally — no JDK/Android SDK installed — but that's an install gap,
-not a policy. `gh` is installed and authenticatable (`gh auth login`), so CI results can be
-read directly rather than only inferred from a pushed SHA.
+Playwright (`pnpm test:e2e`, `playwright test`, `playwright install`) and the Docker smoke
+test both run fine on this laptop — use them to check UI work directly instead of inferring
+from a pushed SHA. `gh` is installed and authenticatable (`gh auth login`), so CI results can
+be read directly too. Gradle is the exception: no JDK or Android SDK here, so `apps/android`
+compiles on CI only.
+
+CI stays the authoritative signal for calling a phase done; local running is the faster first
+look, not a replacement.
 
 ### Verify the clients against reality
 
@@ -695,12 +692,10 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
   tight, which makes a cap plausible, but each attempt also ended in a way that could have
   been the harness rather than the kernel, and no OOM evidence was collected. Use the
   per-package form; do not repeat the memory explanation as though it were measured.
-- **Playwright browsers**: the previous sandbox pre-installed Chromium under
-  `PLAYWRIGHT_BROWSERS_PATH` at a build number that did not match the installed Playwright,
-  and downloads were blocked. `playwright.config.ts` auto-detects and points at whatever
-  build is on disk, falling back to the default lookup when `playwright install` has run
-  normally. On a normal machine this resolves to `undefined` and nothing special happens —
-  leave the helper in place, it is harmless.
+- **Playwright browsers**: `playwright.config.ts` auto-detects a `PLAYWRIGHT_BROWSERS_PATH`
+  build already on disk and falls back to the default lookup otherwise. On this machine it
+  resolves to the normal install and nothing special happens — leave the helper in place,
+  it is harmless.
 - **pnpm build scripts**: `esbuild` and `better-sqlite3` need approval to run install
   scripts; they are listed under `pnpm.onlyBuiltDependencies` in the root `package.json`.
 - **`SESSION_SECRET`** keys the AES-256-GCM encryption of stored upstream credentials.

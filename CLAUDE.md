@@ -8,6 +8,11 @@ user directly; treat them as ongoing, not one-off remarks.
 **The orchestrating instance specs, reviews and integrates. Sonnet subagents write the
 code.** Do not implement phases yourself when they can be delegated.
 
+**The orchestrator runs on Opus.** Set by the user directly on 2026-08-04. The split is the
+point: Opus holds the plan, the specs and the review judgement; Sonnet does the volume work
+behind a precise spec. A session that finds itself orchestrating on a smaller model should
+say so rather than carry on.
+
 **Pass `model: "sonnet"` on every single `Agent` call.** There is no default that does this
 for you — omit the parameter and the agent silently inherits the orchestrator's model, which
 is Opus. Nothing in the spawn result says which model it got, so the mistake is invisible
@@ -176,34 +181,22 @@ genuinely changes the product. Do not stop to ask permission for routine calls.
 - Branch: `claude/media-client-app-k7v9by`. Do not push elsewhere without asking.
 - Commit messages explain the reasoning, not just the change.
 
-### Definition of done — the heavy suites run on CI, never here
+### Definition of done
 
-**Run locally (cheap, safe):**
+**Run locally:**
 
 ```
 pnpm format && pnpm typecheck && pnpm lint && pnpm test
 ```
 
-**Corrected 2026-08-03: there is no hook blocking these here, and `gh` is installed.** Earlier
-drafts of this section said `pnpm test:e2e` / `playwright test` / `playwright install` /
-`scripts/docker-smoke.sh` / `pnpm test:docker` / `gradle`/`./gradlew` were "blocked by a hook"
-on this machine, `gh` was "not installed," and the reason given was the **mediaserver** host's
-3.7 GiB of RAM — all three claims describe the machine development moved _from_, not the
-laptop it moved _to_ (see `docs/HANDOVER.md` §4). Checked directly on 2026-08-03: this
-machine has 7.8 GiB RAM (~4 GiB available under normal load), no `.claude/hooks/` script in
-this repo or on this host blocks any of these commands, and `gh` is installed (just not
-authenticated by default — see `gh auth login`). None of that was re-derived at the time; it
-was carried over from the mediaserver-era text and never checked against the machine the repo
-actually runs on now.
+**Playwright runs here — use it.** `pnpm test:e2e`, `playwright test` and `playwright install`
+all work on this machine, and nothing blocks them. Verifying UI work in a real browser is
+faster and more honest than pushing and waiting on CI: screenshot the change, inspect the
+real DOM, confirm a fix before committing it. `pnpm test:docker` works too.
 
-**Still exercise real caution — the headroom is real but not huge.** ~4 GiB available is a lot
-better than mediaserver's 3.7 GiB _total_ with a media stack running beside it, but it is not
-unlimited, and this is WSL2, which has its own memory/IO quirks worth respecting: prefer a
-**single Playwright worker** (`playwright test --workers=1`) rather than the multi-worker
-config CI uses, watch `free -h` while it runs, and don't run the Docker smoke test and
-Playwright at the same time. Gradle needs a JDK/Android SDK that still isn't installed here
-regardless of RAM — that part of the old constraint is unrelated to memory and still applies
-until someone installs one.
+Two practical notes, not restrictions: prefer `--workers=1` for a long full-suite run, and
+don't overlap the Docker smoke test with Playwright. Gradle is the one thing that genuinely
+can't run here — no JDK or Android SDK installed — so `apps/android` compiles on CI only.
 
 A phase is done when the cheap set passes **and the GitHub Actions run for the pushed
 commit is green** — `.github/workflows/ci.yml` runs lint, typecheck, unit, Playwright and
