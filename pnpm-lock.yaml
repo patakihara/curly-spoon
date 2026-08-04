@@ -47,6 +47,9 @@ importers:
       '@auralis/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@auralis/jellyfin-client':
+        specifier: workspace:*
+        version: link:../../packages/jellyfin-client
       '@fastify/cookie':
         specifier: ^11.0.1
         version: 11.1.2
