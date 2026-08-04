@@ -40,6 +40,17 @@ export function trackAt(
 }
 
 /**
+ * The track immediately following `track` on its own timeline (matched by `index`, not
+ * array position or object identity — same contract as `trackAt`). `undefined` past the
+ * last track. What `useAudioElement.ts`'s `ended` handler uses to continue playback across
+ * a track boundary — a multi-file audiobook's next file, or an album queue's next song —
+ * without either caller needing its own notion of "what comes after this."
+ */
+export function nextTrack(tracks: AudioTrack[], track: AudioTrack): AudioTrack | undefined {
+  return tracks.find((candidate) => candidate.index === track.index + 1);
+}
+
+/**
  * Guards every seek before it reaches `<audio>.currentTime` — an out-of-range or
  * non-finite value there either throws or silently no-ops depending on browser,
  * neither of which is a state this player wants to reason about downstream.

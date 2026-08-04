@@ -6,17 +6,23 @@
  * upstream library changed between browsing to it and this page loading)
  * degrades to "Album" rather than throwing.
  *
- * Clicking a row plays that track through `jellyfinSource`
- * (`features/player/playbackSource.ts`). Unlike `ItemPage.tsx`, there is no
- * `POST /items/:id/play` round-trip to open first — Jellyfin's proxied stream
- * route is stateless, so `playerStore.load()` is called with a `LibraryItem`/
- * `PlaybackSession` pair synthesized here, client-side, rather than one
- * fetched from the BFF. `MediaSummary.kind: 'track'` (widened for exactly
- * this) is what tells `playerDisplayMeta`/`playerArtworkUrl` (`features/
- * player/playerUi.ts`) to bill and illustrate this differently from a real
- * Audiobookshelf item — see those functions' own doc comments. Only the
- * clicked track loads for now, so playback stops at its end; the next wave
- * queues the rest of the album (`features/music/queue.ts`).
+ * Clicking a row plays the *whole currently-loaded page of tracks* as one queue, starting
+ * at that row, through `jellyfinSource` (`features/player/playbackSource.ts`) —
+ * `features/music/queue.ts`'s `albumQueue` lays every track on this page out end to end on
+ * one cumulative timeline (exactly how a multi-file audiobook already plays through its own
+ * file boundaries), so playing track 3 continues into track 4 with no separate "queue"
+ * concept in the player itself. Unlike `ItemPage.tsx`, there is no `POST /items/:id/play`
+ * round-trip to open first — Jellyfin's proxied stream route is stateless, so
+ * `playerStore.load()` is called with a `LibraryItem`/`PlaybackSession` pair synthesized
+ * here, client-side, rather than one fetched from the BFF. `MediaSummary.kind: 'track'`
+ * (widened for exactly this) is what tells `playerDisplayMeta`/`playerArtworkUrl`
+ * (`features/player/playerUi.ts`) to bill and illustrate this differently from a real
+ * Audiobookshelf item — see those functions' own doc comments.
+ *
+ * The queue is scoped to this page's own 40-track window, not the whole album across
+ * pagination boundaries — most real albums fit on one page, and stitching queues across a
+ * `Next` click is unbuilt scope, not a bug: see `queue.ts`'s own header for what a fuller
+ * queue (that, plus shuffle/repeat/cross-source) would still need.
  */
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
@@ -28,6 +34,7 @@ import { jellyfinSource } from '../player/playbackSource.js';
 import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { summarizePage } from './pagination.js';
+import { albumQueue } from './queue.js';
 
 function trackPosition(discNumber: number | null, trackNumber: number | null): string {
   if (trackNumber === null) return '';
@@ -49,8 +56,14 @@ export function MusicAlbumPage() {
     ? summarizePage({ startIndex, limit: 40 }, tracksQuery.data.total, tracks.length)
     : null;
 
-  const playTrack = (track: JellyfinTrack) => {
-    const duration = track.durationSeconds ?? 0;
+  const playTrack = (clicked: JellyfinTrack) => {
+    const queue = albumQueue(tracks);
+    const clickedIndex = tracks.findIndex((track) => track.id === clicked.id);
+    // `clickedIndex` always matches a real `audioTracks` entry — `queue`'s tracks are built
+    // from this same `tracks` array, in the same order, one-to-one — so this only falls back
+    // to the queue's own start if a row is somehow clicked after its track left `tracks`
+    // (e.g. a slow click racing a page change), rather than throwing on a stale reference.
+    const startTrack = queue.audioTracks[clickedIndex] ?? queue.audioTracks[0];
     const item: LibraryItem = {
       id: albumId,
       // Jellyfin has no "library id" surfaced to this page; inert, `load()` never reads it.
@@ -60,24 +73,15 @@ export function MusicAlbumPage() {
       progress: null,
     };
     const session: PlaybackSession = {
-      id: `jellyfin-track-${track.id}`,
+      id: `jellyfin-album-${albumId}`,
       libraryItemId: albumId,
       episodeId: null,
       // Inert — `playerStore.load()` never reads `mediaType`; present only to satisfy the type.
       mediaType: 'book',
-      displayTitle: track.name,
-      duration,
-      currentTime: 0,
-      audioTracks: [
-        {
-          index: 0,
-          startOffset: 0,
-          duration,
-          title: track.name,
-          contentUrl: track.id,
-          mimeType: null,
-        },
-      ],
+      displayTitle: startTrack?.title ?? albumName,
+      duration: queue.duration,
+      currentTime: startTrack?.startOffset ?? 0,
+      audioTracks: queue.audioTracks,
       chapters: [],
     };
     usePlayerStore.getState().load(item, session, jellyfinSource(api));

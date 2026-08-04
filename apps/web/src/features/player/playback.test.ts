@@ -7,6 +7,7 @@ import {
   formatDuration,
   isSkipInterval,
   nextRate,
+  nextTrack,
   sleepTimerRemaining,
   trackAt,
 } from './playback.js';
@@ -73,6 +74,22 @@ describe('trackAt', () => {
 
   it('returns undefined for an empty track list', () => {
     expect(trackAt([], 100)).toBeUndefined();
+  });
+});
+
+describe('nextTrack', () => {
+  const [firstTrack, secondTrack] = tracks as [AudioTrack, AudioTrack];
+
+  it('returns the track whose index immediately follows the given one', () => {
+    expect(nextTrack(tracks, firstTrack)).toBe(secondTrack);
+  });
+
+  it('returns undefined past the last track', () => {
+    expect(nextTrack(tracks, secondTrack)).toBeUndefined();
+  });
+
+  it('returns undefined for an empty track list', () => {
+    expect(nextTrack([], firstTrack)).toBeUndefined();
   });
 });
 

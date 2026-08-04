@@ -207,3 +207,33 @@ test('the full Now Playing surface shows the same track-over-artist billing', as
   );
   await expect(page.getByTestId('now-playing-author')).toContainText('The Nebula Collective');
 });
+
+test('playing a track loads the rest of the album as a queue — crossing into the next track updates the billing', async ({
+  page,
+}) => {
+  // Regression coverage for the exact defect flagged during design: `displayTitle` is fixed
+  // at the album's `load()` time (track 1), so billing off it alone would show "Tidal Lines"
+  // for the whole album. `playerDisplayMeta`'s `currentTrackTitle` (`trackAt(tracks,
+  // currentTime)`) is what has to move as playback crosses into track 2 — this asserts that
+  // it actually does, on the real store/render path, not just in `playerUi.test.ts`'s unit
+  // tests of the pure function alone.
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-track-track-driftwave-1').click();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Tidal Lines');
+
+  await page.getByTestId('mini-player-expand').click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+
+  // "Tidal Lines" is 214s; the default skip interval is 30s (`settingsStore.ts`), so eight
+  // clicks (240s) lands inside "Static Coast", which starts at 214s within the loaded
+  // two-track queue — without needing the fixture audio to actually decode and fire `ended`
+  // (see `useAudioElement.ts`'s header for why that can't be exercised here).
+  for (let i = 0; i < 8; i += 1) {
+    await page.getByTestId('player-skip-forward').click();
+  }
+
+  await expect(page.getByTestId('now-playing').getByRole('heading', { level: 1 })).toHaveText(
+    'Static Coast',
+  );
+  await expect(page.getByTestId('mini-player-title')).toContainText('Static Coast');
+});
