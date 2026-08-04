@@ -229,10 +229,22 @@ unit-untestable in this project (the stub `android.jar` throws on `Uri.parse`), 
 decidable logic must live in a Media3-free class, with `MediaItem`/`MediaMetadata` built
 only as pure mapping in `playback/MediaItemConversions.kt`.
 
+**Two assumptions in the browse tree are unverified against a real server**, both flagged in
+the code's own comments: the continue-listening shelf is found by a case-insensitive
+`contains("continue")` match on the shelf's id or label, and it's unconfirmed whether the
+`/libraries/:id/series` listing populates each series' `books` array. Worth checking against
+the real Audiobookshelf when someone has a device.
+
 **Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
 against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
 — verified against real upstream source, not assumed. No web or Android UI yet; that's the
 next podcast wave, on whichever surface makes sense to build first. See `docs/ROADMAP.md` §8.
+
+**Container images publish to GHCR** (`c1882d5`). CI's `publish` job pushes
+`ghcr.io/patakihara/auralis:latest` and `:<sha>` (linux/amd64) on every green build of this
+branch, gated to `push` events on this branch only. This closes the gap where
+`compose.yaml` referenced `:latest` but nothing had ever pushed it, so nothing could deploy.
+Multi-arch (arm64) remains phase 10; see §7 for a reconciliation gap this surfaced.
 
 ### Mantine — decided, full migration landed on this branch (`2a0d2e0`)
 
@@ -707,10 +719,33 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
   Changing it invalidates every stored secret. Generate a real one for the media server.
 - **Never commit real credentials, tokens or the user's server hostnames.** Fixtures must
   stay synthetic.
+- **A quiet-hours prompt gate is armed on `UserPromptSubmit`.** `scripts/hooks/time-gate.sh`
+  is registered via `.claude/settings.local.json` (gitignored, machine-local). Outside
+  11:00–18:00 local time, a typed prompt is queued to `.claude/deferred-prompts.jsonl` and
+  blocked rather than delivered; nothing wakes a session to drain the queue. Autonomous
+  sessions are exempt via an
+  `AURALIS_AUTONOMOUS=1` marker that `~/bin/auralis-autorun` exports before launching
+  `claude --bg`; the marker rides the process, covering self-scheduled wake-ups too. That
+  marker belongs to this hook alone — `scripts/hooks/usage-gate.sh` must never honour it,
+  since the plan-usage ceiling applies to autonomous sessions most of all. Subagent task
+  notifications are not `UserPromptSubmit` and always arrive normally.
 
 ---
 
 ## 7. Suggested first moves
+
+**Immediate next task: set up Watchtower on mediaserver**, to pull the newly-published GHCR
+image and restart the container when `:latest` changes — the repo owner's direct choice of
+mechanism. Not started because it's a live change on a different host and wants its own
+session; whoever picks it up must read mediaserver's own `~/CLAUDE.md` first (this repo's
+scope rules don't extend to that host) and `docs/setup/MY_SETUP.md`/`HOST_REPORT.md` for
+that box's details.
+
+Worth reconciling before relying on Watchtower: the checked-in `compose.yaml` carries both
+`build: .` and `image: ghcr.io/patakihara/auralis:latest`, while `docs/SELF_HOSTING.md`'s
+recommended snippet uses `image:` only — so `docker compose up` against the checked-in file
+builds locally instead of pulling the published image, and a stray `--build` would override
+a pulled tag.
 
 1. Read the roadmap; confirm which phases are actually complete by running the suite.
 2. Collect the real service details from section 4 and get the app talking to the real
