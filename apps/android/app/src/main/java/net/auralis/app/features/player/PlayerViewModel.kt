@@ -17,6 +17,7 @@ import kotlinx.coroutines.guava.asDeferred
 import kotlinx.coroutines.launch
 import net.auralis.app.playback.AuralisMediaLibraryService
 import net.auralis.app.playback.PlaybackItemResolver
+import net.auralis.app.playback.toMediaItem
 
 /** What the mini player (and, later, a full Now Playing surface) renders. */
 sealed interface PlayerUiState {
@@ -130,12 +131,13 @@ class PlayerViewModel(
     fun playItem(itemId: String) {
         viewModelScope.launch {
             try {
-                val mediaItem =
+                val resolved =
                     playbackItemResolver.resolve(itemId)
                         ?: run {
                             _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
                             return@launch
                         }
+                val mediaItem = resolved.toMediaItem()
                 val ctrl = connectedController()
                 ctrl.setMediaItem(mediaItem)
                 ctrl.prepare()

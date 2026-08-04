@@ -82,17 +82,17 @@ class PlaybackItemResolverTest {
     }
 
     @Test
-    fun `resolves a book-prefixed browse id to a MediaItem whose URI is the expected audioTrackUrl`() =
+    fun `resolves a book-prefixed browse id to a ResolvedPlayback whose uri is the expected audioTrackUrl`() =
         runTest {
             withBaseUrlConfigured()
             enqueuePlayItem(itemId = "item1")
             enqueueLibraryItem(itemId = "item1")
 
-            val mediaItem = resolver.resolve(BrowseIds.book("item1"))
+            val resolved = resolver.resolve(BrowseIds.book("item1"))
 
             assertEquals(
                 "${baseUrl.trimEnd('/')}/api/v1/media/item1/track/f1",
-                mediaItem?.localConfiguration?.uri.toString(),
+                resolved?.uri,
             )
         }
 
@@ -116,9 +116,9 @@ class PlaybackItemResolverTest {
             enqueuePlayItem(itemId = "item7")
             enqueueLibraryItem(itemId = "item7")
 
-            val mediaItem = resolver.resolve("item7")
+            val resolved = resolver.resolve("item7")
 
-            assertNotNull(mediaItem)
+            assertNotNull(resolved)
             val playRequest = mockWebServer.takeRequest()
             assertEquals("/api/v1/items/item7/play", playRequest.path)
         }
@@ -168,31 +168,38 @@ class PlaybackItemResolverTest {
             enqueuePlayItem(itemId = "item1", displayTitle = "Sample Book")
             enqueueLibraryItem(itemId = "item1", author = "Solo Author")
 
-            val mediaItem = resolver.resolve(BrowseIds.book("item1"))
+            val resolved = resolver.resolve(BrowseIds.book("item1"))
 
-            assertEquals("Sample Book", mediaItem?.mediaMetadata?.title?.toString())
-            assertEquals("Solo Author", mediaItem?.mediaMetadata?.artist?.toString())
+            assertEquals("Sample Book", resolved?.title)
+            assertEquals("Solo Author", resolved?.artist)
             assertEquals(
                 "${baseUrl.trimEnd('/')}/api/v1/media/item1/cover?width=200",
-                mediaItem?.mediaMetadata?.artworkUri.toString(),
+                resolved?.artworkUrl,
             )
+            // LibraryItem.media.subtitle is null in this fixture (enqueueLibraryItem never sets
+            // it), matching the overwhelming majority of real audiobooks — so subtitle must fall
+            // back to the same author string as artist, keeping the browse row (which shows
+            // title + author as its subtitle, per BrowseTreeRepository.toBrowseBook) and this
+            // item's now-playing metadata from going blank on the subtitle line the moment it
+            // starts playing.
+            assertEquals("Solo Author", resolved?.subtitle)
         }
 
     @Test
-    fun `preserves the browse mediaId on the returned MediaItem`() =
+    fun `preserves the browse mediaId on the returned ResolvedPlayback`() =
         runTest {
             withBaseUrlConfigured()
             enqueuePlayItem(itemId = "item1")
             enqueueLibraryItem(itemId = "item1")
 
             val browseId = BrowseIds.book("item1")
-            val mediaItem = resolver.resolve(browseId)
+            val resolved = resolver.resolve(browseId)
 
-            assertEquals(browseId, mediaItem?.mediaId)
+            assertEquals(browseId, resolved?.mediaId)
         }
 
     @Test
-    fun `still returns a playable MediaItem, with plainer metadata, when the libraryItem metadata call errors`() =
+    fun `still returns a playable ResolvedPlayback, with plainer metadata, when the libraryItem metadata call errors`() =
         runTest {
             withBaseUrlConfigured()
             enqueuePlayItem(itemId = "item1", displayTitle = "Sample Book")
@@ -202,10 +209,10 @@ class PlaybackItemResolverTest {
                     .setBody("""{"error":{"code":"not_found","message":"No such item"}}"""),
             )
 
-            val mediaItem = resolver.resolve(BrowseIds.book("item1"))
+            val resolved = resolver.resolve(BrowseIds.book("item1"))
 
-            assertNotNull(mediaItem)
-            assertEquals("Sample Book", mediaItem?.mediaMetadata?.title?.toString())
-            assertNull(mediaItem?.mediaMetadata?.artist)
+            assertNotNull(resolved)
+            assertEquals("Sample Book", resolved?.title)
+            assertNull(resolved?.artist)
         }
 }

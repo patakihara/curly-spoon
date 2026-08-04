@@ -1,8 +1,5 @@
 package net.auralis.app.playback
 
-import android.net.Uri
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import net.auralis.app.data.model.LibraryItem
 import net.auralis.app.data.model.PlaybackSession
 import net.auralis.app.data.network.ApiClient
@@ -12,24 +9,47 @@ import net.auralis.app.data.settings.ServerConfigRepository
 import net.auralis.app.features.player.firstPlayableTrack
 
 /**
- * Turns a browse-tree or phone-UI item id into a fully-populated, playable [MediaItem]: the BFF
- * playback session round trip, first-track selection, file-id extraction and audio URL, plus the
- * enriched [MediaMetadata] (title/artist/artwork) both surfaces need.
+ * A resolved, playable item, expressed without any Media3 type so it stays JVM-unit-testable —
+ * see [PlaybackItemResolver]'s own doc comment for why `MediaItem` construction can't happen
+ * here. [MediaItemConversions.toMediaItem] is the only place this becomes one.
+ */
+data class ResolvedPlayback(
+    val mediaId: String, // the browse id as it was asked for, so controller item identity is stable
+    val uri: String, // the resolved audioTrackUrl
+    val title: String,
+    val artist: String?,
+    val subtitle: String?,
+    val artworkUrl: String?,
+)
+
+/**
+ * Turns a browse-tree or phone-UI item id into a fully-populated, playable [ResolvedPlayback]:
+ * the BFF playback session round trip, first-track selection, file-id extraction and audio URL,
+ * plus the enriched title/artist/artwork metadata both surfaces need.
+ *
+ * Deliberately free of any `android.*`/`androidx.*` (Media3 in particular) import, matching
+ * [BrowseTreeRepository]'s own style: `MediaItem.Builder().setUri(String)` reaches
+ * `android.net.Uri.parse`, and this project's unit tests run against the stub `android.jar`,
+ * whose methods throw `RuntimeException` when called (no Robolectric here). Any code that
+ * constructs a `MediaItem` is therefore unit-untestable in this project by construction, so that
+ * construction is isolated in [MediaItemConversions] instead, at the two edges
+ * ([AuralisMediaLibraryService] and [net.auralis.app.features.player.PlayerViewModel]) that
+ * actually need a `MediaItem` to hand to Media3.
  *
  * A plain class, not a `ViewModel`: [AuralisMediaLibraryService] is a `MediaLibraryService`,
  * which has no `ViewModelStore` to scope one to, so this has to be constructible directly (see
  * that class's `onCreate`, alongside [BrowseTreeRepository]). [net.auralis.app.AppContainer]
  * constructs a second instance for [net.auralis.app.features.player.PlayerViewModel]'s phone-UI
- * path — the two previously built their own, diverging `MediaMetadata` (bare title only from the
+ * path — the two previously built their own, diverging metadata (bare title only from the
  * ViewModel, full metadata from the service); this class is now the *only* place either surface
- * builds one, so lock-screen/Auto and the phone UI can no longer drift apart.
+ * resolves one, so lock-screen/Auto and the phone UI can no longer drift apart.
  */
 class PlaybackItemResolver(
     private val apiClient: ApiClient,
     private val serverConfigRepository: ServerConfigRepository,
 ) {
     /**
-     * Resolves [mediaId] into a playable [MediaItem], or `null` when it isn't one — an
+     * Resolves [mediaId] into a playable [ResolvedPlayback], or `null` when it isn't one — an
      * unrecognised id, a folder/series browse node (browsable, not playable), an item with no
      * playable track, or any [ApiException] along the way. Total function, matching
      * [BrowseTreeRepository]'s own degrade-rather-than-throw style: a bad or transient upstream
@@ -44,18 +64,14 @@ class PlaybackItemResolver(
      * rejected — those are browsable, not playable, and resolving one would silently hand the
      * player a folder with nothing to play.
      */
-    suspend fun resolve(mediaId: String): MediaItem? {
+    suspend fun resolve(mediaId: String): ResolvedPlayback? {
         val itemId = playableItemId(mediaId) ?: return null
         return try {
             val session = apiClient.playItem(itemId)
             val track = firstPlayableTrack(session) ?: return null
             val fileId = fileIdFromContentUrl(track.contentUrl) ?: return null
             val trackUrl = apiClient.audioTrackUrl(itemId, fileId)
-            MediaItem.Builder()
-                .setMediaId(mediaId)
-                .setUri(trackUrl)
-                .setMediaMetadata(buildMetadata(itemId, session))
-                .build()
+            buildResolvedPlayback(mediaId, itemId, trackUrl, session)
         } catch (e: ApiException) {
             null
         }
@@ -87,31 +103,36 @@ class PlaybackItemResolver(
      * The artwork URL is *not* part of that extra call: it's built the same way
      * `BrowseTreeRepository.toBrowseBook` builds it, from the base URL and item id alone, so the
      * two constructions can't silently diverge into two different cover-art formats.
+     *
+     * `subtitle` falls back to the author string when `LibraryItem.media.subtitle` is null (true
+     * for the overwhelming majority of audiobooks, which have no subtitle field populated) —
+     * matching [BrowseTreeRepository.toBrowseBook], which puts the author in `BrowseBook.subtitle`
+     * since it has no separate artist concept. Without this fallback, a browse row shows title +
+     * author and the subtitle line goes blank the instant the same item starts playing.
      */
-    private suspend fun buildMetadata(
+    private suspend fun buildResolvedPlayback(
+        mediaId: String,
         itemId: String,
+        trackUrl: String,
         session: PlaybackSession,
-    ): MediaMetadata {
+    ): ResolvedPlayback {
         val libraryItem = libraryItemOrNull(itemId)
         val media = libraryItem?.media
         val artist =
             media?.authors?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name }
                 ?: media?.author
-        val artworkUri =
+        val artworkUrl =
             serverConfigRepository.getBaseUrl()?.let {
-                Uri.parse("${it.trimEnd('/')}/api/v1/media/$itemId/cover?width=200")
+                "${it.trimEnd('/')}/api/v1/media/$itemId/cover?width=200"
             }
-        return MediaMetadata.Builder()
-            .setTitle(session.displayTitle)
-            .setIsPlayable(true)
-            .setIsBrowsable(false)
-            .setMediaType(MediaMetadata.MEDIA_TYPE_AUDIO_BOOK)
-            .apply {
-                artist?.let { setArtist(it) }
-                media?.subtitle?.let { setSubtitle(it) }
-                artworkUri?.let { setArtworkUri(it) }
-            }
-            .build()
+        return ResolvedPlayback(
+            mediaId = mediaId,
+            uri = trackUrl,
+            title = session.displayTitle,
+            artist = artist,
+            subtitle = media?.subtitle ?: artist,
+            artworkUrl = artworkUrl,
+        )
     }
 
     // Degrades to null rather than propagating: this call is metadata enrichment, not the
