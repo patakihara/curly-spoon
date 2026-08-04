@@ -74,6 +74,13 @@ COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/src ./pac
 # gains an external dependency needs the same line; `packages/core` has none
 # today, and pnpm creates no node_modules for it at all, so COPY would fail.
 COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/node_modules ./packages/abs-client/node_modules
+# @auralis/jellyfin-client — same reasoning as abs-client above: apps/server
+# imports it at runtime (`apps/server/src/jellyfinUpstream.ts`), tsx runs the
+# source directly with no compile step, and its own `zod` dependency needs its
+# own node_modules copied for the same isolated-layout reason.
+COPY --from=prod-deps --chown=auralis:auralis /app/packages/jellyfin-client/package.json ./packages/jellyfin-client/package.json
+COPY --from=prod-deps --chown=auralis:auralis /app/packages/jellyfin-client/src ./packages/jellyfin-client/src
+COPY --from=prod-deps --chown=auralis:auralis /app/packages/jellyfin-client/node_modules ./packages/jellyfin-client/node_modules
 COPY --chown=auralis:auralis apps/server/package.json ./apps/server/package.json
 COPY --chown=auralis:auralis apps/server/src ./apps/server/src
 
