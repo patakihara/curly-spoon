@@ -303,7 +303,7 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
     (books carry it, podcasts don't — nullable, matching the existing `narrator`/`tracks`
     convention in that file). Independent review cross-checked every field and query
     param against the real server source (`apps/server/src/routes/{libraries,items,
-    schemas}.ts`, `packages/abs-client/src/{client,domain,normalize}.ts`), not just the
+schemas}.ts`, `packages/abs-client/src/{client,domain,normalize}.ts`), not just the
     Kotlin in isolation — no defects found. No Compose UI, no `MediaLibrarySession.Callback`
     changes yet; pure data layer, mirroring how Wave D1 shipped ahead of D2a/D2b.
   - **Scope decision, made without waiting on the user (routine call, not a product
@@ -312,7 +312,7 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
     but no offline-downloads feature exists anywhere in `apps/android` yet (confirmed by
     grep — zero hits beyond an unrelated `downloadUrl` field on `Release`, phase 6's
     torrent-request model). Auto's own text argues downloads are "a prerequisite for Auto
-    being usable, not an optional extra," which is true for *availability offline*, not for
+    being usable, not an optional extra," which is true for _availability offline_, not for
     landing the browse tree at all — the tree is still useful without it, and a downloads
     wave can add the node later without restructuring what E ships now. `Podcasts`/`Music`
     are likewise out for the same reason (phases 8/9 aren't done) — root ships as
