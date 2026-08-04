@@ -17,9 +17,10 @@ sealed interface DownloadEnqueueResult {
     data class Failed(val code: String) : DownloadEnqueueResult
 
     /**
-     * [DownloadEngine.isAvailable] was `false` — there is no engine yet that could act on this
-     * request (the current build wires [UnavailableDownloadEngine] until Wave F2 lands a real
-     * one). Nothing was queued and, critically, `itemId` was **not** added to
+     * [DownloadEngine.isAvailable] was `false` — the injected [DownloadEngine] can't act on this
+     * request (only [UnavailableDownloadEngine] reports `false`; the real, Media3-backed engine
+     * Wave F2a wires by default never does). Nothing was queued and, critically, `itemId` was
+     * **not** added to
      * [DownloadRepository.keptOfflineItemIds] — the earlier version of this class recorded it
      * anyway, which produced a kept-offline entry indistinguishable from a real, successful
      * download that [DownloadEngine.downloadsFor] would then never report anything about.

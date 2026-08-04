@@ -42,14 +42,16 @@ interface DownloadEngine {
 }
 
 /**
- * Stands in for the real Media3-backed [DownloadEngine] until Wave F2 lands one. Every operation
- * degrades cleanly — `enqueue`/`cancel` are no-ops, `downloadsFor` always answers `emptyList()` —
- * rather than throwing or silently pretending a download started, matching this project's
- * explicit-degradation house style (an unimplemented capability gets a named, honest stand-in,
- * not a `TODO()` that crashes the first time something calls it).
+ * Stood in for the real Media3-backed [DownloadEngine] until Wave F2a landed
+ * `Media3DownloadEngine`, which [net.auralis.app.AppContainer] now wires instead. Every
+ * operation here degrades cleanly — `enqueue`/`cancel` are no-ops, `downloadsFor` always answers
+ * `emptyList()` — rather than throwing or silently pretending a download started, matching this
+ * project's explicit-degradation house style (an unimplemented capability gets a named, honest
+ * stand-in, not a `TODO()` that crashes the first time something calls it).
  *
- * [net.auralis.app.AppContainer] wires this in today. Swap it for the real implementation there
- * once Wave F2 exists — that is the one line this class exists to make trivial to replace.
+ * Left in place deliberately, not deleted: a legitimate fallback for a build where downloads
+ * genuinely can't work, and [DownloadRepository]'s own tests use its shape (via `FakeDownloadEngine`,
+ * which mirrors it).
  */
 class UnavailableDownloadEngine : DownloadEngine {
     /** No engine exists to act on a download yet — see [DownloadRepository.enqueue]'s [DownloadEnqueueResult.Unavailable] case. */

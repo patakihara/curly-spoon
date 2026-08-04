@@ -4,6 +4,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -40,6 +41,23 @@ import net.auralis.app.AuralisApplication
  * ExoPlayer's range requests for a track carry the session cookie
  * [net.auralis.app.data.network.SessionCookieJar] attaches. The BFF's track endpoint requires
  * that cookie like every other route; without it, streaming would 401.
+ *
+ * Wave F2a wraps that OkHttp factory in a [CacheDataSource.Factory] over
+ * [net.auralis.app.AppContainer.downloadCache] — the same
+ * [androidx.media3.datasource.cache.SimpleCache] instance `Media3DownloadEngine`'s
+ * `DownloadManager` writes completed downloads into — so a downloaded item plays from disk with
+ * no network. That factory is built **read-only**
+ * (`setCacheWriteDataSinkFactory(null)`, matching Media3's own demo app's
+ * `buildReadOnlyCacheDataSource`, confirmed at the pinned 1.5.1 tag): `CacheDataSource`'s
+ * default behaviour is to opportunistically write *any* streamed content into the cache it
+ * reads from, and this project's cache is deliberately backed by a `NoOpCacheEvictor` (see
+ * [net.auralis.app.AppContainer.downloadCache]'s own doc comment — evicting a "kept offline"
+ * download would defeat the whole feature). If playback wrote to that same never-evicting cache
+ * on every ordinary stream, merely listening to a book — without ever tapping "download" —
+ * would silently grow that cache forever, invisible to `Media3DownloadEngine.downloadsFor`
+ * (which only knows about rows in `DownloadManager`'s own index, not raw cache contents). Making
+ * playback's side read-only means the cache is populated by exactly one path: an explicit,
+ * user-initiated download.
  *
  * [MediaLibrarySession.Callback]'s browsing methods (`onGetLibraryRoot`, `onGetChildren`,
  * `onGetItem`) are backed by [BrowseTreeRepository]; `onAddMediaItems`, `onSearch`,
@@ -79,11 +97,23 @@ class AuralisMediaLibraryService : MediaLibraryService() {
         playbackItemResolver = PlaybackItemResolver(container.apiClient, container.serverConfigRepository)
 
         val okHttpDataSourceFactory = OkHttpDataSource.Factory(container.httpClient)
+        // Read-only cache layer over the same SimpleCache Media3DownloadEngine's DownloadManager
+        // writes into — see this class's own doc comment for why read-only, and
+        // AppContainer.downloadCache's for why the cache is a single shared instance.
+        // FLAG_IGNORE_CACHE_ON_ERROR: a corrupted or otherwise unreadable cache entry should
+        // fall back to streaming over the network rather than fail playback outright, matching
+        // this project's total-function house style.
+        val cacheDataSourceFactory =
+            CacheDataSource.Factory()
+                .setCache(container.downloadCache)
+                .setUpstreamDataSourceFactory(okHttpDataSourceFactory)
+                .setCacheWriteDataSinkFactory(null)
+                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
         // Wrapped in DefaultDataSource.Factory, matching Media3's own recommended setup for a
-        // custom network stack: the OkHttp factory alone only resolves http(s) URIs, and the
-        // wrapper falls back to the platform's default handling for anything else (e.g. a
-        // content:// URI), so nothing but the authenticated path changes.
-        val dataSourceFactory = DefaultDataSource.Factory(this, okHttpDataSourceFactory)
+        // custom network stack: the cache-then-OkHttp factory only resolves http(s) URIs, and
+        // the wrapper falls back to the platform's default handling for anything else (e.g. a
+        // content:// URI), so nothing but the authenticated/cached path changes.
+        val dataSourceFactory = DefaultDataSource.Factory(this, cacheDataSourceFactory)
         val mediaSourceFactory = DefaultMediaSourceFactory(this).setDataSourceFactory(dataSourceFactory)
 
         player =

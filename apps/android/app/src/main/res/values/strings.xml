@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Auralis</string>
+    <!-- Notification channel Media3's DownloadService creates on first run (see
+         AuralisDownloadService's doc comment). IMPORTANCE_LOW, so it never makes sound. -->
+    <string name="download_notification_channel_name">Downloads</string>
 </resources>
