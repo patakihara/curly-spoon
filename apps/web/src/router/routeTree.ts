@@ -84,6 +84,40 @@ const podcastDiscoverRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// Music (Phase 9 wave A). A flat `/music` root rather than nested under
+// `/library/$libraryId` — music is served by Jellyfin, a wholly separate
+// upstream from the Audiobookshelf libraries `libraryRoute` browses, with no
+// library id of its own to nest under.
+const musicHomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicHomePage.js'),
+    'MusicHomePage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
+const musicArtistRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music/artist/$artistId',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicArtistPage.js'),
+    'MusicArtistPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
+const musicAlbumRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music/album/$albumId',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicAlbumPage.js'),
+    'MusicAlbumPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -128,6 +162,9 @@ export const routeTree = rootRoute.addChildren([
   podcastDetailRoute,
   requestsRoute,
   podcastDiscoverRoute,
+  musicHomeRoute,
+  musicArtistRoute,
+  musicAlbumRoute,
   searchRoute,
   settingsRoute,
   setupRoute,

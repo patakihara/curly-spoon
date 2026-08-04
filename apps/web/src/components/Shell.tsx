@@ -16,7 +16,12 @@ import {
   type NavigationItem,
 } from '@auralis/ui';
 import { useBreakpoint } from '../hooks/useBreakpoint.js';
-import { useLibrariesQuery, useProvidersQuery, useSetupQuery } from '../api/queries.js';
+import {
+  useJellyfinConfigQuery,
+  useLibrariesQuery,
+  useProvidersQuery,
+  useSetupQuery,
+} from '../api/queries.js';
 import { MiniPlayer } from '../features/player/MiniPlayer.js';
 import { NowPlaying } from '../features/player/NowPlaying.js';
 import { useAudioElement } from '../features/player/useAudioElement.js';
@@ -64,11 +69,13 @@ export function Shell({ children }: { children: ReactNode }) {
   const lookup = lookupLibraries(librariesQuery.data?.libraries ?? []);
   const providersQuery = useProvidersQuery();
   const providerLookup = lookupProviders(providersQuery.data?.providers ?? []);
+  const jellyfinConfigQuery = useJellyfinConfigQuery();
 
   const destinations = visibleDestinations({
     audiobookshelfConfigured,
     ...lookup,
     ...providerLookup,
+    jellyfinConfigured: jellyfinConfigQuery.data?.configured ?? false,
   });
   const navItems: NavigationItem[] = destinations.map((d) => ({
     key: d.key,

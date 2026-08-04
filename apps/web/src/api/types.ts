@@ -370,3 +370,77 @@ export interface SubscribePodcastBody {
   metadata?: PodcastSubscribeMetadata;
   autoDownloadEpisodes?: boolean;
 }
+
+// ---------------------------------------------------------------------
+// Jellyfin music (Phase 9 wave A — browse/search, no playback yet)
+// ---------------------------------------------------------------------
+
+/** `GET /jellyfin/config` — mirrors the shape `POST /jellyfin/login` also returns
+ * on success, minus the `user` field a login response adds. */
+export interface JellyfinConfig {
+  configured: boolean;
+  baseUrl: string | null;
+  hasCredentials: boolean;
+}
+
+/** `POST /jellyfin/login`'s success body. `baseUrl` is required only the first
+ * time (before anything is configured) — see `routes/jellyfin.ts`'s doc comment. */
+export interface JellyfinLoginBody {
+  baseUrl?: string;
+  username: string;
+  password: string;
+}
+
+export interface JellyfinLoginResult extends JellyfinConfig {
+  user: { id: string; name: string };
+}
+
+/** Mirrors `packages/jellyfin-client/src/domain.ts`'s `Artist` field-for-field —
+ * this is the BFF's own domain type, not Jellyfin's raw `BaseItemDto`. */
+export interface JellyfinArtist {
+  id: string;
+  name: string;
+  overview: string | null;
+  imageTag: string | null;
+  albumCount: number | null;
+}
+
+export interface JellyfinAlbum {
+  id: string;
+  name: string;
+  sortName: string | null;
+  artistId: string | null;
+  artistName: string | null;
+  productionYear: number | null;
+  overview: string | null;
+  genres: string[];
+  imageTag: string | null;
+  trackCount: number | null;
+}
+
+export interface JellyfinTrack {
+  id: string;
+  name: string;
+  albumId: string | null;
+  albumName: string | null;
+  artistNames: string[];
+  trackNumber: number | null;
+  discNumber: number | null;
+  durationSeconds: number | null;
+  imageTag: string | null;
+  genres: string[];
+}
+
+/** One page of a Jellyfin browse list. `total` is upstream's real
+ * `TotalRecordCount`, never estimated — see `features/music/pagination.ts`. */
+export interface JellyfinLibraryPage<T> {
+  items: T[];
+  total: number;
+  startIndex: number;
+}
+
+export interface JellyfinSearchResults {
+  artists: JellyfinArtist[];
+  albums: JellyfinAlbum[];
+  tracks: JellyfinTrack[];
+}

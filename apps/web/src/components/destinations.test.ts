@@ -30,13 +30,31 @@ describe('visibleDestinations', () => {
     expect(podcasts?.to).toBe('/library/lib-podcasts');
   });
 
-  it('never shows Music — Jellyfin has no configuration surface in this phase', () => {
+  it('hides Music until Jellyfin is configured', () => {
     const keys = visibleDestinations({
       audiobookshelfConfigured: true,
       bookLibraryId: 'lib-books',
       podcastLibraryId: 'lib-podcasts',
+      jellyfinConfigured: false,
     }).map((d) => d.key);
     expect(keys).not.toContain('music');
+  });
+
+  it('shows Music, linking to /music, once Jellyfin is configured', () => {
+    const destinations = visibleDestinations({
+      audiobookshelfConfigured: false,
+      jellyfinConfigured: true,
+    });
+    const music = destinations.find((d) => d.key === 'music');
+    expect(music?.to).toBe('/music');
+  });
+
+  it('shows Music independently of Audiobookshelf — the two upstreams are unrelated', () => {
+    const keys = visibleDestinations({
+      audiobookshelfConfigured: false,
+      jellyfinConfigured: true,
+    }).map((d) => d.key);
+    expect(keys).toContain('music');
   });
 
   it('always shows Home, Search and Settings, in a stable relative order', () => {
