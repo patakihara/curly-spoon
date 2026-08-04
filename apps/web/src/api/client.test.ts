@@ -261,4 +261,60 @@ describe('ApiClient', () => {
       expect(JSON.parse(String(init?.body))).toEqual({ bookSavePath: '/downloads/books' });
     });
   });
+
+  describe('podcast discovery (Phase 8)', () => {
+    it('sends the search term as a query parameter', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ results: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.searchPodcastDirectory('daily tech');
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/podcasts/search?term=daily+tech');
+    });
+
+    it('POSTs the rssFeed to preview a feed', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(JSON.stringify({ preview: { title: 'The Daily Tech Digest' } }), {
+            status: 200,
+          }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.previewPodcastFeed('https://feeds.fake.abs.local/daily-tech.xml');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/podcasts/feed');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({
+        rssFeed: 'https://feeds.fake.abs.local/daily-tech.xml',
+      });
+      expect(result.preview.title).toBe('The Daily Tech Digest');
+    });
+
+    it('POSTs the subscribe body to create the library item', async () => {
+      const body = {
+        libraryId: 'lib-podcasts',
+        folderId: 'folder-podcasts',
+        folderPath: '/data/podcasts',
+        rssFeed: 'https://feeds.fake.abs.local/daily-tech.xml',
+        title: 'The Daily Tech Digest',
+      };
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ item: { id: 'item-podcast-new-1' } }), { status: 201 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.subscribePodcast(body);
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/podcasts');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual(body);
+      expect(result.item.id).toBe('item-podcast-new-1');
+    });
+  });
 });

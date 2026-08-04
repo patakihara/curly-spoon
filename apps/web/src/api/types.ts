@@ -32,11 +32,19 @@ export interface LoginResponse {
   user: { id: string; username: string };
 }
 
+/** One of a library's watched folders on disk — `folders[0]` is what a new podcast
+ * subscription is created under (see `SubscribePodcastBody`). */
+export interface LibraryFolder {
+  id: string;
+  path: string;
+}
+
 export interface Library {
   id: string;
   name: string;
   mediaType: 'book' | 'podcast';
   icon: string | null;
+  folders: LibraryFolder[];
 }
 
 export interface AuthorRef {
@@ -244,4 +252,99 @@ export interface RequestSettings {
   approvalPolicy: string;
   bookSavePath: string;
   bookCategory: string;
+}
+
+// ---------------------------------------------------------------------
+// Podcast discovery (Phase 8, wave A backend / wave B web UI)
+// ---------------------------------------------------------------------
+
+/** One podcast the iTunes-backed directory search turned up — `GET /podcasts/search`. */
+export interface PodcastDirectoryResult {
+  itunesId: number;
+  itunesArtistId: number | null;
+  title: string;
+  artistName: string | null;
+  description: string | null;
+  descriptionPlain: string | null;
+  releaseDate: string | null;
+  genres: string[];
+  cover: string | null;
+  trackCount: number;
+  feedUrl: string | null;
+  pageUrl: string | null;
+  explicit: boolean;
+}
+
+/** One `podcast:chapters` chapter, already parsed into seconds by Audiobookshelf. */
+export interface PodcastFeedChapter {
+  id: number;
+  title: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * One episode as it appears in an as-yet-unsubscribed RSS feed (`POST /podcasts/feed`) —
+ * not yet a library entity, so no `id`. `duration` stays the raw feed string rather than
+ * being parsed into seconds, since feeds format it inconsistently (`"3600"` vs `"1:00:00"`);
+ * `durationSeconds` is Audiobookshelf's own already-parsed value and safe to use directly.
+ */
+export interface PodcastFeedEpisode {
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  pubDate: string | null;
+  publishedAt: number | null;
+  episodeType: string | null;
+  season: string | null;
+  episodeNumber: string | null;
+  author: string | null;
+  duration: string | null;
+  durationSeconds: number | null;
+  explicit: boolean;
+  enclosure: { url: string; type: string | null; length: string | null } | null;
+  guid: string | null;
+  chaptersUrl: string | null;
+  chapters: PodcastFeedChapter[];
+}
+
+/** A previewed RSS feed, before subscribing — the response of `POST /podcasts/feed`. */
+export interface PodcastFeedPreview {
+  title: string | null;
+  author: string | null;
+  description: string | null;
+  descriptionPlain: string | null;
+  feedUrl: string | null;
+  image: string | null;
+  categories: string[];
+  language: string | null;
+  explicit: boolean;
+  numEpisodes: number;
+  episodes: PodcastFeedEpisode[];
+  pubDate: string | null;
+  link: string | null;
+}
+
+/** Mirrors the BFF's `podcastSubscribeMetadataSchema` field-for-field. */
+export interface PodcastSubscribeMetadata {
+  author?: string | null;
+  description?: string | null;
+  releaseDate?: string | null;
+  imageUrl?: string | null;
+  genres?: string[];
+  language?: string | null;
+  explicit?: boolean;
+  itunesPageUrl?: string | null;
+  itunesId?: number | null;
+}
+
+/** Body for `POST /podcasts` — mirrors the BFF's `subscribePodcastBodySchema`. */
+export interface SubscribePodcastBody {
+  libraryId: string;
+  folderId: string;
+  folderPath: string;
+  rssFeed: string;
+  title: string;
+  metadata?: PodcastSubscribeMetadata;
+  autoDownloadEpisodes?: boolean;
 }
