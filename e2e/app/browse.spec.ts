@@ -123,3 +123,17 @@ test('a search with no hits says so by name', async ({ page }) => {
 
   await expect(page.getByText('No matches for "zzz-no-such-book".')).toBeVisible();
 });
+
+test('search status is announced to screen readers via a live region', async ({ page }) => {
+  // A sighted user sees "Searching…" then "No matches for …" appear as they
+  // type; a screen reader user gets nothing unless that same text sits inside
+  // an `aria-live` region — SearchPage.tsx previously rendered plain `<p>`s
+  // with no live-region wrapper at all, so none of these state changes were
+  // ever announced.
+  await page.goto('/search');
+  const status = page.getByTestId('search-status');
+  await expect(status).toHaveAttribute('aria-live', 'polite');
+
+  await page.getByTestId('search-field').getByRole('combobox').fill('zzz-no-such-book');
+  await expect(status).toContainText('No matches for "zzz-no-such-book".');
+});

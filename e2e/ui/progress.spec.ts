@@ -4,6 +4,17 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
+/**
+ * `getComputedStyle().animationDuration` serialises as `"0.01ms"` or `"1e-05s"`
+ * depending on engine, both meaning the same real duration — parse rather than
+ * string-match so this doesn't pin one browser's formatting choice.
+ */
+function parseCssMs(value: string): number {
+  const trimmed = value.trim();
+  const num = parseFloat(trimmed);
+  return trimmed.endsWith('ms') ? num : num * 1000;
+}
+
 test.describe('LinearProgress', () => {
   test('determinate reports its value via aria-valuenow', async ({ page }) => {
     const bar = page.getByTestId('linear-progress-determinate').locator('[role="progressbar"]');
@@ -44,6 +55,26 @@ test.describe('LinearProgress', () => {
     expect(plainBox).not.toBeNull();
     expect(wavyBox!.height).toBeGreaterThan(plainBox!.height);
   });
+
+  test('honours prefers-reduced-motion: the scrolling stripe animation does not run', async ({
+    page,
+  }) => {
+    // Verified empirically, not assumed: `packages/ui/src/styles/index.css`'s global
+    // `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { ... !important } }`
+    // rule forces `animation-duration`/`animation-iteration-count` to near-zero/one on
+    // *every* element, `!important` — so it wins over Mantine's own (non-`!important`)
+    // `[data-animated]` rule regardless of import order or specificity, with no
+    // per-component wiring needed. `animation-name` stays non-'none' (only duration/
+    // iteration-count are touched, unlike Skeleton.tsx's explicit `animate={false}`
+    // fix), so the correct check is computed *duration* collapsing to near-zero, which
+    // is what actually stops the continuous scroll a user would perceive as motion.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.reload();
+    const bar = page.getByTestId('linear-progress-indeterminate').locator('[role="progressbar"]');
+    const fill = bar.locator('.mantine-Progress-section');
+    const duration = await fill.evaluate((el) => getComputedStyle(el).animationDuration);
+    expect(parseCssMs(duration)).toBeLessThan(1);
+  });
 });
 
 test.describe('CircularProgress', () => {
@@ -65,5 +96,20 @@ test.describe('CircularProgress', () => {
       (el) => getComputedStyle(el, '::after').animationName,
     );
     expect(animationName).not.toBe('none');
+  });
+
+  test('honours prefers-reduced-motion: the spin does not run', async ({ page }) => {
+    // Same global catch-all as LinearProgress's equivalent test above — the spin's
+    // `animation-name` stays set (it lives on Mantine's own compiled class, which
+    // this package cannot rename), but `animation-duration` collapses to
+    // near-instant and `animation-iteration-count` to 1, so it no longer spins
+    // continuously.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.reload();
+    const ring = page
+      .getByTestId('circular-progress-indeterminate')
+      .locator('[role="progressbar"]');
+    const duration = await ring.evaluate((el) => getComputedStyle(el, '::after').animationDuration);
+    expect(parseCssMs(duration)).toBeLessThan(1);
   });
 });
