@@ -317,4 +317,66 @@ describe('ApiClient', () => {
       expect(result.item.id).toBe('item-podcast-new-1');
     });
   });
+
+  describe('podcast episode playback (Phase 8 wave C)', () => {
+    it('POSTs to /items/:itemId/play/:episodeId to start an episode session', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              session: {
+                id: 'sess-1',
+                libraryItemId: 'item-dailytech',
+                episodeId: 'ep-dailytech-1',
+                mediaType: 'podcast',
+                displayTitle: 'Pilot',
+                duration: 300,
+                currentTime: 0,
+                audioTracks: [],
+                chapters: [],
+              },
+            }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.playEpisode('item-dailytech', 'ep-dailytech-1');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/items/item-dailytech/play/ep-dailytech-1');
+      expect(init?.method).toBe('POST');
+      expect(result.session.episodeId).toBe('ep-dailytech-1');
+    });
+
+    it('GETs /me/progress for the signed-in user’s progress across every item and episode', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              progress: [
+                {
+                  id: 'p1',
+                  libraryItemId: 'item-dailytech',
+                  episodeId: 'ep-dailytech-1',
+                  duration: 300,
+                  currentTime: 10,
+                  progress: 0.03,
+                  isFinished: false,
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.getMyProgress();
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/me/progress');
+      expect(result.progress).toHaveLength(1);
+      expect(result.progress[0]!.episodeId).toBe('ep-dailytech-1');
+    });
+  });
 });

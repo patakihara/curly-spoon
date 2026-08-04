@@ -77,6 +77,26 @@ export interface AudioTrack {
   mimeType: string | null;
 }
 
+/**
+ * One episode of a subscribed podcast, as returned inside a *library item's* own
+ * `media.episodes` (an expanded `GET /items/:id` fetch) — distinct from
+ * `PodcastFeedEpisode`, which describes an episode in an as-yet-unsubscribed RSS
+ * feed and has no `id` yet. Mirrors `packages/abs-client/src/domain.ts`'s
+ * `PodcastEpisode` field-for-field.
+ */
+export interface PodcastEpisode {
+  id: string;
+  index: number | null;
+  season: string | null;
+  episodeNumber: string | null;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  publishedAt: number | null;
+  duration: number;
+  audioTrack: AudioTrack | null;
+}
+
 export interface MediaSummary {
   kind: 'book' | 'podcast';
   title: string;
@@ -89,6 +109,8 @@ export interface MediaSummary {
   /** Only present on an *expanded* fetch (`?expanded=1`) — absent, not `[]`, otherwise. */
   tracks?: AudioTrack[];
   chapters?: Chapter[];
+  /** Podcast only. Same expanded/minified split as `tracks`/`chapters` above. */
+  episodes?: PodcastEpisode[];
 }
 
 /**

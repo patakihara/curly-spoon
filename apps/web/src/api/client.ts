@@ -13,6 +13,7 @@ import type {
   LibraryItemsPage,
   Library,
   LoginResponse,
+  MediaProgress,
   PlaybackSession,
   PodcastDirectoryResult,
   PodcastFeedPreview,
@@ -174,6 +175,18 @@ export class ApiClient {
     });
   }
 
+  /**
+   * Every `MediaProgress` record for the signed-in user, book and podcast-episode
+   * alike (a book's record has `episodeId: null`). `getItem`'s own `include:
+   * 'progress'` only ever resolves the *item-level* record — for a podcast
+   * container that's not meaningful, since Audiobookshelf tracks progress per
+   * episode — so the podcast detail view reads this list instead and matches
+   * episodes against it itself (`features/podcasts/episodeProgress.ts`).
+   */
+  getMyProgress(signal?: AbortSignal): Promise<{ progress: MediaProgress[] }> {
+    return this.request('/me/progress', { signal });
+  }
+
   // ---------------------------------------------------------------------
   // Playback
   // ---------------------------------------------------------------------
@@ -183,6 +196,24 @@ export class ApiClient {
       method: 'POST',
       signal,
     });
+  }
+
+  /**
+   * Podcast counterpart to `playItem` — opens a session scoped to one episode
+   * rather than the whole item. The returned `PlaybackSession.id` is already
+   * episode-scoped upstream (Audiobookshelf's own play-session API), so
+   * `syncSession`/`closeSession` below need no separate `episodeId` — the same
+   * two calls work unchanged for a book or an episode session.
+   */
+  playEpisode(
+    itemId: string,
+    episodeId: string,
+    signal?: AbortSignal,
+  ): Promise<{ session: PlaybackSession }> {
+    return this.request(
+      `/items/${encodeURIComponent(itemId)}/play/${encodeURIComponent(episodeId)}`,
+      { method: 'POST', signal },
+    );
   }
 
   /**

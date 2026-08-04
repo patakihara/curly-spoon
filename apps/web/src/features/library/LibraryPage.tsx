@@ -111,7 +111,13 @@ export function LibraryPage() {
               interactive
               variant="elevated"
               data-testid={`item-card-${item.id}`}
-              onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: item.id } })}
+              onClick={() =>
+                void navigate(
+                  item.media.kind === 'podcast'
+                    ? { to: '/podcast/$itemId', params: { itemId: item.id } }
+                    : { to: '/item/$itemId', params: { itemId: item.id } },
+                )
+              }
             >
               <h2>{item.media.title}</h2>
               {item.media.authors?.length ? (
