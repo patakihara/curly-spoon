@@ -176,3 +176,45 @@ export const subscribePodcastBodySchema = z.object({
   metadata: podcastSubscribeMetadataSchema.optional(),
   autoDownloadEpisodes: z.boolean().optional(),
 });
+
+// -----------------------------------------------------------------------------
+// Jellyfin music (routes/jellyfin.ts)
+// -----------------------------------------------------------------------------
+
+/** `baseUrl` is optional: after the first successful login it's reused from the stored
+ * `jellyfin` settings row (see routes/jellyfin.ts), same as re-authenticating doesn't
+ * require re-typing the server address. */
+export const jellyfinLoginBodySchema = z.object({
+  baseUrl: z.string().url('baseUrl must be a valid absolute URL').optional(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
+const jellyfinSortOrderSchema = z.enum(['Ascending', 'Descending']);
+
+/** Shared by artists/albums/tracks — mirrors `@auralis/jellyfin-client`'s `LibraryQuery`
+ * field-for-field. `sortBy` is passed through unvalidated, same reasoning as the client
+ * itself: the valid set is server-defined (`ItemSortBy`) and open to server versions
+ * ahead of what this BFF knows about. */
+export const jellyfinLibraryQuerySchema = z.object({
+  parentId: z.string().min(1).optional(),
+  startIndex: z.coerce.number().int().min(0).optional(),
+  limit: z.coerce.number().int().positive().max(500).optional(),
+  sortBy: z.string().optional(),
+  sortOrder: jellyfinSortOrderSchema.optional(),
+});
+
+export const jellyfinAlbumsQuerySchema = jellyfinLibraryQuerySchema.extend({
+  artistId: z.string().min(1).optional(),
+});
+
+export const jellyfinTracksQuerySchema = jellyfinLibraryQuerySchema.extend({
+  albumId: z.string().min(1).optional(),
+});
+
+export const jellyfinSearchQuerySchema = z.object({
+  term: z.string().trim().min(1, 'term is required'),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+
+export const jellyfinItemIdParamSchema = z.object({ itemId: z.string().min(1) });

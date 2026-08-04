@@ -17,6 +17,7 @@ import {
   FAKE_CREDENTIALS,
   type FakeAbsUpstream,
 } from './fakes/fakeAbs.js';
+import { createFakeJellyfinUpstream, FAKE_JELLYFIN_BASE_URL } from './fakes/fakeJellyfin.js';
 
 export interface TestAppContext {
   app: FastifyInstance;
@@ -39,6 +40,7 @@ export function buildTestApp(
   const db = openDatabase(':memory:');
   const sessionSecret = randomBytes(32).toString('hex');
   const fake = createFakeAbsUpstream();
+  const jellyfinFake = createFakeJellyfinUpstream();
 
   const config: AppConfig = {
     port: 0,
@@ -57,12 +59,19 @@ export function buildTestApp(
   }
 
   const providerFetch = options.providerFetch;
-  const fetchFn: FetchLike = providerFetch
-    ? async (input, init) => {
-        const url = new URL(input);
-        return url.origin === FAKE_BASE_URL ? fake.fetch(input, init) : providerFetch(input, init);
-      }
-    : fake.fetch;
+  // Jellyfin is routed first and unconditionally, ahead of the ABS/providerFetch split
+  // below — that split is left byte-identical to before this route existed, so
+  // `routes/requests.test.ts` (which relies on `providerFetch` for its own fake
+  // Prowlarr/qBittorrent instances) cannot regress.
+  const fetchFn: FetchLike = async (input, init) => {
+    const url = new URL(input);
+    if (url.origin === FAKE_JELLYFIN_BASE_URL) return jellyfinFake.fetch(input, init);
+    return providerFetch
+      ? url.origin === FAKE_BASE_URL
+        ? fake.fetch(input, init)
+        : providerFetch(input, init)
+      : fake.fetch(input, init);
+  };
 
   const app = buildServer({ db, config, fetch: fetchFn, logger: false, absRetryBaseDelayMs: 1 });
   return { app, fake, sessionSecret };
