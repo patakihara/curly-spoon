@@ -172,8 +172,28 @@ of an extra spawn is a small constant; the quadratic is what dominates. Splittin
 
 ## Autonomy
 
-Work autonomously. Make ordinary decisions, state them, keep moving. Escalate only what
-genuinely changes the product. Do not stop to ask permission for routine calls.
+**The only thing that stops a session is an explicit request to stop.** Not a finished
+phase, not a wave boundary, not a clean CI run, not "a good place to hand off."
+
+**Finishing a unit of work is not a reason to stop — it is the cue to start the next one.**
+Pick the next unfinished item from `docs/ROADMAP.md` and begin, in the same turn.
+
+**A report is not a stopping point.** Report what landed and keep going; do not end a turn
+with a summary and an implicit request for direction.
+
+**Do not invent a justification for stopping.** Deferring to a "priority the user set" that
+the user did not ask you to wait on, treating the compaction guidance as a reason to end a
+session rather than to compact and continue, and stopping on budget when the budget is
+fine — none of these are real stops.
+
+**The one hard stop that is real is the plan-usage ceiling** (see "Plan usage" above), which
+is enforced by hooks and does not need a session's cooperation. Under it, keep working.
+Between 85% and 90%, land the work and hand off as that section already describes — that is
+the exception, and it is enforced, not discretionary.
+
+Genuine escalation still exists and is narrow: something that **changes the product**, or a
+decision the user alone can make. State it, and — where any part of the work can proceed
+without the answer — keep going on that part rather than blocking.
 
 ## Delivery
 

@@ -1,5 +1,11 @@
 # Handover
 
+## Autonomy — read this before stopping
+
+A session stops only on an explicit request to stop. A finished phase, wave, or CI run is
+the cue to start the next roadmap item, not a reason to end the turn — see `CLAUDE.md`'s
+"Autonomy" section for the full rule and the one real exception (the plan-usage ceiling).
+
 ## Workflow check — resolved 2026-08-04
 
 An earlier session mishandled `EnterWorktree`/subagent isolation, spawned an unsupervised
