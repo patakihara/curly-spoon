@@ -117,6 +117,31 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: 3,
+    name: 'jellyfin-secrets',
+    up: (db) => {
+      db.exec(`
+        -- Per-user Jellyfin access token, encrypted at rest (db/crypto.ts) — see
+        -- db/jellyfinSecretsRepo.ts's file comment for why this is a new, additive table
+        -- rather than a row in \`secrets\`: Jellyfin authenticates per account, same as
+        -- Audiobookshelf, so the credential belongs to whoever signed in (not the
+        -- installation, which is why it isn't in \`provider_configs\` either — that table's
+        -- \`kind\` column is typed to the request-pipeline's two provider roles and
+        -- represents a genuinely different kind of thing). \`secrets\` itself is left
+        -- untouched: its schema only ever supported one credential per user
+        -- (\`PRIMARY KEY (user_id)\`), and it is the read path every Audiobookshelf-backed
+        -- request goes through — widening it is a real schema migration with an
+        -- untestable (always-empty, in this harness) data-copy step, for no benefit over
+        -- a second table scoped to exactly what's new here.
+        CREATE TABLE IF NOT EXISTS jellyfin_secrets (
+          user_id    TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          ciphertext TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {
