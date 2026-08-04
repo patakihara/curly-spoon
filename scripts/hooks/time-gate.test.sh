@@ -140,6 +140,58 @@ status=$?
   ok "fail-open: unwritable queue path allows silently, no crash" ||
   fail "fail-open: unwritable queue path did not allow silently (exit=$status, out=$out)"
 
+# --- AURALIS_AUTONOMOUS exemption -----------------------------------------------
+#
+# Machine-started sessions (autorun's own kickoff prompt, and every wake-up an
+# autonomous session schedules for itself) must never be queued-and-blocked —
+# that would start a session, silently do nothing, and log success. The
+# exemption must (a) actually exempt outside the window, (b) not write the
+# queue file while doing so — a version that stayed silent but still queued
+# would look correct from the caller's side and silently accumulate junk,
+# (c) leave in-window behaviour unchanged, (d) not regress the non-exempt
+# path, and (e) treat an empty value as not set, since an empty marker is not
+# an opt-in.
+
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+out="$(printf '%s' '{"prompt":"autorun kickoff","session_id":"auto1"}' |
+  AURALIS_AUTONOMOUS=1 AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
+status=$?
+[ "$status" -eq 0 ] && ok "autonomous, outside window: exits 0" || fail "autonomous, outside window: exit was $status"
+[ -z "$out" ] && ok "autonomous, outside window: prints nothing" || fail "autonomous, outside window: unexpected output: $out"
+[ -f "$q" ] && fail "autonomous, outside window: must not write the queue file" || ok "autonomous, outside window: no queue file written"
+rm -rf "$qdir"
+
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+out="$(printf '%s' '{"prompt":"autorun kickoff","session_id":"auto2"}' |
+  AURALIS_AUTONOMOUS=1 AURALIS_TIME_GATE_NOW="2026-08-03T14:00:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
+status=$?
+[ "$status" -eq 0 ] && ok "autonomous, inside window: exits 0" || fail "autonomous, inside window: exit was $status"
+[ -z "$out" ] && ok "autonomous, inside window: prints nothing" || fail "autonomous, inside window: unexpected output: $out"
+[ -f "$q" ] && fail "autonomous, inside window: must not write the queue file" || ok "autonomous, inside window: no queue file written"
+rm -rf "$qdir"
+
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+out="$(printf '%s' '{"prompt":"a human prompt","session_id":"s4"}' |
+  AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
+[ -n "$out" ] && ok "AURALIS_AUTONOMOUS unset, outside window: still blocks (regression guard)" ||
+  fail "AURALIS_AUTONOMOUS unset, outside window: expected a block payload, got silence"
+[ -f "$q" ] && ok "AURALIS_AUTONOMOUS unset, outside window: still queues" ||
+  fail "AURALIS_AUTONOMOUS unset, outside window: queue file missing"
+rm -rf "$qdir"
+
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+out="$(printf '%s' '{"prompt":"a human prompt","session_id":"s5"}' |
+  AURALIS_AUTONOMOUS="" AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
+[ -n "$out" ] && ok "AURALIS_AUTONOMOUS empty string, outside window: still blocks (empty is not an opt-in)" ||
+  fail "AURALIS_AUTONOMOUS empty string, outside window: expected a block payload, got silence"
+[ -f "$q" ] && ok "AURALIS_AUTONOMOUS empty string, outside window: still queues" ||
+  fail "AURALIS_AUTONOMOUS empty string, outside window: queue file missing"
+rm -rf "$qdir"
+
 # --- never gated on anything but UserPromptSubmit: registration check ----------
 #
 # settings.local.json is gitignored by design (it's a personal override, never
