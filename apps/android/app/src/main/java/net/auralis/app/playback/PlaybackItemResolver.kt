@@ -84,6 +84,46 @@ class PlaybackItemResolver(
     }
 
     /**
+     * The episode-scoped counterpart to [resolve] — a podcast episode is not reachable through
+     * [BrowseIds]'s book/series id scheme at all (that scheme is Android Auto's book browse
+     * tree only; podcast Android Auto nodes are a later wave, per `docs/ROADMAP.md` §8), so this
+     * is a separate entry point rather than another `mediaId` prefix [playableItemId] would need
+     * to learn. [net.auralis.app.features.player.PlayerViewModel.playEpisode] is the only
+     * caller today.
+     *
+     * Shares [buildResolvedPlayback] with [resolve] unchanged: [ApiClient.playEpisode] returns
+     * the same [net.auralis.app.data.model.PlaybackSession] shape [ApiClient.playItem] does —
+     * confirmed directly in `packages/abs-client/src/client.ts`, where `playItem`/`playEpisode`
+     * decode the *same* `rawPlaybackSessionSchema` through the *same* `normalizePlaybackSession`
+     * — just already scoped to one episode's single track, so first-track selection, file-id
+     * extraction and metadata enrichment all apply identically. The resulting track URL
+     * ([ApiClient.audioTrackUrl]) is built from [itemId] — the *podcast container's* id, not the
+     * episode's — matching `apps/web/src/features/player/useAudioElement.ts`'s
+     * `api.audioTrackUrl(currentItem.id, fileId)`, and `apps/server/src/routes/media.ts`'s
+     * `/media/:itemId/track/:fileId` route does no book/podcast validation of its own: it's a
+     * pure range-forwarding proxy to Audiobookshelf's own `/api/items/:id/file/:fileId`, which
+     * resolves a fileId under whichever item owns it, book or podcast alike.
+     * [ResolvedPlayback.title] ends up as the episode's own title (`session.displayTitle`) and
+     * [ResolvedPlayback.artist] as the podcast's author (from the enclosing
+     * [net.auralis.app.data.model.LibraryItem], fetched by [itemId] the same way a book's does)
+     * — there is no separate "episode author" concept.
+     */
+    suspend fun resolveEpisode(
+        itemId: String,
+        episodeId: String,
+    ): ResolvedPlayback? {
+        return try {
+            val session = apiClient.playEpisode(itemId, episodeId)
+            val track = firstPlayableTrack(session) ?: return null
+            val fileId = fileIdFromContentUrl(track.contentUrl) ?: return null
+            val trackUrl = apiClient.audioTrackUrl(itemId, fileId)
+            buildResolvedPlayback(episodeMediaId(itemId, episodeId), itemId, trackUrl, session)
+        } catch (e: ApiException) {
+            null
+        }
+    }
+
+    /**
      * The browse tree's folder ids ([BrowseIds.ROOT]/[BrowseIds.CONTINUE]/[BrowseIds.BOOKS]/
      * [BrowseIds.SERIES]) carry no prefix the way a series node does, so they need their own
      * explicit rejection here rather than falling through [BrowseIds.isSeriesNode]'s check — a
@@ -99,6 +139,17 @@ class PlaybackItemResolver(
                 mediaId == BrowseIds.BOOKS || mediaId == BrowseIds.SERIES -> null
             else -> mediaId
         }
+
+    /**
+     * The controller-facing identity for a playing episode — distinct from a book's bare item
+     * id so the two can never collide in whatever keys by `mediaId` downstream (e.g. a future
+     * "now playing" lookup). Not one of [BrowseIds]'s prefixes deliberately: those are Android
+     * Auto browse-tree ids specifically, and this id is never handed to that tree.
+     */
+    private fun episodeMediaId(
+        itemId: String,
+        episodeId: String,
+    ): String = "episode:$itemId:$episodeId"
 
     /**
      * [PlaybackSession] (from `POST /items/:id/play`) carries a display title but no author —

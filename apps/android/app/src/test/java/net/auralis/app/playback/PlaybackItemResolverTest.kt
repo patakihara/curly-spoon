@@ -240,4 +240,106 @@ class PlaybackItemResolverTest {
 
             assertEquals(0L, resolved?.startPositionMs)
         }
+
+    // -------------------------------------------------------------------------------------
+    // resolveEpisode — the podcast-episode counterpart to resolve(). Uses the same
+    // buildResolvedPlayback path, so only what genuinely differs (which endpoint is called,
+    // the mediaId shape) gets its own coverage here; title/artist/artwork/startPositionMs
+    // enrichment is already covered above.
+    // -------------------------------------------------------------------------------------
+
+    /** `POST /items/{itemId}/play/{episodeId}` response — the episode-scoped counterpart to
+     * [enqueuePlayItem]. */
+    private fun enqueuePlayEpisode(
+        itemId: String,
+        episodeId: String,
+        displayTitle: String = "Sample Episode",
+        audioTracksJson: String = """[{"index":0,"startOffset":0.0,"duration":100.0,"contentUrl":"/api/items/$itemId/file/f1"}]""",
+        currentTime: Double = 0.0,
+    ) {
+        enqueue(
+            """
+            {"session":{"id":"s1","libraryItemId":"$itemId","episodeId":"$episodeId","mediaType":"podcast_episode",
+             "displayTitle":"$displayTitle","duration":100.0,"currentTime":$currentTime,
+             "audioTracks":$audioTracksJson,"chapters":[]}}
+            """.trimIndent(),
+        )
+    }
+
+    @Test
+    fun `resolveEpisode calls the episode-scoped play endpoint, not playItem's`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayEpisode(itemId = "pod1", episodeId = "ep1")
+            enqueueLibraryItem(itemId = "pod1", title = "Sample Podcast")
+
+            resolver.resolveEpisode("pod1", "ep1")
+
+            val playRequest = mockWebServer.takeRequest()
+            assertEquals("/api/v1/items/pod1/play/ep1", playRequest.path)
+        }
+
+    @Test
+    fun `resolveEpisode resolves to the expected audioTrackUrl`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayEpisode(itemId = "pod1", episodeId = "ep1")
+            enqueueLibraryItem(itemId = "pod1", title = "Sample Podcast")
+
+            val resolved = resolver.resolveEpisode("pod1", "ep1")
+
+            assertEquals("${baseUrl.trimEnd('/')}/api/v1/media/pod1/track/f1", resolved?.uri)
+        }
+
+    @Test
+    fun `resolveEpisode's mediaId encodes both the item id and the episode id`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayEpisode(itemId = "pod1", episodeId = "ep1")
+            enqueueLibraryItem(itemId = "pod1", title = "Sample Podcast")
+
+            val resolved = resolver.resolveEpisode("pod1", "ep1")
+
+            assertEquals("episode:pod1:ep1", resolved?.mediaId)
+        }
+
+    @Test
+    fun `resolveEpisode's title is the episode's own displayTitle, not the podcast container's`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayEpisode(itemId = "pod1", episodeId = "ep1", displayTitle = "Episode 12: The Big One")
+            enqueueLibraryItem(itemId = "pod1", title = "Sample Podcast", author = "Podcast Host")
+
+            val resolved = resolver.resolveEpisode("pod1", "ep1")
+
+            assertEquals("Episode 12: The Big One", resolved?.title)
+            assertEquals("Podcast Host", resolved?.artist)
+        }
+
+    @Test
+    fun `resolveEpisode returns null when the session has no playable track`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayEpisode(itemId = "pod1", episodeId = "ep1", audioTracksJson = "[]")
+            // No libraryItem response enqueued: resolveEpisode must return before spending it.
+
+            val result = resolver.resolveEpisode("pod1", "ep1")
+
+            assertNull(result)
+        }
+
+    @Test
+    fun `resolveEpisode returns null, not throwing, when playEpisode errors`() =
+        runTest {
+            withBaseUrlConfigured()
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("""{"error":{"code":"not_found","message":"No such episode"}}"""),
+            )
+
+            val result = resolver.resolveEpisode("pod1", "missing-ep")
+
+            assertNull(result)
+        }
 }
