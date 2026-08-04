@@ -121,6 +121,23 @@ data class SeriesSequence(
     val sequence: String? = null,
 )
 
+/** One episode of a podcast item's `media.episodes` — only present on an *expanded* fetch,
+ * same split as `MediaSummary.tracks`/`chapters` for a book. Mirrors
+ * `packages/abs-client/src/domain.ts`'s `PodcastEpisode` field-for-field. */
+@Serializable
+data class PodcastEpisode(
+    val id: String,
+    val index: Int? = null,
+    val season: String? = null,
+    val episodeNumber: String? = null,
+    val title: String,
+    val subtitle: String? = null,
+    val description: String? = null,
+    val publishedAt: Long? = null,
+    val duration: Double,
+    val audioTrack: AudioTrack? = null,
+)
+
 @Serializable
 data class MediaSummary(
     val kind: String,
@@ -134,6 +151,15 @@ data class MediaSummary(
     val tracks: List<AudioTrack>? = null,
     val chapters: List<Chapter>? = null,
     val series: List<SeriesSequence>? = null,
+    /** Podcast only; absent on a book. Verified against `normalizeMedia` in
+     * `packages/abs-client/src/normalize.ts` — it always fills this with
+     * `numEpisodes ?? episodes?.length ?? 0`, so it is genuinely present regardless of
+     * expanded/minified, unlike `episodes` below. Nullable anyway, per house style: decoding
+     * degrades rather than throws if a future server response ever omits it. */
+    val numEpisodes: Int? = null,
+    /** Podcast only, and only on an *expanded* fetch — same minified/expanded split as
+     * `tracks`/`chapters` above. `null` means "not fetched", not "no episodes". */
+    val episodes: List<PodcastEpisode>? = null,
 )
 
 /** A series and the books in it. Mirrors `packages/abs-client/src/domain.ts`'s `Series`. */
@@ -338,4 +364,157 @@ data class RequestsResponse(
 @Serializable
 data class RequestResponse(
     val request: BookRequest,
+)
+
+// -----------------------------------------------------------------------------
+// Podcast discovery (routes/podcasts.ts) — search, feed preview, subscribe
+// -----------------------------------------------------------------------------
+
+/**
+ * One result from GET /podcasts/search, the iTunes-backed podcast directory. Not a
+ * library entity — `itunesId`/`itunesArtistId` are iTunes's own numeric ids, kept as
+ * `Long` (not `Int`) for the same reason `Release.sizeBytes`/`publishedAt` are: an
+ * upstream id has no guaranteed upper bound this codebase controls.
+ */
+@Serializable
+data class PodcastDirectoryResult(
+    val itunesId: Long,
+    val itunesArtistId: Long? = null,
+    val title: String,
+    val artistName: String? = null,
+    val description: String? = null,
+    val descriptionPlain: String? = null,
+    val releaseDate: String? = null,
+    val genres: List<String> = emptyList(),
+    val cover: String? = null,
+    val trackCount: Int,
+    val feedUrl: String? = null,
+    val pageUrl: String? = null,
+    val explicit: Boolean,
+)
+
+/** GET /podcasts/search response envelope. */
+@Serializable
+data class PodcastSearchResponse(
+    val results: List<PodcastDirectoryResult>,
+)
+
+/** One `podcast:chapters` chapter, already parsed into seconds by Audiobookshelf before a
+ * feed-preview response reaches the BFF. Nested in [PodcastFeedEpisode.chapters]. */
+@Serializable
+data class PodcastFeedChapter(
+    val id: Int,
+    val title: String,
+    val start: Double,
+    val end: Double,
+)
+
+/** The raw audio-file reference for one [PodcastFeedEpisode], straight from its RSS `<enclosure>`. */
+@Serializable
+data class PodcastFeedEnclosure(
+    val url: String,
+    val type: String? = null,
+    val length: String? = null,
+)
+
+/**
+ * One episode as it appears in an as-yet-unsubscribed RSS feed (POST /podcasts/feed) — not
+ * yet a library entity, so no `id`. `duration` stays the raw feed string (feeds format it
+ * inconsistently, e.g. `"3600"` vs `"1:00:00"`) while `durationSeconds` is Audiobookshelf's
+ * own already-parsed value — see `packages/abs-client/src/domain.ts`'s `PodcastFeedEpisode`
+ * doc comment for the full reasoning.
+ */
+@Serializable
+data class PodcastFeedEpisode(
+    val title: String,
+    val subtitle: String? = null,
+    val description: String? = null,
+    val pubDate: String? = null,
+    val publishedAt: Long? = null,
+    val episodeType: String? = null,
+    val season: String? = null,
+    val episodeNumber: String? = null,
+    val author: String? = null,
+    val duration: String? = null,
+    val durationSeconds: Double? = null,
+    val explicit: Boolean,
+    val enclosure: PodcastFeedEnclosure? = null,
+    val guid: String? = null,
+    val chaptersUrl: String? = null,
+    val chapters: List<PodcastFeedChapter> = emptyList(),
+)
+
+/** A previewed RSS feed, before subscribing — the `preview` object POST /podcasts/feed returns. */
+@Serializable
+data class PodcastFeedPreview(
+    val title: String? = null,
+    val author: String? = null,
+    val description: String? = null,
+    val descriptionPlain: String? = null,
+    val feedUrl: String? = null,
+    val image: String? = null,
+    val categories: List<String> = emptyList(),
+    val language: String? = null,
+    val explicit: Boolean,
+    val numEpisodes: Int,
+    val episodes: List<PodcastFeedEpisode> = emptyList(),
+    val pubDate: String? = null,
+    val link: String? = null,
+)
+
+/** POST /podcasts/feed response envelope. */
+@Serializable
+data class PodcastFeedPreviewResponse(
+    val preview: PodcastFeedPreview,
+)
+
+/** POST /podcasts/feed request body. */
+@Serializable
+data class PreviewPodcastFeedBody(
+    val rssFeed: String,
+)
+
+/** Mirrors the BFF's `podcastSubscribeMetadataSchema` (routes/schemas.ts) field-for-field —
+ * everything a directory search result or a feed preview can seed onto a new subscription. */
+@Serializable
+data class PodcastSubscribeMetadata(
+    val author: String? = null,
+    val description: String? = null,
+    val releaseDate: String? = null,
+    val imageUrl: String? = null,
+    val genres: List<String>? = null,
+    val language: String? = null,
+    val explicit: Boolean? = null,
+    val itunesPageUrl: String? = null,
+    val itunesId: Long? = null,
+)
+
+/** POST /podcasts request body. Mirrors `subscribePodcastBodySchema` (routes/schemas.ts). */
+@Serializable
+data class SubscribePodcastBody(
+    val libraryId: String,
+    val folderId: String,
+    val folderPath: String,
+    val rssFeed: String,
+    val title: String,
+    val metadata: PodcastSubscribeMetadata? = null,
+    val autoDownloadEpisodes: Boolean? = null,
+)
+
+/** POST /podcasts response envelope — the newly created library item. */
+@Serializable
+data class SubscribePodcastResponse(
+    val item: LibraryItem,
+)
+
+/**
+ * GET /me/progress response envelope — every [MediaProgress] record for the signed-in user,
+ * book and podcast-episode alike (a book's record has `episodeId == null`). Audiobookshelf
+ * never populates item-level progress on a podcast container, since it tracks progress per
+ * `(item, episode)` pair instead — see `apps/server/src/routes/progress.ts` and
+ * `apps/web/src/features/podcasts/episodeProgress.ts` for the same reasoning on the web side.
+ */
+@Serializable
+data class MyProgressResponse(
+    val progress: List<MediaProgress>,
 )
