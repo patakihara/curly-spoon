@@ -16,3 +16,25 @@
   white-space: nowrap;
   border: 0;
 }
+
+/*
+ * Mantine's default (`md`) button height (`--button-height-md: 42px`) is below the
+ * 48px minimum touch target. `sm`/`lg` buttons are deliberately compact elsewhere in
+ * the app and must not be forced to 48px, so this only targets the `md` case.
+ */
+.m3-button[data-m3-size='md'] {
+  min-height: 48px;
+}
+
+/*
+ * M3 Expressive shape-morph: the button's corner radius springs from fully round to
+ * a smaller radius while pressed. Restored from the pre-Mantine `.m3-button` rules
+ * (see git history) using the same design tokens.
+ */
+.m3-button {
+  border-radius: var(--m3-shape-full);
+  transition: border-radius var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
+}
+.m3-button:active {
+  border-radius: var(--m3-shape-md);
+}

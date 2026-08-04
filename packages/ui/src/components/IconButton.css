@@ -5,3 +5,18 @@
  * `./IconButton.css` import in IconButton.tsx has somewhere to point, in case a future
  * override needs to land here again.
  */
+
+/*
+ * M3 Expressive toggle-glyph spring: the glyph scales up when the button enters its
+ * `selected` state. Restored from the pre-Mantine `.m3-icon-button__glyph` rules (see
+ * git history) using the same design tokens. Descendant combinator, not a direct-child
+ * one, since Mantine's `ActionIcon` may wrap children in its own inner span.
+ */
+.m3-icon-button__glyph {
+  display: inline-flex;
+  transition: transform var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
+  transform: scale(1);
+}
+[aria-pressed='true'] .m3-icon-button__glyph {
+  transform: scale(1.15);
+}

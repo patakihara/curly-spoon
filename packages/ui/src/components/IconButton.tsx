@@ -97,7 +97,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       }}
       {...rest}
     >
-      {children}
+      <span className="m3-icon-button__glyph">{children}</span>
     </ActionIcon>
   );
 });

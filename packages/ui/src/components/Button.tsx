@@ -82,9 +82,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       size={size}
       loading={loading}
       disabled={disabled}
+      aria-busy={loading}
       leftSection={leadingIcon}
       rightSection={trailingIcon}
-      className={className}
+      data-m3-size={size}
+      className={['m3-button', className].filter(Boolean).join(' ')}
       style={{ ...VARIANT_STYLE_OVERRIDE[variant], ...style }}
       {...rest}
     >

@@ -78,7 +78,9 @@ test('the Duration sort chip reorders the cards shortest to longest', async ({ p
     'The Hobbit',
   ]);
 
-  await page.getByTestId('sort-duration').getByRole('button').click();
+  // Mantine's Chip is a styled checkbox (`<input type="checkbox">` + `<label>`), not a
+  // `<button>` — click the label, same as chip.spec.ts's fix for the identical DOM drift.
+  await page.getByTestId('sort-duration').locator('label').first().click();
 
   // The Hobbit (660s) < The Fellowship of the Ring (720s) < Dune (1260s) — a
   // genuinely different order from the title default, not a coincidental match.
