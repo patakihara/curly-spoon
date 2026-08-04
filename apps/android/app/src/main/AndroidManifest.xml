@@ -4,6 +4,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- AuralisDownloadService (Wave F2a) targets foregroundServiceType="dataSync" — Android's
+         own foreground-service-type docs list "downloading or uploading data ... network
+         operations, transfer between device and cloud" as exactly that type's purpose, and
+         every foreground service type has required its own matching FOREGROUND_SERVICE_* grant
+         since API 34, same as FOREGROUND_SERVICE_MEDIA_PLAYBACK above already does. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Required (API 33+) for AuralisDownloadService's progress notification to actually be
+         visible — declared here so a future UI wave can request it at runtime; nothing in this
+         wave requests it yet (see AuralisDownloadService's own doc comment), so until then the
+         notification is silently invisible while the download itself still proceeds normally. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".AuralisApplication"
@@ -37,6 +48,15 @@
                 <action android:name="androidx.media3.session.MediaLibraryService" />
             </intent-filter>
         </service>
+
+        <!-- Wave F2a. Not exported: unlike AuralisMediaLibraryService above (which Android Auto,
+             an external app, must bind to), nothing outside this app ever needs to start or bind
+             to the download service directly — see AuralisDownloadService's own doc comment for
+             why it declares no PlatformScheduler-related intent-filter either. -->
+        <service
+            android:name=".playback.AuralisDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
     </application>
 
