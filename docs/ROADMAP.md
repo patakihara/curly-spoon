@@ -389,8 +389,13 @@ web and Android together.
 ### 10 — Release polish
 
 Performance budgets enforced in CI (bundle size, Lighthouse on the desktop and mobile
-layouts), a full accessibility audit, multi-arch image publishing (amd64 + arm64, so it
-runs on a Pi or a NAS as happily as on a desktop), and release automation.
+layouts), a full accessibility audit, and the rest of the release story. CI already
+publishes `linux/amd64` images to GHCR (`ghcr.io/patakihara/auralis:latest` and
+`:${{ github.sha }}`) on every green build of the working branch, which is what
+`compose.yaml` and a server-side Watchtower pull from — what's left here is the `arm64`
+half (so it runs on a Pi or a NAS as happily as on a desktop, which needs QEMU and roughly
+triples build time) plus release automation proper (tags, changelogs, a `main`-based flow
+instead of publishing straight off the working branch).
 
 A final holistic pass of the `docs/DESIGN.md` reference-app comparison belongs here too —
 not just the per-surface checks noted against phase 7's waves above, but the whole app,
