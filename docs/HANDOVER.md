@@ -221,13 +221,12 @@ models, reviewed against the real server source with no defects found. The brows
 itself (Wave E2) ships `Continue`/`Books`/`Series` only, deliberately without a
 `Downloaded` node — no offline-downloads feature exists yet anywhere in `apps/android`,
 confirmed by grep; see `docs/ROADMAP.md` §7 for the full reasoning. **Wave E2a (read-only
-browse tree) is done** (`785391e`, crash fix `316cc33`, merged `7365816`), and **Wave E2b
-(browse items now actually playable) is done** (`371f48d`, fix `e05714a`), with both `CI`
-and `Android` green on `8ae9468`. **Next: wave E2c** (voice search + playback resumption) —
-no spec written yet, and it inherits E2b's hard-won constraint: `MediaItem` construction is
-unit-untestable in this project (the stub `android.jar` throws on `Uri.parse`), so any
-decidable logic must live in a Media3-free class, with `MediaItem`/`MediaMetadata` built
-only as pure mapping in `playback/MediaItemConversions.kt`.
+browse tree) is done** (`785391e`, crash fix `316cc33`, merged `7365816`), **Wave E2b
+(browse items now actually playable) is done** (`371f48d`, fix `e05714a`), and **Wave E2c
+(voice search + playback resumption) is done** (`c79a1a7`, merged `f924c47`), with `CI` and
+`Android` green on `f924c47`. **This completes Wave E — Android Auto is feature-complete as
+scoped**, but unverified on real hardware: no Desktop Head Unit or car has exercised it, and
+neither can CI.
 
 **Two assumptions in the browse tree are unverified against a real server**, both flagged in
 the code's own comments: the continue-listening shelf is found by a case-insensitive
