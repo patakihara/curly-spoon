@@ -220,9 +220,10 @@ additions (`libraryItems`/`librarySeries`/`searchLibrary`/`libraryItem`) and mat
 models, reviewed against the real server source with no defects found. The browse tree
 itself (Wave E2) ships `Continue`/`Books`/`Series` only, deliberately without a
 `Downloaded` node — no offline-downloads feature exists yet anywhere in `apps/android`,
-confirmed by grep; see `docs/ROADMAP.md` §7 for the full reasoning. **Next: wave E2**
-(`MediaLibrarySession.Callback` overrides + a shared, non-`ViewModel` playback-item
-resolver) — no spec written yet.
+confirmed by grep; see `docs/ROADMAP.md` §7 for the full reasoning. **Wave E2a (read-only
+browse tree) is done** (`785391e`, crash fix `316cc33`, merged `7365816`). **Next: wave
+E2b** — making browse items actually playable via an `onAddMediaItems` override and a
+shared, non-`ViewModel` `PlaybackItemResolver` — no spec written yet.
 
 **Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
 against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe

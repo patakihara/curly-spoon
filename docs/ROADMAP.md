@@ -317,15 +317,30 @@ schemas}.ts`, `packages/abs-client/src/{client,domain,normalize}.ts`), not just 
     wave can add the node later without restructuring what E ships now. `Podcasts`/`Music`
     are likewise out for the same reason (phases 8/9 aren't done) — root ships as
     `Continue`/`Books`/`Series` only, to be extended as sibling waves land.
-  - **Wave E2 — browse tree + voice + resumption: not started.** Needs
-    `MediaLibrarySession.Callback` overrides (`onGetLibraryRoot`/`onGetChildren`/
-    `onGetItem`/`onSearch`/`onGetSearchResult`), a plain (non-`ViewModel`) helper reading
-    `AppContainer.apiClient` directly since `MediaLibraryService` has no `ViewModelStore`,
-    and extracting `PlayerViewModel.playItem`'s MediaItem-building steps (`playItem` →
-    `firstPlayableTrack` → `fileIdFromContentUrl` → `audioTrackUrl` → build `MediaItem`)
-    into that shared helper rather than duplicating it — `PlayerViewModel` currently only
-    sets `MediaMetadata.title`, nothing else, so Auto's transport surface would show a bare
-    title with no artist/artwork until this wave enriches it. No spec written yet.
+  - **Wave E2a — read-only browse tree: done (`785391e`, crash fix `316cc33`).**
+    `BrowseTree.kt` (`BrowseFolder`/`BrowseBook`/`BrowseIds`/`BrowseTreeRepository`, free of
+    any Media3 import) plus `AuralisMediaLibraryService`'s inner `BrowseTreeCallback`, with
+    three overrides — `onGetLibraryRoot`, `onGetChildren`, `onGetItem` — bridging the
+    repository's suspend API into Media3's `ListenableFuture` contract. Root ships
+    `Continue`/`Books`/`Series` only, per the no-`Downloaded` scope decision above.
+    Independent review caught a real defect before the crash fix landed: `onGetChildren`
+    ignored Media3's `page`/`pageSize` arguments and returned the whole result list
+    unbounded, which crashes/misbehaves in Media3.
+  - **Wave E2b — make browse items actually playable: next.** E2a's tree renders in Auto
+    but nothing plays from it: a controller taps a book and sends back a `MediaItem`
+    carrying only a `mediaId` and no playable URI, and `BrowseTreeCallback` has no
+    `onAddMediaItems` override to resolve it. Adds a plain (non-`ViewModel`)
+    `PlaybackItemResolver`, reading `AppContainer.apiClient` directly since
+    `MediaLibraryService` has no `ViewModelStore`, that turns a browse `mediaId` into a
+    fully-populated `MediaItem` (`playItem` → `firstPlayableTrack` → `fileIdFromContentUrl`
+    → `audioTrackUrl` → enriched `MediaMetadata`), used by both the service callback and
+    `PlayerViewModel` — metadata construction currently has two diverging sites
+    (`AuralisMediaLibraryService` builds title/subtitle/artwork for browse items;
+    `PlayerViewModel.playItem` sets only `MediaMetadata.title`), and this wave collapses
+    them into one. No spec written yet.
+  - **Wave E2c — voice search + playback resumption: not started.** `onSearch`/
+    `onGetSearchResult` (so "play <title>" works hands-free) and `onPlaybackResumption`
+    (Auto asks for a recent item after a reboot, before the phone is unlocked).
 
 #### Android Auto is a design constraint, not a feature toggle
 
