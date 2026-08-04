@@ -188,4 +188,43 @@ class DownloadRepositoryTest {
             assertTrue(downloadEngine.cancelCalls.isEmpty())
             assertTrue(repository.keptOfflineItemIds().isEmpty())
         }
+
+    @Test
+    fun `enqueue against an unavailable engine returns Unavailable without ever calling the API`() =
+        runTest {
+            // Deliberately no `enqueuePlayItem` stub queued: an unavailable engine must short-circuit
+            // before the network call, so if this test needed one, `apiClient.playItem` would throw
+            // rather than the repository silently proceeding past the availability check.
+            val unavailableEngine = FakeDownloadEngine(isAvailable = false)
+            val repositoryWithUnavailableEngine = DownloadRepository(apiClient, keyValueStore, unavailableEngine)
+
+            val result = repositoryWithUnavailableEngine.enqueue("item1")
+
+            assertEquals(DownloadEnqueueResult.Unavailable, result)
+            assertEquals(0, mockWebServer.requestCount)
+        }
+
+    @Test
+    fun `enqueue against an unavailable engine never calls the engine and leaves the kept-offline set empty`() =
+        runTest {
+            val unavailableEngine = FakeDownloadEngine(isAvailable = false)
+            val repositoryWithUnavailableEngine = DownloadRepository(apiClient, keyValueStore, unavailableEngine)
+
+            repositoryWithUnavailableEngine.enqueue("item1")
+
+            assertTrue(unavailableEngine.enqueueCalls.isEmpty())
+            assertTrue(repositoryWithUnavailableEngine.keptOfflineItemIds().isEmpty())
+        }
+
+    @Test
+    fun `cancel against an unavailable engine is a harmless no-op that leaves the kept-offline set empty`() =
+        runTest {
+            val unavailableEngine = FakeDownloadEngine(isAvailable = false)
+            val repositoryWithUnavailableEngine = DownloadRepository(apiClient, keyValueStore, unavailableEngine)
+
+            repositoryWithUnavailableEngine.cancel("item1")
+
+            assertTrue(unavailableEngine.cancelCalls.isEmpty())
+            assertTrue(repositoryWithUnavailableEngine.keptOfflineItemIds().isEmpty())
+        }
 }
