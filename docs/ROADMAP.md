@@ -289,9 +289,10 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
   it; the request list's own `weight(1f)` was already correct).
   `./gradlew test assembleDebug` passed clean on the first real compile, six new
   `RequestsViewModelTest` cases included.
-- **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
-  see below for why this can't be bolted on after the fact. Split into sub-waves the same
-  way phase 6's requests work was, since the data `ApiClient` had was insufficient for a
+- **Wave E — Android Auto: complete (`f924c47`).** Browse tree, `onPlayFromSearch`/
+  `onSearch`, playback resumption — see below for why this can't be bolted on after the
+  fact. Split into sub-waves the same way phase 6's requests work was, since the data
+  `ApiClient` had was insufficient for a
   browse tree at all.
   - **Wave E1 — data layer prep: done (`7f887dd`).** `ApiClient` had no way to list a
     library's items, list its series, search it, or fetch a single item's expanded detail
@@ -355,11 +356,41 @@ setUri(String)` reaches `android.net.Uri.parse`, and this project's unit tests r
     so any decidable playback logic must live in a Media3-free class, with conversion to
     `MediaItem` kept as pure mapping in its own file.** Both `CI` and `Android` workflows
     are green on `8ae9468`.
-  - **Wave E2c — voice search + playback resumption: not started.** `onSearch`/
-    `onGetSearchResult` (so "play <title>" works hands-free) and `onPlaybackResumption`
-    (Auto asks for a recent item after a reboot, before the phone is unlocked). Inherits
-    Wave E2b's Media3-free-construction constraint: keep decision logic out of any class
-    that touches `MediaItem`.
+  - **Wave E2c — voice search + playback resumption: done (`c79a1a7`, merged `f924c47`).**
+    `BrowseTreeRepository.search()` is Media3-free and returns the same `BrowseBook` type
+    the browse tree uses, so results convert through the existing
+    `MediaItemConversions.kt` mapper rather than a second one. `onSearch` and
+    `onGetSearchResult` window results to `pageSize` client-side, gated by the same
+    `verifyResultItems` check that crashed `onGetChildren` in E2a. Spoken "play <title>"
+    doesn't reach `onGetSearchResult` at all — Android Auto sends a `MediaItem` with
+    `mediaId = MediaItem.DEFAULT_MEDIA_ID` (`""`, not null) and the query in
+    `requestMetadata.searchQuery`, through `onAddMediaItems`, so the `searchQuery` branch is
+    checked before the `mediaId` branch; reversing them silently breaks voice search.
+    Best-match selection (case-insensitive exact match wins, else first result, blank query
+    falls back to the most recent continue-listening item) is a Media3-free tested function.
+    `onPlaybackResumption` returns the most recent continue-listening item at its stored
+    position, signalling "nothing to resume" the way Media3's own default does — by failing
+    the future with `UnsupportedOperationException`. `ResolvedPlayback` gained
+    `startPositionMs`, converted from `PlaybackSession.currentTime` (seconds, per this
+    project's own seconds-unless-`Ms`-suffixed convention) with no extra network call.
+    Independent review re-verified every Media3 claim directly against the `androidx/media`
+    1.5.1 tag rather than trusting the implementing agent — the `verifyResultItems` gate,
+    `notifySearchResultChanged`'s signature and non-empty-query contract,
+    `createMediaItemForMediaRequest`'s empty-`mediaId` behaviour, `onPlaybackResumption`'s
+    default, and (via `kotlinx-coroutines-guava`'s source) that throwing inside `future { }`
+    completes the future exceptionally rather than escaping the `SupervisorJob` scope — and
+    found no defects. Two efficiency nits recorded, neither fixed: `onSearch` and
+    `onGetSearchResult` each call `search()` independently and never pass `searchLibrary`'s
+    optional `limit`, so one search interaction makes two unbounded round trips with all
+    windowing done client-side (deliberate, to keep the browser's reported count and the
+    later-returned results from drifting apart); and `search()`'s `.drop(page * pageSize)`
+    carries the same theoretical `Int` overflow risk as the pre-existing
+    `continueListeningChildren`/`seriesBooks` windowing it copies, not reachable with any
+    pageSize a real Auto client sends. Both `CI` and `Android` workflows are green on
+    `f924c47`. This completes Wave E — Android Auto is feature-complete as scoped, but
+    unverified on real hardware: Auto can't be exercised here or on CI, and
+    `onPlaybackResumption` depends on the same unverified `contains("continue")`
+    shelf-matching heuristic the rest of the continue-listening surface already relies on.
 
 #### Android Auto is a design constraint, not a feature toggle
 
