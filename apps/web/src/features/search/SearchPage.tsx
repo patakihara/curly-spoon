@@ -53,6 +53,14 @@ export function SearchPage() {
   const jellyfinConfigured = jellyfinConfigQuery.data?.configured ?? false;
   const jellyfinSearchQuery = useJellyfinSearchQuery(jellyfinConfigured ? query : '');
 
+  // Books/podcasts share one Audiobookshelf query and settle together; music
+  // is a second, independent query that can resolve before or after it. Each
+  // section below gates its own "no matches" placeholder on the loading flag
+  // for the query that actually feeds it, so a fast source never renders a
+  // negative claim about a slow one still in flight.
+  const absLoading = searchQuery.isLoading;
+  const jellyfinLoading = jellyfinSearchQuery.isLoading;
+
   useEffect(() => {
     inputRef.current?.focus();
   }, [searchFocusToken]);
@@ -74,9 +82,10 @@ export function SearchPage() {
   const statusMessage = searchStatus({
     absConfigured,
     jellyfinConfigured,
+    query,
     trimmedQuery,
-    absLoading: searchQuery.isLoading,
-    jellyfinLoading: jellyfinSearchQuery.isLoading,
+    absLoading,
+    jellyfinLoading,
     counts: {
       books: books.length,
       podcasts: podcasts.length,
@@ -106,7 +115,7 @@ export function SearchPage() {
         <div data-testid="search-results">
           <section data-testid="search-results-books">
             <h2>Books</h2>
-            {books.length === 0 ? (
+            {absLoading ? null : books.length === 0 ? (
               <p>No book matches.</p>
             ) : (
               <div className="auralis-card-grid">
@@ -129,7 +138,7 @@ export function SearchPage() {
 
           <section data-testid="search-results-podcasts">
             <h2>Podcasts</h2>
-            {podcasts.length === 0 ? (
+            {absLoading ? null : podcasts.length === 0 ? (
               <p>No podcast matches.</p>
             ) : (
               <div className="auralis-card-grid">
@@ -154,93 +163,99 @@ export function SearchPage() {
             <section data-testid="search-results-music">
               <h2>Music</h2>
 
-              {artists.length > 0 ? (
-                <div data-testid="search-results-music-artists">
-                  <h3>Artists</h3>
-                  <div className="auralis-card-grid">
-                    {artists.map((artist) => (
-                      <Card
-                        key={artist.id}
-                        interactive
-                        variant="elevated"
-                        data-testid={`search-result-${artist.id}`}
-                        onClick={() =>
-                          void navigate({
-                            to: '/music/artist/$artistId',
-                            params: { artistId: artist.id },
-                          })
-                        }
-                      >
-                        <h4>{artist.name}</h4>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+              {jellyfinLoading ? null : !hasMusicResults ? (
+                <p>No music matches.</p>
+              ) : (
+                <>
+                  {artists.length > 0 ? (
+                    <div data-testid="search-results-music-artists">
+                      <h3>Artists</h3>
+                      <div className="auralis-card-grid">
+                        {artists.map((artist) => (
+                          <Card
+                            key={artist.id}
+                            interactive
+                            variant="elevated"
+                            data-testid={`search-result-${artist.id}`}
+                            onClick={() =>
+                              void navigate({
+                                to: '/music/artist/$artistId',
+                                params: { artistId: artist.id },
+                              })
+                            }
+                          >
+                            <h4>{artist.name}</h4>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
-              {albums.length > 0 ? (
-                <div data-testid="search-results-music-albums">
-                  <h3>Albums</h3>
-                  <div className="auralis-card-grid">
-                    {albums.map((album) => (
-                      <Card
-                        key={album.id}
-                        interactive
-                        variant="elevated"
-                        data-testid={`search-result-${album.id}`}
-                        onClick={() =>
-                          void navigate({
-                            to: '/music/album/$albumId',
-                            params: { albumId: album.id },
-                          })
-                        }
-                      >
-                        <h4>{album.name}</h4>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+                  {albums.length > 0 ? (
+                    <div data-testid="search-results-music-albums">
+                      <h3>Albums</h3>
+                      <div className="auralis-card-grid">
+                        {albums.map((album) => (
+                          <Card
+                            key={album.id}
+                            interactive
+                            variant="elevated"
+                            data-testid={`search-result-${album.id}`}
+                            onClick={() =>
+                              void navigate({
+                                to: '/music/album/$albumId',
+                                params: { albumId: album.id },
+                              })
+                            }
+                          >
+                            <h4>{album.name}</h4>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
-              {tracks.length > 0 ? (
-                <div data-testid="search-results-music-tracks">
-                  <h3>Tracks</h3>
-                  <div className="auralis-card-grid">
-                    {tracks.map((track) =>
-                      // A track's search result carries no track list of its own to
-                      // build a playback queue from (see this file's module doc / the
-                      // wave spec's decision on this) — playing it needs the full
-                      // album, so the card navigates to the album instead of playing
-                      // directly. A track with no `albumId` has nowhere to navigate
-                      // to, so it renders inert rather than as a dead click target.
-                      track.albumId != null ? (
-                        <Card
-                          key={track.id}
-                          interactive
-                          variant="elevated"
-                          data-testid={`search-result-${track.id}`}
-                          onClick={() =>
-                            void navigate({
-                              to: '/music/album/$albumId',
-                              params: { albumId: track.albumId! },
-                            })
-                          }
-                        >
-                          <h4>{track.name}</h4>
-                        </Card>
-                      ) : (
-                        <Card
-                          key={track.id}
-                          variant="elevated"
-                          data-testid={`search-result-${track.id}`}
-                        >
-                          <h4>{track.name}</h4>
-                        </Card>
-                      ),
-                    )}
-                  </div>
-                </div>
-              ) : null}
+                  {tracks.length > 0 ? (
+                    <div data-testid="search-results-music-tracks">
+                      <h3>Tracks</h3>
+                      <div className="auralis-card-grid">
+                        {tracks.map((track) =>
+                          // A track's search result carries no track list of its own to
+                          // build a playback queue from (see this file's module doc / the
+                          // wave spec's decision on this) — playing it needs the full
+                          // album, so the card navigates to the album instead of playing
+                          // directly. A track with no `albumId` has nowhere to navigate
+                          // to, so it renders inert rather than as a dead click target.
+                          track.albumId != null ? (
+                            <Card
+                              key={track.id}
+                              interactive
+                              variant="elevated"
+                              data-testid={`search-result-${track.id}`}
+                              onClick={() =>
+                                void navigate({
+                                  to: '/music/album/$albumId',
+                                  params: { albumId: track.albumId! },
+                                })
+                              }
+                            >
+                              <h4>{track.name}</h4>
+                            </Card>
+                          ) : (
+                            <Card
+                              key={track.id}
+                              variant="elevated"
+                              data-testid={`search-result-${track.id}`}
+                            >
+                              <h4>{track.name}</h4>
+                            </Card>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
             </section>
           ) : null}
         </div>

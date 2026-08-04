@@ -9,6 +9,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: false,
         jellyfinConfigured: false,
+        query: 'dune',
         trimmedQuery: 'dune',
         absLoading: false,
         jellyfinLoading: false,
@@ -24,6 +25,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: false,
         jellyfinConfigured: true,
+        query: 'dune',
         trimmedQuery: 'dune',
         absLoading: false,
         jellyfinLoading: false,
@@ -37,6 +39,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: false,
+        query: '',
         trimmedQuery: '',
         absLoading: false,
         jellyfinLoading: false,
@@ -52,6 +55,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: true,
+        query: '',
         trimmedQuery: '',
         absLoading: false,
         jellyfinLoading: false,
@@ -65,6 +69,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: false,
+        query: 'dune',
         trimmedQuery: 'dune',
         absLoading: true,
         jellyfinLoading: false,
@@ -78,6 +83,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: true,
+        query: 'nebula',
         trimmedQuery: 'nebula',
         absLoading: false,
         jellyfinLoading: true,
@@ -93,6 +99,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: false,
+        query: 'dune',
         trimmedQuery: 'dune',
         absLoading: false,
         jellyfinLoading: true,
@@ -106,6 +113,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: false,
+        query: 'zzz-no-such-book',
         trimmedQuery: 'zzz-no-such-book',
         absLoading: false,
         jellyfinLoading: false,
@@ -119,6 +127,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: true,
+        query: 'zzz-no-such-thing',
         trimmedQuery: 'zzz-no-such-thing',
         absLoading: false,
         jellyfinLoading: false,
@@ -127,11 +136,58 @@ describe('searchStatus', () => {
     ).toBe('No matches for "zzz-no-such-thing".');
   });
 
+  it('announces the query exactly as typed, whitespace and all, even though the trimmed value drives the decision', () => {
+    // A leading space is real user input a screen reader should echo back
+    // verbatim — trimming is only for deciding whether the query counts as
+    // empty and whether a request should fire, never for what gets displayed.
+    expect(
+      searchStatus({
+        absConfigured: true,
+        jellyfinConfigured: false,
+        query: ' dune',
+        trimmedQuery: 'dune',
+        absLoading: false,
+        jellyfinLoading: false,
+        counts: ZERO_COUNTS,
+      }),
+    ).toBe('No matches for " dune".');
+
+    expect(
+      searchStatus({
+        absConfigured: true,
+        jellyfinConfigured: false,
+        query: ' dune',
+        trimmedQuery: 'dune',
+        absLoading: false,
+        jellyfinLoading: false,
+        counts: { books: 1, podcasts: 0, artists: 0, albums: 0, tracks: 0 },
+      }),
+    ).toBe('1 book, 0 podcasts found for " dune".');
+  });
+
+  it('omits the music clauses when Jellyfin is configured but no music matched, even though books/podcasts did', () => {
+    // Five parts read aloud on every keystroke is the cost of the old
+    // "list music whenever Jellyfin is configured" rule — the common case of
+    // a query that only ever matches books shouldn't pay it.
+    expect(
+      searchStatus({
+        absConfigured: true,
+        jellyfinConfigured: true,
+        query: 'dune',
+        trimmedQuery: 'dune',
+        absLoading: false,
+        jellyfinLoading: false,
+        counts: { books: 2, podcasts: 1, artists: 0, albums: 0, tracks: 0 },
+      }),
+    ).toBe('2 books, 1 podcast found for "dune".');
+  });
+
   it('reports counts in the original two-part wording when only Audiobookshelf is configured', () => {
     expect(
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: false,
+        query: 'dune',
         trimmedQuery: 'dune',
         absLoading: false,
         jellyfinLoading: false,
@@ -145,6 +201,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: true,
+        query: 'fields',
         trimmedQuery: 'fields',
         absLoading: false,
         jellyfinLoading: false,
@@ -158,6 +215,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: true,
+        query: 'x',
         trimmedQuery: 'x',
         absLoading: false,
         jellyfinLoading: false,
@@ -169,6 +227,7 @@ describe('searchStatus', () => {
       searchStatus({
         absConfigured: true,
         jellyfinConfigured: true,
+        query: 'x',
         trimmedQuery: 'x',
         absLoading: false,
         jellyfinLoading: false,
