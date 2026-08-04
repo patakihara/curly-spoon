@@ -11,12 +11,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import net.auralis.app.AppContainer
+import net.auralis.app.data.model.BookRequest
 import net.auralis.app.data.model.Release
 import java.util.Locale
 
@@ -46,6 +49,8 @@ fun RequestsScreen(container: AppContainer) {
                 },
         )
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.loadRequests() }
 
     Scaffold(
         topBar = {
@@ -120,6 +125,42 @@ fun RequestsScreen(container: AppContainer) {
                                         onRequest = { viewModel.requestRelease(release) },
                                     )
                                 }
+                            }
+                        }
+                    }
+            }
+
+            Text(
+                "Your requests",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 24.dp),
+            )
+            when (val listState = uiState.requestListState) {
+                is RequestListUiState.Loading ->
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                is RequestListUiState.Failed ->
+                    Text(
+                        text = listState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                is RequestListUiState.Loaded ->
+                    if (listState.requests.isEmpty()) {
+                        Text("No requests yet.", modifier = Modifier.padding(top = 8.dp))
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                            items(listState.requests, key = { it.id }) { request ->
+                                RequestRow(
+                                    request = request,
+                                    actionState = uiState.requestActionStates[request.id] ?: RequestActionState.Idle,
+                                    onRetry = { viewModel.retryRequest(request.id) },
+                                    onDelete = { viewModel.deleteRequest(request.id) },
+                                )
                             }
                         }
                     }
@@ -220,3 +261,69 @@ private fun formatBytes(bytes: Long?): String {
     }
     return String.format(Locale.US, "%.1f %s", value, units[unitIndex])
 }
+
+@Composable
+private fun RequestRow(
+    request: BookRequest,
+    actionState: RequestActionState,
+    onRetry: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = request.title,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            Text(statusLabel(request.status))
+        }
+        request.author?.let { Text("by $it") }
+
+        if (request.status == "downloading") {
+            LinearProgressIndicator(
+                progress = { request.progress.toFloat() },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
+        }
+        if (request.status == "failed" && request.statusDetail != null) {
+            Text(request.statusDetail, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+        }
+        if (actionState is RequestActionState.Failed) {
+            Text(actionState.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+        }
+
+        Row(modifier = Modifier.padding(top = 4.dp)) {
+            if (request.status == "failed") {
+                Button(
+                    onClick = onRetry,
+                    enabled = actionState !is RequestActionState.Pending,
+                    modifier = Modifier.padding(end = 8.dp),
+                ) {
+                    Text(if (actionState is RequestActionState.Pending) "Retrying…" else "Retry")
+                }
+            }
+            Button(onClick = onDelete, enabled = actionState !is RequestActionState.Pending) {
+                Text(if (actionState is RequestActionState.Pending) "Deleting…" else "Delete")
+            }
+        }
+    }
+}
+
+/**
+ * Mirrors `apps/web/src/features/requests/RequestList.tsx`'s `STATUS_LABEL`, plus a fallback
+ * for any status this app doesn't yet know about — it must render *something* readable, not
+ * throw, since `BookRequest.status` is a plain `String` deliberately, not an enum.
+ */
+private fun statusLabel(status: String): String =
+    when (status) {
+        "pending" -> "Pending"
+        "approved" -> "Approved"
+        "rejected" -> "Rejected"
+        "searching" -> "Searching"
+        "downloading" -> "Downloading"
+        "importing" -> "Importing"
+        "completed" -> "Completed"
+        "failed" -> "Failed"
+        else -> status.replaceFirstChar { it.uppercase() }
+    }

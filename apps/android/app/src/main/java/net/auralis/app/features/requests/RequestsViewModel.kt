@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import net.auralis.app.data.model.BookRequest
 import net.auralis.app.data.model.Release
 import net.auralis.app.data.model.SearchError
 import net.auralis.app.data.network.ApiClient
@@ -46,6 +47,24 @@ sealed interface TitleRequestState {
     data class Failed(val message: String) : TitleRequestState
 }
 
+/** The state of the `GET /requests` list fetch. */
+sealed interface RequestListUiState {
+    data object Loading : RequestListUiState
+
+    data class Loaded(val requests: List<BookRequest>) : RequestListUiState
+
+    data class Failed(val message: String) : RequestListUiState
+}
+
+/** The state of a retry or delete action on one specific request, keyed by its `id`. */
+sealed interface RequestActionState {
+    data object Idle : RequestActionState
+
+    data object Pending : RequestActionState
+
+    data class Failed(val message: String) : RequestActionState
+}
+
 data class RequestsUiState(
     val searchTerm: String = "",
     val searchAuthor: String = "",
@@ -54,6 +73,8 @@ data class RequestsUiState(
     val searchState: SearchUiState = SearchUiState.Idle,
     val releaseRequestStates: Map<String, ReleaseRequestState> = emptyMap(),
     val titleRequestState: TitleRequestState = TitleRequestState.Idle,
+    val requestListState: RequestListUiState = RequestListUiState.Loading,
+    val requestActionStates: Map<String, RequestActionState> = emptyMap(),
 ) {
     /**
      * "Request anyway" is offered whenever the submitted term is non-blank and the search came
@@ -160,6 +181,99 @@ class RequestsViewModel(private val apiClient: ApiClient) : ViewModel() {
                 _uiState.value = _uiState.value.copy(titleRequestState = TitleRequestState.Requested)
             } catch (e: ApiException) {
                 _uiState.value = _uiState.value.copy(titleRequestState = TitleRequestState.Failed(e.message))
+            }
+        }
+    }
+
+    /**
+     * Loads the signed-in user's existing requests, newest first — mirrors
+     * `apps/web/src/features/requests/RequestList.tsx`'s own `[...requests].sort((a, b) =>
+     * b.createdAt - a.createdAt)`. Deliberately not called from `init {}`: this class is
+     * constructed fresh in every `RequestsViewModelTest` test, several of which enqueue exactly
+     * one `MockWebServer` response for `submitSearch()`/`requestRelease()` — an eager fetch here
+     * would consume that response instead. Only [RequestsScreen]'s `LaunchedEffect` calls this.
+     */
+    fun loadRequests() {
+        _uiState.value = _uiState.value.copy(requestListState = RequestListUiState.Loading)
+        viewModelScope.launch {
+            try {
+                val requests = apiClient.listRequests().sortedByDescending { it.createdAt }
+                _uiState.value = _uiState.value.copy(requestListState = RequestListUiState.Loaded(requests))
+            } catch (e: ApiException) {
+                _uiState.value = _uiState.value.copy(requestListState = RequestListUiState.Failed(e.message))
+            }
+        }
+    }
+
+    /**
+     * Retries one failed request. On success, the request returned by the retry call replaces
+     * its entry in the current list in place — every other request is left untouched — and the
+     * per-id action state resets to [RequestActionState.Idle]; the updated status in the list row
+     * is the only feedback, matching the web reference, which has no lingering "retried" banner
+     * either.
+     */
+    fun retryRequest(id: String) {
+        _uiState.value =
+            _uiState.value.copy(
+                requestActionStates = _uiState.value.requestActionStates + (id to RequestActionState.Pending),
+            )
+        viewModelScope.launch {
+            try {
+                val updated = apiClient.retryRequest(id)
+                val currentListState = _uiState.value.requestListState
+                val newListState =
+                    if (currentListState is RequestListUiState.Loaded) {
+                        RequestListUiState.Loaded(
+                            currentListState.requests.map { if (it.id == id) updated else it },
+                        )
+                    } else {
+                        currentListState
+                    }
+                _uiState.value =
+                    _uiState.value.copy(
+                        requestListState = newListState,
+                        requestActionStates = _uiState.value.requestActionStates + (id to RequestActionState.Idle),
+                    )
+            } catch (e: ApiException) {
+                _uiState.value =
+                    _uiState.value.copy(
+                        requestActionStates = _uiState.value.requestActionStates + (id to RequestActionState.Failed(e.message)),
+                    )
+            }
+        }
+    }
+
+    /**
+     * Deletes one request outright — always available, regardless of status. On success it is
+     * removed from the list and its action-state entry is dropped entirely (there's nothing left
+     * to key it to); on failure the list is untouched and the id's action state becomes
+     * [RequestActionState.Failed].
+     */
+    fun deleteRequest(id: String) {
+        _uiState.value =
+            _uiState.value.copy(
+                requestActionStates = _uiState.value.requestActionStates + (id to RequestActionState.Pending),
+            )
+        viewModelScope.launch {
+            try {
+                apiClient.deleteRequest(id)
+                val currentListState = _uiState.value.requestListState
+                val newListState =
+                    if (currentListState is RequestListUiState.Loaded) {
+                        RequestListUiState.Loaded(currentListState.requests.filterNot { it.id == id })
+                    } else {
+                        currentListState
+                    }
+                _uiState.value =
+                    _uiState.value.copy(
+                        requestListState = newListState,
+                        requestActionStates = _uiState.value.requestActionStates - id,
+                    )
+            } catch (e: ApiException) {
+                _uiState.value =
+                    _uiState.value.copy(
+                        requestActionStates = _uiState.value.requestActionStates + (id to RequestActionState.Failed(e.message)),
+                    )
             }
         }
     }

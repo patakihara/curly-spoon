@@ -383,6 +383,185 @@ class RequestsViewModelTest {
             viewModel.uiState.first { it.searchState is SearchUiState.Results }
         }
 
+    @Test
+    fun `loadRequests with two requests out of order produces Loaded sorted newest-first`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"requests":[
+                      {"id":"req1","userId":"u1","title":"Older Book","status":"pending","progress":0,"createdAt":100,"updatedAt":100},
+                      {"id":"req2","userId":"u1","title":"Newer Book","status":"pending","progress":0,"createdAt":200,"updatedAt":200}
+                    ]}
+                    """.trimIndent(),
+                ),
+            )
+            val viewModel = RequestsViewModel(apiClient)
+
+            viewModel.loadRequests()
+            val state = viewModel.uiState.first { it.requestListState is RequestListUiState.Loaded }
+
+            val loaded = state.requestListState as RequestListUiState.Loaded
+            assertEquals(2, loaded.requests.size)
+            assertEquals("req2", loaded.requests[0].id)
+            assertEquals("req1", loaded.requests[1].id)
+        }
+
+    @Test
+    fun `loadRequests against a 500 response produces Failed with the server's message`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Could not load requests."}}"""),
+            )
+            val viewModel = RequestsViewModel(apiClient)
+
+            viewModel.loadRequests()
+            val state = viewModel.uiState.first { it.requestListState is RequestListUiState.Failed }
+
+            assertEquals(
+                "Could not load requests.",
+                (state.requestListState as RequestListUiState.Failed).message,
+            )
+        }
+
+    @Test
+    fun `retryRequest on a 200 response updates that request while leaving another untouched`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"requests":[
+                      {"id":"req1","userId":"u1","title":"Failed Book","status":"failed","statusDetail":"Download failed","progress":0,"createdAt":100,"updatedAt":100},
+                      {"id":"req2","userId":"u1","title":"Other Book","status":"pending","progress":0,"createdAt":200,"updatedAt":200}
+                    ]}
+                    """.trimIndent(),
+                ),
+            )
+            val viewModel = RequestsViewModel(apiClient)
+            viewModel.loadRequests()
+            viewModel.uiState.first { it.requestListState is RequestListUiState.Loaded }
+
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"request":{"id":"req1","userId":"u1","title":"Failed Book","status":"searching","progress":0,"createdAt":100,"updatedAt":150}}
+                    """.trimIndent(),
+                ),
+            )
+
+            viewModel.retryRequest("req1")
+            val state =
+                viewModel.uiState.first {
+                    val loaded = it.requestListState as? RequestListUiState.Loaded
+                    loaded?.requests?.find { r -> r.id == "req1" }?.status == "searching"
+                }
+
+            val loaded = state.requestListState as RequestListUiState.Loaded
+            assertEquals("searching", loaded.requests.find { it.id == "req1" }?.status)
+            assertEquals("pending", loaded.requests.find { it.id == "req2" }?.status)
+            assertEquals(RequestActionState.Idle, state.requestActionStates["req1"])
+        }
+
+    @Test
+    fun `retryRequest on a failing response sets Failed action state and leaves the list unchanged`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"requests":[
+                      {"id":"req1","userId":"u1","title":"Failed Book","status":"failed","progress":0,"createdAt":100,"updatedAt":100}
+                    ]}
+                    """.trimIndent(),
+                ),
+            )
+            val viewModel = RequestsViewModel(apiClient)
+            viewModel.loadRequests()
+            viewModel.uiState.first { it.requestListState is RequestListUiState.Loaded }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Could not retry this request."}}"""),
+            )
+
+            viewModel.retryRequest("req1")
+            val state = viewModel.uiState.first { it.requestActionStates["req1"] is RequestActionState.Failed }
+
+            assertEquals(
+                "Could not retry this request.",
+                (state.requestActionStates["req1"] as RequestActionState.Failed).message,
+            )
+            val loaded = state.requestListState as RequestListUiState.Loaded
+            assertEquals("failed", loaded.requests.find { it.id == "req1" }?.status)
+        }
+
+    @Test
+    fun `deleteRequest on a 204 response removes that request, leaving others untouched`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"requests":[
+                      {"id":"req1","userId":"u1","title":"Book One","status":"completed","progress":1,"createdAt":100,"updatedAt":100},
+                      {"id":"req2","userId":"u1","title":"Book Two","status":"pending","progress":0,"createdAt":200,"updatedAt":200}
+                    ]}
+                    """.trimIndent(),
+                ),
+            )
+            val viewModel = RequestsViewModel(apiClient)
+            viewModel.loadRequests()
+            viewModel.uiState.first { it.requestListState is RequestListUiState.Loaded }
+
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+
+            viewModel.deleteRequest("req1")
+            val state =
+                viewModel.uiState.first {
+                    (it.requestListState as? RequestListUiState.Loaded)?.requests?.none { r -> r.id == "req1" } == true
+                }
+
+            val loaded = state.requestListState as RequestListUiState.Loaded
+            assertEquals(1, loaded.requests.size)
+            assertEquals("req2", loaded.requests[0].id)
+            assertFalse(state.requestActionStates.containsKey("req1"))
+        }
+
+    @Test
+    fun `deleteRequest on a failing response sets Failed action state and the request remains`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"requests":[
+                      {"id":"req1","userId":"u1","title":"Book One","status":"pending","progress":0,"createdAt":100,"updatedAt":100}
+                    ]}
+                    """.trimIndent(),
+                ),
+            )
+            val viewModel = RequestsViewModel(apiClient)
+            viewModel.loadRequests()
+            viewModel.uiState.first { it.requestListState is RequestListUiState.Loaded }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Could not delete this request."}}"""),
+            )
+
+            viewModel.deleteRequest("req1")
+            val state = viewModel.uiState.first { it.requestActionStates["req1"] is RequestActionState.Failed }
+
+            assertEquals(
+                "Could not delete this request.",
+                (state.requestActionStates["req1"] as RequestActionState.Failed).message,
+            )
+            val loaded = state.requestListState as RequestListUiState.Loaded
+            assertEquals(1, loaded.requests.size)
+            assertEquals("req1", loaded.requests[0].id)
+        }
+
     private fun sampleRelease(guid: String) =
         Release(
             guid = guid,
