@@ -391,6 +391,27 @@ setUri(String)` reaches `android.net.Uri.parse`, and this project's unit tests r
     unverified on real hardware: Auto can't be exercised here or on CI, and
     `onPlaybackResumption` depends on the same unverified `contains("continue")`
     shelf-matching heuristic the rest of the continue-listening surface already relies on.
+- **Wave F — offline downloads: data layer done (`eb211ef`, fix `66829da`).** Follows the
+  same data-layer-first split every prior wave used. New `net.auralis.app.data.downloads`:
+  `DownloadState`/`DownloadedItem`, a pure `downloadProgress` (total on zero/unknown totals,
+  clamps to 0..1), `downloadStateFromMedia3(Int)` mapping Media3's `Download.STATE_*`
+  constants, and a `DownloadRepository` behind a narrow `DownloadEngine` interface, persisted
+  through wave A's existing `KeyValueStore`. `AppContainer` wires a named
+  `UnavailableDownloadEngine` placeholder until the real engine lands. Downloads cover every
+  track of an item, deliberately unlike `PlaybackItemResolver`'s first-track-only playback
+  scoping — downloading only track one of a multi-file audiobook strands a listener exactly
+  during the signal-loss commute the feature exists for. The whole decidable layer stays
+  framework-free (zero `androidx.media3`/`android.*` imports), since unit tests run against
+  the stub `android.jar`, which throws on any real framework call — the same rule Wave E2b
+  learned the hard way. Independent review verified every `Download.STATE_*` constant against
+  `Download.java` at the `androidx/media` 1.5.1 tag and caught one real defect, fixed in
+  `66829da`: with the placeholder engine `AppContainer` actually ships, `enqueue` persisted
+  the item into the kept-offline set and returned the same success value a real download start
+  produces — a phantom entry `downloadsFor` would never report on. Fixed with a distinct
+  `Unavailable` result case and an `isAvailable` property on `DownloadEngine` (default `true`),
+  rather than an `is UnavailableDownloadEngine` type check that would keep compiling and keep
+  silently doing nothing once the real engine replaces that class. **Remaining: Wave F2** — the
+  real Media3 `DownloadManager`-backed engine, and the download UI (list, progress, remove).
 
 #### Android Auto is a design constraint, not a feature toggle
 
@@ -442,8 +463,23 @@ shells exist.
   logging non-admins out instead of returning "forbidden"; review also caught episode
   duration/chapter data being silently dropped and a podcast title of exactly `".."`
   defeating the folder-sanitizer, both fixed.
-- **No web or Android UI yet** — explicitly deferred to a later wave. Next: a UI wave
-  consuming this backend, on whichever surface makes sense to build first.
+- **Wave B — podcast discovery on web: done (`1079228`).** Search the podcast directory,
+  preview the parsed RSS feed, subscribe — consuming Wave A's three BFF routes, no server
+  changes. New `apps/web/src/features/podcasts/` (`PodcastDiscoverPage`,
+  `PodcastFeedPreview`, a pure `subscribeMetadata`), a `/podcasts/discover` route, and an
+  entry point from the podcast `LibraryPage` rather than a new top-level nav destination —
+  discovery is not scoped to a library id the user may not have yet. The preview step is
+  the point: subscribing writes a library item, so a confirmation dialog would ask the user
+  to approve something they cannot see. Verified in a real browser: 4 Playwright specs in
+  `e2e/app/podcasts.spec.ts` covering the nav entry point, search → preview → subscribe, and
+  the paste-a-URL path. Independent review found no confirmed defects, checking the client
+  types field-by-field against the server's zod schemas and confirming the double-submit
+  guard is react-query's own mutation lifecycle rather than something a re-render can
+  invalidate. Two open items, neither a defect: subscribing always targets `folders[0]` of
+  the podcast library (fine for the single-folder setups that dominate; a folder picker is
+  the follow-up if multi-folder turns out common), and `PodcastFeedPreview` has no unmount
+  guard around an in-flight subscribe (console-only, no data effect).
+- **No Android UI yet** — next podcast wave, on whichever surface makes sense to build next.
 
 ### 9 — Music
 
