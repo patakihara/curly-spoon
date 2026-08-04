@@ -195,8 +195,19 @@ wiring + mini player, book-requests data layer — see `docs/ROADMAP.md` §7 for
 detail and defects independent review caught). **Wave D2a (request search + create UI) is
 now done** (`3b1aebe`, fixed `646850d`) — this file previously said it was "in progress";
 it landed with two real defects caught and fixed by independent review before commit, then
-two of its own tests fixed afterward. **Next: wave D2b** — request list + retry/delete UI,
-spec ready, not yet dispatched.
+two of its own tests fixed afterward. **Wave D2b (request list + retry/delete UI) is now
+done** (`fabd6b1`, layout fix `c556d22`) — a "Your requests" section below the existing
+search form, fetched on screen entry and sorted newest-first, with per-request retry (when
+failed) and delete (always). Independent review caught one real defect before landing: the
+search-results branch's unweighted `Modifier.fillMaxSize()` consumed all remaining screen
+height the moment a search returned any release, squeezing the new list to zero height —
+this wave's entire deliverable invisible under its single most common trigger. Fixed by
+making both the results section and the request list weighted siblings in the same
+`Column` (`weight(1f, fill = false)` on results, so it shares space instead of hogging it;
+the request list's existing `weight(1f)` was unchanged).
+`./gradlew test assembleDebug` passed clean on the first real compile, six new
+`RequestsViewModelTest` cases included.
+**Next: wave E (Android Auto)** — no spec written yet.
 
 **Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
 against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
@@ -280,6 +291,19 @@ failed on `ui-mobile` in CI's 2-worker run and did not reproduce locally under
 break — worth re-checking under CI's real worker count before assuming it's the same class
 of bug. Neither was in this pass's scope (chip/progress/skeleton, `e2e/ui` only); noted here
 so the next session doesn't have to re-run all of CI to rediscover them.
+
+**Update 2026-08-04: both of the above, plus the button/icon-button failures from the
+paragraph before it, are now fixed.** `2bea957` reformatted the four files `format:check`
+was failing on (mechanical, no behavior change). `278e3fc` fixed the four real regressions:
+`Button`'s default height was Mantine's 42px (below the 48px minimum touch target, fixed
+with a `data-m3-size`-scoped `min-height` so `sm`/`lg` buttons elsewhere stay compact),
+Mantine's `Button` doesn't set `aria-busy` when `loading` (added explicitly), the M3
+Expressive corner-radius shape-morph on press was restored using the existing
+`--m3-shape-full`/`--m3-shape-md` tokens, and `IconButton`'s toggle-glyph spring animation
+was restored with a `.m3-icon-button__glyph` wrapper span. The same commit fixed
+`browse.spec.ts`'s stale `getByRole('button')` locator to match chip.spec.ts's existing
+checkbox+label pattern. CI is green on `c556d22` — verified directly via `gh run watch`,
+not inferred from the push.
 
 Fixing the locators surfaced one real bug, not just stale selectors: Mantine's
 `respectReducedMotion` only disarms its JS-driven `Transition` machinery (`Modal`, `Drawer`,

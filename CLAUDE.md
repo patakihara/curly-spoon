@@ -260,6 +260,23 @@ mistake at larger scale.** Two things worth separating:
   `.claude/settings.json` are invisible to every other checkout and cannot arm in the user's
   live session until the branch merges — a worktree is not just stale code, it can be a stale
   _configuration_ too.
+- **`isolation: "worktree"` on the `Agent` tool defaults to the wrong base for this repo.**
+  Discovered 2026-08-04: with no `worktree.baseRef` configured in `.claude/settings.json`,
+  an agent spawned with `isolation: "worktree"` lands on `origin/main`'s single "Initial
+  commit" — an empty scaffold with no `apps/` directory, nothing related to this project's
+  real work — not this branch's history. That doesn't mean the mechanism is unusable: a
+  non-isolated subagent's first `Edit`/`Write` is rejected outright by the shared-checkout
+  guard regardless of target path, so `isolation: "worktree"` (or the orchestrator's own
+  `EnterWorktree`, which this section still forbids) is the only way a subagent can edit at
+  all. The fix, used successfully three times on 2026-08-04: instruct the agent, as its
+  literal first action before reading or touching anything, to run
+  `git reset --hard <the current branch tip commit>` inside its own worktree — safe, since
+  every worktree of one repo shares one object database, so that commit is already present
+  locally with nothing to fetch — and verify with `git log -1`/`ls` on a file that should
+  exist before proceeding. The agent then does its work and commits on its own branch (it
+  cannot push from inside the worktree); the orchestrator integrates via a plain
+  `git merge --ff-only <worktree-branch>` from Bash in the main checkout, which is not
+  gated the way `Edit`/`Write` is.
 
 **If a session's own workflow or setup seems to be causing repeated problems like these, the
 priority is to ask the `advisor()` tool to review the workflow and setup and fix it — before

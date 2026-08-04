@@ -277,7 +277,18 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
   two of the wave's own tests that were wrong (an assertion expecting a serialized
   `"release":null` when the field is correctly omitted; a test-ordering bug where a prior
   test's un-awaited coroutine threw after teardown).
-- **Wave D2b — request list + retry/delete UI: not started, spec ready. Next up.**
+- **Wave D2b — request list + retry/delete UI: done (`fabd6b1`, layout fix `c556d22`).**
+  Adds a "Your requests" section below the existing search form: `GET /requests` on screen
+  entry (sorted newest-first), per-request retry when failed, delete always available. No
+  approve/reject — Android has no request-settings/approval-policy fetch yet, so there's no
+  safe way to gate that. Independent review caught one real defect before landing: the
+  search-results branch's unweighted `Modifier.fillMaxSize()` claimed all remaining screen
+  height the moment a search returned any release, rendering the new list invisible under
+  the single most common search outcome — fixed by making both sections weighted siblings
+  (`weight(1f, fill = false)` on the results section, so it shares space instead of hogging
+  it; the request list's own `weight(1f)` was already correct).
+  `./gradlew test assembleDebug` passed clean on the first real compile, six new
+  `RequestsViewModelTest` cases included.
 - **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
   see below for why this can't be bolted on after the fact.
 
