@@ -11,7 +11,8 @@ import { useEffect } from 'react';
 import { useApi } from '../../api/ApiContext.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { useSettingsStore } from '../../state/settingsStore.js';
-import { playerDisplayMeta } from './playerUi.js';
+import { trackAt } from './playback.js';
+import { playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
 
 function setActionHandler(action: MediaSessionAction, handler: MediaSessionActionHandler): void {
   try {
@@ -26,7 +27,16 @@ export function useMediaSession(): void {
   const currentItem = usePlayerStore((s) => s.currentItem);
   const episodeId = usePlayerStore((s) => s.episodeId);
   const displayTitle = usePlayerStore((s) => s.displayTitle);
+  const tracks = usePlayerStore((s) => s.tracks);
+  const currentTime = usePlayerStore((s) => s.currentTime);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+
+  // Computed on every render (cheap: a linear scan of a small array), not memoized — the
+  // point is that it only changes, and so only ever actually triggers the effect below,
+  // when the *track* changes, not every time `currentTime` ticks. Unlike an episode's
+  // `displayTitle` (fixed for the whole loaded session), a music queue's current track
+  // moves without a new `load()` — see `playerUi.ts`'s `playerDisplayMeta` doc comment.
+  const currentTrackTitle = trackAt(tracks, currentTime)?.track.title ?? null;
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
@@ -37,22 +47,32 @@ export function useMediaSession(): void {
 
     const authors =
       currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
-    // Same episode-vs-podcast title split as the mini player and Now Playing — the lock
-    // screen and hardware media keys are, if anything, the more visible surface: the mini
-    // player is at least in the app the user opened, the lock screen is wherever the phone
-    // is. See playerUi.ts's playerDisplayMeta for the full reasoning.
+    // Same episode-vs-podcast-vs-track title split as the mini player and Now Playing — the
+    // lock screen and hardware media keys are, if anything, the more visible surface: the
+    // mini player is at least in the app the user opened, the lock screen is wherever the
+    // phone is. See playerUi.ts's playerDisplayMeta for the full reasoning.
     const { primary, secondary } = playerDisplayMeta({
+      kind: currentItem.media.kind,
       episodeId,
       displayTitle,
       itemTitle: currentItem.media.title,
       authors,
+      currentTrackTitle,
     });
     navigator.mediaSession.metadata = new MediaMetadata({
       title: primary,
       artist: secondary,
-      artwork: [{ src: api.coverUrl(currentItem.id, { width: 512 }) }],
+      artwork: [
+        {
+          src: playerArtworkUrl(api, {
+            kind: currentItem.media.kind,
+            itemId: currentItem.id,
+            width: 512,
+          }),
+        },
+      ],
     });
-  }, [api, currentItem, episodeId, displayTitle]);
+  }, [api, currentItem, episodeId, displayTitle, currentTrackTitle]);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;

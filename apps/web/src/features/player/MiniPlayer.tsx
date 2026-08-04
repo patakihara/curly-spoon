@@ -8,7 +8,8 @@
 import { Icon, IconButton, LinearProgress, Marquee } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
 import { usePlayerStore } from '../../state/playerStore.js';
-import { playerDisplayMeta } from './playerUi.js';
+import { trackAt } from './playback.js';
+import { playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
 
 export interface MiniPlayerProps {
   /** Opens the full Now Playing surface — owned by whichever shell region hosts this. */
@@ -20,6 +21,7 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const currentItem = usePlayerStore((s) => s.currentItem);
   const episodeId = usePlayerStore((s) => s.episodeId);
   const displayTitle = usePlayerStore((s) => s.displayTitle);
+  const tracks = usePlayerStore((s) => s.tracks);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
@@ -31,10 +33,12 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const authors =
     currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
   const { primary, secondary } = playerDisplayMeta({
+    kind: currentItem.media.kind,
     episodeId,
     displayTitle,
     itemTitle: currentItem.media.title,
     authors,
+    currentTrackTitle: trackAt(tracks, currentTime)?.track.title ?? null,
   });
   const progress = duration === 0 ? 0 : currentTime / duration;
 
@@ -49,7 +53,11 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
       >
         <img
           className="auralis-mini-player__cover"
-          src={api.coverUrl(currentItem.id, { width: 96 })}
+          src={playerArtworkUrl(api, {
+            kind: currentItem.media.kind,
+            itemId: currentItem.id,
+            width: 96,
+          })}
           alt=""
           width={48}
           height={48}
@@ -58,7 +66,11 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
           <span className="auralis-mini-player__title" data-testid="mini-player-title">
             <Marquee>{primary}</Marquee>
           </span>
-          {secondary ? <span className="auralis-mini-player__author">{secondary}</span> : null}
+          {secondary ? (
+            <span className="auralis-mini-player__author" data-testid="mini-player-author">
+              {secondary}
+            </span>
+          ) : null}
         </span>
       </button>
       <IconButton

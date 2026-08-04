@@ -400,6 +400,16 @@ export class ApiClient {
   jellyfinArtworkUrl(itemId: string): string {
     return buildUrl(this.baseUrl, `/jellyfin/items/${encodeURIComponent(itemId)}/artwork`);
   }
+
+  /** Not fetched via `request()` — used directly as an `<audio>` src, same reasoning as
+   * `audioTrackUrl` above: Jellyfin's own stream URL embeds the access token in the query
+   * string, so it is built server-side and proxied (`GET /jellyfin/tracks/:itemId/stream`),
+   * never constructed client-side. `itemId` is the track's own Jellyfin item id — Jellyfin
+   * has no separate `fileId` concept the way Audiobookshelf does, so unlike `audioTrackUrl`
+   * this takes a single id. */
+  jellyfinTrackStreamUrl(itemId: string): string {
+    return buildUrl(this.baseUrl, `/jellyfin/tracks/${encodeURIComponent(itemId)}/stream`);
+  }
 }
 
 /** Type-narrowing re-export so callers don't need a separate import for the error class. */

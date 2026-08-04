@@ -61,18 +61,26 @@ export interface Chapter {
 }
 
 /**
- * One audio file within a multi-file book. `startOffset` is where this track begins
- * within the *whole* item's timeline (seconds), so a global `currentTime` can be
- * mapped onto (track, offset-within-track) without the player needing to know how
- * many files a book was split into.
+ * One audio file within a multi-file book — or, since Phase 9's web wave, one track of a
+ * Jellyfin album loaded as a queue (see `features/music/queue.ts`). `startOffset` is where
+ * this track begins within the *whole* loaded item's timeline (seconds), so a global
+ * `currentTime` can be mapped onto (track, offset-within-track) without the player needing
+ * to know how many files a book was split into, or how many tracks an album has — the same
+ * mechanism that lets a multi-file audiobook play through file boundaries is what lets an
+ * album queue play through track boundaries.
  */
 export interface AudioTrack {
   index: number;
   startOffset: number;
   duration: number;
   title: string | null;
-  /** Upstream-relative path, e.g. `/api/items/:itemId/file/:fileId` — the last
-   *  segment is the `fileId` `api.audioTrackUrl` needs. */
+  /**
+   * An opaque per-source token, meaningful only to whichever `PlaybackSource.resolveTrackUrl`
+   * loaded this track (`features/player/playbackSource.ts`) — not a literal URL. Audiobookshelf
+   * embeds a `fileId` in a full upstream-relative path, e.g. `/api/items/:itemId/file/:fileId`
+   * (`fileIdFromContentUrl` extracts the last segment); Jellyfin has no equivalent path shape,
+   * so `jellyfinSource` puts the track's own Jellyfin item id here directly.
+   */
   contentUrl: string | null;
   mimeType: string | null;
 }
@@ -98,7 +106,15 @@ export interface PodcastEpisode {
 }
 
 export interface MediaSummary {
-  kind: 'book' | 'podcast';
+  /**
+   * `'track'` has no upstream counterpart — Jellyfin has no "library item" concept
+   * matching Audiobookshelf's, so `playerStore.currentItem` for a loaded Jellyfin queue
+   * is synthesized client-side by `features/music/queue.ts`, not fetched from the BFF.
+   * It never reaches the `'book'`/`'podcast'` routing checks in `LibraryPage.tsx` /
+   * `PodcastDetailPage.tsx` / `routeTree.ts` (all plain `===` comparisons, no exhaustive
+   * switch) — those only ever see real Audiobookshelf items.
+   */
+  kind: 'book' | 'podcast' | 'track';
   title: string;
   subtitle?: string | null;
   authors?: AuthorRef[];

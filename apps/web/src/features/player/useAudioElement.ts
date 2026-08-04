@@ -20,10 +20,19 @@
  * than an Audiobookshelf-specific URL builder called directly here — this
  * hook only ever deals in the resolved URL, never in how a source turns a
  * track into one. See `features/player/playbackSource.ts`.
+ *
+ * Playing through a multi-file item's own file boundaries (a multi-file audiobook, or —
+ * since Phase 9's web wave — a Jellyfin album queue) needs an explicit `ended` listener:
+ * nothing else advances `currentTime` once the current file's own audio genuinely finishes.
+ * That listener, and the matching fix to actually resume playback after the `src` it just
+ * reassigned, can't be exercised by this app's own e2e suite — the fixture audio never
+ * decodes far enough to fire a real `ended` event (see above) — so both are covered by a
+ * unit-tested pure helper (`nextTrack` in `playback.ts`) plus manual/real-server
+ * verification, not by a Playwright spec asserting on `ended` itself.
  */
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '../../state/playerStore.js';
-import { trackAt } from './playback.js';
+import { nextTrack, trackAt } from './playback.js';
 
 /** How often a `timeupdate` may write into the store — one write a second is plenty for a label. */
 const TIME_SYNC_INTERVAL_MS = 1000;
@@ -98,12 +107,33 @@ export function useAudioElement(): void {
       // lying about an element that will never actually produce sound.
       usePlayerStore.getState().pause();
     };
+    // Fires when the *current file* finishes — not the same as "nothing left to play": a
+    // multi-file audiobook or an album queue (`AudioTrack.startOffset`'s own doc comment)
+    // is several files end to end on one timeline, so one file ending usually means
+    // continuing into the next, not stopping. Reads `tracks`/`currentTime` fresh from the
+    // store rather than this effect's own closed-over `tracks`, for the same reason
+    // `handleTimeUpdate` above reads `currentTime` that way: this handler doesn't need to
+    // re-subscribe every time either value ticks, only to see the latest one when it fires.
+    const handleEnded = () => {
+      const state = usePlayerStore.getState();
+      const match = trackAt(state.tracks, state.currentTime);
+      if (!match) return;
+      const next = nextTrack(state.tracks, match.track);
+      if (next) {
+        state.seek(next.startOffset);
+      } else {
+        // The last track on the timeline ended — nothing queued to continue into.
+        state.pause();
+      }
+    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('error', handleError);
+    audio.addEventListener('ended', handleEnded);
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('error', handleError);
+      audio.removeEventListener('ended', handleEnded);
     };
   }, [tracks]);
 
@@ -121,6 +151,18 @@ export function useAudioElement(): void {
     if (loadedUrlRef.current !== url) {
       loadedUrlRef.current = url;
       audio.src = url;
+      // Reassigning `src` resets the element's own play state, so playback that was already
+      // underway (crossing a track boundary via `handleEnded` above, or a manual seek across
+      // one mid-playback) would otherwise silently go quiet: `isPlaying` stays true, nothing
+      // downstream reverts it, but no sound plays until the next explicit pause/play toggle.
+      // The `[isPlaying]` effect below only fires on an *isPlaying transition*, which a track
+      // change is not, so it can't be relied on to restart audio here. Same rejection handling
+      // as that effect, and for the same reason (fixture audio can't decode — file header).
+      if (usePlayerStore.getState().isPlaying) {
+        audio.play().catch(() => {
+          usePlayerStore.getState().pause();
+        });
+      }
     }
 
     // Only correct drift bigger than the timeupdate's own margin of error —

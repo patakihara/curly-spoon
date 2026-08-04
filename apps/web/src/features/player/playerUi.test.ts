@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   defaultBookmarkTitle,
   endOfChapterMs,
   formatRemaining,
+  playerArtworkUrl,
   playerDisplayMeta,
   remainingSeconds,
 } from './playerUi.js';
@@ -68,6 +69,7 @@ describe('playerDisplayMeta', () => {
   it('shows the episode’s own title over the podcast’s, when an episode is loaded', () => {
     expect(
       playerDisplayMeta({
+        kind: 'podcast',
         episodeId: 'ep-1',
         displayTitle: 'The One About Rust',
         itemTitle: 'Daily Tech Briefing',
@@ -79,6 +81,7 @@ describe('playerDisplayMeta', () => {
   it('shows the book’s title and author, unchanged, when no episode is loaded', () => {
     expect(
       playerDisplayMeta({
+        kind: 'book',
         episodeId: null,
         displayTitle: 'Dune',
         itemTitle: 'Dune',
@@ -90,11 +93,83 @@ describe('playerDisplayMeta', () => {
   it('falls back to the item’s own title if an episode session ever arrives with a blank displayTitle', () => {
     expect(
       playerDisplayMeta({
+        kind: 'podcast',
         episodeId: 'ep-1',
         displayTitle: '',
         itemTitle: 'Daily Tech Briefing',
         authors: 'Signal Media',
       }),
     ).toEqual({ primary: 'Daily Tech Briefing', secondary: 'Daily Tech Briefing' });
+  });
+
+  it('shows the current track’s own title over the artist, for a loaded music queue', () => {
+    // Unlike an episode, `displayTitle` is frozen at the album's `load()` time (track 1),
+    // never updated as the queue advances — `currentTrackTitle` (`trackAt(tracks,
+    // currentTime)?.track.title`, computed fresh by the caller every render) is what
+    // actually tracks which song is playing right now.
+    expect(
+      playerDisplayMeta({
+        kind: 'track',
+        episodeId: null,
+        displayTitle: 'Track One',
+        itemTitle: 'Some Album',
+        authors: 'The Artists',
+        currentTrackTitle: 'Track Three',
+      }),
+    ).toEqual({ primary: 'Track Three', secondary: 'The Artists' });
+  });
+
+  it('falls back to displayTitle, then the album title, if the current track can’t be resolved', () => {
+    expect(
+      playerDisplayMeta({
+        kind: 'track',
+        episodeId: null,
+        displayTitle: 'Track One',
+        itemTitle: 'Some Album',
+        authors: 'The Artists',
+        currentTrackTitle: null,
+      }),
+    ).toEqual({ primary: 'Track One', secondary: 'The Artists' });
+
+    expect(
+      playerDisplayMeta({
+        kind: 'track',
+        episodeId: null,
+        displayTitle: '',
+        itemTitle: 'Some Album',
+        authors: 'The Artists',
+        currentTrackTitle: null,
+      }),
+    ).toEqual({ primary: 'Some Album', secondary: 'The Artists' });
+  });
+});
+
+describe('playerArtworkUrl', () => {
+  function fakeApi() {
+    return {
+      coverUrl: vi.fn(
+        (itemId: string, options?: { width?: number }) =>
+          `/media/${itemId}/cover?width=${options?.width ?? ''}`,
+      ),
+      jellyfinArtworkUrl: vi.fn((itemId: string) => `/jellyfin/items/${itemId}/artwork`),
+    };
+  }
+
+  it('uses the Audiobookshelf cover route, sized per surface, for a book or podcast', () => {
+    const api = fakeApi();
+    expect(playerArtworkUrl(api, { kind: 'book', itemId: 'item-1', width: 96 })).toBe(
+      '/media/item-1/cover?width=96',
+    );
+    expect(api.coverUrl).toHaveBeenCalledWith('item-1', { width: 96 });
+    expect(api.jellyfinArtworkUrl).not.toHaveBeenCalled();
+  });
+
+  it('uses the proxied Jellyfin artwork route for a track, ignoring width — that route has no resize option', () => {
+    const api = fakeApi();
+    expect(playerArtworkUrl(api, { kind: 'track', itemId: 'album-1', width: 640 })).toBe(
+      '/jellyfin/items/album-1/artwork',
+    );
+    expect(api.jellyfinArtworkUrl).toHaveBeenCalledWith('album-1');
+    expect(api.coverUrl).not.toHaveBeenCalled();
   });
 });

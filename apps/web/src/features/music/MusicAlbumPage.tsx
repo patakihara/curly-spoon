@@ -6,21 +6,35 @@
  * upstream library changed between browsing to it and this page loading)
  * degrades to "Album" rather than throwing.
  *
- * No play affordance on any row — playback is explicitly out of scope for this
- * wave (see `docs/HANDOVER.md`): the existing player is built around an
- * Audiobookshelf playback *session*
- * (`features/player/playback.ts`/`state/playerStore.ts`/`progressSync.ts`),
- * which a Jellyfin track has no equivalent of. Rows use `ListItem` with
- * `interactive={false}` for exactly that reason — present the data, wire
- * nothing that would silently no-op.
+ * Clicking a row plays the *whole currently-loaded page of tracks* as one queue, starting
+ * at that row, through `jellyfinSource` (`features/player/playbackSource.ts`) —
+ * `features/music/queue.ts`'s `albumQueue` lays every track on this page out end to end on
+ * one cumulative timeline (exactly how a multi-file audiobook already plays through its own
+ * file boundaries), so playing track 3 continues into track 4 with no separate "queue"
+ * concept in the player itself. Unlike `ItemPage.tsx`, there is no `POST /items/:id/play`
+ * round-trip to open first — Jellyfin's proxied stream route is stateless, so
+ * `playerStore.load()` is called with a `LibraryItem`/`PlaybackSession` pair synthesized
+ * here, client-side, rather than one fetched from the BFF. `MediaSummary.kind: 'track'`
+ * (widened for exactly this) is what tells `playerDisplayMeta`/`playerArtworkUrl`
+ * (`features/player/playerUi.ts`) to bill and illustrate this differently from a real
+ * Audiobookshelf item — see those functions' own doc comments.
+ *
+ * The queue is scoped to this page's own 40-track window, not the whole album across
+ * pagination boundaries — most real albums fit on one page, and stitching queues across a
+ * `Next` click is unbuilt scope, not a bug: see `queue.ts`'s own header for what a fuller
+ * queue (that, plus shuffle/repeat/cross-source) would still need.
  */
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { Button, ListItem, Skeleton } from '@auralis/ui';
+import type { JellyfinTrack, LibraryItem, PlaybackSession } from '../../api/types.js';
 import { useApi } from '../../api/ApiContext.js';
 import { useJellyfinTracksQuery } from '../../api/queries.js';
+import { jellyfinSource } from '../player/playbackSource.js';
 import { formatDuration } from '../player/playback.js';
+import { usePlayerStore } from '../../state/playerStore.js';
 import { summarizePage } from './pagination.js';
+import { albumQueue } from './queue.js';
 
 function trackPosition(discNumber: number | null, trackNumber: number | null): string {
   if (trackNumber === null) return '';
@@ -41,6 +55,38 @@ export function MusicAlbumPage() {
   const page = tracksQuery.data
     ? summarizePage({ startIndex, limit: 40 }, tracksQuery.data.total, tracks.length)
     : null;
+
+  const playTrack = (clicked: JellyfinTrack) => {
+    const queue = albumQueue(tracks);
+    const clickedIndex = tracks.findIndex((track) => track.id === clicked.id);
+    // `clickedIndex` always matches a real `audioTracks` entry — `queue`'s tracks are built
+    // from this same `tracks` array, in the same order, one-to-one — so this only falls back
+    // to the queue's own start if a row is somehow clicked after its track left `tracks`
+    // (e.g. a slow click racing a page change), rather than throwing on a stale reference.
+    const startTrack = queue.audioTracks[clickedIndex] ?? queue.audioTracks[0];
+    const item: LibraryItem = {
+      id: albumId,
+      // Jellyfin has no "library id" surfaced to this page; inert, `load()` never reads it.
+      libraryId: '',
+      coverPath: null,
+      media: { kind: 'track', title: albumName, author: artistNames || null },
+      progress: null,
+    };
+    const session: PlaybackSession = {
+      id: `jellyfin-album-${albumId}`,
+      libraryItemId: albumId,
+      episodeId: null,
+      // Inert — `playerStore.load()` never reads `mediaType`; present only to satisfy the type.
+      mediaType: 'book',
+      displayTitle: startTrack?.title ?? albumName,
+      duration: queue.duration,
+      currentTime: startTrack?.startOffset ?? 0,
+      audioTracks: queue.audioTracks,
+      chapters: [],
+    };
+    usePlayerStore.getState().load(item, session, jellyfinSource(api));
+    usePlayerStore.getState().play();
+  };
 
   return (
     <div className="auralis-page" data-testid="music-album-page">
@@ -72,23 +118,17 @@ export function MusicAlbumPage() {
         <>
           <div data-testid="music-track-list" style={{ display: 'flex', flexDirection: 'column' }}>
             {tracks.map((track) => (
-              // `ListItem`'s non-interactive (`interactive={false}`) branch renders a plain
-              // `Box` that doesn't spread its remaining props (see `packages/ui/src/components/
-              // ListItem.tsx`) — `data-testid` would silently vanish if passed to `ListItem`
-              // itself here, so the wrapping `div` carries it instead. Not touching
-              // `packages/ui` to fix that spread is deliberate — out of this wave's scope.
-              <div key={track.id} data-testid={`music-track-${track.id}`}>
-                <ListItem
-                  interactive={false}
-                  leading={<span>{trackPosition(track.discNumber, track.trackNumber)}</span>}
-                  headline={track.name}
-                  supportingText={
-                    track.durationSeconds !== null
-                      ? formatDuration(track.durationSeconds)
-                      : undefined
-                  }
-                />
-              </div>
+              <ListItem
+                key={track.id}
+                data-testid={`music-track-${track.id}`}
+                aria-label={`Play ${track.name}`}
+                onClick={() => playTrack(track)}
+                leading={<span>{trackPosition(track.discNumber, track.trackNumber)}</span>}
+                headline={track.name}
+                supportingText={
+                  track.durationSeconds !== null ? formatDuration(track.durationSeconds) : undefined
+                }
+              />
             ))}
           </div>
 

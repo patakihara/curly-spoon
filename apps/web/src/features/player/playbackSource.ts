@@ -1,14 +1,14 @@
 /**
  * The seam between the player and whatever upstream is actually playing.
  *
- * Today only one upstream exists: an Audiobookshelf playback session (a book,
- * or — scoped by `PlaybackSession.episodeId` — a podcast episode; the same
- * `/sessions/:id/sync`/`/close` pair serves both, so this is one
- * implementation, not two, per `client.ts`'s own `playEpisode` doc comment).
- * It owns two things a source-agnostic player cannot know on its own: how to
- * turn a measured stretch of listening into an upstream report
- * (`reportProgress`), and how to turn one of the item's tracks into a URL
- * `<audio>` can actually load (`resolveTrackUrl`).
+ * Two upstreams exist: an Audiobookshelf playback session (a book, or — scoped by
+ * `PlaybackSession.episodeId` — a podcast episode; the same `/sessions/:id/sync`/`/close`
+ * pair serves both, so this is one implementation, not two, per `client.ts`'s own
+ * `playEpisode` doc comment), and — since Phase 9's web wave — a Jellyfin album queue
+ * (`jellyfinSource`, fed by `features/music/queue.ts`). Each owns two things a
+ * source-agnostic player cannot know on its own: how to turn a measured stretch of
+ * listening into an upstream report (`reportProgress`), and how to turn one of the item's
+ * tracks into a URL `<audio>` can actually load (`resolveTrackUrl`).
  *
  * What is deliberately *not* part of this interface: opening the session.
  * `POST /items/:id/play(/:episodeId)` is a network round-trip with its own
@@ -16,12 +16,11 @@
  * `usePlayEpisodeMutation` at the call site (`ItemPage.tsx`/
  * `PodcastDetailPage.tsx`) — its result (`PlaybackSession`) is exactly what
  * `playerStore.load()` needs to populate tracks/chapters/duration/currentTime.
- * A hypothetical Jellyfin source's "start" step — resolving a stream URL, with
- * no session concept at all — is structurally nothing like opening an
- * Audiobookshelf session, and this wave has no second implementation to design
- * a shared shape against. Folding "start" in now would mean guessing at a
- * return type both would have to share; better to let the wave that actually
- * adds a second source design that against a real one.
+ * `jellyfinSource` confirms this split was the right call: it has no "start" step at all
+ * (Jellyfin's stream URL needs nothing opened upstream, so `MusicAlbumPage.tsx` builds a
+ * `PlaybackSession`-shaped value client-side, synchronously — see its own comment), which
+ * would have been an awkward shared return type to have guessed at ahead of a real second
+ * implementation to design it against.
  */
 import type { ApiClient } from '../../api/client.js';
 import type { AudioTrack } from '../../api/types.js';
@@ -108,12 +107,11 @@ export function audiobookshelfSource(
 }
 
 /**
- * The honest answer for a source with no progress-reporting API wired up
- * yet — e.g. a future Jellyfin track, ahead of that upstream's own
- * `PlaybackProgress` reporting being built. Not wired up anywhere in this
- * wave (no surface offers a play affordance for anything but an
- * Audiobookshelf item yet); exported so the next wave has a ready-made,
- * already-tested starting point instead of writing this from scratch.
+ * The honest answer for a source with no progress-reporting API wired up yet. Used directly
+ * by `jellyfinSource` below, ahead of Jellyfin's own `PlaybackProgress` reporting being
+ * built — exported separately so a future source (or a later wave that does wire up
+ * Jellyfin progress) has a ready-made, already-tested starting point instead of writing this
+ * from scratch.
  */
 export const noopProgressReporter: PlaybackProgressReporter = {
   onTick() {
@@ -124,3 +122,29 @@ export const noopProgressReporter: PlaybackProgressReporter = {
     // Nothing to report to, and nothing to close.
   },
 };
+
+/**
+ * Music (Phase 9 web wave). Unlike `audiobookshelfSource`, there is no session to open or
+ * close — Jellyfin's stream/artwork routes are stateless proxies keyed by the track's own
+ * item id (`routes/jellyfin.ts`), so this source needs no `itemId`/`sessionId` closed over
+ * at construction, and `reportProgress` is the plain `noopProgressReporter`: Jellyfin has
+ * its own `PlaybackProgress` API, but nothing here calls it yet, so a track played through
+ * this source reports nothing upstream — an upstream "continue listening" shelf or resume
+ * point will not reflect it. That gap is deliberate scope, not an oversight; see this
+ * module's own header and `noopProgressReporter`'s doc comment.
+ *
+ * `resolveTrackUrl` reads `track.contentUrl` as the track's own Jellyfin item id directly
+ * (an opaque per-source token — see `AudioTrack.contentUrl`'s doc comment in `api/types.ts`
+ * — never a literal URL), which is exactly what `features/music/queue.ts`'s `albumQueue`
+ * puts there.
+ */
+export function jellyfinSource(api: Pick<ApiClient, 'jellyfinTrackStreamUrl'>): PlaybackSource {
+  return {
+    reportProgress: noopProgressReporter,
+    resolveTrackUrl(track) {
+      const id = track.contentUrl;
+      if (!id) return null;
+      return api.jellyfinTrackStreamUrl(id);
+    },
+  };
+}
