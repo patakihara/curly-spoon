@@ -1,20 +1,14 @@
 # Handover
 
-## Priority, before any feature work: review the workflow itself
+## Workflow check — resolved 2026-08-04
 
-The orchestrator has not been working well (2026-08-04): it repeatedly called `EnterWorktree`
-on its own initiative despite `CLAUDE.md` already forbidding exactly that; it exited a worktree
-mid-task while subagents were still writing inside it, which dropped at least one agent's
-pending edit; it spawned a fully autonomous `claude --bg` session with unsupervised authority
-to merge straight into `claude/media-client-app-k7v9by`, with no check-in; and it defaulted to
-a `gh pr create` workflow in a repo that has never used PRs. All of this cost real time and
-had to be corrected live by the user, repeatedly, in the same conversation.
-
-**Before picking up any roadmap phase or feature request, call `advisor()` with this session's
-actual workflow and setup as the subject — not a specific technical question — and fix what it
-finds first.** `CLAUDE.md`'s "do not create a worktree" section now has the specifics of what
-went wrong. Don't re-derive them; read that section, then ask the advisor to check whether the
-session is actually following it, before trusting your own judgement that it is.
+An earlier session mishandled `EnterWorktree`/subagent isolation, spawned an unsupervised
+`claude --bg`, and defaulted to a PR workflow this repo doesn't use. `CLAUDE.md`'s "do not
+create a worktree" section has the full detail if it recurs. An `advisor()` call on
+2026-08-04 confirmed the workflow was back on track (main checkout, no stray
+`EnterWorktree`, subagents correctly isolated via `Agent(isolation: "worktree")`) before
+Wave E1 was picked up — no need to re-spend a call re-verifying this unless something looks
+wrong again.
 
 ---
 
@@ -221,7 +215,14 @@ making both the results section and the request list weighted siblings in the sa
 the request list's existing `weight(1f)` was unchanged).
 `./gradlew test assembleDebug` passed clean on the first real compile, six new
 `RequestsViewModelTest` cases included.
-**Next: wave E (Android Auto)** — no spec written yet.
+**Wave E1 (Android Auto data layer prep) landed `7f887dd`** — `ApiClient`
+additions (`libraryItems`/`librarySeries`/`searchLibrary`/`libraryItem`) and matching
+models, reviewed against the real server source with no defects found. The browse tree
+itself (Wave E2) ships `Continue`/`Books`/`Series` only, deliberately without a
+`Downloaded` node — no offline-downloads feature exists yet anywhere in `apps/android`,
+confirmed by grep; see `docs/ROADMAP.md` §7 for the full reasoning. **Next: wave E2**
+(`MediaLibrarySession.Callback` overrides + a shared, non-`ViewModel` playback-item
+resolver) — no spec written yet.
 
 **Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
 against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
