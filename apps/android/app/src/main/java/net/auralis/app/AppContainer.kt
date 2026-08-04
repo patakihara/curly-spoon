@@ -5,6 +5,8 @@ import coil.ImageLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import net.auralis.app.data.downloads.DownloadRepository
+import net.auralis.app.data.downloads.UnavailableDownloadEngine
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.ApiException
 import net.auralis.app.data.network.DataStoreKeyValueStore
@@ -38,6 +40,14 @@ class AppContainer(context: Context) {
      * the two diverging constructions Wave E2b replaced.
      */
     val playbackItemResolver = PlaybackItemResolver(apiClient, serverConfigRepository)
+
+    /**
+     * Offline downloads (Wave F1 — data layer only, see `docs/ROADMAP.md` §7). Wired against
+     * [UnavailableDownloadEngine] because Wave F1 ships only the `DownloadEngine` interface, not
+     * a Media3-backed implementation: enqueue/cancel are no-ops and no download ever actually
+     * starts until Wave F2 replaces this one line with a real `DownloadManager`-backed engine.
+     */
+    val downloadRepository = DownloadRepository(apiClient, keyValueStore, UnavailableDownloadEngine())
 
     /**
      * Shared with [apiClient] via the same [httpClient] instance, so cover-art requests carry
