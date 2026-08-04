@@ -11,9 +11,11 @@
          since API 34, same as FOREGROUND_SERVICE_MEDIA_PLAYBACK above already does. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Required (API 33+) for AuralisDownloadService's progress notification to actually be
-         visible — declared here so a future UI wave can request it at runtime; nothing in this
-         wave requests it yet (see AuralisDownloadService's own doc comment), so until then the
-         notification is silently invisible while the download itself still proceeds normally. -->
+         visible. Requested at runtime as of Wave F2b, from HomeScreen.kt, the first time the
+         user starts a download — not here at manifest-parse time, and not at app launch; see
+         HomeScreen.kt's startDownloadWithPermissionPrompt for the request itself and
+         DownloadsViewModel/DownloadsScreen for what the download looks like once it's running.
+         A refusal doesn't block the download, only the notification. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application

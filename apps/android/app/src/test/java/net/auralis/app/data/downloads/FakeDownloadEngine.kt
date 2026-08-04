@@ -45,4 +45,24 @@ class FakeDownloadEngine(override val isAvailable: Boolean = true) : DownloadEng
     }
 
     override suspend fun downloadsFor(itemId: String): List<DownloadedItem> = entries.values.filter { it.itemId == itemId }
+
+    /**
+     * Test-only: directly inserts (or overwrites) one track's entry, bypassing [enqueue]'s
+     * hardcoded [DownloadState.QUEUED] default — lets a test set up an already-[DownloadState
+     * .COMPLETED] (or otherwise arbitrary) download without walking through a full
+     * enqueue-then-progress lifecycle no fake here can simulate.
+     */
+    fun seed(item: DownloadedItem) {
+        entries[item.itemId to item.fileId] = item
+    }
+
+    /**
+     * Test-only: removes every track entry for [itemId] without recording a [cancelCalls] entry
+     * or touching [DownloadRepository]'s kept-offline bookkeeping — simulates the engine having
+     * lost its record of an item through some path other than [DownloadRepository.cancel], which
+     * a caller reading [downloadsFor] must degrade to "nothing known" for rather than fabricate.
+     */
+    fun forgetAllTracks(itemId: String) {
+        entries.keys.filter { it.first == itemId }.forEach { entries.remove(it) }
+    }
 }

@@ -1,5 +1,7 @@
 package net.auralis.app.playback
 
+import net.auralis.app.data.downloads.DownloadRepository
+import net.auralis.app.data.downloads.DownloadState
 import net.auralis.app.data.model.LibraryItem
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.ApiException
@@ -34,6 +36,7 @@ object BrowseIds {
     const val CONTINUE = "continue"
     const val BOOKS = "books"
     const val SERIES = "series"
+    const val DOWNLOADED = "downloaded"
     private const val SERIES_PREFIX = "series:"
     private const val BOOK_PREFIX = "book:"
 
@@ -55,18 +58,24 @@ object BrowseIds {
  * lookup by browse id. Playing a tapped item and voice search are a later wave's job (see
  * `docs/ROADMAP.md` §7, Wave E2b) — this class only resolves what the tree looks like.
  *
- * Deliberately ships `Continue`/`Books`/`Series` only, no `Downloaded` node: no
- * offline-downloads feature exists anywhere in `apps/android` yet.
+ * Ships `Continue`/`Books`/`Series`/`Downloaded`. The first three shipped without a `Downloaded`
+ * node in Wave E2a, deliberately, because no offline-downloads feature existed anywhere in
+ * `apps/android` at the time; Wave F2b adds it now that one does — see [downloadedChildren]'s own
+ * doc comment for what counts as "downloaded" there. [downloadRepository] stays [DownloadRepository]
+ * for the same reason [apiClient] stays [ApiClient]: both are Media3-free, so this class remains
+ * fully unit-testable with no Robolectric/instrumented setup.
  */
 class BrowseTreeRepository(
     private val apiClient: ApiClient,
     private val serverConfigRepository: ServerConfigRepository,
+    private val downloadRepository: DownloadRepository,
 ) {
     suspend fun rootChildren(): List<BrowseFolder> =
         listOf(
             BrowseFolder(BrowseIds.CONTINUE, "Continue Listening"),
             BrowseFolder(BrowseIds.BOOKS, "Books"),
             BrowseFolder(BrowseIds.SERIES, "Series"),
+            BrowseFolder(BrowseIds.DOWNLOADED, "Downloaded"),
         )
 
     // Network failures degrade to emptyList() here rather than propagating, mirroring item()'s
@@ -104,6 +113,7 @@ class BrowseTreeRepository(
                     .series.map { BrowseFolder(BrowseIds.seriesNode(it.id), it.name) }
             BrowseIds.isSeriesNode(parentId) ->
                 seriesBooks(libraryId, BrowseIds.seriesIdFrom(parentId), baseUrl, page, pageSize)
+            parentId == BrowseIds.DOWNLOADED -> downloadedChildren(baseUrl, page, pageSize)
             else -> emptyList()
         }
     }
@@ -218,6 +228,46 @@ class BrowseTreeRepository(
     ): List<BrowseBook> {
         val series = apiClient.librarySeries(libraryId, limit = 500).series.firstOrNull { it.id == seriesId } ?: return emptyList()
         return series.books.drop(page * pageSize).take(pageSize).map { it.toBrowseBook(baseUrl) }
+    }
+
+    /**
+     * Only items whose [net.auralis.app.data.downloads.DownloadSummary.state] is
+     * [DownloadState.COMPLETED] — every track finished, not merely "downloading" or "kept
+     * offline but partially failed" — appear here. This is deliberately stricter than
+     * [DownloadRepository.keptOfflineItemIds] alone: signal is worst exactly where a car is,
+     * which is this node's whole reason to exist, so listing an item that isn't actually fully
+     * on disk yet would let a driver tap it expecting offline playback and get nothing. A
+     * still-downloading item simply doesn't appear here until it finishes; it's never hidden
+     * from the phone app's own downloads screen, which shows in-progress state deliberately.
+     *
+     * Sorted by item id for a stable, deterministic order across pages — [DownloadSummary]
+     * carries no title to sort by without an extra network round trip per item, and
+     * [DownloadRepository] has no other ordering of its own to borrow.
+     *
+     * Windowed to [pageSize] client-side, exactly like every other node in this class: an
+     * unbounded result crashes `onGetChildren` on the main looper (see [seriesBooks]'s own
+     * comment on `verifyResultItems()`).
+     */
+    private suspend fun downloadedChildren(
+        baseUrl: String,
+        page: Int,
+        pageSize: Int,
+    ): List<BrowseBook> {
+        val completedItemIds =
+            downloadRepository.downloadSummaries()
+                .filter { it.state == DownloadState.COMPLETED }
+                .map { it.itemId }
+                .sorted()
+        return completedItemIds.drop(page * pageSize).take(pageSize).mapNotNull { itemId ->
+            try {
+                apiClient.libraryItem(itemId).toBrowseBook(baseUrl)
+            } catch (e: ApiException) {
+                // One item's lookup failing (deleted upstream since it was downloaded, a
+                // transient network blip) shouldn't blank the whole node — skip it, matching
+                // this class's existing total-function style elsewhere.
+                null
+            }
+        }
     }
 
     private fun LibraryItem.toBrowseBook(baseUrl: String): BrowseBook =

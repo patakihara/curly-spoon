@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import net.auralis.app.AppContainer
+import net.auralis.app.features.downloads.DownloadsScreen
 import net.auralis.app.features.login.LoginScreen
 import net.auralis.app.features.home.HomeScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
@@ -29,6 +30,7 @@ object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
     const val REQUESTS = "requests"
+    const val DOWNLOADS = "downloads"
 }
 
 /**
@@ -71,6 +73,7 @@ fun AuralisNavHost(
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
                 composable(Routes.HOME) { HomeScreen(container, playerViewModel, navController) }
                 composable(Routes.REQUESTS) { RequestsScreen(container) }
+                composable(Routes.DOWNLOADS) { DownloadsScreen(container) }
             }
         }
     }

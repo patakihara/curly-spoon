@@ -227,4 +227,59 @@ class DownloadRepositoryTest {
             assertTrue(unavailableEngine.cancelCalls.isEmpty())
             assertTrue(repositoryWithUnavailableEngine.keptOfflineItemIds().isEmpty())
         }
+
+    @Test
+    fun `downloadSummaries is empty when nothing is kept offline`() =
+        runTest {
+            assertTrue(repository.downloadSummaries().isEmpty())
+        }
+
+    @Test
+    fun `downloadSummaries returns one summary per kept-offline item, rolling up its tracks`() =
+        runTest {
+            enqueuePlayItem(
+                itemId = "item1",
+                audioTracksJson =
+                    """[
+                        {"index":0,"startOffset":0.0,"duration":50.0,"contentUrl":"/api/items/item1/file/f1"},
+                        {"index":1,"startOffset":50.0,"duration":50.0,"contentUrl":"/api/items/item1/file/f2"}
+                    ]""",
+            )
+            enqueuePlayItem(
+                itemId = "item2",
+                audioTracksJson = """[{"index":0,"startOffset":0.0,"duration":50.0,"contentUrl":"/api/items/item2/file/f1"}]""",
+            )
+
+            repository.enqueue("item1")
+            repository.enqueue("item2")
+
+            val summaries = repository.downloadSummaries().associateBy { it.itemId }
+
+            assertEquals(setOf("item1", "item2"), summaries.keys)
+            // FakeDownloadEngine.enqueue always records QUEUED entries — summarizeDownloads
+            // rolls both of item1's tracks up into a single DOWNLOADING summary.
+            assertEquals(DownloadState.DOWNLOADING, summaries.getValue("item1").state)
+            assertEquals(DownloadState.DOWNLOADING, summaries.getValue("item2").state)
+        }
+
+    @Test
+    fun `downloadSummaries drops a kept-offline item whose engine has forgotten every track`() =
+        runTest {
+            enqueuePlayItem(
+                itemId = "item1",
+                audioTracksJson = """[{"index":0,"startOffset":0.0,"duration":50.0,"contentUrl":"/api/items/item1/file/f1"}]""",
+            )
+            repository.enqueue("item1")
+            assertEquals(setOf("item1"), repository.keptOfflineItemIds())
+
+            // Simulates the engine losing its record of every track through some path other than
+            // DownloadRepository.cancel() (which would also clear the kept-offline entry below) —
+            // summarizeDownloads' null-on-empty-list case is what keeps this from producing a
+            // fabricated zero-state row instead of dropping the item outright.
+            downloadEngine.forgetAllTracks("item1")
+
+            assertTrue(repository.downloadSummaries().isEmpty())
+            // The kept-offline set itself is untouched — only the derived summary degrades.
+            assertEquals(setOf("item1"), repository.keptOfflineItemIds())
+        }
 }

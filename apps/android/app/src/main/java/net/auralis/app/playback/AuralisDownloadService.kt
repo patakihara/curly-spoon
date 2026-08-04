@@ -125,11 +125,11 @@ class AuralisDownloadService :
      * this for one whenever it exists.
      *
      * On API 33+ this notification is silently invisible unless the user has granted
-     * `POST_NOTIFICATIONS` — declared in the manifest (required to ever show it) but not yet
-     * requested anywhere at runtime, since requesting a runtime permission is UI work and this
-     * wave is explicitly data-layer only (see `docs/ROADMAP.md` §7, Wave F2b). The download
-     * itself is unaffected either way: this is still a real foreground service, and downloads
-     * proceed whether or not its notification happens to be visible to the user.
+     * `POST_NOTIFICATIONS` — declared in the manifest, and, as of Wave F2b, requested at
+     * runtime from `HomeScreen.kt`'s `startDownloadWithPermissionPrompt` the first time the
+     * user starts a download. A refusal is still handled gracefully: this is a real foreground
+     * service either way, and downloads proceed whether or not its notification happens to be
+     * visible to the user.
      */
     override fun getForegroundNotification(
         downloads: MutableList<Download>,
