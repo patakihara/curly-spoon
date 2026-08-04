@@ -57,8 +57,18 @@ export function PodcastFeedPreview({
   // React Query owns that lifecycle independently of this component — so an unguarded
   // subscribe still leaves the subscription correctly reflected elsewhere; only this
   // component's own `subscribed`/`subscribeError` state needs the guard.
+  //
+  // The effect body must set the ref back to `true`, not just declare it `true` at
+  // `useRef`'s initial value — this app renders under `<StrictMode>` (`main.tsx`), which
+  // in development intentionally mounts, unmounts and remounts every component once on
+  // first mount to surface effect cleanup bugs. The first (simulated) unmount runs the
+  // cleanup below and sets the ref to `false`; without reopening it here on the second
+  // (real) mount, the ref stays permanently closed for the component's entire actual
+  // lifetime, and `setSubscribed(true)` never runs — the exact bug this comment is here to
+  // stop a future "simplification" from reintroducing.
   const mountedRef = useRef(true);
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
