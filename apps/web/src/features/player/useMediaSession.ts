@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { useApi } from '../../api/ApiContext.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { useSettingsStore } from '../../state/settingsStore.js';
+import { playerDisplayMeta } from './playerUi.js';
 
 function setActionHandler(action: MediaSessionAction, handler: MediaSessionActionHandler): void {
   try {
@@ -23,6 +24,8 @@ function setActionHandler(action: MediaSessionAction, handler: MediaSessionActio
 export function useMediaSession(): void {
   const api = useApi();
   const currentItem = usePlayerStore((s) => s.currentItem);
+  const episodeId = usePlayerStore((s) => s.episodeId);
+  const displayTitle = usePlayerStore((s) => s.displayTitle);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
 
   useEffect(() => {
@@ -34,12 +37,22 @@ export function useMediaSession(): void {
 
     const authors =
       currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
+    // Same episode-vs-podcast title split as the mini player and Now Playing — the lock
+    // screen and hardware media keys are, if anything, the more visible surface: the mini
+    // player is at least in the app the user opened, the lock screen is wherever the phone
+    // is. See playerUi.ts's playerDisplayMeta for the full reasoning.
+    const { primary, secondary } = playerDisplayMeta({
+      episodeId,
+      displayTitle,
+      itemTitle: currentItem.media.title,
+      authors,
+    });
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentItem.media.title,
-      artist: authors,
+      title: primary,
+      artist: secondary,
       artwork: [{ src: api.coverUrl(currentItem.id, { width: 512 }) }],
     });
-  }, [api, currentItem]);
+  }, [api, currentItem, episodeId, displayTitle]);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;

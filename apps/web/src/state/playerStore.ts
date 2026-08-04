@@ -29,6 +29,15 @@ export interface Bookmark {
 export interface PlayerState {
   currentItem: LibraryItem | null;
   sessionId: string | null;
+  /** Non-null when the loaded session is one episode of `currentItem` (a podcast) rather
+   *  than the item itself (a book) — mirrors `PlaybackSession.episodeId`. What the
+   *  transport surfaces use to decide whether to show episode-vs-podcast title billing;
+   *  see `playerUi.ts`'s `playerDisplayMeta`. */
+  episodeId: string | null;
+  /** The session's own display title — the *episode's* title when `episodeId` is set, the
+   *  book's title otherwise. Distinct from `currentItem.media.title`, which is always the
+   *  library item's (for an episode, the podcast's) own title. */
+  displayTitle: string;
   tracks: AudioTrack[];
   chapters: Chapter[];
   isPlaying: boolean;
@@ -55,6 +64,8 @@ export interface PlayerState {
 const INITIAL_STATE = {
   currentItem: null,
   sessionId: null,
+  episodeId: null,
+  displayTitle: '',
   tracks: [],
   chapters: [],
   isPlaying: false,
@@ -91,6 +102,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({
       currentItem: item,
       sessionId: session.id,
+      episodeId: session.episodeId,
+      displayTitle: session.displayTitle,
       tracks: session.audioTracks,
       chapters: session.chapters,
       duration: session.duration,

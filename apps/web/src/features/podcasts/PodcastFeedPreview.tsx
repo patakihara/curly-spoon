@@ -7,7 +7,7 @@
  * directory search snippet. See `PodcastDiscoverPage`'s doc comment for how a preview
  * is reached (a directory result, or a pasted URL).
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Card, Chip } from '@auralis/ui';
 import { ApiError } from '../../api/errors.js';
 import { useSubscribePodcastMutation } from '../../api/queries.js';
@@ -51,6 +51,19 @@ export function PodcastFeedPreview({
   const [subscribed, setSubscribed] = useState(false);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
 
+  // Guards the two local-state updates below against landing after this component has
+  // unmounted (e.g. the user navigates away mid-subscribe). The mutation's own cache
+  // invalidation (`useSubscribePodcastMutation`'s `onSuccess`) isn't affected either way —
+  // React Query owns that lifecycle independently of this component — so an unguarded
+  // subscribe still leaves the subscription correctly reflected elsewhere; only this
+  // component's own `subscribed`/`subscribeError` state needs the guard.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const body = podcastLibrary
     ? buildSubscribeBody({ preview, rssFeed, library: podcastLibrary, directoryResult })
     : null;
@@ -60,8 +73,9 @@ export function PodcastFeedPreview({
     setSubscribeError(null);
     try {
       await subscribeMutation.mutateAsync(body);
-      setSubscribed(true);
+      if (mountedRef.current) setSubscribed(true);
     } catch (err) {
+      if (!mountedRef.current) return;
       const message =
         err instanceof ApiError ? err.message : 'Could not subscribe to this podcast.';
       setSubscribeError(message);
