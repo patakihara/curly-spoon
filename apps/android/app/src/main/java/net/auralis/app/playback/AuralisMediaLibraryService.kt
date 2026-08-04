@@ -1,9 +1,7 @@
 package net.auralis.app.playback
 
-import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
@@ -113,10 +111,12 @@ class AuralisMediaLibraryService : MediaLibraryService() {
     }
 
     /**
-     * Bridges [BrowseTreeRepository]'s suspend API into the `ListenableFuture`-based
-     * [MediaLibrarySession.Callback] contract via `serviceScope.future { }`
-     * (kotlinx-coroutines-guava). `MediaItem` conversion happens here, not in
-     * [BrowseTreeRepository], so that class stays free of any Media3 import.
+     * Bridges [BrowseTreeRepository]'s and [PlaybackItemResolver]'s suspend APIs into the
+     * `ListenableFuture`-based [MediaLibrarySession.Callback] contract via
+     * `serviceScope.future { }` (kotlinx-coroutines-guava). `MediaItem` conversion is delegated
+     * to [MediaItemConversions]'s extension functions, not done here or in
+     * [BrowseTreeRepository]/[PlaybackItemResolver], so those two classes stay free of any
+     * Media3 import.
      */
     private inner class BrowseTreeCallback : MediaLibrarySession.Callback {
         override fun onGetLibraryRoot(
@@ -184,48 +184,10 @@ class AuralisMediaLibraryService : MediaLibraryService() {
                         if (item.localConfiguration != null) {
                             item
                         } else {
-                            playbackItemResolver.resolve(item.mediaId)
+                            playbackItemResolver.resolve(item.mediaId)?.toMediaItem()
                         }
                     }
                     .toMutableList()
             }
-    }
-
-    private fun BrowseNode.toMediaItem(): MediaItem =
-        when (this) {
-            is BrowseFolder -> folderMediaItem(id, title)
-            is BrowseBook -> {
-                val metadata =
-                    MediaMetadata.Builder()
-                        .setIsBrowsable(false)
-                        .setIsPlayable(true)
-                        .setTitle(title)
-                        .apply {
-                            subtitle?.let { setSubtitle(it) }
-                            coverUrl?.let { setArtworkUri(Uri.parse(it)) }
-                        }
-                        .build()
-                MediaItem.Builder()
-                    .setMediaId(id)
-                    .setMediaMetadata(metadata)
-                    .build()
-            }
-        }
-
-    private fun folderMediaItem(
-        id: String,
-        title: String,
-    ): MediaItem {
-        val metadata =
-            MediaMetadata.Builder()
-                .setIsBrowsable(true)
-                .setIsPlayable(false)
-                .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                .setTitle(title)
-                .build()
-        return MediaItem.Builder()
-            .setMediaId(id)
-            .setMediaMetadata(metadata)
-            .build()
     }
 }
