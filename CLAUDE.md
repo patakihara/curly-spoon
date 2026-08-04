@@ -212,11 +212,14 @@ pnpm format && pnpm typecheck && pnpm lint && pnpm test
 **Playwright runs here — use it.** `pnpm test:e2e`, `playwright test` and `playwright install`
 all work on this machine, and nothing blocks them. Verifying UI work in a real browser is
 faster and more honest than pushing and waiting on CI: screenshot the change, inspect the
-real DOM, confirm a fix before committing it. `pnpm test:docker` works too.
+real DOM, confirm a fix before committing it. `pnpm test:docker` does **not** work here —
+Docker isn't installed on this laptop (Docker Desktop is on the Windows host, but WSL
+integration isn't enabled for this distro) — so the container smoke test is CI-only, same
+as Gradle.
 
-Two practical notes, not restrictions: prefer `--workers=1` for a long full-suite run, and
-don't overlap the Docker smoke test with Playwright. Gradle is the one thing that genuinely
-can't run here — no JDK or Android SDK installed — so `apps/android` compiles on CI only.
+One practical note, not a restriction: prefer `--workers=1` for a long full-suite run.
+Gradle is the other thing that genuinely can't run here — no JDK or Android SDK installed —
+so `apps/android` compiles on CI only.
 
 A phase is done when the cheap set passes **and the GitHub Actions run for the pushed
 commit is green** — `.github/workflows/ci.yml` runs lint, typecheck, unit, Playwright and

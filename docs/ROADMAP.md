@@ -12,9 +12,9 @@ self-contained, tested increment.
 | 5   | Audiobooks experience + player                                  | done        |
 | 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
 | 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | in progress |
-| 8   | Podcast client (web + Android) — backend wave A done            | in progress |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | planned     |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done        |
+| 8   | Podcast client (web + Android) — no Android UI yet              | in progress |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | in progress |
 | 10  | Release polish — performance budgets, a11y audit                | planned     |
 | 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
 
@@ -391,27 +391,75 @@ setUri(String)` reaches `android.net.Uri.parse`, and this project's unit tests r
     unverified on real hardware: Auto can't be exercised here or on CI, and
     `onPlaybackResumption` depends on the same unverified `contains("continue")`
     shelf-matching heuristic the rest of the continue-listening surface already relies on.
-- **Wave F — offline downloads: data layer done (`eb211ef`, fix `66829da`).** Follows the
-  same data-layer-first split every prior wave used. New `net.auralis.app.data.downloads`:
-  `DownloadState`/`DownloadedItem`, a pure `downloadProgress` (total on zero/unknown totals,
-  clamps to 0..1), `downloadStateFromMedia3(Int)` mapping Media3's `Download.STATE_*`
-  constants, and a `DownloadRepository` behind a narrow `DownloadEngine` interface, persisted
-  through wave A's existing `KeyValueStore`. `AppContainer` wires a named
-  `UnavailableDownloadEngine` placeholder until the real engine lands. Downloads cover every
-  track of an item, deliberately unlike `PlaybackItemResolver`'s first-track-only playback
-  scoping — downloading only track one of a multi-file audiobook strands a listener exactly
-  during the signal-loss commute the feature exists for. The whole decidable layer stays
-  framework-free (zero `androidx.media3`/`android.*` imports), since unit tests run against
-  the stub `android.jar`, which throws on any real framework call — the same rule Wave E2b
-  learned the hard way. Independent review verified every `Download.STATE_*` constant against
-  `Download.java` at the `androidx/media` 1.5.1 tag and caught one real defect, fixed in
-  `66829da`: with the placeholder engine `AppContainer` actually ships, `enqueue` persisted
-  the item into the kept-offline set and returned the same success value a real download start
-  produces — a phantom entry `downloadsFor` would never report on. Fixed with a distinct
-  `Unavailable` result case and an `isAvailable` property on `DownloadEngine` (default `true`),
-  rather than an `is UnavailableDownloadEngine` type check that would keep compiling and keep
-  silently doing nothing once the real engine replaces that class. **Remaining: Wave F2** — the
-  real Media3 `DownloadManager`-backed engine, and the download UI (list, progress, remove).
+- **Wave F — offline downloads: complete (`a762cbb`).** Split data-layer-first, same as every
+  prior wave.
+  - **Wave F1 — data layer: done (`eb211ef`, fix `66829da`).** New
+    `net.auralis.app.data.downloads`: `DownloadState`/`DownloadedItem`, a pure
+    `downloadProgress` (total on zero/unknown totals, clamps to 0..1),
+    `downloadStateFromMedia3(Int)` mapping Media3's `Download.STATE_*` constants, and a
+    `DownloadRepository` behind a narrow `DownloadEngine` interface, persisted through wave
+    A's existing `KeyValueStore`. `AppContainer` wires a named `UnavailableDownloadEngine`
+    placeholder until the real engine lands. Downloads cover every track of an item,
+    deliberately unlike `PlaybackItemResolver`'s first-track-only playback scoping —
+    downloading only track one of a multi-file audiobook strands a listener exactly during
+    the signal-loss commute the feature exists for. The whole decidable layer stays
+    framework-free (zero `androidx.media3`/`android.*` imports), since unit tests run against
+    the stub `android.jar`, which throws on any real framework call — the same rule Wave E2b
+    learned the hard way. Independent review verified every `Download.STATE_*` constant
+    against `Download.java` at the `androidx/media` 1.5.1 tag and caught one real defect,
+    fixed in `66829da`: with the placeholder engine `AppContainer` actually ships, `enqueue`
+    persisted the item into the kept-offline set and returned the same success value a real
+    download start produces — a phantom entry `downloadsFor` would never report on. Fixed
+    with a distinct `Unavailable` result case and an `isAvailable` property on
+    `DownloadEngine` (default `true`), rather than an `is UnavailableDownloadEngine` type
+    check that would keep compiling and keep silently doing nothing once the real engine
+    replaces that class.
+  - **Wave F2a — real download engine: done (`f07668b`, crash-risk fix `21fb61c`).** The
+    real `Media3DownloadEngine` behind F1's interface, an `AuralisDownloadService` so
+    downloads survive backgrounding, and a single shared non-evicting `SimpleCache` the
+    player reads through so a downloaded item plays with no network. Two decisions worth
+    recording because neither is visible without a device: the download stack uses the
+    **same cookie-authenticated `OkHttpClient`** as playback (Media3's default HTTP stack
+    would 401 every request against an authenticated Audiobookshelf), and playback's
+    `CacheDataSource` is deliberately **read-only** (`setCacheWriteDataSinkFactory(null)`) —
+    the default opportunistically writes streamed content into the cache it reads from,
+    which combined with the non-evicting policy downloads require would grow disk forever
+    from ordinary listening, invisible to `DownloadManager`'s index. Independent review
+    found a real crash risk, fixed in `21fb61c`: a `dataSync` foreground service on
+    targetSdk 35 is capped at 6 cumulative hours per 24h, and a service that doesn't stop
+    itself when the system calls `onTimeout` takes a fatal `RemoteServiceException` —
+    neither Media3's `DownloadService` nor ours implemented it. Reachable, not theoretical:
+    `getScheduler()` returns `null` and Media3 only consults a scheduler below API 31, so a
+    download stalled on lost signal pins the service indefinitely. The fix **pauses
+    downloads before `stopSelf()`** — that ordering is load-bearing, since Media3 restarts a
+    detached service whenever a download is still `DOWNLOADING`, so a bare `stopSelf()`
+    would relaunch against the very budget the system just exhausted. The pause flag is
+    in-memory and cleared on the next `onCreate`, so resumability is unaffected.
+  - **Wave F2b — download UI: done (`a762cbb`, test fixes `f21709a`).** Starting a download
+    from the home shelves (no book-detail screen exists yet), a downloads screen with live
+    progress and cancel, the runtime `POST_NOTIFICATIONS` request on first download rather
+    than at launch, and a **`Downloaded` node in the Android Auto browse tree** (deliberately
+    omitted by Wave E1's scope decision above while no downloads feature existed — it exists
+    now). The Auto node lists only items whose aggregate state is `COMPLETED`, not merely
+    kept-offline — a still-downloading item would let a driver tap it expecting offline
+    playback and get nothing. Progress **polls** rather than pushing from a
+    `DownloadManager.Listener`: a listener is strictly better but can only live in
+    `Media3DownloadEngine`, which is untestable here, so polling keeps the new logic in a
+    framework-free tested class. `f21709a` fixed four failing tests, **both test-side,
+    implementation correct** — worth recording because both traps will recur:
+    `MockWebServer` serves queued responses strictly **FIFO by arrival**, not by matching
+    URL, so a helper that fires its own request before the one under test steals the queued
+    response and shifts every later one, compounded by `BrowseTreeRepository.children()`'s
+    own degrade-to-empty catch turning the resulting parse error into a silent "no children"
+    rather than a visible failure; and a `SharedFlow` with `replay = 0` loses an event
+    emitted before its collector attaches, which happens whenever the production path
+    doesn't suspend — fixed by starting the test's collector `UNDISPATCHED`. **Still
+    unfixed, flagged**: one Downloaded-node test (`excludes an item that is still
+downloading`) has the same enqueue-ordering flaw but passes anyway, because its expected
+    empty result holds either way — it passes for the wrong reason and should be corrected.
+
+  **This completes Wave F, and with it Phase 7 as scoped** — audiobooks, requests, Android
+  Auto and offline downloads are all in place.
 
 #### Android Auto is a design constraint, not a feature toggle
 
@@ -479,6 +527,16 @@ shells exist.
   the podcast library (fine for the single-folder setups that dominate; a folder picker is
   the follow-up if multi-folder turns out common), and `PodcastFeedPreview` has no unmount
   guard around an in-flight subscribe (console-only, no data effect).
+- **Wave C — podcast detail, episode list and playback on web: done (`95e42f8`).** The
+  podcast detail view, episode list, and episode playback. Threading `episodeId` through the
+  player proved unnecessary: the play route opens a session already scoped to the episode
+  upstream, so `playerStore`/`progressSync` needed no changes — sync/close operate on that
+  opaque session id. Per-episode progress reads `/me/progress`, because Audiobookshelf never
+  populates item-level progress on a podcast container. A follow-up (`dca99f2`, fixed
+  `0ce770d`) made the player show the **episode** title rather than the show's, including on
+  the lock screen via `useMediaSession`. Its own unmount-guard side-fix shipped a StrictMode
+  bug — a cleanup-only `mountedRef` is permanently `false` after StrictMode's simulated
+  remount, so the subscribe success state never rendered — now fixed.
 - **No Android UI yet** — next podcast wave, on whichever surface makes sense to build next.
 
 ### 9 — Music
@@ -486,6 +544,35 @@ shells exist.
 Jellyfin browse (albums, artists, genres, playlists), Spotify-depth search including
 **lyrics search**, gapless queue playback, synced lyrics view, music request provider —
 web and Android together.
+
+- **`packages/jellyfin-client`: done (`07282f8`).** A typed, tested Jellyfin client: auth,
+  music browsing (artists/albums/tracks), search, and pure stream/artwork URL builders.
+  Every endpoint, the `MediaBrowser` auth-header format and the PascalCase response
+  convention verified against `jellyfin/jellyfin`'s own source rather than recalled.
+  `BaseItemDto` is Jellyfin's single DTO for every item kind, so only `Id` is required on
+  the raw schemas and all defaulting happens visibly in `normalize.ts`.
+- **Credential storage, decided (`184fc82`).** Jellyfin authenticates per account like
+  Audiobookshelf, so its token is **user-scoped**, in its own `jellyfin_secrets` table —
+  not `provider_configs` (whose `kind` column is typed to the request pipeline's
+  indexer/download roles) and not a widened `secrets` (whose primary key is `user_id`
+  alone). An undecryptable ciphertext reads as unconfigured rather than erroring. The
+  server URL needs no new storage — `settingsRepo` already supports a `jellyfin` upstream.
+- **BFF routes: done (`2de121d`).** Config, login, artists/albums/tracks with pagination
+  and the upstream's `TotalRecordCount`, search, and **proxied** stream and artwork. The
+  proxy is the wave's security requirement: Jellyfin's URL builders embed the auth token in
+  the query string, so those URLs never reach a browser or an APK — the BFF builds them,
+  fetches them, and returns only the bytes. A transport failure becomes a typed network
+  error whose message never echoes the URL. Tests assert the token appears in no response
+  body across every route, and sweep response headers too.
+- **`586742e`** — the package had to be added to the container image: `apps/server`'s
+  `start` runs `tsx` against TypeScript sources, so a workspace import is a **runtime**
+  dependency, not just a build-time one. The image built fine and the container died on
+  boot. Its own `node_modules` must come along too, since pnpm's isolated layout means its
+  `zod` is only reachable through it. The Dockerfile enumerates workspace packages by hand,
+  so this same failure mode — image builds, container dies on boot — recurs for every
+  future package `apps/server` depends on until that's automated.
+- **No UI yet, on either surface.** Browse, search, playback and the request provider
+  remain to build on top of the client and BFF routes above.
 
 ### 10 — Release polish
 
@@ -502,6 +589,15 @@ A final holistic pass of the `docs/DESIGN.md` reference-app comparison belongs h
 not just the per-surface checks noted against phase 7's waves above, but the whole app,
 web and Android together, side by side with YouTube Music and Symfonium one more time before
 release.
+
+**The accessibility audit has started: done (`d3b2791`).** Two real defects fixed: search
+state changes were invisible to a screen reader (a plain paragraph, no live region), and the
+sleep timer's menu had no `aria-haspopup`/`aria-expanded` with Escape closing the entire Now
+Playing sheet — because Mantine's `Drawer` listens for Escape on `window` in the **capture**
+phase, ahead of any bubble handler the menu could register. The reduced-motion gap flagged
+earlier in `LinearProgress`/`CircularProgress` turned out already covered by a global
+catch-all in `packages/ui`'s stylesheet, verified in a browser and now pinned by regression
+tests. Contrast is asserted against real rendered elements in both themes.
 
 ### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
 
