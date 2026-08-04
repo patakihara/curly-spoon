@@ -9,6 +9,7 @@ import { registerProgressRoutes } from './progress.js';
 import { registerMediaRoutes } from './media.js';
 import { registerRequestRoutes } from './requests.js';
 import { registerPodcastRoutes } from './podcasts.js';
+import { registerJellyfinRoutes } from './jellyfin.js';
 
 /** All `/api/v1` routes, in one place so app.ts stays a thin composition root. */
 export function registerRoutes(app: FastifyInstance): void {
@@ -22,4 +23,5 @@ export function registerRoutes(app: FastifyInstance): void {
   registerMediaRoutes(app);
   registerRequestRoutes(app);
   registerPodcastRoutes(app);
+  registerJellyfinRoutes(app);
 }

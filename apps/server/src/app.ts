@@ -13,6 +13,7 @@ import type { FetchLike } from '@auralis/abs-client';
 import type { AppConfig } from './config.js';
 import type { Db } from './db/connection.js';
 import { createAbsUpstreamFactory, type AbsUpstreamFactory } from './absUpstream.js';
+import { createJellyfinUpstreamFactory, type JellyfinUpstreamFactory } from './jellyfinUpstream.js';
 import { RateLimiter } from './auth/rateLimit.js';
 import { sendError } from './httpErrors.js';
 import { registerRoutes } from './routes/index.js';
@@ -24,6 +25,7 @@ declare module 'fastify' {
     db: Db;
     config: AppConfig;
     abs: AbsUpstreamFactory;
+    jellyfin: JellyfinUpstreamFactory;
     loginRateLimiter: RateLimiter;
     requests: RequestService;
     /**
@@ -50,6 +52,8 @@ export interface BuildServerDeps {
   logger?: boolean;
   /** Retry backoff base for the upstream client — overridden to a few ms in tests. */
   absRetryBaseDelayMs?: number;
+  /** Same as `absRetryBaseDelayMs`, for the Jellyfin client. */
+  jellyfinRetryBaseDelayMs?: number;
 }
 
 export function buildServer(deps: BuildServerDeps): FastifyInstance {
@@ -67,6 +71,15 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
       sessionSecret: deps.config.sessionSecret,
       fetch: deps.fetch,
       retryBaseDelayMs: deps.absRetryBaseDelayMs,
+    }),
+  );
+  app.decorate(
+    'jellyfin',
+    createJellyfinUpstreamFactory({
+      db: deps.db,
+      sessionSecret: deps.config.sessionSecret,
+      fetch: deps.fetch,
+      retryBaseDelayMs: deps.jellyfinRetryBaseDelayMs,
     }),
   );
   // 10 attempts/minute/IP: generous for a genuine user mistyping a password a few

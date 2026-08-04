@@ -14,17 +14,33 @@ const config = loadConfig();
 
 let fetchImpl: FetchLike = fetch;
 if (config.fakeUpstreams) {
-  // Dynamic import so the fake (and its fixtures) are never pulled into a real
+  // Dynamic import so the fakes (and their fixtures) are never pulled into a real
   // deployment's module graph unless AURALIS_FAKE_UPSTREAMS=1 is set — this is the
-  // "offline dev mode" ARCHITECTURE.md describes, sharing the same fake the tests use.
+  // "offline dev mode" ARCHITECTURE.md describes, sharing the same fakes the tests use.
   //
-  // It lives under `src/`, not a sibling `test/`, precisely because of this line:
+  // They live under `src/`, not a sibling `test/`, precisely because of this line:
   // `AURALIS_FAKE_UPSTREAMS` is a runtime flag parsed by config.ts alongside PORT
   // and DATA_DIR, so the *shipped* server can be asked to load this at boot. A
   // `test/` directory is not copied into the Docker image, which made that mode
   // exit on an unresolvable import in the container while working fine locally.
-  const { createFakeAbsUpstream } = await import('./testSupport/fakes/fakeAbs.js');
-  fetchImpl = createFakeAbsUpstream().fetch;
+  const [{ createFakeAbsUpstream }, { createFakeJellyfinUpstream, FAKE_JELLYFIN_BASE_URL }] =
+    await Promise.all([
+      import('./testSupport/fakes/fakeAbs.js'),
+      import('./testSupport/fakes/fakeJellyfin.js'),
+    ]);
+  const absFake = createFakeAbsUpstream();
+  const jellyfinFake = createFakeJellyfinUpstream();
+  // Routed by origin, Jellyfin first and unconditionally — same shape as
+  // testSupport/buildTestApp.ts's composition, kept in sync deliberately so dev-mode
+  // and the test suite exercise identical routing logic. ABS stays the fallback (not
+  // gated on its own origin check) since it was the only upstream before this wave and
+  // nothing else currently registers a third fake to route to.
+  fetchImpl = async (input, init) => {
+    const url = new URL(input);
+    return url.origin === FAKE_JELLYFIN_BASE_URL
+      ? jellyfinFake.fetch(input, init)
+      : absFake.fetch(input, init);
+  };
 }
 
 const dbPath = config.dataDir === ':memory:' ? ':memory:' : join(config.dataDir, 'auralis.sqlite3');

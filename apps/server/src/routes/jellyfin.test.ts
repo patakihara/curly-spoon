@@ -1,0 +1,440 @@
+import { describe, expect, it } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
+import {
+  FAKE_JELLYFIN_BAD_CREDENTIALS,
+  FAKE_JELLYFIN_BASE_URL,
+  FAKE_JELLYFIN_CREDENTIALS,
+} from '../testSupport/fakes/fakeJellyfin.js';
+import { FAKE_NON_ADMIN_CREDENTIALS } from '../testSupport/fakes/fakeAbs.js';
+
+/** Signs in the Auralis session (ABS fake), leaving Jellyfin itself unconfigured. */
+async function authedApp(): Promise<{ app: FastifyInstance; cookie: string }> {
+  const { app } = buildTestApp();
+  const cookie = await loginTestUser(app);
+  return { app, cookie };
+}
+
+/** `authedApp`, plus a completed `POST /jellyfin/login` against the fake — the shape
+ * most browsing/search/media tests start from. */
+async function jellyfinConnectedApp(): Promise<{ app: FastifyInstance; cookie: string }> {
+  const { app, cookie } = await authedApp();
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/v1/jellyfin/login',
+    payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+    cookies: { auralis_session: cookie },
+  });
+  if (response.statusCode !== 200) {
+    throw new Error(`jellyfin login failed in test setup: ${response.statusCode} ${response.body}`);
+  }
+  return { app, cookie };
+}
+
+describe('GET /api/v1/jellyfin/config', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({ method: 'GET', url: '/api/v1/jellyfin/config' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('reports unconfigured, no credentials before any login', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/config',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ configured: false, baseUrl: null, hasCredentials: false });
+  });
+
+  it('reports configured and hasCredentials after a successful login', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/config',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      configured: true,
+      baseUrl: FAKE_JELLYFIN_BASE_URL,
+      hasCredentials: true,
+    });
+  });
+});
+
+describe('POST /api/v1/jellyfin/login', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('configures and authenticates in one call, never echoing the access token', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toMatchObject({ configured: true, baseUrl: FAKE_JELLYFIN_BASE_URL });
+    expect(body.user.name).toBe(FAKE_JELLYFIN_CREDENTIALS.username);
+    // The whole point of storing the token server-side: it must never appear in a
+    // response body at all, not even this one.
+    expect(response.body).not.toMatch(/fake-jellyfin-token-/);
+  });
+
+  it('rejects bad credentials with 401 and persists nothing', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_BAD_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(401);
+
+    const config = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/config',
+      cookies: { auralis_session: cookie },
+    });
+    expect(config.json()).toEqual({ configured: false, baseUrl: null, hasCredentials: false });
+  });
+
+  it('a bad baseUrl on a later attempt does not overwrite a previously-working one', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+
+    const badAttempt = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: 'http://not-a-real-jellyfin.invalid', ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    expect(badAttempt.statusCode).toBeGreaterThanOrEqual(400);
+
+    const config = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/config',
+      cookies: { auralis_session: cookie },
+    });
+    expect(config.json().baseUrl).toBe(FAKE_JELLYFIN_BASE_URL);
+  });
+
+  it('reuses the stored baseUrl when omitted after a first successful login', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().baseUrl).toBe(FAKE_JELLYFIN_BASE_URL);
+  });
+
+  it('409s when baseUrl is omitted and nothing has been configured yet', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
+});
+
+describe('GET /api/v1/jellyfin/artists|albums|tracks', () => {
+  it('artists requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({ method: 'GET', url: '/api/v1/jellyfin/artists' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('409s with jellyfin_not_configured when no Jellyfin server has ever been connected', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
+
+  it('401s with jellyfin_unauthenticated when Jellyfin is configured but this user has no stored token', async () => {
+    // A second, distinct Auralis account (a different ABS fixture user), signed in but
+    // never through `POST /jellyfin/login` — the shared Jellyfin `settings` row already
+    // exists (the first account connected it), so this must fail on *this user's*
+    // missing token, not on the server being unconfigured.
+    const { app } = await jellyfinConnectedApp();
+    const otherUserLogin = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: FAKE_NON_ADMIN_CREDENTIALS,
+    });
+    const setCookieHeader = otherUserLogin.headers['set-cookie'];
+    const cookieHeader = Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader;
+    const match = /auralis_session=([^;]+)/.exec(cookieHeader ?? '');
+    if (!match?.[1]) throw new Error('second account login carried no session cookie');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: match[1] },
+    });
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error.code).toBe('jellyfin_unauthenticated');
+  });
+
+  it('returns normalised artists with the upstream total', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { items, total } = response.json();
+    expect(total).toBe(2);
+    expect(items).toHaveLength(2);
+    expect(items.map((a: { name: string }) => a.name)).toContain('The Nebula Collective');
+  });
+
+  it('returns albums scoped to one artist via artistId', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const artists = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: cookie },
+    });
+    const nebula = artists
+      .json()
+      .items.find((a: { name: string }) => a.name === 'The Nebula Collective');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/albums?artistId=${nebula.id}`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { items, total } = response.json();
+    expect(total).toBe(2);
+    expect(items.every((al: { artistId: string }) => al.artistId === nebula.id)).toBe(true);
+  });
+
+  it('returns tracks scoped to one album via albumId', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const albums = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/albums',
+      cookies: { auralis_session: cookie },
+    });
+    const driftwave = albums.json().items.find((al: { name: string }) => al.name === 'Driftwave');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/tracks?albumId=${driftwave.id}`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { items, total } = response.json();
+    expect(total).toBe(2);
+    expect(items.every((t: { albumId: string }) => t.albumId === driftwave.id)).toBe(true);
+  });
+
+  it('rejects a non-positive limit with 400 before ever calling upstream', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists?limit=0',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('GET /api/v1/jellyfin/search', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({ method: 'GET', url: '/api/v1/jellyfin/search?term=drift' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('rejects a missing term with 400', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/search',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('matches by item name, bucketing results by kind', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    // "drift" only matches the album name ("Driftwave") — no artist or track name
+    // contains it, so this also proves search doesn't pull in an album's own tracks.
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/search?term=drift',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { artists, albums, tracks } = response.json();
+    expect(artists).toEqual([]);
+    expect(albums.map((a: { name: string }) => a.name)).toEqual(['Driftwave']);
+    expect(tracks).toEqual([]);
+  });
+
+  it('matches a track name directly', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/search?term=tidal',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { tracks } = response.json();
+    expect(tracks.map((t: { name: string }) => t.name)).toEqual(['Tidal Lines']);
+  });
+
+  it('returns an empty result (not an error) for a term with no matches', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/search?term=nonexistentxyz',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ artists: [], albums: [], tracks: [] });
+  });
+});
+
+describe('GET /api/v1/jellyfin/tracks/:itemId/stream', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/stream',
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('proxies the audio bytes without ever exposing the upstream token-bearing URL', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/stream',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toBe('audio/mpeg');
+    expect(Number(response.headers['content-length'])).toBeGreaterThan(0);
+    // No response header may carry the upstream URL — that URL has ApiKey=<token> in it.
+    for (const value of Object.values(response.headers)) {
+      expect(String(value)).not.toMatch(/ApiKey=/);
+    }
+  });
+
+  it('honours a Range header, returning 206 with Content-Range', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/stream',
+      headers: { range: 'bytes=0-99' },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(206);
+    expect(response.headers['content-range']).toMatch(/^bytes 0-99\//);
+  });
+
+  it('404s for an unknown item id', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/does-not-exist/stream',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+});
+
+describe('GET /api/v1/jellyfin/items/:itemId/artwork', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/items/album-driftwave/artwork',
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('proxies cover art bytes with a long-lived cache header', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/items/album-driftwave/artwork',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toBe('image/jpeg');
+    expect(response.headers['cache-control']).toContain('immutable');
+    expect(response.rawPayload.length).toBeGreaterThan(0);
+  });
+});
+
+describe('no route ever leaks the stored Jellyfin access token into a response body', () => {
+  it('checks login, browse, search and both media-proxy responses', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+
+    const responses = await Promise.all([
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/artists',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/albums',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/tracks',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/search?term=drift',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/tracks/track-driftwave-1/stream',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/items/album-driftwave/artwork',
+        cookies: { auralis_session: cookie },
+      }),
+    ]);
+
+    for (const response of responses) {
+      expect(response.body).not.toMatch(/fake-jellyfin-token-/);
+    }
+  });
+});
