@@ -89,8 +89,19 @@ function normalizeMedia(raw: RawLibraryItem): Media {
     const authors =
       metadata.authors?.map((a) => ({ id: a.id, name: a.name })) ??
       (metadata.authorName ? [{ id: metadata.authorName, name: metadata.authorName }] : []);
+    // Verified against Audiobookshelf 2.36.0 source (`server/models/Book.js`
+    // `oldMetadataToJSONMinified()`): a minified item — every list/shelf/personalized
+    // response, not just an edge case — never sends a `series` array, only the
+    // flattened `seriesName` string (itself a comma-joined "Name #sequence" summary
+    // when a book is in more than one series, same ambiguity `authorName` already has
+    // above). Without this fallback, every minified response normalized `series` to
+    // `[]`, silently dropping series membership from every home-shelf and
+    // library-browse card.
     const series =
-      metadata.series?.map((s) => ({ id: s.id, name: s.name, sequence: s.sequence ?? null })) ?? [];
+      metadata.series?.map((s) => ({ id: s.id, name: s.name, sequence: s.sequence ?? null })) ??
+      (metadata.seriesName
+        ? [{ id: metadata.seriesName, name: metadata.seriesName, sequence: null }]
+        : []);
 
     return {
       kind: 'book',

@@ -168,6 +168,15 @@ export interface MediaProgress {
   libraryItemId: string;
   episodeId: string | null;
   duration: number;
+  /**
+   * Seconds, not milliseconds — this project's convention is that unsuffixed time
+   * fields are seconds and only `Ms`-suffixed fields are milliseconds. Verified against
+   * Audiobookshelf 2.36.0 source: `server/objects/PlaybackSession.js` derives it from
+   * `MediaProgress.currentTime` (`server/managers/PlaybackSessionManager.js`,
+   * `userStartTime = Number.parseFloat(userProgress.currentTime)`), which is stored and
+   * compared directly against `duration` (itself seconds, from ffprobe) with no scaling
+   * anywhere in the chain.
+   */
   currentTime: number;
   /** 0..1 */
   progress: number;
@@ -205,6 +214,15 @@ export interface PlaybackSession {
   mediaType: 'book' | 'podcast';
   displayTitle: string;
   duration: number;
+  /**
+   * Seconds, not milliseconds — this project's convention is that unsuffixed time
+   * fields are seconds and only `Ms`-suffixed fields are milliseconds. Verified against
+   * Audiobookshelf 2.36.0 source: `server/objects/PlaybackSession.js` derives it from
+   * `MediaProgress.currentTime` (`server/managers/PlaybackSessionManager.js`,
+   * `userStartTime = Number.parseFloat(userProgress.currentTime)`), which is stored and
+   * compared directly against `duration` (itself seconds, from ffprobe) with no scaling
+   * anywhere in the chain.
+   */
   currentTime: number;
   audioTracks: AudioTrack[];
   chapters: Chapter[];
