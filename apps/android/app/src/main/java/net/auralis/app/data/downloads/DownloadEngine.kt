@@ -14,6 +14,16 @@ package net.auralis.app.data.downloads
  * `downloadStateFromMedia3` (see that function's doc comment).
  */
 interface DownloadEngine {
+    /**
+     * Whether this engine can actually perform a download. Defaults to `true` so every real
+     * implementation (including Wave F2's Media3-backed one) satisfies it with no ceremony;
+     * [UnavailableDownloadEngine] is the one override, so [DownloadRepository] can detect "no
+     * engine exists yet" through the interface instead of an `is UnavailableDownloadEngine`
+     * type-sniff that would still compile — and silently do nothing — after Wave F2 deletes that
+     * class.
+     */
+    val isAvailable: Boolean get() = true
+
     /** Starts (or resumes) downloading one track. `fileId` identifies the track within `itemId` — see [DownloadedItem]. */
     suspend fun enqueue(
         itemId: String,
@@ -42,13 +52,17 @@ interface DownloadEngine {
  * once Wave F2 exists — that is the one line this class exists to make trivial to replace.
  */
 class UnavailableDownloadEngine : DownloadEngine {
+    /** No engine exists to act on a download yet — see [DownloadRepository.enqueue]'s [DownloadEnqueueResult.Unavailable] case. */
+    override val isAvailable: Boolean = false
+
     override suspend fun enqueue(
         itemId: String,
         fileId: String,
         uri: String,
     ) {
-        // No-op: nothing to enqueue into yet. DownloadRepository still records the item as
-        // "kept offline" so the intent survives until a real engine exists to act on it.
+        // No-op: nothing to enqueue into yet. DownloadRepository checks isAvailable before ever
+        // calling this, so in practice this body never runs — kept as a harmless no-op rather
+        // than throwing, consistent with this project's total-function house style.
     }
 
     override suspend fun cancel(

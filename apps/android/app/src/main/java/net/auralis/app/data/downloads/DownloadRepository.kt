@@ -15,6 +15,16 @@ sealed interface DownloadEnqueueResult {
 
     /** The upstream call failed; `code` is the originating [ApiException.code]. */
     data class Failed(val code: String) : DownloadEnqueueResult
+
+    /**
+     * [DownloadEngine.isAvailable] was `false` — there is no engine yet that could act on this
+     * request (the current build wires [UnavailableDownloadEngine] until Wave F2 lands a real
+     * one). Nothing was queued and, critically, `itemId` was **not** added to
+     * [DownloadRepository.keptOfflineItemIds] — the earlier version of this class recorded it
+     * anyway, which produced a kept-offline entry indistinguishable from a real, successful
+     * download that [DownloadEngine.downloadsFor] would then never report anything about.
+     */
+    data object Unavailable : DownloadEnqueueResult
 }
 
 /**
@@ -54,25 +64,32 @@ class DownloadRepository(
      * [BrowseTreeRepository]/[PlaybackItemResolver]'s own try/catch-and-degrade methods).
      *
      * Marks `itemId` as kept-offline only on a successful enqueue, so a failed attempt doesn't
-     * leave a phantom entry in [keptOfflineItemIds] with nothing actually queued behind it.
+     * leave a phantom entry in [keptOfflineItemIds] with nothing actually queued behind it. Checked
+     * first and before any network call: [DownloadEnqueueResult.Unavailable] when
+     * [downloadEngine]'s [DownloadEngine.isAvailable] is `false`, for the same reason — a
+     * placeholder engine's no-op "success" is otherwise indistinguishable from a real one.
      */
     suspend fun enqueue(itemId: String): DownloadEnqueueResult =
-        try {
-            val session = apiClient.playItem(itemId)
-            val resolvedTracks =
-                session.audioTracks.mapNotNull { track ->
-                    val fileId = fileIdFromContentUrl(track.contentUrl) ?: return@mapNotNull null
-                    fileId to apiClient.audioTrackUrl(itemId, fileId)
+        if (!downloadEngine.isAvailable) {
+            DownloadEnqueueResult.Unavailable
+        } else {
+            try {
+                val session = apiClient.playItem(itemId)
+                val resolvedTracks =
+                    session.audioTracks.mapNotNull { track ->
+                        val fileId = fileIdFromContentUrl(track.contentUrl) ?: return@mapNotNull null
+                        fileId to apiClient.audioTrackUrl(itemId, fileId)
+                    }
+                if (resolvedTracks.isEmpty()) {
+                    DownloadEnqueueResult.NoPlayableTrack
+                } else {
+                    resolvedTracks.forEach { (fileId, url) -> downloadEngine.enqueue(itemId, fileId, url) }
+                    addKeptOffline(itemId)
+                    DownloadEnqueueResult.Enqueued(resolvedTracks.size)
                 }
-            if (resolvedTracks.isEmpty()) {
-                DownloadEnqueueResult.NoPlayableTrack
-            } else {
-                resolvedTracks.forEach { (fileId, url) -> downloadEngine.enqueue(itemId, fileId, url) }
-                addKeptOffline(itemId)
-                DownloadEnqueueResult.Enqueued(resolvedTracks.size)
+            } catch (e: ApiException) {
+                DownloadEnqueueResult.Failed(e.code)
             }
-        } catch (e: ApiException) {
-            DownloadEnqueueResult.Failed(e.code)
         }
 
     /**
@@ -81,6 +98,14 @@ class DownloadRepository(
      * a crash between the two calls leaves a stray "kept offline" entry (harmless — the user can
      * just try again) rather than an item whose files silently keep downloading with no record
      * the user ever asked to keep it.
+     *
+     * Needs no [DownloadEngine.isAvailable] check of its own, unlike [enqueue]: an unavailable
+     * engine's [DownloadEngine.downloadsFor] answers `emptyList()`, so the loop below is
+     * naturally a no-op, and [removeKeptOffline] on an id that was never added (which, since the
+     * [enqueue] fix, is now always true for an unavailable engine) is a harmless no-op set
+     * difference. The one case this quietly does something useful: an item kept-offline by a
+     * build *before* this fix — back when [enqueue] recorded one unconditionally — gets its
+     * phantom entry cleaned up the first time this is called on it.
      */
     suspend fun cancel(itemId: String) {
         downloadEngine.downloadsFor(itemId).forEach { downloadEngine.cancel(itemId, it.fileId) }
