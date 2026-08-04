@@ -1,6 +1,7 @@
 package net.auralis.app.features.home
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -213,7 +214,28 @@ class HomeViewModelTest {
             // short-circuit didn't happen.
             val viewModel = HomeViewModel(apiClient, serverConfigRepository, downloadRepository)
 
-            val eventDeferred = async { viewModel.downloadEvents.first() }
+            // CoroutineStart.UNDISPATCHED (not the default async{} used by the other
+            // startDownload tests in this file): the unavailable-engine path never suspends —
+            // downloadRepository.enqueue() returns DownloadEnqueueResult.Unavailable directly, so
+            // startDownload()'s whole viewModelScope.launch body (dispatched via
+            // Dispatchers.Main.immediate = UnconfinedTestDispatcher from setUp) runs eagerly and
+            // completes, including the downloadEvents.emit() below, before this test's own
+            // runTest coroutine — which runs on runTest's ambient StandardTestDispatcher, not
+            // Unconfined — would otherwise get a chance to actually start a plain async{} block
+            // (merely queued, not run, until something suspends). downloadEvents has
+            // replay = 0, so a value emitted before this collector has actually subscribed is
+            // not buffered for it — extraBufferCapacity only lets emit() return without
+            // suspending, it is not a replay mechanism for a later subscriber — and this
+            // collector would then wait forever for an event that already came and went, which
+            // is exactly the UncompletedCoroutinesError this produced. UNDISPATCHED guarantees
+            // the subscription happens inline, before this line returns, regardless of the
+            // ambient dispatcher, closing the race. The other three startDownload tests in this
+            // file don't need this: their DownloadRepository.enqueue() suspends on real
+            // (fake-server) network I/O, so startDownload() returns before the state/event
+            // update happens, and this test's own next suspension (downloadStates.first{}
+            // below, genuinely waiting on a not-yet-reached state) gives the scheduler a chance
+            // to run the queued async{} before the real completion later emits.
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.downloadEvents.first() }
             viewModel.startDownload("item1")
             val states = viewModel.downloadStates.first { it["item1"] == DownloadActionState.UNAVAILABLE }
             val event = eventDeferred.await()
