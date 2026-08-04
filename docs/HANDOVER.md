@@ -211,8 +211,8 @@ Treat these as standing instructions, not one-off remarks.
 | 5a    | Android build skeleton + APK pipeline                   | done        |
 | 6     | Book requests                                           | done        |
 | 7     | Android — audiobooks, requests, Auto, offline downloads | done        |
-| 8     | Podcasts — backend + web done, no Android UI            | in progress |
-| 9     | Music — Jellyfin client + BFF routes done, no UI yet    | in progress |
+| 8     | Podcasts — backend, web, Android                        | done        |
+| 9     | Music — web only, no Android                            | in progress |
 | 10–11 | Polish, F-Droid                                         | not started |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
@@ -235,10 +235,8 @@ aren't tied to one wave:
 - **Android Auto is unverified on real hardware end to end** — no Desktop Head Unit or car
   has exercised any of it, and CI cannot either.
 
-**Phase 8 has a backend and a web UI; no Android UI yet.** Discovery (search the podcast
-directory, preview an RSS feed, subscribe) and detail/episode-list/playback are both done on
-web. The next podcast wave is Android, on whichever surface makes sense to build next. See
-`docs/ROADMAP.md` §8.
+**Phase 8 is done** — backend, web and Android all shipped. `docs/ROADMAP.md` §8 has every
+wave and sha.
 
 **A real normalization bug is fixed (`7e57a78`):** minified library items — what every
 shelf/browse/personalized response returns — never carried `series`, only the flattened
@@ -255,9 +253,13 @@ the live/source/unverified breakdown; get a credential before re-deriving it.
 `ghcr.io/patakihara/auralis:latest` and `:<sha>` (linux/amd64) on every green build of this
 branch, gated to `push` events on this branch only. Multi-arch (arm64) remains phase 10.
 
-**Phase 9 has begun**: a typed `packages/jellyfin-client`, a per-user `jellyfin_secrets`
-credential store, and BFF routes for browse/search/proxied stream-and-artwork — no UI on
-either surface yet. `docs/ROADMAP.md` §9 has the detail.
+**Phase 9 is web-only — there is no music on Android at all.** Web has the connect flow,
+browse/search, a `PlaybackSource` seam that lets the player reuse its Audiobookshelf logic
+rather than fork it, and playback with album queueing. Deliberately missing: Jellyfin
+progress reporting, cross-page/shuffle/repeat queueing, lyrics, playlists, favourites, music
+requests, and any Android UI. Lyrics *search* is separately blocked on a product decision,
+not on effort — Jellyfin cannot search lyric text at all, so Auralis would have to build its
+own index. `docs/ROADMAP.md` §9 has the wave-by-wave detail.
 
 **Two latent bugs, neither fixed:**
 

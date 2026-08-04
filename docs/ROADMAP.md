@@ -13,7 +13,7 @@ self-contained, tested increment.
 | 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
 | 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | done        |
-| 8   | Podcast client (web + Android) — no Android UI yet              | in progress |
+| 8   | Podcast client (web + Android)                                  | done        |
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | in progress |
 | 10  | Release polish — performance budgets, a11y audit                | planned     |
 | 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
@@ -537,7 +537,28 @@ shells exist.
   the lock screen via `useMediaSession`. Its own unmount-guard side-fix shipped a StrictMode
   bug — a cleanup-only `mountedRef` is permanently `false` after StrictMode's simulated
   remount, so the subscribe success state never rendered — now fixed.
-- **No Android UI yet** — next podcast wave, on whichever surface makes sense to build next.
+- **Android wave A — data layer: done (`8c689fa`).** Discovery (directory search, feed
+  preview, subscribe), episode listing via the expanded item detail, `playEpisode(itemId,
+episodeId)`, and `myProgress()`. Each operation was checked against its server route
+  rather than inferred from the web client. Nullability was verified against the BFF's
+  **own normalizer**, not the domain interface: fields that look optional upstream are
+  filled with `?? 0`/`?? false` fallbacks before serialization, so non-nullable Kotlin types
+  are correct — widening them would push imaginary null-handling into every consumer.
+- **Android wave B — discovery, detail and playback UI: done (`58a2aa2`, test fix
+  `774e592`).** Discovery, a podcast detail screen with per-episode progress, and episode
+  playback. `PlaybackItemResolver.resolveEpisode` is a **sibling** of `resolve`, not a
+  branch inside it: it calls `playEpisode` and shares `buildResolvedPlayback` unchanged,
+  since both endpoints decode the identical session shape. The episode stream URL is built
+  from the **container** item id, verified against web's own `useAudioElement` and against
+  `media.ts` (a pure range-forwarding proxy with no book/podcast distinction) rather than
+  assumed. `774e592`'s lesson is worth keeping in mind for any future coroutine test:
+  `UncaughtExceptionsBeforeTest` names the test that runs _next_, not the one at fault — an
+  earlier test's `subscribe()` launches an independent list reload, asserted only to have
+  been _sent_, not applied, so the coroutine was still suspended when teardown reset the
+  main dispatcher out from under it. The reload fixture had to be made distinguishable from
+  the pre-subscribe one before a test could wait for it to actually complete.
+
+**This completes Phase 8** — backend, web and Android all shipped.
 
 ### 9 — Music
 
@@ -573,11 +594,34 @@ decision, not on remaining build time — see the bullet at the end of this sect
   `zod` is only reachable through it. The Dockerfile enumerates workspace packages by hand,
   so this same failure mode — image builds, container dies on boot — recurs for every
   future package `apps/server` depends on until that's automated.
-- **Web music browse and playback: done (`2a2edf7`, `de2f908`, merged `d98cc9e`).** Home,
-  artist and album pages against the Jellyfin client and BFF routes above; clicking a track
-  starts single-track playback, and the player loads the rest of the album as a queue so
-  playback continues past one track instead of stopping when the first ends. No Android UI
-  yet.
+- **Web wave A — connect flow, browse, search: done (`d99888e`).** The connect flow (in
+  Settings, following the existing provider pattern), artist/album/track browse with
+  `TotalRecordCount`-driven pagination, and search. Shipped with **no play affordance**,
+  deliberately, because the player had no seam for a non-Audiobookshelf source. It also
+  fixed a pre-existing bug it was the first to trigger: the global 401 handler signed the
+  whole app out on any 401, so a wrong Jellyfin password logged the user out before the
+  connect form's own error could render. It now keys on the `unauthenticated` code
+  `requireSession` actually sends; the same collision already existed for Audiobookshelf's
+  `upstream_auth_expired` and nothing had exercised it.
+- **The player seam: done (`fe12a77`).** A `PlaybackSource` bundling a progress reporter
+  (`onTick`/`onEnd`) and a `resolveTrackUrl`. The Audiobookshelf implementation was **lifted
+  intact, not rewritten**; the wall-clock `timeListened` arithmetic and its tests are
+  untouched. `onEnd` takes a **nullable** body, because teardown must still close the
+  upstream session when no sync payload was ever produced — a body-only signature would
+  have compiled, passed every test, and silently stopped closing those sessions. There is
+  deliberately **no `onStart` hook**: session-opening is a network round-trip already owned
+  by the call site's mutation, and Jellyfin's equivalent shares no shape with it, so
+  abstracting it with one implementation would have been guessing.
+- **Web wave B — music plays: done (`2a2edf7`, `de2f908`, merged `d98cc9e`).**
+  `jellyfinSource` uses the proxied stream route and, honestly, a **no-op progress
+  reporter** — Jellyfin's own `PlaybackProgress` API is not wired up, so music reports
+  nothing upstream. Album queueing needed **no new store concept**: an album's tracks lay
+  end to end on the same cumulative `startOffset` timeline multi-file audiobooks already
+  use, plus a pure `nextTrack()` and an `ended` listener. Two latent bugs affecting _books_
+  were found and fixed along the way: nothing listened for the audio element's `ended` event
+  at all, and reassigning `audio.src` while playing did not resume (the `[isPlaying]` effect
+  fires on a play/pause transition, not a track change), so audio went silently quiet
+  mid-book.
 - **Unified search: web done.** `/search` fans one typed query out to Audiobookshelf _and_
   Jellyfin, gated on `useJellyfinConfigQuery()` so an unconfigured Jellyfin fires no request
   and shows no music section — the page reads exactly as it did before this wave in that
@@ -612,6 +656,17 @@ decision, not on remaining build time — see the bullet at the end of this sect
   two viable approaches to take — index only what the server already has, or also backfill
   from an external provider (which carries a privacy opt-in decision) — is the user's call,
   not this wave's. `docs/INTEGRATIONS.md`'s "Discovery layer" section has the full breakdown.
+
+**Known gaps, all deliberate**: no Jellyfin progress reporting; the album queue covers only
+the displayed 40-track page, not across pagination; no shuffle/repeat/cross-source queue
+(needs an explicit ordered play-list decoupled from `startOffset`, since shuffle breaks the
+"tracks are already in play order" assumption); no synced-lyrics view, playlists, favourites
+or music requests (lyrics _search_ is separately blocked, see the bullet above); and **no
+music on Android at all**. One testing gap: the `ended` listener and the
+resume-after-track-change fix cannot be exercised by the e2e suite, because the fixture
+audio never decodes far enough to fire a real `ended` event — `nextTrack()` is unit-tested
+directly and the billing behaviour is covered by crossing a track boundary via skip-forward,
+but the `ended` path itself needs manual or real-server verification.
 
 ### 10 — Release polish
 
