@@ -113,6 +113,73 @@ class BrowseTreeTest {
         }
 
     @Test
+    fun `children of Continue windows the shelf's items to pageSize, not the whole shelf`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"shelves":[
+                  {"id":"shelf2","label":"Continue Listening","type":"book","items":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null},
+                    {"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Second"},"progress":null},
+                    {"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Third"},"progress":null}
+                  ]}
+                ]}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.CONTINUE, page = 0, pageSize = 2)
+
+            assertEquals(2, children.size)
+            assertEquals(BrowseIds.book("item1"), (children[0] as BrowseBook).id)
+            assertEquals(BrowseIds.book("item2"), (children[1] as BrowseBook).id)
+        }
+
+    @Test
+    fun `children of Continue at page 1 returns the second window, not the first repeated`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"shelves":[
+                  {"id":"shelf2","label":"Continue Listening","type":"book","items":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null},
+                    {"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Second"},"progress":null},
+                    {"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Third"},"progress":null}
+                  ]}
+                ]}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.CONTINUE, page = 1, pageSize = 2)
+
+            assertEquals(1, children.size)
+            assertEquals(BrowseIds.book("item3"), (children[0] as BrowseBook).id)
+        }
+
+    @Test
+    fun `children of Continue past the end of the shelf returns emptyList rather than throwing`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"shelves":[
+                  {"id":"shelf2","label":"Continue Listening","type":"book","items":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null}
+                  ]}
+                ]}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.CONTINUE, page = 5, pageSize = 2)
+
+            assertTrue(children.isEmpty())
+        }
+
+    @Test
     fun `children of Continue returns emptyList when no shelf matches`() =
         runTest {
             withBaseUrlConfigured()
@@ -167,6 +234,73 @@ class BrowseTreeTest {
         }
 
     @Test
+    fun `children of a series node windows that series' books to pageSize, not the whole series`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"series":[
+                  {"id":"ser1","name":"The Chronicles","description":null,"books":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book One"},"progress":null},
+                    {"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book Two"},"progress":null},
+                    {"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book Three"},"progress":null}
+                  ]}
+                ],"total":1}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.seriesNode("ser1"), page = 0, pageSize = 2)
+
+            assertEquals(2, children.size)
+            assertEquals(BrowseIds.book("item1"), (children[0] as BrowseBook).id)
+            assertEquals(BrowseIds.book("item2"), (children[1] as BrowseBook).id)
+        }
+
+    @Test
+    fun `children of a series node at page 1 returns the second window, not the first repeated`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"series":[
+                  {"id":"ser1","name":"The Chronicles","description":null,"books":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book One"},"progress":null},
+                    {"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book Two"},"progress":null},
+                    {"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book Three"},"progress":null}
+                  ]}
+                ],"total":1}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.seriesNode("ser1"), page = 1, pageSize = 2)
+
+            assertEquals(1, children.size)
+            assertEquals(BrowseIds.book("item3"), (children[0] as BrowseBook).id)
+        }
+
+    @Test
+    fun `children of a series node past the end of its books returns emptyList rather than throwing`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"series":[
+                  {"id":"ser1","name":"The Chronicles","description":null,"books":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Book One"},"progress":null}
+                  ]}
+                ],"total":1}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.seriesNode("ser1"), page = 5, pageSize = 2)
+
+            assertTrue(children.isEmpty())
+        }
+
+    @Test
     fun `children of an unknown series node returns emptyList when no series matches`() =
         runTest {
             withBaseUrlConfigured()
@@ -194,6 +328,37 @@ class BrowseTreeTest {
 
             enqueue("""{"libraries":[]}""")
             assertTrue(repository.children(BrowseIds.seriesNode("ser1"), page = 0, pageSize = 50).isEmpty())
+        }
+
+    @Test
+    fun `children returns emptyList, not throwing, when the libraries call errors`() =
+        runTest {
+            withBaseUrlConfigured()
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Boom"}}"""),
+            )
+
+            val children = repository.children(BrowseIds.BOOKS, page = 0, pageSize = 50)
+
+            assertTrue(children.isEmpty())
+        }
+
+    @Test
+    fun `children returns emptyList, not throwing, when the libraryItems call errors`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Boom"}}"""),
+            )
+
+            val children = repository.children(BrowseIds.BOOKS, page = 0, pageSize = 50)
+
+            assertTrue(children.isEmpty())
         }
 
     @Test
