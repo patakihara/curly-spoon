@@ -93,7 +93,8 @@ class AuralisMediaLibraryService : MediaLibraryService() {
     override fun onCreate() {
         super.onCreate()
         val container = (applicationContext as AuralisApplication).container
-        browseTreeRepository = BrowseTreeRepository(container.apiClient, container.serverConfigRepository)
+        browseTreeRepository =
+            BrowseTreeRepository(container.apiClient, container.serverConfigRepository, container.downloadRepository)
         playbackItemResolver = PlaybackItemResolver(container.apiClient, container.serverConfigRepository)
 
         val okHttpDataSourceFactory = OkHttpDataSource.Factory(container.httpClient)

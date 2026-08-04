@@ -2,11 +2,15 @@ package net.auralis.app.features.home
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import net.auralis.app.data.downloads.DownloadRepository
+import net.auralis.app.data.downloads.FakeDownloadEngine
+import net.auralis.app.data.downloads.UnavailableDownloadEngine
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.FakeKeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
@@ -25,6 +29,7 @@ class HomeViewModelTest {
     private lateinit var keyValueStore: FakeKeyValueStore
     private lateinit var serverConfigRepository: ServerConfigRepository
     private lateinit var apiClient: ApiClient
+    private lateinit var downloadRepository: DownloadRepository
 
     @Before
     fun setUp() {
@@ -36,6 +41,11 @@ class HomeViewModelTest {
         val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
         apiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+        // These tests exercise only the shelf-loading half of HomeViewModel; the download half
+        // has its own coverage below. UnavailableDownloadEngine is the same documented no-op
+        // stand-in AppContainer used before Wave F2a, sufficient here since nothing in this file
+        // calls startDownload().
+        downloadRepository = DownloadRepository(apiClient, keyValueStore, UnavailableDownloadEngine())
     }
 
     @After
@@ -47,7 +57,7 @@ class HomeViewModelTest {
     @Test
     fun `no base URL saved produces an error state`() =
         runTest {
-            val viewModel = HomeViewModel(apiClient, serverConfigRepository)
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, downloadRepository)
 
             val state = viewModel.uiState.first { it !is HomeUiState.Loading }
 
@@ -61,7 +71,7 @@ class HomeViewModelTest {
             serverConfigRepository.setBaseUrl(mockWebServer.url("/").toString())
             mockWebServer.enqueue(MockResponse().setBody("""{"libraries":[]}"""))
 
-            val viewModel = HomeViewModel(apiClient, serverConfigRepository)
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, downloadRepository)
 
             val state = viewModel.uiState.first { it !is HomeUiState.Loading }
 
@@ -90,7 +100,7 @@ class HomeViewModelTest {
                 ),
             )
 
-            val viewModel = HomeViewModel(apiClient, serverConfigRepository)
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, downloadRepository)
 
             val state = viewModel.uiState.first { it !is HomeUiState.Loading }
 
@@ -119,11 +129,97 @@ class HomeViewModelTest {
                     .setBody("""{"error":{"code":"not_authenticated","message":"Not signed in"}}"""),
             )
 
-            val viewModel = HomeViewModel(apiClient, serverConfigRepository)
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, downloadRepository)
 
             val state = viewModel.uiState.first { it !is HomeUiState.Loading }
 
             assertTrue(state is HomeUiState.Error)
             assertEquals("Not signed in", (state as HomeUiState.Error).message)
+        }
+
+    /** `POST /items/{id}/play` response with one resolvable track — enough for
+     * `DownloadRepository.enqueue` to succeed. Mirrors `DownloadRepositoryTest`'s own helper. */
+    private fun enqueuePlayItem(audioTracksJson: String) {
+        mockWebServer.enqueue(
+            MockResponse().setBody(
+                """
+                {"session":{"id":"s1","libraryItemId":"item1","mediaType":"book",
+                 "displayTitle":"Sample","duration":100.0,"currentTime":0.0,
+                 "audioTracks":$audioTracksJson,"chapters":[]}}
+                """.trimIndent(),
+            ),
+        )
+    }
+
+    @Test
+    fun `startDownload with a resolvable track sets ENQUEUED and emits a track-count message`() =
+        runTest {
+            val enqueueRepository = DownloadRepository(apiClient, keyValueStore, FakeDownloadEngine())
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, enqueueRepository)
+            enqueuePlayItem("""[{"index":0,"startOffset":0.0,"duration":100.0,"contentUrl":"/api/items/item1/file/f1"}]""")
+
+            val eventDeferred = async { viewModel.downloadEvents.first() }
+            viewModel.startDownload("item1")
+            val states = viewModel.downloadStates.first { it["item1"] == DownloadActionState.ENQUEUED }
+            val event = eventDeferred.await()
+
+            assertEquals(DownloadActionState.ENQUEUED, states["item1"])
+            assertEquals("item1", event.itemId)
+            assertEquals("Downloading 1 track…", event.message)
+        }
+
+    @Test
+    fun `startDownload on an item with no audio tracks sets NO_PLAYABLE_TRACK`() =
+        runTest {
+            val enqueueRepository = DownloadRepository(apiClient, keyValueStore, FakeDownloadEngine())
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, enqueueRepository)
+            enqueuePlayItem("[]")
+
+            val eventDeferred = async { viewModel.downloadEvents.first() }
+            viewModel.startDownload("item1")
+            val states = viewModel.downloadStates.first { it["item1"] == DownloadActionState.NO_PLAYABLE_TRACK }
+            val event = eventDeferred.await()
+
+            assertEquals(DownloadActionState.NO_PLAYABLE_TRACK, states["item1"])
+            assertEquals("This item has no track that can be downloaded.", event.message)
+        }
+
+    @Test
+    fun `startDownload against a failing API sets FAILED with the error code in the message`() =
+        runTest {
+            val enqueueRepository = DownloadRepository(apiClient, keyValueStore, FakeDownloadEngine())
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, enqueueRepository)
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Boom"}}"""),
+            )
+
+            val eventDeferred = async { viewModel.downloadEvents.first() }
+            viewModel.startDownload("item1")
+            val states = viewModel.downloadStates.first { it["item1"] == DownloadActionState.FAILED }
+            val event = eventDeferred.await()
+
+            assertEquals(DownloadActionState.FAILED, states["item1"])
+            assertEquals("Download failed (internal_error).", event.message)
+        }
+
+    @Test
+    fun `startDownload against an unavailable engine sets UNAVAILABLE without calling the API`() =
+        runTest {
+            // `downloadRepository` from setUp wraps UnavailableDownloadEngine — no MockResponse
+            // is queued here, so if this ever called the API the test would hang on the real
+            // MockWebServer connection rather than fail cleanly, which is itself evidence the
+            // short-circuit didn't happen.
+            val viewModel = HomeViewModel(apiClient, serverConfigRepository, downloadRepository)
+
+            val eventDeferred = async { viewModel.downloadEvents.first() }
+            viewModel.startDownload("item1")
+            val states = viewModel.downloadStates.first { it["item1"] == DownloadActionState.UNAVAILABLE }
+            val event = eventDeferred.await()
+
+            assertEquals(DownloadActionState.UNAVAILABLE, states["item1"])
+            assertEquals("Downloads aren't available on this build.", event.message)
+            assertEquals(0, mockWebServer.requestCount)
         }
 }

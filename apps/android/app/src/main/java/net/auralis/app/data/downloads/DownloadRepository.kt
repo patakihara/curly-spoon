@@ -113,6 +113,21 @@ class DownloadRepository(
         removeKeptOffline(itemId)
     }
 
+    /**
+     * One [DownloadSummary] per kept-offline item — the read model the downloads screen (Wave
+     * F2b) and the Android Auto "Downloaded" browse node both render. Iterates
+     * [keptOfflineItemIds] rather than asking [downloadEngine] for a single global listing: no
+     * such query exists on [DownloadEngine] (see [DownloadEngine.downloadsFor]'s own per-`itemId`
+     * scoping), and the kept-offline set already *is* "every item this user has asked to keep
+     * offline" — nothing this package tracks would be missing from it (see [enqueue]'s doc
+     * comment on why a failed attempt never joins the set, and [cancel]'s on why removing an item
+     * also removes its entry). An item with no tracks the engine still remembers (a race between
+     * this call and a concurrent [cancel]) is simply dropped — [summarizeDownloads] returns
+     * `null` for an empty track list, matching this class's total-function style.
+     */
+    suspend fun downloadSummaries(): List<DownloadSummary> =
+        keptOfflineItemIds().mapNotNull { itemId -> summarizeDownloads(downloadEngine.downloadsFor(itemId)) }
+
     private suspend fun addKeptOffline(itemId: String) {
         val current = keyValueStore.getStringSet(KEPT_OFFLINE_KEY)
         keyValueStore.putStringSet(KEPT_OFFLINE_KEY, current + itemId)

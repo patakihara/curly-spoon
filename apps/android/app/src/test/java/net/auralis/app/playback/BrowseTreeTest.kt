@@ -3,6 +3,10 @@ package net.auralis.app.playback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import net.auralis.app.data.downloads.DownloadRepository
+import net.auralis.app.data.downloads.DownloadState
+import net.auralis.app.data.downloads.DownloadedItem
+import net.auralis.app.data.downloads.FakeDownloadEngine
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.FakeKeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
@@ -22,6 +26,8 @@ class BrowseTreeTest {
     private lateinit var keyValueStore: FakeKeyValueStore
     private lateinit var serverConfigRepository: ServerConfigRepository
     private lateinit var apiClient: ApiClient
+    private lateinit var downloadEngine: FakeDownloadEngine
+    private lateinit var downloadRepository: DownloadRepository
     private lateinit var repository: BrowseTreeRepository
     private lateinit var baseUrl: String
 
@@ -35,7 +41,9 @@ class BrowseTreeTest {
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
         baseUrl = mockWebServer.url("/").toString()
         apiClient = ApiClient(httpClient, cookieJar) { baseUrl }
-        repository = BrowseTreeRepository(apiClient, serverConfigRepository)
+        downloadEngine = FakeDownloadEngine()
+        downloadRepository = DownloadRepository(apiClient, keyValueStore, downloadEngine)
+        repository = BrowseTreeRepository(apiClient, serverConfigRepository, downloadRepository)
     }
 
     @After
@@ -56,14 +64,15 @@ class BrowseTreeTest {
     }
 
     @Test
-    fun `rootChildren returns exactly the three folders, in order`() =
+    fun `rootChildren returns exactly the four folders, in order`() =
         runTest {
             val root = repository.rootChildren()
 
-            assertEquals(3, root.size)
+            assertEquals(4, root.size)
             assertEquals(BrowseFolder(BrowseIds.CONTINUE, "Continue Listening"), root[0])
             assertEquals(BrowseFolder(BrowseIds.BOOKS, "Books"), root[1])
             assertEquals(BrowseFolder(BrowseIds.SERIES, "Series"), root[2])
+            assertEquals(BrowseFolder(BrowseIds.DOWNLOADED, "Downloaded"), root[3])
         }
 
     @Test
@@ -625,4 +634,108 @@ class BrowseTreeTest {
         assertNull(bestSearchMatch("dune", emptyList(), continueListeningFallback = null))
         assertNull(bestSearchMatch("", emptyList(), continueListeningFallback = null))
     }
+
+    /** Enqueues a `POST /items/{id}/play` response with a single resolvable track — enough for
+     * [DownloadRepository.enqueue] to succeed and mark the item kept-offline. */
+    private fun enqueuePlayItem(itemId: String) {
+        enqueue(
+            """
+            {"session":{"id":"s1","libraryItemId":"$itemId","mediaType":"book",
+             "displayTitle":"Sample","duration":100.0,"currentTime":0.0,
+             "audioTracks":[{"index":0,"startOffset":0.0,"duration":100.0,"contentUrl":"/api/items/$itemId/file/f1"}],
+             "chapters":[]}}
+            """.trimIndent(),
+        )
+    }
+
+    /** Marks [itemId] kept-offline (a real `enqueue()` round trip through [downloadRepository])
+     * and then overwrites its one track's engine entry to [DownloadState.COMPLETED] — the state
+     * [BrowseTreeRepository]'s `Downloaded` node requires before an item appears in it. */
+    private suspend fun keepOfflineAndComplete(itemId: String) {
+        enqueuePlayItem(itemId)
+        downloadRepository.enqueue(itemId)
+        downloadEngine.seed(DownloadedItem(itemId, "f1", DownloadState.COMPLETED, bytesDownloaded = 100, totalBytes = 100))
+    }
+
+    @Test
+    fun `children of Downloaded is empty when nothing is kept offline`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+
+            val children = repository.children(BrowseIds.DOWNLOADED, page = 0, pageSize = 50)
+
+            assertTrue(children.isEmpty())
+        }
+
+    @Test
+    fun `children of Downloaded excludes an item that is still downloading`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueuePlayItem("item1")
+            downloadRepository.enqueue("item1")
+            // Left at FakeDownloadEngine's default QUEUED state — never seeded to COMPLETED.
+
+            val children = repository.children(BrowseIds.DOWNLOADED, page = 0, pageSize = 50)
+
+            assertTrue(children.isEmpty())
+        }
+
+    @Test
+    fun `children of Downloaded includes a fully completed item, mapped like Books`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            keepOfflineAndComplete("item1")
+            enqueue(
+                """
+                {"item":{"id":"item1","libraryId":"lib1","coverPath":null,
+                 "media":{"kind":"book","title":"Sample Book"},"progress":null}}
+                """.trimIndent(),
+            )
+
+            val children = repository.children(BrowseIds.DOWNLOADED, page = 0, pageSize = 50)
+
+            assertEquals(1, children.size)
+            val book = children[0] as BrowseBook
+            assertEquals(BrowseIds.book("item1"), book.id)
+            assertEquals("Sample Book", book.title)
+            assertEquals("${baseUrl.trimEnd('/')}/api/v1/media/item1/cover?width=200", book.coverUrl)
+        }
+
+    @Test
+    fun `children of Downloaded windows completed items to pageSize, not the whole set`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            // Sorted by item id (BrowseTreeRepository's own tie-break) — item1 then item2 then item3.
+            keepOfflineAndComplete("item1")
+            keepOfflineAndComplete("item2")
+            keepOfflineAndComplete("item3")
+            enqueue("""{"item":{"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null}}""")
+            enqueue("""{"item":{"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Second"},"progress":null}}""")
+
+            val children = repository.children(BrowseIds.DOWNLOADED, page = 0, pageSize = 2)
+
+            assertEquals(2, children.size)
+            assertEquals(BrowseIds.book("item1"), (children[0] as BrowseBook).id)
+            assertEquals(BrowseIds.book("item2"), (children[1] as BrowseBook).id)
+        }
+
+    @Test
+    fun `children of Downloaded at page 1 returns the second window, not the first repeated`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            keepOfflineAndComplete("item1")
+            keepOfflineAndComplete("item2")
+            keepOfflineAndComplete("item3")
+            enqueue("""{"item":{"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Third"},"progress":null}}""")
+
+            val children = repository.children(BrowseIds.DOWNLOADED, page = 1, pageSize = 2)
+
+            assertEquals(1, children.size)
+            assertEquals(BrowseIds.book("item3"), (children[0] as BrowseBook).id)
+        }
 }
