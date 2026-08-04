@@ -56,11 +56,12 @@ class PlaybackItemResolverTest {
         itemId: String,
         displayTitle: String = "Sample Book",
         audioTracksJson: String = """[{"index":0,"startOffset":0.0,"duration":100.0,"contentUrl":"/api/items/$itemId/file/f1"}]""",
+        currentTime: Double = 0.0,
     ) {
         enqueue(
             """
             {"session":{"id":"s1","libraryItemId":"$itemId","mediaType":"book",
-             "displayTitle":"$displayTitle","duration":100.0,"currentTime":0.0,
+             "displayTitle":"$displayTitle","duration":100.0,"currentTime":$currentTime,
              "audioTracks":$audioTracksJson,"chapters":[]}}
             """.trimIndent(),
         )
@@ -214,5 +215,29 @@ class PlaybackItemResolverTest {
             assertNotNull(resolved)
             assertEquals("Sample Book", resolved?.title)
             assertNull(resolved?.artist)
+        }
+
+    @Test
+    fun `maps the play session's currentTime to startPositionMs, in milliseconds`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayItem(itemId = "item1", currentTime = 42.5)
+            enqueueLibraryItem(itemId = "item1")
+
+            val resolved = resolver.resolve(BrowseIds.book("item1"))
+
+            assertEquals(42_500L, resolved?.startPositionMs)
+        }
+
+    @Test
+    fun `startPositionMs is zero for a session with no recorded progress`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePlayItem(itemId = "item1", currentTime = 0.0)
+            enqueueLibraryItem(itemId = "item1")
+
+            val resolved = resolver.resolve(BrowseIds.book("item1"))
+
+            assertEquals(0L, resolved?.startPositionMs)
         }
 }

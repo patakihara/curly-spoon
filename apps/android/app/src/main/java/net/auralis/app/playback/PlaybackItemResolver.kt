@@ -7,11 +7,13 @@ import net.auralis.app.data.network.ApiException
 import net.auralis.app.data.network.fileIdFromContentUrl
 import net.auralis.app.data.settings.ServerConfigRepository
 import net.auralis.app.features.player.firstPlayableTrack
+import kotlin.math.roundToLong
 
 /**
  * A resolved, playable item, expressed without any Media3 type so it stays JVM-unit-testable —
  * see [PlaybackItemResolver]'s own doc comment for why `MediaItem` construction can't happen
- * here. [MediaItemConversions.toMediaItem] is the only place this becomes one.
+ * here. [MediaItemConversions.toMediaItem]/[MediaItemConversions.toMediaItemsWithStartPosition]
+ * are the only places this becomes one.
  */
 data class ResolvedPlayback(
     val mediaId: String, // the browse id as it was asked for, so controller item identity is stable
@@ -20,6 +22,10 @@ data class ResolvedPlayback(
     val artist: String?,
     val subtitle: String?,
     val artworkUrl: String?,
+    // Where Audiobookshelf's own play session says this item was last left off — see
+    // buildResolvedPlayback's doc comment for where this comes from. Used by Wave E2c's
+    // playback-resumption path; every other caller of resolve() ignores it today.
+    val startPositionMs: Long,
 )
 
 /**
@@ -109,6 +115,13 @@ class PlaybackItemResolver(
      * matching [BrowseTreeRepository.toBrowseBook], which puts the author in `BrowseBook.subtitle`
      * since it has no separate artist concept. Without this fallback, a browse row shows title +
      * author and the subtitle line goes blank the instant the same item starts playing.
+     *
+     * `startPositionMs` comes from `session.currentTime` — [PlaybackSession] (`POST
+     * /items/:id/play`) already carries Audiobookshelf's own record of where this item was last
+     * left off, the same field this method already had in hand for every other caller of
+     * [resolve] and simply wasn't reading. No second network call, and no separate "progress"
+     * concept: it's the position the *play* endpoint itself hands back for resuming, which is
+     * exactly what Wave E2c's `onPlaybackResumption` needs.
      */
     private suspend fun buildResolvedPlayback(
         mediaId: String,
@@ -132,6 +145,7 @@ class PlaybackItemResolver(
             artist = artist,
             subtitle = media?.subtitle ?: artist,
             artworkUrl = artworkUrl,
+            startPositionMs = (session.currentTime * 1000).roundToLong(),
         )
     }
 

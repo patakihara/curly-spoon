@@ -108,6 +108,63 @@ class BrowseTreeRepository(
         }
     }
 
+    /**
+     * Text/voice search across the current library's books, mapped to the same [BrowseBook]
+     * shape the rest of this class uses so search results and browsed items convert through the
+     * identical [MediaItemConversions] mapper. Backs both
+     * [AuralisMediaLibraryService]'s `onSearch`/`onGetSearchResult` (typed/spoken search) and its
+     * `onAddMediaItems` handling of a `RequestMetadata.searchQuery` item (a spoken "play <title>"
+     * request, resolved via [bestSearchMatch]) — the same upstream call answers both.
+     *
+     * Windowed to [pageSize] client-side, exactly like [continueListeningChildren] and
+     * [seriesBooks] above: `GET /libraries/{id}/search` has no page parameter of its own, and —
+     * confirmed by reading `MediaLibrarySessionImpl` at the pinned Media3 1.5.1 tag —
+     * `onGetSearchResult` is gated by the *exact same* `verifyResultItems()` pageSize check that
+     * made `onGetChildren`'s windowing mandatory, not optional (see that method's own comment).
+     * An unbounded result list here would crash `onGetSearchResult` the same way an unbounded
+     * shelf once crashed `onGetChildren`.
+     *
+     * Degrades to `emptyList()` for a blank query (nothing to search for) or any [ApiException],
+     * matching this class's existing total-function style — and specifically what lets a blank
+     * spoken query fall through to [mostRecentContinueListening] in the caller instead of
+     * surfacing an error.
+     */
+    suspend fun search(
+        query: String,
+        page: Int,
+        pageSize: Int,
+    ): List<BrowseBook> {
+        if (query.isBlank()) return emptyList()
+        return try {
+            searchOrThrow(query, page, pageSize)
+        } catch (e: ApiException) {
+            emptyList()
+        }
+    }
+
+    private suspend fun searchOrThrow(
+        query: String,
+        page: Int,
+        pageSize: Int,
+    ): List<BrowseBook> {
+        val baseUrl = serverConfigRepository.getBaseUrl() ?: return emptyList()
+        val libraryId = apiClient.libraries().firstOrNull()?.id ?: return emptyList()
+        return apiClient.searchLibrary(libraryId, query)
+            .books.drop(page * pageSize).take(pageSize).map { it.toBrowseBook(baseUrl) }
+    }
+
+    /**
+     * The single most recently listened-to book, for Android Auto's post-reboot playback
+     * resumption ([AuralisMediaLibraryService]'s `onPlaybackResumption`) and for a spoken
+     * "play"/"resume" request with no title in it (a blank `RequestMetadata.searchQuery`,
+     * handled in [AuralisMediaLibraryService]'s `onAddMediaItems` via [bestSearchMatch]). A thin
+     * wrapper over [children]'s existing [BrowseIds.CONTINUE] handling with `pageSize = 1`, so
+     * "most recent" stays defined in exactly one place — the shelf's own item order — rather
+     * than gaining a second, possibly-diverging definition here.
+     */
+    suspend fun mostRecentContinueListening(): BrowseBook? =
+        children(BrowseIds.CONTINUE, page = 0, pageSize = 1).firstOrNull() as? BrowseBook
+
     suspend fun item(browseId: String): BrowseBook? {
         if (!BrowseIds.isBookNode(browseId)) return null
         val baseUrl = serverConfigRepository.getBaseUrl() ?: return null
@@ -173,3 +230,32 @@ class BrowseTreeRepository(
             coverUrl = "${baseUrl.trimEnd('/')}/api/v1/media/$id/cover?width=200",
         )
 }
+
+/**
+ * Picks what a "play <query>" voice/text request should actually play — the decidable half of
+ * [AuralisMediaLibraryService]'s handling of a `MediaItem` whose `RequestMetadata.searchQuery`
+ * is set (see `MediaSessionLegacyStub.onPlayFromSearch` at the pinned Media3 1.5.1 tag: `mediaId`
+ * is `MediaItem.DEFAULT_MEDIA_ID`, i.e. `""`, in that case, so `mediaId` alone can never carry
+ * this). [searchResults] is the caller's own already-fetched, already-windowed
+ * [BrowseTreeRepository.search] output for a non-blank [query]; [continueListeningFallback] is
+ * only ever consulted when [query] is blank — Android Auto's "play"/"resume" without a title —
+ * and is the same [BrowseTreeRepository.mostRecentContinueListening] result
+ * `onPlaybackResumption` falls back to after a reboot.
+ *
+ * An exact, case-insensitive title match wins over Audiobookshelf's own relevance ordering: a
+ * user who speaks the *exact* title of a book almost certainly wants that book, even over a
+ * differently-titled result the server ranks higher. Failing an exact match, the first (most
+ * relevant) result stands. `null` when there is nothing to play at all — no search results and
+ * no fallback.
+ */
+fun bestSearchMatch(
+    query: String,
+    searchResults: List<BrowseBook>,
+    continueListeningFallback: BrowseBook?,
+): BrowseBook? =
+    if (query.isBlank()) {
+        continueListeningFallback
+    } else {
+        searchResults.firstOrNull { it.title.equals(query, ignoreCase = true) }
+            ?: searchResults.firstOrNull()
+    }

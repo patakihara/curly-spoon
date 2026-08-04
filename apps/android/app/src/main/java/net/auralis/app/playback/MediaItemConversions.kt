@@ -3,6 +3,7 @@ package net.auralis.app.playback
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.session.MediaSession
 
 /**
  * The one place in this project where a Media3 [MediaItem]/[MediaMetadata] gets built.
@@ -38,6 +39,21 @@ internal fun ResolvedPlayback.toMediaItem(): MediaItem {
         .setMediaMetadata(metadata)
         .build()
 }
+
+/**
+ * The single-item playlist [MediaSession.Callback.onPlaybackResumption] hands back to Android
+ * Auto after a reboot: this [ResolvedPlayback] as its only item, starting at its own
+ * `startPositionMs` rather than 0 — the whole point of resumption being "pick up where you left
+ * off", not "start over". `startIndex = 0` because there is exactly one item; confirmed against
+ * the pinned Media3 1.5.1 tag (`MediaSession.java`'s `MediaItemsWithStartPosition` constructor:
+ * `(List<MediaItem>, int startIndex, long startPositionMs)`) rather than assumed.
+ */
+internal fun ResolvedPlayback.toMediaItemsWithStartPosition(): MediaSession.MediaItemsWithStartPosition =
+    MediaSession.MediaItemsWithStartPosition(
+        listOf(toMediaItem()),
+        0,
+        startPositionMs,
+    )
 
 internal fun BrowseNode.toMediaItem(): MediaItem =
     when (this) {

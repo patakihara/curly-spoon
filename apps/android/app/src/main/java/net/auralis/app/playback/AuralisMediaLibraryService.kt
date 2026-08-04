@@ -28,9 +28,11 @@ import net.auralis.app.AuralisApplication
  * [MediaLibraryService] rather than a plain `MediaSessionService` specifically so that a browse
  * tree could be added later without restructuring playback — Wave E2a added that browse tree, in
  * its read-only form: browsing the root, browsing a folder's children, and looking up a single
- * item by browse id. Wave E2b (this one) is what makes tapping a leaf item actually play: see
- * [BrowseTreeCallback.onAddMediaItems] and [PlaybackItemResolver]. Voice search and playback
- * resumption are still not implemented.
+ * item by browse id. Wave E2b made tapping a leaf item actually play: see
+ * [BrowseTreeCallback.onAddMediaItems] and [PlaybackItemResolver]. Wave E2c (this one) adds voice
+ * search ([BrowseTreeCallback.onSearch]/[BrowseTreeCallback.onGetSearchResult]), a spoken
+ * "play <title>" request ([BrowseTreeCallback.onAddMediaItems]'s `RequestMetadata.searchQuery`
+ * branch), and post-reboot playback resumption ([BrowseTreeCallback.onPlaybackResumption]).
  *
  * The player's media source factory is backed by an OkHttp [androidx.media3.datasource.DataSource.Factory]
  * wrapping [net.auralis.app.AppContainer.httpClient] — the same client
@@ -40,13 +42,12 @@ import net.auralis.app.AuralisApplication
  * that cookie like every other route; without it, streaming would 401.
  *
  * [MediaLibrarySession.Callback]'s browsing methods (`onGetLibraryRoot`, `onGetChildren`,
- * `onGetItem`) are backed by [BrowseTreeRepository]; `onAddMediaItems` is backed by
- * [PlaybackItemResolver] — both plain, Media3-free classes kept unit-testable with no
+ * `onGetItem`) are backed by [BrowseTreeRepository]; `onAddMediaItems`, `onSearch`,
+ * `onGetSearchResult` and `onPlaybackResumption` are backed by [BrowseTreeRepository] and
+ * [PlaybackItemResolver] together — all plain, Media3-free classes kept unit-testable with no
  * Robolectric/instrumented setup, since this project has none for `MediaLibrarySession.Callback`
- * itself. `onSearch`/`onGetSearchResult` are left at their defaults
- * (`LibraryResult.ofError(ERROR_NOT_SUPPORTED)`) — voice search is out of this wave's scope.
- * `onConnect`'s default already accepts a connecting controller and grants it every available
- * session and player command, which this wave still needs unchanged: transport control
+ * itself. `onConnect`'s default already accepts a connecting controller and grants it every
+ * available session and player command, which this wave still needs unchanged: transport control
  * (play/pause/seek/skip) from the notification and from Android Auto's transport surface.
  *
  * `onSetMediaItems` (the "tap to play, replacing the current queue" path Media3 routes
@@ -161,17 +162,23 @@ class AuralisMediaLibraryService : MediaLibraryService() {
             }
 
         /**
-         * Resolves each incoming [MediaItem] to a playable one via [PlaybackItemResolver] —
-         * this is what makes tapping a browse-tree leaf (or the notification/lock-screen replaying
-         * a queued item) actually start playback, rather than handing ExoPlayer an item with no
-         * [MediaItem.LocalConfiguration] to open. An item that already carries a real URI (the
-         * phone UI's own path — [net.auralis.app.features.player.PlayerViewModel] resolves its own
-         * items before calling `MediaController.setMediaItem`) is passed through unchanged rather
-         * than re-resolved, both to avoid a redundant BFF round trip and because
+         * Resolves each incoming [MediaItem] to a playable one. Checks
+         * [MediaItem.RequestMetadata.searchQuery] first, via [resolveSearchQueryItem] — set, and
+         * not `null`, on the item Android Auto sends for a spoken "play <title>" request.
+         * Confirmed at the pinned Media3 1.5.1 tag
+         * (`MediaSessionLegacyStub.onPlayFromSearch`/`createMediaItemForMediaRequest`): that item's
+         * `mediaId` is `MediaItem.DEFAULT_MEDIA_ID` (`""`), not `null` or omitted, so `mediaId`
+         * alone can never distinguish this case from an ordinary unrecognised-id item — the
+         * `searchQuery` check has to come first, not as a fallback.
+         *
+         * Everything else keeps Wave E2b's original behaviour: an item that already carries a real
+         * URI (the phone UI's own path — [net.auralis.app.features.player.PlayerViewModel]
+         * resolves its own items before calling `MediaController.setMediaItem`) passes through
+         * unchanged, both to avoid a redundant BFF round trip and because
          * [PlaybackItemResolver.resolve] only understands browse/bare item ids, not an
-         * already-playable item's own media id. Anything the resolver can't turn into a playable
-         * item — an unrecognised id, a track-less item, an upstream error — is dropped rather than
-         * passed through broken, per this project's total-function house style.
+         * already-playable item's own media id; anything else resolves by `mediaId`. Anything none
+         * of these three paths can turn into a playable item is dropped rather than passed through
+         * broken, per this project's total-function house style.
          */
         override fun onAddMediaItems(
             mediaSession: MediaSession,
@@ -179,15 +186,112 @@ class AuralisMediaLibraryService : MediaLibraryService() {
             mediaItems: MutableList<MediaItem>,
         ): ListenableFuture<MutableList<MediaItem>> =
             serviceScope.future<MutableList<MediaItem>> {
-                mediaItems
-                    .mapNotNull { item ->
-                        if (item.localConfiguration != null) {
-                            item
-                        } else {
-                            playbackItemResolver.resolve(item.mediaId)?.toMediaItem()
-                        }
-                    }
-                    .toMutableList()
+                mediaItems.mapNotNull { item -> resolveIncomingItem(item) }.toMutableList()
             }
+
+        private suspend fun resolveIncomingItem(item: MediaItem): MediaItem? {
+            val searchQuery = item.requestMetadata.searchQuery
+            return when {
+                searchQuery != null -> resolveSearchQueryItem(searchQuery)
+                item.localConfiguration != null -> item
+                else -> playbackItemResolver.resolve(item.mediaId)?.toMediaItem()
+            }
+        }
+
+        /**
+         * Resolves a "play <query>" voice/text request: search (or, for a blank query — Android
+         * Auto's "play"/"resume" with no title — fetch the continue-listening fallback instead),
+         * hand both to [bestSearchMatch] to decide which book wins, then resolve that browse id
+         * through the same [PlaybackItemResolver] every other path uses. `null` — dropping the
+         * item, per [onAddMediaItems]'s own contract — when nothing matches.
+         */
+        private suspend fun resolveSearchQueryItem(query: String): MediaItem? {
+            val results =
+                if (query.isBlank()) {
+                    emptyList()
+                } else {
+                    browseTreeRepository.search(query, page = 0, pageSize = SEARCH_PLAY_CANDIDATE_LIMIT)
+                }
+            val fallback = if (query.isBlank()) browseTreeRepository.mostRecentContinueListening() else null
+            val match = bestSearchMatch(query, results, fallback) ?: return null
+            return playbackItemResolver.resolve(match.id)?.toMediaItem()
+        }
+
+        /**
+         * `onSearch`'s contract (confirmed against `MediaLibrarySessionImpl`/`MediaLibraryService`
+         * at the pinned Media3 1.5.1 tag): return a [LibraryResult] for the search itself, and
+         * *separately* notify the browser of how many results exist via
+         * [MediaLibrarySession.notifySearchResultChanged] — the browser only calls
+         * [onGetSearchResult] afterwards, using that count to decide how many pages to ask for.
+         * The count here is computed by running the exact same [BrowseTreeRepository.search] query
+         * [onGetSearchResult] will, windowed to effectively "everything" (`Int.MAX_VALUE`) rather
+         * than duplicating the upstream call unwindowed — so the reported count and the results a
+         * later [onGetSearchResult] call actually returns can never drift apart.
+         */
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<Void>> =
+            serviceScope.future<LibraryResult<Void>> {
+                val resultCount = browseTreeRepository.search(query, page = 0, pageSize = Int.MAX_VALUE).size
+                session.notifySearchResultChanged(browser, query, resultCount, params)
+                LibraryResult.ofVoid(params)
+            }
+
+        /**
+         * The paginated half of search, called after [onSearch]. `page`/`pageSize` are windowed
+         * by [BrowseTreeRepository.search] itself, reusing the exact client-side windowing
+         * [onGetChildren] already needs for the same reason: `MediaLibrarySessionImpl`'s
+         * `verifyResultItems()` (confirmed at the pinned 1.5.1 tag to gate this method with the
+         * identical check it gates `onGetChildren` with) throws an uncaught
+         * `IllegalStateException` on the main looper if more than `pageSize` items come back.
+         */
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
+            serviceScope.future<LibraryResult<ImmutableList<MediaItem>>> {
+                val results = browseTreeRepository.search(query, page, pageSize)
+                LibraryResult.ofItemList(results.map { it.toMediaItem() }, params)
+            }
+
+        /**
+         * Answers Android Auto's post-reboot "what was playing" request (before the phone is even
+         * unlocked) with the most recent continue-listening item, resumed from its stored
+         * position rather than restarted — see [ResolvedPlayback.startPositionMs] and
+         * [MediaItemConversions.toMediaItemsWithStartPosition] for where that position comes from.
+         * The default implementation this overrides
+         * (confirmed at the pinned Media3 1.5.1 tag, `MediaSession.java`) fails the future with
+         * `UnsupportedOperationException` to mean "resumption not supported"; this override
+         * reproduces exactly that signal — by throwing inside the `future { }` block, which
+         * `kotlinx-coroutines-guava` completes the returned future with — for the "nothing to
+         * resume" case (an empty continue-listening shelf, or a resolve failure), rather than
+         * inventing a different empty-result contract of its own.
+         */
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
+            serviceScope.future<MediaSession.MediaItemsWithStartPosition> {
+                val mostRecent = browseTreeRepository.mostRecentContinueListening() ?: throw UnsupportedOperationException()
+                val resolved = playbackItemResolver.resolve(mostRecent.id) ?: throw UnsupportedOperationException()
+                resolved.toMediaItemsWithStartPosition()
+            }
+    }
+
+    private companion object {
+        /**
+         * How many top search matches [BrowseTreeCallback.resolveSearchQueryItem] fetches before
+         * picking a winner via [bestSearchMatch] — small on purpose: only Audiobookshelf's own
+         * top-ranked results are ever going to win an exact-title tie-break, and this path never
+         * shows the list to the user the way [BrowseTreeCallback.onGetSearchResult] does.
+         */
+        const val SEARCH_PLAY_CANDIDATE_LIMIT = 5
     }
 }
