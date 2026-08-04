@@ -541,9 +541,11 @@ shells exist.
 
 ### 9 — Music
 
-Jellyfin browse (albums, artists, genres, playlists), Spotify-depth search including
-**lyrics search**, gapless queue playback, synced lyrics view, music request provider —
-web and Android together.
+Jellyfin browse (albums, artists, genres, playlists), Spotify-depth search, gapless queue
+playback, a synced lyrics view, music request provider — web and Android together.
+**Lyrics search** (typing a remembered line to find the track) is scoped separately from the
+synced lyrics view below: it needs Auralis's own lyric index and is blocked on a product
+decision, not on remaining build time — see the bullet at the end of this section.
 
 - **`packages/jellyfin-client`: done (`07282f8`).** A typed, tested Jellyfin client: auth,
   music browsing (artists/albums/tracks), search, and pure stream/artwork URL builders.
@@ -598,9 +600,18 @@ web and Android together.
   matches books stays a short, two-part sentence. The no-music, Jellyfin-unconfigured wording
   matches what `browse.spec.ts`'s pre-existing search tests already assert, so that suite
   needed no changes. No Android UI yet.
-- **Lyric-text search remains unscoped.** Whether Jellyfin's own search even matches lyric
-  text at all is being verified separately (docs/HANDOVER.md/INTEGRATIONS.md); this wave
-  does not assume either way, and does not build toward it.
+- **Lyrics search is blocked on a product decision, not on Jellyfin.** Verified against
+  `jellyfin/jellyfin` source (this project's standing rule for Jellyfin claims — recall isn't
+  trusted): Jellyfin's search never matches lyric text — `SqlSearchProvider.cs`'s `WHERE`
+  clause and relevance scoring both cover only `CleanName` and `OriginalTitle` — and its
+  lyrics API (`GET /Audio/{itemId}/Lyrics`) is strictly per-item, with no endpoint that
+  searches lyric text across a library. The **synced lyrics view** above is unaffected by
+  this and stays ordinary remaining phase-9 work: the per-item endpoint already returns
+  per-line timestamps, so it needs only a client method, a BFF route and a UI. **Lyrics
+  search** needs Auralis to build and maintain its own lyric index instead, and which of the
+  two viable approaches to take — index only what the server already has, or also backfill
+  from an external provider (which carries a privacy opt-in decision) — is the user's call,
+  not this wave's. `docs/INTEGRATIONS.md`'s "Discovery layer" section has the full breakdown.
 
 ### 10 — Release polish
 

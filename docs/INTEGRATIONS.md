@@ -302,3 +302,62 @@ way it already proxies playback. But the exact request/response shape is **not c
 (the doc site is unmaintained), and it needs a real spike against the actual Audiobookshelf
 server (`docs/setup/MY_SETUP.md` has connection details) before anything is decided. This is
 the recommended next step, not a settled fact.
+
+### Jellyfin lyrics search — synced view is unblocked, search is not
+
+Verified against `jellyfin/jellyfin` source, not recall — this project's standing rule for
+Jellyfin claims.
+
+**Jellyfin's search never matches lyric text.** Both `GET /Items?searchTerm=` and
+`GET /Search/Hints` funnel through `ISearchManager` into
+`Emby.Server.Implementations/Library/Search/SqlSearchProvider.cs`, whose `WHERE` clause
+matches only two columns: `CleanName` (a normalized form of `Name`/`SortName`) and
+`OriginalTitle`. Relevance scoring is computed against `CleanName` alone. `Overview`,
+`Album`, `Artists` and `Lyrics` never enter the query. Corroborated by jellyfin/jellyfin
+issue #13541, where a maintainer states that all name-based search parameters match on
+`CleanName` and `OriginalTitle` only.
+
+**Jellyfin's lyrics API is strictly per-item.** `Jellyfin.Api/Controllers/LyricsController.cs`
+exposes `GET /Audio/{itemId}/Lyrics` (→ `LyricDto`), POST/DELETE upload and delete under a
+`LyricManagement` policy, `GET /Audio/{itemId}/RemoteSearch/Lyrics` and
+`POST /Audio/{itemId}/RemoteSearch/Lyrics/{lyricId}` for provider lookups, and
+`GET /Providers/Lyrics/{lyricId}`. Every one of these methods begins by resolving a single
+known `itemId` — there is no endpoint anywhere that searches lyric text across a library.
+
+Shapes, from `MediaBrowser.Model/Lyrics/`:
+
+```
+LyricDto      = { Metadata: LyricMetadata, Lyrics: LyricLine[] }
+LyricLine     = { Text: string, Start: long? (ticks), Cues: LyricLineCue[]? }
+LyricMetadata = { IsSynced: bool?, Artist, Album, Title, Author, Length, Offset, Creator, Version }
+```
+
+`Start` is null for unsynced plain text and populated for `.lrc`-style synced lyrics;
+`Cues` allows word/phrase-level alignment. Jellyfin resolves lyrics through
+`ILyricManager`/`ILyricProvider` — a local `.lrc`/`.txt` file provider plus pluggable remote
+providers. There is an official first-party plugin, `jellyfin/jellyfin-plugin-lrclib`, that
+fetches synced lyrics from lrclib.net per track.
+
+**What this means for Auralis.** These two facts split phase 9's lyrics work into two pieces
+with very different status:
+
+- **Synced lyrics view** — displaying a track's lyrics, scrolling in time with playback — is
+  **unblocked**. It needs only the per-item endpoint above, which already returns per-line
+  timestamps. Nothing beyond a client method, a BFF route and a UI is required.
+- **Lyrics search** — the actual reference is Spotify's "type a lyric fragment, find the
+  track" — **cannot be delivered by wrapping any Jellyfin endpoint**. Jellyfin has nothing
+  that searches lyric text; delivering this means Auralis builds and maintains its own lyric
+  index in the BFF. Two realistic options, and the choice between them is the user's:
+  - **(a) Index only what is already on the server.** Walk the library, call the per-item
+    lyrics endpoint for each track, store the text, search it locally — SQLite FTS5 fits the
+    existing stack (`better-sqlite3` is already a dependency). No third-party call at any
+    point; only reads data the Jellyfin server already holds. Moderate cost: a background
+    indexing job plus backfill/freshness logic as the library grows. Its coverage ceiling is
+    whatever fraction of tracks already have lyrics attached, which in practice depends on
+    whether the LrcLib plugin above is installed and has been run on the server.
+  - **(b) Additionally backfill from an external provider** — calling lrclib.net directly for
+    tracks with no lyrics attached. Higher cost: artist/title/album/duration matching
+    heuristics against a provider whose own API is itself only a title/artist search, plus
+    rate limiting, caching and false-match handling. It carries a genuine privacy decision:
+    it sends metadata about the user's library to a third party, so it needs explicit
+    opt-in, not a silent default.
