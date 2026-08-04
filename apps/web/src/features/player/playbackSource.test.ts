@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AudioTrack } from '../../api/types.js';
-import { audiobookshelfSource, noopProgressReporter } from './playbackSource.js';
+import { audiobookshelfSource, jellyfinSource, noopProgressReporter } from './playbackSource.js';
 import type { ProgressSyncBody } from './progressSync.js';
 
 const BODY: ProgressSyncBody = { currentTime: 120, timeListened: 15, duration: 3_600 };
@@ -110,5 +110,41 @@ describe('noopProgressReporter', () => {
     expect(() => noopProgressReporter.onTick(BODY)).not.toThrow();
     expect(() => noopProgressReporter.onEnd(BODY)).not.toThrow();
     expect(() => noopProgressReporter.onEnd(null)).not.toThrow();
+  });
+});
+
+function fakeJellyfinApi() {
+  return {
+    jellyfinTrackStreamUrl: vi.fn((itemId: string) => `/jellyfin/tracks/${itemId}/stream`),
+  };
+}
+
+describe('jellyfinSource', () => {
+  describe('reportProgress', () => {
+    it('is the shared no-op reporter — Jellyfin PlaybackProgress reporting is not wired up', () => {
+      const source = jellyfinSource(fakeJellyfinApi());
+      expect(source.reportProgress).toBe(noopProgressReporter);
+    });
+  });
+
+  describe('resolveTrackUrl', () => {
+    it('resolves a track to the proxied stream URL, keyed by the track’s own Jellyfin id', () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api);
+
+      expect(source.resolveTrackUrl(track({ contentUrl: 'jf-track-1' }))).toBe(
+        '/jellyfin/tracks/jf-track-1/stream',
+      );
+      expect(api.jellyfinTrackStreamUrl).toHaveBeenCalledWith('jf-track-1');
+    });
+
+    it('degrades to null for a track with no usable id, rather than throwing', () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api);
+
+      expect(source.resolveTrackUrl(track({ contentUrl: null }))).toBeNull();
+      expect(source.resolveTrackUrl(track({ contentUrl: '' }))).toBeNull();
+      expect(api.jellyfinTrackStreamUrl).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,9 +1,10 @@
 /**
  * Music (Phase 9 wave A): connecting Jellyfin from Settings, browsing
- * artists → albums → tracks, and searching across all three. Playback is
- * explicitly out of scope for this wave — see `docs/HANDOVER.md` and
- * `features/music/MusicAlbumPage.tsx`'s doc comment — so there is nothing
- * here about playing a track, only browsing to it.
+ * artists → albums → tracks, and searching across all three. Wave B (see
+ * `docs/HANDOVER.md`) adds playback — tests for that are at the end of this
+ * file, after the browse/search tests below, so they run once a Jellyfin
+ * connection is already established by the earlier tests in this `serial`
+ * suite.
  *
  * Fixture data (`apps/server/src/testSupport/fakes/fakeJellyfin.ts`):
  * - Artists: "The Nebula Collective" (`artist-nebula`, 2 albums), "Echo Fields"
@@ -28,6 +29,28 @@
 import { expect, test } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
+
+test.beforeEach(async ({ page }) => {
+  // Playing a track needs the same fixture-audio neutralization `player.spec.ts` uses — see
+  // that file's header for the full reasoning (the fixture audio can't decode; unneutralized,
+  // `play()` rejecting and a native `error` event both revert `playerStore`'s "playing" state
+  // out from under an assertion). Applied to every test in this file, not just the playback
+  // ones at the end, since it's inert for tests that never touch playback.
+  await page.addInitScript(() => {
+    const proto = HTMLMediaElement.prototype;
+    proto.play = () => Promise.resolve();
+    proto.pause = function () {};
+    Object.defineProperty(proto, 'src', {
+      configurable: true,
+      get(this: HTMLMediaElement & { _auralisSrc?: string }) {
+        return this._auralisSrc ?? '';
+      },
+      set(this: HTMLMediaElement & { _auralisSrc?: string }, value: string) {
+        this._auralisSrc = value;
+      },
+    });
+  });
+});
 
 const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
 const FAKE_JELLYFIN_USERNAME = 'nova';
@@ -151,4 +174,36 @@ test('a search with no matches says so rather than looking broken', async ({ pag
   await page.getByTestId('music-search-submit').click();
 
   await expect(page.getByText('No matches for "zzz-no-such-artist".')).toBeVisible();
+});
+
+test('clicking a track plays it — the mini player bills the track over the artist', async ({
+  page,
+}) => {
+  await page.goto('/music/album/album-driftwave');
+  await expect(page.getByTestId('music-album-page')).toBeVisible();
+
+  await page.getByTestId('music-track-track-driftwave-1').click();
+
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Tidal Lines');
+  await expect(page.getByTestId('mini-player-author')).toContainText('The Nebula Collective');
+});
+
+test('clicking a different row switches the mini player to that track', async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+
+  await page.getByTestId('music-track-track-driftwave-2').click();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Static Coast');
+});
+
+test('the full Now Playing surface shows the same track-over-artist billing', async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-track-track-driftwave-1').click();
+
+  await page.getByTestId('mini-player-expand').click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+  await expect(page.getByTestId('now-playing').getByRole('heading', { level: 1 })).toHaveText(
+    'Tidal Lines',
+  );
+  await expect(page.getByTestId('now-playing-author')).toContainText('The Nebula Collective');
 });

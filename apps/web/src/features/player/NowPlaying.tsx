@@ -17,8 +17,8 @@ import { usePlayerStore } from '../../state/playerStore.js';
 import { useSettingsStore } from '../../state/settingsStore.js';
 import { BookmarkControls } from './BookmarkControls.js';
 import { ChapterList } from './ChapterList.js';
-import { chapterAt, formatDuration, nextRate } from './playback.js';
-import { formatRemaining, playerDisplayMeta } from './playerUi.js';
+import { chapterAt, formatDuration, nextRate, trackAt } from './playback.js';
+import { formatRemaining, playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
 import { SleepTimerControl } from './SleepTimerControl.js';
 
 export interface NowPlayingProps {
@@ -32,6 +32,7 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
   const currentItem = usePlayerStore((s) => s.currentItem);
   const episodeId = usePlayerStore((s) => s.episodeId);
   const displayTitle = usePlayerStore((s) => s.displayTitle);
+  const tracks = usePlayerStore((s) => s.tracks);
   const chapters = usePlayerStore((s) => s.chapters);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -50,10 +51,12 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
   const authors =
     currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
   const { primary, secondary } = playerDisplayMeta({
+    kind: currentItem.media.kind,
     episodeId,
     displayTitle,
     itemTitle: currentItem.media.title,
     authors,
+    currentTrackTitle: trackAt(tracks, currentTime)?.track.title ?? null,
   });
   const chapter = chapterAt(chapters, currentTime);
 
@@ -70,13 +73,21 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
 
       <img
         className="auralis-now-playing__art"
-        src={api.coverUrl(currentItem.id, { width: 640 })}
+        src={playerArtworkUrl(api, {
+          kind: currentItem.media.kind,
+          itemId: currentItem.id,
+          width: 640,
+        })}
         alt=""
       />
 
       <div className="auralis-now-playing__meta">
         <h1 className="auralis-now-playing__title">{primary}</h1>
-        {secondary ? <p className="auralis-now-playing__author">{secondary}</p> : null}
+        {secondary ? (
+          <p className="auralis-now-playing__author" data-testid="now-playing-author">
+            {secondary}
+          </p>
+        ) : null}
         <p data-testid="now-playing-chapter">{chapter?.title ?? ''}</p>
       </div>
 
