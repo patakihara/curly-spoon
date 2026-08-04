@@ -360,9 +360,11 @@ must be beautiful" worth a product decision.
 `doc-feedback-accumulate.sh`, `doc-feedback-review.sh`, `delegation-nudge.sh`) — logging
 subagent launches/ends (cross-worktree, via a shared file under `git rev-parse
 --git-common-dir`), accumulating documentation-relevant user feedback for later batch review,
-and a delegation nudge. All are registered in _this worktree's_ `.claude/settings.json` only —
-they cannot arm in any live session until this branch merges, and none have been observed
-firing in a real conversation yet (only pipe-tested with synthesized stdin). `delegation-nudge`
+and a delegation nudge. All are registered in _this worktree's_ `.claude/settings.json` only,
+which is invisible to sessions rooted in other checkouts until the branch merges — a session
+can arm its own hooks immediately, but only within the checkout that sees the settings file —
+and none have been observed firing in a real conversation yet (only pipe-tested with
+synthesized stdin). `delegation-nudge`
 specifically should stay disabled/uncommitted even after merge: its live classification path
 (a nested headless `claude -p` call) has never succeeded in testing and measured close to a
 full timeout (5.66s/6s) on one real attempt — a synchronous hook with that latency risk and no
@@ -734,12 +736,13 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
 
 ## 7. Suggested first moves
 
-**Immediate next task: set up Watchtower on mediaserver**, to pull the newly-published GHCR
-image and restart the container when `:latest` changes — the repo owner's direct choice of
-mechanism. Not started because it's a live change on a different host and wants its own
-session; whoever picks it up must read mediaserver's own `~/CLAUDE.md` first (this repo's
-scope rules don't extend to that host) and `docs/setup/MY_SETUP.md`/`HOST_REPORT.md` for
-that box's details.
+**Immediate next task: set up auto-updating container deployment on mediaserver** — pulling
+the newly-published GHCR image and restarting the container when `:latest` changes.
+Watchtower is the candidate mechanism. **The other containers on that host must stay
+running; above all, Jellyfin must not be taken down.** Not started because it's a live
+change on a different host and wants its own session; whoever picks it up must read
+mediaserver's own `~/CLAUDE.md` first (this repo's scope rules don't extend to that host)
+and `docs/setup/MY_SETUP.md`/`HOST_REPORT.md` for that box's details.
 
 Worth reconciling before relying on Watchtower: the checked-in `compose.yaml` carries both
 `build: .` and `image: ghcr.io/patakihara/auralis:latest`, while `docs/SELF_HOSTING.md`'s

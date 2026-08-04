@@ -249,10 +249,12 @@ mistake at larger scale.** Two things worth separating:
   no edits yourself) rather than exiting and re-entering.
 - Everything the earlier paragraphs warn about (main-checkout rot, per-directory auto-memory,
   the autorun runner's directory-based lookup) held again, now at roughly double the earlier
-  incident's scale, plus a new failure mode: hooks registered in a worktree's own
-  `.claude/settings.json` are invisible to every other checkout and cannot arm in the user's
-  live session until the branch merges — a worktree is not just stale code, it can be a stale
-  _configuration_ too.
+  incident's scale, plus a new failure mode: a worktree's own `.claude/settings.json` is a
+  file only that checkout can see, so hooks registered there are invisible to sessions rooted
+  in other checkouts until the branch merges — a worktree is not just stale code, it can be a
+  stale _configuration_ too. (A session **can** arm its own hooks the moment it registers
+  them, with no merge required — the limitation here is visibility across checkouts, not
+  arming.)
 - **`isolation: "worktree"` on the `Agent` tool defaults to the wrong base for this repo.**
   Discovered 2026-08-04: with no `worktree.baseRef` configured in `.claude/settings.json`,
   an agent spawned with `isolation: "worktree"` lands on `origin/main`'s single "Initial
