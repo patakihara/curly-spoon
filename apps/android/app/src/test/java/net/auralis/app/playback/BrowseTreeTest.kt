@@ -484,4 +484,145 @@ class BrowseTreeTest {
 
             assertNull((children[0] as BrowseBook).subtitle)
         }
+
+    @Test
+    fun `search maps upstream results to BrowseBooks with the browse tree's own book ids`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"books":[
+                  {"id":"item1","libraryId":"lib1","coverPath":null,
+                   "media":{"kind":"book","title":"Found Book"},"progress":null}
+                ],"podcasts":[],"series":[],"authors":[]}
+                """.trimIndent(),
+            )
+
+            val results = repository.search("found", page = 0, pageSize = 50)
+
+            assertEquals(1, results.size)
+            assertEquals(BrowseIds.book("item1"), results[0].id)
+        }
+
+    @Test
+    fun `search windows its results to pageSize, not the whole upstream result set`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"books":[
+                  {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null},
+                  {"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Second"},"progress":null},
+                  {"id":"item3","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Third"},"progress":null}
+                ],"podcasts":[],"series":[],"authors":[]}
+                """.trimIndent(),
+            )
+
+            val results = repository.search("book", page = 0, pageSize = 2)
+
+            assertEquals(2, results.size)
+            assertEquals(BrowseIds.book("item1"), results[0].id)
+            assertEquals(BrowseIds.book("item2"), results[1].id)
+        }
+
+    @Test
+    fun `search degrades to emptyList, not throwing, when the upstream call errors`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"internal_error","message":"Boom"}}"""),
+            )
+
+            val results = repository.search("book", page = 0, pageSize = 50)
+
+            assertTrue(results.isEmpty())
+        }
+
+    @Test
+    fun `search returns emptyList for a blank query without calling the API`() =
+        runTest {
+            withBaseUrlConfigured()
+            // No response enqueued: if the repository called the API here, the request would
+            // block/fail with no queued response, failing this test loudly.
+            val results = repository.search("   ", page = 0, pageSize = 50)
+
+            assertTrue(results.isEmpty())
+        }
+
+    @Test
+    fun `mostRecentContinueListening returns the shelf's first item`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue(
+                """
+                {"shelves":[
+                  {"id":"shelf2","label":"Continue Listening","type":"book","items":[
+                    {"id":"item1","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"First"},"progress":null},
+                    {"id":"item2","libraryId":"lib1","coverPath":null,"media":{"kind":"book","title":"Second"},"progress":null}
+                  ]}
+                ]}
+                """.trimIndent(),
+            )
+
+            val result = repository.mostRecentContinueListening()
+
+            assertEquals(BrowseIds.book("item1"), result?.id)
+        }
+
+    @Test
+    fun `mostRecentContinueListening returns null when the shelf is empty`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueueLibraries()
+            enqueue("""{"shelves":[{"id":"personalized-01","label":"Recently Added","type":"book","items":[]}]}""")
+
+            val result = repository.mostRecentContinueListening()
+
+            assertNull(result)
+        }
+
+    @Test
+    fun `bestSearchMatch picks an exact, case-insensitive title match over the first result`() {
+        val exact = BrowseBook(id = BrowseIds.book("item2"), title = "Dune")
+        val candidates =
+            listOf(
+                BrowseBook(id = BrowseIds.book("item1"), title = "Dune Messiah"),
+                exact,
+            )
+
+        val match = bestSearchMatch("dune", candidates, continueListeningFallback = null)
+
+        assertEquals(exact, match)
+    }
+
+    @Test
+    fun `bestSearchMatch falls back to the first result when nothing matches exactly`() {
+        val first = BrowseBook(id = BrowseIds.book("item1"), title = "Dune Messiah")
+        val candidates = listOf(first, BrowseBook(id = BrowseIds.book("item2"), title = "Children of Dune"))
+
+        val match = bestSearchMatch("dune", candidates, continueListeningFallback = null)
+
+        assertEquals(first, match)
+    }
+
+    @Test
+    fun `bestSearchMatch falls back to the continue-listening item on a blank query`() {
+        val fallback = BrowseBook(id = BrowseIds.book("item9"), title = "Whatever Was Playing")
+
+        val match = bestSearchMatch("", emptyList(), continueListeningFallback = fallback)
+
+        assertEquals(fallback, match)
+    }
+
+    @Test
+    fun `bestSearchMatch returns null when there is nothing to pick from`() {
+        assertNull(bestSearchMatch("dune", emptyList(), continueListeningFallback = null))
+        assertNull(bestSearchMatch("", emptyList(), continueListeningFallback = null))
+    }
 }
