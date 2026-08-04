@@ -18,7 +18,7 @@ import { useSettingsStore } from '../../state/settingsStore.js';
 import { BookmarkControls } from './BookmarkControls.js';
 import { ChapterList } from './ChapterList.js';
 import { chapterAt, formatDuration, nextRate } from './playback.js';
-import { formatRemaining } from './playerUi.js';
+import { formatRemaining, playerDisplayMeta } from './playerUi.js';
 import { SleepTimerControl } from './SleepTimerControl.js';
 
 export interface NowPlayingProps {
@@ -30,6 +30,8 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
   const breakpoint = useBreakpoint();
   const api = useApi();
   const currentItem = usePlayerStore((s) => s.currentItem);
+  const episodeId = usePlayerStore((s) => s.episodeId);
+  const displayTitle = usePlayerStore((s) => s.displayTitle);
   const chapters = usePlayerStore((s) => s.chapters);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -47,6 +49,12 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
 
   const authors =
     currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
+  const { primary, secondary } = playerDisplayMeta({
+    episodeId,
+    displayTitle,
+    itemTitle: currentItem.media.title,
+    authors,
+  });
   const chapter = chapterAt(chapters, currentTime);
 
   const content = (
@@ -67,8 +75,8 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
       />
 
       <div className="auralis-now-playing__meta">
-        <h1 className="auralis-now-playing__title">{currentItem.media.title}</h1>
-        {authors ? <p className="auralis-now-playing__author">{authors}</p> : null}
+        <h1 className="auralis-now-playing__title">{primary}</h1>
+        {secondary ? <p className="auralis-now-playing__author">{secondary}</p> : null}
         <p data-testid="now-playing-chapter">{chapter?.title ?? ''}</p>
       </div>
 

@@ -91,8 +91,43 @@ test('playing an episode from the detail page starts the mini player', async ({ 
   await page.getByTestId('podcast-episode-ep-dailytech-2').click();
 
   await expect(page.getByTestId('mini-player')).toBeVisible();
-  // The mini player shows the podcast's own title (its display chrome is the
-  // library item, not the individual episode) — see PodcastDetailPage.tsx's
-  // header comment for why episode playback still loads the podcast item.
-  await expect(page.getByTestId('mini-player-title')).toContainText('Daily Tech Briefing');
+  // The mini player shows the *episode's* own title as the primary line — every
+  // episode of a show looked identical while playing before this, since the store
+  // only ever held the podcast (the library item `load()` is handed, per
+  // PodcastDetailPage.tsx's header comment) — with the podcast's own title
+  // demoted to the secondary line, the way a book shows title-over-author. See
+  // playerUi.ts's `playerDisplayMeta`.
+  await expect(page.getByTestId('mini-player-title')).toContainText('The One About Rust');
+  await expect(page.locator('.auralis-mini-player__author')).toContainText('Daily Tech Briefing');
+});
+
+test('the mini player and Now Playing surface the episode title, not the podcast title, while an episode plays', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const proto = HTMLMediaElement.prototype;
+    proto.play = () => Promise.resolve();
+    proto.pause = function () {};
+    Object.defineProperty(proto, 'src', {
+      configurable: true,
+      get(this: HTMLMediaElement & { _auralisSrc?: string }) {
+        return this._auralisSrc ?? '';
+      },
+      set(this: HTMLMediaElement & { _auralisSrc?: string }, value: string) {
+        this._auralisSrc = value;
+      },
+    });
+  });
+
+  await openDailyTech(page);
+  await page.getByTestId('podcast-episode-ep-dailytech-2').click();
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+
+  await page.getByTestId('mini-player-expand').click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+
+  const title = page.getByTestId('now-playing').locator('.auralis-now-playing__title');
+  const author = page.getByTestId('now-playing').locator('.auralis-now-playing__author');
+  await expect(title).toContainText('The One About Rust');
+  await expect(author).toContainText('Daily Tech Briefing');
 });

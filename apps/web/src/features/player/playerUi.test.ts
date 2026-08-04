@@ -3,6 +3,7 @@ import {
   defaultBookmarkTitle,
   endOfChapterMs,
   formatRemaining,
+  playerDisplayMeta,
   remainingSeconds,
 } from './playerUi.js';
 
@@ -60,5 +61,40 @@ describe('defaultBookmarkTitle', () => {
 
   it('falls back to a formatted timestamp with no chapter data', () => {
     expect(defaultBookmarkTitle([], 90)).toBe('1:30');
+  });
+});
+
+describe('playerDisplayMeta', () => {
+  it('shows the episode’s own title over the podcast’s, when an episode is loaded', () => {
+    expect(
+      playerDisplayMeta({
+        episodeId: 'ep-1',
+        displayTitle: 'The One About Rust',
+        itemTitle: 'Daily Tech Briefing',
+        authors: 'Signal Media',
+      }),
+    ).toEqual({ primary: 'The One About Rust', secondary: 'Daily Tech Briefing' });
+  });
+
+  it('shows the book’s title and author, unchanged, when no episode is loaded', () => {
+    expect(
+      playerDisplayMeta({
+        episodeId: null,
+        displayTitle: 'Dune',
+        itemTitle: 'Dune',
+        authors: 'Frank Herbert',
+      }),
+    ).toEqual({ primary: 'Dune', secondary: 'Frank Herbert' });
+  });
+
+  it('falls back to the item’s own title if an episode session ever arrives with a blank displayTitle', () => {
+    expect(
+      playerDisplayMeta({
+        episodeId: 'ep-1',
+        displayTitle: '',
+        itemTitle: 'Daily Tech Briefing',
+        authors: 'Signal Media',
+      }),
+    ).toEqual({ primary: 'Daily Tech Briefing', secondary: 'Daily Tech Briefing' });
   });
 });

@@ -8,6 +8,7 @@
 import { Icon, IconButton, LinearProgress, Marquee } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
 import { usePlayerStore } from '../../state/playerStore.js';
+import { playerDisplayMeta } from './playerUi.js';
 
 export interface MiniPlayerProps {
   /** Opens the full Now Playing surface — owned by whichever shell region hosts this. */
@@ -17,6 +18,8 @@ export interface MiniPlayerProps {
 export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const api = useApi();
   const currentItem = usePlayerStore((s) => s.currentItem);
+  const episodeId = usePlayerStore((s) => s.episodeId);
+  const displayTitle = usePlayerStore((s) => s.displayTitle);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
@@ -27,6 +30,12 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
 
   const authors =
     currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
+  const { primary, secondary } = playerDisplayMeta({
+    episodeId,
+    displayTitle,
+    itemTitle: currentItem.media.title,
+    authors,
+  });
   const progress = duration === 0 ? 0 : currentTime / duration;
 
   return (
@@ -36,7 +45,7 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
         className="auralis-mini-player__body"
         data-testid="mini-player-expand"
         onClick={onExpand}
-        aria-label={`Open ${currentItem.media.title}`}
+        aria-label={`Open ${primary}`}
       >
         <img
           className="auralis-mini-player__cover"
@@ -47,9 +56,9 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
         />
         <span className="auralis-mini-player__text">
           <span className="auralis-mini-player__title" data-testid="mini-player-title">
-            <Marquee>{currentItem.media.title}</Marquee>
+            <Marquee>{primary}</Marquee>
           </span>
-          {authors ? <span className="auralis-mini-player__author">{authors}</span> : null}
+          {secondary ? <span className="auralis-mini-player__author">{secondary}</span> : null}
         </span>
       </button>
       <IconButton
