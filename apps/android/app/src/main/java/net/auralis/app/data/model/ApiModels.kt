@@ -70,6 +70,19 @@ data class OkResponse(
     val ok: Boolean,
 )
 
+/**
+ * One folder attached to a library — Audiobookshelf's own unit for "where on disk new content
+ * for this library lands." Needed only to build a podcast subscribe body
+ * ([SubscribePodcastBody.folderId]/[SubscribePodcastBody.folderPath] are both required by the
+ * upstream schema); nothing else in this app reads it yet. Mirrors
+ * `packages/abs-client/src/domain.ts`'s `LibraryFolder`.
+ */
+@Serializable
+data class LibraryFolder(
+    val id: String,
+    val path: String,
+)
+
 /** One entry from GET /libraries. */
 @Serializable
 data class Library(
@@ -77,6 +90,9 @@ data class Library(
     val name: String,
     val mediaType: String,
     val icon: String? = null,
+    /** `[]` when the server predates this field or the library genuinely has none — see
+     * [LibraryFolder]'s doc comment for why this app needs it at all. */
+    val folders: List<LibraryFolder> = emptyList(),
 )
 
 /** GET /libraries response envelope. */

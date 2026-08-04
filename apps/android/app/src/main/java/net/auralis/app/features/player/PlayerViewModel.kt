@@ -17,6 +17,7 @@ import kotlinx.coroutines.guava.asDeferred
 import kotlinx.coroutines.launch
 import net.auralis.app.playback.AuralisMediaLibraryService
 import net.auralis.app.playback.PlaybackItemResolver
+import net.auralis.app.playback.ResolvedPlayback
 import net.auralis.app.playback.toMediaItem
 
 /** What the mini player (and, later, a full Now Playing surface) renders. */
@@ -130,28 +131,61 @@ class PlayerViewModel(
      */
     fun playItem(itemId: String) {
         viewModelScope.launch {
-            try {
-                val resolved =
-                    playbackItemResolver.resolve(itemId)
-                        ?: run {
-                            _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
-                            return@launch
-                        }
-                val mediaItem = resolved.toMediaItem()
-                val ctrl = connectedController()
-                ctrl.setMediaItem(mediaItem)
-                ctrl.prepare()
-                ctrl.play()
-                val title = mediaItem.mediaMetadata.title?.toString() ?: itemId
-                _uiState.value = PlayerUiState.Playing(title = title, isPlaying = true)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Total function, per house style: a failed MediaController connection (service
-                // unreachable, connection refused) degrades to an error state rather than
-                // crashing the ViewModel's coroutine scope.
-                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
-            }
+            playResolved(fallbackTitle = itemId) { playbackItemResolver.resolve(itemId) }
+        }
+    }
+
+    /**
+     * Starts playback of one podcast episode. Called from a podcast detail screen's episode
+     * row `onClick` — the podcast counterpart to [playItem], sharing every step past resolution
+     * with it via [playResolved] so the two can't drift in how a failure surfaces.
+     */
+    fun playEpisode(
+        itemId: String,
+        episodeId: String,
+    ) {
+        viewModelScope.launch {
+            playResolved(fallbackTitle = episodeId) { playbackItemResolver.resolveEpisode(itemId, episodeId) }
+        }
+    }
+
+    /**
+     * Shared tail of [playItem]/[playEpisode]: resolve, hand to the controller, publish
+     * [PlayerUiState]. Pulled out so the two entry points can't diverge in how a resolution
+     * failure or a controller-connection failure is reported — before this existed, only
+     * [playItem] had this logic and [playEpisode] would have been a second, easily-drifting copy.
+     *
+     * [resolve] is a suspend lambda, not a plain `ResolvedPlayback?`, so the network round trip
+     * happens *inside* this function's own try/catch — matching [playItem]'s original structure,
+     * where `playbackItemResolver.resolve(itemId)` itself could throw (a non-[ApiException]
+     * failure, though [PlaybackItemResolver.resolve]/`resolveEpisode` are both already total
+     * functions in practice) as easily as `connectedController()` could.
+     */
+    private suspend fun playResolved(
+        fallbackTitle: String,
+        resolve: suspend () -> ResolvedPlayback?,
+    ) {
+        try {
+            val resolved =
+                resolve()
+                    ?: run {
+                        _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
+                        return
+                    }
+            val mediaItem = resolved.toMediaItem()
+            val ctrl = connectedController()
+            ctrl.setMediaItem(mediaItem)
+            ctrl.prepare()
+            ctrl.play()
+            val title = mediaItem.mediaMetadata.title?.toString() ?: fallbackTitle
+            _uiState.value = PlayerUiState.Playing(title = title, isPlaying = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Total function, per house style: a failed MediaController connection (service
+            // unreachable, connection refused) degrades to an error state rather than
+            // crashing the ViewModel's coroutine scope.
+            _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
         }
     }
 

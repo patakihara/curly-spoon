@@ -13,15 +13,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import net.auralis.app.AppContainer
 import net.auralis.app.features.downloads.DownloadsScreen
 import net.auralis.app.features.login.LoginScreen
 import net.auralis.app.features.home.HomeScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
 import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.features.podcasts.PodcastDetailScreen
+import net.auralis.app.features.podcasts.PodcastsScreen
 import net.auralis.app.features.requests.RequestsScreen
 
 /** Route name constants for [AuralisNavHost]'s graph. */
@@ -31,6 +35,17 @@ object Routes {
     const val HOME = "home"
     const val REQUESTS = "requests"
     const val DOWNLOADS = "downloads"
+    const val PODCASTS = "podcasts"
+
+    /** Argument name within [PODCAST_DETAIL_PATTERN] — the podcast library item's id. */
+    const val PODCAST_DETAIL_ARG_ITEM_ID = "itemId"
+    private const val PODCAST_DETAIL_PATTERN = "podcast/{$PODCAST_DETAIL_ARG_ITEM_ID}"
+
+    /** Route pattern registered with [NavHost]. */
+    fun podcastDetailRoute(): String = PODCAST_DETAIL_PATTERN
+
+    /** The concrete route to `navController.navigate(...)` for one podcast's detail screen. */
+    fun podcastDetail(itemId: String): String = "podcast/$itemId"
 }
 
 /**
@@ -74,6 +89,16 @@ fun AuralisNavHost(
                 composable(Routes.HOME) { HomeScreen(container, playerViewModel, navController) }
                 composable(Routes.REQUESTS) { RequestsScreen(container) }
                 composable(Routes.DOWNLOADS) { DownloadsScreen(container) }
+                composable(Routes.PODCASTS) { PodcastsScreen(container, navController) }
+                composable(
+                    Routes.podcastDetailRoute(),
+                    arguments = listOf(navArgument(Routes.PODCAST_DETAIL_ARG_ITEM_ID) { type = NavType.StringType }),
+                ) { backStackEntry ->
+                    val itemId =
+                        backStackEntry.arguments?.getString(Routes.PODCAST_DETAIL_ARG_ITEM_ID)
+                            ?: return@composable
+                    PodcastDetailScreen(container, playerViewModel, itemId)
+                }
             }
         }
     }
