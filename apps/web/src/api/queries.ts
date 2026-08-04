@@ -28,6 +28,7 @@ export const queryKeys = {
   providers: ['providers'] as const,
   requestSettings: ['settings', 'requests'] as const,
   podcastDirectorySearch: (term: string) => ['podcasts', 'search', term] as const,
+  myProgress: ['me', 'progress'] as const,
 };
 
 export function useSetupQuery() {
@@ -115,6 +116,32 @@ export function usePlayItemMutation() {
   const api = useApi();
   return useMutation({
     mutationFn: (itemId: string) => api.playItem(itemId),
+  });
+}
+
+/** Podcast counterpart to `usePlayItemMutation` — same shape, one extra id. */
+export function usePlayEpisodeMutation() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: ({ itemId, episodeId }: { itemId: string; episodeId: string }) =>
+      api.playEpisode(itemId, episodeId),
+  });
+}
+
+/**
+ * Every progress record for the signed-in user — the podcast detail view's
+ * source for per-episode played/in-progress/unplayed state (see
+ * `getMyProgress`'s doc comment on `ApiClient` for why `getItem`'s own
+ * `include: 'progress'` isn't enough for a podcast). `staleTime` matches
+ * `useItemQuery`'s: fresh enough that returning from a just-finished episode
+ * shows its new state, not so fresh it refetches on every render.
+ */
+export function useMyProgressQuery() {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.myProgress,
+    queryFn: ({ signal }) => api.getMyProgress(signal),
+    staleTime: 30_000,
   });
 }
 

@@ -38,6 +38,21 @@ const itemRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// A separate route (not a branch inside `itemRoute`) because a podcast container
+// has no single audio stream of its own — every "Play" in `PodcastDetailPage` is
+// per-episode — so the two pages' layouts diverge enough to be their own
+// components. `LibraryPage.tsx`'s click handler routes here for
+// `item.media.kind === 'podcast'`, `itemRoute` otherwise.
+const podcastDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/podcast/$itemId',
+  component: lazyRouteComponent(
+    () => import('../features/podcasts/PodcastDetailPage.js'),
+    'PodcastDetailPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/search',
@@ -110,6 +125,7 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   libraryRoute,
   itemRoute,
+  podcastDetailRoute,
   requestsRoute,
   podcastDiscoverRoute,
   searchRoute,
