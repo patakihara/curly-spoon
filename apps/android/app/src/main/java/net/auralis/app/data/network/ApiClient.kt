@@ -18,9 +18,16 @@ import net.auralis.app.data.model.LibraryItemsPage
 import net.auralis.app.data.model.LoginRequestBody
 import net.auralis.app.data.model.LoginResponse
 import net.auralis.app.data.model.MeResponse
+import net.auralis.app.data.model.MediaProgress
+import net.auralis.app.data.model.MyProgressResponse
 import net.auralis.app.data.model.OkResponse
 import net.auralis.app.data.model.PlaybackSession
 import net.auralis.app.data.model.PlayResponse
+import net.auralis.app.data.model.PodcastDirectoryResult
+import net.auralis.app.data.model.PodcastFeedPreview
+import net.auralis.app.data.model.PodcastFeedPreviewResponse
+import net.auralis.app.data.model.PodcastSearchResponse
+import net.auralis.app.data.model.PreviewPodcastFeedBody
 import net.auralis.app.data.model.Release
 import net.auralis.app.data.model.RequestResponse
 import net.auralis.app.data.model.RequestSearchResult
@@ -31,6 +38,8 @@ import net.auralis.app.data.model.SetupRequestBody
 import net.auralis.app.data.model.SetupResult
 import net.auralis.app.data.model.SetupState
 import net.auralis.app.data.model.Shelf
+import net.auralis.app.data.model.SubscribePodcastBody
+import net.auralis.app.data.model.SubscribePodcastResponse
 import net.auralis.app.data.model.SyncSessionBody
 import net.auralis.app.data.model.auralisJson
 import okhttp3.HttpUrl
@@ -139,6 +148,19 @@ class ApiClient(
 
     suspend fun playItem(itemId: String): PlaybackSession = postNoBody<PlayResponse>("/items/$itemId/play").session
 
+    /**
+     * POST /items/{itemId}/play/{episodeId} — the episode-scoped counterpart to [playItem].
+     * Verified against `routes/playback.ts`: this endpoint and `POST /items/{id}/play` both
+     * route through the same `/sessions/{id}/sync` and `/sessions/{id}/close` handlers, so
+     * the returned session's id is already scoped to the episode upstream — [syncSession]
+     * and [closeSession] need no separate episode parameter, matching how `apps/web`'s
+     * `playEpisode` is documented.
+     */
+    suspend fun playEpisode(
+        itemId: String,
+        episodeId: String,
+    ): PlaybackSession = postNoBody<PlayResponse>("/items/$itemId/play/$episodeId").session
+
     suspend fun syncSession(
         sessionId: String,
         currentTime: Double,
@@ -152,10 +174,53 @@ class ApiClient(
         postNoBody<OkResponse>("/sessions/$sessionId/close")
     }
 
+    /**
+     * GET /me/progress — every [MediaProgress] record for the signed-in user, book and
+     * podcast-episode alike (a book's record has `episodeId == null`). Audiobookshelf never
+     * populates item-level progress on a podcast container — it tracks progress per
+     * `(item, episode)` pair instead — so a podcast UI resolves an episode's resume position
+     * by filtering this list for a matching `libraryItemId`/`episodeId` pair itself, the same
+     * approach `apps/web`'s `getMyProgress`/`episodeProgress.ts` use.
+     */
+    suspend fun myProgress(): List<MediaProgress> = get<MyProgressResponse>("/me/progress").progress
+
     suspend fun audioTrackUrl(
         itemId: String,
         fileId: String,
     ): String = apiUrl("/media/$itemId/track/$fileId").toString()
+
+    // -----------------------------------------------------------------------------
+    // Podcast discovery (routes/podcasts.ts) — search, feed preview, subscribe
+    // -----------------------------------------------------------------------------
+
+    /** GET /podcasts/search — the iTunes-backed podcast directory. Not admin-gated upstream,
+     * unlike [previewPodcastFeed]/[subscribePodcast]. */
+    suspend fun searchPodcastDirectory(
+        term: String,
+        country: String? = null,
+    ): List<PodcastDirectoryResult> {
+        val params =
+            buildMap {
+                put("term", term)
+                country?.let { put("country", it) }
+            }
+        return get<PodcastSearchResponse>("/podcasts/search", params).results
+    }
+
+    /** POST /podcasts/feed — parses an RSS feed so its episodes can be shown before
+     * subscribing. Admin-gated upstream: a non-admin session gets `upstream_forbidden`
+     * (403), distinct from the `upstream_auth_expired` (401) a stale session gets — a
+     * non-admin user tapping "subscribe" must not be signed out as if their session expired. */
+    suspend fun previewPodcastFeed(rssFeed: String): PodcastFeedPreview =
+        post<PreviewPodcastFeedBody, PodcastFeedPreviewResponse>(
+            "/podcasts/feed",
+            PreviewPodcastFeedBody(rssFeed),
+        ).preview
+
+    /** POST /podcasts — subscribe to a previewed feed, creating a new Audiobookshelf library
+     * item. Admin-gated upstream, same as [previewPodcastFeed]. */
+    suspend fun subscribePodcast(body: SubscribePodcastBody): LibraryItem =
+        post<SubscribePodcastBody, SubscribePodcastResponse>("/podcasts", body).item
 
     suspend fun searchReleases(
         term: String,

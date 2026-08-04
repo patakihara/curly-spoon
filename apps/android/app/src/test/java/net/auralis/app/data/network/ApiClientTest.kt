@@ -2,13 +2,16 @@ package net.auralis.app.data.network
 
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import net.auralis.app.data.model.PodcastSubscribeMetadata
 import net.auralis.app.data.model.Release
+import net.auralis.app.data.model.SubscribePodcastBody
 import okhttp3.Cookie
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -721,5 +724,302 @@ class ApiClientTest {
             val result = apiClient.libraryItem("item1")
 
             assertNull(result.media.series)
+        }
+
+    // -----------------------------------------------------------------------------
+    // Podcast discovery — mirrors routes/podcasts.ts
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `searchPodcastDirectory sends term and country as query parameters and decodes results`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"results":[{"itunesId":1200000001,"itunesArtistId":1200000002,
+                      "title":"Nebula Weekly","artistName":"Nebula Media","description":"A synthetic show",
+                      "descriptionPlain":"A synthetic show","releaseDate":"2020-01-01","genres":["Science"],
+                      "cover":"https://example.com/cover.jpg","trackCount":42,
+                      "feedUrl":"https://example.com/feed.xml","pageUrl":"https://example.com/page",
+                      "explicit":false}]}
+                    """.trimIndent(),
+                ),
+            )
+
+            val results = apiClient.searchPodcastDirectory("nebula", country = "us")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("term=nebula"))
+            assertTrue(recordedPath.contains("country=us"))
+            assertEquals(1, results.size)
+            assertEquals(1200000001L, results[0].itunesId)
+            assertEquals("Nebula Weekly", results[0].title)
+            assertEquals(42, results[0].trackCount)
+        }
+
+    @Test
+    fun `searchPodcastDirectory with no country omits the country query parameter`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"results":[]}"""))
+
+            apiClient.searchPodcastDirectory("nebula")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("term=nebula"))
+            assertFalse(recordedPath.contains("country"))
+        }
+
+    @Test
+    fun `previewPodcastFeed sends rssFeed in the request body and decodes its episodes`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"preview":{"title":"Nebula Weekly","author":"Nebula Media",
+                      "description":"A synthetic show","descriptionPlain":"A synthetic show",
+                      "feedUrl":"https://example.com/feed.xml","image":"https://example.com/cover.jpg",
+                      "categories":["Science"],"language":"en","explicit":false,"numEpisodes":1,
+                      "episodes":[{"title":"Episode One","subtitle":null,"description":null,
+                        "pubDate":"2020-01-01","publishedAt":1577836800000,"episodeType":"full",
+                        "season":null,"episodeNumber":"1","author":null,"duration":"3600",
+                        "durationSeconds":3600.0,"explicit":false,
+                        "enclosure":{"url":"https://example.com/ep1.mp3","type":"audio/mpeg","length":"123456"},
+                        "guid":"guid-1","chaptersUrl":null,"chapters":[]}],
+                      "pubDate":"2020-01-01","link":"https://example.com"}}
+                    """.trimIndent(),
+                ),
+            )
+
+            val preview = apiClient.previewPodcastFeed("https://example.com/feed.xml")
+
+            val recorded = mockWebServer.takeRequest().body.readUtf8()
+            assertTrue(recorded.contains("https://example.com/feed.xml"))
+            assertEquals("Nebula Weekly", preview.title)
+            assertEquals(1, preview.numEpisodes)
+            assertEquals("Episode One", preview.episodes[0].title)
+            assertEquals("https://example.com/ep1.mp3", preview.episodes[0].enclosure?.url)
+        }
+
+    @Test
+    fun `previewPodcastFeed throws ApiException with code upstream_forbidden on a 403`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(403)
+                    .setBody("""{"error":{"code":"upstream_forbidden","message":"Admin access required"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.previewPodcastFeed("https://example.com/feed.xml")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("upstream_forbidden", exception?.code)
+            assertEquals(403, exception?.httpStatus)
+        }
+
+    @Test
+    fun `subscribePodcast sends the subscription body and decodes the created item`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setResponseCode(201).setBody(
+                    """{"item":{"id":"item-nebula","libraryId":"lib-podcasts","coverPath":null,
+                       "media":{"kind":"podcast","title":"Nebula Weekly","numEpisodes":0},"progress":null}}""",
+                ),
+            )
+
+            val body =
+                SubscribePodcastBody(
+                    libraryId = "lib-podcasts",
+                    folderId = "folder1",
+                    folderPath = "/podcasts",
+                    rssFeed = "https://example.com/feed.xml",
+                    title = "Nebula Weekly",
+                    metadata =
+                        PodcastSubscribeMetadata(
+                            author = "Nebula Media",
+                            itunesId = 1200000001,
+                        ),
+                    autoDownloadEpisodes = true,
+                )
+
+            val item = apiClient.subscribePodcast(body)
+
+            val recorded = mockWebServer.takeRequest().body.readUtf8()
+            assertTrue(recorded.contains("lib-podcasts"))
+            assertTrue(recorded.contains("https://example.com/feed.xml"))
+            assertTrue(recorded.contains("1200000001"))
+            assertEquals("item-nebula", item.id)
+            assertEquals("Nebula Weekly", item.media.title)
+        }
+
+    // -----------------------------------------------------------------------------
+    // Episode listing — MediaSummary.episodes/numEpisodes on an expanded item fetch
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `a MediaSummary with an episodes field decodes numEpisodes and PodcastEpisode entries`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item-nebula","libraryId":"lib-podcasts","coverPath":null,
+                       "media":{"kind":"podcast","title":"Nebula Weekly","numEpisodes":2,
+                         "episodes":[{"id":"ep1","index":1,"season":null,"episodeNumber":"1",
+                           "title":"Episode One","subtitle":null,"description":null,
+                           "publishedAt":1577836800000,"duration":3600.0,
+                           "audioTrack":{"index":0,"startOffset":0.0,"duration":3600.0,
+                             "title":null,"contentUrl":"/api/items/item-nebula/file/ep1",
+                             "mimeType":"audio/mpeg"}}]},
+                       "progress":null}}""",
+                ),
+            )
+
+            val result = apiClient.libraryItem("item-nebula", expanded = true)
+
+            assertEquals(2, result.media.numEpisodes)
+            val episodes = result.media.episodes
+            assertNotNull(episodes)
+            assertEquals(1, episodes?.size)
+            assertEquals("ep1", episodes?.get(0)?.id)
+            assertEquals("Episode One", episodes?.get(0)?.title)
+            assertEquals("/api/items/item-nebula/file/ep1", episodes?.get(0)?.audioTrack?.contentUrl)
+        }
+
+    @Test
+    fun `a minified podcast MediaSummary carries numEpisodes but decodes episodes as null`() =
+        runTest {
+            // The BFF's `normalizeMedia` (packages/abs-client/src/normalize.ts) always
+            // populates `numEpisodes` — minified or expanded alike — but only ever maps
+            // `episodes` when the raw item carried them, which a minified fetch never does.
+            // This is the shape a real un-expanded `libraryItem()` call decodes.
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item-nebula","libraryId":"lib-podcasts","coverPath":null,
+                       "media":{"kind":"podcast","title":"Nebula Weekly","numEpisodes":12},
+                       "progress":null}}""",
+                ),
+            )
+
+            val result = apiClient.libraryItem("item-nebula")
+
+            assertEquals(12, result.media.numEpisodes)
+            assertNull(result.media.episodes)
+        }
+
+    @Test
+    fun `a MediaSummary with neither numEpisodes nor episodes keys decodes both as null`() =
+        runTest {
+            // Defensive: the real server always sends `numEpisodes` for a podcast item (see
+            // the test above), but decoding must degrade rather than throw if it's ever
+            // absent — total functions over a partial upstream response, not a crash.
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"item":{"id":"item-nebula","libraryId":"lib-podcasts","coverPath":null,
+                       "media":{"kind":"podcast","title":"Nebula Weekly"},"progress":null}}""",
+                ),
+            )
+
+            val result = apiClient.libraryItem("item-nebula")
+
+            assertNull(result.media.numEpisodes)
+            assertNull(result.media.episodes)
+        }
+
+    // -----------------------------------------------------------------------------
+    // Episode playback — POST /items/{itemId}/play/{episodeId}
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `playEpisode POSTs to the episode-scoped play path and decodes a session carrying both ids`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"session":{"id":"sess-ep1","libraryItemId":"item-nebula","episodeId":"ep1",
+                       "mediaType":"podcast","displayTitle":"Nebula Weekly - Episode One",
+                       "duration":3600.0,"currentTime":0.0,"audioTracks":[],"chapters":[]}}""",
+                ),
+            )
+
+            val session = apiClient.playEpisode("item-nebula", "ep1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertEquals("/api/v1/items/item-nebula/play/ep1", recordedPath)
+            assertEquals("sess-ep1", session.id)
+            assertEquals("item-nebula", session.libraryItemId)
+            assertEquals("ep1", session.episodeId)
+        }
+
+    @Test
+    fun `playEpisode throws ApiException on an error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("""{"error":{"code":"not_found","message":"Episode not found"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.playEpisode("item-nebula", "missing-ep")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("not_found", exception?.code)
+            assertEquals(404, exception?.httpStatus)
+        }
+
+    // -----------------------------------------------------------------------------
+    // Per-episode progress — GET /me/progress
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `myProgress decodes records for both a book (null episodeId) and a podcast episode`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"progress":[
+                       {"id":"p1","libraryItemId":"item-dune","episodeId":null,"duration":1800.0,
+                        "currentTime":600.0,"progress":0.33,"isFinished":false},
+                       {"id":"p2","libraryItemId":"item-nebula","episodeId":"ep1","duration":3600.0,
+                        "currentTime":1800.0,"progress":0.5,"isFinished":false}
+                     ]}""",
+                ),
+            )
+
+            val progress = apiClient.myProgress()
+
+            assertEquals(2, progress.size)
+            assertNull(progress[0].episodeId)
+            assertEquals("ep1", progress[1].episodeId)
+            assertEquals(0.5, progress[1].progress, 0.0001)
+        }
+
+    @Test
+    fun `myProgress throws ApiException rather than an unrelated exception on an error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.myProgress()
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("upstream_auth_expired", exception?.code)
+            assertEquals(401, exception?.httpStatus)
         }
 }
