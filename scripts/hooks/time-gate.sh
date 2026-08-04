@@ -30,6 +30,38 @@
 # .claude/settings.local.json, which is gitignored and never leaves this
 # machine.
 #
+# ## Autonomous-session exemption
+#
+# When AURALIS_AUTONOMOUS is set and non-empty, this hook exits 0 immediately,
+# silently, before touching stdin or the queue at all. What it exempts and
+# why: machine-started sessions — the kickoff prompt `auralis-autorun` passes
+# to `claude --bg` on a timer, and every wake-up prompt a running autonomous
+# session later schedules for itself. UserPromptSubmit fires for those exactly
+# as it does for a human typing, and this gate exists to stop the *user* from
+# texting at all hours by their own request (see "Why this exists" above) — it
+# was never meant to stop the machine from working, and an unattended session
+# has no human on the other end to defer. Without this exemption, an autorun
+# session started outside the window would have its own kickoff prompt queued
+# and blocked: the session starts, does nothing, and logs success — a silent
+# no-op that looks exactly like normal operation.
+#
+# Why an environment marker rather than matching prompt text: wake-up prompts
+# are written fresh each time and have no stable prefix or shape to match
+# against, so content-based detection cannot cover them. AURALIS_AUTONOMOUS
+# rides the *process* instead — `auralis-autorun` exports it before launching
+# `claude --bg`, hooks inherit the Claude process environment, and that covers
+# both the kickoff prompt and everything the session schedules for itself
+# afterward, with nothing to keep in sync.
+#
+# This marker is this hook's alone. No other hook should ever honour
+# AURALIS_AUTONOMOUS — in particular not usage-gate.sh, which enforces the
+# plan-usage ceiling. That ceiling is the repo owner's, it deliberately
+# applies to autonomous sessions above all (they are the ones that spend
+# unattended with nobody watching), and a general-purpose "skip checks when
+# autonomous" flag would gut it. This exemption is about *who is being
+# protected from whom* — the user, from their own texting habit — not about
+# bypassing a safety limit, and it must not be read as precedent for one.
+#
 # ## Clock
 #
 # `date`/`datetime.now()` below read THIS MACHINE's local system time, not UTC
@@ -61,6 +93,12 @@ WINDOW_START="${AURALIS_TIME_GATE_START:-11:00}"
 WINDOW_END="${AURALIS_TIME_GATE_END:-18:00}"
 
 command -v python3 >/dev/null 2>&1 || exit 0
+
+# Machine-started sessions and their own scheduled wake-ups are exempt — see
+# "Autonomous-session exemption" in the header comment. Checked as early as
+# possible, before stdin is even read, so the exempt path does the least
+# possible work and has nothing left in it that could fail.
+[ -n "${AURALIS_AUTONOMOUS:-}" ] && exit 0
 
 # Capture stdin to a temp file rather than piping it straight into python3.
 # `python3 - ... <<'PY'` reads the *script itself* from stdin, which conflicts
