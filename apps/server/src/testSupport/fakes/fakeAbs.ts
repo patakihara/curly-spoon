@@ -155,9 +155,22 @@ const audioBuffers = new Map<string, Uint8Array>(
   ]),
 );
 
+// Verified against Audiobookshelf 2.36.0 source (`server/models/Book.js`
+// `oldMetadataToJSONMinified()`): real minified metadata never sends the structured
+// `authors`/`series` arrays, only the flattened `authorName`/`seriesName` strings — those
+// arrays are expanded-only. Stripping only `tracks`/`chapters`/`episodes` (as this used
+// to) left the fixtures' `authors`/`series` arrays in "minified" fake-server responses,
+// so nothing exercising the fake server's list/shelf endpoints ever saw what a real
+// minified payload looks like. See `normalize.test.ts`'s "falls back to a
+// `seriesName`-derived entry" test for the normalize-layer bug this shape masked.
 function stripToMinified(item: JsonRecord): JsonRecord {
   const media = item.media as JsonRecord;
   const { tracks: _tracks, chapters: _chapters, episodes: _episodes, ...minifiedMedia } = media;
+  const metadata = minifiedMedia.metadata as JsonRecord | undefined;
+  if (metadata && ('authors' in metadata || 'series' in metadata)) {
+    const { authors: _authors, series: _series, ...minifiedMetadata } = metadata;
+    minifiedMedia.metadata = minifiedMetadata;
+  }
   return { ...item, media: minifiedMedia };
 }
 

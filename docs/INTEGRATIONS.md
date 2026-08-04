@@ -33,6 +33,70 @@ Auth: `Authorization: Bearer <token>`, obtained from `POST /login`.
 
 Realtime updates arrive over Socket.io on the same origin.
 
+### Fixture/schema reconciliation pass — 2026-08-04
+
+`packages/abs-client`'s fixtures and zod schemas were written from documented endpoint
+shapes, never checked against a live server. This pass attempted that check and hit a real
+blocker worth recording so the next session doesn't rediscover it: **no Audiobookshelf
+login credential is available to a session in this worktree.** `docs/setup/MY_SETUP.md`
+itself says so (§"Verify against reality before building more" — `«have it»` is a
+placeholder the user holds, deliberately never committed to this public repo) and names
+getting one "the first ask." Only the two unauthenticated endpoints below could actually be
+exercised against the real box.
+
+**Live-verified against the real server, Audiobookshelf 2.36.0** (`192.168.100.34:13378`):
+
+- `GET /status` — matches `rawStatusResponseSchema`.
+- `GET /ping` — matches `rawPingResponseSchema`.
+
+**Source-derived, NOT live-verified** — cross-checked against
+`github.com/advplyr/audiobookshelf` at tag `v2.36.0` (the version `MY_SETUP.md` records for
+the real server) instead of a live authenticated response. This is a real check — it reads
+the actual serializer code the server runs — but it is not a substitute for hitting the live
+endpoints once a credential exists; a future session with one should still do that.
+
+- `POST /items/:id/play` (`rawPlaybackSessionSchema`): confirmed `currentTime` is
+  **seconds**, matching this project's "unsuffixed = seconds" convention. Traced
+  `server/objects/PlaybackSession.js` → `PlaybackSessionManager.js`
+  (`userStartTime = Number.parseFloat(userProgress.currentTime)`) → `MediaProgress.js`'s
+  `currentTime`, compared directly against `duration` (itself seconds, from ffprobe) with
+  no scaling anywhere in the chain. Documented on `PlaybackSession.currentTime` and
+  `MediaProgress.currentTime` in `packages/abs-client/src/domain.ts`.
+- Library item minified vs. expanded shape (`server/models/LibraryItem.js`,
+  `server/models/Book.js`): found and fixed a real divergence — **real minified metadata
+  (every list/shelf/`personalized` response) never sends the structured `authors`/`series`
+  arrays, only the flattened `authorName`/`seriesName` strings.** `normalizeMedia`
+  (`packages/abs-client/src/normalize.ts`) had a `authorName` fallback for `authors` but no
+  equivalent for `series`, so a real minified item that's actually in a series normalized to
+  `series: []` — home-shelf and library-browse cards would silently drop series membership
+  for every book, since those endpoints only ever return minified items. Fixed with a
+  `seriesName` fallback mirroring the existing `authorName` one (same accepted limitation:
+  a multi-series `seriesName` string isn't split back into separate entries, matching how
+  a multi-author `authorName` string already wasn't). The fake server's own
+  `stripToMinified` (`apps/server/src/testSupport/fakes/fakeAbs.ts`) had the same gap — it
+  only stripped `tracks`/`chapters`/`episodes`, leaving `authors`/`series` in "minified"
+  fixture responses — which is _why_ no existing test caught this: nothing exercising the
+  fake server's list/shelf endpoints ever saw a real minified shape. Both are fixed, with a
+  regression test in `packages/abs-client/src/normalize.test.ts`.
+- Everything else already resilient by construction: every raw schema in
+  `packages/abs-client/src/schemas/raw.ts` uses `.passthrough()`, and the fields checked
+  against source (`path`/`relPath`/`mtimeMs`/etc. on `LibraryItem`, `lastUpdate` on
+  `MediaProgress`, `numAudioFiles`/`numChapters`/`ebookFormat` on minified `Book`) were
+  either already `.optional()` or safely ignored as passthrough extras — no tightening was
+  needed or done. Source alone can only justify _loosening_ a schema, never tightening it
+  (loosening can't break a payload that previously parsed); nothing here needed loosening
+  either.
+
+**Not covered by this pass** (still fixture-derived, unverified against source or a live
+server): `GET /api/libraries`, `GET /api/libraries/:id/items`,
+`GET /api/libraries/:id/personalized`, `GET /api/libraries/:id/search`,
+`GET /api/items/:id?expanded=1&include=progress`, `GET /api/me/*`, bookmarks, and all three
+podcast-discovery operations (`searchPodcastDirectory`, `previewPodcastFeed`,
+`subscribePodcast` — phase 8 wave A already verified these against source, not repeated
+here). A session with a real credential should prioritize actually calling the live server
+over more source-reading — source review is a fallback for when live access is blocked, not
+a preferred substitute for it.
+
 ---
 
 ## Jellyfin (music)

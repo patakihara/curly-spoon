@@ -110,6 +110,43 @@ describe('normalizeLibraryItem — books', () => {
     if (item.media.kind !== 'book') throw new Error('expected book');
     expect(item.media.authors).toEqual([{ id: 'author-1', name: 'J.R.R. Tolkien' }]);
   });
+
+  // Regression test — verified against Audiobookshelf 2.36.0 source
+  // (`server/models/Book.js` `oldMetadataToJSONMinified()`): the *real* minified
+  // metadata shape (used by every list/shelf/personalized endpoint, i.e. everywhere
+  // except a single item's `expanded=1` detail fetch) never includes a `series` array
+  // at all — only the flattened `seriesName` string. `minifiedBook` above is not a
+  // faithful minified fixture (it carries both), so it never exercised this path; every
+  // existing test asserting on `.series` went through the structured-array branch.
+  //
+  // Before this fix, `normalizeMedia` had a `metadata.authorName` fallback for
+  // `authors` but no equivalent fallback for `series`, so a real minified library item
+  // that is actually in a series normalized to `series: []` — home-shelf and
+  // library-browse cards would silently show no series badge for every book, since
+  // those endpoints only ever return minified items.
+  it('falls back to a `seriesName`-derived entry when `series` is absent, matching a real minified payload', () => {
+    const raw = rawLibraryItemSchema.parse({
+      id: 'item-3',
+      libraryId: 'lib-1',
+      mediaType: 'book' as const,
+      media: {
+        metadata: {
+          title: 'The Two Towers',
+          authorName: 'J.R.R. Tolkien',
+          seriesName: 'The Lord of the Rings #2',
+          // no `series` array — this is the real shape of a minified response.
+        },
+        coverPath: '/covers/item-3.jpg',
+        duration: 36000,
+        numTracks: 12,
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'book') throw new Error('expected book');
+    expect(item.media.series).toEqual([
+      { id: 'The Lord of the Rings #2', name: 'The Lord of the Rings #2', sequence: null },
+    ]);
+  });
 });
 
 describe('normalizeLibraryItem — podcasts', () => {
