@@ -104,7 +104,7 @@ fun RequestsScreen(container: AppContainer) {
                         }
                     }
                 is SearchUiState.Results ->
-                    Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth().weight(1f, fill = false).padding(top = 16.dp)) {
                         // Rendered alongside whatever releases came back, never in place of them
                         // — a broken indexer must not look identical to "nothing exists".
                         searchState.errors.forEach { error ->
@@ -117,7 +117,7 @@ fun RequestsScreen(container: AppContainer) {
                                 onRequestAnyway = viewModel::requestAnyway,
                             )
                         } else {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
                                 items(searchState.releases, key = { it.guid }) { release ->
                                     ReleaseRow(
                                         release = release,
