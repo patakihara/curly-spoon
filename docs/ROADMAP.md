@@ -326,21 +326,40 @@ schemas}.ts`, `packages/abs-client/src/{client,domain,normalize}.ts`), not just 
     Independent review caught a real defect before the crash fix landed: `onGetChildren`
     ignored Media3's `page`/`pageSize` arguments and returned the whole result list
     unbounded, which crashes/misbehaves in Media3.
-  - **Wave E2b — make browse items actually playable: next.** E2a's tree renders in Auto
-    but nothing plays from it: a controller taps a book and sends back a `MediaItem`
-    carrying only a `mediaId` and no playable URI, and `BrowseTreeCallback` has no
-    `onAddMediaItems` override to resolve it. Adds a plain (non-`ViewModel`)
-    `PlaybackItemResolver`, reading `AppContainer.apiClient` directly since
-    `MediaLibraryService` has no `ViewModelStore`, that turns a browse `mediaId` into a
-    fully-populated `MediaItem` (`playItem` → `firstPlayableTrack` → `fileIdFromContentUrl`
-    → `audioTrackUrl` → enriched `MediaMetadata`), used by both the service callback and
-    `PlayerViewModel` — metadata construction currently has two diverging sites
-    (`AuralisMediaLibraryService` builds title/subtitle/artwork for browse items;
-    `PlayerViewModel.playItem` sets only `MediaMetadata.title`), and this wave collapses
-    them into one. No spec written yet.
+  - **Wave E2b — make browse items actually playable: done (`371f48d`, fix `e05714a`).**
+    E2a's tree rendered in Auto but nothing played from it: a controller taps a book and
+    sends back a `MediaItem` carrying only a `mediaId` and no playable URI. Added a plain
+    (non-`ViewModel`) `PlaybackItemResolver`, reading `AppContainer.apiClient` directly
+    since `MediaLibraryService` has no `ViewModelStore`, owning the chain `playItem` →
+    `firstPlayableTrack` → `fileIdFromContentUrl` → `audioTrackUrl`; an `onAddMediaItems`
+    override on `BrowseTreeCallback`; and `PlayerViewModel.playItem` rerouted through the
+    resolver. Independent review verified against the tagged `androidx/media` 1.5.1 source
+    that `MediaSession.Callback.onSetMediaItems`'s default delegates to `onAddMediaItems`
+    (so overriding only the latter covers both "add to queue" and "tap to play, replacing
+    the queue"), and that returning a shorter list than was passed in is legal — Android
+    Auto's legacy `onPlayFromMediaId` path routes through
+    `MediaUtils.setMediaItemsWithStartIndexAndPosition`'s `C.INDEX_UNSET` branch, which
+    handles an empty list without an index-based crash — so dropping unresolvable items is
+    safe. Review found one real defect, fixed in `e05714a`: the browse row put the author in
+    `subtitle` while the resolver put it in `artist` and mapped a different, usually-null
+    field into `subtitle`, so the subtitle line blanked the instant playback started — both
+    converters now set `artist` from the author, with `subtitle` falling back to it. A
+    second fix in the same commit generalizes beyond this wave: `MediaItem.Builder().
+setUri(String)` reaches `android.net.Uri.parse`, and this project's unit tests run
+    against the stub `android.jar` (no Robolectric, `isReturnDefaultValues` unset), whose
+    methods throw — so any test that reaches a successful resolve and constructs a real
+    `MediaItem` fails on CI. The resolver's `resolve` now returns a Media3-free
+    `ResolvedPlayback` data class; all `MediaItem`/`MediaMetadata` construction moved into a
+    separate `playback/MediaItemConversions.kt` as pure, logic-free mapping. **General rule
+    for this project, not just this wave: `MediaItem` construction is unit-untestable here,
+    so any decidable playback logic must live in a Media3-free class, with conversion to
+    `MediaItem` kept as pure mapping in its own file.** Both `CI` and `Android` workflows
+    are green on `8ae9468`.
   - **Wave E2c — voice search + playback resumption: not started.** `onSearch`/
     `onGetSearchResult` (so "play <title>" works hands-free) and `onPlaybackResumption`
-    (Auto asks for a recent item after a reboot, before the phone is unlocked).
+    (Auto asks for a recent item after a reboot, before the phone is unlocked). Inherits
+    Wave E2b's Media3-free-construction constraint: keep decision logic out of any class
+    that touches `MediaItem`.
 
 #### Android Auto is a design constraint, not a feature toggle
 

@@ -221,9 +221,13 @@ models, reviewed against the real server source with no defects found. The brows
 itself (Wave E2) ships `Continue`/`Books`/`Series` only, deliberately without a
 `Downloaded` node — no offline-downloads feature exists yet anywhere in `apps/android`,
 confirmed by grep; see `docs/ROADMAP.md` §7 for the full reasoning. **Wave E2a (read-only
-browse tree) is done** (`785391e`, crash fix `316cc33`, merged `7365816`). **Next: wave
-E2b** — making browse items actually playable via an `onAddMediaItems` override and a
-shared, non-`ViewModel` `PlaybackItemResolver` — no spec written yet.
+browse tree) is done** (`785391e`, crash fix `316cc33`, merged `7365816`), and **Wave E2b
+(browse items now actually playable) is done** (`371f48d`, fix `e05714a`), with both `CI`
+and `Android` green on `8ae9468`. **Next: wave E2c** (voice search + playback resumption) —
+no spec written yet, and it inherits E2b's hard-won constraint: `MediaItem` construction is
+unit-untestable in this project (the stub `android.jar` throws on `Uri.parse`), so any
+decidable logic must live in a Media3-free class, with `MediaItem`/`MediaMetadata` built
+only as pure mapping in `playback/MediaItemConversions.kt`.
 
 **Phase 8 wave A (podcast discovery backend) landed on `87595f0`.** Three BFF operations
 against Audiobookshelf 2.36.0 — search the podcast directory, preview an RSS feed, subscribe
