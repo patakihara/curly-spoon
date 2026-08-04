@@ -290,7 +290,42 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
   `./gradlew test assembleDebug` passed clean on the first real compile, six new
   `RequestsViewModelTest` cases included.
 - **Wave E — Android Auto**: browse tree, `onPlayFromSearch`/`onSearch`, playback resumption —
-  see below for why this can't be bolted on after the fact.
+  see below for why this can't be bolted on after the fact. Split into sub-waves the same
+  way phase 6's requests work was, since the data `ApiClient` had was insufficient for a
+  browse tree at all.
+  - **Wave E1 — data layer prep: done (`7f887dd`).** `ApiClient` had no way to list a
+    library's items, list its series, search it, or fetch a single item's expanded detail
+    (chapters) — all four exist server-side (`GET /libraries/:id/items`, `/series`,
+    `/search`, `GET /items/:id`) but were never wired into the Android client, because
+    nothing before this needed them. Added `libraryItems`/`librarySeries`/`searchLibrary`/
+    `libraryItem`, plus `SeriesSequence`/`Series`/`Author`/`LibraryItemsPage`/`SeriesPage`/
+    `SearchResults`/`LibraryItemResponse` models and a new `series` field on `MediaSummary`
+    (books carry it, podcasts don't — nullable, matching the existing `narrator`/`tracks`
+    convention in that file). Independent review cross-checked every field and query
+    param against the real server source (`apps/server/src/routes/{libraries,items,
+    schemas}.ts`, `packages/abs-client/src/{client,domain,normalize}.ts`), not just the
+    Kotlin in isolation — no defects found. No Compose UI, no `MediaLibrarySession.Callback`
+    changes yet; pure data layer, mirroring how Wave D1 shipped ahead of D2a/D2b.
+  - **Scope decision, made without waiting on the user (routine call, not a product
+    change): the browse tree will ship without a "Downloaded" root node.** ROADMAP's own
+    text below lists `Downloaded` alongside `Continue`/`Books`/`Series`/`Podcasts`/`Music`,
+    but no offline-downloads feature exists anywhere in `apps/android` yet (confirmed by
+    grep — zero hits beyond an unrelated `downloadUrl` field on `Release`, phase 6's
+    torrent-request model). Auto's own text argues downloads are "a prerequisite for Auto
+    being usable, not an optional extra," which is true for *availability offline*, not for
+    landing the browse tree at all — the tree is still useful without it, and a downloads
+    wave can add the node later without restructuring what E ships now. `Podcasts`/`Music`
+    are likewise out for the same reason (phases 8/9 aren't done) — root ships as
+    `Continue`/`Books`/`Series` only, to be extended as sibling waves land.
+  - **Wave E2 — browse tree + voice + resumption: not started.** Needs
+    `MediaLibrarySession.Callback` overrides (`onGetLibraryRoot`/`onGetChildren`/
+    `onGetItem`/`onSearch`/`onGetSearchResult`), a plain (non-`ViewModel`) helper reading
+    `AppContainer.apiClient` directly since `MediaLibraryService` has no `ViewModelStore`,
+    and extracting `PlayerViewModel.playItem`'s MediaItem-building steps (`playItem` →
+    `firstPlayableTrack` → `fileIdFromContentUrl` → `audioTrackUrl` → build `MediaItem`)
+    into that shared helper rather than duplicating it — `PlayerViewModel` currently only
+    sets `MediaMetadata.title`, nothing else, so Auto's transport surface would show a bare
+    title with no artist/artwork until this wave enriches it. No spec written yet.
 
 #### Android Auto is a design constraint, not a feature toggle
 
