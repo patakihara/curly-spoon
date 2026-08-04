@@ -20,7 +20,10 @@
  * — kept under their original M3 names here since that's this package's public API.
  */
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
-import { Button as MantineButtonPrimitive, type ButtonVariant as MantineButtonVariant } from '@mantine/core';
+import {
+  Button as MantineButtonPrimitive,
+  type ButtonVariant as MantineButtonVariant,
+} from '@mantine/core';
 import './Button.css';
 
 export type ButtonVariant = 'filled' | 'tonal' | 'outlined' | 'text' | 'elevated';

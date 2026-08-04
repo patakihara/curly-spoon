@@ -249,7 +249,7 @@ mistake at larger scale.** Two things worth separating:
   subagents, when an agent genuinely needs an isolated copy to edit concurrently with others;
   they are not a place for the orchestrator to go do the work personally.
 - **Exiting a worktree mid-task while subagents are still writing inside it breaks them.** The
-  shared-checkout write guard appears to key off the *orchestrating session's own* isolation
+  shared-checkout write guard appears to key off the _orchestrating session's own_ isolation
   state, not the target path — exiting was observed rejecting an in-flight subagent's `Edit`
   calls into that same worktree with "parent bg session hasn't isolated yet," dropping one
   agent's pending edit. If subagents are still active in a worktree, stay parked in it (doing
@@ -259,7 +259,7 @@ mistake at larger scale.** Two things worth separating:
   incident's scale, plus a new failure mode: hooks registered in a worktree's own
   `.claude/settings.json` are invisible to every other checkout and cannot arm in the user's
   live session until the branch merges — a worktree is not just stale code, it can be a stale
-  *configuration* too.
+  _configuration_ too.
 
 **If a session's own workflow or setup seems to be causing repeated problems like these, the
 priority is to ask the `advisor()` tool to review the workflow and setup and fix it — before

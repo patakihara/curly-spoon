@@ -24,14 +24,7 @@
  * render the dropdown outside that wrapper and fail every one of those assertions
  * even though the UI looks identical on screen.
  */
-import {
-  forwardRef,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react';
+import { forwardRef, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { Combobox, TextInput, useCombobox } from '@mantine/core';
 import { Icon } from './Icon.js';
@@ -120,11 +113,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
 
   return (
     <Combobox store={combobox} withinPortal={false} onOptionSubmit={() => undefined}>
-      <Combobox.Target
-        withAriaAttributes={false}
-        withKeyboardNavigation={false}
-        autoComplete="off"
-      >
+      <Combobox.Target withAriaAttributes={false} withKeyboardNavigation={false} autoComplete="off">
         <TextInput
           ref={mergeRefs(forwardedRef, inputRef)}
           className={clsx('m3-search-field', className)}

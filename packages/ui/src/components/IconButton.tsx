@@ -46,7 +46,9 @@ function resolveMantineProps(
     case 'outlined':
       // M3's outlined-selected state swaps to an inverse (dark) fill — approximated
       // here with Mantine's own `filled` + `dark`, rather than `gray`'s outline.
-      return selected ? { variant: 'filled', color: 'dark' } : { variant: 'outline', color: 'gray' };
+      return selected
+        ? { variant: 'filled', color: 'dark' }
+        : { variant: 'outline', color: 'gray' };
     case 'standard':
     default:
       // Unselected "standard" is neutral; selected turns primary-coloured, matching
@@ -58,7 +60,17 @@ function resolveMantineProps(
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { variant = 'standard', selected, onSelectedChange, onClick, disabled, className, style, children, ...rest },
+  {
+    variant = 'standard',
+    selected,
+    onSelectedChange,
+    onClick,
+    disabled,
+    className,
+    style,
+    children,
+    ...rest
+  },
   ref,
 ) {
   const isToggle = selected !== undefined;
