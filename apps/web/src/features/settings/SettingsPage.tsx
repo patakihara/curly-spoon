@@ -1,16 +1,16 @@
 /**
  * Settings: theme mode + demo source colour (Phase 5 will drive the real colour
  * from artwork instead), connection status, sign-out, and — as of Phase 6 —
- * provider and book-request configuration. Jellyfin (music) is still the one
- * "add this later" service promised during onboarding, surfaced as a
- * clearly-labelled not-yet-available entry; the download-client slot that used
- * to sit next to it is now the real thing, in `ProviderSettingsSection`.
+ * provider and book-request configuration. Jellyfin (music) got its own
+ * connect flow in Phase 9 wave A (`JellyfinConnectSection`), replacing the
+ * "add this later" placeholder chip this section used to render inline.
  */
 import { useNavigate } from '@tanstack/react-router';
 import { AURALIS_SOURCE_COLOR, Button, Chip } from '@auralis/ui';
 import { useLogoutMutation, useSetupQuery } from '../../api/queries.js';
 import { useThemeStore } from '../../state/themeStore.js';
 import type { ThemeMode } from '@auralis/ui';
+import { JellyfinConnectSection } from '../music/JellyfinConnectSection.js';
 import { ProviderSettingsSection } from '../requests/ProviderSettingsSection.js';
 import { RequestSettingsSection } from '../requests/RequestSettingsSection.js';
 
@@ -84,11 +84,9 @@ export function SettingsPage() {
             <Chip variant="assist">Not connected</Chip>
           )}
         </div>
-        <div className="auralis-service-row">
-          <span>Jellyfin (Music)</span>
-          <Chip variant="assist">Coming soon — you can add this later</Chip>
-        </div>
       </section>
+
+      <JellyfinConnectSection />
 
       <ProviderSettingsSection />
 

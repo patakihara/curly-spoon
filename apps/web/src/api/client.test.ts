@@ -379,4 +379,132 @@ describe('ApiClient', () => {
       expect(result.progress[0]!.episodeId).toBe('ep-dailytech-1');
     });
   });
+
+  describe('Jellyfin music (Phase 9 wave A)', () => {
+    it('fetches config from /jellyfin/config', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({ configured: false, baseUrl: null, hasCredentials: false }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.getJellyfinConfig();
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/config');
+      expect(result).toEqual({ configured: false, baseUrl: null, hasCredentials: false });
+    });
+
+    it('sends baseUrl/username/password to /jellyfin/login when connecting for the first time', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              configured: true,
+              baseUrl: 'http://fake.jellyfin.local',
+              user: { id: 'jellyfin-user-1', name: 'nova' },
+            }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.jellyfinLogin({
+        baseUrl: 'http://fake.jellyfin.local',
+        username: 'nova',
+        password: 'stardust1',
+      });
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/login');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({
+        baseUrl: 'http://fake.jellyfin.local',
+        username: 'nova',
+        password: 'stardust1',
+      });
+      expect(result.user).toEqual({ id: 'jellyfin-user-1', name: 'nova' });
+    });
+
+    it('omits baseUrl from the login body when reconnecting with an already-configured server', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              configured: true,
+              baseUrl: 'http://fake.jellyfin.local',
+              user: { id: 'jellyfin-user-1', name: 'nova' },
+            }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.jellyfinLogin({ username: 'nova', password: 'stardust1' });
+
+      const [, init] = fetchFn.mock.calls[0]!;
+      expect(JSON.parse(String(init?.body))).toEqual({ username: 'nova', password: 'stardust1' });
+    });
+
+    it('queries /jellyfin/artists with pagination params', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ items: [], total: 0, startIndex: 0 }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getJellyfinArtists({ startIndex: 40, limit: 20 });
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/artists?startIndex=40&limit=20');
+    });
+
+    it('queries /jellyfin/albums scoped to an artistId', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ items: [], total: 0, startIndex: 0 }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getJellyfinAlbums({ artistId: 'artist-nebula' });
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/albums?artistId=artist-nebula');
+    });
+
+    it('queries /jellyfin/tracks scoped to an albumId', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ items: [], total: 0, startIndex: 0 }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getJellyfinTracks({ albumId: 'album-driftwave' });
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/tracks?albumId=album-driftwave');
+    });
+
+    it('searches /jellyfin/search with the term and an optional limit', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(JSON.stringify({ artists: [], albums: [], tracks: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.searchJellyfin('nebula', 10);
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/search?term=nebula&limit=10');
+      expect(result).toEqual({ artists: [], albums: [], tracks: [] });
+    });
+
+    it('builds a same-origin artwork URL without making a request', () => {
+      const client = new ApiClient({ fetch: fakeFetch(() => new Response('', { status: 200 })) });
+
+      expect(client.jellyfinArtworkUrl('album-driftwave')).toBe(
+        '/api/v1/jellyfin/items/album-driftwave/artwork',
+      );
+    });
+  });
 });

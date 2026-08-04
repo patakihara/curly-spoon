@@ -62,17 +62,28 @@ test('resizing across a boundary swaps the chrome without a reload', async ({ pa
   await expect(page.getByTestId('nav-bar')).toHaveCount(0);
 });
 
-test('Music is not offered while nothing serves it', async ({ page }) => {
+test('Books, Podcasts and Settings are offered once a real library backs each one', async ({
+  page,
+}) => {
   // "Never show a section that will only error" (apps/web/src/components/
-  // destinations.ts): Music is Jellyfin, and this phase's BFF has no Jellyfin
-  // configuration surface at all. Books and Podcasts *are* offered, because a
-  // real library of each media type came back from the server.
+  // destinations.ts): Books and Podcasts are offered because a real library of
+  // each media type came back from the server.
+  //
+  // Music (Jellyfin) used to be asserted absent here too, back when this
+  // phase's BFF had no Jellyfin configuration surface at all. It does now
+  // (Phase 9 wave A) — `e2e/app/music.spec.ts` owns that assertion instead,
+  // in both directions (absent while unconfigured, present once connected),
+  // because Jellyfin's config is process-global state
+  // (`GET/POST /api/v1/jellyfin/config`) that only that file mutates. This
+  // file must not also assert a fixed Music state: under `fullyParallel`
+  // (`playwright.config.ts`), music.spec.ts connecting Jellyfin in another
+  // worker while this test runs would make either direction flaky depending
+  // on timing.
   const nav = page.getByTestId('nav-rail-expanded');
   await expect(nav.getByRole('button', { name: 'Home' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Books' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Podcasts' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Settings' })).toBeVisible();
-  await expect(nav.getByRole('button', { name: 'Music' })).toHaveCount(0);
   // Search is an always-visible input at the top of the rail (Feishin's
   // pattern), not a destination link in this list — it must not appear as one.
   await expect(nav.getByRole('button', { name: 'Search' })).toHaveCount(0);

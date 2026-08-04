@@ -10,10 +10,13 @@
  * `GET /api/v1/libraries` actually returns, so this holds for any real server,
  * not just the fixture used in tests.
  *
- * Music is served through Jellyfin, which this phase's BFF has no configuration
- * surface for at all (that lands in Phase 8) — so it is unconditionally hidden
- * for now, rather than shown pointing at a feature that doesn't exist yet.
+ * Music is served through Jellyfin, an independent upstream from Audiobookshelf
+ * (its own base URL and its own per-user credential — see
+ * `apps/server/src/routes/jellyfin.ts`) — so it's gated on its own
+ * `jellyfinConfigured` flag, not on `audiobookshelfConfigured`, and shown at a
+ * flat `/music` regardless of whether any Audiobookshelf library exists.
  *
+
  * Requests (Phase 6) follows the same rule with its own condition: a request can
  * be *created* the moment any indexer exists, but it can never be *fulfilled*
  * without a download client too — so the destination stays hidden until both an
@@ -44,6 +47,8 @@ export interface DestinationContext extends LibraryLookup {
   hasEnabledIndexer?: boolean;
   /** Whether at least one download-client provider is configured *and* enabled. */
   hasEnabledDownloadClient?: boolean;
+  /** Whether the BFF reports a working Jellyfin connection (`GET /api/v1/jellyfin/config`). */
+  jellyfinConfigured?: boolean;
 }
 
 /** The destinations to render in nav, in a fixed order, filtered by what's actually usable. */
@@ -60,7 +65,9 @@ export function visibleDestinations(ctx: DestinationContext): Destination[] {
       to: `/library/${ctx.podcastLibraryId}`,
     });
   }
-  // Music (Jellyfin) is never shown yet — see the module doc comment.
+  if (ctx.jellyfinConfigured) {
+    destinations.push({ key: 'music', label: 'Music', to: '/music' });
+  }
 
   if (ctx.hasEnabledIndexer && ctx.hasEnabledDownloadClient) {
     destinations.push({ key: 'requests', label: 'Requests', to: '/requests' });

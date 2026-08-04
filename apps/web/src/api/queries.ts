@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from './ApiContext.js';
 import { shouldPollRequests, REQUEST_POLL_INTERVAL_MS } from '../features/requests/polling.js';
 import type {
+  JellyfinLoginBody,
   ProviderUpdateBody,
   Release,
   RequestSettings,
@@ -29,6 +30,13 @@ export const queryKeys = {
   requestSettings: ['settings', 'requests'] as const,
   podcastDirectorySearch: (term: string) => ['podcasts', 'search', term] as const,
   myProgress: ['me', 'progress'] as const,
+  jellyfinConfig: ['jellyfin', 'config'] as const,
+  jellyfinArtists: (startIndex: number) => ['jellyfin', 'artists', startIndex] as const,
+  jellyfinAlbums: (artistId: string, startIndex: number) =>
+    ['jellyfin', 'albums', artistId, startIndex] as const,
+  jellyfinTracks: (albumId: string, startIndex: number) =>
+    ['jellyfin', 'tracks', albumId, startIndex] as const,
+  jellyfinSearch: (term: string) => ['jellyfin', 'search', term] as const,
 };
 
 export function useSetupQuery() {
@@ -348,5 +356,77 @@ export function useSubscribePodcastMutation() {
   return useMutation({
     mutationFn: (body: SubscribePodcastBody) => api.subscribePodcast(body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['libraries'] }),
+  });
+}
+
+// ---------------------------------------------------------------------
+// Jellyfin music (Phase 9 wave A — browse/search, no playback yet)
+// ---------------------------------------------------------------------
+
+/** One browse page's size, for artists, albums and tracks alike — matches
+ * `useLibraryItemsQuery`'s own Audiobookshelf page size. */
+export const JELLYFIN_PAGE_SIZE = 40;
+
+export function useJellyfinConfigQuery() {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinConfig,
+    queryFn: ({ signal }) => api.getJellyfinConfig(signal),
+    staleTime: 10_000,
+  });
+}
+
+export function useJellyfinLoginMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: JellyfinLoginBody) => api.jellyfinLogin(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.jellyfinConfig }),
+  });
+}
+
+export function useJellyfinArtistsQuery(startIndex = 0, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinArtists(startIndex),
+    queryFn: ({ signal }) =>
+      api.getJellyfinArtists({ startIndex, limit: JELLYFIN_PAGE_SIZE }, signal),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useJellyfinAlbumsQuery(artistId: string, startIndex = 0) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinAlbums(artistId, startIndex),
+    queryFn: ({ signal }) =>
+      api.getJellyfinAlbums({ artistId, startIndex, limit: JELLYFIN_PAGE_SIZE }, signal),
+    enabled: artistId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+export function useJellyfinTracksQuery(albumId: string, startIndex = 0) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinTracks(albumId, startIndex),
+    queryFn: ({ signal }) =>
+      api.getJellyfinTracks({ albumId, startIndex, limit: JELLYFIN_PAGE_SIZE }, signal),
+    enabled: albumId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/** Search only runs on explicit submit — same reasoning as
+ * `usePodcastDirectorySearchQuery`: this fans out to the real Jellyfin server
+ * rather than filtering something already in memory. */
+export function useJellyfinSearchQuery(term: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinSearch(term),
+    queryFn: ({ signal }) => api.searchJellyfin(term, 25, signal),
+    enabled: term.trim().length > 0,
+    staleTime: 10_000,
   });
 }

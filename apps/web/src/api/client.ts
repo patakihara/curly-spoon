@@ -9,6 +9,14 @@
 import { ApiError, apiErrorFromNetworkFailure, apiErrorFromResponse } from './errors.js';
 import type {
   BookRequest,
+  JellyfinAlbum,
+  JellyfinArtist,
+  JellyfinConfig,
+  JellyfinLibraryPage,
+  JellyfinLoginBody,
+  JellyfinLoginResult,
+  JellyfinSearchResults,
+  JellyfinTrack,
   LibraryItem,
   LibraryItemsPage,
   Library,
@@ -341,6 +349,56 @@ export class ApiClient {
 
   subscribePodcast(body: SubscribePodcastBody): Promise<{ item: LibraryItem }> {
     return this.request('/podcasts', { method: 'POST', body });
+  }
+
+  // ---------------------------------------------------------------------
+  // Jellyfin music (Phase 9 wave A — browse/search, no playback yet)
+  // ---------------------------------------------------------------------
+
+  getJellyfinConfig(signal?: AbortSignal): Promise<JellyfinConfig> {
+    return this.request('/jellyfin/config', { signal });
+  }
+
+  /** Configures the shared Jellyfin base URL (if `baseUrl` is given) and signs the
+   * caller in, in one call — mirrors `POST /jellyfin/login`'s own doc comment. */
+  jellyfinLogin(body: JellyfinLoginBody): Promise<JellyfinLoginResult> {
+    return this.request('/jellyfin/login', { method: 'POST', body });
+  }
+
+  getJellyfinArtists(
+    query: { startIndex?: number; limit?: number } = {},
+    signal?: AbortSignal,
+  ): Promise<JellyfinLibraryPage<JellyfinArtist>> {
+    return this.request('/jellyfin/artists', { query, signal });
+  }
+
+  getJellyfinAlbums(
+    query: { artistId?: string; startIndex?: number; limit?: number } = {},
+    signal?: AbortSignal,
+  ): Promise<JellyfinLibraryPage<JellyfinAlbum>> {
+    return this.request('/jellyfin/albums', { query, signal });
+  }
+
+  getJellyfinTracks(
+    query: { albumId?: string; startIndex?: number; limit?: number } = {},
+    signal?: AbortSignal,
+  ): Promise<JellyfinLibraryPage<JellyfinTrack>> {
+    return this.request('/jellyfin/tracks', { query, signal });
+  }
+
+  searchJellyfin(
+    term: string,
+    limit: number | undefined,
+    signal?: AbortSignal,
+  ): Promise<JellyfinSearchResults> {
+    return this.request('/jellyfin/search', { query: { term, limit }, signal });
+  }
+
+  /** Not fetched via `request()` — used directly as an `<img>` src, same reasoning
+   * as `coverUrl` above. The token that makes this URL work lives server-side,
+   * behind the session cookie this request already carries — never in the URL. */
+  jellyfinArtworkUrl(itemId: string): string {
+    return buildUrl(this.baseUrl, `/jellyfin/items/${encodeURIComponent(itemId)}/artwork`);
   }
 }
 
