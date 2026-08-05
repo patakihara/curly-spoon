@@ -894,6 +894,41 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   the underlying trap: a test that needs a real background thread to reach a point _before_
   virtual time advances cannot express that ordering, only hope for it.
 
+- **Android wave E — favourites: done (`6e90595`).** Toggles on album header, track rows and
+  artist header, plus a favourites screen. **Playlists were deliberately deferred** and not
+  started — the wave was already large and a clean partial beats a shaky whole. Optimistic
+  toggling is guarded by a **per-item generation counter** captured synchronously before the
+  only suspension point and re-checked at both the success and failure write sites, which is
+  the same mechanism `MusicSearchViewModel` uses and closes the same race the web client
+  shipped once.
+
+- **Web wave G — shuffle, repeat, cross-page queue: done (`58cc2d3`, merged `788bbd9`).** The
+  three gaps this section recorded as deliberate are closed, and the reason they existed is
+  worth keeping: the player had **no ordered play-list at all**. Album tracks were laid end to
+  end on the same cumulative `startOffset` timeline multi-file audiobooks use, and "what plays
+  next" was derived from position on it — a representation that cannot express shuffle (which
+  breaks "tracks are already in play order"), repeat, or a queue beyond the page on screen.
+
+  The fix adds an explicit queue **alongside** that timeline rather than replacing it: a
+  canonical order that only ever grows, a permutation describing play order, and a cursor.
+  Shuffling rewrites only the permutation after the cursor, so the current track is untouched
+  and unshuffling restores the original order exactly, including tracks already passed.
+  `startOffset` keeps the job it is genuinely good at — resolving a position _within_ the
+  playing item.
+
+  **Audiobooks and podcasts are untouched by construction**: the ended-track override defaults
+  to `null`, is always reset by `load()`, and is set only by the two music call sites, so a
+  book runs the pre-existing logic. A regression test pins that reset contract.
+
+  Cross-page fetching is **lazy** — the queue asks for more only when playback reaches the
+  loaded edge — so an album that fits on one page fetches nothing extra and a large "play all"
+  never blocks playback starting. Repeat's three states use a dynamic `aria-label` plus a
+  boolean `aria-pressed`, since `aria-pressed` cannot carry three states; the label is what
+  distinguishes "all" from "one" for assistive tech.
+
+  Left behind deliberately: `features/music/queue.ts`'s `albumQueue` is now unused by any page
+  but still present with its tests, rather than widening the diff to delete it.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
