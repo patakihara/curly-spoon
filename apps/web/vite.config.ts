@@ -88,5 +88,30 @@ export default defineConfig({
   build: {
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),
     emptyOutDir: true,
+    /**
+     * `build.rollupOptions.output.manualChunks` was tried here (phase 10, entry-chunk
+     * work — docs/ROADMAP.md §10) and deliberately reverted, not merely left undone.
+     * Splitting `react`/`@mantine`/`@tanstack`/`zustand` into their own vendor chunks
+     * measured **zero** first-paint benefit — every one of those packages is still on
+     * the entry critical path (the onboarding/setup screen Lighthouse audits needs
+     * React and Mantine's base components before it can render at all), so five
+     * smaller chunks are still five chunks the browser must fetch and parse before
+     * anything paints; a same-build Lighthouse comparison came back with the mobile
+     * score and every timing metric unchanged within noise.
+     *
+     * Worse, it actively broke `scripts/bundle-budget.mjs`'s measurement: that script
+     * (not owned by this wave — see its own header) treats only the `<script
+     * type="module">` tag in `index.html` as "entry"; it has no notion of the
+     * `<link rel="modulepreload">` tags Vite emits for each vendor chunk, which the
+     * browser fetches and blocks on just as eagerly. With manualChunks on, "entry, raw"
+     * read as an artificially tiny ~330 KB (only the leftover app-code chunk), while
+     * the always-loaded ~190 KB React chunk got bucketed as a "lazy" chunk and blew
+     * through the 60 KB accidental-whole-library-import guard that budget exists to
+     * enforce — a real dependency, misread as a page-specific mistake. A manualChunks
+     * split may still be worth doing purely for redeploy cache-hit-rate, but it needs
+     * `bundle-budget.mjs` updated to treat `modulepreload` links as entry first; that
+     * script is out of this wave's scope, so the split stays out too rather than ship
+     * a config that quietly lies to its own budget.
+     */
   },
 });
