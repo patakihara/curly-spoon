@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T16:30:53Z` · `a4b9f6733090ab05a` · general-purpose · ended · Waiting for the full e2e suite (backgrounded, ID 'by2a78goj') to finish before continuing.
 - `2026-08-05T16:43:15Z` · `a8b69177155025d84` · general-purpose · ended · Working tree clean. Committed on branch 'worktree-agent-a8b69177155025d84' at '731cdcf', based on 'bd9310a' ('origin/main'). Not pushed, per instruct…
 - `2026-08-05T16:52:23Z` · `aa288a2dc33649778` · general-purpose · ended · Sufficient coverage confirmed symmetrically for both viewmodels. This is enough to write the report. ## Report **Overall: sound implementation.** The…
 - `2026-08-05T16:57:20Z` · `a231ab6f1a8a3a465` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a231ab6f1a8a3a465' @ 'f62df5b', based o…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T17:49:37Z` · `a63c963e583db6a35` · general-purpose · ended · ## Review: Android wave K (music requests), merge 'c2aa038' **Verdict: sound. No bugs found. One test-coverage gap worth a should-fix, not a blocker.…
 - `2026-08-05T17:56:12Z` · `aa6ae7c7ece724114` · general-purpose · ended · Usage is fine (70%/41%, both under the 85% band). Work is complete. ## Report **Branch/commit**: 'worktree-agent-aa6ae7c7ece724114' @ '3a63115' (base…
 - `2026-08-05T17:56:35Z` · `ae810ede7c59baad3` · general-purpose · ended · ## Report **1. Branch and sha:** 'worktree-agent-ae810ede7c59baad3' @ 'a0f849b', based on 'origin/main''s 'c41b2e1' (which was itself only the orches…
+- `2026-08-05T18:12:10Z` · `a4f3ab764e9517c55` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -282,7 +282,8 @@ nothing on `main` is stale — take it.
   landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
   lyrics view) and wave K (music requests on **Android** — the web UI for the same feature is
   session `01Wf5C2q`'s, claimed above, and the two did not overlap). This session stays inside
-  `apps/android/` and is not touching `apps/server/` or `apps/web/`.
+  `apps/android/` and is not touching `apps/server/` or `apps/web/`. Wave L — per-track artist in
+  the Android queue and lock screen — is dispatched now.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
