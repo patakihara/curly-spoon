@@ -151,15 +151,51 @@ describe('createSlskdProvider: add / status / remove', () => {
     expect(status.progress).toBe(0);
   });
 
-  it('sends the configured save path as the batch destination', async () => {
+  it('sends a relative configured save path through as the batch destination', async () => {
     const upstream = createFakeSlskdUpstream();
     const { provider, candidate } = await searchOneCandidate(upstream);
-    // No dedicated assertion hook on the fake for the sent destination — this exercises
-    // the code path (an options object present vs. absent) without erroring, which is what
-    // the `AddDownloadOptions.savePath !== null` branch needs covered.
+    // The fake 400s an invalid `destination` (mirroring slskd's own model validation — see
+    // its comment), so resolving here proves a *relative* path round-trips successfully.
     await expect(
       provider.add(candidate, { savePath: 'music/incoming', category: null }),
     ).resolves.toEqual(expect.any(String));
+  });
+
+  it('rejects an absolute save path locally, before any network call, naming the constraint', async () => {
+    const upstream = createFakeSlskdUpstream();
+    const { provider, candidate } = await searchOneCandidate(upstream);
+    await expectKind(
+      provider.add(candidate, { savePath: '/data/music', category: null }),
+      'rejected',
+    );
+  });
+
+  it("rejects a '..' traversal save path locally", async () => {
+    const upstream = createFakeSlskdUpstream();
+    const { provider, candidate } = await searchOneCandidate(upstream);
+    await expectKind(
+      provider.add(candidate, { savePath: '../outside', category: null }),
+      'rejected',
+    );
+  });
+
+  it('a save path that reaches slskd invalid anyway (fake-level 400) still maps to rejected', async () => {
+    // Exercises the fake's own validation directly, independent of `slskd.ts`'s local
+    // check, as a defence against that local check regressing silently.
+    const upstream = createFakeSlskdUpstream();
+    const response = await upstream.fetch(
+      'http://fake.slskd.local/api/v0/transfers/downloads/batches',
+      {
+        method: 'POST',
+        headers: { 'X-API-Key': FAKE_SLSKD_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: 'peer-a',
+          files: [{ filename: 'x.mp3', size: 1 }],
+          options: { destination: 'C:\\music' },
+        }),
+      },
+    );
+    expect(response.status).toBe(400);
   });
 
   it('throws rejected when slskd reports the enqueue as failed', async () => {

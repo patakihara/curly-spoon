@@ -182,6 +182,22 @@ export function createFakeSlskdUpstream(): FakeSlskdUpstream {
       const username = String(b.username ?? '');
       const files = Array.isArray(b.files) ? (b.files as Array<Record<string, unknown>>) : [];
 
+      // Mirrors real slskd's `[RelativePath]`/`[NonTraversingPath]` model validation on
+      // `EnqueueDownloadBatchOptions.Destination` (a 400, not a per-file failure) — a defence
+      // this fake keeps even though `slskd.ts` is expected to reject an absolute/traversing
+      // path itself before ever reaching here, so a regression in that client-side check
+      // still fails a test instead of silently round-tripping.
+      const destination = (b.options as Record<string, unknown> | undefined)?.destination;
+      if (
+        typeof destination === 'string' &&
+        (destination.startsWith('/') ||
+          destination.startsWith('\\') ||
+          /^[A-Za-z]:[\\/]/.test(destination) ||
+          destination.split(/[\\/]/).includes('..'))
+      ) {
+        return json({ message: 'The Destination field is invalid.' }, 400);
+      }
+
       if (nextEnqueueFailure && nextEnqueueFailure.username === username) {
         const failure = nextEnqueueFailure;
         nextEnqueueFailure = null;

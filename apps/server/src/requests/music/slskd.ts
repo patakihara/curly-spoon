@@ -225,6 +225,27 @@ function guessArtistAlbum(path: string): { artist: string | null; album: string 
   return { artist, album };
 }
 
+/**
+ * `AddDownloadOptions.savePath` is documented (`types.ts`) as an absolute path in the
+ * download client's own filesystem namespace — what `getBookSavePath` feeds qBittorrent's
+ * `savepath` verbatim. slskd's `destination` is a different, stricter thing:
+ * `EnqueueDownloadBatchOptions.Destination`
+ * (`src/slskd/Transfers/API/DTO/EnqueueDownloadBatchRequest.cs`) is decorated
+ * `[RelativePath(OperatingSystem.All)]` and `[NonTraversingPath]`, and its own doc comment
+ * says "relative to the configured download directory" — an absolute path or a `..`
+ * segment fails slskd's own model validation with a 400. Rather than let that surface as an
+ * opaque `rejected` HTTP error, `add()` below checks locally first and names the real
+ * constraint, since this is exactly the "reports success, nothing lands" failure class
+ * `docs/HANDOVER.md`'s save-path section is written to prevent — a caller reusing the
+ * pattern of a book save path (an absolute path) here would otherwise fail confusingly.
+ */
+function isRelativeSavePath(path: string): boolean {
+  if (path.startsWith('/') || path.startsWith('\\')) return false;
+  if (/^[A-Za-z]:[\\/]/.test(path)) return false;
+  if (path.split(/[\\/]/).includes('..')) return false;
+  return true;
+}
+
 function encodeCandidateHandle(handle: SlskdCandidateHandle): string {
   return JSON.stringify(handle);
 }
@@ -397,6 +418,19 @@ export const createSlskdProvider: MusicProviderFactory = ({
     return parsed.data;
   }
 
+  /**
+   * Known gap, left as-is deliberately rather than fixed under this wave: hitting
+   * `SEARCH_POLL_CEILING_MS` and hitting a genuinely empty search are indistinguishable to
+   * the caller — both return normally, and `search()` below reads back whatever `responses`
+   * exist at that point (`[]` for either case). `requestService.ts`'s `grab()` goes out of
+   * its way to avoid exactly this confusion for books ("Reporting a broken Prowlarr as
+   * 'nothing found' sends the user hunting for a book that is there"), by carrying indexer
+   * errors on `SearchOutcome`. `MusicSearchOutcome` has the same `errors` channel, but a
+   * ceiling timeout is not a `ProviderError` (slskd itself answered every poll normally —
+   * it just never finished), so nothing here currently reports into it. Worth a warning-
+   * severity entry on `MusicSearchOutcome` if this proves to matter in practice; not added
+   * speculatively.
+   */
   async function pollUntilComplete(
     searchId: string,
     signal: AbortSignal | undefined,
@@ -501,6 +535,15 @@ export const createSlskdProvider: MusicProviderFactory = ({
         files: [{ filename: decoded.filename, size: decoded.size }],
       };
       if (options.savePath !== null) {
+        if (!isRelativeSavePath(options.savePath)) {
+          throw new ProviderError(
+            'rejected',
+            PROVIDER_ID,
+            'slskd only accepts a download destination relative to its own configured ' +
+              'download directory — no absolute path and no ".." segment. Check the music ' +
+              'save-path setting.',
+          );
+        }
         body.options = { destination: options.savePath };
       }
 
