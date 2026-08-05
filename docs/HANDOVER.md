@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T10:46:35Z` · `a82047d2d17e2cb96` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-a82047d2d17e2cb96', commit '25cee48', based on '050e705'. Working tree is clean. Not pushed, per instruct…
-- `2026-08-05T11:21:44Z` · `a419735bdc118acf3` · general-purpose · ended · ## Review report — Phase 9 web wave E (Jellyfin favourites), commit '25cee48' / merge '905cd60' **Verdict: sound as merged**, with one should-fix wor…
 - `2026-08-05T11:29:31Z` · `a08bd8be8670bf50d` · general-purpose · ended · Working tree clean, both commits in place. Final report follows. ## Report **Branch/commits**: 'worktree-agent-a08bd8be8670bf50d', two commits on top…
 - `2026-08-05T11:48:55Z` · `a9fec07248e10b997` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a9fec07248e10b997' @ 'f143107', based o…
 - `2026-08-05T11:49:38Z` · `a6c8f32a9701d85c7` · general-purpose · ended · Committed clean, working tree empty. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a6c8f32a9701d85c7' @ '4eaa78c', based…
@@ -95,7 +93,9 @@ in-context scan of the current one.
 - `2026-08-05T12:52:59Z` · `ae7eb4057186070b6` · general-purpose · ended · Clean. Final report follows. ## Report **Branch/commit**: 'worktree-agent-ae7eb4057186070b6' @ '6e90595', based on 'e77d7c5'. Working tree clean, not…
 - `2026-08-05T13:19:04Z` · `a6b0a49406fd9236a` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a6b0a49406fd9236a' @ '58cc2d3', based on '6420501' ('origin/main'). Working tree clean, not pushed. **De…
 - `2026-08-05T13:24:32Z` · `a42723c44397de649` · general-purpose · ended · Confirmed no forbidden-path changes. Now writing the final report. ## Report **Android CI result: FAILED**, on commit '6e90595' itself (run '31009999…
-- `2026-08-05T13:29:53Z` · `aeb1404a8b20fc69e` · general-purpose · running · —
+- `2026-08-05T13:29:53Z` · `aeb1404a8b20fc69e` · general-purpose · ended · Advisor is unavailable this turn; proceeding with my own verification, which was already thorough (traced the exact synchronous-optimistic-write mech…
+- `2026-08-05T13:42:13Z` · `ae7595e1db400590f` · general-purpose · ended · Working tree is clean, committed on branch 'worktree-agent-ae7595e1db400590f' at '6644ff6', not pushed as instructed. ## Report **Branch/commit**: 'w…
+- `2026-08-05T14:00:29Z` · `a975d1956d27f0ff1` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -262,12 +262,47 @@ playback with album queueing, **Jellyfin progress reporting**, a **synced lyrics
 album), **playback** through the existing Media3 stack, and **search** — all reachable from the
 home screen.
 
-Still missing: shuffle/repeat and a queue spanning more than the displayed 40-track page
-(both clients); favourites and playlists on Android; music requests; and progress reporting
-from Android. Lyrics _search_ remains blocked on a product decision, not on effort — Jellyfin
-cannot search lyric text at all, so Auralis would need its own index and a decision about
-whether to backfill from an external provider (a privacy opt-in). The synced lyrics _view_ is
-unaffected and has shipped.
+Still missing: **playlists on Android** (web has them; the Android wave that added favourites
+deliberately deferred them and started nothing), **music requests**, and **progress reporting
+from Android**. Lyrics _search_ remains blocked on a product decision, not on effort —
+Jellyfin cannot search lyric text at all, so Auralis would need its own index and a decision
+about whether to backfill from an external provider (a privacy opt-in). The synced lyrics
+_view_ is unaffected and has shipped.
+
+### Android CI: read this before touching an Android test
+
+**A leaked-coroutine failure class cost four red-CI iterations on 2026-08-05.** It is now fixed
+structurally and the fix is worth understanding before it gets undone.
+
+`ApiClient` did its work in a hard-coded `withContext(Dispatchers.IO)` — a real thread pool the
+test scheduler cannot see. So `runTest` could not wait for it: a ViewModel test returned while a
+request was still in flight, `@After` ran `mockWebServer.shutdown()`, the call threw, and the
+exception surfaced as `UncaughtExceptionsBeforeTest` **on whichever unrelated test ran next**.
+The reported failure never named the culprit, which is why three successive point fixes each
+made the failure move rather than go away.
+
+`ApiClient` now takes its dispatcher as a constructor parameter defaulting to `Dispatchers.IO`,
+and the nine ViewModel test files pass their own `UnconfinedTestDispatcher`. That makes the work
+visible to `runTest` and the leak impossible by construction rather than by author discipline.
+
+Two consequences to know:
+
+- **In those tests the whole call is now synchronous.** `withContext` on an unconfined
+  dispatcher runs inline, so optimistic write, request and settled write all complete before the
+  call returns. Assert on `uiState.value`; do not add a `Flow.first { … }` await back — an
+  await for a state the flow has already passed never completes.
+- **An optimistic intermediate state is no longer observable through `MockWebServer`.** Pinning
+  one needs a controllable seam (a fake repository the test can hold open), not a real round
+  trip.
+
+Two related traps in the same suite, both already paid for:
+
+- **`MockWebServer` serves enqueued responses in request-arrival order, not enqueue order**, so
+  two concurrent requests swap bodies. Key responses with a `Dispatcher` on something in the
+  request itself — `features/music/MusicSearchViewModelTest.kt` shows the pattern.
+- **An assertion that stops observing too early can be a tautology.** One test asserting "a
+  stale response never overwrites a newer one" returned the instant the fast response landed,
+  before the slow one had arrived — it would have passed with the guard deleted.
 
 The defects this section used to list are fixed — album track order, the `Slider` prop drop,
 and a paused track reporting to Jellyfin as playing. `docs/ROADMAP.md` §9 has each fix and
