@@ -675,6 +675,15 @@ decision, not on remaining build time — see the bullet at the end of this sect
   `ProgressSyncBody` carries no pause signal — it affects Jellyfin's own UI hints, not resume
   correctness.
 
+**One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
+not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
+so a *paused* track still ticks. For audiobooks that is harmless (it re-reports the same
+position). For Jellyfin it means a paused track keeps sending `IsPaused: false`, so the
+upstream session reads as actively playing while it is not — a live-session artifact, not the
+cosmetic UI hint wave C's own report called it. Fixing it properly means the seam carrying a
+pause signal, which touches the audiobook reporter too, so it is a wave of its own rather than
+a patch to `jellyfinSource`.
+
 **Known gaps, all deliberate**: the album queue covers only
 the displayed 40-track page, not across pagination; no shuffle/repeat/cross-source queue
 (needs an explicit ordered play-list decoupled from `startOffset`, since shuffle breaks the
