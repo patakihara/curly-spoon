@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from './ApiContext.js';
 import { shouldPollRequests, REQUEST_POLL_INTERVAL_MS } from '../features/requests/polling.js';
+import { withFavoriteState } from '../features/music/favorites.js';
 import type {
   JellyfinLoginBody,
   ProviderUpdateBody,
@@ -38,6 +39,14 @@ export const queryKeys = {
     ['jellyfin', 'tracks', albumId, startIndex] as const,
   jellyfinSearch: (term: string) => ['jellyfin', 'search', term] as const,
   jellyfinLyrics: (itemId: string) => ['jellyfin', 'lyrics', itemId] as const,
+  /** The single-item fetches behind an album/artist page's own favourite-state toggle —
+   * see those hooks' doc comments below for why a dedicated "one item by id" query exists
+   * alongside the listing queries above. */
+  jellyfinArtist: (artistId: string) => ['jellyfin', 'artists', 'byId', artistId] as const,
+  jellyfinAlbum: (albumId: string) => ['jellyfin', 'albums', 'byId', albumId] as const,
+  jellyfinFavoriteArtists: ['jellyfin', 'artists', 'favorites'] as const,
+  jellyfinFavoriteAlbums: ['jellyfin', 'albums', 'favorites'] as const,
+  jellyfinFavoriteTracks: ['jellyfin', 'tracks', 'favorites'] as const,
 };
 
 export function useSetupQuery() {
@@ -466,5 +475,122 @@ export function useJellyfinLyricsQuery(itemId: string | null) {
     queryFn: ({ signal }) => api.getJellyfinLyrics(itemId as string, signal),
     enabled: itemId != null && itemId.length > 0,
     staleTime: 10_000,
+  });
+}
+
+// ---------------------------------------------------------------------
+// Jellyfin favourites (Phase 9 web wave — mark/unmark, browse, and the toggles that drive
+// both). See `favorites.ts`'s file doc comment for why the optimistic update below rewrites
+// every cached Jellyfin query at once rather than just the one list a toggle was clicked from.
+// ---------------------------------------------------------------------
+
+/** Fetches exactly one artist by id, via `getJellyfinArtists`' `id` filter. `MusicArtistPage`
+ * has no dedicated single-artist BFF route to call (only the artist-scoped albums listing —
+ * see that page's own doc comment) and needs the *artist's own* `favorite` flag to render its
+ * header toggle correctly on load, which no album in that listing carries. */
+export function useJellyfinArtistQuery(artistId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinArtist(artistId),
+    queryFn: ({ signal }) => api.getJellyfinArtists({ id: artistId, limit: 1 }, signal),
+    enabled: artistId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/** Fetches exactly one album by id — see `useJellyfinArtistQuery`'s doc comment for the
+ * same reasoning, applied to `MusicAlbumPage`'s own header toggle. */
+export function useJellyfinAlbumQuery(albumId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinAlbum(albumId),
+    queryFn: ({ signal }) => api.getJellyfinAlbums({ id: albumId, limit: 1 }, signal),
+    enabled: albumId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+export function useJellyfinFavoriteArtistsQuery() {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinFavoriteArtists,
+    queryFn: ({ signal }) =>
+      api.getJellyfinArtists({ favoritesOnly: true, limit: JELLYFIN_PAGE_SIZE }, signal),
+    staleTime: 30_000,
+  });
+}
+
+export function useJellyfinFavoriteAlbumsQuery() {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinFavoriteAlbums,
+    queryFn: ({ signal }) =>
+      api.getJellyfinAlbums({ favoritesOnly: true, limit: JELLYFIN_PAGE_SIZE }, signal),
+    staleTime: 30_000,
+  });
+}
+
+export function useJellyfinFavoriteTracksQuery() {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinFavoriteTracks,
+    queryFn: ({ signal }) =>
+      api.getJellyfinTracks({ favoritesOnly: true, limit: JELLYFIN_PAGE_SIZE }, signal),
+    staleTime: 30_000,
+  });
+}
+
+export interface ToggleJellyfinFavoriteVariables {
+  itemId: string;
+  /** The state to move *to* — the toggle already knows its own current state from the item
+   * it's rendering, so this is the target, not a "flip whatever it currently is" instruction
+   * this hook would have no way to double-check against the cache it's about to rewrite. */
+  favorite: boolean;
+}
+
+/**
+ * Marks/unmarks a Jellyfin item as a favourite, with an optimistic cache update: every
+ * cached artist/album/track listing, favourites list and search-result page gets the new
+ * `favorite` state applied immediately (`withFavoriteState`, see that module's doc comment
+ * for why *every* cached list needs the same rewrite, not just the one the toggle was
+ * clicked from), and rolled back if the request fails.
+ *
+ * No mutation elsewhere in this file does an optimistic cache write — every other one here
+ * just `invalidateQueries` on success (grepped for `onMutate`/`setQueryData` across this
+ * codebase before writing this; there is no existing precedent to follow instead). This
+ * follows TanStack Query's own documented optimistic-update recipe — cancel in-flight
+ * fetches, snapshot the cache, apply the change, roll back from the snapshot in `onError`,
+ * reconcile with the server in `onSettled` — rather than inventing a bespoke shape for the
+ * one mutation in this app that actually needs one: a toggle that waits for a round trip
+ * before flipping reads as broken, which is the whole reason this mutation exists in this
+ * shape rather than as a plain `invalidateQueries`-only one like its neighbours.
+ *
+ * A failed toggle is surfaced to the caller via this hook's own `isError`/`error`, same as
+ * every other mutation — the rollback above is silent (the icon just reverts), but the
+ * calling component is expected to show the user *why* it reverted using those fields (see
+ * `MusicAlbumPage.tsx`/`MusicArtistPage.tsx`'s own favourite-toggle handlers).
+ */
+export function useToggleJellyfinFavoriteMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, favorite }: ToggleJellyfinFavoriteVariables) =>
+      favorite ? api.markJellyfinFavorite(itemId) : api.unmarkJellyfinFavorite(itemId),
+    onMutate: async ({ itemId, favorite }: ToggleJellyfinFavoriteVariables) => {
+      await queryClient.cancelQueries({ queryKey: ['jellyfin'] });
+      const previous = queryClient.getQueriesData({ queryKey: ['jellyfin'] });
+      queryClient.setQueriesData({ queryKey: ['jellyfin'] }, (data: unknown) =>
+        withFavoriteState(data, itemId, favorite),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      for (const [queryKey, data] of context?.previous ?? []) {
+        queryClient.setQueryData(queryKey, data);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['jellyfin'] });
+    },
   });
 }

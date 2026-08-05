@@ -14,6 +14,7 @@ function track(overrides: Partial<JellyfinTrack> = {}): JellyfinTrack {
     durationSeconds: 180,
     imageTag: null,
     genres: [],
+    favorite: false,
     ...overrides,
   };
 }

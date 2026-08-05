@@ -419,6 +419,9 @@ export interface JellyfinArtist {
   overview: string | null;
   imageTag: string | null;
   albumCount: number | null;
+  /** Always a definite boolean — see `@auralis/jellyfin-client`'s `Artist.favorite` doc
+   * comment for why the BFF never forwards an "unknown" third state. */
+  favorite: boolean;
 }
 
 export interface JellyfinAlbum {
@@ -432,6 +435,7 @@ export interface JellyfinAlbum {
   genres: string[];
   imageTag: string | null;
   trackCount: number | null;
+  favorite: boolean;
 }
 
 export interface JellyfinTrack {
@@ -445,6 +449,7 @@ export interface JellyfinTrack {
   durationSeconds: number | null;
   imageTag: string | null;
   genres: string[];
+  favorite: boolean;
 }
 
 /** One page of a Jellyfin browse list. `total` is upstream's real
@@ -459,6 +464,13 @@ export interface JellyfinSearchResults {
   artists: JellyfinArtist[];
   albums: JellyfinAlbum[];
   tracks: JellyfinTrack[];
+}
+
+/** `POST`/`DELETE /jellyfin/items/:itemId/favorite`'s success body — the favourite state
+ * Jellyfin actually recorded, not just an echo of the request's own intent. See
+ * `@auralis/jellyfin-client`'s `markFavorite`/`unmarkFavorite` doc comments for why. */
+export interface JellyfinFavoriteResponse {
+  favorite: boolean;
 }
 
 // ---------------------------------------------------------------------

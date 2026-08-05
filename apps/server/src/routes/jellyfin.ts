@@ -264,6 +264,48 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
   });
 
   // ---------------------------------------------------------------------
+  // Favourites — mirrors `JellyfinClient.markFavorite`/`unmarkFavorite` one route to one
+  // method, same shape as playback progress reporting above: `requireSession`,
+  // `app.jellyfin.forUser`, `handleUpstreamError`. Each responds with `{ favorite }`
+  // reflecting the state Jellyfin actually recorded (see those client methods' own doc
+  // comments for why the return value is trusted over the request's own intent).
+  // ---------------------------------------------------------------------
+
+  app.post(
+    '/jellyfin/items/:itemId/favorite',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const params = parseInput(reply, jellyfinItemIdParamSchema, request.params);
+      if (!params) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        const favorite = await client.markFavorite(params.itemId);
+        return reply.send({ favorite });
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
+
+  app.delete(
+    '/jellyfin/items/:itemId/favorite',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const params = parseInput(reply, jellyfinItemIdParamSchema, request.params);
+      if (!params) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        const favorite = await client.unmarkFavorite(params.itemId);
+        return reply.send({ favorite });
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------
   // Proxied media — see this file's doc comment and `fetchJellyfinMedia` above for why
   // the token-bearing URL is built and fetched here, never handed to the caller.
   // ---------------------------------------------------------------------

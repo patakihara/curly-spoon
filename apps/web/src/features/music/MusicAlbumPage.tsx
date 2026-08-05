@@ -26,13 +26,14 @@
  */
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
-import { Button, ListItem, Skeleton } from '@auralis/ui';
+import { Button, ListItem, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import type { JellyfinTrack, LibraryItem, PlaybackSession } from '../../api/types.js';
 import { useApi } from '../../api/ApiContext.js';
-import { useJellyfinTracksQuery } from '../../api/queries.js';
+import { useJellyfinAlbumQuery, useJellyfinTracksQuery } from '../../api/queries.js';
 import { jellyfinSource } from '../player/playbackSource.js';
 import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
+import { FavoriteToggle } from './FavoriteToggle.js';
 import { summarizePage } from './pagination.js';
 import { albumQueue } from './queue.js';
 
@@ -47,14 +48,20 @@ export function MusicAlbumPage() {
   const { albumId } = useParams({ from: '/music/album/$albumId' });
   const api = useApi();
   const [startIndex, setStartIndex] = useState(0);
+  const snackbar = useSnackbar();
 
   const tracksQuery = useJellyfinTracksQuery(albumId, startIndex);
+  const albumQuery = useJellyfinAlbumQuery(albumId);
   const tracks = tracksQuery.data?.items ?? [];
   const albumName = tracks[0]?.albumName ?? 'Album';
   const artistNames = tracks[0]?.artistNames.join(', ') ?? '';
+  const albumFavorite = albumQuery.data?.items[0]?.favorite ?? false;
   const page = tracksQuery.data
     ? summarizePage({ startIndex, limit: 40 }, tracksQuery.data.total, tracks.length)
     : null;
+
+  const onFavoriteError = () =>
+    snackbar.enqueue({ message: "Couldn't update favourite — try again." });
 
   const playTrack = (clicked: JellyfinTrack) => {
     const queue = albumQueue(tracks);
@@ -102,6 +109,14 @@ export function MusicAlbumPage() {
           <h1 data-testid="music-album-name">{albumName}</h1>
           {artistNames ? <p>{artistNames}</p> : null}
         </div>
+        <FavoriteToggle
+          itemId={albumId}
+          itemName={albumName}
+          favorite={albumFavorite}
+          stopPropagation={false}
+          onError={onFavoriteError}
+          data-testid="music-album-favorite"
+        />
       </div>
 
       {tracksQuery.isLoading ? (
@@ -127,6 +142,15 @@ export function MusicAlbumPage() {
                 headline={track.name}
                 supportingText={
                   track.durationSeconds !== null ? formatDuration(track.durationSeconds) : undefined
+                }
+                trailing={
+                  <FavoriteToggle
+                    itemId={track.id}
+                    itemName={track.name}
+                    favorite={track.favorite}
+                    onError={onFavoriteError}
+                    data-testid={`music-track-favorite-${track.id}`}
+                  />
                 }
               />
             ))}
@@ -160,6 +184,7 @@ export function MusicAlbumPage() {
           ) : null}
         </>
       )}
+      <Snackbar snackbar={snackbar.current} onDismiss={snackbar.dismiss} />
     </div>
   );
 }

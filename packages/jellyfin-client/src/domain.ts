@@ -17,6 +17,10 @@ export interface Artist {
   imageTag: string | null;
   /** Best-effort; see `rawBaseItemDtoSchema`'s `ChildCount` doc comment. */
   albumCount: number | null;
+  /** Always a definite boolean, never absent — see `normalize.ts`'s `favoriteState` for why
+   * a missing/absent upstream `UserData.IsFavorite` normalizes to `false` rather than a
+   * third "unknown" state a consumer would otherwise have to handle. */
+  favorite: boolean;
 }
 
 export interface Album {
@@ -34,6 +38,8 @@ export interface Album {
   imageTag: string | null;
   /** Best-effort; see `rawBaseItemDtoSchema`'s `ChildCount` doc comment. */
   trackCount: number | null;
+  /** See `Artist.favorite`'s doc comment — same "always a definite boolean" guarantee. */
+  favorite: boolean;
 }
 
 export interface Track {
@@ -51,6 +57,8 @@ export interface Track {
   durationSeconds: number | null;
   imageTag: string | null;
   genres: string[];
+  /** See `Artist.favorite`'s doc comment — same "always a definite boolean" guarantee. */
+  favorite: boolean;
 }
 
 export interface LibraryPage<T> {

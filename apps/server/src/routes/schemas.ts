@@ -202,6 +202,17 @@ export const jellyfinLibraryQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(500).optional(),
   sortBy: z.string().optional(),
   sortOrder: jellyfinSortOrderSchema.optional(),
+  /** Mirrors `@auralis/jellyfin-client`'s `LibraryQuery.favoritesOnly` — scopes the
+   * listing to just this user's favourited items via that client's `filters=IsFavorite`. */
+  favoritesOnly: boolQueryParam,
+  /** Mirrors `@auralis/jellyfin-client`'s `LibraryQuery.ids` — a comma-separated list, the
+   * wire shape a query string param actually takes (an HTTP query string has no native
+   * array type), split back into individual ids here at the boundary. */
+  ids: z
+    .string()
+    .min(1)
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v.split(',').filter(Boolean))),
 });
 
 export const jellyfinAlbumsQuerySchema = jellyfinLibraryQuerySchema.extend({

@@ -118,6 +118,20 @@ const musicAlbumRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// A flat sibling of the other `/music/*` routes rather than nested under
+// `musicHomeRoute` — same reasoning as `musicArtistRoute`/`musicAlbumRoute` above, and see
+// `MusicFavoritesPage.tsx`'s own doc comment for why this is a dedicated page rather than a
+// section on `MusicHomePage`.
+const musicFavoritesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music/favorites',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicFavoritesPage.js'),
+    'MusicFavoritesPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -165,6 +179,7 @@ export const routeTree = rootRoute.addChildren([
   musicHomeRoute,
   musicArtistRoute,
   musicAlbumRoute,
+  musicFavoritesRoute,
   searchRoute,
   settingsRoute,
   setupRoute,

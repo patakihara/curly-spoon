@@ -139,6 +139,7 @@ describe('JellyfinClient.getArtists', () => {
         overview: 'Scottish electronic duo',
         imageTag: 'tag-artist',
         albumCount: 3,
+        favorite: false,
       },
     ]);
   });
@@ -161,6 +162,44 @@ describe('JellyfinClient.getArtists', () => {
       sortBy: 'SortName',
       sortOrder: 'Descending',
     });
+  });
+
+  it('sends filters=IsFavorite when favoritesOnly is set, and omits it otherwise', async () => {
+    const fetchFn = router({
+      'GET /Items': ({ url }) => {
+        expect(url.searchParams.get('filters')).toBe('IsFavorite');
+        return json({ Items: [], TotalRecordCount: 0, StartIndex: 0 });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await client.getArtists({ favoritesOnly: true });
+
+    const fetchFnNoFilter = router({
+      'GET /Items': ({ url }) => {
+        expect(url.searchParams.has('filters')).toBe(false);
+        return json({ Items: [], TotalRecordCount: 0, StartIndex: 0 });
+      },
+    });
+    await makeClient(fetchFnNoFilter).getArtists();
+  });
+
+  it('joins multiple ids with a comma for the ids filter, and omits it when empty', async () => {
+    const fetchFn = router({
+      'GET /Items': ({ url }) => {
+        expect(url.searchParams.get('ids')).toBe('artist-1,artist-2');
+        return json({ Items: [], TotalRecordCount: 0, StartIndex: 0 });
+      },
+    });
+    await makeClient(fetchFn).getArtists({ ids: ['artist-1', 'artist-2'] });
+
+    const fetchFnNoIds = router({
+      'GET /Items': ({ url }) => {
+        expect(url.searchParams.has('ids')).toBe(false);
+        return json({ Items: [], TotalRecordCount: 0, StartIndex: 0 });
+      },
+    });
+    await makeClient(fetchFnNoIds).getArtists({ ids: [] });
   });
 });
 
@@ -311,6 +350,63 @@ describe('JellyfinClient.getLyrics', () => {
 
     expect((err as JellyfinError).code).toBe('upstream_error');
     expect((err as JellyfinError).message).not.toContain('super-secret-token');
+  });
+});
+
+describe('JellyfinClient.markFavorite / unmarkFavorite', () => {
+  it('POSTs /UserFavoriteItems/{itemId} with the MediaBrowser auth header, no explicit userId', async () => {
+    const fetchFn = router({
+      'POST /UserFavoriteItems/track-1': ({ url, init }) => {
+        expect(url.searchParams.has('userId')).toBe(false);
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        return json({ IsFavorite: true });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.markFavorite('track-1')).resolves.toBe(true);
+  });
+
+  it('DELETEs /UserFavoriteItems/{itemId} to unmark a favourite', async () => {
+    const fetchFn = router({
+      'DELETE /UserFavoriteItems/track-1': () => json({ IsFavorite: false }),
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.unmarkFavorite('track-1')).resolves.toBe(false);
+  });
+
+  it('normalises a response missing IsFavorite to a definite false rather than undefined', async () => {
+    const fetchFn = router({
+      'POST /UserFavoriteItems/track-1': () => json({}),
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.markFavorite('track-1')).resolves.toBe(false);
+  });
+
+  it('surfaces an upstream 5xx as a typed JellyfinError whose message never carries the token', async () => {
+    const fetchFn = router({
+      'POST /UserFavoriteItems/track-1': () =>
+        new Response('server exploded, ApiKey=tok-should-not-leak', { status: 500 }),
+    });
+    const client = makeClient(fetchFn, 'super-secret-token');
+
+    const err = await client.markFavorite('track-1').catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('upstream_error');
+    expect((err as JellyfinError).message).not.toContain('super-secret-token');
+  });
+
+  it('surfaces an upstream 404 as a typed not_found JellyfinError', async () => {
+    const fetchFn = router({
+      'DELETE /UserFavoriteItems/missing': () => new Response(null, { status: 404 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.unmarkFavorite('missing').catch((e: unknown) => e);
+    expect((err as JellyfinError).code).toBe('not_found');
   });
 });
 

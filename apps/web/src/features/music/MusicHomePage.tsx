@@ -91,7 +91,17 @@ export function MusicHomePage() {
 
   return (
     <div className="auralis-page" data-testid="music-page">
-      <h1>Music</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1>Music</h1>
+        <Button
+          variant="text"
+          size="sm"
+          onClick={() => void navigate({ to: '/music/favorites' })}
+          data-testid="music-favorites-link"
+        >
+          Favourites
+        </Button>
+      </div>
 
       <div
         data-testid="music-search-field"
