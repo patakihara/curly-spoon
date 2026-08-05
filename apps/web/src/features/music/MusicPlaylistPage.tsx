@@ -18,12 +18,23 @@
  * client-only id, so removing by it would either no-op or error depending on how the BFF's
  * `entryIds` filter handles an unknown value, neither of which is worth surfacing to a user
  * who just clicked "add".
+ *
+ * Pagination is the same mechanism `MusicAlbumPage.tsx` already has, not a second one:
+ * `startIndex` state, `summarizePage` (`./pagination.js`) for the range label and
+ * next/previous availability, and matching Previous/Next `Button`s. Before this, a
+ * playlist longer than one `JELLYFIN_PAGE_SIZE` page (40 tracks) silently showed only its
+ * first 40 with no signal more existed — see the wave-review defect this fixes. Playing a
+ * row still only queues the *current page*'s tracks, same scope limit as the album page
+ * (`queue.ts`'s own header has the reasoning); stitching a queue across pages is separate,
+ * unbuilt work, not something this fix attempts.
  */
+import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Button, IconButton, Icon, ListItem, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import type { LibraryItem, PlaybackSession } from '../../api/types.js';
 import { useApi } from '../../api/ApiContext.js';
 import {
+  JELLYFIN_PAGE_SIZE,
   useJellyfinPlaylistItemsQuery,
   useJellyfinPlaylistQuery,
   useRemoveFromJellyfinPlaylistMutation,
@@ -32,21 +43,26 @@ import { jellyfinSource } from '../player/playbackSource.js';
 import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { isOptimisticPlaylistItem } from './playlists.js';
+import { summarizePage } from './pagination.js';
 import { albumQueue } from './queue.js';
 
 export function MusicPlaylistPage() {
   const { playlistId } = useParams({ from: '/music/playlist/$playlistId' });
   const navigate = useNavigate();
   const api = useApi();
+  const [startIndex, setStartIndex] = useState(0);
   const snackbar = useSnackbar();
 
-  const itemsQuery = useJellyfinPlaylistItemsQuery(playlistId);
+  const itemsQuery = useJellyfinPlaylistItemsQuery(playlistId, startIndex);
   const playlistQuery = useJellyfinPlaylistQuery(playlistId);
   const removeMutation = useRemoveFromJellyfinPlaylistMutation();
 
   const items = itemsQuery.data?.items ?? [];
   const tracks = items.map((item) => item.track);
   const playlistName = playlistQuery.data?.items[0]?.name ?? 'Playlist';
+  const page = itemsQuery.data
+    ? summarizePage({ startIndex, limit: JELLYFIN_PAGE_SIZE }, itemsQuery.data.total, items.length)
+    : null;
 
   const onRemoveError = () =>
     snackbar.enqueue({ message: "Couldn't remove that track — try again." });
@@ -112,50 +128,79 @@ export function MusicPlaylistPage() {
       ) : items.length === 0 ? (
         <p>This playlist is empty — add tracks from an album's track list.</p>
       ) : (
-        <div
-          data-testid="music-playlist-items"
-          style={{ display: 'flex', flexDirection: 'column' }}
-        >
-          {items.map((item) => {
-            const optimistic = isOptimisticPlaylistItem(item.playlistItemId);
-            return (
-              <ListItem
-                key={item.playlistItemId}
-                data-testid={`music-playlist-item-${item.playlistItemId}`}
-                aria-label={`Play ${item.track.name}`}
-                onClick={() => playFrom(item.playlistItemId)}
-                headline={item.track.name}
-                supportingText={
-                  [
-                    item.track.artistNames.join(', '),
-                    item.track.durationSeconds !== null
-                      ? formatDuration(item.track.durationSeconds)
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || undefined
-                }
-                trailing={
-                  <IconButton
-                    aria-label={
-                      optimistic
-                        ? `${item.track.name} is still being added`
-                        : `Remove ${item.track.name} from this playlist`
-                    }
-                    disabled={optimistic}
-                    data-testid={`music-playlist-remove-${item.playlistItemId}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      removeItem(item.playlistItemId);
-                    }}
-                  >
-                    <Icon name="close" />
-                  </IconButton>
-                }
-              />
-            );
-          })}
-        </div>
+        <>
+          <div
+            data-testid="music-playlist-items"
+            style={{ display: 'flex', flexDirection: 'column' }}
+          >
+            {items.map((item) => {
+              const optimistic = isOptimisticPlaylistItem(item.playlistItemId);
+              return (
+                <ListItem
+                  key={item.playlistItemId}
+                  data-testid={`music-playlist-item-${item.playlistItemId}`}
+                  aria-label={`Play ${item.track.name}`}
+                  onClick={() => playFrom(item.playlistItemId)}
+                  headline={item.track.name}
+                  supportingText={
+                    [
+                      item.track.artistNames.join(', '),
+                      item.track.durationSeconds !== null
+                        ? formatDuration(item.track.durationSeconds)
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || undefined
+                  }
+                  trailing={
+                    <IconButton
+                      aria-label={
+                        optimistic
+                          ? `${item.track.name} is still being added`
+                          : `Remove ${item.track.name} from this playlist`
+                      }
+                      disabled={optimistic}
+                      data-testid={`music-playlist-remove-${item.playlistItemId}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeItem(item.playlistItemId);
+                      }}
+                    >
+                      <Icon name="close" />
+                    </IconButton>
+                  }
+                />
+              );
+            })}
+          </div>
+
+          {page ? (
+            <div
+              data-testid="music-playlist-tracks-pagination"
+              style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+            >
+              <Button
+                variant="outlined"
+                size="sm"
+                disabled={!page.hasPrevious}
+                onClick={() => setStartIndex(page.previousStartIndex ?? 0)}
+                data-testid="music-playlist-tracks-prev"
+              >
+                Previous
+              </Button>
+              <span>{page.rangeLabel}</span>
+              <Button
+                variant="outlined"
+                size="sm"
+                disabled={!page.hasNext}
+                onClick={() => setStartIndex(page.nextStartIndex ?? 0)}
+                data-testid="music-playlist-tracks-next"
+              >
+                Next
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
       <Snackbar snackbar={snackbar.current} onDismiss={snackbar.dismiss} />
     </div>

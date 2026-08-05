@@ -345,7 +345,28 @@ describe('useJellyfinPlaylistItemsQuery', () => {
 
     expect(getJellyfinPlaylistItems).toHaveBeenCalledWith(
       'pl-1',
-      expect.objectContaining({ limit: expect.any(Number) }),
+      expect.objectContaining({ limit: expect.any(Number), startIndex: 0 }),
+      undefined,
+    );
+  });
+
+  // Regression: this hook originally took no `startIndex` at all, so
+  // `MusicPlaylistPage.tsx` always fetched the same first `JELLYFIN_PAGE_SIZE` (40) tracks
+  // with no way to reach anything past them and no signal that more existed — a playlist
+  // with, say, 200 tracks silently showed only its first 40. `MusicAlbumPage.tsx` (the page
+  // this one borrowed its queueing from) already threads a `startIndex` through to its own
+  // tracks query; this pins the playlist-items query doing the same.
+  it('forwards a non-zero startIndex, for pages beyond the first', async () => {
+    const { useJellyfinPlaylistItemsQuery } = await import('./queries.js');
+    const { queryFn } = useJellyfinPlaylistItemsQuery(
+      'pl-1',
+      40,
+    ) as unknown as CapturedQueryOptions;
+    await queryFn({ signal: undefined });
+
+    expect(getJellyfinPlaylistItems).toHaveBeenCalledWith(
+      'pl-1',
+      expect.objectContaining({ startIndex: 40, limit: expect.any(Number) }),
       undefined,
     );
   });
