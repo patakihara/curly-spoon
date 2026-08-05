@@ -56,6 +56,67 @@ sealed interface PlayerUiState {
 }
 
 /**
+ * The subset of [androidx.media3.common.Player] (implemented by [MediaController]) that
+ * [PlayerViewModel] actually drives from [PlayerViewModel.playResolved]/
+ * [PlayerViewModel.playQueue]/its toggle methods. Exists so a unit test can substitute a
+ * lightweight fake instead of a real [MediaController], which needs a live [Context] and a bound
+ * [AuralisMediaLibraryService] connection that a plain JVM unit test cannot provide (no
+ * Robolectric in this project). The wider listener-registration/connection-memoization machinery
+ * in [PlayerViewModel.connectedController] is deliberately left outside this seam — that is
+ * Android/service plumbing this project has never unit-tested, and isn't where wave I's
+ * stale-queue race risk lives.
+ */
+interface PlaybackHandle {
+    fun setMediaItem(item: MediaItem)
+
+    fun setMediaItems(items: List<MediaItem>)
+
+    fun addMediaItems(items: List<MediaItem>)
+
+    fun prepare()
+
+    fun play()
+
+    fun pause()
+
+    var shuffleModeEnabled: Boolean
+
+    var repeatMode: Int
+
+    val isPlaying: Boolean
+}
+
+/** Adapts a real [MediaController] to [PlaybackHandle] — the production implementation. */
+private class MediaControllerPlaybackHandle(private val controller: MediaController) : PlaybackHandle {
+    override fun setMediaItem(item: MediaItem) = controller.setMediaItem(item)
+
+    override fun setMediaItems(items: List<MediaItem>) = controller.setMediaItems(items)
+
+    override fun addMediaItems(items: List<MediaItem>) = controller.addMediaItems(items)
+
+    override fun prepare() = controller.prepare()
+
+    override fun play() = controller.play()
+
+    override fun pause() = controller.pause()
+
+    override var shuffleModeEnabled: Boolean
+        get() = controller.shuffleModeEnabled
+        set(value) {
+            controller.shuffleModeEnabled = value
+        }
+
+    override var repeatMode: Int
+        get() = controller.repeatMode
+        set(value) {
+            controller.repeatMode = value
+        }
+
+    override val isPlaying: Boolean
+        get() = controller.isPlaying
+}
+
+/**
  * Owns the single [MediaController] connection to [AuralisMediaLibraryService] and translates
  * BFF playback sessions into transport commands. Constructed once per app (see
  * `AuralisNavHost`) so the controller — and the state it drives — survives navigation between
@@ -76,6 +137,24 @@ class PlayerViewModel(
     private val context: Context,
     private val playbackItemResolver: PlaybackItemResolver,
     jellyfinPlaybackReportSender: JellyfinPlaybackReportSender,
+    /**
+     * Test-only seam: when non-null, [activeController] returns this directly instead of
+     * connecting to a real [MediaController] via [connectedController] — see [PlaybackHandle]'s
+     * own doc comment for why a real connection can't run under this project's plain JVM unit
+     * tests. Always `null` in production; [net.auralis.app.navigation.AuralisNavHost] never sets
+     * it.
+     */
+    private val controllerOverride: PlaybackHandle? = null,
+    /**
+     * Test-only seam: converts a resolved item into the [MediaItem] handed to the controller.
+     * Defaults to the real [net.auralis.app.playback.toMediaItem] conversion. Overridable because
+     * that conversion reaches `android.net.Uri` (via `MediaItem.Builder.setUri`), which throws
+     * under this project's unmocked test `android.jar` — see
+     * `net.auralis.app.playback.MediaItemConversions`'s own doc comment. A test can supply a
+     * conversion that builds a bare [MediaItem] (no `setUri`/`setArtworkUri`) instead, so
+     * [playQueue]'s real generation-guard logic runs without ever touching `Uri`.
+     */
+    private val toPlayableMediaItem: (ResolvedPlayback) -> MediaItem = { it.toMediaItem() },
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Idle)
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
@@ -271,6 +350,15 @@ class PlayerViewModel(
     }
 
     /**
+     * The command-dispatch seam every play/toggle method below actually calls: [controllerOverride]
+     * in a test, otherwise a real connection via [connectedController] wrapped as a
+     * [PlaybackHandle]. See [PlaybackHandle]'s own doc comment for why the split sits here rather
+     * than inside [connectedController] itself.
+     */
+    private suspend fun activeController(): PlaybackHandle =
+        controllerOverride ?: MediaControllerPlaybackHandle(connectedController())
+
+    /**
      * Starts playback of an item's first track. Called from a shelf item's onClick.
      *
      * `PlaybackItemResolver.resolve` is itself a total function — it swallows `ApiException` and
@@ -329,8 +417,8 @@ class PlayerViewModel(
                         _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
                         return
                     }
-            val mediaItem = resolved.toMediaItem()
-            val ctrl = connectedController()
+            val mediaItem = toPlayableMediaItem(resolved)
+            val ctrl = activeController()
             ctrl.setMediaItem(mediaItem)
             ctrl.prepare()
             ctrl.play()
@@ -401,8 +489,8 @@ class PlayerViewModel(
                     _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
                     return@launch
                 }
-                val mediaItems = queue.map { it.toMediaItem() }
-                val ctrl = connectedController()
+                val mediaItems = queue.map(toPlayableMediaItem)
+                val ctrl = activeController()
                 ctrl.setMediaItems(mediaItems)
                 ctrl.prepare()
                 ctrl.play()
@@ -423,7 +511,7 @@ class PlayerViewModel(
                         // points any one of which a newer playQueue()/playResolved() call could
                         // land in between.
                         if (page.isEmpty() || queueGeneration != myGeneration) return@fetchRemaining
-                        connectedController().addMediaItems(page.map { it.toMediaItem() })
+                        activeController().addMediaItems(page.map(toPlayableMediaItem))
                     }
                 }
             } catch (e: CancellationException) {
@@ -445,7 +533,7 @@ class PlayerViewModel(
             val current = _uiState.value
             if (current !is PlayerUiState.Playing) return@launch
             try {
-                val ctrl = connectedController()
+                val ctrl = activeController()
                 if (ctrl.isPlaying) ctrl.pause() else ctrl.play()
             } catch (e: CancellationException) {
                 throw e
@@ -468,7 +556,7 @@ class PlayerViewModel(
             val current = _uiState.value
             if (current !is PlayerUiState.Playing || !current.isMusic) return@launch
             try {
-                val ctrl = connectedController()
+                val ctrl = activeController()
                 ctrl.shuffleModeEnabled = !ctrl.shuffleModeEnabled
             } catch (e: CancellationException) {
                 throw e
@@ -488,7 +576,7 @@ class PlayerViewModel(
             val current = _uiState.value
             if (current !is PlayerUiState.Playing || !current.isMusic) return@launch
             try {
-                val ctrl = connectedController()
+                val ctrl = activeController()
                 ctrl.repeatMode = nextRepeatMode(ctrl.repeatMode)
             } catch (e: CancellationException) {
                 throw e
