@@ -190,10 +190,17 @@ export interface SearchResults {
 // ---------------------------------------------------------------------
 
 /**
- * `completed` and `rejected` are terminal — nothing moves a request out of them
- * again. `failed` is *not* terminal: a `retry` action can revive it, but nothing
- * progresses it on its own, which matters for `features/requests/polling.ts`'s
+ * `completed`, `importRequested` and `rejected` are terminal — nothing moves a request
+ * out of them again. `failed` is *not* terminal: a `retry` action can revive it, but
+ * nothing progresses it on its own, which matters for `features/requests/polling.ts`'s
  * decision about when to keep polling `GET /requests`.
+ *
+ * `importRequested` is a second, honest terminal state out of `importing` — a music
+ * request's own, not a book one (see `apps/server/src/requests/requestStatus.ts`'s
+ * header comment, the authority for this whole union). A music request lands here once
+ * Auralis has asked Jellyfin to rescan its library, which is fire-and-forget: there is no
+ * API to confirm the rescan actually found the file. Calling that `completed` would claim
+ * a confirmation this codebase does not have.
  */
 export type RequestStatus =
   | 'pending'
@@ -203,6 +210,7 @@ export type RequestStatus =
   | 'downloading'
   | 'importing'
   | 'completed'
+  | 'importRequested'
   | 'failed';
 
 /** One release a search against the configured indexers turned up. */
