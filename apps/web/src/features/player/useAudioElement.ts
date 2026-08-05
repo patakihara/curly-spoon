@@ -116,6 +116,14 @@ export function useAudioElement(): void {
     // re-subscribe every time either value ticks, only to see the latest one when it fires.
     const handleEnded = () => {
       const state = usePlayerStore.getState();
+      // A music queue (`features/music/musicQueueController.ts`) installs this to run its
+      // own shuffle/repeat/cross-page policy in place of the book/podcast logic below — see
+      // `PlayerState.onTrackEnded`'s doc comment for why every non-music session always
+      // leaves this `null` and so is completely unaffected by its existence.
+      if (state.onTrackEnded) {
+        state.onTrackEnded();
+        return;
+      }
       const match = trackAt(state.tracks, state.currentTime);
       if (!match) return;
       const next = nextTrack(state.tracks, match.track);
@@ -151,18 +159,6 @@ export function useAudioElement(): void {
     if (loadedUrlRef.current !== url) {
       loadedUrlRef.current = url;
       audio.src = url;
-      // Reassigning `src` resets the element's own play state, so playback that was already
-      // underway (crossing a track boundary via `handleEnded` above, or a manual seek across
-      // one mid-playback) would otherwise silently go quiet: `isPlaying` stays true, nothing
-      // downstream reverts it, but no sound plays until the next explicit pause/play toggle.
-      // The `[isPlaying]` effect below only fires on an *isPlaying transition*, which a track
-      // change is not, so it can't be relied on to restart audio here. Same rejection handling
-      // as that effect, and for the same reason (fixture audio can't decode — file header).
-      if (usePlayerStore.getState().isPlaying) {
-        audio.play().catch(() => {
-          usePlayerStore.getState().pause();
-        });
-      }
     }
 
     // Only correct drift bigger than the timeupdate's own margin of error —
@@ -171,6 +167,26 @@ export function useAudioElement(): void {
     const withinTrack = currentTime - match.track.startOffset;
     if (Math.abs(audio.currentTime - withinTrack) > 1.5) {
       audio.currentTime = withinTrack;
+    }
+
+    // Resumes whenever the store says playback should be happening but the element itself
+    // has stopped — covers both a `src` reassignment just above (which always resets the
+    // element to paused; the original trigger for this) *and* a same-track restart (music's
+    // repeat-one, via `musicQueueController.ts`: `currentTime` reset to the track's own
+    // start with no `src` change at all, so the branch above never runs and nothing else
+    // would restart it). Both are cases the browser's own `ended` handling already paused
+    // `audio` for; the `[isPlaying]` effect below only reacts to an *isPlaying transition*,
+    // which neither of these is. Broadening the condition to `audio.paused` rather than
+    // "did the URL just change" is a strict generalization, not a behaviour change for a
+    // book/podcast: real playback keeps `audio.paused` false throughout, so this never fires
+    // while genuinely playing mid-track, only exactly when something (a track boundary or a
+    // repeat-one restart) just stopped the element out from under a store that still says
+    // "playing". Same rejection handling as the `[isPlaying]` effect below, and for the same
+    // reason (fixture audio can't decode — file header).
+    if (usePlayerStore.getState().isPlaying && audio.paused) {
+      audio.play().catch(() => {
+        usePlayerStore.getState().pause();
+      });
     }
   }, [currentItem, source, tracks, currentTime]);
 

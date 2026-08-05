@@ -6,12 +6,14 @@
  * by title) — this page never asks the BFF to sort at all, it just renders what
  * `GET /jellyfin/playlists/:id/items` hands back.
  *
- * Clicking a row plays the whole currently-loaded list as one queue, starting at that row —
- * same mechanism as `MusicAlbumPage.tsx`: `features/music/queue.ts`'s `albumQueue` (reused
- * unchanged; it only ever needed a `JellyfinTrack[]`, and `items.map(i => i.track)` is
- * exactly that) lays every track out end to end on one cumulative timeline through
- * `jellyfinSource`. No second queueing mechanism was built for playlists — see this wave's
- * own report for confirmation this reuse was clean, not a near-miss.
+ * Clicking a row starts a `features/music/musicQueue.ts` queue at that row — same mechanism
+ * as `MusicAlbumPage.tsx`: `musicQueueController.ts`'s `beginMusicQueue` lays this page's
+ * already-loaded tracks (`items.map(i => i.track)`, via `toQueueTrack`) out end to end on
+ * one cumulative timeline through `jellyfinSource`. No second queueing mechanism was built
+ * for playlists here either — same reuse `MusicAlbumPage.tsx`'s own header describes,
+ * including the lazy cross-page fetch: `fetchMore` below closes over
+ * `api.getJellyfinPlaylistItems` instead of `getJellyfinTracks`, which is the only thing
+ * that differs between the two pages' queues.
  *
  * A row still marked `isOptimisticPlaylistItem` (added but not yet confirmed by the server —
  * see `playlists.ts`) has its remove control disabled: Jellyfin has never heard of a
@@ -24,9 +26,8 @@
  * next/previous availability, and matching Previous/Next `Button`s. Before this, a
  * playlist longer than one `JELLYFIN_PAGE_SIZE` page (40 tracks) silently showed only its
  * first 40 with no signal more existed — see the wave-review defect this fixes. Playing a
- * row still only queues the *current page*'s tracks, same scope limit as the album page
- * (`queue.ts`'s own header has the reasoning); stitching a queue across pages is separate,
- * unbuilt work, not something this fix attempts.
+ * row now queues the *whole playlist*, not just the page it was clicked from — see the
+ * queue-wave header above.
  */
 import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -44,7 +45,8 @@ import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { isOptimisticPlaylistItem } from './playlists.js';
 import { summarizePage } from './pagination.js';
-import { albumQueue } from './queue.js';
+import { attachMusicQueueEndedHandler, beginMusicQueue } from './musicQueueController.js';
+import { toQueueTrack, type QueueTrack } from './musicQueue.js';
 
 export function MusicPlaylistPage() {
   const { playlistId } = useParams({ from: '/music/playlist/$playlistId' });
@@ -75,12 +77,22 @@ export function MusicPlaylistPage() {
   };
 
   const playFrom = (clickedPlaylistItemId: string) => {
-    const queue = albumQueue(tracks);
+    const queueTracks: QueueTrack[] = tracks.map(toQueueTrack);
     const clickedIndex = items.findIndex((item) => item.playlistItemId === clickedPlaylistItemId);
     // Same fallback reasoning as `MusicAlbumPage.tsx`'s `playTrack`: `clickedIndex` always
-    // matches a real `audioTracks` entry (built from this same `items` array, one-to-one),
+    // matches a real `queueTracks` entry (built from this same `items` array, one-to-one),
     // this only guards a row clicked after a slow click races a removal out from under it.
-    const startTrack = queue.audioTracks[clickedIndex] ?? queue.audioTracks[0];
+    const startIndex = clickedIndex === -1 ? 0 : clickedIndex;
+    const total = itemsQuery.data?.total ?? items.length;
+    const { audioTracks, duration, startTrack } = beginMusicQueue(
+      queueTracks,
+      total,
+      startIndex,
+      (fetchStartIndex, limit) =>
+        api
+          .getJellyfinPlaylistItems(playlistId, { startIndex: fetchStartIndex, limit })
+          .then((page) => page.items.map((entry) => toQueueTrack(entry.track))),
+    );
     const item: LibraryItem = {
       id: playlistId,
       libraryId: '',
@@ -94,12 +106,13 @@ export function MusicPlaylistPage() {
       episodeId: null,
       mediaType: 'book',
       displayTitle: startTrack?.title ?? playlistName,
-      duration: queue.duration,
+      duration,
       currentTime: startTrack?.startOffset ?? 0,
-      audioTracks: queue.audioTracks,
+      audioTracks,
       chapters: [],
     };
-    usePlayerStore.getState().load(item, session, jellyfinSource(api, queue.audioTracks));
+    usePlayerStore.getState().load(item, session, jellyfinSource(api, audioTracks));
+    attachMusicQueueEndedHandler();
     usePlayerStore.getState().play();
   };
 

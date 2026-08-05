@@ -6,37 +6,47 @@
  * upstream library changed between browsing to it and this page loading)
  * degrades to "Album" rather than throwing.
  *
- * Clicking a row plays the *whole currently-loaded page of tracks* as one queue, starting
- * at that row, through `jellyfinSource` (`features/player/playbackSource.ts`) —
- * `features/music/queue.ts`'s `albumQueue` lays every track on this page out end to end on
- * one cumulative timeline (exactly how a multi-file audiobook already plays through its own
- * file boundaries), so playing track 3 continues into track 4 with no separate "queue"
- * concept in the player itself. Unlike `ItemPage.tsx`, there is no `POST /items/:id/play`
- * round-trip to open first — Jellyfin's proxied stream route is stateless, so
- * `playerStore.load()` is called with a `LibraryItem`/`PlaybackSession` pair synthesized
- * here, client-side, rather than one fetched from the BFF. `MediaSummary.kind: 'track'`
- * (widened for exactly this) is what tells `playerDisplayMeta`/`playerArtworkUrl`
- * (`features/player/playerUi.ts`) to bill and illustrate this differently from a real
- * Audiobookshelf item — see those functions' own doc comments.
+ * Clicking a row starts a `features/music/musicQueue.ts` queue at that row, through
+ * `jellyfinSource` (`features/player/playbackSource.ts`) — `musicQueueController.ts`'s
+ * `beginMusicQueue` lays this page's already-loaded tracks out end to end on one cumulative
+ * timeline (exactly how a multi-file audiobook already plays through its own file
+ * boundaries, and exactly what `queue.ts`'s older `albumQueue` used to do directly here), so
+ * playing track 3 continues into track 4 with no separate "queue" concept in the player
+ * itself. Unlike `ItemPage.tsx`, there is no `POST /items/:id/play` round-trip to open
+ * first — Jellyfin's proxied stream route is stateless, so `playerStore.load()` is called
+ * with a `LibraryItem`/`PlaybackSession` pair synthesized here, client-side, rather than one
+ * fetched from the BFF. `MediaSummary.kind: 'track'` (widened for exactly this) is what
+ * tells `playerDisplayMeta`/`playerArtworkUrl` (`features/player/playerUi.ts`) to bill and
+ * illustrate this differently from a real Audiobookshelf item — see those functions' own
+ * doc comments.
  *
- * The queue is scoped to this page's own 40-track window, not the whole album across
- * pagination boundaries — most real albums fit on one page, and stitching queues across a
- * `Next` click is unbuilt scope, not a bug: see `queue.ts`'s own header for what a fuller
- * queue (that, plus shuffle/repeat/cross-source) would still need.
+ * Unlike the old `albumQueue`-only design, the queue is **not** scoped to this page's own
+ * 40-track window: `beginMusicQueue` is given the album's real `total` and a `fetchMore`
+ * closure over `api.getJellyfinTracks`, so `musicQueueController.ts`'s `handleTrackEnded`
+ * fetches the rest of the album lazily, only once playback actually advances past what's
+ * already loaded here — see that file's own header for why lazily rather than eagerly (a
+ * library-artist "play all" must not stall on a giant upfront fetch before sound starts).
+ * Shuffle and repeat live on `useMusicQueueStore`, driven from `NowPlaying.tsx`'s transport
+ * controls; this page never reads or writes them directly.
  */
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { Button, ListItem, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import type { JellyfinTrack, LibraryItem, PlaybackSession } from '../../api/types.js';
 import { useApi } from '../../api/ApiContext.js';
-import { useJellyfinAlbumQuery, useJellyfinTracksQuery } from '../../api/queries.js';
+import {
+  TRACK_ORDER_SORT_BY,
+  useJellyfinAlbumQuery,
+  useJellyfinTracksQuery,
+} from '../../api/queries.js';
 import { jellyfinSource } from '../player/playbackSource.js';
 import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { AddToPlaylistButton } from './AddToPlaylistButton.js';
 import { FavoriteToggle } from './FavoriteToggle.js';
 import { summarizePage } from './pagination.js';
-import { albumQueue } from './queue.js';
+import { attachMusicQueueEndedHandler, beginMusicQueue } from './musicQueueController.js';
+import { toQueueTrack, type QueueTrack } from './musicQueue.js';
 
 function trackPosition(discNumber: number | null, trackNumber: number | null): string {
   if (trackNumber === null) return '';
@@ -68,13 +78,26 @@ export function MusicAlbumPage() {
   const onAdded = () => snackbar.enqueue({ message: 'Added to playlist.' });
 
   const playTrack = (clicked: JellyfinTrack) => {
-    const queue = albumQueue(tracks);
+    const queueTracks: QueueTrack[] = tracks.map(toQueueTrack);
     const clickedIndex = tracks.findIndex((track) => track.id === clicked.id);
-    // `clickedIndex` always matches a real `audioTracks` entry — `queue`'s tracks are built
-    // from this same `tracks` array, in the same order, one-to-one — so this only falls back
-    // to the queue's own start if a row is somehow clicked after its track left `tracks`
-    // (e.g. a slow click racing a page change), rather than throwing on a stale reference.
-    const startTrack = queue.audioTracks[clickedIndex] ?? queue.audioTracks[0];
+    // `clickedIndex` always matches a real `queueTracks` entry — built from this same
+    // `tracks` array, in the same order, one-to-one — so this only falls back to the queue's
+    // own start if a row is somehow clicked after its track left `tracks` (e.g. a slow click
+    // racing a page change), rather than throwing on a stale reference.
+    const startIndex = clickedIndex === -1 ? 0 : clickedIndex;
+    const total = tracksQuery.data?.total ?? tracks.length;
+    const { audioTracks, duration, startTrack } = beginMusicQueue(
+      queueTracks,
+      total,
+      startIndex,
+      (fetchStartIndex, limit) =>
+        api
+          .getJellyfinTracks(
+            { albumId, startIndex: fetchStartIndex, limit, sortBy: TRACK_ORDER_SORT_BY },
+            undefined,
+          )
+          .then((page) => page.items.map(toQueueTrack)),
+    );
     const item: LibraryItem = {
       id: albumId,
       // Jellyfin has no "library id" surfaced to this page; inert, `load()` never reads it.
@@ -90,12 +113,13 @@ export function MusicAlbumPage() {
       // Inert — `playerStore.load()` never reads `mediaType`; present only to satisfy the type.
       mediaType: 'book',
       displayTitle: startTrack?.title ?? albumName,
-      duration: queue.duration,
+      duration,
       currentTime: startTrack?.startOffset ?? 0,
-      audioTracks: queue.audioTracks,
+      audioTracks,
       chapters: [],
     };
-    usePlayerStore.getState().load(item, session, jellyfinSource(api, queue.audioTracks));
+    usePlayerStore.getState().load(item, session, jellyfinSource(api, audioTracks));
+    attachMusicQueueEndedHandler();
     usePlayerStore.getState().play();
   };
 

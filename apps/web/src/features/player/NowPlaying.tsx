@@ -14,13 +14,28 @@ import { Icon, IconButton, Sheet, Slider } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
 import { useBreakpoint } from '../../hooks/useBreakpoint.js';
 import { usePlayerStore } from '../../state/playerStore.js';
+import { useMusicQueueStore } from '../../state/musicQueueStore.js';
 import { useSettingsStore } from '../../state/settingsStore.js';
+import { nextRepeatMode } from '../music/musicQueue.js';
 import { BookmarkControls } from './BookmarkControls.js';
 import { ChapterList } from './ChapterList.js';
 import { LyricsView } from './LyricsView.js';
 import { chapterAt, formatDuration, nextRate, trackAt } from './playback.js';
 import { formatRemaining, playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
 import { SleepTimerControl } from './SleepTimerControl.js';
+
+/** `aria-label` for the repeat control at each mode — see this file's own render for why a
+ *  dynamic label rather than a bare "Repeat" is the accessible-name mechanism for a 3-state
+ *  cycle button: `aria-pressed` (from `IconButton`'s `selected`) is fundamentally boolean, so
+ *  it can only ever convey "some repeat is on"; the label is what actually distinguishes
+ *  "all" from "one", and what tells assistive tech what the *next* click does — the same
+ *  pattern browsers' own tri-state form controls (e.g. a mute button that also shows volume
+ *  level) use when `aria-pressed`/`aria-checked` alone can't carry every state. */
+const REPEAT_LABELS: Record<'off' | 'all' | 'one', string> = {
+  off: 'Repeat off. Choose to repeat the whole queue.',
+  all: 'Repeat queue. Choose to repeat just this track.',
+  one: 'Repeat this track. Choose to turn repeat off.',
+};
 
 export interface NowPlayingProps {
   open: boolean;
@@ -46,8 +61,19 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
   const setRate = usePlayerStore((s) => s.setRate);
   const skipBackSeconds = useSettingsStore((s) => s.skipBackSeconds);
   const skipForwardSeconds = useSettingsStore((s) => s.skipForwardSeconds);
+  const queue = useMusicQueueStore((s) => s.queue);
+  const toggleShuffle = useMusicQueueStore((s) => s.toggleShuffle);
+  const setRepeat = useMusicQueueStore((s) => s.setRepeat);
 
   if (!open || !currentItem) return null;
+
+  // Shuffle/repeat are music-only — `currentItem.media.kind === 'track'` is the same signal
+  // `playerDisplayMeta`/`playerArtworkUrl` already use to tell a Jellyfin queue apart from a
+  // real Audiobookshelf item (see this file's imports). Gating on `queue` too, rather than
+  // on `kind` alone, is what keeps a stale queue left over from a previous music session
+  // inert the moment a book or podcast episode is loaded — see `state/musicQueueStore.ts`'s
+  // own header for why nothing needs to actively clear it on an unrelated `load()`.
+  const showQueueControls = currentItem.media.kind === 'track' && queue !== null;
 
   const authors =
     currentItem.media.authors?.map((a) => a.name).join(', ') ?? currentItem.media.author ?? '';
@@ -132,6 +158,32 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
           <Icon name="forward_30" />
         </IconButton>
       </div>
+
+      {showQueueControls && queue ? (
+        <div className="auralis-now-playing__queue">
+          <IconButton
+            aria-label="Shuffle"
+            data-testid="player-shuffle-toggle"
+            selected={queue.shuffled}
+            onSelectedChange={() => toggleShuffle()}
+          >
+            <Icon name="shuffle" />
+          </IconButton>
+          <IconButton
+            aria-label={REPEAT_LABELS[queue.repeat]}
+            data-testid="player-repeat-toggle"
+            selected={queue.repeat !== 'off'}
+            onClick={() => setRepeat(nextRepeatMode(queue.repeat))}
+          >
+            <Icon name="repeat" />
+            {queue.repeat === 'one' ? (
+              <span className="auralis-now-playing__repeat-badge" aria-hidden="true">
+                1
+              </span>
+            ) : null}
+          </IconButton>
+        </div>
+      ) : null}
 
       <div className="auralis-now-playing__rate">
         <IconButton

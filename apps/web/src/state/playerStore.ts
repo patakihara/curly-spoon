@@ -59,6 +59,26 @@ export interface PlayerState {
   /** Absolute epoch-ms deadline, or `null` when no sleep timer is running — read via `sleepTimerRemaining`. */
   sleepTimerEndsAt: number | null;
   bookmarks: Bookmark[];
+  /**
+   * Overrides `useAudioElement.ts`'s built-in "continue to the next `AudioTrack`, or pause"
+   * handling of the underlying `<audio>` element's native `ended` event — set by
+   * `features/music/musicQueueController.ts` for a Jellyfin queue, whose shuffle/repeat/
+   * cross-page policy an audiobook's own file-boundary timeline has no concept of. `load()`
+   * always resets this to `null`, so switching from a music queue to a book or podcast
+   * episode clears it automatically: `ItemPage.tsx`/`PodcastDetailPage.tsx` never need to
+   * know this field exists, and their sessions' `ended` handling is exactly what it was
+   * before this field was added.
+   */
+  onTrackEnded: (() => void) | null;
+  setOnTrackEnded: (fn: (() => void) | null) => void;
+  /**
+   * Replaces `tracks`/`duration` in place, touching nothing else — unlike `load()`, which
+   * resets the whole session (`currentTime`, `isPlaying`, bookmarks, ...). What a music
+   * queue's shuffle toggle, repeat-mode change, or cross-page fetch uses to extend or
+   * reorder what plays next without interrupting whatever is currently playing. See
+   * `features/music/musicQueueController.ts` and `state/musicQueueStore.ts`.
+   */
+  setTracks: (tracks: AudioTrack[], duration: number) => void;
   load: (item: LibraryItem, session: PlaybackSession, source: PlaybackSource) => void;
   play: () => void;
   pause: () => void;
@@ -87,8 +107,11 @@ const INITIAL_STATE = {
   playbackRate: 1,
   sleepTimerEndsAt: null,
   bookmarks: [],
+  onTrackEnded: null,
 } satisfies Omit<
   PlayerState,
+  | 'setOnTrackEnded'
+  | 'setTracks'
   | 'load'
   | 'play'
   | 'pause'
@@ -126,7 +149,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       playbackRate: 1,
       sleepTimerEndsAt: null,
       bookmarks: [],
+      // See this field's own doc comment: every load starts with the built-in pause-or-
+      // continue `ended` handling, and only a music queue (`musicQueueController.ts`,
+      // called *after* `load()`) opts back into its own policy.
+      onTrackEnded: null,
     }),
+
+  setOnTrackEnded: (fn) => set({ onTrackEnded: fn }),
+  setTracks: (tracks, duration) => set({ tracks, duration }),
 
   play: () => set({ isPlaying: true }),
   pause: () => set({ isPlaying: false }),
