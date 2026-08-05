@@ -98,7 +98,21 @@ export function useProgressSync(): void {
       // A null body means nothing has ever been worth reporting yet — unlike
       // the final flush below, there is no session-closing side effect riding
       // along here that still has to happen regardless.
-      if (body) source?.reportProgress.onTick(body);
+      //
+      // `isPlaying` is read fresh from the store here rather than closed over
+      // from this hook's own top-level subscription: this effect's identity
+      // only depends on `sessionId` (see the dependency array below), so a
+      // closed-over value would be stale for every tick after the first
+      // play/pause toggle. A source that doesn't care (`audiobookshelfSource`)
+      // ignores it; `jellyfinSource` uses it to report the real pause state
+      // instead of always reporting "playing" — see `playbackSource.ts`'s
+      // `PlaybackTickState` doc comment for why this isn't a field on the body
+      // itself.
+      if (body) {
+        source?.reportProgress.onTick(body, {
+          isPlaying: usePlayerStore.getState().isPlaying,
+        });
+      }
     };
 
     // Best effort only: a browser tearing the page down may not let the request

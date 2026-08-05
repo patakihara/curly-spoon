@@ -28,12 +28,26 @@ import { fileIdFromContentUrl, trackAt } from './playback.js';
 import type { ProgressSyncBody } from './progressSync.js';
 
 /**
+ * Playback state alongside a tick's measured body. Kept as a second, separate
+ * argument to `onTick` rather than a field on `ProgressSyncBody` because that
+ * type is Audiobookshelf's own wire shape — the literal request body posted to
+ * `POST /sessions/:id/sync` — which has no pause concept and must never grow one
+ * it doesn't ask for; a field added there would leak into an upstream request
+ * that can't use it. A named object rather than a bare boolean so a future
+ * signal (e.g. playback rate) can join it without another signature change.
+ */
+export interface PlaybackTickState {
+  isPlaying: boolean;
+}
+
+/**
  * What `useProgressSync` does with a measured stretch of listening, once
  * `progressSync.ts`'s pure `progressSyncPayload` has turned it into a body (or
  * withheld one, when `duration` isn't known yet). The hook still owns *when*
  * to call these — the 15s interval, `pagehide`, and the wall-clock
  * accumulation `progressSync.ts`'s own header describes — this interface is
- * only ever asked "given this body (or its absence), what do you do."
+ * only ever asked "given this body (or its absence) and the current play/pause
+ * state, what do you do."
  *
  * A reporter must never throw synchronously: `onEnd` runs from a `useEffect`
  * cleanup, which cannot usefully catch or retry a throw. Every implementation
@@ -45,8 +59,14 @@ export interface PlaybackProgressReporter {
    * Called on the periodic interval and on `pagehide`, while still loaded.
    * Never called with a withheld body — `useProgressSync` just keeps
    * accumulating unreported time instead of calling this with nothing to send.
+   *
+   * `state` reflects play/pause at the moment of this tick, read fresh each
+   * call rather than captured once — a source that cares (`jellyfinSource`)
+   * needs the *current* value, not whatever it was when the reporter was
+   * built. `onEnd` takes no such state: it always represents playback
+   * stopping outright, never a pause, so there is nothing for it to carry.
    */
-  onTick(body: ProgressSyncBody): void;
+  onTick(body: ProgressSyncBody, state: PlaybackTickState): void;
   /**
    * Called exactly once, on teardown. `body` is `null` precisely when
    * `duration` was never learned before teardown (a session opened and closed
@@ -90,7 +110,12 @@ export function audiobookshelfSource(
 ): PlaybackSource {
   return {
     reportProgress: {
-      onTick(body) {
+      // `_state` is ignored deliberately: Audiobookshelf's sync endpoint has no
+      // pause concept (see `PlaybackTickState`'s doc comment) and this
+      // implementation's behaviour must not change at all — it reports the same
+      // `body` whether the player is playing or paused, exactly as before this
+      // parameter existed.
+      onTick(body, _state) {
         void api.syncSession(sessionId, body).catch(() => undefined);
       },
       onEnd(body) {
@@ -114,7 +139,7 @@ export function audiobookshelfSource(
  * from scratch.
  */
 export const noopProgressReporter: PlaybackProgressReporter = {
-  onTick() {
+  onTick(_body, _state) {
     // Nothing to report to — see the module header for why "doing nothing"
     // is the correct, honest behaviour here rather than a stub to fill in.
   },
@@ -164,6 +189,18 @@ export const noopProgressReporter: PlaybackProgressReporter = {
  *    the queue's total duration was known, which also means `resolveQueuePosition` could
  *    never have resolved a track, so no item id was ever identified to report a stop
  *    *for*. Sending a stop report needs an item id; skip it rather than guess one.
+ * 3. **The lazy start report still fires on a first tick that arrives while paused, and
+ *    carries no pause signal of its own.** `reportPlaybackStart` has no `isPaused`
+ *    parameter — Jellyfin's own client only ever sends `IsPaused: false` for it, since its
+ *    job is establishing `NowPlayingItem`, not describing playback state. That would read
+ *    as briefly-wrong if start were the last word, but it never is: the progress report
+ *    that immediately follows it, in the same `onTick` call, always carries the real
+ *    `state.isPlaying` for this tick. So a paused first tick still shows the track as
+ *    `NowPlayingItem` (correct — the user has it loaded) and correctly paused (from the
+ *    progress call a few lines later), with no separate handling needed here. A transition
+ *    from playing to paused mid-track needs nothing beyond this either: the next
+ *    already-scheduled tick reports the new state, on the existing 15s cadence — adding an
+ *    immediate out-of-band report on every pause would be a second timer in disguise.
  *
  * `reportProgress`'s three network calls are fire-and-forget with a swallowed `.catch`,
  * matching `audiobookshelfSource`'s own contract above: a failed report leaves Jellyfin's
@@ -201,7 +238,7 @@ export function jellyfinSource(
 
   return {
     reportProgress: {
-      onTick(body) {
+      onTick(body, state) {
         const resolved = resolveQueuePosition(audioTracks, body.currentTime);
         if (!resolved) return;
         if (resolved.itemId !== lastStartedItemId) {
@@ -210,8 +247,14 @@ export function jellyfinSource(
             .reportJellyfinPlaybackStart(resolved.itemId, resolved.positionSeconds)
             .catch(() => undefined);
         }
+        // `isPaused` is the real fix here: without it, a paused track keeps reporting to
+        // Jellyfin as playing for as long as `useProgressSync`'s interval keeps firing
+        // (it fires regardless of play/pause — see that hook's own header), which leaves a
+        // live Jellyfin session showing a track as actively playing indefinitely.
         void api
-          .reportJellyfinPlaybackProgress(resolved.itemId, resolved.positionSeconds)
+          .reportJellyfinPlaybackProgress(resolved.itemId, resolved.positionSeconds, {
+            isPaused: !state.isPlaying,
+          })
           .catch(() => undefined);
       },
       onEnd(body) {

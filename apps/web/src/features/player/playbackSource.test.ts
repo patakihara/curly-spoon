@@ -33,11 +33,28 @@ describe('audiobookshelfSource', () => {
       const api = fakeApi();
       const source = audiobookshelfSource(api, 'item-dune', 'session-1');
 
-      source.reportProgress.onTick(BODY);
+      source.reportProgress.onTick(BODY, { isPlaying: true });
       await Promise.resolve();
 
       expect(api.syncSession).toHaveBeenCalledWith('session-1', BODY);
       expect(api.closeSession).not.toHaveBeenCalled();
+    });
+
+    it('sends the exact same payload whether or not the player is playing — the pause signal is Jellyfin-only, never a field Audiobookshelf sees', async () => {
+      const playing = fakeApi();
+      const paused = fakeApi();
+      audiobookshelfSource(playing, 'item-dune', 'session-1').reportProgress.onTick(BODY, {
+        isPlaying: true,
+      });
+      audiobookshelfSource(paused, 'item-dune', 'session-1').reportProgress.onTick(BODY, {
+        isPlaying: false,
+      });
+      await Promise.resolve();
+
+      expect(playing.syncSession).toHaveBeenCalledWith('session-1', BODY);
+      expect(paused.syncSession).toHaveBeenCalledWith('session-1', BODY);
+      // Same call, same single argument shape — nothing pause-related riding along.
+      expect(playing.syncSession.mock.calls[0]).toEqual(paused.syncSession.mock.calls[0]);
     });
   });
 
@@ -107,7 +124,8 @@ describe('audiobookshelfSource', () => {
 
 describe('noopProgressReporter', () => {
   it('does nothing and never throws, for a source with no progress API wired up yet', () => {
-    expect(() => noopProgressReporter.onTick(BODY)).not.toThrow();
+    expect(() => noopProgressReporter.onTick(BODY, { isPlaying: true })).not.toThrow();
+    expect(() => noopProgressReporter.onTick(BODY, { isPlaying: false })).not.toThrow();
     expect(() => noopProgressReporter.onEnd(BODY)).not.toThrow();
     expect(() => noopProgressReporter.onEnd(null)).not.toThrow();
   });
@@ -158,30 +176,62 @@ describe('jellyfinSource', () => {
       const api = fakeJellyfinApi();
       const source = jellyfinSource(api, ALBUM_QUEUE);
 
-      source.reportProgress.onTick({ currentTime: 130, timeListened: 15, duration: 330 });
+      source.reportProgress.onTick(
+        { currentTime: 130, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
       await Promise.resolve();
 
-      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-b', 30);
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-b', 30, {
+        isPaused: false,
+      });
     });
 
     it('fires a lazy start report on the very first tick, before the progress report', async () => {
       const api = fakeJellyfinApi();
       const source = jellyfinSource(api, ALBUM_QUEUE);
 
-      source.reportProgress.onTick({ currentTime: 30, timeListened: 15, duration: 330 });
+      source.reportProgress.onTick(
+        { currentTime: 30, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
       await Promise.resolve();
 
       expect(api.reportJellyfinPlaybackStart).toHaveBeenCalledWith('jf-track-a', 30);
-      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-a', 30);
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-a', 30, {
+        isPaused: false,
+      });
+    });
+
+    it('still fires the lazy start report on the first tick even while paused — the start report itself carries no pause signal, but the progress report that immediately follows it in the same tick does', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onTick(
+        { currentTime: 30, timeListened: 15, duration: 330 },
+        { isPlaying: false },
+      );
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStart).toHaveBeenCalledWith('jf-track-a', 30);
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-a', 30, {
+        isPaused: true,
+      });
     });
 
     it('does not re-fire the start report on a later tick within the same track', async () => {
       const api = fakeJellyfinApi();
       const source = jellyfinSource(api, ALBUM_QUEUE);
 
-      source.reportProgress.onTick({ currentTime: 10, timeListened: 15, duration: 330 });
+      source.reportProgress.onTick(
+        { currentTime: 10, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
       await Promise.resolve();
-      source.reportProgress.onTick({ currentTime: 50, timeListened: 15, duration: 330 });
+      source.reportProgress.onTick(
+        { currentTime: 50, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
       await Promise.resolve();
 
       expect(api.reportJellyfinPlaybackStart).toHaveBeenCalledTimes(1);
@@ -192,9 +242,15 @@ describe('jellyfinSource', () => {
       const api = fakeJellyfinApi();
       const source = jellyfinSource(api, ALBUM_QUEUE);
 
-      source.reportProgress.onTick({ currentTime: 90, timeListened: 15, duration: 330 });
+      source.reportProgress.onTick(
+        { currentTime: 90, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
       await Promise.resolve();
-      source.reportProgress.onTick({ currentTime: 130, timeListened: 15, duration: 330 });
+      source.reportProgress.onTick(
+        { currentTime: 130, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
       await Promise.resolve();
 
       expect(api.reportJellyfinPlaybackStart).toHaveBeenNthCalledWith(1, 'jf-track-a', 90);
@@ -206,7 +262,7 @@ describe('jellyfinSource', () => {
       const api = fakeJellyfinApi();
       const source = jellyfinSource(api, []);
 
-      source.reportProgress.onTick(BODY);
+      source.reportProgress.onTick(BODY, { isPlaying: true });
       await Promise.resolve();
 
       expect(api.reportJellyfinPlaybackStart).not.toHaveBeenCalled();
@@ -220,8 +276,52 @@ describe('jellyfinSource', () => {
       const source = jellyfinSource(api, ALBUM_QUEUE);
 
       expect(() =>
-        source.reportProgress.onTick({ currentTime: 30, timeListened: 15, duration: 330 }),
+        source.reportProgress.onTick(
+          { currentTime: 30, timeListened: 15, duration: 330 },
+          { isPlaying: true },
+        ),
       ).not.toThrow();
+    });
+
+    it('reports the real pause state — a tick while playing sends isPaused: false, a tick while paused sends isPaused: true', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onTick(
+        { currentTime: 30, timeListened: 15, duration: 330 },
+        { isPlaying: true },
+      );
+      await Promise.resolve();
+      source.reportProgress.onTick(
+        { currentTime: 40, timeListened: 15, duration: 330 },
+        { isPlaying: false },
+      );
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenNthCalledWith(1, 'jf-track-a', 30, {
+        isPaused: false,
+      });
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenNthCalledWith(2, 'jf-track-a', 40, {
+        isPaused: true,
+      });
+    });
+
+    it('regression: a track sitting paused across several ticks never reports as playing — the old bug reported IsPaused: false unconditionally for as long as the interval kept firing', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      for (const currentTime of [10, 10, 10, 10]) {
+        source.reportProgress.onTick(
+          { currentTime, timeListened: 0, duration: 330 },
+          { isPlaying: false },
+        );
+        await Promise.resolve();
+      }
+
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledTimes(4);
+      for (const call of api.reportJellyfinPlaybackProgress.mock.calls) {
+        expect(call[2]).toEqual({ isPaused: true });
+      }
     });
   });
 
