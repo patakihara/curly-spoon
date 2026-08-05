@@ -16,6 +16,7 @@
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { Chip, Icon, ListItem, Skeleton } from '@auralis/ui';
+import { RichDescription } from '../../components/RichDescription.js';
 import { useApi } from '../../api/ApiContext.js';
 import { useItemQuery, useMyProgressQuery, usePlayEpisodeMutation } from '../../api/queries.js';
 import { ApiError } from '../../api/errors.js';
@@ -114,9 +115,11 @@ export function PodcastDetailPage() {
         </div>
       </div>
 
-      {item.media.description ? (
-        <p className="auralis-item-description">{item.media.description}</p>
-      ) : null}
+      <RichDescription
+        html={item.media.description}
+        className="auralis-item-description"
+        data-testid="item-description"
+      />
 
       <section>
         <div

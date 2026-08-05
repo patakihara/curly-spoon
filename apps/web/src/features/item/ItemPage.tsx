@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { Button, LinearProgress } from '@auralis/ui';
+import { RichDescription } from '../../components/RichDescription.js';
 import { useApi } from '../../api/ApiContext.js';
 import { useItemQuery, usePlayItemMutation } from '../../api/queries.js';
 import { ApiError } from '../../api/errors.js';
@@ -93,9 +94,11 @@ export function ItemPage() {
         </div>
       ) : null}
 
-      {item.media.description ? (
-        <p className="auralis-item-description">{item.media.description}</p>
-      ) : null}
+      <RichDescription
+        html={item.media.description}
+        className="auralis-item-description"
+        data-testid="item-description"
+      />
     </div>
   );
 }

@@ -17,7 +17,7 @@
         "series": [{ "id": "series-dune", "name": "Dune", "sequence": "1" }],
         "genres": ["Science Fiction"],
         "publishedYear": "1965",
-        "description": "A story of politics, religion and ecology on the desert planet Arrakis.",
+        "description": "<p><b>A story of politics, religion and ecology on the desert planet Arrakis.<br />\"A towering achievement.\" —A Critic<br /></b>Also available as <a href=\"https://example.com/dune\">large print</a> or via <a href=\"javascript:alert(1)\">this link</a>.</p><script>window.__xss = true;</script>",
         "isbn": "9780441013593"
       },
       "coverPath": "/covers/item-dune.jpg",
