@@ -280,9 +280,8 @@ nothing on `main` is stale — take it.
   persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked). Web UI for music
   requests follows in a separate wave and is **not** claimed yet.
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
-  (Jellyfin progress reporting) have both landed; wave H (shuffle + repeat on Android) is
-  dispatched now. This session stays inside `apps/android/` and is not touching `apps/server/`
-  or `apps/web/`.
+  (Jellyfin progress reporting) and H (shuffle + repeat) have all landed. This session stays
+  inside `apps/android/` and is not touching `apps/server/` or `apps/web/`.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 

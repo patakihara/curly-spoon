@@ -975,6 +975,32 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   `book:`/`episode:` schemes, so audiobooks and podcasts keep reporting to Audiobookshelf
   through their own untouched path.
 
+- **Android wave H — shuffle and repeat: done (`ce15dc2`, merged `dc54085`; fix `f01409f`).**
+  The web equivalent needed a canonical order, a permutation and a cursor built from scratch;
+  Android needed none of it. Media3 already owns queue, shuffle and repeat, so this wave is
+  `Player.shuffleModeEnabled` / `Player.repeatMode` plus the two listener callbacks that report
+  them back, and the only real logic is which mode a tap moves to next. State is read from the
+  controller rather than written optimistically at click time, so the UI cannot drift from what
+  the player actually holds.
+
+  The controls are hidden unless the current item is music, reusing
+  `jellyfinItemIdFromMediaId`'s `track:` prefix gate rather than a second copy of the rule —
+  shuffling a multi-file audiobook would be actively harmful. Repeat's three states get a dynamic
+  content description, since a boolean toggle semantic cannot carry three; the shuffle control is
+  a genuine two-state toggle and uses ordinary `Role.Switch` semantics.
+
+  **A decision, not a defect:** with `REPEAT_MODE_ONE`, each loop fires
+  `onMediaItemTransition`, so the Jellyfin reporter sends a stopped-then-start pair for the same
+  track. Independent review flagged this as spurious. It is kept deliberately — a repeat _is_ a
+  fresh play of that track, and Jellyfin's play history should record it as one. Suppressing it
+  would make repeated plays invisible.
+
+  CI caught one defect review had misread: `nextRepeatMode`'s unknown-mode branch returned
+  `REPEAT_MODE_OFF` while its own doc comment and test said the value is _treated as_ off — which
+  means the tap should yield `ALL`. A tap from an unknown mode therefore did nothing. Fixed in
+  `f01409f`; worth noting that a reviewer reading for intent read the branch as already correct,
+  and only running it settled it.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
