@@ -720,12 +720,15 @@ decision, not on remaining build time — see the bullet at the end of this sect
   passes a UI-only check), reduced motion reaching `scrollIntoView`, and the active line
   actually scrolling. Stable across three consecutive runs; full suite 243/243.
 
-**A real bug that coverage pass found in `packages/ui`, not yet fixed**:
-`Slider.tsx` destructures `data-testid` into `...rest` and then never spreads `...rest` onto
-any rendered node, so the prop is silently dropped — `NowPlaying.tsx`'s
-`data-testid="player-scrubber"` does not exist in the DOM. Nothing had caught it because no
-test drove the scrubber directly. Anything else passed to `Slider` as a pass-through prop is
-dropped the same way.
+**A real bug that coverage pass found in `packages/ui`, now fixed (`a6c61d4`)**:
+`Slider.tsx` collected props into `...rest` and never spread it, so **every** pass-through
+prop was silently dropped — `data-testid` was only how it surfaced, and `aria-label` survived
+by accident because the component hand-plucked that one attribute back out of `rest`. Fixed
+by spreading `rest` last onto the `role="slider"` element, which is what every other component
+in the package already does. Covered by Playwright rather than a unit test, because
+`packages/ui` has **no component-render path in Vitest at all**: the config globs only
+`*.test.ts` under a `node` environment, so a `.tsx` render test would not even be collected.
+No other component in the package has the same bug.
 
 **A repo-wide testing gap this wave surfaced, not caused**: `vitest.config.ts` collects only
 `apps/web/src/**/*.test.ts` in a `node` environment, and neither jsdom/happy-dom nor
