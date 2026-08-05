@@ -9,6 +9,7 @@ import kotlinx.serialization.encodeToString
 import net.auralis.app.data.model.ApiErrorBody
 import net.auralis.app.data.model.AuthUser
 import net.auralis.app.data.model.BookRequest
+import net.auralis.app.data.model.CreateMusicRequestBody
 import net.auralis.app.data.model.CreateRequestBody
 import net.auralis.app.data.model.HomeResponse
 import net.auralis.app.data.model.JellyfinAddToPlaylistBody
@@ -36,6 +37,11 @@ import net.auralis.app.data.model.LoginRequestBody
 import net.auralis.app.data.model.LoginResponse
 import net.auralis.app.data.model.MeResponse
 import net.auralis.app.data.model.MediaProgress
+import net.auralis.app.data.model.MusicCandidate
+import net.auralis.app.data.model.MusicRequest
+import net.auralis.app.data.model.MusicRequestResponse
+import net.auralis.app.data.model.MusicRequestsResponse
+import net.auralis.app.data.model.MusicSearchResult
 import net.auralis.app.data.model.MyProgressResponse
 import net.auralis.app.data.model.OkResponse
 import net.auralis.app.data.model.PlaybackSession
@@ -287,6 +293,53 @@ class ApiClient(
 
     suspend fun deleteRequest(id: String) {
         executeNoContent(Request.Builder().url(apiUrl("/requests/$id")).delete().build())
+    }
+
+    // -----------------------------------------------------------------------------
+    // Music requests (routes/musicRequests.ts) — Android wave K. Only search/list/create/
+    // retry/delete are wired into a screen (net.auralis.app.features.musicrequests); approve/
+    // reject/grab are included here for parity with the book pipeline's ApiClient surface but
+    // stay unused, exactly like approveRequest/rejectRequest/grabRequest above — approval
+    // defaults to automatic (see docs/HANDOVER.md's phase-6 decisions) and grab already runs
+    // as part of retry.
+    // -----------------------------------------------------------------------------
+
+    suspend fun searchMusicRequests(
+        term: String,
+        limit: Int? = null,
+    ): MusicSearchResult {
+        val params =
+            buildMap {
+                put("term", term)
+                limit?.let { put("limit", it.toString()) }
+            }
+        return get("/music-requests/search", params)
+    }
+
+    suspend fun listMusicRequests(status: String? = null): List<MusicRequest> {
+        val params = status?.let { mapOf("status" to it) } ?: emptyMap()
+        return get<MusicRequestsResponse>("/music-requests", params).requests
+    }
+
+    suspend fun createMusicRequest(candidate: MusicCandidate): MusicRequest =
+        post<CreateMusicRequestBody, MusicRequestResponse>("/music-requests", CreateMusicRequestBody(candidate)).request
+
+    suspend fun getMusicRequest(id: String): MusicRequest = get<MusicRequestResponse>("/music-requests/$id").request
+
+    suspend fun approveMusicRequest(id: String): MusicRequest =
+        postNoBody<MusicRequestResponse>("/music-requests/$id/approve").request
+
+    suspend fun rejectMusicRequest(id: String): MusicRequest =
+        postNoBody<MusicRequestResponse>("/music-requests/$id/reject").request
+
+    suspend fun retryMusicRequest(id: String): MusicRequest =
+        postNoBody<MusicRequestResponse>("/music-requests/$id/retry").request
+
+    suspend fun grabMusicRequest(id: String): MusicRequest =
+        postNoBody<MusicRequestResponse>("/music-requests/$id/grab").request
+
+    suspend fun deleteMusicRequest(id: String) {
+        executeNoContent(Request.Builder().url(apiUrl("/music-requests/$id")).delete().build())
     }
 
     // -----------------------------------------------------------------------------
