@@ -97,11 +97,21 @@ data class MusicSearchUiState(
  * properties at once, the same way `PodcastsViewModel.submitSearch`'s own `searchJob` already
  * does for an explicit-submit search: rapid typing never sends more than the one request the
  * text eventually settles on (nothing before that survives to fire), and a slower, already
- * in-flight response for an earlier term can never overwrite a newer one's result — cancelling a
- * coroutine that is suspended awaiting that response (whether still in `delay()` or already
- * inside [MusicRepository.search]'s own network call) throws into it at its next suspension
- * point rather than letting it run to a stale `_uiState` write, a standard structured-concurrency
- * guarantee this class relies on rather than re-implements.
+ * in-flight response for an earlier term does not become the lasting result — cancelling a
+ * coroutine suspended awaiting that response (whether still in `delay()` or inside
+ * [MusicRepository.search]'s own network call) normally throws into it rather than letting it
+ * run to a stale `_uiState` write, a standard structured-concurrency guarantee this class
+ * relies on rather than re-implements.
+ *
+ * "Normally", not "always", and the difference is worth stating precisely. [MusicRepository]
+ * reaches a *blocking* OkHttp call inside `withContext(Dispatchers.IO)`, so the request itself
+ * always runs to completion once started; what cancellation actually stops is the resumption
+ * back onto Main. If the older request's resumption is already queued on Main *before* the
+ * newer keystroke's `cancel()` runs, that older job is still active when its resumption is
+ * processed and it does write its superseded results. That write is same-frame and
+ * self-correcting — `onQueryChange` sets `Searching` immediately after — so it can flicker but
+ * can never be the state the user is left looking at. Sequence numbers would close it
+ * outright; they are not worth the machinery for a frame.
  */
 class MusicSearchViewModel(
     private val musicRepository: MusicRepository,
