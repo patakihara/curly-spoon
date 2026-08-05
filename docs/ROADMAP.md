@@ -675,6 +675,22 @@ decision, not on remaining build time — see the bullet at the end of this sect
   `ProgressSyncBody` carries no pause signal — it affects Jellyfin's own UI hints, not resume
   correctness.
 
+- **Android wave A — music data layer: done (`821ec42`, merged `924cc2c`).** Android had no
+  music at all. This is the data layer only, deliberately: DTOs, `ApiClient` methods against
+  the existing `/jellyfin/*` BFF routes, a `MusicRepository` and its `AppContainer` wiring —
+  no Composable, no ViewModel, no nav entry, so the UI wave builds against a surface that
+  already exists and is unit-tested. Written blind like every `apps/android` change here (no
+  JDK/SDK/Gradle on this machine); the Android workflow compiled it green on the merge commit,
+  which is the only real signal. Independent review confirmed the DTOs match
+  `packages/jellyfin-client/src/domain.ts` field-for-field and the query parameters match
+  `routes/schemas.ts` param-for-param — the pagination field is `total`, not Jellyfin's own
+  `TotalRecordCount`, which the BFF already normalizes away. The stream URL builder targets
+  the BFF's proxied route and is asserted token-free, and the login DTO has no token field at
+  all, so no Jellyfin credential is ever persisted Android-side. Result types are non-generic
+  per call (`ArtistsPageResult`/`AlbumsPageResult`/`TracksPageResult`) rather than one generic
+  page type: the generic version star-projects to `List<*>` at the call site and does not
+  compile, and every other sealed result in the app is non-generic too.
+
 **One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
 not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
 so a *paused* track still ticks. For audiobooks that is harmless (it re-reports the same
