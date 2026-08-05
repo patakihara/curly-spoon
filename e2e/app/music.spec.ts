@@ -22,9 +22,17 @@
  * `routes/jellyfin.ts`), not scoped to the signed-in Auralis session — the
  * same "BFF is single-tenant and stateful" fact `requests.spec.ts` and
  * `onboarding.spec.ts` are built around (`docs/HANDOVER.md` §4). So, like
- * `requests.spec.ts`, this file opts into `serial` mode: the first tests
- * establish the unconfigured state and then connect, and every later test
- * depends on that connection already being in place.
+ * `requests.spec.ts`, this file opts into `serial` mode: the first test
+ * connects, and every later test depends on that connection already being in
+ * place.
+ *
+ * It does **not** assert the unconfigured state first, and must not: `serial`
+ * orders tests within this file, not across files, so a second file doing the
+ * same thing races it on any run with more than one worker. Every
+ * unconfigured-state assertion lives in `jellyfin-unconfigured.spec.ts`, in a
+ * project the `app` project depends on. Connecting here is idempotent —
+ * `POST /jellyfin/config` overwrites — so it is safe whether or not another
+ * file in this project has already connected.
  */
 import { expect, test } from '@playwright/test';
 
@@ -56,20 +64,10 @@ const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
 const FAKE_JELLYFIN_USERNAME = 'nova';
 const FAKE_JELLYFIN_PASSWORD = 'stardust1';
 
-test('an unconfigured Jellyfin sends /music to the connect prompt, not an empty library', async ({
-  page,
-}) => {
-  // Signed in already, via the `app` project's `storageState`.
-  await page.goto('/settings');
-  await expect(page.getByTestId('jellyfin-status-disconnected')).toBeVisible();
-
-  await page.goto('/music');
-  await expect(page.getByTestId('music-page')).toBeVisible();
-  await expect(page.getByTestId('music-unconfigured')).toBeVisible();
-
-  await page.getByTestId('music-connect-cta').click();
-  await expect(page.getByTestId('settings-page')).toBeVisible();
-});
+// The unconfigured-state assertions this file used to open with now live in
+// `jellyfin-unconfigured.spec.ts`, in its own project — see that file's header.
+// Nothing below may assume Jellyfin is disconnected on entry: another file in
+// this project may already have connected it.
 
 test('connecting Jellyfin from Settings shows a connected status', async ({ page }) => {
   await page.goto('/settings');

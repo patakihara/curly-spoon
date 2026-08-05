@@ -13,9 +13,16 @@
  *
  * Jellyfin's connect state is process-global, not scoped to the signed-in
  * session (`music.spec.ts`'s header explains why), so — like that file — this
- * one runs `serial`: the first test asserts the still-unconfigured state
- * before anything here has connected Jellyfin, and every later test relies on
- * the connection the second test establishes.
+ * one runs `serial`: the first test connects, and every later test relies on
+ * that connection.
+ *
+ * It does **not** assert the unconfigured state first. It used to, and so did
+ * `music.spec.ts`; `serial` orders tests within a file but not across files, so
+ * the two raced as soon as CI ran with two workers and this file's opening
+ * assertion failed against a Jellyfin the other had already connected. Those
+ * assertions now live in `jellyfin-unconfigured.spec.ts`, in a project the
+ * `app` project depends on. Connecting here is idempotent, so it is safe
+ * whether or not another file has already connected.
  */
 import { expect, test } from '@playwright/test';
 
@@ -25,26 +32,9 @@ const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
 const FAKE_JELLYFIN_USERNAME = 'nova';
 const FAKE_JELLYFIN_PASSWORD = 'stardust1';
 
-test('no music section renders while Jellyfin is unconfigured, even for a matching term', async ({
-  page,
-}) => {
-  // Signed in already, via the `app` project's `storageState`.
-  await page.goto('/settings');
-  await expect(page.getByTestId('jellyfin-status-disconnected')).toBeVisible();
-
-  await page.goto('/search');
-  await page.getByTestId('search-field').getByRole('combobox').fill('dune');
-
-  await expect(page.getByTestId('search-results-books')).toBeVisible();
-  await expect(page.getByTestId('search-result-item-dune')).toBeVisible();
-  await expect(page.getByTestId('search-results-music')).toHaveCount(0);
-
-  // The status line stays in its original two-part shape — no music mention,
-  // no fired-and-discarded Jellyfin request to reason about.
-  await expect(page.getByTestId('search-status')).toContainText(
-    '1 book, 0 podcasts found for "dune".',
-  );
-});
+// The unconfigured-state assertion this file used to open with now lives in
+// `jellyfin-unconfigured.spec.ts`, in its own project — see that file's header.
+// Nothing below may assume Jellyfin is disconnected on entry.
 
 test('connecting Jellyfin from Settings', async ({ page }) => {
   await page.goto('/settings');

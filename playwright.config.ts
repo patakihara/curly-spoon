@@ -53,11 +53,13 @@ const APP_SESSION_SECRET = 'e2e-only-not-a-real-secret-32chars-min';
 const APP_AUTH_STATE = './e2e/.auth/app-user.json';
 
 /**
- * Four projects:
+ * Five projects:
  *  - `ui-desktop`/`ui-mobile` — component and design-system tests, rendered from
  *    static fixtures.
  *  - `app-onboarding` — the flows that need a server nothing has configured yet.
- *  - `app` — everything else, which runs after onboarding has configured it.
+ *  - `app-jellyfin-unconfigured` — the assertions that need Jellyfin not yet
+ *    connected, for the same single-tenant reason one level down.
+ *  - `app` — everything else, which runs after both have run.
  *
  * Mobile and desktop viewports are both exercised because the shell is adaptive:
  * the navigation and Now Playing layouts genuinely differ between them.
@@ -155,20 +157,41 @@ export default defineConfig({
       },
     },
     {
+      // Every assertion that needs Jellyfin *not* connected. Same shape as
+      // `app-onboarding` one level down: Jellyfin's config row is process-global,
+      // so the first spec that connects it destroys the unconfigured state for
+      // every other spec. `describe.serial` cannot express this — it orders tests
+      // within a file, and Playwright still runs different files on different
+      // workers — which is exactly how `music.spec.ts` and `search-music.spec.ts`
+      // came to race on CI. See `e2e/app/jellyfin-unconfigured.spec.ts`.
+      name: 'app-jellyfin-unconfigured',
+      testDir: './e2e/app',
+      testMatch: /jellyfin-unconfigured\.spec\.ts$/,
+      dependencies: ['app-onboarding'],
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        launchOptions,
+        baseURL: APP_URL,
+        storageState: APP_AUTH_STATE,
+      },
+    },
+    {
       name: 'app',
       testDir: './e2e/app',
-      testIgnore: /onboarding\.spec\.ts$/,
-      // The one ordering constraint in the suite, made explicit rather than
-      // hoped for. `POST /api/v1/setup` writes single-tenant server state, so
-      // the first spec that signs in configures the server for every other spec
-      // sharing this `webServer`. Onboarding is the only file that asserts on
-      // the *unconfigured* state, so it runs as its own project and everything
-      // else declares a dependency on it: Playwright then finishes that project
-      // entirely before starting this one, instead of `fullyParallel` racing
-      // them. That dependency also produces `storageState` — see below — so it
-      // is load-bearing twice over. Files in *this* project are otherwise
-      // order-independent.
-      dependencies: ['app-onboarding'],
+      testIgnore: /(onboarding|jellyfin-unconfigured)\.spec\.ts$/,
+      // The ordering constraints in the suite, made explicit rather than hoped
+      // for. `POST /api/v1/setup` writes single-tenant server state, so the first
+      // spec that signs in configures the server for every other spec sharing
+      // this `webServer`; `POST /jellyfin/config` is single-tenant the same way.
+      // Both unconfigured-state assertions therefore live in their own projects
+      // and everything else declares a dependency on them: Playwright finishes a
+      // dependency project entirely before starting this one, instead of
+      // `fullyParallel` racing them. The onboarding dependency also produces
+      // `storageState` — see below — so it is load-bearing twice over. Files in
+      // *this* project are otherwise order-independent, and each must make its
+      // own preconditions true rather than inherit them from another file.
+      dependencies: ['app-onboarding', 'app-jellyfin-unconfigured'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 900 },
