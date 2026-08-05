@@ -1477,7 +1477,7 @@ Findings that stand independently of that decision:
   `values/` — no `mipmap-*` at anything — and the `<application>` tag sets no `android:icon`, so
   it ships with Android's default. Not a build error, which is why nothing has caught it; it is
   a missing asset, and it blocks every distribution route equally. It also needs a design
-  decision about what the icon *is*, so it is not a mechanical fix.
+  decision about what the icon _is_, so it is not a mechanical fix.
 - **Reproducible builds are a best practice for official F-Droid, not a hard gate** — the
   `AllowedAPKSigningKeys`/`Binaries` mechanism lets a project ship its own signed binaries
   verified against an F-Droid-built one. That is less disruptive to our Gradle config than the

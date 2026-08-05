@@ -81,9 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T18:13:06Z` · `a2f64ce34080707a3` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a2f64ce34080707a3' @ '2c1b476', based on 'origin/main''s 'f0c6e8d'. Working tree clean, not pushed. **Fi…
-- `2026-08-05T18:18:01Z` · `a269bc8240faac80c` · general-purpose · ended · Both runs for '2c1b476' are still in_progress — none failed, so no 'gh run view' per the budget rule. Not polling further. Review complete. Summary b…
-- `2026-08-05T18:24:41Z` · `a63cd56eb719ac304` · general-purpose · ended · Background agent launched to fix the web-side music queue artist-attribution bug in an isolated worktree. I'll report back once it completes.
 - `2026-08-05T18:25:13Z` · `a9337a39798847e4d` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a9337a39798847e4d' @ '226fcd5' **Files changed:** - 'apps/web/src/api/types.ts' — added 'AudioTrack.arti…
 - `2026-08-05T18:31:46Z` · `a63cd56eb719ac304` · general-purpose · ended · Review agent launched to independently verify the merged fix (commit '226fcd5'). I'll report once it comes back and, if clean, proceed to push and up…
 - `2026-08-05T18:33:21Z` · `ac7df0ceb12354a20` · general-purpose · ended · All 8 points check out. Summary: 1. **Precedence** — correct. 'playerUi.ts' 'playerDisplayMeta': 'secondary: params.currentTrackArtist || params.auth…
@@ -93,9 +90,12 @@ in-context scan of the current one.
 - `2026-08-05T21:21:39Z` · `a907d5ff4e6be11b5` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a907d5ff4e6be11b5' @ '0ed8304', based on 'origin/main''s 'ac1639e'. Working tree clean, not pushed. **2.…
 - `2026-08-05T21:22:48Z` · `a3c70047c964a822f` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a3c70047c964a822f' @ '8311278', base…
 - `2026-08-05T21:23:23Z` · `a32ff662d30f3d46e` · general-purpose · ended · ## Findings: AbleMusicPlayer (uditkarode/AbleMusicPlayer, master) **1. The source, in one paragraph.** AbleMusicPlayer plays audio ripped from **YouT…
-- `2026-08-05T22:46:13Z` · `a86e71de6b0b9208a` · general-purpose · running · —
+- `2026-08-05T22:46:13Z` · `a86e71de6b0b9208a` · general-purpose · ended · Clean working tree, no leaked processes or temp directories. Work is complete and committed. ## Report **Branch/commit**: 'worktree-agent-a86e71de6b0…
 - `2026-08-05T23:14:46Z` · `ab77262198a5f1013` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-ab77262198a5f1013' @ 'beaebf2', based on '950f3cb'. Not pushed. Only 'docs/research/FDROID_DISTRIBUTION.…
 - `2026-08-05T23:20:58Z` · `ad9a7605ea9fb8f35` · general-purpose · ended · That confirms the self-reference is the only occurrence — no actual "do not touch" list exists anywhere in the document. **Verdict: merge with named…
+- `2026-08-05T23:25:54Z` · `adecb0141289e1db1` · general-purpose · running · —
+- `2026-08-05T23:35:19Z` · `ae8e40cc1197402e6` · general-purpose · running · —
+- `2026-08-05T23:35:28Z` · `a91ca918da4364ef2` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -256,7 +256,7 @@ Treat these as standing instructions, not one-off remarks.
 | 6     | Book requests                                           | done        |
 | 7     | Android — audiobooks, requests, Auto, offline downloads | done        |
 | 8     | Podcasts — backend, web, Android                        | done        |
-| 9     | Music — Jellyfin, lyrics, requests (web + Android)       | done        |
+| 9     | Music — Jellyfin, lyrics, requests (web + Android)      | done        |
 | 10    | Release polish — perf budgets, a11y audit               | in progress |
 | 11    | F-Droid / Droid-ify distribution                        | not started |
 
@@ -321,11 +321,6 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-- **2026-08-06** — phase 10, Lighthouse performance budgets (`scripts/`, `.github/workflows/ci.yml`).
-  **Held by a live agent in another session**, verified 2026-08-05T23:12Z: worktree
-  `.claude/worktrees/agent-a86e71de6b0b9208a` has uncommitted `scripts/lighthouse-budget.*`,
-  a modified `ci.yml`, and a headless Chrome actually running under it. Do not touch
-  `scripts/` or `.github/workflows/ci.yml` until that lands.
 - **2026-08-06** — phase 10, the holistic `docs/DESIGN.md` reference-app comparison, web
   surfaces only (`docs/research/`). Audit only, no code changes.
 
@@ -361,6 +356,23 @@ user's: ask IzzyOnDroid rather than assume, disclose or not, self-host instead, 
 whole route is not worth it. `ROADMAP.md` §11 has the rest, including two findings that hold
 regardless of the answer — the Android dependencies clear the FOSS bar outright, and the app
 has no launcher icon at all.
+
+### The mobile Lighthouse score is 62, and that is the phase 10 finding (2026-08-06)
+
+The Lighthouse budgets landed (`6f0d466`) and pass, but the number they pin is not a good one.
+On simulated mobile hardware and network the app scores **0.62**, with first contentful paint
+at ~6.1s and largest contentful paint at ~6.5s. Desktop is fine (0.95, ~1.1s FCP). Blocking
+time is near zero and layout shift is zero, so nothing is janky — it is purely how much has to
+arrive before anything renders.
+
+The cause is already documented next to the bundle budget: the entry chunk is ~949 KB raw /
+248 KB gzip, because the app shell uses `@auralis/ui` (and so Mantine, React, react-query, the
+router, zustand and `material-color-utilities`) eagerly. Route-level splitting already exists
+and is working — the largest lazy chunk is 13 KB. The entry chunk is the whole story.
+
+The budget is deliberately set as a **floor at the current value**, not an aspiration. It stops
+this getting worse; making it better is real work — vendor `manualChunks`, or making the shell
+itself lazier — and it is the obvious next phase 10 wave.
 
 ### A subagent pushed to `main` after being told not to (2026-08-05)
 
