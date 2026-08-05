@@ -126,7 +126,7 @@ someone restarts it; a quiet repo here is not evidence of a crash.
 
 The dirty-tree incident earlier drafts of this section described (uncommitted phase 5/5a
 work left behind mid-phase) is long since reconciled — the checkout is clean and tracks
-`origin/claude/media-client-app-k7v9by`. The one durable lesson from it: **the shared
+`origin/main`. The one durable lesson from it: **the shared
 checkout is where the user edits**, so a `git status` before any destructive git command
 (`reset --hard`, `clean -fd`) is a real check, not a formality — it can lead as well as lag.
 
@@ -145,7 +145,7 @@ pnpm install --frozen-lockfile        # a new worktree has no node_modules
 Push with an explicit refspec — a worktree branch has no upstream:
 
 ```bash
-git push origin <name>:claude/media-client-app-k7v9by
+git push origin <name>:main
 ```
 
 `.claude/worktrees/` is gitignored as of `07ce0c3`; git does not auto-ignore a nested
@@ -326,8 +326,15 @@ wrapper) is what every phase 7 wave built on. Still no JDK/SDK/Gradle on this ma
 `apps/android` compiles on CI only — check the `Android` workflow after any `apps/android`
 change.
 
-`docs/ROADMAP.md` is the source of truth for status. Everything is on the branch
-**`claude/media-client-app-k7v9by`**; do not push elsewhere without asking.
+`docs/ROADMAP.md` is the source of truth for status. Everything is on **`main`**; do not
+push elsewhere without asking.
+
+**The delivery branch moved to `main` on 2026-08-05.** It was
+`claude/media-client-app-k7v9by` — an agent-generated name that had become the integration
+branch by accident and was baked into `ci.yml`'s publish gate, `scripts/hooks/worktree-gc.sh`
+and four docs. `main` was an ancestor of it (nothing but the initial commit), so the move was
+a fast-forward, not a rewrite: **every sha in this file and in `ROADMAP.md` is still valid.**
+If you find the old name anywhere, it is a leftover — replace it.
 
 **Check `docs/agent-specs/`.** Subagent specs written but never launched — usually because
 the usage gate closed first — are parked there, and each one that exists should be listed

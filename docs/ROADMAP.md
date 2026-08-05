@@ -1,6 +1,6 @@
 # Auralis — Roadmap
 
-Delivery is phase by phase; each phase lands on `claude/media-client-app-k7v9by` as a
+Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
 | #   | Phase                                                           | Status      |

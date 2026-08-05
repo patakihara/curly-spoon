@@ -94,11 +94,14 @@ jobs:
     name: Publish image to GHCR
     needs: [static, unit, container]
     runs-on: ubuntu-latest
-    # Push events only, and only for the branch this project actually delivers on — there
-    # is no `main`-based release flow yet (see docs/ROADMAP.md phase 10), so this reads as
-    # a deliberate interim choice, not an oversight, once that phase adds one. A pull_request
-    # run has no write-scoped GITHUB_TOKEN and must never attempt this.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/claude/media-client-app-k7v9by'
+    # Push events only, and only on `main` — the branch this project delivers on. A
+    # pull_request run has no write-scoped GITHUB_TOKEN and must never attempt this.
+    #
+    # This gate is coupled to a live deployment and the coupling is not obvious: the
+    # mediaserver box auto-updates from `:latest`, so a red build here is silently a frozen
+    # container there. Nothing alerts on it. If `publish` stops running, that is the thing
+    # to check first.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       packages: write
       contents: read

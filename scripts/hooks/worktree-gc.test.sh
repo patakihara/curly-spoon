@@ -29,12 +29,12 @@ ok() {
   passed=$((passed + 1))
 }
 
-# A fresh bare-bones repo, branch claude/media-client-app-k7v9by (the real
+# A fresh bare-bones repo, branch main (the real
 # integration branch name), one commit. Returns the repo's path.
 new_repo() {
   local dir
   dir="$(mktemp -d)"
-  git init -q -b claude/media-client-app-k7v9by "$dir" >/dev/null
+  git init -q -b main "$dir" >/dev/null
   git -C "$dir" config user.email test@example.com
   git -C "$dir" config user.name test
   echo seed >"$dir/seed.txt"

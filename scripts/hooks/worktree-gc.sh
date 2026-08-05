@@ -109,7 +109,7 @@
 #
 #   AURALIS_WORKTREE_GC_BRANCH         integration branch worktree HEADs are
 #                                       tested as an ancestor of (default:
-#                                       claude/media-client-app-k7v9by)
+#                                       main)
 #   AURALIS_WORKTREE_GC_BRANCH_PREFIX  branch-name prefix considered for the
 #                                       orphan-branch pass (default:
 #                                       worktree-agent-)
@@ -157,7 +157,7 @@ MAIN_CHECKOUT="$(dirname "$GIT_COMMON_DIR")"
 
 GIT_TIMEOUT="${AURALIS_WORKTREE_GC_GIT_TIMEOUT:-30}"
 MIN_AGE="${AURALIS_WORKTREE_GC_MIN_AGE:-86400}"
-TARGET_BRANCH="${AURALIS_WORKTREE_GC_BRANCH:-claude/media-client-app-k7v9by}"
+TARGET_BRANCH="${AURALIS_WORKTREE_GC_BRANCH:-main}"
 PREFIX="${AURALIS_WORKTREE_GC_BRANCH_PREFIX:-worktree-agent-}"
 SHARED_LOG="${AURALIS_AGENT_LOG_SHARED:-$GIT_COMMON_DIR/auralis-agent-log.jsonl}"
 LOG_FILE="${AURALIS_WORKTREE_GC_LOG:-${XDG_STATE_HOME:-${HOME:-}/.local/state}/auralis-respawn/worktree-gc.log}"

@@ -222,7 +222,7 @@ without the answer — keep going on that part rather than blocking.
 ## Delivery
 
 - Deliver **phase by phase**; keep `docs/ROADMAP.md` statuses current as you go.
-- Branch: `claude/media-client-app-k7v9by`. Do not push elsewhere without asking.
+- Branch: `main`. Do not push elsewhere without asking.
 - Commit messages explain the reasoning, not just the change.
 
 ### Definition of done
