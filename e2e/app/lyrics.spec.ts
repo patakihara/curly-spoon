@@ -106,8 +106,11 @@ test.beforeEach(async ({ page }) => {
  * right — the driftwave crossing test below distinguishes 3s from 4s, well under one
  * rendered pixel's worth of a multi-hundred-second track.
  *
- * Located by ARIA role/name, not by `data-testid="player-scrubber"` — see this file's own
- * findings for why: that `data-testid` is never actually rendered.
+ * Located by ARIA role/name rather than by `data-testid="player-scrubber"`. That test id was
+ * genuinely missing from the DOM when this spec was written — `Slider` dropped every
+ * pass-through prop — and it renders correctly now that `a6c61d4` fixed that. The role-based
+ * locator is kept anyway: it asserts the scrubber is reachable the way a screen reader
+ * reaches it, which is the stronger claim.
  */
 async function seekToSeconds(page: Page, seconds: number) {
   const slider = page.getByRole('slider', { name: 'Seek' });
