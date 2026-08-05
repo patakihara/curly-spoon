@@ -175,7 +175,7 @@ class ArtistDetailViewModelTest {
     // -----------------------------------------------------------------------------
 
     @Test
-    fun `toggleArtistFavorite flips optimistically, then reconciles against the server's own answer`() =
+    fun `toggleArtistFavorite reconciles against the server's own answer, not the optimistic guess`() =
         runTest {
             mockWebServer.enqueue(
                 albumsPageResponse(total = 1, items = """[{"id":"alb1","name":"OK Computer","artistName":"Radiohead"}]"""),
@@ -185,13 +185,16 @@ class ArtistDetailViewModelTest {
             viewModel.load()
             viewModel.uiState.first { it !is ArtistDetailUiState.Loading }
 
+            // The server disagrees with the requested state (true) and answers false — see
+            // AlbumDetailViewModelTest's identical toggle test for why the momentary optimistic
+            // flip isn't asserted here: the `UnconfinedTestDispatcher` shared by `Dispatchers.Main`
+            // and `ApiClient`'s own IO dispatcher (see setUp) makes the whole toggle run inline,
+            // so `.value` is already the settled, reconciled state by the time this call returns.
             mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
             viewModel.toggleArtistFavorite()
 
-            assertTrue((viewModel.uiState.value as ArtistDetailUiState.Loaded).artistFavorite)
-
-            val settled = viewModel.uiState.first { (it as? ArtistDetailUiState.Loaded)?.artistFavorite == false }
-            assertFalse((settled as ArtistDetailUiState.Loaded).artistFavorite)
+            val settled = viewModel.uiState.value as ArtistDetailUiState.Loaded
+            assertFalse(settled.artistFavorite)
         }
 
     @Test
@@ -212,9 +215,12 @@ class ArtistDetailViewModelTest {
             )
             viewModel.toggleArtistFavorite()
 
-            assertTrue((viewModel.uiState.value as ArtistDetailUiState.Loaded).artistFavorite)
-
-            val settled = viewModel.uiState.first { (it as? ArtistDetailUiState.Loaded)?.artistFavorite == false }
-            assertFalse((settled as ArtistDetailUiState.Loaded).artistFavorite)
+            // As above: the synchronous test dispatchers run the optimistic flip (to true), the
+            // failing request, and the rollback all inline before this call returns. Asserted
+            // directly against `.value` rather than via `.first {}` — this still pins the rollback
+            // itself: without it, the optimistic write to true would be the last write, and the
+            // assertion below (expecting the original `false`) would fail.
+            val settled = viewModel.uiState.value as ArtistDetailUiState.Loaded
+            assertFalse(settled.artistFavorite)
         }
 }
