@@ -23,6 +23,9 @@ import net.auralis.app.features.downloads.DownloadsScreen
 import net.auralis.app.features.login.LoginScreen
 import net.auralis.app.features.home.HomeScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
+import net.auralis.app.features.music.AlbumDetailScreen
+import net.auralis.app.features.music.ArtistDetailScreen
+import net.auralis.app.features.music.MusicLibraryScreen
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.features.podcasts.PodcastDetailScreen
 import net.auralis.app.features.podcasts.PodcastsScreen
@@ -36,6 +39,7 @@ object Routes {
     const val REQUESTS = "requests"
     const val DOWNLOADS = "downloads"
     const val PODCASTS = "podcasts"
+    const val MUSIC = "music"
 
     /** Argument name within [PODCAST_DETAIL_PATTERN] — the podcast library item's id. */
     const val PODCAST_DETAIL_ARG_ITEM_ID = "itemId"
@@ -46,6 +50,22 @@ object Routes {
 
     /** The concrete route to `navController.navigate(...)` for one podcast's detail screen. */
     fun podcastDetail(itemId: String): String = "podcast/$itemId"
+
+    /** Argument name within [MUSIC_ARTIST_DETAIL_PATTERN] — the Jellyfin artist item's id. */
+    const val MUSIC_ARTIST_DETAIL_ARG_ARTIST_ID = "artistId"
+    private const val MUSIC_ARTIST_DETAIL_PATTERN = "music/artist/{$MUSIC_ARTIST_DETAIL_ARG_ARTIST_ID}"
+
+    fun musicArtistDetailRoute(): String = MUSIC_ARTIST_DETAIL_PATTERN
+
+    fun musicArtistDetail(artistId: String): String = "music/artist/$artistId"
+
+    /** Argument name within [MUSIC_ALBUM_DETAIL_PATTERN] — the Jellyfin album item's id. */
+    const val MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID = "albumId"
+    private const val MUSIC_ALBUM_DETAIL_PATTERN = "music/album/{$MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID}"
+
+    fun musicAlbumDetailRoute(): String = MUSIC_ALBUM_DETAIL_PATTERN
+
+    fun musicAlbumDetail(albumId: String): String = "music/album/$albumId"
 }
 
 /**
@@ -98,6 +118,27 @@ fun AuralisNavHost(
                         backStackEntry.arguments?.getString(Routes.PODCAST_DETAIL_ARG_ITEM_ID)
                             ?: return@composable
                     PodcastDetailScreen(container, playerViewModel, itemId)
+                }
+                composable(Routes.MUSIC) { MusicLibraryScreen(container, navController) }
+                composable(
+                    Routes.musicArtistDetailRoute(),
+                    arguments =
+                        listOf(navArgument(Routes.MUSIC_ARTIST_DETAIL_ARG_ARTIST_ID) { type = NavType.StringType }),
+                ) { backStackEntry ->
+                    val artistId =
+                        backStackEntry.arguments?.getString(Routes.MUSIC_ARTIST_DETAIL_ARG_ARTIST_ID)
+                            ?: return@composable
+                    ArtistDetailScreen(container, navController, artistId)
+                }
+                composable(
+                    Routes.musicAlbumDetailRoute(),
+                    arguments =
+                        listOf(navArgument(Routes.MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID) { type = NavType.StringType }),
+                ) { backStackEntry ->
+                    val albumId =
+                        backStackEntry.arguments?.getString(Routes.MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID)
+                            ?: return@composable
+                    AlbumDetailScreen(container, albumId)
                 }
             }
         }
