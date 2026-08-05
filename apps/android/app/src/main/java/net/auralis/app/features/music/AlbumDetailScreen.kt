@@ -1,5 +1,6 @@
 package net.auralis.app.features.music
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,12 +15,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,18 +33,27 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import net.auralis.app.AppContainer
+import net.auralis.app.features.player.PlayerUiState
+import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.util.formatDuration
 
 /**
  * One album's tracks, in track order (`music/album/{albumId}`). Reached from
- * [MusicLibraryScreen]'s albums list or [ArtistDetailScreen]'s album list. Track rows are
- * deliberately non-interactive — no play button, no tap handler — playback is a later wave;
- * see [AlbumDetailViewModel]'s own doc comment.
+ * [MusicLibraryScreen]'s albums list or [ArtistDetailScreen]'s album list.
+ *
+ * Tapping a track plays it and every track after it, in order, through [playerViewModel] — the
+ * same shared controller every other playback surface in this app uses (see
+ * [net.auralis.app.navigation.AuralisNavHost]'s own doc comment on why it's constructed once, at
+ * the nav host's scope), so the persistent mini player and lock-screen/notification metadata
+ * work for a music track exactly as they already do for a book or episode. Failures surface the
+ * same way [net.auralis.app.features.podcasts.PodcastDetailScreen] already does: a snackbar
+ * driven by [PlayerUiState.Error], not a state this screen invents its own handling for.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
     container: AppContainer,
+    playerViewModel: PlayerViewModel,
     albumId: String,
 ) {
     val viewModel: AlbumDetailViewModel =
@@ -53,8 +66,17 @@ fun AlbumDetailScreen(
                 },
         )
     val uiState by viewModel.uiState.collectAsState()
+    val playerUiState by playerViewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(albumId) { viewModel.load() }
+
+    LaunchedEffect(playerUiState) {
+        val state = playerUiState
+        if (state is PlayerUiState.Error) {
+            snackbarHostState.showSnackbar(state.message)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -62,6 +84,7 @@ fun AlbumDetailScreen(
                 title = { Text((uiState as? AlbumDetailUiState.Loaded)?.albumName ?: "Album") },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (val state = uiState) {
             is AlbumDetailUiState.Loading ->
@@ -89,6 +112,7 @@ fun AlbumDetailScreen(
                     imageLoader = container.imageLoader,
                     state = state,
                     onLoadMore = viewModel::loadMoreTracks,
+                    onTrackClick = { track -> playerViewModel.playQueue { viewModel.buildQueueFrom(track) } },
                 )
         }
     }
@@ -100,6 +124,7 @@ private fun AlbumDetailContent(
     imageLoader: ImageLoader,
     state: AlbumDetailUiState.Loaded,
     onLoadMore: () -> Unit,
+    onTrackClick: (MusicTrackUi) -> Unit,
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
@@ -121,7 +146,7 @@ private fun AlbumDetailContent(
         }
 
         items(state.tracks, key = { it.id }) { track ->
-            TrackRow(track)
+            TrackRow(track, onClick = { onTrackClick(track) })
         }
 
         if (state.hasMore) {
@@ -139,9 +164,12 @@ private fun AlbumDetailContent(
 }
 
 @Composable
-private fun TrackRow(track: MusicTrackUi) {
+private fun TrackRow(
+    track: MusicTrackUi,
+    onClick: () -> Unit,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

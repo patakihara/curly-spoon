@@ -138,7 +138,7 @@ fun AuralisNavHost(
                     val albumId =
                         backStackEntry.arguments?.getString(Routes.MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID)
                             ?: return@composable
-                    AlbumDetailScreen(container, albumId)
+                    AlbumDetailScreen(container, playerViewModel, albumId)
                 }
             }
         }
