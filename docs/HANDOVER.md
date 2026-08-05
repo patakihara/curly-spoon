@@ -81,9 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T13:19:04Z` · `a6b0a49406fd9236a` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a6b0a49406fd9236a' @ '58cc2d3', based on '6420501' ('origin/main'). Working tree clean, not pushed. **De…
-- `2026-08-05T13:24:32Z` · `a42723c44397de649` · general-purpose · ended · Confirmed no forbidden-path changes. Now writing the final report. ## Report **Android CI result: FAILED**, on commit '6e90595' itself (run '31009999…
-- `2026-08-05T13:29:53Z` · `aeb1404a8b20fc69e` · general-purpose · ended · Advisor is unavailable this turn; proceeding with my own verification, which was already thorough (traced the exact synchronous-optimistic-write mech…
 - `2026-08-05T13:42:13Z` · `ae7595e1db400590f` · general-purpose · ended · Working tree is clean, committed on branch 'worktree-agent-ae7595e1db400590f' at '6644ff6', not pushed as instructed. ## Report **Branch/commit**: 'w…
 - `2026-08-05T14:00:29Z` · `a975d1956d27f0ff1` · general-purpose · ended · Working tree is clean. Committed on branch 'worktree-agent-a975d1956d27f0ff1' at 'ef98321', based on '6644ff6' ('origin/main'). Not pushed, per instr…
 - `2026-08-05T15:22:17Z` · `a8c337e23999a50ca` · general-purpose · ended · ## Review: Phase 9 web wave — music queue (shuffle/repeat/cross-page), commit '58cc2d3' **Scope check**: 'git show --stat' confirms only 'apps/web/sr…
@@ -95,7 +92,10 @@ in-context scan of the current one.
 - `2026-08-05T15:49:17Z` · `aa1127d1c9275f967` · general-purpose · ended · Committed cleanly, working tree clean, not pushed. ## Report **Branch/commit**: 'worktree-agent-aa1127d1c9275f967' @ '67b3ee0', based on 'origin/main…
 - `2026-08-05T16:01:58Z` · `ab1dbe52bc54d243a` · general-purpose · running · —
 - `2026-08-05T16:01:59Z` · `acecb43e50d6b071c` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-acecb43e50d6b071c' @ 'e0c183a', based o…
-- `2026-08-05T16:13:49Z` · `a3df81486463c212b` · general-purpose · running · —
+- `2026-08-05T16:13:49Z` · `a3df81486463c212b` · general-purpose · ended · I'll stop issuing tool calls and wait silently for the monitor's completion event.
+- `2026-08-05T16:17:07Z` · `a3df81486463c212b` · general-purpose · ended · Still in progress. No action needed; continuing to wait for the completion event.
+- `2026-08-05T16:17:28Z` · `a3df81486463c212b` · general-purpose · ended · Still in progress. Continuing to wait.
+- `2026-08-05T16:17:37Z` · `a3df81486463c212b` · general-purpose · ended · ## Review findings — commit 'e0c183a' (Jellyfin playback progress reporting, Android) **CI: not established.** I was told to stop watching; the coord…
 
 <!-- AGENT_LOG_END -->
 
@@ -279,8 +279,9 @@ nothing on `main` is stale — take it.
   persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked). Web UI for music
   requests follows in a separate wave and is **not** claimed yet.
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
-  (Jellyfin progress reporting) have both landed; this session stays inside `apps/android/`
-  and is not touching `apps/server/` or `apps/web/`.
+  (Jellyfin progress reporting) have both landed; wave H (shuffle + repeat on Android) is
+  dispatched now. This session stays inside `apps/android/` and is not touching `apps/server/`
+  or `apps/web/`.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
