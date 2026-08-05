@@ -763,11 +763,19 @@ of the two fixes; installing a DOM environment is the other.
     `loadMoreAlbums`, which open with an `as? Loaded ?: return` — so from a `Failed` state they
     were a silent no-op. No test exercised the path, which is why it shipped.
 
-**A real, shipped web bug the Android wave surfaced**: `apps/web/src/api/queries.ts`'s
-`useJellyfinTracksQuery` never sets `sortBy`, so it gets the BFF's `SortName` default and the
-web album page lists tracks **alphabetically by title, not in track order**. Because the album
-page is also what builds the playback queue, an album plays in alphabetical order too. Android
-does not have this bug (see above). Not yet fixed.
+**A real, shipped web bug the Android wave surfaced, now fixed (`4f8cddf`, merged
+`f00f336`)**: `apps/web/src/api/queries.ts`'s `useJellyfinTracksQuery` never set `sortBy`, so
+it got the BFF's `SortName` default and the web album page listed tracks **alphabetically by
+title, not in track order** — and because the album page is what builds the playback queue,
+albums also _played_ alphabetically. Now `ParentIndexNumber,IndexNumber`, verified against
+`Jellyfin.Data/Enums/ItemSortBy.cs` and `AudioFileProber.cs` (which assigns both from a
+track's own disc/track tags). Two things the fix turned up: `apps/web/src/api/client.ts`'s
+`getJellyfinTracks` query type had no `sortBy` field at all, so the parameter had no way to
+reach the request even though the BFF already accepted it; and a hook _can_ be unit-tested in
+this repo after all, without a DOM — `apps/web/src/api/queries.test.ts` follows
+`queryClient.test.ts`'s existing `vi.mock` idiom, mocking `useQuery` and `useApi` and calling
+the hook as a plain function. That does not close the component-test gap below, but it does
+mean query-shape bugs like this one are testable.
 
 **One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
 not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
