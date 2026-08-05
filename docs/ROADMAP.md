@@ -806,6 +806,12 @@ mean query-shape bugs like this one are testable.
   fired unawaited immediately after — so the two requests have no guaranteed wire ordering.
   Pre-existing, not introduced by the fix.
 
+**A product caveat, not a defect**: every queued track — on both web and Android — carries
+**album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
+per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
+the album artist for every track. Worth a decision before phase 10 rather than a silent
+inherit.
+
 **Known gaps, all deliberate**: the album queue covers only
 the displayed 40-track page, not across pagination; no shuffle/repeat/cross-source queue
 (needs an explicit ordered play-list decoupled from `startOffset`, since shuffle breaks the
