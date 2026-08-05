@@ -17,6 +17,10 @@ const getJellyfinTracks = vi.fn();
 const getJellyfinArtists = vi.fn();
 const markJellyfinFavorite = vi.fn();
 const unmarkJellyfinFavorite = vi.fn();
+const getJellyfinPlaylistItems = vi.fn();
+const createJellyfinPlaylist = vi.fn();
+const addToJellyfinPlaylist = vi.fn();
+const removeFromJellyfinPlaylist = vi.fn();
 
 /** Same content-based key hashing the production rollback guard uses (`hashKey` from
  * `@tanstack/react-query`, mocked below) — every query key in this file is a flat array
@@ -64,6 +68,10 @@ vi.mock('./ApiContext.js', () => ({
     getJellyfinArtists,
     markJellyfinFavorite,
     unmarkJellyfinFavorite,
+    getJellyfinPlaylistItems,
+    createJellyfinPlaylist,
+    addToJellyfinPlaylist,
+    removeFromJellyfinPlaylist,
   }),
 }));
 
@@ -326,5 +334,237 @@ describe('useToggleJellyfinFavoriteMutation', () => {
     const options = await loadMutation();
     options.onSettled();
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['jellyfin'] });
+  });
+});
+
+describe('useJellyfinPlaylistItemsQuery', () => {
+  it('fetches one playlist by id', async () => {
+    const { useJellyfinPlaylistItemsQuery } = await import('./queries.js');
+    const { queryFn } = useJellyfinPlaylistItemsQuery('pl-1') as unknown as CapturedQueryOptions;
+    await queryFn({ signal: undefined });
+
+    expect(getJellyfinPlaylistItems).toHaveBeenCalledWith(
+      'pl-1',
+      expect.objectContaining({ limit: expect.any(Number) }),
+      undefined,
+    );
+  });
+});
+
+const track = (
+  id: string,
+  name: string,
+): {
+  id: string;
+  name: string;
+  albumId: string | null;
+  albumName: string | null;
+  artistNames: string[];
+  trackNumber: number | null;
+  discNumber: number | null;
+  durationSeconds: number | null;
+  imageTag: string | null;
+  genres: string[];
+  favorite: boolean;
+} => ({
+  id,
+  name,
+  albumId: null,
+  albumName: null,
+  artistNames: [],
+  trackNumber: null,
+  discNumber: null,
+  durationSeconds: 100,
+  imageTag: null,
+  genres: [],
+  favorite: false,
+});
+
+describe('useCreateJellyfinPlaylistMutation', () => {
+  it('calls createJellyfinPlaylist with the given name and seed itemIds', async () => {
+    const { useCreateJellyfinPlaylistMutation } = await import('./queries.js');
+    const options = useCreateJellyfinPlaylistMutation() as unknown as {
+      mutationFn: (vars: { name: string; itemIds?: string[] }) => Promise<unknown>;
+      onSuccess: () => void;
+    };
+    await options.mutationFn({ name: 'Roadtrip', itemIds: ['track-1'] });
+    expect(createJellyfinPlaylist).toHaveBeenCalledWith('Roadtrip', ['track-1']);
+  });
+
+  it('invalidates the playlists cache slice on success', async () => {
+    const { useCreateJellyfinPlaylistMutation } = await import('./queries.js');
+    const options = useCreateJellyfinPlaylistMutation() as unknown as { onSuccess: () => void };
+    options.onSuccess();
+    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['jellyfin', 'playlists'],
+    });
+  });
+});
+
+describe('useAddToJellyfinPlaylistMutation', () => {
+  interface Captured {
+    mutationFn: (vars: {
+      playlistId: string;
+      tracks: ReturnType<typeof track>[];
+    }) => Promise<unknown>;
+    onMutate: (vars: { playlistId: string; tracks: ReturnType<typeof track>[] }) => Promise<{
+      queryKey: readonly unknown[];
+      previous: unknown;
+      applied: unknown;
+    }>;
+    onError: (
+      err: unknown,
+      vars: unknown,
+      context: { queryKey: readonly unknown[]; previous: unknown; applied: unknown } | undefined,
+    ) => void;
+    onSettled: (data: unknown, err: unknown, vars: { playlistId: string }) => void;
+  }
+
+  async function loadAddMutation(): Promise<Captured> {
+    const { useAddToJellyfinPlaylistMutation } = await import('./queries.js');
+    return useAddToJellyfinPlaylistMutation() as unknown as Captured;
+  }
+
+  it('calls addToJellyfinPlaylist with just the track ids, in order', async () => {
+    const options = await loadAddMutation();
+    await options.mutationFn({
+      playlistId: 'pl-1',
+      tracks: [track('track-2', 'Second'), track('track-1', 'First')],
+    });
+    expect(addToJellyfinPlaylist).toHaveBeenCalledWith('pl-1', ['track-2', 'track-1']);
+  });
+
+  it('onMutate optimistically appends the tracks to the cached playlist-items page', async () => {
+    const pageKey = ['jellyfin', 'playlists', 'pl-1', 'items'];
+    const page = {
+      items: [{ playlistItemId: 'entry-a', track: track('track-1', 'First') }],
+      total: 1,
+      startIndex: 0,
+    };
+    seedCache([[pageKey, page]]);
+
+    const options = await loadAddMutation();
+    const context = await options.onMutate({
+      playlistId: 'pl-1',
+      tracks: [track('track-2', 'Second')],
+    });
+
+    expect(mockQueryClient.cancelQueries).toHaveBeenCalledWith({ queryKey: pageKey });
+    const applied = context.applied as { items: { track: { id: string } }[]; total: number };
+    expect(applied.items.map((i) => i.track.id)).toEqual(['track-1', 'track-2']);
+    expect(applied.total).toBe(2);
+    expect(fakeCache.get(hashKey(pageKey))?.data).toBe(applied);
+  });
+
+  it('onError rolls back only if the cache still holds exactly what this mutation applied', async () => {
+    const pageKey = ['jellyfin', 'playlists', 'pl-1', 'items'];
+    const originalPage = { items: [], total: 0, startIndex: 0 };
+    seedCache([[pageKey, originalPage]]);
+
+    const options = await loadAddMutation();
+    const context = await options.onMutate({
+      playlistId: 'pl-1',
+      tracks: [track('track-1', 'First')],
+    });
+    options.onError(new Error('upstream failed'), { playlistId: 'pl-1' }, context);
+
+    expect(fakeCache.get(hashKey(pageKey))?.data).toBe(originalPage);
+  });
+
+  it('onError leaves a later overlapping mutation on the same playlist untouched', async () => {
+    const pageKey = ['jellyfin', 'playlists', 'pl-1', 'items'];
+    seedCache([[pageKey, { items: [], total: 0, startIndex: 0 }]]);
+
+    const first = await loadAddMutation();
+    const firstContext = await first.onMutate({
+      playlistId: 'pl-1',
+      tracks: [track('track-1', 'First')],
+    });
+
+    const second = await loadAddMutation();
+    const secondContext = await second.onMutate({
+      playlistId: 'pl-1',
+      tracks: [track('track-2', 'Second')],
+    });
+
+    first.onError(new Error('boom'), { playlistId: 'pl-1' }, firstContext);
+
+    // The second mutation's own optimistic write must survive the first one's rollback.
+    expect(fakeCache.get(hashKey(pageKey))?.data).toBe(secondContext.applied);
+  });
+
+  it("onSettled invalidates this playlist's items and the playlists list", async () => {
+    const options = await loadAddMutation();
+    options.onSettled(undefined, undefined, { playlistId: 'pl-1' });
+    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['jellyfin', 'playlists', 'pl-1', 'items'],
+    });
+    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['jellyfin', 'playlists'],
+    });
+  });
+});
+
+describe('useRemoveFromJellyfinPlaylistMutation', () => {
+  interface Captured {
+    mutationFn: (vars: { playlistId: string; playlistItemIds: string[] }) => Promise<unknown>;
+    onMutate: (vars: { playlistId: string; playlistItemIds: string[] }) => Promise<{
+      queryKey: readonly unknown[];
+      previous: unknown;
+      applied: unknown;
+    }>;
+    onError: (
+      err: unknown,
+      vars: unknown,
+      context: { queryKey: readonly unknown[]; previous: unknown; applied: unknown } | undefined,
+    ) => void;
+  }
+
+  async function loadRemoveMutation(): Promise<Captured> {
+    const { useRemoveFromJellyfinPlaylistMutation } = await import('./queries.js');
+    return useRemoveFromJellyfinPlaylistMutation() as unknown as Captured;
+  }
+
+  it('calls removeFromJellyfinPlaylist with the given playlist-entry ids', async () => {
+    const options = await loadRemoveMutation();
+    await options.mutationFn({ playlistId: 'pl-1', playlistItemIds: ['entry-a', 'entry-b'] });
+    expect(removeFromJellyfinPlaylist).toHaveBeenCalledWith('pl-1', ['entry-a', 'entry-b']);
+  });
+
+  it('onMutate optimistically removes only the matching entry, leaving a duplicated track alone', async () => {
+    const pageKey = ['jellyfin', 'playlists', 'pl-1', 'items'];
+    const page = {
+      items: [
+        { playlistItemId: 'entry-a', track: track('track-1', 'Repeat') },
+        { playlistItemId: 'entry-b', track: track('track-1', 'Repeat') },
+      ],
+      total: 2,
+      startIndex: 0,
+    };
+    seedCache([[pageKey, page]]);
+
+    const options = await loadRemoveMutation();
+    const context = await options.onMutate({ playlistId: 'pl-1', playlistItemIds: ['entry-a'] });
+
+    const applied = context.applied as { items: { playlistItemId: string }[] };
+    expect(applied.items).toEqual([
+      { playlistItemId: 'entry-b', track: track('track-1', 'Repeat') },
+    ]);
+  });
+
+  it("onError rolls back only when nothing has overwritten this mutation's own write", async () => {
+    const pageKey = ['jellyfin', 'playlists', 'pl-1', 'items'];
+    const originalPage = {
+      items: [{ playlistItemId: 'entry-a', track: track('track-1', 'First') }],
+      total: 1,
+      startIndex: 0,
+    };
+    seedCache([[pageKey, originalPage]]);
+
+    const options = await loadRemoveMutation();
+    const context = await options.onMutate({ playlistId: 'pl-1', playlistItemIds: ['entry-a'] });
+    options.onError(new Error('upstream failed'), { playlistId: 'pl-1' }, context);
+
+    expect(fakeCache.get(hashKey(pageKey))?.data).toBe(originalPage);
   });
 });

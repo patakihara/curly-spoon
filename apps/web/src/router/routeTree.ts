@@ -132,6 +132,28 @@ const musicFavoritesRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// Flat siblings of the routes above, same reasoning as `musicFavoritesRoute` — a
+// playlist has no library id of its own to nest under either.
+const musicPlaylistsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music/playlists',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicPlaylistsPage.js'),
+    'MusicPlaylistsPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
+const musicPlaylistRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music/playlist/$playlistId',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicPlaylistPage.js'),
+    'MusicPlaylistPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -180,6 +202,8 @@ export const routeTree = rootRoute.addChildren([
   musicArtistRoute,
   musicAlbumRoute,
   musicFavoritesRoute,
+  musicPlaylistsRoute,
+  musicPlaylistRoute,
   searchRoute,
   settingsRoute,
   setupRoute,

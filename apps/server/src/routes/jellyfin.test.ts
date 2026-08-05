@@ -446,6 +446,165 @@ describe('POST|DELETE /api/v1/jellyfin/items/:itemId/favorite', () => {
   });
 });
 
+describe('playlists', () => {
+  it('every playlist route requires authentication', async () => {
+    const { app } = buildTestApp();
+    const responses = await Promise.all([
+      app.inject({ method: 'GET', url: '/api/v1/jellyfin/playlists' }),
+      app.inject({ method: 'GET', url: '/api/v1/jellyfin/playlists/pl-1/items' }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playlists',
+        payload: { name: 'Roadtrip' },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playlists/pl-1/items',
+        payload: { itemIds: ['track-driftwave-1'] },
+      }),
+      app.inject({
+        method: 'DELETE',
+        url: '/api/v1/jellyfin/playlists/pl-1/items?playlistItemIds=entry-1',
+      }),
+    ]);
+    for (const response of responses) expect(response.statusCode).toBe(401);
+  });
+
+  it('creates a playlist seeded out of natural id order, and both the listing and the items route reflect it', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playlists',
+      payload: { name: 'Roadtrip', itemIds: ['track-driftwave-2', 'track-driftwave-1'] },
+      cookies: { auralis_session: cookie },
+    });
+    expect(createResponse.statusCode).toBe(201);
+    const { id: playlistId } = createResponse.json();
+    expect(typeof playlistId).toBe('string');
+
+    const listResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/playlists',
+      cookies: { auralis_session: cookie },
+    });
+    const listed = listResponse.json().items.find((p: { id: string }) => p.id === playlistId);
+    expect(listed).toMatchObject({ name: 'Roadtrip', trackCount: 2 });
+
+    const itemsResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(itemsResponse.statusCode).toBe(200);
+    const items = itemsResponse.json().items;
+    // Seeded second-then-first: playlist order is preserved, not re-sorted to the tracks'
+    // own natural/alphabetical order — the exact bug this wave's spec called out.
+    expect(items.map((i: { track: { id: string } }) => i.track.id)).toEqual([
+      'track-driftwave-2',
+      'track-driftwave-1',
+    ]);
+    expect(items[0].playlistItemId).not.toBe(items[1].playlistItemId);
+  });
+
+  it('appends items to an existing playlist via addToPlaylist', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playlists',
+      payload: { name: 'Empty' },
+      cookies: { auralis_session: cookie },
+    });
+    const { id: playlistId } = created.json();
+
+    const addResponse = await app.inject({
+      method: 'POST',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+      payload: { itemIds: ['track-hollow-1'] },
+      cookies: { auralis_session: cookie },
+    });
+    expect(addResponse.statusCode).toBe(204);
+
+    const itemsResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(itemsResponse.json().items.map((i: { track: { id: string } }) => i.track.id)).toEqual([
+      'track-hollow-1',
+    ]);
+  });
+
+  it('removes one occurrence of a duplicated track by its playlistItemId, leaving the other in place', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playlists',
+      payload: { name: 'Repeats', itemIds: ['track-driftwave-1', 'track-driftwave-1'] },
+      cookies: { auralis_session: cookie },
+    });
+    const { id: playlistId } = created.json();
+
+    const before = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+      cookies: { auralis_session: cookie },
+    });
+    const entries = before.json().items as Array<{ playlistItemId: string }>;
+    expect(entries).toHaveLength(2);
+    const [firstEntry, secondEntry] = entries;
+    expect(firstEntry?.playlistItemId).not.toBe(secondEntry?.playlistItemId);
+
+    const removeResponse = await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items?playlistItemIds=${firstEntry?.playlistItemId}`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(removeResponse.statusCode).toBe(204);
+
+    const after = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+      cookies: { auralis_session: cookie },
+    });
+    const remaining = after.json().items as Array<{ playlistItemId: string }>;
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]?.playlistItemId).toBe(secondEntry?.playlistItemId);
+  });
+
+  it('404s on an unknown playlist id', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/playlists/does-not-exist/items',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('409s with jellyfin_not_configured when no Jellyfin server has ever been connected', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playlists',
+      payload: { name: 'Roadtrip' },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
+
+  it('rejects an empty playlistItemIds on removal rather than silently no-op-ing', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/jellyfin/playlists/pl-1/items?playlistItemIds=',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+});
+
 describe('GET /api/v1/jellyfin/search', () => {
   it('requires authentication', async () => {
     const { app } = buildTestApp();
@@ -747,8 +906,26 @@ describe('GET /api/v1/jellyfin/items/:itemId/artwork', () => {
 });
 
 describe('no route ever leaks the stored Jellyfin access token into a response body', () => {
-  it('checks login, browse, search, lyrics, both media-proxy responses and the three playback reports', async () => {
+  it('checks login, browse, search, lyrics, both media-proxy responses, the three playback reports and playlists', async () => {
     const { app, cookie } = await jellyfinConnectedApp();
+
+    // A real playlist id/entry id to exercise the items/add/remove routes with — created
+    // sequentially, ahead of the parallel sweep below, so those routes hit their normal
+    // 200/204 path rather than a 404 that would trivially pass the "no token" check without
+    // actually exercising the response bodies that matter.
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playlists',
+      payload: { name: 'Sweep', itemIds: ['track-driftwave-1'] },
+      cookies: { auralis_session: cookie },
+    });
+    const { id: playlistId } = created.json();
+    const items = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+      cookies: { auralis_session: cookie },
+    });
+    const entryId = items.json().items[0].playlistItemId as string;
 
     const responses = await Promise.all([
       app.inject({
@@ -819,6 +996,27 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
         url: '/api/v1/jellyfin/artists?favoritesOnly=true',
         cookies: { auralis_session: cookie },
       }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/playlists',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'POST',
+        url: `/api/v1/jellyfin/playlists/${playlistId}/items`,
+        payload: { itemIds: ['track-driftwave-2'] },
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'DELETE',
+        url: `/api/v1/jellyfin/playlists/${playlistId}/items?playlistItemIds=${entryId}`,
+        cookies: { auralis_session: cookie },
+      }),
     ]);
 
     for (const response of responses) {
@@ -883,5 +1081,16 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
     });
     expect(favoriteResponse.statusCode).toBe(409);
     expect(favoriteResponse.body).not.toMatch(/not-the-fake-upstream/);
+
+    // Same check for the newest not-configured code path added by this wave: creating a
+    // playlist against an account that was never connected.
+    const playlistResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playlists',
+      payload: { name: 'Roadtrip' },
+      cookies: { auralis_session: cookie },
+    });
+    expect(playlistResponse.statusCode).toBe(409);
+    expect(playlistResponse.body).not.toMatch(/not-the-fake-upstream/);
   });
 });

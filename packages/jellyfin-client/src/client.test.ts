@@ -249,6 +249,128 @@ describe('JellyfinClient.getTracks', () => {
   });
 });
 
+describe('JellyfinClient.getPlaylists', () => {
+  it('queries /Items scoped to Playlist', async () => {
+    const fetchFn = router({
+      'GET /Items': ({ url }) => {
+        expect(url.searchParams.get('includeItemTypes')).toBe('Playlist');
+        return json({
+          Items: [{ Id: 'pl-1', Name: 'Roadtrip', ChildCount: 12, ImageTags: { Primary: 't' } }],
+          TotalRecordCount: 1,
+          StartIndex: 0,
+        });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    const page = await client.getPlaylists();
+
+    expect(page.items[0]).toEqual({
+      id: 'pl-1',
+      name: 'Roadtrip',
+      imageTag: 't',
+      trackCount: 12,
+    });
+  });
+});
+
+describe('JellyfinClient.getPlaylistItems', () => {
+  it('GETs /Playlists/:id/Items and normalises each row with its playlistItemId, in response order', async () => {
+    const fetchFn = router({
+      'GET /Playlists/pl-1/Items': ({ url }) => {
+        expect(url.searchParams.get('fields')).toBe('Genres');
+        return json({
+          Items: [
+            { ...trackItem, Id: 'track-2', Name: 'Second', PlaylistItemId: 'entry-b' },
+            { ...trackItem, Id: 'track-1', Name: 'First', PlaylistItemId: 'entry-a' },
+          ],
+          TotalRecordCount: 2,
+          StartIndex: 0,
+        });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    const page = await client.getPlaylistItems('pl-1');
+
+    expect(page.items.map((i) => [i.playlistItemId, i.track.id])).toEqual([
+      ['entry-b', 'track-2'],
+      ['entry-a', 'track-1'],
+    ]);
+  });
+
+  it('falls back to the track id when PlaylistItemId is absent, rather than dropping the row', async () => {
+    const fetchFn = router({
+      'GET /Playlists/pl-1/Items': () =>
+        json({ Items: [trackItem], TotalRecordCount: 1, StartIndex: 0 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const page = await client.getPlaylistItems('pl-1');
+
+    expect(page.items[0]?.playlistItemId).toBe('track-1');
+  });
+});
+
+describe('JellyfinClient.createPlaylist / addToPlaylist / removeFromPlaylist', () => {
+  it('POSTs /Playlists with Name, seed Ids and MediaType Audio, returning the new id', async () => {
+    const fetchFn = router({
+      'POST /Playlists': ({ init }) => {
+        expect(JSON.parse(init?.body as string)).toEqual({
+          Name: 'Roadtrip',
+          Ids: ['track-1'],
+          MediaType: 'Audio',
+        });
+        return json({ Id: 'pl-new' });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.createPlaylist('Roadtrip', ['track-1'])).resolves.toBe('pl-new');
+  });
+
+  it('POSTs /Playlists/:id/Items with a comma-delimited ids query, no body', async () => {
+    const fetchFn = router({
+      'POST /Playlists/pl-1/Items': ({ url, init }) => {
+        expect(url.searchParams.get('ids')).toBe('track-1,track-2');
+        expect(init?.body).toBeUndefined();
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.addToPlaylist('pl-1', ['track-1', 'track-2'])).resolves.toBeUndefined();
+  });
+
+  it('DELETEs /Playlists/:id/Items with entryIds — the playlist-entry ids, not track ids', async () => {
+    const fetchFn = router({
+      'DELETE /Playlists/pl-1/Items': ({ url }) => {
+        expect(url.searchParams.get('entryIds')).toBe('entry-a,entry-b');
+        expect(url.searchParams.has('ids')).toBe(false);
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(
+      client.removeFromPlaylist('pl-1', ['entry-a', 'entry-b']),
+    ).resolves.toBeUndefined();
+  });
+
+  it('surfaces an upstream 5xx from createPlaylist as a typed JellyfinError whose message never carries the token', async () => {
+    const fetchFn = router({
+      'POST /Playlists': () =>
+        new Response('server exploded, ApiKey=tok-should-not-leak', { status: 500 }),
+    });
+    const client = makeClient(fetchFn, 'super-secret-token');
+
+    const err = await client.createPlaylist('Roadtrip').catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('upstream_error');
+    expect((err as JellyfinError).message).not.toContain('super-secret-token');
+  });
+});
+
 describe('JellyfinClient.search', () => {
   it('queries /Items with a searchTerm and splits results by item type', async () => {
     const fetchFn = router({

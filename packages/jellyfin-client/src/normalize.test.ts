@@ -5,6 +5,8 @@ import {
   normalizeFavoriteState,
   normalizeLogin,
   normalizeLyrics,
+  normalizePlaylist,
+  normalizePlaylistItem,
   normalizeTrack,
   normalizeUser,
 } from './normalize.js';
@@ -146,6 +148,46 @@ describe('normalizeTrack', () => {
     expect(track.artistNames).toEqual([]);
     expect(track.genres).toEqual([]);
     expect(track.favorite).toBe(false);
+  });
+});
+
+describe('normalizePlaylist', () => {
+  it('maps a fully-populated playlist item', () => {
+    const playlist = normalizePlaylist(
+      rawItem({ Id: 'pl-1', Name: 'Roadtrip', ChildCount: 8, ImageTags: { Primary: 'tag-pl' } }),
+    );
+    expect(playlist).toEqual({
+      id: 'pl-1',
+      name: 'Roadtrip',
+      imageTag: 'tag-pl',
+      trackCount: 8,
+    });
+  });
+
+  it('defaults a missing name and missing counts rather than surfacing undefined', () => {
+    const playlist = normalizePlaylist(rawItem({ Id: 'pl-2', Name: null }));
+    expect(playlist).toEqual({
+      id: 'pl-2',
+      name: '(unknown playlist)',
+      imageTag: null,
+      trackCount: null,
+    });
+  });
+});
+
+describe('normalizePlaylistItem', () => {
+  it('keeps the entry id separate from the track id', () => {
+    const item = normalizePlaylistItem(
+      rawItem({ Id: 'track-1', Name: 'Roygbiv', PlaylistItemId: 'entry-a' }),
+    );
+    expect(item.playlistItemId).toBe('entry-a');
+    expect(item.track.id).toBe('track-1');
+    expect(item.track.name).toBe('Roygbiv');
+  });
+
+  it('falls back to the track id when PlaylistItemId is absent, so a caller always has something to key removal on', () => {
+    const item = normalizePlaylistItem(rawItem({ Id: 'track-2' }));
+    expect(item.playlistItemId).toBe('track-2');
   });
 });
 

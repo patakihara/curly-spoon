@@ -474,6 +474,35 @@ export interface JellyfinFavoriteResponse {
 }
 
 // ---------------------------------------------------------------------
+// Jellyfin playlists (Phase 9 web wave — playlists)
+// ---------------------------------------------------------------------
+
+/** Mirrors `@auralis/jellyfin-client`'s `Playlist` field-for-field. */
+export interface JellyfinPlaylist {
+  id: string;
+  name: string;
+  imageTag: string | null;
+  trackCount: number | null;
+}
+
+/**
+ * One row of `GET /jellyfin/playlists/:playlistId/items`, in playlist order — mirrors
+ * `@auralis/jellyfin-client`'s `PlaylistItem`. `playlistItemId` identifies *this
+ * occurrence* of `track` within the playlist, distinct from `track.id`: the same track can
+ * appear twice, each with its own `playlistItemId`, and removal must use this value — see
+ * `ApiClient.removeFromJellyfinPlaylist`'s doc comment.
+ */
+export interface JellyfinPlaylistItem {
+  playlistItemId: string;
+  track: JellyfinTrack;
+}
+
+/** `POST /jellyfin/playlists`'s success body. */
+export interface JellyfinCreatePlaylistResult {
+  id: string;
+}
+
+// ---------------------------------------------------------------------
 // Jellyfin lyrics (Phase 9 web wave — synced lyrics view)
 // ---------------------------------------------------------------------
 

@@ -12,11 +12,14 @@ import type {
   JellyfinAlbum,
   JellyfinArtist,
   JellyfinConfig,
+  JellyfinCreatePlaylistResult,
   JellyfinFavoriteResponse,
   JellyfinLibraryPage,
   JellyfinLoginBody,
   JellyfinLoginResult,
   JellyfinLyricsResponse,
+  JellyfinPlaylist,
+  JellyfinPlaylistItem,
   JellyfinSearchResults,
   JellyfinTrack,
   LibraryItem,
@@ -446,6 +449,66 @@ export class ApiClient {
   unmarkJellyfinFavorite(itemId: string): Promise<JellyfinFavoriteResponse> {
     return this.request(`/jellyfin/items/${encodeURIComponent(itemId)}/favorite`, {
       method: 'DELETE',
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Jellyfin playlists (Phase 9 web wave — playlists)
+  // ---------------------------------------------------------------------
+
+  getJellyfinPlaylists(
+    query: {
+      startIndex?: number;
+      limit?: number;
+      /** See `getJellyfinArtists`'s identical `id` param doc comment — same shape, same
+       * reasoning: `MusicPlaylistPage` has no dedicated single-playlist BFF route, only
+       * this listing's own `ids` filter, to get the one playlist's name for its header. */
+      id?: string;
+    } = {},
+    signal?: AbortSignal,
+  ): Promise<JellyfinLibraryPage<JellyfinPlaylist>> {
+    const { id, ...rest } = query;
+    return this.request('/jellyfin/playlists', { query: { ...rest, ids: id }, signal });
+  }
+
+  /** Fetches `playlistId`'s tracks in playlist order — see `JellyfinPlaylistItem`'s doc
+   * comment for why that order, not an alphabetical re-sort, is what this resolves to. */
+  getJellyfinPlaylistItems(
+    playlistId: string,
+    query: { startIndex?: number; limit?: number } = {},
+    signal?: AbortSignal,
+  ): Promise<JellyfinLibraryPage<JellyfinPlaylistItem>> {
+    return this.request(`/jellyfin/playlists/${encodeURIComponent(playlistId)}/items`, {
+      query,
+      signal,
+    });
+  }
+
+  /** Creates a playlist named `name`, optionally seeded with `itemIds` (in the given
+   * order), and resolves to its new id. */
+  createJellyfinPlaylist(name: string, itemIds?: string[]): Promise<JellyfinCreatePlaylistResult> {
+    return this.request('/jellyfin/playlists', {
+      method: 'POST',
+      body: { name, itemIds },
+    });
+  }
+
+  /** Appends `itemIds` to the end of `playlistId`. */
+  addToJellyfinPlaylist(playlistId: string, itemIds: string[]): Promise<void> {
+    return this.request(`/jellyfin/playlists/${encodeURIComponent(playlistId)}/items`, {
+      method: 'POST',
+      body: { itemIds },
+    });
+  }
+
+  /** Removes the given playlist entries. `playlistItemIds` must be
+   * `JellyfinPlaylistItem.playlistItemId` values, never `track.id` — see that type's doc
+   * comment for why a track duplicated within one playlist needs this distinction to
+   * remove a single occurrence. */
+  removeFromJellyfinPlaylist(playlistId: string, playlistItemIds: string[]): Promise<void> {
+    return this.request(`/jellyfin/playlists/${encodeURIComponent(playlistId)}/items`, {
+      method: 'DELETE',
+      query: { playlistItemIds: playlistItemIds.join(',') },
     });
   }
 

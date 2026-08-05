@@ -230,6 +230,40 @@ export const jellyfinSearchQuerySchema = z.object({
 
 export const jellyfinItemIdParamSchema = z.object({ itemId: z.string().min(1) });
 
+export const jellyfinPlaylistIdParamSchema = z.object({ playlistId: z.string().min(1) });
+
+/** Query for `GET /jellyfin/playlists/:playlistId/items` — deliberately narrower than
+ * `jellyfinLibraryQuerySchema`: a playlist's own item order is fixed server-side (see
+ * `JellyfinClient.getPlaylistItems`'s doc comment), so `sortBy`/`sortOrder`/`favoritesOnly`
+ * don't apply here the way they do to a library browse. */
+export const jellyfinPlaylistItemsQuerySchema = z.object({
+  startIndex: z.coerce.number().int().min(0).optional(),
+  limit: z.coerce.number().int().positive().max(500).optional(),
+});
+
+export const jellyfinCreatePlaylistBodySchema = z.object({
+  name: z.string().trim().min(1, 'name is required'),
+  itemIds: z.array(z.string().min(1)).optional(),
+});
+
+export const jellyfinAddToPlaylistBodySchema = z.object({
+  itemIds: z.array(z.string().min(1)).min(1, 'itemIds must include at least one item'),
+});
+
+/** Mirrors `jellyfinLibraryQuerySchema.ids`'s comma-separated-query-string shape — an HTTP
+ * query string has no native array type. Unlike that field, this one is required and
+ * non-empty: a `DELETE` with nothing to remove is a caller bug worth rejecting rather than
+ * silently no-op'ing against Jellyfin. These are `PlaylistItem.playlistItemId` values, not
+ * track ids — see `JellyfinClient.removeFromPlaylist`'s doc comment for why the distinction
+ * is load-bearing. */
+export const jellyfinRemoveFromPlaylistQuerySchema = z.object({
+  playlistItemIds: z
+    .string()
+    .min(1, 'playlistItemIds is required')
+    .transform((v) => v.split(',').filter(Boolean))
+    .refine((ids) => ids.length > 0, 'playlistItemIds must include at least one entry'),
+});
+
 /** Body for the three `POST /jellyfin/playback/*` routes — mirrors `JellyfinClient`'s
  * `reportPlaybackStart`/`reportPlaybackProgress`/`reportPlaybackStopped` parameters
  * one-for-one. `positionSeconds` stays in seconds at this boundary too, same reasoning as

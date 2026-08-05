@@ -61,6 +61,30 @@ export interface Track {
   favorite: boolean;
 }
 
+export interface Playlist {
+  id: string;
+  name: string;
+  imageTag: string | null;
+  /** Best-effort; see `rawBaseItemDtoSchema`'s `ChildCount` doc comment. */
+  trackCount: number | null;
+}
+
+/**
+ * One occurrence of a track within a playlist, in playlist order — never re-sorted, see
+ * `schemas/raw.ts`'s playlists section for why `GET /Playlists/{id}/Items` is trustworthy
+ * as-given.
+ *
+ * `playlistItemId` is the id of *this occurrence*, not of `track` itself: the same track can
+ * appear twice in one playlist, each with its own `playlistItemId`, and Jellyfin's removal
+ * endpoint keys on this value precisely so one occurrence can be removed without touching the
+ * other. Never use `track.id` for removal. See `JellyfinClient.removeFromPlaylist`'s doc
+ * comment.
+ */
+export interface PlaylistItem {
+  playlistItemId: string;
+  track: Track;
+}
+
 export interface LibraryPage<T> {
   items: T[];
   /** Total matching records upstream, independent of how many were returned
