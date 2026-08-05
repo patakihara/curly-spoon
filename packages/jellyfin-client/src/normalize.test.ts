@@ -3,10 +3,15 @@ import {
   normalizeAlbum,
   normalizeArtist,
   normalizeLogin,
+  normalizeLyrics,
   normalizeTrack,
   normalizeUser,
 } from './normalize.js';
-import type { rawAuthenticationResultSchema, rawBaseItemDtoSchema } from './schemas/raw.js';
+import type {
+  rawAuthenticationResultSchema,
+  rawBaseItemDtoSchema,
+  rawLyricDtoSchema,
+} from './schemas/raw.js';
 import type { z } from 'zod';
 
 type RawItem = z.infer<typeof rawBaseItemDtoSchema>;
@@ -152,5 +157,62 @@ describe('normalizeUser / normalizeLogin', () => {
       serverId: 'server-1',
       user: { id: 'user-1', name: 'kara', serverId: 'server-1' },
     });
+  });
+});
+
+describe('normalizeLyrics', () => {
+  type RawLyricDto = z.infer<typeof rawLyricDtoSchema>;
+
+  it('converts every line’s Start from ticks to seconds and reports synced: true when every line has one', () => {
+    const raw: RawLyricDto = {
+      Metadata: {},
+      Lyrics: [
+        { Text: 'First line', Start: 0 },
+        { Text: 'Second line', Start: 25_000_000 }, // 2.5s
+        { Text: 'Third line', Start: 100_000_000 }, // 10s
+      ],
+    };
+    expect(normalizeLyrics(raw)).toEqual({
+      lines: [
+        { text: 'First line', startSeconds: 0 },
+        { text: 'Second line', startSeconds: 2.5 },
+        { text: 'Third line', startSeconds: 10 },
+      ],
+      synced: true,
+    });
+  });
+
+  it('reports synced: false and startSeconds: null for every line when none carry a Start (an unsynced .txt lyric)', () => {
+    const raw: RawLyricDto = {
+      Metadata: {},
+      Lyrics: [{ Text: 'Some lyrics' }, { Text: 'with no timing at all' }],
+    };
+    const result = normalizeLyrics(raw);
+    expect(result.synced).toBe(false);
+    expect(result.lines).toEqual([
+      { text: 'Some lyrics', startSeconds: null },
+      { text: 'with no timing at all', startSeconds: null },
+    ]);
+  });
+
+  it('trusts the given line order rather than re-sorting by Start', () => {
+    // Deliberately out of order — normalizeLyrics must not reorder it. The real upstream
+    // (LrcLyricParser) always pre-sorts, so an out-of-order response like this would only
+    // happen from a malformed/hand-edited upstream; the client's job is to render exactly
+    // what it was given, not to second-guess it.
+    const raw: RawLyricDto = {
+      Metadata: {},
+      Lyrics: [
+        { Text: 'Later line', Start: 50_000_000 },
+        { Text: 'Earlier line', Start: 10_000_000 },
+      ],
+    };
+    const result = normalizeLyrics(raw);
+    expect(result.lines.map((l) => l.text)).toEqual(['Later line', 'Earlier line']);
+  });
+
+  it('treats an empty Lyrics array as unsynced rather than throwing', () => {
+    const raw: RawLyricDto = { Metadata: {}, Lyrics: [] };
+    expect(normalizeLyrics(raw)).toEqual({ lines: [], synced: false });
   });
 });

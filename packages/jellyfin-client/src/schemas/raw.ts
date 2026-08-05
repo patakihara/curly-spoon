@@ -130,8 +130,11 @@ export const rawQueryResultSchema = z
 
 // ---------------------------------------------------------------------------
 // Lyrics — `Jellyfin.Api/Controllers/LyricsController.cs` (`GetLyrics`),
-// `MediaBrowser.Model/Lyrics/{LyricDto,LyricLine,LyricMetadata}.cs`, verified
-// against `jellyfin/jellyfin` `master` 2026-08-04.
+// `MediaBrowser.Model/Lyrics/{LyricDto,LyricLine,LyricMetadata}.cs`. Re-verified
+// 2026-08-05 against `jellyfin/jellyfin` `master` directly (raw source files, not
+// recollection) for this wave — see `client.ts`'s `getLyrics` doc comment for the
+// controller-behaviour findings (404 semantics, which parser sets `Start`, why
+// `IsSynced` can't be trusted) this pass turned up.
 // ---------------------------------------------------------------------------
 
 /** `MediaBrowser.Model/Lyrics/LyricMetadata.cs` — the standard LRC header
@@ -153,23 +156,48 @@ export const rawLyricMetadataSchema = z
     Offset: z.number().nullable().optional(),
     Creator: z.string().nullable().optional(),
     Version: z.string().nullable().optional(),
-    /** Optional, and — per `normalize.ts`'s `normalizeLyrics` — not the
-     * field a caller should trust for sync state; see that function's doc
-     * comment for why. */
+    /** Present in the C# model, but confirmed **never populated** by the code
+     * path behind `GET /Audio/{id}/Lyrics`: `LyricManager.GetLyricsAsync`
+     * returns whatever `ILyricParser.ParseLyrics` produces directly, and
+     * neither shipped parser (`LrcLyricParser`/`TxtLyricParser`) ever sets
+     * `Metadata.IsSynced` — it is only ever assigned on the separate remote
+     * lyric-*search* path (`LyricManager.InternalSearchProviderAsync`, not
+     * this endpoint). So this field is always `null`/absent here; do not use
+     * it as a sync signal — see `normalize.ts`'s `normalizeLyrics` for the
+     * signal actually used (whether every line carries a `Start`). */
     IsSynced: z.boolean().nullable().optional(),
   })
   .passthrough();
 
-/** `MediaBrowser.Model/Lyrics/LyricLine.cs`. `Start` is ticks ("start time
- * in ticks" per that file's own doc comment); `null`/absent for a plain
- * unsynced line. `Cues` (`LyricLineCue[]`, word/phrase-level alignment) is
- * deliberately not modeled beyond `.passthrough()`: nothing in this
- * codebase reads word-level timing yet, and passthrough keeps the raw field
- * intact on the parsed object for a future caller without this schema
- * having to guess at `LyricLineCue`'s exact shape. */
+/** `MediaBrowser.Model/Lyrics/LyricLine.cs`. `Text` is a required constructor
+ * parameter (`LyricLine(string text, long? start = null, ...)`) with a
+ * non-nullable `string` getter — unlike `rawBaseItemDtoSchema`'s fields, this
+ * is **not** optional/nullable here; both real parsers that can produce a
+ * `GET /Audio/{id}/Lyrics` response (`MediaBrowser.Providers/Lyric/
+ * {LrcLyricParser,TxtLyricParser}.cs`) always pass a string (possibly empty
+ * after `.Trim()`), never null. Corrected from an earlier, never-verified
+ * draft that had this as `.nullable().optional()`.
+ *
+ * `Start` is ticks ("start time in ticks" per that file's own doc comment);
+ * `null`/absent for a plain unsynced line — confirmed directly:
+ * `TxtLyricParser.ParseLyrics` constructs every `LyricLine` with no `start`
+ * argument at all (stays `null`), while `LrcLyricParser.ParseLyrics` always
+ * passes a computed `lyricStartTicks` for every line and pre-sorts its output
+ * by that same start time (`sortedLyricData = lyricData.Lyrics.OrderBy(x =>
+ * x.StartTime)`). The two parsers are mutually exclusive per response — a
+ * `LyricDto` is never a mix of synced and unsynced lines — which is why
+ * `normalize.ts`'s `normalizeLyrics` derives "synced" from whether every line
+ * has a `Start`, not from `LyricMetadata.IsSynced` (see that schema's own
+ * comment for why the metadata field can't be trusted).
+ *
+ * `Cues` (`LyricLineCue[]`, word/phrase-level alignment) is deliberately not
+ * modeled beyond `.passthrough()`: nothing in this codebase reads word-level
+ * timing yet, and passthrough keeps the raw field intact on the parsed object
+ * for a future caller without this schema having to guess at
+ * `LyricLineCue`'s exact shape. */
 export const rawLyricLineSchema = z
   .object({
-    Text: z.string().nullable().optional(),
+    Text: z.string(),
     Start: z.number().nullable().optional(),
   })
   .passthrough();

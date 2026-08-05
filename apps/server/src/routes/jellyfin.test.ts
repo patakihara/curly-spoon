@@ -323,6 +323,74 @@ describe('GET /api/v1/jellyfin/search', () => {
   });
 });
 
+describe('GET /api/v1/jellyfin/tracks/:itemId/lyrics', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/lyrics',
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('returns normalised, synced lyrics for a track that has them', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/lyrics',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      lyrics: {
+        synced: true,
+        lines: [
+          { text: 'Tidal lines on the shore', startSeconds: 0 },
+          { text: 'Static coast forevermore', startSeconds: 3.25 },
+        ],
+      },
+    });
+  });
+
+  it('returns unsynced lyrics (no startSeconds, synced: false) for a plain-text lyric file', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-2/lyrics',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      lyrics: {
+        synced: false,
+        lines: [{ text: 'plain text, no timing at all', startSeconds: null }],
+      },
+    });
+  });
+
+  it('returns 200 with { lyrics: null } — not a 404 or 500 — for a track with no lyrics', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-hollow-1/lyrics',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ lyrics: null });
+  });
+
+  it('409s with jellyfin_not_configured when no Jellyfin server has ever been connected', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/lyrics',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
+});
+
 describe('POST /api/v1/jellyfin/playback/start|progress|stopped', () => {
   it('start requires authentication', async () => {
     const { app } = buildTestApp();
@@ -499,13 +567,18 @@ describe('GET /api/v1/jellyfin/items/:itemId/artwork', () => {
 });
 
 describe('no route ever leaks the stored Jellyfin access token into a response body', () => {
-  it('checks login, browse, search, both media-proxy responses and the three playback reports', async () => {
+  it('checks login, browse, search, lyrics, both media-proxy responses and the three playback reports', async () => {
     const { app, cookie } = await jellyfinConnectedApp();
 
     const responses = await Promise.all([
       app.inject({
         method: 'GET',
         url: '/api/v1/jellyfin/artists',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/tracks/track-driftwave-1/lyrics',
         cookies: { auralis_session: cookie },
       }),
       app.inject({
@@ -593,5 +666,16 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
     });
     expect(response.statusCode).toBe(409);
     expect(response.body).not.toMatch(/not-the-fake-upstream/);
+
+    // Same check for the lyrics route specifically — it's a GET, not a POST like the
+    // playback reports above, and its own not-configured path is a separate code path
+    // worth confirming doesn't leak the attempted URL either.
+    const lyricsResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks/track-driftwave-1/lyrics',
+      cookies: { auralis_session: cookie },
+    });
+    expect(lyricsResponse.statusCode).toBe(409);
+    expect(lyricsResponse.body).not.toMatch(/not-the-fake-upstream/);
   });
 });

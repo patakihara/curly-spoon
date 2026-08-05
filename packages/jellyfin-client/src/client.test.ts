@@ -253,6 +253,67 @@ describe('JellyfinClient.search', () => {
   });
 });
 
+describe('JellyfinClient.getLyrics', () => {
+  it('GETs /Audio/:itemId/Lyrics with the auth header and normalises a synced, multi-line response', async () => {
+    const fetchFn = router({
+      'GET /Audio/track-1/Lyrics': ({ init }) => {
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        return json({
+          Metadata: { Artist: 'Boards of Canada' },
+          Lyrics: [
+            { Text: 'First line', Start: 0 },
+            { Text: 'Second line', Start: 32_500_000 }, // 3.25s
+          ],
+        });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    const lyrics = await client.getLyrics('track-1');
+
+    expect(lyrics).toEqual({
+      lines: [
+        { text: 'First line', startSeconds: 0 },
+        { text: 'Second line', startSeconds: 3.25 },
+      ],
+      synced: true,
+    });
+  });
+
+  it('resolves to null — not an error — when Jellyfin has no lyrics for this track', async () => {
+    const fetchFn = router({
+      'GET /Audio/track-no-lyrics/Lyrics': () => new Response(null, { status: 404 }),
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.getLyrics('track-no-lyrics')).resolves.toBeNull();
+  });
+
+  it('surfaces a schema_mismatch JellyfinError for an unparseable response', async () => {
+    const fetchFn = router({
+      'GET /Audio/track-bad/Lyrics': () => json({ Metadata: {} /* missing required Lyrics */ }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.getLyrics('track-bad').catch((e: unknown) => e);
+    expect((err as JellyfinError).code).toBe('schema_mismatch');
+  });
+
+  it('surfaces an upstream 5xx as a typed JellyfinError whose message never carries the token', async () => {
+    const fetchFn = router({
+      'GET /Audio/track-1/Lyrics': () =>
+        new Response('server exploded, ApiKey=tok-should-not-leak', { status: 500 }),
+    });
+    const client = makeClient(fetchFn, 'super-secret-token');
+
+    const err = await client.getLyrics('track-1').catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('upstream_error');
+    expect((err as JellyfinError).message).not.toContain('super-secret-token');
+  });
+});
+
 describe('JellyfinClient.streamUrl / imageUrl', () => {
   it('builds a stream URL using the client’s own token', async () => {
     const client = makeClient(router({}), 'my-token');

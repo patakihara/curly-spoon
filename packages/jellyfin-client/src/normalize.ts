@@ -10,10 +10,11 @@ import type { z } from 'zod';
 import type {
   rawAuthenticationResultSchema,
   rawBaseItemDtoSchema,
+  rawLyricDtoSchema,
   rawNameGuidPairSchema,
   rawUserDtoSchema,
 } from './schemas/raw.js';
-import type { Album, Artist, LoginResult, Track, UserProfile } from './domain.js';
+import type { Album, Artist, LoginResult, Lyrics, Track, UserProfile } from './domain.js';
 
 type RawItem = z.infer<typeof rawBaseItemDtoSchema>;
 type RawNameGuidPair = z.infer<typeof rawNameGuidPairSchema>;
@@ -94,5 +95,36 @@ export function normalizeLogin(raw: z.infer<typeof rawAuthenticationResultSchema
     token: raw.AccessToken,
     serverId: raw.ServerId ?? raw.User.ServerId ?? null,
     user: normalizeUser(raw.User),
+  };
+}
+
+/**
+ * Maps a raw `LyricDto` (a *found* response — the 404 "no lyrics" case is handled one
+ * layer up, in `client.ts`'s `getLyrics`, and never reaches this function) onto the
+ * domain `Lyrics` type.
+ *
+ * `synced` is derived here, not read off `Metadata.IsSynced` — see `schemas/raw.ts`'s
+ * `IsSynced` field comment for the source-verified reason that field is always empty on
+ * this endpoint. The derivation instead uses the same signal the two real parsers behind
+ * `GET /Audio/{id}/Lyrics` actually differ on: `LrcLyricParser` (synced) sets every
+ * line's `Start`; `TxtLyricParser` (unsynced) sets none. A response is never a mix of the
+ * two (one parser produces the whole `LyricDto`), so "every line has a start" and "the
+ * first line has a start" are equivalent in practice; this checks every line so a
+ * malformed or hand-edited upstream response degrades to unsynced (safe: plain text)
+ * rather than mis-highlighting from a partial timestamp set.
+ *
+ * Line order is trusted as given, not re-sorted: `LrcLyricParser` already sorts its
+ * output by `StartTime` before returning it, and `TxtLyricParser`'s lines have no
+ * timestamp to sort by at all — their only meaningful order is the source file's own
+ * line order, which re-sorting would have no correct way to preserve.
+ */
+export function normalizeLyrics(raw: z.infer<typeof rawLyricDtoSchema>): Lyrics {
+  const lines = raw.Lyrics.map((line) => ({
+    text: line.Text,
+    startSeconds: line.Start != null ? line.Start / TICKS_PER_SECOND : null,
+  }));
+  return {
+    lines,
+    synced: lines.length > 0 && lines.every((line) => line.startSeconds != null),
   };
 }

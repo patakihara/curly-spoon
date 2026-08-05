@@ -24,4 +24,6 @@ export type {
   SearchResults,
   UserProfile,
   LoginResult,
+  Lyrics,
+  LyricLine,
 } from './domain.js';

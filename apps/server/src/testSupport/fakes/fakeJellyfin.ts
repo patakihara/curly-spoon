@@ -1,7 +1,8 @@
 /**
  * A minimal, in-memory fake of the Jellyfin REST API surface `@auralis/jellyfin-client`
- * uses — auth, `/Items` browsing/search, and the two token-bearing byte routes
- * (`/Audio/:id/stream`, `/Items/:id/Images/Primary`). Mirrors `fakeAbs.ts`'s shape: a
+ * uses — auth, `/Items` browsing/search, lyrics (`/Audio/:id/Lyrics`), and the two
+ * token-bearing byte routes (`/Audio/:id/stream`, `/Items/:id/Images/Primary`). Mirrors
+ * `fakeAbs.ts`'s shape: a
  * `fetch`-compatible function, keyed by a distinct base URL so `buildTestApp.ts` can
  * route by origin, no real socket.
  *
@@ -201,6 +202,22 @@ const IMAGE_BYTES = new Map<string, Uint8Array>(
   [...IMAGE_IDS].map((id, i) => [id, generateBytes(600, i + 100)]),
 );
 
+/** Lyrics, keyed by track id — deliberately covers the three response shapes
+ * `GET /jellyfin/tracks/:itemId/lyrics` (`routes/jellyfin.ts`) has to distinguish: a
+ * synced (every line has `Start`) response for `track-driftwave-1`, an unsynced (no line
+ * has `Start`) response for `track-driftwave-2`, and no entry at all for
+ * `track-hollow-1` — that one falls through to this fake's default 404, exactly the
+ * "item not found or has no lyrics" ambiguity the real `LyricsController.GetLyrics`
+ * itself can't distinguish (see `client.ts`'s `getLyrics` doc comment).
+ */
+const LYRICS: Record<string, { Text: string; Start?: number }[]> = {
+  'track-driftwave-1': [
+    { Text: 'Tidal lines on the shore', Start: 0 },
+    { Text: 'Static coast forevermore', Start: 32_500_000 }, // 3.25s
+  ],
+  'track-driftwave-2': [{ Text: 'plain text, no timing at all' }],
+};
+
 export interface FakeJellyfinUpstream {
   fetch: FetchLike;
 }
@@ -335,6 +352,13 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
         status: result.status,
         headers: result.headers,
       });
+    }
+
+    // ---- Lyrics ----
+    if (method === 'GET' && parts[0] === 'Audio' && parts[1] && parts[2] === 'Lyrics') {
+      const lines = LYRICS[parts[1]];
+      if (!lines) return notFound();
+      return json({ Metadata: {}, Lyrics: lines });
     }
 
     // ---- Playback progress reporting ----

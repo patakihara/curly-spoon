@@ -7,8 +7,10 @@
  * `/Items` query model. See `schemas/raw.ts`'s file doc comment for the
  * sources each raw shape was verified against.
  *
- * Out of scope for this wave (see the phase 9 spec): lyrics, playlists,
- * favourites, transcoding decisions, and the slskd music-request provider.
+ * Out of scope for this wave (see the phase 9 spec): playlists, favourites,
+ * transcoding decisions, and the slskd music-request provider. Lyrics *display*
+ * (`getLyrics`, below) shipped in the synced-lyrics-view wave; lyric *search* remains
+ * out of scope — Jellyfin has no lyric-text search at all, see `docs/INTEGRATIONS.md`.
  */
 
 import { z } from 'zod';
@@ -16,11 +18,26 @@ import { HttpClient, type FetchLike } from './http.js';
 import type { JellyfinDeviceInfo } from './auth.js';
 import {
   rawAuthenticationResultSchema,
+  rawLyricDtoSchema,
   rawQueryResultSchema,
   type rawBaseItemDtoSchema,
 } from './schemas/raw.js';
-import { normalizeAlbum, normalizeArtist, normalizeLogin, normalizeTrack } from './normalize.js';
-import type { Album, Artist, LibraryPage, LoginResult, SearchResults, Track } from './domain.js';
+import {
+  normalizeAlbum,
+  normalizeArtist,
+  normalizeLogin,
+  normalizeLyrics,
+  normalizeTrack,
+} from './normalize.js';
+import type {
+  Album,
+  Artist,
+  LibraryPage,
+  LoginResult,
+  Lyrics,
+  SearchResults,
+  Track,
+} from './domain.js';
 import {
   buildImageUrl,
   buildStreamUrl,
@@ -246,6 +263,41 @@ export class JellyfinClient {
       // Jellyfin version returning something outside that filter.
     }
     return { artists, albums, tracks };
+  }
+
+  // ---------------------------------------------------------------------
+  // Lyrics — `Jellyfin.Api/Controllers/LyricsController.cs`'s `GetLyrics`. Verified
+  // directly against that controller (not memory), 2026-08-05: `[HttpGet("Audio/{itemId}/
+  // Lyrics")]`, `[Authorize]`, and it returns `NotFound()` — a bare 404, no body — in
+  // *two* distinct cases it cannot tell apart from one another: the item id doesn't
+  // resolve to an `Audio` item at all, and the item resolves but
+  // `ILyricManager.GetLyricsAsync` came back `null` (no lyric file/stream found). Either
+  // way, 404 here means exactly one thing a caller can act on: "nothing to show for this
+  // id" — never a transient failure — so it is folded into a typed `null` return rather
+  // than a thrown `JellyfinError`, matching this package's "total functions that degrade
+  // rather than throw" convention. Every other non-2xx status still throws normally.
+  //
+  // `GetLyricsAsync` (`MediaBrowser.Providers/Lyric/LyricManager.cs`) hands back whatever
+  // the first matching `ILyricParser.ParseLyrics` produces, unmodified — no synchronous
+  // "is this synced" flag is added at that layer either, which is why `normalize.ts`'s
+  // `normalizeLyrics` has to derive sync state itself; see that function's doc comment.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Fetches `itemId`'s lyrics, or `null` if Jellyfin has none for it — see this section's
+   * comment above for why a 404 is folded into `null` rather than thrown. This is the
+   * common case for most of a library, not an error condition.
+   */
+  async getLyrics(itemId: string): Promise<Lyrics | null> {
+    try {
+      const raw = await this.http.requestJson(`/Audio/${itemId}/Lyrics`, {
+        schema: rawLyricDtoSchema,
+      });
+      return normalizeLyrics(raw);
+    } catch (err) {
+      if (err instanceof JellyfinError && err.code === 'not_found') return null;
+      throw err;
+    }
   }
 
   // ---------------------------------------------------------------------
