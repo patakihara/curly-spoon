@@ -952,6 +952,36 @@ dispatcher as a parameter defaulting to `Dispatchers.IO`. **`docs/HANDOVER.md` c
 account and what it means for writing any future Android ViewModel test** — read it before
 touching one.
 
+- **Music requests — server side: done (`a6ae38b`, `a7ec008`, merged `51c5613`).** A full slskd
+  client, a `music/registry.ts` mirroring `indexers/`/`download/`, credentials in
+  `provider_configs` under a new `kind: 'music'`, the existing `/providers` routes extended to
+  list/configure/test slskd, and `GET /music-requests/search`. Verified against slskd's own
+  source: auth is `X-API-Key`, and **search is asynchronous** — `POST /searches`, then poll —
+  which shapes the whole client.
+
+  **slskd does not fit `IndexerProvider`/`DownloadClientProvider`** and was not forced into
+  them: it unifies search and download in one upstream with no magnet, URL or seeder concept.
+  It gets its own `MusicRequestProvider` interface reusing the existing download-option and
+  status types.
+
+  **Create and list are deliberately absent, and this is the blocker for the rest.** The
+  `requests` table has no column distinguishing a music request from a book one, and
+  `GET /requests` filters only by status — so a music row written there would appear in the
+  book list. The fix is a `media_type` column defaulting to `'book'`, or a sibling table; it
+  needs a schema change. The provider's download half (`add`/`status`/`remove`) is built and
+  tested and is unreachable over HTTP only because nothing persists a request yet.
+
+  Known and documented in code: `artist`/`album` are path heuristics, since slskd's file DTO
+  carries neither; `contentPath` is always `null` because slskd never reports a resolved local
+  path; `remove(deleteData: true)` only untracks; and a poll hitting its ceiling is
+  indistinguishable to the caller from a genuinely empty search. Two things could not be
+  verified against source and are flagged in the file: the JSON casing (framework default, not
+  a captured response) and `AverageSpeed`'s unit.
+
+  **Still open, and the user's to settle**: they already run `deemix`, which cuts against the
+  slskd decision. The pluggable interface is what makes that reversible — deemix would be a new
+  file, not a refactor — but it is worth asking before building the UI on top.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
