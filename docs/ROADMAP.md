@@ -1124,6 +1124,27 @@ touching one.
   UI's own create/approve action has no grab affordance. The music UI works around it by
   chaining create/approve straight into `grab()`; books have no such chain.
 
+- **Music requests — Jellyfin rescan: done (`6dfcafb`, merged `8ae8448`).** A music request can
+  now advance past `downloading`, because the Jellyfin client can ask for a library refresh the
+  way a book grab asks Audiobookshelf. Scoped to the music library folder rather than the whole
+  server: refreshing a `CollectionFolder` cascades to its children, so it picks up newly
+  downloaded files without rescanning unrelated libraries.
+
+  **The terminal state is `importRequested`, not `completed`, and that distinction is the whole
+  point.** Verified against `LibraryController.cs`/`ItemRefreshController.cs`: Jellyfin's
+  refresh is genuinely fire-and-forget — it enqueues a task and returns — and **there is no API
+  to observe scan progress or completion at all** (`IProviderManager.GetRefreshQueue()` exists
+  but is wired to no controller). So "the file is in your library" is a claim this code cannot
+  support, and it does not make it. Failure paths land in the same state with a static note
+  that never echoes an upstream message.
+
+  **A real product limitation, tested rather than hidden**: both refresh endpoints require
+  `Policies.RequiresElevation`, so a **non-admin** connected Jellyfin account 403s on every
+  call. Worth knowing before wondering why a rescan silently never happens.
+
+  **An inherited gap this surfaced, not fixed**: `pollDownloads` is not wired to any scheduler
+  in production, for books or music. Nothing advances a request's download state on its own.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
