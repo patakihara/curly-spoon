@@ -1015,6 +1015,24 @@ touching one.
   slskd decision. The pluggable interface is what makes that reversible — deemix would be a new
   file, not a refactor — but it is worth asking before building the UI on top.
 
+- **Music requests — persistence: done (`d1152c1`, merged `8983546`).** `requests` gained
+  `media_type` (existing rows default to `'book'`) and a `candidate_json` column, rather than a
+  sibling table: every other column on that table already means the same thing for a track as
+  for a book, and only the payload genuinely differs — a slskd candidate has no seeders, magnet
+  or download URL, so storing one under `Release`'s type would be a type lie. Book and music
+  routes each reject the other's request ids, so one shared table cannot cross-contaminate the
+  two pipelines. The migration is tested against a database that **already has book rows in
+  it**, not only against a fresh schema.
+
+  **Music requests stop at `downloading`.** They flow through the existing status pipeline as
+  far as that, then stop — there is no Jellyfin rescan capability in this codebase the way a
+  book grab has Audiobookshelf's `scanLibrary`, so slskd's transfer states have nothing to map
+  onto past that point. That import step is the remaining gap, and it needs a Jellyfin library
+  refresh before it can be built.
+
+  `GET /music-requests` deliberately inherits the unscoped-by-caller behaviour `GET /requests`
+  already has, rather than diverging music from books on a decision that is the user's.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
