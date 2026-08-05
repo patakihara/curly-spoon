@@ -4,8 +4,8 @@
  * Two upstreams exist: an Audiobookshelf playback session (a book, or — scoped by
  * `PlaybackSession.episodeId` — a podcast episode; the same `/sessions/:id/sync`/`/close`
  * pair serves both, so this is one implementation, not two, per `client.ts`'s own
- * `playEpisode` doc comment), and — since Phase 9's web wave — a Jellyfin album queue
- * (`jellyfinSource`, fed by `features/music/queue.ts`). Each owns two things a
+ * `playEpisode` doc comment), and — since Phase 9's web wave — a Jellyfin album/playlist
+ * queue (`jellyfinSource`, fed by `features/music/musicQueue.ts`). Each owns two things a
  * source-agnostic player cannot know on its own: how to turn a measured stretch of
  * listening into an upstream report (`reportProgress`), and how to turn one of the item's
  * tracks into a URL `<audio>` can actually load (`resolveTrackUrl`).
@@ -155,21 +155,39 @@ export const noopProgressReporter: PlaybackProgressReporter = {
  *
  * `resolveTrackUrl` reads `track.contentUrl` as the track's own Jellyfin item id directly
  * (an opaque per-source token — see `AudioTrack.contentUrl`'s doc comment in `api/types.ts`
- * — never a literal URL), which is exactly what `features/music/queue.ts`'s `albumQueue`
- * puts there.
+ * — never a literal URL), which is exactly what `features/music/musicQueue.ts`'s
+ * `materialize` puts there.
  *
  * `reportProgress` now actually reports, via `POST /jellyfin/playback/{start,progress,
  * stopped}` (`@auralis/jellyfin-client`'s `reportPlaybackStart`/`reportPlaybackProgress`/
  * `reportPlaybackStopped`, proxied by the BFF — see `routes/jellyfin.ts`). The one thing
  * that makes this harder than `audiobookshelfSource` above: `ProgressSyncBody.currentTime`
- * is a position on the *queue's* cumulative timeline (`queue.ts`'s `albumQueue` lays an
- * album's tracks end to end on the same `startOffset` timeline a multi-file audiobook
- * already plays through), but Jellyfin wants a position *within the currently playing
- * track*, plus that track's own item id. `audioTracks` — the same array
- * `playerStore.load()` was given, i.e. the queue this source was constructed for — is
- * what `resolveQueuePosition` below maps a cumulative time back through, reusing
- * `playback.ts`'s `trackAt` (the same walk `useAudioElement`'s own track-boundary logic
- * already relies on) rather than re-deriving that walk here.
+ * is a position on the *queue's* cumulative timeline (`musicQueue.ts`'s `materialize` lays
+ * an album/playlist's tracks end to end on the same `startOffset` timeline a multi-file
+ * audiobook already plays through), but Jellyfin wants a position *within the currently
+ * playing track*, plus that track's own item id. `getAudioTracks` is what `resolveQueuePosition`
+ * below maps a cumulative time back through, reusing `playback.ts`'s `trackAt` (the same walk
+ * `useAudioElement`'s own track-boundary logic already relies on) rather than re-deriving
+ * that walk here.
+ *
+ * `getAudioTracks` is a *getter*, not a plain array, and that is load-bearing, not
+ * stylistic. `MusicAlbumPage.tsx`/`MusicPlaylistPage.tsx` construct this source exactly
+ * once, when playback starts — but `musicQueueStore.ts`'s `applyQueue` (shuffle toggle,
+ * cross-page fetch, repeat-all reshuffle-on-wrap — see that file's own header) replaces
+ * `playerStore.tracks` afterwards via `setTracks`, without ever reconstructing this source.
+ * An array captured once at construction would silently go stale the moment any of those
+ * three run: `onTick`/`onEnd` would keep mapping `currentTime` through a queue whose
+ * *content* no longer matches what is actually playing — reporting the wrong track's id
+ * after a shuffle (same total duration, so `trackAt` still resolves to *some* track, just
+ * the wrong one), or reporting nothing at all once playback passes the stale array's
+ * shorter total duration after a cross-page append. Calling `getAudioTracks()` fresh inside
+ * `onTick`/`onEnd`, instead of closing over its result, is the same fix
+ * `useProgressSync.ts` already applies to `isPlaying` for the identical reason (see that
+ * hook's own comment by its `tick` function) — read live state at the moment it's needed,
+ * not whatever it was when the reporter was built. This also keeps `playbackSource.ts`
+ * free of a direct import of the `playerStore` singleton: the call site (which already
+ * holds `usePlayerStore`) supplies the live-read function, so this module stays a plain
+ * factory over injected dependencies, the same shape `api` already has.
  *
  * Two design decisions the spec left open, made here and not elsewhere:
  *
@@ -230,7 +248,7 @@ export function jellyfinSource(
     | 'reportJellyfinPlaybackProgress'
     | 'reportJellyfinPlaybackStopped'
   >,
-  audioTracks: AudioTrack[],
+  getAudioTracks: () => AudioTrack[],
 ): PlaybackSource {
   // Closure state, not `PlaybackProgressReporter` state — see this function's doc comment,
   // decision 1. `null` until the first tick resolves a track.
@@ -239,7 +257,9 @@ export function jellyfinSource(
   return {
     reportProgress: {
       onTick(body, state) {
-        const resolved = resolveQueuePosition(audioTracks, body.currentTime);
+        // `getAudioTracks()` is called fresh on every tick rather than once — see this
+        // function's doc comment for why a value captured at construction goes stale.
+        const resolved = resolveQueuePosition(getAudioTracks(), body.currentTime);
         if (!resolved) return;
         if (resolved.itemId !== lastStartedItemId) {
           lastStartedItemId = resolved.itemId;
@@ -261,7 +281,9 @@ export function jellyfinSource(
         // See this function's doc comment, decision 2: no body means no track was ever
         // identified, so there is nothing to send a stop report *for*.
         if (!body) return;
-        const resolved = resolveQueuePosition(audioTracks, body.currentTime);
+        // Fresh read here too — the same staleness this function's doc comment describes
+        // for `onTick` applies equally to the final report on teardown.
+        const resolved = resolveQueuePosition(getAudioTracks(), body.currentTime);
         if (!resolved) return;
         void api
           .reportJellyfinPlaybackStopped(resolved.itemId, resolved.positionSeconds)

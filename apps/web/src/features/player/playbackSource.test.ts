@@ -141,8 +141,8 @@ function fakeJellyfinApi() {
 }
 
 /** A three-track album queue laid out end to end on one cumulative timeline, exactly as
- * `queue.ts`'s `albumQueue` builds one — track B (index 1) starts at 100s and runs 150s,
- * so time 130 lands 30s into track B, not 130s into anything. */
+ * `musicQueue.ts`'s `materialize` builds one — track B (index 1) starts at 100s and runs
+ * 150s, so time 130 lands 30s into track B, not 130s into anything. */
 const ALBUM_QUEUE: AudioTrack[] = [
   track({ index: 0, startOffset: 0, duration: 100, contentUrl: 'jf-track-a' }),
   track({ index: 1, startOffset: 100, duration: 150, contentUrl: 'jf-track-b' }),
@@ -153,7 +153,7 @@ describe('jellyfinSource', () => {
   describe('resolveTrackUrl', () => {
     it('resolves a track to the proxied stream URL, keyed by the track’s own Jellyfin id', () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       expect(source.resolveTrackUrl(track({ contentUrl: 'jf-track-1' }))).toBe(
         '/jellyfin/tracks/jf-track-1/stream',
@@ -163,7 +163,7 @@ describe('jellyfinSource', () => {
 
     it('degrades to null for a track with no usable id, rather than throwing', () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       expect(source.resolveTrackUrl(track({ contentUrl: null }))).toBeNull();
       expect(source.resolveTrackUrl(track({ contentUrl: '' }))).toBeNull();
@@ -174,7 +174,7 @@ describe('jellyfinSource', () => {
   describe('reportProgress.onTick', () => {
     it('maps a queue-timeline position into the second track of a three-track album, reporting that track’s id and a position relative to its own start', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onTick(
         { currentTime: 130, timeListened: 15, duration: 330 },
@@ -189,7 +189,7 @@ describe('jellyfinSource', () => {
 
     it('fires a lazy start report on the very first tick, before the progress report', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onTick(
         { currentTime: 30, timeListened: 15, duration: 330 },
@@ -205,7 +205,7 @@ describe('jellyfinSource', () => {
 
     it('still fires the lazy start report on the first tick even while paused — the start report itself carries no pause signal, but the progress report that immediately follows it in the same tick does', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onTick(
         { currentTime: 30, timeListened: 15, duration: 330 },
@@ -221,7 +221,7 @@ describe('jellyfinSource', () => {
 
     it('does not re-fire the start report on a later tick within the same track', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onTick(
         { currentTime: 10, timeListened: 15, duration: 330 },
@@ -240,7 +240,7 @@ describe('jellyfinSource', () => {
 
     it('fires a new start report when the queue advances past a track boundary', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onTick(
         { currentTime: 90, timeListened: 15, duration: 330 },
@@ -260,7 +260,7 @@ describe('jellyfinSource', () => {
 
     it('reports nothing when the position resolves to no track at all', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, []);
+      const source = jellyfinSource(api, () => []);
 
       source.reportProgress.onTick(BODY, { isPlaying: true });
       await Promise.resolve();
@@ -273,7 +273,7 @@ describe('jellyfinSource', () => {
       const api = fakeJellyfinApi();
       api.reportJellyfinPlaybackStart.mockRejectedValue(new Error('network down'));
       api.reportJellyfinPlaybackProgress.mockRejectedValue(new Error('network down'));
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       expect(() =>
         source.reportProgress.onTick(
@@ -285,7 +285,7 @@ describe('jellyfinSource', () => {
 
     it('reports the real pause state — a tick while playing sends isPaused: false, a tick while paused sends isPaused: true', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onTick(
         { currentTime: 30, timeListened: 15, duration: 330 },
@@ -308,7 +308,7 @@ describe('jellyfinSource', () => {
 
     it('regression: a track sitting paused across several ticks never reports as playing — the old bug reported IsPaused: false unconditionally for as long as the interval kept firing', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       for (const currentTime of [10, 10, 10, 10]) {
         source.reportProgress.onTick(
@@ -323,12 +323,85 @@ describe('jellyfinSource', () => {
         expect(call[2]).toEqual({ isPaused: true });
       }
     });
+
+    it("regression: reports the track at the *live* list, not the one captured when the source was built — a shuffle replaces `playerStore.tracks` via `musicQueueStore.ts`'s `applyQueue` without ever reconstructing this source, so a stale closure would keep mapping `currentTime` through the pre-shuffle order", async () => {
+      const api = fakeJellyfinApi();
+      // Same total duration (200s) as `SHUFFLED`, but a different track owns the first
+      // 100 seconds in each ordering — chosen so time 50 resolves to a *different* id
+      // depending on which list is live, rather than merely a different offset.
+      const ORIGINAL: AudioTrack[] = [
+        track({ index: 0, startOffset: 0, duration: 100, contentUrl: 'jf-original-first' }),
+        track({ index: 1, startOffset: 100, duration: 100, contentUrl: 'jf-original-second' }),
+      ];
+      const SHUFFLED: AudioTrack[] = [
+        track({ index: 0, startOffset: 0, duration: 100, contentUrl: 'jf-original-second' }),
+        track({ index: 1, startOffset: 100, duration: 100, contentUrl: 'jf-original-first' }),
+      ];
+      let live = ORIGINAL;
+      const source = jellyfinSource(api, () => live);
+
+      source.reportProgress.onTick(
+        { currentTime: 50, timeListened: 15, duration: 200 },
+        { isPlaying: true },
+      );
+      await Promise.resolve();
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenNthCalledWith(
+        1,
+        'jf-original-first',
+        50,
+        { isPaused: false },
+      );
+
+      // Simulates a shuffle toggle: `musicQueueStore.ts`'s `applyQueue` calls
+      // `playerStore.setTracks` with a reordered array; the source was never rebuilt.
+      live = SHUFFLED;
+      source.reportProgress.onTick(
+        { currentTime: 50, timeListened: 15, duration: 200 },
+        { isPlaying: true },
+      );
+      await Promise.resolve();
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenNthCalledWith(
+        2,
+        'jf-original-second',
+        50,
+        { isPaused: false },
+      );
+    });
+
+    it('regression: reports the appended track once the live list grows past a cross-page fetch — a position beyond the page-1 list resolves against the *live* array, not the shorter one the source was built with', async () => {
+      const api = fakeJellyfinApi();
+      // Page 1 alone: one 60s track. A stale closure resolves any time >= 60 to this same
+      // track with an offset run past its own real duration — wrong id, wrong position —
+      // rather than to whatever the queue actually appended.
+      const PAGE_ONE: AudioTrack[] = [
+        track({ index: 0, startOffset: 0, duration: 60, contentUrl: 'jf-page1-track' }),
+      ];
+      const AFTER_APPEND: AudioTrack[] = [
+        track({ index: 0, startOffset: 0, duration: 60, contentUrl: 'jf-page1-track' }),
+        track({ index: 1, startOffset: 60, duration: 50, contentUrl: 'jf-page2-track' }),
+      ];
+      let live: AudioTrack[] = PAGE_ONE;
+      const source = jellyfinSource(api, () => live);
+
+      // Simulates `musicQueueController.ts`'s cross-page fetch-then-`applyQueue`, which
+      // happens before playback ever reaches the appended track.
+      live = AFTER_APPEND;
+      source.reportProgress.onTick(
+        { currentTime: 90, timeListened: 15, duration: 110 },
+        { isPlaying: true },
+      );
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-page2-track', 30, {
+        isPaused: false,
+      });
+    });
   });
 
   describe('reportProgress.onEnd', () => {
     it('sends a stopped report mapped to the resolved track, given a body', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onEnd({ currentTime: 130, timeListened: 15, duration: 330 });
       await Promise.resolve();
@@ -338,7 +411,7 @@ describe('jellyfinSource', () => {
 
     it('sends no stop report for a null body — no track was ever identified to stop', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       source.reportProgress.onEnd(null);
       await Promise.resolve();
@@ -349,7 +422,7 @@ describe('jellyfinSource', () => {
 
     it('sends no stop report when a body exists but no track resolves from it', async () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api, []);
+      const source = jellyfinSource(api, () => []);
 
       source.reportProgress.onEnd(BODY);
       await Promise.resolve();
@@ -360,7 +433,7 @@ describe('jellyfinSource', () => {
     it('never throws synchronously, even if the underlying report rejects', () => {
       const api = fakeJellyfinApi();
       api.reportJellyfinPlaybackStopped.mockRejectedValue(new Error('network down'));
-      const source = jellyfinSource(api, ALBUM_QUEUE);
+      const source = jellyfinSource(api, () => ALBUM_QUEUE);
 
       expect(() =>
         source.reportProgress.onEnd({ currentTime: 30, timeListened: 15, duration: 330 }),

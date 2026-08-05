@@ -118,7 +118,15 @@ export function MusicAlbumPage() {
       audioTracks,
       chapters: [],
     };
-    usePlayerStore.getState().load(item, session, jellyfinSource(api, audioTracks));
+    // A getter, not `audioTracks` itself: `musicQueueStore.ts`'s `applyQueue` replaces
+    // `playerStore.tracks` after shuffle/cross-page/repeat-wrap without ever reconstructing
+    // this source, so the reporter must read the live array on every tick — see
+    // `jellyfinSource`'s own doc comment in `playbackSource.ts`.
+    usePlayerStore.getState().load(
+      item,
+      session,
+      jellyfinSource(api, () => usePlayerStore.getState().tracks),
+    );
     attachMusicQueueEndedHandler();
     usePlayerStore.getState().play();
   };

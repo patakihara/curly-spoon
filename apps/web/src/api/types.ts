@@ -62,7 +62,7 @@ export interface Chapter {
 
 /**
  * One audio file within a multi-file book — or, since Phase 9's web wave, one track of a
- * Jellyfin album loaded as a queue (see `features/music/queue.ts`). `startOffset` is where
+ * Jellyfin album/playlist loaded as a queue (see `features/music/musicQueue.ts`). `startOffset` is where
  * this track begins within the *whole* loaded item's timeline (seconds), so a global
  * `currentTime` can be mapped onto (track, offset-within-track) without the player needing
  * to know how many files a book was split into, or how many tracks an album has — the same
@@ -109,7 +109,7 @@ export interface MediaSummary {
   /**
    * `'track'` has no upstream counterpart — Jellyfin has no "library item" concept
    * matching Audiobookshelf's, so `playerStore.currentItem` for a loaded Jellyfin queue
-   * is synthesized client-side by `features/music/queue.ts`, not fetched from the BFF.
+   * is synthesized client-side by `features/music/musicQueueController.ts`, not fetched from the BFF.
    * It never reaches the `'book'`/`'podcast'` routing checks in `LibraryPage.tsx` /
    * `PodcastDetailPage.tsx` / `routeTree.ts` (all plain `===` comparisons, no exhaustive
    * switch) — those only ever see real Audiobookshelf items.

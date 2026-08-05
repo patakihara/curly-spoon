@@ -59,7 +59,7 @@ describe('activeLineIndex', () => {
 });
 
 /** Three tracks laid end to end on one cumulative timeline, same shape
- * `features/music/queue.ts`'s `albumQueue` produces. `contentUrl` carries each track's
+ * `features/music/musicQueue.ts`'s `materialize` produces. `contentUrl` carries each track's
  * Jellyfin item id — see `AudioTrack.contentUrl`'s own doc comment. */
 function queueTrack(
   index: number,

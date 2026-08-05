@@ -11,9 +11,9 @@
  * 1. `activeLineIndex` — given one track's lyric lines and a position *within that
  *    track*, which line is "now playing".
  * 2. `activeLyric` — the player's `currentTime` is a position on the *queue's*
- *    cumulative timeline (`features/music/queue.ts`'s `albumQueue` lays an album's
- *    tracks end to end on one `startOffset` timeline, exactly like a multi-file
- *    audiobook), but lyric timestamps are per-track. `activeLyric` maps one to the other
+ *    cumulative timeline (`features/music/musicQueue.ts`'s `materialize` lays an
+ *    album/playlist's tracks end to end on one `startOffset` timeline, exactly like a
+ *    multi-file audiobook), but lyric timestamps are per-track. `activeLyric` maps one to the other
  *    by reusing `playbackSource.ts`'s own `resolveQueuePosition` — the identical walk
  *    `jellyfinSource`'s progress reporting already relies on to turn a queue position into
  *    "this Jellyfin item id, this far into it" — rather than re-deriving that walk a

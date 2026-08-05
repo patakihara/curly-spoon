@@ -76,8 +76,8 @@ export interface PlayerDisplayMeta {
  *
  * `kind: 'track'` (Phase 9 web wave) bills the same way as an episode — its own title over
  * its container's — but can't reuse `displayTitle` to get there: `displayTitle` is fixed at
- * `load()` time, and a Jellyfin album queue is loaded *once*, for every track in it (see
- * `features/music/queue.ts`), not once per track the way an Audiobookshelf episode session
+ * `load()` time, and a Jellyfin album/playlist queue is loaded *once*, for every track in it
+ * (see `features/music/musicQueueController.ts`), not once per track the way an Audiobookshelf episode session
  * is. Billing straight off `displayTitle` would show track 1's title for the whole album.
  * `currentTrackTitle` — `trackAt(tracks, currentTime)?.track.title`, computed fresh by the
  * caller on every render — is the thing that actually changes as playback crosses track
