@@ -269,6 +269,16 @@ Jellyfin cannot search lyric text at all, so Auralis would need its own index an
 about whether to backfill from an external provider (a privacy opt-in). The synced lyrics
 _view_ is unaffected and has shipped.
 
+### Claimed work — check here before starting a wave
+
+A lightweight lock, because two sessions share this checkout. Claim a wave here **before**
+dispatching it, and delete the line when it lands. A claim older than a couple of hours with
+nothing on `main` is stale — take it.
+
+- **2026-08-05, session `01Wf5C2q`** — music requests: the `media_type` schema change and
+  persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked). Web UI for music
+  requests follows in a separate wave and is **not** claimed yet.
+
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
 **Android playlists got built twice, independently, within the same hour.** One session
