@@ -324,8 +324,6 @@ nothing on `main` is stale — take it.
 - **2026-08-06** — phase 10, entry-chunk splitting to lift the mobile Lighthouse score
   (`apps/web/vite.config.ts`, `apps/web/src/` shell, `scripts/*budget.config.mjs`
   baselines). Does not touch `docs/research/` or `apps/android/`.
-- **2026-08-06** — phase 10, `arm64` in the GHCR publish job (`.github/workflows/ci.yml`,
-  publish job only). Does not touch `apps/`, `scripts/` or `docs/research/`.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that

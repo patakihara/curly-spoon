@@ -1277,10 +1277,21 @@ Performance budgets enforced in CI (bundle size, Lighthouse on the desktop and m
 layouts), a full accessibility audit, and the rest of the release story. CI already
 publishes `linux/amd64` images to GHCR (`ghcr.io/patakihara/auralis:latest` and
 `:${{ github.sha }}`) on every green build of the working branch, which is what
-`compose.yaml` and a server-side Watchtower pull from — what's left here is the `arm64`
-half (so it runs on a Pi or a NAS as happily as on a desktop, which needs QEMU and roughly
-triples build time) plus release automation proper (tags, changelogs, a `main`-based flow
-instead of publishing straight off the working branch).
+`compose.yaml` and a server-side Watchtower pull from.
+
+**`arm64` is done (`ci.yml`'s `publish` job, 2026-08-06).** `docker/setup-qemu-action` now
+precedes buildx — the order matters, because buildx enumerates the platforms it can emulate at
+startup and registering binfmt handlers afterwards leaves it advertising amd64 only — and
+`platforms:` is `linux/amd64,linux/arm64`. Both architectures land under one tag as a multi-arch
+manifest list, so `:latest` keeps meaning what it meant: a client pulls the image matching its
+own architecture, and nothing in `compose.yaml`, `docs/SELF_HOSTING.md` or the Watchtower setup
+on mediaserver changes. A Pi or an arm64 NAS is now a supported target rather than an
+aspiration. The emulated half makes `publish` the slowest job in the workflow by a wide margin;
+that is accepted rather than worked around, since it falls only on `main` pushes and is cached
+between runs.
+
+What is left here is release automation proper (tags, changelogs, a release flow rather than
+publishing straight off every green `main` push).
 
 A final holistic pass of the `docs/DESIGN.md` reference-app comparison belongs here too —
 not just the per-surface checks noted against phase 7's waves above, but the whole app,

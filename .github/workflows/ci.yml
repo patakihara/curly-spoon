@@ -171,6 +171,11 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      # QEMU is what lets an amd64 runner build the arm64 half of the manifest. It must
+      # come before buildx: buildx enumerates the platforms it can emulate when it starts,
+      # so registering the binfmt handlers afterwards leaves it advertising amd64 only and
+      # the arm64 build fails with "no match for platform".
+      - uses: docker/setup-qemu-action@v3
       # Unlike the `container` job above, this one *does* want buildx: it pushes straight
       # to the registry rather than loading into the local daemon for `docker run`, and
       # buildx is what makes the GitHub Actions layer cache (below) available.
@@ -180,9 +185,19 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # `linux/amd64` only, deliberately. Multi-arch needs QEMU and roughly triples build
-      # time; docs/ROADMAP.md phase 10 already scopes amd64+arm64 as its own deliverable,
-      # so the omission here is that plan, not a gap.
+      # `linux/amd64` + `linux/arm64` since 2026-08-06, which is what makes a Pi or an
+      # arm64 NAS a supported target rather than an aspiration — docs/ROADMAP.md phase 10's
+      # remaining half of the release story. The arm64 half is emulated through QEMU above,
+      # so this job is now the slowest thing in the workflow by a wide margin. That cost is
+      # accepted rather than worked around: it falls only on `main` pushes, it is fully
+      # cached between runs, and the alternative (a native arm64 runner) is not available
+      # on this account.
+      #
+      # `docker/build-push-action` writes both architectures under one tag as a multi-arch
+      # manifest list, so `ghcr.io/patakihara/auralis:latest` keeps meaning exactly what it
+      # meant before — a client pulls the image matching its own architecture. Nothing in
+      # `compose.yaml`, `docs/SELF_HOSTING.md` or mediaserver's Watchtower setup has to
+      # change, and an amd64 host pulling `:latest` gets the same bytes it did yesterday.
       #
       # Both tags hardcode the lowercase `patakihara/auralis` path rather than interpolating
       # `github.repository_owner` — GHCR rejects uppercase, and the owner's account casing
@@ -191,7 +206,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/patakihara/auralis:latest
             ghcr.io/patakihara/auralis:${{ github.sha }}
