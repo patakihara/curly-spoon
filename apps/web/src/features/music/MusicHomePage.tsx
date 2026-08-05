@@ -110,6 +110,14 @@ export function MusicHomePage() {
           >
             Favourites
           </Button>
+          <Button
+            variant="text"
+            size="sm"
+            onClick={() => void navigate({ to: '/music/requests' })}
+            data-testid="music-requests-link"
+          >
+            Requests
+          </Button>
         </div>
       </div>
 

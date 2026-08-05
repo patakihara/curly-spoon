@@ -95,7 +95,18 @@ export function lookupLibraries(
  * hold for the provider to actually be usable.
  */
 export function lookupProviders(
-  providers: Array<{ kind: 'indexer' | 'download'; configured: boolean; enabled: boolean }>,
+  // Accepts the full `ProviderKind` union (now including `'music'`, phase 9's slskd
+  // provider) rather than the narrower `'indexer' | 'download'` this used to declare —
+  // `Shell.tsx` passes the whole `GET /providers` list, which includes music providers
+  // since `apps/server/src/routes/requests.ts`'s `allDescriptors()` already did. `usable`
+  // below still only ever checks for `'indexer'`/`'download'`, so a music entry is simply
+  // ignored here, exactly as it was before this type accepted it — the Requests
+  // destination's visibility rule is unchanged.
+  providers: Array<{
+    kind: 'indexer' | 'download' | 'music';
+    configured: boolean;
+    enabled: boolean;
+  }>,
 ): Pick<DestinationContext, 'hasEnabledIndexer' | 'hasEnabledDownloadClient'> {
   const usable = (kind: 'indexer' | 'download') =>
     providers.some((p) => p.kind === kind && p.configured && p.enabled);

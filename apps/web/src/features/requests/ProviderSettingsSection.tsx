@@ -138,7 +138,11 @@ export function ProviderSettingsSection() {
                 <legend>
                   {provider.displayName}{' '}
                   <Chip variant="assist">
-                    {provider.kind === 'indexer' ? 'Indexer' : 'Download client'}
+                    {provider.kind === 'indexer'
+                      ? 'Indexer'
+                      : provider.kind === 'download'
+                        ? 'Download client'
+                        : 'Music provider'}
                   </Chip>
                 </legend>
                 <p className="auralis-field__hint">{provider.summary}</p>

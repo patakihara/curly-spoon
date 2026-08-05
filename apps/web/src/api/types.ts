@@ -249,7 +249,76 @@ export interface RequestSearchResult {
   errors: Array<{ indexerId: string; kind: string; message: string }>;
 }
 
-export type ProviderKind = 'indexer' | 'download';
+// -----------------------------------------------------------------------------
+// Music requests (Phase 9) — mirrors apps/server/src/requests/types.ts's
+// `MusicCandidate` and apps/server/src/db/requestsRepo.ts's `MediaRequest` (music rows)
+// field-for-field, the same way `Release`/`BookRequest` above mirror the book pipeline's
+// server-side shapes.
+// -----------------------------------------------------------------------------
+
+/**
+ * One file a music provider found, available to enqueue. Deliberately **not** `Release` —
+ * see `apps/server/src/requests/types.ts`'s doc comment on the server-side type this
+ * mirrors: a Soulseek search result is one file held by one specific peer online *right
+ * now*, with no seeders/leechers/magnet/download-url concept, not a stable catalogue entry.
+ */
+export interface MusicCandidate {
+  /** Unique within one search response only — not a stable id across separate searches. */
+  guid: string;
+  providerId: string;
+  /** The peer offering the file, for display — analogous to `Release.sourceName`. */
+  sourceName: string;
+  title: string;
+  artist: string | null;
+  album: string | null;
+  sizeBytes: number | null;
+  bitrateKbps: number | null;
+  format: string | null;
+}
+
+/**
+ * `GET /music-requests/search`'s shape — same partial-results-plus-errors coupling as
+ * `RequestSearchResult`, for the same reason (see `AskForBookPanel`'s doc comment): a
+ * broken provider must never look identical to "nothing matched".
+ */
+export interface MusicSearchResult {
+  candidates: MusicCandidate[];
+  errors: Array<{ providerId: string; kind: string; message: string }>;
+}
+
+/**
+ * A music request row. Not `BookRequest` with a renamed field: the server's own
+ * `MediaRequest` unifies book and music rows behind one `release: Release | null` /
+ * `candidate: MusicCandidate | null` pair, but book and music each only ever populate one
+ * side, so a client-facing type per media kind (no `release` field a music row can never
+ * use, no `candidate` field a book row can never use) is the honest mirror of that, the same
+ * way `BookRequest` already omits `candidate`.
+ */
+export interface MusicRequest {
+  id: string;
+  userId: string;
+  title: string;
+  author: string | null;
+  status: RequestStatus;
+  /** Why it failed, when it failed. Null otherwise. */
+  statusDetail: string | null;
+  /** The candidate chosen at creation time — always present for a row created through
+   * `createMusicRequestBodySchema` (candidate is required there, unlike a book request's
+   * optional `release`), but still nullable to match the server's own `MediaRequest.candidate`
+   * typing for a hand-edited or pre-migration row. */
+  candidate: MusicCandidate | null;
+  indexerId: string | null;
+  clientId: string | null;
+  downloadHandle: string | null;
+  /** 0..1. Frozen at whatever `grab()` last wrote — nothing updates it past that point, since
+   * the music pipeline has no download-progress poller. See `musicRequestPolling.ts`'s doc
+   * comment before wiring a progress bar to this. */
+  progress: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type ProviderKind = 'indexer' | 'download' | 'music';
 
 export interface ProviderSecretField {
   key: string;
@@ -290,6 +359,14 @@ export interface RequestSettings {
   approvalPolicy: string;
   bookSavePath: string;
   bookCategory: string;
+  /** `apps/server/src/db/appSettingsRepo.ts`'s `getMusicSavePath` returns `null` for an
+   * unset path (its own doc comment: "so it drops straight into `AddDownloadOptions.savePath`"),
+   * and `GET /settings/requests` returns that `null` straight through — unlike
+   * `bookSavePath` above, which this type declares as non-nullable despite the server
+   * being able to send `null` for it too. Typed accurately here rather than repeating that
+   * mismatch: `MusicRequestSettingsSection.tsx` is new code with no reason to inherit it. */
+  musicSavePath: string | null;
+  musicCategory: string | null;
 }
 
 // ---------------------------------------------------------------------

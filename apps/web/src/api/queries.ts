@@ -6,11 +6,16 @@
 import { hashKey, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from './ApiContext.js';
 import { shouldPollRequests, REQUEST_POLL_INTERVAL_MS } from '../features/requests/polling.js';
+import {
+  shouldPollMusicRequests,
+  MUSIC_REQUEST_POLL_INTERVAL_MS,
+} from '../features/music/musicRequestPolling.js';
 import { withFavoriteState } from '../features/music/favorites.js';
 import { appendPlaylistItems, removePlaylistItems } from '../features/music/playlists.js';
 import type {
   JellyfinLoginBody,
   JellyfinTrack,
+  MusicCandidate,
   ProviderUpdateBody,
   Release,
   RequestSettings,
@@ -31,6 +36,8 @@ export const queryKeys = {
   requestSearch: (term: string, author: string) => ['requests', 'search', term, author] as const,
   providers: ['providers'] as const,
   requestSettings: ['settings', 'requests'] as const,
+  musicRequests: (status?: RequestStatus) => ['musicRequests', status ?? 'all'] as const,
+  musicRequestSearch: (term: string) => ['musicRequests', 'search', term] as const,
   podcastDirectorySearch: (term: string) => ['podcasts', 'search', term] as const,
   myProgress: ['me', 'progress'] as const,
   jellyfinConfig: ['jellyfin', 'config'] as const,
@@ -336,6 +343,101 @@ export function useUpdateRequestSettingsMutation() {
   return useMutation({
     mutationFn: (body: Partial<RequestSettings>) => api.updateRequestSettings(body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.requestSettings }),
+  });
+}
+
+// ---------------------------------------------------------------------
+// Music requests (Phase 9)
+// ---------------------------------------------------------------------
+
+/**
+ * Polls only while `shouldPollMusicRequests` says something is still moving — see that
+ * function's doc comment for why `downloading` is deliberately excluded here, unlike
+ * `useRequestsQuery`'s book equivalent.
+ */
+export function useMusicRequestsQuery(status?: RequestStatus) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.musicRequests(status),
+    queryFn: ({ signal }) => api.getMusicRequests(status, signal),
+    refetchInterval: (query) =>
+      shouldPollMusicRequests(query.state.data?.requests ?? [])
+        ? MUSIC_REQUEST_POLL_INTERVAL_MS
+        : false,
+  });
+}
+
+function invalidateMusicRequests(queryClient: ReturnType<typeof useQueryClient>) {
+  return queryClient.invalidateQueries({ queryKey: ['musicRequests'] });
+}
+
+export function useCreateMusicRequestMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (candidate: MusicCandidate) => api.createMusicRequest(candidate),
+    onSuccess: () => invalidateMusicRequests(queryClient),
+  });
+}
+
+export function useApproveMusicRequestMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.approveMusicRequest(id),
+    onSuccess: () => invalidateMusicRequests(queryClient),
+  });
+}
+
+export function useRejectMusicRequestMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.rejectMusicRequest(id),
+    onSuccess: () => invalidateMusicRequests(queryClient),
+  });
+}
+
+export function useRetryMusicRequestMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.retryMusicRequest(id),
+    onSuccess: () => invalidateMusicRequests(queryClient),
+  });
+}
+
+/** Not called from `MusicRequestList.tsx`'s per-row actions directly — `retry` already
+ * chains this server-side (`routes/musicRequests.ts`). Used by the search panel and the
+ * approve action instead, to drive a fresh `approved` request on to `downloading` — see
+ * `MusicRequestList.tsx`'s doc comment for why nothing does this automatically otherwise. */
+export function useGrabMusicRequestMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.grabMusicRequest(id),
+    onSuccess: () => invalidateMusicRequests(queryClient),
+  });
+}
+
+export function useDeleteMusicRequestMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteMusicRequest(id),
+    onSuccess: () => invalidateMusicRequests(queryClient),
+  });
+}
+
+/** Search only runs on explicit submit (`AskForBookPanel`'s pattern) — this fans out to a
+ * real, slow Soulseek search (`music/slskd.ts`'s `pollUntilComplete`, up to ~17s), not an
+ * in-memory filter, so it must not run on every keystroke. */
+export function useMusicRequestSearchQuery(term: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.musicRequestSearch(term),
+    queryFn: ({ signal }) => api.searchMusicRequests({ term }, signal),
+    enabled: term.trim().length > 0,
   });
 }
 

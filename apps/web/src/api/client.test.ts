@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiClient } from './client.js';
 import { ApiError } from './errors.js';
-import type { Release } from './types.js';
+import type { MusicCandidate, Release } from './types.js';
 
 function fakeFetch(handler: (url: string, init?: RequestInit) => Response) {
   return vi.fn(async (url: string, init?: RequestInit) => handler(url, init));
@@ -215,6 +215,101 @@ describe('ApiClient', () => {
     });
   });
 
+  describe('music requests (Phase 9)', () => {
+    it('drops the status filter from the query string when omitted', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ requests: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getMusicRequests();
+
+      expect(fetchFn.mock.calls[0]![0]).toBe('/api/v1/music-requests');
+    });
+
+    it('sends the status filter when given one', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ requests: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getMusicRequests('downloading');
+
+      expect(fetchFn.mock.calls[0]![0]).toBe('/api/v1/music-requests?status=downloading');
+    });
+
+    it('POSTs a new request with the candidate attached — candidate is never optional here', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ request: { id: 'mreq-1' } }), { status: 201 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+      const candidate: MusicCandidate = {
+        guid: 'g1',
+        providerId: 'slskd',
+        sourceName: 'somepeer',
+        title: 'Track One',
+        artist: 'Some Artist',
+        album: 'Some Album',
+        sizeBytes: 4_000_000,
+        bitrateKbps: 320,
+        format: 'mp3',
+      };
+
+      await client.createMusicRequest(candidate);
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/music-requests');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({ candidate });
+    });
+
+    it('POSTs the approve/reject/retry/grab actions to their own sub-paths, with no body', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ request: { id: 'mreq-1' } }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.approveMusicRequest('mreq-1');
+      await client.rejectMusicRequest('mreq-1');
+      await client.retryMusicRequest('mreq-1');
+      await client.grabMusicRequest('mreq-1');
+
+      const urls = fetchFn.mock.calls.map((call) => call[0]);
+      expect(urls).toEqual([
+        '/api/v1/music-requests/mreq-1/approve',
+        '/api/v1/music-requests/mreq-1/reject',
+        '/api/v1/music-requests/mreq-1/retry',
+        '/api/v1/music-requests/mreq-1/grab',
+      ]);
+      for (const call of fetchFn.mock.calls) {
+        expect(call[1]?.method).toBe('POST');
+        expect(call[1]?.body).toBeUndefined();
+      }
+    });
+
+    it('DELETEs a request by id', async () => {
+      const fetchFn = fakeFetch(() => new Response(null, { status: 204 }));
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.deleteMusicRequest('mreq-1');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/music-requests/mreq-1');
+      expect(init?.method).toBe('DELETE');
+    });
+
+    it('sends the search term and limit as query parameters', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ candidates: [], errors: [] }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.searchMusicRequests({ term: 'dune', limit: 10 });
+
+      expect(fetchFn.mock.calls[0]![0]).toBe('/api/v1/music-requests/search?term=dune&limit=10');
+    });
+  });
+
   describe('providers (Phase 6)', () => {
     it('sends a PUT with the given body to update a provider', async () => {
       const fetchFn = fakeFetch(
@@ -259,6 +354,32 @@ describe('ApiClient', () => {
       expect(url).toBe('/api/v1/settings/requests');
       expect(init?.method).toBe('PUT');
       expect(JSON.parse(String(init?.body))).toEqual({ bookSavePath: '/downloads/books' });
+    });
+
+    // Phase 9's music-request settings (save path, category) reuse this same PUT rather
+    // than a new endpoint — see `MusicRequestSettingsSection.tsx`'s doc comment.
+    it('sends only the music fields when that is all that is being updated', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              approvalPolicy: 'auto',
+              bookSavePath: '',
+              bookCategory: 'auralis-books',
+              musicSavePath: 'downloads/music',
+              musicCategory: 'auralis-music',
+            }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.updateRequestSettings({ musicSavePath: 'downloads/music' });
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/settings/requests');
+      expect(init?.method).toBe('PUT');
+      expect(JSON.parse(String(init?.body))).toEqual({ musicSavePath: 'downloads/music' });
     });
   });
 
