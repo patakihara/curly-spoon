@@ -38,6 +38,7 @@ import {
   getDownloadClientFactory,
   describeDownloadClients,
 } from '../requests/download/registry.js';
+import { getMusicProviderFactory, describeMusicProviders } from '../requests/music/registry.js';
 import {
   ProviderError,
   type ProviderErrorKind,
@@ -81,10 +82,15 @@ const PROVIDER_ERROR_CODE: Record<ProviderErrorKind, string> = {
   bad_response: 'provider_rejected',
 };
 
-/** Every descriptor this build knows, indexers and download clients combined — one entry
- * per descriptor, so `GET /providers` can list a provider nobody has configured yet. */
+/** Every descriptor this build knows — indexers, download clients and music providers
+ * combined — one entry per descriptor, so `GET /providers` can list a provider nobody has
+ * configured yet. Music providers (`kind: 'music'`) are folded in here rather than getting
+ * a parallel `/music-providers` route set, because credential storage/settings-screen
+ * listing is exactly the part of the request pipeline that generalises across media types
+ * with no widening beyond `ProviderKind` itself — see `requests/types.ts`'s file comment on
+ * `MusicRequestProvider` for why *search* still needed its own interface. */
 function allDescriptors(): ProviderDescriptor[] {
-  return [...describeIndexers(), ...describeDownloadClients()];
+  return [...describeIndexers(), ...describeDownloadClients(), ...describeMusicProviders()];
 }
 
 function findDescriptor(id: string): ProviderDescriptor | null {
@@ -361,7 +367,9 @@ export function registerRequestRoutes(app: FastifyInstance): void {
     const factory =
       descriptor.kind === 'indexer'
         ? getIndexerFactory(params.id)
-        : getDownloadClientFactory(params.id);
+        : descriptor.kind === 'download'
+          ? getDownloadClientFactory(params.id)
+          : getMusicProviderFactory(params.id);
     if (!factory) {
       sendError(
         reply,

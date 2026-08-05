@@ -19,6 +19,10 @@ import { sendError } from './httpErrors.js';
 import { registerRoutes } from './routes/index.js';
 import { registerStaticServing } from './static.js';
 import { createRequestService, type RequestService } from './requests/requestService.js';
+import {
+  createMusicRequestService,
+  type MusicRequestService,
+} from './requests/musicRequestService.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -28,6 +32,9 @@ declare module 'fastify' {
     jellyfin: JellyfinUpstreamFactory;
     loginRateLimiter: RateLimiter;
     requests: RequestService;
+    /** Music's counterpart to `requests` — search only for now; see that service's file
+     * comment for why it has no `createRequest`/`listRequests`. */
+    musicRequests: MusicRequestService;
     /**
      * The same injected upstream `fetch` `abs` and `requests` are built from, exposed
      * directly. `RequestService` deliberately has no "build me one arbitrary provider,
@@ -92,6 +99,15 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
       sessionSecret: deps.config.sessionSecret,
       fetch: deps.fetch,
       absFor: (userId) => app.abs.forUser(userId),
+      logger: app.log,
+    }),
+  );
+  app.decorate(
+    'musicRequests',
+    createMusicRequestService({
+      db: deps.db,
+      sessionSecret: deps.config.sessionSecret,
+      fetch: deps.fetch,
       logger: app.log,
     }),
   );
