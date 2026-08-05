@@ -315,6 +315,18 @@ Two consequences to know:
   one needs a controllable seam (a fake repository the test can hold open), not a real round
   trip.
 
+A **third** trap, distinct from the dispatcher leak and found the same way (six red assertions
+on `a1cb367`): a test that collects a **one-shot event `SharedFlow`** with
+`launch { flow.collect { … } }` never sees the emission. That `launch` goes on the test's own
+`StandardTestDispatcher`, which *schedules* rather than runs, while the ViewModel action runs
+to completion synchronously on the unconfined `Main` dispatcher — emitting before the collector
+is ever subscribed. `replay = 0` then drops it, and `extraBufferCapacity = 1` does not help: it
+only lets `emit()` return without suspending, it is not replay. Use
+`async(start = CoroutineStart.UNDISPATCHED) { flow.first() }`, which subscribes inline before
+returning; `features/home/HomeViewModelTest.kt` is the pattern. Note this applies to the
+one-shot **event** flows only — `uiState` still wants a plain `.value` assertion, never an
+await.
+
 Two related traps in the same suite, both already paid for:
 
 - **`MockWebServer` serves enqueued responses in request-arrival order, not enqueue order**, so

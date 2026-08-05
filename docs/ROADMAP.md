@@ -942,6 +942,25 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   forgettable-second-call shape that caused the bug. `features/music/queue.ts`'s dead
   `albumQueue` was deleted in the same commit.
 
+- **Android wave F — playlists: done (`ad2f9f8`, merged `a1cb367`; test fix `67b3ee0`, merged
+  `101ad19`).** Android reaches web parity on playlists: browse, create, add a track or a whole
+  album, remove, and play. The Jellyfin facts web wave F established were reused rather than
+  re-derived — removal keys on the per-entry `playlistItemId`, add keys on plain item ids,
+  order comes from the playlist's stored `LinkedChildren` with no sort parameter — and the BFF
+  routes already existed, so this wave was client-only.
+
+  It went red on CI once, on a failure class worth knowing: six tests collected one-shot
+  `SharedFlow` events with `launch { … collect … }`, which subscribes too late to see an
+  emission from a synchronous unconfined action. `docs/HANDOVER.md`'s Android test section has
+  the full account and the `async(UNDISPATCHED)` fix. Review also turned up two things fixed in
+  the same commit: no test covered the *reason* removal keys on `playlistItemId` (the same
+  track appearing twice), and the optimistic rollback re-inserted at a numeric index captured
+  before the suspension point, so a page landing in between could restore the entry at the
+  wrong position — it now anchors to the preceding entry's id instead.
+
+  Left out deliberately: no pagination on the add-to-playlist picker (mirrors `FavoritesViewModel`),
+  and no playlist rename or delete.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
