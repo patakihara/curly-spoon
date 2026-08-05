@@ -691,6 +691,37 @@ decision, not on remaining build time — see the bullet at the end of this sect
   page type: the generic version star-projects to `List<*>` at the call site and does not
   compile, and every other sealed result in the app is non-generic too.
 
+- **Web wave D — synced lyrics view: done (`c0c05f3`, merged `08a1cc6`).** Client method, BFF
+  route, and a player panel that highlights the current line and scrolls it into view.
+  Lyrics *search* stays out of scope and blocked (see the bullet below it). Three things this
+  wave established that are worth not rediscovering, all verified against
+  `jellyfin/jellyfin` source rather than recalled:
+  - **The draft lyric schemas an earlier session left in `schemas/raw.ts` were wrong.**
+    `LyricLine.Text` was nullable-optional; the C# model requires a non-null string. And
+    `LyricMetadata.IsSynced` — the field that looks like it answers "is this synced" — is
+    **never populated** by either `LrcLyricParser` or `TxtLyricParser`. Whether a file is
+    synced is derived from whether every line carries a `Start` tick instead. This is what a
+    schema with no consumer and no test costs.
+  - **`GET /Audio/{id}/Lyrics` returns a bare 404 for two different things** — item not found,
+    and item has no lyrics — indistinguishably. The client folds *only* `not_found` into a
+    typed `null`; every other status still throws, so a real upstream failure stays
+    distinguishable from the overwhelmingly common "this track has no lyrics".
+  - Line order is trusted, not re-sorted: `LrcLyricParser` pre-sorts server-side and
+    `TxtLyricParser` has no timestamps to sort by.
+
+  No `aria-live` on the lyrics container, deliberately — it would re-announce every few
+  seconds. Scroll behaviour is driven from `ThemeProvider`'s own `prefersReducedMotion`, not
+  from a library prop, for the reason the Mantine notes below already record.
+
+**A repo-wide testing gap this wave surfaced, not caused**: `vitest.config.ts` collects only
+`apps/web/src/**/*.test.ts` in a `node` environment, and neither jsdom/happy-dom nor
+`@testing-library/react` is installed — there is **no `.test.tsx` anywhere in the repo and no
+harness that would run one**. So every React component in `apps/web` is covered only by
+whatever pure logic it delegates to, plus Playwright. For `LyricsView.tsx` specifically that
+leaves its four render branches, its `scrollIntoView` effect and its reduced-motion wiring
+unverified by any automated test. Playwright runs locally on this machine and is the cheaper
+of the two fixes; installing a DOM environment is the other.
+
 **One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
 not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
 so a *paused* track still ticks. For audiobooks that is harmless (it re-reports the same
