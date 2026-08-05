@@ -1095,6 +1095,34 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   and this one does not. The cancellation code was verified as structurally identical to the
   tested original, so the risk is confined to a future edit that touches only the music path.
 
+- **Three review-flagged Android test gaps closed (`3a63115`).** Test-only; all three pieces of
+  production code were already correct and were re-verified rather than changed.
+
+  The music-request search now has the stale-cancellation regression test the book pipeline
+  already had. Writing it turned up something worth knowing about this suite's own conventions:
+  the shared `UnconfinedTestDispatcher` these tests normally inject as both `Main` and
+  `ApiClient`'s IO dispatcher makes `withContext` run **inline**, so a "slow" request would block
+  the caller instead of racing a second one — the race is unobservable under the very dispatcher
+  the rest of the file depends on. This one test therefore uses the real `Dispatchers.IO`
+  deliberately, as the book original does.
+
+  The book original was checked rather than assumed, since a test that races is exactly where a
+  latent flake hides: it is sound. It calls `takeRequest()` after firing the slow search, which
+  blocks until that request has actually reached the server, forcing arrival order to match
+  enqueue order — so `MockWebServer`'s "responses follow arrival, not enqueue" trap is closed by
+  synchronisation rather than by luck, and no keyed `Dispatcher` is needed.
+
+  Also closed: a literal `book:`-prefixed id in the reporter's music-gate coverage (it had
+  `episode:` and a bare id but not the scheme audiobooks actually use), and the first
+  ViewModel-level tests for wave H's `isMusic` gate and the shuffle/repeat commands.
+
+  **One thing deliberately left unreachable.** `onShuffleModeEnabledChanged` /
+  `onRepeatModeChanged` are registered inside `connectedController()`, which the test seam
+  bypasses, so a listener-driven state update cannot be exercised without widening production
+  surface. Rather than paper over it, the tests pin what the code actually does: the commands
+  reach the handle and do **not** write UI state themselves, and play seeds shuffle/repeat from
+  the handle's real state rather than a default.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
