@@ -266,7 +266,7 @@ class AlbumDetailViewModelTest {
     // -----------------------------------------------------------------------------
 
     @Test
-    fun `toggleAlbumFavorite flips optimistically, then reconciles against the server's own answer`() =
+    fun `toggleAlbumFavorite reconciles against the server's own answer, not the optimistic guess`() =
         runTest {
             mockWebServer.enqueue(
                 tracksPageResponse(
@@ -285,15 +285,21 @@ class AlbumDetailViewModelTest {
             // answer (false), not the optimistic guess (true) or a bare "request succeeded, so
             // keep my own guess" — see JellyfinFavoriteResponse's own doc comment for why the
             // resulting state is trusted over the request's own intent.
+            //
+            // `ioDispatcher` is an `UnconfinedTestDispatcher` here (see setUp), shared by both
+            // `Dispatchers.Main` and `ApiClient`'s own IO dispatcher, so `toggleAlbumFavorite`'s
+            // `viewModelScope.launch { ... }` runs eagerly and its `withContext(ioDispatcher)`
+            // executes inline — the whole toggle (optimistic write, request, settled write)
+            // completes synchronously before this call returns. The momentary optimistic flip is
+            // therefore not observable through a real `MockWebServer` round trip and isn't
+            // asserted here; reconciliation is still pinned directly, since the assertion below
+            // fails if the ViewModel kept its own optimistic guess instead of the server's
+            // disagreeing answer.
             mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
             viewModel.toggleAlbumFavorite()
 
-            // Flips immediately, synchronously, before the request even reaches the network —
-            // the optimistic write happens before `toggleFavorite`'s own suspension point.
-            assertTrue((viewModel.uiState.value as AlbumDetailUiState.Loaded).albumFavorite)
-
-            val settled = viewModel.uiState.first { (it as? AlbumDetailUiState.Loaded)?.albumFavorite == false }
-            assertFalse((settled as AlbumDetailUiState.Loaded).albumFavorite)
+            val settled = viewModel.uiState.value as AlbumDetailUiState.Loaded
+            assertFalse(settled.albumFavorite)
         }
 
     @Test
@@ -319,12 +325,14 @@ class AlbumDetailViewModelTest {
             )
             viewModel.toggleAlbumFavorite()
 
-            // Flips optimistically to false first — the eventual failure must move it back to
-            // true, not merely leave it unchanged from some other cause.
-            assertFalse((viewModel.uiState.value as AlbumDetailUiState.Loaded).albumFavorite)
-
-            val settled = viewModel.uiState.first { (it as? AlbumDetailUiState.Loaded)?.albumFavorite == true }
-            assertTrue((settled as AlbumDetailUiState.Loaded).albumFavorite)
+            // As above: the synchronous test dispatchers run the optimistic flip (to false), the
+            // failing request, and the rollback all inline before this call returns, so `.value`
+            // is already the rolled-back state — asserted directly rather than via `.first {}`.
+            // This still pins the rollback itself: without it, the optimistic write to false
+            // would be the last write, and the assertion below (expecting the original `true`)
+            // would fail.
+            val settled = viewModel.uiState.value as AlbumDetailUiState.Loaded
+            assertTrue(settled.albumFavorite)
         }
 
     @Test

@@ -145,17 +145,11 @@ class FavoritesViewModelTest {
         }
 
     @Test
-    fun `toggleTrackFavorite updates only the tapped track, in place, without removing it from the list`() =
+    fun `toggleTrackFavorite reconciles against the server's own answer, in place, without removing it from the list`() =
         runTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(pageResponse("[]", total = 0))
             mockWebServer.enqueue(pageResponse("[]", total = 0))
-            // Loaded unfavourited, mirroring AlbumDetailViewModelTest's own
-            // "toggleAlbumFavorite flips optimistically, then reconciles..." test: the optimistic
-            // flip (see FavoritesViewModel.toggleFavorite) must land on a *different* boolean than
-            // the server's eventual answer, or the predicate below could be satisfied by the
-            // synchronous optimistic write alone, before the network call ever completes — see the
-            // comment further down for why that would defeat the point of awaiting at all.
             mockWebServer.enqueue(
                 pageResponse(
                     """[{"id":"trk1","name":"Airbag","albumId":"alb1","artistNames":["Radiohead"],
@@ -169,26 +163,23 @@ class FavoritesViewModelTest {
 
             // The server disagrees with the requested state — reconciliation must end on *its*
             // answer (false), not the optimistic guess (true).
+            //
+            // `ioDispatcher` is an `UnconfinedTestDispatcher` here (see setUp), shared by both
+            // `Dispatchers.Main` and `ApiClient`'s own IO dispatcher, so `toggleFavorite`'s
+            // `viewModelScope.launch { ... }` runs eagerly and its `withContext(ioDispatcher)`
+            // executes inline — the whole toggle (optimistic write, request, settled write)
+            // completes synchronously before this call returns. That makes the momentary
+            // optimistic flip unobservable through a real `MockWebServer` round trip, so it is not
+            // asserted here (an earlier version of this test asserted it against `.value` before
+            // this dispatcher injection existed, to prove a subsequent `.first {}` await wasn't
+            // satisfied vacuously by an un-awaited coroutine still in flight — that race is what
+            // the dispatcher injection fixed, so the guard is no longer needed). Reconciliation is
+            // still pinned directly: the assertion below fails if the ViewModel kept its own
+            // optimistic guess (true) instead of the server's disagreeing answer (false).
             mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
             viewModel.toggleTrackFavorite("trk1")
 
-            // Flips immediately, synchronously, before the request even reaches the network — the
-            // optimistic write happens before toggleFavorite's own suspension point. Asserting it
-            // here, against `.value` rather than through `.first{}`, is what proves the predicate
-            // below can only be satisfied by the *later*, settled emission: if the optimistic value
-            // were left equal to the server's eventual answer (as it was before this fix — both
-            // ended up `false`), `.first { favorite == false }` would already be true at this exact
-            // instant and return without ever forcing the awaited coroutine's network round trip to
-            // complete, leaving it still running when @After's mockWebServer.shutdown() tears down
-            // the server out from under it.
-            assertTrue(
-                (viewModel.uiState.value as FavoritesUiState.Loaded).tracks.first { it.id == "trk1" }.favorite,
-            )
-
-            val settled =
-                viewModel.uiState.first {
-                    (it as? FavoritesUiState.Loaded)?.tracks?.firstOrNull()?.favorite == false
-                } as FavoritesUiState.Loaded
+            val settled = viewModel.uiState.value as FavoritesUiState.Loaded
 
             // Still present — this screen flips state in place rather than removing the item,
             // matching apps/web/src/features/music/FavoriteToggle.tsx's own mutation, per
