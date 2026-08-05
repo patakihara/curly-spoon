@@ -26,6 +26,14 @@ export interface FavoriteToggleProps {
    * see `useToggleJellyfinFavoriteMutation`'s own doc comment for why the rollback itself is
    * silent and this is how the caller learns to tell the user. */
   onError?: () => void;
+  /** Called synchronously, before the mutation is even started — i.e. before the optimistic
+   * cache write that (for a caller like `MusicFavoritesPage` that filters its list down to
+   * `favorite === true` items) removes this row on the very same render. A caller that needs
+   * to redirect focus away from this button before its own row disappears (rather than
+   * leaving the browser to drop focus to `<body>`, the phase-10 a11y audit's finding) must do
+   * it here, not in a mutation callback — by the time any mutation callback fires, the row
+   * this button was in may already be gone. */
+  onToggle?: (nextFavorite: boolean) => void;
   /** Set to `false` when this toggle is not nested inside another clickable element (e.g. a
    * page header, not a row or card) — stopping propagation there would be a silent no-op but
    * there is no reason to call it either. Defaults to `true` since every current call site
@@ -39,6 +47,7 @@ export function FavoriteToggle({
   itemName,
   favorite,
   onError,
+  onToggle,
   stopPropagation = true,
   'data-testid': testId,
 }: FavoriteToggleProps) {
@@ -53,6 +62,7 @@ export function FavoriteToggle({
         if (stopPropagation) event.stopPropagation();
       }}
       onSelectedChange={(nextFavorite) => {
+        onToggle?.(nextFavorite);
         mutation.mutate({ itemId, favorite: nextFavorite }, { onError: () => onError?.() });
       }}
     >
