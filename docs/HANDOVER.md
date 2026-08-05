@@ -95,7 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T08:58:30Z` · `a1640b20f630bbad0` · general-purpose · ended · Working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a1640b20f630bbad0' @ 'b35bba8', based on '83e3f32' ('or…
 - `2026-08-05T09:04:41Z` · `a029ef271eb6845b7` · general-purpose · ended · ## Android CI result for '52307c7' **Failed** (run 30991662924, conclusion 'failure'). Not a compile error — 'compileDebugKotlin'/'compileReleaseKotl…
 - `2026-08-05T09:11:55Z` · `a89ca5d18015b9a36` · general-purpose · ended · Committed clean, working tree empty, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a89ca5d18015b9a36' @ 'ad3ecbf', based on…
-- `2026-08-05T09:21:47Z` · `a1d4554db1e1ed7e1` · general-purpose · running · —
+- `2026-08-05T09:21:47Z` · `a1d4554db1e1ed7e1` · general-purpose · ended · Working tree is clean. Committed on 'worktree-agent-a1d4554db1e1ed7e1' at '4f8cddf', based on '2030a3d'. Not pushed, per instructions. ## Report **Ve…
 
 <!-- AGENT_LOG_END -->
 
@@ -269,11 +269,8 @@ cannot search lyric text at all, so Auralis would have to build its own index an
 whether to backfill from an external provider (a privacy opt-in). The synced lyrics _view_
 is unaffected by that and has shipped.
 
-Three known defects are recorded in `docs/ROADMAP.md` §9 and none is fixed:
+Two known defects are recorded in `docs/ROADMAP.md` §9 and neither is fixed:
 
-- **Web album pages, and therefore web album playback, are in alphabetical order**, not track
-  order — `useJellyfinTracksQuery` never sets `sortBy`, so it gets Jellyfin's `SortName`
-  default. Android does not have this bug.
 - **A paused track keeps reporting to Jellyfin as playing.** `useProgressSync`'s interval is
   not gated on `isPlaying`, so the upstream session reads as active while paused. Fixing it
   properly puts a pause signal in the shared seam, which the audiobook reporter implements
