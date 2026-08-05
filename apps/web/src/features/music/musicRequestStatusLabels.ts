@@ -8,11 +8,12 @@ import type { RequestStatus } from '../../api/types.js';
  * nothing inside a component can be exercised here at all.
  *
  * Exhaustive against the shared `RequestStatus` type, but `importing`/`completed` are
- * unreachable for a music row today — `musicRequestService.ts`'s `grab()` never moves a
- * request past `downloading` on its own, and nothing in production currently schedules
- * `pollOne` to advance it further (see `docs/HANDOVER.md`'s "pollDownloads is not wired to
- * any scheduler" note). Kept in the map anyway so this stays a total function rather than
- * a silent `undefined` in the UI if that gap closes.
+ * unreachable for a music row today — `musicRequestService.ts`'s own file comment and its
+ * `pollDownloads()` doc comment explain why: `grab()` never moves a request past
+ * `downloading` on its own, and nothing in production currently schedules `pollOne` to
+ * advance it further (`docs/ROADMAP.md`'s music-requests-web-UI entry notes the same gap:
+ * "There is no `pollDownloads` for music"). Kept in the map anyway so this stays a total
+ * function rather than a silent `undefined` in the UI if that gap closes.
  */
 export const MUSIC_REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   pending: 'Pending',
