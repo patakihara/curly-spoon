@@ -1399,6 +1399,54 @@ catch more of the `aria-pressed` class quickly but would not have caught the foc
 or contrast findings, which needed real interaction sequences; adding it is the user's call and
 was deliberately not taken.
 
+**The holistic `docs/DESIGN.md` comparison is done for the web surfaces
+(`docs/research/WEB_DESIGN_AUDIT.md`, merged `27bde64`).** Six surfaces — Home, book detail,
+Now Playing collapsed and expanded, Search, Music home and album, Settings — at 1440x900 and
+390x844. Android was not covered and still needs its own pass.
+
+**Its first draft got the headline wrong, and the correction is the useful part.** It reported
+every surface as a phone layout stretched to desktop width with 30-40% dead space. An
+independent re-measurement of the live DOM found the opposite: a real 220px navigation rail, a
+real 320px Now Playing side panel flush to the viewport's right edge with nothing beyond it, an
+852px content column inside a 900px slot (~5% margin), and `.auralis-card-grid`
+(`repeat(auto-fill, minmax(200px, 1fr))`) rendering **four live columns** on Search and on the
+Music grids. Home's horizontal-scroll shelves and the album tracklist's single column are
+deliberate patterns, not failures. The desktop layout is closer to this file's "not a stretched
+phone UI" target than the audit first concluded. The document now says what was measured.
+
+Worth generalising: a design finding read off screenshots is a hypothesis. `getComputedStyle`
+and `boundingBox` settle it, and they disagreed with the eye on the single largest claim here.
+
+**Four real defects, none yet fixed** — the next web wave's list:
+
+- **The mini player is not fixed or sticky.** `MiniPlayer` renders `position: relative` as a
+  sibling after `.auralis-shell__row`, so on a page tall enough to scroll (item detail reached
+  921px against a 900px viewport) it is pushed below the fold — in the DOM, `isVisible()`, and
+  off-screen. It appeared to "come back" on interaction only because the browser scrolled it
+  into view before the click. Secondary: at 360px wide it overlaps ~140px past the 220px rail
+  rather than docking at the rail's foot as `DESIGN.md` specifies.
+- **Music's Jellyfin artwork has no `onError` fallback.** Home's `ShelfCard` already implements
+  `coverFailed`/`onError` -> a styled on-theme icon; the Music artist and album cards render a
+  bare `<img>` and fall through to the browser's native broken-image glyph. The pattern to copy
+  already exists in this repo, so this is a defect, not a design question.
+- **Two overflow bugs at 390px**: the book-detail title/byline header (`flex-wrap: nowrap`,
+  `body.scrollWidth` 405 against a 390px viewport) and the Music page's link row plus search
+  button (`scrollWidth` 419), which visibly clips "Requests"/"Search".
+- **Settings still reads "Source colour (Phase 5 will set this automatically from artwork)"** —
+  stale copy naming an internal phase number to the user, for work that shipped.
+
+**One design decision left to the user**: what a missing-artwork placeholder should actually
+look like. The defect above is that Music has no fallback at all; what the fallback *is* was
+never decided.
+
+Not covered by this pass, and each still open: Android entirely, the 600-1240px tablet
+breakpoint, motion and cross-fade, hover states, the light colour scheme, real assistive
+technology, and the Podcasts, Lyrics, Playlists, Favourites and Requests pages. One environment
+note for whoever picks it up: the fake upstreams serve synthetic random bytes labelled
+`image/jpeg` (HTTP 200, not 404), so no artwork decodes under `pnpm dev:fake` — artwork-derived
+colour cannot be checked there at all, and a "broken image" seen in that environment is the
+fixture, not the app.
+
 ### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
 
 Sideloading an APK from a CI artifact is fine for the person who builds it and hostile to

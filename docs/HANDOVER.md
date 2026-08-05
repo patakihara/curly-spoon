@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T18:25:13Z` · `a9337a39798847e4d` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a9337a39798847e4d' @ '226fcd5' **Files changed:** - 'apps/web/src/api/types.ts' — added 'AudioTrack.arti…
-- `2026-08-05T18:31:46Z` · `a63cd56eb719ac304` · general-purpose · ended · Review agent launched to independently verify the merged fix (commit '226fcd5'). I'll report once it comes back and, if clean, proceed to push and up…
 - `2026-08-05T18:33:21Z` · `ac7df0ceb12354a20` · general-purpose · ended · All 8 points check out. Summary: 1. **Precedence** — correct. 'playerUi.ts' 'playerDisplayMeta': 'secondary: params.currentTrackArtist || params.auth…
 - `2026-08-05T18:34:18Z` · `a63cd56eb719ac304` · general-purpose · ended · Pushed. Fix landed on 'main' at commit '226fcd5'. **What was fixed:** Web music queue tracks were carrying the album-level artist instead of each tra…
 - `2026-08-05T20:21:37Z` · `a909bf25206c507fb` · general-purpose · ended · Clean. No stray processes, no scratch files left, working tree has only the pre-existing hook-modified 'docs/HANDOVER.md' (from 'agent-log.sh' firing…
@@ -95,7 +93,9 @@ in-context scan of the current one.
 - `2026-08-05T23:20:58Z` · `ad9a7605ea9fb8f35` · general-purpose · ended · That confirms the self-reference is the only occurrence — no actual "do not touch" list exists anywhere in the document. **Verdict: merge with named…
 - `2026-08-05T23:25:54Z` · `adecb0141289e1db1` · general-purpose · running · —
 - `2026-08-05T23:35:19Z` · `ae8e40cc1197402e6` · general-purpose · ended · Good, both are root dependencies as expected (chrome-launcher deliberately not, per the doc comment, resolved dynamically). This all checks out. I ha…
-- `2026-08-05T23:35:28Z` · `a91ca918da4364ef2` · general-purpose · running · —
+- `2026-08-05T23:35:28Z` · `a91ca918da4364ef2` · general-purpose · ended · That's a different, unrelated process from the audit worktree — not mine. My server process is gone. Good. **Verdict:** sound with named corrections…
+- `2026-08-05T23:41:38Z` · `a623d0d03e48b3297` · general-purpose · running · —
+- `2026-08-05T23:46:45Z` · `a50deddeeb6332027` · general-purpose · ended · Branch 'worktree-agent-a50deddeeb6332027', commit '68ab86d'. Not pushed. - Corrected verdict: the desktop layout is close to 'DESIGN.md''s intent (re…
 
 <!-- AGENT_LOG_END -->
 
@@ -324,8 +324,8 @@ nothing on `main` is stale — take it.
 - **2026-08-06** — phase 10, entry-chunk splitting to lift the mobile Lighthouse score
   (`apps/web/vite.config.ts`, `apps/web/src/` shell, `scripts/*budget.config.mjs`
   baselines). Does not touch `docs/research/` or `apps/android/`.
-- **2026-08-06** — phase 10, the holistic `docs/DESIGN.md` reference-app comparison, web
-  surfaces only (`docs/research/`). Audit only, no code changes.
+- **2026-08-06** — phase 10, `arm64` in the GHCR publish job (`.github/workflows/ci.yml`,
+  publish job only). Does not touch `apps/`, `scripts/` or `docs/research/`.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
