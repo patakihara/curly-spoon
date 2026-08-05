@@ -929,6 +929,16 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   Left behind deliberately: `features/music/queue.ts`'s `albumQueue` is now unused by any page
   but still present with its tests, rather than widening the diff to delete it.
 
+**The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
+structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
+`withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
+requests still in flight and the resulting throw surfaced as `UncaughtExceptionsBeforeTest` on
+whichever unrelated test ran next. The reported failure never named the culprit, which is why
+three point fixes each moved the failure instead of removing it. `ApiClient` now takes its
+dispatcher as a parameter defaulting to `Dispatchers.IO`. **`docs/HANDOVER.md` carries the full
+account and what it means for writing any future Android ViewModel test** — read it before
+touching one.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
