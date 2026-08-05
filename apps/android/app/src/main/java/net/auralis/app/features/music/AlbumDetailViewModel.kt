@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import net.auralis.app.data.model.JellyfinTrack
 import net.auralis.app.data.settings.ServerConfigRepository
+import net.auralis.app.playback.ResolvedPlayback
 import kotlin.math.roundToLong
 
 /**
@@ -66,9 +67,12 @@ sealed interface AlbumDetailUiState {
  * [ArtistDetailViewModel]'s own doc comment for why a detail screen's first page fetch already
  * answers that question for free.
  *
- * Playback is explicitly out of scope for this wave — track rows exist to be seen, not
- * tapped. Wiring Jellyfin into Media3 is a later wave; see `MusicRepository.trackStreamUrl`'s
- * own doc comment for the stream-URL builder this screen deliberately does not call yet.
+ * [buildQueueFrom] is the one playback-adjacent method here: it turns a tapped [MusicTrackUi]
+ * into the [ResolvedPlayback] queue [net.auralis.app.features.player.PlayerViewModel.playQueue]
+ * hands to Media3, using [MusicRepository.trackStreamUrl] — a pure URL builder, not a fetch, so
+ * unlike an audiobook/podcast item a Jellyfin track needs no server-side "play session" round
+ * trip before it's playable. See [albumPlaybackQueue]'s own doc comment for the actual queue
+ * construction, kept as a pure function so it's testable without a `ViewModel`/`MockWebServer`.
  */
 class AlbumDetailViewModel(
     private val musicRepository: MusicRepository,
@@ -147,7 +151,81 @@ class AlbumDetailViewModel(
             }
         }
     }
+
+    /**
+     * Builds the queue [net.auralis.app.features.player.PlayerViewModel.playQueue] should play
+     * for a tap on [track]: that track and every track after it in the currently loaded page, in
+     * track order — matching `apps/web/src/features/music/queue.ts`'s "click a row, play the
+     * loaded page from there onward" behaviour, translated onto Media3's own native multi-item
+     * queue instead of the single-file `startOffset` timeline the web player's
+     * `HTMLMediaElement` needs (see that file's own doc comment for why the web side does it
+     * differently). Not itself the pure part — [albumPlaybackQueue] is — because it has two
+     * unavoidably impure jobs: reading current [uiState] and resolving each track's stream URL
+     * through [musicRepository] (a suspend call, though [MusicRepository.trackStreamUrl] itself
+     * never awaits a network response — see that method's own doc comment).
+     *
+     * Degrades to an empty list — never throws — when [uiState] isn't [AlbumDetailUiState.Loaded]
+     * or [track] is no longer present (it left the loaded page between when its row was rendered
+     * and tapped, e.g. mid [loadMoreTracks]); [PlayerViewModel.playQueue] already treats an empty
+     * queue as "nothing to play" rather than starting playback with no items.
+     */
+    suspend fun buildQueueFrom(track: MusicTrackUi): List<ResolvedPlayback> {
+        val state = _uiState.value as? AlbumDetailUiState.Loaded ?: return emptyList()
+        val startIndex = state.tracks.indexOfFirst { it.id == track.id }
+        if (startIndex == -1) return emptyList()
+        val queueTracks = state.tracks.subList(startIndex, state.tracks.size)
+        val streamUrls = queueTracks.associate { it.id to musicRepository.trackStreamUrl(it.id) }
+        return albumPlaybackQueue(
+            tracks = queueTracks,
+            streamUrls = streamUrls,
+            artistName = state.artistName,
+            albumName = state.albumName,
+            artworkUrl = state.coverUrl,
+        )
+    }
 }
+
+/**
+ * Pure mapping from a slice of an album's tracks to the [ResolvedPlayback] queue Media3 plays —
+ * kept free of `ViewModel`/network types so it's directly unit-testable, per this project's
+ * "prefer a pure function over asserting through a ViewModel" house style. [streamUrls] is a
+ * pre-fetched `id -> url` map rather than a suspend lookup here, for the same reason; a track
+ * missing its own entry is dropped ([mapNotNull]) rather than played with a blank URI — total,
+ * matching every other queue/browse builder in this app degrading rather than throwing.
+ *
+ * [artistName]/[albumName]/[artworkUrl] are the *album's* own values, applied to every track in
+ * the queue — there is no separate per-track artist/artwork concept here, matching
+ * [AlbumDetailUiState.Loaded]'s own header fields and
+ * `apps/web/src/features/music/MusicAlbumPage.tsx`'s identical choice to display the page-level
+ * artist/cover for whichever track is playing, not a per-track one Jellyfin's `/tracks` response
+ * doesn't reliably carry
+ * anyway (a compilation album's tracks can each have their own `artistNames`, but this app has no
+ * UI yet that would make a per-track artist visible, so there's nothing to lose by not reading
+ * it). `mediaId` is prefixed `track:` — distinct from [net.auralis.app.playback.BrowseIds]'s
+ * `book:`/`episode:` schemes, matching [net.auralis.app.playback.PlaybackItemResolver]'s own
+ * `episodeMediaId` — even though nothing resolves a `track:` id back to a track today (Android
+ * Auto browsing of music is a later wave), so collisions with a book/episode id already playing
+ * are impossible by construction rather than by accident.
+ */
+fun albumPlaybackQueue(
+    tracks: List<MusicTrackUi>,
+    streamUrls: Map<String, String>,
+    artistName: String?,
+    albumName: String,
+    artworkUrl: String?,
+): List<ResolvedPlayback> =
+    tracks.mapNotNull { track ->
+        val streamUrl = streamUrls[track.id] ?: return@mapNotNull null
+        ResolvedPlayback(
+            mediaId = "track:${track.id}",
+            uri = streamUrl,
+            title = track.title,
+            artist = artistName,
+            subtitle = albumName,
+            artworkUrl = artworkUrl,
+            startPositionMs = 0L,
+        )
+    }
 
 private fun JellyfinTrack.toTrackUi(): MusicTrackUi =
     MusicTrackUi(

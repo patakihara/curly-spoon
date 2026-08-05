@@ -166,4 +166,52 @@ class AlbumDetailViewModelTest {
             assertEquals(listOf("Airbag", "Paranoid Android"), state.tracks.map { it.title })
             assertFalse(state.hasMore)
         }
+
+    @Test
+    fun `buildQueueFrom queues the tapped track and every track after it, with a BFF stream url`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 3,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0},
+                           {"id":"trk2","name":"Paranoid Android","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":2,"discNumber":1,"durationSeconds":383.5},
+                           {"id":"trk3","name":"Subterranean Homesick Alien","albumId":"alb1",
+                            "albumName":"OK Computer","artistNames":["Radiohead"],"trackNumber":3,
+                            "discNumber":1,"durationSeconds":267.0}]""",
+                ),
+            )
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            val loaded =
+                viewModel.uiState.first { it !is AlbumDetailUiState.Loading } as AlbumDetailUiState.Loaded
+
+            // Tap the second track: the queue must start there, not from the album's beginning.
+            val queue = viewModel.buildQueueFrom(loaded.tracks[1])
+
+            assertEquals(listOf("Paranoid Android", "Subterranean Homesick Alien"), queue.map { it.title })
+            assertEquals("track:trk2", queue[0].mediaId)
+            assertEquals("Radiohead", queue[0].artist)
+            assertEquals("OK Computer", queue[0].subtitle)
+            assertTrue(queue[0].uri.contains("/jellyfin/tracks/trk2/stream"))
+            assertFalse(queue[0].uri.contains("token", ignoreCase = true))
+        }
+
+    @Test
+    fun `buildQueueFrom against a track no longer on the page returns an empty queue, not a crash`() =
+        runTest {
+            mockWebServer.enqueue(tracksPageResponse(total = 0, items = "[]"))
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            val queue =
+                viewModel.buildQueueFrom(
+                    MusicTrackUi(id = "gone", title = "Gone", position = "1", durationSeconds = 0L),
+                )
+
+            assertTrue(queue.isEmpty())
+        }
 }

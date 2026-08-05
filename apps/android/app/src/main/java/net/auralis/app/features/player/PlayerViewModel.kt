@@ -189,6 +189,47 @@ class PlayerViewModel(
         }
     }
 
+    /**
+     * Starts playing an already-built queue of tracks — an album's tapped track and everything
+     * after it, in order (see `AlbumDetailViewModel.buildQueueFrom`/
+     * [net.auralis.app.features.music.albumPlaybackQueue]). Distinct from
+     * [playResolved]'s single-`MediaItem` path because a queue needs Media3's own multi-item
+     * `setMediaItems`, not `setMediaItem`, and because the caller — not
+     * [net.auralis.app.playback.PlaybackItemResolver] — has already resolved every item: a
+     * Jellyfin track needs no server-side "play session" the way an audiobook/podcast item does,
+     * so there is no per-item BFF round trip for a resolver to own here.
+     *
+     * [buildQueue] is a suspend lambda, matching [playResolved]'s own shape, so the caller's
+     * network work (fetching each track's stream URL) runs inside this ViewModel's
+     * [viewModelScope] rather than the call site's — the same reason [playResolved] takes
+     * `resolve` as a lambda instead of a plain value.
+     */
+    fun playQueue(buildQueue: suspend () -> List<ResolvedPlayback>) {
+        viewModelScope.launch {
+            try {
+                val queue = buildQueue()
+                if (queue.isEmpty()) {
+                    _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
+                    return@launch
+                }
+                val mediaItems = queue.map { it.toMediaItem() }
+                val ctrl = connectedController()
+                ctrl.setMediaItems(mediaItems)
+                ctrl.prepare()
+                ctrl.play()
+                val title = mediaItems.first().mediaMetadata.title?.toString() ?: queue.first().title
+                _uiState.value = PlayerUiState.Playing(title = title, isPlaying = true)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Total function, matching playResolved: a failed MediaController connection or
+                // a failed buildQueue() degrades to an error state rather than crashing this
+                // ViewModel's coroutine scope.
+                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+            }
+        }
+    }
+
     /** Toggles play/pause on the currently loaded item. A no-op when nothing is loaded. */
     fun togglePlayPause() {
         viewModelScope.launch {
