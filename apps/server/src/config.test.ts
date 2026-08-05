@@ -16,6 +16,7 @@ describe('loadConfig', () => {
       nodeEnv: 'development',
       serveWeb: true,
       webDistDir: undefined,
+      downloadPollIntervalMs: 30_000,
     });
   });
 
@@ -70,6 +71,22 @@ describe('loadConfig', () => {
 
   it('reads an explicit WEB_DIST_DIR override', () => {
     expect(loadConfig({ ...validEnv, WEB_DIST_DIR: '/srv/web' }).webDistDir).toBe('/srv/web');
+  });
+
+  it('defaults AURALIS_DOWNLOAD_POLL_INTERVAL_MS to 30 seconds', () => {
+    expect(loadConfig(validEnv).downloadPollIntervalMs).toBe(30_000);
+  });
+
+  it('reads an explicit AURALIS_DOWNLOAD_POLL_INTERVAL_MS override', () => {
+    expect(
+      loadConfig({ ...validEnv, AURALIS_DOWNLOAD_POLL_INTERVAL_MS: '5000' }).downloadPollIntervalMs,
+    ).toBe(5000);
+  });
+
+  it('rejects a non-positive AURALIS_DOWNLOAD_POLL_INTERVAL_MS', () => {
+    expect(() => loadConfig({ ...validEnv, AURALIS_DOWNLOAD_POLL_INTERVAL_MS: '0' })).toThrow(
+      ConfigError,
+    );
   });
 
   it('reports every issue at once rather than only the first', () => {
