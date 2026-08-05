@@ -1,9 +1,10 @@
 package net.auralis.app.features.music
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -105,18 +106,21 @@ class AddToPlaylistViewModelTest {
                 ),
             )
             val viewModel = AddToPlaylistViewModel(musicRepository, serverConfigRepository)
-            val events = mutableListOf<AddToPlaylistEvent>()
-            val collectJob = launch { viewModel.events.collect { events.add(it) } }
             viewModel.load()
             viewModel.uiState.first { it is AddToPlaylistUiState.Loaded }
 
             mockWebServer.enqueue(MockResponse().setResponseCode(204))
+            // UNDISPATCHED subscribes inline before this line returns, so the subscription is
+            // live before addToExisting() below runs synchronously (Dispatchers.Main =
+            // UnconfinedTestDispatcher) and emits — a plain launch{} here loses the event to a
+            // replay = 0 flow that already fired before a queued collector got a turn.
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.events.first() }
             viewModel.addToExisting("pl1", "Road Trip", listOf("trk1"))
             val state = viewModel.uiState.value as AddToPlaylistUiState.Loaded
+            val event = eventDeferred.await()
 
             assertFalse(state.busy)
-            assertEquals(listOf(AddToPlaylistEvent.Added("Road Trip")), events)
-            collectJob.cancel()
+            assertEquals(AddToPlaylistEvent.Added("Road Trip"), event)
         }
 
     @Test
@@ -129,8 +133,6 @@ class AddToPlaylistViewModelTest {
                 ),
             )
             val viewModel = AddToPlaylistViewModel(musicRepository, serverConfigRepository)
-            val events = mutableListOf<AddToPlaylistEvent>()
-            val collectJob = launch { viewModel.events.collect { events.add(it) } }
             viewModel.load()
             viewModel.uiState.first { it is AddToPlaylistUiState.Loaded }
 
@@ -139,13 +141,13 @@ class AddToPlaylistViewModelTest {
                     .setResponseCode(401)
                     .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
             )
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.events.first() }
             viewModel.addToExisting("pl1", "Road Trip", listOf("trk1"))
             val state = viewModel.uiState.value as AddToPlaylistUiState.Loaded
+            val event = eventDeferred.await()
 
             assertFalse(state.busy)
-            assertEquals(1, events.size)
-            assertTrue(events[0] is AddToPlaylistEvent.Failed)
-            collectJob.cancel()
+            assertTrue(event is AddToPlaylistEvent.Failed)
         }
 
     @Test
@@ -153,19 +155,18 @@ class AddToPlaylistViewModelTest {
         runTest {
             mockWebServer.enqueue(playlistsPageResponse("[]", total = 0))
             val viewModel = AddToPlaylistViewModel(musicRepository, serverConfigRepository)
-            val events = mutableListOf<AddToPlaylistEvent>()
-            val collectJob = launch { viewModel.events.collect { events.add(it) } }
             viewModel.load()
             viewModel.uiState.first { it is AddToPlaylistUiState.Loaded }
 
             mockWebServer.takeRequest() // the initial GET /jellyfin/playlists from load() above
             mockWebServer.enqueue(MockResponse().setResponseCode(201).setBody("""{"id":"pl-new"}"""))
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.events.first() }
             viewModel.createAndAdd("Road Trip", listOf("trk1", "trk2"))
 
             val recorded = mockWebServer.takeRequest(2, java.util.concurrent.TimeUnit.SECONDS)
+            val event = eventDeferred.await()
             assertEquals(true, recorded?.body?.readUtf8()?.contains("\"itemIds\":[\"trk1\",\"trk2\"]"))
-            assertEquals(listOf(AddToPlaylistEvent.Added("Road Trip")), events)
-            collectJob.cancel()
+            assertEquals(AddToPlaylistEvent.Added("Road Trip"), event)
         }
 
     @Test

@@ -1,9 +1,10 @@
 package net.auralis.app.features.music
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -213,8 +214,6 @@ class PlaylistDetailViewModelTest {
             )
             mockWebServer.enqueue(playlistNameResponse("Road Trip"))
             val viewModel = PlaylistDetailViewModel(musicRepository, "pl1")
-            val events = mutableListOf<PlaylistDetailEvent>()
-            val collectJob = launch { viewModel.events.collect { events.add(it) } }
             viewModel.load()
             val loaded = viewModel.uiState.first { it is PlaylistDetailUiState.Loaded } as PlaylistDetailUiState.Loaded
             val toRemove = loaded.entries.first { it.playlistItemId == "entry1" }
@@ -224,14 +223,89 @@ class PlaylistDetailViewModelTest {
                     .setResponseCode(401)
                     .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
             )
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.events.first() }
             viewModel.removeTrack(toRemove)
             val state = viewModel.uiState.value as PlaylistDetailUiState.Loaded
+            val event = eventDeferred.await()
 
             // Rolled back to its original position and count.
             assertEquals(listOf("entry1", "entry2"), state.entries.map { it.playlistItemId })
             assertEquals(2, state.total)
-            assertEquals(1, events.size)
-            assertTrue(events[0] is PlaylistDetailEvent.RemoveFailed)
-            collectJob.cancel()
+            assertTrue(event is PlaylistDetailEvent.RemoveFailed)
+        }
+
+    /**
+     * Pins [PlaylistDetailViewModel.removeTrack]'s rollback-position fix: restoring a removed
+     * *non-first* entry must land it back between the same two neighbours, not merely "somewhere
+     * in a list of the right length". This test alone can't reproduce the drift the fix targets
+     * — `ioDispatcher` being an `UnconfinedTestDispatcher` (see setUp) makes the whole call
+     * (optimistic write, request, rollback write) run synchronously to completion before
+     * `removeTrack` returns, so nothing can mutate `entries` between the optimistic removal and
+     * the rollback the way a concurrent `loadMore()`/another removal could in production — but it
+     * does exercise the "preceding entry still present" branch of the neighbour-based restore
+     * (`entry1`'s own failing-removal test above exercises the other branch, `precedingId == null`
+     * for a first entry) and would fail if that branch ever mis-derived the insertion index.
+     */
+    @Test
+    fun `a failing removeTrack of a middle entry rolls back between the same two neighbours`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[
+                        {"playlistItemId":"entry1","track":${trackJson("trkA", "First")}},
+                        {"playlistItemId":"entry2","track":${trackJson("trkB", "Second")}},
+                        {"playlistItemId":"entry3","track":${trackJson("trkC", "Third")}}
+                    ],"total":3,"startIndex":0}""",
+                ),
+            )
+            mockWebServer.enqueue(playlistNameResponse("Road Trip"))
+            val viewModel = PlaylistDetailViewModel(musicRepository, "pl1")
+            viewModel.load()
+            val loaded = viewModel.uiState.first { it is PlaylistDetailUiState.Loaded } as PlaylistDetailUiState.Loaded
+            val toRemove = loaded.entries.first { it.playlistItemId == "entry2" }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+            viewModel.removeTrack(toRemove)
+            val state = viewModel.uiState.value as PlaylistDetailUiState.Loaded
+
+            assertEquals(listOf("entry1", "entry2", "entry3"), state.entries.map { it.playlistItemId })
+            assertEquals(3, state.total)
+        }
+
+    /**
+     * Removal keys on [MusicPlaylistEntryUi.playlistItemId], not [MusicPlaylistEntryUi.trackId]
+     * — a playlist can legitimately contain the same track twice under two different playlist
+     * entries (e.g. added once by hand, once via an album), and removing one occurrence must
+     * not remove both. If [PlaylistDetailViewModel.removeTrack] ever regressed to keying on
+     * trackId, this would fail: the surviving entry shares [MusicPlaylistEntryUi.trackId] with
+     * the removed one, so a trackId-keyed removal would drop it too.
+     */
+    @Test
+    fun `removeTrack keys on playlistItemId, not trackId, when the same track appears twice`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[
+                        {"playlistItemId":"entry1","track":${trackJson("trkA", "Repeat")}},
+                        {"playlistItemId":"entry2","track":${trackJson("trkA", "Repeat")}}
+                    ],"total":2,"startIndex":0}""",
+                ),
+            )
+            mockWebServer.enqueue(playlistNameResponse("Road Trip"))
+            val viewModel = PlaylistDetailViewModel(musicRepository, "pl1")
+            viewModel.load()
+            val loaded = viewModel.uiState.first { it is PlaylistDetailUiState.Loaded } as PlaylistDetailUiState.Loaded
+            val toRemove = loaded.entries.first { it.playlistItemId == "entry1" }
+
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+            viewModel.removeTrack(toRemove)
+            val state = viewModel.uiState.value as PlaylistDetailUiState.Loaded
+
+            assertEquals(listOf("entry2"), state.entries.map { it.playlistItemId })
+            assertEquals(1, state.total)
         }
 }

@@ -141,17 +141,24 @@ class PlaylistDetailViewModel(
      * immediately, before the network call, on the caller's own thread (`viewModelScope` is
      * confined to `Dispatchers.Main`, so there is no window for a second removal of the same
      * entry to race this one's own generation capture). On failure, the removal is rolled back
-     * — [entry] is re-inserted at its original index — **and** [PlaylistDetailEvent.RemoveFailed]
-     * is emitted so [PlaylistDetailScreen] can show a snackbar; a silent revert would leave the
-     * user believing the removal landed. [removeGeneration] guards both the success path (where
-     * there is nothing left to do, since the optimistic removal already stuck) and the failure
-     * path against a stale write, the same way [AlbumDetailViewModel.toggleFavorite]'s own
-     * generation check does for its two write sites.
+     * — [entry] is re-inserted relative to the entry that preceded it (see `precedingId` below)
+     * — **and** [PlaylistDetailEvent.RemoveFailed] is emitted so [PlaylistDetailScreen] can show
+     * a snackbar; a silent revert would leave the user believing the removal landed.
+     * [removeGeneration] guards both the success path (where there is nothing left to do, since
+     * the optimistic removal already stuck) and the failure path against a stale write, the same
+     * way [AlbumDetailViewModel.toggleFavorite]'s own generation check does for its two write
+     * sites.
      */
     fun removeTrack(entry: MusicPlaylistEntryUi) {
         val current = _uiState.value as? PlaylistDetailUiState.Loaded ?: return
         val index = current.entries.indexOfFirst { it.playlistItemId == entry.playlistItemId }
         if (index == -1) return
+        // Captured instead of relying on `index` at rollback time: a numeric index goes stale if
+        // loadMore() appends a page, or another entry is removed, while this removal is still in
+        // flight — restoring at a now-wrong numeric position would misplace the row. A neighbour
+        // relationship survives both, because it's re-resolved against the list as it stands at
+        // rollback time rather than replayed against a snapshot. Null means entry was first.
+        val precedingId = current.entries.getOrNull(index - 1)?.playlistItemId
         val myGeneration = (removeGeneration[entry.playlistItemId] ?: 0) + 1
         removeGeneration[entry.playlistItemId] = myGeneration
         _uiState.value =
@@ -165,8 +172,18 @@ class PlaylistDetailViewModel(
                 is PlaylistMutationResult.Failed -> {
                     if (removeGeneration[entry.playlistItemId] != myGeneration) return@launch
                     val state = _uiState.value as? PlaylistDetailUiState.Loaded ?: return@launch
+                    // Re-derive the insertion point from precedingId's *current* position rather
+                    // than the stale `index` captured above. If the preceding entry is itself gone
+                    // by now (e.g. also removed while this call was in flight), append instead of
+                    // guessing — still correct on count, just no longer position-stable, same as
+                    // the case being fixed.
+                    val restoreAt =
+                        precedingId?.let { id ->
+                            val precedingIndex = state.entries.indexOfFirst { it.playlistItemId == id }
+                            if (precedingIndex == -1) state.entries.size else precedingIndex + 1
+                        } ?: 0
                     val restored =
-                        state.entries.toMutableList().apply { add(index.coerceAtMost(size), entry) }
+                        state.entries.toMutableList().apply { add(restoreAt.coerceIn(0, size), entry) }
                     _uiState.value = state.copy(entries = restored, total = state.total + 1)
                     _events.emit(PlaylistDetailEvent.RemoveFailed(musicErrorMessage(result.code)))
                 }
