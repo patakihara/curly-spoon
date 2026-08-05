@@ -101,29 +101,24 @@ in-context scan of the current one.
 
 ---
 
-## Leftover worktrees — salvage survey (2026-08-04)
+## Leftover worktrees — surveyed, salvaged, closed out (2026-08-05)
 
-This session was **stopped deliberately by the user**, mid-flight; subagents never reported
-back. `auralis-autorun.timer` is currently **stopped** — no autonomous session will pick this
-up until someone restarts it; stale-looking work here is not evidence of a crash.
+**There are no worktrees left. Nothing was lost.** A session stopped mid-flight on
+2026-08-04 left six behind; every one has since been surveyed, its work merged or confirmed
+already-merged, and the worktree and its branch deleted. Three things came out of them and
+are now on the branch:
 
-| Worktree (agent id)            | Branch                             | Commits ahead of tip                                     | Uncommitted                                                         | What / verdict                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------ | ---------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `a2d41422f046c6b64` (LOCKED)   | `worktree-agent-a2d41422f046c6b64` | 0                                                        | **yes** — `packages/jellyfin-client/src/schemas/raw.ts` (+63 lines) | Zod schemas for Jellyfin's lyrics endpoint (`LyricMetadata`/`LyricLine`/`LyricDto`), well-commented, schema-only — no consumer, no test. **Salvaged 2026-08-04**: copied into the main checkout's working tree (still uncommitted there too); the worktree itself was left untouched.                                                                                      |
-| `a5fe68bc1b55496c1` (LOCKED)   | `worktree-agent-a5fe68bc1b55496c1` | 0                                                        | none                                                                | Tree identical to tip. Nothing to salvage — agent left no trace before being killed.                                                                                                                                                                                                                                                                                       |
-| `a8c9c60164d64c2ed`            | `worktree-agent-a8c9c60164d64c2ed` | 0 (tip `4111d4b`, an ancestor of the current branch tip) | none                                                                | Fully merged already (music-search wave). Stale checkout, safe to ignore.                                                                                                                                                                                                                                                                                                  |
-| `a966e1707aa23490c` (retained) | `worktree-agent-a966e1707aa23490c` | 1 — `9888bec`                                            | none                                                                | Docs-only commit recording phase 8 done + phase 9 web waves. **Not merged, not superseded** — `docs/ROADMAP.md`'s phase 8 row still says "in progress / no Android UI yet" even though the code it documents (`8c689fa`, `58a2aa2`, `774e592`) is already on the tip. Real, cheap to reapply: `git cherry-pick 9888bec`, then hand-resolve the ROADMAP/HANDOVER conflicts. |
-| `a9879cca6eefcd8c5`            | `worktree-agent-a9879cca6eefcd8c5` | 0, identical to tip                                      | none                                                                | This branch **is** the current tip (`d012c95`). Nothing to salvage.                                                                                                                                                                                                                                                                                                        |
+- **`packages/jellyfin-client/src/schemas/raw.ts`** — Jellyfin lyrics schemas
+  (`LyricMetadata`/`LyricLine`/`LyricDto`). Schema-only: no consumer, no test, never
+  reviewed or exercised against a real `LyricDto` response. **Treat as a draft to verify**,
+  not as a settled design.
+- **`57d545e`** — the verified Jellyfin lyrics-search limits, in `docs/INTEGRATIONS.md`
+  and `ROADMAP.md` §9.
+- **`9888bec`** — phase 8 closed out and phase 9's web waves recorded, hand-merged into
+  §9 against the newer unified-search and lyrics content that had landed since.
 
-**`a2d41422f046c6b64`'s lyrics schemas are salvaged**, not just at-risk: they're now also in
-the main checkout's `packages/jellyfin-client/src/schemas/raw.ts` (uncommitted), typechecked
-clean in isolation. They were never reviewed or exercised by the session that wrote them —
-no consumer, no test — so whoever builds lyrics support should treat them as a draft to
-verify against the real `LyricDto` response, not as a design already settled on their behalf.
-
-A sixth worktree, `agent-ad110cc38081aefc6`, exists alongside the five above but was out of
-scope for this survey; its one commit (`57d545e`) matches an "ended" log entry and looks
-already accounted for.
+`auralis-autorun.timer` is still **stopped** — no autonomous session will pick this up until
+someone restarts it; a quiet repo here is not evidence of a crash.
 
 ---
 
@@ -257,7 +252,7 @@ branch, gated to `push` events on this branch only. Multi-arch (arm64) remains p
 browse/search, a `PlaybackSource` seam that lets the player reuse its Audiobookshelf logic
 rather than fork it, and playback with album queueing. Deliberately missing: Jellyfin
 progress reporting, cross-page/shuffle/repeat queueing, lyrics, playlists, favourites, music
-requests, and any Android UI. Lyrics *search* is separately blocked on a product decision,
+requests, and any Android UI. Lyrics _search_ is separately blocked on a product decision,
 not on effort — Jellyfin cannot search lyric text at all, so Auralis would have to build its
 own index. `docs/ROADMAP.md` §9 has the wave-by-wave detail.
 

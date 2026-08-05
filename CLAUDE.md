@@ -170,6 +170,30 @@ of an extra spawn is a small constant; the quadratic is what dominates. Splittin
 6. **Do small, well-understood fixes inline.** The sheet-detent fix cost cents done
    directly; delegating it would have cost dollars.
 
+## Hooks — what is armed in this repo
+
+Everything under `scripts/hooks/`. Each script has a header comment that is the real
+specification; this table is the index, not the documentation. **Keep it in sync** — a hook
+added, moved or retired without a row here is the failure mode this table exists to prevent.
+
+| Script                | Event(s)                                                                    | Registered in                                             | What it does                                                                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `usage-gate.sh`       | `SessionStart`, `UserPromptSubmit`, `PreToolUse` (`*`)                      | `.claude/settings.json`                                   | The plan-usage ceiling — reports under 85%, urges a hand-off 85–90%, denies past 90%. See "Plan usage" above. Also retires an autonomous job and arms its respawn.   |
+| `delegation-nudge.sh` | `PreToolUse` (`*`)                                                          | `.claude/settings.json`                                   | One static "consider delegating" line on the first tool call of a user turn, silent when that call is already an `Agent`/`Task` spawn. Never blocks.                 |
+| `agent-log.sh`        | `SubagentStart`, `SubagentStop`                                             | `.claude/settings.json`                                   | Appends subagent launch/end to `docs/HANDOVER.md`'s log block and to a cross-worktree JSONL under `git rev-parse --git-common-dir`.                                  |
+| `time-gate.sh`        | `UserPromptSubmit`                                                          | `.claude/settings.local.json` (gitignored, machine-local) | Quiet hours. Outside 17:00–18:00 local a typed prompt is queued to `.claude/deferred-prompts.jsonl` and blocked. Two per-prompt exemptions; see §6 of `HANDOVER.md`. |
+| `worktree-gc.sh`      | **not a hook** — invoked by `usage-gate.sh` and by the host's autorun timer | —                                                         | Prunes fully-merged agent worktrees and their branches behind a four-layer safety rail. Never `--force`, never `-D`; skips anything it cannot prove is merged.       |
+
+Two properties hold across all of them and are worth not rediscovering:
+
+- **Everything fails open.** No credential, no `python3`, malformed payload,
+  network down — every one of these scripts allows and explains itself on stderr. The only
+  deliberate blocks are the usage ceiling and quiet hours, both on their happy path.
+- **A session can arm its own hooks.** Writing a registration into a settings file applies
+  for the rest of that session — no restart. The limitation is _visibility across
+  checkouts_, not arming: a worktree's own `.claude/settings.json` is invisible to sessions
+  rooted elsewhere until the branch merges.
+
 ## Autonomy
 
 **The only thing that stops a session is an explicit request to stop.** Not a finished
