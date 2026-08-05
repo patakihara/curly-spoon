@@ -9,7 +9,7 @@
 # ## Why this exists
 #
 # User's own words: "i just end up texting you too much, it sucks. if you
-# don't reply to me then there's no urge yeah." Outside 11:00-18:00 *local
+# don't reply to me then there's no urge yeah." Outside 17:00-18:00 *local
 # system time*, a submitted prompt is captured with a timestamp instead of
 # being processed this turn, and the user is told plainly that it was queued.
 #
@@ -30,43 +30,70 @@
 # .claude/settings.local.json, which is gitignored and never leaves this
 # machine.
 #
-# ## Autonomous-session exemption
+# ## Per-prompt exemptions (rules A and B)
 #
-# When AURALIS_AUTONOMOUS is set and non-empty, this hook exits 0 immediately,
-# silently, before touching stdin or the queue at all. What it exempts and
-# why: machine-started sessions — the kickoff prompt `auralis-autorun` passes
-# to `claude --bg` on a timer, and every wake-up prompt a running autonomous
-# session later schedules for itself. UserPromptSubmit fires for those exactly
-# as it does for a human typing, and this gate exists to stop the *user* from
-# texting at all hours by their own request (see "Why this exists" above) — it
-# was never meant to stop the machine from working, and an unattended session
-# has no human on the other end to defer. Without this exemption, an autorun
-# session started outside the window would have its own kickoff prompt queued
-# and blocked: the session starts, does nothing, and logs success — a silent
-# no-op that looks exactly like normal operation.
+# An earlier version of this hook exempted machine-started sessions via an
+# `AURALIS_AUTONOMOUS` environment marker that `auralis-autorun` exported
+# before `claude --bg`. That marker **never worked**: `claude --bg` does not
+# fork the session from the calling shell, it hands the job to a pre-spawned
+# `bg-spare` worker pulled from a daemon's pool, and that worker process
+# already existed before the export ran. An exported variable cannot reach a
+# process that predates it — this was a structural impossibility, not a
+# misconfiguration, verified by checking that AURALIS_AUTONOMOUS was absent
+# from every claude process's environ on this machine, including the
+# offending session's. Do not reintroduce an environment-marker exemption for
+# `--bg` sessions; it cannot work for the same reason a second time.
 #
-# Why an environment marker rather than matching prompt text: wake-up prompts
-# are written fresh each time and have no stable prefix or shape to match
-# against, so content-based detection cannot cover them. AURALIS_AUTONOMOUS
-# rides the *process* instead — `auralis-autorun` exports it before launching
-# `claude --bg`, hooks inherit the Claude process environment, and that covers
-# both the kickoff prompt and everything the session schedules for itself
-# afterward, with nothing to keep in sync.
+# The replacement classifies each *prompt*, not each session:
 #
-# This marker is this hook's alone. No other hook should ever honour
-# AURALIS_AUTONOMOUS — in particular not usage-gate.sh, which enforces the
+# **Rule A — the session's own kickoff prompt.** `claude --bg` creates a job
+# record at `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/jobs/<jobId>/state.json`
+# with an `intent` field fixed at creation time — the exact text the job was
+# launched with. Given the payload's `session_id`, glob the jobs directory
+# for the `state.json` whose `sessionId` matches, and exempt only when its
+# `intent`, stripped, equals the submitted prompt, stripped. This is true at
+# most once per session, by construction: every later prompt differs from
+# `intent`, including the user's own later messages to that same session.
+# Interactive sessions have no job record at all, so they never match and
+# fall through to normal gating.
+#
+# Deliberately per-prompt rather than per-session: a session-level exemption
+# would also exempt the *user* texting that same background session at
+# 02:00, which is exactly what this hook exists to stop.
+#
+# Accepted limitation, not a bug: this also passes the first prompt of any
+# brand-new session, including one the user starts from their phone outside
+# the window — one message per new session slips through, then the gate
+# closes on everything after it. This is coherent ("the reason a session
+# exists gets delivered, everything after waits") and is not to be closed by
+# matching on `respawnFlags` shape or any other launcher fingerprint — that
+# was considered and rejected as fragile.
+#
+# **Rule B — harness-generated prompts.** A prompt that, left-stripped,
+# starts with `<task-notification>` is a subagent handing a result back to
+# its parent session via UserPromptSubmit, not a human typing — exempt it at
+# any hour. Deliberately narrow: `<local-command-caveat>` and
+# `<command-name>` are user-initiated slash commands and stay gated.
+#
+# Both rules are new failure surface (a missing jobs dir, an unreadable or
+# malformed `state.json`) and must fail open to *normal gating*, never to a
+# crash or to a silent allow — see "Failing open" below.
+#
+# This hook's exemptions are its own. No other hook should ever adopt an
+# autonomy exemption — in particular not usage-gate.sh, which enforces the
 # plan-usage ceiling. That ceiling is the repo owner's, it deliberately
 # applies to autonomous sessions above all (they are the ones that spend
 # unattended with nobody watching), and a general-purpose "skip checks when
-# autonomous" flag would gut it. This exemption is about *who is being
-# protected from whom* — the user, from their own texting habit — not about
-# bypassing a safety limit, and it must not be read as precedent for one.
+# autonomous" flag would gut it. This hook's exemptions are about *who is
+# being protected from whom* — the user, from their own texting habit — not
+# about bypassing a safety limit, and removing the old env-marker mechanism
+# must not be read as softening that warning.
 #
 # ## Clock
 #
 # `date`/`datetime.now()` below read THIS MACHINE's local system time, not UTC
 # and not any timezone fixed in code. If this checkout is ever used from a box
-# in a different timezone, "11:00-18:00" means that box's clock — that is
+# in a different timezone, "17:00-18:00" means that box's clock — that is
 # accepted as-is, not compensated for.
 #
 # ## Failing open
@@ -81,24 +108,22 @@
 # Testing hooks (env overrides, all optional, only meant for
 # time-gate.test.sh):
 #   AURALIS_TIME_GATE_NOW    ISO 8601 local datetime to use instead of "now"
-#   AURALIS_TIME_GATE_START  window start, HH:MM (default 11:00)
+#   AURALIS_TIME_GATE_START  window start, HH:MM (default 17:00)
 #   AURALIS_TIME_GATE_END    window end, HH:MM (default 18:00)
 #   AURALIS_TIME_GATE_QUEUE  path to the queue file (default under this repo)
+#   AURALIS_TIME_GATE_JOBS_DIR  jobs directory for rule A's lookup (default
+#                            ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/jobs)
 
 set -uo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 QUEUE_FILE="${AURALIS_TIME_GATE_QUEUE:-$PROJECT_DIR/.claude/deferred-prompts.jsonl}"
-WINDOW_START="${AURALIS_TIME_GATE_START:-11:00}"
+WINDOW_START="${AURALIS_TIME_GATE_START:-17:00}"
 WINDOW_END="${AURALIS_TIME_GATE_END:-18:00}"
 
 command -v python3 >/dev/null 2>&1 || exit 0
 
-# Machine-started sessions and their own scheduled wake-ups are exempt — see
-# "Autonomous-session exemption" in the header comment. Checked as early as
-# possible, before stdin is even read, so the exempt path does the least
-# possible work and has nothing left in it that could fail.
-[ -n "${AURALIS_AUTONOMOUS:-}" ] && exit 0
+JOBS_DIR="${AURALIS_TIME_GATE_JOBS_DIR:-${CLAUDE_CONFIG_DIR:-${HOME:-}/.claude}/jobs}"
 
 # Capture stdin to a temp file rather than piping it straight into python3.
 # `python3 - ... <<'PY'` reads the *script itself* from stdin, which conflicts
@@ -115,20 +140,60 @@ cat >"$payload_file" 2>/dev/null || exit 0
 # wrapper below always treats as "allow, no output". Nothing here can make
 # the hook deny anything: the only two outcomes are silence (allow) or a
 # `decision: block` JSON payload (queued).
-out="$(python3 - "$payload_file" "$QUEUE_FILE" "$WINDOW_START" "$WINDOW_END" "${AURALIS_TIME_GATE_NOW:-}" <<'PY'
+out="$(python3 - "$payload_file" "$QUEUE_FILE" "$WINDOW_START" "$WINDOW_END" "${AURALIS_TIME_GATE_NOW:-}" "$JOBS_DIR" <<'PY'
 import datetime
+import glob
 import json
 import os
 import sys
 
-payload_file, queue_file, start_s, end_s, now_override = (
-    sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+payload_file, queue_file, start_s, end_s, now_override, jobs_dir = (
+    sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
 )
 
 
 def parse_hm(s):
     h, m = s.split(":")
     return int(h), int(m)
+
+
+def is_task_notification(prompt):
+    # Rule B: a subagent handing a result back to its own parent session via
+    # UserPromptSubmit is not the user texting, at any hour. Deliberately
+    # narrow — <local-command-caveat> and <command-name> are user-initiated
+    # slash commands and stay gated.
+    return prompt.lstrip().startswith("<task-notification>")
+
+
+def kickoff_intent_matches(prompt, session_id, jobs_dir):
+    # Rule A: the prompt that caused a `claude --bg` session to exist is
+    # delivered once; everything after it, including the user's own later
+    # messages to that session, is gated normally. This is new failure
+    # surface (missing dir, unreadable/malformed state.json, permissions) —
+    # any error here must return False, never raise, so the caller always
+    # falls through to normal gating rather than crashing or wrongly
+    # allowing.
+    try:
+        if not isinstance(session_id, str) or not session_id:
+            return False
+        for state_path in glob.glob(os.path.join(jobs_dir, "*", "state.json")):
+            try:
+                with open(state_path) as f:
+                    state = json.load(f)
+            except Exception:
+                continue
+            job_session_id = state.get("sessionId")
+            if not isinstance(job_session_id, str) or not job_session_id:
+                continue
+            if job_session_id != session_id:
+                continue
+            intent = state.get("intent")
+            if isinstance(intent, str) and intent.strip() == prompt.strip():
+                return True
+            return False
+        return False
+    except Exception:
+        return False
 
 
 try:
@@ -140,6 +205,14 @@ try:
         # Either a shape change upstream, or this hook got fired for something
         # that isn't a real UserPromptSubmit event. Never guess at content —
         # fail open.
+        sys.exit(0)
+
+    session_id = payload.get("session_id")
+
+    if is_task_notification(prompt):
+        sys.exit(0)
+
+    if kickoff_intent_matches(prompt, session_id, jobs_dir):
         sys.exit(0)
 
     now = (

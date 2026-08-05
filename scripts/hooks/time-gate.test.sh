@@ -2,13 +2,18 @@
 #
 # Tests for the quiet-hours prompt gate hook (scripts/hooks/time-gate.sh).
 #
-# The contract: inside 11:00-18:00, behave completely normally and silently.
+# The contract: inside 17:00-18:00, behave completely normally and silently.
 # Outside it, queue the prompt to a JSONL file with a timestamp and block it
 # from being processed this turn via `decision: "block"`. Any failure at all
-# — bad JSON, no prompt field, unwritable queue file — must allow, silently,
-# same direction as usage-gate.sh. Nothing here should ever deny a prompt by
-# accident; the only two legitimate outcomes are silence and a well-formed
-# queue-and-block.
+# — bad JSON, no prompt field, unwritable queue file, malformed job state —
+# must allow through to normal gating, never crash, same fail-open direction
+# as usage-gate.sh. Nothing here should ever deny a prompt by accident; the
+# only two legitimate outcomes are silence and a well-formed queue-and-block.
+#
+# Rule A (a session's own `claude --bg` kickoff prompt) and rule B
+# (`<task-notification>` results) are exempted per-prompt, not per-session —
+# see time-gate.sh's header comment for the full design and why the old
+# AURALIS_AUTONOMOUS environment marker was removed (it never worked).
 #
 # "Now" is controlled via AURALIS_TIME_GATE_NOW so this suite never depends on
 # the wall clock at run time.
@@ -37,7 +42,7 @@ run_hook() {
 
 qdir="$(mktemp -d)"
 q="$qdir/deferred-prompts.jsonl"
-out="$(run_hook '{"prompt":"hi","session_id":"s1"}' "2026-08-03T14:00:00" "$q")"
+out="$(run_hook '{"prompt":"hi","session_id":"s1"}' "2026-08-03T17:30:00" "$q")"
 status=$?
 [ "$status" -eq 0 ] && ok "inside window: exits 0" || fail "inside window: exit was $status"
 [ -z "$out" ] && ok "inside window: prints nothing" || fail "inside window: unexpected output: $out"
@@ -48,8 +53,8 @@ rm -rf "$qdir"
 
 qdir="$(mktemp -d)"
 q="$qdir/deferred-prompts.jsonl"
-out="$(run_hook '{"prompt":"hi"}' "2026-08-03T11:00:00" "$q")"
-[ -z "$out" ] && ok "boundary 11:00: treated as inside (silent)" || fail "boundary 11:00: expected silence, got: $out"
+out="$(run_hook '{"prompt":"hi"}' "2026-08-03T17:00:00" "$q")"
+[ -z "$out" ] && ok "boundary 17:00: treated as inside (silent)" || fail "boundary 17:00: expected silence, got: $out"
 rm -rf "$qdir"
 
 # --- boundary: exactly window end is outside -----------------------------------
@@ -140,57 +145,132 @@ status=$?
   ok "fail-open: unwritable queue path allows silently, no crash" ||
   fail "fail-open: unwritable queue path did not allow silently (exit=$status, out=$out)"
 
-# --- AURALIS_AUTONOMOUS exemption -----------------------------------------------
+# --- Rule A / Rule B per-prompt exemptions --------------------------------------
 #
-# Machine-started sessions (autorun's own kickoff prompt, and every wake-up an
-# autonomous session schedules for itself) must never be queued-and-blocked —
-# that would start a session, silently do nothing, and log success. The
-# exemption must (a) actually exempt outside the window, (b) not write the
-# queue file while doing so — a version that stayed silent but still queued
-# would look correct from the caller's side and silently accumulate junk,
-# (c) leave in-window behaviour unchanged, (d) not regress the non-exempt
-# path, and (e) treat an empty value as not set, since an empty marker is not
-# an opt-in.
+# Replaces the old AURALIS_AUTONOMOUS session-level exemption (never worked —
+# see time-gate.sh's header). Machine-started sessions' own kickoff prompt
+# (rule A) and harness-generated <task-notification> prompts (rule B) must
+# never be queued-and-blocked. Critically, this must be per-*prompt*: a later,
+# different prompt on the same session is a human texting and must still be
+# gated (regression guard for the whole reframing — a session-level exemption
+# would wrongly pass it too).
 
+run_hook_jobs() {
+  # $1 = stdin payload, $2 = AURALIS_TIME_GATE_NOW, $3 = queue file path,
+  # $4 = jobs dir path
+  printf '%s' "$1" |
+    AURALIS_TIME_GATE_NOW="$2" AURALIS_TIME_GATE_QUEUE="$3" AURALIS_TIME_GATE_JOBS_DIR="$4" "$HOOK"
+}
+
+# 1. Kickoff prompt, outside window, matching intent -> allowed, no queue write.
 qdir="$(mktemp -d)"
 q="$qdir/deferred-prompts.jsonl"
-out="$(printf '%s' '{"prompt":"autorun kickoff","session_id":"auto1"}' |
-  AURALIS_AUTONOMOUS=1 AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
+jdir="$(mktemp -d)"
+mkdir -p "$jdir/job1"
+cat >"$jdir/job1/state.json" <<'JSON'
+{"sessionId":"auto1","intent":"autorun kickoff"}
+JSON
+out="$(run_hook_jobs '{"prompt":"autorun kickoff","session_id":"auto1"}' "2026-08-03T22:15:00" "$q" "$jdir")"
 status=$?
-[ "$status" -eq 0 ] && ok "autonomous, outside window: exits 0" || fail "autonomous, outside window: exit was $status"
-[ -z "$out" ] && ok "autonomous, outside window: prints nothing" || fail "autonomous, outside window: unexpected output: $out"
-[ -f "$q" ] && fail "autonomous, outside window: must not write the queue file" || ok "autonomous, outside window: no queue file written"
-rm -rf "$qdir"
+[ "$status" -eq 0 ] && ok "rule A: kickoff match exits 0" || fail "rule A: kickoff match exit was $status"
+[ -z "$out" ] && ok "rule A: kickoff match prints nothing" || fail "rule A: kickoff match unexpected output: $out"
+[ -f "$q" ] && fail "rule A: kickoff match must not write the queue file" || ok "rule A: kickoff match no queue file written"
+rm -rf "$qdir" "$jdir"
 
+# 2. Different prompt, same session, outside window -> blocked and queued.
 qdir="$(mktemp -d)"
 q="$qdir/deferred-prompts.jsonl"
-out="$(printf '%s' '{"prompt":"autorun kickoff","session_id":"auto2"}' |
-  AURALIS_AUTONOMOUS=1 AURALIS_TIME_GATE_NOW="2026-08-03T14:00:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
+jdir="$(mktemp -d)"
+mkdir -p "$jdir/job1"
+cat >"$jdir/job1/state.json" <<'JSON'
+{"sessionId":"auto1","intent":"autorun kickoff"}
+JSON
+out="$(run_hook_jobs '{"prompt":"a human prompt","session_id":"auto1"}' "2026-08-03T22:15:00" "$q" "$jdir")"
+[ -n "$out" ] && ok "rule A regression guard: later different prompt on same session still blocks" ||
+  fail "rule A regression guard: expected a block payload, got silence"
+[ -f "$q" ] && ok "rule A regression guard: later different prompt still queues" ||
+  fail "rule A regression guard: queue file missing"
+rm -rf "$qdir" "$jdir"
+
+# 3. <task-notification>..., outside window -> allowed.
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+jdir="$(mktemp -d)"
+out="$(run_hook_jobs '{"prompt":"<task-notification>result here</task-notification>","session_id":"s6"}' "2026-08-03T22:15:00" "$q" "$jdir")"
 status=$?
-[ "$status" -eq 0 ] && ok "autonomous, inside window: exits 0" || fail "autonomous, inside window: exit was $status"
-[ -z "$out" ] && ok "autonomous, inside window: prints nothing" || fail "autonomous, inside window: unexpected output: $out"
-[ -f "$q" ] && fail "autonomous, inside window: must not write the queue file" || ok "autonomous, inside window: no queue file written"
-rm -rf "$qdir"
+[ "$status" -eq 0 ] && [ -z "$out" ] &&
+  ok "rule B: task-notification outside window allows silently" ||
+  fail "rule B: task-notification outside window did not allow silently (exit=$status, out=$out)"
+[ -f "$q" ] && fail "rule B: task-notification outside window must not write the queue file" ||
+  ok "rule B: task-notification outside window no queue file written"
+rm -rf "$qdir" "$jdir"
 
+# 4. <task-notification> inside the window -> allowed (trivially, but pin it).
 qdir="$(mktemp -d)"
 q="$qdir/deferred-prompts.jsonl"
-out="$(printf '%s' '{"prompt":"a human prompt","session_id":"s4"}' |
-  AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
-[ -n "$out" ] && ok "AURALIS_AUTONOMOUS unset, outside window: still blocks (regression guard)" ||
-  fail "AURALIS_AUTONOMOUS unset, outside window: expected a block payload, got silence"
-[ -f "$q" ] && ok "AURALIS_AUTONOMOUS unset, outside window: still queues" ||
-  fail "AURALIS_AUTONOMOUS unset, outside window: queue file missing"
-rm -rf "$qdir"
+jdir="$(mktemp -d)"
+out="$(run_hook_jobs '{"prompt":"<task-notification>result here</task-notification>","session_id":"s7"}' "2026-08-03T17:30:00" "$q" "$jdir")"
+[ -z "$out" ] && ok "rule B: task-notification inside window allows silently" ||
+  fail "rule B: task-notification inside window unexpected output: $out"
+rm -rf "$qdir" "$jdir"
 
+# 5. No matching job record for the session id (interactive session), outside
+#    window -> blocked and queued.
 qdir="$(mktemp -d)"
 q="$qdir/deferred-prompts.jsonl"
-out="$(printf '%s' '{"prompt":"a human prompt","session_id":"s5"}' |
-  AURALIS_AUTONOMOUS="" AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" AURALIS_TIME_GATE_QUEUE="$q" "$HOOK")"
-[ -n "$out" ] && ok "AURALIS_AUTONOMOUS empty string, outside window: still blocks (empty is not an opt-in)" ||
-  fail "AURALIS_AUTONOMOUS empty string, outside window: expected a block payload, got silence"
-[ -f "$q" ] && ok "AURALIS_AUTONOMOUS empty string, outside window: still queues" ||
-  fail "AURALIS_AUTONOMOUS empty string, outside window: queue file missing"
+jdir="$(mktemp -d)"
+mkdir -p "$jdir/job1"
+cat >"$jdir/job1/state.json" <<'JSON'
+{"sessionId":"some-other-session","intent":"unrelated kickoff"}
+JSON
+out="$(run_hook_jobs '{"prompt":"a human prompt","session_id":"interactive1"}' "2026-08-03T22:15:00" "$q" "$jdir")"
+[ -n "$out" ] && ok "rule A: no matching job record still blocks" ||
+  fail "rule A: no matching job record expected a block payload, got silence"
+[ -f "$q" ] && ok "rule A: no matching job record still queues" ||
+  fail "rule A: no matching job record queue file missing"
+rm -rf "$qdir" "$jdir"
+
+# 6. Malformed / unreadable state.json in the jobs dir -> hook still
+#    functions, falls through to normal gating (block+queue outside window),
+#    does not crash.
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+jdir="$(mktemp -d)"
+mkdir -p "$jdir/job1"
+printf 'not valid json at all' >"$jdir/job1/state.json"
+out="$(run_hook_jobs '{"prompt":"a human prompt","session_id":"whatever"}' "2026-08-03T22:15:00" "$q" "$jdir")"
+status=$?
+[ "$status" -eq 0 ] && ok "malformed state.json: exits 0, no crash" || fail "malformed state.json: exit was $status"
+[ -n "$out" ] && ok "malformed state.json: falls through to normal gating (blocks)" ||
+  fail "malformed state.json: expected a block payload, got silence"
+[ -f "$q" ] && ok "malformed state.json: still queues" || fail "malformed state.json: queue file missing"
+rm -rf "$qdir" "$jdir"
+
+# 7. Jobs dir does not exist at all -> normal gating.
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+out="$(run_hook_jobs '{"prompt":"a human prompt","session_id":"whatever"}' "2026-08-03T22:15:00" "$q" "/nonexistent-root-only-path/nope/jobs")"
+status=$?
+[ "$status" -eq 0 ] && ok "missing jobs dir: exits 0, no crash" || fail "missing jobs dir: exit was $status"
+[ -n "$out" ] && ok "missing jobs dir: falls through to normal gating (blocks)" ||
+  fail "missing jobs dir: expected a block payload, got silence"
 rm -rf "$qdir"
+
+# 8. Whitespace differences between intent and prompt -> still matches (both
+#    are stripped).
+qdir="$(mktemp -d)"
+q="$qdir/deferred-prompts.jsonl"
+jdir="$(mktemp -d)"
+mkdir -p "$jdir/job1"
+cat >"$jdir/job1/state.json" <<'JSON'
+{"sessionId":"auto3","intent":"  autorun kickoff\n"}
+JSON
+out="$(run_hook_jobs '{"prompt":"autorun kickoff","session_id":"auto3"}' "2026-08-03T22:15:00" "$q" "$jdir")"
+[ -z "$out" ] && ok "rule A: whitespace-only difference still matches" ||
+  fail "rule A: whitespace-only difference should have matched, got: $out"
+[ -f "$q" ] && fail "rule A: whitespace-only match must not write the queue file" ||
+  ok "rule A: whitespace-only match no queue file written"
+rm -rf "$qdir" "$jdir"
 
 # --- never gated on anything but UserPromptSubmit: registration check ----------
 #
