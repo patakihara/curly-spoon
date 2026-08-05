@@ -130,6 +130,30 @@ test('closing Now Playing at compact width leaves nothing behind that blocks the
   await expect(page.getByTestId('now-playing')).toBeVisible();
 });
 
+// a11y audit (2026-08-05): `Sheet.tsx`'s own doc comment claims Mantine's `Drawer`
+// supplies "return-focus-on-close" for free, and `e2e/ui/sheet.spec.ts` proves that in
+// isolation. It broke here anyway: `NowPlaying` used to early-return `null` the instant
+// `open` went false, which unmounts `Sheet`'s `Drawer.Root` synchronously rather than
+// letting Mantine observe the `opened: true -> false` prop transition on a still-mounted
+// component — which is what its internal focus-return effect is wired to. The isolated
+// gallery (`packages/ui/gallery/App.tsx`) never unmounts `Sheet` itself, only toggles
+// `open`, so it never hit this. Fixed by only early-returning on `!currentItem` and
+// letting `Sheet`'s own `open` prop carry the closed state instead.
+test('closing Now Playing with Escape at compact width returns focus to the mini player’s expand control', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 480, height: 900 });
+  await startDune(page);
+
+  const expandButton = page.getByTestId('mini-player-expand');
+  await expandButton.click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('now-playing')).toHaveCount(0);
+  await expect(expandButton).toBeFocused();
+});
+
 test('clicking a chapter seeks: elapsed updates and the chapter list marks it current', async ({
   page,
 }) => {

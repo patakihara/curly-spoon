@@ -212,7 +212,16 @@ export function ThemeProvider({
         ref={rootRef}
         className="auralis-theme-root"
         data-theme={resolvedMode}
-        style={staticVars}
+        // `styles/index.css`'s `:root { color-scheme: light dark }` is only ever a static
+        // fallback — it never tracked `resolvedMode` the way `data-theme` above does, so a
+        // pinned mode that disagreed with the OS's own `prefers-color-scheme` still got native
+        // form-control chrome (placeholder text among it) rendered for the *wrong* scheme:
+        // `data-theme` flipped, the actual UA rendering didn't (a11y audit, 2026-08-05, 2.47:1/
+        // 2.07:1 against WCAG AA's 4.5:1 floor). `color-scheme` is an inherited CSS property, so
+        // setting it here — on the same element `data-theme` already lives on — cascades to
+        // every descendant and overrides that `:root` fallback for the whole app, without a
+        // second sync mechanism.
+        style={{ ...staticVars, colorScheme: resolvedMode }}
       >
         {/* `forceColorScheme` takes `resolvedMode` — already collapsed from `system`
             via `systemPrefersDark` above — so Mantine never disagrees with the rest

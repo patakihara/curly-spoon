@@ -65,7 +65,19 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
   const toggleShuffle = useMusicQueueStore((s) => s.toggleShuffle);
   const setRepeat = useMusicQueueStore((s) => s.setRepeat);
 
-  if (!open || !currentItem) return null;
+  // Only `currentItem` gates mounting — `open` must NOT, even though it reads as the
+  // obvious guard. Below `expanded` this component's content lives inside `Sheet`
+  // (Mantine `Drawer`), and Mantine's return-focus-on-close behaviour is wired to its own
+  // `opened` prop transitioning on a component that stays mounted, not to unmount
+  // cleanup. Early-returning `null` here the instant `open` goes false used to unmount
+  // `Sheet`'s `Drawer.Root` synchronously in the same render — removing it from the tree
+  // before Mantine ever observed `opened: true -> false` — so focus was left on `<body>`
+  // instead of returning to whatever opened the sheet (found in the phase-10 a11y audit;
+  // `e2e/app/player.spec.ts`'s "returns focus to the mini player's expand control" test).
+  // `packages/ui/gallery/App.tsx`'s own `<Sheet>` never hit this because its wrapper never
+  // unmounts `Sheet` either — only `open` toggles — which is why `e2e/ui/sheet.spec.ts`
+  // passed in isolation while the app-level behaviour was broken.
+  if (!currentItem) return null;
 
   // Shuffle/repeat are music-only — `currentItem.media.kind === 'track'` is the same signal
   // `playerDisplayMeta`/`playerArtworkUrl` already use to tell a Jellyfin queue apart from a

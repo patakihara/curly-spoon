@@ -23,6 +23,16 @@
  * depends on: `Drawer.Content`'s `className`/`style` are applied by Mantine to *two*
  * different DOM nodes, not one, and the panel-specific CSS rules are scoped
  * accordingly so they don't leak onto the other one.
+ *
+ * Caller contract for "return-focus-on-close": Mantine's focus-return effect watches
+ * this component's own `opened` prop transitioning from true to false — it does *not*
+ * run on unmount. A caller that unmounts `<Sheet>` itself (rather than just flipping
+ * `open` to false) the instant it wants to close removes `Drawer.Root` before Mantine
+ * ever sees that transition, and focus is left on `<body>`. Keep `<Sheet>` mounted for
+ * as long as there is anything to show, and let `open` alone carry the closed state —
+ * `NowPlaying.tsx` shipped exactly this bug (a11y audit, 2026-08-05) and
+ * `e2e/ui/sheet.spec.ts` couldn't catch it because this gallery's own harness never
+ * unmounts `<Sheet>` either.
  */
 import {
   useId,
