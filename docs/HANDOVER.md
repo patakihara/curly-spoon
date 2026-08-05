@@ -275,15 +275,22 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-- **2026-08-05, session `01Wf5C2q`** — phase 10, performance budgets enforced in CI (bundle
-  size first). The a11y audit half of phase 10 is **not** claimed.
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
   (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
   landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
+  <<<<<<< HEAD
   lyrics view) and wave K (music requests on **Android** — the web UI for the same feature is
   session `01Wf5C2q`'s, claimed above, and the two did not overlap). This session stays inside
-  `apps/android/`. **This session's Android lane is complete and the claim is released** — waves
-  F through L all landed and are CI-verified, and Android now matches web's music feature.
+  `apps/android/`. The Android lane is complete — waves F through L all landed and are
+  CI-verified, and Android now matches web's music feature. **Now holding one small web item**:
+  the per-track-artist fix in `apps/web/src/features/music/musicQueue.ts` and its call sites
+  only — deliberately disjoint from session `01Wf5C2q`'s `MusicRequest*.tsx` work.
+  \=======
+  lyrics view) and wave K (music requests on **Android** — the web UI for the same feature was
+  a different session's, already landed, and the two did not overlap). This session stays
+  inside `apps/android/` and is not touching `apps/server/` or `apps/web/`.
+
+> > > > > > > worktree-agent-a4f3ab764e9517c55
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 

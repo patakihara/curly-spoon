@@ -1274,6 +1274,28 @@ not just the per-surface checks noted against phase 7's waves above, but the who
 web and Android together, side by side with YouTube Music and Symfonium one more time before
 release.
 
+**The web bundle-size budget is done.** `scripts/bundle-budget.mjs` measures
+`apps/web`'s production build straight from `dist/index.html` and `dist/assets` (entry
+chunk vs. every lazily-loaded route, both raw and gzip, plus a per-chunk ceiling on the
+largest lazy chunk so one page can't quietly balloon under the total budget's slack) and
+compares it against `scripts/bundle-budget.config.mjs`, which carries the reasoning for
+every number in its own doc comments. Wired into `ci.yml` as the `bundle-budget` job,
+gating `publish` alongside the other jobs that can say a build is wrong.
+
+Baseline measured 2026-08-05 (commit `9c162c2`): entry chunk 949 KB raw / 248 KB gzip,
+total bundle 1043 KB raw / 284 KB gzip, largest lazy chunk (`SettingsPage`) 13.3 KB raw.
+Route-level code splitting already existed (`apps/web/src/router/routeTree.ts`'s
+`lazyRouteComponent` on every leaf route) — nothing to add here. Worth a look, not fixed in
+this wave since a budget change and a bundle refactor in one commit would make neither
+reviewable: the entry chunk is Mantine + React + react-query + the router + zustand +
+`material-color-utilities`, all eagerly bundled together because the app shell
+(`RootLayout`) uses `@auralis/ui` components directly rather than lazily — undifferentiated
+today, but a candidate for `manualChunks` vendor splitting later if cache-busting on
+unrelated app-shell changes ever becomes a real cost.
+
+Lighthouse audits (desktop and mobile layouts) are the other half of "performance budgets"
+this phase names and remain open.
+
 **The accessibility audit has started: done (`d3b2791`).** Two real defects fixed: search
 state changes were invisible to a screen reader (a plain paragraph, no live region), and the
 sleep timer's menu had no `aria-haspopup`/`aria-expanded` with Escape closing the entire Now
