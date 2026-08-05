@@ -926,8 +926,21 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   boolean `aria-pressed`, since `aria-pressed` cannot carry three states; the label is what
   distinguishes "all" from "one" for assistive tech.
 
-  Left behind deliberately: `features/music/queue.ts`'s `albumQueue` is now unused by any page
-  but still present with its tests, rather than widening the diff to delete it.
+  **Review found one real bug in it, fixed in `42cb5cf`**, and it is the kind worth
+  recognising: `jellyfinSource` captured the track list **once at construction**, while
+  shuffle, cross-page append and repeat-all's reshuffle all replace `playerStore.tracks`
+  without reconstructing the source. So exactly the three behaviours this wave added were
+  reporting the **wrong item id and position** to Jellyfin — and because `trackAt` has no
+  upper bound against a track's own duration, a stale shorter list does not fail loudly, it
+  keeps resolving to its last track forever with the position running past that track's real
+  end. Silent corruption of play history for a track that is not audible. Nothing caught it
+  because the queue's unit tests never touch `playbackSource.ts` and the e2e spec asserts
+  control state, not reporting.
+
+  The reporter now takes a **getter** rather than an array, so it reads the live list at tick
+  time. Refreshing the source alongside every `setTracks` call was rejected: it leaves the same
+  forgettable-second-call shape that caused the bug. `features/music/queue.ts`'s dead
+  `albumQueue` was deleted in the same commit.
 
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
