@@ -275,10 +275,12 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-request can progress past `downloading` (see `docs/ROADMAP.md` §9 for why it stops there).
-`main`; `docs/ROADMAP.md` §9 has what exists to build against).
-persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked). Web UI for music
-requests follows in a separate wave and is **not** claimed yet.
+- **2026-08-05, session `01Wf5C2q`** — a Jellyfin library-rescan capability, so a music
+  request can progress past `downloading` (see `docs/ROADMAP.md` §9 for why it stops there).
+- **2026-08-05, session `01Wf5C2q`** — music requests **web UI** (server side is done and on
+  `main`; `docs/ROADMAP.md` §9 has what exists to build against).
+- **2026-08-05, session `01Wf5C2q`** — music requests: the `media_type` schema change and
+  persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked).
 
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
   (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
