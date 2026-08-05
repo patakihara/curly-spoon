@@ -361,3 +361,49 @@ with very different status:
     rate limiting, caching and false-match handling. It carries a genuine privacy decision:
     it sends metadata about the user's library to a third party, so it needs explicit
     opt-in, not a silent default.
+
+## YouTube / YouTube Music as a playback source (researched, not decided)
+
+Researched 2026-08-06 at the user's request, from `uditkarode/AbleMusicPlayer`'s own source
+rather than its README. **Nothing here is decided or built.**
+
+**What that app actually does.** Every byte of audio comes from **YouTube / YouTube Music**,
+via **NewPipeExtractor** — the same reverse-engineering library behind NewPipe. Search uses
+YouTube Music's search surface; playback resolves a YouTube audio stream. Spotify appears only
+as a one-way **playlist-metadata importer** (scrapes the public embed page for track names,
+then re-resolves each against YouTube Music); Deezer only as an album-art fallback. Neither
+ever supplies audio.
+
+Notably it does **not** stream progressively: it resolves the URL, **fully downloads** the file
+through 256KB ranged requests with a spoofed user-agent (to dodge per-connection throttling),
+then plays the local file. That shape is closer to slskd's acquire-then-play than to on-demand
+streaming.
+
+**It is not device-locked.** NewPipeExtractor is a plain JVM library doing HTTP; nothing needs
+to be on the phone. The Node equivalent is `yt-dlp` as a subprocess, which would put this in
+`apps/server` alongside every other upstream — the same place the BFF already centralises
+credentials and CORS.
+
+**The two facts that should decide this, both evidenced rather than assumed:**
+
+- **The maintenance burden is continuous, not one-off.** That repo runs a **daily** GitHub
+  Action that checks for a new NewPipeExtractor release, bumps the pin and ships a rebuilt APK
+  — and its commit log shows a steady stream of those bumps. It works because someone automated
+  keeping pace with an adversarial upstream. Anything Auralis builds on the same technique
+  inherits that, and will silently start failing when YouTube changes its player internals.
+- **The technique violates YouTube's ToS.** It is the youtube-dl/yt-dlp pattern: bypassing the
+  official player to obtain direct media URLs. Legally contested rather than settled — youtube-dl
+  survived its DMCA dispute, but that concerned distributing the _code_, not a ruling that
+  extraction is lawful. Enforcement against personal self-hosting is effectively unheard of.
+  Stated plainly because it is a real difference in standing from Jellyfin, Audiobookshelf and
+  slskd, which carry no such exposure.
+
+**How it would fit.** It is a **streaming** source — play something that is not in the library —
+where slskd is an **acquire-into-library** source. So it genuinely complements the request
+feature rather than duplicating it, and it does **not** fit `MusicRequestProvider`'s
+search/add/status/remove shape, which assumes the result lands in the library for Jellyfin to
+ingest. The better home is a new on-demand source parallel to phase 9's `PlaybackSource` seam.
+A lower-risk alternative exists: reuse `MusicRequestProvider` as-is and download into the
+library, which is what AbleMusicPlayer effectively does anyway.
+
+AbleMusicPlayer is GPL-3.0, 734 stars, single active maintainer, last commit 2026-07-21.
