@@ -131,6 +131,20 @@ sealed interface CreatePlaylistResult {
  * state to reconcile against on success; [Success] carries nothing. Shared by both methods for
  * the same reason [FavoriteToggleResult] is shared by mark/unmark — one outcome shape, two
  * dispatch sites. */
+/** Outcome of [MusicRepository.reportPlaybackStart]/[reportPlaybackProgress]/
+ * [reportPlaybackStopped] — one shared shape for all three, like [PlaylistMutationResult]
+ * above and for the same reason (all three BFF routes are 204-on-success, no body to
+ * distinguish). Not consumed by [net.auralis.app.features.player.JellyfinApiPlaybackReportSender]
+ * today — it treats [Failed] the same as [Success], swallowing either — but kept as a real
+ * sealed result rather than a bare `Unit`/throwing suspend fun so this class's own house style
+ * (every method degrades an [ApiException] into a typed result, never lets one propagate) holds
+ * without exception here too. */
+sealed interface PlaybackReportResult {
+    data object Success : PlaybackReportResult
+
+    data class Failed(val code: String) : PlaybackReportResult
+}
+
 sealed interface PlaylistMutationResult {
     data object Success : PlaylistMutationResult
 
@@ -354,5 +368,45 @@ class MusicRepository(private val apiClient: ApiClient) {
             PlaylistMutationResult.Success
         } catch (e: ApiException) {
             PlaylistMutationResult.Failed(e.code)
+        }
+
+    /** POST /jellyfin/playback/start — see [ApiClient.jellyfinReportPlaybackStart]'s doc comment.
+     * [net.auralis.app.features.player.JellyfinApiPlaybackReportSender] is the only caller. */
+    suspend fun reportPlaybackStart(
+        itemId: String,
+        positionSeconds: Double,
+    ): PlaybackReportResult =
+        try {
+            apiClient.jellyfinReportPlaybackStart(itemId, positionSeconds)
+            PlaybackReportResult.Success
+        } catch (e: ApiException) {
+            PlaybackReportResult.Failed(e.code)
+        }
+
+    /** POST /jellyfin/playback/progress — see [ApiClient.jellyfinReportPlaybackProgress]'s doc
+     * comment. */
+    suspend fun reportPlaybackProgress(
+        itemId: String,
+        positionSeconds: Double,
+        isPaused: Boolean,
+    ): PlaybackReportResult =
+        try {
+            apiClient.jellyfinReportPlaybackProgress(itemId, positionSeconds, isPaused)
+            PlaybackReportResult.Success
+        } catch (e: ApiException) {
+            PlaybackReportResult.Failed(e.code)
+        }
+
+    /** POST /jellyfin/playback/stopped — see [ApiClient.jellyfinReportPlaybackStopped]'s doc
+     * comment. */
+    suspend fun reportPlaybackStopped(
+        itemId: String,
+        positionSeconds: Double,
+    ): PlaybackReportResult =
+        try {
+            apiClient.jellyfinReportPlaybackStopped(itemId, positionSeconds)
+            PlaybackReportResult.Success
+        } catch (e: ApiException) {
+            PlaybackReportResult.Failed(e.code)
         }
 }

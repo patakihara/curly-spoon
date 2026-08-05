@@ -754,3 +754,25 @@ data class JellyfinCreatePlaylistResponse(
 data class JellyfinAddToPlaylistBody(
     val itemIds: List<String>,
 )
+
+/** Request body shared by POST /jellyfin/playback/start and POST /jellyfin/playback/stopped —
+ * mirrors `jellyfinPlaybackReportBodySchema` (`apps/server/src/routes/schemas.ts`), which has no
+ * `isPaused` field; see [JellyfinPlaybackProgressBody] for the one route that adds it. */
+@Serializable
+data class JellyfinPlaybackReportBody(
+    val itemId: String,
+    val positionSeconds: Double,
+)
+
+/** Request body of POST /jellyfin/playback/progress — mirrors
+ * `jellyfinPlaybackProgressBodySchema`, which extends [JellyfinPlaybackReportBody] with an
+ * optional `isPaused`. Not a Kotlin `data class` extension of [JellyfinPlaybackReportBody] (this
+ * project's serialization setup has no inheritance story here) — a separate, structurally
+ * identical-plus-one-field class, matching how every other pair of sibling BFF request bodies in
+ * this file is modelled. */
+@Serializable
+data class JellyfinPlaybackProgressBody(
+    val itemId: String,
+    val positionSeconds: Double,
+    val isPaused: Boolean? = null,
+)

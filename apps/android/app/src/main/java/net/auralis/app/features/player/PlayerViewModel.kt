@@ -4,12 +4,17 @@ import android.content.ComponentName
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +24,11 @@ import net.auralis.app.playback.AuralisMediaLibraryService
 import net.auralis.app.playback.PlaybackItemResolver
 import net.auralis.app.playback.ResolvedPlayback
 import net.auralis.app.playback.toMediaItem
+
+/** How often [PlayerViewModel] pushes a Jellyfin progress report for a currently-playing music
+ * item, matching `apps/web/src/features/player/useProgressSync.ts`'s own 15s cadence — see
+ * [JellyfinPlaybackReporter]'s own doc comment for why that file is the design this mirrors. */
+private const val JELLYFIN_PROGRESS_TICK_MS = 15_000L
 
 /** What the mini player (and, later, a full Now Playing surface) renders. */
 sealed interface PlayerUiState {
@@ -49,9 +59,26 @@ sealed interface PlayerUiState {
 class PlayerViewModel(
     private val context: Context,
     private val playbackItemResolver: PlaybackItemResolver,
+    jellyfinPlaybackReportSender: JellyfinPlaybackReportSender,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Idle)
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+
+    /**
+     * A dedicated scope for [jellyfinPlaybackReporter], deliberately *not* [viewModelScope]:
+     * [ViewModel.clear] cancels [viewModelScope]'s `Job` before calling [onCleared] (it is
+     * closed as a registered `Closeable` ahead of that call, per `androidx.lifecycle`'s own
+     * `ViewModel.clear()` implementation), so a `viewModelScope.launch` made from inside
+     * [onCleared] never actually runs its body — it would silently drop exactly the final
+     * `stopped` report [onCleared] below needs to send. This scope has no such lifecycle tie, so
+     * that report can still fire. Not explicitly cancelled anywhere: this class is already
+     * documented as constructed once per app process (see this class's own header) and lives for
+     * the app's whole life, the same as the [MediaController] connection it owns — there is
+     * nothing shorter-lived to leak against.
+     */
+    private val jellyfinPlaybackReporterScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val jellyfinPlaybackReporter =
+        JellyfinPlaybackReporter(jellyfinPlaybackReportSender, jellyfinPlaybackReporterScope)
 
     private var controller: MediaController? = null
 
@@ -99,6 +126,10 @@ class PlayerViewModel(
                         if (current is PlayerUiState.Playing) {
                             _uiState.value = current.copy(isPlaying = isPlaying)
                         }
+                        jellyfinPlaybackReporter.onIsPlayingChanged(
+                            positionSeconds = newController.currentPosition / 1000.0,
+                            isPlaying = isPlaying,
+                        )
                     }
 
                     // setMediaItem/prepare/play() in playItem() are fire-and-forget: ExoPlayer's
@@ -110,10 +141,79 @@ class PlayerViewModel(
                         _uiState.value =
                             PlayerUiState.Error("Playback failed: ${error.errorCodeName} — ${error.message}")
                     }
+
+                    // Fires on every queue advance, seek-to-a-different-item, or fresh
+                    // setMediaItem(s) call — the one place [jellyfinPlaybackReporter] learns the
+                    // active item changed. `mediaItem?.mediaId` is gated against a `track:` prefix
+                    // *inside* the reporter (see [jellyfinItemIdFromMediaId]), so this override
+                    // fires unconditionally for every item, book/episode/track alike, and stays
+                    // silent for anything that isn't music.
+                    override fun onMediaItemTransition(
+                        mediaItem: MediaItem?,
+                        reason: Int,
+                    ) {
+                        jellyfinPlaybackReporter.onMediaItemChanged(
+                            newMediaId = mediaItem?.mediaId,
+                            positionSeconds = newController.currentPosition / 1000.0,
+                            isPlaying = newController.isPlaying,
+                        )
+                    }
+
+                    // A user-initiated seek *within the currently playing item* — a seek that
+                    // lands on a different item instead fires onMediaItemTransition above (Media3
+                    // reports both callbacks for a cross-item seek; the mediaItemIndex check below
+                    // is what keeps this override from double-reporting that case). Every other
+                    // discontinuity reason (auto-advance, skip, remove, internal) is left alone:
+                    // auto-advance is already covered by onMediaItemTransition, and the rest aren't
+                    // a position change a listener/resume position needs to hear about separately.
+                    override fun onPositionDiscontinuity(
+                        oldPosition: Player.PositionInfo,
+                        newPosition: Player.PositionInfo,
+                        reason: Int,
+                    ) {
+                        val isSameItemSeek =
+                            (
+                                reason == Player.DISCONTINUITY_REASON_SEEK ||
+                                    reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT
+                            ) && oldPosition.mediaItemIndex == newPosition.mediaItemIndex
+                        if (isSameItemSeek) {
+                            jellyfinPlaybackReporter.onSeek(
+                                positionSeconds = newPosition.positionMs / 1000.0,
+                                isPlaying = newController.isPlaying,
+                            )
+                        }
+                    }
+
+                    // The queue reached its end with no next item to transition to, so
+                    // onMediaItemTransition above never fires to close out whatever was last
+                    // playing — this is the one other place a music item's final `stopped` report
+                    // has to come from during normal playback (the other being onCleared, for
+                    // teardown rather than natural completion).
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        if (playbackState == Player.STATE_ENDED) {
+                            jellyfinPlaybackReporter.onStopped(newController.currentPosition / 1000.0)
+                        }
+                    }
                 },
             )
             controller = newController
             pendingController = null
+            // The periodic Jellyfin progress-report cadence — see JELLYFIN_PROGRESS_TICK_MS's own
+            // doc comment for why 15s. Started once, alongside the listener above, and left
+            // running for viewModelScope's lifetime (it becomes a no-op once `controller` is
+            // cleared, and viewModelScope itself is cancelled on ViewModel teardown either way);
+            // jellyfinPlaybackReporter.onTick is itself a no-op whenever no music item is current,
+            // so this costs nothing during book/podcast playback.
+            viewModelScope.launch {
+                while (true) {
+                    delay(JELLYFIN_PROGRESS_TICK_MS)
+                    val ctrl = controller ?: break
+                    jellyfinPlaybackReporter.onTick(
+                        positionSeconds = ctrl.currentPosition / 1000.0,
+                        isPlaying = ctrl.isPlaying,
+                    )
+                }
+            }
         }
         return controller!!
     }
@@ -247,6 +347,12 @@ class PlayerViewModel(
     }
 
     override fun onCleared() {
+        // Final stopped report for whatever music item is current — see
+        // jellyfinPlaybackReporterScope's own doc comment for why this has to run on that
+        // dedicated scope rather than viewModelScope, which is already cancelled by the time this
+        // method runs. A no-op (both the reporter's own and this call's currentPosition read) when
+        // nothing is playing or the last item wasn't music.
+        controller?.let { jellyfinPlaybackReporter.onStopped(it.currentPosition / 1000.0) }
         controller?.release()
         controller = null
         // A connection attempt may still be in flight (pendingController non-null, controller

@@ -22,6 +22,7 @@ import net.auralis.app.data.network.KeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
 import net.auralis.app.data.settings.ServerConfigRepository
 import net.auralis.app.features.music.MusicRepository
+import net.auralis.app.features.player.JellyfinApiPlaybackReportSender
 import net.auralis.app.playback.PlaybackItemResolver
 import okhttp3.OkHttpClient
 import java.io.File
@@ -57,6 +58,16 @@ class AppContainer(context: Context) {
      * nothing left to plumb.
      */
     val musicRepository = MusicRepository(apiClient)
+
+    /**
+     * Wired through to [net.auralis.app.features.player.PlayerViewModel], which builds the
+     * actual [net.auralis.app.features.player.JellyfinPlaybackReporter] around this — see that
+     * ViewModel's own constructor doc comment for why the reporter itself isn't constructed here
+     * (it needs a `CoroutineScope` the ViewModel owns, not one this composition root can hand
+     * over intact — see `jellyfinPlaybackReporterScope`'s own doc comment there for the lifecycle
+     * reasoning).
+     */
+    val jellyfinPlaybackReportSender = JellyfinApiPlaybackReportSender(musicRepository)
 
     /**
      * Shared by [net.auralis.app.features.player.PlayerViewModel] (the phone UI's "tap a shelf

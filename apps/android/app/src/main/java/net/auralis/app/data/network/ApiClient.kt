@@ -20,6 +20,8 @@ import net.auralis.app.data.model.JellyfinCreatePlaylistResponse
 import net.auralis.app.data.model.JellyfinFavoriteResponse
 import net.auralis.app.data.model.JellyfinLoginRequestBody
 import net.auralis.app.data.model.JellyfinLoginResponse
+import net.auralis.app.data.model.JellyfinPlaybackProgressBody
+import net.auralis.app.data.model.JellyfinPlaybackReportBody
 import net.auralis.app.data.model.JellyfinPlaylistItemsPage
 import net.auralis.app.data.model.JellyfinPlaylistsPage
 import net.auralis.app.data.model.JellyfinSearchResults
@@ -531,6 +533,49 @@ class ApiClient(
                 .addQueryParameter("playlistItemIds", playlistItemIds.joinToString(","))
                 .build()
         executeNoContent(Request.Builder().url(url).delete().build())
+    }
+
+    /** POST /jellyfin/playback/start — establishes [itemId] as Jellyfin's `NowPlayingItem` for
+     * the signed-in session, at [positionSeconds]. 204 on success, so this goes through
+     * [executeNoContent], same as [jellyfinAddToPlaylist]. See
+     * `net.auralis.app.features.player.JellyfinPlaybackReporter`'s own doc comment for when this
+     * fires relative to [jellyfinReportPlaybackProgress]/[jellyfinReportPlaybackStopped]. */
+    suspend fun jellyfinReportPlaybackStart(
+        itemId: String,
+        positionSeconds: Double,
+    ) {
+        val requestBody =
+            auralisJson.encodeToString(JellyfinPlaybackReportBody(itemId, positionSeconds))
+                .toRequestBody("application/json".toMediaType())
+        executeNoContent(Request.Builder().url(apiUrl("/jellyfin/playback/start")).post(requestBody).build())
+    }
+
+    /** POST /jellyfin/playback/progress — reports [itemId]'s current position and pause state.
+     * [isPaused] has no default here (unlike the BFF's own optional field): the caller is always
+     * `JellyfinPlaybackReporter`, which always knows the real play state, and an implicit
+     * "unspecified" would risk silently repeating the exact bug this route exists to avoid — a
+     * paused track that Jellyfin keeps showing as playing. 204 on success. */
+    suspend fun jellyfinReportPlaybackProgress(
+        itemId: String,
+        positionSeconds: Double,
+        isPaused: Boolean,
+    ) {
+        val requestBody =
+            auralisJson.encodeToString(JellyfinPlaybackProgressBody(itemId, positionSeconds, isPaused))
+                .toRequestBody("application/json".toMediaType())
+        executeNoContent(Request.Builder().url(apiUrl("/jellyfin/playback/progress")).post(requestBody).build())
+    }
+
+    /** POST /jellyfin/playback/stopped — closes out [itemId]'s Jellyfin `NowPlayingItem` at
+     * [positionSeconds], the position resume picks up from next time. 204 on success. */
+    suspend fun jellyfinReportPlaybackStopped(
+        itemId: String,
+        positionSeconds: Double,
+    ) {
+        val requestBody =
+            auralisJson.encodeToString(JellyfinPlaybackReportBody(itemId, positionSeconds))
+                .toRequestBody("application/json".toMediaType())
+        executeNoContent(Request.Builder().url(apiUrl("/jellyfin/playback/stopped")).post(requestBody).build())
     }
 
     private suspend fun apiUrl(path: String): HttpUrl = "${baseUrl().trimEnd('/')}/api/v1$path".toHttpUrl()
