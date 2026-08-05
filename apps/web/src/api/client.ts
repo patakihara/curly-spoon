@@ -381,7 +381,10 @@ export class ApiClient {
   }
 
   getJellyfinTracks(
-    query: { albumId?: string; startIndex?: number; limit?: number } = {},
+    // `sortBy` is a Jellyfin `ItemSortBy` value (e.g. `'ParentIndexNumber,IndexNumber'` for
+    // disc/track order) passed straight through to the BFF's own pass-through parameter —
+    // this method never interprets it, same as every other query field here.
+    query: { albumId?: string; startIndex?: number; limit?: number; sortBy?: string } = {},
     signal?: AbortSignal,
   ): Promise<JellyfinLibraryPage<JellyfinTrack>> {
     return this.request('/jellyfin/tracks', { query, signal });
