@@ -139,6 +139,9 @@ fun HomeScreen(
                     TextButton(onClick = { navController.navigate(Routes.PODCASTS) }) {
                         Text("Podcasts")
                     }
+                    TextButton(onClick = { navController.navigate(Routes.MUSIC) }) {
+                        Text("Music")
+                    }
                 },
             )
         },
