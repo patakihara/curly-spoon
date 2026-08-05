@@ -7,12 +7,18 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FetchLike } from '@auralis/abs-client';
+import type { JellyfinClient, Library } from '@auralis/jellyfin-client';
 import { openDatabase, type Db } from '../db/connection.js';
 import { upsertUser } from '../db/usersRepo.js';
 import { setProviderConfig } from '../db/providerConfigRepo.js';
 import { APP_SETTING_KEYS, setAppSetting } from '../db/appSettingsRepo.js';
-import { updateRequest } from '../db/requestsRepo.js';
-import { ProviderError, type MusicCandidate, type MusicRequestProvider } from './types.js';
+import { getRequest, updateRequest } from '../db/requestsRepo.js';
+import {
+  ProviderError,
+  type DownloadStatus,
+  type MusicCandidate,
+  type MusicRequestProvider,
+} from './types.js';
 
 const musicRegistry = vi.hoisted(() => ({
   factories: {} as Record<string, () => MusicRequestProvider>,
@@ -52,16 +58,18 @@ function candidate(overrides: Partial<MusicCandidate> = {}): MusicCandidate {
 
 function makeProvider(
   id: string,
-  opts: Partial<Pick<MusicRequestProvider, 'search' | 'add'>> = {},
+  opts: Partial<Pick<MusicRequestProvider, 'search' | 'add' | 'status'>> = {},
 ): MusicRequestProvider {
   return {
     id,
     displayName: id,
     search: opts.search ?? (async () => []),
     add: opts.add ?? (async () => `handle-${id}`),
-    status: async () => {
-      throw new Error('not used in this test');
-    },
+    status:
+      opts.status ??
+      (async () => {
+        throw new Error('not used in this test');
+      }),
     remove: async () => {},
     testConnection: async () => {},
   };
@@ -69,6 +77,39 @@ function makeProvider(
 
 function registerProvider(provider: MusicRequestProvider): void {
   musicRegistry.factories[provider.id] = () => provider;
+}
+
+function downloadStatus(overrides: Partial<DownloadStatus> = {}): DownloadStatus {
+  return {
+    clientId: 'slskd',
+    handle: 'peer-a::transfer-1',
+    state: 'downloading',
+    progress: 0,
+    contentPath: null,
+    downloadRateBytes: 0,
+    etaSeconds: null,
+    errorMessage: null,
+    ...overrides,
+  };
+}
+
+/** Mirrors `requestService.test.ts`'s `makeFakeAbs` for the Jellyfin side: a minimal fake
+ * satisfying only the two `JellyfinClient` methods `musicRequestService.ts`'s rescan path
+ * calls, cast past the rest of the real client's surface — this file never needs a real
+ * `fetch` or a real Jellyfin server. */
+function makeFakeJellyfin(
+  overrides: Partial<{
+    getLibraries: () => Promise<Library[]>;
+    refreshItem: (itemId: string) => Promise<void>;
+  }> = {},
+): JellyfinClient {
+  const fake = {
+    getLibraries:
+      overrides.getLibraries ??
+      (async () => [{ id: 'lib-music', name: 'Music', collectionType: 'music' }]),
+    refreshItem: overrides.refreshItem ?? (async () => {}),
+  };
+  return fake as unknown as JellyfinClient;
 }
 
 function makeUser(db: Db, upstreamUserId = 'abs-user-1') {
@@ -104,8 +145,30 @@ function makeDeps(
     fetch: (() => {
       throw new Error('unexpected network call in a unit test');
     }) as unknown as FetchLike,
+    jellyfinFor: () => makeFakeJellyfin(),
     ...overrides,
   };
+}
+
+/** Mirrors `requestService.test.ts`'s `makeDownloadingRequest`: creates a request through
+ * the real service (so it carries a real candidate/provider), then fast-forwards it past
+ * `grab()` directly at the repo layer, the same shortcut book's fixture takes. */
+function makeDownloadingRequest(
+  db: Db,
+  service: ReturnType<typeof createMusicRequestService>,
+  userId: string,
+  overrides: { clientId?: string; downloadHandle?: string } = {},
+) {
+  const created = service.createRequest({ userId, candidate: candidate() });
+  updateRequest(db, created.id, { status: 'searching' });
+  updateRequest(db, created.id, {
+    status: 'downloading',
+    clientId: overrides.clientId ?? 'slskd',
+    downloadHandle: overrides.downloadHandle ?? 'peer-a::transfer-1',
+  });
+  const row = getRequest(db, created.id);
+  if (!row) throw new Error('fixture request vanished');
+  return row;
 }
 
 describe('listProviders', () => {
@@ -465,5 +528,235 @@ describe('grab', () => {
 
     const service = createMusicRequestService(makeDeps(db));
     await expect(service.grab('req-book')).rejects.toThrowError(/not found/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// pollDownloads — the Jellyfin rescan wave. Mirrors `requestService.test.ts`'s own
+// `pollDownloads` suite; see that file for the book-side comparison this deliberately
+// diverges from at the "completed vs. importRequested" step (requestStatus.ts's header
+// comment has the full reasoning).
+// ---------------------------------------------------------------------------
+
+describe('pollDownloads', () => {
+  it('advances progress without changing status mid-download', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'downloading', progress: 0.3 }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(makeDeps(db));
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.status).toBe('downloading');
+    expect(updated?.progress).toBe(0.3);
+  });
+
+  it.each(['completed', 'seeding'] as const)(
+    'moves to importRequested (never completed) and asks Jellyfin to refresh the music library when the provider reports %s',
+    async (state) => {
+      const db = openDatabase(':memory:');
+      const user = makeUser(db);
+      registerProvider(
+        makeProvider('slskd', {
+          status: async () => downloadStatus({ state, progress: 1 }),
+        }),
+      );
+      configureProvider(db, 'slskd', { secret: 'api-key' });
+      const refreshItem = vi.fn(async () => {});
+      const service = createMusicRequestService(
+        makeDeps(db, { jellyfinFor: () => makeFakeJellyfin({ refreshItem }) }),
+      );
+      const req = makeDownloadingRequest(db, service, user.id);
+
+      await service.pollDownloads();
+
+      const updated = getRequest(db, req.id);
+      // Not 'completed': Jellyfin's refresh has no completion signal at all (see
+      // `JellyfinClient.refreshItem`'s doc comment), so this codebase does not claim the
+      // file actually landed — only that it asked.
+      expect(updated?.status).toBe('importRequested');
+      expect(updated?.statusDetail).toBeNull();
+      expect(refreshItem).toHaveBeenCalledWith('lib-music');
+    },
+  );
+
+  it('triggers exactly one rescan across two pollDownloads calls for the same completed request', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'completed', progress: 1 }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(makeDeps(db));
+    makeDownloadingRequest(db, service, user.id);
+    const refreshItem = vi.fn(async () => {});
+    const serviceWithSpy = createMusicRequestService(
+      makeDeps(db, { jellyfinFor: () => makeFakeJellyfin({ refreshItem }) }),
+    );
+
+    await serviceWithSpy.pollDownloads();
+    await serviceWithSpy.pollDownloads();
+
+    expect(refreshItem).toHaveBeenCalledTimes(1);
+  });
+
+  it('still reaches importRequested, with an explanatory note, when no music library is found', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'completed', progress: 1 }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(
+      makeDeps(db, { jellyfinFor: () => makeFakeJellyfin({ getLibraries: async () => [] }) }),
+    );
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.status).toBe('importRequested');
+    expect(updated?.statusDetail).toMatch(/no music library/i);
+  });
+
+  it('still reaches importRequested, with an explanatory note, when the rescan call itself fails', async () => {
+    // e.g. the connected Jellyfin account is not an administrator — `refreshItem` is
+    // verified to require elevation, so a 403 here is an expected failure mode, not a bug.
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'completed', progress: 1 }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(
+      makeDeps(db, {
+        jellyfinFor: () =>
+          makeFakeJellyfin({
+            refreshItem: async () => {
+              throw new Error('403 forbidden');
+            },
+          }),
+      }),
+    );
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.status).toBe('importRequested');
+    expect(updated?.statusDetail).toMatch(/rescan failed to start/i);
+  });
+
+  it('never echoes the underlying rescan error into statusDetail — a generic note only, so a Jellyfin error message (which could carry an upstream URL/token) never reaches a stored, servable field', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'completed', progress: 1 }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(
+      makeDeps(db, {
+        jellyfinFor: () =>
+          makeFakeJellyfin({
+            refreshItem: async () => {
+              throw new Error(
+                'Could not reach Jellyfin: fetch failed for http://jellyfin.local/Items/lib-music/Refresh?ApiKey=super-secret-token',
+              );
+            },
+          }),
+      }),
+    );
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.statusDetail).not.toContain('super-secret-token');
+    expect(updated?.statusDetail).not.toMatch(/jellyfin\.local/);
+    expect(updated?.statusDetail).toBe('downloaded, but the library rescan failed to start');
+  });
+
+  it('marks the request failed with the provider error message when the provider reports error', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'error', errorMessage: 'peer disconnected' }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(makeDeps(db));
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.status).toBe('failed');
+    expect(updated?.statusDetail).toBe('peer disconnected');
+  });
+
+  it('marks the request failed when it vanished from the provider', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    registerProvider(
+      makeProvider('slskd', {
+        status: async () => downloadStatus({ state: 'missing' }),
+      }),
+    );
+    configureProvider(db, 'slskd', { secret: 'api-key' });
+    const service = createMusicRequestService(makeDeps(db));
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.status).toBe('failed');
+    expect(updated?.statusDetail).toMatch(/vanished/i);
+  });
+
+  it('marks the request failed when its provider is no longer configured', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    // No provider registered/configured at all — 'slskd' is orphaned.
+    const service = createMusicRequestService(makeDeps(db));
+    const req = makeDownloadingRequest(db, service, user.id);
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, req.id);
+    expect(updated?.status).toBe('failed');
+    expect(updated?.statusDetail).toMatch(/no longer configured/i);
+  });
+
+  it('never picks up a book request stuck in downloading', async () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    db.prepare(
+      `INSERT INTO requests
+         (id, user_id, title, status, progress, media_type, client_id, download_handle, created_at, updated_at)
+       VALUES ('req-book', ?, 'A Book', 'downloading', 0, 'book', 'transmission', 'hash-1', ?, ?)`,
+    ).run(user.id, Date.now(), Date.now());
+    const service = createMusicRequestService(makeDeps(db));
+
+    await service.pollDownloads();
+
+    const updated = getRequest(db, 'req-book');
+    // Unchanged: pollDownloads never even looks at a book row.
+    expect(updated?.status).toBe('downloading');
   });
 });

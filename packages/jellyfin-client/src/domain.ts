@@ -93,6 +93,24 @@ export interface LibraryPage<T> {
   startIndex: number;
 }
 
+/**
+ * One of the server's top-level library folders (`GET /Library/MediaFolders`) — the
+ * Jellyfin analogue of `@auralis/abs-client`'s `Library`, used the same way: find the one
+ * whose `collectionType` matches what a caller needs (e.g. `'music'`) rather than acting
+ * on every library the server hosts. See `JellyfinClient.getLibraries`'s doc comment for
+ * the verified endpoint and permission requirement, and `refreshItem`'s for why finding
+ * the right folder id matters — a rescan can be scoped to it instead of the whole server.
+ */
+export interface Library {
+  id: string;
+  name: string;
+  /** Jellyfin's `CollectionType` enum value, serialized as its lowercase name (`'music'`,
+   * `'movies'`, `'books'`, ...) — verified against `Jellyfin.Data/Enums/CollectionType.cs`,
+   * 2026-08-05. `null` for a folder Jellyfin hasn't classified (or a raw response missing
+   * the field, which `normalize.ts`'s `normalizeLibrary` folds into the same `null`). */
+  collectionType: string | null;
+}
+
 export interface SearchResults {
   artists: Artist[];
   albums: Album[];
