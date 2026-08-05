@@ -595,7 +595,12 @@ export function useToggleJellyfinFavoriteMutation() {
       // Snapshot exactly what *this* mutation just wrote to each query — `onError` compares
       // the cache's *current* contents against this to tell "nothing has touched this query
       // since I wrote it" (safe to roll back) apart from "a later overlapping mutation has
-      // since applied its own optimistic write on top" (rolling back would clobber it).
+      // since applied its own optimistic write on top" (rolling back would clobber it). This
+      // reads the snapshot back from the cache itself, rather than trusting the updater's
+      // return value — that keeps the comparison correct under React Query's default
+      // structural sharing too: `setQueryData` can hand a query back its *previous*
+      // reference when a write doesn't actually change that entry's content, and reading
+      // live means `applied` always matches whatever reference the cache truly holds.
       const applied = queryClient.getQueriesData({ queryKey: ['jellyfin'] });
       return { previous, applied };
     },
@@ -604,11 +609,13 @@ export function useToggleJellyfinFavoriteMutation() {
       const appliedByKey = new Map(context.applied.map(([key, data]) => [hashKey(key), data]));
       for (const [queryKey, previousData] of context.previous) {
         // Only roll back if the entry is still exactly what this mutation's own onMutate
-        // applied. If it's something else, a later overlapping mutation has since written
-        // its own optimistic state on top of this one, and restoring this mutation's
-        // pre-write snapshot would overwrite that newer state with stale data. Leaving it
-        // alone is safe either way — the newer mutation's own onSettled still reconciles
-        // the cache with the server shortly after, same as this one's.
+        // applied (reference equality — see the comment on `applied` above for why that
+        // stays correct under structural sharing). If it's something else, a later
+        // overlapping mutation has since written its own optimistic state on top of this
+        // one, and restoring this mutation's pre-write snapshot would overwrite that newer
+        // state with stale data. Leaving it alone is safe either way — the newer mutation's
+        // own onSettled still reconciles the cache with the server shortly after, same as
+        // this one's.
         if (queryClient.getQueryData(queryKey) === appliedByKey.get(hashKey(queryKey))) {
           queryClient.setQueryData(queryKey, previousData);
         }

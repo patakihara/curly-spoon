@@ -285,6 +285,43 @@ describe('useToggleJellyfinFavoriteMutation', () => {
     });
   });
 
+  it('onError does not clobber a second toggle of the *same* item — the fast-double-click case', async () => {
+    // A real fast double-click on one heart: both clicks read `favorite` off the same
+    // pre-click render (React hasn't committed the first click's optimistic write as a
+    // new prop before the second `pointerdown`/`click` fires), so both `mutate()` calls
+    // carry the *same* target, `true` — not a click-then-click-back. This is also the
+    // scenario that best distinguishes the fix from the bug: with an opposite-target
+    // flip-back, the first click's pre-write snapshot happens to numerically coincide
+    // with the second click's target, so an unconditional rollback would "accidentally"
+    // land on the right value. A same-target double-click has no such coincidence: the
+    // stale snapshot is `false`, the correct in-flight state is `true`, and only the
+    // guard tells them apart.
+    const page = { items: [{ id: 'album-1', favorite: false }], total: 1, startIndex: 0 };
+    const pageKey = ['jellyfin', 'albums', 'artist-1', 0];
+    seedCache([[pageKey, page]]);
+
+    const first = await loadMutation();
+    const firstContext = await first.onMutate({ itemId: 'album-1', favorite: true });
+
+    const second = await loadMutation();
+    await second.onMutate({ itemId: 'album-1', favorite: true });
+
+    // The first click's request fails *after* the second click's optimistic write landed.
+    first.onError(
+      new Error('upstream failed'),
+      { itemId: 'album-1', favorite: true },
+      firstContext,
+    );
+
+    // The still-in-flight second click's state (`true`) must survive — not revert to
+    // `false` just because the first click (of the same pair) happened to fail.
+    expect(fakeCache.get(hashKey(pageKey))?.data).toEqual({
+      items: [{ id: 'album-1', favorite: true }],
+      total: 1,
+      startIndex: 0,
+    });
+  });
+
   it('onSettled invalidates the whole jellyfin cache slice to reconcile with the server', async () => {
     const options = await loadMutation();
     options.onSettled();
