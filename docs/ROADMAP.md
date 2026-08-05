@@ -657,7 +657,25 @@ decision, not on remaining build time — see the bullet at the end of this sect
   from an external provider (which carries a privacy opt-in decision) — is the user's call,
   not this wave's. `docs/INTEGRATIONS.md`'s "Discovery layer" section has the full breakdown.
 
-**Known gaps, all deliberate**: no Jellyfin progress reporting; the album queue covers only
+- **Web wave C — Jellyfin progress reporting: done (`fb59f64`).** Music now reports upstream,
+  so Jellyfin records plays, advances "recently played" and can resume. Client methods for
+  `POST /Sessions/Playing{,/Progress,/Stopped}` (verified against `PlaystateController.cs`
+  and `PlaybackProgressInfo.cs`, not recalled — all three return 204 with an empty body),
+  three session-guarded BFF routes, and a real reporter replacing `jellyfinSource`'s no-op.
+  The client's public API takes **seconds** and converts to Jellyfin's 100ns ticks internally,
+  so no caller ever handles the upstream's unit. Two things the wave had to get right:
+  `ProgressSyncBody.currentTime` is a position on the **cumulative queue timeline**, so the
+  reporter maps it to (track item id, per-track position) by reusing `playback.ts`'s existing
+  `trackAt` rather than walking the queue a second time; and the `PlaybackProgressReporter`
+  interface still has **no `onStart` hook** — Jellyfin needs a start report to populate
+  `NowPlayingItem`, so `jellyfinSource` fires one lazily from its own first `onTick` and again
+  on each track change, tracked in a closure, keeping the shared seam unchanged. `onEnd(null)`
+  sends no stop report: a null body means duration was never learned, so no track was ever
+  resolved to stop. Known limitation: `IsPaused` is always reported `false`, because
+  `ProgressSyncBody` carries no pause signal — it affects Jellyfin's own UI hints, not resume
+  correctness.
+
+**Known gaps, all deliberate**: the album queue covers only
 the displayed 40-track page, not across pagination; no shuffle/repeat/cross-source queue
 (needs an explicit ordered play-list decoupled from `startOffset`, since shuffle breaks the
 "tracks are already in play order" assumption); no synced-lyrics view, playlists, favourites
