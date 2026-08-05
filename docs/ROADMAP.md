@@ -846,6 +846,54 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   coincides with the second click's target. It only exposes the bug as a same-target double
   fire.
 
+- **Web wave F — playlists: done (`f143107`, merged `d090a95`; pagination `2d30008`).** List,
+  view, create, add to and remove from playlists, and play one. Two Jellyfin facts shaped it,
+  both verified against `PlaylistsController.cs`:
+  - **There is no list-playlists route.** A playlist is a `BaseItemKind`, so listing reuses
+    `/Items?includeItemTypes=Playlist&recursive=true` like every other item kind here.
+  - **Removal keys on `PlaylistItemId`, a per-entry id distinct from the track's own `Id`** and
+    set only by `GetPlaylistItems`. That is what lets one of two identical tracks be removed
+    rather than both or neither. Add, by contrast, keys on item ids — the asymmetry is real.
+
+  Playlist order needs no sort parameter: the handler builds from the playlist's own stored
+  `LinkedChildren` and never goes through the sort machinery that made album pages alphabetical.
+  Pinned by tests at the client and route layers anyway, each seeding **out of natural id
+  order** so the assertion cannot pass by coincidence. Playing a playlist reused the album
+  queueing untouched — it only ever needed a list of tracks — so the player boundary was never
+  crossed. Review caught that the page shipped without pagination, hiding the 40-track limit
+  worse than the album page it borrowed from; fixed by reusing that page's existing
+  `summarizePage` helper.
+
+- **Android wave D — music search: done (`4eaa78c`, merged `18bced1`; fixes `0de5a31`,
+  `6246aa0`).** Debounced query, three result sections, and the same decision the web client
+  made: a track result navigates to its album rather than playing, since a search result
+  carries no track list to build a queue from; a track with no album id is non-interactive
+  rather than a dead target.
+
+  **Its stale-response test turned Android CI red for three commits, and the two obvious
+  diagnoses were both wrong** — worth recording in full, because the failure mode is not
+  specific to search:
+
+  - Widening the teardown sleep did nothing; it was never a teardown-timing problem.
+  - Adding a sequence-number guard to the ViewModel did not fix the test either — though it
+    **is** a real fix and was kept. Cancellation cannot stop a resumption from an
+    already-completed _blocking_ OkHttp call inside `withContext(Dispatchers.IO)`: what
+    cancellation stops is the resumption onto Main, so a resumption already queued before
+    `cancel()` runs still writes. The sequence check closes that outright.
+  - The actual cause was in the test: **`MockWebServer` serves enqueued responses in the order
+    requests arrive at the socket, not the order they were enqueued.** Two concurrent real
+    requests raced, and whichever connected first took the other's body — a content mismatch
+    with nothing to do with staleness. Fixed with a `Dispatcher` keyed on the request's own
+    `term` parameter, so a response is bound to its query rather than to arrival order.
+  - **And the assertion was a tautology.** `uiState.first { it is Results }` returned the
+    instant the fast response landed, before the slow one had arrived at all — so it would have
+    passed with the production guard deleted. Any test asserting "X never overwrites Y" has to
+    keep observing _past_ the moment X could arrive.
+
+  Mixing `runTest`'s virtual time with `MockResponse.setBodyDelay`'s real wall-clock time is
+  the underlying trap: a test that needs a real background thread to reach a point _before_
+  virtual time advances cannot express that ordering, only hope for it.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
