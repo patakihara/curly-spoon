@@ -189,7 +189,7 @@ export interface ResolvedProviderConfig {
   secret: string | null;
 }
 
-export type ProviderKind = 'indexer' | 'download';
+export type ProviderKind = 'indexer' | 'download' | 'music';
 
 export interface ProviderFactoryDeps {
   config: ResolvedProviderConfig;
@@ -198,6 +198,89 @@ export interface ProviderFactoryDeps {
 
 export type IndexerFactory = (deps: ProviderFactoryDeps) => IndexerProvider;
 export type DownloadClientFactory = (deps: ProviderFactoryDeps) => DownloadClientProvider;
+
+// -----------------------------------------------------------------------------
+// Music requests (phase 9)
+// -----------------------------------------------------------------------------
+
+export interface MusicSearchQuery {
+  /** The free-text term. Never empty — callers trim and reject blanks first. */
+  term: string;
+  /** Upper bound on results. Providers may return fewer; never more. */
+  limit?: number;
+}
+
+/**
+ * One file a music provider found, available to enqueue.
+ *
+ * Deliberately **not** `Release`: a torrent release is identified by a magnet URI or a
+ * `.torrent` URL and reports swarm-wide `seeders`/`leechers`. A Soulseek search result (the
+ * only music provider this codebase has today — see `music/slskd.ts`) has neither: it is one
+ * file held by one specific peer who is online *right now*, identified only by
+ * `(username, filename)`, with no swarm concept at all. Reusing `Release` would leave
+ * `downloadUrl`/`magnetUri` permanently `null` and `seeders`/`leechers` permanently `0`,
+ * which is not "the indexer didn't report it" (the meaning those fields carry for `Release`)
+ * — it is "this concept does not apply here". A distinct, smaller shape says that honestly
+ * instead of forcing a torrent-shaped lie. See `music/slskd.ts`'s file comment for the
+ * source citations this is verified against.
+ */
+export interface MusicCandidate {
+  /**
+   * Unique within one search response, and the handle `add` needs to enqueue it. What it
+   * encodes is entirely up to the provider that produced it (opaque to everything else,
+   * exactly like `Release.guid`) — `music/slskd.ts` packs `{ username, filename, size }` into
+   * it, because slskd's own enqueue call needs all three and nothing else here carries them.
+   */
+  guid: string;
+  /** Which provider produced this — `MusicRequestProvider.id`. */
+  providerId: string;
+  /** The peer offering the file, for display — analogous to `Release.sourceName`. */
+  sourceName: string;
+  title: string;
+  artist: string | null;
+  album: string | null;
+  /** Size in bytes. `null` when the provider does not report one. */
+  sizeBytes: number | null;
+  /** `null` when the provider does not report one, or the format is lossless/uncompressed. */
+  bitrateKbps: number | null;
+  /** Best-effort file extension (`mp3`, `flac`, `m4a`), lowercased, without the leading dot. */
+  format: string | null;
+}
+
+/**
+ * A combined search-and-download source for music, standing in for the `IndexerProvider` /
+ * `DownloadClientProvider` split the book pipeline uses.
+ *
+ * That split does not fit here: an indexer and a download client are two independent
+ * upstreams for books (Prowlarr never downloads anything; qBittorrent never searches
+ * anything), but slskd — and Soulseek-protocol tools generally — are one upstream doing
+ * both, over one live peer connection. Forcing two provider rows out of one slskd
+ * installation would need two `provider_configs` rows sharing one credential, or one row
+ * whose `kind` lies about which half it is; either is worse than naming the real shape.
+ * This interface is that name: `search` replaces `IndexerProvider.search`, and
+ * `add`/`status`/`remove`/`testConnection` replace `DownloadClientProvider`'s identically
+ * named members (reusing `AddDownloadOptions`/`DownloadStatus` as-is — nothing about those
+ * two types is torrent-specific).
+ */
+export interface MusicRequestProvider {
+  readonly id: string;
+  readonly displayName: string;
+  /** Degrades to `[]` for "no matches", the same convention as `IndexerProvider.search` —
+   * throws `ProviderError` only when the provider itself is broken or unreachable. */
+  search(query: MusicSearchQuery, signal?: AbortSignal): Promise<MusicCandidate[]>;
+  add(
+    candidate: MusicCandidate,
+    options: AddDownloadOptions,
+    signal?: AbortSignal,
+  ): Promise<string>;
+  /** Never throws `not_found` for an unknown handle — reports `state: 'missing'` instead,
+   * same convention as `DownloadClientProvider.status`. */
+  status(handle: string, signal?: AbortSignal): Promise<DownloadStatus>;
+  remove(handle: string, deleteData: boolean, signal?: AbortSignal): Promise<void>;
+  testConnection(signal?: AbortSignal): Promise<void>;
+}
+
+export type MusicProviderFactory = (deps: ProviderFactoryDeps) => MusicRequestProvider;
 
 /**
  * One input the settings screen must render to collect a provider's credential.

@@ -117,6 +117,15 @@ export const searchReleasesQuerySchema = z.object({
 });
 
 // -----------------------------------------------------------------------------
+// Music requests (routes/musicRequests.ts)
+// -----------------------------------------------------------------------------
+
+export const musicSearchQuerySchema = z.object({
+  term: z.string().trim().min(1, 'term is required'),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+
+// -----------------------------------------------------------------------------
 // Providers (indexers, download clients) — routes/requests.ts
 // -----------------------------------------------------------------------------
 
