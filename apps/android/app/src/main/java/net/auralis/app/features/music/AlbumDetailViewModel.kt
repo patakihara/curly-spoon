@@ -298,6 +298,55 @@ class AlbumDetailViewModel(
             artworkUrl = state.coverUrl,
         )
     }
+
+    /**
+     * Fetches and hands over every track of this album beyond the page [buildQueueFrom] already
+     * queued, one page at a time, via [appendRemainingQueuePages] — the cross-page half of
+     * "play album" this wave adds. `PlayerViewModel.playQueue` calls this only *after* its
+     * initial [buildQueueFrom] queue is already playing (see that method's own doc comment), so
+     * a 60-track album starts on its first tapped track immediately and the remaining tracks
+     * arrive into the live Media3 queue in the background rather than delaying playback start.
+     *
+     * Reads [uiState] once, at the moment this is called, to fix `loadedCount`/`total`/the
+     * album's own artist-name/album-name/artwork — a page fetched here uses this snapshot even
+     * if [loadMoreTracks] or a fresh [load] changes [uiState] afterwards, matching
+     * [buildQueueFrom]'s own "queue frozen at tap time" behaviour rather than trying to track a
+     * moving target. Degrades to nothing — never throws — when [uiState] isn't
+     * [AlbumDetailUiState.Loaded], the same "no crash, no partial queue" degrade
+     * [buildQueueFrom] already gives for a state that isn't loaded.
+     */
+    suspend fun appendRemainingToQueue(onPage: suspend (List<ResolvedPlayback>) -> Unit) {
+        val state = _uiState.value as? AlbumDetailUiState.Loaded ?: return
+        appendRemainingQueuePages(
+            loadedCount = state.tracks.size,
+            total = state.total,
+            fetchPage = { startIndex, limit ->
+                when (
+                    val result =
+                        musicRepository.tracks(
+                            albumId = albumId,
+                            startIndex = startIndex,
+                            limit = limit,
+                            sortBy = TRACK_ORDER_SORT_BY,
+                        )
+                ) {
+                    is TracksPageResult.Loaded -> result.items.map { it.toTrackUi() }
+                    is TracksPageResult.Failed -> null
+                }
+            },
+            toResolved = { pageTracks ->
+                val streamUrls = pageTracks.associate { it.id to musicRepository.trackStreamUrl(it.id) }
+                albumPlaybackQueue(
+                    tracks = pageTracks,
+                    streamUrls = streamUrls,
+                    artistName = state.artistName,
+                    albumName = state.albumName,
+                    artworkUrl = state.coverUrl,
+                )
+            },
+            onPage = onPage,
+        )
+    }
 }
 
 /**

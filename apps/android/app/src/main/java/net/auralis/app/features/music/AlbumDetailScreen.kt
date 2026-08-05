@@ -123,7 +123,12 @@ fun AlbumDetailScreen(
                     imageLoader = container.imageLoader,
                     state = state,
                     onLoadMore = viewModel::loadMoreTracks,
-                    onTrackClick = { track -> playerViewModel.playQueue { viewModel.buildQueueFrom(track) } },
+                    onTrackClick = { track ->
+                        playerViewModel.playQueue(
+                            buildQueue = { viewModel.buildQueueFrom(track) },
+                            fetchRemaining = { onPage -> viewModel.appendRemainingToQueue(onPage) },
+                        )
+                    },
                     onToggleAlbumFavorite = viewModel::toggleAlbumFavorite,
                     onToggleTrackFavorite = viewModel::toggleTrackFavorite,
                     onAddTrackToPlaylist = { track -> addToPlaylistItemIds = listOf(track.id) },

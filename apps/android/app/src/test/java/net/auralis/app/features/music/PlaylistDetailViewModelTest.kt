@@ -308,4 +308,91 @@ class PlaylistDetailViewModelTest {
             assertEquals(listOf("entry2"), state.entries.map { it.playlistItemId })
             assertEquals(1, state.total)
         }
+
+    // -----------------------------------------------------------------------------
+    // appendRemainingToQueue — wave I's cross-page queueing, the playlist counterpart to
+    // AlbumDetailViewModelTest's own tests of the same shape. See
+    // PlaylistDetailViewModel.appendRemainingToQueue's own doc comment for why this reuses
+    // appendRemainingQueuePages unmodified.
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `appendRemainingToQueue against a fully-loaded playlist fetches nothing extra`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[{"playlistItemId":"entry1","track":${trackJson("trkA", "First")}}],
+                        "total":1,"startIndex":0}""",
+                ),
+            )
+            mockWebServer.enqueue(playlistNameResponse("Road Trip"))
+            val viewModel = PlaylistDetailViewModel(musicRepository, "pl1")
+            viewModel.load()
+            viewModel.uiState.first { it is PlaylistDetailUiState.Loaded }
+
+            val pages = mutableListOf<List<net.auralis.app.playback.ResolvedPlayback>>()
+            viewModel.appendRemainingToQueue { pages.add(it) }
+
+            // Reaching this assertion at all proves no further request was made — nothing else
+            // is enqueued on mockWebServer to answer one.
+            assertTrue(pages.isEmpty())
+        }
+
+    @Test
+    fun `appendRemainingToQueue against a multi-page playlist queues every remaining entry, in playlist order`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[{"playlistItemId":"entry1","track":${trackJson("trkA", "First")}}],
+                        "total":3,"startIndex":0}""",
+                ),
+            )
+            mockWebServer.enqueue(playlistNameResponse("Road Trip"))
+            val viewModel = PlaylistDetailViewModel(musicRepository, "pl1")
+            viewModel.load()
+            viewModel.uiState.first { it is PlaylistDetailUiState.Loaded }
+
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[
+                        {"playlistItemId":"entry2","track":${trackJson("trkB", "Second")}},
+                        {"playlistItemId":"entry3","track":${trackJson("trkC", "Third")}}
+                    ],"total":3,"startIndex":1}""",
+                ),
+            )
+            val pages = mutableListOf<List<net.auralis.app.playback.ResolvedPlayback>>()
+            viewModel.appendRemainingToQueue { pages.add(it) }
+
+            assertEquals(1, pages.size)
+            assertEquals(listOf("Second", "Third"), pages[0].map { it.title })
+            assertEquals("track:trkB", pages[0][0].mediaId)
+            assertTrue(pages[0][0].uri.contains("/jellyfin/tracks/trkB/stream"))
+            assertEquals("Road Trip", pages[0][0].subtitle)
+        }
+
+    @Test
+    fun `appendRemainingToQueue against a failed page fetch stops without retrying`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[{"playlistItemId":"entry1","track":${trackJson("trkA", "First")}}],
+                        "total":3,"startIndex":0}""",
+                ),
+            )
+            mockWebServer.enqueue(playlistNameResponse("Road Trip"))
+            val viewModel = PlaylistDetailViewModel(musicRepository, "pl1")
+            viewModel.load()
+            viewModel.uiState.first { it is PlaylistDetailUiState.Loaded }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
+            )
+            val pages = mutableListOf<List<net.auralis.app.playback.ResolvedPlayback>>()
+            // Must not throw — a failed page fetch mid-playback is non-fatal.
+            viewModel.appendRemainingToQueue { pages.add(it) }
+
+            assertTrue(pages.isEmpty())
+        }
 }

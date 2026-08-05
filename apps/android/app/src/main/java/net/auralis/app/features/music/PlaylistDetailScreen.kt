@@ -114,7 +114,12 @@ fun PlaylistDetailScreen(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
                     state = state,
                     onLoadMore = viewModel::loadMore,
-                    onEntryClick = { entry -> playerViewModel.playQueue { viewModel.buildQueueFrom(entry) } },
+                    onEntryClick = { entry ->
+                        playerViewModel.playQueue(
+                            buildQueue = { viewModel.buildQueueFrom(entry) },
+                            fetchRemaining = { onPage -> viewModel.appendRemainingToQueue(onPage) },
+                        )
+                    },
                     onRemove = viewModel::removeTrack,
                 )
         }

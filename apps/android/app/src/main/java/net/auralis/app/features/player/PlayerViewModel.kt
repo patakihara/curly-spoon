@@ -112,6 +112,18 @@ class PlayerViewModel(
     private var pendingController: Deferred<MediaController>? = null
 
     /**
+     * Bumped on every [playQueue] call, read back by that same call's own [fetchRemaining]
+     * continuation before each append. Guards against a stale wave I background append landing
+     * after the user has already tapped a different track: without this, a slow
+     * `appendRemainingToQueue` page fetch for album A completing after `playQueue` has already
+     * been called again for album B would call [MediaController.addMediaItems] against B's
+     * now-current queue with A's leftover tracks. `viewModelScope` runs on
+     * `Dispatchers.Main.immediate`, so the increment below and every generation check happen on
+     * the same single thread — no window for two calls to both observe a stale value.
+     */
+    private var queueGeneration = 0
+
+    /**
      * Lazily connects to [AuralisMediaLibraryService], reusing the connection on every
      * subsequent call. `MediaController.Builder.buildAsync()` returns a Guava
      * `ListenableFuture`; `asDeferred().await()` bridges that into this suspend function.
@@ -305,6 +317,11 @@ class PlayerViewModel(
         fallbackTitle: String,
         resolve: suspend () -> ResolvedPlayback?,
     ) {
+        // Invalidates any wave I background queue-append still in flight from a previous
+        // playQueue() call — see queueGeneration's own doc comment. A book/podcast item played
+        // here has no append of its own, but a prior music queue's straggling page fetch must
+        // not addMediaItems() into what is about to become this single-item queue.
+        queueGeneration++
         try {
             val resolved =
                 resolve()
@@ -350,9 +367,34 @@ class PlayerViewModel(
      * network work (fetching each track's stream URL) runs inside this ViewModel's
      * [viewModelScope] rather than the call site's — the same reason [playResolved] takes
      * `resolve` as a lambda instead of a plain value.
+     *
+     * [fetchRemaining], added in wave I, is how a queue grows past the one page [buildQueue]
+     * already resolved: once the loaded page is playing, this calls [fetchRemaining] with an
+     * `onPage` callback that [Player.addMediaItems] appends to the *live* queue, one page at a
+     * time, as `AlbumDetailViewModel.appendRemainingToQueue`/`PlaylistDetailViewModel`'s own
+     * fetch it — see those methods' own doc comments for the fetch plan itself
+     * ([appendRemainingQueuePages]). `null` (the default) means "this queue is already
+     * everything there is" — [AlbumDetailScreen]/[PlaylistDetailScreen] only pass a non-null
+     * lambda for their own "play album"/"play playlist" entry points. Deliberately called
+     * *after* `ctrl.play()` above, not before: appending happens in the background while the
+     * first track is already audible, matching this wave's own "must not block playback start"
+     * requirement — `apps/web/src/features/music/musicQueueController.ts`'s `beginMusicQueue`
+     * settled the identical design for the web player.
+     *
+     * [Player.addMediaItems] appends without touching the item currently playing or the
+     * shuffle history behind it: Media3's `ShuffleOrder` implementations support insertion
+     * (`ShuffleOrder.cloneAndInsert`), so a queue running with `shuffleModeEnabled` gets the
+     * newly-appended items folded into its shuffle order rather than the order being rebuilt
+     * from scratch or the current item restarting. Not independently exercised here — no JDK/
+     * Android SDK on this machine to run a real `ExoPlayer` against — so this rests on Media3's
+     * own documented contract for `addMediaItems`, not a local repro.
      */
-    fun playQueue(buildQueue: suspend () -> List<ResolvedPlayback>) {
+    fun playQueue(
+        buildQueue: suspend () -> List<ResolvedPlayback>,
+        fetchRemaining: (suspend (onPage: suspend (List<ResolvedPlayback>) -> Unit) -> Unit)? = null,
+    ) {
         viewModelScope.launch {
+            val myGeneration = ++queueGeneration
             try {
                 val queue = buildQueue()
                 if (queue.isEmpty()) {
@@ -373,12 +415,25 @@ class PlayerViewModel(
                         shuffleEnabled = ctrl.shuffleModeEnabled,
                         repeatMode = ctrl.repeatMode,
                     )
+                if (fetchRemaining != null) {
+                    fetchRemaining { page ->
+                        // Stale-queue guard: see queueGeneration's own doc comment. Checked
+                        // before every append, not just once before the whole fetchRemaining
+                        // call, since a multi-page album's fetch spans several suspension
+                        // points any one of which a newer playQueue()/playResolved() call could
+                        // land in between.
+                        if (page.isEmpty() || queueGeneration != myGeneration) return@fetchRemaining
+                        connectedController().addMediaItems(page.map { it.toMediaItem() })
+                    }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 // Total function, matching playResolved: a failed MediaController connection or
                 // a failed buildQueue() degrades to an error state rather than crashing this
-                // ViewModel's coroutine scope.
+                // ViewModel's coroutine scope. A failure inside fetchRemaining itself is already
+                // handled one level down, in appendRemainingQueuePages — a failed page fetch
+                // there returns quietly rather than throwing, so it never reaches this catch.
                 _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
             }
         }

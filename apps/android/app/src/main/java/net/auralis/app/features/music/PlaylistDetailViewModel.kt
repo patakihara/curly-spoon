@@ -214,6 +214,39 @@ class PlaylistDetailViewModel(
             artworkUrl = null,
         )
     }
+
+    /**
+     * The playlist counterpart to [AlbumDetailViewModel.appendRemainingToQueue] — see that
+     * method's own doc comment for the full "fetch in the background, after playback of the
+     * loaded page has already started" reasoning, which this reuses unmodified via
+     * [appendRemainingQueuePages]. [MusicRepository.playlistItems] pages in stored playlist
+     * order, the same order [buildQueueFrom] already slices [PlaylistDetailUiState.Loaded.entries]
+     * in, so a page fetched here continues that same order rather than restarting it.
+     */
+    suspend fun appendRemainingToQueue(onPage: suspend (List<ResolvedPlayback>) -> Unit) {
+        val state = _uiState.value as? PlaylistDetailUiState.Loaded ?: return
+        appendRemainingQueuePages(
+            loadedCount = state.entries.size,
+            total = state.total,
+            fetchPage = { startIndex, limit ->
+                when (val result = musicRepository.playlistItems(playlistId, startIndex = startIndex, limit = limit)) {
+                    is PlaylistItemsPageResult.Loaded -> result.items.map { it.toUi().toTrackUi() }
+                    is PlaylistItemsPageResult.Failed -> null
+                }
+            },
+            toResolved = { pageTracks ->
+                val streamUrls = pageTracks.associate { it.id to musicRepository.trackStreamUrl(it.id) }
+                albumPlaybackQueue(
+                    tracks = pageTracks,
+                    streamUrls = streamUrls,
+                    artistName = null,
+                    albumName = state.playlistName,
+                    artworkUrl = null,
+                )
+            },
+            onPage = onPage,
+        )
+    }
 }
 
 /** Adapts one playlist entry to the shape [albumPlaybackQueue] expects — see

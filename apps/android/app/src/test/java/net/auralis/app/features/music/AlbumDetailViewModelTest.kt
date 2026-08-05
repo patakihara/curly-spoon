@@ -233,6 +233,105 @@ class AlbumDetailViewModelTest {
             assertFalse(queue[0].uri.contains("token", ignoreCase = true))
         }
 
+    // -----------------------------------------------------------------------------
+    // appendRemainingToQueue — wave I's cross-page queueing. See
+    // AlbumDetailViewModel.appendRemainingToQueue's own doc comment for why this is a separate
+    // method from buildQueueFrom rather than buildQueueFrom itself fetching every page.
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `appendRemainingToQueue against a fully-loaded album fetches nothing extra`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 1,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse())
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            val pages = mutableListOf<List<net.auralis.app.playback.ResolvedPlayback>>()
+            viewModel.appendRemainingToQueue { pages.add(it) }
+
+            // No further request was enqueued above — a second request against this
+            // MockWebServer here would throw (nothing queued to answer it), so reaching this
+            // assertion at all already proves nothing extra was fetched.
+            assertTrue(pages.isEmpty())
+        }
+
+    @Test
+    fun `appendRemainingToQueue against a multi-page album queues every remaining track, in order, with stream urls`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 3,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse())
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 3,
+                    startIndex = 1,
+                    items =
+                        """[{"id":"trk2","name":"Paranoid Android","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":2,"discNumber":1,"durationSeconds":383.5},
+                           {"id":"trk3","name":"Subterranean Homesick Alien","albumId":"alb1",
+                            "albumName":"OK Computer","artistNames":["Radiohead"],"trackNumber":3,
+                            "discNumber":1,"durationSeconds":267.0}]""",
+                ),
+            )
+            val pages = mutableListOf<List<net.auralis.app.playback.ResolvedPlayback>>()
+            viewModel.appendRemainingToQueue { pages.add(it) }
+
+            assertEquals(1, pages.size)
+            assertEquals(listOf("Paranoid Android", "Subterranean Homesick Alien"), pages[0].map { it.title })
+            assertEquals("track:trk2", pages[0][0].mediaId)
+            assertTrue(pages[0][0].uri.contains("/jellyfin/tracks/trk2/stream"))
+            assertEquals("Radiohead", pages[0][0].artist)
+            assertEquals("OK Computer", pages[0][0].subtitle)
+        }
+
+    @Test
+    fun `appendRemainingToQueue against a failed page fetch stops without retrying`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 3,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse())
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
+            )
+            val pages = mutableListOf<List<net.auralis.app.playback.ResolvedPlayback>>()
+            // Must not throw — a failed page fetch mid-playback is non-fatal, per this wave's
+            // own spec.
+            viewModel.appendRemainingToQueue { pages.add(it) }
+
+            assertTrue(pages.isEmpty())
+        }
+
     @Test
     fun `buildQueueFrom against a track no longer on the page returns an empty queue, not a crash`() =
         runTest {
