@@ -63,6 +63,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Runs unconditionally, not just on the happy path at the end of each `it`
+  // body — otherwise a failed assertion would skip both the cleanup calls and
+  // `useRealTimers()`, leaking fake timers into whatever runs next.
+  runCleanups();
+  vi.useRealTimers();
   Reflect.deleteProperty(globalThis, 'window');
   vi.resetModules();
 });
@@ -176,8 +181,5 @@ describe('useProgressSync', () => {
       expect.anything(),
       expect.objectContaining({ isPlaying: false }),
     );
-
-    runCleanups();
-    vi.useRealTimers();
   });
 });
