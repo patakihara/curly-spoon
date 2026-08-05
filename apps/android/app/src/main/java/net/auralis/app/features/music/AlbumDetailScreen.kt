@@ -18,12 +18,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,6 +36,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.ImageLoader
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
@@ -68,6 +73,12 @@ fun AlbumDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val playerUiState by playerViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    // The item ids the currently-open AddToPlaylistSheet should add — null means the sheet is
+    // closed. A single track's id for a track row's own action, or every loaded track's id for
+    // the album header's "Add album to playlist" action; see AlbumDetailContent's own
+    // onAddTrackToPlaylist/onAddAlbumToPlaylist callbacks below.
+    var addToPlaylistItemIds by remember { mutableStateOf<List<String>?>(null) }
 
     LaunchedEffect(albumId) { viewModel.load() }
 
@@ -115,8 +126,20 @@ fun AlbumDetailScreen(
                     onTrackClick = { track -> playerViewModel.playQueue { viewModel.buildQueueFrom(track) } },
                     onToggleAlbumFavorite = viewModel::toggleAlbumFavorite,
                     onToggleTrackFavorite = viewModel::toggleTrackFavorite,
+                    onAddTrackToPlaylist = { track -> addToPlaylistItemIds = listOf(track.id) },
+                    onAddAlbumToPlaylist = { addToPlaylistItemIds = state.tracks.map { it.id } },
                 )
         }
+    }
+
+    val sheetItemIds = addToPlaylistItemIds
+    if (sheetItemIds != null) {
+        AddToPlaylistSheet(
+            container = container,
+            itemIds = sheetItemIds,
+            onDismiss = { addToPlaylistItemIds = null },
+            onResult = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
+        )
     }
 }
 
@@ -129,6 +152,8 @@ private fun AlbumDetailContent(
     onTrackClick: (MusicTrackUi) -> Unit,
     onToggleAlbumFavorite: () -> Unit,
     onToggleTrackFavorite: (String) -> Unit,
+    onAddTrackToPlaylist: (MusicTrackUi) -> Unit,
+    onAddAlbumToPlaylist: () -> Unit,
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
@@ -149,6 +174,10 @@ private fun AlbumDetailContent(
                     onToggle = onToggleAlbumFavorite,
                 )
             }
+            // Disabled for a genuinely empty album — there is nothing to seed a playlist with.
+            TextButton(onClick = onAddAlbumToPlaylist, enabled = state.tracks.isNotEmpty()) {
+                Text("Add album to playlist")
+            }
             if (state.tracks.isEmpty()) {
                 Text("No tracks found for this album.", modifier = Modifier.padding(top = 24.dp))
             }
@@ -159,6 +188,7 @@ private fun AlbumDetailContent(
                 track,
                 onClick = { onTrackClick(track) },
                 onToggleFavorite = { onToggleTrackFavorite(track.id) },
+                onAddToPlaylist = { onAddTrackToPlaylist(track) },
             )
         }
 
@@ -192,6 +222,7 @@ private fun TrackRow(
     track: MusicTrackUi,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onAddToPlaylist: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -211,6 +242,7 @@ private fun TrackRow(
             }
             Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
         }
+        TextButton(onClick = onAddToPlaylist) { Text("Add") }
         FavoriteToggleButton(
             favorite = track.favorite,
             itemName = track.title,

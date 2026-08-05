@@ -2,6 +2,8 @@ package net.auralis.app.features.music
 
 import net.auralis.app.data.model.JellyfinAlbum
 import net.auralis.app.data.model.JellyfinArtist
+import net.auralis.app.data.model.JellyfinPlaylist
+import net.auralis.app.data.model.JellyfinPlaylistItem
 import net.auralis.app.data.model.JellyfinTrack
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.ApiException
@@ -94,6 +96,45 @@ sealed interface FavoriteToggleResult {
     data class Updated(val favorite: Boolean) : FavoriteToggleResult
 
     data class Failed(val code: String) : FavoriteToggleResult
+}
+
+/** Outcome of [MusicRepository.playlists]. See [ArtistsPageResult]'s doc comment for why this
+ * is its own non-generic type rather than a shared generic one. */
+sealed interface PlaylistsPageResult {
+    data class Loaded(val items: List<JellyfinPlaylist>, val total: Int, val startIndex: Int) : PlaylistsPageResult
+
+    data class Failed(val code: String) : PlaylistsPageResult
+}
+
+/** Outcome of [MusicRepository.playlistItems]. See [ArtistsPageResult]'s doc comment for why
+ * this is its own non-generic type rather than a shared generic one. */
+sealed interface PlaylistItemsPageResult {
+    data class Loaded(
+        val items: List<JellyfinPlaylistItem>,
+        val total: Int,
+        val startIndex: Int,
+    ) : PlaylistItemsPageResult
+
+    data class Failed(val code: String) : PlaylistItemsPageResult
+}
+
+/** Outcome of [MusicRepository.createPlaylist]. */
+sealed interface CreatePlaylistResult {
+    data class Created(val id: String) : CreatePlaylistResult
+
+    data class Failed(val code: String) : CreatePlaylistResult
+}
+
+/** Outcome of [MusicRepository.addToPlaylist]/[MusicRepository.removeFromPlaylist] — both
+ * mutate a playlist's items and respond with nothing but a status code (see
+ * `routes/jellyfin.ts`'s 204 responses), so unlike [FavoriteToggleResult] there is no server
+ * state to reconcile against on success; [Success] carries nothing. Shared by both methods for
+ * the same reason [FavoriteToggleResult] is shared by mark/unmark — one outcome shape, two
+ * dispatch sites. */
+sealed interface PlaylistMutationResult {
+    data object Success : PlaylistMutationResult
+
+    data class Failed(val code: String) : PlaylistMutationResult
 }
 
 /**
@@ -240,4 +281,78 @@ class MusicRepository(private val apiClient: ApiClient) {
      * unlike every other method here it has nothing to catch: [ApiClient.jellyfinTrackStreamUrl]
      * never throws. */
     suspend fun trackStreamUrl(itemId: String): String = apiClient.jellyfinTrackStreamUrl(itemId)
+
+    /** GET /jellyfin/playlists, paginated. See [ApiClient.jellyfinPlaylists] for parameter
+     * meaning. */
+    suspend fun playlists(
+        parentId: String? = null,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        sortBy: String? = null,
+        sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
+        id: String? = null,
+    ): PlaylistsPageResult =
+        try {
+            val page =
+                apiClient.jellyfinPlaylists(parentId, startIndex, limit, sortBy, sortOrder, favoritesOnly, id)
+            PlaylistsPageResult.Loaded(page.items, page.total, page.startIndex)
+        } catch (e: ApiException) {
+            PlaylistsPageResult.Failed(e.code)
+        }
+
+    /** GET /jellyfin/playlists/{playlistId}/items, paginated, in stored playlist order. See
+     * [ApiClient.jellyfinPlaylistItems] for parameter meaning. */
+    suspend fun playlistItems(
+        playlistId: String,
+        startIndex: Int? = null,
+        limit: Int? = null,
+    ): PlaylistItemsPageResult =
+        try {
+            val page = apiClient.jellyfinPlaylistItems(playlistId, startIndex, limit)
+            PlaylistItemsPageResult.Loaded(page.items, page.total, page.startIndex)
+        } catch (e: ApiException) {
+            PlaylistItemsPageResult.Failed(e.code)
+        }
+
+    /** POST /jellyfin/playlists — creates a playlist named [name], optionally seeded with
+     * [itemIds]. */
+    suspend fun createPlaylist(
+        name: String,
+        itemIds: List<String>? = null,
+    ): CreatePlaylistResult =
+        try {
+            CreatePlaylistResult.Created(apiClient.jellyfinCreatePlaylist(name, itemIds))
+        } catch (e: ApiException) {
+            CreatePlaylistResult.Failed(e.code)
+        }
+
+    /** POST /jellyfin/playlists/{playlistId}/items — appends [itemIds] (plain item ids) to the
+     * end of [playlistId]. See [ApiClient.jellyfinAddToPlaylist]'s doc comment for why these are
+     * item ids, not playlist-entry ids — the opposite of [removeFromPlaylist]'s own parameter. */
+    suspend fun addToPlaylist(
+        playlistId: String,
+        itemIds: List<String>,
+    ): PlaylistMutationResult =
+        try {
+            apiClient.jellyfinAddToPlaylist(playlistId, itemIds)
+            PlaylistMutationResult.Success
+        } catch (e: ApiException) {
+            PlaylistMutationResult.Failed(e.code)
+        }
+
+    /** DELETE /jellyfin/playlists/{playlistId}/items — removes the given playlist entries.
+     * [playlistItemIds] must be [net.auralis.app.data.model.JellyfinPlaylistItem.playlistItemId]
+     * values from a prior [playlistItems] call, **not** track ids — see that field's own doc
+     * comment for why the distinction is load-bearing. */
+    suspend fun removeFromPlaylist(
+        playlistId: String,
+        playlistItemIds: List<String>,
+    ): PlaylistMutationResult =
+        try {
+            apiClient.jellyfinRemoveFromPlaylist(playlistId, playlistItemIds)
+            PlaylistMutationResult.Success
+        } catch (e: ApiException) {
+            PlaylistMutationResult.Failed(e.code)
+        }
 }

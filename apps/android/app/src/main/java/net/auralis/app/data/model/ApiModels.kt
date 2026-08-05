@@ -680,3 +680,77 @@ data class JellyfinSearchResults(
 data class JellyfinFavoriteResponse(
     val favorite: Boolean,
 )
+
+// -----------------------------------------------------------------------------
+// Jellyfin playlists (routes/jellyfin.ts) — Android wave F (music playlists). Mirrors
+// `@auralis/jellyfin-client`'s `Playlist`/`PlaylistItem`/`LibraryPage<T>` field-for-field, same
+// as every other Jellyfin model above.
+// -----------------------------------------------------------------------------
+
+/** One entry from GET /jellyfin/playlists. Mirrors `@auralis/jellyfin-client`'s `Playlist`
+ * (packages/jellyfin-client/src/domain.ts) — unlike [JellyfinArtist]/[JellyfinAlbum] a playlist
+ * carries no `favorite` field at all (Jellyfin playlists aren't favouritable the way library
+ * items are), so there is nothing to default here. */
+@Serializable
+data class JellyfinPlaylist(
+    val id: String,
+    val name: String,
+    val imageTag: String? = null,
+    val trackCount: Int? = null,
+)
+
+/** GET /jellyfin/playlists response — unwrapped, the object itself. See
+ * [JellyfinArtistsPage]'s doc comment for what [total] means. */
+@Serializable
+data class JellyfinPlaylistsPage(
+    val items: List<JellyfinPlaylist>,
+    val total: Int,
+    val startIndex: Int,
+)
+
+/** One row of a GET /jellyfin/playlists/:playlistId/items response — one track occurrence
+ * *within* the playlist, in playlist order. Mirrors `@auralis/jellyfin-client`'s
+ * `PlaylistItem`. [playlistItemId] is the id of *this occurrence*, distinct from
+ * [track]'s own id: the same track can appear twice in one playlist, each with its own
+ * [playlistItemId], and removal keys on this value, never `track.id` — see
+ * `packages/jellyfin-client/src/domain.ts`'s `PlaylistItem` doc comment for the full
+ * reasoning this mirrors. */
+@Serializable
+data class JellyfinPlaylistItem(
+    val playlistItemId: String,
+    val track: JellyfinTrack,
+)
+
+/** GET /jellyfin/playlists/:playlistId/items response — unwrapped, the object itself. See
+ * [JellyfinArtistsPage]'s doc comment for what [total] means. */
+@Serializable
+data class JellyfinPlaylistItemsPage(
+    val items: List<JellyfinPlaylistItem>,
+    val total: Int,
+    val startIndex: Int,
+)
+
+/** Request body of POST /jellyfin/playlists — [itemIds] seeds the new playlist, empty/omitted
+ * for an empty playlist. Mirrors `jellyfinCreatePlaylistBodySchema` (apps/server/src/routes/
+ * schemas.ts) field-for-field. */
+@Serializable
+data class JellyfinCreatePlaylistBody(
+    val name: String,
+    val itemIds: List<String>? = null,
+)
+
+/** Response body of POST /jellyfin/playlists — the new playlist's id, nothing else (Jellyfin's
+ * own `PlaylistCreationResult` carries more fields; the BFF route only forwards `id`, see
+ * `routes/jellyfin.ts`). */
+@Serializable
+data class JellyfinCreatePlaylistResponse(
+    val id: String,
+)
+
+/** Request body of POST /jellyfin/playlists/:playlistId/items — mirrors
+ * `jellyfinAddToPlaylistBodySchema`; the BFF rejects an empty [itemIds], so callers must not
+ * send one. */
+@Serializable
+data class JellyfinAddToPlaylistBody(
+    val itemIds: List<String>,
+)

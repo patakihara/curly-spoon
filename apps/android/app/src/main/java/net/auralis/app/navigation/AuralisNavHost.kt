@@ -28,6 +28,8 @@ import net.auralis.app.features.music.ArtistDetailScreen
 import net.auralis.app.features.music.FavoritesScreen
 import net.auralis.app.features.music.MusicLibraryScreen
 import net.auralis.app.features.music.MusicSearchScreen
+import net.auralis.app.features.music.PlaylistDetailScreen
+import net.auralis.app.features.music.PlaylistsScreen
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.features.podcasts.PodcastDetailScreen
 import net.auralis.app.features.podcasts.PodcastsScreen
@@ -44,6 +46,7 @@ object Routes {
     const val MUSIC = "music"
     const val MUSIC_SEARCH = "music/search"
     const val MUSIC_FAVORITES = "music/favorites"
+    const val MUSIC_PLAYLISTS = "music/playlists"
 
     /** Argument name within [PODCAST_DETAIL_PATTERN] — the podcast library item's id. */
     const val PODCAST_DETAIL_ARG_ITEM_ID = "itemId"
@@ -70,6 +73,14 @@ object Routes {
     fun musicAlbumDetailRoute(): String = MUSIC_ALBUM_DETAIL_PATTERN
 
     fun musicAlbumDetail(albumId: String): String = "music/album/$albumId"
+
+    /** Argument name within [PLAYLIST_DETAIL_PATTERN] — the Jellyfin playlist item's id. */
+    const val PLAYLIST_DETAIL_ARG_PLAYLIST_ID = "playlistId"
+    private const val PLAYLIST_DETAIL_PATTERN = "music/playlist/{$PLAYLIST_DETAIL_ARG_PLAYLIST_ID}"
+
+    fun playlistDetailRoute(): String = PLAYLIST_DETAIL_PATTERN
+
+    fun playlistDetail(playlistId: String): String = "music/playlist/$playlistId"
 }
 
 /**
@@ -126,6 +137,7 @@ fun AuralisNavHost(
                 composable(Routes.MUSIC) { MusicLibraryScreen(container, navController) }
                 composable(Routes.MUSIC_SEARCH) { MusicSearchScreen(container, navController) }
                 composable(Routes.MUSIC_FAVORITES) { FavoritesScreen(container, navController) }
+                composable(Routes.MUSIC_PLAYLISTS) { PlaylistsScreen(container, navController) }
                 composable(
                     Routes.musicArtistDetailRoute(),
                     arguments =
@@ -145,6 +157,16 @@ fun AuralisNavHost(
                         backStackEntry.arguments?.getString(Routes.MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID)
                             ?: return@composable
                     AlbumDetailScreen(container, playerViewModel, albumId)
+                }
+                composable(
+                    Routes.playlistDetailRoute(),
+                    arguments =
+                        listOf(navArgument(Routes.PLAYLIST_DETAIL_ARG_PLAYLIST_ID) { type = NavType.StringType }),
+                ) { backStackEntry ->
+                    val playlistId =
+                        backStackEntry.arguments?.getString(Routes.PLAYLIST_DETAIL_ARG_PLAYLIST_ID)
+                            ?: return@composable
+                    PlaylistDetailScreen(container, playerViewModel, playlistId)
                 }
             }
         }
