@@ -2,6 +2,9 @@ package net.auralis.app.features.music
 
 import net.auralis.app.data.model.JellyfinAlbum
 import net.auralis.app.data.model.JellyfinArtist
+import net.auralis.app.data.model.JellyfinPlaylist
+import net.auralis.app.data.model.JellyfinPlaylistItem
+import kotlin.math.roundToLong
 
 /** How many items each `artists()`/`albums()`/`tracks()` page requests — matches
  * `apps/web/src/api/queries.ts`'s `JELLYFIN_PAGE_SIZE`, for no reason other than there being
@@ -41,4 +44,41 @@ internal fun JellyfinAlbum.toUi(baseUrl: String?): MusicAlbumUi =
         artistName = artistName,
         coverUrl = jellyfinItemArtworkUrl(baseUrl, id),
         favorite = favorite,
+    )
+
+/** One playlist row on [PlaylistsScreen] and one entry of the "add to playlist" sheet
+ * ([AddToPlaylistSheet]). */
+data class MusicPlaylistUi(
+    val id: String,
+    val name: String,
+    val trackCount: Int?,
+    val coverUrl: String?,
+)
+
+internal fun JellyfinPlaylist.toUi(baseUrl: String?): MusicPlaylistUi =
+    MusicPlaylistUi(id = id, name = name, trackCount = trackCount, coverUrl = jellyfinItemArtworkUrl(baseUrl, id))
+
+/** One track row on [PlaylistDetailScreen] — one occurrence of a track *within* a playlist, in
+ * stored playlist order. [playlistItemId] is this occurrence's own id, distinct from
+ * [trackId] — see [net.auralis.app.data.model.JellyfinPlaylistItem.playlistItemId]'s doc
+ * comment for why the distinction is load-bearing: removal keys on [playlistItemId], never
+ * [trackId], so the same track appearing twice in one playlist can be removed once without
+ * touching the other occurrence. */
+data class MusicPlaylistEntryUi(
+    val playlistItemId: String,
+    val trackId: String,
+    val title: String,
+    val artistNames: String?,
+    val albumId: String?,
+    val durationSeconds: Long,
+)
+
+internal fun JellyfinPlaylistItem.toUi(): MusicPlaylistEntryUi =
+    MusicPlaylistEntryUi(
+        playlistItemId = playlistItemId,
+        trackId = track.id,
+        title = track.name,
+        artistNames = track.artistNames.joinToString(", ").takeIf { it.isNotBlank() },
+        albumId = track.albumId,
+        durationSeconds = (track.durationSeconds ?: 0.0).roundToLong(),
     )

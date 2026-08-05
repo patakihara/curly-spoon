@@ -1369,4 +1369,178 @@ class ApiClientTest {
             assertNotNull(exception)
             assertEquals("upstream_auth_expired", exception?.code)
         }
+
+    // -----------------------------------------------------------------------------
+    // Jellyfin playlists (Android wave F — music playlists). See routes/jellyfin.ts's own
+    // "Playlists" section comment and packages/jellyfin-client/src/schemas/raw.ts's playlists
+    // section for the source-verified upstream behaviour these mirror: add keys on plain item
+    // ids ("itemIds" in the request body), remove keys on the per-entry "playlistItemId" (sent
+    // as comma-separated "playlistItemIds" query parameter), never a track id.
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `jellyfinPlaylists decodes items, total and startIndex`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[{"id":"pl1","name":"Road Trip","imageTag":"tag1","trackCount":12}],
+                        "total":3,"startIndex":0}""",
+                ),
+            )
+
+            val page = apiClient.jellyfinPlaylists()
+
+            assertEquals(1, page.items.size)
+            assertEquals("Road Trip", page.items[0].name)
+            assertEquals(12, page.items[0].trackCount)
+            assertEquals(3, page.total)
+        }
+
+    @Test
+    fun `jellyfinPlaylists sends startIndex, limit and favoritesOnly-ids as query parameters`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":10}"""))
+
+            apiClient.jellyfinPlaylists(startIndex = 10, limit = 20, favoritesOnly = true, id = "pl1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("startIndex=10"))
+            assertTrue(recordedPath.contains("limit=20"))
+            assertTrue(recordedPath.contains("favoritesOnly=true"))
+            assertTrue(recordedPath.contains("ids=pl1"))
+        }
+
+    @Test
+    fun `jellyfinPlaylistItems decodes each entry's playlistItemId distinct from its track id`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"items":[
+                      {"playlistItemId":"entry1","track":{"id":"trk1","name":"Airbag","albumId":"alb1",
+                       "albumName":"OK Computer","artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,
+                       "durationSeconds":284.0,"imageTag":"tag2","genres":["Rock"]}}
+                    ],"total":1,"startIndex":0}
+                    """.trimIndent(),
+                ),
+            )
+
+            val page = apiClient.jellyfinPlaylistItems("pl1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.endsWith("/jellyfin/playlists/pl1/items"))
+            assertEquals(1, page.items.size)
+            assertEquals("entry1", page.items[0].playlistItemId)
+            assertEquals("trk1", page.items[0].track.id)
+            assertEquals("Airbag", page.items[0].track.name)
+        }
+
+    @Test
+    fun `jellyfinPlaylistItems sends startIndex and limit as query parameters`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":5}"""))
+
+            apiClient.jellyfinPlaylistItems("pl1", startIndex = 5, limit = 40)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("startIndex=5"))
+            assertTrue(recordedPath.contains("limit=40"))
+        }
+
+    @Test
+    fun `jellyfinCreatePlaylist POSTs name and itemIds in the body and returns the new id`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(201).setBody("""{"id":"pl-new"}"""))
+
+            val id = apiClient.jellyfinCreatePlaylist("Road Trip", listOf("trk1", "trk2"))
+
+            val recorded = mockWebServer.takeRequest()
+            assertTrue(recorded.path.orEmpty().endsWith("/jellyfin/playlists"))
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains("\"name\":\"Road Trip\""))
+            assertTrue(body.contains("\"itemIds\":[\"trk1\",\"trk2\"]"))
+            assertEquals("pl-new", id)
+        }
+
+    @Test
+    fun `jellyfinCreatePlaylist omits itemIds from the body when not provided`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(201).setBody("""{"id":"pl-new"}"""))
+
+            apiClient.jellyfinCreatePlaylist("Empty playlist")
+
+            val body = mockWebServer.takeRequest().body.readUtf8()
+            assertFalse(body.contains("itemIds"))
+        }
+
+    @Test
+    fun `jellyfinAddToPlaylist POSTs itemIds in the body against a 204 response`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+
+            apiClient.jellyfinAddToPlaylist("pl1", listOf("trk1", "trk2"))
+
+            val recorded = mockWebServer.takeRequest()
+            assertEquals("POST", recorded.method)
+            assertTrue(recorded.path.orEmpty().endsWith("/jellyfin/playlists/pl1/items"))
+            assertTrue(recorded.body.readUtf8().contains("\"itemIds\":[\"trk1\",\"trk2\"]"))
+        }
+
+    @Test
+    fun `jellyfinAddToPlaylist throws ApiException rather than an unrelated exception on an error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(400)
+                    .setBody("""{"error":{"code":"validation_error","message":"itemIds must include at least one item"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.jellyfinAddToPlaylist("pl1", listOf("trk1"))
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("validation_error", exception?.code)
+        }
+
+    @Test
+    fun `jellyfinRemoveFromPlaylist DELETEs with playlistItemIds as a comma-separated query parameter`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+
+            apiClient.jellyfinRemoveFromPlaylist("pl1", listOf("entry1", "entry2"))
+
+            val recorded = mockWebServer.takeRequest()
+            assertEquals("DELETE", recorded.method)
+            val recordedPath = recorded.path.orEmpty()
+            assertTrue(recordedPath.contains("/jellyfin/playlists/pl1/items"))
+            // Keyed on playlistItemId (the per-entry id), never a track id — see this section's
+            // own file doc comment.
+            assertTrue(recordedPath.contains("playlistItemIds=entry1%2Centry2") || recordedPath.contains("playlistItemIds=entry1,entry2"))
+        }
+
+    @Test
+    fun `jellyfinRemoveFromPlaylist throws ApiException rather than an unrelated exception on an error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.jellyfinRemoveFromPlaylist("pl1", listOf("entry1"))
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("upstream_auth_expired", exception?.code)
+        }
 }

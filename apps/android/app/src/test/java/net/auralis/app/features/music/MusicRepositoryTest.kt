@@ -300,4 +300,158 @@ class MusicRepositoryTest {
 
             assertEquals(FavoriteToggleResult.Failed("upstream_auth_expired"), result)
         }
+
+    // -----------------------------------------------------------------------------
+    // playlists() / playlistItems() / createPlaylist() / addToPlaylist() / removeFromPlaylist()
+    // — the exact request path/method/body/query wiring is ApiClientTest's job (see that file's
+    // own `jellyfinPlaylists`/`jellyfinPlaylistItems`/`jellyfinCreatePlaylist`/
+    // `jellyfinAddToPlaylist`/`jellyfinRemoveFromPlaylist` tests); this class only needs to
+    // prove the Loaded/Failed (and Created/Success) dispatch, same division of labour as every
+    // other MusicRepository method's own tests in this file.
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `playlists reports Loaded with items, total and startIndex`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"items":[{"id":"pl1","name":"Road Trip","imageTag":null,"trackCount":12}],
+                        "total":3,"startIndex":0}""",
+                ),
+            )
+
+            val result = repository.playlists()
+
+            val loaded = result as? PlaylistsPageResult.Loaded
+            assertEquals(listOf("Road Trip"), loaded?.items?.map { it.name })
+            assertEquals(3, loaded?.total)
+        }
+
+    @Test
+    fun `playlists reports Failed with the upstream error code rather than throwing`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val result = repository.playlists()
+
+            assertEquals(PlaylistsPageResult.Failed("upstream_auth_expired"), result)
+        }
+
+    /** Entries are seeded deliberately out of natural id order (`entry2` before `entry1`) so
+     * "order comes from the server, unsorted" cannot pass by coincidence — a repository that
+     * silently re-sorted by id would still pass a test seeded in id order. */
+    @Test
+    fun `playlistItems preserves server-given order rather than re-sorting`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"items":[
+                      {"playlistItemId":"entry2","track":{"id":"trkB","name":"Second","albumId":null,
+                       "albumName":null,"artistNames":[],"trackNumber":null,"discNumber":null,
+                       "durationSeconds":null,"imageTag":null,"genres":[]}},
+                      {"playlistItemId":"entry1","track":{"id":"trkA","name":"First","albumId":null,
+                       "albumName":null,"artistNames":[],"trackNumber":null,"discNumber":null,
+                       "durationSeconds":null,"imageTag":null,"genres":[]}}
+                    ],"total":2,"startIndex":0}
+                    """.trimIndent(),
+                ),
+            )
+
+            val result = repository.playlistItems("pl1")
+
+            val loaded = result as? PlaylistItemsPageResult.Loaded
+            assertEquals(listOf("entry2", "entry1"), loaded?.items?.map { it.playlistItemId })
+            assertEquals(listOf("Second", "First"), loaded?.items?.map { it.track.name })
+        }
+
+    @Test
+    fun `playlistItems reports Failed with the upstream error code rather than throwing`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("""{"error":{"code":"not_found","message":"Playlist not found"}}"""),
+            )
+
+            val result = repository.playlistItems("missing")
+
+            assertEquals(PlaylistItemsPageResult.Failed("not_found"), result)
+        }
+
+    @Test
+    fun `createPlaylist reports Created with the server's new id`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(201).setBody("""{"id":"pl-new"}"""))
+
+            val result = repository.createPlaylist("Road Trip", listOf("trk1"))
+
+            assertEquals(CreatePlaylistResult.Created("pl-new"), result)
+        }
+
+    @Test
+    fun `createPlaylist reports Failed with the upstream error code rather than throwing`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(400)
+                    .setBody("""{"error":{"code":"validation_error","message":"name is required"}}"""),
+            )
+
+            val result = repository.createPlaylist("")
+
+            assertEquals(CreatePlaylistResult.Failed("validation_error"), result)
+        }
+
+    @Test
+    fun `addToPlaylist reports Success on a 204 response`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+
+            val result = repository.addToPlaylist("pl1", listOf("trk1"))
+
+            assertEquals(PlaylistMutationResult.Success, result)
+        }
+
+    @Test
+    fun `addToPlaylist reports Failed with the upstream error code rather than throwing`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val result = repository.addToPlaylist("pl1", listOf("trk1"))
+
+            assertEquals(PlaylistMutationResult.Failed("upstream_auth_expired"), result)
+        }
+
+    @Test
+    fun `removeFromPlaylist reports Success on a 204 response`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setResponseCode(204))
+
+            val result = repository.removeFromPlaylist("pl1", listOf("entry1"))
+
+            assertEquals(PlaylistMutationResult.Success, result)
+        }
+
+    @Test
+    fun `removeFromPlaylist reports Failed with the upstream error code rather than throwing`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val result = repository.removeFromPlaylist("pl1", listOf("entry1"))
+
+            assertEquals(PlaylistMutationResult.Failed("upstream_auth_expired"), result)
+        }
 }

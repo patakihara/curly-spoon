@@ -11,12 +11,17 @@ import net.auralis.app.data.model.AuthUser
 import net.auralis.app.data.model.BookRequest
 import net.auralis.app.data.model.CreateRequestBody
 import net.auralis.app.data.model.HomeResponse
+import net.auralis.app.data.model.JellyfinAddToPlaylistBody
 import net.auralis.app.data.model.JellyfinAlbumsPage
 import net.auralis.app.data.model.JellyfinArtistsPage
 import net.auralis.app.data.model.JellyfinConfig
+import net.auralis.app.data.model.JellyfinCreatePlaylistBody
+import net.auralis.app.data.model.JellyfinCreatePlaylistResponse
 import net.auralis.app.data.model.JellyfinFavoriteResponse
 import net.auralis.app.data.model.JellyfinLoginRequestBody
 import net.auralis.app.data.model.JellyfinLoginResponse
+import net.auralis.app.data.model.JellyfinPlaylistItemsPage
+import net.auralis.app.data.model.JellyfinPlaylistsPage
 import net.auralis.app.data.model.JellyfinSearchResults
 import net.auralis.app.data.model.JellyfinTracksPage
 import net.auralis.app.data.model.Library
@@ -435,6 +440,98 @@ class ApiClient(
      * hands it to a browser or an APK — see routes/jellyfin.ts's file doc comment.
      */
     suspend fun jellyfinTrackStreamUrl(itemId: String): String = apiUrl("/jellyfin/tracks/$itemId/stream").toString()
+
+    // -----------------------------------------------------------------------------
+    // Jellyfin playlists (routes/jellyfin.ts) — Android wave F (music playlists). See
+    // routes/jellyfin.ts's own "Playlists" section comment and `@auralis/jellyfin-client`'s
+    // `schemas/raw.ts` playlists section for the source-verified upstream behaviour these
+    // mirror: add keys on plain item ids, remove keys on the per-entry `playlistItemId`
+    // (never a track id), and a playlist's own item order is fixed server-side (no sort
+    // parameter exists for it).
+    // -----------------------------------------------------------------------------
+
+    /** GET /jellyfin/playlists — paginated, same shape as [jellyfinArtists]/[jellyfinAlbums].
+     * [favoritesOnly]/[id] included for parity with those methods, though no screen in this
+     * wave uses them (a playlist itself carries no favourite state — see [JellyfinPlaylist]'s
+     * doc comment — so [favoritesOnly] would always report nothing back). */
+    suspend fun jellyfinPlaylists(
+        parentId: String? = null,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        sortBy: String? = null,
+        sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
+        id: String? = null,
+    ): JellyfinPlaylistsPage {
+        val params =
+            buildMap {
+                parentId?.let { put("parentId", it) }
+                startIndex?.let { put("startIndex", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+                sortBy?.let { put("sortBy", it) }
+                sortOrder?.let { put("sortOrder", it) }
+                favoritesOnly?.let { put("favoritesOnly", it.toString()) }
+                id?.let { put("ids", it) }
+            }
+        return get("/jellyfin/playlists", params)
+    }
+
+    /** GET /jellyfin/playlists/{playlistId}/items — [playlistId]'s tracks in playlist order,
+     * paginated. No `sortBy`/`sortOrder`/`favoritesOnly` here — see this section's own file
+     * doc comment for why a playlist's order is fixed server-side. */
+    suspend fun jellyfinPlaylistItems(
+        playlistId: String,
+        startIndex: Int? = null,
+        limit: Int? = null,
+    ): JellyfinPlaylistItemsPage {
+        val params =
+            buildMap {
+                startIndex?.let { put("startIndex", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+            }
+        return get("/jellyfin/playlists/$playlistId/items", params)
+    }
+
+    /** POST /jellyfin/playlists — creates a playlist named [name], optionally seeded with
+     * [itemIds], and returns its new id. */
+    suspend fun jellyfinCreatePlaylist(
+        name: String,
+        itemIds: List<String>? = null,
+    ): String = post<JellyfinCreatePlaylistBody, JellyfinCreatePlaylistResponse>(
+        "/jellyfin/playlists",
+        JellyfinCreatePlaylistBody(name, itemIds),
+    ).id
+
+    /** POST /jellyfin/playlists/{playlistId}/items — appends [itemIds] (plain item ids, not
+     * playlist-entry ids) to the end of [playlistId]. 204 on success, so this goes through
+     * [executeNoContent] rather than [post]'s own `execute`, same as [deleteRequest]. */
+    suspend fun jellyfinAddToPlaylist(
+        playlistId: String,
+        itemIds: List<String>,
+    ) {
+        val requestBody =
+            auralisJson.encodeToString(JellyfinAddToPlaylistBody(itemIds))
+                .toRequestBody("application/json".toMediaType())
+        executeNoContent(
+            Request.Builder().url(apiUrl("/jellyfin/playlists/$playlistId/items")).post(requestBody).build(),
+        )
+    }
+
+    /** DELETE /jellyfin/playlists/{playlistId}/items?playlistItemIds=a,b,c — removes the given
+     * playlist entries. [playlistItemIds] must be [net.auralis.app.data.model.JellyfinPlaylistItem
+     * .playlistItemId] values from a prior [jellyfinPlaylistItems] call, **not** track ids — see
+     * that field's own doc comment. Sent comma-separated, mirroring [jellyfinArtists]'s own
+     * [id] parameter's `ids` shape. 204 on success, so this goes through [executeNoContent]. */
+    suspend fun jellyfinRemoveFromPlaylist(
+        playlistId: String,
+        playlistItemIds: List<String>,
+    ) {
+        val url =
+            apiUrl("/jellyfin/playlists/$playlistId/items").newBuilder()
+                .addQueryParameter("playlistItemIds", playlistItemIds.joinToString(","))
+                .build()
+        executeNoContent(Request.Builder().url(url).delete().build())
+    }
 
     private suspend fun apiUrl(path: String): HttpUrl = "${baseUrl().trimEnd('/')}/api/v1$path".toHttpUrl()
 

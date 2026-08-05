@@ -80,6 +80,9 @@ fun MusicLibraryScreen(
                     TextButton(onClick = { navController.navigate(Routes.MUSIC_FAVORITES) }) {
                         Text("Favourites")
                     }
+                    TextButton(onClick = { navController.navigate(Routes.MUSIC_PLAYLISTS) }) {
+                        Text("Playlists")
+                    }
                 },
             )
         },
