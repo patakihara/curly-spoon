@@ -2,7 +2,7 @@
   "name": "auralis",
   "private": true,
   "version": "0.1.0",
-  "description": "Auralis \u2014 a Material 3 Expressive audiobook, podcast and music client for your home media server",
+  "description": "Auralis — a Material 3 Expressive audiobook, podcast and music client for your home media server",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
@@ -33,6 +33,7 @@
     "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
+    "lighthouse": "^13.4.1",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
