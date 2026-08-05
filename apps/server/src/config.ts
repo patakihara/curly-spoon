@@ -36,6 +36,11 @@ const envSchema = z.object({
   // relative to this package (see static.ts's DEFAULT_WEB_DIST_DIR). The
   // Docker image sets this explicitly rather than relying on relative layout.
   WEB_DIST_DIR: z.string().min(1).optional(),
+  // How often the background job that advances `downloading` requests polls the
+  // download clients (see requests/downloadPoller.ts). 30s is frequent enough for a
+  // progress bar to look alive without hammering a self-hosted slskd/qBittorrent
+  // instance that is usually the only caller on its own LAN.
+  AURALIS_DOWNLOAD_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),
 });
 
 export interface AppConfig {
@@ -47,6 +52,8 @@ export interface AppConfig {
   /** Whether the BFF should attempt to serve the built web app. Treat `undefined` as enabled — only tests explicitly set this to `false`. */
   serveWeb?: boolean;
   webDistDir?: string;
+  /** Treat `undefined` as the 30s default — see `requests/downloadPoller.ts`. */
+  downloadPollIntervalMs?: number;
 }
 
 /** Raised when the environment fails validation; `.message` is safe to log or print as-is. */
@@ -75,5 +82,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     nodeEnv: parsed.data.NODE_ENV,
     serveWeb: parsed.data.AURALIS_SERVE_WEB,
     webDistDir: parsed.data.WEB_DIST_DIR,
+    downloadPollIntervalMs: parsed.data.AURALIS_DOWNLOAD_POLL_INTERVAL_MS,
   };
 }

@@ -23,6 +23,7 @@ import {
   createMusicRequestService,
   type MusicRequestService,
 } from './requests/musicRequestService.js';
+import { createDownloadPoller, type DownloadPoller } from './requests/downloadPoller.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -36,6 +37,15 @@ declare module 'fastify' {
      * `pollDownloads`; see that service's file comment for the one deliberate difference
      * from the book pipeline (the `importRequested` terminal status). */
     musicRequests: MusicRequestService;
+    /**
+     * The background job that calls `requests.pollDownloads()` and
+     * `musicRequests.pollDownloads()` on an interval — see `requests/downloadPoller.ts`.
+     * Always decorated so a test can drive it explicitly, but only auto-started when
+     * `config.nodeEnv !== 'test'` (see the `buildServer` body below); `onClose` always
+     * stops it so no interval outlives the app, in production shutdown or in a test that
+     * built one without going through `pnpm start`.
+     */
+    downloadPoller: DownloadPoller;
     /**
      * The same injected upstream `fetch` `abs` and `requests` are built from, exposed
      * directly. `RequestService` deliberately has no "build me one arbitrary provider,
@@ -114,6 +124,30 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
     }),
   );
   app.decorate('upstreamFetch', deps.fetch);
+
+  const downloadPoller = createDownloadPoller({
+    requests: app.requests,
+    musicRequests: app.musicRequests,
+    intervalMs: deps.config.downloadPollIntervalMs ?? 30_000,
+    logger: app.log,
+  });
+  app.decorate('downloadPoller', downloadPoller);
+  // Default-on in production, default-off under test: every route test builds its app
+  // through `testSupport/buildTestApp.ts`, which always sets `nodeEnv: 'test'`, so this
+  // never fires as a side effect of building an app to inject requests into — a stray
+  // `setInterval` from every one of those would otherwise hang Vitest or fire against a
+  // database a test has already closed. A test that genuinely wants the poller running
+  // can still call `app.downloadPoller.start()` itself.
+  if (deps.config.nodeEnv !== 'test') {
+    downloadPoller.start();
+  }
+  // Registered unconditionally (not just when auto-started) so a test that started the
+  // poller itself still gets it stopped on `app.close()`, same as any other resource this
+  // app owns.
+  app.addHook('onClose', (_instance, done) => {
+    downloadPoller.stop();
+    done();
+  });
 
   void app.register(cookiePlugin);
   // The web app is served from this same origin (see static.ts) — there is no
