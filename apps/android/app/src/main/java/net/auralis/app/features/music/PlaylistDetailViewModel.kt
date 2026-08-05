@@ -56,10 +56,9 @@ sealed interface PlaylistDetailEvent {
  *
  * [buildQueueFrom] mirrors [AlbumDetailViewModel.buildQueueFrom] exactly, reusing
  * [albumPlaybackQueue] unmodified: a playlist queue needs nothing an album queue doesn't
- * already provide (a list of tracks, their stream URLs, and one artist/album/artwork triple
- * applied to every queued item) — see that function's own doc comment for why a uniform
- * artist/album/artwork per queue, rather than per track, is already this app's standing
- * choice, not a new gap introduced here. [playlistName] fills the "album name" slot.
+ * already provide (a list of tracks, their stream URLs, an album/artwork pair applied to every
+ * queued item, and each track's own artist with a queue-level fallback) — see that function's
+ * own doc comment for the artist fallback rule. [playlistName] fills the "album name" slot.
  */
 class PlaylistDetailViewModel(
     private val musicRepository: MusicRepository,
@@ -253,6 +252,18 @@ class PlaylistDetailViewModel(
  * [PlaylistDetailViewModel]'s own doc comment for why that function is reused rather than
  * duplicated for playlists. [MusicTrackUi.position] is blank: a playlist has no disc/track
  * numbering of its own, unlike an album (see [MusicTrackUi.position]'s doc comment on
- * [AlbumDetailScreen]'s track rows, which this queue path never renders anyway). */
+ * [AlbumDetailScreen]'s track rows, which this queue path never renders anyway).
+ * [MusicPlaylistEntryUi.artistNames] carries straight through to [MusicTrackUi.artistNames] —
+ * both are already the same "joined per-track `artistNames`, or null" shape, and a playlist is
+ * exactly the case ([albumPlaybackQueue]'s own doc comment) where per-track artist matters most:
+ * `buildQueueFrom`/`appendRemainingToQueue` below both pass `artistName = null` for the
+ * queue-level fallback, since a playlist has no single header artist of its own, so a track with
+ * no `artistNames` of its own degrades to a blank artist line rather than a wrong one. */
 private fun MusicPlaylistEntryUi.toTrackUi(): MusicTrackUi =
-    MusicTrackUi(id = trackId, title = title, position = "", durationSeconds = durationSeconds)
+    MusicTrackUi(
+        id = trackId,
+        title = title,
+        position = "",
+        durationSeconds = durationSeconds,
+        artistNames = artistNames,
+    )

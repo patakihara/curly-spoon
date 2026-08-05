@@ -39,6 +39,15 @@ data class MusicTrackUi(
      * don't exercise — same reasoning as [net.auralis.app.data.model.JellyfinArtist.favorite]'s
      * doc comment. */
     val favorite: Boolean = false,
+    /** This track's own `Jellyfin.artistNames`, pre-joined (", "-separated) the same way
+     * [MusicPlaylistEntryUi.artistNames]/`MusicSearchTrackUi.artistNames` already join theirs —
+     * `null` when Jellyfin never populated it for this track. Fixes a real bug: every queued
+     * track used to carry the *album's* artist regardless of its own, so a compilation or
+     * various-artists album credited the wrong person on the lock screen for every track but
+     * one. See [albumPlaybackQueue]'s own doc comment for the fallback rule this feeds. Defaults
+     * `null` for the same "don't touch every pre-existing test construction" reason [favorite]
+     * does. */
+    val artistNames: String? = null,
 )
 
 sealed interface AlbumDetailUiState {
@@ -357,15 +366,20 @@ class AlbumDetailViewModel(
  * missing its own entry is dropped ([mapNotNull]) rather than played with a blank URI — total,
  * matching every other queue/browse builder in this app degrading rather than throwing.
  *
- * [artistName]/[albumName]/[artworkUrl] are the *album's* own values, applied to every track in
- * the queue — there is no separate per-track artist/artwork concept here, matching
+ * [albumName]/[artworkUrl] are the *album's* (or playlist's) own values, applied to every track
+ * in the queue — there is no per-track album/artwork concept, matching
  * [AlbumDetailUiState.Loaded]'s own header fields and
  * `apps/web/src/features/music/MusicAlbumPage.tsx`'s identical choice to display the page-level
- * artist/cover for whichever track is playing, not a per-track one Jellyfin's `/tracks` response
- * doesn't reliably carry
- * anyway (a compilation album's tracks can each have their own `artistNames`, but this app has no
- * UI yet that would make a per-track artist visible, so there's nothing to lose by not reading
- * it). `mediaId` is prefixed `track:` — distinct from [net.auralis.app.playback.BrowseIds]'s
+ * cover for whichever track is playing. **Artist is different**: each queued item's `artist`
+ * prefers [MusicTrackUi.artistNames] — the track's own Jellyfin `artistNames`, already joined —
+ * and only falls back to the queue-level [artistName] when a track carries none of its own. A
+ * compilation or various-artists album (or a multi-artist playlist) has tracks whose own artist
+ * genuinely differs from the album/playlist header; crediting every track to the header artist
+ * was a real bug (every lock-screen/notification/Android-Auto row for that track was wrong), not
+ * a deliberate simplification — see [MusicTrackUi.artistNames]'s own doc comment. An empty
+ * per-track artist is treated as worse than a slightly-too-broad one, hence the fallback rather
+ * than leaving the line blank. `mediaId` is prefixed `track:` — distinct from
+ * [net.auralis.app.playback.BrowseIds]'s
  * `book:`/`episode:` schemes, matching [net.auralis.app.playback.PlaybackItemResolver]'s own
  * `episodeMediaId` — even though nothing resolves a `track:` id back to a track today (Android
  * Auto browsing of music is a later wave), so collisions with a book/episode id already playing
@@ -384,7 +398,7 @@ fun albumPlaybackQueue(
             mediaId = "track:${track.id}",
             uri = streamUrl,
             title = track.title,
-            artist = artistName,
+            artist = track.artistNames ?: artistName,
             subtitle = albumName,
             artworkUrl = artworkUrl,
             startPositionMs = 0L,
@@ -398,6 +412,7 @@ private fun JellyfinTrack.toTrackUi(): MusicTrackUi =
         position = trackPosition(discNumber, trackNumber),
         durationSeconds = (durationSeconds ?: 0.0).roundToLong(),
         favorite = favorite,
+        artistNames = artistNames.joinToString(", ").takeIf { it.isNotBlank() },
     )
 
 private fun trackPosition(

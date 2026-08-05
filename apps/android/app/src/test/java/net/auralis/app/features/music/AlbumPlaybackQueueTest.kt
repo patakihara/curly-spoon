@@ -124,4 +124,75 @@ class AlbumPlaybackQueueTest {
         assertNull(queue.single().artist)
         assertNull(queue.single().artworkUrl)
     }
+
+    // Regression coverage for the "every queued track shows the album artist" bug: a
+    // compilation/various-artists album has tracks whose own `artistNames` genuinely differs
+    // from the album-level `artistName` passed in. Deliberately distinct from `tracks`/
+    // `streamUrls` above (which are all-Radiohead) so this can't pass with the fix reverted —
+    // per this project's own "no tautologies" rule, a fixture where track and album artist
+    // happen to agree would pass either way.
+    private val compilationTracks =
+        listOf(
+            MusicTrackUi(
+                id = "va1",
+                title = "Immigrant Song",
+                position = "1",
+                durationSeconds = 146L,
+                artistNames = "Led Zeppelin",
+            ),
+            MusicTrackUi(
+                id = "va2",
+                title = "Kashmir",
+                position = "2",
+                durationSeconds = 517L,
+                artistNames = null, // Jellyfin never populated per-track artists for this one.
+            ),
+        )
+    private val compilationStreamUrls =
+        mapOf(
+            "va1" to "https://bff.example.test/api/v1/jellyfin/tracks/va1/stream",
+            "va2" to "https://bff.example.test/api/v1/jellyfin/tracks/va2/stream",
+        )
+
+    @Test
+    fun `a track's own artist is used over the album-level artist when present`() {
+        val queue =
+            albumPlaybackQueue(
+                tracks = compilationTracks,
+                streamUrls = compilationStreamUrls,
+                artistName = "Various Artists",
+                albumName = "Best Of Rock",
+                artworkUrl = null,
+            )
+
+        assertEquals("Led Zeppelin", queue.first { it.mediaId == "track:va1" }.artist)
+    }
+
+    @Test
+    fun `a track with no artist of its own falls back to the album-level artist`() {
+        val queue =
+            albumPlaybackQueue(
+                tracks = compilationTracks,
+                streamUrls = compilationStreamUrls,
+                artistName = "Various Artists",
+                albumName = "Best Of Rock",
+                artworkUrl = null,
+            )
+
+        assertEquals("Various Artists", queue.first { it.mediaId == "track:va2" }.artist)
+    }
+
+    @Test
+    fun `both album-level and per-track artist absent degrades to null, not a crash`() {
+        val queue =
+            albumPlaybackQueue(
+                tracks = listOf(compilationTracks[1]), // artistNames = null
+                streamUrls = compilationStreamUrls,
+                artistName = null,
+                albumName = "Best Of Rock",
+                artworkUrl = null,
+            )
+
+        assertNull(queue.single().artist)
+    }
 }
