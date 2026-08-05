@@ -23,6 +23,7 @@ export type {
   Track,
   Playlist,
   PlaylistItem,
+  Library,
   LibraryPage,
   SearchResults,
   UserProfile,

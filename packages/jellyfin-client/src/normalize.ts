@@ -18,6 +18,7 @@ import type {
 import type {
   Album,
   Artist,
+  Library,
   LoginResult,
   Lyrics,
   Playlist,
@@ -132,6 +133,14 @@ export function normalizePlaylistItem(raw: RawItem): PlaylistItem {
   return {
     playlistItemId: raw.PlaylistItemId ?? raw.Id,
     track: normalizeTrack(raw),
+  };
+}
+
+export function normalizeLibrary(raw: RawItem): Library {
+  return {
+    id: raw.Id,
+    name: raw.Name ?? '(unnamed library)',
+    collectionType: raw.CollectionType ?? null,
   };
 }
 

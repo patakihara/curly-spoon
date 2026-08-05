@@ -274,6 +274,107 @@ describe('JellyfinClient.getPlaylists', () => {
   });
 });
 
+describe('JellyfinClient.getLibraries', () => {
+  it('GETs /Library/MediaFolders with the auth header and normalises each folder', async () => {
+    const fetchFn = router({
+      'GET /Library/MediaFolders': ({ init }) => {
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        return json({
+          Items: [
+            { Id: 'lib-music', Name: 'Music', CollectionType: 'music' },
+            { Id: 'lib-movies', Name: 'Movies', CollectionType: 'movies' },
+          ],
+          TotalRecordCount: 2,
+          StartIndex: 0,
+        });
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    const libraries = await client.getLibraries();
+
+    expect(libraries).toEqual([
+      { id: 'lib-music', name: 'Music', collectionType: 'music' },
+      { id: 'lib-movies', name: 'Movies', collectionType: 'movies' },
+    ]);
+  });
+
+  it('defaults a missing CollectionType to null rather than dropping the folder', async () => {
+    const fetchFn = router({
+      'GET /Library/MediaFolders': () =>
+        json({ Items: [{ Id: 'lib-1', Name: 'Odds and ends' }], TotalRecordCount: 1 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const libraries = await client.getLibraries();
+
+    expect(libraries[0]?.collectionType).toBeNull();
+  });
+
+  it('surfaces an upstream 403 as a typed forbidden JellyfinError — the expected outcome for a non-admin account', async () => {
+    const fetchFn = router({
+      'GET /Library/MediaFolders': () => new Response(null, { status: 403 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.getLibraries().catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('forbidden');
+  });
+});
+
+describe('JellyfinClient.refreshItem', () => {
+  it('POSTs /Items/:itemId/Refresh with the auth header and no body, resolving on 204', async () => {
+    const fetchFn = router({
+      'POST /Items/lib-music/Refresh': ({ init }) => {
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        expect(init?.body).toBeUndefined();
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.refreshItem('lib-music')).resolves.toBeUndefined();
+  });
+
+  it('surfaces an upstream 5xx as a typed JellyfinError whose message never carries the token', async () => {
+    const fetchFn = router({
+      'POST /Items/lib-music/Refresh': () =>
+        new Response('server exploded, ApiKey=tok-should-not-leak', { status: 500 }),
+    });
+    const client = makeClient(fetchFn, 'super-secret-token');
+
+    const err = await client.refreshItem('lib-music').catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('upstream_error');
+    expect((err as JellyfinError).message).not.toContain('super-secret-token');
+  });
+
+  it('surfaces an upstream 403 as a typed forbidden JellyfinError — the expected outcome for a non-admin account', async () => {
+    const fetchFn = router({
+      'POST /Items/lib-music/Refresh': () => new Response(null, { status: 403 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.refreshItem('lib-music').catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('forbidden');
+  });
+
+  it('404s for an unknown item id', async () => {
+    const fetchFn = router({
+      'POST /Items/missing/Refresh': () => new Response(null, { status: 404 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.refreshItem('missing').catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('not_found');
+  });
+});
+
 describe('JellyfinClient.getPlaylistItems', () => {
   it('GETs /Playlists/:id/Items and normalises each row with its playlistItemId, in response order', async () => {
     const fetchFn = router({

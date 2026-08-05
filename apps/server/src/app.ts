@@ -32,8 +32,9 @@ declare module 'fastify' {
     jellyfin: JellyfinUpstreamFactory;
     loginRateLimiter: RateLimiter;
     requests: RequestService;
-    /** Music's counterpart to `requests` — search, create, list and a `grab` that stops at
-     * `downloading`; see that service's file comment for why it has no `pollDownloads`. */
+    /** Music's counterpart to `requests` — search, create, list, `grab` and
+     * `pollDownloads`; see that service's file comment for the one deliberate difference
+     * from the book pipeline (the `importRequested` terminal status). */
     musicRequests: MusicRequestService;
     /**
      * The same injected upstream `fetch` `abs` and `requests` are built from, exposed
@@ -108,6 +109,7 @@ export function buildServer(deps: BuildServerDeps): FastifyInstance {
       db: deps.db,
       sessionSecret: deps.config.sessionSecret,
       fetch: deps.fetch,
+      jellyfinFor: (userId) => app.jellyfin.forUser(userId),
       logger: app.log,
     }),
   );

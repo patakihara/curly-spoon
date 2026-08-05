@@ -7,6 +7,13 @@ import {
   FAKE_JELLYFIN_CREDENTIALS,
 } from '../testSupport/fakes/fakeJellyfin.js';
 import { FAKE_NON_ADMIN_CREDENTIALS } from '../testSupport/fakes/fakeAbs.js';
+import { setProviderConfig } from '../db/providerConfigRepo.js';
+import {
+  createFakeSlskdUpstream,
+  FAKE_SLSKD_API_KEY,
+  FAKE_SLSKD_BASE_URL,
+} from '../testSupport/fakes/fakeSlskd.js';
+import type { MusicCandidate } from '../requests/types.js';
 
 /** Signs in the Auralis session (ABS fake), leaving Jellyfin itself unconfigured. */
 async function authedApp(): Promise<{ app: FastifyInstance; cookie: string }> {
@@ -1024,6 +1031,97 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
       for (const value of Object.values(response.headers)) {
         expect(String(value)).not.toMatch(/fake-jellyfin-token-/);
       }
+    }
+  });
+
+  it("a music request's Jellyfin rescan (getLibraries + refreshItem, driven through pollDownloads) never leaks the token into GET /music-requests", async () => {
+    // Not reachable through any route sweep above — `musicRequestService.ts`'s rescan
+    // path runs inside `pollDownloads()`, which (mirroring the book pipeline's own
+    // `pollDownloads`) is not itself exposed as a route. Driving it directly through the
+    // `app.musicRequests` decorator, then reading the result back over HTTP, is what
+    // actually exercises the real `JellyfinClient` against the real fake upstream end to
+    // end — the `client.test.ts` unit tests already prove the client itself never embeds
+    // the token in an error message; this proves the same holds once a real request row
+    // carries that outcome out through the BFF.
+    const slskd = createFakeSlskdUpstream();
+    const { app, sessionSecret } = buildTestApp({ providerFetch: slskd.fetch });
+    const cookie = await loginTestUser(app);
+    const jellyfinLogin = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    expect(jellyfinLogin.statusCode).toBe(200);
+    setProviderConfig(
+      app.db,
+      {
+        id: 'slskd',
+        kind: 'music',
+        enabled: true,
+        baseUrl: FAKE_SLSKD_BASE_URL,
+        options: {},
+        secret: FAKE_SLSKD_API_KEY,
+      },
+      sessionSecret,
+    );
+    const candidate: MusicCandidate = {
+      guid: JSON.stringify({ username: 'peer-a', filename: 'Artist/Album/Track.mp3', size: 4000 }),
+      providerId: 'slskd',
+      sourceName: 'peer-a',
+      title: 'Track',
+      artist: 'Artist',
+      album: 'Album',
+      sizeBytes: 4000,
+      bitrateKbps: 320,
+      format: 'mp3',
+    };
+
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/music-requests',
+      payload: { candidate },
+      cookies: { auralis_session: cookie },
+    });
+    const requestId = created.json().request.id as string;
+    const grabbed = await app.inject({
+      method: 'POST',
+      url: `/api/v1/music-requests/${requestId}/grab`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(grabbed.json().request.status).toBe('downloading');
+    const { username, id } = JSON.parse(grabbed.json().request.downloadHandle as string) as {
+      username: string;
+      id: string;
+    };
+    // Moves the fake transfer to slskd's real completed-and-succeeded state string — see
+    // `slskd.ts`'s `mapTransferState`, which this fake's field names mirror exactly.
+    slskd.setTransferState(username, id, { state: 'Completed, Succeeded' });
+
+    // Drives the rescan directly — `pollDownloads` (like the book pipeline's own) is not
+    // itself routed; see this test's own comment above.
+    await app.musicRequests.pollDownloads();
+
+    const listed = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music-requests',
+      cookies: { auralis_session: cookie },
+    });
+    const request = listed.json().requests.find((r: { id: string }) => r.id === requestId) as {
+      status: string;
+      statusDetail: string | null;
+    };
+    // Confirms the rescan actually ran and succeeded — not a false-positive sweep over a
+    // request that never reached Jellyfin at all, or one whose refresh 404'd against the
+    // wrong library id (which `statusDetail` would report instead of `null`) — mirrors
+    // this file's "no route leaks the token" sweep's own point of checking a real
+    // 200/204 path, not a trivially-passing failure.
+    expect(request.status).toBe('importRequested');
+    expect(request.statusDetail).toBeNull();
+
+    expect(listed.body).not.toMatch(/fake-jellyfin-token-/);
+    for (const value of Object.values(listed.headers)) {
+      expect(String(value)).not.toMatch(/fake-jellyfin-token-/);
     }
   });
 

@@ -28,6 +28,7 @@ import {
   normalizeAlbum,
   normalizeArtist,
   normalizeFavoriteState,
+  normalizeLibrary,
   normalizeLogin,
   normalizeLyrics,
   normalizePlaylist,
@@ -37,6 +38,7 @@ import {
 import type {
   Album,
   Artist,
+  Library,
   LibraryPage,
   LoginResult,
   Lyrics,
@@ -268,6 +270,77 @@ export class JellyfinClient {
       total: page.total,
       startIndex: page.startIndex,
     };
+  }
+
+  // ---------------------------------------------------------------------
+  // Library scan/refresh — `Jellyfin.Api/Controllers/LibraryController.cs`'s
+  // `GetMediaFolders` and `Jellyfin.Api/Controllers/ItemRefreshController.cs`'s
+  // `RefreshItem`. Both verified directly against the real server source (not memory),
+  // 2026-08-05, for the music-request pipeline's post-download library rescan — the
+  // Jellyfin analogue of `@auralis/abs-client`'s `scanLibrary`.
+  //
+  // **Both routes require an elevated (administrator) Jellyfin account** —
+  // `[Authorize(Policy = Policies.RequiresElevation)]` on each controller. A non-admin
+  // account's token gets a 403, surfaced as `JellyfinError` with `code: 'forbidden'` —
+  // this is an expected, not exceptional, failure mode for whichever account a user
+  // connects Auralis with, and callers must handle it as a normal outcome rather than a
+  // bug.
+  //
+  // `RefreshItem` (`POST /Items/{itemId}/Refresh`) is genuinely fire-and-forget:
+  // `ItemRefreshController.RefreshItem` calls `IProviderManager.QueueRefresh(itemId,
+  // options, RefreshPriority.High)` and returns `NoContent()` immediately, never awaiting
+  // the work. `QueueRefresh` (`MediaBrowser.Providers/Manager/ProviderManager.cs`) only
+  // enqueues onto an internal `PriorityQueue` and starts a detached background worker
+  // (`Task.Run(StartProcessingRefreshQueue)`) if one isn't already running — the HTTP
+  // response carries no indication of when, or whether, the refresh actually finishes.
+  // `IProviderManager.GetRefreshQueue()` exists server-side (a snapshot of queued item
+  // ids) but is never wired to any controller, so **there is no way to observe scan
+  // progress or completion through the Jellyfin API at all** for this route. Calling it
+  // again while a refresh for the same item is already queued/running is harmless — it is
+  // a priority queue, not a single-flight lock, so a second call just re-enqueues; nothing
+  // here needs to guard against that.
+  //
+  // `RefreshItem` can be scoped to exactly one library folder — pass a `Library.id` from
+  // `getLibraries()` rather than the whole server. Confirmed by reading
+  // `ProviderManager.RefreshItem`'s `CollectionFolder` branch: refreshing a library-folder
+  // item calls `RefreshCollectionFolderChildren` (its physical child folders) and then
+  // `Folder.ValidateChildren` on each, which is what actually discovers files added to disk
+  // since the last scan — so scoping to the music library's own id still picks up a new
+  // download, it does not just refresh the folder's own metadata. This is why
+  // `getLibraries` exists here: without it, the only alternative is the whole-server
+  // `POST /Library/Refresh` (`LibraryController.RefreshLibrary`), which this client
+  // deliberately does not implement — verified to be equally fire-and-forget
+  // (`ILibraryManager.ValidateMediaLibrary` just calls
+  // `_taskManager.CancelIfRunningAndQueue<RefreshMediaLibraryTask>()` and returns), but
+  // needlessly rescans every library the server hosts (movies, TV, photos, ...) to import
+  // one music file.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Lists the server's top-level library folders. Used to find the music library's own id
+   * so a rescan (`refreshItem`) can be scoped to it — see this section's file comment for
+   * the verified endpoint behaviour and the admin-account requirement.
+   */
+  async getLibraries(): Promise<Library[]> {
+    const raw = await this.http.requestJson('/Library/MediaFolders', {
+      schema: rawQueryResultSchema,
+    });
+    return (raw.Items ?? []).map(normalizeLibrary);
+  }
+
+  /**
+   * Queues a metadata/content refresh for `itemId` — pass a library folder's id (from
+   * `getLibraries()`) to rescan that whole library, picking up newly downloaded files. See
+   * this section's file comment for the verified request/response shape, the admin-account
+   * requirement, and — most importantly — that this call cannot report when or whether the
+   * refresh it queues actually completes.
+   */
+  async refreshItem(itemId: string): Promise<void> {
+    await this.http.requestJson(`/Items/${encodeURIComponent(itemId)}/Refresh`, {
+      method: 'POST',
+      schema: z.void(),
+      retryable: false,
+    });
   }
 
   // ---------------------------------------------------------------------

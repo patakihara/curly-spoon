@@ -172,6 +172,14 @@ export const rawBaseItemDtoSchema = z
      * track appear twice in one playlist and be removed once — see `client.ts`'s
      * `removeFromPlaylist` doc comment. */
     PlaylistItemId: z.string().nullable().optional(),
+    /** `BaseItemDto.CollectionType` — populated on a library's own top-level folder item
+     * (the rows `GET /Library/MediaFolders` returns), absent on ordinary artist/album/track
+     * items. A `CollectionType?` enum serialized as its lowercase name (`'music'`,
+     * `'movies'`, `'books'`, ...) per this package's standard `JsonStringEnumConverter`
+     * convention (see `http.ts`'s file comment) — verified directly against
+     * `Jellyfin.Data/Enums/CollectionType.cs`, 2026-08-05. See `client.ts`'s `getLibraries`
+     * doc comment for the controller this backs. */
+    CollectionType: z.string().nullable().optional(),
   })
   .passthrough();
 

@@ -1,30 +1,29 @@
 /**
  * Orchestrates the music-request pipeline: list/search providers, persist a chosen
- * candidate as a request, and hand it to slskd. Deliberately **not** a full mirror of
- * `requestService.ts` — it has no `pollDownloads`, and `grab()` stops at `downloading`
- * rather than following through to `importing`/`completed`. One structural reason, not a
- * scope shortcut: `requestService.ts`'s `grab()` finishes a completed download by calling
- * `tryRescan`, hard-wired to `deps.absFor` (Audiobookshelf) and a book library lookup.
- * There is no Jellyfin equivalent anywhere in this codebase — no `scanLibrary`, no
- * rescan-after-download capability at all — and building one lives in
- * `packages/jellyfin-client`, a different package with its own review surface. Forcing
- * music through the book `grab()`/`pollOne()` shape as-is would either silently do nothing
- * useful after a download finished, or invent a Jellyfin capability under a wave whose job
- * was clearing the persistence blocker. So: `create`/`list`/`approve`/`reject`/`retry` are
- * full parity with the book pipeline (they are pure state-table moves, and
- * `requestStatus.ts`'s `pending -> approved -> rejected` corner means exactly the same
- * thing for a track as for a book); `grab()` calls the real `slskd.ts` `add()` and lands on
- * `downloading`, making that half of the provider genuinely reachable over HTTP for the
- * first time; and status polling through to completion is left for whoever adds the
- * Jellyfin rescan capability this needs.
+ * candidate as a request, hand it to slskd, and — once slskd reports the transfer done —
+ * ask Jellyfin to pick the file up. Structurally a mirror of `requestService.ts` now:
+ * `grab()` lands on `downloading` exactly as before, and `pollDownloads()`/`pollOne()`
+ * carry a request the rest of the way, the same shape as the book pipeline's own polling.
  *
- * The schema half of the blocker (`docs/ROADMAP.md` §9's "Create and list are deliberately
- * absent") is migration 4 in `db/migrations.ts` — a `media_type` column on the shared
- * `requests` table, not a sibling table; see that migration's own comment for why.
+ * The one deliberate divergence is the terminal state `pollOne` lands on. Book's `pollOne`
+ * finishes at `completed` after calling Audiobookshelf's `scanLibrary`; music's finishes at
+ * `importRequested` after calling `JellyfinClient.refreshItem`, a **different** terminal
+ * status, not just a different call. That call is verified fire-and-forget with no
+ * completion signal at all (see `refreshItem`'s doc comment in
+ * `packages/jellyfin-client/src/client.ts`) — Auralis has no way to learn whether Jellyfin
+ * actually found the file. Calling that `completed` would assert something this codebase
+ * cannot know; `requestStatus.ts`'s header comment has the full reasoning for why
+ * `importRequested` exists as its own terminal status instead of reusing `completed`.
+ *
+ * The schema half of the original persistence blocker (`docs/ROADMAP.md` §9's "Create and
+ * list are deliberately absent") is migration 4 in `db/migrations.ts` — a `media_type`
+ * column on the shared `requests` table, not a sibling table; see that migration's own
+ * comment for why.
  */
 
 import { randomUUID } from 'node:crypto';
 import type { FetchLike } from '@auralis/abs-client';
+import type { JellyfinClient } from '@auralis/jellyfin-client';
 import type { Db } from '../db/connection.js';
 import { listProviderConfigs } from '../db/providerConfigRepo.js';
 import { getApprovalPolicy, getMusicCategory, getMusicSavePath } from '../db/appSettingsRepo.js';
@@ -39,6 +38,7 @@ import { canTransition, type RequestStatus } from './requestStatus.js';
 import { RequestNotFoundError, RequestTransitionError } from './requestService.js';
 import {
   ProviderError,
+  type DownloadStatus,
   type MusicCandidate,
   type MusicRequestProvider,
   type MusicSearchQuery,
@@ -51,6 +51,9 @@ export interface MusicRequestServiceDeps {
   db: Db;
   sessionSecret: string;
   fetch: FetchLike;
+  /** Builds a `JellyfinClient` for a user — used for the post-download library rescan,
+   * mirrored from `requestService.ts`'s `absFor`. */
+  jellyfinFor: (userId: string) => JellyfinClient;
   /** Optional structured logger; default is a no-op — mirrors `requestService.ts`'s. */
   logger?: { info(o: unknown, m?: string): void; warn(o: unknown, m?: string): void };
 }
@@ -80,9 +83,13 @@ export interface MusicRequestService {
   reject(id: string): MediaRequest;
   retry(id: string): MediaRequest;
   /** Enqueues the request's already-chosen candidate with its owning provider and moves
-   * the request to `downloading`. Stops there — see this file's header comment for why
-   * there is no further polling. */
+   * the request to `downloading`. `pollDownloads` carries it the rest of the way. */
   grab(id: string): Promise<MediaRequest>;
+  /** Advances every `downloading` music request one step: records progress, fails it on
+   * error/vanished, or — once the provider reports the transfer done — asks Jellyfin to
+   * rescan and lands on `importRequested`. Mirrors `requestService.ts`'s `pollDownloads`;
+   * see this file's header comment for the one deliberate difference in terminal state. */
+  pollDownloads(): Promise<void>;
 }
 
 type Logger = NonNullable<MusicRequestServiceDeps['logger']>;
@@ -288,6 +295,115 @@ export function createMusicRequestService(deps: MusicRequestServiceDeps): MusicR
     }
   }
 
+  /**
+   * Asks Jellyfin to rescan the music library, scoped to whichever library
+   * `JellyfinClient.getLibraries()` reports as `collectionType === 'music'` — mirrors
+   * `requestService.ts`'s `tryRescan` finding the book library by `mediaType === 'book'`.
+   * Returns a human-readable note when it could not, `null` on a plain success — "success"
+   * here meaning only "the request was accepted", per this file's header comment; there is
+   * no stronger claim this function is in a position to make. Every failure (no music
+   * library found, `getLibraries`/`refreshItem` throwing — including the expected 403 a
+   * non-admin Jellyfin account gets, see `refreshItem`'s doc comment) is caught here rather
+   * than propagated: a rescan that could not be started must not make `pollOne` lose the
+   * request or leave it stuck in `downloading` — see this function's caller.
+   */
+  async function tryRescan(userId: string): Promise<string | null> {
+    try {
+      const jellyfin = deps.jellyfinFor(userId);
+      const libraries = await jellyfin.getLibraries();
+      const musicLibrary = libraries.find((library) => library.collectionType === 'music');
+      if (!musicLibrary) {
+        return 'downloaded, but no music library was found to rescan';
+      }
+      await jellyfin.refreshItem(musicLibrary.id);
+      return null;
+    } catch (err) {
+      logger.warn({ err }, 'post-download library rescan failed');
+      return 'downloaded, but the library rescan failed to start';
+    }
+  }
+
+  /** One request's worth of `pollDownloads` — mirrors `requestService.ts`'s `pollOne`
+   * state-by-state, with the `completed`/`importRequested` divergence this file's header
+   * comment explains. */
+  async function pollOne(request: MediaRequest, handle: string): Promise<void> {
+    const provider = buildProviders().find((p) => p.id === request.clientId);
+    if (!provider) {
+      updateRequest(deps.db, request.id, {
+        status: 'failed',
+        statusDetail: `music provider "${String(request.clientId)}" is no longer configured`,
+      });
+      return;
+    }
+
+    let status: DownloadStatus;
+    try {
+      status = await provider.status(handle);
+    } catch (err) {
+      if (err instanceof ProviderError) {
+        updateRequest(deps.db, request.id, { status: 'failed', statusDetail: err.message });
+        return;
+      }
+      throw err;
+    }
+
+    if (status.state === 'completed' || status.state === 'seeding') {
+      // Idempotence: same reasoning as `requestService.ts`'s `pollOne` — this write moves
+      // the row out of `downloading` *before* the rescan is awaited, so a `pollDownloads`
+      // call whose `downloading` selection runs after this write lands cannot rescan the
+      // same completed transfer twice.
+      updateRequest(deps.db, request.id, { status: 'importing', progress: status.progress });
+      const rescanNote = await tryRescan(request.userId);
+      updateRequest(deps.db, request.id, {
+        status: 'importRequested',
+        statusDetail: rescanNote,
+        progress: 1,
+      });
+      return;
+    }
+
+    if (status.state === 'error') {
+      updateRequest(deps.db, request.id, {
+        status: 'failed',
+        statusDetail: status.errorMessage ?? 'the download client reported an error',
+        progress: status.progress,
+      });
+      return;
+    }
+
+    if (status.state === 'missing') {
+      updateRequest(deps.db, request.id, {
+        status: 'failed',
+        statusDetail: 'the download vanished from the download client',
+      });
+      return;
+    }
+
+    // 'queued' | 'downloading' | 'paused' — still in progress, just record where it stands.
+    updateRequest(deps.db, request.id, { progress: status.progress });
+  }
+
+  async function pollDownloads(): Promise<void> {
+    // `mediaType: 'music'` is load-bearing, not decorative — same reasoning as
+    // `requestService.ts`'s own `pollDownloads`: without it, a book request reaching
+    // `downloading` would be picked up here too, this loop would look for its download
+    // client's id among `buildProviders()` (music-only providers), find nothing, and fail
+    // it with "music provider is not configured" — silently and wrongly.
+    const inProgress = listRequestRows(deps.db, {
+      status: 'downloading',
+      mediaType: 'music',
+    }).filter((r): r is MediaRequest & { downloadHandle: string } => r.downloadHandle !== null);
+
+    for (const request of inProgress) {
+      try {
+        await pollOne(request, request.downloadHandle);
+      } catch (err) {
+        // One request's failure must not abort the loop for the others.
+        logger.warn({ requestId: request.id, err }, 'pollDownloads: failed to poll a request');
+      }
+    }
+  }
+
   return {
     listProviders,
     searchMusic,
@@ -297,5 +413,6 @@ export function createMusicRequestService(deps: MusicRequestServiceDeps): MusicR
     reject,
     retry,
     grab,
+    pollDownloads,
   };
 }

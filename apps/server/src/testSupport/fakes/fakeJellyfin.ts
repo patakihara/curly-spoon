@@ -1,10 +1,10 @@
 /**
  * A minimal, in-memory fake of the Jellyfin REST API surface `@auralis/jellyfin-client`
- * uses — auth, `/Items` browsing/search, lyrics (`/Audio/:id/Lyrics`), and the two
- * token-bearing byte routes (`/Audio/:id/stream`, `/Items/:id/Images/Primary`). Mirrors
- * `fakeAbs.ts`'s shape: a
- * `fetch`-compatible function, keyed by a distinct base URL so `buildTestApp.ts` can
- * route by origin, no real socket.
+ * uses — auth, `/Items` browsing/search, lyrics (`/Audio/:id/Lyrics`), library refresh
+ * (`/Library/MediaFolders`, `/Items/:id/Refresh` — the music-request rescan capability),
+ * and the two token-bearing byte routes (`/Audio/:id/stream`, `/Items/:id/Images/Primary`).
+ * Mirrors `fakeAbs.ts`'s shape: a `fetch`-compatible function, keyed by a distinct base URL
+ * so `buildTestApp.ts` can route by origin, no real socket.
  *
  * Data is small and inline (not a JSON fixture directory like `fakeAbs.ts`'s) —
  * deliberately: this fake exists to exercise the BFF's routes/schemas/error-mapping,
@@ -20,6 +20,9 @@ import { serveRangeableBytes } from './rangeBytes.js';
 export const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
 export const FAKE_JELLYFIN_CREDENTIALS = { username: 'nova', password: 'stardust1' };
 export const FAKE_JELLYFIN_BAD_CREDENTIALS = { username: 'nova', password: 'wrong-password' };
+/** The id `GET /Library/MediaFolders` reports for this fake's one music library — the
+ * value a real `musicRequestService.ts` rescan passes to `POST /Items/:id/Refresh`. */
+export const FAKE_JELLYFIN_MUSIC_LIBRARY_ID = 'lib-fake-music';
 
 interface RawUserData {
   IsFavorite: boolean;
@@ -463,6 +466,25 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
         playlist.entries = playlist.entries.filter((e) => !entryIds.includes(e.entryId));
         return new Response(null, { status: 204 });
       }
+    }
+
+    // ---- Library refresh — the music-request rescan wave. Mirrors the real
+    // `GET /Library/MediaFolders` / `POST /Items/{itemId}/Refresh` shapes verified in
+    // `@auralis/jellyfin-client`'s `client.ts` (same section comment has the source
+    // citations): one music library folder, and a refresh call that just 204s — this fake
+    // has no background worker to simulate, since the real endpoint never reports
+    // completion either. ----
+    if (method === 'GET' && path === '/Library/MediaFolders') {
+      return json({
+        Items: [{ Id: FAKE_JELLYFIN_MUSIC_LIBRARY_ID, Name: 'Music', CollectionType: 'music' }],
+        TotalRecordCount: 1,
+        StartIndex: 0,
+      });
+    }
+    if (method === 'POST' && parts[0] === 'Items' && parts[1] && parts[2] === 'Refresh') {
+      const itemId = parts[1];
+      if (itemId !== FAKE_JELLYFIN_MUSIC_LIBRARY_ID) return notFound();
+      return new Response(null, { status: 204 });
     }
 
     // ---- Library browsing / search — one endpoint for all three item kinds ----

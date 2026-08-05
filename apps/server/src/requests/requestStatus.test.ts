@@ -17,6 +17,7 @@ describe('canTransition', () => {
     ['downloading', 'importing'],
     ['downloading', 'failed'],
     ['importing', 'completed'],
+    ['importing', 'importRequested'],
     ['importing', 'failed'],
     ['failed', 'searching'],
   ];
@@ -48,6 +49,18 @@ describe('canTransition', () => {
     ['rejected', 'importing'],
     ['rejected', 'completed'],
     ['rejected', 'failed'],
+    // Every transition out of importRequested — a music request's own honest terminal
+    // state (see requestStatus.ts's file comment): Jellyfin's library refresh has no
+    // completion signal, so unlike a book's `completed`, nothing ever confirms this
+    // request further and it stays put, exactly like `completed`/`rejected`.
+    ['importRequested', 'pending'],
+    ['importRequested', 'approved'],
+    ['importRequested', 'searching'],
+    ['importRequested', 'downloading'],
+    ['importRequested', 'importing'],
+    ['importRequested', 'completed'],
+    ['importRequested', 'failed'],
+    ['importRequested', 'rejected'],
     // Backward moves within the working pipeline.
     ['downloading', 'searching'],
     ['importing', 'downloading'],
@@ -56,6 +69,7 @@ describe('canTransition', () => {
     ['failed', 'downloading'],
     ['failed', 'importing'],
     ['failed', 'completed'],
+    ['failed', 'importRequested'],
   ];
 
   for (const [from, to] of illegal) {
@@ -78,6 +92,10 @@ describe('isTerminal', () => {
 
   it('treats rejected as terminal', () => {
     expect(isTerminal('rejected')).toBe(true);
+  });
+
+  it('treats importRequested as terminal — see requestStatus.ts for why a music request rests here', () => {
+    expect(isTerminal('importRequested')).toBe(true);
   });
 
   it('does not treat failed as terminal, because retry via searching is legal', () => {
