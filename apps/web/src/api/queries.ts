@@ -37,6 +37,7 @@ export const queryKeys = {
   jellyfinTracks: (albumId: string, startIndex: number) =>
     ['jellyfin', 'tracks', albumId, startIndex] as const,
   jellyfinSearch: (term: string) => ['jellyfin', 'search', term] as const,
+  jellyfinLyrics: (itemId: string) => ['jellyfin', 'lyrics', itemId] as const,
 };
 
 export function useSetupQuery() {
@@ -427,6 +428,28 @@ export function useJellyfinSearchQuery(term: string) {
     queryKey: queryKeys.jellyfinSearch(term),
     queryFn: ({ signal }) => api.searchJellyfin(term, 25, signal),
     enabled: term.trim().length > 0,
+    staleTime: 10_000,
+  });
+}
+
+/**
+ * Fetches one track's lyrics. `itemId` is a Jellyfin item id, `null` when nothing should
+ * be fetched (e.g. the currently playing item isn't a Jellyfin track at all, or no
+ * queue position has resolved yet) — `enabled` is derived from that, not left to the
+ * caller to gate separately, so `LyricsView.tsx` (the only caller) never has to remember
+ * to check both. `lyrics: null` inside a successful response is a distinct, normal
+ * outcome (see `JellyfinLyricsResponse`'s doc comment) from this query's own
+ * loading/error states — the two are not the same thing and `LyricsView.tsx` renders them
+ * differently. `staleTime` matches `useJellyfinSearchQuery`'s: lyrics for a given track
+ * don't change within a session, but there's no reason to cache them any longer than
+ * this app's other Jellyfin reads.
+ */
+export function useJellyfinLyricsQuery(itemId: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinLyrics(itemId ?? ''),
+    queryFn: ({ signal }) => api.getJellyfinLyrics(itemId as string, signal),
+    enabled: itemId != null && itemId.length > 0,
     staleTime: 10_000,
   });
 }

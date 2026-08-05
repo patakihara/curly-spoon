@@ -15,6 +15,7 @@ import type {
   JellyfinLibraryPage,
   JellyfinLoginBody,
   JellyfinLoginResult,
+  JellyfinLyricsResponse,
   JellyfinSearchResults,
   JellyfinTrack,
   LibraryItem,
@@ -392,6 +393,14 @@ export class ApiClient {
     signal?: AbortSignal,
   ): Promise<JellyfinSearchResults> {
     return this.request('/jellyfin/search', { query: { term, limit }, signal });
+  }
+
+  /** `lyrics: null` in the resolved value means Jellyfin has nothing for this track — a
+   * normal outcome (see `JellyfinLyricsResponse`'s own doc comment), not a rejected
+   * promise. Only an actual transport/upstream failure rejects, same as every other
+   * method here. */
+  getJellyfinLyrics(itemId: string, signal?: AbortSignal): Promise<JellyfinLyricsResponse> {
+    return this.request(`/jellyfin/tracks/${encodeURIComponent(itemId)}/lyrics`, { signal });
   }
 
   /** Not fetched via `request()` — used directly as an `<img>` src, same reasoning

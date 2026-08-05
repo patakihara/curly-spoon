@@ -1,6 +1,6 @@
 /**
- * Jellyfin music routes — config/login, artist/album/track browsing, search, and the
- * two proxied byte endpoints a player needs (stream, artwork). Every route sits behind
+ * Jellyfin music routes — config/login, artist/album/track browsing, search, lyrics, and
+ * the two proxied byte endpoints a player needs (stream, artwork). Every route sits behind
  * `requireSession`: unlike Audiobookshelf there is no separate first-run "connect the
  * server" step outside a signed-in Auralis session, so `POST /jellyfin/login` both
  * configures the shared base URL and authenticates the calling user in one call.
@@ -182,6 +182,33 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
       return undefined;
     }
   });
+
+  // ---------------------------------------------------------------------
+  // Lyrics — mirrors `JellyfinClient.getLyrics` one route to one method, same shape as
+  // every other route here. `getLyrics` already folds Jellyfin's "no lyrics" 404 into a
+  // typed `null` (see that method's own doc comment for why — the 404 also covers "item
+  // not found", which this route can't tell apart from "no lyrics" either), so a 200 with
+  // `{ lyrics: null }` is this route's own honest way of saying the same thing to the web
+  // client — never a 404, which the client would otherwise have to special-case away from
+  // every other kind of upstream failure this file already maps with `handleUpstreamError`.
+  // ---------------------------------------------------------------------
+
+  app.get(
+    '/jellyfin/tracks/:itemId/lyrics',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const params = parseInput(reply, jellyfinItemIdParamSchema, request.params);
+      if (!params) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        const lyrics = await client.getLyrics(params.itemId);
+        return reply.send({ lyrics });
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
 
   // ---------------------------------------------------------------------
   // Playback progress reporting — mirrors `JellyfinClient.reportPlaybackStart`/

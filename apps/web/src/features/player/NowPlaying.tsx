@@ -17,6 +17,7 @@ import { usePlayerStore } from '../../state/playerStore.js';
 import { useSettingsStore } from '../../state/settingsStore.js';
 import { BookmarkControls } from './BookmarkControls.js';
 import { ChapterList } from './ChapterList.js';
+import { LyricsView } from './LyricsView.js';
 import { chapterAt, formatDuration, nextRate, trackAt } from './playback.js';
 import { formatRemaining, playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
 import { SleepTimerControl } from './SleepTimerControl.js';
@@ -152,6 +153,7 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
       </div>
 
       <ChapterList />
+      <LyricsView />
       <BookmarkControls />
     </div>
   );

@@ -460,3 +460,31 @@ export interface JellyfinSearchResults {
   albums: JellyfinAlbum[];
   tracks: JellyfinTrack[];
 }
+
+// ---------------------------------------------------------------------
+// Jellyfin lyrics (Phase 9 web wave — synced lyrics view)
+// ---------------------------------------------------------------------
+
+/** Mirrors `@auralis/jellyfin-client`'s `LyricLine` field-for-field — the BFF's own
+ * domain type, not Jellyfin's raw `LyricLine`. `startSeconds` is `null` for an unsynced
+ * line — see `JellyfinLyrics.synced`'s doc comment for how a caller should read that. */
+export interface JellyfinLyricLine {
+  text: string;
+  startSeconds: number | null;
+}
+
+/** Mirrors `@auralis/jellyfin-client`'s `Lyrics`. `synced: false` means every line
+ * should render as plain, unhighlighted text — never treat a missing timestamp as
+ * "starts at 0"; see that package's `normalize.ts`'s `normalizeLyrics` for why `synced`
+ * isn't read off Jellyfin's own (never-populated, on this endpoint) `IsSynced` field. */
+export interface JellyfinLyrics {
+  lines: JellyfinLyricLine[];
+  synced: boolean;
+}
+
+/** `GET /jellyfin/tracks/:itemId/lyrics`'s success body. `lyrics: null` means Jellyfin
+ * has nothing for this track — a normal, common outcome, not an error; the route always
+ * 200s for it (see `routes/jellyfin.ts`'s own doc comment on that route). */
+export interface JellyfinLyricsResponse {
+  lyrics: JellyfinLyrics | null;
+}

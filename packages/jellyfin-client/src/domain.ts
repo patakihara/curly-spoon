@@ -78,3 +78,26 @@ export interface LoginResult {
   serverId: string | null;
   user: UserProfile;
 }
+
+/** One line of a track's lyrics. `startSeconds` is `null` for an unsynced line — see
+ * `Lyrics.synced`'s doc comment for how a caller should read that. */
+export interface LyricLine {
+  text: string;
+  startSeconds: number | null;
+}
+
+/**
+ * A track's lyrics, or the reason there's nothing to show — `JellyfinClient.getLyrics`
+ * returns `null` (not this type) for "no lyrics at all"; this type only exists once
+ * Jellyfin *has* something.
+ *
+ * `synced` is derived from whether every line carries a `startSeconds`, not from
+ * Jellyfin's own `LyricMetadata.IsSynced` — see `schemas/raw.ts`'s `IsSynced` field
+ * comment for why that field can't be trusted (it's never populated on this endpoint).
+ * `false` means every line should render as plain, unhighlighted text — never treat an
+ * unsynced line's missing timestamp as "starts at 0".
+ */
+export interface Lyrics {
+  lines: LyricLine[];
+  synced: boolean;
+}

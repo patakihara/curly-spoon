@@ -168,8 +168,13 @@ export const noopProgressReporter: PlaybackProgressReporter = {
  * `reportProgress`'s three network calls are fire-and-forget with a swallowed `.catch`,
  * matching `audiobookshelfSource`'s own contract above: a failed report leaves Jellyfin's
  * resume position slightly stale, never tears the player down.
+ *
+ * Exported — the synced-lyrics wave reuses this rather than re-deriving the same
+ * cumulative-timeline-to-per-track-position walk a second time (see
+ * `features/music/lyrics.ts`); the walk itself (`trackAt`) is what's actually shared,
+ * this is just its Jellyfin-item-id framing of the result.
  */
-function resolveQueuePosition(
+export function resolveQueuePosition(
   audioTracks: AudioTrack[],
   currentTime: number,
 ): { itemId: string; positionSeconds: number } | null {
