@@ -62,25 +62,27 @@ WORKDIR /app
 # from (see the top-of-file note — nothing in this repo ships compiled JS).
 COPY --from=prod-deps --chown=auralis:auralis /app/node_modules ./node_modules
 COPY --from=prod-deps --chown=auralis:auralis /app/apps/server/node_modules ./apps/server/node_modules
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/core/package.json ./packages/core/package.json
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/core/src ./packages/core/src
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/package.json ./packages/abs-client/package.json
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/src ./packages/abs-client/src
-# pnpm's layout is isolated, not hoisted: a workspace package's dependencies are
-# reachable only through its *own* node_modules, which holds relative symlinks
-# into the root `.pnpm` store. Copying the root node_modules is therefore not
-# enough — without this line `packages/abs-client/src/client.ts` cannot resolve
-# `zod` and the container exits on its first import. Any workspace package that
-# gains an external dependency needs the same line; `packages/core` has none
-# today, and pnpm creates no node_modules for it at all, so COPY would fail.
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/abs-client/node_modules ./packages/abs-client/node_modules
-# @auralis/jellyfin-client — same reasoning as abs-client above: apps/server
-# imports it at runtime (`apps/server/src/jellyfinUpstream.ts`), tsx runs the
-# source directly with no compile step, and its own `zod` dependency needs its
-# own node_modules copied for the same isolated-layout reason.
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/jellyfin-client/package.json ./packages/jellyfin-client/package.json
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/jellyfin-client/src ./packages/jellyfin-client/src
-COPY --from=prod-deps --chown=auralis:auralis /app/packages/jellyfin-client/node_modules ./packages/jellyfin-client/node_modules
+# `packages/` wholesale, rather than a `package.json`/`src`/`node_modules` triple
+# per package. The enumerated form was a standing trap: `apps/server` gaining a
+# dependency on a workspace package produced an image that *built* and then died
+# on its first import, because nothing in the build says which packages the
+# server needs — only the runtime does. That failure shipped once already
+# (`586742e`) and it costs a container restart loop to notice, not a red build.
+#
+# What makes copying everything correct rather than merely convenient: `prod-deps`
+# installs with `--prod --filter "@auralis/server..."`, so pnpm has already
+# resolved exactly which workspace packages the server transitively needs and
+# created `node_modules` for those and no others. The filter is the source of
+# truth; this COPY just stops restating it by hand and getting it wrong. The
+# packages the server does not use contribute their source and nothing else —
+# tens of kilobytes against an image that carries a compiled `better-sqlite3`.
+#
+# The per-package `node_modules` come along for free, and they are load-bearing:
+# pnpm's layout is isolated, not hoisted, so a workspace package's dependencies
+# are reachable only through its *own* `node_modules` of relative symlinks into
+# the root `.pnpm` store. Without them `packages/abs-client/src/client.ts` cannot
+# resolve `zod` and the container exits immediately.
+COPY --from=prod-deps --chown=auralis:auralis /app/packages ./packages
 COPY --chown=auralis:auralis apps/server/package.json ./apps/server/package.json
 COPY --chown=auralis:auralis apps/server/src ./apps/server/src
 
