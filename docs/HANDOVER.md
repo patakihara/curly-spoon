@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-04T20:42:32Z` · `a5fe68bc1b55496c1` · general-purpose · running · —
 - `2026-08-04T20:42:50Z` · `a2d41422f046c6b64` · general-purpose · running · —
 - `2026-08-04T20:42:50Z` · `a5fe68bc1b55496c1` · general-purpose · running · —
 - `2026-08-04T20:42:50Z` · `a334818b757135847` · general-purpose · running · —
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T09:04:41Z` · `a029ef271eb6845b7` · general-purpose · ended · ## Android CI result for '52307c7' **Failed** (run 30991662924, conclusion 'failure'). Not a compile error — 'compileDebugKotlin'/'compileReleaseKotl…
 - `2026-08-05T09:11:55Z` · `a89ca5d18015b9a36` · general-purpose · ended · Committed clean, working tree empty, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a89ca5d18015b9a36' @ 'ad3ecbf', based on…
 - `2026-08-05T09:21:47Z` · `a1d4554db1e1ed7e1` · general-purpose · ended · Working tree is clean. Committed on 'worktree-agent-a1d4554db1e1ed7e1' at '4f8cddf', based on '2030a3d'. Not pushed, per instructions. ## Report **Ve…
+- `2026-08-05T09:34:14Z` · `a1ae8ebf697cae519` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a1ae8ebf697cae519' @ 'a6c61d4', based on '960ac8d'…
 
 <!-- AGENT_LOG_END -->
 
@@ -269,15 +269,12 @@ cannot search lyric text at all, so Auralis would have to build its own index an
 whether to backfill from an external provider (a privacy opt-in). The synced lyrics _view_
 is unaffected by that and has shipped.
 
-Two known defects are recorded in `docs/ROADMAP.md` §9 and neither is fixed:
+One known defect is recorded in `docs/ROADMAP.md` §9 and is not fixed:
 
 - **A paused track keeps reporting to Jellyfin as playing.** `useProgressSync`'s interval is
   not gated on `isPlaying`, so the upstream session reads as active while paused. Fixing it
   properly puts a pause signal in the shared seam, which the audiobook reporter implements
   too.
-- **`packages/ui/src/components/Slider.tsx` silently drops every pass-through prop** — it
-  destructures `...rest` and never spreads it, so `data-testid` and anything like it never
-  reaches the DOM.
 
 `docs/ROADMAP.md` §9 has the wave-by-wave detail.
 
