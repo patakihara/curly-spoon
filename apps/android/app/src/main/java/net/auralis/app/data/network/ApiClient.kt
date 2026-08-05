@@ -10,6 +10,13 @@ import net.auralis.app.data.model.AuthUser
 import net.auralis.app.data.model.BookRequest
 import net.auralis.app.data.model.CreateRequestBody
 import net.auralis.app.data.model.HomeResponse
+import net.auralis.app.data.model.JellyfinAlbumsPage
+import net.auralis.app.data.model.JellyfinArtistsPage
+import net.auralis.app.data.model.JellyfinConfig
+import net.auralis.app.data.model.JellyfinLoginRequestBody
+import net.auralis.app.data.model.JellyfinLoginResponse
+import net.auralis.app.data.model.JellyfinSearchResults
+import net.auralis.app.data.model.JellyfinTracksPage
 import net.auralis.app.data.model.Library
 import net.auralis.app.data.model.LibrariesResponse
 import net.auralis.app.data.model.LibraryItem
@@ -260,6 +267,113 @@ class ApiClient(
     suspend fun deleteRequest(id: String) {
         executeNoContent(Request.Builder().url(apiUrl("/requests/$id")).delete().build())
     }
+
+    // -----------------------------------------------------------------------------
+    // Jellyfin music (routes/jellyfin.ts) — Android data layer, phase 9. No screen consumes
+    // these yet; see net.auralis.app.features.music.MusicRepository.
+    // -----------------------------------------------------------------------------
+
+    /** GET /jellyfin/config — whether a Jellyfin server is configured at all, and whether the
+     * signed-in user already has a stored access token. */
+    suspend fun jellyfinConfig(): JellyfinConfig = get("/jellyfin/config")
+
+    /**
+     * POST /jellyfin/login. `baseUrl` is optional — omitted, the BFF reuses whatever a previous
+     * login already configured (see `JellyfinLoginRequestBody`'s doc comment); required the very
+     * first time nothing is configured yet, or to point at a different server.
+     */
+    suspend fun jellyfinLogin(
+        username: String,
+        password: String,
+        baseUrl: String? = null,
+    ): JellyfinLoginResponse = post("/jellyfin/login", JellyfinLoginRequestBody(baseUrl, username, password))
+
+    /** GET /jellyfin/artists — paginated. `sortOrder` is passed through verbatim, same as the
+     * BFF/upstream client: `'Ascending'`/`'Descending'`, not validated client-side. */
+    suspend fun jellyfinArtists(
+        parentId: String? = null,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        sortBy: String? = null,
+        sortOrder: String? = null,
+    ): JellyfinArtistsPage {
+        val params =
+            buildMap {
+                parentId?.let { put("parentId", it) }
+                startIndex?.let { put("startIndex", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+                sortBy?.let { put("sortBy", it) }
+                sortOrder?.let { put("sortOrder", it) }
+            }
+        return get("/jellyfin/artists", params)
+    }
+
+    /** GET /jellyfin/albums — paginated, optionally scoped to one artist via [artistId] (the
+     * BFF's `albumArtistIds` filter — see `AlbumsQuery`'s doc comment in `@auralis/jellyfin-client`
+     * for why album-artist rather than any-contributing-artist). */
+    suspend fun jellyfinAlbums(
+        parentId: String? = null,
+        artistId: String? = null,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        sortBy: String? = null,
+        sortOrder: String? = null,
+    ): JellyfinAlbumsPage {
+        val params =
+            buildMap {
+                parentId?.let { put("parentId", it) }
+                artistId?.let { put("artistId", it) }
+                startIndex?.let { put("startIndex", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+                sortBy?.let { put("sortBy", it) }
+                sortOrder?.let { put("sortOrder", it) }
+            }
+        return get("/jellyfin/albums", params)
+    }
+
+    /** GET /jellyfin/tracks — paginated, optionally scoped to one album via [albumId]. */
+    suspend fun jellyfinTracks(
+        parentId: String? = null,
+        albumId: String? = null,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        sortBy: String? = null,
+        sortOrder: String? = null,
+    ): JellyfinTracksPage {
+        val params =
+            buildMap {
+                parentId?.let { put("parentId", it) }
+                albumId?.let { put("albumId", it) }
+                startIndex?.let { put("startIndex", it.toString()) }
+                limit?.let { put("limit", it.toString()) }
+                sortBy?.let { put("sortBy", it) }
+                sortOrder?.let { put("sortOrder", it) }
+            }
+        return get("/jellyfin/tracks", params)
+    }
+
+    /** GET /jellyfin/search — artists, albums and tracks matching [term] in one call. */
+    suspend fun jellyfinSearch(
+        term: String,
+        limit: Int? = null,
+    ): JellyfinSearchResults {
+        val params =
+            buildMap {
+                put("term", term)
+                limit?.let { put("limit", it.toString()) }
+            }
+        return get("/jellyfin/search", params)
+    }
+
+    /**
+     * Builds the URL for GET /jellyfin/tracks/{itemId}/stream — a pure URL builder, like
+     * [audioTrackUrl] above, not a fetch. Deliberately carries **no token**: unlike
+     * `JellyfinClient.streamUrl` in `@auralis/jellyfin-client` (which embeds the upstream
+     * Jellyfin access token as an `ApiKey` query parameter by that package's own design), this
+     * URL points at the BFF's own proxy route, which holds the token server-side and never
+     * hands it to a browser or an APK — see routes/jellyfin.ts's file doc comment.
+     */
+    suspend fun jellyfinTrackStreamUrl(itemId: String): String = apiUrl("/jellyfin/tracks/$itemId/stream").toString()
 
     private suspend fun apiUrl(path: String): HttpUrl = "${baseUrl().trimEnd('/')}/api/v1$path".toHttpUrl()
 

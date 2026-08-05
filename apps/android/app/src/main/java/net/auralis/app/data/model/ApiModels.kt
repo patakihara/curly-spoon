@@ -534,3 +534,127 @@ data class SubscribePodcastResponse(
 data class MyProgressResponse(
     val progress: List<MediaProgress>,
 )
+
+// -----------------------------------------------------------------------------
+// Jellyfin music (routes/jellyfin.ts) — Android data layer, phase 9. No UI wave yet;
+// see net.auralis.app.features.music.MusicRepository for the layer that consumes these.
+// Field names are read directly off apps/server/src/routes/jellyfin.ts and
+// packages/jellyfin-client/src/domain.ts (the plain object that route's handlers
+// `reply.send()` without any further wrapping), not inferred from apps/web.
+// -----------------------------------------------------------------------------
+
+/** GET /jellyfin/config response. */
+@Serializable
+data class JellyfinConfig(
+    val configured: Boolean,
+    val baseUrl: String? = null,
+    val hasCredentials: Boolean = false,
+)
+
+/** POST /jellyfin/login request body. `baseUrl` is optional — omitted, the BFF reuses the
+ * `jellyfin` settings row from an earlier login (see routes/jellyfin.ts); sent, it configures
+ * (or reconfigures) the shared server address as a side effect of this same call. */
+@Serializable
+data class JellyfinLoginRequestBody(
+    val baseUrl: String? = null,
+    val username: String,
+    val password: String,
+)
+
+/** The `user` object POST /jellyfin/login echoes back — id/name only, deliberately never the
+ * access token (see that route's own doc comment). */
+@Serializable
+data class JellyfinUserRef(
+    val id: String,
+    val name: String,
+)
+
+/** POST /jellyfin/login response. */
+@Serializable
+data class JellyfinLoginResponse(
+    val configured: Boolean,
+    val baseUrl: String? = null,
+    val user: JellyfinUserRef,
+)
+
+/** One entry from GET /jellyfin/artists. Mirrors `@auralis/jellyfin-client`'s `Artist`
+ * (packages/jellyfin-client/src/domain.ts) field-for-field. */
+@Serializable
+data class JellyfinArtist(
+    val id: String,
+    val name: String,
+    val overview: String? = null,
+    val imageTag: String? = null,
+    val albumCount: Int? = null,
+)
+
+/** One entry from GET /jellyfin/albums. Mirrors `@auralis/jellyfin-client`'s `Album`. */
+@Serializable
+data class JellyfinAlbum(
+    val id: String,
+    val name: String,
+    val sortName: String? = null,
+    val artistId: String? = null,
+    val artistName: String? = null,
+    val productionYear: Int? = null,
+    val overview: String? = null,
+    val genres: List<String> = emptyList(),
+    val imageTag: String? = null,
+    val trackCount: Int? = null,
+)
+
+/** One entry from GET /jellyfin/tracks. Mirrors `@auralis/jellyfin-client`'s `Track`.
+ * `durationSeconds` is a `Double` (not `Int`) because the upstream client derives it by
+ * dividing .NET ticks by a constant (`normalize.ts`'s `TICKS_PER_SECOND`), not a whole number. */
+@Serializable
+data class JellyfinTrack(
+    val id: String,
+    val name: String,
+    val albumId: String? = null,
+    val albumName: String? = null,
+    val artistNames: List<String> = emptyList(),
+    val trackNumber: Int? = null,
+    val discNumber: Int? = null,
+    val durationSeconds: Double? = null,
+    val imageTag: String? = null,
+    val genres: List<String> = emptyList(),
+)
+
+/** GET /jellyfin/artists response — unwrapped, the object itself. Mirrors
+ * `@auralis/jellyfin-client`'s `LibraryPage<Artist>`; `total` is the upstream's
+ * `TotalRecordCount`, independent of how many items this page actually carries — the field a
+ * pager needs, not a count of [items]. */
+@Serializable
+data class JellyfinArtistsPage(
+    val items: List<JellyfinArtist>,
+    val total: Int,
+    val startIndex: Int,
+)
+
+/** GET /jellyfin/albums response — unwrapped, the object itself. See [JellyfinArtistsPage]'s
+ * doc comment for what [total] means. */
+@Serializable
+data class JellyfinAlbumsPage(
+    val items: List<JellyfinAlbum>,
+    val total: Int,
+    val startIndex: Int,
+)
+
+/** GET /jellyfin/tracks response — unwrapped, the object itself. See [JellyfinArtistsPage]'s
+ * doc comment for what [total] means. */
+@Serializable
+data class JellyfinTracksPage(
+    val items: List<JellyfinTrack>,
+    val total: Int,
+    val startIndex: Int,
+)
+
+/** GET /jellyfin/search response — unwrapped, the object itself. Mirrors
+ * `@auralis/jellyfin-client`'s `SearchResults`: one `/Items` query fanned out into three
+ * buckets server-side, not three separate requests. */
+@Serializable
+data class JellyfinSearchResults(
+    val artists: List<JellyfinArtist> = emptyList(),
+    val albums: List<JellyfinAlbum> = emptyList(),
+    val tracks: List<JellyfinTrack> = emptyList(),
+)
