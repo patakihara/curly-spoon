@@ -1447,7 +1447,7 @@ and `boundingBox` settle it, and they disagreed with the eye on the single large
   stale copy naming an internal phase number to the user, for work that shipped.
 
 **One design decision left to the user**: what a missing-artwork placeholder should actually
-look like. The defect above is that Music has no fallback at all; what the fallback *is* was
+look like. The defect above is that Music has no fallback at all; what the fallback _is_ was
 never decided.
 
 Not covered by this pass, and each still open: Android entirely, the 600-1240px tablet

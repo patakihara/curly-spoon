@@ -31,6 +31,7 @@ correctly.
 ## 2. Findings, ranked by user-visible impact
 
 ### Finding 1 — Mini player is not fixed to the viewport, so it sits below the fold on tall pages
+
 **Surface:** Now Playing (mini). **Viewport:** desktop (1440×900).
 `DESIGN.md`: "The mini player is always present when something is loaded, docked ... at the
 foot of the rail." `MiniPlayer` renders with `position: relative`, as a sibling after
@@ -55,6 +56,7 @@ this is a CSS positioning change (`position: fixed`/`sticky` plus width scoped t
 rail), not a structural rewrite.
 
 ### Finding 2 — Desktop layout is close to `DESIGN.md`'s intent, not a stretched phone
+
 **Surfaces:** Home, Search, Music home, Music album. **Viewport:** desktop (1440×900).
 The nav rail is a real 220px icon+label rail at 1440px. The Now Playing side panel is a
 real 320px panel occupying x:1120→1440 — flush to the viewport's right edge, with no dead
@@ -72,6 +74,7 @@ stretched wide. Nothing here rises to a defect; this surface is closer to `DESIG
 intent than the audit first concluded.
 
 ### Finding 3 — Text and controls overflow, uncontained, at the 390px mobile viewport
+
 **Surfaces:** Book detail, Music home. **Viewport:** mobile (390×844).
 Two independent occurrences: `book-detail-mobile.png` shows the title ("The Fellowship of
 the Ring") and byline ("Narrated by Rob Inglis") running off the right edge of the screen
@@ -81,6 +84,7 @@ row: "Requests" is clipped to "Request" and the search button's label is clipped
 "Searc". This is a pattern (two surfaces, two different components), not an isolated typo.
 
 ### Finding 4 — The mobile expanded Now Playing sheet renders in a light, low-contrast palette
+
 **Surface:** Now Playing, expanded. **Viewport:** mobile (390×844).
 Every other surface in this audit, in both viewports, renders the same warm dark neutral
 background with amber/cream text — consistent with `DESIGN.md`'s stated fallback source
@@ -95,6 +99,7 @@ inference from the screenshot, not something read from source in this pass (see 
 scope: no code was read to confirm the mechanism).
 
 ### Finding 5 — Settings still shows Phase 5's placeholder copy for artwork colour
+
 **Surface:** Settings. **Viewport:** both.
 `settings-desktop.png` and `settings-mobile.png` both show, under the manual colour-swatch
 picker: "Source colour (Phase 5 will set this automatically from artwork):" — literal
@@ -105,6 +110,7 @@ path was deliberately kept and the copy is simply stale about why it exists. Eit
 user reads this screen as telling them the feature doesn't exist yet.
 
 ### Finding 6 — Cover art never rendered; one environment artefact, one real defect, one open design decision
+
 **Surfaces:** all six. **Viewport:** both.
 Every item — book covers, author/artist images, album art — shows a broken image where a
 cover should be, across all 22 screenshots. Network responses split this into three
@@ -139,7 +145,7 @@ this pass either way, since no real image ever decoded to derive a colour from.
 
 - **The persistent Now Playing side panel at the expanded breakpoint exists and is
   populated correctly.** `home-desktop.png`, `book-detail-desktop.png`, `search-*-
-  desktop.png`, `music-*-desktop.png` and `settings-desktop.png` all show the right-hand
+desktop.png`, `music-*-desktop.png` and `settings-desktop.png` all show the right-hand
   panel either idle ("Nothing playing / Play a book to see chapters, speed, sleep timer and
   bookmarks here") or, once something is playing, populated with artwork slot, title,
   author, scrubber, transport controls, playback-rate control, chapter progress and a
@@ -171,8 +177,8 @@ this pass either way, since no real image ever decoded to derive a colour from.
 1. **[Defect]** Dock the mini player to the viewport instead of leaving it in ordinary page
    flow, so it can't land below the fold on a tall page, and scope its width to the rail
    rather than overlapping ~140px into the content column. Files: `apps/web/src/
-   components/Shell.tsx` (the `breakpoint !== 'compact'` `<MiniPlayer>` render) and `apps/
-   web/src/features/player/MiniPlayer.tsx` plus its CSS (`position: fixed`/`sticky`, width
+components/Shell.tsx` (the `breakpoint !== 'compact'` `<MiniPlayer>` render) and `apps/
+web/src/features/player/MiniPlayer.tsx` plus its CSS (`position: fixed`/`sticky`, width
    scoped to the rail).
 2. **[Defect]** Give Music's Jellyfin artist/album card images an `onError` fallback, same
    as Home's `ShelfCard` already implements, instead of the browser's native broken-image
@@ -181,7 +187,7 @@ this pass either way, since no real image ever decoded to derive a colour from.
    `MusicHomePage.tsx`/`MusicAlbumPage.tsx`).
 3. **[Defect]** Fix uncontained text/button overflow at the 390px viewport on the book
    detail header and the Music page's top link row. Files: `apps/web/src/features/item/
-   ItemPage.tsx`, `apps/web/src/features/music/MusicHomePage.tsx`.
+ItemPage.tsx`, `apps/web/src/features/music/MusicHomePage.tsx`.
 4. **[Defect]** Investigate the pale, low-contrast palette on the mobile expanded Now
    Playing sheet — reproduce with `now-playing-expanded-mobile.png` as the reference,
    check what colour-derivation path runs when artwork fails to load. Files: wherever the
