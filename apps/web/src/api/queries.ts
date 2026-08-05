@@ -368,6 +368,18 @@ export function useSubscribePodcastMutation() {
  * `useLibraryItemsQuery`'s own Audiobookshelf page size. */
 export const JELLYFIN_PAGE_SIZE = 40;
 
+/** Jellyfin's `ItemSortBy` value for "disc number, then track number" (`ParentIndexNumber`
+ * is the disc number, `IndexNumber` the track number — verified against `AudioFileProber.cs`
+ * in `jellyfin/jellyfin`, which assigns exactly these two fields from a track's tag-read
+ * disc/track numbers). Left unset, the BFF forwards no `sortBy` and Jellyfin falls back to
+ * its own default, `SortName` — alphabetical by track title — which is wrong for an album:
+ * `useJellyfinTracksQuery` is *only* ever an album's own track list (`MusicAlbumPage.tsx`,
+ * which also builds its playback queue straight from this query's result), so "the order
+ * tracks sit on the album" is the one ordering that call site ever wants. Mirrors
+ * `TRACK_ORDER_SORT_BY` in the Android client's `AlbumDetailViewModel.kt`, which already
+ * requests this. */
+const TRACK_ORDER_SORT_BY = 'ParentIndexNumber,IndexNumber';
+
 export function useJellyfinConfigQuery() {
   const api = useApi();
   return useQuery({
@@ -413,7 +425,10 @@ export function useJellyfinTracksQuery(albumId: string, startIndex = 0) {
   return useQuery({
     queryKey: queryKeys.jellyfinTracks(albumId, startIndex),
     queryFn: ({ signal }) =>
-      api.getJellyfinTracks({ albumId, startIndex, limit: JELLYFIN_PAGE_SIZE }, signal),
+      api.getJellyfinTracks(
+        { albumId, startIndex, limit: JELLYFIN_PAGE_SIZE, sortBy: TRACK_ORDER_SORT_BY },
+        signal,
+      ),
     enabled: albumId.length > 0,
     staleTime: 30_000,
   });
