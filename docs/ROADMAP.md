@@ -1200,16 +1200,26 @@ per-track artist field to read. On a compilation or a multi-artist album the loc
 the album artist for every track. Worth a decision before phase 10 rather than a silent
 inherit.
 
-**Known gaps, all deliberate**: the album queue covers only
-the displayed 40-track page, not across pagination; no shuffle/repeat/cross-source queue
-(needs an explicit ordered play-list decoupled from `startOffset`, since shuffle breaks the
-"tracks are already in play order" assumption); no synced-lyrics view, playlists, favourites
-or music requests (lyrics _search_ is separately blocked, see the bullet above); and **no
-music on Android at all**. One testing gap: the `ended` listener and the
-resume-after-track-change fix cannot be exercised by the e2e suite, because the fixture
-audio never decodes far enough to fire a real `ended` event — `nextTrack()` is unit-tested
-directly and the billing behaviour is covered by crossing a track boundary via skip-forward,
-but the `ended` path itself needs manual or real-server verification.
+**Everything that paragraph used to list as a deliberate gap has since shipped** — the
+cross-page queue, shuffle and repeat, the synced-lyrics view, playlists, favourites, music
+requests, and music on Android, which now has browse, search, playback, favourites, playlists,
+shuffle/repeat, progress reporting and requests of its own.
+
+**What is genuinely left in phase 9:**
+
+- **Lyrics search — blocked on a product decision, not on effort.** Jellyfin cannot search
+  lyric text at all, so Auralis would have to build and maintain its own index, and whether to
+  backfill from an external provider carries a privacy opt-in. That choice is the user's. See
+  the bullet earlier in this section and `docs/INTEGRATIONS.md`'s "Discovery layer".
+- **`pollDownloads` is wired to no scheduler in production**, for books _or_ music, so nothing
+  advances a request's download state on its own. Inherited, not introduced by the music work.
+- **A non-admin Jellyfin account cannot rescan.** Both refresh endpoints require elevation, so
+  requested music downloads and silently never appears if the connected account is not an
+  admin.
+- **One testing gap**: the `ended` listener and the resume-after-track-change fix cannot be
+  exercised by the e2e suite, because the fixture audio never decodes far enough to fire a real
+  `ended` event. The queue's advance logic is unit-tested directly, but the `ended` path itself
+  needs manual or real-server verification.
 
 ### 10 — Release polish
 
