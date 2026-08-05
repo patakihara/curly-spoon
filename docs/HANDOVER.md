@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T17:56:35Z` · `ae810ede7c59baad3` · general-purpose · ended · ## Report **1. Branch and sha:** 'worktree-agent-ae810ede7c59baad3' @ 'a0f849b', based on 'origin/main''s 'c41b2e1' (which was itself only the orches…
 - `2026-08-05T18:12:10Z` · `a4f3ab764e9517c55` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a4f3ab764e9517c55' @ '3bdb785', based on 'origin/main''s '9c162c2'. Not pushed, per instructions. **1. M…
 - `2026-08-05T18:13:06Z` · `a2f64ce34080707a3` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a2f64ce34080707a3' @ '2c1b476', based on 'origin/main''s 'f0c6e8d'. Working tree clean, not pushed. **Fi…
 - `2026-08-05T18:18:01Z` · `a269bc8240faac80c` · general-purpose · ended · Both runs for '2c1b476' are still in_progress — none failed, so no 'gh run view' per the budget rule. Not polling further. Review complete. Summary b…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T21:22:48Z` · `a3c70047c964a822f` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a3c70047c964a822f' @ '8311278', base…
 - `2026-08-05T21:23:23Z` · `a32ff662d30f3d46e` · general-purpose · ended · ## Findings: AbleMusicPlayer (uditkarode/AbleMusicPlayer, master) **1. The source, in one paragraph.** AbleMusicPlayer plays audio ripped from **YouT…
 - `2026-08-05T22:46:13Z` · `a86e71de6b0b9208a` · general-purpose · running · —
+- `2026-08-05T23:14:46Z` · `ab77262198a5f1013` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -304,9 +304,13 @@ playback with album queueing, **Jellyfin progress reporting**, a **synced lyrics
 album), **playback** through the existing Media3 stack, and **search** — all reachable from the
 home screen.
 
-Android now also has **playlists** (wave F) and **Jellyfin progress reporting** (wave G), so the
-only phase-9 gap left on Android is whatever music requests turn into. Still missing overall:
-**music requests** (server-side provider landed; persistence and UI follow). Lyrics _search_ remains blocked on a product decision, not on effort —
+Android now also has **playlists** (wave F), **Jellyfin progress reporting** (wave G) and
+**music requests** (wave K). **Phase 9 is complete** — music requests shipped end to end: the
+slskd provider server-side, `media_type`/`candidate_json` persistence on the shared `requests`
+table, the web UI at `/music/requests`, the Android mirror, and a Jellyfin library rescan so a
+request can advance past `downloading`. `docs/ROADMAP.md` §9 has each sha. A music request's
+terminal state is `importRequested`, not `completed`, and that is by design: Jellyfin exposes
+no API to confirm an import landed. Lyrics _search_ remains blocked on a product decision, not on effort —
 Jellyfin cannot search lyric text at all, so Auralis would need its own index and a decision
 about whether to backfill from an external provider (a privacy opt-in). The synced lyrics
 _view_ is unaffected and has shipped.
@@ -332,7 +336,7 @@ it is idle. Check the worktree's own `git status --short`, the mtimes on the fil
 writing, and `pgrep -af chrome|node` before concluding a wave is free. Doing only the
 branch-log check is how the same feature gets built twice.
 
-The The 2026-08-05 Android music claim (waves F–L) is
+The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
 
