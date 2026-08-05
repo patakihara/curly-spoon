@@ -8,24 +8,14 @@
 import { useState } from 'react';
 import { Button, LinearProgress } from '@auralis/ui';
 import { ApiError } from '../../api/errors.js';
-import type { BookRequest, RequestStatus } from '../../api/types.js';
+import type { BookRequest } from '../../api/types.js';
 import {
   useApproveRequestMutation,
   useDeleteRequestMutation,
   useRejectRequestMutation,
   useRetryRequestMutation,
 } from '../../api/queries.js';
-
-const STATUS_LABEL: Record<RequestStatus, string> = {
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  searching: 'Searching',
-  downloading: 'Downloading',
-  importing: 'Importing',
-  completed: 'Completed',
-  failed: 'Failed',
-};
+import { REQUEST_STATUS_LABEL } from './statusLabels.js';
 
 export interface RequestListProps {
   requests: BookRequest[];
@@ -77,7 +67,7 @@ export function RequestList({ requests, allowApproval }: RequestListProps) {
             <strong>{request.title}</strong>
             {request.author ? <span>by {request.author}</span> : null}
             <span role="status" data-testid={`request-${request.id}-status`}>
-              {STATUS_LABEL[request.status]}
+              {REQUEST_STATUS_LABEL[request.status]}
             </span>
           </div>
 

@@ -27,7 +27,7 @@
 import { useState } from 'react';
 import { Button } from '@auralis/ui';
 import { ApiError } from '../../api/errors.js';
-import type { MusicRequest, RequestStatus } from '../../api/types.js';
+import type { MusicRequest } from '../../api/types.js';
 import {
   useApproveMusicRequestMutation,
   useDeleteMusicRequestMutation,
@@ -35,22 +35,7 @@ import {
   useRejectMusicRequestMutation,
   useRetryMusicRequestMutation,
 } from '../../api/queries.js';
-
-// Exhaustive against the shared `RequestStatus` type, but `importing`/`completed` are
-// unreachable for a music row today — `musicRequestService.ts`'s `grab()` never moves a
-// request past `downloading`, and nothing else in this pipeline advances it further. Kept
-// in the map anyway so this stays a total function if that ever changes, rather than a
-// silent `undefined` in the UI.
-const STATUS_LABEL: Record<RequestStatus, string> = {
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  searching: 'Searching',
-  downloading: 'Downloading',
-  importing: 'Importing',
-  completed: 'Completed',
-  failed: 'Failed',
-};
+import { MUSIC_REQUEST_STATUS_LABEL } from './musicRequestStatusLabels.js';
 
 export interface MusicRequestListProps {
   requests: MusicRequest[];
@@ -105,7 +90,7 @@ export function MusicRequestList({ requests, allowApproval }: MusicRequestListPr
             <strong>{request.title}</strong>
             {request.author ? <span>by {request.author}</span> : null}
             <span role="status" data-testid={`music-request-${request.id}-status`}>
-              {STATUS_LABEL[request.status]}
+              {MUSIC_REQUEST_STATUS_LABEL[request.status]}
             </span>
           </div>
 
