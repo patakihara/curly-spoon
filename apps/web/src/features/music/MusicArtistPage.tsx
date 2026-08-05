@@ -9,9 +9,10 @@
  */
 import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { Button, Card, Skeleton } from '@auralis/ui';
+import { Button, Card, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
-import { useJellyfinAlbumsQuery } from '../../api/queries.js';
+import { useJellyfinAlbumsQuery, useJellyfinArtistQuery } from '../../api/queries.js';
+import { FavoriteToggle } from './FavoriteToggle.js';
 import { summarizePage } from './pagination.js';
 
 export function MusicArtistPage() {
@@ -19,17 +20,33 @@ export function MusicArtistPage() {
   const navigate = useNavigate();
   const api = useApi();
   const [startIndex, setStartIndex] = useState(0);
+  const snackbar = useSnackbar();
 
   const albumsQuery = useJellyfinAlbumsQuery(artistId, startIndex);
+  const artistQuery = useJellyfinArtistQuery(artistId);
   const albums = albumsQuery.data?.items ?? [];
   const artistName = albums[0]?.artistName ?? 'Artist';
+  const artistFavorite = artistQuery.data?.items[0]?.favorite ?? false;
   const page = albumsQuery.data
     ? summarizePage({ startIndex, limit: 40 }, albumsQuery.data.total, albums.length)
     : null;
 
+  const onFavoriteError = () =>
+    snackbar.enqueue({ message: "Couldn't update favourite — try again." });
+
   return (
     <div className="auralis-page" data-testid="music-artist-page">
-      <h1 data-testid="music-artist-name">{artistName}</h1>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <h1 data-testid="music-artist-name">{artistName}</h1>
+        <FavoriteToggle
+          itemId={artistId}
+          itemName={artistName}
+          favorite={artistFavorite}
+          stopPropagation={false}
+          onError={onFavoriteError}
+          data-testid="music-artist-favorite"
+        />
+      </div>
 
       {albumsQuery.isLoading ? (
         <div className="auralis-card-grid">
@@ -63,7 +80,18 @@ export function MusicArtistPage() {
                     style={{ borderRadius: 8, objectFit: 'cover' }}
                   />
                 ) : null}
-                <h3>{album.name}</h3>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                >
+                  <h3>{album.name}</h3>
+                  <FavoriteToggle
+                    itemId={album.id}
+                    itemName={album.name}
+                    favorite={album.favorite}
+                    onError={onFavoriteError}
+                    data-testid={`music-album-favorite-${album.id}`}
+                  />
+                </div>
                 <p>
                   {album.productionYear ?? ''}
                   {album.trackCount !== null
@@ -104,6 +132,7 @@ export function MusicArtistPage() {
           ) : null}
         </>
       )}
+      <Snackbar snackbar={snackbar.current} onDismiss={snackbar.dismiss} />
     </div>
   );
 }

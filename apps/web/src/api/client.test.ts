@@ -506,6 +506,46 @@ describe('ApiClient', () => {
         '/api/v1/jellyfin/items/album-driftwave/artwork',
       );
     });
+
+    it('queries /jellyfin/artists?favoritesOnly=true, and translates id to the ids query param', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ items: [], total: 0, startIndex: 0 }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.getJellyfinArtists({ favoritesOnly: true, id: 'artist-nebula' });
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/artists?favoritesOnly=true&ids=artist-nebula');
+    });
+
+    it('POSTs /jellyfin/items/:itemId/favorite to mark a favourite', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ favorite: true }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.markJellyfinFavorite('album-driftwave');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/items/album-driftwave/favorite');
+      expect(init?.method).toBe('POST');
+      expect(result).toEqual({ favorite: true });
+    });
+
+    it('DELETEs /jellyfin/items/:itemId/favorite to unmark a favourite', async () => {
+      const fetchFn = fakeFetch(
+        () => new Response(JSON.stringify({ favorite: false }), { status: 200 }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.unmarkJellyfinFavorite('album-driftwave');
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/items/album-driftwave/favorite');
+      expect(init?.method).toBe('DELETE');
+      expect(result).toEqual({ favorite: false });
+    });
   });
 
   describe('Jellyfin playback progress reporting', () => {

@@ -67,6 +67,41 @@ export const rawAuthenticationResultSchema = z
   .passthrough();
 
 // ---------------------------------------------------------------------------
+// Favourites — `Jellyfin.Api/Controllers/UserLibraryController.cs`
+// (`MarkFavoriteItem`/`UnmarkFavoriteItem`), `MediaBrowser.Model/Dto/UserItemDataDto.cs`.
+// Verified directly against `jellyfin/jellyfin` `master` (raw source, not recollection),
+// 2026-08-05: the *current* (non-`[Obsolete]`) routes are `POST /UserFavoriteItems/{itemId}`
+// and `DELETE /UserFavoriteItems/{itemId}`, each taking an *optional* `userId` query
+// parameter resolved via `RequestHelpers.GetUserId(User, userId)` — when omitted, it falls
+// back to the id embedded in the caller's own auth token
+// (`Jellyfin.Api/Helpers/RequestHelpers.cs`'s `GetUserId`). So no explicit Jellyfin user id
+// needs to be threaded through this client at all; the token alone is enough, exactly like
+// every other authenticated call this client makes. The `Users/{userId}/FavoriteItems/
+// {itemId}` route a first-draft version of this spec assumed exists too, but only as an
+// `[Obsolete("Kept for backwards compatibility")]` alias of the same handler — the
+// non-legacy path is used here.
+//
+// Both routes return a `UserItemDataDto` (`MarkFavorite`'s private helper calls
+// `_userDataRepository.GetUserDataDto(item, user)` after flipping `IsFavorite`), whose
+// `IsFavorite` is a non-nullable C# `bool` — always serialized, in principle. Kept
+// `.optional()` here anyway, deliberately more lenient than the field's C# nullability
+// would strictly require (contrast `rawLyricDtoSchema`'s required fields, which mirror
+// their non-nullable C# types exactly): a malformed/omitted field on this response should
+// degrade to "not favourited" rather than fail the whole toggle with a schema-mismatch
+// error, and `normalize.ts` is where that default is made visible either way.
+// ---------------------------------------------------------------------------
+
+/** `MediaBrowser.Model/Dto/UserItemDataDto.cs` — the body of both
+ * `POST /UserFavoriteItems/{itemId}` and `DELETE /UserFavoriteItems/{itemId}`. Only
+ * `IsFavorite` is modeled; the DTO's other fields (`Rating`, `PlaybackPositionTicks`,
+ * `PlayCount`, ...) are progress/rating data this package doesn't otherwise track. */
+export const rawUserItemDataDtoSchema = z
+  .object({
+    IsFavorite: z.boolean().nullable().optional(),
+  })
+  .passthrough();
+
+// ---------------------------------------------------------------------------
 // Library items — `Jellyfin.Api/Controllers/ItemsController.cs` (`GetItems`),
 // `MediaBrowser.Model/Dto/BaseItemDto.cs`
 // ---------------------------------------------------------------------------
@@ -110,6 +145,21 @@ export const rawBaseItemDtoSchema = z
     ChildCount: z.number().nullable().optional(),
     Genres: z.array(z.string()).nullable().optional(),
     CommunityRating: z.number().nullable().optional(),
+    /** `MediaBrowser.Model/Dto/BaseItemDto.cs`'s `UserData` property — per-user playback/
+     * favourite state for this item. Populated by `DtoService.AttachUserData` (source name
+     * inferred from the batch-fetch call sites; the field itself is confirmed directly)
+     * whenever the request resolves to an authenticated user *and* `DtoOptions.EnableUserData`
+     * is true — true by default (`DtoOptions`'s parameterless constructor delegates to
+     * `DtoOptions(true)`, which sets it), overridable only by an explicit `enableUserData`
+     * query flag this client never sends. Every request this client makes carries a token,
+     * so `user` always resolves (`RequestHelpers.GetUserId` falls back to the token's own
+     * user id — see the favourites section above) and this field is expected to be present
+     * on ordinary `/Items` responses. Still optional/nullable here, matching this schema's
+     * general leniency: some server-side paths (a minified shelf/personalized response, an
+     * older server version) are not guaranteed to populate it, and `normalize.ts` is what
+     * turns its absence into a definite `false` rather than an `undefined` a consumer would
+     * have to special-case. */
+    UserData: rawUserItemDataDtoSchema.nullable().optional(),
   })
   .passthrough();
 

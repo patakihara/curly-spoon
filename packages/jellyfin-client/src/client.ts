@@ -20,11 +20,13 @@ import {
   rawAuthenticationResultSchema,
   rawLyricDtoSchema,
   rawQueryResultSchema,
+  rawUserItemDataDtoSchema,
   type rawBaseItemDtoSchema,
 } from './schemas/raw.js';
 import {
   normalizeAlbum,
   normalizeArtist,
+  normalizeFavoriteState,
   normalizeLogin,
   normalizeLyrics,
   normalizeTrack,
@@ -71,6 +73,23 @@ export interface LibraryQuery {
    * of this package. */
   sortBy?: string;
   sortOrder?: SortOrder;
+  /** Scope to only this user's favourited items, via `/Items`' `filters=IsFavorite` —
+   * verified directly against `Jellyfin.Api/Controllers/ItemsController.cs`'s `GetItems`,
+   * whose `filters` parameter doc comment lists `IsFavorite` among the accepted
+   * `ItemFilter` values (`[FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))]
+   * ItemFilter[] filters`). A query param, not a separate endpoint: the same `/Items` route
+   * every other library-browsing method here already uses, so favouriting composes with
+   * `parentId`/`artistId`/`albumId`/pagination/sort for free rather than needing its own
+   * bespoke listing method per item kind. */
+  favoritesOnly?: boolean;
+  /** Scopes to exactly the given item ids, via `/Items`' `ids` filter — verified against
+   * `Jellyfin.Api/Controllers/ItemsController.cs`'s `GetItems`
+   * (`[FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))] Guid[] ids`).
+   * The one caller today (the web app's single-artist/single-album favourite-state fetch,
+   * where a page has an id from its own route param but no listing endpoint that returns
+   * just that one item) only ever passes one id, but this mirrors Jellyfin's own
+   * multi-id-capable filter rather than inventing a narrower single-id parameter. */
+  ids?: string[];
 }
 
 export type ArtistsQuery = LibraryQuery;
@@ -191,6 +210,8 @@ export class JellyfinClient {
         searchTerm: query.searchTerm,
         albumArtistIds: query.albumArtistIds,
         albumIds: query.albumIds,
+        filters: query.favoritesOnly ? 'IsFavorite' : undefined,
+        ids: query.ids && query.ids.length > 0 ? query.ids.join(',') : undefined,
       },
     });
     return {
@@ -368,6 +389,42 @@ export class JellyfinClient {
       schema: z.void(),
       retryable: false,
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Favourites — `Jellyfin.Api/Controllers/UserLibraryController.cs`'s `MarkFavoriteItem`/
+  // `UnmarkFavoriteItem`. Verified directly against that controller (not memory),
+  // 2026-08-05: both are `[HttpPost("UserFavoriteItems/{itemId}")]`/
+  // `[HttpDelete("UserFavoriteItems/{itemId}")]` — no Jellyfin user id needs to be sent;
+  // see `schemas/raw.ts`'s favourites section comment for why the token alone is enough.
+  // Neither takes a body; both return a `UserItemDataDto`, whose `IsFavorite` reflects the
+  // state *after* the change — used as the return value here rather than just trusting the
+  // request succeeded, so a caller's optimistic UI update can reconcile against what the
+  // server actually recorded rather than what it merely asked for.
+  // ---------------------------------------------------------------------
+
+  /** Marks `itemId` as a favourite for the signed-in user. Returns the resulting favourite
+   * state (expected to be `true`) rather than `void`, so callers reconcile against the
+   * server's own answer instead of assuming the request they sent is the state that stuck. */
+  async markFavorite(itemId: string): Promise<boolean> {
+    const raw = await this.http.requestJson(`/UserFavoriteItems/${itemId}`, {
+      method: 'POST',
+      schema: rawUserItemDataDtoSchema,
+      retryable: false,
+    });
+    return normalizeFavoriteState(raw);
+  }
+
+  /** Unmarks `itemId` as a favourite for the signed-in user. See `markFavorite`'s doc
+   * comment for why this returns the resulting state (expected to be `false`) rather than
+   * `void`. */
+  async unmarkFavorite(itemId: string): Promise<boolean> {
+    const raw = await this.http.requestJson(`/UserFavoriteItems/${itemId}`, {
+      method: 'DELETE',
+      schema: rawUserItemDataDtoSchema,
+      retryable: false,
+    });
+    return normalizeFavoriteState(raw);
   }
 
   // ---------------------------------------------------------------------

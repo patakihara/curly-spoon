@@ -13,6 +13,7 @@ import type {
   rawLyricDtoSchema,
   rawNameGuidPairSchema,
   rawUserDtoSchema,
+  rawUserItemDataDtoSchema,
 } from './schemas/raw.js';
 import type { Album, Artist, LoginResult, Lyrics, Track, UserProfile } from './domain.js';
 
@@ -32,6 +33,21 @@ function primaryImageTag(raw: Pick<RawItem, 'ImageTags'>): string | null {
   return raw.ImageTags?.Primary ?? null;
 }
 
+/**
+ * Reads favourite state off a raw `UserData` fragment (present on a `BaseItemDto`, or the
+ * whole body of a mark/unmark-favourite response) and defaults it to a definite `false`
+ * when absent — never `undefined`. This is the one place that default is made, per this
+ * file's own house rule (see the file doc comment): a `BaseItemDto` whose `UserData` never
+ * populated (see `schemas/raw.ts`'s `UserData` field comment for when that can happen) is
+ * indistinguishable, to every caller of this package, from an item that was checked and
+ * found not-favourited — there is no third "unknown" state to preserve.
+ */
+export function normalizeFavoriteState(
+  raw: z.infer<typeof rawUserItemDataDtoSchema> | null | undefined,
+): boolean {
+  return raw?.IsFavorite ?? false;
+}
+
 export function normalizeArtist(raw: RawItem): Artist {
   return {
     id: raw.Id,
@@ -39,6 +55,7 @@ export function normalizeArtist(raw: RawItem): Artist {
     overview: raw.Overview ?? null,
     imageTag: primaryImageTag(raw),
     albumCount: raw.ChildCount ?? null,
+    favorite: normalizeFavoriteState(raw.UserData),
   };
 }
 
@@ -64,6 +81,7 @@ export function normalizeAlbum(raw: RawItem): Album {
     genres: raw.Genres ?? [],
     imageTag: primaryImageTag(raw),
     trackCount: raw.ChildCount ?? null,
+    favorite: normalizeFavoriteState(raw.UserData),
   };
 }
 
@@ -79,6 +97,7 @@ export function normalizeTrack(raw: RawItem): Track {
     durationSeconds: raw.RunTimeTicks != null ? raw.RunTimeTicks / TICKS_PER_SECOND : null,
     imageTag: primaryImageTag(raw),
     genres: raw.Genres ?? [],
+    favorite: normalizeFavoriteState(raw.UserData),
   };
 }
 

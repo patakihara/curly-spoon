@@ -264,6 +264,132 @@ describe('GET /api/v1/jellyfin/artists|albums|tracks', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  it('ids=<id> scopes the listing to exactly that one item — the album/artist page favourite-toggle fetch', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const artists = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: cookie },
+    });
+    const nebula = artists
+      .json()
+      .items.find((a: { name: string }) => a.name === 'The Nebula Collective');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/jellyfin/artists?ids=${nebula.id}`,
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { items, total } = response.json();
+    expect(total).toBe(1);
+    expect(items).toEqual([expect.objectContaining({ id: nebula.id })]);
+  });
+
+  it("favoritesOnly=true scopes artists to just this user's favourites", async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const artists = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: cookie },
+    });
+    const nebula = artists
+      .json()
+      .items.find((a: { name: string }) => a.name === 'The Nebula Collective');
+
+    await app.inject({
+      method: 'POST',
+      url: `/api/v1/jellyfin/items/${nebula.id}/favorite`,
+      cookies: { auralis_session: cookie },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists?favoritesOnly=true',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { items, total } = response.json();
+    expect(total).toBe(1);
+    expect(items).toEqual([expect.objectContaining({ id: nebula.id, favorite: true })]);
+  });
+});
+
+describe('POST|DELETE /api/v1/jellyfin/items/:itemId/favorite', () => {
+  it('POST requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('DELETE requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('marks an item as a favourite, and the listing reflects it back as favorite: true', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+
+    const markResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+      cookies: { auralis_session: cookie },
+    });
+    expect(markResponse.statusCode).toBe(200);
+    expect(markResponse.json()).toEqual({ favorite: true });
+
+    const albums = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/albums',
+      cookies: { auralis_session: cookie },
+    });
+    const driftwave = albums.json().items.find((al: { id: string }) => al.id === 'album-driftwave');
+    expect(driftwave.favorite).toBe(true);
+  });
+
+  it('unmarks a favourite, and the listing reflects it back as favorite: false', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+      cookies: { auralis_session: cookie },
+    });
+
+    const unmarkResponse = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+      cookies: { auralis_session: cookie },
+    });
+    expect(unmarkResponse.statusCode).toBe(200);
+    expect(unmarkResponse.json()).toEqual({ favorite: false });
+
+    const albums = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/albums',
+      cookies: { auralis_session: cookie },
+    });
+    const driftwave = albums.json().items.find((al: { id: string }) => al.id === 'album-driftwave');
+    expect(driftwave.favorite).toBe(false);
+  });
+
+  it('409s with jellyfin_not_configured when no Jellyfin server has ever been connected', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
 });
 
 describe('GET /api/v1/jellyfin/search', () => {
@@ -624,6 +750,21 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
         payload: { itemId: 'track-driftwave-1', positionSeconds: 60 },
         cookies: { auralis_session: cookie },
       }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'DELETE',
+        url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'GET',
+        url: '/api/v1/jellyfin/artists?favoritesOnly=true',
+        cookies: { auralis_session: cookie },
+      }),
     ]);
 
     for (const response of responses) {
@@ -677,5 +818,16 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
     });
     expect(lyricsResponse.statusCode).toBe(409);
     expect(lyricsResponse.body).not.toMatch(/not-the-fake-upstream/);
+
+    // Same check for the favourite-toggle route — a POST, and the newest not-configured
+    // code path in this file, worth confirming independently rather than assuming it
+    // shares the others' safety by construction.
+    const favoriteResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/items/album-driftwave/favorite',
+      cookies: { auralis_session: cookie },
+    });
+    expect(favoriteResponse.statusCode).toBe(409);
+    expect(favoriteResponse.body).not.toMatch(/not-the-fake-upstream/);
   });
 });

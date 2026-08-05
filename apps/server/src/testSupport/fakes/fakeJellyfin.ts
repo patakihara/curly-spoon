@@ -21,6 +21,10 @@ export const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
 export const FAKE_JELLYFIN_CREDENTIALS = { username: 'nova', password: 'stardust1' };
 export const FAKE_JELLYFIN_BAD_CREDENTIALS = { username: 'nova', password: 'wrong-password' };
 
+interface RawUserData {
+  IsFavorite: boolean;
+}
+
 interface RawArtist {
   Id: string;
   Name: string;
@@ -28,6 +32,7 @@ interface RawArtist {
   Overview: string | null;
   ImageTags: Record<string, string>;
   ChildCount: number;
+  UserData: RawUserData;
 }
 
 interface RawAlbum {
@@ -41,6 +46,7 @@ interface RawAlbum {
   Genres: string[];
   ImageTags: Record<string, string>;
   ChildCount: number;
+  UserData: RawUserData;
 }
 
 interface RawTrack {
@@ -56,6 +62,7 @@ interface RawTrack {
   RunTimeTicks: number;
   ImageTags: Record<string, string>;
   Genres: string[];
+  UserData: RawUserData;
 }
 
 const ARTISTS: Array<{ id: string; name: string; overview: string }> = [
@@ -160,7 +167,7 @@ const albumName = (id: string): string => ALBUMS.find((a) => a.id === id)?.name 
 const albumArtistId = (albumId: string): string =>
   ALBUMS.find((a) => a.id === albumId)?.artistId ?? '';
 
-function artistDto(a: (typeof ARTISTS)[number]): RawArtist {
+function artistDto(a: (typeof ARTISTS)[number], favorites: ReadonlySet<string>): RawArtist {
   return {
     Id: a.id,
     Name: a.name,
@@ -168,10 +175,11 @@ function artistDto(a: (typeof ARTISTS)[number]): RawArtist {
     Overview: a.overview,
     ImageTags: { Primary: `${a.id}-tag` },
     ChildCount: ALBUMS.filter((al) => al.artistId === a.id).length,
+    UserData: { IsFavorite: favorites.has(a.id) },
   };
 }
 
-function albumDto(al: (typeof ALBUMS)[number]): RawAlbum {
+function albumDto(al: (typeof ALBUMS)[number], favorites: ReadonlySet<string>): RawAlbum {
   return {
     Id: al.id,
     Name: al.name,
@@ -183,10 +191,11 @@ function albumDto(al: (typeof ALBUMS)[number]): RawAlbum {
     Genres: al.genres,
     ImageTags: { Primary: `${al.id}-tag` },
     ChildCount: TRACKS.filter((t) => t.albumId === al.id).length,
+    UserData: { IsFavorite: favorites.has(al.id) },
   };
 }
 
-function trackDto(t: (typeof TRACKS)[number]): RawTrack {
+function trackDto(t: (typeof TRACKS)[number], favorites: ReadonlySet<string>): RawTrack {
   const artistId = albumArtistId(t.albumId);
   return {
     Id: t.id,
@@ -201,6 +210,7 @@ function trackDto(t: (typeof TRACKS)[number]): RawTrack {
     RunTimeTicks: t.durationSeconds * 10_000_000,
     ImageTags: { Primary: `${t.albumId}-tag` },
     Genres: [],
+    UserData: { IsFavorite: favorites.has(t.id) },
   };
 }
 
@@ -269,6 +279,10 @@ export interface FakeJellyfinUpstream {
 
 export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
   const tokens = new Map<string, string>(); // token -> userId
+  // Favourite state, keyed by item id — a single set is enough since every fake token
+  // resolves to the same one fake user (`jellyfin-user-1`), matching this fake's existing
+  // single-tenant shape elsewhere (no per-user branching in `/Items` either).
+  const favorites = new Set<string>();
 
   function json(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body), {
@@ -336,6 +350,28 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
     const token = tokenFromRequest(url, headers);
     if (!token || !tokens.has(token)) return unauthorized();
 
+    // ---- Favourites ----
+    // Mirrors the real `UserLibraryController`'s `MarkFavoriteItem`/`UnmarkFavoriteItem` —
+    // verified against that controller (see `schemas/raw.ts`'s favourites section comment
+    // in `@auralis/jellyfin-client`): `POST`/`DELETE /UserFavoriteItems/{itemId}`, no
+    // userId needed since it resolves from the token, response is `{ IsFavorite }`
+    // reflecting the state *after* the change.
+    if (
+      (method === 'POST' || method === 'DELETE') &&
+      parts[0] === 'UserFavoriteItems' &&
+      parts[1]
+    ) {
+      const itemId = parts[1];
+      const known =
+        ARTISTS.some((a) => a.id === itemId) ||
+        ALBUMS.some((a) => a.id === itemId) ||
+        TRACKS.some((t) => t.id === itemId);
+      if (!known) return notFound();
+      if (method === 'POST') favorites.add(itemId);
+      else favorites.delete(itemId);
+      return json({ IsFavorite: favorites.has(itemId) });
+    }
+
     // ---- Library browsing / search — one endpoint for all three item kinds ----
     if (method === 'GET' && path === '/Items') {
       const includeItemTypes = (url.searchParams.get('includeItemTypes') ?? '')
@@ -344,26 +380,36 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
       const searchTerm = url.searchParams.get('searchTerm')?.toLowerCase();
       const albumArtistIds = url.searchParams.get('albumArtistIds');
       const albumIds = url.searchParams.get('albumIds');
+      const ids = url.searchParams.get('ids')?.split(',').filter(Boolean);
       const startIndex = Number(url.searchParams.get('startIndex') ?? 0);
       const limitParam = url.searchParams.get('limit');
       const limit = limitParam !== null ? Number(limitParam) : undefined;
+      const favoritesOnly = (url.searchParams.get('filters') ?? '')
+        .split(',')
+        .includes('IsFavorite');
 
       let items: Array<RawArtist | RawAlbum | RawTrack> = [];
       if (includeItemTypes.includes('MusicArtist')) {
-        items = items.concat(ARTISTS.map(artistDto));
+        items = items.concat(ARTISTS.map((a) => artistDto(a, favorites)));
       }
       if (includeItemTypes.includes('MusicAlbum')) {
         let albums = ALBUMS;
         if (albumArtistIds) albums = albums.filter((a) => a.artistId === albumArtistIds);
-        items = items.concat(albums.map(albumDto));
+        items = items.concat(albums.map((a) => albumDto(a, favorites)));
       }
       if (includeItemTypes.includes('Audio')) {
         let tracks = TRACKS;
         if (albumIds) tracks = tracks.filter((t) => t.albumId === albumIds);
-        items = items.concat(tracks.map(trackDto));
+        items = items.concat(tracks.map((t) => trackDto(t, favorites)));
       }
       if (searchTerm) {
         items = items.filter((item) => (item.Name ?? '').toLowerCase().includes(searchTerm));
+      }
+      if (favoritesOnly) {
+        items = items.filter((item) => item.UserData.IsFavorite);
+      }
+      if (ids && ids.length > 0) {
+        items = items.filter((item) => ids.includes(item.Id));
       }
 
       const total = items.length;

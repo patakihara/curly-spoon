@@ -12,6 +12,7 @@ import type {
   JellyfinAlbum,
   JellyfinArtist,
   JellyfinConfig,
+  JellyfinFavoriteResponse,
   JellyfinLibraryPage,
   JellyfinLoginBody,
   JellyfinLoginResult,
@@ -367,24 +368,49 @@ export class ApiClient {
   }
 
   getJellyfinArtists(
-    query: { startIndex?: number; limit?: number } = {},
+    query: {
+      startIndex?: number;
+      limit?: number;
+      favoritesOnly?: boolean;
+      /** A single artist id, joined the same comma-separated way as every other
+       * `ids`-filter caller — see `@auralis/jellyfin-client`'s `LibraryQuery.ids` doc
+       * comment. This BFF route only ever forwards one id today (the artist page's own
+       * favourite-state fetch), so it's typed as a single optional id here rather than
+       * an array a caller would just build a one-element array for. */
+      id?: string;
+    } = {},
     signal?: AbortSignal,
   ): Promise<JellyfinLibraryPage<JellyfinArtist>> {
-    return this.request('/jellyfin/artists', { query, signal });
+    const { id, ...rest } = query;
+    return this.request('/jellyfin/artists', { query: { ...rest, ids: id }, signal });
   }
 
   getJellyfinAlbums(
-    query: { artistId?: string; startIndex?: number; limit?: number } = {},
+    query: {
+      artistId?: string;
+      startIndex?: number;
+      limit?: number;
+      favoritesOnly?: boolean;
+      /** See `getJellyfinArtists`'s `id` param doc comment — same shape, same reasoning. */
+      id?: string;
+    } = {},
     signal?: AbortSignal,
   ): Promise<JellyfinLibraryPage<JellyfinAlbum>> {
-    return this.request('/jellyfin/albums', { query, signal });
+    const { id, ...rest } = query;
+    return this.request('/jellyfin/albums', { query: { ...rest, ids: id }, signal });
   }
 
   getJellyfinTracks(
     // `sortBy` is a Jellyfin `ItemSortBy` value (e.g. `'ParentIndexNumber,IndexNumber'` for
     // disc/track order) passed straight through to the BFF's own pass-through parameter —
     // this method never interprets it, same as every other query field here.
-    query: { albumId?: string; startIndex?: number; limit?: number; sortBy?: string } = {},
+    query: {
+      albumId?: string;
+      startIndex?: number;
+      limit?: number;
+      sortBy?: string;
+      favoritesOnly?: boolean;
+    } = {},
     signal?: AbortSignal,
   ): Promise<JellyfinLibraryPage<JellyfinTrack>> {
     return this.request('/jellyfin/tracks', { query, signal });
@@ -404,6 +430,23 @@ export class ApiClient {
    * method here. */
   getJellyfinLyrics(itemId: string, signal?: AbortSignal): Promise<JellyfinLyricsResponse> {
     return this.request(`/jellyfin/tracks/${encodeURIComponent(itemId)}/lyrics`, { signal });
+  }
+
+  /** Marks `itemId` (artist, album or track — the BFF route is item-kind agnostic, same as
+   * Jellyfin's own favourite endpoints) as a favourite. Resolves to the state Jellyfin
+   * actually recorded — see `JellyfinFavoriteResponse`'s doc comment for why that's trusted
+   * over the request's own intent. */
+  markJellyfinFavorite(itemId: string): Promise<JellyfinFavoriteResponse> {
+    return this.request(`/jellyfin/items/${encodeURIComponent(itemId)}/favorite`, {
+      method: 'POST',
+    });
+  }
+
+  /** Unmarks `itemId` as a favourite. See `markJellyfinFavorite`'s doc comment. */
+  unmarkJellyfinFavorite(itemId: string): Promise<JellyfinFavoriteResponse> {
+    return this.request(`/jellyfin/items/${encodeURIComponent(itemId)}/favorite`, {
+      method: 'DELETE',
+    });
   }
 
   /** Not fetched via `request()` — used directly as an `<img>` src, same reasoning

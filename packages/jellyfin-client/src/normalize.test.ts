@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeAlbum,
   normalizeArtist,
+  normalizeFavoriteState,
   normalizeLogin,
   normalizeLyrics,
   normalizeTrack,
@@ -29,6 +30,7 @@ describe('normalizeArtist', () => {
         Overview: 'Scottish electronic duo',
         ImageTags: { Primary: 'tag-abc' },
         ChildCount: 5,
+        UserData: { IsFavorite: true },
       }),
     );
     expect(artist).toEqual({
@@ -37,6 +39,7 @@ describe('normalizeArtist', () => {
       overview: 'Scottish electronic duo',
       imageTag: 'tag-abc',
       albumCount: 5,
+      favorite: true,
     });
   });
 
@@ -45,7 +48,7 @@ describe('normalizeArtist', () => {
     expect(artist.name).toBe('(unknown artist)');
   });
 
-  it('defaults every other optional field to null when the server omits them', () => {
+  it('defaults every other optional field to null (and favorite to false) when the server omits them', () => {
     const artist = normalizeArtist(rawItem({ Id: 'artist-3' }));
     expect(artist).toEqual({
       id: 'artist-3',
@@ -53,6 +56,7 @@ describe('normalizeArtist', () => {
       overview: null,
       imageTag: null,
       albumCount: null,
+      favorite: false,
     });
   });
 });
@@ -71,12 +75,14 @@ describe('normalizeAlbum', () => {
         ChildCount: 17,
         AlbumArtists: [{ Id: 'artist-1', Name: 'Boards of Canada' }],
         ArtistItems: [{ Id: 'other-artist', Name: 'Someone Else' }],
+        UserData: { IsFavorite: true },
       }),
     );
     expect(album.artistId).toBe('artist-1');
     expect(album.artistName).toBe('Boards of Canada');
     expect(album.genres).toEqual(['IDM', 'Ambient']);
     expect(album.trackCount).toBe(17);
+    expect(album.favorite).toBe(true);
   });
 
   it('falls back to ArtistItems when AlbumArtists is absent', () => {
@@ -95,6 +101,7 @@ describe('normalizeAlbum', () => {
     expect(album.artistId).toBeNull();
     expect(album.artistName).toBeNull();
     expect(album.genres).toEqual([]);
+    expect(album.favorite).toBe(false);
   });
 });
 
@@ -112,6 +119,7 @@ describe('normalizeTrack', () => {
         RunTimeTicks: 25_000_000, // 2.5 seconds
         ImageTags: { Primary: 'tag-ghi' },
         Genres: ['IDM'],
+        UserData: { IsFavorite: true },
       }),
     );
     expect(track).toEqual({
@@ -125,10 +133,11 @@ describe('normalizeTrack', () => {
       durationSeconds: 2.5,
       imageTag: 'tag-ghi',
       genres: ['IDM'],
+      favorite: true,
     });
   });
 
-  it('defaults duration and every optional field to null/[] when the server omits them', () => {
+  it('defaults duration and every optional field to null/[]/false when the server omits them', () => {
     const track = normalizeTrack(rawItem({ Id: 'track-2', Name: 'Untitled' }));
     expect(track.durationSeconds).toBeNull();
     expect(track.albumId).toBeNull();
@@ -136,6 +145,7 @@ describe('normalizeTrack', () => {
     expect(track.discNumber).toBeNull();
     expect(track.artistNames).toEqual([]);
     expect(track.genres).toEqual([]);
+    expect(track.favorite).toBe(false);
   });
 });
 
@@ -214,5 +224,28 @@ describe('normalizeLyrics', () => {
   it('treats an empty Lyrics array as unsynced rather than throwing', () => {
     const raw: RawLyricDto = { Metadata: {}, Lyrics: [] };
     expect(normalizeLyrics(raw)).toEqual({ lines: [], synced: false });
+  });
+});
+
+describe('normalizeFavoriteState', () => {
+  it('reads IsFavorite: true through', () => {
+    expect(normalizeFavoriteState({ IsFavorite: true })).toBe(true);
+  });
+
+  it('reads IsFavorite: false through as a definite false, not just falsy', () => {
+    expect(normalizeFavoriteState({ IsFavorite: false })).toBe(false);
+  });
+
+  it('defaults to false when IsFavorite is absent', () => {
+    expect(normalizeFavoriteState({})).toBe(false);
+  });
+
+  it('defaults to false when IsFavorite is null', () => {
+    expect(normalizeFavoriteState({ IsFavorite: null })).toBe(false);
+  });
+
+  it('defaults to false when the whole UserData fragment is null or absent', () => {
+    expect(normalizeFavoriteState(null)).toBe(false);
+    expect(normalizeFavoriteState(undefined)).toBe(false);
   });
 });
