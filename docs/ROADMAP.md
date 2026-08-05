@@ -1080,6 +1080,26 @@ touching one.
   `GET /music-requests` deliberately inherits the unscoped-by-caller behaviour `GET /requests`
   already has, rather than diverging music from books on a decision that is the user's.
 
+- **Music requests — web UI: done (`12ec3eb`, merged `f5c8e1e`).** Search, request and a status
+  list at `/music/requests`, reached from Music home. Two things it presents honestly rather
+  than prettily, both worth keeping:
+  - A slskd search runs **synchronously server-side for up to ~17s** with no separate progress
+    signal, so the page distinguishes in-flight from settled-empty through a tested pure
+    function rather than rendering an unfinished search as "no matches" — the same mistake
+    `/search` had to fix once.
+  - A music request really does end at `downloading`, so it shows a plain note saying Jellyfin
+    needs a rescan, **not** a progress bar. There is no `pollDownloads` for music, so a bar
+    would sit frozen at 0% and imply completion was coming.
+
+  An unset or invalid save path surfaces slskd's own actionable message verbatim rather than a
+  raw upstream error — slskd's destination is relative-only, so an absolute path is rejected
+  before it ever reaches the upstream.
+
+  **A latent gap it found in the book path, not fixed:** `useGrabRequestMutation` is never
+  called for books either, so a request that reaches `approved` by any route other than the
+  UI's own create/approve action has no grab affordance. The music UI works around it by
+  chaining create/approve straight into `grab()`; books have no such chain.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
