@@ -156,9 +156,9 @@ export const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider(
         aria-valuemax={max}
         aria-valuenow={value}
         aria-valuetext={valueText}
-        aria-label={rest['aria-label']}
         onPointerDown={handlePointerDown}
         onKeyDown={handleKeyDown}
+        {...rest}
       >
         {bufferedPercent !== undefined ? (
           <div className="m3-slider__buffered" style={{ width: `${bufferedPercent}%` }} />
