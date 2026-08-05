@@ -1307,6 +1307,40 @@ earlier in `LinearProgress`/`CircularProgress` turned out already covered by a g
 catch-all in `packages/ui`'s stylesheet, verified in a browser and now pinned by regression
 tests. Contrast is asserted against real rendered elements in both themes.
 
+**Accessibility audit — a second pass, and four fixes (`663ffad`, merged `ae7d985`).** An
+earlier pass swept the player, search and overlay surfaces; this one covered music, playlists,
+favourites and settings, and verified every claim in a real browser rather than from source —
+one hypothesis (`Loader`/`Progress` ignoring reduced motion) died that way before being
+reported, because a global `!important` rule already handled it.
+
+The most instructive finding: **Now Playing did not restore focus on Escape, while the shared
+`Sheet` component's own gallery spec passed.** `NowPlaying` returned `null` the instant `open`
+went false, so the whole `Sheet` unmounted before Mantine's Drawer could observe the `opened`
+prop transition its focus-return effect is wired to. The component was correct; its caller was
+not, and the isolated spec could never have caught it because the gallery only toggles `open`
+and never unmounts. It affected books and podcasts too — one `NowPlaying` serves every media
+kind.
+
+The other three: unfavouriting removed the focused row with no announcement and dropped focus
+to `<body>`; the theme-mode buttons conveyed selection only through their visual variant, while
+the colour swatches directly below them already set `aria-pressed`; and `color-scheme` was
+never synced to the resolved theme the way `data-theme` is, so native placeholder text rendered
+for the wrong scheme whenever the pinned theme disagreed with the OS — measured **2.07:1**
+against WCAG AA's 4.5:1.
+
+**Left as product decisions, not fixed**: `FavoriteToggle` uses one heart glyph in both states
+(differentiated by colour at 1.61:1 plus a 15% scale bump — screen readers are unaffected, but
+a proper fix needs an outline/filled glyph pair, i.e. a change to the icon set), and
+`SearchField` has no visible label besides its placeholder across six call sites, one of which
+is deliberately chrome-minimal.
+
+**Not covered by this audit**: real assistive technology (VoiceOver/NVDA/JAWS) — everything is
+DOM/ARIA/computed-style verification in Chromium — the podcasts UI beyond a source grep, and a
+full tab-walk of pages other than Home, album and Now Playing. `@axe-core/playwright` would
+catch more of the `aria-pressed` class quickly but would not have caught the focus, live-region
+or contrast findings, which needed real interaction sequences; adding it is the user's call and
+was deliberately not taken.
+
 ### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
 
 Sideloading an APK from a CI artifact is fine for the person who builds it and hostile to
