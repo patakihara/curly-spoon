@@ -321,6 +321,9 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
+- **2026-08-06** — phase 10, entry-chunk splitting to lift the mobile Lighthouse score
+  (`apps/web/vite.config.ts`, `apps/web/src/` shell, `scripts/*budget.config.mjs`
+  baselines). Does not touch `docs/research/` or `apps/android/`.
 - **2026-08-06** — phase 10, the holistic `docs/DESIGN.md` reference-app comparison, web
   surfaces only (`docs/research/`). Audit only, no code changes.
 
