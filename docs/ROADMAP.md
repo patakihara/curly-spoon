@@ -1239,7 +1239,9 @@ The regression test uses a track artist that genuinely differs from the album ar
 (`"Led Zeppelin"` against `"Various Artists"`), so it cannot pass with the fix reverted — the
 failure mode two earlier tests in this repo shipped with.
 
-**Web still has this bug.** Nothing about it is Android-specific except where it was fixed.
+**Web is fixed too (`226fcd5`)**, the same way and for the same reason, threaded through
+`playerUi.ts`, `NowPlaying`, `MiniPlayer` and `useMediaSession` — fixing the queue alone would
+have left the OS lock screen still reading the album artist, which is the visible symptom.
 
 **Everything that paragraph used to list as a deliberate gap has since shipped** — the
 cross-page queue, shuffle and repeat, the synced-lyrics view, playlists, favourites, music
