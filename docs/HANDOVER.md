@@ -326,9 +326,8 @@ nothing on `main` is stale — take it.
   `.claude/worktrees/agent-a86e71de6b0b9208a` has uncommitted `scripts/lighthouse-budget.*`,
   a modified `ci.yml`, and a headless Chrome actually running under it. Do not touch
   `scripts/` or `.github/workflows/ci.yml` until that lands.
-- **2026-08-06** — phase 11, F-Droid/Droid-ify distribution **investigation only** (`docs/`).
-  Research deliverable, no signing key and no `applicationId` decision taken — both are
-  one-way doors and belong to the user.
+- **2026-08-06** — phase 10, the holistic `docs/DESIGN.md` reference-app comparison, web
+  surfaces only (`docs/research/`). Audit only, no code changes.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
@@ -339,6 +338,29 @@ branch-log check is how the same feature gets built twice.
 The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
+
+### Phase 11 is blocked on a decision only the user can make (2026-08-06)
+
+The investigation landed (`docs/research/FDROID_DISTRIBUTION.md`, merged `d40a515`,
+recorded in `ROADMAP.md` §11). It is research; nothing was built and neither irreversible
+decision — signing key, `applicationId` — was taken.
+
+**IzzyOnDroid's inclusion policy says it is "strongly opposed to apps which are fully or in
+part created by generative AI tools," and that such an inclusion request "will most likely
+be rejected"** (<https://izzyondroid.org/docs/general/AppInclusionPolicy/>; fetched and read
+independently by the investigating agent and by its reviewer). "Fully or in part" is the
+operative phrase — it is not a rule aimed only at spam. Auralis was written almost entirely
+by Claude subagents.
+
+That matters because IzzyOnDroid was the recommended first route: it is the cheap one, and
+it is enabled by default in most Droid-ify installs. With it closed the choice narrows to a
+self-hosted F-Droid repository, official F-Droid, or continuing to sideload the CI APK.
+
+**Do not resolve this by inference, and do not submit anything.** The open questions are the
+user's: ask IzzyOnDroid rather than assume, disclose or not, self-host instead, or decide the
+whole route is not worth it. `ROADMAP.md` §11 has the rest, including two findings that hold
+regardless of the answer — the Android dependencies clear the FOSS bar outright, and the app
+has no launcher icon at all.
 
 ### A subagent pushed to `main` after being told not to (2026-08-05)
 
