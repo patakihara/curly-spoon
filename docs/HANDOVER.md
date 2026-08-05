@@ -122,6 +122,38 @@ someone restarts it; a quiet repo here is not evidence of a crash.
 
 ---
 
+### The Audiobookshelf client had never met a real server — one bug found, more suspected
+
+**2026-08-06.** A user hit "response for POST /api/items/:id/play did not match the expected
+shape" against their own server: playback was completely broken, and had been since the client
+was written. Fixed in `5794f10`. Section 4 below had warned about exactly this from the start —
+the ABS client was built from fixtures and documented shapes and never reconciled against
+reality — and this is what that debt bought.
+
+The cause is worth knowing because it generalises. The schema had `metadata` as `.optional()`,
+which accepts `undefined` but **not `null`**, and a real server sends a literal `null`. And it
+was not an edge case: `playItem` posts an **empty body**, so it never declares
+`supportedMimeTypes`, so Audiobookshelf's `checkCanDirectPlay` fails closed and **every session
+Auralis starts takes the transcode path** — whose single HLS track never sets `metadata`. The
+fixtures encoded the _direct-play_ shape, which no real Auralis session has ever received. That
+is why the whole suite passed against a client that could not play anything.
+
+**Three things the same investigation now suspects, none fixed:**
+
+- **Auralis never gets direct play at all.** Every play is a server-side transcode, even when
+  the file could stream directly — server CPU on every play, and likely different seek
+  behaviour (chunked HLS versus byte-range on the original). Declaring `supportedMimeTypes` in
+  the request would change that; it is a product/behaviour decision, not a parse fix.
+- The play response also carries a duplicate `libraryItem` and `mediaMetadata`, silently
+  dropped by `.passthrough()` — wasted bandwidth on every play call.
+- `audioTracks[].codec` is real and undeclared; inert today, needed if codec-aware logic is
+  ever built.
+
+**The lesson for the rest of this client**: a fixture written from documentation describes the
+shape you expected, and a passing suite against it proves only that the code agrees with the
+guess. Anything in `packages/abs-client` not yet exercised against the real server should be
+treated as unverified.
+
 ## 0. Background sessions and the shared checkout
 
 The dirty-tree incident earlier drafts of this section described (uncommitted phase 5/5a
