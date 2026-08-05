@@ -9,8 +9,11 @@
  *    `progress` as it moves. The music pipeline has no such poller — `progress` is
  *    whatever `grab()` last wrote (0, and frozen there) — so a bar here would just sit at
  *    0% forever, which reads as broken, not as "working". A plain note is the honest
- *    version: it says the download is in progress and that Jellyfin needs a manual
- *    rescan to pick it up once it lands, without claiming to track it.
+ *    version: it says the download is in progress and that Jellyfin has to pick the file
+ *    up before it appears, without claiming to track it. The rescan itself is no longer
+ *    manual — a request reaching `importing` asks Jellyfin for one — but the ask is
+ *    fire-and-forget with no completion signal, so "it will appear once Jellyfin picks it
+ *    up" stays the strongest honest claim.
  * 2. **Approve auto-grabs.** The book list's "Approve" button only calls `POST
  *    .../approve`, which leaves a request sitting at `approved` forever — nothing else
  *    in this codebase calls `grab()` for it (confirmed: `useGrabRequestMutation` exists
@@ -97,7 +100,7 @@ export function MusicRequestList({ requests, allowApproval }: MusicRequestListPr
           {request.status === 'downloading' ? (
             <p data-testid={`music-request-${request.id}-downloading-note`}>
               Downloading via Soulseek. Auralis doesn't track transfer progress for music yet, and
-              Jellyfin needs a manual library rescan once the file lands before it shows up.
+              Jellyfin is asked to rescan once the file lands; it appears after that scan runs.
             </p>
           ) : null}
 

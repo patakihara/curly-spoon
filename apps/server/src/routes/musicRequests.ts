@@ -2,9 +2,11 @@
  * Music request routes. Registered from `routes/index.ts`, same as `registerRequestRoutes`.
  *
  * Search, create, list, approve/reject/retry and grab are here. What is **not**: a status
- * poll or anything past `downloading` (no import, no completion) — `musicRequestService.ts`'s
- * file comment explains why (no Jellyfin rescan capability exists anywhere in this
- * codebase to call into). `remove()` on the provider is likewise unwired: `DELETE
+ * poll. A request does now advance past `downloading` — `musicRequestService.ts` asks
+ * Jellyfin to rescan and lands on `importRequested` — but nothing claims `completed`,
+ * because Jellyfin's refresh is fire-and-forget with no API to observe it finishing. (An
+ * earlier version of this comment said no rescan capability existed at all; it does now.)
+ * `remove()` on the provider is likewise unwired: `DELETE
  * /music-requests/:id` below only drops the row, exactly mirroring `routes/requests.ts`'s
  * `DELETE /requests/:id`, which never calls the book download client's `remove` either.
  *
