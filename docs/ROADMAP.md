@@ -780,14 +780,31 @@ this repo after all, without a DOM — `apps/web/src/api/queries.test.ts` follow
 the hook as a plain function. That does not close the component-test gap below, but it does
 mean query-shape bugs like this one are testable.
 
-**One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
-not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
-so a _paused_ track still ticks. For audiobooks that is harmless (it re-reports the same
-position). For Jellyfin it means a paused track keeps sending `IsPaused: false`, so the
-upstream session reads as actively playing while it is not — a live-session artifact, not the
-cosmetic UI hint wave C's own report called it. Fixing it properly means the seam carrying a
-pause signal, which touches the audiobook reporter too, so it is a wave of its own rather than
-a patch to `jellyfinSource`.
+- **Android wave C — music playback: done (`5d3d4e7`, merged `ed60f1b`).** Tapping a track
+  plays the album from there. It needed **no change to the Media3 stack**: the service's
+  `onAddMediaItems` already passes through any item carrying a real URI, which is the same
+  mechanism single-item book and episode playback relies on, so it accepted a multi-item queue
+  unchanged. `MiniPlayerBar` and the lock-screen metadata needed nothing either. The queue is
+  built by a pure `albumPlaybackQueue(...)` so its ordering is unit-testable directly rather
+  than through a ViewModel. Every queued track carries **album-level** artist/album/artwork,
+  matching the web client — which will show the wrong artist on a compilation. Not yet
+  reported to Jellyfin: Android playback sends no progress upstream (web does).
+
+- **The paused-reporting gap below is fixed (`4b11b22`).** The whole path — BFF route,
+  `jellyfin-client`, the web API client — already carried `isPaused` end to end; only
+  `jellyfinSource.onTick` never passed it through. `PlaybackProgressReporter.onTick` now takes
+  a second argument, `PlaybackTickState`, kept **out of** `ProgressSyncBody` deliberately:
+  that type is Audiobookshelf's literal wire shape, so a field added there would leak into an
+  upstream request that has no such parameter. `audiobookshelfSource` ignores the new argument
+  and a test pins its payload byte-for-byte so a future refactor cannot start sending a pause
+  field to Audiobookshelf. `useProgressSync` reads `isPlaying` **fresh at tick time** via
+  `getState()`, because the interval's effect depends on `[collect, sessionId]` and a
+  closed-over value would be frozen at session change and never see a play/pause toggle.
+
+  One consequence worth knowing: the lazy start report still hardcodes `IsPaused: false`
+  (Jellyfin's start DTO has no pause parameter), and the progress report that corrects it is
+  fired unawaited immediately after — so the two requests have no guaranteed wire ordering.
+  Pre-existing, not introduced by the fix.
 
 **Known gaps, all deliberate**: the album queue covers only
 the displayed 40-track page, not across pagination; no shuffle/repeat/cross-source queue
