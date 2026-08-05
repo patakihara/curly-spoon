@@ -285,8 +285,9 @@ nothing on `main` is stale — take it.
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
   (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
   landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
-  lyrics view). This session stays inside `apps/android/` and is not touching `apps/server/` or
-  `apps/web/`.
+  lyrics view). Wave K — music requests on **Android** — is dispatched now; the web UI for the
+  same feature is session `01Wf5C2q`'s, claimed above, and these do not overlap. This session
+  stays inside `apps/android/` and is not touching `apps/server/` or `apps/web/`.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
