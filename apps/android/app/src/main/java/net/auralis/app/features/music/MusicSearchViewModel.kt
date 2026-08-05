@@ -93,25 +93,24 @@ data class MusicSearchUiState(
  *
  * [onQueryChange] is the only entry point: it updates the visible field text immediately, then
  * cancels any pending or in-flight search and starts a fresh one behind [MUSIC_SEARCH_DEBOUNCE_MS]
- * of `delay()`. That cancel-then-relaunch is what gives this class both of its correctness
- * properties at once, the same way `PodcastsViewModel.submitSearch`'s own `searchJob` already
- * does for an explicit-submit search: rapid typing never sends more than the one request the
- * text eventually settles on (nothing before that survives to fire), and a slower, already
- * in-flight response for an earlier term does not become the lasting result — cancelling a
- * coroutine suspended awaiting that response (whether still in `delay()` or inside
- * [MusicRepository.search]'s own network call) normally throws into it rather than letting it
- * run to a stale `_uiState` write, a standard structured-concurrency guarantee this class
- * relies on rather than re-implements.
+ * of `delay()`. That cancel-then-relaunch, together with [searchSequence] below, is what gives
+ * this class both of its correctness properties at once, the same way `PodcastsViewModel
+ * .submitSearch`'s own `searchJob` gives the first one for an explicit-submit search: rapid
+ * typing never sends more than the one request the text eventually settles on (nothing before
+ * that survives to fire — cancellation during `delay()` is a plain suspension-point throw, and
+ * a genuine one), and a slower, already in-flight response for an earlier term never becomes the
+ * lasting result either.
  *
- * "Normally", not "always", and the difference is worth stating precisely. [MusicRepository]
- * reaches a *blocking* OkHttp call inside `withContext(Dispatchers.IO)`, so the request itself
- * always runs to completion once started; what cancellation actually stops is the resumption
- * back onto Main. If the older request's resumption is already queued on Main *before* the
- * newer keystroke's `cancel()` runs, that older job is still active when its resumption is
- * processed and it does write its superseded results. That write is same-frame and
- * self-correcting — `onQueryChange` sets `Searching` immediately after — so it can flicker but
- * can never be the state the user is left looking at. Sequence numbers would close it
- * outright; they are not worth the machinery for a frame.
+ * That second guarantee is *not* something coroutine cancellation alone provides here, and the
+ * reason is worth stating precisely. [MusicRepository] reaches a *blocking* OkHttp call inside
+ * `withContext(Dispatchers.IO)`, so a request that has already started always runs to completion
+ * regardless of `cancel()`; only the resumption back onto Main is subject to cancellation, and
+ * that resumption's timing relative to `cancel()` is not something this class controls or can
+ * rely on. [performSearch] therefore never lets a network result reach `_uiState` on trust: it
+ * compares the sequence number captured when *that* search was launched against [searchSequence]
+ * immediately before writing, and drops the result if a newer `onQueryChange`/[retry] has since
+ * moved on. That comparison is a plain, single-threaded-at-the-write-site field read with no
+ * dependency on cancellation timing, so it holds in every interleaving, not just the common one.
  */
 class MusicSearchViewModel(
     private val musicRepository: MusicRepository,
@@ -121,9 +120,18 @@ class MusicSearchViewModel(
     val uiState: StateFlow<MusicSearchUiState> = _uiState.asStateFlow()
 
     // Cancelled and replaced on every onQueryChange (and by retry) — see this class's own doc
-    // comment for why this single field is what makes both the debounce and the stale-response
-    // guarantee hold.
+    // comment for why this single field is what makes the debounce guarantee hold. It is *not*
+    // what makes the stale-response guarantee hold — see [searchSequence] for that one.
     private var searchJob: Job? = null
+
+    // Bumped every time a new "live" search is issued — by a debounced onQueryChange, by retry,
+    // or by onQueryChange clearing the field back to Idle. [performSearch] captures the value at
+    // launch and compares it against this field immediately before writing to `_uiState`, so a
+    // network response for a since-superseded query can never land: the comparison is a plain
+    // field read at the write site, so it holds regardless of how two searches' resumptions
+    // actually interleave, unlike relying on `searchJob.cancel()` alone (see the class doc
+    // comment for why that alone is not enough here).
+    private var searchSequence: Int = 0
 
     /** Called on every keystroke. Updates the visible field text unconditionally, then either
      * settles [MusicSearchResultsUiState] back to [MusicSearchResultsUiState.Idle] (an empty or
@@ -134,14 +142,19 @@ class MusicSearchViewModel(
         searchJob?.cancel()
         val term = newQuery.trim()
         if (term.isEmpty()) {
+            // Supersedes any still-in-flight search even though nothing new is being issued —
+            // otherwise a response for the just-abandoned term could still land after the field
+            // has already gone Idle.
+            searchSequence++
             _uiState.value = _uiState.value.copy(resultsState = MusicSearchResultsUiState.Idle)
             return
         }
         _uiState.value = _uiState.value.copy(resultsState = MusicSearchResultsUiState.Searching)
+        val sequence = ++searchSequence
         searchJob =
             viewModelScope.launch {
                 delay(MUSIC_SEARCH_DEBOUNCE_MS)
-                performSearch(term)
+                performSearch(term, sequence)
             }
     }
 
@@ -156,12 +169,21 @@ class MusicSearchViewModel(
         if (term.isEmpty()) return
         searchJob?.cancel()
         _uiState.value = _uiState.value.copy(resultsState = MusicSearchResultsUiState.Searching)
-        searchJob = viewModelScope.launch { performSearch(term) }
+        val sequence = ++searchSequence
+        searchJob = viewModelScope.launch { performSearch(term, sequence) }
     }
 
-    private suspend fun performSearch(term: String) {
+    private suspend fun performSearch(
+        term: String,
+        sequence: Int,
+    ) {
         val baseUrl = serverConfigRepository.getBaseUrl()
-        when (val result = musicRepository.search(term)) {
+        val result = musicRepository.search(term)
+        // See [searchSequence]'s own comment: this is what actually stops a stale, already
+        // in-flight response from overwriting a newer search's result — cancelling [searchJob]
+        // cannot, since the network call behind it is blocking and always runs to completion.
+        if (sequence != searchSequence) return
+        when (result) {
             is MusicSearchResult.Loaded ->
                 _uiState.value =
                     _uiState.value.copy(
