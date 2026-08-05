@@ -26,9 +26,11 @@ fun nextRepeatMode(current: Int): Int =
         Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_OFF
         // Player.repeatMode is an @Player.RepeatMode Int, not a sealed type, so a value outside
         // the three known constants is reachable in principle (a future Media3 addition, or a
-        // caller passing an arbitrary Int). Treat it the same as REPEAT_MODE_OFF rather than
-        // throwing — matches this project's total-function house style.
-        else -> Player.REPEAT_MODE_OFF
+        // caller passing an arbitrary Int). Treat the unknown *current* value as REPEAT_MODE_OFF
+        // and return what OFF maps to, rather than throwing — matches this project's
+        // total-function house style. Returning OFF here instead would make the tap a no-op from
+        // a state the user can already see is not "off", which reads as a dead control.
+        else -> Player.REPEAT_MODE_ALL
     }
 
 /**
