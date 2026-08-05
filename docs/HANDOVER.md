@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T10:23:10Z` · `a85fd5fd4f3276e9f` · general-purpose · ended · Working tree is clean, commit is in place and not pushed, as instructed. ## Report **Branch/commit**: 'worktree-agent-a85fd5fd4f3276e9f' @ '4b11b22',…
-- `2026-08-05T10:24:02Z` · `ade8157eff4187436` · general-purpose · ended · Committed clean, working tree empty, not pushed (per instructions). ## Report **Branch/commit**: 'worktree-agent-ade8157eff4187436' @ '5d3d4e7', base…
 - `2026-08-05T10:33:03Z` · `a5efac28947969d8a` · general-purpose · ended · ## Review report — '4b11b22' (Jellyfin paused-track fix) **Verdict: sound as merged.** ### Commands run | Command | Result | |---|---| | 'git log -1…
 - `2026-08-05T10:38:35Z` · `a190a8412b56f76b3` · general-purpose · ended · 'clickable' is already used elsewhere in the app, confirming no new dependency was introduced. Review complete. ## Report — Wave: Android album queue…
 - `2026-08-05T10:39:42Z` · `aa80b0a8bbbf71472` · general-purpose · ended · Clean tree, two commits on 'worktree-agent-aa80b0a8bbbf71472' on top of 'ed60f1b', not pushed. Task complete. ## Report **Branch/commit**: 'worktree-…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-05T12:24:16Z` · `a8bab14e9846f7245` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a8bab14e9846f7245' @ '0de5a31', based on 'd090a95'…
 - `2026-08-05T12:24:45Z` · `ad5ae4de822ad9a21` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-ad5ae4de822ad9a21' @ '2d30008', based o…
 - `2026-08-05T12:34:04Z` · `a41b7cdeb98c5f220` · general-purpose · ended · Working tree is clean. Commit '6246aa0' on branch 'worktree-agent-a41b7cdeb98c5f220', based on 'a3fcfc3'. Not pushed, per instructions. Nothing was c…
+- `2026-08-05T12:52:14Z` · `a6b0a49406fd9236a` · general-purpose · running · —
+- `2026-08-05T12:52:59Z` · `ae7eb4057186070b6` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -256,18 +256,18 @@ the live/source/unverified breakdown; get a credential before re-deriving it.
 `ghcr.io/patakihara/auralis:latest` and `:<sha>` (linux/amd64) on every green build of this
 branch, gated to `push` events on this branch only. Multi-arch (arm64) remains phase 10.
 
-**Phase 9 now has music on Android too.** Web has the connect flow, browse, unified search, a
-`PlaybackSource` seam that lets the player reuse its Audiobookshelf logic rather than fork
-it, playback with album queueing, **Jellyfin progress reporting** and a **synced lyrics
-view**. Android has a music **data layer and browse UI** (library, artist detail, album
-detail), reachable from the home screen.
+**Phase 9 now has music on Android too.** Web has the connect flow, browse, unified search,
+playback with album queueing, **Jellyfin progress reporting**, a **synced lyrics view**,
+**favourites** and **playlists**. Android has a music data layer, browse UI (library, artist,
+album), **playback** through the existing Media3 stack, and **search** — all reachable from the
+home screen.
 
-Still missing, all deliberate: cross-page/shuffle/repeat queueing, playlists, favourites,
-music requests, and **any Android playback of music** — Android browses but cannot play a
-track. Lyrics _search_ is separately blocked on a product decision, not on effort: Jellyfin
-cannot search lyric text at all, so Auralis would have to build its own index and decide
-whether to backfill from an external provider (a privacy opt-in). The synced lyrics _view_
-is unaffected by that and has shipped.
+Still missing: shuffle/repeat and a queue spanning more than the displayed 40-track page
+(both clients); favourites and playlists on Android; music requests; and progress reporting
+from Android. Lyrics _search_ remains blocked on a product decision, not on effort — Jellyfin
+cannot search lyric text at all, so Auralis would need its own index and a decision about
+whether to backfill from an external provider (a privacy opt-in). The synced lyrics _view_ is
+unaffected and has shipped.
 
 The defects this section used to list are fixed — album track order, the `Slider` prop drop,
 and a paused track reporting to Jellyfin as playing. `docs/ROADMAP.md` §9 has each fix and
