@@ -15,9 +15,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.guava.asDeferred
 import kotlinx.coroutines.launch
 import net.auralis.app.playback.AuralisMediaLibraryService
@@ -29,6 +31,17 @@ import net.auralis.app.playback.toMediaItem
  * item, matching `apps/web/src/features/player/useProgressSync.ts`'s own 15s cadence — see
  * [JellyfinPlaybackReporter]'s own doc comment for why that file is the design this mirrors. */
 private const val JELLYFIN_PROGRESS_TICK_MS = 15_000L
+
+/**
+ * How often [PlayerViewModel.lyricsPositionMsFlow] samples playback position — far finer than
+ * [JELLYFIN_PROGRESS_TICK_MS]'s 15s, which is a network-reporting cadence chosen to keep
+ * Jellyfin traffic low, not a display-refresh rate. This constant is unrelated to that one and
+ * must stay unrelated: raising [JELLYFIN_PROGRESS_TICK_MS] to match lyric-highlighting precision
+ * would multiply Jellyfin request volume for no reason connected to lyrics at all (see
+ * [PlayerViewModel.lyricsPositionMsFlow]'s own doc comment for why this tick instead costs
+ * nothing extra).
+ */
+private const val LYRICS_POSITION_TICK_MS = 200L
 
 /** What the mini player (and, later, a full Now Playing surface) renders. */
 sealed interface PlayerUiState {
@@ -43,11 +56,18 @@ sealed interface PlayerUiState {
      * [androidx.media3.common.Player]'s own `shuffleModeEnabled`/`repeatMode` — there is no
      * separate optimistic copy that could drift from what the player actually holds. [repeatMode]
      * is one of [Player.REPEAT_MODE_OFF]/[Player.REPEAT_MODE_ALL]/[Player.REPEAT_MODE_ONE].
+     *
+     * [musicItemId] (Android wave J) is the same Jellyfin item id [isMusic] was derived from via
+     * [jellyfinItemIdFromMediaId] — `null` whenever [isMusic] is `false`. Carried here rather
+     * than re-derived by a caller because the raw Media3 media id isn't otherwise exposed on this
+     * state; the lyrics screen needs the plain Jellyfin id to call
+     * [net.auralis.app.features.music.MusicRepository.lyrics] with.
      */
     data class Playing(
         val title: String,
         val isPlaying: Boolean,
         val isMusic: Boolean = false,
+        val musicItemId: String? = null,
         val shuffleEnabled: Boolean = false,
         val repeatMode: Int = Player.REPEAT_MODE_OFF,
     ) : PlayerUiState
@@ -266,7 +286,11 @@ class PlayerViewModel(
                         )
                         val current = _uiState.value
                         if (current is PlayerUiState.Playing) {
-                            _uiState.value = current.copy(isMusic = isMusicMediaId(mediaItem?.mediaId))
+                            _uiState.value =
+                                current.copy(
+                                    isMusic = isMusicMediaId(mediaItem?.mediaId),
+                                    musicItemId = jellyfinItemIdFromMediaId(mediaItem?.mediaId),
+                                )
                         }
                     }
 
@@ -428,6 +452,7 @@ class PlayerViewModel(
                     title = title,
                     isPlaying = true,
                     isMusic = isMusicMediaId(mediaItem.mediaId),
+                    musicItemId = jellyfinItemIdFromMediaId(mediaItem.mediaId),
                     shuffleEnabled = ctrl.shuffleModeEnabled,
                     repeatMode = ctrl.repeatMode,
                 )
@@ -500,6 +525,7 @@ class PlayerViewModel(
                         title = title,
                         isPlaying = true,
                         isMusic = isMusicMediaId(mediaItems.first().mediaId),
+                        musicItemId = jellyfinItemIdFromMediaId(mediaItems.first().mediaId),
                         shuffleEnabled = ctrl.shuffleModeEnabled,
                         repeatMode = ctrl.repeatMode,
                     )
@@ -585,6 +611,40 @@ class PlayerViewModel(
             }
         }
     }
+
+    /**
+     * A cold flow of the current playback position in milliseconds (Android wave J), sampled
+     * every [LYRICS_POSITION_TICK_MS] while collected — the finer-grained position source the
+     * lyrics view needs, distinct from [JELLYFIN_PROGRESS_TICK_MS]'s 15s network-reporting
+     * ticker (see that constant's own doc comment for why the two must stay independent).
+     *
+     * Deliberately a fresh `flow { }` per collector, not a [StateFlow] this ViewModel keeps
+     * running for its own lifetime the way the 15s Jellyfin ticker does: a `flow { }` builder's
+     * loop only runs for as long as something is actively collecting it, and stops the moment
+     * that collection is cancelled. A Compose call site (`collectAsState`) collects for exactly
+     * as long as the composable that calls it stays in composition, so "this ticker only runs
+     * while the lyrics screen is visible" falls out of ordinary structured-concurrency
+     * cancellation — no manual start/stop bookkeeping needed here, and no risk of a
+     * lyrics-precision ticker silently continuing to run (and burning battery) after the user has
+     * navigated away.
+     *
+     * Reads the private [controller] field directly, not through [activeController]/
+     * [PlaybackHandle]: [PlaybackHandle] exists only to make the wave I queue-dispatch commands
+     * (`setMediaItem(s)`/`prepare`/`play`/shuffle/repeat) testable against a fake, and extending
+     * it with a `currentPosition` getter for this one read would widen that seam for no test in
+     * this file that needs it — [activeLineIndex] (the logic actually worth unit-testing here)
+     * takes a plain position, not a [PlaybackHandle]. Emits nothing while [controller] is null
+     * (not yet connected, or already torn down) rather than throwing, matching this file's
+     * "total, degrades rather than throws" style; a collector simply sees no position update
+     * until a controller exists.
+     */
+    fun lyricsPositionMsFlow(): Flow<Long> =
+        flow {
+            while (true) {
+                controller?.let { emit(it.currentPosition) }
+                delay(LYRICS_POSITION_TICK_MS)
+            }
+        }
 
     override fun onCleared() {
         // Final stopped report for whatever music item is current — see

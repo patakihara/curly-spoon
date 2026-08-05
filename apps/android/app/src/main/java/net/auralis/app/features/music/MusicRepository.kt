@@ -2,6 +2,7 @@ package net.auralis.app.features.music
 
 import net.auralis.app.data.model.JellyfinAlbum
 import net.auralis.app.data.model.JellyfinArtist
+import net.auralis.app.data.model.JellyfinLyrics
 import net.auralis.app.data.model.JellyfinPlaylist
 import net.auralis.app.data.model.JellyfinPlaylistItem
 import net.auralis.app.data.model.JellyfinTrack
@@ -149,6 +150,20 @@ sealed interface PlaylistMutationResult {
     data object Success : PlaylistMutationResult
 
     data class Failed(val code: String) : PlaylistMutationResult
+}
+
+/**
+ * Outcome of [MusicRepository.lyrics] (Android wave J, synced lyrics view). Distinct from every
+ * other result in this file: [Loaded.lyrics] is nullable *by design*, not merely absent —
+ * Jellyfin having no lyrics for a track is the common case across the library (see
+ * `routes/jellyfin.ts`'s own doc comment, mirrored on [ApiClient.jellyfinLyrics]), not something
+ * this sealed type has a distinct case for. Only a genuine upstream/network failure reaches
+ * [Failed].
+ */
+sealed interface LyricsResult {
+    data class Loaded(val lyrics: JellyfinLyrics?) : LyricsResult
+
+    data class Failed(val code: String) : LyricsResult
 }
 
 /**
@@ -408,5 +423,15 @@ class MusicRepository(private val apiClient: ApiClient) {
             PlaybackReportResult.Success
         } catch (e: ApiException) {
             PlaybackReportResult.Failed(e.code)
+        }
+
+    /** GET /jellyfin/tracks/{itemId}/lyrics (Android wave J). See [ApiClient.jellyfinLyrics]'s
+     * doc comment for why a `null` [LyricsResult.Loaded.lyrics] is a normal outcome, not
+     * [LyricsResult.Failed]. */
+    suspend fun lyrics(itemId: String): LyricsResult =
+        try {
+            LyricsResult.Loaded(apiClient.jellyfinLyrics(itemId).lyrics)
+        } catch (e: ApiException) {
+            LyricsResult.Failed(e.code)
         }
 }

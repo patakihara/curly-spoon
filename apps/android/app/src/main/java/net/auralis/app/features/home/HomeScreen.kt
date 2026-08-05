@@ -154,6 +154,7 @@ fun HomeScreen(
                     onTogglePlayPause = playerViewModel::togglePlayPause,
                     onToggleShuffle = playerViewModel::toggleShuffle,
                     onCycleRepeat = playerViewModel::cycleRepeatMode,
+                    onOpenLyrics = { navController.navigate(Routes.LYRICS) },
                 )
             }
         },

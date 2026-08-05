@@ -30,6 +30,7 @@ import net.auralis.app.features.music.MusicLibraryScreen
 import net.auralis.app.features.music.MusicSearchScreen
 import net.auralis.app.features.music.PlaylistDetailScreen
 import net.auralis.app.features.music.PlaylistsScreen
+import net.auralis.app.features.player.LyricsScreen
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.features.podcasts.PodcastDetailScreen
 import net.auralis.app.features.podcasts.PodcastsScreen
@@ -47,6 +48,13 @@ object Routes {
     const val MUSIC_SEARCH = "music/search"
     const val MUSIC_FAVORITES = "music/favorites"
     const val MUSIC_PLAYLISTS = "music/playlists"
+
+    /** Android wave J — the synced lyrics view, reached from [net.auralis.app.features.player
+     * .MiniPlayerBar]'s "Lyrics" action. No argument: unlike every other detail route above,
+     * this reads the currently-playing track straight off `PlayerViewModel.uiState` rather than
+     * a nav argument — see [net.auralis.app.features.player.LyricsScreen]'s own doc comment for
+     * why. */
+    const val LYRICS = "music/lyrics"
 
     /** Argument name within [PODCAST_DETAIL_PATTERN] — the podcast library item's id. */
     const val PODCAST_DETAIL_ARG_ITEM_ID = "itemId"
@@ -144,6 +152,7 @@ fun AuralisNavHost(
                 composable(Routes.MUSIC_SEARCH) { MusicSearchScreen(container, navController) }
                 composable(Routes.MUSIC_FAVORITES) { FavoritesScreen(container, navController) }
                 composable(Routes.MUSIC_PLAYLISTS) { PlaylistsScreen(container, navController) }
+                composable(Routes.LYRICS) { LyricsScreen(container, playerViewModel) }
                 composable(
                     Routes.musicArtistDetailRoute(),
                     arguments =

@@ -682,6 +682,47 @@ data class JellyfinFavoriteResponse(
 )
 
 // -----------------------------------------------------------------------------
+// Jellyfin lyrics (routes/jellyfin.ts) — Android wave J (synced lyrics view). Mirrors
+// `@auralis/jellyfin-client`'s `LyricLine`/`Lyrics` domain types field-for-field; the BFF has
+// already normalized Jellyfin's raw `LyricDto` by the time this app sees it, so — unlike
+// `JellyfinTrack`/`JellyfinAlbum` above, which mirror upstream shapes this app itself only
+// consumes — there is no separate raw/domain split needed here.
+// -----------------------------------------------------------------------------
+
+/** One line of a track's lyrics. `startSeconds` is `null` for an unsynced line — see
+ * [JellyfinLyrics.synced]'s doc comment for how a caller should read that. Mirrors
+ * `@auralis/jellyfin-client`'s `LyricLine` (packages/jellyfin-client/src/domain.ts). */
+@Serializable
+data class JellyfinLyricLine(
+    val text: String,
+    val startSeconds: Double? = null,
+)
+
+/**
+ * A track's lyrics, once Jellyfin has something to show — [ApiClient.jellyfinLyrics]'s own
+ * response wraps this in a nullable field; `null` there (not this type) means "no lyrics at
+ * all" and is a normal, expected outcome — see `routes/jellyfin.ts`'s "Lyrics" section comment,
+ * mirrored on [ApiClient.jellyfinLyrics].
+ *
+ * [synced] mirrors `@auralis/jellyfin-client`'s `Lyrics.synced`: `false` means every line
+ * should render as plain, unhighlighted text — never treat an unsynced line's missing
+ * timestamp as "starts at 0".
+ */
+@Serializable
+data class JellyfinLyrics(
+    val lines: List<JellyfinLyricLine>,
+    val synced: Boolean,
+)
+
+/** GET /jellyfin/tracks/{itemId}/lyrics response — unwrapped, the object itself. [lyrics] is
+ * `null` when Jellyfin has no lyrics for this track — see [JellyfinLyrics]'s own doc comment
+ * for why that is not folded into an error. */
+@Serializable
+data class JellyfinLyricsResponse(
+    val lyrics: JellyfinLyrics? = null,
+)
+
+// -----------------------------------------------------------------------------
 // Jellyfin playlists (routes/jellyfin.ts) — Android wave F (music playlists). Mirrors
 // `@auralis/jellyfin-client`'s `Playlist`/`PlaylistItem`/`LibraryPage<T>` field-for-field, same
 // as every other Jellyfin model above.
