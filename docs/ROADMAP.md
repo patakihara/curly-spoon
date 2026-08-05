@@ -953,7 +953,7 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   `SharedFlow` events with `launch { … collect … }`, which subscribes too late to see an
   emission from a synchronous unconfined action. `docs/HANDOVER.md`'s Android test section has
   the full account and the `async(UNDISPATCHED)` fix. Review also turned up two things fixed in
-  the same commit: no test covered the *reason* removal keys on `playlistItemId` (the same
+  the same commit: no test covered the _reason_ removal keys on `playlistItemId` (the same
   track appearing twice), and the optimistic rollback re-inserted at a numeric index captured
   before the suspension point, so a page landing in between could restore the entry at the
   wrong position — it now anchors to the preceding entry's id instead.
