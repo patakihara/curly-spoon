@@ -26,6 +26,7 @@ import net.auralis.app.features.onboarding.OnboardingScreen
 import net.auralis.app.features.music.AlbumDetailScreen
 import net.auralis.app.features.music.ArtistDetailScreen
 import net.auralis.app.features.music.MusicLibraryScreen
+import net.auralis.app.features.music.MusicSearchScreen
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.features.podcasts.PodcastDetailScreen
 import net.auralis.app.features.podcasts.PodcastsScreen
@@ -40,6 +41,7 @@ object Routes {
     const val DOWNLOADS = "downloads"
     const val PODCASTS = "podcasts"
     const val MUSIC = "music"
+    const val MUSIC_SEARCH = "music/search"
 
     /** Argument name within [PODCAST_DETAIL_PATTERN] — the podcast library item's id. */
     const val PODCAST_DETAIL_ARG_ITEM_ID = "itemId"
@@ -120,6 +122,7 @@ fun AuralisNavHost(
                     PodcastDetailScreen(container, playerViewModel, itemId)
                 }
                 composable(Routes.MUSIC) { MusicLibraryScreen(container, navController) }
+                composable(Routes.MUSIC_SEARCH) { MusicSearchScreen(container, navController) }
                 composable(
                     Routes.musicArtistDetailRoute(),
                     arguments =

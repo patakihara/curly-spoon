@@ -17,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,9 +43,12 @@ import net.auralis.app.navigation.Routes
  * `Column`; see that screen's own doc comment for the bug (an unweighted sibling silently
  * squeezed a second list to zero height) that shape avoids.
  *
- * No search field and no playback here — see `docs/agent-specs` (or this wave's own spec) for
- * why: search and playback are separate, later waves, and adding either here would collide
- * with whichever agent picks them up next.
+ * No playback here — see `docs/agent-specs` (or an earlier wave's own spec) for why: playback is
+ * a separate, later wave. Search is reachable from the top bar's "Search" action
+ * ([MusicSearchScreen]) rather than built into this screen — a debounced-as-you-type field
+ * fighting this screen's own two independently-paginated sections for one shared scroll
+ * position would be its own source of bugs, and the web client
+ * (`apps/web/src/features/search/SearchPage.tsx`) already treats search as its own page.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +68,18 @@ fun MusicLibraryScreen(
     LaunchedEffect(Unit) { viewModel.load() }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Music") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Music") },
+                actions = {
+                    // A stock Material 3 icon set is not a confirmed dependency here — see
+                    // HomeScreen.kt's identical text-not-icon top bar actions for why.
+                    TextButton(onClick = { navController.navigate(Routes.MUSIC_SEARCH) }) {
+                        Text("Search")
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         when (val availability = uiState.availability) {
             is MusicAvailabilityUiState.Loading ->
