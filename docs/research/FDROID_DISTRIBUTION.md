@@ -222,9 +222,11 @@ repo or its docs — `docs/setup/` and `CLAUDE.md` never mention domain ownershi
 investigation did not check WHOIS (out of scope for a code-audit agent, and irrelevant to
 buy-vs-not-buy without a user decision anyway). F-Droid does **not** verify domain ownership
 for application ids
-([Inclusion Policy](https://f-droid.org/en/docs/Inclusion_Policy/), fetched 2026-08-06, "each
-app must have their own distinct Android Application ID... ideally derived from a domain the
-developer owns" — "ideally," not "verified"). The real risk isn't rejection, it's collision:
+([Inclusion Policy](https://f-droid.org/en/docs/Inclusion_Policy/), fetched 2026-08-06). Its
+two relevant sentences, quoted separately because they sit in different sections: "All
+applications must have their own distinct Android 'Application ID'", and "It is advised to
+use an Application ID that stems from a domain name owned by the developer." Advised, not
+verified. The real risk isn't rejection, it's collision:
 if `auralis.net` is owned by an unrelated third party, or is later registered by someone
 else who ships an Android app under the same reverse-DNS convention, there is no technical
 conflict (application ids only need to be unique within one distribution channel, and
@@ -269,7 +271,7 @@ metadata/en-US/
     <versionCode>.txt         # one per release, ≤ 500 chars
   images/
     icon.png
-    phoneScreenshots/         # ≥ 2 required by IzzyOnDroid
+    phoneScreenshots/         # at least one; two or more is the convention
     featureGraphic.png        # optional but conventional
 ```
 
@@ -301,8 +303,9 @@ proceed in parallel with that question being open.
 4. **Add a `release` build type with the determinism flags from §4**, and a release CI job
    gated on a git tag push, producing a signed APK attached to a GitHub Release. Touches
    `apps/android/app/build.gradle.kts` and `.github/workflows/android.yml`
-   (**note**: another agent owns `.github/workflows/` right now per this investigation's own
-   "do not touch" list — coordinate before editing). Depends on step 3.
+   (check `docs/HANDOVER.md`'s "Claimed work" list before editing — it is where concurrent
+   sessions record which files they hold, and it claimed `.github/workflows/ci.yml` on
+   2026-08-06). Depends on step 3.
 5. **Tag `v0.1.0` (or whatever the first release is called), verify the release job produces
    a working signed APK**, install it on a real device via `adb install` if a JDK/SDK becomes
    available, or ask the user to sideload-verify. Depends on step 4.

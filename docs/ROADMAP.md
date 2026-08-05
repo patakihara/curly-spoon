@@ -1393,3 +1393,45 @@ What that investigation must settle:
 **Do not start this before phase 7 ships a real Android app.** Everything here is packaging
 around a working artifact, and the irreversible decisions above should be made once the app
 they identify actually exists.
+
+**The investigation is done (`beaebf2`, merged `d40a515`): `docs/research/FDROID_DISTRIBUTION.md`.**
+Independently reviewed; three citation defects were corrected before merge. It is research, not
+a decision — nothing was built and neither one-way door was walked through.
+
+**It found a blocker no one had anticipated, and it is the reason this phase cannot simply
+proceed.** IzzyOnDroid's own inclusion policy states: "We are strongly opposed to apps which are
+fully or in part created by generative AI tools," and concludes that such an app's "request for
+inclusion will most likely be rejected"
+(<https://izzyondroid.org/docs/general/AppInclusionPolicy/>, fetched and read directly by both
+the investigating and the reviewing agent, 2026-08-06). The scope is "fully or in part" — this is
+not a rule about spam submissions. Auralis was written almost entirely by Claude subagents, so on
+a plain reading it is exactly what the policy excludes. IzzyOnDroid was the recommended first
+route precisely because it is the cheap one that is enabled by default in most Droid-ify installs;
+if it is closed, the recommendation collapses to "own repo, or official F-Droid, or neither."
+**This is the user's call and nobody else's** — whether to ask IzzyOnDroid rather than assume,
+whether to disclose, whether to go straight to a self-hosted repo, or whether sideloading the CI
+APK is simply good enough. Do not resolve it by inference.
+
+Findings that stand independently of that decision:
+
+- **`apps/android` clears the FOSS bar as it is.** Every declared dependency is Apache-2.0 or
+  EPL-1.0 — AndroidX, Compose, Kotlin/kotlinx, OkHttp, Media3/ExoPlayer, Coil, JUnit. No Google
+  Play Services, no Firebase, no tracking library. No build flavour needed. This is a
+  **first-order** audit: `./gradlew :app:dependencies --configuration releaseRuntimeClasspath`
+  is the one thing that would close it fully, and it cannot run on this machine.
+- **The Android Auto hypothesis above is confirmed, not merely plausible.** It is a single
+  `com.google.android.gms.car.application` meta-data string in `AndroidManifest.xml` pointing at
+  a two-line `res/xml/automotive_app_desc.xml`. `grep -rn "gms\|play-services\|firebase"` over
+  `apps/android/` returns that one hit and nothing else — there is no Play Services Gradle
+  coordinate anywhere. Whether `fdroidserver`'s scanner would still flag it is reasoned, not
+  tested (the scanner matches compiled DEX class references, not manifest values); testing it
+  needs a built APK and `fdroid scanner`, neither available here.
+- **The app has no launcher icon.** `apps/android/app/src/main/res/` contains only `xml/` and
+  `values/` — no `mipmap-*` at anything — and the `<application>` tag sets no `android:icon`, so
+  it ships with Android's default. Not a build error, which is why nothing has caught it; it is
+  a missing asset, and it blocks every distribution route equally. It also needs a design
+  decision about what the icon *is*, so it is not a mechanical fix.
+- **Reproducible builds are a best practice for official F-Droid, not a hard gate** — the
+  `AllowedAPKSigningKeys`/`Binaries` mechanism lets a project ship its own signed binaries
+  verified against an F-Droid-built one. That is less disruptive to our Gradle config than the
+  phase description above assumed.
