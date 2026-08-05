@@ -1,9 +1,10 @@
 package net.auralis.app.features.music
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -186,16 +187,15 @@ class PlaylistsViewModelTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(playlistsPageResponse("[]", total = 0))
             val viewModel = PlaylistsViewModel(musicRepository, serverConfigRepository)
-            val events = mutableListOf<PlaylistEvent>()
-            val collectJob = launch { viewModel.events.collect { events.add(it) } }
             viewModel.load()
             viewModel.uiState.first { it is PlaylistsUiState.Loaded }
 
             mockWebServer.enqueue(MockResponse().setResponseCode(201).setBody("""{"id":"pl-new"}"""))
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.events.first() }
             viewModel.createPlaylist("Road Trip")
+            val event = eventDeferred.await()
 
-            assertEquals(listOf(PlaylistEvent.Created("pl-new")), events)
-            collectJob.cancel()
+            assertEquals(PlaylistEvent.Created("pl-new"), event)
         }
 
     @Test
@@ -204,8 +204,6 @@ class PlaylistsViewModelTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(playlistsPageResponse("[]", total = 0))
             val viewModel = PlaylistsViewModel(musicRepository, serverConfigRepository)
-            val events = mutableListOf<PlaylistEvent>()
-            val collectJob = launch { viewModel.events.collect { events.add(it) } }
             viewModel.load()
             viewModel.uiState.first { it is PlaylistsUiState.Loaded }
 
@@ -214,13 +212,13 @@ class PlaylistsViewModelTest {
                     .setResponseCode(401)
                     .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
             )
+            val eventDeferred = async(start = CoroutineStart.UNDISPATCHED) { viewModel.events.first() }
             viewModel.createPlaylist("Road Trip")
             val state = viewModel.uiState.value as PlaylistsUiState.Loaded
+            val event = eventDeferred.await()
 
             assertTrue(state.items.isEmpty())
             assertFalse(state.creating)
-            assertEquals(1, events.size)
-            assertTrue(events[0] is PlaylistEvent.Failed)
-            collectJob.cancel()
+            assertTrue(event is PlaylistEvent.Failed)
         }
 }
