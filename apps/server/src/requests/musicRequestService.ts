@@ -1,39 +1,42 @@
 /**
- * Orchestrates the music-request pipeline's **search** half. There is no `createRequest`/
- * `listRequests`/`grab`/`pollDownloads` here, unlike `requestService.ts` — two independent,
- * source-verified reasons, both worth stating plainly rather than leaving as a silent gap:
+ * Orchestrates the music-request pipeline: list/search providers, persist a chosen
+ * candidate as a request, and hand it to slskd. Deliberately **not** a full mirror of
+ * `requestService.ts` — it has no `pollDownloads`, and `grab()` stops at `downloading`
+ * rather than following through to `importing`/`completed`. One structural reason, not a
+ * scope shortcut: `requestService.ts`'s `grab()` finishes a completed download by calling
+ * `tryRescan`, hard-wired to `deps.absFor` (Audiobookshelf) and a book library lookup.
+ * There is no Jellyfin equivalent anywhere in this codebase — no `scanLibrary`, no
+ * rescan-after-download capability at all — and building one lives in
+ * `packages/jellyfin-client`, a different package with its own review surface. Forcing
+ * music through the book `grab()`/`pollOne()` shape as-is would either silently do nothing
+ * useful after a download finished, or invent a Jellyfin capability under a wave whose job
+ * was clearing the persistence blocker. So: `create`/`list`/`approve`/`reject`/`retry` are
+ * full parity with the book pipeline (they are pure state-table moves, and
+ * `requestStatus.ts`'s `pending -> approved -> rejected` corner means exactly the same
+ * thing for a track as for a book); `grab()` calls the real `slskd.ts` `add()` and lands on
+ * `downloading`, making that half of the provider genuinely reachable over HTTP for the
+ * first time; and status polling through to completion is left for whoever adds the
+ * Jellyfin rescan capability this needs.
  *
- * 1. **No table to write a music request into.** `requestsRepo.ts`'s `requests` table
- *    (`db/migrations.ts`, migration 2) has no column distinguishing "a book someone asked
- *    for" from any other media type — `GET /requests` (the existing, shipped book route)
- *    reads every row with no filter beyond `status`. Writing a music request into that same
- *    table would make it appear, indistinguishably, in the book request list the very next
- *    time anyone loads it — a real regression to a route this wave must not change the
- *    behaviour of. Every workaround considered (an `indexer_id` string-prefix convention,
- *    an app-level allowlist) either still requires touching `routes/requests.ts`'s shared
- *    `GET /requests` filtering to keep the two apart, or relies on an undocumented string
- *    convention no schema enforces. Both are worse than the honest fix: a `media_type`
- *    column (default `'book'`, so every existing row stays correct with no backfill) or a
- *    sibling `music_requests` table. `apps/server/src/db/**` is off-limits for this wave, so
- *    that migration is not made here — it is a decision for whoever picks up persisted
- *    music-request create/list next.
- * 2. **`grab()`'s post-download step doesn't generalise.** `requestService.ts`'s `grab()`
- *    finishes by calling `tryRescan`, which is hard-wired to `deps.absFor` and a book
- *    library lookup (`libraries.find(l => l.mediaType === 'book')`) — Audiobookshelf, not
- *    Jellyfin. A music download completing has nothing analogous to call yet; wiring music
- *    through the book `grab()` as-is would either silently do nothing useful after a
- *    download finished, or require changing `requestService.ts`'s behaviour for books to
- *    make room for a media-type branch, which this wave's instructions rule out.
- *
- * What *is* here — provider listing and the search fan-out — needs neither a schema change
- * nor a `requestService.ts` edit, and is a real, usable slice of this feature: a caller can
- * search slskd today. See the wave's own report for the exact migration this file is
- * blocked on.
+ * The schema half of the blocker (`docs/ROADMAP.md` §9's "Create and list are deliberately
+ * absent") is migration 4 in `db/migrations.ts` — a `media_type` column on the shared
+ * `requests` table, not a sibling table; see that migration's own comment for why.
  */
 
+import { randomUUID } from 'node:crypto';
 import type { FetchLike } from '@auralis/abs-client';
 import type { Db } from '../db/connection.js';
 import { listProviderConfigs } from '../db/providerConfigRepo.js';
+import { getApprovalPolicy, getMusicCategory, getMusicSavePath } from '../db/appSettingsRepo.js';
+import {
+  createRequest as insertRequest,
+  getRequest,
+  listRequests as listRequestRows,
+  updateRequest,
+  type MediaRequest,
+} from '../db/requestsRepo.js';
+import { canTransition, type RequestStatus } from './requestStatus.js';
+import { RequestNotFoundError, RequestTransitionError } from './requestService.js';
 import {
   ProviderError,
   type MusicCandidate,
@@ -58,9 +61,28 @@ export interface MusicSearchOutcome {
   errors: Array<{ providerId: string; kind: ProviderErrorKind; message: string }>;
 }
 
+export interface CreateMusicRequestInput {
+  userId: string;
+  /** The specific file, held by the specific peer, the caller picked from a prior
+   * `searchMusic` call. Required — see `schemas.ts`'s `createMusicRequestBodySchema` doc
+   * comment for why there is no "search for this later" path here. */
+  candidate: MusicCandidate;
+}
+
 export interface MusicRequestService {
   listProviders(): MusicRequestProvider[];
   searchMusic(query: MusicSearchQuery): Promise<MusicSearchOutcome>;
+  createRequest(input: CreateMusicRequestInput): MediaRequest;
+  /** Newest first, this user's music requests only — `listRequestRows` is always called
+   * with `mediaType: 'music'` here, so a book row can never leak into this list. */
+  listRequests(status?: RequestStatus): MediaRequest[];
+  approve(id: string): MediaRequest;
+  reject(id: string): MediaRequest;
+  retry(id: string): MediaRequest;
+  /** Enqueues the request's already-chosen candidate with its owning provider and moves
+   * the request to `downloading`. Stops there — see this file's header comment for why
+   * there is no further polling. */
+  grab(id: string): Promise<MediaRequest>;
 }
 
 type Logger = NonNullable<MusicRequestServiceDeps['logger']>;
@@ -152,5 +174,128 @@ export function createMusicRequestService(deps: MusicRequestServiceDeps): MusicR
     return { candidates, errors };
   }
 
-  return { listProviders, searchMusic };
+  function createRequest(input: CreateMusicRequestInput): MediaRequest {
+    const status: RequestStatus = getApprovalPolicy(deps.db) === 'auto' ? 'approved' : 'pending';
+    return insertRequest(deps.db, {
+      id: randomUUID(),
+      userId: input.userId,
+      // Derived from the candidate, not taken from the request body — see
+      // `createMusicRequestBodySchema`'s doc comment for why there is no independent
+      // client-supplied title/author here.
+      title: input.candidate.title,
+      author: input.candidate.artist,
+      status,
+      mediaType: 'music',
+      candidate: input.candidate,
+    });
+  }
+
+  function listRequests(status?: RequestStatus): MediaRequest[] {
+    return listRequestRows(
+      deps.db,
+      status ? { status, mediaType: 'music' } : { mediaType: 'music' },
+    );
+  }
+
+  /** Same guard in spirit as `requestService.ts`'s own `requireRequest`, mirrored rather
+   * than shared: a book-request id must 404 here exactly as a nonexistent one would, not be
+   * silently acted on by the music pipeline. */
+  function requireRequest(id: string): MediaRequest {
+    const request = getRequest(deps.db, id);
+    if (!request || request.mediaType !== 'music') throw new RequestNotFoundError(id);
+    return request;
+  }
+
+  function moveTo(
+    request: MediaRequest,
+    to: RequestStatus,
+    patch: Partial<Omit<Parameters<typeof updateRequest>[2], 'status'>> = {},
+  ): MediaRequest {
+    if (!canTransition(request.status, to)) {
+      throw new RequestTransitionError(request.status, to);
+    }
+    const updated = updateRequest(deps.db, request.id, { ...patch, status: to });
+    if (!updated) throw new RequestNotFoundError(request.id);
+    return updated;
+  }
+
+  function approve(id: string): MediaRequest {
+    return moveTo(requireRequest(id), 'approved');
+  }
+
+  function reject(id: string): MediaRequest {
+    return moveTo(requireRequest(id), 'rejected');
+  }
+
+  function retry(id: string): MediaRequest {
+    return moveTo(requireRequest(id), 'searching', { statusDetail: null });
+  }
+
+  /** Writes a terminal-looking failure with an explanation. Always legal: every state this
+   * is called from (`searching`) allows a move to `failed`. */
+  function failRequest(id: string, statusDetail: string): MediaRequest {
+    const updated = updateRequest(deps.db, id, { status: 'failed', statusDetail });
+    if (!updated) throw new RequestNotFoundError(id);
+    return updated;
+  }
+
+  async function grab(id: string): Promise<MediaRequest> {
+    // Illegal starting state (e.g. still `pending` under manual approval) is the caller's
+    // mistake, not a provider failure — let it throw before the try/catch below. Passing
+    // through an already-`searching` request mirrors `requestService.ts`'s `grab()`: there
+    // is no self-loop in `TRANSITIONS`, so a retry (`retry()` then `grab()`) would otherwise
+    // throw on the second call. `searching` means "the pipeline is working on this", not
+    // "a provider query is in flight" — book `grab()` already establishes that reading for
+    // a request whose release was chosen ahead of time, which every music request's is.
+    const loaded = requireRequest(id);
+    const request = loaded.status === 'searching' ? loaded : moveTo(loaded, 'searching');
+
+    // Not reachable through `createMusicRequestBodySchema` (candidate is required there),
+    // but `MediaRequest.candidate` is still typed nullable — a hand-edited row, or a future
+    // caller of `createRequest` that skips validation, must fail loudly rather than crash
+    // on a null dereference below.
+    if (!request.candidate) {
+      return failRequest(request.id, 'this request has no chosen candidate to download');
+    }
+    const candidate = request.candidate;
+
+    const provider = buildProviders().find((p) => p.id === candidate.providerId);
+    if (!provider) {
+      return failRequest(request.id, `music provider "${candidate.providerId}" is not configured`);
+    }
+
+    try {
+      const handle = await provider.add(candidate, {
+        savePath: getMusicSavePath(deps.db),
+        category: getMusicCategory(deps.db),
+      });
+
+      // `indexerId`/`clientId` both name the same provider — slskd (like any
+      // `MusicRequestProvider`) is one upstream doing what an indexer and a download
+      // client split for books (`types.ts`'s file comment on `MusicRequestProvider`), so
+      // there is no second id to record.
+      return moveTo(request, 'downloading', {
+        indexerId: provider.id,
+        clientId: provider.id,
+        downloadHandle: handle,
+        statusDetail: null,
+      });
+    } catch (err) {
+      if (err instanceof ProviderError) {
+        return failRequest(request.id, err.message);
+      }
+      throw err;
+    }
+  }
+
+  return {
+    listProviders,
+    searchMusic,
+    createRequest,
+    listRequests,
+    approve,
+    reject,
+    retry,
+    grab,
+  };
 }

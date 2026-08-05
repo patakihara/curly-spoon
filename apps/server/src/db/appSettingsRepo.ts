@@ -28,12 +28,24 @@ export const APP_SETTING_KEYS = {
   bookSavePath: 'requests.bookSavePath',
   /** Client-side label applied to downloads Auralis creates, so they are identifiable. */
   bookCategory: 'requests.bookCategory',
+  /**
+   * Same gap as `bookSavePath`, for slskd: expressed in **slskd's own** filesystem
+   * namespace, which is additionally always relative (`music/slskd.ts`'s
+   * `isRelativeSavePath` rejects an absolute path or a `..` segment — slskd's own model
+   * validation rejects the shape `bookSavePath` is documented to be). Empty means "leave
+   * slskd's default download directory alone".
+   */
+  musicSavePath: 'requests.musicSavePath',
+  /** `bookCategory`'s music counterpart. */
+  musicCategory: 'requests.musicCategory',
 } as const;
 
 const DEFAULTS: Record<string, string> = {
   [APP_SETTING_KEYS.approvalPolicy]: 'auto',
   [APP_SETTING_KEYS.bookSavePath]: '',
   [APP_SETTING_KEYS.bookCategory]: 'auralis-books',
+  [APP_SETTING_KEYS.musicSavePath]: '',
+  [APP_SETTING_KEYS.musicCategory]: 'auralis-music',
 };
 
 export function getAppSetting(db: Db, key: string): string {
@@ -62,5 +74,18 @@ export function getBookSavePath(db: Db): string | null {
 
 export function getBookCategory(db: Db): string | null {
   const value = getAppSetting(db, APP_SETTING_KEYS.bookCategory).trim();
+  return value === '' ? null : value;
+}
+
+/** `null` rather than `''`, same as `getBookSavePath` — drops straight into
+ * `AddDownloadOptions.savePath`. Callers passing this to slskd must not reuse
+ * `getBookSavePath`: slskd rejects the absolute-path shape that setting is documented as. */
+export function getMusicSavePath(db: Db): string | null {
+  const value = getAppSetting(db, APP_SETTING_KEYS.musicSavePath).trim();
+  return value === '' ? null : value;
+}
+
+export function getMusicCategory(db: Db): string | null {
+  const value = getAppSetting(db, APP_SETTING_KEYS.musicCategory).trim();
   return value === '' ? null : value;
 }

@@ -30,6 +30,8 @@ import {
   getApprovalPolicy,
   getBookCategory,
   getBookSavePath,
+  getMusicCategory,
+  getMusicSavePath,
   setAppSetting,
 } from '../db/appSettingsRepo.js';
 import { RequestNotFoundError, RequestTransitionError } from '../requests/requestService.js';
@@ -48,8 +50,13 @@ import {
 
 /** Maps the two request-pipeline errors the route layer must translate itself; anything
  * else is rethrown so Fastify's own error handler produces a 500. Returns `true` when it
- * handled (and already sent) the error. */
-function handleRequestError(reply: FastifyReply, err: unknown): boolean {
+ * handled (and already sent) the error.
+ *
+ * Exported for `routes/musicRequests.ts` — `RequestNotFoundError`/`RequestTransitionError`
+ * are thrown by `musicRequestService.ts` too (same classes, imported from
+ * `requestService.ts` — see that file's own comment on reusing rather than forking them),
+ * so the HTTP mapping is identical and does not need a second copy. */
+export function handleRequestError(reply: FastifyReply, err: unknown): boolean {
   if (err instanceof RequestNotFoundError) {
     sendError(reply, 404, 'not_found', err.message);
     return true;
@@ -210,7 +217,13 @@ export function registerRequestRoutes(app: FastifyInstance): void {
   app.get('/requests', { preHandler: requireSession }, async (request, reply) => {
     const query = parseInput(reply, listRequestsQuerySchema, request.query);
     if (!query) return undefined;
-    const requests = listRequests(app.db, query.status ? { status: query.status } : {});
+    // `mediaType: 'book'` always, not just by default — this is the book route, and a
+    // caller that has only ever seen book rows here must keep seeing only book rows now
+    // that a music row can exist in the same table (see migration 4's comment).
+    const requests = listRequests(
+      app.db,
+      query.status ? { status: query.status, mediaType: 'book' } : { mediaType: 'book' },
+    );
     return reply.send({ requests });
   });
 
@@ -230,7 +243,8 @@ export function registerRequestRoutes(app: FastifyInstance): void {
     const params = parseInput(reply, idParamSchema, request.params);
     if (!params) return undefined;
     const found = getRequest(app.db, params.id);
-    if (!found) {
+    // A music row 404s here exactly as a nonexistent id would — this is the book route.
+    if (!found || found.mediaType !== 'book') {
       sendError(reply, 404, 'not_found', `request "${params.id}" not found`);
       return undefined;
     }
@@ -290,7 +304,8 @@ export function registerRequestRoutes(app: FastifyInstance): void {
   app.delete('/requests/:id', { preHandler: requireSession }, async (request, reply) => {
     const params = parseInput(reply, idParamSchema, request.params);
     if (!params) return undefined;
-    if (!getRequest(app.db, params.id)) {
+    const found = getRequest(app.db, params.id);
+    if (!found || found.mediaType !== 'book') {
       sendError(reply, 404, 'not_found', `request "${params.id}" not found`);
       return undefined;
     }
@@ -419,6 +434,8 @@ export function registerRequestRoutes(app: FastifyInstance): void {
       approvalPolicy: getApprovalPolicy(app.db),
       bookSavePath: getBookSavePath(app.db),
       bookCategory: getBookCategory(app.db),
+      musicSavePath: getMusicSavePath(app.db),
+      musicCategory: getMusicCategory(app.db),
     });
   });
 
@@ -435,11 +452,19 @@ export function registerRequestRoutes(app: FastifyInstance): void {
     if (body.bookCategory !== undefined) {
       setAppSetting(app.db, APP_SETTING_KEYS.bookCategory, body.bookCategory ?? '');
     }
+    if (body.musicSavePath !== undefined) {
+      setAppSetting(app.db, APP_SETTING_KEYS.musicSavePath, body.musicSavePath ?? '');
+    }
+    if (body.musicCategory !== undefined) {
+      setAppSetting(app.db, APP_SETTING_KEYS.musicCategory, body.musicCategory ?? '');
+    }
 
     return reply.send({
       approvalPolicy: getApprovalPolicy(app.db),
       bookSavePath: getBookSavePath(app.db),
       bookCategory: getBookCategory(app.db),
+      musicSavePath: getMusicSavePath(app.db),
+      musicCategory: getMusicCategory(app.db),
     });
   });
 }
