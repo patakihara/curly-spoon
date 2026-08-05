@@ -275,6 +275,9 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
+- **2026-08-05, session `01Wf5C2q`** — wiring `pollDownloads` to a scheduler, so a request's
+  download state actually advances in production. Affects both the book and music pipelines
+  (`docs/ROADMAP.md` §9 records the gap).
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
   (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
   landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
