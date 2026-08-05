@@ -722,6 +722,39 @@ leaves its four render branches, its `scrollIntoView` effect and its reduced-mot
 unverified by any automated test. Playwright runs locally on this machine and is the cheaper
 of the two fixes; installing a DOM environment is the other.
 
+- **Android wave B — music browse UI: done (`b73c246`, entry point `52307c7`, fixes
+  `ad3ecbf`).** Library browse (paginated artists + albums), artist detail and album detail,
+  with ViewModels, navigation and unit tests. No playback, no search, no connect form — each
+  is a later wave and each would have collided with a package this one was told to leave
+  alone. A Jellyfin connect form is deliberately _not_ needed to make this usable: credentials
+  are user-scoped and stored server-side, so a user who connected in the web app is already
+  connected on Android, and "not connected" is therefore a calm empty state rather than
+  something to fix here.
+
+  **Album tracks are requested with `sortBy=ParentIndexNumber,IndexNumber` explicitly**,
+  because the BFF's default of `SortName` sorts alphabetically by title rather than by track
+  number.
+
+  Two defects were caught after merge, both now fixed in `ad3ecbf`. Worth recording because
+  neither is specific to music:
+
+  - **A leaked-coroutine test race turned Android CI red**, and the two tests that _reported_
+    the failure were innocent — `UncaughtExceptionsBeforeTest` lands on whichever test's
+    `runTest` happens to run next. The cause was a test awaiting only a _partial_ state match
+    (`artistsState is Loaded`) while the same ViewModel coroutine was still fetching the
+    albums page, then enqueuing another `MockWebServer` response — racing two requests against
+    a strictly-FIFO response queue. `features/podcasts/PodcastsViewModelTest.kt` already
+    documents this exact mechanism and its fix; await the whole of `load()`, not half of it.
+  - **The two section-level Retry buttons were dead.** They were wired to `loadMoreArtists`/
+    `loadMoreAlbums`, which open with an `as? Loaded ?: return` — so from a `Failed` state they
+    were a silent no-op. No test exercised the path, which is why it shipped.
+
+**A real, shipped web bug the Android wave surfaced**: `apps/web/src/api/queries.ts`'s
+`useJellyfinTracksQuery` never sets `sortBy`, so it gets the BFF's `SortName` default and the
+web album page lists tracks **alphabetically by title, not in track order**. Because the album
+page is also what builds the playback queue, an album plays in alphabetical order too. Android
+does not have this bug (see above). Not yet fixed.
+
 **One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
 not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
 so a _paused_ track still ticks. For audiobooks that is harmless (it re-reports the same
