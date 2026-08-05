@@ -1222,11 +1222,24 @@ touching one.
   **An inherited gap this surfaced, not fixed**: `pollDownloads` is not wired to any scheduler
   in production, for books or music. Nothing advances a request's download state on its own.
 
-**A product caveat, not a defect**: every queued track — on both web and Android — carries
-**album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
-per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
-the album artist for every track. Worth a decision before phase 10 rather than a silent
-inherit.
+**Android wave L — per-track artist: done (`2c1b476`).** This was recorded here for a long time
+as a product caveat awaiting a decision, on the grounds that the track model had no per-track
+artist to read. That reasoning was wrong: `normalize.ts` sets `artistNames` per track and it
+already reached `JellyfinTrack` on Android — the queue builder simply dropped it. So a
+compilation credited the album artist on every track's lock screen, notification and Android Auto
+entry, and no decision was needed to fix it.
+
+The fallback is `track.artistNames ?: queue-level artist`, joined with the same `", "` convention
+the playlist and search models already used, and an empty list becomes `null` rather than `""` —
+an empty string is non-null and would have defeated the fallback, producing a blank artist line,
+which is worse than the bug being fixed. The append path needed no separate fix because
+cross-page appending routes through the same queue builder; that was verified rather than assumed.
+
+The regression test uses a track artist that genuinely differs from the album artist
+(`"Led Zeppelin"` against `"Various Artists"`), so it cannot pass with the fix reverted — the
+failure mode two earlier tests in this repo shipped with.
+
+**Web still has this bug.** Nothing about it is Android-specific except where it was fixed.
 
 **Everything that paragraph used to list as a deliberate gap has since shipped** — the
 cross-page queue, shuffle and repeat, the synced-lyrics view, playlists, favourites, music

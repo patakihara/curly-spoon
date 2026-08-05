@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T16:43:15Z` · `a8b69177155025d84` · general-purpose · ended · Working tree clean. Committed on branch 'worktree-agent-a8b69177155025d84' at '731cdcf', based on 'bd9310a' ('origin/main'). Not pushed, per instruct…
-- `2026-08-05T16:52:23Z` · `aa288a2dc33649778` · general-purpose · ended · Sufficient coverage confirmed symmetrically for both viewmodels. This is enough to write the report. ## Report **Overall: sound implementation.** The…
 - `2026-08-05T16:57:20Z` · `a231ab6f1a8a3a465` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a231ab6f1a8a3a465' @ 'f62df5b', based o…
 - `2026-08-05T16:59:44Z` · `a4b9f6733090ab05a` · general-purpose · ended · A background watcher is now armed (task 'bc5fsao83') that will notify me the moment the full e2e run's process exits, so I'll wait for that rather th…
 - `2026-08-05T17:01:16Z` · `ac51c4d082a0813c1` · general-purpose · ended · Working tree is clean. Committed on branch 'worktree-agent-ac51c4d082a0813c1', not pushed, as instructed. ## Report **1. Branch and sha:** 'worktree-…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-05T17:56:12Z` · `aa6ae7c7ece724114` · general-purpose · ended · Usage is fine (70%/41%, both under the 85% band). Work is complete. ## Report **Branch/commit**: 'worktree-agent-aa6ae7c7ece724114' @ '3a63115' (base…
 - `2026-08-05T17:56:35Z` · `ae810ede7c59baad3` · general-purpose · ended · ## Report **1. Branch and sha:** 'worktree-agent-ae810ede7c59baad3' @ 'a0f849b', based on 'origin/main''s 'c41b2e1' (which was itself only the orches…
 - `2026-08-05T18:12:10Z` · `a4f3ab764e9517c55` · general-purpose · running · —
+- `2026-08-05T18:13:06Z` · `a2f64ce34080707a3` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a2f64ce34080707a3' @ '2c1b476', based on 'origin/main''s 'f0c6e8d'. Working tree clean, not pushed. **Fi…
+- `2026-08-05T18:18:01Z` · `a269bc8240faac80c` · general-purpose · ended · Both runs for '2c1b476' are still in_progress — none failed, so no 'gh run view' per the budget rule. Not polling further. Review complete. Summary b…
 
 <!-- AGENT_LOG_END -->
 
@@ -282,8 +282,8 @@ nothing on `main` is stale — take it.
   landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
   lyrics view) and wave K (music requests on **Android** — the web UI for the same feature is
   session `01Wf5C2q`'s, claimed above, and the two did not overlap). This session stays inside
-  `apps/android/` and is not touching `apps/server/` or `apps/web/`. Wave L — per-track artist in
-  the Android queue and lock screen — is dispatched now.
+  `apps/android/`. **This session's Android lane is complete and the claim is released** — waves
+  F through L all landed and are CI-verified, and Android now matches web's music feature.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
@@ -356,9 +356,12 @@ The defects this section used to list are fixed — album track order, the `Slid
 and a paused track reporting to Jellyfin as playing. `docs/ROADMAP.md` §9 has each fix and
 what it turned up.
 
-One **product decision** is open rather than a defect: every queued track carries album-level
-artist/album/artwork on both clients, because the track model has no per-track artist, so a
-compilation shows the album artist on every track's lock screen.
+The album-level-artist caveat earlier drafts recorded here as an open product decision was
+**neither open nor a decision** — it was a bug, and it is fixed on Android (`2c1b476`). The
+reasoning behind it ("the track model has no per-track artist") was stale: `artistNames` is
+normalized per track and already reached both clients; Android simply dropped it when building
+the queue. **Web still does**, so a compilation still credits the album artist on every track
+there — a real, contained bug rather than a question for anyone.
 
 `docs/ROADMAP.md` §9 has the wave-by-wave detail.
 
