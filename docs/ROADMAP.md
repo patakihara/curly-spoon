@@ -14,7 +14,7 @@ self-contained, tested increment.
 | 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
 | 7   | **Android — audiobooks + requests** (Compose + Media3)          | done        |
 | 8   | Podcast client (web + Android)                                  | done        |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | in progress |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done        |
 | 10  | Release polish — performance budgets, a11y audit                | planned     |
 | 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
 
@@ -1259,6 +1259,17 @@ shuffle/repeat, progress reporting and requests of its own.
   try/catch within a tick, so one pipeline failing neither blocks the other nor stops future
   ticks — a poller that dies silently on the first error would be worse than none, because the
   UI would still look alive. Not yet verified against a real slskd or qBittorrent under load.
+
+**Phase 9 is done (2026-08-06).** Every wave listed above shipped on both surfaces, and the
+last open item in the list above — `pollDownloads` having no scheduler — is fixed. Three things
+stay open and are deliberately *not* phase-9 work:
+
+- **Lyrics search** is blocked on a product decision (index only what the server has, or also
+  backfill from an external provider, which carries a privacy opt-in). Not effort-bound.
+- **The download poller is unverified against a real slskd or qBittorrent under load** — it is
+  tested, wired and running, but only against fakes.
+- **A music request's import can never be confirmed**, by design: Jellyfin exposes no API to
+  observe scan progress, so `importRequested` is the honest terminal state.
 
 ### 10 — Release polish
 

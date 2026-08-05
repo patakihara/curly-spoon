@@ -149,6 +149,15 @@ is why the whole suite passed against a client that could not play anything.
 - `audioTracks[].codec` is real and undeclared; inert today, needed if codec-aware logic is
   ever built.
 
+**Awaiting a user decision — direct play versus transcode.** `playItem` posts an empty body,
+so it never declares `supportedMimeTypes`, so Audiobookshelf's `checkCanDirectPlay` fails closed
+and **every Auralis session is a server-side transcode**, even for a file the client could stream
+directly. Declaring the client's real supported types would flip most sessions to direct play:
+less server CPU on every listen, and byte-range seeking on the original file instead of chunked
+HLS. It is not a parse fix — it changes playback behaviour on a path that currently works, and
+the seek semantics differ — so it wants the user's call rather than an autonomous change.
+Nothing in the roadmap is blocked on it.
+
 **The lesson for the rest of this client**: a fixture written from documentation describes the
 shape you expected, and a passing suite against it proves only that the code agrees with the
 guess. Anything in `packages/abs-client` not yet exercised against the real server should be
@@ -247,8 +256,9 @@ Treat these as standing instructions, not one-off remarks.
 | 6     | Book requests                                           | done        |
 | 7     | Android — audiobooks, requests, Auto, offline downloads | done        |
 | 8     | Podcasts — backend, web, Android                        | done        |
-| 9     | Music — web only, no Android                            | in progress |
-| 10–11 | Polish, F-Droid                                         | not started |
+| 9     | Music — Jellyfin, lyrics, requests (web + Android)       | done        |
+| 10    | Release polish — perf budgets, a11y audit               | in progress |
+| 11    | F-Droid / Droid-ify distribution                        | not started |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
@@ -307,22 +317,11 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-- **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
-  (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
-  landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
-  <<<<<<< HEAD
-  lyrics view) and wave K (music requests on **Android** — the web UI for the same feature is
-  session `01Wf5C2q`'s, claimed above, and the two did not overlap). This session stays inside
-  `apps/android/`. **Complete; claim released.** Waves F through L landed and are CI-verified,
-  Android now matches web's music feature, and the per-track-artist fix went in on both clients
-  (`2c1b476` Android, `226fcd5` web — the latter touched only the queue/player path, never
-  `MusicRequest*.tsx`).
-  \=======
-  lyrics view) and wave K (music requests on **Android** — the web UI for the same feature was
-  a different session's, already landed, and the two did not overlap). This session stays
-  inside `apps/android/` and is not touching `apps/server/` or `apps/web/`.
+- **2026-08-06** — phase 10, Lighthouse performance budgets (`scripts/`, `.github/workflows/ci.yml`).
 
-> > > > > > > worktree-agent-a4f3ab764e9517c55
+The The 2026-08-05 Android music claim (waves F–L) is
+complete and released; the merge-conflict markers it left in this section were resolved
+on 2026-08-06.
 
 ### A subagent pushed to `main` after being told not to (2026-08-05)
 
