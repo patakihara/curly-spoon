@@ -125,6 +125,35 @@ export const musicSearchQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),
 });
 
+/** Mirrors `requests/types.ts`'s `MusicCandidate` field-for-field — the music pipeline's
+ * counterpart to `releaseSchema` above. Deliberately not `releaseSchema` reused: a
+ * candidate has no seeders/leechers/magnet/download-url concept (`types.ts`'s file comment
+ * on `MusicCandidate` explains why), so a shared schema would either accept fields a
+ * candidate can never have or make them falsely optional. */
+export const musicCandidateSchema = z.object({
+  guid: z.string().min(1),
+  providerId: z.string().min(1),
+  sourceName: z.string(),
+  title: z.string(),
+  artist: z.string().nullable(),
+  album: z.string().nullable(),
+  sizeBytes: z.number().nullable(),
+  bitrateKbps: z.number().nullable(),
+  format: z.string().nullable(),
+});
+
+/** Unlike `createRequestBodySchema`'s `release` (optional — a book request may name only a
+ * title and let `grab()` search for it later), `candidate` is required here: there is no
+ * music equivalent of "search for this later" — `MusicRequestProvider.search` results are
+ * one specific file held by one specific peer *right now* (`types.ts`'s file comment), not
+ * a stable catalogue entry worth deferring a choice on. `title`/`author` are not asked for
+ * separately either, for the same reason — `musicRequestService.ts`'s `createRequest`
+ * derives them from the candidate rather than trusting a client-supplied value that could
+ * disagree with it. */
+export const createMusicRequestBodySchema = z.object({
+  candidate: musicCandidateSchema,
+});
+
 // -----------------------------------------------------------------------------
 // Providers (indexers, download clients) — routes/requests.ts
 // -----------------------------------------------------------------------------
@@ -146,6 +175,8 @@ export const requestSettingsBodySchema = z.object({
   approvalPolicy: z.enum(['auto', 'manual']).optional(),
   bookSavePath: z.string().nullable().optional(),
   bookCategory: z.string().nullable().optional(),
+  musicSavePath: z.string().nullable().optional(),
+  musicCategory: z.string().nullable().optional(),
 });
 
 // -----------------------------------------------------------------------------

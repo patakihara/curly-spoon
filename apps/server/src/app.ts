@@ -32,8 +32,8 @@ declare module 'fastify' {
     jellyfin: JellyfinUpstreamFactory;
     loginRateLimiter: RateLimiter;
     requests: RequestService;
-    /** Music's counterpart to `requests` — search only for now; see that service's file
-     * comment for why it has no `createRequest`/`listRequests`. */
+    /** Music's counterpart to `requests` — search, create, list and a `grab` that stops at
+     * `downloading`; see that service's file comment for why it has no `pollDownloads`. */
     musicRequests: MusicRequestService;
     /**
      * The same injected upstream `fetch` `abs` and `requests` are built from, exposed

@@ -32,6 +32,30 @@ function seedRequest(
   return created;
 }
 
+/** Seeds one **music** request row directly at the repo layer — used only to prove the
+ * book routes correctly refuse to see/act on it (see migration 4's comment and this wave's
+ * report on why `GET /requests`/`GET /requests/:id`/`DELETE /requests/:id` must not). */
+function seedMusicRequest(app: FastifyInstance, id: string, userId: string) {
+  return createRequest(app.db, {
+    id,
+    userId,
+    title: 'A Track',
+    status: 'pending',
+    mediaType: 'music',
+    candidate: {
+      guid: 'g',
+      providerId: 'slskd',
+      sourceName: 'peer-a',
+      title: 'A Track',
+      artist: null,
+      album: null,
+      sizeBytes: null,
+      bitrateKbps: null,
+      format: null,
+    },
+  });
+}
+
 /** `requests.user_id` is a foreign key into the local `users` table, which is only
  * populated by a real login — `loginTestUser` must run first. */
 function firstUserId(app: FastifyInstance): string {
@@ -212,6 +236,27 @@ describe('GET /api/v1/requests', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  // Regression pin for migration 4 (`db/migrations.ts`): this route must keep behaving
+  // exactly as it did before a music row could exist in the same `requests` table — see
+  // `musicRequestService.ts`'s file comment and the wave's own report.
+  it('never lists a music request, even when one exists alongside a book request', async () => {
+    const { app } = buildTestApp();
+    const cookie = await loginTestUser(app);
+    const userId = firstUserId(app);
+    seedRequest(app, { id: 'r-book', title: 'A Book', userId });
+    seedMusicRequest(app, 'r-music', userId);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/requests',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().requests.map((r: { id: string }) => r.id);
+    expect(ids).toEqual(['r-book']);
+  });
 });
 
 // -----------------------------------------------------------------------------
@@ -243,6 +288,19 @@ describe('GET /api/v1/requests/:id', () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.json().request).toMatchObject({ id: 'r1', title: 'Dune' });
+  });
+
+  it('404s for a music request id — this is the book route', async () => {
+    const { app } = buildTestApp();
+    const cookie = await loginTestUser(app);
+    seedMusicRequest(app, 'r-music', firstUserId(app));
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/requests/r-music',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(404);
   });
 });
 
@@ -277,6 +335,20 @@ describe('DELETE /api/v1/requests/:id', () => {
       cookies: { auralis_session: cookie },
     });
     expect(response.statusCode).toBe(404);
+  });
+
+  it('404s for a music request id, leaving it undeleted', async () => {
+    const { app } = buildTestApp();
+    const cookie = await loginTestUser(app);
+    seedMusicRequest(app, 'r-music', firstUserId(app));
+
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/requests/r-music',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(app.db.prepare('SELECT id FROM requests WHERE id = ?').get('r-music')).toBeDefined();
   });
 });
 
@@ -816,6 +888,8 @@ describe('GET/PUT /api/v1/settings/requests', () => {
       approvalPolicy: 'auto',
       bookSavePath: null,
       bookCategory: 'auralis-books',
+      musicSavePath: null,
+      musicCategory: 'auralis-music',
     });
 
     const put = await app.inject({
@@ -826,6 +900,8 @@ describe('GET/PUT /api/v1/settings/requests', () => {
         approvalPolicy: 'manual',
         bookSavePath: '/downloads/books',
         bookCategory: 'books',
+        musicSavePath: 'music-downloads',
+        musicCategory: 'tracks',
       },
     });
     expect(put.statusCode).toBe(200);
@@ -833,6 +909,8 @@ describe('GET/PUT /api/v1/settings/requests', () => {
       approvalPolicy: 'manual',
       bookSavePath: '/downloads/books',
       bookCategory: 'books',
+      musicSavePath: 'music-downloads',
+      musicCategory: 'tracks',
     });
 
     const after = await app.inject({
@@ -844,6 +922,8 @@ describe('GET/PUT /api/v1/settings/requests', () => {
       approvalPolicy: 'manual',
       bookSavePath: '/downloads/books',
       bookCategory: 'books',
+      musicSavePath: 'music-downloads',
+      musicCategory: 'tracks',
     });
   });
 

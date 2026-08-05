@@ -142,6 +142,37 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: 4,
+    name: 'request-media-type',
+    up: (db) => {
+      db.exec(`
+        -- Distinguishes a music request from a book request in the shared \`requests\`
+        -- table. A sibling table was the other option and was rejected: every existing
+        -- column (status, status_detail, indexer_id, client_id, download_handle, progress,
+        -- the timestamps) means the same thing for both media types and would otherwise be
+        -- duplicated verbatim in a second repo/table for zero benefit — unlike migration 3's
+        -- \`jellyfin_secrets\`, which really is a different row shape under a different
+        -- uniqueness constraint. \`DEFAULT 'book'\` on a NOT NULL column is what makes this
+        -- safe on a database that already has rows: SQLite backfills the default into every
+        -- existing row as part of the ALTER, so every request written before this migration
+        -- stays exactly what it already was.
+        ALTER TABLE requests ADD COLUMN media_type TEXT NOT NULL DEFAULT 'book';
+
+        -- The music pipeline's frozen choice, parallel to \`release_json\` for books (see
+        -- migration 2's comment on that column). Deliberately a second column rather than
+        -- reusing \`release_json\`: a \`MusicCandidate\` (requests/types.ts) is a materially
+        -- different shape from a \`Release\` — no seeders, no magnet URI, a peer username
+        -- instead of an indexer id — and storing one under the other's name/type would be
+        -- exactly the kind of type lie this codebase's house rules (no \`any\` to dodge a
+        -- type error) exist to prevent. NULL for every book row, and for a music row before
+        -- a candidate has been chosen.
+        ALTER TABLE requests ADD COLUMN candidate_json TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_requests_media_type ON requests(media_type);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

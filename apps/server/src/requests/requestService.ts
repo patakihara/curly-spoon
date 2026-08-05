@@ -259,7 +259,11 @@ export function createRequestService(deps: RequestServiceDeps): RequestService {
 
   function requireRequest(id: string): BookRequest {
     const request = getRequest(deps.db, id);
-    if (!request) throw new RequestNotFoundError(id);
+    // A music-request id must 404 here exactly as a nonexistent one would, not be silently
+    // acted on by the book pipeline (a book-flavoured `grab()` searching book indexers for
+    // a track title, for one) — `musicRequestService.ts`'s own `requireRequest` carries the
+    // symmetric guard for its routes.
+    if (!request || request.mediaType !== 'book') throw new RequestNotFoundError(id);
     return request;
   }
 
@@ -455,7 +459,13 @@ export function createRequestService(deps: RequestServiceDeps): RequestService {
   }
 
   async function pollDownloads(): Promise<void> {
-    const inProgress = listRequests(deps.db, { status: 'downloading' }).filter(
+    // `mediaType: 'book'` is load-bearing, not decorative: without it a music request that
+    // reached `downloading` would be picked up here too, this loop would look for its
+    // `slskd` id among `buildDownloadClientProviders()` (book-only download clients), find
+    // nothing, and fail it with "download client is no longer configured" — silently and
+    // wrongly. `ListRequestsFilter.mediaType` is required specifically so this line cannot
+    // compile without saying which requests it means.
+    const inProgress = listRequests(deps.db, { status: 'downloading', mediaType: 'book' }).filter(
       (r): r is BookRequest & { downloadHandle: string } => r.downloadHandle !== null,
     );
 

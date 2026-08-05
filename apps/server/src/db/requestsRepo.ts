@@ -1,24 +1,37 @@
 /**
- * One book someone asked for, from the ask to the file landing in the library.
+ * One thing someone asked for — a book or a piece of music — from the ask to the file
+ * landing in the library. One table, one repo, shared by both: see migration 4's comment
+ * in `db/migrations.ts` for why a `media_type` column won over a second table.
  *
  * `release` freezes the release chosen at grab time (see migration 2's comment on
  * `release_json`): the indexer that offered it may stop listing it, or even disappear,
  * but the request has to keep being able to explain what it grabbed and from where.
+ * `candidate` is the music pipeline's equivalent, frozen the same way (migration 4).
  */
 
 import type { Db } from './connection.js';
 import type { RequestStatus } from '../requests/requestStatus.js';
-import type { Release } from '../requests/types.js';
+import type { MusicCandidate, Release } from '../requests/types.js';
 
-export interface BookRequest {
+/** What a request row is for. Drives which of `release`/`candidate` is populated and
+ * which route set (`routes/requests.ts` vs `routes/musicRequests.ts`) may act on it. */
+export type MediaType = 'book' | 'music';
+
+export interface MediaRequest {
   id: string;
   userId: string;
   title: string;
   author: string | null;
   status: RequestStatus;
   statusDetail: string | null;
-  /** The release frozen at grab time. `null` when nothing has been chosen yet. */
+  mediaType: MediaType;
+  /** The release frozen at grab time. `null` for a music row, or a book row nothing has
+   * been chosen for yet. */
   release: Release | null;
+  /** The candidate frozen at creation time (`music/slskd.ts`'s `add` needs the whole
+   * object, not just its `guid`). `null` for a book row, or a music row predating this
+   * column. */
+  candidate: MusicCandidate | null;
   indexerId: string | null;
   clientId: string | null;
   downloadHandle: string | null;
@@ -28,6 +41,12 @@ export interface BookRequest {
   updatedAt: number;
 }
 
+/** Kept as the name every existing book-pipeline import already uses
+ * (`requestService.ts`, `routes/requests.ts`, their tests) — every request row is now a
+ * `MediaRequest`, book or music, so `MediaRequest` is the honest name for new code, and
+ * this alias is what keeps the rename from rippling anywhere it doesn't need to. */
+export type BookRequest = MediaRequest;
+
 interface RequestRow {
   id: string;
   user_id: string;
@@ -35,7 +54,9 @@ interface RequestRow {
   author: string | null;
   status: string;
   status_detail: string | null;
+  media_type: string;
   release_json: string | null;
+  candidate_json: string | null;
   indexer_id: string | null;
   client_id: string | null;
   download_handle: string | null;
@@ -50,10 +71,23 @@ export interface CreateRequestInput {
   title: string;
   author?: string | null;
   status: RequestStatus;
+  /** Defaults to `'book'` — every call site that predates the music pipeline stays
+   * correct without being touched. */
+  mediaType?: MediaType;
   release?: Release | null;
+  candidate?: MusicCandidate | null;
 }
 
 export interface ListRequestsFilter {
+  /**
+   * Required, deliberately — not defaulted to "every media type". `GET /requests` (books)
+   * and `pollDownloads` both need to see only their own kind, and a caller that forgets to
+   * say which one is exactly the bug this field being optional would hide: a music request
+   * reaching `downloading` would otherwise be picked up by the book poller, which cannot
+   * find a `slskd` download client and fails it. Making this required turns that into a
+   * compile error at every call site instead of a runtime misfire.
+   */
+  mediaType: MediaType;
   status?: RequestStatus;
   userId?: string;
 }
@@ -85,7 +119,21 @@ function parseRelease(raw: string | null): Release | null {
   }
 }
 
-function toRequest(row: RequestRow): BookRequest {
+/** Same lenient-degrade contract as `parseRelease` above, and the same reasoning: this is
+ * our own data, written only by `createRequest`, so a strict re-parse would turn a
+ * harmless future field addition into unreadable history. */
+function parseCandidate(raw: string | null): MusicCandidate | null {
+  if (raw === null) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    return parsed as MusicCandidate;
+  } catch {
+    return null;
+  }
+}
+
+function toRequest(row: RequestRow): MediaRequest {
   return {
     id: row.id,
     userId: row.user_id,
@@ -93,7 +141,9 @@ function toRequest(row: RequestRow): BookRequest {
     author: row.author,
     status: row.status as RequestStatus,
     statusDetail: row.status_detail,
+    mediaType: row.media_type as MediaType,
     release: parseRelease(row.release_json),
+    candidate: parseCandidate(row.candidate_json),
     indexerId: row.indexer_id,
     clientId: row.client_id,
     downloadHandle: row.download_handle,
@@ -103,20 +153,23 @@ function toRequest(row: RequestRow): BookRequest {
   };
 }
 
-export function createRequest(db: Db, input: CreateRequestInput): BookRequest {
+export function createRequest(db: Db, input: CreateRequestInput): MediaRequest {
   const now = Date.now();
   db.prepare(
     `INSERT INTO requests
-       (id, user_id, title, author, status, status_detail, release_json, indexer_id,
-        client_id, download_handle, progress, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, NULL, NULL, 0, ?, ?)`,
+       (id, user_id, title, author, status, status_detail, media_type, release_json,
+        candidate_json, indexer_id, client_id, download_handle, progress, created_at,
+        updated_at)
+     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, NULL, NULL, 0, ?, ?)`,
   ).run(
     input.id,
     input.userId,
     input.title,
     input.author ?? null,
     input.status,
+    input.mediaType ?? 'book',
     input.release ? JSON.stringify(input.release) : null,
+    input.candidate ? JSON.stringify(input.candidate) : null,
     now,
     now,
   );
@@ -126,15 +179,15 @@ export function createRequest(db: Db, input: CreateRequestInput): BookRequest {
   return created;
 }
 
-export function getRequest(db: Db, id: string): BookRequest | null {
+export function getRequest(db: Db, id: string): MediaRequest | null {
   const row = db.prepare('SELECT * FROM requests WHERE id = ?').get(id) as RequestRow | undefined;
   return row ? toRequest(row) : null;
 }
 
 /** Newest first by `created_at`, tie-broken by `id` so equal timestamps still sort stably. */
-export function listRequests(db: Db, filter: ListRequestsFilter = {}): BookRequest[] {
-  const conditions: string[] = [];
-  const params: unknown[] = [];
+export function listRequests(db: Db, filter: ListRequestsFilter): MediaRequest[] {
+  const conditions: string[] = ['media_type = ?'];
+  const params: unknown[] = [filter.mediaType];
   if (filter.status !== undefined) {
     conditions.push('status = ?');
     params.push(filter.status);
@@ -143,7 +196,7 @@ export function listRequests(db: Db, filter: ListRequestsFilter = {}): BookReque
     conditions.push('user_id = ?');
     params.push(filter.userId);
   }
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const where = `WHERE ${conditions.join(' AND ')}`;
   const rows = db
     .prepare(`SELECT * FROM requests ${where} ORDER BY created_at DESC, id ASC`)
     .all(...params) as RequestRow[];

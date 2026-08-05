@@ -8,7 +8,7 @@ import {
   listRequests,
   updateRequest,
 } from './requestsRepo.js';
-import type { Release } from '../requests/types.js';
+import type { MusicCandidate, Release } from '../requests/types.js';
 
 function makeUser(db: ReturnType<typeof openDatabase>, upstreamUserId = 'abs-user-1') {
   return upsertUser(db, { username: 'kara', upstreamUserId });
@@ -28,6 +28,20 @@ function fullRelease(): Release {
     magnetUri: 'magnet:?xt=urn:btih:abc123',
     categories: ['Audiobooks'],
     format: 'm4b',
+  };
+}
+
+function fullCandidate(): MusicCandidate {
+  return {
+    guid: JSON.stringify({ username: 'peer-a', filename: 'Artist/Album/Track.mp3', size: 4000 }),
+    providerId: 'slskd',
+    sourceName: 'peer-a',
+    title: 'Track',
+    artist: 'Artist',
+    album: 'Album',
+    sizeBytes: 4000,
+    bitrateKbps: 320,
+    format: 'mp3',
   };
 }
 
@@ -53,7 +67,9 @@ describe('requestsRepo', () => {
       author: 'Frank Herbert',
       status: 'searching',
       statusDetail: null,
+      mediaType: 'book',
       release,
+      candidate: null,
       indexerId: null,
       clientId: null,
       downloadHandle: null,
@@ -80,6 +96,36 @@ describe('requestsRepo', () => {
     expect(created.release).toBeNull();
   });
 
+  it('defaults mediaType to book when omitted, and round-trips a music request explicitly', () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    const candidate = fullCandidate();
+
+    const bookRow = createRequest(db, {
+      id: 'req-book',
+      userId: user.id,
+      title: 'Dune',
+      status: 'pending',
+    });
+    expect(bookRow.mediaType).toBe('book');
+    expect(bookRow.candidate).toBeNull();
+
+    const musicRow = createRequest(db, {
+      id: 'req-music',
+      userId: user.id,
+      title: candidate.title,
+      author: candidate.artist,
+      status: 'pending',
+      mediaType: 'music',
+      candidate,
+    });
+    expect(musicRow.mediaType).toBe('music');
+    expect(musicRow.candidate).toEqual(candidate);
+    expect(musicRow.release).toBeNull();
+
+    expect(getRequest(db, 'req-music')).toEqual(musicRow);
+  });
+
   it('returns null from getRequest for a missing id', () => {
     const db = openDatabase(':memory:');
     expect(getRequest(db, 'does-not-exist')).toBeNull();
@@ -102,7 +148,7 @@ describe('requestsRepo', () => {
        VALUES (?, ?, ?, ?, 0, ?, ?)`,
     ).run('req-c', user.id, 'Book C', 'pending', now - 1000, now - 1000);
 
-    const ids = listRequests(db).map((r) => r.id);
+    const ids = listRequests(db, { mediaType: 'book' }).map((r) => r.id);
     // req-a and req-b share created_at; id order breaks the tie. req-c is strictly older.
     expect(ids).toEqual(['req-a', 'req-b', 'req-c']);
   });
@@ -113,7 +159,9 @@ describe('requestsRepo', () => {
     createRequest(db, { id: 'req-1', userId: user.id, title: 'A', status: 'pending' });
     createRequest(db, { id: 'req-2', userId: user.id, title: 'B', status: 'completed' });
 
-    expect(listRequests(db, { status: 'completed' }).map((r) => r.id)).toEqual(['req-2']);
+    expect(listRequests(db, { status: 'completed', mediaType: 'book' }).map((r) => r.id)).toEqual([
+      'req-2',
+    ]);
   });
 
   it('filters by userId', () => {
@@ -123,7 +171,9 @@ describe('requestsRepo', () => {
     createRequest(db, { id: 'req-1', userId: userA.id, title: 'A', status: 'pending' });
     createRequest(db, { id: 'req-2', userId: userB.id, title: 'B', status: 'pending' });
 
-    expect(listRequests(db, { userId: userB.id }).map((r) => r.id)).toEqual(['req-2']);
+    expect(listRequests(db, { userId: userB.id, mediaType: 'book' }).map((r) => r.id)).toEqual([
+      'req-2',
+    ]);
   });
 
   it('filters by both status and userId together', () => {
@@ -134,9 +184,30 @@ describe('requestsRepo', () => {
     createRequest(db, { id: 'req-2', userId: userA.id, title: 'B', status: 'completed' });
     createRequest(db, { id: 'req-3', userId: userB.id, title: 'C', status: 'completed' });
 
-    expect(listRequests(db, { status: 'completed', userId: userA.id }).map((r) => r.id)).toEqual([
-      'req-2',
-    ]);
+    expect(
+      listRequests(db, {
+        status: 'completed',
+        userId: userA.id,
+        mediaType: 'book',
+      }).map((r) => r.id),
+    ).toEqual(['req-2']);
+  });
+
+  it('filters by mediaType, keeping book and music requests apart', () => {
+    const db = openDatabase(':memory:');
+    const user = makeUser(db);
+    createRequest(db, { id: 'req-book', userId: user.id, title: 'A', status: 'pending' });
+    createRequest(db, {
+      id: 'req-music',
+      userId: user.id,
+      title: 'B',
+      status: 'pending',
+      mediaType: 'music',
+      candidate: fullCandidate(),
+    });
+
+    expect(listRequests(db, { mediaType: 'book' }).map((r) => r.id)).toEqual(['req-book']);
+    expect(listRequests(db, { mediaType: 'music' }).map((r) => r.id)).toEqual(['req-music']);
   });
 
   it('writes only the patched keys and leaves the rest alone', () => {
