@@ -20,6 +20,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 /**
  * Exercises [MusicRequestsViewModel] against a real [ApiClient] over [MockWebServer] — same
@@ -138,6 +139,81 @@ class MusicRequestsViewModelTest {
 
             assertTrue(state.searchState is MusicSearchUiState.Failed)
             assertEquals("slskd is unreachable", (state.searchState as MusicSearchUiState.Failed).message)
+        }
+
+    /**
+     * Ported from `RequestsViewModelTest`'s identical test (the book-request equivalent,
+     * `features/requests/RequestsViewModelTest.kt`) — see `docs/HANDOVER.md`'s "Android CI"
+     * section for the two traps this file's other tests exist to avoid, neither of which
+     * applies the same way here:
+     *
+     * - This test builds its own [ApiClient] with the **default, real [Dispatchers.IO]**
+     *   instead of the shared [testDispatcher] this class's `setUp` injects for every other
+     *   test. That shared dispatcher is an [UnconfinedTestDispatcher] used as *both* the
+     *   `Main` dispatcher and `ApiClient`'s `ioDispatcher` — under that combination,
+     *   `withContext(ioDispatcher)` never actually dispatches (same instance, so it runs
+     *   inline), so the "slow" network call would block `submitSearch()` itself on the calling
+     *   thread for its whole delay instead of running concurrently with a second call. The
+     *   book original hits the same requirement for the same reason (its own `apiClient`
+     *   never overrides `ioDispatcher` either) — this deviates from this file's usual
+     *   synchronous-call pattern deliberately, to get a *real* in-flight race.
+     * - Response ordering is forced, not hoped-for: `mockWebServer.takeRequest()` blocks until
+     *   the "Slow" request has actually reached the server before the "Fast" one fires, which
+     *   guarantees the two requests arrive (and are matched to the two enqueued responses, in
+     *   default arrival-order dispatch) in that order — no keyed `Dispatcher` is needed here.
+     *   The book original relies on the exact same synchronization and is sound for the same
+     *   reason, not passing by luck.
+     *
+     * Deleting `searchJob?.cancel()` in `MusicRequestsViewModel.submitSearch` would fail this
+     * test: without it, the still-running "Slow" job's response arrives during the
+     * `Thread.sleep(500)` below and unconditionally overwrites `_uiState.value` with the
+     * slow candidate — `finalState`'s `candidates` would then contain `"slow-guid"` instead of
+     * being empty.
+     */
+    @Test
+    fun `a slower search cancelled by a faster later one does not overwrite the later result`() =
+        runTest {
+            val keyValueStore = FakeKeyValueStore()
+            val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
+            val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
+            val realIoApiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setBodyDelay(300, TimeUnit.MILLISECONDS)
+                    .setBody(
+                        """
+                        {"candidates":[{"guid":"slow-guid","providerId":"slskd","sourceName":"peer-a",
+                          "title":"Slow Result","artist":"Slow Artist","album":"Slow Album",
+                          "sizeBytes":1024,"bitrateKbps":128,"format":"mp3"}],"errors":[]}
+                        """.trimIndent(),
+                    ),
+            )
+            mockWebServer.enqueue(MockResponse().setBody("""{"candidates":[],"errors":[]}"""))
+            val viewModel = MusicRequestsViewModel(realIoApiClient)
+
+            viewModel.onSearchTermChange("Slow")
+            viewModel.submitSearch()
+            // Wait for the slow request to actually reach the server before firing the second
+            // one, so the two requests are guaranteed to arrive (and be matched to the two
+            // enqueued responses) in this order.
+            mockWebServer.takeRequest()
+
+            viewModel.onSearchTermChange("Fast")
+            viewModel.submitSearch()
+            val fastState =
+                viewModel.uiState.first { it.submittedTerm == "Fast" && it.searchState is MusicSearchUiState.Results }
+            assertEquals(emptyList<Any>(), (fastState.searchState as MusicSearchUiState.Results).candidates)
+
+            // Give the cancelled "Slow" search's response (still in flight, delayed) time to
+            // arrive. If submitSearch didn't cancel the earlier job, this would land after and
+            // silently overwrite "Fast"'s already-rendered empty result with "Slow"'s candidate.
+            Thread.sleep(500)
+
+            val finalState = viewModel.uiState.value
+            assertEquals("Fast", finalState.submittedTerm)
+            assertTrue(finalState.searchState is MusicSearchUiState.Results)
+            assertEquals(emptyList<Any>(), (finalState.searchState as MusicSearchUiState.Results).candidates)
         }
 
     @Test

@@ -256,4 +256,133 @@ class PlayerViewModelTest {
                 handle.setMediaItemsCalls.map { items -> items.map { it.mediaId } },
             )
         }
+
+    /**
+     * Covers `PlayerUiState.Playing.isMusic`, `shuffleEnabled` and `repeatMode` (Android wave
+     * H) at the `PlayerViewModel` level, plus `toggleShuffle`/`cycleRepeatMode` — previously
+     * untested at this layer per `docs/HANDOVER.md`'s wave H review note. Uses [FakePlaybackHandle]
+     * as `controllerOverride`, same as every other test in this file, via [playQueue] rather than
+     * [PlayerViewModel.playItem]/`playEpisode` (both would need a real `playbackItemResolver`
+     * round trip this suite deliberately avoids — see the class doc comment above).
+     *
+     * One real gap: [PlayerViewModel]'s `Player.Listener.onShuffleModeEnabledChanged`/
+     * `onRepeatModeChanged` overrides — the callbacks that mirror a real `MediaController`'s
+     * shuffle/repeat state back into `_uiState` — are registered only inside
+     * `connectedController()`, which `controllerOverride` bypasses entirely (see
+     * [PlaybackHandle]'s own doc comment: the wider listener-registration machinery is
+     * deliberately outside this seam). So the listener path itself is unreachable from this
+     * file without adding new production surface, which the spec for this wave says not to do.
+     * What *is* reachable, and is what these tests pin: `playResolved`/`playQueue` read
+     * `shuffleModeEnabled`/`repeatMode` off the controller at play time to seed
+     * `PlayerUiState.Playing` (rather than defaulting both to off), and `toggleShuffle`/
+     * `cycleRepeatMode` write straight to [PlaybackHandle] without also writing `_uiState`
+     * optimistically — both verified against the real `PlayerViewModel.kt` source, not assumed.
+     */
+    @Test
+    fun `a music item's Playing state reflects the handle's shuffle and repeat mode at play time`() =
+        runTest {
+            handle.shuffleModeEnabled = true
+            handle.repeatMode = Player.REPEAT_MODE_ALL
+
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("track:t1")) })
+
+            val state = viewModel.uiState.value
+            assertTrue(state is PlayerUiState.Playing)
+            state as PlayerUiState.Playing
+            assertTrue("a track: media id must be recognised as music", state.isMusic)
+            assertTrue(state.shuffleEnabled)
+            assertEquals(Player.REPEAT_MODE_ALL, state.repeatMode)
+        }
+
+    @Test
+    fun `a book-prefixed item is not music, regardless of the handle's shuffle state`() =
+        runTest {
+            handle.shuffleModeEnabled = true
+
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("book:b1")) })
+
+            val state = viewModel.uiState.value
+            assertTrue(state is PlayerUiState.Playing)
+            assertTrue("a book: media id must never be treated as music", !(state as PlayerUiState.Playing).isMusic)
+        }
+
+    @Test
+    fun `an episode-prefixed item is not music`() =
+        runTest {
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("episode:e1:ep1")) })
+
+            val state = viewModel.uiState.value
+            assertTrue(state is PlayerUiState.Playing)
+            assertTrue(
+                "an episode: media id must never be treated as music",
+                !(state as PlayerUiState.Playing).isMusic,
+            )
+        }
+
+    @Test
+    fun `toggleShuffle flips the handle's shuffle mode but does not itself write uiState`() =
+        runTest {
+            handle.shuffleModeEnabled = false
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("track:t1")) })
+            val stateBeforeToggle = viewModel.uiState.value as PlayerUiState.Playing
+            assertTrue("seeded false at play time", !stateBeforeToggle.shuffleEnabled)
+
+            viewModel.toggleShuffle()
+
+            // The command reached the handle...
+            assertTrue("toggleShuffle must flip the underlying handle's shuffle mode", handle.shuffleModeEnabled)
+            // ...but PlayerViewModel writes no optimistic copy of its own: with controllerOverride
+            // bypassing the real MediaController's Player.Listener (see this test's own doc
+            // comment), nothing updates _uiState after playQueue's initial seed, so it must still
+            // read exactly what it did right after playQueue — not the handle's new value.
+            val stateAfterToggle = viewModel.uiState.value as PlayerUiState.Playing
+            assertTrue(
+                "PlayerViewModel must not optimistically flip shuffleEnabled itself",
+                !stateAfterToggle.shuffleEnabled,
+            )
+        }
+
+    @Test
+    fun `cycleRepeatMode advances the handle's repeat mode but does not itself write uiState`() =
+        runTest {
+            handle.repeatMode = Player.REPEAT_MODE_OFF
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("track:t1")) })
+            val stateBeforeCycle = viewModel.uiState.value as PlayerUiState.Playing
+            assertEquals(Player.REPEAT_MODE_OFF, stateBeforeCycle.repeatMode)
+
+            viewModel.cycleRepeatMode()
+
+            assertEquals(
+                "cycleRepeatMode must advance the underlying handle off -> all",
+                Player.REPEAT_MODE_ALL,
+                handle.repeatMode,
+            )
+            val stateAfterCycle = viewModel.uiState.value as PlayerUiState.Playing
+            assertEquals(
+                "PlayerViewModel must not optimistically advance repeatMode itself",
+                Player.REPEAT_MODE_OFF,
+                stateAfterCycle.repeatMode,
+            )
+        }
+
+    @Test
+    fun `toggleShuffle and cycleRepeatMode are no-ops on a non-music item`() =
+        runTest {
+            handle.shuffleModeEnabled = false
+            handle.repeatMode = Player.REPEAT_MODE_OFF
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("book:b1")) })
+
+            viewModel.toggleShuffle()
+            viewModel.cycleRepeatMode()
+
+            assertTrue(
+                "toggleShuffle must not touch the handle when the current item isn't music",
+                !handle.shuffleModeEnabled,
+            )
+            assertEquals(
+                "cycleRepeatMode must not touch the handle when the current item isn't music",
+                Player.REPEAT_MODE_OFF,
+                handle.repeatMode,
+            )
+        }
 }

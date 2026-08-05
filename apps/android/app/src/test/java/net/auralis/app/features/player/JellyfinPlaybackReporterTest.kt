@@ -164,6 +164,27 @@ class JellyfinPlaybackReporterTest {
         assertTrue(sender.progress.isEmpty())
     }
 
+    /**
+     * The real audiobook scheme (`net.auralis.app.playback.BrowseTree.BOOK_PREFIX`), not the
+     * arbitrary `"book-item-1"` id the other non-music test above uses — that id happens to
+     * gate correctly (it doesn't start with `track:`), but never actually exercises a `book:`-
+     * prefixed id, which is what `net.auralis.app.playback.PlaybackItemResolver` really produces
+     * for audiobooks. Covers the same entry points as
+     * `a non-music item produces zero Jellyfin reports across every entry point` above.
+     */
+    @Test
+    fun `a book-prefixed media id produces zero Jellyfin reports across every entry point`() {
+        reporter.onMediaItemChanged(newMediaId = "book:item-1", positionSeconds = 0.0, isPlaying = true)
+        reporter.onTick(positionSeconds = 30.0, isPlaying = true)
+        reporter.onIsPlayingChanged(positionSeconds = 30.0, isPlaying = false)
+        reporter.onSeek(positionSeconds = 45.0, isPlaying = true)
+        reporter.onStopped(positionSeconds = 45.0)
+
+        assertTrue(sender.starts.isEmpty())
+        assertTrue(sender.progress.isEmpty())
+        assertTrue(sender.stops.isEmpty())
+    }
+
     @Test
     fun `a failing send does not throw and does not stop later reports`() {
         reporter.onMediaItemChanged(newMediaId = "track:abc", positionSeconds = 0.0, isPlaying = true)
