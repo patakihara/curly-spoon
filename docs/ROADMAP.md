@@ -1072,6 +1072,29 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   and is tested at exact positions — on a line's start time, just before the first, past the last,
   empty, single, and unsynced — rather than merely asserting that some line is active.
 
+- **Android wave K — music requests on Android: done (`93908ee`, merged `c2aa038`).** Mirrors the
+  existing Android book-request feature against the music-request routes that landed server-side
+  the same day. Search a provider, submit a request, and see the list with its real statuses.
+
+  Two contract details differ from the book pipeline and are easy to get wrong: search errors are
+  keyed by **`providerId`**, not `indexerId`, and a request row carries the **`candidate`** frozen
+  at creation rather than a `release`. There is no title-only request path — the server requires a
+  candidate — so the client offers none.
+
+  **Status labelling is deliberately literal.** `importRequested` is a real terminal status,
+  distinct from `completed`, which exists precisely because the Jellyfin rescan confirmation a
+  true "completed" would need does not exist yet. The UI shows it as itself, and a failed request
+  shows its `statusDetail`; nothing is relabelled into something friendlier that would make a
+  stuck request look fine. Retry is offered only from `failed`, matching the server's own
+  transition table rather than a guess.
+
+  Nothing is written optimistically — every mutation updates state from the server's response — so
+  the generation-counter pattern the favourites and queue waves needed does not apply here.
+
+  One gap left open, judged small: the book path has a stale-search-cancellation regression test
+  and this one does not. The cancellation code was verified as structurally identical to the
+  tested original, so the risk is confined to a future edit that touches only the music path.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with

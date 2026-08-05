@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T16:17:28Z` · `a3df81486463c212b` · general-purpose · ended · Still in progress. Continuing to wait.
-- `2026-08-05T16:17:37Z` · `a3df81486463c212b` · general-purpose · ended · ## Review findings — commit 'e0c183a' (Jellyfin playback progress reporting, Android) **CI: not established.** I was told to stop watching; the coord…
 - `2026-08-05T16:20:39Z` · `a7a143f825a4b1d5f` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a7a143f825a4b1d5f' @ 'ce15dc2', based on '0f52924'…
 - `2026-08-05T16:30:06Z` · `a974bf4a1642cfc85` · general-purpose · ended · ## Review: Android wave H (shuffle/repeat), merge commit 'dc54085' **Categories checked and found clean:** Media3 API correctness (names/signatures/c…
 - `2026-08-05T16:30:53Z` · `a4b9f6733090ab05a` · general-purpose · ended · Waiting for the full e2e suite (backgrounded, ID 'by2a78goj') to finish before continuing.
@@ -94,8 +92,10 @@ in-context scan of the current one.
 - `2026-08-05T17:01:33Z` · `a4b9f6733090ab05a` · general-purpose · ended · Clean tree, no leftover processes. ## Report **Status: complete.** Committed as '12ec3eb' on branch 'worktree-agent-a4b9f6733090ab05a' (based on 'ori…
 - `2026-08-05T17:09:38Z` · `ae2dca6bc1b35fbfd` · general-purpose · ended · ## Review: 'ce080fe' — PlayerViewModel 'PlaybackHandle' seam + first test file **Verdict: net improvement, low risk of a behavioral regression, but l…
 - `2026-08-05T17:18:06Z` · `a549e375b184b5a0c` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a549e375b184b5a0c' @ '24d01bb', based o…
-- `2026-08-05T17:30:48Z` · `a2e6d71b4d93a15cd` · general-purpose · running · —
+- `2026-08-05T17:30:48Z` · `a2e6d71b4d93a15cd` · general-purpose · ended · Clean, working tree empty. Final report below. ## Report **Branch/sha**: 'worktree-agent-a2e6d71b4d93a15cd', two commits on top of '54b1335' (which i…
 - `2026-08-05T17:31:14Z` · `a58503a6febdf9f85` · general-purpose · ended · Confirmed properly gated inside 'if (state.isMusic)'. Review complete. ## Findings — Android synced-lyrics wave (0d6e32b..54b1335) **No defects found…
+- `2026-08-05T17:40:31Z` · `aed2b92133586315c` · general-purpose · ended · Working tree clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-aed2b92133586315c' @ '93908ee', based on 'bd9310a' ('o…
+- `2026-08-05T17:49:37Z` · `a63c963e583db6a35` · general-purpose · ended · ## Review: Android wave K (music requests), merge 'c2aa038' **Verdict: sound. No bugs found. One test-coverage gap worth a should-fix, not a blocker.…
 
 <!-- AGENT_LOG_END -->
 
@@ -285,9 +285,9 @@ nothing on `main` is stale — take it.
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
   (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
   landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
-  lyrics view). Wave K — music requests on **Android** — is dispatched now; the web UI for the
-  same feature is session `01Wf5C2q`'s, claimed above, and these do not overlap. This session
-  stays inside `apps/android/` and is not touching `apps/server/` or `apps/web/`.
+  lyrics view) and wave K (music requests on **Android** — the web UI for the same feature is
+  session `01Wf5C2q`'s, claimed above, and the two did not overlap). This session stays inside
+  `apps/android/` and is not touching `apps/server/` or `apps/web/`.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
