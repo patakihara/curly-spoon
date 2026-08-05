@@ -1022,6 +1022,30 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   continues on what is queued, and nothing retries. Pinned by a test asserting exactly one fetch
   call, so a retry loop would fail it.
 
+- **`PlayerViewModel`'s first test file (`ce080fe`).** Wave I's stale-append guard was the
+  highest-risk logic in the music feature and had no test, because `PlayerViewModel` had never
+  had a test file at all. The obstacle was concrete: `ResolvedPlayback.toMediaItem()` calls
+  `MediaItem.Builder.setUri`, which reaches `android.net.Uri.parse` and throws under the unmocked
+  test `android.jar`, and `playQueue` converts its whole queue before touching the controller —
+  so no controller-only fake could get past it.
+
+  Two narrow seams fix that: a `PlaybackHandle` interface covering exactly the commands the
+  ViewModel issues (with a thin adapter over the real `MediaController`), and an injectable
+  `MediaItem` conversion. Both default to the previous behaviour, `connectedController()`'s own
+  service connection and listener wiring are untouched, and the production call site passes
+  neither. The real guard code now runs under test.
+
+  The headline test parks album A's page fetch on an incomplete deferred, starts album B, then
+  releases A's page and asserts A's tracks never reach the player — and it asserts the release
+  actually happened, so it cannot pass by returning early. Deleting the generation check makes it
+  fail, which was verified by tracing the path rather than taken on the author's word.
+
+  Worth knowing for the next Android test that needs a framework class: this is the first one
+  here to construct one (`ContextWrapper(null)`), and `app/build.gradle.kts` sets no
+  `testOptions.unitTests.returnDefaultValues`, so unstubbed `android.*` methods throw. It works
+  because the wrapper's constructor is a field assignment and `context` is never dereferenced on
+  the tested path — not because the stub jar is lenient.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
