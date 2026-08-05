@@ -54,8 +54,16 @@ export const queryKeys = {
    * behind `MusicPlaylistPage`'s own header, which the items listing alone can't provide
    * (a playlist's own name isn't part of `GET /jellyfin/playlists/:id/items`'s response). */
   jellyfinPlaylist: (playlistId: string) => ['jellyfin', 'playlists', 'byId', playlistId] as const,
-  jellyfinPlaylistItems: (playlistId: string) =>
-    ['jellyfin', 'playlists', playlistId, 'items'] as const,
+  /** `startIndex` defaults to (and, for page 0, collapses to the same 4-element key as)
+   * the pre-pagination shape — so the existing page-0 optimistic add/remove mutations
+   * below, which only ever target page 0's cache entry, keep hitting the same key a
+   * `useJellyfinPlaylistItemsQuery(playlistId)` call for the first page also uses, with no
+   * change to their own tests. A non-zero page gets its own distinct key, the same
+   * pattern `jellyfinTracks` already uses for `MusicAlbumPage.tsx`. */
+  jellyfinPlaylistItems: (playlistId: string, startIndex = 0) =>
+    startIndex === 0
+      ? (['jellyfin', 'playlists', playlistId, 'items'] as const)
+      : (['jellyfin', 'playlists', playlistId, 'items', startIndex] as const),
 };
 
 export function useSetupQuery() {
@@ -664,13 +672,18 @@ export function useJellyfinPlaylistQuery(playlistId: string) {
 }
 
 /** Fetches `playlistId`'s tracks in playlist order — see `JellyfinPlaylistItem`'s doc
- * comment for why that's what this resolves to, not an alphabetical re-sort. */
-export function useJellyfinPlaylistItemsQuery(playlistId: string) {
+ * comment for why that's what this resolves to, not an alphabetical re-sort.
+ *
+ * `startIndex` defaults to 0 (the first `JELLYFIN_PAGE_SIZE` tracks) so a playlist longer
+ * than one page doesn't just silently truncate: `MusicPlaylistPage.tsx` threads its own
+ * pagination state through here the same way `MusicAlbumPage.tsx` does via
+ * `useJellyfinTracksQuery`. */
+export function useJellyfinPlaylistItemsQuery(playlistId: string, startIndex = 0) {
   const api = useApi();
   return useQuery({
-    queryKey: queryKeys.jellyfinPlaylistItems(playlistId),
+    queryKey: queryKeys.jellyfinPlaylistItems(playlistId, startIndex),
     queryFn: ({ signal }) =>
-      api.getJellyfinPlaylistItems(playlistId, { limit: JELLYFIN_PAGE_SIZE }, signal),
+      api.getJellyfinPlaylistItems(playlistId, { startIndex, limit: JELLYFIN_PAGE_SIZE }, signal),
     enabled: playlistId.length > 0,
     staleTime: 30_000,
   });
