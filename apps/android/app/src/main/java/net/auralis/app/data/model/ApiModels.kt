@@ -383,6 +383,98 @@ data class RequestResponse(
 )
 
 // -----------------------------------------------------------------------------
+// Music requests (routes/musicRequests.ts) — Android wave K
+// -----------------------------------------------------------------------------
+
+/**
+ * One file a music provider (slskd) found, available to enqueue. Mirrors
+ * `apps/server/src/routes/schemas.ts`'s `musicCandidateSchema` and
+ * `apps/server/src/requests/types.ts`'s `MusicCandidate` field-for-field. Deliberately not
+ * [Release]: a Soulseek search result has no seeders/leechers/magnet concept at all — see
+ * `MusicCandidate`'s own doc comment on the server for why a shared shape would be a lie.
+ * `bitrateKbps` is `Int`, unlike [Release]'s byte/timestamp fields, because a bitrate is
+ * always small and never fractional.
+ */
+@Serializable
+data class MusicCandidate(
+    val guid: String,
+    val providerId: String,
+    val sourceName: String,
+    val title: String,
+    val artist: String? = null,
+    val album: String? = null,
+    val sizeBytes: Long? = null,
+    val bitrateKbps: Int? = null,
+    val format: String? = null,
+)
+
+/** One music provider's failure to answer a search — surfaced alongside partial
+ * [MusicCandidate] results. `providerId`, not `indexerId` like [SearchError]: the server's
+ * `musicRequestService.ts` `searchMusic` errors are keyed by provider id, matching slskd
+ * being a combined search-and-download source rather than a book-style indexer. */
+@Serializable
+data class MusicSearchError(
+    val providerId: String,
+    val kind: String,
+    val message: String,
+)
+
+/** GET /music-requests/search response envelope. */
+@Serializable
+data class MusicSearchResult(
+    val candidates: List<MusicCandidate>,
+    val errors: List<MusicSearchError>,
+)
+
+/**
+ * A music request and its pipeline state. Mirrors `apps/server/src/db/requestsRepo.ts`'s
+ * `MediaRequest` for a `mediaType: 'music'` row — `candidate` is populated (frozen at
+ * creation time) where a book row would populate `release`; this app never needs the
+ * `release`/`mediaType` fields on a music row, so they are left off entirely rather than
+ * modelled as always-null noise. `status` is a plain `String`, not an enum, for the same
+ * reason as [BookRequest.status]: an upstream status this app doesn't know about (e.g. a
+ * future addition) must decode, not throw. `importRequested` is a real, terminal status
+ * value unique to the music pipeline — see `requests/requestStatus.ts`'s header comment on
+ * the server for why it exists instead of reusing `completed`.
+ */
+@Serializable
+data class MusicRequest(
+    val id: String,
+    val userId: String,
+    val title: String,
+    val author: String? = null,
+    val status: String,
+    val statusDetail: String? = null,
+    val candidate: MusicCandidate? = null,
+    val indexerId: String? = null,
+    val clientId: String? = null,
+    val downloadHandle: String? = null,
+    val progress: Double,
+    val createdAt: Long,
+    val updatedAt: Long,
+)
+
+/** POST /music-requests request body. Unlike [CreateRequestBody], `candidate` is required,
+ * not optional — see `createMusicRequestBodySchema`'s doc comment on the server: there is
+ * no music equivalent of "request this title later without a specific file in hand". */
+@Serializable
+data class CreateMusicRequestBody(
+    val candidate: MusicCandidate,
+)
+
+/** GET /music-requests response envelope. */
+@Serializable
+data class MusicRequestsResponse(
+    val requests: List<MusicRequest>,
+)
+
+/** Envelope shared by every `{request}`-returning music-request endpoint. */
+@Serializable
+data class MusicRequestResponse(
+    val request: MusicRequest,
+)
+
+// -----------------------------------------------------------------------------
 // Podcast discovery (routes/podcasts.ts) — search, feed preview, subscribe
 // -----------------------------------------------------------------------------
 
