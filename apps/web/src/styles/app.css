@@ -483,6 +483,25 @@ html body {
   gap: var(--m3-space-sm);
 }
 
+/* Shuffle/repeat (music-only — see NowPlaying.tsx's `showQueueControls`). */
+.auralis-now-playing__queue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--m3-space-lg);
+}
+
+/* Repeat has no dedicated "repeat one" glyph in the icon set (`packages/ui/src/components/
+   Icon.tsx`) — this numeral is what distinguishes "repeat all" from "repeat one" visually;
+   `aria-label` (see NowPlaying.tsx's `REPEAT_LABELS`) is what distinguishes them for
+   assistive tech, so this badge is purely decorative (`aria-hidden`). */
+.auralis-now-playing__repeat-badge {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 2px;
+}
+
 .auralis-chapter-list,
 .auralis-bookmarks__list {
   list-style: none;

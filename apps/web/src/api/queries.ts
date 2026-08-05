@@ -404,7 +404,7 @@ export const JELLYFIN_PAGE_SIZE = 40;
  * tracks sit on the album" is the one ordering that call site ever wants. Mirrors
  * `TRACK_ORDER_SORT_BY` in the Android client's `AlbumDetailViewModel.kt`, which already
  * requests this. */
-const TRACK_ORDER_SORT_BY = 'ParentIndexNumber,IndexNumber';
+export const TRACK_ORDER_SORT_BY = 'ParentIndexNumber,IndexNumber';
 
 export function useJellyfinConfigQuery() {
   const api = useApi();
