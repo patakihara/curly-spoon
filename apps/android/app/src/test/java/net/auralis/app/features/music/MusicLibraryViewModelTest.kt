@@ -130,6 +130,18 @@ class MusicLibraryViewModelTest {
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
             viewModel.load()
             viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }
+            // load() runs one coroutine that fetches artists and *then* albums, sequentially.
+            // Awaiting only artistsState here would let this test enqueue and consume the
+            // MockWebServer response below while that same coroutine is still in flight
+            // fetching the albums page — racing two in-flight requests against MockWebServer's
+            // strictly-FIFO queue, so one request gets the response meant for the other, its
+            // parse fails, and the exception surfaces asynchronously after @After has already
+            // torn down MockWebServer/Dispatchers.Main, landing on whichever test's runTest
+            // happens to run next as UncaughtExceptionsBeforeTest. Awaiting albumsState too
+            // proves the whole of load() has settled before the queue is touched again. See
+            // PodcastsViewModelTest's `startPreview then subscribe succeeds and reloads the
+            // podcast list` test for the same mechanism, diagnosed first.
+            viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }
 
             mockWebServer.enqueue(
                 artistsPageResponse(total = 2, startIndex = 1, items = """[{"id":"art2","name":"Sigur Rós"}]"""),
@@ -154,6 +166,10 @@ class MusicLibraryViewModelTest {
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
             viewModel.load()
             viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }
+            // See the identical comment in `loadMoreArtists appends the next page...` above:
+            // load()'s albums fetch can still be in flight here, and touching the MockWebServer
+            // queue before it settles races it against loadMoreArtists()'s own request.
+            viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }
 
             mockWebServer.enqueue(
                 MockResponse()
@@ -169,5 +185,59 @@ class MusicLibraryViewModelTest {
 
             assertEquals(listOf("Radiohead"), loaded.items.map { it.name })
             assertFalse(loaded.loadingMore)
+        }
+
+    @Test
+    fun `retryArtists re-issues the artists first page after a Failed section and reaches Loaded`() =
+        runTest {
+            mockWebServer.enqueue(configuredResponse())
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
+            )
+            mockWebServer.enqueue(albumsPageResponse())
+            val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
+            viewModel.load()
+            viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Failed }
+            // load() fetches artists then albums sequentially regardless of the artists outcome —
+            // await albums settling too before touching the queue again, same race as the
+            // loadMoreArtists tests above.
+            viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }
+
+            // Retry on a Failed first page used to be wired to loadMoreArtists(), which starts
+            // with `artistsState as? Loaded ?: return` — a silent no-op against a Failed state,
+            // no request ever sent. retryArtists() re-issues the first-page fetch instead.
+            mockWebServer.enqueue(artistsPageResponse())
+            viewModel.retryArtists()
+            val loaded =
+                viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }.artistsState
+                    as ArtistsSectionUiState.Loaded
+
+            assertEquals(listOf("Radiohead"), loaded.items.map { it.name })
+        }
+
+    @Test
+    fun `retryAlbums re-issues the albums first page after a Failed section and reaches Loaded`() =
+        runTest {
+            mockWebServer.enqueue(configuredResponse())
+            mockWebServer.enqueue(artistsPageResponse())
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
+            )
+            val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
+            viewModel.load()
+            viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }
+            viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Failed }
+
+            mockWebServer.enqueue(albumsPageResponse())
+            viewModel.retryAlbums()
+            val loaded =
+                viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }.albumsState
+                    as AlbumsSectionUiState.Loaded
+
+            assertEquals(listOf("OK Computer"), loaded.items.map { it.name })
         }
 }

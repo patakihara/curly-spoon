@@ -151,6 +151,23 @@ class MusicLibraryViewModel(
         }
     }
 
+    /** Re-issues the artists section's first-page load after [ArtistsSectionUiState.Failed] —
+     * [loadMoreArtists] cannot do this itself: it starts from `_uiState.value.artistsState as?
+     * ArtistsSectionUiState.Loaded ?: return`, so on a `Failed` first page it is a silent no-op
+     * (no request, no spinner, no state change) rather than a retry. Wired to
+     * [MusicLibraryScreen]'s "Retry" button in the artists section's `Failed` branch; the
+     * `Loaded`-section "Load more" row keeps using [loadMoreArtists], unchanged. */
+    fun retryArtists() {
+        _uiState.value = _uiState.value.copy(artistsState = ArtistsSectionUiState.Loading)
+        viewModelScope.launch { loadFirstArtistsPage() }
+    }
+
+    /** See [retryArtists] — identical shape, for the albums section. */
+    fun retryAlbums() {
+        _uiState.value = _uiState.value.copy(albumsState = AlbumsSectionUiState.Loading)
+        viewModelScope.launch { loadFirstAlbumsPage() }
+    }
+
     /** Fetches the next page of artists and appends it. A no-op if the current state isn't a
      * [ArtistsSectionUiState.Loaded] with more pages left, or if a page fetch is already in
      * flight — both defensive guards against a double-tap, not reachable UI paths on their own

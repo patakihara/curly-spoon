@@ -111,6 +111,7 @@ fun MusicLibraryScreen(
                         imageLoader = container.imageLoader,
                         onOpen = { artistId -> navController.navigate(Routes.musicArtistDetail(artistId)) },
                         onLoadMore = viewModel::loadMoreArtists,
+                        onRetry = viewModel::retryArtists,
                     )
 
                     item {
@@ -125,6 +126,7 @@ fun MusicLibraryScreen(
                         imageLoader = container.imageLoader,
                         onOpen = { albumId -> navController.navigate(Routes.musicAlbumDetail(albumId)) },
                         onLoadMore = viewModel::loadMoreAlbums,
+                        onRetry = viewModel::retryAlbums,
                     )
                 }
         }
@@ -136,6 +138,7 @@ private fun LazyListScope.artistsSection(
     imageLoader: ImageLoader,
     onOpen: (String) -> Unit,
     onLoadMore: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     when (state) {
         is ArtistsSectionUiState.Loading ->
@@ -148,7 +151,10 @@ private fun LazyListScope.artistsSection(
             item {
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     Text(state.message, color = MaterialTheme.colorScheme.error)
-                    Button(onClick = onLoadMore, modifier = Modifier.padding(top = 4.dp)) { Text("Retry") }
+                    // Not onLoadMore: this section has no Loaded items yet (the first page
+                    // itself failed), and loadMoreArtists() is a no-op without one — see
+                    // MusicLibraryViewModel.retryArtists's doc comment.
+                    Button(onClick = onRetry, modifier = Modifier.padding(top = 4.dp)) { Text("Retry") }
                 }
             }
         is ArtistsSectionUiState.Loaded ->
@@ -174,6 +180,7 @@ private fun LazyListScope.albumsSection(
     imageLoader: ImageLoader,
     onOpen: (String) -> Unit,
     onLoadMore: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     when (state) {
         is AlbumsSectionUiState.Loading ->
@@ -186,7 +193,10 @@ private fun LazyListScope.albumsSection(
             item {
                 Column(modifier = Modifier.padding(top = 8.dp)) {
                     Text(state.message, color = MaterialTheme.colorScheme.error)
-                    Button(onClick = onLoadMore, modifier = Modifier.padding(top = 4.dp)) { Text("Retry") }
+                    // Not onLoadMore: this section has no Loaded items yet (the first page
+                    // itself failed), and loadMoreAlbums() is a no-op without one — see
+                    // MusicLibraryViewModel.retryAlbums's doc comment.
+                    Button(onClick = onRetry, modifier = Modifier.padding(top = 4.dp)) { Text("Retry") }
                 }
             }
         is AlbumsSectionUiState.Loaded ->
