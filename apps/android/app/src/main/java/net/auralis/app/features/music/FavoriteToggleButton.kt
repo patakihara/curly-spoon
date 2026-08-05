@@ -4,6 +4,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 
 /**
  * The favourite toggle shared by every place this wave adds one: an album's track rows, an
@@ -17,17 +21,17 @@ import androidx.compose.ui.Modifier
  * transitive dependency of `material3` at this project's pinned Compose BOM) was never confirmed
  * to include the glyphs a two-state toggle would need, and `HomeScreen.kt`'s top-bar actions made
  * the same call for the same reason — this toggle follows that same, already-reviewed reasoning
- * rather than reopening it.
+ * rather than reopening it. That reasoning is about the *icon*, though, and doesn't bear on
+ * accessibility semantics: [Role.Switch] and `stateDescription` below live in
+ * `androidx.compose.ui.semantics`, part of the same `androidx.compose.ui:ui` artifact this file
+ * already pulls in for [Modifier] — no icon dependency involved at all.
  *
- * Accessibility note, stated plainly because it is a real gap and not a compliant-by-construction
- * toggle: a [TextButton] whose own visible label already names the current state and what
- * tapping it does is announced to accessibility services as *its text content*, the same way
- * [MiniPlayerBar]'s play/pause toggle and `PodcastDetailScreen`'s episode-order toggle already
- * are — not the same thing as an accessibility-service-visible checked/unchecked toggle role
- * (`Modifier.semantics`/`Role.Switch`/`toggleable`), which nothing in this app uses anywhere yet
- * (grepped: no existing `Modifier.semantics` or `toggleable` usage) and was not introduced here
- * for that reason. See this wave's own final report for the deviation and why it was accepted
- * rather than papered over with an icon-based toggle whose dependency wasn't confirmed either.
+ * Exposes proper toggle semantics via [Modifier.semantics]: [Role.Switch] tells an accessibility
+ * service this is a two-state control, and `stateDescription` announces "on"/"off" as a state
+ * change, distinct from [Text]'s own visible label. Without this, a screen reader hears only the
+ * label's changing text — the same gap [MiniPlayerBar]'s play/pause toggle and
+ * `PodcastDetailScreen`'s episode-order toggle still have, left alone here for the same
+ * least-surprise reason: fixing every existing toggle in one pass is out of scope for this file.
  */
 @Composable
 internal fun FavoriteToggleButton(
@@ -36,7 +40,14 @@ internal fun FavoriteToggleButton(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TextButton(onClick = onToggle, modifier = modifier) {
+    TextButton(
+        onClick = onToggle,
+        modifier =
+            modifier.semantics {
+                role = Role.Switch
+                stateDescription = if (favorite) "On" else "Off"
+            },
+    ) {
         Text(if (favorite) "Remove $itemName from favourites" else "Add $itemName to favourites")
     }
 }

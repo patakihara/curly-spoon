@@ -145,10 +145,16 @@ class FavoritesViewModelTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(pageResponse("[]", total = 0))
             mockWebServer.enqueue(pageResponse("[]", total = 0))
+            // Loaded unfavourited, mirroring AlbumDetailViewModelTest's own
+            // "toggleAlbumFavorite flips optimistically, then reconciles..." test: the optimistic
+            // flip (see FavoritesViewModel.toggleFavorite) must land on a *different* boolean than
+            // the server's eventual answer, or the predicate below could be satisfied by the
+            // synchronous optimistic write alone, before the network call ever completes — see the
+            // comment further down for why that would defeat the point of awaiting at all.
             mockWebServer.enqueue(
                 pageResponse(
                     """[{"id":"trk1","name":"Airbag","albumId":"alb1","artistNames":["Radiohead"],
-                        "durationSeconds":284.0,"favorite":true}]""",
+                        "durationSeconds":284.0,"favorite":false}]""",
                     total = 1,
                 ),
             )
@@ -156,8 +162,23 @@ class FavoritesViewModelTest {
             viewModel.load()
             viewModel.uiState.first { it !is FavoritesUiState.Loading }
 
+            // The server disagrees with the requested state — reconciliation must end on *its*
+            // answer (false), not the optimistic guess (true).
             mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
             viewModel.toggleTrackFavorite("trk1")
+
+            // Flips immediately, synchronously, before the request even reaches the network — the
+            // optimistic write happens before toggleFavorite's own suspension point. Asserting it
+            // here, against `.value` rather than through `.first{}`, is what proves the predicate
+            // below can only be satisfied by the *later*, settled emission: if the optimistic value
+            // were left equal to the server's eventual answer (as it was before this fix — both
+            // ended up `false`), `.first { favorite == false }` would already be true at this exact
+            // instant and return without ever forcing the awaited coroutine's network round trip to
+            // complete, leaving it still running when @After's mockWebServer.shutdown() tears down
+            // the server out from under it.
+            assertTrue(
+                (viewModel.uiState.value as FavoritesUiState.Loaded).tracks.first { it.id == "trk1" }.favorite,
+            )
 
             val settled =
                 viewModel.uiState.first {
