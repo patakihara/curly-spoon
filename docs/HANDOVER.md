@@ -81,23 +81,49 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-04T11:31:02Z` · `a494525f31c2b819c` · general-purpose · ended · Committed cleanly on this worktree's own branch 'worktree-agent-a494525f31c2b819c' as commit 'd3b2791', working tree clean, not pushed. Here is the f…
-- `2026-08-04T11:39:34Z` · `a067025f957369ca8` · general-purpose · ended · ## Report **Commit**: '0ce770d' on branch 'worktree-agent-a067025f957369ca8' (this worktree's own branch, based on '88eb0d0'). Working tree is clean.…
-- `2026-08-04T11:47:46Z` · `a951b0806dda1a982` · general-purpose · ended · Final report below. ## Blocker — read this first **This wave cannot proceed past credential storage until 'apps/server/package.json' gets '"@auralis/…
-- `2026-08-04T12:01:41Z` · `a99d0daa7c377ba61` · general-purpose · ended · Committed cleanly, working tree is clean (the temp commit-message file was removed and wasn't tracked). Not pushed, per instructions. ## Report **Com…
-- `2026-08-04T12:07:08Z` · `afab63b4c80f27e63` · general-purpose · ended · Committed cleanly, working tree clean, not pushed (per instructions). ## Report **Mandatory first steps**: passed. 'git status --short' was clean bef…
-- `2026-08-04T12:09:35Z` · `a1ec59c18afa6319b` · general-purpose · ended · Committed clean, working tree empty. Here is the final report. ## Summary **Mandatory first steps**: passed. 'git status --short' was clean, 'git res…
-- `2026-08-04T12:26:52Z` · `a4c8be47df08c4418` · general-purpose · ended · Working tree is clean, commit 'f21709a' is on the worktree's own branch 'worktree-agent-a4c8be47df08c4418', not pushed, as instructed. ## Report **Co…
-- `2026-08-04T12:52:53Z` · `a9985d70434205481` · general-purpose · ended · Committed clean. Working tree is empty. ## Report **Commit:** 'aa48ade' on branch 'worktree-agent-a9985d70434205481' (based on 'b2ea67a', the shared-…
-- `2026-08-04T13:00:28Z` · `aec8316a17825b170` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed (as instructed). ## Report **Mandatory first steps**: passed. 'git status --short' was clean, 'g…
-- `2026-08-04T13:10:28Z` · `a07ab93ed4bf34306` · general-purpose · ended · ## Report **Mandatory first steps**: passed. 'git status --short' was clean, 'git reset --hard 9bea24a' succeeded, 'git log -1 --oneline' confirmed '…
-- `2026-08-04T13:10:57Z` · `a461a405c2bc43ffb` · general-purpose · ended · Committed clean, working tree is empty, not pushed as instructed. ## Report **Commit**: '8c689fa' on branch 'worktree-agent-a461a405c2bc43ffb' (based…
-- `2026-08-04T13:25:16Z` · `a19eaf43404483b3b` · general-purpose · ended · Working tree is clean. Committed as '58a2aa2' on branch 'worktree-agent-a19eaf43404483b3b', not pushed as instructed. ## Report **Mandatory first ste…
-- `2026-08-04T13:57:15Z` · `aa169cbabb2f747a0` · general-purpose · ended · Committed clean, working tree is empty, not pushed (as instructed). ## Report **Commit:** '774e592' on branch 'worktree-agent-aa169cbabb2f747a0' (bas…
 - `2026-08-04T14:11:38Z` · `a0b3dc48a5a6bebc9` · general-purpose · ended · Committed clean, working tree empty, not pushed (per instructions). ## Report **Commit**: 'fe12a77' on branch 'worktree-agent-a0b3dc48a5a6bebc9' (bas…
 - `2026-08-04T14:26:31Z` · `a05c81dbdd4d8f33a` · general-purpose · ended · ## Report **Branch**: 'worktree-agent-a05c81dbdd4d8f33a', two commits on top of 'af7bac5': - '2a2edf7' — single-track Jellyfin playback - 'de2f908' —…
+- `2026-08-04T15:00:07Z` · `a417305d82c5acb5d` · general-purpose · ended · ## Review report — Phase 9 web wave B ('d98cc9e', commits '2a2edf7' + 'de2f908') **Mandatory steps**: passed. 'git status --short' clean, 'git reset…
+- `2026-08-04T15:00:45Z` · `a966e1707aa23490c` · general-purpose · ended · Committed clean, working tree empty. Not pushed, per constraints. ## Report **Mandatory first steps**: passed. 'git status --short' was clean before…
+- `2026-08-04T20:03:47Z` · `afb3d65d8df046966` · general-purpose · ended · ## Findings ### 1. Does Jellyfin's search match lyric text? — No. Verified directly against 'Emby.Server.Implementations/Library/Search/SqlSearchProv…
+- `2026-08-04T20:04:42Z` · `a8c9c60164d64c2ed` · general-purpose · ended · Committed clean, working tree empty, not pushed as instructed. ## Report **Branch**: 'worktree-agent-a8c9c60164d64c2ed', commit '4111d4b', based on '…
+- `2026-08-04T20:17:59Z` · `a17dd639a70ecff06` · general-purpose · ended · ## Review findings — wave '4111d4b' (unified search: music) **Mandatory steps**: 'git show --stat' and full 'git diff d98cc9e..4111d4b' read in full.…
+- `2026-08-04T20:24:40Z` · `a9879cca6eefcd8c5` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit:** 'worktree-agent-a9879cca6eefcd8c5' at 'd012c95', on top of '4111d4b…
+- `2026-08-04T20:36:57Z` · `ad110cc38081aefc6` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-ad110cc38081aefc6' @ '57d545e' (base…
+- `2026-08-04T20:38:09Z` · `a2d41422f046c6b64` · general-purpose · running · —
+- `2026-08-04T20:41:17Z` · `a334818b757135847` · general-purpose · running · —
+- `2026-08-04T20:42:32Z` · `a5fe68bc1b55496c1` · general-purpose · running · —
+- `2026-08-04T20:42:50Z` · `a2d41422f046c6b64` · general-purpose · running · —
+- `2026-08-04T20:42:50Z` · `a5fe68bc1b55496c1` · general-purpose · running · —
+- `2026-08-04T20:42:50Z` · `a334818b757135847` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
+
+---
+
+## Leftover worktrees — salvage survey (2026-08-04)
+
+This session was **stopped deliberately by the user**, mid-flight; subagents never reported
+back. `auralis-autorun.timer` is currently **stopped** — no autonomous session will pick this
+up until someone restarts it; stale-looking work here is not evidence of a crash.
+
+| Worktree (agent id)            | Branch                             | Commits ahead of tip                                     | Uncommitted                                                         | What / verdict                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------ | ---------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `a2d41422f046c6b64` (LOCKED)   | `worktree-agent-a2d41422f046c6b64` | 0                                                        | **yes** — `packages/jellyfin-client/src/schemas/raw.ts` (+63 lines) | Zod schemas for Jellyfin's lyrics endpoint (`LyricMetadata`/`LyricLine`/`LyricDto`), well-commented, schema-only — no consumer, no test. **Salvaged 2026-08-04**: copied into the main checkout's working tree (still uncommitted there too); the worktree itself was left untouched.                                                                                      |
+| `a5fe68bc1b55496c1` (LOCKED)   | `worktree-agent-a5fe68bc1b55496c1` | 0                                                        | none                                                                | Tree identical to tip. Nothing to salvage — agent left no trace before being killed.                                                                                                                                                                                                                                                                                       |
+| `a8c9c60164d64c2ed`            | `worktree-agent-a8c9c60164d64c2ed` | 0 (tip `4111d4b`, an ancestor of the current branch tip) | none                                                                | Fully merged already (music-search wave). Stale checkout, safe to ignore.                                                                                                                                                                                                                                                                                                  |
+| `a966e1707aa23490c` (retained) | `worktree-agent-a966e1707aa23490c` | 1 — `9888bec`                                            | none                                                                | Docs-only commit recording phase 8 done + phase 9 web waves. **Not merged, not superseded** — `docs/ROADMAP.md`'s phase 8 row still says "in progress / no Android UI yet" even though the code it documents (`8c689fa`, `58a2aa2`, `774e592`) is already on the tip. Real, cheap to reapply: `git cherry-pick 9888bec`, then hand-resolve the ROADMAP/HANDOVER conflicts. |
+| `a9879cca6eefcd8c5`            | `worktree-agent-a9879cca6eefcd8c5` | 0, identical to tip                                      | none                                                                | This branch **is** the current tip (`d012c95`). Nothing to salvage.                                                                                                                                                                                                                                                                                                        |
+
+**`a2d41422f046c6b64`'s lyrics schemas are salvaged**, not just at-risk: they're now also in
+the main checkout's `packages/jellyfin-client/src/schemas/raw.ts` (uncommitted), typechecked
+clean in isolation. They were never reviewed or exercised by the session that wrote them —
+no consumer, no test — so whoever builds lyrics support should treat them as a draft to
+verify against the real `LyricDto` response, not as a design already settled on their behalf.
+
+A sixth worktree, `agent-ad110cc38081aefc6`, exists alongside the five above but was out of
+scope for this survey; its one commit (`57d545e`) matches an "ended" log entry and looks
+already accounted for.
 
 ---
 
@@ -277,13 +303,14 @@ product decision.
 CI is green on `c556d22`. `pnpm typecheck` (per-package), `pnpm lint`, `pnpm test` and the
 full `e2e/ui` + `e2e/app` Playwright suite all pass.
 
-Three Claude Code hooks live in `scripts/hooks/`: `agent-log.sh` (subagent launch/end
-logging, cross-worktree via a file under `git rev-parse --git-common-dir`),
-`doc-feedback-accumulate.sh` and `doc-feedback-review.sh` (documentation-feedback
-accumulation and batch review). `delegation-nudge.sh` also exists but should stay
-disabled/uncommitted: its live classification path (a nested headless `claude -p` call) has
-never succeeded in testing and measured close to a full timeout on its one real attempt — a
-synchronous hook with that latency risk and no proven success path is worse than no hook.
+Two Claude Code hooks live in `scripts/hooks/`: `agent-log.sh` (subagent launch/end
+logging, cross-worktree via a file under `git rev-parse --git-common-dir`) and
+`delegation-nudge.sh`, registered on `PreToolUse` (`*`) in `.claude/settings.json`. It no
+longer runs a nested headless `claude -p` classifier — that live-classification path never
+succeeded in testing and measured close to a full timeout on its one real attempt. It now
+fires a static "consider delegating" nudge on the first tool call of each user turn (keyed
+on `prompt_id`, so the marker self-invalidates each turn) and stays silent when that first
+call is itself an `Agent`/`Task` spawn, since delegation already happened.
 
 (Phase 7's Android work is unaffected by any of this — it shares no code with either web
 component system.)
@@ -583,14 +610,17 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
   stay synthetic.
 - **A quiet-hours prompt gate is armed on `UserPromptSubmit`.** `scripts/hooks/time-gate.sh`
   is registered via `.claude/settings.local.json` (gitignored, machine-local). Outside
-  11:00–18:00 local time, a typed prompt is queued to `.claude/deferred-prompts.jsonl` and
-  blocked rather than delivered; nothing wakes a session to drain the queue. Autonomous
-  sessions are exempt via an
-  `AURALIS_AUTONOMOUS=1` marker that `~/bin/auralis-autorun` exports before launching
-  `claude --bg`; the marker rides the process, covering self-scheduled wake-ups too. That
-  marker belongs to this hook alone — `scripts/hooks/usage-gate.sh` must never honour it,
-  since the plan-usage ceiling applies to autonomous sessions most of all. Subagent task
-  notifications are not `UserPromptSubmit` and always arrive normally.
+  17:00–18:00 local time, a typed prompt is queued to `.claude/deferred-prompts.jsonl` and
+  blocked rather than delivered; nothing wakes a session to drain the queue. Exemptions are
+  per-prompt, not per-session: a `claude --bg` session's own kickoff prompt (matched against
+  its job's `intent` in `~/.claude/jobs/<jobId>/state.json`) and any `<task-notification>`
+  result a subagent hands back. An earlier `AURALIS_AUTONOMOUS=1` environment-marker
+  exemption never worked — `claude --bg` hands jobs to pre-spawned daemon workers that
+  predate the export — and has been removed; see the hook's own header comment for the
+  full design. These exemptions belong to this hook alone — `scripts/hooks/usage-gate.sh`
+  must never honour anything like them, since the plan-usage ceiling applies to autonomous
+  sessions most of all. Subagent task notifications are not gated by anything else in the
+  hook stack; time-gate.sh's rule B is what lets them through here.
 
 ---
 

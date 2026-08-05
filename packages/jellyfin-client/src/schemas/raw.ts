@@ -127,3 +127,66 @@ export const rawQueryResultSchema = z
     StartIndex: z.number().optional(),
   })
   .passthrough();
+
+// ---------------------------------------------------------------------------
+// Lyrics — `Jellyfin.Api/Controllers/LyricsController.cs` (`GetLyrics`),
+// `MediaBrowser.Model/Lyrics/{LyricDto,LyricLine,LyricMetadata}.cs`, verified
+// against `jellyfin/jellyfin` `master` 2026-08-04.
+// ---------------------------------------------------------------------------
+
+/** `MediaBrowser.Model/Lyrics/LyricMetadata.cs` — the standard LRC header
+ * fields. Every field is nullable in the C# model itself (not just
+ * optionally serialized), so all are optional here too. `Length`/`Offset`
+ * are ticks, per that file's own doc comments ("length of the song in
+ * ticks", "lyric offset compared to audio in ticks") — the same unit as
+ * `BaseItemDto.RunTimeTicks`, converted to seconds in `normalize.ts`. */
+export const rawLyricMetadataSchema = z
+  .object({
+    Artist: z.string().nullable().optional(),
+    Album: z.string().nullable().optional(),
+    Title: z.string().nullable().optional(),
+    Author: z.string().nullable().optional(),
+    /** Who the LRC file itself was created by — distinct from `Author`
+     * (the lyric data's author) and `Creator` (the *software* used). */
+    By: z.string().nullable().optional(),
+    Length: z.number().nullable().optional(),
+    Offset: z.number().nullable().optional(),
+    Creator: z.string().nullable().optional(),
+    Version: z.string().nullable().optional(),
+    /** Optional, and — per `normalize.ts`'s `normalizeLyrics` — not the
+     * field a caller should trust for sync state; see that function's doc
+     * comment for why. */
+    IsSynced: z.boolean().nullable().optional(),
+  })
+  .passthrough();
+
+/** `MediaBrowser.Model/Lyrics/LyricLine.cs`. `Start` is ticks ("start time
+ * in ticks" per that file's own doc comment); `null`/absent for a plain
+ * unsynced line. `Cues` (`LyricLineCue[]`, word/phrase-level alignment) is
+ * deliberately not modeled beyond `.passthrough()`: nothing in this
+ * codebase reads word-level timing yet, and passthrough keeps the raw field
+ * intact on the parsed object for a future caller without this schema
+ * having to guess at `LyricLineCue`'s exact shape. */
+export const rawLyricLineSchema = z
+  .object({
+    Text: z.string().nullable().optional(),
+    Start: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+/** `MediaBrowser.Model/Lyrics/LyricDto.cs` — the body of
+ * `GET /Audio/{itemId}/Lyrics`. Both fields are non-nullable in the C#
+ * model (default-initialized to `new()`/`[]`), so — unlike
+ * `rawBaseItemDtoSchema`'s deliberate leniency — they're required here:
+ * this is a dedicated, single-purpose response shape, not `BaseItemDto`'s
+ * shared-across-every-item-kind case that motivates optionality elsewhere
+ * in this file. Same reasoning as `rawAuthenticationResultSchema` requiring
+ * `AccessToken`. A 404 (no lyrics for this track) never reaches this schema
+ * at all — the client's `getLyrics` short-circuits on that status before
+ * any body is parsed; see `client.ts`. */
+export const rawLyricDtoSchema = z
+  .object({
+    Metadata: rawLyricMetadataSchema,
+    Lyrics: z.array(rawLyricLineSchema),
+  })
+  .passthrough();
