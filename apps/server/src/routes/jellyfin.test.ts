@@ -287,6 +287,60 @@ describe('GET /api/v1/jellyfin/artists|albums|tracks', () => {
     expect(items).toEqual([expect.objectContaining({ id: nebula.id })]);
   });
 
+  it('ids=,,, — a supplied ids param that parses to zero actual ids — returns an empty page, not the unfiltered listing', async () => {
+    // `jellyfinLibraryQuerySchema` splits `ids` on commas and drops empty segments, so
+    // this parses to `[]`. The underlying Jellyfin client treats an empty `ids` array the
+    // same as no filter at all (it only sends `ids` upstream when the array is non-empty),
+    // so without a route-level short-circuit this would silently return every artist —
+    // the wrong answer to "give me these zero items".
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists?ids=,,,',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ items: [], total: 0, startIndex: 0 });
+  });
+
+  it('ids entirely absent is unaffected by the empty-ids short-circuit — still the full unfiltered listing', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/artists',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const { items, total } = response.json();
+    expect(total).toBe(2);
+    expect(items).toHaveLength(2);
+  });
+
+  // The empty-ids short-circuit is implemented once per route (artists/albums/tracks each
+  // parse their own query schema), not shared through one code path — pin albums and
+  // tracks too, so a future edit can't silently drop it from one of the three.
+  it('ids=,,, on /jellyfin/albums also returns an empty page rather than the unfiltered listing', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/albums?ids=,,,',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ items: [], total: 0, startIndex: 0 });
+  });
+
+  it('ids=,,, on /jellyfin/tracks also returns an empty page rather than the unfiltered listing', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/jellyfin/tracks?ids=,,,',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ items: [], total: 0, startIndex: 0 });
+  });
+
   it("favoritesOnly=true scopes artists to just this user's favourites", async () => {
     const { app, cookie } = await jellyfinConnectedApp();
     const artists = await app.inject({

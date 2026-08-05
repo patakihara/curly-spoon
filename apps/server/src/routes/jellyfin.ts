@@ -131,9 +131,33 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
   // Library browsing — one flat route per item kind, all through /Items upstream.
   // ---------------------------------------------------------------------
 
+  /**
+   * `ids=,,,`-shaped query strings parse to a *defined but empty* array
+   * (`jellyfinLibraryQuerySchema`'s own doc comment on `ids`) — distinct from `ids` not
+   * being supplied at all, which stays `undefined` and falls through to the normal
+   * unfiltered listing below. The distinction matters because `@auralis/jellyfin-client`'s
+   * `queryItems` only sends `ids` upstream when the array is non-empty (`query.ids &&
+   * query.ids.length > 0`), so an empty array reaches Jellyfin exactly as if `ids` had
+   * never been passed — the whole unfiltered listing, not the "these zero items" the
+   * caller actually asked for. Short-circuiting here, before the upstream call, is
+   * simpler than teaching the client package to tell the two cases apart.
+   */
+  function isEmptyIdsFilter(query: { ids?: string[] }): boolean {
+    return query.ids !== undefined && query.ids.length === 0;
+  }
+
+  function emptyLibraryPage(startIndex: number | undefined): {
+    items: never[];
+    total: number;
+    startIndex: number;
+  } {
+    return { items: [], total: 0, startIndex: startIndex ?? 0 };
+  }
+
   app.get('/jellyfin/artists', { preHandler: requireSession }, async (request, reply) => {
     const query = parseInput(reply, jellyfinLibraryQuerySchema, request.query);
     if (!query) return undefined;
+    if (isEmptyIdsFilter(query)) return reply.send(emptyLibraryPage(query.startIndex));
     try {
       const client = app.jellyfin.forUser(request.userId!);
       return reply.send(await client.getArtists(query));
@@ -146,6 +170,7 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
   app.get('/jellyfin/albums', { preHandler: requireSession }, async (request, reply) => {
     const query = parseInput(reply, jellyfinAlbumsQuerySchema, request.query);
     if (!query) return undefined;
+    if (isEmptyIdsFilter(query)) return reply.send(emptyLibraryPage(query.startIndex));
     try {
       const client = app.jellyfin.forUser(request.userId!);
       return reply.send(await client.getAlbums(query));
@@ -158,6 +183,7 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
   app.get('/jellyfin/tracks', { preHandler: requireSession }, async (request, reply) => {
     const query = parseInput(reply, jellyfinTracksQuerySchema, request.query);
     if (!query) return undefined;
+    if (isEmptyIdsFilter(query)) return reply.send(emptyLibraryPage(query.startIndex));
     try {
       const client = app.jellyfin.forUser(request.userId!);
       return reply.send(await client.getTracks(query));

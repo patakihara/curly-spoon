@@ -3,7 +3,7 @@
  * cache invalidation (e.g. "setup changed, libraries might now be visible") is
  * declared once instead of scattered across every page that happens to read it.
  */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { hashKey, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from './ApiContext.js';
 import { shouldPollRequests, REQUEST_POLL_INTERVAL_MS } from '../features/requests/polling.js';
 import { withFavoriteState } from '../features/music/favorites.js';
@@ -569,6 +569,16 @@ export interface ToggleJellyfinFavoriteVariables {
  * every other mutation — the rollback above is silent (the icon just reverts), but the
  * calling component is expected to show the user *why* it reverted using those fields (see
  * `MusicAlbumPage.tsx`/`MusicArtistPage.tsx`'s own favourite-toggle handlers).
+ *
+ * The rollback is **guarded**, not unconditional: `onError` only restores a query to its
+ * pre-toggle snapshot if that query still holds exactly what *this* mutation's own
+ * `onMutate` wrote. Two overlapping toggles share one cache — the same heart double-clicked,
+ * or a second item toggled before the first settles — and `withFavoriteState` rewrites
+ * *every* cached Jellyfin page on each call, not just the one holding the item in question.
+ * Without the guard, an earlier toggle failing after a later one has already applied its own
+ * optimistic write would blindly restore the earlier toggle's stale pre-write snapshot,
+ * silently erasing the later toggle's still-in-flight state. See `onError` below for the
+ * mechanics; `queries.test.ts`'s overlapping-mutation test is what this guards against.
  */
 export function useToggleJellyfinFavoriteMutation() {
   const api = useApi();
@@ -582,11 +592,33 @@ export function useToggleJellyfinFavoriteMutation() {
       queryClient.setQueriesData({ queryKey: ['jellyfin'] }, (data: unknown) =>
         withFavoriteState(data, itemId, favorite),
       );
-      return { previous };
+      // Snapshot exactly what *this* mutation just wrote to each query — `onError` compares
+      // the cache's *current* contents against this to tell "nothing has touched this query
+      // since I wrote it" (safe to roll back) apart from "a later overlapping mutation has
+      // since applied its own optimistic write on top" (rolling back would clobber it). This
+      // reads the snapshot back from the cache itself, rather than trusting the updater's
+      // return value — that keeps the comparison correct under React Query's default
+      // structural sharing too: `setQueryData` can hand a query back its *previous*
+      // reference when a write doesn't actually change that entry's content, and reading
+      // live means `applied` always matches whatever reference the cache truly holds.
+      const applied = queryClient.getQueriesData({ queryKey: ['jellyfin'] });
+      return { previous, applied };
     },
     onError: (_err, _vars, context) => {
-      for (const [queryKey, data] of context?.previous ?? []) {
-        queryClient.setQueryData(queryKey, data);
+      if (!context) return;
+      const appliedByKey = new Map(context.applied.map(([key, data]) => [hashKey(key), data]));
+      for (const [queryKey, previousData] of context.previous) {
+        // Only roll back if the entry is still exactly what this mutation's own onMutate
+        // applied (reference equality — see the comment on `applied` above for why that
+        // stays correct under structural sharing). If it's something else, a later
+        // overlapping mutation has since written its own optimistic state on top of this
+        // one, and restoring this mutation's pre-write snapshot would overwrite that newer
+        // state with stale data. Leaving it alone is safe either way — the newer mutation's
+        // own onSettled still reconciles the cache with the server shortly after, same as
+        // this one's.
+        if (queryClient.getQueryData(queryKey) === appliedByKey.get(hashKey(queryKey))) {
+          queryClient.setQueryData(queryKey, previousData);
+        }
       }
     },
     onSettled: () => {
