@@ -39,6 +39,7 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
     itemTitle: currentItem.media.title,
     authors,
     currentTrackTitle: trackAt(tracks, currentTime)?.track.title ?? null,
+    currentTrackArtist: trackAt(tracks, currentTime)?.track.artist ?? null,
   });
   const progress = duration === 0 ? 0 : currentTime / duration;
 

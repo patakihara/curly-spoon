@@ -29,6 +29,16 @@ export interface QueueTrack {
   id: string;
   title: string;
   durationSeconds: number | null;
+  /**
+   * This track's own artist, pre-joined (`", "`-separated, matching the convention
+   * `MusicAlbumPage.tsx`/`MusicPlaylistPage.tsx` already use for `JellyfinTrack.artistNames`) —
+   * `null` when Jellyfin never populated `artistNames` for this track, never `''` (an empty
+   * join result is normalized to `null` in `toQueueTrack` so a falsy-check-based fallback,
+   * e.g. `track.artist || albumArtist`, can't be defeated by a defined-but-blank string).
+   * Optional so every pre-existing `QueueTrack` literal in this module's own tests keeps
+   * typechecking without an update — `materialize` treats a missing value the same as `null`.
+   */
+  artist?: string | null;
 }
 
 export type RepeatMode = 'off' | 'one' | 'all';
@@ -61,13 +71,26 @@ export type AdvanceResult =
 
 /** `JellyfinTrack` and `JellyfinPlaylistItem.track` both already carry every field this
  *  needs — a small adapter so the album/playlist pages don't need to know this module's own
- *  shape, and so this module doesn't need to import either upstream type. */
+ *  shape, and so this module doesn't need to import either upstream type.
+ *
+ *  `artistNames.join(', ')` degrades to `''` for a track with no artists at all — normalized
+ *  to `null` here (rather than left as `''`) so a downstream `track.artist || <fallback>`
+ *  check (`playerUi.ts`'s `playerDisplayMeta`) actually falls back instead of "succeeding"
+ *  with a blank artist line, which would be worse than the album-artist bug this exists to
+ *  fix. */
 export function toQueueTrack(track: {
   id: string;
   name: string;
   durationSeconds: number | null;
+  artistNames: string[];
 }): QueueTrack {
-  return { id: track.id, title: track.name, durationSeconds: track.durationSeconds };
+  const artist = track.artistNames.join(', ');
+  return {
+    id: track.id,
+    title: track.name,
+    durationSeconds: track.durationSeconds,
+    artist: artist === '' ? null : artist,
+  };
 }
 
 /**
@@ -254,6 +277,7 @@ export function materialize(state: MusicQueueState): {
       title: track?.title ?? null,
       contentUrl: track?.id ?? null,
       mimeType: null,
+      artist: track?.artist ?? null,
     };
     cumulative += duration;
     return audioTrack;

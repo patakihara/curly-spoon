@@ -34,12 +34,36 @@ function sequenceRandom(values: number[]): () => number {
 }
 
 describe('toQueueTrack', () => {
-  it('maps a JellyfinTrack-shaped object to a QueueTrack', () => {
-    expect(toQueueTrack({ id: 'a', name: 'A', durationSeconds: 42 })).toEqual({
+  it('maps a JellyfinTrack-shaped object to a QueueTrack, joining its artistNames', () => {
+    expect(
+      toQueueTrack({ id: 'a', name: 'A', durationSeconds: 42, artistNames: ['Radiohead'] }),
+    ).toEqual({
       id: 'a',
       title: 'A',
       durationSeconds: 42,
+      artist: 'Radiohead',
     });
+  });
+
+  it('joins multiple artistNames with ", "', () => {
+    expect(
+      toQueueTrack({
+        id: 'b',
+        name: 'B',
+        durationSeconds: 10,
+        artistNames: ['Artist One', 'Artist Two'],
+      }).artist,
+    ).toBe('Artist One, Artist Two');
+  });
+
+  // Regression guard: `[].join(', ')` is `''`, a *defined* value that would defeat a
+  // `track.artist || fallback` check downstream (`playerUi.ts`'s `playerDisplayMeta`) and
+  // produce a blank artist line instead of the intended album/playlist fallback — worse than
+  // the bug this fix addresses. Must normalize to `null`, not `''`.
+  it('normalizes an empty artistNames array to null, not an empty string', () => {
+    expect(toQueueTrack({ id: 'c', name: 'C', durationSeconds: 5, artistNames: [] }).artist).toBe(
+      null,
+    );
   });
 });
 
@@ -215,10 +239,45 @@ describe('materialize', () => {
     );
     const { audioTracks, duration } = materialize(state);
     expect(audioTracks).toEqual([
-      { index: 0, startOffset: 0, duration: 180, title: 'One', contentUrl: 't1', mimeType: null },
-      { index: 1, startOffset: 180, duration: 200, title: 'Two', contentUrl: 't2', mimeType: null },
+      {
+        index: 0,
+        startOffset: 0,
+        duration: 180,
+        title: 'One',
+        contentUrl: 't1',
+        mimeType: null,
+        artist: null,
+      },
+      {
+        index: 1,
+        startOffset: 180,
+        duration: 200,
+        title: 'Two',
+        contentUrl: 't2',
+        mimeType: null,
+        artist: null,
+      },
     ]);
     expect(duration).toBe(380);
+  });
+
+  // Regression coverage for the "every track credits the album/playlist artist" bug: a
+  // fixture where the track's own artist genuinely differs from what the queue-level
+  // fallback would be (`Led Zeppelin` vs `Various Artists`) — a fixture using the same value
+  // in both positions would pass even with the fix reverted, which is exactly the false
+  // positive this project has shipped before for this bug class.
+  it("carries each track's own artist through into the materialized AudioTrack", () => {
+    const state = createQueue(
+      [
+        { id: 't1', title: 'Immigrant Song', durationSeconds: 146, artist: 'Led Zeppelin' },
+        { id: 't2', title: 'Unknown Artist Track', durationSeconds: 200, artist: null },
+      ],
+      2,
+      0,
+    );
+    const { audioTracks } = materialize(state);
+    expect(audioTracks[0]?.artist).toBe('Led Zeppelin');
+    expect(audioTracks[1]?.artist).toBe(null);
   });
 
   it('lays tracks out in play order, not array order, once shuffled', () => {

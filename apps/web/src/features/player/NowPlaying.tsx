@@ -84,6 +84,7 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
     itemTitle: currentItem.media.title,
     authors,
     currentTrackTitle: trackAt(tracks, currentTime)?.track.title ?? null,
+    currentTrackArtist: trackAt(tracks, currentTime)?.track.artist ?? null,
   });
   const chapter = chapterAt(chapters, currentTime);
 

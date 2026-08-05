@@ -37,6 +37,13 @@ export function useMediaSession(): void {
   // `displayTitle` (fixed for the whole loaded session), a music queue's current track
   // moves without a new `load()` — see `playerUi.ts`'s `playerDisplayMeta` doc comment.
   const currentTrackTitle = trackAt(tracks, currentTime)?.track.title ?? null;
+  // Same "current queue item, not the whole session" scoping as `currentTrackTitle` above —
+  // without this the lock screen credited every track in a compilation/various-artists
+  // album or playlist to `currentItem.media.authors`/`author` (the queue-level artist, frozen
+  // at `load()` time), which is exactly the bug `playerDisplayMeta`'s `currentTrackArtist`
+  // fallback fixes. See `musicQueue.ts`'s `QueueTrack.artist` doc comment for where the value
+  // comes from.
+  const currentTrackArtist = trackAt(tracks, currentTime)?.track.artist ?? null;
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
@@ -58,6 +65,7 @@ export function useMediaSession(): void {
       itemTitle: currentItem.media.title,
       authors,
       currentTrackTitle,
+      currentTrackArtist,
     });
     navigator.mediaSession.metadata = new MediaMetadata({
       title: primary,
@@ -72,7 +80,7 @@ export function useMediaSession(): void {
         },
       ],
     });
-  }, [api, currentItem, episodeId, displayTitle, currentTrackTitle]);
+  }, [api, currentItem, episodeId, displayTitle, currentTrackTitle, currentTrackArtist]);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;

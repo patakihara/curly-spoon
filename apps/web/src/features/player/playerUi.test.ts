@@ -142,6 +142,56 @@ describe('playerDisplayMeta', () => {
       }),
     ).toEqual({ primary: 'Some Album', secondary: 'The Artists' });
   });
+
+  // Regression coverage for the "every track credits the album/playlist artist" bug fixed
+  // alongside `musicQueue.ts`'s `QueueTrack.artist`. `authors` ('Various Artists', the
+  // queue-level fallback) deliberately differs from `currentTrackArtist` ('Led Zeppelin') so
+  // this can't pass with the fix reverted — a fixture where the two agree would pass either
+  // way, which is exactly the false positive this project has shipped for this bug class
+  // before.
+  it("prefers the current track's own artist over the queue-level authors fallback", () => {
+    expect(
+      playerDisplayMeta({
+        kind: 'track',
+        episodeId: null,
+        displayTitle: 'Immigrant Song',
+        itemTitle: 'Best Of Rock',
+        authors: 'Various Artists',
+        currentTrackTitle: 'Immigrant Song',
+        currentTrackArtist: 'Led Zeppelin',
+      }).secondary,
+    ).toBe('Led Zeppelin');
+  });
+
+  it('falls back to the queue-level authors when the current track has no artist of its own', () => {
+    expect(
+      playerDisplayMeta({
+        kind: 'track',
+        episodeId: null,
+        displayTitle: 'Kashmir',
+        itemTitle: 'Best Of Rock',
+        authors: 'Various Artists',
+        currentTrackTitle: 'Kashmir',
+        currentTrackArtist: null,
+      }).secondary,
+    ).toBe('Various Artists');
+  });
+
+  it('degrades to an empty string, not "null" or a crash, when neither the track nor the queue has an artist', () => {
+    // Mirrors a playlist, which has no queue-level artist of its own at all (`authors: ''`,
+    // `MusicPlaylistPage.tsx`'s `media: { author: null }`).
+    expect(
+      playerDisplayMeta({
+        kind: 'track',
+        episodeId: null,
+        displayTitle: 'Kashmir',
+        itemTitle: 'My Playlist',
+        authors: '',
+        currentTrackTitle: 'Kashmir',
+        currentTrackArtist: null,
+      }).secondary,
+    ).toBe('');
+  });
 });
 
 describe('playerArtworkUrl', () => {

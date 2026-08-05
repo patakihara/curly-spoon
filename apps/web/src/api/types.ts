@@ -83,6 +83,15 @@ export interface AudioTrack {
    */
   contentUrl: string | null;
   mimeType: string | null;
+  /**
+   * This track's own artist — populated only for a Jellyfin music queue
+   * (`features/music/musicQueue.ts`'s `materialize`, from `QueueTrack.artist`); left
+   * `undefined` for an Audiobookshelf book/podcast `AudioTrack`, which has no per-track artist
+   * concept at all. Distinct from the *queue*-level artist (an album's or playlist's own name)
+   * that `playerUi.ts`'s `playerDisplayMeta` falls back to when a track carries none of its
+   * own — see that function's doc comment for the fallback rule this feeds.
+   */
+  artist?: string | null;
 }
 
 /**

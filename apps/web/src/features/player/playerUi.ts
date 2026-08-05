@@ -87,7 +87,16 @@ export interface PlayerDisplayMeta {
  * unlike an episode, which bills its container's title as the secondary line, a track's
  * album is *not* the equivalent of "which show this episode belongs to" for a listener's
  * purposes, so this reuses the `authors` slot instead (the caller passes artist names into
- * it, exactly as the book branch already reuses it for the book's own author).
+ * it, exactly as the book branch already reuses it for the book's own author) — but only as
+ * the *fallback*: `currentTrackArtist` (`AudioTrack.artist`, threaded through from
+ * `JellyfinTrack.artistNames` by `musicQueue.ts`'s `toQueueTrack`/`materialize`) wins when the
+ * current track carries its own artist, exactly mirroring `currentTrackTitle`'s precedence
+ * over `displayTitle`/`itemTitle` above. Without this, every track in a compilation or
+ * various-artists album/playlist was billed to the *queue's* artist (the album name's artist,
+ * or nothing at all for a playlist) regardless of who actually performed it — a real bug, not
+ * a deliberate simplification; see `musicQueue.ts`'s `QueueTrack.artist` doc comment. `||`,
+ * not `??`, is deliberate: `toQueueTrack` already normalizes a blank join to `null`, but this
+ * is the read side of that same "never let an empty string defeat the fallback" contract.
  */
 export function playerDisplayMeta(params: {
   kind: 'book' | 'podcast' | 'track';
@@ -97,11 +106,13 @@ export function playerDisplayMeta(params: {
   authors: string;
   /** Only read when `kind` is `'track'` — see this function's own doc comment. */
   currentTrackTitle?: string | null;
+  /** Only read when `kind` is `'track'` — see this function's own doc comment. */
+  currentTrackArtist?: string | null;
 }): PlayerDisplayMeta {
   if (params.kind === 'track') {
     return {
       primary: params.currentTrackTitle || params.displayTitle || params.itemTitle,
-      secondary: params.authors,
+      secondary: params.currentTrackArtist || params.authors,
     };
   }
   if (params.episodeId) {
