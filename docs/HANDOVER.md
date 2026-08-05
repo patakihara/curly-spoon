@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T17:56:12Z` · `aa6ae7c7ece724114` · general-purpose · ended · Usage is fine (70%/41%, both under the 85% band). Work is complete. ## Report **Branch/commit**: 'worktree-agent-aa6ae7c7ece724114' @ '3a63115' (base…
 - `2026-08-05T17:56:35Z` · `ae810ede7c59baad3` · general-purpose · ended · ## Report **1. Branch and sha:** 'worktree-agent-ae810ede7c59baad3' @ 'a0f849b', based on 'origin/main''s 'c41b2e1' (which was itself only the orches…
 - `2026-08-05T18:12:10Z` · `a4f3ab764e9517c55` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a4f3ab764e9517c55' @ '3bdb785', based on 'origin/main''s '9c162c2'. Not pushed, per instructions. **1. M…
 - `2026-08-05T18:13:06Z` · `a2f64ce34080707a3` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a2f64ce34080707a3' @ '2c1b476', based on 'origin/main''s 'f0c6e8d'. Working tree clean, not pushed. **Fi…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T21:21:39Z` · `a907d5ff4e6be11b5` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a907d5ff4e6be11b5' @ '0ed8304', based on 'origin/main''s 'ac1639e'. Working tree clean, not pushed. **2.…
 - `2026-08-05T21:22:48Z` · `a3c70047c964a822f` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a3c70047c964a822f' @ '8311278', base…
 - `2026-08-05T21:23:23Z` · `a32ff662d30f3d46e` · general-purpose · ended · ## Findings: AbleMusicPlayer (uditkarode/AbleMusicPlayer, master) **1. The source, in one paragraph.** AbleMusicPlayer plays audio ripped from **YouT…
+- `2026-08-05T22:46:13Z` · `a86e71de6b0b9208a` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -318,6 +318,19 @@ dispatching it, and delete the line when it lands. A claim older than a couple o
 nothing on `main` is stale — take it.
 
 - **2026-08-06** — phase 10, Lighthouse performance budgets (`scripts/`, `.github/workflows/ci.yml`).
+  **Held by a live agent in another session**, verified 2026-08-05T23:12Z: worktree
+  `.claude/worktrees/agent-a86e71de6b0b9208a` has uncommitted `scripts/lighthouse-budget.*`,
+  a modified `ci.yml`, and a headless Chrome actually running under it. Do not touch
+  `scripts/` or `.github/workflows/ci.yml` until that lands.
+- **2026-08-06** — phase 11, F-Droid/Droid-ify distribution **investigation only** (`docs/`).
+  Research deliverable, no signing key and no `applicationId` decision taken — both are
+  one-way doors and belong to the user.
+
+**How to tell a claim is live rather than stale**, learned the same day: an empty
+`git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
+it is idle. Check the worktree's own `git status --short`, the mtimes on the files it is
+writing, and `pgrep -af chrome|node` before concluding a wave is free. Doing only the
+branch-log check is how the same feature gets built twice.
 
 The The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
