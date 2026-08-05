@@ -81,9 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T12:34:04Z` · `a41b7cdeb98c5f220` · general-purpose · ended · Working tree is clean. Commit '6246aa0' on branch 'worktree-agent-a41b7cdeb98c5f220', based on 'a3fcfc3'. Not pushed, per instructions. Nothing was c…
-- `2026-08-05T12:52:14Z` · `a6b0a49406fd9236a` · general-purpose · ended · I'll pause here and wait for the background e2e run to complete before continuing.
-- `2026-08-05T12:52:59Z` · `ae7eb4057186070b6` · general-purpose · ended · Clean. Final report follows. ## Report **Branch/commit**: 'worktree-agent-ae7eb4057186070b6' @ '6e90595', based on 'e77d7c5'. Working tree clean, not…
 - `2026-08-05T13:19:04Z` · `a6b0a49406fd9236a` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a6b0a49406fd9236a' @ '58cc2d3', based on '6420501' ('origin/main'). Working tree clean, not pushed. **De…
 - `2026-08-05T13:24:32Z` · `a42723c44397de649` · general-purpose · ended · Confirmed no forbidden-path changes. Now writing the final report. ## Report **Android CI result: FAILED**, on commit '6e90595' itself (run '31009999…
 - `2026-08-05T13:29:53Z` · `aeb1404a8b20fc69e` · general-purpose · ended · Advisor is unavailable this turn; proceeding with my own verification, which was already thorough (traced the exact synchronous-optimistic-write mech…
@@ -96,6 +93,9 @@ in-context scan of the current one.
 - `2026-08-05T15:30:35Z` · `abaf4b6fd2411fefa` · general-purpose · ended · Committed cleanly on 'worktree-agent-abaf4b6fd2411fefa' at '42cb5cf', working tree clean, not pushed. ## Report **Branch/commit**: 'worktree-agent-ab…
 - `2026-08-05T15:43:38Z` · `ab65efd1cb1a86d67` · general-purpose · ended · ## Findings — Android playlists wave ('bd9310a..a1cb367') **1. CRITICAL — CI is red. 6 tests fail deterministically, real bug, not flakiness.** Confi…
 - `2026-08-05T15:49:17Z` · `aa1127d1c9275f967` · general-purpose · ended · Committed cleanly, working tree clean, not pushed. ## Report **Branch/commit**: 'worktree-agent-aa1127d1c9275f967' @ '67b3ee0', based on 'origin/main…
+- `2026-08-05T16:01:58Z` · `ab1dbe52bc54d243a` · general-purpose · running · —
+- `2026-08-05T16:01:59Z` · `acecb43e50d6b071c` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-acecb43e50d6b071c' @ 'e0c183a', based o…
+- `2026-08-05T16:13:49Z` · `a3df81486463c212b` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -262,9 +262,9 @@ playback with album queueing, **Jellyfin progress reporting**, a **synced lyrics
 album), **playback** through the existing Media3 stack, and **search** — all reachable from the
 home screen.
 
-Still missing: **playlists on Android** (web has them; the Android wave that added favourites
-deliberately deferred them and started nothing), **music requests**, and **progress reporting
-from Android**. Lyrics _search_ remains blocked on a product decision, not on effort —
+Android now also has **playlists** (wave F) and **Jellyfin progress reporting** (wave G), so the
+only phase-9 gap left on Android is whatever music requests turn into. Still missing overall:
+**music requests** (server-side provider landed; persistence and UI follow). Lyrics _search_ remains blocked on a product decision, not on effort —
 Jellyfin cannot search lyric text at all, so Auralis would need its own index and a decision
 about whether to backfill from an external provider (a privacy opt-in). The synced lyrics
 _view_ is unaffected and has shipped.
@@ -278,6 +278,9 @@ nothing on `main` is stale — take it.
 - **2026-08-05, session `01Wf5C2q`** — music requests: the `media_type` schema change and
   persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked). Web UI for music
   requests follows in a separate wave and is **not** claimed yet.
+- **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
+  (Jellyfin progress reporting) have both landed; this session stays inside `apps/android/`
+  and is not touching `apps/server/` or `apps/web/`.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 

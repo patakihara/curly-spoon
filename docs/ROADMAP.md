@@ -961,6 +961,20 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   Left out deliberately: no pagination on the add-to-playlist picker (mirrors `FavoritesViewModel`),
   and no playlist rename or delete.
 
+- **Android wave G — Jellyfin progress reporting: done (`e0c183a`).** Music played on Android
+  now reports start, periodic progress and stopped, so play state and resume position survive
+  leaving the phone. The decision logic sits in a plain-Kotlin `JellyfinPlaybackReporter` tested
+  against a fake sender, with the Media3 `Player.Listener` wiring kept deliberately thin — the
+  same split the web reporter uses, and the reason the logic is testable at all on a machine
+  with no Android SDK.
+
+  Two web-side lessons were carried over rather than re-learned: `reportPlaybackStart` has no
+  `isPaused` field, so a paused track must keep sending progress reports carrying
+  `isPaused = true` or Jellyfin shows it playing forever; and reporting is gated to music items
+  only, by the `track:` mediaId prefix that distinguishes them from `PlaybackItemResolver`'s
+  `book:`/`episode:` schemes, so audiobooks and podcasts keep reporting to Audiobookshelf
+  through their own untouched path.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
