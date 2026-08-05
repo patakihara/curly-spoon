@@ -1207,19 +1207,15 @@ shuffle/repeat, progress reporting and requests of its own.
 
 **What is genuinely left in phase 9:**
 
-- **Lyrics search — blocked on a product decision, not on effort.** Jellyfin cannot search
-  lyric text at all, so Auralis would have to build and maintain its own index, and whether to
-  backfill from an external provider carries a privacy opt-in. That choice is the user's. See
-  the bullet earlier in this section and `docs/INTEGRATIONS.md`'s "Discovery layer".
-- **`pollDownloads` is wired to no scheduler in production**, for books _or_ music, so nothing
-  advances a request's download state on its own. Inherited, not introduced by the music work.
-- **A non-admin Jellyfin account cannot rescan.** Both refresh endpoints require elevation, so
-  requested music downloads and silently never appears if the connected account is not an
-  admin.
-- **One testing gap**: the `ended` listener and the resume-after-track-change fix cannot be
-  exercised by the e2e suite, because the fixture audio never decodes far enough to fire a real
-  `ended` event. The queue's advance logic is unit-tested directly, but the `ended` path itself
-  needs manual or real-server verification.
+- ~~`pollDownloads` is wired to no scheduler~~ — **fixed (`a0f849b`, merged `2570bdd`).** It
+  existed and was tested for both pipelines but had no caller in production, so a request that
+  reached `downloading` stayed there forever while the UI looked alive. Now driven by a poller
+  owned by `buildServer` and stopped from an `onClose` hook, so it cannot outlive a test's app
+  or leak a timer into the next suite; auto-start is gated on `nodeEnv`. Interval is
+  `AURALIS_DOWNLOAD_POLL_INTERVAL_MS`, default 30s. Book and music pollers each run in their own
+  try/catch within a tick, so one pipeline failing neither blocks the other nor stops future
+  ticks — a poller that dies silently on the first error would be worse than none, because the
+  UI would still look alive. Not yet verified against a real slskd or qBittorrent under load.
 
 ### 10 — Release polish
 
