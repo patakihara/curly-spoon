@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { AbsError, isAbsError } from './errors.js';
 
 describe('AbsError', () => {
@@ -55,6 +56,56 @@ describe('AbsError', () => {
     expect(err.code).toBe('schema_mismatch');
     expect(err.cause).toBe(cause);
     expect(err.message).toContain('/api/libraries');
+  });
+
+  it('names the field path and expected/received types for a ZodError cause', () => {
+    const schema = z.object({ audioTracks: z.array(z.object({ metadata: z.object({}) })) });
+    const result = schema.safeParse({ audioTracks: [{ metadata: null }] });
+    if (result.success) throw new Error('expected parse failure');
+
+    const err = AbsError.schemaMismatch('POST /api/items/x/play', result.error);
+    expect(err.message).toContain('audioTracks.0.metadata');
+    expect(err.message).toContain('expected object');
+    expect(err.message).toContain('received null');
+  });
+
+  it('never includes the actual received value, only its type, so a token- or', () => {
+    // URL-shaped field can't leak through a schema-mismatch message.
+    const schema = z.object({ token: z.string() });
+    const result = schema.safeParse({ token: 12345 });
+    if (result.success) throw new Error('expected parse failure');
+
+    const err = AbsError.schemaMismatch('POST /auth/login', result.error);
+    expect(err.message).not.toContain('12345');
+    expect(err.message).toContain('token');
+    expect(err.message).toContain('expected string');
+  });
+
+  it('caps the number of issues listed so a badly-shaped payload stays readable', () => {
+    const schema = z.object({
+      a: z.string(),
+      b: z.string(),
+      c: z.string(),
+      d: z.string(),
+      e: z.string(),
+      f: z.string(),
+      g: z.string(),
+    });
+    const result = schema.safeParse({ a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 });
+    if (result.success) throw new Error('expected parse failure');
+
+    const err = AbsError.schemaMismatch('GET /api/x', result.error);
+    expect(err.message).toContain('a (expected string');
+    expect(err.message).toContain('e (expected string');
+    expect(err.message).not.toContain('f (expected string');
+    expect(err.message).toContain('and 2 more');
+  });
+
+  it('falls back to the plain message when the cause is not a ZodError', () => {
+    const err = AbsError.schemaMismatch('GET /api/libraries', 'not a zod error');
+    expect(err.message).toBe(
+      'Audiobookshelf response for GET /api/libraries did not match the expected shape',
+    );
   });
 
   describe('isAbsError', () => {

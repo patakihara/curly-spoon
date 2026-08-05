@@ -4,6 +4,41 @@
  * failure kind without string matching.
  */
 
+import { ZodError, type ZodIssue } from 'zod';
+
+/**
+ * Describes one zod issue as `path: what was wrong` — field paths and
+ * expected-vs-received *type names* only, never a value. `invalid_type`'s
+ * `expected`/`received` are type names (`"string"`, `"undefined"`, …), so those are
+ * safe to include verbatim; issue codes like `invalid_enum_value`/`invalid_literal`
+ * have zod's own `.message` echo the actual received value, so those are
+ * deliberately *not* used here — a schema mismatch on a token- or URL-shaped field
+ * must never leak into a client-visible error string.
+ */
+function describeZodIssue(issue: ZodIssue): string {
+  const path = issue.path.length > 0 ? issue.path.map(String).join('.') : '(root)';
+  if (issue.code === 'invalid_type') {
+    return `${path} (expected ${issue.expected}, received ${issue.received})`;
+  }
+  if (issue.code === 'unrecognized_keys') {
+    return `${path} (unrecognized key(s): ${issue.keys.join(', ')})`;
+  }
+  if (issue.code === 'invalid_union') {
+    return `${path} (no union member matched)`;
+  }
+  return `${path} (${issue.code})`;
+}
+
+/** Summarises up to `max` zod issues for a client-visible error message. Caps the
+ * count rather than the string length so a payload with hundreds of missing fields
+ * still produces a short, readable message. */
+function summarizeZodError(error: ZodError, max = 5): string {
+  const shown = error.issues.slice(0, max).map(describeZodIssue);
+  const remaining = error.issues.length - shown.length;
+  const suffix = remaining > 0 ? `, and ${remaining} more` : '';
+  return shown.join('; ') + suffix;
+}
+
 export type AbsErrorCode =
   /** `fetch` itself rejected: DNS, TCP, TLS, connection refused, etc. */
   | 'network'
@@ -86,9 +121,10 @@ export class AbsError extends Error {
   }
 
   static schemaMismatch(context: string, cause: unknown): AbsError {
+    const detail = cause instanceof ZodError ? `: ${summarizeZodError(cause)}` : '';
     return new AbsError(
       'schema_mismatch',
-      `Audiobookshelf response for ${context} did not match the expected shape`,
+      `Audiobookshelf response for ${context} did not match the expected shape${detail}`,
       { cause },
     );
   }
