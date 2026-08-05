@@ -87,20 +87,23 @@ jobs:
       - run: scripts/docker-smoke.sh auralis:ci
 
   # Publishes the image `compose.yaml` names (`ghcr.io/patakihara/auralis:latest`) so a
-  # self-hoster's Watchtower has something to pull. Gated on `static`/`unit`/`container`
-  # so only a build that lints, typechecks, passes its tests and has proven it boots ever
-  # reaches the registry.
+  # self-hoster's Watchtower has something to pull.
+  #
+  # `e2e` is in `needs` as of 2026-08-05. It was not, and the omission was invisible
+  # because this comment claimed the opposite ("passes its tests"): two consecutive builds
+  # with a failing Playwright suite published anyway, and the mediaserver box — which
+  # auto-updates from `:latest` — pulled and ran both. A red run reported failure while
+  # shipping. Every job that can say the build is wrong must gate the registry, or the
+  # overall run conclusion means nothing about what is deployed.
   publish:
     name: Publish image to GHCR
-    needs: [static, unit, container]
+    needs: [static, unit, e2e, container]
     runs-on: ubuntu-latest
     # Push events only, and only on `main` — the branch this project delivers on. A
     # pull_request run has no write-scoped GITHUB_TOKEN and must never attempt this.
     #
-    # This gate is coupled to a live deployment and the coupling is not obvious: the
-    # mediaserver box auto-updates from `:latest`, so a red build here is silently a frozen
-    # container there. Nothing alerts on it. If `publish` stops running, that is the thing
-    # to check first.
+    # This gate is coupled to a live deployment: mediaserver auto-updates from `:latest`,
+    # so whatever reaches the registry is running on that box within ~15 minutes.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       packages: write
