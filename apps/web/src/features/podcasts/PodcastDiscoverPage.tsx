@@ -16,6 +16,7 @@
  */
 import { useState } from 'react';
 import { Button, Card, SearchField } from '@auralis/ui';
+import { RichDescription } from '../../components/RichDescription.js';
 import { ApiError } from '../../api/errors.js';
 import {
   useLibrariesQuery,
@@ -124,7 +125,7 @@ export function PodcastDiscoverPage() {
                     <div>
                       <strong>{result.title}</strong>
                       {result.artistName ? <p>{result.artistName}</p> : null}
-                      {result.descriptionPlain ? <p>{result.descriptionPlain}</p> : null}
+                      <RichDescription html={result.descriptionPlain} />
                     </div>
                   </div>
                 </Card>

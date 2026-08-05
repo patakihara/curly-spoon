@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Button, Card, Chip } from '@auralis/ui';
+import { RichDescription } from '../../components/RichDescription.js';
 import { ApiError } from '../../api/errors.js';
 import { useSubscribePodcastMutation } from '../../api/queries.js';
 import type {
@@ -107,9 +108,7 @@ export function PodcastFeedPreview({
         <div>
           <h2>{preview.title ?? 'Untitled podcast'}</h2>
           {preview.author ? <p>{preview.author}</p> : null}
-          {(preview.descriptionPlain ?? preview.description) ? (
-            <p>{preview.descriptionPlain ?? preview.description}</p>
-          ) : null}
+          <RichDescription html={preview.descriptionPlain ?? preview.description} />
           <p>{preview.numEpisodes} episodes</p>
         </div>
       </div>
