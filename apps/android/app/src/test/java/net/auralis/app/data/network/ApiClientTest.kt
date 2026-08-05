@@ -1022,4 +1022,271 @@ class ApiClientTest {
             assertEquals("upstream_auth_expired", exception?.code)
             assertEquals(401, exception?.httpStatus)
         }
+
+    // -----------------------------------------------------------------------------
+    // Jellyfin music (routes/jellyfin.ts) — Android data layer, phase 9
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `jellyfinConfig decodes an unconfigured response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody("""{"configured":false,"baseUrl":null,"hasCredentials":false}"""),
+            )
+
+            val config = apiClient.jellyfinConfig()
+
+            assertFalse(config.configured)
+            assertNull(config.baseUrl)
+            assertFalse(config.hasCredentials)
+        }
+
+    @Test
+    fun `jellyfinConfig decodes a configured response with stored credentials`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"configured":true,"baseUrl":"https://jellyfin.example.com","hasCredentials":true}""",
+                ),
+            )
+
+            val config = apiClient.jellyfinConfig()
+
+            assertTrue(config.configured)
+            assertEquals("https://jellyfin.example.com", config.baseUrl)
+            assertTrue(config.hasCredentials)
+        }
+
+    @Test
+    fun `jellyfinLogin omits baseUrl from the request body when not provided`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"configured":true,"baseUrl":"https://jellyfin.example.com","user":{"id":"u1","name":"alice"}}""",
+                ),
+            )
+
+            apiClient.jellyfinLogin("alice", "hunter2")
+
+            val recordedBody = mockWebServer.takeRequest().body.readUtf8()
+            assertFalse(recordedBody.contains("baseUrl"))
+            assertTrue(recordedBody.contains(""""username":"alice""""))
+            assertTrue(recordedBody.contains(""""password":"hunter2""""))
+        }
+
+    @Test
+    fun `jellyfinLogin sends baseUrl in the request body when provided`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"configured":true,"baseUrl":"https://jellyfin.example.com","user":{"id":"u1","name":"alice"}}""",
+                ),
+            )
+
+            apiClient.jellyfinLogin("alice", "hunter2", baseUrl = "https://jellyfin.example.com")
+
+            val recordedBody = mockWebServer.takeRequest().body.readUtf8()
+            assertTrue(recordedBody.contains(""""baseUrl":"https://jellyfin.example.com""""))
+        }
+
+    @Test
+    fun `jellyfinLogin decodes the user id and name on success`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"configured":true,"baseUrl":"https://jellyfin.example.com","user":{"id":"u1","name":"alice"}}""",
+                ),
+            )
+
+            val result = apiClient.jellyfinLogin("alice", "hunter2")
+
+            assertEquals("u1", result.user.id)
+            assertEquals("alice", result.user.name)
+        }
+
+    @Test
+    fun `jellyfinLogin throws ApiException with code jellyfin_not_configured when no baseUrl is known`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(409)
+                    .setBody(
+                        """{"error":{"code":"jellyfin_not_configured","message":"Jellyfin connection has not been configured yet"}}""",
+                    ),
+            )
+
+            val exception =
+                try {
+                    apiClient.jellyfinLogin("alice", "hunter2")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("jellyfin_not_configured", exception?.code)
+            assertEquals(409, exception?.httpStatus)
+        }
+
+    @Test
+    fun `jellyfinArtists requests parentId, startIndex, limit, sortBy and sortOrder as query parameters`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":0}"""))
+
+            apiClient.jellyfinArtists(
+                parentId = "lib1",
+                startIndex = 20,
+                limit = 10,
+                sortBy = "SortName",
+                sortOrder = "Descending",
+            )
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("parentId=lib1"))
+            assertTrue(recordedPath.contains("startIndex=20"))
+            assertTrue(recordedPath.contains("limit=10"))
+            assertTrue(recordedPath.contains("sortBy=SortName"))
+            assertTrue(recordedPath.contains("sortOrder=Descending"))
+        }
+
+    @Test
+    fun `jellyfinArtists omits optional query parameters when not provided`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":0}"""))
+
+            apiClient.jellyfinArtists()
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertFalse(recordedPath.contains("parentId"))
+            assertFalse(recordedPath.contains("startIndex"))
+            assertFalse(recordedPath.contains("limit"))
+        }
+
+    @Test
+    fun `jellyfinArtists decodes items and surfaces the upstream total record count`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"items":[{"id":"art1","name":"Radiohead","overview":null,"imageTag":"tag1","albumCount":9}],
+                     "total":42,"startIndex":0}
+                    """.trimIndent(),
+                ),
+            )
+
+            val page = apiClient.jellyfinArtists()
+
+            assertEquals(1, page.items.size)
+            assertEquals("Radiohead", page.items[0].name)
+            assertEquals(9, page.items[0].albumCount)
+            assertEquals(42, page.total)
+        }
+
+    @Test
+    fun `jellyfinArtists throws ApiException rather than an unrelated exception on an error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.jellyfinArtists()
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("upstream_auth_expired", exception?.code)
+            assertEquals(401, exception?.httpStatus)
+        }
+
+    @Test
+    fun `jellyfinAlbums includes artistId as a query parameter and decodes the album fields`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"items":[{"id":"alb1","name":"OK Computer","sortName":"OK Computer","artistId":"art1",
+                     "artistName":"Radiohead","productionYear":1997,"overview":null,"genres":["Rock"],
+                     "imageTag":"tag2","trackCount":12}],
+                     "total":9,"startIndex":0}
+                    """.trimIndent(),
+                ),
+            )
+
+            val page = apiClient.jellyfinAlbums(artistId = "art1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("artistId=art1"))
+            assertEquals(1, page.items.size)
+            assertEquals("OK Computer", page.items[0].name)
+            assertEquals(listOf("Rock"), page.items[0].genres)
+            assertEquals(9, page.total)
+        }
+
+    @Test
+    fun `jellyfinTracks includes albumId as a query parameter and decodes the track fields`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"items":[{"id":"trk1","name":"Paranoid Android","albumId":"alb1","albumName":"OK Computer",
+                     "artistNames":["Radiohead"],"trackNumber":2,"discNumber":1,"durationSeconds":383.5,
+                     "imageTag":"tag2","genres":["Rock"]}],
+                     "total":12,"startIndex":0}
+                    """.trimIndent(),
+                ),
+            )
+
+            val page = apiClient.jellyfinTracks(albumId = "alb1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("albumId=alb1"))
+            assertEquals(1, page.items.size)
+            assertEquals("Paranoid Android", page.items[0].name)
+            assertEquals(383.5, page.items[0].durationSeconds!!, 0.001)
+            assertEquals(12, page.total)
+        }
+
+    @Test
+    fun `jellyfinSearch sends term and limit as query parameters and decodes all three result buckets`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """
+                    {"artists":[{"id":"art1","name":"Radiohead","overview":null,"imageTag":null,"albumCount":null}],
+                     "albums":[{"id":"alb1","name":"OK Computer","sortName":null,"artistId":null,"artistName":null,
+                      "productionYear":null,"overview":null,"genres":[],"imageTag":null,"trackCount":null}],
+                     "tracks":[{"id":"trk1","name":"Paranoid Android","albumId":null,"albumName":null,
+                      "artistNames":[],"trackNumber":null,"discNumber":null,"durationSeconds":null,
+                      "imageTag":null,"genres":[]}]}
+                    """.trimIndent(),
+                ),
+            )
+
+            val results = apiClient.jellyfinSearch("radiohead", limit = 5)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("term=radiohead"))
+            assertTrue(recordedPath.contains("limit=5"))
+            assertEquals(1, results.artists.size)
+            assertEquals(1, results.albums.size)
+            assertEquals(1, results.tracks.size)
+        }
+
+    @Test
+    fun `jellyfinTrackStreamUrl builds the exact BFF proxy URL with no token in it`() =
+        runTest {
+            val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+
+            val url = apiClient.jellyfinTrackStreamUrl("track1")
+
+            assertEquals("$baseUrl/api/v1/jellyfin/tracks/track1/stream", url)
+            assertFalse(url.contains("ApiKey"))
+            assertFalse(url.contains("token", ignoreCase = true))
+        }
 }

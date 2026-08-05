@@ -21,6 +21,7 @@ import net.auralis.app.data.network.DataStoreKeyValueStore
 import net.auralis.app.data.network.KeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
 import net.auralis.app.data.settings.ServerConfigRepository
+import net.auralis.app.features.music.MusicRepository
 import net.auralis.app.playback.PlaybackItemResolver
 import okhttp3.OkHttpClient
 import java.io.File
@@ -48,6 +49,14 @@ class AppContainer(context: Context) {
             serverConfigRepository.getBaseUrl()
                 ?: throw ApiException("server_not_configured", "No Auralis server configured", 0)
         }
+
+    /**
+     * Phase 9's Android data layer — Jellyfin artists/albums/tracks/search plus the connect
+     * flow, over the same [apiClient] every other repository here shares. No screen consumes
+     * this yet (see `docs/ROADMAP.md` §9); wired in now so that later wave's ViewModel has
+     * nothing left to plumb.
+     */
+    val musicRepository = MusicRepository(apiClient)
 
     /**
      * Shared by [net.auralis.app.features.player.PlayerViewModel] (the phone UI's "tap a shelf
