@@ -28,7 +28,11 @@ class PodcastDetailViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // Shared with ApiClient below, not just Dispatchers.Main — see ApiClient.ioDispatcher's
+        // own doc comment for why a fire-and-forget request otherwise escapes onto the real
+        // Dispatchers.IO pool, invisible to runTest and able to leak past this test's @After.
+        val testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
         mockWebServer.start()
         val keyValueStore = FakeKeyValueStore()
@@ -36,7 +40,7 @@ class PodcastDetailViewModelTest {
         val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
         baseUrl = mockWebServer.url("/").toString()
-        apiClient = ApiClient(httpClient, cookieJar) { baseUrl }
+        apiClient = ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { baseUrl }
     }
 
     @After

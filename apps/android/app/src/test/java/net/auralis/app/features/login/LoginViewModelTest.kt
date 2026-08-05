@@ -28,12 +28,16 @@ class LoginViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // Shared with ApiClient below, not just Dispatchers.Main — see ApiClient.ioDispatcher's
+        // own doc comment for why a fire-and-forget request otherwise escapes onto the real
+        // Dispatchers.IO pool, invisible to runTest and able to leak past this test's @After.
+        val testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
         mockWebServer.start()
         val cookieJar = SessionCookieJar(FakeKeyValueStore(), CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
-        apiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+        apiClient = ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { mockWebServer.url("/").toString() }
         viewModel = LoginViewModel(apiClient)
     }
 
@@ -67,13 +71,12 @@ class LoginViewModelTest {
             assertEquals(0, mockWebServer.requestCount)
         }
 
-    // `apiClient.login()` dispatches its real HTTP call via `withContext(Dispatchers.IO)` —
-    // a genuine, real dispatcher untouched by `Dispatchers.setMain` — so `viewModel.login`
-    // (which just launches on `viewModelScope` and returns immediately) does not necessarily
-    // finish before the next line runs. Waiting on the observable `uiState` transition (for
-    // the error case) or on a `CompletableDeferred` completed from `onSuccess` (since
-    // `uiState` deliberately never leaves `LoggingIn` on success — the caller navigates away
-    // instead) avoids racing that background call, unlike sampling a plain var immediately.
+    // `viewModel.login` just launches on `viewModelScope` and returns immediately — its own
+    // completion is never guaranteed by the mere fact that the next line runs, `testDispatcher`
+    // injection above notwithstanding. Waiting on the observable `uiState` transition (for the
+    // error case) or on a `CompletableDeferred` completed from `onSuccess` (since `uiState`
+    // deliberately never leaves `LoggingIn` on success — the caller navigates away instead)
+    // avoids racing that call, unlike sampling a plain var immediately.
 
     @Test
     fun `successful login calls onSuccess`() =

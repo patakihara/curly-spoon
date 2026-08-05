@@ -1,5 +1,6 @@
 package net.auralis.app.data.network
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -66,6 +67,17 @@ import java.io.IOException
 class ApiClient(
     private val httpClient: OkHttpClient,
     private val cookieJar: SessionCookieJar,
+    /**
+     * Where every request's blocking OkHttp call runs. Defaults to the real [Dispatchers.IO]
+     * thread pool for production use, but a test can inject a `TestDispatcher` sharing the same
+     * scheduler that drives the coroutine under test — making the request visible to `runTest`'s
+     * own completion tracking instead of escaping onto a real background thread it knows nothing
+     * about, which is what let a fire-and-forget caller's request outlive its test and throw
+     * during a *later* test's run. Declared before [baseUrl] (rather than after) so [baseUrl]
+     * stays the trailing lambda parameter at every call site — this parameter is meant to be
+     * skipped by production callers, who get the default, and named explicitly by tests.
+     */
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val baseUrl: suspend () -> String,
 ) {
     suspend fun getSetupState(): SetupState = get("/setup")
@@ -451,7 +463,7 @@ class ApiClient(
         execute(Request.Builder().url(apiUrl(path)).post(ByteArray(0).toRequestBody(null)).build())
 
     private suspend inline fun <reified T> execute(request: Request): T =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             var status = 0
             try {
                 httpClient.newCall(request).execute().use { response ->
@@ -475,7 +487,7 @@ class ApiClient(
      * status and never calls into `auralisJson`.
      */
     private suspend fun executeNoContent(request: Request) =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {

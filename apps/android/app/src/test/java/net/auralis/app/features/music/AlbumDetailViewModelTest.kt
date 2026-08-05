@@ -31,14 +31,20 @@ class AlbumDetailViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // Shared with ApiClient below, not just Dispatchers.Main: a request otherwise runs on
+        // the real Dispatchers.IO thread pool, invisible to runTest, and a fire-and-forget
+        // caller (a viewModelScope.launch a test never explicitly awaits) can then leak that
+        // request past this test's own @After — see ApiClient.ioDispatcher's own doc comment.
+        val testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
         mockWebServer.start()
         val keyValueStore = FakeKeyValueStore()
         serverConfigRepository = ServerConfigRepository(keyValueStore)
         val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
-        val apiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+        val apiClient =
+            ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { mockWebServer.url("/").toString() }
         musicRepository = MusicRepository(apiClient)
     }
 

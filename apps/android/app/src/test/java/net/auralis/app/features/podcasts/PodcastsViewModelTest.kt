@@ -29,7 +29,16 @@ class PodcastsViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // Shared with ApiClient below, not just Dispatchers.Main — see ApiClient.ioDispatcher's
+        // own doc comment. This closes the exact gap the comment on the "startPreview then
+        // subscribe..." test below documents: a fire-and-forget reload left suspended on a real
+        // Dispatchers.IO call when this test method returned, throwing after @After tore down
+        // Dispatchers.Main and the server. With ioDispatcher now the same Unconfined dispatcher
+        // as Main, that call runs eagerly to completion inline instead of escaping onto a real
+        // background thread, so it cannot outlive the test regardless of what any given test
+        // remembers to await.
+        val testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
         mockWebServer.start()
         val keyValueStore = FakeKeyValueStore()
@@ -37,7 +46,7 @@ class PodcastsViewModelTest {
         val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
         baseUrl = mockWebServer.url("/").toString()
-        apiClient = ApiClient(httpClient, cookieJar) { baseUrl }
+        apiClient = ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { baseUrl }
     }
 
     @After
