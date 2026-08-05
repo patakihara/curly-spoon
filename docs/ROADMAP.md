@@ -1001,6 +1001,27 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   `f01409f`; worth noting that a reviewer reading for intent read the branch as already correct,
   and only running it settled it.
 
+- **Android wave I — cross-page album and playlist queueing: done (`731cdcf`).** "Play album" used
+  to queue only the loaded 40-track page, so a 60-track album stopped two thirds of the way
+  through; the same applied to playing a playlist. The queue now covers every track.
+
+  Fetching is **lazy and non-blocking**, the same constraint the web wave settled on: playback
+  starts from what is already loaded, and the remaining pages are appended to the live Media3
+  queue with `addMediaItems` as they arrive. An album that fits on one page fetches nothing extra
+  and a large "play all" never delays the first note. Capped at `QUEUE_APPEND_CAP = 2000` tracks;
+  at the cap the append simply stops and what is queued keeps playing.
+
+  The risk this wave introduced is a **stale-append race** — start album A, start album B while
+  A's background fetch is still running, and A's late pages must not land in B's queue. Guarded
+  by a generation counter captured synchronously before the first suspension point and re-checked
+  immediately before every `addMediaItems` call. That is the same mechanism the favourites waves
+  use, and independent review traced it as correct — but it landed with no test, and
+  `PlayerViewModel` had never had a test file at all. A follow-up wave closes that.
+
+  A page fetch that fails is non-fatal by construction: the append loop returns, playback
+  continues on what is queued, and nothing retries. Pinned by a test asserting exactly one fetch
+  call, so a retry loop would fail it.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with
