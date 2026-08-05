@@ -15,7 +15,16 @@ import type {
   rawUserDtoSchema,
   rawUserItemDataDtoSchema,
 } from './schemas/raw.js';
-import type { Album, Artist, LoginResult, Lyrics, Track, UserProfile } from './domain.js';
+import type {
+  Album,
+  Artist,
+  LoginResult,
+  Lyrics,
+  Playlist,
+  PlaylistItem,
+  Track,
+  UserProfile,
+} from './domain.js';
 
 type RawItem = z.infer<typeof rawBaseItemDtoSchema>;
 type RawNameGuidPair = z.infer<typeof rawNameGuidPairSchema>;
@@ -98,6 +107,31 @@ export function normalizeTrack(raw: RawItem): Track {
     imageTag: primaryImageTag(raw),
     genres: raw.Genres ?? [],
     favorite: normalizeFavoriteState(raw.UserData),
+  };
+}
+
+export function normalizePlaylist(raw: RawItem): Playlist {
+  return {
+    id: raw.Id,
+    name: raw.Name ?? '(unknown playlist)',
+    imageTag: primaryImageTag(raw),
+    trackCount: raw.ChildCount ?? null,
+  };
+}
+
+/**
+ * Normalizes one row of a `GET /Playlists/{id}/Items` response. `playlistItemId` falls back
+ * to the track's own id when Jellyfin's `PlaylistItemId` is absent — a degrade, not the
+ * common case (the controller always sets it, per `schemas/raw.ts`'s `PlaylistItemId`
+ * comment) — so a caller always has *something* to key a removal on rather than losing the
+ * row entirely, per this package's "total functions degrade rather than throw" convention.
+ * A caller that hits this fallback for a track duplicated in the same playlist would remove
+ * the wrong occurrence; that risk only exists if Jellyfin itself omits the field.
+ */
+export function normalizePlaylistItem(raw: RawItem): PlaylistItem {
+  return {
+    playlistItemId: raw.PlaylistItemId ?? raw.Id,
+    track: normalizeTrack(raw),
   };
 }
 

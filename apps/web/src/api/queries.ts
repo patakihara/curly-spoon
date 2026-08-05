@@ -7,8 +7,10 @@ import { hashKey, useMutation, useQuery, useQueryClient } from '@tanstack/react-
 import { useApi } from './ApiContext.js';
 import { shouldPollRequests, REQUEST_POLL_INTERVAL_MS } from '../features/requests/polling.js';
 import { withFavoriteState } from '../features/music/favorites.js';
+import { appendPlaylistItems, removePlaylistItems } from '../features/music/playlists.js';
 import type {
   JellyfinLoginBody,
+  JellyfinTrack,
   ProviderUpdateBody,
   Release,
   RequestSettings,
@@ -47,6 +49,13 @@ export const queryKeys = {
   jellyfinFavoriteArtists: ['jellyfin', 'artists', 'favorites'] as const,
   jellyfinFavoriteAlbums: ['jellyfin', 'albums', 'favorites'] as const,
   jellyfinFavoriteTracks: ['jellyfin', 'tracks', 'favorites'] as const,
+  jellyfinPlaylists: (startIndex: number) => ['jellyfin', 'playlists', startIndex] as const,
+  /** See `jellyfinArtist`/`jellyfinAlbum`'s identical doc comment — the single-item fetch
+   * behind `MusicPlaylistPage`'s own header, which the items listing alone can't provide
+   * (a playlist's own name isn't part of `GET /jellyfin/playlists/:id/items`'s response). */
+  jellyfinPlaylist: (playlistId: string) => ['jellyfin', 'playlists', 'byId', playlistId] as const,
+  jellyfinPlaylistItems: (playlistId: string) =>
+    ['jellyfin', 'playlists', playlistId, 'items'] as const,
 };
 
 export function useSetupQuery() {
@@ -623,6 +632,166 @@ export function useToggleJellyfinFavoriteMutation() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['jellyfin'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
+// Jellyfin playlists (Phase 9 web wave — playlists)
+// ---------------------------------------------------------------------
+
+export function useJellyfinPlaylistsQuery(startIndex = 0) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinPlaylists(startIndex),
+    queryFn: ({ signal }) =>
+      api.getJellyfinPlaylists({ startIndex, limit: JELLYFIN_PAGE_SIZE }, signal),
+    staleTime: 30_000,
+  });
+}
+
+/** Fetches exactly one playlist by id, via `getJellyfinPlaylists`'s `id` filter — see
+ * `queryKeys.jellyfinPlaylist`'s doc comment for why `MusicPlaylistPage` needs this
+ * alongside the items listing below. */
+export function useJellyfinPlaylistQuery(playlistId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinPlaylist(playlistId),
+    queryFn: ({ signal }) => api.getJellyfinPlaylists({ id: playlistId, limit: 1 }, signal),
+    enabled: playlistId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/** Fetches `playlistId`'s tracks in playlist order — see `JellyfinPlaylistItem`'s doc
+ * comment for why that's what this resolves to, not an alphabetical re-sort. */
+export function useJellyfinPlaylistItemsQuery(playlistId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.jellyfinPlaylistItems(playlistId),
+    queryFn: ({ signal }) =>
+      api.getJellyfinPlaylistItems(playlistId, { limit: JELLYFIN_PAGE_SIZE }, signal),
+    enabled: playlistId.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Creates a playlist, optionally seeded with `itemIds` (already in the desired order —
+ * `createJellyfinPlaylist` forwards them straight through, see that method's own doc
+ * comment). Not optimistic, unlike the add/remove mutations below: creation hands back a
+ * server-assigned id with nothing pre-existing in the cache to speculatively rewrite, so
+ * there's no stale state to hide the way there is for a toggle or an append to an
+ * already-open list — the caller's own `isPending` state is what covers the round trip.
+ * Invalidates the whole `['jellyfin', 'playlists']` slice on success (list pages and any
+ * open item pages alike) so a freshly created playlist appears without a manual refetch.
+ */
+export function useCreateJellyfinPlaylistMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, itemIds }: { name: string; itemIds?: string[] }) =>
+      api.createJellyfinPlaylist(name, itemIds),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['jellyfin', 'playlists'] });
+    },
+  });
+}
+
+export interface AddToJellyfinPlaylistVariables {
+  playlistId: string;
+  /** Full track objects, not just ids — the optimistic write needs each track's own name/
+   * duration/artwork to render a real-looking row immediately, not just a placeholder; see
+   * `playlists.ts`'s `appendPlaylistItems`. */
+  tracks: JellyfinTrack[];
+}
+
+/**
+ * Appends `tracks` to `playlistId`, with an optimistic cache write and a guarded rollback —
+ * same shape as `useToggleJellyfinFavoriteMutation` (cancel, snapshot, apply, and in
+ * `onError` only restore if nothing has touched the query since this mutation's own write),
+ * scoped to the *one* cache entry that's actually wrong until the next fetch: this
+ * playlist's own items page (`queryKeys.jellyfinPlaylistItems`). See `playlists.ts`'s file
+ * doc comment for why that single-key scope is enough here, unlike favourites' broad
+ * `['jellyfin']` rewrite.
+ *
+ * Each optimistically-added row gets a client-only `playlistItemId` (`playlists.ts`'s
+ * `isOptimisticPlaylistItem`) until the server assigns the real one — `onSettled` always
+ * invalidates to replace it, and callers should disable a remove control on a still-
+ * optimistic row rather than try to remove it by an id Jellyfin has never heard of.
+ */
+export function useAddToJellyfinPlaylistMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ playlistId, tracks }: AddToJellyfinPlaylistVariables) =>
+      api.addToJellyfinPlaylist(
+        playlistId,
+        tracks.map((t) => t.id),
+      ),
+    onMutate: async ({ playlistId, tracks }: AddToJellyfinPlaylistVariables) => {
+      const queryKey = queryKeys.jellyfinPlaylistItems(playlistId);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      const applied = appendPlaylistItems(previous, tracks);
+      queryClient.setQueryData(queryKey, applied);
+      return { queryKey, previous, applied };
+    },
+    onError: (_err, _vars, context) => {
+      if (!context) return;
+      // Guard, same reasoning as `useToggleJellyfinFavoriteMutation`'s: only roll back if
+      // the cache still holds exactly what *this* mutation's own `onMutate` wrote — a later
+      // overlapping add/remove on the same playlist may have already written its own
+      // optimistic state on top, which restoring this mutation's stale pre-write snapshot
+      // would otherwise clobber.
+      if (queryClient.getQueryData(context.queryKey) === context.applied) {
+        queryClient.setQueryData(context.queryKey, context.previous);
+      }
+    },
+    onSettled: (_data, _err, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jellyfinPlaylistItems(vars.playlistId),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['jellyfin', 'playlists'] });
+    },
+  });
+}
+
+export interface RemoveFromJellyfinPlaylistVariables {
+  playlistId: string;
+  /** `JellyfinPlaylistItem.playlistItemId` values, never `track.id` — see that type's doc
+   * comment for why a track duplicated within one playlist needs this distinction. */
+  playlistItemIds: string[];
+}
+
+/** Removes playlist entries, with the same optimistic-write-plus-guarded-rollback shape as
+ * `useAddToJellyfinPlaylistMutation` above — see that hook's doc comment for the full
+ * reasoning, which applies here unchanged. */
+export function useRemoveFromJellyfinPlaylistMutation() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ playlistId, playlistItemIds }: RemoveFromJellyfinPlaylistVariables) =>
+      api.removeFromJellyfinPlaylist(playlistId, playlistItemIds),
+    onMutate: async ({ playlistId, playlistItemIds }: RemoveFromJellyfinPlaylistVariables) => {
+      const queryKey = queryKeys.jellyfinPlaylistItems(playlistId);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      const applied = removePlaylistItems(previous, playlistItemIds);
+      queryClient.setQueryData(queryKey, applied);
+      return { queryKey, previous, applied };
+    },
+    onError: (_err, _vars, context) => {
+      if (!context) return;
+      if (queryClient.getQueryData(context.queryKey) === context.applied) {
+        queryClient.setQueryData(context.queryKey, context.previous);
+      }
+    },
+    onSettled: (_data, _err, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.jellyfinPlaylistItems(vars.playlistId),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['jellyfin', 'playlists'] });
     },
   });
 }

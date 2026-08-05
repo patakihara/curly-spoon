@@ -25,12 +25,17 @@ import { getJellyfinToken, setJellyfinToken } from '../db/jellyfinSecretsRepo.js
 import { AURALIS_JELLYFIN_DEVICE, JELLYFIN_UPSTREAM_KEY } from '../jellyfinUpstream.js';
 import { parseInput } from '../validation.js';
 import {
+  jellyfinAddToPlaylistBodySchema,
   jellyfinAlbumsQuerySchema,
+  jellyfinCreatePlaylistBodySchema,
   jellyfinItemIdParamSchema,
   jellyfinLibraryQuerySchema,
   jellyfinLoginBodySchema,
   jellyfinPlaybackProgressBodySchema,
   jellyfinPlaybackReportBodySchema,
+  jellyfinPlaylistIdParamSchema,
+  jellyfinPlaylistItemsQuerySchema,
+  jellyfinRemoveFromPlaylistQuerySchema,
   jellyfinSearchQuerySchema,
   jellyfinTracksQuerySchema,
 } from './schemas.js';
@@ -192,6 +197,96 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
       return undefined;
     }
   });
+
+  // ---------------------------------------------------------------------
+  // Playlists — mirrors `JellyfinClient`'s playlist methods one route per method, same
+  // `requireSession` / `app.jellyfin.forUser` / `handleUpstreamError` shape as everything
+  // else in this file. See `@auralis/jellyfin-client`'s `schemas/raw.ts` playlists section
+  // for the source-verified route findings this mirrors, in particular that removal keys
+  // on the playlist-entry id (`playlistItemIds` here), never a track id.
+  // ---------------------------------------------------------------------
+
+  app.get('/jellyfin/playlists', { preHandler: requireSession }, async (request, reply) => {
+    const query = parseInput(reply, jellyfinLibraryQuerySchema, request.query);
+    if (!query) return undefined;
+    if (isEmptyIdsFilter(query)) return reply.send(emptyLibraryPage(query.startIndex));
+    try {
+      const client = app.jellyfin.forUser(request.userId!);
+      return reply.send(await client.getPlaylists(query));
+    } catch (err) {
+      handleUpstreamError(reply, err);
+      return undefined;
+    }
+  });
+
+  app.get(
+    '/jellyfin/playlists/:playlistId/items',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const params = parseInput(reply, jellyfinPlaylistIdParamSchema, request.params);
+      if (!params) return undefined;
+      const query = parseInput(reply, jellyfinPlaylistItemsQuerySchema, request.query);
+      if (!query) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        return reply.send(await client.getPlaylistItems(params.playlistId, query));
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
+
+  app.post('/jellyfin/playlists', { preHandler: requireSession }, async (request, reply) => {
+    const body = parseInput(reply, jellyfinCreatePlaylistBodySchema, request.body);
+    if (!body) return undefined;
+    try {
+      const client = app.jellyfin.forUser(request.userId!);
+      const id = await client.createPlaylist(body.name, body.itemIds);
+      return reply.code(201).send({ id });
+    } catch (err) {
+      handleUpstreamError(reply, err);
+      return undefined;
+    }
+  });
+
+  app.post(
+    '/jellyfin/playlists/:playlistId/items',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const params = parseInput(reply, jellyfinPlaylistIdParamSchema, request.params);
+      if (!params) return undefined;
+      const body = parseInput(reply, jellyfinAddToPlaylistBodySchema, request.body);
+      if (!body) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        await client.addToPlaylist(params.playlistId, body.itemIds);
+        return reply.code(204).send();
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
+
+  app.delete(
+    '/jellyfin/playlists/:playlistId/items',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const params = parseInput(reply, jellyfinPlaylistIdParamSchema, request.params);
+      if (!params) return undefined;
+      const query = parseInput(reply, jellyfinRemoveFromPlaylistQuerySchema, request.query);
+      if (!query) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        await client.removeFromPlaylist(params.playlistId, query.playlistItemIds);
+        return reply.code(204).send();
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
 
   // ---------------------------------------------------------------------
   // Search

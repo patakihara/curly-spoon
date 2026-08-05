@@ -5,6 +5,7 @@ export type {
   ArtistsQuery,
   AlbumsQuery,
   TracksQuery,
+  PlaylistsQuery,
   SearchOptions,
   SortOrder,
 } from './client.js';
@@ -20,6 +21,8 @@ export type {
   Artist,
   Album,
   Track,
+  Playlist,
+  PlaylistItem,
   LibraryPage,
   SearchResults,
   UserProfile,

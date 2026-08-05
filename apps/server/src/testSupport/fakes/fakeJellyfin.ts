@@ -273,6 +273,22 @@ const LYRICS: Record<string, { Text: string; Start?: number }[]> = {
   ],
 };
 
+/** One occurrence of a track within a fake playlist. `entryId` is deliberately a separate
+ * counter from any item id, mirroring the real server's `PlaylistItemId` (see
+ * `@auralis/jellyfin-client`'s `schemas/raw.ts` playlists section) — the whole point being
+ * that route/schema tests exercising add-then-remove can prove the BFF forwards *this* id,
+ * not the track's own id, on the way out. */
+interface FakePlaylistEntry {
+  entryId: string;
+  itemId: string;
+}
+
+interface FakePlaylist {
+  id: string;
+  name: string;
+  entries: FakePlaylistEntry[];
+}
+
 export interface FakeJellyfinUpstream {
   fetch: FetchLike;
 }
@@ -283,6 +299,31 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
   // resolves to the same one fake user (`jellyfin-user-1`), matching this fake's existing
   // single-tenant shape elsewhere (no per-user branching in `/Items` either).
   const favorites = new Set<string>();
+  const playlists = new Map<string, FakePlaylist>();
+  let nextPlaylistId = 1;
+  let nextEntryId = 1;
+
+  /** Carries `UserData` even though playlists don't have favourite state in this client —
+   * purely so this fake's `/Items` handler can hold every item kind in one array without a
+   * type split; real Jellyfin does populate `UserData` on every `BaseItemDto` regardless of
+   * kind. */
+  function playlistDto(p: FakePlaylist): {
+    Id: string;
+    Name: string;
+    Type: 'Playlist';
+    ChildCount: number;
+    ImageTags: Record<string, string>;
+    UserData: RawUserData;
+  } {
+    return {
+      Id: p.id,
+      Name: p.name,
+      Type: 'Playlist',
+      ChildCount: p.entries.length,
+      ImageTags: {},
+      UserData: { IsFavorite: false },
+    };
+  }
 
   function json(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body), {
@@ -372,6 +413,58 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
       return json({ IsFavorite: favorites.has(itemId) });
     }
 
+    // ---- Playlists ----
+    // Mirrors the real `PlaylistsController`, verified against that controller (see
+    // `@auralis/jellyfin-client`'s `schemas/raw.ts` playlists section comment): `POST
+    // /Playlists` (body `Name`/`Ids`), `GET /Playlists/:id/Items` (playlist order, each row
+    // carrying its own `PlaylistItemId` distinct from the track's `Id`), `POST
+    // /Playlists/:id/Items?ids=` to append, `DELETE /Playlists/:id/Items?entryIds=` to
+    // remove by that same per-entry id. Playlist listing itself has no dedicated route —
+    // it's folded into the generic `/Items?includeItemTypes=Playlist` branch below, exactly
+    // like the real server.
+    if (method === 'POST' && path === '/Playlists') {
+      const { Name, Ids } = body() as { Name?: string; Ids?: string[] };
+      const id = `playlist-${nextPlaylistId}`;
+      nextPlaylistId += 1;
+      const entries: FakePlaylistEntry[] = (Ids ?? []).map((itemId) => {
+        const entryId = `entry-${nextEntryId}`;
+        nextEntryId += 1;
+        return { entryId, itemId };
+      });
+      playlists.set(id, { id, name: Name ?? '', entries });
+      return json({ Id: id });
+    }
+
+    if (parts[0] === 'Playlists' && parts[1] && parts[2] === 'Items' && parts.length === 3) {
+      const playlist = playlists.get(parts[1]);
+      if (!playlist) return notFound();
+
+      if (method === 'GET') {
+        const dtos = playlist.entries.flatMap((entry) => {
+          const track = TRACKS.find((t) => t.id === entry.itemId);
+          if (!track) return [];
+          return [{ ...trackDto(track, favorites), PlaylistItemId: entry.entryId }];
+        });
+        return json({ Items: dtos, TotalRecordCount: dtos.length, StartIndex: 0 });
+      }
+
+      if (method === 'POST') {
+        const ids = url.searchParams.get('ids')?.split(',').filter(Boolean) ?? [];
+        for (const itemId of ids) {
+          const entryId = `entry-${nextEntryId}`;
+          nextEntryId += 1;
+          playlist.entries.push({ entryId, itemId });
+        }
+        return new Response(null, { status: 204 });
+      }
+
+      if (method === 'DELETE') {
+        const entryIds = url.searchParams.get('entryIds')?.split(',').filter(Boolean) ?? [];
+        playlist.entries = playlist.entries.filter((e) => !entryIds.includes(e.entryId));
+        return new Response(null, { status: 204 });
+      }
+    }
+
     // ---- Library browsing / search — one endpoint for all three item kinds ----
     if (method === 'GET' && path === '/Items') {
       const includeItemTypes = (url.searchParams.get('includeItemTypes') ?? '')
@@ -388,7 +481,7 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
         .split(',')
         .includes('IsFavorite');
 
-      let items: Array<RawArtist | RawAlbum | RawTrack> = [];
+      let items: Array<RawArtist | RawAlbum | RawTrack | ReturnType<typeof playlistDto>> = [];
       if (includeItemTypes.includes('MusicArtist')) {
         items = items.concat(ARTISTS.map((a) => artistDto(a, favorites)));
       }
@@ -401,6 +494,9 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
         let tracks = TRACKS;
         if (albumIds) tracks = tracks.filter((t) => t.albumId === albumIds);
         items = items.concat(tracks.map((t) => trackDto(t, favorites)));
+      }
+      if (includeItemTypes.includes('Playlist')) {
+        items = items.concat([...playlists.values()].map(playlistDto));
       }
       if (searchTerm) {
         items = items.filter((item) => (item.Name ?? '').toLowerCase().includes(searchTerm));

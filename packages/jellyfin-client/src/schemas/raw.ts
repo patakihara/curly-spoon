@@ -160,6 +160,71 @@ export const rawBaseItemDtoSchema = z
      * turns its absence into a definite `false` rather than an `undefined` a consumer would
      * have to special-case. */
     UserData: rawUserItemDataDtoSchema.nullable().optional(),
+    /** `MediaBrowser.Model/Dto/BaseItemDto.cs`'s `PlaylistItemId` — verified directly against
+     * that file, 2026-08-05: `public string PlaylistItemId { get; set; }`, and the file opens
+     * with `#nullable disable`, so it carries no compiler-enforced non-null guarantee despite
+     * the bare `string` type. Populated only on a `/Playlists/{id}/Items` response
+     * (`Jellyfin.Api/Controllers/PlaylistsController.cs`'s `GetPlaylistItems` sets
+     * `dtos[index].PlaylistItemId = items[index].Item1.ItemId?.ToString("N", ...)` after
+     * fetching — never on a plain `/Items` listing), and is a **playlist-entry id, distinct
+     * from the item's own `Id`**: `Item1` is the `LinkedChild` row backing this occurrence of
+     * the track *in this playlist*, not the track itself, which is exactly what lets the same
+     * track appear twice in one playlist and be removed once — see `client.ts`'s
+     * `removeFromPlaylist` doc comment. */
+    PlaylistItemId: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+// ---------------------------------------------------------------------------
+// Playlists — `Jellyfin.Api/Controllers/PlaylistsController.cs`. Verified directly against
+// that controller (not memory), 2026-08-05:
+//
+// - **No dedicated "list my playlists" route exists.** Playlists are library items like any
+//   other (`Jellyfin.Data/Enums/BaseItemKind.cs` has a `Playlist` member), so they're listed
+//   through the exact same `GET /Items?includeItemTypes=Playlist&recursive=true` every other
+//   item kind in this client already uses — `client.ts`'s `getPlaylists` reuses `queryItems`
+//   rather than adding a bespoke method.
+// - **Create**: `POST /Playlists`, body `CreatePlaylistDto` (`Jellyfin.Api/Models/
+//   PlaylistDtos/CreatePlaylistDto.cs`) — `Name` (required), `Ids` (item ids to seed the
+//   playlist with), `MediaType`, `UserId` (resolved from the caller's token when omitted,
+//   same `RequestHelpers.GetUserId` pattern as favourites). The controller also accepts a
+//   `[FromQuery, ParameterObsolete]` form of the same fields for backwards compatibility —
+//   not used here; the body is the current, non-obsolete path. Returns
+//   `PlaylistCreationResult` (`MediaBrowser.Model/Playlists/PlaylistCreationResult.cs`),
+//   just `{ Id: string }`.
+// - **Get items, in playlist order**: `GET /Playlists/{playlistId}/Items`, returning the same
+//   `QueryResult<BaseItemDto>` wrapper as `/Items` (`rawQueryResultSchema` covers it). Order
+//   is genuinely playlist order, not re-sorted: the handler builds the response from
+//   `playlist.GetManageableItems()`, which is `MediaBrowser.Controller/Playlists/Playlist.cs`'s
+//   `GetLinkedChildrenInfos()` — the playlist's own stored, ordered `LinkedChildren` list —
+//   never routed through `ItemsController`'s `sortBy`/`sortOrder` machinery the way a library
+//   browse is. This is the field `normalize.ts`'s `normalizePlaylistItem` trusts as given.
+// - **Add items**: `POST /Playlists/{playlistId}/Items?ids=<comma-delimited-guids>`, no body,
+//   204 on success — item ids, not entry ids (adding doesn't need to disambiguate an
+//   occurrence that doesn't exist yet).
+// - **Remove items**: `DELETE /Playlists/{playlistId}/Items?entryIds=<comma-delimited>`, 204
+//   on success. `entryIds` takes the **`PlaylistItemId` values from a prior
+//   `GET .../Items` response, not track ids** — confirmed directly in
+//   `RemoveItemFromPlaylist`'s signature (`string[] entryIds`, forwarded verbatim to
+//   `IPlaylistManager.RemoveItemFromPlaylistAsync(string playlistId, IEnumerable<string>
+//   entryIds)`) and in `GetPlaylistItems`'s field name for the same value. This is the
+//   surprise the wave spec called out: removal keys on the per-entry id, not the item id, so
+//   a track duplicated in one playlist can be removed once without touching its other
+//   occurrence.
+// - **No `[Obsolete]` alias found on any of the routes this client uses** — unlike
+//   favourites' `Users/{userId}/FavoriteItems/{itemId}`, `PlaylistsController.cs` has no
+//   commented-out or `[Obsolete]`-marked sibling for `POST /Playlists`, `GET .../Items`,
+//   `POST .../Items` or `DELETE .../Items`. The only `[ParameterObsolete]` markers are on
+//   `CreatePlaylist`'s query-parameter overload, avoided here by using the body instead.
+// ---------------------------------------------------------------------------
+
+/** `MediaBrowser.Model/Playlists/PlaylistCreationResult.cs` — the body of `POST /Playlists`.
+ * `Id` is a non-nullable `string` constructor parameter in the C# model (no `#nullable
+ * disable` on this file), so required here too, matching this package's convention of
+ * requiring fields the source itself guarantees. */
+export const rawPlaylistCreationResultSchema = z
+  .object({
+    Id: z.string(),
   })
   .passthrough();
 

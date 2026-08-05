@@ -7,7 +7,7 @@
  * `/Items` query model. See `schemas/raw.ts`'s file doc comment for the
  * sources each raw shape was verified against.
  *
- * Out of scope for this wave (see the phase 9 spec): playlists, favourites,
+ * Out of scope for this wave (see the phase 9 spec): favourites,
  * transcoding decisions, and the slskd music-request provider. Lyrics *display*
  * (`getLyrics`, below) shipped in the synced-lyrics-view wave; lyric *search* remains
  * out of scope — Jellyfin has no lyric-text search at all, see `docs/INTEGRATIONS.md`.
@@ -19,6 +19,7 @@ import type { JellyfinDeviceInfo } from './auth.js';
 import {
   rawAuthenticationResultSchema,
   rawLyricDtoSchema,
+  rawPlaylistCreationResultSchema,
   rawQueryResultSchema,
   rawUserItemDataDtoSchema,
   type rawBaseItemDtoSchema,
@@ -29,6 +30,8 @@ import {
   normalizeFavoriteState,
   normalizeLogin,
   normalizeLyrics,
+  normalizePlaylist,
+  normalizePlaylistItem,
   normalizeTrack,
 } from './normalize.js';
 import type {
@@ -37,6 +40,8 @@ import type {
   LibraryPage,
   LoginResult,
   Lyrics,
+  Playlist,
+  PlaylistItem,
   SearchResults,
   Track,
 } from './domain.js';
@@ -93,6 +98,7 @@ export interface LibraryQuery {
 }
 
 export type ArtistsQuery = LibraryQuery;
+export type PlaylistsQuery = LibraryQuery;
 
 export interface AlbumsQuery extends LibraryQuery {
   /** Scope to one artist's albums, via the `albumArtistIds` filter — chosen
@@ -122,6 +128,7 @@ type RawBaseItemDto = z.infer<typeof rawBaseItemDtoSchema>;
 const MUSIC_ARTIST_TYPE = 'MusicArtist';
 const MUSIC_ALBUM_TYPE = 'MusicAlbum';
 const AUDIO_TYPE = 'Audio';
+const PLAYLIST_TYPE = 'Playlist';
 
 /** .NET tick resolution: 100ns per tick, 10,000,000 ticks per second. This is the same
  * constant `normalize.ts` uses for `RunTimeTicks` — see that file's doc comment for the
@@ -246,6 +253,18 @@ export class JellyfinClient {
     const page = await this.queryItems(AUDIO_TYPE, { ...query, albumIds: query.albumId });
     return {
       items: page.items.map(normalizeTrack),
+      total: page.total,
+      startIndex: page.startIndex,
+    };
+  }
+
+  /** Lists playlists visible to the signed-in user. There is no dedicated "list my
+   * playlists" route — see `schemas/raw.ts`'s playlists section comment — so this reuses
+   * the same `/Items` listing every other item kind here goes through. */
+  async getPlaylists(query: PlaylistsQuery = {}): Promise<LibraryPage<Playlist>> {
+    const page = await this.queryItems(PLAYLIST_TYPE, query);
+    return {
+      items: page.items.map(normalizePlaylist),
       total: page.total,
       startIndex: page.startIndex,
     };
@@ -386,6 +405,85 @@ export class JellyfinClient {
         ItemId: itemId,
         PositionTicks: secondsToTicks(positionSeconds),
       },
+      schema: z.void(),
+      retryable: false,
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Playlists — `Jellyfin.Api/Controllers/PlaylistsController.cs`. Verified directly against
+  // that controller (not memory), 2026-08-05 — see `schemas/raw.ts`'s playlists section
+  // comment for the full route-by-route findings, including that removal keys on the
+  // per-entry `PlaylistItemId`, not the track's own id, and that none of these routes have
+  // an `[Obsolete]` alias the way favourites' did.
+  // ---------------------------------------------------------------------
+
+  /** Fetches `playlistId`'s tracks in playlist order — see `PlaylistItem`'s doc comment and
+   * `schemas/raw.ts`'s playlists section for why this order is trustworthy as returned. */
+  async getPlaylistItems(
+    playlistId: string,
+    query: { startIndex?: number; limit?: number } = {},
+  ): Promise<LibraryPage<PlaylistItem>> {
+    const raw = await this.http.requestJson(`/Playlists/${playlistId}/Items`, {
+      schema: rawQueryResultSchema,
+      query: {
+        startIndex: query.startIndex,
+        limit: query.limit,
+        // `GetPlaylistItems`'s own `DtoOptions.Fields` defaults to empty unless this is
+        // sent — verified against `MediaBrowser.Controller/Dto/DtoOptions.cs` — unlike a
+        // plain `/Items` browse, whose `InternalItemsQuery` has its own separate default
+        // field set. `ImageTags`/`UserData` are unaffected (`EnableImages`/`EnableUserData`
+        // default `true` regardless), but `Genres` is field-gated, so it's requested
+        // explicitly here to match what `getTracks` returns for the same track elsewhere.
+        fields: 'Genres',
+      },
+    });
+    const items = raw.Items ?? [];
+    return {
+      items: items.map(normalizePlaylistItem),
+      total: raw.TotalRecordCount ?? 0,
+      startIndex: raw.StartIndex ?? 0,
+    };
+  }
+
+  /** Creates a playlist named `name`, optionally seeded with `itemIds`, and returns its new
+   * id. Sends `MediaType: 'Audio'` since every playlist this client creates is a music
+   * playlist — `CreatePlaylistDto.MediaType` (`Jellyfin.Api/Models/PlaylistDtos/
+   * CreatePlaylistDto.cs`) is otherwise left for Jellyfin to infer from its seed items,
+   * which would leave an empty new playlist untyped. */
+  async createPlaylist(name: string, itemIds: string[] = []): Promise<string> {
+    const raw = await this.http.requestJson('/Playlists', {
+      method: 'POST',
+      body: { Name: name, Ids: itemIds, MediaType: 'Audio' },
+      schema: rawPlaylistCreationResultSchema,
+      retryable: false,
+    });
+    return raw.Id;
+  }
+
+  /** Appends `itemIds` to the end of `playlistId`. Item ids, not playlist-entry ids — see
+   * `removeFromPlaylist`'s doc comment for the distinction, which only matters on the way
+   * out. */
+  async addToPlaylist(playlistId: string, itemIds: string[]): Promise<void> {
+    await this.http.requestJson(`/Playlists/${playlistId}/Items`, {
+      method: 'POST',
+      query: { ids: itemIds.join(',') },
+      schema: z.void(),
+      retryable: false,
+    });
+  }
+
+  /** Removes the given playlist entries. `playlistItemIds` must be `PlaylistItem
+   * .playlistItemId` values from a prior `getPlaylistItems` call — **not** track ids.
+   * Jellyfin's `DELETE /Playlists/{id}/Items` keys removal on the per-entry id precisely so
+   * a track that appears twice in one playlist can be removed once without touching its
+   * other occurrence; passing a track id here would not match any entry and Jellyfin would
+   * silently remove nothing. See `schemas/raw.ts`'s playlists section for the source
+   * citation. */
+  async removeFromPlaylist(playlistId: string, playlistItemIds: string[]): Promise<void> {
+    await this.http.requestJson(`/Playlists/${playlistId}/Items`, {
+      method: 'DELETE',
+      query: { entryIds: playlistItemIds.join(',') },
       schema: z.void(),
       retryable: false,
     });

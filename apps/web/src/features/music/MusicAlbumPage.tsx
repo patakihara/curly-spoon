@@ -33,6 +33,7 @@ import { useJellyfinAlbumQuery, useJellyfinTracksQuery } from '../../api/queries
 import { jellyfinSource } from '../player/playbackSource.js';
 import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
+import { AddToPlaylistButton } from './AddToPlaylistButton.js';
 import { FavoriteToggle } from './FavoriteToggle.js';
 import { summarizePage } from './pagination.js';
 import { albumQueue } from './queue.js';
@@ -62,6 +63,9 @@ export function MusicAlbumPage() {
 
   const onFavoriteError = () =>
     snackbar.enqueue({ message: "Couldn't update favourite — try again." });
+  const onPlaylistError = () =>
+    snackbar.enqueue({ message: "Couldn't update that playlist — try again." });
+  const onAdded = () => snackbar.enqueue({ message: 'Added to playlist.' });
 
   const playTrack = (clicked: JellyfinTrack) => {
     const queue = albumQueue(tracks);
@@ -117,6 +121,14 @@ export function MusicAlbumPage() {
           onError={onFavoriteError}
           data-testid="music-album-favorite"
         />
+        <AddToPlaylistButton
+          tracks={tracks}
+          label={albumName}
+          stopPropagation={false}
+          onError={onPlaylistError}
+          onAdded={onAdded}
+          data-testid="music-album-add-to-playlist"
+        />
       </div>
 
       {tracksQuery.isLoading ? (
@@ -144,13 +156,22 @@ export function MusicAlbumPage() {
                   track.durationSeconds !== null ? formatDuration(track.durationSeconds) : undefined
                 }
                 trailing={
-                  <FavoriteToggle
-                    itemId={track.id}
-                    itemName={track.name}
-                    favorite={track.favorite}
-                    onError={onFavoriteError}
-                    data-testid={`music-track-favorite-${track.id}`}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <AddToPlaylistButton
+                      tracks={[track]}
+                      label={track.name}
+                      onError={onPlaylistError}
+                      onAdded={onAdded}
+                      data-testid={`music-track-add-to-playlist-${track.id}`}
+                    />
+                    <FavoriteToggle
+                      itemId={track.id}
+                      itemName={track.name}
+                      favorite={track.favorite}
+                      onError={onFavoriteError}
+                      data-testid={`music-track-favorite-${track.id}`}
+                    />
+                  </div>
                 }
               />
             ))}
