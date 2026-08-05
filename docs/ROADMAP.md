@@ -806,6 +806,26 @@ mean query-shape bugs like this one are testable.
   fired unawaited immediately after — so the two requests have no guaranteed wire ordering.
   Pre-existing, not introduced by the fix.
 
+- **Web wave E — favourites: done (`25cee48`, merged `905cd60`).** Mark and unmark tracks,
+  albums and artists, plus a `/music/favorites` view. Verified against Jellyfin's source: the
+  live routes are `POST`/`DELETE /UserFavoriteItems/{itemId}` — the `Users/{userId}/
+FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete alias** — and
+  no Jellyfin user id has to be threaded through at all, because `RequestHelpers.GetUserId`
+  falls back to the id inside the caller's own token. Favourite state comes from
+  `BaseItemDto.UserData.IsFavorite`, which is populated by default (`DtoOptions()`'s
+  parameterless constructor sets `EnableUserData = true`, and nothing here sends the parameter
+  that would override it) — worth knowing, because if it had needed an explicit request
+  parameter, every item would have read as un-favourited and looked like a sync bug rather
+  than a missing flag. Listing is `filters=IsFavorite` on `/Items`.
+
+  The toggle updates optimistically across **every** cached Jellyfin query rather than only
+  the list it was clicked in, so the same album shows the same state everywhere at once, and
+  rolls back with a snackbar on failure — a silent revert would leave the user believing a
+  toggle landed. Three separate sections rather than one merged list, because Jellyfin has no
+  single "all favourites" endpoint to merge from.
+
+  Not covered: `MusicHomePage`'s artist grid and search results have no toggle yet.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
