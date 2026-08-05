@@ -713,6 +713,20 @@ decision, not on remaining build time — see the bullet at the end of this sect
   seconds. Scroll behaviour is driven from `ThemeProvider`'s own `prefersReducedMotion`, not
   from a library prop, for the reason the Mantine notes below already record.
 
+  Playwright coverage followed in `b35bba8` (merged `90b2485`), closing the gap below for
+  the branches that matter: active-line tracking across a real timestamp boundary, unsynced
+  lyrics staying unhighlighted, the no-lyrics copy not being announced as an alert, a book
+  firing **no** lyrics request (asserted on the network, since a fetched-and-discarded request
+  passes a UI-only check), reduced motion reaching `scrollIntoView`, and the active line
+  actually scrolling. Stable across three consecutive runs; full suite 243/243.
+
+**A real bug that coverage pass found in `packages/ui`, not yet fixed**:
+`Slider.tsx` destructures `data-testid` into `...rest` and then never spreads `...rest` onto
+any rendered node, so the prop is silently dropped — `NowPlaying.tsx`'s
+`data-testid="player-scrubber"` does not exist in the DOM. Nothing had caught it because no
+test drove the scrubber directly. Anything else passed to `Slider` as a pass-through prop is
+dropped the same way.
+
 **A repo-wide testing gap this wave surfaced, not caused**: `vitest.config.ts` collects only
 `apps/web/src/**/*.test.ts` in a `node` environment, and neither jsdom/happy-dom nor
 `@testing-library/react` is installed — there is **no `.test.tsx` anywhere in the repo and no
