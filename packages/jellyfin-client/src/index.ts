@@ -1,4 +1,4 @@
-export { JellyfinClient } from './client.js';
+export { JellyfinClient, secondsToTicks } from './client.js';
 export type {
   JellyfinClientConfig,
   LibraryQuery,

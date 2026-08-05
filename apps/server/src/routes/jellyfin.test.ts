@@ -323,6 +323,108 @@ describe('GET /api/v1/jellyfin/search', () => {
   });
 });
 
+describe('POST /api/v1/jellyfin/playback/start|progress|stopped', () => {
+  it('start requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/start',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 0 },
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('progress requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/progress',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 30 },
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('stopped requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/stopped',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 30 },
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('start reports 204 with an empty body on success', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/start',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 0 },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(204);
+    expect(response.body).toBe('');
+  });
+
+  it('progress reports 204, accepting an optional isPaused flag', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/progress',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 45.5, isPaused: true },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(204);
+    expect(response.body).toBe('');
+  });
+
+  it('stopped reports 204 with an empty body on success', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/stopped',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 214 },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(204);
+    expect(response.body).toBe('');
+  });
+
+  it('rejects a missing itemId with 400 before ever calling upstream', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/progress',
+      payload: { positionSeconds: 10 },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('rejects a negative positionSeconds with 400', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/start',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: -1 },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('409s with jellyfin_not_configured when no Jellyfin server has ever been connected — same as /jellyfin/tracks', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/progress',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 10 },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
+});
+
 describe('GET /api/v1/jellyfin/tracks/:itemId/stream', () => {
   it('requires authentication', async () => {
     const { app } = buildTestApp();
@@ -397,7 +499,7 @@ describe('GET /api/v1/jellyfin/items/:itemId/artwork', () => {
 });
 
 describe('no route ever leaks the stored Jellyfin access token into a response body', () => {
-  it('checks login, browse, search and both media-proxy responses', async () => {
+  it('checks login, browse, search, both media-proxy responses and the three playback reports', async () => {
     const { app, cookie } = await jellyfinConnectedApp();
 
     const responses = await Promise.all([
@@ -431,10 +533,65 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
         url: '/api/v1/jellyfin/items/album-driftwave/artwork',
         cookies: { auralis_session: cookie },
       }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playback/start',
+        payload: { itemId: 'track-driftwave-1', positionSeconds: 0 },
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playback/progress',
+        payload: { itemId: 'track-driftwave-1', positionSeconds: 30 },
+        cookies: { auralis_session: cookie },
+      }),
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playback/stopped',
+        payload: { itemId: 'track-driftwave-1', positionSeconds: 60 },
+        cookies: { auralis_session: cookie },
+      }),
     ]);
 
     for (const response of responses) {
       expect(response.body).not.toMatch(/fake-jellyfin-token-/);
+      for (const value of Object.values(response.headers)) {
+        expect(String(value)).not.toMatch(/fake-jellyfin-token-/);
+      }
     }
+  });
+
+  it('an upstream failure produces a typed error whose message never echoes the upstream URL', async () => {
+    // Jellyfin is configured and this user has a token, but the stored base URL itself is
+    // wrong (points nowhere the fake upstream answers for) — the same "network failure"
+    // path a real DNS/connection failure would take, and the shape `JellyfinError.network`
+    // produces never includes the URL it was constructed from (see errors.ts).
+    const { app, cookie } = await authedApp();
+    const badLogin = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: 'http://not-the-fake-upstream.invalid', ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    // The login call itself fails against an unreachable host (the fake throws a
+    // getaddrinfo-shaped error for any origin other than FAKE_JELLYFIN_BASE_URL), so
+    // nothing gets persisted. Its own error body is the first place a leak could show up.
+    expect(badLogin.statusCode).not.toBe(200);
+    // JellyfinError never carries the full URL it was constructed from (see errors.ts) —
+    // only `network()`'s underlying `cause.message` reaches the response, and that never
+    // includes a scheme, so no full URL (which for the media-proxy routes would carry
+    // ApiKey=<token>) is ever echoed back.
+    expect(badLogin.body).not.toMatch(/http:\/\//);
+
+    // Confirm playback/progress against the still-unconfigured server takes the
+    // not-configured path rather than leaking anything about the attempted URL.
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/progress',
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 10 },
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.body).not.toMatch(/not-the-fake-upstream/);
   });
 });

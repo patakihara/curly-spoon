@@ -507,4 +507,66 @@ describe('ApiClient', () => {
       );
     });
   });
+
+  describe('Jellyfin playback progress reporting', () => {
+    it('POSTs itemId/positionSeconds to /jellyfin/playback/start and resolves on a 204', async () => {
+      const fetchFn = fakeFetch(() => new Response(null, { status: 204 }));
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await expect(
+        client.reportJellyfinPlaybackStart('track-driftwave-1', 0),
+      ).resolves.toBeUndefined();
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/playback/start');
+      expect(init?.method).toBe('POST');
+      expect(JSON.parse(String(init?.body))).toEqual({
+        itemId: 'track-driftwave-1',
+        positionSeconds: 0,
+      });
+    });
+
+    it('POSTs to /jellyfin/playback/progress, including isPaused when given', async () => {
+      const fetchFn = fakeFetch(() => new Response(null, { status: 204 }));
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.reportJellyfinPlaybackProgress('track-driftwave-1', 45.5, { isPaused: true });
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/playback/progress');
+      expect(JSON.parse(String(init?.body))).toEqual({
+        itemId: 'track-driftwave-1',
+        positionSeconds: 45.5,
+        isPaused: true,
+      });
+    });
+
+    it('POSTs itemId/positionSeconds to /jellyfin/playback/stopped', async () => {
+      const fetchFn = fakeFetch(() => new Response(null, { status: 204 }));
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await client.reportJellyfinPlaybackStopped('track-driftwave-1', 214);
+
+      const [url, init] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/jellyfin/playback/stopped');
+      expect(JSON.parse(String(init?.body))).toEqual({
+        itemId: 'track-driftwave-1',
+        positionSeconds: 214,
+      });
+    });
+
+    it('rejects with a typed ApiError on an upstream failure, not a raw fetch throw', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(JSON.stringify({ error: { code: 'jellyfin_unreachable' } }), {
+            status: 502,
+          }),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await expect(
+        client.reportJellyfinPlaybackProgress('track-driftwave-1', 10),
+      ).rejects.toBeInstanceOf(ApiError);
+    });
+  });
 });

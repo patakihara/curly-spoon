@@ -84,7 +84,7 @@ export function MusicAlbumPage() {
       audioTracks: queue.audioTracks,
       chapters: [],
     };
-    usePlayerStore.getState().load(item, session, jellyfinSource(api));
+    usePlayerStore.getState().load(item, session, jellyfinSource(api, queue.audioTracks));
     usePlayerStore.getState().play();
   };
 

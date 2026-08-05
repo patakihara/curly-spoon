@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JellyfinClient } from './client.js';
+import { JellyfinClient, secondsToTicks } from './client.js';
 import type { JellyfinError } from './errors.js';
 import type { FetchLike } from './http.js';
 
@@ -8,6 +8,13 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+/** Jellyfin's real `PlaystateController` returns `NoContent()` on every successful
+ * playback report — 204, empty body — verified against `Jellyfin.Api/Controllers/
+ * PlaystateController.cs`. */
+function noContent(): Response {
+  return new Response(null, { status: 204 });
 }
 
 /** A router-shaped fake so each test only states the routes it cares about. */
@@ -290,5 +297,134 @@ describe('JellyfinClient.withToken', () => {
     expect(original.token).toBeUndefined();
     expect(authed.token).toBe('new-token');
     await authed.getArtists();
+  });
+});
+
+describe('secondsToTicks', () => {
+  it('converts whole seconds to .NET ticks (10,000,000 per second)', () => {
+    expect(secondsToTicks(1)).toBe(10_000_000);
+    expect(secondsToTicks(214)).toBe(2_140_000_000);
+  });
+
+  it('rounds a fractional-second position rather than truncating', () => {
+    expect(secondsToTicks(125.5)).toBe(1_255_000_000);
+    expect(secondsToTicks(0)).toBe(0);
+  });
+});
+
+describe('JellyfinClient.reportPlaybackStart', () => {
+  it('POSTs /Sessions/Playing with the token header and the converted position', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing': ({ init }) => {
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        expect(JSON.parse(init?.body as string)).toEqual({
+          ItemId: 'track-1',
+          PositionTicks: 0,
+          IsPaused: false,
+        });
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.reportPlaybackStart('track-1')).resolves.toBeUndefined();
+  });
+
+  it('accepts a starting position in seconds, converted to ticks', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing': ({ init }) => {
+        expect(JSON.parse(init?.body as string)).toMatchObject({ PositionTicks: 45_000_000 });
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await client.reportPlaybackStart('track-1', 4.5);
+  });
+});
+
+describe('JellyfinClient.reportPlaybackProgress', () => {
+  it('POSTs /Sessions/Playing/Progress with the item id and converted position', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing/Progress': ({ init }) => {
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        expect(JSON.parse(init?.body as string)).toEqual({
+          ItemId: 'track-2',
+          PositionTicks: 1_255_000_000,
+          IsPaused: false,
+        });
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.reportPlaybackProgress('track-2', 125.5)).resolves.toBeUndefined();
+  });
+
+  it('carries an explicit isPaused flag through to the request body', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing/Progress': ({ init }) => {
+        expect(JSON.parse(init?.body as string)).toMatchObject({ IsPaused: true });
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await client.reportPlaybackProgress('track-2', 10, { isPaused: true });
+  });
+});
+
+describe('JellyfinClient.reportPlaybackStopped', () => {
+  it('POSTs /Sessions/Playing/Stopped with the item id and converted position', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing/Stopped': ({ init }) => {
+        const headers = init?.headers as Record<string, string>;
+        expect(headers.Authorization).toContain('Token="tok"');
+        expect(JSON.parse(init?.body as string)).toEqual({
+          ItemId: 'track-3',
+          PositionTicks: 2_140_000_000,
+        });
+        return noContent();
+      },
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.reportPlaybackStopped('track-3', 214)).resolves.toBeUndefined();
+  });
+});
+
+describe('playback-report error handling', () => {
+  it('surfaces an upstream 5xx as a typed JellyfinError whose message never carries the token', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing/Progress': () =>
+        new Response('server exploded, ApiKey=tok-should-not-leak', { status: 500 }),
+    });
+    const client = makeClient(fetchFn, 'super-secret-token');
+
+    const err = await client.reportPlaybackProgress('track-1', 1).catch((e: unknown) => e);
+
+    expect((err as JellyfinError).code).toBe('upstream_error');
+    expect((err as JellyfinError).message).not.toContain('super-secret-token');
+  });
+
+  it('surfaces an upstream 401 as a typed auth JellyfinError', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing': () => new Response('nope', { status: 401 }),
+    });
+    const client = makeClient(fetchFn);
+
+    const err = await client.reportPlaybackStart('track-1').catch((e: unknown) => e);
+    expect((err as JellyfinError).code).toBe('auth');
+  });
+
+  it('resolves without throwing when Jellyfin returns 204 with an empty body', async () => {
+    const fetchFn = router({
+      'POST /Sessions/Playing/Stopped': () => noContent(),
+    });
+    const client = makeClient(fetchFn);
+
+    await expect(client.reportPlaybackStopped('track-1', 1)).resolves.toBeUndefined();
   });
 });

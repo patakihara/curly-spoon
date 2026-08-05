@@ -116,21 +116,26 @@ describe('noopProgressReporter', () => {
 function fakeJellyfinApi() {
   return {
     jellyfinTrackStreamUrl: vi.fn((itemId: string) => `/jellyfin/tracks/${itemId}/stream`),
+    reportJellyfinPlaybackStart: vi.fn().mockResolvedValue(undefined),
+    reportJellyfinPlaybackProgress: vi.fn().mockResolvedValue(undefined),
+    reportJellyfinPlaybackStopped: vi.fn().mockResolvedValue(undefined),
   };
 }
 
-describe('jellyfinSource', () => {
-  describe('reportProgress', () => {
-    it('is the shared no-op reporter — Jellyfin PlaybackProgress reporting is not wired up', () => {
-      const source = jellyfinSource(fakeJellyfinApi());
-      expect(source.reportProgress).toBe(noopProgressReporter);
-    });
-  });
+/** A three-track album queue laid out end to end on one cumulative timeline, exactly as
+ * `queue.ts`'s `albumQueue` builds one — track B (index 1) starts at 100s and runs 150s,
+ * so time 130 lands 30s into track B, not 130s into anything. */
+const ALBUM_QUEUE: AudioTrack[] = [
+  track({ index: 0, startOffset: 0, duration: 100, contentUrl: 'jf-track-a' }),
+  track({ index: 1, startOffset: 100, duration: 150, contentUrl: 'jf-track-b' }),
+  track({ index: 2, startOffset: 250, duration: 80, contentUrl: 'jf-track-c' }),
+];
 
+describe('jellyfinSource', () => {
   describe('resolveTrackUrl', () => {
     it('resolves a track to the proxied stream URL, keyed by the track’s own Jellyfin id', () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api);
+      const source = jellyfinSource(api, ALBUM_QUEUE);
 
       expect(source.resolveTrackUrl(track({ contentUrl: 'jf-track-1' }))).toBe(
         '/jellyfin/tracks/jf-track-1/stream',
@@ -140,11 +145,126 @@ describe('jellyfinSource', () => {
 
     it('degrades to null for a track with no usable id, rather than throwing', () => {
       const api = fakeJellyfinApi();
-      const source = jellyfinSource(api);
+      const source = jellyfinSource(api, ALBUM_QUEUE);
 
       expect(source.resolveTrackUrl(track({ contentUrl: null }))).toBeNull();
       expect(source.resolveTrackUrl(track({ contentUrl: '' }))).toBeNull();
       expect(api.jellyfinTrackStreamUrl).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reportProgress.onTick', () => {
+    it('maps a queue-timeline position into the second track of a three-track album, reporting that track’s id and a position relative to its own start', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onTick({ currentTime: 130, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-b', 30);
+    });
+
+    it('fires a lazy start report on the very first tick, before the progress report', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onTick({ currentTime: 30, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStart).toHaveBeenCalledWith('jf-track-a', 30);
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledWith('jf-track-a', 30);
+    });
+
+    it('does not re-fire the start report on a later tick within the same track', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onTick({ currentTime: 10, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+      source.reportProgress.onTick({ currentTime: 50, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStart).toHaveBeenCalledTimes(1);
+      expect(api.reportJellyfinPlaybackProgress).toHaveBeenCalledTimes(2);
+    });
+
+    it('fires a new start report when the queue advances past a track boundary', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onTick({ currentTime: 90, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+      source.reportProgress.onTick({ currentTime: 130, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStart).toHaveBeenNthCalledWith(1, 'jf-track-a', 90);
+      expect(api.reportJellyfinPlaybackStart).toHaveBeenNthCalledWith(2, 'jf-track-b', 30);
+      expect(api.reportJellyfinPlaybackStart).toHaveBeenCalledTimes(2);
+    });
+
+    it('reports nothing when the position resolves to no track at all', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, []);
+
+      source.reportProgress.onTick(BODY);
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStart).not.toHaveBeenCalled();
+      expect(api.reportJellyfinPlaybackProgress).not.toHaveBeenCalled();
+    });
+
+    it('never throws synchronously, even if the underlying reports reject', () => {
+      const api = fakeJellyfinApi();
+      api.reportJellyfinPlaybackStart.mockRejectedValue(new Error('network down'));
+      api.reportJellyfinPlaybackProgress.mockRejectedValue(new Error('network down'));
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      expect(() =>
+        source.reportProgress.onTick({ currentTime: 30, timeListened: 15, duration: 330 }),
+      ).not.toThrow();
+    });
+  });
+
+  describe('reportProgress.onEnd', () => {
+    it('sends a stopped report mapped to the resolved track, given a body', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onEnd({ currentTime: 130, timeListened: 15, duration: 330 });
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStopped).toHaveBeenCalledWith('jf-track-b', 30);
+    });
+
+    it('sends no stop report for a null body — no track was ever identified to stop', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      source.reportProgress.onEnd(null);
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStopped).not.toHaveBeenCalled();
+      expect(api.reportJellyfinPlaybackStart).not.toHaveBeenCalled();
+    });
+
+    it('sends no stop report when a body exists but no track resolves from it', async () => {
+      const api = fakeJellyfinApi();
+      const source = jellyfinSource(api, []);
+
+      source.reportProgress.onEnd(BODY);
+      await Promise.resolve();
+
+      expect(api.reportJellyfinPlaybackStopped).not.toHaveBeenCalled();
+    });
+
+    it('never throws synchronously, even if the underlying report rejects', () => {
+      const api = fakeJellyfinApi();
+      api.reportJellyfinPlaybackStopped.mockRejectedValue(new Error('network down'));
+      const source = jellyfinSource(api, ALBUM_QUEUE);
+
+      expect(() =>
+        source.reportProgress.onEnd({ currentTime: 30, timeListened: 15, duration: 330 }),
+      ).not.toThrow();
     });
   });
 });

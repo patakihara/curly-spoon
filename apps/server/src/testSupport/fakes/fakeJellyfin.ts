@@ -337,6 +337,23 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
       });
     }
 
+    // ---- Playback progress reporting ----
+    // Mirrors the real `PlaystateController`'s three routes, verified against
+    // `Jellyfin.Api/Controllers/PlaystateController.cs`: every one of
+    // `ReportPlaybackStart`/`ReportPlaybackProgress`/`ReportPlaybackStopped` returns
+    // `NoContent()` on success — 204, empty body — regardless of whether a start report
+    // preceded a progress/stop report, so this fake does the same without tracking any
+    // session state across the three calls.
+    if (method === 'POST' && path === '/Sessions/Playing') {
+      return new Response(null, { status: 204 });
+    }
+    if (method === 'POST' && path === '/Sessions/Playing/Progress') {
+      return new Response(null, { status: 204 });
+    }
+    if (method === 'POST' && path === '/Sessions/Playing/Stopped') {
+      return new Response(null, { status: 204 });
+    }
+
     return notFound();
   };
 

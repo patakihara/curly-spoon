@@ -24,7 +24,7 @@
  */
 import type { ApiClient } from '../../api/client.js';
 import type { AudioTrack } from '../../api/types.js';
-import { fileIdFromContentUrl } from './playback.js';
+import { fileIdFromContentUrl, trackAt } from './playback.js';
 import type { ProgressSyncBody } from './progressSync.js';
 
 /**
@@ -126,21 +126,100 @@ export const noopProgressReporter: PlaybackProgressReporter = {
 /**
  * Music (Phase 9 web wave). Unlike `audiobookshelfSource`, there is no session to open or
  * close — Jellyfin's stream/artwork routes are stateless proxies keyed by the track's own
- * item id (`routes/jellyfin.ts`), so this source needs no `itemId`/`sessionId` closed over
- * at construction, and `reportProgress` is the plain `noopProgressReporter`: Jellyfin has
- * its own `PlaybackProgress` API, but nothing here calls it yet, so a track played through
- * this source reports nothing upstream — an upstream "continue listening" shelf or resume
- * point will not reflect it. That gap is deliberate scope, not an oversight; see this
- * module's own header and `noopProgressReporter`'s doc comment.
+ * item id (`routes/jellyfin.ts`).
  *
  * `resolveTrackUrl` reads `track.contentUrl` as the track's own Jellyfin item id directly
  * (an opaque per-source token — see `AudioTrack.contentUrl`'s doc comment in `api/types.ts`
  * — never a literal URL), which is exactly what `features/music/queue.ts`'s `albumQueue`
  * puts there.
+ *
+ * `reportProgress` now actually reports, via `POST /jellyfin/playback/{start,progress,
+ * stopped}` (`@auralis/jellyfin-client`'s `reportPlaybackStart`/`reportPlaybackProgress`/
+ * `reportPlaybackStopped`, proxied by the BFF — see `routes/jellyfin.ts`). The one thing
+ * that makes this harder than `audiobookshelfSource` above: `ProgressSyncBody.currentTime`
+ * is a position on the *queue's* cumulative timeline (`queue.ts`'s `albumQueue` lays an
+ * album's tracks end to end on the same `startOffset` timeline a multi-file audiobook
+ * already plays through), but Jellyfin wants a position *within the currently playing
+ * track*, plus that track's own item id. `audioTracks` — the same array
+ * `playerStore.load()` was given, i.e. the queue this source was constructed for — is
+ * what `resolveQueuePosition` below maps a cumulative time back through, reusing
+ * `playback.ts`'s `trackAt` (the same walk `useAudioElement`'s own track-boundary logic
+ * already relies on) rather than re-deriving that walk here.
+ *
+ * Two design decisions the spec left open, made here and not elsewhere:
+ *
+ * 1. **Lazy, per-track start report.** Jellyfin's `ReportPlaybackStart` establishes the
+ *    session's `NowPlayingItem` server-side — what its "continue listening"/resume data is
+ *    built from (verified against `Emby.Server.Implementations/Session/SessionManager.cs`:
+ *    `OnPlaybackStart` calls `UpdateNowPlayingItem(..., true)`, which `OnPlaybackProgress`
+ *    doesn't redo when it's already been set) — but `PlaybackProgressReporter` deliberately
+ *    has no `onStart` hook (see this file's header), and there is no natural "track
+ *    changed" event this source is ever handed on its own. So a start report fires lazily,
+ *    inside `onTick`, tracked in the `lastStartedItemId` closure below: once on the very
+ *    first tick a track resolves, and again whenever the resolved item id changes from the
+ *    last one reported (an album queue advancing past a track boundary). This stays inside
+ *    `jellyfinSource` — the shared `PlaybackProgressReporter` interface is unchanged.
+ * 2. **A `null` onEnd body sends no stop report.** `onEnd` receives `null` precisely when
+ *    `duration` was never learned before teardown — a session opened and torn down before
+ *    the queue's total duration was known, which also means `resolveQueuePosition` could
+ *    never have resolved a track, so no item id was ever identified to report a stop
+ *    *for*. Sending a stop report needs an item id; skip it rather than guess one.
+ *
+ * `reportProgress`'s three network calls are fire-and-forget with a swallowed `.catch`,
+ * matching `audiobookshelfSource`'s own contract above: a failed report leaves Jellyfin's
+ * resume position slightly stale, never tears the player down.
  */
-export function jellyfinSource(api: Pick<ApiClient, 'jellyfinTrackStreamUrl'>): PlaybackSource {
+function resolveQueuePosition(
+  audioTracks: AudioTrack[],
+  currentTime: number,
+): { itemId: string; positionSeconds: number } | null {
+  const resolved = trackAt(audioTracks, currentTime);
+  if (!resolved) return null;
+  const itemId = resolved.track.contentUrl;
+  if (!itemId) return null;
+  return { itemId, positionSeconds: resolved.offsetInTrack };
+}
+
+export function jellyfinSource(
+  api: Pick<
+    ApiClient,
+    | 'jellyfinTrackStreamUrl'
+    | 'reportJellyfinPlaybackStart'
+    | 'reportJellyfinPlaybackProgress'
+    | 'reportJellyfinPlaybackStopped'
+  >,
+  audioTracks: AudioTrack[],
+): PlaybackSource {
+  // Closure state, not `PlaybackProgressReporter` state — see this function's doc comment,
+  // decision 1. `null` until the first tick resolves a track.
+  let lastStartedItemId: string | null = null;
+
   return {
-    reportProgress: noopProgressReporter,
+    reportProgress: {
+      onTick(body) {
+        const resolved = resolveQueuePosition(audioTracks, body.currentTime);
+        if (!resolved) return;
+        if (resolved.itemId !== lastStartedItemId) {
+          lastStartedItemId = resolved.itemId;
+          void api
+            .reportJellyfinPlaybackStart(resolved.itemId, resolved.positionSeconds)
+            .catch(() => undefined);
+        }
+        void api
+          .reportJellyfinPlaybackProgress(resolved.itemId, resolved.positionSeconds)
+          .catch(() => undefined);
+      },
+      onEnd(body) {
+        // See this function's doc comment, decision 2: no body means no track was ever
+        // identified, so there is nothing to send a stop report *for*.
+        if (!body) return;
+        const resolved = resolveQueuePosition(audioTracks, body.currentTime);
+        if (!resolved) return;
+        void api
+          .reportJellyfinPlaybackStopped(resolved.itemId, resolved.positionSeconds)
+          .catch(() => undefined);
+      },
+    },
     resolveTrackUrl(track) {
       const id = track.contentUrl;
       if (!id) return null;

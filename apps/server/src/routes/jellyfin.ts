@@ -29,6 +29,8 @@ import {
   jellyfinItemIdParamSchema,
   jellyfinLibraryQuerySchema,
   jellyfinLoginBodySchema,
+  jellyfinPlaybackProgressBodySchema,
+  jellyfinPlaybackReportBodySchema,
   jellyfinSearchQuerySchema,
   jellyfinTracksQuerySchema,
 } from './schemas.js';
@@ -175,6 +177,59 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
     try {
       const client = app.jellyfin.forUser(request.userId!);
       return reply.send(await client.search(query.term, { limit: query.limit }));
+    } catch (err) {
+      handleUpstreamError(reply, err);
+      return undefined;
+    }
+  });
+
+  // ---------------------------------------------------------------------
+  // Playback progress reporting — mirrors `JellyfinClient.reportPlaybackStart`/
+  // `reportPlaybackProgress`/`reportPlaybackStopped` one route per method. Same shape as
+  // every other route here: `requireSession`, `app.jellyfin.forUser`, and
+  // `handleUpstreamError` for the not-configured/no-credentials/upstream-failure cases —
+  // no new error handling invented for these three.
+  // ---------------------------------------------------------------------
+
+  app.post('/jellyfin/playback/start', { preHandler: requireSession }, async (request, reply) => {
+    const body = parseInput(reply, jellyfinPlaybackReportBodySchema, request.body);
+    if (!body) return undefined;
+    try {
+      const client = app.jellyfin.forUser(request.userId!);
+      await client.reportPlaybackStart(body.itemId, body.positionSeconds);
+      return reply.code(204).send();
+    } catch (err) {
+      handleUpstreamError(reply, err);
+      return undefined;
+    }
+  });
+
+  app.post(
+    '/jellyfin/playback/progress',
+    { preHandler: requireSession },
+    async (request, reply) => {
+      const body = parseInput(reply, jellyfinPlaybackProgressBodySchema, request.body);
+      if (!body) return undefined;
+      try {
+        const client = app.jellyfin.forUser(request.userId!);
+        await client.reportPlaybackProgress(body.itemId, body.positionSeconds, {
+          isPaused: body.isPaused,
+        });
+        return reply.code(204).send();
+      } catch (err) {
+        handleUpstreamError(reply, err);
+        return undefined;
+      }
+    },
+  );
+
+  app.post('/jellyfin/playback/stopped', { preHandler: requireSession }, async (request, reply) => {
+    const body = parseInput(reply, jellyfinPlaybackReportBodySchema, request.body);
+    if (!body) return undefined;
+    try {
+      const client = app.jellyfin.forUser(request.userId!);
+      await client.reportPlaybackStopped(body.itemId, body.positionSeconds);
+      return reply.code(204).send();
     } catch (err) {
       handleUpstreamError(reply, err);
       return undefined;

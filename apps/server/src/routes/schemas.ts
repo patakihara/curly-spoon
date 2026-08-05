@@ -218,3 +218,18 @@ export const jellyfinSearchQuerySchema = z.object({
 });
 
 export const jellyfinItemIdParamSchema = z.object({ itemId: z.string().min(1) });
+
+/** Body for the three `POST /jellyfin/playback/*` routes — mirrors `JellyfinClient`'s
+ * `reportPlaybackStart`/`reportPlaybackProgress`/`reportPlaybackStopped` parameters
+ * one-for-one. `positionSeconds` stays in seconds at this boundary too, same reasoning as
+ * the client package: the tick conversion is Jellyfin's own internal concern, not
+ * something either the BFF or its caller should have to think about. Non-negative only —
+ * a negative position can't correspond to anything Jellyfin would accept as meaningful. */
+export const jellyfinPlaybackReportBodySchema = z.object({
+  itemId: z.string().min(1),
+  positionSeconds: z.number().min(0),
+});
+
+export const jellyfinPlaybackProgressBodySchema = jellyfinPlaybackReportBodySchema.extend({
+  isPaused: z.boolean().optional(),
+});

@@ -410,6 +410,42 @@ export class ApiClient {
   jellyfinTrackStreamUrl(itemId: string): string {
     return buildUrl(this.baseUrl, `/jellyfin/tracks/${encodeURIComponent(itemId)}/stream`);
   }
+
+  // ---------------------------------------------------------------------
+  // Jellyfin playback progress reporting (Phase 9 wave — see
+  // `features/player/playbackSource.ts`'s `jellyfinSource`, the only caller). All three
+  // routes 204 with an empty body on success, same as `closeSession` above — `request()`
+  // already resolves an empty body to `undefined`, hence `Promise<void>` here rather than
+  // an `{ ok: true }` wrapper. `positionSeconds` is plain seconds throughout, never
+  // Jellyfin's internal tick unit — that conversion happens once, server-side
+  // (`@auralis/jellyfin-client`'s `secondsToTicks`), so nothing on this side of the BFF
+  // ever has to think about it.
+  // ---------------------------------------------------------------------
+
+  reportJellyfinPlaybackStart(itemId: string, positionSeconds: number): Promise<void> {
+    return this.request('/jellyfin/playback/start', {
+      method: 'POST',
+      body: { itemId, positionSeconds },
+    });
+  }
+
+  reportJellyfinPlaybackProgress(
+    itemId: string,
+    positionSeconds: number,
+    options: { isPaused?: boolean } = {},
+  ): Promise<void> {
+    return this.request('/jellyfin/playback/progress', {
+      method: 'POST',
+      body: { itemId, positionSeconds, isPaused: options.isPaused },
+    });
+  }
+
+  reportJellyfinPlaybackStopped(itemId: string, positionSeconds: number): Promise<void> {
+    return this.request('/jellyfin/playback/stopped', {
+      method: 'POST',
+      body: { itemId, positionSeconds },
+    });
+  }
 }
 
 /** Type-narrowing re-export so callers don't need a separate import for the error class. */
