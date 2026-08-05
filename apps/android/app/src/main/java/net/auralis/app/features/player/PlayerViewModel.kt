@@ -34,7 +34,23 @@ private const val JELLYFIN_PROGRESS_TICK_MS = 15_000L
 sealed interface PlayerUiState {
     data object Idle : PlayerUiState
 
-    data class Playing(val title: String, val isPlaying: Boolean) : PlayerUiState
+    /**
+     * [isMusic], [shuffleEnabled] and [repeatMode] back the shuffle/repeat controls added in
+     * Android wave H. [isMusic] gates whether those controls are shown at all — shuffle on a
+     * multi-file audiobook would scramble its chapters, and repeat-one on a podcast episode is at
+     * best odd, so both controls are music-only, mirroring [jellyfinItemIdFromMediaId]'s own
+     * `track:`-prefix gate via [isMusicMediaId]. [shuffleEnabled] and [repeatMode] always mirror
+     * [androidx.media3.common.Player]'s own `shuffleModeEnabled`/`repeatMode` — there is no
+     * separate optimistic copy that could drift from what the player actually holds. [repeatMode]
+     * is one of [Player.REPEAT_MODE_OFF]/[Player.REPEAT_MODE_ALL]/[Player.REPEAT_MODE_ONE].
+     */
+    data class Playing(
+        val title: String,
+        val isPlaying: Boolean,
+        val isMusic: Boolean = false,
+        val shuffleEnabled: Boolean = false,
+        val repeatMode: Int = Player.REPEAT_MODE_OFF,
+    ) : PlayerUiState
 
     data class Error(val message: String) : PlayerUiState
 }
@@ -157,6 +173,30 @@ class PlayerViewModel(
                             positionSeconds = newController.currentPosition / 1000.0,
                             isPlaying = newController.isPlaying,
                         )
+                        val current = _uiState.value
+                        if (current is PlayerUiState.Playing) {
+                            _uiState.value = current.copy(isMusic = isMusicMediaId(mediaItem?.mediaId))
+                        }
+                    }
+
+                    // Keeps PlayerUiState.Playing.shuffleEnabled mirroring the controller's own
+                    // state rather than an optimistic local copy that could drift — see
+                    // PlayerUiState.Playing's own doc comment for why. Fires for a change made by
+                    // this app (toggleShuffle below) as much as one made anywhere else the
+                    // MediaSession is controlled from (Android Auto, a Bluetooth control surface).
+                    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                        val current = _uiState.value
+                        if (current is PlayerUiState.Playing) {
+                            _uiState.value = current.copy(shuffleEnabled = shuffleModeEnabled)
+                        }
+                    }
+
+                    // Same reasoning as onShuffleModeEnabledChanged above, for repeatMode.
+                    override fun onRepeatModeChanged(repeatMode: Int) {
+                        val current = _uiState.value
+                        if (current is PlayerUiState.Playing) {
+                            _uiState.value = current.copy(repeatMode = repeatMode)
+                        }
                     }
 
                     // A user-initiated seek *within the currently playing item* — a seek that
@@ -278,7 +318,14 @@ class PlayerViewModel(
             ctrl.prepare()
             ctrl.play()
             val title = mediaItem.mediaMetadata.title?.toString() ?: fallbackTitle
-            _uiState.value = PlayerUiState.Playing(title = title, isPlaying = true)
+            _uiState.value =
+                PlayerUiState.Playing(
+                    title = title,
+                    isPlaying = true,
+                    isMusic = isMusicMediaId(mediaItem.mediaId),
+                    shuffleEnabled = ctrl.shuffleModeEnabled,
+                    repeatMode = ctrl.repeatMode,
+                )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -318,7 +365,14 @@ class PlayerViewModel(
                 ctrl.prepare()
                 ctrl.play()
                 val title = mediaItems.first().mediaMetadata.title?.toString() ?: queue.first().title
-                _uiState.value = PlayerUiState.Playing(title = title, isPlaying = true)
+                _uiState.value =
+                    PlayerUiState.Playing(
+                        title = title,
+                        isPlaying = true,
+                        isMusic = isMusicMediaId(mediaItems.first().mediaId),
+                        shuffleEnabled = ctrl.shuffleModeEnabled,
+                        repeatMode = ctrl.repeatMode,
+                    )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -338,6 +392,49 @@ class PlayerViewModel(
             try {
                 val ctrl = connectedController()
                 if (ctrl.isPlaying) ctrl.pause() else ctrl.play()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Toggles shuffle on the underlying [MediaController] — Media3's own shuffle, not a
+     * hand-rolled permutation (see this file's doc comment / `docs/HANDOVER.md` wave H entry for
+     * why). A no-op when the current item isn't music or nothing is loaded; [_uiState] itself
+     * updates from [Player.Listener.onShuffleModeEnabledChanged] once the controller applies the
+     * change, not from this call directly, so it never drifts from what the player actually
+     * holds.
+     */
+    fun toggleShuffle() {
+        viewModelScope.launch {
+            val current = _uiState.value
+            if (current !is PlayerUiState.Playing || !current.isMusic) return@launch
+            try {
+                val ctrl = connectedController()
+                ctrl.shuffleModeEnabled = !ctrl.shuffleModeEnabled
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Cycles repeat mode off -> all -> one -> off (see [nextRepeatMode]) on the underlying
+     * [MediaController]. Same music-only gate and same "state comes back through the listener,
+     * not written optimistically here" shape as [toggleShuffle].
+     */
+    fun cycleRepeatMode() {
+        viewModelScope.launch {
+            val current = _uiState.value
+            if (current !is PlayerUiState.Playing || !current.isMusic) return@launch
+            try {
+                val ctrl = connectedController()
+                ctrl.repeatMode = nextRepeatMode(ctrl.repeatMode)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

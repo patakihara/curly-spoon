@@ -149,7 +149,12 @@ fun HomeScreen(
         bottomBar = {
             val playing = playerUiState
             if (playing is PlayerUiState.Playing) {
-                MiniPlayerBar(state = playing, onTogglePlayPause = playerViewModel::togglePlayPause)
+                MiniPlayerBar(
+                    state = playing,
+                    onTogglePlayPause = playerViewModel::togglePlayPause,
+                    onToggleShuffle = playerViewModel::toggleShuffle,
+                    onCycleRepeat = playerViewModel::cycleRepeatMode,
+                )
             }
         },
     ) { innerPadding ->
