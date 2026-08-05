@@ -20,6 +20,7 @@ import net.auralis.app.data.model.JellyfinCreatePlaylistResponse
 import net.auralis.app.data.model.JellyfinFavoriteResponse
 import net.auralis.app.data.model.JellyfinLoginRequestBody
 import net.auralis.app.data.model.JellyfinLoginResponse
+import net.auralis.app.data.model.JellyfinLyricsResponse
 import net.auralis.app.data.model.JellyfinPlaybackProgressBody
 import net.auralis.app.data.model.JellyfinPlaybackReportBody
 import net.auralis.app.data.model.JellyfinPlaylistItemsPage
@@ -442,6 +443,15 @@ class ApiClient(
      * hands it to a browser or an APK — see routes/jellyfin.ts's file doc comment.
      */
     suspend fun jellyfinTrackStreamUrl(itemId: String): String = apiUrl("/jellyfin/tracks/$itemId/stream").toString()
+
+    /**
+     * GET /jellyfin/tracks/{itemId}/lyrics (Android wave J, synced lyrics view). Mirrors
+     * `routes/jellyfin.ts`'s own "Lyrics" section comment: Jellyfin's "no lyrics" 404 is folded
+     * server-side into a 200 with `{ lyrics: null }`, so a `null`
+     * [JellyfinLyricsResponse.lyrics] reaching here is a normal, expected outcome — never an
+     * [ApiException] — the same way every other 2xx response on this class is trusted as-is.
+     */
+    suspend fun jellyfinLyrics(itemId: String): JellyfinLyricsResponse = get("/jellyfin/tracks/$itemId/lyrics")
 
     // -----------------------------------------------------------------------------
     // Jellyfin playlists (routes/jellyfin.ts) — Android wave F (music playlists). See

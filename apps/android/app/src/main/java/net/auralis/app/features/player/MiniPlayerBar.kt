@@ -33,6 +33,10 @@ import androidx.media3.common.Player
  * unresolved reference on one of the icons this wave adds (`Shuffle`, `Repeat`, `RepeatOne`),
  * every control renders as plain text — swap in real icons once `material-icons-extended` is a
  * deliberate, granted addition.
+ *
+ * [onOpenLyrics] (Android wave J) is the entry point to [LyricsScreen] — music-only, same
+ * [state]`.isMusic` gate as shuffle/repeat, for the same reason: a book or podcast episode has no
+ * Jellyfin lyrics endpoint to call at all.
  */
 @Composable
 fun MiniPlayerBar(
@@ -40,6 +44,7 @@ fun MiniPlayerBar(
     onTogglePlayPause: () -> Unit,
     onToggleShuffle: () -> Unit = {},
     onCycleRepeat: () -> Unit = {},
+    onOpenLyrics: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -77,6 +82,9 @@ fun MiniPlayerBar(
                         else -> "Repeat"
                     },
                 )
+            }
+            TextButton(onClick = onOpenLyrics) {
+                Text("Lyrics")
             }
         }
         TextButton(onClick = onTogglePlayPause) {
