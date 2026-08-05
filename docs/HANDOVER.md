@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T12:24:16Z` · `a8bab14e9846f7245` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a8bab14e9846f7245' @ '0de5a31', based on 'd090a95'…
-- `2026-08-05T12:24:45Z` · `ad5ae4de822ad9a21` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-ad5ae4de822ad9a21' @ '2d30008', based o…
 - `2026-08-05T12:34:04Z` · `a41b7cdeb98c5f220` · general-purpose · ended · Working tree is clean. Commit '6246aa0' on branch 'worktree-agent-a41b7cdeb98c5f220', based on 'a3fcfc3'. Not pushed, per instructions. Nothing was c…
 - `2026-08-05T12:52:14Z` · `a6b0a49406fd9236a` · general-purpose · ended · I'll pause here and wait for the background e2e run to complete before continuing.
 - `2026-08-05T12:52:59Z` · `ae7eb4057186070b6` · general-purpose · ended · Clean. Final report follows. ## Report **Branch/commit**: 'worktree-agent-ae7eb4057186070b6' @ '6e90595', based on 'e77d7c5'. Working tree clean, not…
@@ -92,10 +90,12 @@ in-context scan of the current one.
 - `2026-08-05T13:42:13Z` · `ae7595e1db400590f` · general-purpose · ended · Working tree is clean, committed on branch 'worktree-agent-ae7595e1db400590f' at '6644ff6', not pushed as instructed. ## Report **Branch/commit**: 'w…
 - `2026-08-05T14:00:29Z` · `a975d1956d27f0ff1` · general-purpose · ended · Working tree is clean. Committed on branch 'worktree-agent-a975d1956d27f0ff1' at 'ef98321', based on '6644ff6' ('origin/main'). Not pushed, per instr…
 - `2026-08-05T15:22:17Z` · `a8c337e23999a50ca` · general-purpose · ended · ## Review: Phase 9 web wave — music queue (shuffle/repeat/cross-page), commit '58cc2d3' **Scope check**: 'git show --stat' confirms only 'apps/web/sr…
-- `2026-08-05T15:23:08Z` · `a664a550bde27d7c8` · general-purpose · running · —
-- `2026-08-05T15:23:21Z` · `a5f8a3ecdae93a44c` · general-purpose · running · —
+- `2026-08-05T15:23:08Z` · `a664a550bde27d7c8` · general-purpose · ended · ## Report **Branch/commit**: 'worktree-agent-a664a550bde27d7c8' @ 'bdf398a', based on 'origin/main' ('bd9310a'). Working tree clean, not pushed as in…
+- `2026-08-05T15:23:21Z` · `a5f8a3ecdae93a44c` · general-purpose · ended · Working tree clean, committed on branch 'worktree-agent-a5f8a3ecdae93a44c' at 'ad2f9f8', based on 'bd9310a'. Not pushed, per instructions. ## Report…
 - `2026-08-05T15:23:59Z` · `a077d12054e2dc516` · general-purpose · running · —
 - `2026-08-05T15:30:35Z` · `abaf4b6fd2411fefa` · general-purpose · ended · Committed cleanly on 'worktree-agent-abaf4b6fd2411fefa' at '42cb5cf', working tree clean, not pushed. ## Report **Branch/commit**: 'worktree-agent-ab…
+- `2026-08-05T15:43:38Z` · `ab65efd1cb1a86d67` · general-purpose · ended · ## Findings — Android playlists wave ('bd9310a..a1cb367') **1. CRITICAL — CI is red. 6 tests fail deterministically, real bug, not flakiness.** Confi…
+- `2026-08-05T15:49:17Z` · `aa1127d1c9275f967` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -268,6 +268,26 @@ from Android**. Lyrics _search_ remains blocked on a product decision, not on ef
 Jellyfin cannot search lyric text at all, so Auralis would need its own index and a decision
 about whether to backfill from an external provider (a privacy opt-in). The synced lyrics
 _view_ is unaffected and has shipped.
+
+### Two autonomous sessions were running in this checkout at once (2026-08-05)
+
+**Android playlists got built twice, independently, within the same hour.** One session
+merged `ad2f9f8`/`a1cb367` ("wave F"); another had `bdf398a` finished and about to merge. The
+second discarded its own copy rather than merge two implementations of one feature — the
+duplicate cost was already paid, and the only thing worse than wasting it once is landing both.
+
+What made it invisible: both sessions worked in the _same_ checkout, pushed to the _same_
+`main`, and each only looked at `main` when it dispatched a wave — not when it merged one.
+A session that dispatched a wave at T and merged at T+25min never saw what landed in between.
+
+**Before dispatching a wave, and again before merging it, check what is already on `main`.**
+`git log --oneline origin/main -15` costs nothing. Also check `git branch --list 'worktree-*'`:
+a `+` marks a branch checked out in some other session's worktree, which is a live signal that
+someone else is mid-flight.
+
+`auralis-autorun` is the likely source of the second session — it starts an autonomous session
+whenever the usage window has room and nothing looks busy, and its idle check cannot see a
+session that is busy inside subagents rather than in its own transcript.
 
 ### Android CI: read this before touching an Android test
 
