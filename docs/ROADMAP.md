@@ -1046,6 +1046,32 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
   because the wrapper's constructor is a field assignment and `context` is never dereferenced on
   the tested path — not because the stub jar is lenient.
 
+- **Android wave J — synced lyrics view: done (`24d01bb`, merged `54b1335`).** Android reaches
+  parity with web's lyrics view; the BFF route already existed, so this was client-only.
+  Independent review found no defects.
+
+  Two things worth carrying forward. **`lyrics: null` is a normal outcome, not an error** — the
+  BFF deliberately folds Jellyfin's "no lyrics" 404 into a `200` with a null body, and the Android
+  path models that as a distinct non-error state all the way to a calm "No lyrics for this track"
+  message. Anything else here would surface a missing-lyrics track as a failure.
+
+  **The highlight needs a much finer clock than the reporter does.** The existing 15s Jellyfin
+  progress ticker is far too coarse to follow a lyric line, so lyrics get their own 200ms position
+  flow — cold, started only by the screen collecting it, and stopped by ordinary structured
+  concurrency when the screen leaves composition. Raising the reporter's own rate instead would
+  have multiplied upstream traffic by roughly fifty for an unrelated reason.
+
+  Auto-scroll follows the active line unless the user is touch-dragging or within 3s of stopping.
+  That distinction is safe because Compose's drag interaction source reports genuine gestures
+  only, never the screen's own `animateScrollToItem` — had it reported both, auto-scroll would
+  have disabled itself permanently after the first line change. The active line is distinguished
+  by weight and size as well as colour, and there is deliberately no live region: a highlight that
+  moves every few seconds would make a screen reader unusable.
+
+  `activeLineIndex` is a pure function ported from web's own, with the same boundary semantics,
+  and is tested at exact positions — on a line's start time, just before the first, past the last,
+  empty, single, and unsynced — rather than merely asserting that some line is active.
+
 **The Android favourites wave cost four red-CI iterations**, all one failure class, now fixed
 structurally in `6644ff6` + `ef98321`: `ApiClient` did its work in a hard-coded
 `withContext(Dispatchers.IO)` that the test scheduler could not see, so tests returned with

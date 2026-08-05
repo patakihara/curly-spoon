@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T16:17:07Z` · `a3df81486463c212b` · general-purpose · ended · Still in progress. No action needed; continuing to wait for the completion event.
 - `2026-08-05T16:17:28Z` · `a3df81486463c212b` · general-purpose · ended · Still in progress. Continuing to wait.
 - `2026-08-05T16:17:37Z` · `a3df81486463c212b` · general-purpose · ended · ## Review findings — commit 'e0c183a' (Jellyfin playback progress reporting, Android) **CI: not established.** I was told to stop watching; the coord…
 - `2026-08-05T16:20:39Z` · `a7a143f825a4b1d5f` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a7a143f825a4b1d5f' @ 'ce15dc2', based on '0f52924'…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T17:09:38Z` · `ae2dca6bc1b35fbfd` · general-purpose · ended · ## Review: 'ce080fe' — PlayerViewModel 'PlaybackHandle' seam + first test file **Verdict: net improvement, low risk of a behavioral regression, but l…
 - `2026-08-05T17:18:06Z` · `a549e375b184b5a0c` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a549e375b184b5a0c' @ '24d01bb', based o…
 - `2026-08-05T17:30:48Z` · `a2e6d71b4d93a15cd` · general-purpose · running · —
+- `2026-08-05T17:31:14Z` · `a58503a6febdf9f85` · general-purpose · ended · Confirmed properly gated inside 'if (state.isMusic)'. Review complete. ## Findings — Android synced-lyrics wave (0d6e32b..54b1335) **No defects found…
 
 <!-- AGENT_LOG_END -->
 
@@ -282,9 +282,9 @@ requests follows in a separate wave and is **not** claimed yet.
 
 - **2026-08-05, session `01YESuEj`** — Android music waves. Wave F (playlists) and wave G
   (Jellyfin progress reporting), H (shuffle + repeat) and I (cross-page album queueing) have all
-  landed, as has a follow-up giving `PlayerViewModel` its first test file. Wave J (synced lyrics
-  view on Android) is dispatched now. This session stays inside `apps/android/` and is not
-  touching `apps/server/` or `apps/web/`.
+  landed, as have a follow-up giving `PlayerViewModel` its first test file and wave J (synced
+  lyrics view). This session stays inside `apps/android/` and is not touching `apps/server/` or
+  `apps/web/`.
 
 ### Two autonomous sessions were running in this checkout at once (2026-08-05)
 
