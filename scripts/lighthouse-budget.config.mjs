@@ -62,7 +62,7 @@ export const budget = {
      * First Contentful Paint, ms, a ceiling. 5-run baseline: median 1116,
      * range 1092–1134. Later re-verification runs (same unchanged build)
      * stayed in the same neighbourhood — worst single sample seen anywhere
-     * was 1155ms. Budget 1450 (+28% over that 1155 worst-observed sample,
+     * was 1155ms. Budget 1450 (+26% over that 1155 worst-observed sample,
      * not just the 5-run baseline's own max) — wide relative to how tight the
      * actual local variance is, specifically to cover CI-runner variance this
      * laptop's own repeated runs cannot see (different CPU, different disk,

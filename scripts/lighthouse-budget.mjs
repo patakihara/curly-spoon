@@ -403,9 +403,18 @@ async function main() {
   // leaked its Chrome process (chrome-launcher spawns detached, so the parent
   // shell's process-group kill in `lighthouse-budget.sh` doesn't reach it
   // either) and its `userDataDir` temp directory.
+  //
+  // `anyOverBudget` lives *outside* the `try` deliberately. A form factor that has
+  // already run, printed `OVER` and been counted is a settled fact, and a later form
+  // factor failing to run at all must not erase it: the fail-soft branch below means
+  // "this sample proved nothing", not "everything is fine". Scoped inside the `try`
+  // it was reachable — desktop over budget, then mobile throwing
+  // `AuditUnavailableError` — and the run exited 0 with the real failure printed and
+  // ignored, holding `publish`'s gate open on exactly the regression this check
+  // exists to catch.
   let exitCode;
+  let anyOverBudget = false;
   try {
-    let allPass = true;
     for (const formFactor of FORM_FACTORS) {
       const measured = await auditFormFactor(opts.url, formFactor, chrome.port, opts.runs);
       const results = evaluateBudget(measured, budgetConfig[formFactor]);
@@ -413,10 +422,10 @@ async function main() {
       console.log(formatMeasuredLine(formFactor, opts.runs, measured));
       console.log('');
       if (!results.every((r) => r.pass)) {
-        allPass = false;
+        anyOverBudget = true;
       }
     }
-    exitCode = allPass ? 0 : 1;
+    exitCode = anyOverBudget ? 1 : 0;
   } catch (err) {
     if (err instanceof AuditUnavailableError) {
       console.error(
@@ -424,7 +433,9 @@ async function main() {
           'Treated the same as "no Chrome available" — the check could not run, which is not ' +
           'the same claim as "the budget was exceeded" — so this exits 0 rather than red.',
       );
-      exitCode = 0;
+      // Unless a form factor that *did* run was already over budget, in which case
+      // that verdict stands: an unavailable audit cannot retract a measured failure.
+      exitCode = anyOverBudget ? 1 : 0;
     } else {
       throw err;
     }

@@ -29,13 +29,13 @@ IzzyOnDroid submission work starts, not after.
 
 ## 2. The three routes compared
 
-| | Own repo | IzzyOnDroid | Official F-Droid |
-|---|---|---|---|
-| What we must produce | `fdroidserver`-generated repo index + APKs, hosted somewhere with a stable URL/TLS cert | Release-signed APK attached to a tagged GitHub release, fastlane `metadata/en-US/` | Public FOSS source, all-FOSS dependency graph, a `metadata/<appId>.yml` build recipe accepted into `fdroiddata`, ideally reproducible |
-| Reach (Droid-ify default) | Not enabled by default — user must add our repo URL manually | Enabled by default in most Droid-ify installs | Enabled by default everywhere F-Droid clients ship |
-| Effort to first release | Stand up + maintain repo infra (`fdroidserver update`, TLS, hosting), ongoing | Tag a release, attach a signed APK, write fastlane metadata, file one GitHub issue | All of IzzyOnDroid's asks, plus a reproducible-build recipe merged upstream and reviewed by F-Droid maintainers (weeks to months of review, historically) |
-| How updates reach a user | We push a new repo index on every release; user's client polls our URL | IzzyOnDroid's bot polls tagged GitHub releases; picks up new tags automatically | F-Droid's own build server rebuilds from source on every tagged commit per the merged recipe; independent of our CI artifact entirely |
-| Cost to back out | Ours to delete; no external dependency | File an issue asking removal; otherwise inert if we stop tagging releases | Once merged, `fdroiddata` history is public and the app id is registered; removal is an explicit request but the historical record (and any existing installs) persists |
+|                           | Own repo                                                                                | IzzyOnDroid                                                                        | Official F-Droid                                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What we must produce      | `fdroidserver`-generated repo index + APKs, hosted somewhere with a stable URL/TLS cert | Release-signed APK attached to a tagged GitHub release, fastlane `metadata/en-US/` | Public FOSS source, all-FOSS dependency graph, a `metadata/<appId>.yml` build recipe accepted into `fdroiddata`, ideally reproducible                                   |
+| Reach (Droid-ify default) | Not enabled by default — user must add our repo URL manually                            | Enabled by default in most Droid-ify installs                                      | Enabled by default everywhere F-Droid clients ship                                                                                                                      |
+| Effort to first release   | Stand up + maintain repo infra (`fdroidserver update`, TLS, hosting), ongoing           | Tag a release, attach a signed APK, write fastlane metadata, file one GitHub issue | All of IzzyOnDroid's asks, plus a reproducible-build recipe merged upstream and reviewed by F-Droid maintainers (weeks to months of review, historically)               |
+| How updates reach a user  | We push a new repo index on every release; user's client polls our URL                  | IzzyOnDroid's bot polls tagged GitHub releases; picks up new tags automatically    | F-Droid's own build server rebuilds from source on every tagged commit per the merged recipe; independent of our CI artifact entirely                                   |
+| Cost to back out          | Ours to delete; no external dependency                                                  | File an issue asking removal; otherwise inert if we stop tagging releases          | Once merged, `fdroiddata` history is public and the app id is registered; removal is an explicit request but the historical record (and any existing installs) persists |
 
 Sources: [F-Droid Inclusion Policy](https://f-droid.org/en/docs/Inclusion_Policy/) (fetched
 2026-08-06), [F-Droid Inclusion How-To](https://f-droid.org/docs/Inclusion_How-To/) (fetched
@@ -55,16 +55,16 @@ Read directly from this checkout: `apps/android/gradle/libs.versions.toml`,
 
 ### Dependency-by-dependency
 
-| Dependency | Group | FOSS-acceptable to official F-Droid? | Evidence |
-|---|---|---|---|
-| AndroidX core-ktx, lifecycle-runtime-ktx, activity-compose, lifecycle-viewmodel-compose, datastore-preferences, navigation-compose | `androidx.*` | Yes | AndroidX is Apache-2.0, published from AOSP source on `maven.google.com`; it is the standard dependency set for essentially every F-Droid-listed Compose app. No F-Droid documentation lists AndroidX itself as an anti-feature. |
-| Jetpack Compose (`androidx.compose.*`, `compose-bom`, material3, ui-tooling) | `androidx.compose.*` | Yes | Same basis as above — Apache-2.0, AOSP source, the BOM only pins versions and ships no code of its own. |
-| Kotlin stdlib / AGP / Kotlin Compose & Serialization Gradle plugins | `org.jetbrains.kotlin.*` | Yes | Kotlin is Apache-2.0, JetBrains open-source; F-Droid's own build toolchain compiles Kotlin routinely (`fdroidserver`'s `gradlew-fdroid` wrapper exists specifically to standardize Kotlin/AGP builds). |
-| `kotlinx-serialization-json`, `kotlinx-coroutines-android`, `kotlinx-coroutines-guava`, `kotlinx-coroutines-test` | `org.jetbrains.kotlinx` | Yes | Apache-2.0, JetBrains, no network/telemetry code. |
-| OkHttp, OkHttp MockWebServer | `com.squareup.okhttp3` | Yes | Apache-2.0, Square. Used directly as the HTTP client, not a Google-services shim. |
-| Media3 (`media3-exoplayer`, `media3-session`, `media3-datasource-okhttp`) | `androidx.media3` | Yes | Apache-2.0, AndroidX/AOSP. ExoPlayer is the de facto standard playback stack in F-Droid-listed media apps (e.g. NewPipe, AntennaPod both ship it). No proprietary codec plugins are declared here — only the OkHttp-backed HTTP data source. |
-| Coil (`coil-compose`) | `io.coil-kt` | Yes | Apache-2.0, Instacart-authored image loader with no telemetry, no Google Play Services dependency (unlike Glide's optional GMS integration modules, which are not used here). |
-| JUnit | `junit` | Yes | EPL-1.0, standard test dependency, not shipped in the release APK. |
+| Dependency                                                                                                                         | Group                    | FOSS-acceptable to official F-Droid? | Evidence                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AndroidX core-ktx, lifecycle-runtime-ktx, activity-compose, lifecycle-viewmodel-compose, datastore-preferences, navigation-compose | `androidx.*`             | Yes                                  | AndroidX is Apache-2.0, published from AOSP source on `maven.google.com`; it is the standard dependency set for essentially every F-Droid-listed Compose app. No F-Droid documentation lists AndroidX itself as an anti-feature.             |
+| Jetpack Compose (`androidx.compose.*`, `compose-bom`, material3, ui-tooling)                                                       | `androidx.compose.*`     | Yes                                  | Same basis as above — Apache-2.0, AOSP source, the BOM only pins versions and ships no code of its own.                                                                                                                                      |
+| Kotlin stdlib / AGP / Kotlin Compose & Serialization Gradle plugins                                                                | `org.jetbrains.kotlin.*` | Yes                                  | Kotlin is Apache-2.0, JetBrains open-source; F-Droid's own build toolchain compiles Kotlin routinely (`fdroidserver`'s `gradlew-fdroid` wrapper exists specifically to standardize Kotlin/AGP builds).                                       |
+| `kotlinx-serialization-json`, `kotlinx-coroutines-android`, `kotlinx-coroutines-guava`, `kotlinx-coroutines-test`                  | `org.jetbrains.kotlinx`  | Yes                                  | Apache-2.0, JetBrains, no network/telemetry code.                                                                                                                                                                                            |
+| OkHttp, OkHttp MockWebServer                                                                                                       | `com.squareup.okhttp3`   | Yes                                  | Apache-2.0, Square. Used directly as the HTTP client, not a Google-services shim.                                                                                                                                                            |
+| Media3 (`media3-exoplayer`, `media3-session`, `media3-datasource-okhttp`)                                                          | `androidx.media3`        | Yes                                  | Apache-2.0, AndroidX/AOSP. ExoPlayer is the de facto standard playback stack in F-Droid-listed media apps (e.g. NewPipe, AntennaPod both ship it). No proprietary codec plugins are declared here — only the OkHttp-backed HTTP data source. |
+| Coil (`coil-compose`)                                                                                                              | `io.coil-kt`             | Yes                                  | Apache-2.0, Instacart-authored image loader with no telemetry, no Google Play Services dependency (unlike Glide's optional GMS integration modules, which are not used here).                                                                |
+| JUnit                                                                                                                              | `junit`                  | Yes                                  | EPL-1.0, standard test dependency, not shipped in the release APK.                                                                                                                                                                           |
 
 No Firebase, no Crashlytics, no Google Play Services artifact (`com.google.android.gms:*`),
 no Google Analytics, no ad SDK, no Room, no Hilt/Koin, no Retrofit, no Glide appears anywhere
@@ -78,6 +78,7 @@ ROADMAP.md §11 hypothesized the Android Auto plumbing is only a meta-data strin
 descriptor, not a real Play Services dependency. **Confirmed against the actual files:**
 
 `AndroidManifest.xml`:
+
 ```xml
 <meta-data
     android:name="com.google.android.gms.car.application"
@@ -85,6 +86,7 @@ descriptor, not a real Play Services dependency. **Confirmed against the actual 
 ```
 
 `res/xml/automotive_app_desc.xml`:
+
 ```xml
 <automotiveApp>
     <uses name="media" />
@@ -94,7 +96,7 @@ descriptor, not a real Play Services dependency. **Confirmed against the actual 
 That is the entirety of the Android Auto surface. There is no `com.google.android.gms:*`
 artifact in either Gradle file, no `google()`-resolved GMS coordinate anywhere, and no
 generated `google_play_services_version` resource. The string `com.google.android.gms.car.application`
-is a manifest *key name* Android's package manager reads to discover automotive apps — it
+is a manifest _key name_ Android's package manager reads to discover automotive apps — it
 does not pull in or require the Play Services runtime library at all
 ([Android Auto developer docs](https://developer.android.com/training/cars/platforms/android-auto),
 general reference, fetched 2026-08-06). The `androidx.media3.session.MediaLibraryService`
@@ -104,7 +106,7 @@ Whether F-Droid's scanner flags this anyway: `fdroidserver`'s `scanner.py` detec
 code by decompiling the built APK's DEX files and matching compiled Java class references
 (`scan_binary()`, matching against signatures like the literal bytecode string
 `com/google/android/gms`) — [`fdroidserver/scanner.py`](https://github.com/f-droid/fdroidserver/blob/master/fdroidserver/scanner.py)
-(fetched 2026-08-06). A manifest meta-data *value* is packaged into the APK's binary XML,
+(fetched 2026-08-06). A manifest meta-data _value_ is packaged into the APK's binary XML,
 not compiled into a DEX class, so it is not the kind of artifact this scanner's class-name
 signatures match against. This project found no F-Droid documentation or fdroiddata history
 of a real app being rejected for carrying only the automotive meta-data string with no
@@ -119,8 +121,8 @@ machine doesn't have (see the gap below).
 Google-branded (the Android Auto meta-data key) is confirmed to carry no dependency. No
 named changes are required and no build flavour is needed on current evidence.
 
-**The one real gap**: this is a *first-order* audit — every declared dependency, read from
-the Gradle files. It is not a *transitive* audit. AndroidX/Media3/Coil/OkHttp are well-known
+**The one real gap**: this is a _first-order_ audit — every declared dependency, read from
+the Gradle files. It is not a _transitive_ audit. AndroidX/Media3/Coil/OkHttp are well-known
 enough that a hidden proprietary transitive pull-in is unlikely, but "unlikely" is not
 "checked." The exact command to close this gap, once a JDK/Android SDK is available:
 
@@ -145,7 +147,7 @@ built and signed ourselves, so a user can independently verify F-Droid didn't ta
 the binary between our source and their phone
 ([Reproducible Builds](https://f-droid.org/docs/Reproducible_Builds/), fetched 2026-08-06).
 It is explicitly **not a hard requirement for inclusion** — best practice, not a gate — but
-it's the mechanism that lets F-Droid publish the *developer's own signature* rather than
+it's the mechanism that lets F-Droid publish the _developer's own signature_ rather than
 re-signing with F-Droid's key, which is the difference that actually matters for update
 continuity if we ever also distribute through IzzyOnDroid or GitHub releases with the same
 signature.
@@ -181,11 +183,11 @@ discipline, most of it front-loaded into step 1.
 ## 5. Signing and identity — the irreversible decisions
 
 F-Droid (and IzzyOnDroid, and Android's own package manager) identify one app as the
-*continuation* of a previous install by two things together: the `applicationId`
+_continuation_ of a previous install by two things together: the `applicationId`
 (`net.auralis.app`) and the certificate that signs the APK. Android refuses to install an
 update whose signature doesn't match the one already on the device — that's not an F-Droid
 policy, it's how `PackageManager` works. Change either the id or the key and every existing
-user's client sees it as a *different app*: no update path, forced uninstall, and every piece
+user's client sees it as a _different app_: no update path, forced uninstall, and every piece
 of on-device state Auralis owns (DataStore preferences, offline downloads) is lost, since
 Android scopes app-private storage to `applicationId` and wipes it on uninstall. This is why
 ROADMAP.md §11 calls it a one-way door, and why this document stops short of picking one
@@ -202,7 +204,7 @@ for the user.
   `secrets.ANDROID_KEYSTORE_BASE64` + `secrets.ANDROID_KEYSTORE_PASSWORD`, decoded to a file
   in a release job step, never committed — `.gitignore` already excludes `*.keystore`). This
   is the only real option: F-Droid does not hold a key on our behalf for anything except the
-  case where they *also* sign an F-Droid-key build for update continuity across install
+  case where they _also_ sign an F-Droid-key build for update continuity across install
   sources, which is an additional, opt-in signature, not a replacement for having our own.
 - **If the key is lost**: there is no recovery. A new key means a new "app" as far as every
   installed client is concerned — the only mitigation is to keep the keystore backed up
@@ -230,7 +232,7 @@ verified. The real risk isn't rejection, it's collision:
 if `auralis.net` is owned by an unrelated third party, or is later registered by someone
 else who ships an Android app under the same reverse-DNS convention, there is no technical
 conflict (application ids only need to be unique within one distribution channel, and
-official F-Droid rejects only *exact* id collisions with an existing listing) but it is a
+official F-Droid rejects only _exact_ id collisions with an existing listing) but it is a
 naming collision an outside reader could reasonably read as impersonation. Confirming
 `auralis.net` ownership (or picking an id independent of any real-world domain, e.g.
 `net.patakihara.auralis` matching the GitHub org `patakihara`) is a five-minute check with
@@ -254,6 +256,7 @@ the chance of the two drifting.
 
 **What a release run must produce**, each a candidate CI job step once a keystore secret
 exists:
+
 1. A signed release APK (`./gradlew assembleRelease`, once the `release` build type from §4
    exists), built from the exact tagged commit.
 2. The APK attached to a GitHub Release for that tag (IzzyOnDroid polls this directly).
@@ -278,7 +281,7 @@ metadata/en-US/
 **What we don't have yet — a real blocker, not a formality**: this repo has **no launcher
 icon at all**. `apps/android/app/src/main/res/` contains only `values/` and `xml/` — no
 `mipmap-*` directories, no adaptive-icon XML. The app currently launches with Android's
-default icon. This blocks both the Play-Store-style store listing icon *and* the on-device
+default icon. This blocks both the Play-Store-style store listing icon _and_ the on-device
 launcher icon, and is arguably higher priority than anything else in this document since it
 affects every install, not just F-Droid ones. No phone screenshots and no feature graphic
 exist either (nothing under any `res/` or `docs/` path matches `*screenshot*` or
