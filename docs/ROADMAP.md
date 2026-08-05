@@ -826,6 +826,26 @@ FavoriteItems/{itemId}` shape that reads as the obvious one is an **obsolete ali
 
   Not covered: `MusicHomePage`'s artist grid and search results have no toggle yet.
 
+  **Two defects found in review and fixed (`f78a00d`, `26d7b00`, merged `08436b0`)**, both
+  worth knowing before writing the next optimistic mutation:
+
+  - **The standard optimistic recipe has a rollback race, and it was reachable by
+    double-clicking one heart.** Each `mutate()` call snapshotted the whole cache in
+    `onMutate` and restored it unconditionally in `onError`, so a first request failing
+    _after_ a second had already written clobbered the second. `onError` now restores a query
+    only if the cache still holds exactly what that mutation wrote — one guard that closes
+    both the same-item and the cross-item case. The identity check works because "what I
+    wrote" is read back from the live cache rather than computed from the updater's return
+    value; React Query's structural sharing would otherwise break reference equality.
+  - **An `ids` filter that parsed to zero ids returned the full unfiltered listing**, because
+    an empty array reads identically to "no filter" downstream. It now short-circuits to an
+    empty page; `ids` genuinely absent still means unfiltered.
+
+  The regression test is worth a note of its own: written first as a click-then-click-back, it
+  could not distinguish fixed code from buggy — for any two-click flip-back the stale snapshot
+  coincides with the second click's target. It only exposes the bug as a same-target double
+  fire.
+
 **A product caveat, not a defect**: every queued track — on both web and Android — carries
 **album-level** artist/album/artwork rather than its own, because `MusicTrackUi` has no
 per-track artist field to read. On a compilation or a multi-artist album the lock screen shows
