@@ -250,6 +250,20 @@ function SliderGallery() {
           disabled
         />
       </div>
+      {/*
+       * No wrapping data-testid here, deliberately: this instance exists to prove
+       * `Slider` forwards arbitrary pass-through props (`data-testid`, but standing in
+       * for any `aria-*`/`id`/event-handler prop) onto its own rendered DOM, not to be
+       * located via a wrapper the way the other gallery entries are.
+       */}
+      <Slider
+        aria-label="Playback position, passthrough check"
+        value={70}
+        min={0}
+        max={100}
+        onChange={() => {}}
+        data-testid="slider-passthrough"
+      />
     </Section>
   );
 }

@@ -89,6 +89,18 @@ test.describe('Slider', () => {
     await expect(slider).toHaveAttribute('tabindex', '-1');
   });
 
+  test('forwards pass-through props (data-testid, and by extension any aria-*/id/handler) to the slider element', async ({
+    page,
+  }) => {
+    // `Slider` collects unrecognised props into `...rest`; this asserts they actually
+    // reach the DOM rather than being silently dropped. `data-testid` stands in for the
+    // whole class — `NowPlaying.tsx` passes one for exactly this reason and it never
+    // rendered until this behaviour was fixed.
+    const slider = page.getByTestId('slider-passthrough');
+    await expect(slider).toHaveAttribute('role', 'slider');
+    await expect(slider).toHaveAccessibleName('Playback position, passthrough check');
+  });
+
   test('the wavy track only animates while the wave is set to animate', async ({ page }) => {
     const animatingActive = page.locator('[data-testid="slider-wavy"] .m3-slider__active');
     const animationName = await animatingActive.evaluate(
