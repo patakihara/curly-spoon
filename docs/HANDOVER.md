@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T15:30:35Z` · `abaf4b6fd2411fefa` · general-purpose · ended · Committed cleanly on 'worktree-agent-abaf4b6fd2411fefa' at '42cb5cf', working tree clean, not pushed. ## Report **Branch/commit**: 'worktree-agent-ab…
 - `2026-08-05T15:43:38Z` · `ab65efd1cb1a86d67` · general-purpose · ended · ## Findings — Android playlists wave ('bd9310a..a1cb367') **1. CRITICAL — CI is red. 6 tests fail deterministically, real bug, not flakiness.** Confi…
 - `2026-08-05T15:49:17Z` · `aa1127d1c9275f967` · general-purpose · ended · Committed cleanly, working tree clean, not pushed. ## Report **Branch/commit**: 'worktree-agent-aa1127d1c9275f967' @ '67b3ee0', based on 'origin/main…
 - `2026-08-05T16:01:58Z` · `ab1dbe52bc54d243a` · general-purpose · ended · Committed cleanly, working tree clean, not pushed as instructed. ## Report **1. Branch and sha:** 'worktree-agent-ab1dbe52bc54d243a' at 'd1152c1', ba…
@@ -92,10 +91,11 @@ in-context scan of the current one.
 - `2026-08-05T16:17:37Z` · `a3df81486463c212b` · general-purpose · ended · ## Review findings — commit 'e0c183a' (Jellyfin playback progress reporting, Android) **CI: not established.** I was told to stop watching; the coord…
 - `2026-08-05T16:20:39Z` · `a7a143f825a4b1d5f` · general-purpose · ended · Working tree is clean. Not pushed, per instructions. ## Report **Branch/commit**: 'worktree-agent-a7a143f825a4b1d5f' @ 'ce15dc2', based on '0f52924'…
 - `2026-08-05T16:30:06Z` · `a974bf4a1642cfc85` · general-purpose · ended · ## Review: Android wave H (shuffle/repeat), merge commit 'dc54085' **Categories checked and found clean:** Media3 API correctness (names/signatures/c…
-- `2026-08-05T16:30:53Z` · `a4b9f6733090ab05a` · general-purpose · running · —
+- `2026-08-05T16:30:53Z` · `a4b9f6733090ab05a` · general-purpose · ended · Waiting for the full e2e suite (backgrounded, ID 'by2a78goj') to finish before continuing.
 - `2026-08-05T16:43:15Z` · `a8b69177155025d84` · general-purpose · ended · Working tree clean. Committed on branch 'worktree-agent-a8b69177155025d84' at '731cdcf', based on 'bd9310a' ('origin/main'). Not pushed, per instruct…
 - `2026-08-05T16:52:23Z` · `aa288a2dc33649778` · general-purpose · ended · Sufficient coverage confirmed symmetrically for both viewmodels. This is enough to write the report. ## Report **Overall: sound implementation.** The…
 - `2026-08-05T16:57:20Z` · `a231ab6f1a8a3a465` · general-purpose · running · —
+- `2026-08-05T16:59:44Z` · `a4b9f6733090ab05a` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -276,6 +276,8 @@ dispatching it, and delete the line when it lands. A claim older than a couple o
 nothing on `main` is stale — take it.
 
 - **2026-08-05, session `01Wf5C2q`** — music requests **web UI** (server side is done and on
+- **2026-08-05, session `01Wf5C2q`** — a Jellyfin library-rescan capability, so a music
+  request can progress past `downloading` (see `docs/ROADMAP.md` §9 for why it stops there).
   `main`; `docs/ROADMAP.md` §9 has what exists to build against).
   persisted create/list (`docs/ROADMAP.md` §9 records why it is blocked). Web UI for music
   requests follows in a separate wave and is **not** claimed yet.
