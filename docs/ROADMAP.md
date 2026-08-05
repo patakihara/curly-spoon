@@ -3,20 +3,20 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status      |
-| --- | --------------------------------------------------------------- | ----------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
-| 3   | Server BFF core + Audiobookshelf client                         | done        |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
-| 5   | Audiobooks experience + player                                  | done        |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done        |
-| 8   | Podcast client (web + Android)                                  | done        |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done        |
-| 10  | Release polish — performance budgets, a11y audit                | planned     |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned     |
+| #   | Phase                                                           | Status  |
+| --- | --------------------------------------------------------------- | ------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
+| 3   | Server BFF core + Audiobookshelf client                         | done    |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
+| 5   | Audiobooks experience + player                                  | done    |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done    |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done    |
+| 8   | Podcast client (web + Android)                                  | done    |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done    |
+| 10  | Release polish — performance budgets, a11y audit                | planned |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned |
 
 ### Why Android sits at 7 rather than last
 
@@ -1262,7 +1262,7 @@ shuffle/repeat, progress reporting and requests of its own.
 
 **Phase 9 is done (2026-08-06).** Every wave listed above shipped on both surfaces, and the
 last open item in the list above — `pollDownloads` having no scheduler — is fixed. Three things
-stay open and are deliberately *not* phase-9 work:
+stay open and are deliberately _not_ phase-9 work:
 
 - **Lyrics search** is blocked on a product decision (index only what the server has, or also
   backfill from an external provider, which carries a privacy opt-in). Not effort-bound.
@@ -1306,8 +1306,55 @@ reviewable: the entry chunk is Mantine + React + react-query + the router + zust
 today, but a candidate for `manualChunks` vendor splitting later if cache-busting on
 unrelated app-shell changes ever becomes a real cost.
 
-Lighthouse audits (desktop and mobile layouts) are the other half of "performance budgets"
-this phase names and remain open.
+**The Lighthouse performance budget is done**, the other half of "performance budgets" this
+phase names. `scripts/lighthouse-budget.mjs` boots the built web app the same way
+Playwright's `webServer` does (`AURALIS_FAKE_UPSTREAMS=1`, `DATA_DIR=:memory:`, its own port
+so a local `pnpm test:e2e` run can coexist with it), launches a real headless Chrome via
+`chrome-launcher` using the Chromium binary Playwright already manages (there is no system
+Chrome, locally or on the CI runner), and audits `performance` for both `desktop` and
+`mobile` form factors — Lighthouse's own `desktop-config.js` preset for the former, its
+default (simulated slow 4G, 4x CPU throttle) for the latter. Each form factor runs three
+times by default and every metric is judged on the **median**, with the observed min/max
+reported alongside, because Lighthouse's own timing metrics turned out to be genuinely noisy
+on this hardware — see below. `scripts/lighthouse-budget.config.mjs` carries every budget
+number's reasoning the same way `bundle-budget.config.mjs` does. Wired into `ci.yml` as the
+`lighthouse-budget` job (needs `playwright install --with-deps chromium`, unlike
+`bundle-budget`), gating `publish` alongside every other job that can say a build is wrong.
+
+Baseline measured 2026-08-06 (commit `814a595`), audited against `/` only — a fresh
+in-memory server starts unconfigured, so that URL serves the onboarding/setup screen, not
+the authenticated library/home experience, and the fake upstreams respond near-instantly
+from the same process, so this says nothing about real-network latency either. Desktop:
+score 0.95, FCP/SI 1.1s, LCP 1.2s, TBT ~0ms, CLS 0. Mobile: score ~0.6, FCP/SI ~6.1s, LCP
+~6.6s — reflecting an un-code-split ~705KB main JS chunk (see the bundle-budget entry above)
+parsed and executed under simulated 4x CPU throttling, not something this wave fixed.
+
+**Total Blocking Time under mobile's simulated throttling was far noisier than everything
+else measured**, worth recording so a future CI failure here isn't mistaken for a regression
+on sight: the 5-run baseline had TBT at a tidy 27–31ms, but repeated re-verification of the
+_same unchanged build_ on the _same machine_ kept finding worse individual samples than the
+last check had (112ms, then 351ms, then 940ms), with mobile's performance score — downstream
+of TBT — dipping as low as an individual sample of 0.39 along the way. That escalating
+pattern is itself the finding, not a series of regressions: Lighthouse's simulated throttling
+models a 4x CPU slowdown on top of whatever the real CPU was doing that millisecond, so
+ordinary scheduling jitter on the host gets amplified 4x into the metric, and chasing a
+"worst observed sample" on a distribution that heavy-tailed has no fixed stopping point.
+What stayed stable across every one of those same re-verification runs was the **median of
+three runs** — the number `evaluateBudget` actually gates on, never the max — which held in a
+consistent band (TBT medians at or under ~310ms; mobile score medians at 0.55 or above) even
+while individual samples swung far wider. The shipped budget (`tbt: 600`, `score: 0.5` on
+mobile) sits with real margin above that median range, not above any one sample; see
+`scripts/lighthouse-budget.config.mjs`'s own comments on `tbt` and `score` for the full
+run-by-run detail. If `lighthouse-budget` ever goes red in CI, the first move is `--runs 7` or
+more locally to see whether the _median_ moved, not to assume the app regressed from one red
+run.
+
+**Not covered by this wave**: any page beyond the unauthenticated onboarding screen (the
+audiobook library grid, the player, any Jellyfin-backed music page — all heavier and
+unaudited), a real Audiobookshelf/Jellyfin over a real network, and every Lighthouse category
+except `performance` (no accessibility, best-practices, SEO or PWA score budget here — the
+accessibility audit above is separate, manual, and covers more ground than Lighthouse's own
+automated a11y category would).
 
 **The accessibility audit has started: done (`d3b2791`).** Two real defects fixed: search
 state changes were invisible to a screen reader (a plain paragraph, no live region), and the

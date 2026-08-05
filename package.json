@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:docker": "scripts/docker-smoke.sh",
+    "perf:lighthouse": "scripts/lighthouse-budget.sh",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",

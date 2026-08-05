@@ -91,6 +91,38 @@ jobs:
       - run: pnpm --filter @auralis/web build
       - run: node scripts/bundle-budget.mjs
 
+  # Phase 10's second release-polish check (docs/ROADMAP.md §10), alongside
+  # `bundle-budget` above: a small bundle does not guarantee a fast page.
+  # `scripts/lighthouse-budget.mjs` has the full spec and
+  # `scripts/lighthouse-budget.config.mjs` has every budget number's reasoning —
+  # including that the numbers were derived on the maintainer's own laptop, not
+  # this runner. CI-runner numbers can genuinely differ from local ones (a
+  # different, unmeasured CPU under mobile's *simulated* throttling especially),
+  # so if this job turns out to fail systematically here while passing locally,
+  # the honest fix is to re-derive the baseline against this runner, not to nudge
+  # a number until it happens to pass.
+  #
+  # `pnpm exec playwright install --with-deps chromium` is required here, unlike
+  # the plain `bundle-budget` job above: this one launches a real Chrome via
+  # `chrome-launcher` (see `lighthouse-budget.mjs`'s header for why), and no
+  # system Chrome exists on this runner any more than it does locally.
+  #
+  # Deliberately no `needs:` on `static`/`unit`, same reasoning as `bundle-budget`
+  # above — it shares no build output with them and gains nothing from waiting.
+  lighthouse-budget:
+    name: Web Lighthouse performance budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm perf:lighthouse
+
   # Phase 4's exit criterion: the container is covered by CI, not by hope. Every
   # phase from here on leaves `docker compose up` working, so this job failing is
   # a release blocker, not a packaging detail to sort out at the end.
@@ -121,10 +153,12 @@ jobs:
   #
   # `bundle-budget` joined the same list on 2026-08-05, for the same reason: it is a job
   # that can say "this build is wrong" (a regressed web bundle), so it gates the registry
-  # like every other one here.
+  # like every other one here. `lighthouse-budget` joined on 2026-08-06 for the identical
+  # reason, one level up the stack: a regressed *performance* budget is just as much a
+  # reason to withhold a release as a regressed bundle size.
   publish:
     name: Publish image to GHCR
-    needs: [static, unit, e2e, container, bundle-budget]
+    needs: [static, unit, e2e, container, bundle-budget, lighthouse-budget]
     runs-on: ubuntu-latest
     # Push events only, and only on `main` — the branch this project delivers on. A
     # pull_request run has no write-scoped GITHUB_TOKEN and must never attempt this.
