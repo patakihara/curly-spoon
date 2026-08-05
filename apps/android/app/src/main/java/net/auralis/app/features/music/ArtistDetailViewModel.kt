@@ -36,6 +36,12 @@ sealed interface ArtistDetailUiState {
         val albums: List<MusicAlbumUi>,
         val total: Int,
         val loadingMore: Boolean = false,
+        /** The artist's own favourite state, fetched separately in [ArtistDetailViewModel.load]
+         * via [MusicRepository.artists]' single-item `id` filter — see
+         * [AlbumDetailUiState.Loaded.albumFavorite]'s identical doc comment for why this is a
+         * second fetch rather than derived from [albums], and why it defaults `false` on
+         * failure rather than blocking the rest of the page. */
+        val artistFavorite: Boolean = false,
     ) : ArtistDetailUiState {
         val hasMore: Boolean get() = hasMoreMusicPages(albums.size, total)
     }
@@ -72,6 +78,7 @@ class ArtistDetailViewModel(
                             artistName = albums.firstOrNull()?.artistName ?: "Artist",
                             albums = albums,
                             total = result.total,
+                            artistFavorite = fetchArtistFavorite(),
                         )
                 }
                 is AlbumsPageResult.Failed ->
@@ -104,6 +111,46 @@ class ArtistDetailViewModel(
                             loadingMore = false,
                         )
                 is AlbumsPageResult.Failed -> _uiState.value = current.copy(loadingMore = false)
+            }
+        }
+    }
+
+    /** See [AlbumDetailViewModel.fetchAlbumFavorite] — identical shape and identical reasoning
+     * (sequential after the page fetch above, degrades to `false` on failure), applied to
+     * [ArtistDetailViewModel.artistId] via [MusicRepository.artists]' own single-item `id`
+     * filter instead of [MusicRepository.albums]'. */
+    private suspend fun fetchArtistFavorite(): Boolean =
+        when (val result = musicRepository.artists(id = artistId, limit = 1)) {
+            is ArtistsPageResult.Loaded -> result.items.firstOrNull()?.favorite ?: false
+            is ArtistsPageResult.Failed -> false
+        }
+
+    // See [AlbumDetailViewModel.favoriteGeneration]/[AlbumDetailViewModel.toggleFavorite] for
+    // the full correctness argument this pair reuses verbatim, applied to one item (this
+    // screen's own `artistId`) instead of a track list plus an album id.
+    private val favoriteGeneration = mutableMapOf<String, Int>()
+
+    /** Toggles favourite state for the artist itself. See
+     * [AlbumDetailViewModel.toggleFavorite]'s doc comment for the optimistic-update/rollback
+     * guarantee this gives. */
+    fun toggleArtistFavorite() {
+        val current = _uiState.value as? ArtistDetailUiState.Loaded ?: return
+        val myGeneration = (favoriteGeneration[artistId] ?: 0) + 1
+        favoriteGeneration[artistId] = myGeneration
+        val optimisticFavorite = !current.artistFavorite
+        _uiState.value = current.copy(artistFavorite = optimisticFavorite)
+        viewModelScope.launch {
+            when (val result = musicRepository.setFavorite(artistId, optimisticFavorite)) {
+                is FavoriteToggleResult.Updated -> {
+                    if (favoriteGeneration[artistId] != myGeneration) return@launch
+                    val state = _uiState.value as? ArtistDetailUiState.Loaded ?: return@launch
+                    _uiState.value = state.copy(artistFavorite = result.favorite)
+                }
+                is FavoriteToggleResult.Failed -> {
+                    if (favoriteGeneration[artistId] != myGeneration) return@launch
+                    val state = _uiState.value as? ArtistDetailUiState.Loaded ?: return@launch
+                    _uiState.value = state.copy(artistFavorite = current.artistFavorite)
+                }
             }
         }
     }

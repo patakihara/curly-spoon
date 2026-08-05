@@ -13,6 +13,7 @@ import net.auralis.app.data.model.HomeResponse
 import net.auralis.app.data.model.JellyfinAlbumsPage
 import net.auralis.app.data.model.JellyfinArtistsPage
 import net.auralis.app.data.model.JellyfinConfig
+import net.auralis.app.data.model.JellyfinFavoriteResponse
 import net.auralis.app.data.model.JellyfinLoginRequestBody
 import net.auralis.app.data.model.JellyfinLoginResponse
 import net.auralis.app.data.model.JellyfinSearchResults
@@ -288,14 +289,28 @@ class ApiClient(
         baseUrl: String? = null,
     ): JellyfinLoginResponse = post("/jellyfin/login", JellyfinLoginRequestBody(baseUrl, username, password))
 
-    /** GET /jellyfin/artists — paginated. `sortOrder` is passed through verbatim, same as the
-     * BFF/upstream client: `'Ascending'`/`'Descending'`, not validated client-side. */
+    /**
+     * GET /jellyfin/artists — paginated. `sortOrder` is passed through verbatim, same as the
+     * BFF/upstream client: `'Ascending'`/`'Descending'`, not validated client-side.
+     *
+     * [favoritesOnly] mirrors the BFF's own `favoritesOnly` filter — used by the favourites
+     * screen to list only favourited artists. [id] is a single artist id, sent as the BFF's
+     * comma-separated `ids` filter with exactly one entry — the same shape
+     * `apps/web/src/api/client.ts`'s `getJellyfinArtists`' own `id` parameter already uses to
+     * fetch one artist (there is no dedicated single-artist route; see that method's own doc
+     * comment) for a detail screen's own favourite-state header fetch. A one-element `ids`
+     * filter is not treated as empty by the BFF (`isEmptyIdsFilter` only short-circuits a
+     * *zero*-element list), so this reaches `getArtists` normally rather than the BFF's
+     * empty-page shortcut.
+     */
     suspend fun jellyfinArtists(
         parentId: String? = null,
         startIndex: Int? = null,
         limit: Int? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
+        id: String? = null,
     ): JellyfinArtistsPage {
         val params =
             buildMap {
@@ -304,13 +319,21 @@ class ApiClient(
                 limit?.let { put("limit", it.toString()) }
                 sortBy?.let { put("sortBy", it) }
                 sortOrder?.let { put("sortOrder", it) }
+                favoritesOnly?.let { put("favoritesOnly", it.toString()) }
+                id?.let { put("ids", it) }
             }
         return get("/jellyfin/artists", params)
     }
 
-    /** GET /jellyfin/albums — paginated, optionally scoped to one artist via [artistId] (the
+    /**
+     * GET /jellyfin/albums — paginated, optionally scoped to one artist via [artistId] (the
      * BFF's `albumArtistIds` filter — see `AlbumsQuery`'s doc comment in `@auralis/jellyfin-client`
-     * for why album-artist rather than any-contributing-artist). */
+     * for why album-artist rather than any-contributing-artist).
+     *
+     * [favoritesOnly]/[id] mirror [jellyfinArtists]'s identical parameters — see that method's
+     * own doc comment for what each does and why [id] is safe against the BFF's empty-`ids`
+     * shortcut.
+     */
     suspend fun jellyfinAlbums(
         parentId: String? = null,
         artistId: String? = null,
@@ -318,6 +341,8 @@ class ApiClient(
         limit: Int? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
+        id: String? = null,
     ): JellyfinAlbumsPage {
         val params =
             buildMap {
@@ -327,11 +352,17 @@ class ApiClient(
                 limit?.let { put("limit", it.toString()) }
                 sortBy?.let { put("sortBy", it) }
                 sortOrder?.let { put("sortOrder", it) }
+                favoritesOnly?.let { put("favoritesOnly", it.toString()) }
+                id?.let { put("ids", it) }
             }
         return get("/jellyfin/albums", params)
     }
 
-    /** GET /jellyfin/tracks — paginated, optionally scoped to one album via [albumId]. */
+    /** GET /jellyfin/tracks — paginated, optionally scoped to one album via [albumId].
+     * [favoritesOnly] mirrors [jellyfinArtists]'s identical parameter — used by the favourites
+     * screen to list only favourited tracks. No single-track [id] fetch exists here: unlike an
+     * artist/album header, no screen in this app needs one track's favourite state fetched in
+     * isolation. */
     suspend fun jellyfinTracks(
         parentId: String? = null,
         albumId: String? = null,
@@ -339,6 +370,7 @@ class ApiClient(
         limit: Int? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
     ): JellyfinTracksPage {
         val params =
             buildMap {
@@ -348,6 +380,7 @@ class ApiClient(
                 limit?.let { put("limit", it.toString()) }
                 sortBy?.let { put("sortBy", it) }
                 sortOrder?.let { put("sortOrder", it) }
+                favoritesOnly?.let { put("favoritesOnly", it.toString()) }
             }
         return get("/jellyfin/tracks", params)
     }
@@ -364,6 +397,22 @@ class ApiClient(
             }
         return get("/jellyfin/search", params)
     }
+
+    /** POST /jellyfin/items/{itemId}/favorite — marks `itemId` as a favourite for the signed-in
+     * user. Returns the resulting favourite state (expected `true`) rather than nothing, so
+     * [MusicRepository.setFavorite] reconciles against what the server actually recorded
+     * instead of assuming the request it sent is the state that stuck — see
+     * [JellyfinFavoriteResponse]'s own doc comment. */
+    suspend fun jellyfinMarkFavorite(itemId: String): JellyfinFavoriteResponse =
+        postNoBody("/jellyfin/items/$itemId/favorite")
+
+    /** DELETE /jellyfin/items/{itemId}/favorite — unmarks `itemId` as a favourite. See
+     * [jellyfinMarkFavorite]'s doc comment for why the resulting state is returned rather than
+     * assumed. Built as a direct [execute] call, like [jellyfinMarkFavorite]'s underlying
+     * [postNoBody], rather than [executeNoContent]: unlike [deleteRequest] this DELETE has a
+     * response body to decode, not a 204. */
+    suspend fun jellyfinUnmarkFavorite(itemId: String): JellyfinFavoriteResponse =
+        execute(Request.Builder().url(apiUrl("/jellyfin/items/$itemId/favorite")).delete().build())
 
     /**
      * Builds the URL for GET /jellyfin/tracks/{itemId}/stream — a pure URL builder, like

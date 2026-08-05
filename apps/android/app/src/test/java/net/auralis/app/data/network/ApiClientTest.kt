@@ -1289,4 +1289,84 @@ class ApiClientTest {
             assertFalse(url.contains("ApiKey"))
             assertFalse(url.contains("token", ignoreCase = true))
         }
+
+    @Test
+    fun `jellyfinArtists favoritesOnly and id are sent as favoritesOnly and ids query parameters`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":0}"""))
+
+            apiClient.jellyfinArtists(favoritesOnly = true, id = "art1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("favoritesOnly=true"))
+            assertTrue(recordedPath.contains("ids=art1"))
+        }
+
+    @Test
+    fun `jellyfinAlbums favoritesOnly and id are sent as favoritesOnly and ids query parameters`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":0}"""))
+
+            apiClient.jellyfinAlbums(favoritesOnly = true, id = "alb1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("favoritesOnly=true"))
+            assertTrue(recordedPath.contains("ids=alb1"))
+        }
+
+    @Test
+    fun `jellyfinTracks favoritesOnly is sent as a favoritesOnly query parameter`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"items":[],"total":0,"startIndex":0}"""))
+
+            apiClient.jellyfinTracks(favoritesOnly = true)
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.contains("favoritesOnly=true"))
+        }
+
+    @Test
+    fun `jellyfinMarkFavorite POSTs to the item's favorite route and decodes the resulting state`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"favorite":true}"""))
+
+            val result = apiClient.jellyfinMarkFavorite("art1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.endsWith("/jellyfin/items/art1/favorite"))
+            assertTrue(result.favorite)
+        }
+
+    @Test
+    fun `jellyfinUnmarkFavorite DELETEs the item's favorite route and decodes the resulting state`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
+
+            val result = apiClient.jellyfinUnmarkFavorite("art1")
+
+            val recordedPath = mockWebServer.takeRequest().path.orEmpty()
+            assertTrue(recordedPath.endsWith("/jellyfin/items/art1/favorite"))
+            assertFalse(result.favorite)
+        }
+
+    @Test
+    fun `jellyfinUnmarkFavorite throws ApiException rather than an unrelated exception on an error response`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val exception =
+                try {
+                    apiClient.jellyfinUnmarkFavorite("art1")
+                    null
+                } catch (e: ApiException) {
+                    e
+                }
+
+            assertNotNull(exception)
+            assertEquals("upstream_auth_expired", exception?.code)
+        }
 }

@@ -77,6 +77,9 @@ fun MusicLibraryScreen(
                     TextButton(onClick = { navController.navigate(Routes.MUSIC_SEARCH) }) {
                         Text("Search")
                     }
+                    TextButton(onClick = { navController.navigate(Routes.MUSIC_FAVORITES) }) {
+                        Text("Favourites")
+                    }
                 },
             )
         },
@@ -252,9 +255,18 @@ private fun LazyListScope.loadMoreRow(
     }
 }
 
-/** Shared with [ArtistDetailScreen] — an artist row and an album row are visually identical
- * (cover, title, optional subtitle), so this is `internal`, not `private`, rather than
- * duplicated. */
+/**
+ * Shared with [ArtistDetailScreen], [MusicSearchScreen] and [FavoritesScreen] — an artist row
+ * and an album row are visually identical (cover, title, optional subtitle), so this is
+ * `internal`, not `private`, rather than duplicated.
+ *
+ * [trailing] defaults to nothing, which every pre-existing caller relies on to keep this row's
+ * layout unchanged. When it's supplied ([FavoritesScreen]'s own favourite-toggle rows), it is a
+ * *sibling* of the clickable artwork-plus-text [Row], not nested inside its `clickable`
+ * modifier's subtree — see [AlbumDetailScreen]'s `TrackRow` doc comment for why that avoids
+ * depending on Compose's nested-`clickable` pointer-event-consumption behaviour, which nothing
+ * in this app tests directly.
+ */
 @Composable
 internal fun MusicRow(
     title: String,
@@ -262,24 +274,27 @@ internal fun MusicRow(
     coverUrl: String?,
     imageLoader: ImageLoader,
     onClick: () -> Unit,
+    trailing: @Composable () -> Unit = {},
 ) {
     Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AsyncImage(
-            model = coverUrl,
-            contentDescription = null,
-            imageLoader = imageLoader,
-            modifier = Modifier.size(56.dp),
-        )
-        Column(modifier = Modifier.padding(start = 16.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        Row(
+            modifier = Modifier.weight(1f).clickable(onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AsyncImage(
+                model = coverUrl,
+                contentDescription = null,
+                imageLoader = imageLoader,
+                modifier = Modifier.size(56.dp),
+            )
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            }
         }
+        trailing()
     }
 }

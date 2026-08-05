@@ -59,6 +59,15 @@ fun ArtistDetailScreen(
         topBar = {
             TopAppBar(
                 title = { Text((uiState as? ArtistDetailUiState.Loaded)?.artistName ?: "Artist") },
+                actions = {
+                    (uiState as? ArtistDetailUiState.Loaded)?.let { loaded ->
+                        FavoriteToggleButton(
+                            favorite = loaded.artistFavorite,
+                            itemName = loaded.artistName,
+                            onToggle = viewModel::toggleArtistFavorite,
+                        )
+                    }
+                },
             )
         },
     ) { innerPadding ->

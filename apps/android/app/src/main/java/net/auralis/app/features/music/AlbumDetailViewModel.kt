@@ -34,6 +34,11 @@ data class MusicTrackUi(
     val title: String,
     val position: String,
     val durationSeconds: Long,
+    /** Defaults `false` so [AlbumPlaybackQueueTest]'s pre-existing constructions (queueing
+     * logic, which never touches favourite state) don't all need updating for a field they
+     * don't exercise — same reasoning as [net.auralis.app.data.model.JellyfinArtist.favorite]'s
+     * doc comment. */
+    val favorite: Boolean = false,
 )
 
 sealed interface AlbumDetailUiState {
@@ -55,6 +60,13 @@ sealed interface AlbumDetailUiState {
         val tracks: List<MusicTrackUi>,
         val total: Int,
         val loadingMore: Boolean = false,
+        /** The *album's* own favourite state — distinct from any track's — fetched separately
+         * in [AlbumDetailViewModel.load] via [MusicRepository.albums]' single-item `id` filter,
+         * since `/jellyfin/tracks` carries no favourite flag for the album container itself.
+         * Defaults `false` (never left unset) so a failed fetch of this one extra field degrades
+         * to "not favourited" rather than blocking the rest of the page — see [load]'s own
+         * comment on that fetch. */
+        val albumFavorite: Boolean = false,
     ) : AlbumDetailUiState {
         val hasMore: Boolean get() = hasMoreMusicPages(tracks.size, total)
     }
@@ -111,6 +123,7 @@ class AlbumDetailViewModel(
                             coverUrl = jellyfinItemArtworkUrl(cachedBaseUrl, albumId),
                             tracks = tracks,
                             total = result.total,
+                            albumFavorite = fetchAlbumFavorite(),
                         )
                 }
                 is TracksPageResult.Failed ->
@@ -123,6 +136,27 @@ class AlbumDetailViewModel(
             }
         }
     }
+
+    /**
+     * A second, sequential fetch of just this album's own favourite state, via
+     * [MusicRepository.albums]' single-item `id` filter — the same "list filtered to one id"
+     * shape `apps/web/src/api/queries.ts`'s `useJellyfinAlbumQuery` already uses for its own
+     * header favourite toggle, since there is no dedicated single-album route (see
+     * [ArtistDetailUiState.Loaded.artistName]'s doc comment on the same gap). Deliberately
+     * sequential, run *after* the tracks page above has already landed in `_uiState` rather than
+     * concurrently with it: `MockWebServer`'s default dispatcher hands out enqueued responses in
+     * request-arrival order, not enqueue order, so two genuinely concurrent requests from this
+     * method race unpredictably in a test — see `MusicSearchViewModelTest`'s
+     * "a stale response for a superseded query" test for where that bit this project before.
+     * Sequential avoids the whole class of bug for one extra field that isn't on the critical
+     * path to showing the album's tracks. Degrades to `false` on any failure — a favourite-state
+     * fetch failing must never block the rest of the page from loading.
+     */
+    private suspend fun fetchAlbumFavorite(): Boolean =
+        when (val result = musicRepository.albums(id = albumId, limit = 1)) {
+            is AlbumsPageResult.Loaded -> result.items.firstOrNull()?.favorite ?: false
+            is AlbumsPageResult.Failed -> false
+        }
 
     /** See [MusicLibraryViewModel.loadMoreArtists] — identical shape and identical
      * failed-load-more degrade. */
@@ -148,6 +182,87 @@ class AlbumDetailViewModel(
                             loadingMore = false,
                         )
                 is TracksPageResult.Failed -> _uiState.value = current.copy(loadingMore = false)
+            }
+        }
+    }
+
+    // One counter per item id (a track id, or this screen's own `albumId`) — bumped on every
+    // toggle of that item, read back by [toggleFavorite]'s own coroutine to tell "nothing newer
+    // has touched this item since I started" from "a later toggle has already taken over". See
+    // [toggleFavorite]'s doc comment for the full correctness argument; this field only exists
+    // because that argument needs somewhere to keep its bookkeeping.
+    private val favoriteGeneration = mutableMapOf<String, Int>()
+
+    /** Toggles favourite state for one of this album's tracks, by [trackId]. See
+     * [toggleFavorite]'s doc comment for the optimistic-update/rollback guarantee this gives. */
+    fun toggleTrackFavorite(trackId: String) {
+        val current = _uiState.value as? AlbumDetailUiState.Loaded ?: return
+        val track = current.tracks.firstOrNull { it.id == trackId } ?: return
+        toggleFavorite(trackId, track.favorite) { favorite ->
+            val state = _uiState.value as? AlbumDetailUiState.Loaded ?: return@toggleFavorite
+            _uiState.value =
+                state.copy(tracks = state.tracks.map { if (it.id == trackId) it.copy(favorite = favorite) else it })
+        }
+    }
+
+    /** Toggles favourite state for the album itself (this screen's own `albumId`, its header
+     * toggle — distinct from any one track's, see [AlbumDetailUiState.Loaded.albumFavorite]'s
+     * doc comment). See [toggleFavorite]'s doc comment for the guarantee this gives. */
+    fun toggleAlbumFavorite() {
+        val current = _uiState.value as? AlbumDetailUiState.Loaded ?: return
+        toggleFavorite(albumId, current.albumFavorite) { favorite ->
+            val state = _uiState.value as? AlbumDetailUiState.Loaded ?: return@toggleFavorite
+            _uiState.value = state.copy(albumFavorite = favorite)
+        }
+    }
+
+    /**
+     * Flips [itemId]'s favourite state from [currentFavorite] immediately (optimistic —
+     * [applyFavorite] is called synchronously, before any suspension, so the UI updates on the
+     * same frame as the tap), then calls [MusicRepository.setFavorite] and reconciles: on
+     * success, [applyFavorite] is called again with the *server's* resulting state (normally the
+     * same value, but see [net.auralis.app.data.model.JellyfinFavoriteResponse]'s doc comment for
+     * why that isn't assumed); on failure, [applyFavorite] is called a second time with
+     * [currentFavorite] to roll back.
+     *
+     * The rollback is only safe because of [favoriteGeneration]. Two overlapping toggles of the
+     * *same* [itemId] (a double-tap, or a track row's toggle racing the album header's toggle of
+     * the same underlying item id, though no call site here does that) would otherwise corrupt
+     * each other: an earlier toggle's slow failure must not rewrite state a newer toggle has
+     * already moved past — exactly the bug `apps/web/src/features/music/FavoriteToggle.tsx`'s own
+     * mutation shipped once and a review caught (two overlapping mutations each snapshotting
+     * state and rolling back unconditionally, so a first request failing after a second had
+     * already written clobbered the second). This method captures its own generation number
+     * before touching the map again, so a second call for the same [itemId] bumps the counter out
+     * from under the first — both the success and the failure branches below re-check
+     * [favoriteGeneration] immediately before writing and drop a stale write rather than apply
+     * it, the same "capture a sequence number at launch, compare it at the write site" guarantee
+     * [MusicSearchViewModel]'s own `searchSequence` field gives for a stale search response (see
+     * that field's doc comment for why a plain field read at the write site holds regardless of
+     * how two coroutines' resumptions actually interleave — the identical argument applies here).
+     * The capture-and-bump above happens synchronously on the caller's thread (`viewModelScope`
+     * is confined to `Dispatchers.Main`), so there is no window where two toggles could both read
+     * the same "current" generation.
+     */
+    private fun toggleFavorite(
+        itemId: String,
+        currentFavorite: Boolean,
+        applyFavorite: (Boolean) -> Unit,
+    ) {
+        val myGeneration = (favoriteGeneration[itemId] ?: 0) + 1
+        favoriteGeneration[itemId] = myGeneration
+        val optimisticFavorite = !currentFavorite
+        applyFavorite(optimisticFavorite)
+        viewModelScope.launch {
+            when (val result = musicRepository.setFavorite(itemId, optimisticFavorite)) {
+                is FavoriteToggleResult.Updated -> {
+                    if (favoriteGeneration[itemId] != myGeneration) return@launch
+                    applyFavorite(result.favorite)
+                }
+                is FavoriteToggleResult.Failed -> {
+                    if (favoriteGeneration[itemId] != myGeneration) return@launch
+                    applyFavorite(currentFavorite)
+                }
             }
         }
     }
@@ -233,6 +348,7 @@ private fun JellyfinTrack.toTrackUi(): MusicTrackUi =
         title = name,
         position = trackPosition(discNumber, trackNumber),
         durationSeconds = (durationSeconds ?: 0.0).roundToLong(),
+        favorite = favorite,
     )
 
 private fun trackPosition(

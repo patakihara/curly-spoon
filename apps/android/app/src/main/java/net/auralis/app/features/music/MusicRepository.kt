@@ -84,6 +84,18 @@ sealed interface MusicSearchResult {
     data class Failed(val code: String) : MusicSearchResult
 }
 
+/** Outcome of [MusicRepository.setFavorite]. Shared by mark and unmark — both
+ * [net.auralis.app.data.network.ApiClient.jellyfinMarkFavorite]/`jellyfinUnmarkFavorite` return
+ * the same `{ favorite }` shape, so there is no reason for two near-identical result types. */
+sealed interface FavoriteToggleResult {
+    /** [favorite] is the state Jellyfin actually recorded, not necessarily what was requested
+     * — see [net.auralis.app.data.model.JellyfinFavoriteResponse]'s own doc comment for why a
+     * caller should reconcile against this value rather than assume its own request stuck. */
+    data class Updated(val favorite: Boolean) : FavoriteToggleResult
+
+    data class Failed(val code: String) : FavoriteToggleResult
+}
+
 /**
  * Thin, testable layer over [ApiClient]'s `jellyfin*` methods — the Jellyfin-music counterpart
  * to how `BrowseTreeRepository`/`DownloadRepository` sit over the Audiobookshelf routes. No
@@ -136,23 +148,26 @@ class MusicRepository(private val apiClient: ApiClient) {
             MusicLoginResult.Failed(e.code)
         }
 
-    /** GET /jellyfin/artists, paginated. See [ApiClient.jellyfinArtists] for parameter meaning. */
+    /** GET /jellyfin/artists, paginated. See [ApiClient.jellyfinArtists] for parameter meaning
+     * — [favoritesOnly]/[id] included. */
     suspend fun artists(
         parentId: String? = null,
         startIndex: Int? = null,
         limit: Int? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
+        id: String? = null,
     ): ArtistsPageResult =
         try {
-            val page = apiClient.jellyfinArtists(parentId, startIndex, limit, sortBy, sortOrder)
+            val page = apiClient.jellyfinArtists(parentId, startIndex, limit, sortBy, sortOrder, favoritesOnly, id)
             ArtistsPageResult.Loaded(page.items, page.total, page.startIndex)
         } catch (e: ApiException) {
             ArtistsPageResult.Failed(e.code)
         }
 
     /** GET /jellyfin/albums, paginated, optionally scoped to one artist. See
-     * [ApiClient.jellyfinAlbums] for parameter meaning. */
+     * [ApiClient.jellyfinAlbums] for parameter meaning — [favoritesOnly]/[id] included. */
     suspend fun albums(
         parentId: String? = null,
         artistId: String? = null,
@@ -160,16 +175,19 @@ class MusicRepository(private val apiClient: ApiClient) {
         limit: Int? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
+        id: String? = null,
     ): AlbumsPageResult =
         try {
-            val page = apiClient.jellyfinAlbums(parentId, artistId, startIndex, limit, sortBy, sortOrder)
+            val page =
+                apiClient.jellyfinAlbums(parentId, artistId, startIndex, limit, sortBy, sortOrder, favoritesOnly, id)
             AlbumsPageResult.Loaded(page.items, page.total, page.startIndex)
         } catch (e: ApiException) {
             AlbumsPageResult.Failed(e.code)
         }
 
     /** GET /jellyfin/tracks, paginated, optionally scoped to one album. See
-     * [ApiClient.jellyfinTracks] for parameter meaning. */
+     * [ApiClient.jellyfinTracks] for parameter meaning — [favoritesOnly] included. */
     suspend fun tracks(
         parentId: String? = null,
         albumId: String? = null,
@@ -177,9 +195,10 @@ class MusicRepository(private val apiClient: ApiClient) {
         limit: Int? = null,
         sortBy: String? = null,
         sortOrder: String? = null,
+        favoritesOnly: Boolean? = null,
     ): TracksPageResult =
         try {
-            val page = apiClient.jellyfinTracks(parentId, albumId, startIndex, limit, sortBy, sortOrder)
+            val page = apiClient.jellyfinTracks(parentId, albumId, startIndex, limit, sortBy, sortOrder, favoritesOnly)
             TracksPageResult.Loaded(page.items, page.total, page.startIndex)
         } catch (e: ApiException) {
             TracksPageResult.Failed(e.code)
@@ -195,6 +214,25 @@ class MusicRepository(private val apiClient: ApiClient) {
             MusicSearchResult.Loaded(result.artists, result.albums, result.tracks)
         } catch (e: ApiException) {
             MusicSearchResult.Failed(e.code)
+        }
+
+    /**
+     * Marks or unmarks [itemId] as a favourite, depending on [favorite] — dispatches to
+     * [ApiClient.jellyfinMarkFavorite]/[ApiClient.jellyfinUnmarkFavorite] the same way
+     * `apps/web/src/api/queries.ts`'s `useToggleJellyfinFavoriteMutation` dispatches to the
+     * web client's own `markJellyfinFavorite`/`unmarkJellyfinFavorite`, so both clients make the
+     * identical mark-vs-unmark call for the identical intent. Works for an artist, album or
+     * track id alike — Jellyfin's favourite endpoints are not scoped to one item kind.
+     */
+    suspend fun setFavorite(
+        itemId: String,
+        favorite: Boolean,
+    ): FavoriteToggleResult =
+        try {
+            val response = if (favorite) apiClient.jellyfinMarkFavorite(itemId) else apiClient.jellyfinUnmarkFavorite(itemId)
+            FavoriteToggleResult.Updated(response.favorite)
+        } catch (e: ApiException) {
+            FavoriteToggleResult.Failed(e.code)
         }
 
     /** The BFF-proxied stream URL for one track — see [ApiClient.jellyfinTrackStreamUrl]'s doc

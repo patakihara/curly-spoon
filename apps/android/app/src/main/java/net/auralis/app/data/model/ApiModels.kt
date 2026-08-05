@@ -578,7 +578,13 @@ data class JellyfinLoginResponse(
 )
 
 /** One entry from GET /jellyfin/artists. Mirrors `@auralis/jellyfin-client`'s `Artist`
- * (packages/jellyfin-client/src/domain.ts) field-for-field. */
+ * (packages/jellyfin-client/src/domain.ts) field-for-field. `favorite` defaults `false` for
+ * decoding purposes only — the upstream domain type guarantees it is always a definite
+ * boolean, never absent (see that interface's own doc comment), so this default exists solely
+ * to keep every fixture written before favourites existed (none of which include the field)
+ * decoding successfully rather than throwing; it is not evidence the field is genuinely
+ * optional on the wire, and should not be "tightened" to a required field later without
+ * checking every existing fixture first. */
 @Serializable
 data class JellyfinArtist(
     val id: String,
@@ -586,9 +592,12 @@ data class JellyfinArtist(
     val overview: String? = null,
     val imageTag: String? = null,
     val albumCount: Int? = null,
+    val favorite: Boolean = false,
 )
 
-/** One entry from GET /jellyfin/albums. Mirrors `@auralis/jellyfin-client`'s `Album`. */
+/** One entry from GET /jellyfin/albums. Mirrors `@auralis/jellyfin-client`'s `Album`. See
+ * [JellyfinArtist.favorite]'s doc comment for why this defaults `false` rather than being
+ * required. */
 @Serializable
 data class JellyfinAlbum(
     val id: String,
@@ -601,11 +610,13 @@ data class JellyfinAlbum(
     val genres: List<String> = emptyList(),
     val imageTag: String? = null,
     val trackCount: Int? = null,
+    val favorite: Boolean = false,
 )
 
 /** One entry from GET /jellyfin/tracks. Mirrors `@auralis/jellyfin-client`'s `Track`.
  * `durationSeconds` is a `Double` (not `Int`) because the upstream client derives it by
- * dividing .NET ticks by a constant (`normalize.ts`'s `TICKS_PER_SECOND`), not a whole number. */
+ * dividing .NET ticks by a constant (`normalize.ts`'s `TICKS_PER_SECOND`), not a whole number.
+ * See [JellyfinArtist.favorite]'s doc comment for why `favorite` defaults `false`. */
 @Serializable
 data class JellyfinTrack(
     val id: String,
@@ -618,6 +629,7 @@ data class JellyfinTrack(
     val durationSeconds: Double? = null,
     val imageTag: String? = null,
     val genres: List<String> = emptyList(),
+    val favorite: Boolean = false,
 )
 
 /** GET /jellyfin/artists response — unwrapped, the object itself. Mirrors
@@ -657,4 +669,14 @@ data class JellyfinSearchResults(
     val artists: List<JellyfinArtist> = emptyList(),
     val albums: List<JellyfinAlbum> = emptyList(),
     val tracks: List<JellyfinTrack> = emptyList(),
+)
+
+/** Response body of both `POST /jellyfin/items/:itemId/favorite` and
+ * `DELETE /jellyfin/items/:itemId/favorite` — see `routes/jellyfin.ts`'s favourites section:
+ * both respond `{ favorite }` reflecting the state Jellyfin actually recorded *after* the
+ * change, not just an echo of which request was sent. [MusicRepository.setFavorite] trusts
+ * this value over the request's own intent for exactly that reason. */
+@Serializable
+data class JellyfinFavoriteResponse(
+    val favorite: Boolean,
 )

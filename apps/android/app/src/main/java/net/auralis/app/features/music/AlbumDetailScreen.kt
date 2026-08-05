@@ -113,6 +113,8 @@ fun AlbumDetailScreen(
                     state = state,
                     onLoadMore = viewModel::loadMoreTracks,
                     onTrackClick = { track -> playerViewModel.playQueue { viewModel.buildQueueFrom(track) } },
+                    onToggleAlbumFavorite = viewModel::toggleAlbumFavorite,
+                    onToggleTrackFavorite = viewModel::toggleTrackFavorite,
                 )
         }
     }
@@ -125,6 +127,8 @@ private fun AlbumDetailContent(
     state: AlbumDetailUiState.Loaded,
     onLoadMore: () -> Unit,
     onTrackClick: (MusicTrackUi) -> Unit,
+    onToggleAlbumFavorite: () -> Unit,
+    onToggleTrackFavorite: (String) -> Unit,
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
@@ -135,10 +139,15 @@ private fun AlbumDetailContent(
                     imageLoader = imageLoader,
                     modifier = Modifier.size(96.dp),
                 )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
+                Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
                     Text(state.albumName, style = MaterialTheme.typography.titleLarge)
                     state.artistName?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 }
+                FavoriteToggleButton(
+                    favorite = state.albumFavorite,
+                    itemName = state.albumName,
+                    onToggle = onToggleAlbumFavorite,
+                )
             }
             if (state.tracks.isEmpty()) {
                 Text("No tracks found for this album.", modifier = Modifier.padding(top = 24.dp))
@@ -146,7 +155,11 @@ private fun AlbumDetailContent(
         }
 
         items(state.tracks, key = { it.id }) { track ->
-            TrackRow(track, onClick = { onTrackClick(track) })
+            TrackRow(
+                track,
+                onClick = { onTrackClick(track) },
+                onToggleFavorite = { onToggleTrackFavorite(track.id) },
+            )
         }
 
         if (state.hasMore) {
@@ -163,23 +176,45 @@ private fun AlbumDetailContent(
     }
 }
 
+/**
+ * One track row. The clickable-to-play area (position + title + duration) is a
+ * `Modifier.weight(1f)`-scoped inner [Row], deliberately kept as a *sibling* of
+ * [FavoriteToggleButton] rather than wrapping the whole row (button included) in one outer
+ * `clickable` — nesting the button's own tap target inside another `clickable`'s would make
+ * "does the button's tap also fire the row's `onClick`" depend on Compose's pointer-event-
+ * consumption behaviour between nested `clickable`s, which nothing else in this app's existing
+ * screens exercises (grepped: no other screen nests a `Button`/`TextButton` inside a `clickable`
+ * row). Kept as siblings instead, which has no such ambiguity — the favourite tap can never
+ * reach `onClick` because it is never inside its modifier's subtree to begin with.
+ */
 @Composable
 private fun TrackRow(
     track: MusicTrackUi,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            track.position,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(end = 16.dp),
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(track.title, style = MaterialTheme.typography.titleSmall)
+        Row(
+            modifier = Modifier.weight(1f).clickable(onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                track.position,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(end = 16.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(track.title, style = MaterialTheme.typography.titleSmall)
+            }
+            Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
         }
-        Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
+        FavoriteToggleButton(
+            favorite = track.favorite,
+            itemName = track.title,
+            onToggle = onToggleFavorite,
+        )
     }
 }

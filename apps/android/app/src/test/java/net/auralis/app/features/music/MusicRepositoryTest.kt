@@ -259,4 +259,45 @@ class MusicRepositoryTest {
             assertFalse(url.contains("ApiKey"))
             assertFalse(url.contains("token", ignoreCase = true))
         }
+
+    // -----------------------------------------------------------------------------
+    // setFavorite() — the exact mark-vs-unmark query-parameter wiring is ApiClientTest's job
+    // (see that file's `jellyfinMarkFavorite`/`jellyfinUnmarkFavorite` tests); this class only
+    // needs to prove the true/false dispatch and the Updated/Failed mapping, same division of
+    // labour as every other MusicRepository method's own tests in this file.
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `setFavorite true reports Updated with the server's resulting favourite state`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"favorite":true}"""))
+
+            val result = repository.setFavorite("art1", favorite = true)
+
+            assertEquals(FavoriteToggleResult.Updated(true), result)
+        }
+
+    @Test
+    fun `setFavorite false reports Updated with the server's resulting favourite state`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
+
+            val result = repository.setFavorite("art1", favorite = false)
+
+            assertEquals(FavoriteToggleResult.Updated(false), result)
+        }
+
+    @Test
+    fun `setFavorite reports Failed with the upstream error code rather than throwing`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(401)
+                    .setBody("""{"error":{"code":"upstream_auth_expired","message":"Session expired"}}"""),
+            )
+
+            val result = repository.setFavorite("art1", favorite = true)
+
+            assertEquals(FavoriteToggleResult.Failed("upstream_auth_expired"), result)
+        }
 }

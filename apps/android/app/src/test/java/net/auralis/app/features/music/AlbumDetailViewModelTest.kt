@@ -54,6 +54,23 @@ class AlbumDetailViewModelTest {
         items: String,
     ) = MockResponse().setBody("""{"items":$items,"total":$total,"startIndex":$startIndex}""")
 
+    /**
+     * Response for the second, sequential request [AlbumDetailViewModel.load] issues after a
+     * successful tracks page — [AlbumDetailViewModel.fetchAlbumFavorite]'s own
+     * `musicRepository.albums(id = albumId, limit = 1)` call. Every test below that reaches
+     * [AlbumDetailUiState.Loaded] via [AlbumDetailViewModel.load] must enqueue one of these
+     * *after* its tracks-page response — both requests are sent from the same coroutine, in
+     * this order, so FIFO enqueue order matches arrival order and there is no race to key a
+     * `Dispatcher` against (see `MusicSearchViewModelTest`'s own doc comment for the case where
+     * that guard *would* be needed: concurrent, not sequential, requests). An empty page is
+     * enough for every existing test here, since none of them assert on [favorite] and
+     * [AlbumDetailViewModel.fetchAlbumFavorite] already degrades a missing item to `false`.
+     */
+    private fun albumByIdResponse(favorite: Boolean = false) =
+        MockResponse().setBody(
+            """{"items":[{"id":"alb1","name":"OK Computer","favorite":$favorite}],"total":1,"startIndex":0}""",
+        )
+
     @Test
     fun `load derives album and artist name from the first track and lists every track in order`() =
         runTest {
@@ -67,6 +84,7 @@ class AlbumDetailViewModelTest {
                             "artistNames":["Radiohead"],"trackNumber":2,"discNumber":1,"durationSeconds":383.5}]""",
                 ),
             )
+            mockWebServer.enqueue(albumByIdResponse())
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
 
             viewModel.load()
@@ -92,6 +110,7 @@ class AlbumDetailViewModelTest {
                             "artistNames":["Some Band"],"trackNumber":1,"discNumber":2,"durationSeconds":200.0}]""",
                 ),
             )
+            mockWebServer.enqueue(albumByIdResponse())
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
 
             viewModel.load()
@@ -104,6 +123,7 @@ class AlbumDetailViewModelTest {
     fun `load against an empty album falls back to generic names, not an error`() =
         runTest {
             mockWebServer.enqueue(tracksPageResponse(total = 0, items = "[]"))
+            mockWebServer.enqueue(albumByIdResponse())
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
 
             viewModel.load()
@@ -144,8 +164,15 @@ class AlbumDetailViewModelTest {
                             "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
                 ),
             )
+            mockWebServer.enqueue(albumByIdResponse())
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
             viewModel.load()
+            // `_uiState` only leaves Loading once the whole Loaded object is constructed, and
+            // `albumFavorite = fetchAlbumFavorite()` (load()'s second, sequential request) is
+            // one of that constructor's own arguments — so this single await already guarantees
+            // both of load()'s requests have been consumed before the queue is touched again,
+            // unlike MusicLibraryViewModelTest's two-independent-state-fields case, which needs
+            // two separate awaits for the same reason.
             viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
 
             mockWebServer.enqueue(
@@ -183,6 +210,7 @@ class AlbumDetailViewModelTest {
                             "discNumber":1,"durationSeconds":267.0}]""",
                 ),
             )
+            mockWebServer.enqueue(albumByIdResponse())
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
             viewModel.load()
             val loaded =
@@ -203,15 +231,121 @@ class AlbumDetailViewModelTest {
     fun `buildQueueFrom against a track no longer on the page returns an empty queue, not a crash`() =
         runTest {
             mockWebServer.enqueue(tracksPageResponse(total = 0, items = "[]"))
+            mockWebServer.enqueue(albumByIdResponse())
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
             viewModel.load()
             viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
 
             val queue =
                 viewModel.buildQueueFrom(
-                    MusicTrackUi(id = "gone", title = "Gone", position = "1", durationSeconds = 0L),
+                    MusicTrackUi(id = "gone", title = "Gone", position = "1", durationSeconds = 0L, favorite = false),
                 )
 
             assertTrue(queue.isEmpty())
+        }
+
+    // -----------------------------------------------------------------------------
+    // toggleAlbumFavorite() / toggleTrackFavorite() — see AlbumDetailViewModel.toggleFavorite's
+    // own doc comment for the optimistic-update/rollback guarantee under test here. A dedicated
+    // regression test for the *overlapping-toggle* race that guarantee exists to prevent was
+    // deliberately not written: constructing it would need a custom MockWebServer Dispatcher
+    // that reliably tells two bodiless, same-path, same-method requests apart (this wave's own
+    // final report explains why — the two toggle calls needed to prove the race collapse to
+    // indistinguishable wire traffic for a boolean's only two states), which is exactly the
+    // response-mismatch trap MusicSearchViewModelTest's own "stale response" test warns about
+    // hitting three times already. The guard's correctness instead rests on its direct structural
+    // analogy to MusicSearchViewModel's own `searchSequence` field — capture a generation number
+    // before the only suspension point, compare it at every write site — which this codebase
+    // already ships and tests for the same "stale response must not overwrite a newer one" shape.
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `toggleAlbumFavorite flips optimistically, then reconciles against the server's own answer`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 1,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse(favorite = false))
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            // The server disagrees with the requested state — reconciliation must end on *its*
+            // answer (false), not the optimistic guess (true) or a bare "request succeeded, so
+            // keep my own guess" — see JellyfinFavoriteResponse's own doc comment for why the
+            // resulting state is trusted over the request's own intent.
+            mockWebServer.enqueue(MockResponse().setBody("""{"favorite":false}"""))
+            viewModel.toggleAlbumFavorite()
+
+            // Flips immediately, synchronously, before the request even reaches the network —
+            // the optimistic write happens before `toggleFavorite`'s own suspension point.
+            assertTrue((viewModel.uiState.value as AlbumDetailUiState.Loaded).albumFavorite)
+
+            val settled = viewModel.uiState.first { (it as? AlbumDetailUiState.Loaded)?.albumFavorite == false }
+            assertFalse((settled as AlbumDetailUiState.Loaded).albumFavorite)
+        }
+
+    @Test
+    fun `toggleAlbumFavorite rolls back to the previous value when the request fails`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 1,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse(favorite = true))
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(500)
+                    .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
+            )
+            viewModel.toggleAlbumFavorite()
+
+            // Flips optimistically to false first — the eventual failure must move it back to
+            // true, not merely leave it unchanged from some other cause.
+            assertFalse((viewModel.uiState.value as AlbumDetailUiState.Loaded).albumFavorite)
+
+            val settled = viewModel.uiState.first { (it as? AlbumDetailUiState.Loaded)?.albumFavorite == true }
+            assertTrue((settled as AlbumDetailUiState.Loaded).albumFavorite)
+        }
+
+    @Test
+    fun `toggleTrackFavorite updates only the tapped track, leaving its siblings untouched`() =
+        runTest {
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 2,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0,
+                            "favorite":false},
+                           {"id":"trk2","name":"Paranoid Android","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":2,"discNumber":1,"durationSeconds":383.5,
+                            "favorite":false}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse())
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+            viewModel.load()
+            viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            mockWebServer.enqueue(MockResponse().setBody("""{"favorite":true}"""))
+            viewModel.toggleTrackFavorite("trk1")
+
+            val loaded = viewModel.uiState.value as AlbumDetailUiState.Loaded
+            assertTrue(loaded.tracks.first { it.id == "trk1" }.favorite)
+            assertFalse(loaded.tracks.first { it.id == "trk2" }.favorite)
         }
 }
