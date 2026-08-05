@@ -154,6 +154,19 @@ const musicPlaylistRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// A flat sibling of the other `/music/*` routes, same reasoning as `musicFavoritesRoute` —
+// see `MusicRequestsPage.tsx`'s own doc comment for why this has no destination of its own
+// in `components/destinations.ts` the way the book `requestsRoute` does.
+const musicRequestsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/music/requests',
+  component: lazyRouteComponent(
+    () => import('../features/music/MusicRequestsPage.js'),
+    'MusicRequestsPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -204,6 +217,7 @@ export const routeTree = rootRoute.addChildren([
   musicFavoritesRoute,
   musicPlaylistsRoute,
   musicPlaylistRoute,
+  musicRequestsRoute,
   searchRoute,
   settingsRoute,
   setupRoute,

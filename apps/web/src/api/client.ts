@@ -27,6 +27,9 @@ import type {
   Library,
   LoginResponse,
   MediaProgress,
+  MusicCandidate,
+  MusicRequest,
+  MusicSearchResult,
   PlaybackSession,
   PodcastDirectoryResult,
   PodcastFeedPreview,
@@ -334,6 +337,51 @@ export class ApiClient {
 
   updateRequestSettings(body: Partial<RequestSettings>): Promise<RequestSettings> {
     return this.request('/settings/requests', { method: 'PUT', body });
+  }
+
+  // ---------------------------------------------------------------------
+  // Music requests (Phase 9) — mirrors the book-request methods above one for one;
+  // see routes/musicRequests.ts's header comment for why there is no `/music-requests/:id`
+  // getter used here (the list already carries everything the UI needs) and why grab stops
+  // at `downloading`.
+  // ---------------------------------------------------------------------
+
+  searchMusicRequests(
+    query: { term: string; limit?: number },
+    signal?: AbortSignal,
+  ): Promise<MusicSearchResult> {
+    return this.request('/music-requests/search', { query, signal });
+  }
+
+  getMusicRequests(
+    status?: RequestStatus,
+    signal?: AbortSignal,
+  ): Promise<{ requests: MusicRequest[] }> {
+    return this.request('/music-requests', { query: { status }, signal });
+  }
+
+  createMusicRequest(candidate: MusicCandidate): Promise<{ request: MusicRequest }> {
+    return this.request('/music-requests', { method: 'POST', body: { candidate } });
+  }
+
+  approveMusicRequest(id: string): Promise<{ request: MusicRequest }> {
+    return this.request(`/music-requests/${encodeURIComponent(id)}/approve`, { method: 'POST' });
+  }
+
+  rejectMusicRequest(id: string): Promise<{ request: MusicRequest }> {
+    return this.request(`/music-requests/${encodeURIComponent(id)}/reject`, { method: 'POST' });
+  }
+
+  retryMusicRequest(id: string): Promise<{ request: MusicRequest }> {
+    return this.request(`/music-requests/${encodeURIComponent(id)}/retry`, { method: 'POST' });
+  }
+
+  grabMusicRequest(id: string): Promise<{ request: MusicRequest }> {
+    return this.request(`/music-requests/${encodeURIComponent(id)}/grab`, { method: 'POST' });
+  }
+
+  deleteMusicRequest(id: string): Promise<void> {
+    return this.request(`/music-requests/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
   // ---------------------------------------------------------------------

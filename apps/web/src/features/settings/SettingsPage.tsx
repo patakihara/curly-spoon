@@ -11,6 +11,7 @@ import { useLogoutMutation, useSetupQuery } from '../../api/queries.js';
 import { useThemeStore } from '../../state/themeStore.js';
 import type { ThemeMode } from '@auralis/ui';
 import { JellyfinConnectSection } from '../music/JellyfinConnectSection.js';
+import { MusicRequestSettingsSection } from '../music/MusicRequestSettingsSection.js';
 import { ProviderSettingsSection } from '../requests/ProviderSettingsSection.js';
 import { RequestSettingsSection } from '../requests/RequestSettingsSection.js';
 
@@ -91,6 +92,8 @@ export function SettingsPage() {
       <ProviderSettingsSection />
 
       <RequestSettingsSection />
+
+      <MusicRequestSettingsSection />
 
       <section>
         <Button variant="outlined" onClick={() => void handleSignOut()} data-testid="sign-out">
