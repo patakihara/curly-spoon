@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-04T20:41:17Z` · `a334818b757135847` · general-purpose · running · —
 - `2026-08-04T20:42:32Z` · `a5fe68bc1b55496c1` · general-purpose · running · —
 - `2026-08-04T20:42:50Z` · `a2d41422f046c6b64` · general-purpose · running · —
 - `2026-08-04T20:42:50Z` · `a5fe68bc1b55496c1` · general-purpose · running · —
@@ -93,9 +92,10 @@ in-context scan of the current one.
 - `2026-08-05T08:38:30Z` · `a8cdd90ee4f264e05` · general-purpose · ended · ## Review report — Phase 9 Android music data layer ('821ec42', merged '924cc2c') **Android CI for '924cc2c': passed.** Run 30989819518, 'build' job…
 - `2026-08-05T08:43:47Z` · `a8e65badc58052dd3` · general-purpose · ended · Committed, working tree clean, not pushed (per instructions). ## Report **Branch/commit**: 'worktree-agent-a8e65badc58052dd3' @ 'b73c246', based on '…
 - `2026-08-05T08:51:27Z` · `ac1255f097df9c0d8` · general-purpose · ended · ## Review report — Phase 9 web wave, synced lyrics view ('c0c05f3', based on 'fb59f64') **Verdict: merge as-is.** No blocking or should-fix findings.…
-- `2026-08-05T08:58:30Z` · `a1640b20f630bbad0` · general-purpose · running · —
+- `2026-08-05T08:58:30Z` · `a1640b20f630bbad0` · general-purpose · ended · Working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a1640b20f630bbad0' @ 'b35bba8', based on '83e3f32' ('or…
 - `2026-08-05T09:04:41Z` · `a029ef271eb6845b7` · general-purpose · ended · ## Android CI result for '52307c7' **Failed** (run 30991662924, conclusion 'failure'). Not a compile error — 'compileDebugKotlin'/'compileReleaseKotl…
 - `2026-08-05T09:11:55Z` · `a89ca5d18015b9a36` · general-purpose · ended · Committed clean, working tree empty, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a89ca5d18015b9a36' @ 'ad3ecbf', based on…
+- `2026-08-05T09:21:47Z` · `a1d4554db1e1ed7e1` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -256,13 +256,33 @@ the live/source/unverified breakdown; get a credential before re-deriving it.
 `ghcr.io/patakihara/auralis:latest` and `:<sha>` (linux/amd64) on every green build of this
 branch, gated to `push` events on this branch only. Multi-arch (arm64) remains phase 10.
 
-**Phase 9 is web-only — there is no music on Android at all.** Web has the connect flow,
-browse/search, a `PlaybackSource` seam that lets the player reuse its Audiobookshelf logic
-rather than fork it, and playback with album queueing. Deliberately missing: Jellyfin
-progress reporting, cross-page/shuffle/repeat queueing, lyrics, playlists, favourites, music
-requests, and any Android UI. Lyrics _search_ is separately blocked on a product decision,
-not on effort — Jellyfin cannot search lyric text at all, so Auralis would have to build its
-own index. `docs/ROADMAP.md` §9 has the wave-by-wave detail.
+**Phase 9 now has music on Android too.** Web has the connect flow, browse, unified search, a
+`PlaybackSource` seam that lets the player reuse its Audiobookshelf logic rather than fork
+it, playback with album queueing, **Jellyfin progress reporting** and a **synced lyrics
+view**. Android has a music **data layer and browse UI** (library, artist detail, album
+detail), reachable from the home screen.
+
+Still missing, all deliberate: cross-page/shuffle/repeat queueing, playlists, favourites,
+music requests, and **any Android playback of music** — Android browses but cannot play a
+track. Lyrics _search_ is separately blocked on a product decision, not on effort: Jellyfin
+cannot search lyric text at all, so Auralis would have to build its own index and decide
+whether to backfill from an external provider (a privacy opt-in). The synced lyrics _view_
+is unaffected by that and has shipped.
+
+Three known defects are recorded in `docs/ROADMAP.md` §9 and none is fixed:
+
+- **Web album pages, and therefore web album playback, are in alphabetical order**, not track
+  order — `useJellyfinTracksQuery` never sets `sortBy`, so it gets Jellyfin's `SortName`
+  default. Android does not have this bug.
+- **A paused track keeps reporting to Jellyfin as playing.** `useProgressSync`'s interval is
+  not gated on `isPlaying`, so the upstream session reads as active while paused. Fixing it
+  properly puts a pause signal in the shared seam, which the audiobook reporter implements
+  too.
+- **`packages/ui/src/components/Slider.tsx` silently drops every pass-through prop** — it
+  destructures `...rest` and never spreads it, so `data-testid` and anything like it never
+  reaches the DOM.
+
+`docs/ROADMAP.md` §9 has the wave-by-wave detail.
 
 **Two latent bugs, neither fixed:**
 
