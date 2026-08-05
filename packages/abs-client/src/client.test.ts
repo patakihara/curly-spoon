@@ -470,6 +470,41 @@ describe('AbsClient.playItem / playEpisode', () => {
     expect(session.audioTracks).toHaveLength(1);
   });
 
+  it('normalises a transcoded session, whose lone HLS track carries metadata: null', async () => {
+    // Shaped exactly like Audiobookshelf v2.36.0's real response
+    // (`AudioTrack.setFromStream` in `server/objects/files/AudioTrack.js`): a
+    // transcode session's one audio track never gets `metadata` populated, and
+    // `toJSON()` sends it as a literal `null`, not an absent key. This is not a rare
+    // path — `AbsClient.playItem` posts an empty body, never `supportedMimeTypes`, so
+    // `checkCanDirectPlay` fails closed and every real session takes this branch.
+    const fetchFn = router({
+      'POST /api/items/item-3/play': () =>
+        json({
+          id: 'sess-3',
+          libraryItemId: 'item-3',
+          mediaType: 'book',
+          duration: 3800,
+          playMethod: 2,
+          audioTracks: [
+            {
+              index: 1,
+              startOffset: 0,
+              duration: 3800,
+              title: 'My Book',
+              contentUrl: '/hls/sess-3/output.m3u8',
+              mimeType: 'application/vnd.apple.mpegurl',
+              codec: null,
+              metadata: null,
+            },
+          ],
+        }),
+    });
+    const client = makeClient(fetchFn);
+    const session = await client.playItem('item-3');
+    expect(session.audioTracks).toHaveLength(1);
+    expect(session.audioTracks[0]?.contentUrl).toBe('/hls/sess-3/output.m3u8');
+  });
+
   it('normalises a podcast episode playback session', async () => {
     const fetchFn = router({
       'POST /api/items/item-2/play/ep-1': () =>

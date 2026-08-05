@@ -466,6 +466,12 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
       }
 
       if (parts[3] === 'play' && method === 'POST') {
+        // Echoes each item's fixture-defined tracks as-is. Their `metadata: null` isn't
+        // a quirk of this fake — it's real Audiobookshelf behaviour: `AbsClient.playItem`/
+        // `playEpisode` never send `supportedMimeTypes`, so a real server always takes
+        // the transcode path (`checkCanDirectPlay` fails closed on a non-array), whose
+        // one HLS track's `metadata` is a hard `null`, never an object. See the doc
+        // comment on `rawAudioTrackSchema` in `packages/abs-client/src/schemas/raw.ts`.
         if (!item) return notFound();
         const episodeId = parts[4];
         sessionSeq += 1;

@@ -30,7 +30,8 @@
           "duration": 630,
           "title": "Part One",
           "contentUrl": "/api/items/item-dune/file/file-dune-1",
-          "mimeType": "audio/mp4"
+          "mimeType": "audio/mp4",
+          "metadata": null
         },
         {
           "index": 1,
@@ -38,7 +39,8 @@
           "duration": 630,
           "title": "Part Two",
           "contentUrl": "/api/items/item-dune/file/file-dune-2",
-          "mimeType": "audio/mp4"
+          "mimeType": "audio/mp4",
+          "metadata": null
         }
       ],
       "chapters": [

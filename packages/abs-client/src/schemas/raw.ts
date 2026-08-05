@@ -15,6 +15,26 @@ import { z } from 'zod';
 // Shared fragments
 // ---------------------------------------------------------------------------
 
+/**
+ * One entry of a playback session's `audioTracks`. Verified against Audiobookshelf
+ * v2.36.0 source, two independent producers:
+ *
+ * - Direct play (`server/models/Book.js` `getTracklist`): clones the item's stored
+ *   `AudioFile` (`server/objects/files/AudioFile.js`), so `metadata` is always the
+ *   real `FileMetadata` object.
+ * - Transcode/HLS (`server/objects/files/AudioTrack.js` `setFromStream`): never sets
+ *   `metadata` at all, and `toJSON()` sends it as `metadata: null` — not omitted, an
+ *   explicit `null`, which `.optional()` alone does not accept.
+ *
+ * This matters more than it looks: `AbsClient.playItem`/`playEpisode` (`client.ts`)
+ * always POST an empty body, never `supportedMimeTypes`. `PlaybackSessionManager
+ * .startSession`'s `checkCanDirectPlay(options.supportedMimeTypes, …)` fails closed
+ * on a non-array (`!Array.isArray(undefined)`), so **every real playback session
+ * Auralis starts takes the transcode path** — this is not an edge case, it is the
+ * only case, and is why a real server 502'd "did not match the expected shape" on
+ * every single Resume tap. `metadata` is unused by `normalizeAudioTrack` in
+ * normalize.ts, so accepting `null` costs nothing downstream.
+ */
 export const rawAudioTrackSchema = z
   .object({
     index: z.number(),
@@ -29,6 +49,7 @@ export const rawAudioTrackSchema = z
         ext: z.string().optional(),
       })
       .passthrough()
+      .nullable()
       .optional(),
   })
   .passthrough();
@@ -434,6 +455,12 @@ export const rawItemsInProgressResponseSchema = z
 
 // ---------------------------------------------------------------------------
 // Playback sessions
+//
+// The top-level shape (`server/objects/PlaybackSession.js` `toJSONForClient`,
+// returned by `POST /api/items/:id/play[/:episodeId]` per
+// `server/managers/PlaybackSessionManager.js` `startSessionRequest`) is verified
+// against Audiobookshelf v2.36.0 source. See `rawAudioTrackSchema` above for why its
+// `metadata` field has to tolerate `null`, not just absence.
 // ---------------------------------------------------------------------------
 
 export const rawPlaybackSessionSchema = z
