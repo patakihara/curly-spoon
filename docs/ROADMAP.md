@@ -693,7 +693,7 @@ decision, not on remaining build time — see the bullet at the end of this sect
 
 - **Web wave D — synced lyrics view: done (`c0c05f3`, merged `08a1cc6`).** Client method, BFF
   route, and a player panel that highlights the current line and scrolls it into view.
-  Lyrics *search* stays out of scope and blocked (see the bullet below it). Three things this
+  Lyrics _search_ stays out of scope and blocked (see the bullet below it). Three things this
   wave established that are worth not rediscovering, all verified against
   `jellyfin/jellyfin` source rather than recalled:
   - **The draft lyric schemas an earlier session left in `schemas/raw.ts` were wrong.**
@@ -703,7 +703,7 @@ decision, not on remaining build time — see the bullet at the end of this sect
     synced is derived from whether every line carries a `Start` tick instead. This is what a
     schema with no consumer and no test costs.
   - **`GET /Audio/{id}/Lyrics` returns a bare 404 for two different things** — item not found,
-    and item has no lyrics — indistinguishably. The client folds *only* `not_found` into a
+    and item has no lyrics — indistinguishably. The client folds _only_ `not_found` into a
     typed `null`; every other status still throws, so a real upstream failure stays
     distinguishable from the overwhelmingly common "this track has no lyrics".
   - Line order is trusted, not re-sorted: `LrcLyricParser` pre-sorts server-side and
@@ -724,7 +724,7 @@ of the two fixes; installing a DOM environment is the other.
 
 **One gap found after wave C shipped, not deliberate**: `useProgressSync`'s 15s interval is
 not gated on `isPlaying` — `progressSyncPayload` returns a body whenever `duration` is known,
-so a *paused* track still ticks. For audiobooks that is harmless (it re-reports the same
+so a _paused_ track still ticks. For audiobooks that is harmless (it re-reports the same
 position). For Jellyfin it means a paused track keeps sending `IsPaused: false`, so the
 upstream session reads as actively playing while it is not — a live-session artifact, not the
 cosmetic UI hint wave C's own report called it. Fixing it properly means the seam carrying a
