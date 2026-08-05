@@ -91,6 +91,21 @@ const ALBUMS: Array<{
     year: 2020,
     genres: ['Ambient'],
   },
+  {
+    // Added for the synced-lyrics e2e wave (`e2e/app/lyrics.spec.ts`): a track with enough
+    // lyric lines to overflow `.auralis-lyrics`'s `max-height: 320px` (see `app.css`), so the
+    // active-line scroll-into-view effect has genuinely off-screen lines to scroll to, not
+    // just a short list that already fits. Kept as its own album/artist-echo addition rather
+    // than extending `album-driftwave`/`album-hollow` because both those albums' track counts
+    // are asserted exactly (`jellyfin.test.ts`'s "returns tracks scoped to one album"
+    // expects 2 for Driftwave; `music.spec.ts`'s doc comment states 1 for Hollow) — adding
+    // here changes only artist-echo's child count, which nothing asserts.
+    id: 'album-wavelengths',
+    name: 'Wavelengths',
+    artistId: 'artist-echo',
+    year: 2022,
+    genres: ['Ambient'],
+  },
 ];
 
 const TRACKS: Array<{
@@ -128,6 +143,15 @@ const TRACKS: Array<{
     trackNumber: 1,
     durationSeconds: 301,
     audio: { size: 5100, mimeType: 'audio/mpeg' },
+  },
+  {
+    id: 'track-wavelengths-1',
+    name: 'Horizon Radio',
+    albumId: 'album-wavelengths',
+    discNumber: 1,
+    trackNumber: 1,
+    durationSeconds: 90,
+    audio: { size: 2200, mimeType: 'audio/mpeg' },
   },
 ];
 
@@ -216,6 +240,27 @@ const LYRICS: Record<string, { Text: string; Start?: number }[]> = {
     { Text: 'Static coast forevermore', Start: 32_500_000 }, // 3.25s
   ],
   'track-driftwave-2': [{ Text: 'plain text, no timing at all' }],
+  // 15 invented lines, 5s apart (0s-70s), for `track-wavelengths-1` — see that track's own
+  // comment above `ALBUMS` for why: this is the one fixture with enough lines to overflow
+  // `.auralis-lyrics`'s 320px `max-height`, so `e2e/app/lyrics.spec.ts` can exercise the
+  // active-line scroll-into-view effect against lines that start genuinely off-screen.
+  'track-wavelengths-1': [
+    { Text: 'Horizon caught the static hush', Start: 0 },
+    { Text: 'Radio waves in gentle rush', Start: 50_000_000 }, // 5s
+    { Text: 'Counting seconds in the wire', Start: 100_000_000 }, // 10s
+    { Text: 'Antennas humming with desire', Start: 150_000_000 }, // 15s
+    { Text: 'Frequencies drawn out and slow', Start: 200_000_000 }, // 20s
+    { Text: 'Somewhere a signal starts to grow', Start: 250_000_000 }, // 25s
+    { Text: 'Voices folding into hiss', Start: 300_000_000 }, // 30s
+    { Text: 'A tuning dial you cannot miss', Start: 350_000_000 }, // 35s
+    { Text: 'Wavelengths bending toward the dawn', Start: 400_000_000 }, // 40s
+    { Text: "The station hums after you're gone", Start: 450_000_000 }, // 45s
+    { Text: 'Copper wire and open sky', Start: 500_000_000 }, // 50s
+    { Text: 'Every channel asking why', Start: 550_000_000 }, // 55s
+    { Text: 'The dial turns another notch', Start: 600_000_000 }, // 60s
+    { Text: 'Somewhere a silence starts to watch', Start: 650_000_000 }, // 65s
+    { Text: 'Horizon fades to gentle grey', Start: 700_000_000 }, // 70s
+  ],
 };
 
 export interface FakeJellyfinUpstream {
