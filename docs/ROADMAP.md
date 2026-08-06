@@ -1392,12 +1392,12 @@ account. It may still be worth doing purely for redeploy cache-hit-rate, but onl
 twice (a 6-run then a 5-run pass): median 0.61 then 0.62, both within the pre-existing
 0.55–0.62 band. This is the honest result, not a shortfall in the fix: the audited page
 (onboarding/setup, unauthenticated) never rendered `Shell` in the first place — the ~7% entry
-reduction it bought is real and will matter for every *authenticated* page load, but the
+reduction it bought is real and will matter for every _authenticated_ page load, but the
 specific page this Lighthouse budget measures was never paying for `Shell` to begin with. What
 actually gates mobile's score on this page is React + Mantine's base components + react-query +
 the router + zustand, all genuinely needed before `SetupPage` can render at all, plus
 `@material/material-color-utilities`'s `Hct`/`SchemeExpressive` (used by `ThemeProvider` to
-compute the initial M3 palette synchronously — this is *not* the artwork-quantization path;
+compute the initial M3 palette synchronously — this is _not_ the artwork-quantization path;
 `sourceColorFromImageData`/`QuantizerCelebi`/`Score` are already absent from every build, dead
 code no route calls, confirmed by grep against the built output before assuming there was
 anything left to defer there). None of that is deferrable without either breaking boot order or
