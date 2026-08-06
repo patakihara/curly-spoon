@@ -172,3 +172,61 @@ test('the podcast detail page falls back to a tonal icon, not the browser glyph,
   await expect(header.locator('img')).toHaveCount(0);
   await expect(header.locator('svg, [aria-hidden="true"]').first()).toBeVisible();
 });
+
+/** The swap to `CoverImage` dropped the `.auralis-item-cover` class these two
+ * covers used to carry, and with it `background: var(--m3-surface-container)` —
+ * the tonal letterbox behind a cover that is still loading or does not fill its
+ * frame. The radius and object-fit were re-added inline at the time; the
+ * background was not, and nothing in the suite looked at it. These pin the
+ * computed value on the real element so a future prop change cannot drop it
+ * again silently. */
+/** The fake upstreams answer cover requests with synthetic bytes labelled
+ * `image/jpeg` that no browser can decode (docs/HANDOVER.md's environment
+ * note), so `CoverImage`'s `onError` fires and swaps in the fallback tile —
+ * which means there is no `<img>` in that environment to measure at all. The
+ * two tests below are about the *loaded* element, so they serve a real,
+ * decodable pixel instead. This is the mirror image of
+ * `forceCoverLoadFailure` above. */
+async function serveDecodableCover(page: Page) {
+  const onePixelPng = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  await page.route('**/api/v1/media/*/cover**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: onePixelPng }),
+  );
+}
+
+for (const [label, path, testId] of [
+  ['book detail', '/item/item-dune', 'item-page'],
+  ['podcast detail', '/podcast/item-dailytech', 'podcast-detail-page'],
+] as const) {
+  test(`the ${label} cover keeps its tonal letterbox behind the image`, async ({ page }) => {
+    await serveDecodableCover(page);
+    await page.goto(path);
+    await expect(page.getByTestId(testId)).toBeVisible();
+
+    const cover = page.locator('.auralis-item-header img').first();
+    await expect(cover).toBeVisible();
+
+    // Resolve the expected colour **in the cover's own scope**, not from
+    // `:root`. `ThemeProvider` writes the M3 palette onto a nested element, so
+    // reading `--m3-surface-container` off `document.documentElement` returns
+    // the light-theme default regardless of the theme actually rendered — which
+    // is how the first draft of this test failed against correct code.
+    const [coverBackground, expectedBackground] = await cover.evaluate((el) => {
+      const actual = getComputedStyle(el).backgroundColor;
+      const probe = document.createElement('div');
+      probe.style.backgroundColor = 'var(--m3-surface-container)';
+      el.parentElement?.append(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return [actual, expected] as const;
+    });
+
+    // A probe that resolved to nothing would make this assertion vacuous.
+    expect(expectedBackground).not.toBe('rgba(0, 0, 0, 0)');
+
+    expect(coverBackground).toBe(expectedBackground);
+  });
+}

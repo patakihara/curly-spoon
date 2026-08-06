@@ -108,7 +108,14 @@ export function PodcastDetailPage() {
           alt=""
           size={200}
           fallbackIcon="podcasts"
-          style={{ borderRadius: 'var(--m3-shape-lg)' }}
+          style={{
+            borderRadius: 'var(--m3-shape-lg)',
+            // Carried over from the `.auralis-item-cover` class this used to
+            // carry: the tonal letterbox behind a cover that is loading, or
+            // narrower than its frame. `CoverImage` supplies the radius and
+            // object-fit but has no opinion about what sits behind the image.
+            background: 'var(--m3-surface-container)',
+          }}
         />
         <div>
           <h1>{item.media.title}</h1>
