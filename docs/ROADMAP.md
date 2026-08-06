@@ -1360,6 +1360,52 @@ run-by-run detail. If `lighthouse-budget` ever goes red in CI, the first move is
 more locally to see whether the _median_ moved, not to assume the app regressed from one red
 run.
 
+**Entry-chunk wave — done (`a98736a`).** The candidate flagged next to the bundle-size
+baseline above (manualChunks vendor splitting, or making the shell itself lazier) was picked
+up. `RootLayout.tsx`'s `Shell` import — nav chrome, mini player, the full Now Playing sheet
+and everything it reaches (chapters, lyrics, sleep timer, bookmarks) — moved from a static
+import to `lazy()`, since none of it is needed for the page this budget actually audits (a
+fresh unconfigured server's onboarding/setup screen never renders `Shell` at all) and `AuthGate`
+already shows a loading spinner on every page load before `children` is reached, giving a
+pre-existing async gap to load it in. Measured (`node scripts/bundle-budget.mjs`): entry raw
+949.5 KB → 887.3 KB (−6.5%), entry gzip 248.1 KB → 230.7 KB (−7.0%); `Shell`'s own chunk
+(34.1 KB raw) is now the largest lazy chunk, comfortably inside budget. Both budget configs
+were tightened to the new, real numbers in a separate commit (`docs/HANDOVER.md`'s "do not
+touch" scope kept that split — a budget change and a bundle refactor in one commit make
+neither reviewable), not just left at the old, looser ones.
+
+**`manualChunks` vendor splitting was tried and rejected, not merely left undone.** Splitting
+`react`/`@mantine`/`@tanstack`/`zustand` into separate vendor chunks measured **zero**
+first-paint benefit under Lighthouse (mobile score and every timing metric held within
+existing run-to-run noise) — expected, since every one of those packages is still on the
+entry critical path for the audited page, so five smaller chunks are still five chunks the
+browser must fetch and parse before anything renders. It also broke `scripts/bundle-budget.mjs`'s
+own measurement, which treats only the `<script type="module">` tag in `index.html` as "entry"
+and has no notion of the `<link rel="modulepreload">` tags a manualChunks build adds for each
+vendor chunk — with the split in place, "entry, raw" read as an artificially tiny ~330 KB while
+the always-loaded ~190 KB React chunk got bucketed as "lazy" and blew through the
+accidental-whole-library-import guard. See `apps/web/vite.config.ts`'s own comment for the full
+account. It may still be worth doing purely for redeploy cache-hit-rate, but only once
+`bundle-budget.mjs` (out of this wave's scope) learns to treat `modulepreload` links as entry.
+
+**The mobile Lighthouse score did not move — 0.61–0.62, same as before `a98736a`.** Re-verified
+twice (a 6-run then a 5-run pass): median 0.61 then 0.62, both within the pre-existing
+0.55–0.62 band. This is the honest result, not a shortfall in the fix: the audited page
+(onboarding/setup, unauthenticated) never rendered `Shell` in the first place — the ~7% entry
+reduction it bought is real and will matter for every *authenticated* page load, but the
+specific page this Lighthouse budget measures was never paying for `Shell` to begin with. What
+actually gates mobile's score on this page is React + Mantine's base components + react-query +
+the router + zustand, all genuinely needed before `SetupPage` can render at all, plus
+`@material/material-color-utilities`'s `Hct`/`SchemeExpressive` (used by `ThemeProvider` to
+compute the initial M3 palette synchronously — this is *not* the artwork-quantization path;
+`sourceColorFromImageData`/`QuantizerCelebi`/`Score` are already absent from every build, dead
+code no route calls, confirmed by grep against the built output before assuming there was
+anything left to defer there). None of that is deferrable without either breaking boot order or
+flashing an unthemed shell, which this wave's constraints ruled out. Moving the mobile score
+for real would mean auditing a heavier, more representative page than the onboarding screen, or
+accepting a slower-loading but correctly-themed shell — both product decisions past this wave's
+scope.
+
 **Not covered by this wave**: any page beyond the unauthenticated onboarding screen (the
 audiobook library grid, the player, any Jellyfin-backed music page — all heavier and
 unaudited), a real Audiobookshelf/Jellyfin over a real network, and every Lighthouse category
