@@ -349,7 +349,7 @@ export function parseArgs(argv, defaults = {}) {
  * (`apps/server/src/auth/rateLimitHook.ts`), and a script that signed in once
  * per sample would 429 partway through any `--runs` count above a couple.
  */
-export async function establishAuthenticatedSession(baseUrl, fetchImpl = fetch) {
+export async function establishAuthenticatedSession(baseUrl, fetchImpl = globalThis.fetch) {
   const setupResponse = await fetchImpl(`${baseUrl}/api/v1/setup`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
