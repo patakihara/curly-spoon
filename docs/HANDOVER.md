@@ -81,10 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T23:14:46Z` · `ab77262198a5f1013` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-ab77262198a5f1013' @ 'beaebf2', based on '950f3cb'. Not pushed. Only 'docs/research/FDROID_DISTRIBUTION.…
-- `2026-08-05T23:20:58Z` · `ad9a7605ea9fb8f35` · general-purpose · ended · That confirms the self-reference is the only occurrence — no actual "do not touch" list exists anywhere in the document. **Verdict: merge with named…
-- `2026-08-05T23:25:54Z` · `adecb0141289e1db1` · general-purpose · running · —
-- `2026-08-05T23:35:19Z` · `ae8e40cc1197402e6` · general-purpose · ended · Good, both are root dependencies as expected (chrome-launcher deliberately not, per the doc comment, resolved dynamically). This all checks out. I ha…
 - `2026-08-05T23:35:28Z` · `a91ca918da4364ef2` · general-purpose · ended · That's a different, unrelated process from the audit worktree — not mine. My server process is gone. Good. **Verdict:** sound with named corrections…
 - `2026-08-05T23:41:38Z` · `a623d0d03e48b3297` · general-purpose · running · —
 - `2026-08-05T23:46:45Z` · `a50deddeeb6332027` · general-purpose · ended · Branch 'worktree-agent-a50deddeeb6332027', commit '68ab86d'. Not pushed. - Corrected verdict: the desktop layout is close to 'DESIGN.md''s intent (re…
@@ -96,6 +92,10 @@ in-context scan of the current one.
 - `2026-08-06T06:32:17Z` · `a5c905c9a94d01f15` · general-purpose · ended · Matches. Review complete. **Verdict: merge with named corrections** (all minor/stylistic — nothing here fails on the first real tag). **Defects, most…
 - `2026-08-06T06:47:25Z` · `a4e7cfbe04684c443` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a4e7cfbe04684c443' @ '47179c7', based on 'ef3a3a4'. Working tree clean, not pushed. **Per-defect:** 1. *…
 - `2026-08-06T07:14:49Z` · `a1e34f364c8ab1953` · general-purpose · ended · Working tree is clean. Final report: **Verdict: merge with named corrections.** The core fix (mini player fixed positioning) is correct and well-test…
+- `2026-08-06T07:39:05Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · Waiting for the full Playwright suite to finish in the background before proceeding to commit.
+- `2026-08-06T07:55:14Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for that notification before continuing.
+- `2026-08-06T08:04:47Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · Waiting for the Playwright suite to finish; will proceed with verification and commit once it completes.
+- `2026-08-06T08:12:15Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for this clean, isolated run to finish before drawing conclusions.
 
 <!-- AGENT_LOG_END -->
 
@@ -324,6 +324,11 @@ nothing on `main` is stale — take it.
 - **2026-08-06** — phase 10, the accessibility audit's remaining surfaces: the podcasts UI
   and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
   touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
+
+- **2026-08-06** — phase 10, the mini player's three remaining gaps: the medium-breakpoint
+  overlap, the compact bottom-padding gap, and its own missing cover fallback
+  (`apps/web/src/styles/app.css`, `apps/web/src/features/player/`, `apps/web/src/components/`).
+  Does not touch `apps/web/src/features/podcasts/` or `e2e/app/`.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
