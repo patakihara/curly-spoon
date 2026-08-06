@@ -18,10 +18,14 @@ on:
 # Deliberately no `cancel-in-progress: true`, and deliberately no `cancel-in-progress` key at
 # all — same reasoning as `ci.yml`'s `publish` job (see that file's `concurrency` comment): a
 # release is coupled to an artifact someone will actually download and a GitHub Release page
-# someone will actually read. Cancelling it mid-run because a second tag landed would leave a
-# half-published release (maybe the image pushed, maybe not; maybe the GitHub Release exists
-# with no APK attached) with nothing left running to finish or clean it up. Two tags pushed in
-# quick succession should both complete, in order, not race.
+# someone will actually read. Cancelling one mid-run would leave it half-published — maybe the
+# image pushed, maybe not; maybe the GitHub Release exists with no APK attached — with nothing
+# left running to finish or clean up.
+#
+# Note what the group key does and does not cover: `github.ref` is unique per tag, so two
+# *different* tags never share a group and never contended in the first place. What this
+# actually protects is the same tag re-triggering — a tag deleted and re-pushed, or a manual
+# re-run — which is a real scenario for release automation and the one worth serialising.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -35,6 +39,8 @@ jobs:
   guard-fork:
     name: Refuse to run from a fork
     runs-on: ubuntu-latest
+    # Reads nothing and writes nothing — it compares two strings.
+    permissions: {}
     steps:
       - name: Confirm this is the upstream repo
         run: |
@@ -54,6 +60,8 @@ jobs:
   validate-version:
     name: Validate the tag as a version
     runs-on: ubuntu-latest
+    # Parses the tag out of GITHUB_REF; it does not even check out the repo.
+    permissions: {}
     needs: [guard-fork]
     outputs:
       version: ${{ steps.parse.outputs.version }}
@@ -134,6 +142,11 @@ jobs:
   build-android:
     name: Build debug APK
     runs-on: ubuntu-latest
+    # `contents: read` and nothing else: enough for `actions/checkout` to fetch the
+    # repo, and uploading a workflow artifact needs no token scope. The release job
+    # that consumes the artifact is the only one holding `contents: write`.
+    permissions:
+      contents: read
     needs: [validate-version]
     steps:
       - uses: actions/checkout@v4

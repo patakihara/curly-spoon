@@ -1305,8 +1305,31 @@ cancels; every other branch is unchanged. **The general shape is worth rememberi
 coupled to a deployment must not be cancellable by the next push, and a cancelled job is not a
 failed one, so nothing in the UI calls it out.**
 
-What is left here is release automation proper (tags, changelogs, a release flow rather than
-publishing straight off every green `main` push).
+**Release automation is done (`.github/workflows/release.yml`).** A pushed `v<x.y.z>` tag —
+optionally with a prerelease suffix — validates the version, builds the same multi-arch image,
+pushes it as `:<version>` and `:stable`, generates a changelog from `git log <prev-tag>..<tag>`,
+and creates a GitHub Release with the Android APK attached.
+
+**It is additive, and that is the whole design.** `:latest` still means what it always meant —
+written by `ci.yml`'s `publish` on every green `main` push, which is what the user's own
+Watchtower follows. Changing that would have changed what runs on a live box tonight, so
+releases got their own channel instead: `:latest` for continuous, `:stable`/`:<version>` for
+tagged. `docs/SELF_HOSTING.md` documents both and the one-line compose change to switch.
+
+Details worth not rediscovering:
+
+- **`fetch-depth: 0` on the release job only.** `actions/checkout` defaults to a shallow,
+  tagless fetch, which would make `git describe --tags` and the `<prev>..<tag>` range silently
+  wrong rather than loudly broken. Only the job that reads history sets it; the build jobs do
+  not need it and do not pay for it.
+- **A malformed tag fails before anything is built.** `v1.2`, `1.2.3` and `v1.2.3.4` are
+  rejected by a gating job, so a mislabelled image is never pushed in the first place.
+- **The APK is debug-signed**, identical to what `android.yml` already produces, and the
+  release notes say so. Release signing is one of the irreversible decisions phase 11 leaves
+  to the user — see `docs/research/FDROID_DISTRIBUTION.md`.
+- **Nothing has been tagged yet.** The workflow has never executed; a static review checked the
+  mechanics against `ci.yml`'s `publish` job, but the first real tag is still the first real
+  test.
 
 A final holistic pass of the `docs/DESIGN.md` reference-app comparison belongs here too —
 not just the per-surface checks noted against phase 7's waves above, but the whole app,

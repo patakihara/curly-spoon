@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T21:21:39Z` · `a907d5ff4e6be11b5` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a907d5ff4e6be11b5' @ '0ed8304', based on 'origin/main''s 'ac1639e'. Working tree clean, not pushed. **2.…
-- `2026-08-05T21:22:48Z` · `a3c70047c964a822f` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit**: 'worktree-agent-a3c70047c964a822f' @ '8311278', base…
 - `2026-08-05T21:23:23Z` · `a32ff662d30f3d46e` · general-purpose · ended · ## Findings: AbleMusicPlayer (uditkarode/AbleMusicPlayer, master) **1. The source, in one paragraph.** AbleMusicPlayer plays audio ripped from **YouT…
 - `2026-08-05T22:46:13Z` · `a86e71de6b0b9208a` · general-purpose · ended · Clean working tree, no leaked processes or temp directories. Work is complete and committed. ## Report **Branch/commit**: 'worktree-agent-a86e71de6b0…
 - `2026-08-05T23:14:46Z` · `ab77262198a5f1013` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-ab77262198a5f1013' @ 'beaebf2', based on '950f3cb'. Not pushed. Only 'docs/research/FDROID_DISTRIBUTION.…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-06T00:13:54Z` · `acb70db81676e779a` · general-purpose · ended · The full suite ('pnpm test:e2e' equivalent) is running in the background. I'll pick back up once it completes.
 - `2026-08-06T00:49:12Z` · `acb70db81676e779a` · general-purpose · ended · Diff is clean and scoped correctly. Now waiting for the monitor notification.
 - `2026-08-06T00:50:07Z` · `acb70db81676e779a` · general-purpose · ended · Committed: 'worktree-agent-acb70db81676e779a' @ '052c428'. **Files changed:** - 'apps/web/src/features/podcasts/PodcastDiscoverPage.tsx' - 'apps/web/…
+- `2026-08-06T06:29:17Z` · `a66b2d3bf9be4b715` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit:** 'worktree-agent-a66b2d3bf9be4b715' @ '5816937', base…
+- `2026-08-06T06:32:17Z` · `a5c905c9a94d01f15` · general-purpose · ended · Matches. Review complete. **Verdict: merge with named corrections** (all minor/stylistic — nothing here fails on the first real tag). **Defects, most…
 
 <!-- AGENT_LOG_END -->
 
@@ -324,10 +324,6 @@ nothing on `main` is stale — take it.
 - **2026-08-06** — phase 10, the accessibility audit's remaining surfaces: the podcasts UI
   and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
   touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
-
-- **2026-08-06** — phase 10, release automation: tag-driven versioned images and GitHub
-  Releases (`.github/workflows/release.yml`, new file; `docs/SELF_HOSTING.md`). Does not
-  change `ci.yml` or what `:latest` means.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
