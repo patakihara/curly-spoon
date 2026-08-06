@@ -1,14 +1,40 @@
 /*
  * Mantine migration: the field's own box/input chrome is now `TextInput`'s —
- * background, border-radius, padding, focus ring all come from Mantine's Input
- * styles instead of being repeated here. What's left is: the auralis-token colour
- * on the leading icon and clear button (Mantine has no notion of `--m3-*`), the
- * clear button's own layout (a custom element, not part of `TextInput`), and the
- * suggestion dropdown's look, since `Combobox.Options`/`Combobox.Option` render
- * unstyled by default.
+ * background, border-radius, padding all come from Mantine's Input styles instead
+ * of being repeated here. What's left is: the auralis-token colour on the leading
+ * icon and clear button (Mantine has no notion of `--m3-*`), the clear button's own
+ * layout (a custom element, not part of `TextInput`), the suggestion dropdown's
+ * look (since `Combobox.Options`/`Combobox.Option` render unstyled by default), and
+ * the keyboard focus ring below.
+ *
+ * The focus ring does *not* come from Mantine's Input styles, despite the doc
+ * comment above claiming so until the phase-10 a11y audit checked in a real
+ * browser (2026-08-06): Mantine's own Input CSS sets `outline: none` on
+ * `:focus`/`:focus-within` and swaps a `--input-bd` custom property to
+ * `--input-bd-focus` (`--mantine-primary-color-filled`) instead, expecting the
+ * border-colour change alone to read as the indicator. Measured on this field
+ * (`getComputedStyle` before/after a real `Tab`-driven focus, not a synthetic
+ * `.focus()`), that swap never reaches the underlying `<input>` — the computed
+ * `border-color` was byte-identical before and after, `outline-style` stayed
+ * `none`, and `box-shadow` stayed `none` throughout, even though the element
+ * correctly matched `:focus-visible`. Root cause not chased further (something in
+ * how `Combobox.Target withAriaAttributes={false}` or this field's own
+ * `data-mantine-color-scheme`/`data-variant` wiring breaks the CSS custom-property
+ * cascade) — the practical fix is a second, explicit ring that doesn't depend on
+ * that chain at all, matching every other focusable element's `outline: 3px solid`
+ * (`packages/ui/src/styles/index.css`'s global rule, itself `:where()`-scoped to
+ * zero specificity so it can never win against a real component stylesheet — which
+ * is exactly why it lost here silently). `input` (element) plus `:focus-visible`
+ * (pseudo-class) gives this selector one more specificity point than Mantine's own
+ * `.mantine-Input-input:focus`, so it wins regardless of load order.
  */
 .m3-search-field {
   width: 100%;
+}
+
+.m3-search-field input:focus-visible {
+  outline: 3px solid var(--m3-secondary, currentColor);
+  outline-offset: 2px;
 }
 
 .m3-search-field__leading-icon {

@@ -125,7 +125,19 @@ export function PodcastDiscoverPage() {
                     <div>
                       <strong>{result.title}</strong>
                       {result.artistName ? <p>{result.artistName}</p> : null}
-                      <RichDescription html={result.descriptionPlain} />
+                      {/* The directory result's description is untrusted third-party text that
+                       * `RichDescription` may render as a real `<a>` — nested inside this `Card`'s
+                       * `<button>` (an HTML5 violation the browser still renders, since React
+                       * builds the DOM directly rather than through the HTML parser that would
+                       * normally reject it). Without this guard, activating that link — by click
+                       * or by keyboard Enter, both of which dispatch a `click` that bubbles —
+                       * *also* fires the card's own `onClick` and starts an unwanted feed preview
+                       * at the same time the link navigates away. Stopping propagation here, on
+                       * just the description's wrapper, keeps every other part of the card
+                       * (title, artist, whitespace) selecting it as before. */}
+                      <span onClick={(event) => event.stopPropagation()}>
+                        <RichDescription html={result.descriptionPlain} />
+                      </span>
                     </div>
                   </div>
                 </Card>
