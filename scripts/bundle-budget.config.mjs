@@ -9,7 +9,7 @@
  * with no budget failures, reading the "measured" line it prints, and repeating the
  * arithmetic below — do not just nudge a failing number up to make CI pass.
  *
- * Baseline measured 2026-08-06, commit `a98736a` (phase 10, Shell lazy-loaded out of
+ * Baseline measured 2026-08-06, commit `a25d2ea` (phase 10, Shell lazy-loaded out of
  * the entry chunk — see that commit and the ROADMAP §10 entry next to it), by this
  * script's own `node scripts/bundle-budget.mjs` (Node's `zlib.gzipSync`, level 9 —
  * gzip byte counts are implementation-specific by a few hundred bytes, so the baseline
@@ -20,7 +20,7 @@
  *
  * These numbers are **tighter on entry, not on total** than the previous baseline
  * (2026-08-05, commit `9c162c2`: entry raw 971,803 B / gzip 253,884 B, total raw
- * 1,068,472 B). `a98736a` moved the app shell — nav chrome, mini player, the full
+ * 1,068,472 B). `a25d2ea` moved the app shell — nav chrome, mini player, the full
  * Now Playing sheet (chapters, lyrics, sleep timer) — from a static import in
  * `RootLayout` to a `lazy()` one, so that code now ships in `Shell`'s own chunk
  * instead of the entry chunk. Total bundle size is essentially unchanged (that code
@@ -43,7 +43,7 @@ export const budget = {
    * raw: parse/compile cost, independent of network. 908,544 B measured -> 1120 KB
    * (1,146,880 B) is +26.2%, the same relative headroom the previous baseline used
    * (26%) — this is a genuine drop in the number itself (1200 KB -> 1120 KB), not a
-   * loosened policy, reflecting `a98736a`'s real ~62 KB reduction. It stays tight for
+   * loosened policy, reflecting `a25d2ea`'s real ~62 KB reduction. It stays tight for
    * the same reason as before: the entry chunk should only grow when the app shell
    * itself grows (a new nav destination, a new eagerly-needed provider), not when a
    * feature area gains another lazy page.
@@ -62,7 +62,7 @@ export const budget = {
    * though most of it is not on the critical path for any single visit.
    *
    * raw: 1,076,973 B measured -> 1420 KB (1,454,080 B) is +35.0%. Essentially
-   * unchanged from the previous 1400 KB ceiling — `a98736a` moved bytes from entry
+   * unchanged from the previous 1400 KB ceiling — `a25d2ea` moved bytes from entry
    * to lazy, it did not add or remove any, so total bundle size barely moved
    * (1,068,472 B -> 1,076,973 B, the ~8.5 KB difference being `Shell`'s own
    * `Suspense`/`lazy` wiring plus normal chunk-boundary overhead from the new split).
@@ -78,7 +78,7 @@ export const budget = {
    * split (see `routeTree.ts`'s history), so naming a budget after one file by name
    * would need editing on every refactor. "Whatever the biggest lazy chunk is"
    * survives renames and still catches the failure mode this guards against: one
-   * page (or, as of `a98736a`, the shell itself) quietly pulling in something
+   * page (or, as of `a25d2ea`, the shell itself) quietly pulling in something
    * disproportionate that the total-bundle budget's slack would otherwise hide.
    *
    * `Shell` is now that chunk, at 34,952 B measured — a real, substantial chunk (nav

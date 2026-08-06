@@ -23,7 +23,7 @@
  * own rendering cost, not upstream latency. Only the `performance` category is
  * budgeted — no accessibility, best-practices, SEO or PWA category.
  *
- * Baseline re-measured 2026-08-06, commit `a98736a` (phase 10, `Shell` moved from a
+ * Baseline re-measured 2026-08-06, commit `a25d2ea` (phase 10, `Shell` moved from a
  * static import to `lazy()` — see that commit and `bundle-budget.config.mjs`'s own
  * re-derivation next to it), on the same laptop CI numbers are expected to roughly
  * track (`docs/HANDOVER.md` §4's "SofiaThinkPad"), via two independent verification
@@ -55,7 +55,7 @@ export const budget = {
   desktop: {
     /**
      * Performance category score, 0–1, a floor (higher is better). Original
-     * 5-run baseline: median 0.95, range 0.95–0.95. Post-`a98736a`
+     * 5-run baseline: median 0.95, range 0.95–0.95. Post-`a25d2ea`
      * re-verification: median 0.94 (0.94–0.95) on a 6-run pass, median 0.95
      * (0.95–0.95) on a 5-run pass — individual samples as low as 0.93 were
      * already seen pre-refactor, so this is within the pre-existing spread,
@@ -67,7 +67,7 @@ export const budget = {
     /**
      * First Contentful Paint, ms, a ceiling. Original 5-run baseline: median
      * 1116, range 1092–1134; worst single sample seen anywhere on that build
-     * was 1155ms. Post-`a98736a`: median 1122 (1103–1151) on a 6-run pass,
+     * was 1155ms. Post-`a25d2ea`: median 1122 (1103–1151) on a 6-run pass,
      * median 1096 (1091–1100) on a 5-run pass — same neighbourhood. Budget
      * 1450 stands unchanged (+26% over the 1155 worst-observed sample, not
      * just one baseline's own max) — wide relative to how tight the actual
@@ -79,7 +79,7 @@ export const budget = {
     /**
      * Largest Contentful Paint, ms, a ceiling. Original 5-run baseline:
      * median 1219, range 1201–1303; worst single sample across
-     * re-verification was 1388ms. Post-`a98736a`: median 1263 (1236–1280) on
+     * re-verification was 1388ms. Post-`a25d2ea`: median 1263 (1236–1280) on
      * a 6-run pass, median 1220 (1215–1227) on a 5-run pass — again within
      * the existing spread. Budget 1600 stands unchanged (+15% over that
      * 1388 worst-observed sample), same reasoning as FCP above — on this
@@ -116,17 +116,17 @@ export const budget = {
   },
   mobile: {
     /**
-     * Performance category score, 0–1, a floor. **Re-measured after `a98736a`
+     * Performance category score, 0–1, a floor. **Re-measured after `a25d2ea`
      * (Shell lazy-loaded out of the entry chunk) and unchanged**: a 6-run pass
      * measured median 0.61 (0.61–0.62), a following 5-run pass measured median
      * 0.62 (0.62–0.62) — the same 0.55–0.62 band the previous baseline (an
      * un-code-split entry chunk) already observed. This is the wave's honest
-     * finding, not a gap in the fix: `a98736a` shrank the entry chunk by ~7%
+     * finding, not a gap in the fix: `a25d2ea` shrank the entry chunk by ~7%
      * (908,544 B raw / 236,244 B gzip — see `bundle-budget.config.mjs`), but the
      * page this budget audits (the unconfigured server's onboarding/setup
      * screen) still has to fetch and execute React, Mantine's base components,
      * react-query, the router and zustand before it can render anything — none
-     * of which `a98736a` touched, because none of it is deferrable without
+     * of which `a25d2ea` touched, because none of it is deferrable without
      * either breaking the app's actual boot sequence or (per `color`'s already-
      * critical-path use in `packages/ui/src/theme`) flashing an unthemed shell.
      * Score is downstream of TBT here (see this form factor's `tbt` comment for
@@ -140,7 +140,7 @@ export const budget = {
      * precisely because outlier samples this deep into the tail are a known,
      * recurring feature of this metric on this machine, not a one-off. 0.61–0.62
      * itself is not a target to defend as "good" — see the ROADMAP §10 entry
-     * next to `a98736a` for what was tried to move it and why it didn't. This
+     * next to `a25d2ea` for what was tried to move it and why it didn't. This
      * budget only guards against the score getting meaningfully *worse*, not
      * against it already being mediocre.
      */
@@ -148,7 +148,7 @@ export const budget = {
     /**
      * First Contentful Paint, ms, a ceiling. Original 5-run baseline: median
      * 5981, range 5894–6155; worst single sample across every re-verification
-     * of that build was 6594ms. Post-`a98736a` re-verification (6-run then
+     * of that build was 6594ms. Post-`a25d2ea` re-verification (6-run then
      * 5-run pass): median 5993 (5984–6028), then median 5953 (5946–5955) — the
      * same neighbourhood, entirely within the pre-existing spread. Budget 8500
      * stands unchanged (+29% over the 6594 worst-observed sample) — wider than
@@ -159,7 +159,7 @@ export const budget = {
     /**
      * Largest Contentful Paint, ms, a ceiling. Original 5-run baseline: median
      * 6556, range 6475–6740; worst single sample across re-verification of
-     * that build was 7890ms. Post-`a98736a`: median 6724 (6569–6793), then
+     * that build was 7890ms. Post-`a25d2ea`: median 6724 (6569–6793), then
      * median 6649 (6489–6650) — again within the pre-existing spread. Budget
      * 9200 stands unchanged (+17% over that 7890 worst-observed sample) — a
      * tighter relative margin than FCP's only because the worst sample itself
@@ -189,7 +189,7 @@ export const budget = {
      * gates on, per `evaluateBudget`'s use of `measured[key].median`, never
      * `.max`. Every median observed across this whole investigation stayed
      * at or under ~310ms; individual outlier samples went far higher without
-     * ever dragging a 3-run median past that. Post-`a98736a` re-verification
+     * ever dragging a 3-run median past that. Post-`a25d2ea` re-verification
      * (6-run then 5-run pass) stayed comfortably inside that same range:
      * median 62ms (samples 56–110), then median 32ms (samples 17–37) — both
      * far under the 310ms ceiling the original investigation established.

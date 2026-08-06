@@ -61,10 +61,18 @@ export function RootLayout() {
   // route mounts, regardless of `bare` — a bare (onboarding) visit today is
   // usually followed by a real, chrome-having one once setup completes, and
   // starting the fetch here overlaps it with AuthGate's own setup-query round
-  // trip instead of waiting for that to finish first. `void` — this is a cache
-  // warm, not something the render path awaits.
+  // trip instead of waiting for that to finish first.
+  //
+  // The rejection is swallowed deliberately, and `void` alone would not have done
+  // it: `void` discards the value, not the rejection, so a failed chunk fetch would
+  // surface as an unhandled rejection. That is a real case rather than a defensive
+  // one — this is a PWA, so a client on a stale service worker after a redeploy asks
+  // for a content-hashed filename that no longer exists. Failing here costs nothing:
+  // the `lazy()` import below is what the render path actually depends on, and it
+  // reports its own failure to the root route's error boundary. A warm-up that could
+  // not warm is not an error to tell anyone about.
   useEffect(() => {
-    void import('./Shell.js');
+    import('./Shell.js').catch(() => {});
   }, []);
 
   return (

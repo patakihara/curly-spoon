@@ -1360,7 +1360,7 @@ run-by-run detail. If `lighthouse-budget` ever goes red in CI, the first move is
 more locally to see whether the _median_ moved, not to assume the app regressed from one red
 run.
 
-**Entry-chunk wave — done (`a98736a`).** The candidate flagged next to the bundle-size
+**Entry-chunk wave — done (`a25d2ea`).** The candidate flagged next to the bundle-size
 baseline above (manualChunks vendor splitting, or making the shell itself lazier) was picked
 up. `RootLayout.tsx`'s `Shell` import — nav chrome, mini player, the full Now Playing sheet
 and everything it reaches (chapters, lyrics, sleep timer, bookmarks) — moved from a static
@@ -1388,7 +1388,7 @@ accidental-whole-library-import guard. See `apps/web/vite.config.ts`'s own comme
 account. It may still be worth doing purely for redeploy cache-hit-rate, but only once
 `bundle-budget.mjs` (out of this wave's scope) learns to treat `modulepreload` links as entry.
 
-**The mobile Lighthouse score did not move — 0.61–0.62, same as before `a98736a`.** Re-verified
+**The mobile Lighthouse score did not move — 0.61–0.62, same as before `a25d2ea`.** Re-verified
 twice (a 6-run then a 5-run pass): median 0.61 then 0.62, both within the pre-existing
 0.55–0.62 band. This is the honest result, not a shortfall in the fix: the audited page
 (onboarding/setup, unauthenticated) never rendered `Shell` in the first place — the ~7% entry
