@@ -8,7 +8,7 @@
  * is reached (a directory result, or a pasted URL).
  */
 import { useEffect, useRef, useState } from 'react';
-import { Button, Card, Chip } from '@auralis/ui';
+import { Button, Card, Chip, Snackbar, useSnackbar } from '@auralis/ui';
 import { RichDescription } from '../../components/RichDescription.js';
 import { ApiError } from '../../api/errors.js';
 import { useSubscribePodcastMutation } from '../../api/queries.js';
@@ -51,6 +51,7 @@ export function PodcastFeedPreview({
   const subscribeMutation = useSubscribePodcastMutation();
   const [subscribed, setSubscribed] = useState(false);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
+  const snackbar = useSnackbar();
 
   // Guards the two local-state updates below against landing after this component has
   // unmounted (e.g. the user navigates away mid-subscribe). The mutation's own cache
@@ -84,7 +85,17 @@ export function PodcastFeedPreview({
     setSubscribeError(null);
     try {
       await subscribeMutation.mutateAsync(body);
-      if (mountedRef.current) setSubscribed(true);
+      if (mountedRef.current) {
+        setSubscribed(true);
+        // The success state below (`Chip` replacing the `Button`) is a real state
+        // change a sighted user notices instantly but a screen reader user gets no
+        // signal for at all — nothing here moves focus or has a live region. Same
+        // "Added to playlist." pattern `MusicFavoritesPage.tsx`'s doc comment
+        // describes: a `Snackbar` announcement for a discrete, user-triggered
+        // action's result, not a persistent `aria-live` region (this fires once,
+        // not on a timer).
+        snackbar.enqueue({ message: `Subscribed to ${preview.title ?? 'this podcast'}.` });
+      }
     } catch (err) {
       if (!mountedRef.current) return;
       const message =
@@ -168,6 +179,8 @@ export function PodcastFeedPreview({
           ))}
         </ul>
       ) : null}
+
+      <Snackbar snackbar={snackbar.current} onDismiss={snackbar.dismiss} />
     </section>
   );
 }

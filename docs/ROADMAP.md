@@ -1456,6 +1456,59 @@ catch more of the `aria-pressed` class quickly but would not have caught the foc
 or contrast findings, which needed real interaction sequences; adding it is the user's call and
 was deliberately not taken.
 
+**Accessibility audit — a third pass: the podcasts UI and a keyboard tab-walk of the surfaces
+the first two skipped (`e2e/app/podcasts.spec.ts`, `podcast-detail.spec.ts`).** Three real
+defects, all found by measuring in a real browser rather than by reading source, and all
+fixed:
+
+- **A link inside a directory search result's description also selected the card.**
+  `PodcastDiscoverPage.tsx` renders each result's untrusted `descriptionPlain` through
+  `RichDescription`, which can produce a real `<a>` — nested inside the result `Card`'s own
+  `<button>`, an HTML5 interactive-content violation the browser still renders (React builds
+  the DOM directly, never through the HTML parser that would otherwise reject it). Confirmed
+  live: intercepting the search response with a description containing a link and clicking it
+  opened the link **and** fired the card's `onClick`, starting an unwanted feed preview at the
+  same moment — true for both a mouse click and a keyboard Enter on the nested link, since
+  both dispatch a bubbling `click`. Fixed with `event.stopPropagation()` on a wrapper around
+  just the description, so every other part of the card still selects it as before.
+- **Subscribing had no announcement for assistive tech.** The only observable change on
+  success was the "Subscribe" `Button` being replaced by a "Subscribed" `Chip` — a purely
+  visual swap, no live region, nothing moving focus. Fixed in `PodcastFeedPreview.tsx` with the
+  same `Snackbar` (`role="status"`, `aria-live="polite"`) pattern `MusicFavoritesPage.tsx`
+  already uses for a discrete, user-triggered action's result.
+- **The podcast search field had no visible keyboard focus indicator at all.** Measured, not
+  assumed: `getComputedStyle` before and after a real `Tab`-driven focus showed byte-identical
+  `border-color`, `outline-style: none` and `box-shadow: none`, despite the element correctly
+  matching `:focus-visible`. Root cause: Mantine's own `TextInput` CSS sets `outline: none` on
+  focus and instead swaps a `--input-bd` custom property to a themed colour, expecting the
+  border-colour change alone to read as the ring — and that swap never reached this field's
+  underlying `<input>` (the exact break in the variable cascade wasn't chased further).
+  `packages/ui`'s global `:where(...):focus-visible` rule, deliberately zero-specificity so it
+  never fights a real component stylesheet, is exactly why it lost here silently. Fixed with an
+  explicit `.m3-search-field input:focus-visible` rule in `SearchField.css`, one specificity
+  point above Mantine's own selector so it wins regardless of load order — this is a shared
+  `@auralis/ui` component, so the fix reaches every `SearchField` call site, not just
+  podcasts'.
+
+**Verified already correct, with regression tests pinning it**: the episode list's `ListItem`s
+render as real `<button>`s (reachable, activatable, no ARIA needed beyond what's native);
+episode "Played"/"In progress" state is folded into the same visible supporting-text string a
+sighted user reads, not a colour- or icon-only signal; the episode-order `Chip`s are real
+checkbox inputs whose `checked` state is native, needing no manual `aria-pressed`; per-episode
+play errors use `role="alert"` scoped to that row; and text contrast on the episode list clears
+WCAG AA (4.5:1) in both themes. A full keyboard tab-walk of the podcast detail page (focus
+order, a visible ring at every stop) also came back clean once the walk itself stopped
+accidentally starting playback — `body.click()`'s bounding-box centre depends on the full
+document height, not the viewport, and on this page that centre lands on an episode row;
+clicking the page's own `<h1>` instead gives the page real keyboard focus without side effects,
+and is the pattern to reuse for any future page-level tab-walk here.
+
+**Not covered by this pass**: a keyboard tab-walk of the settings sub-sections, search results
+grid and request flows was attempted but not completed to the same regression-test standard as
+podcasts — spot checks found nothing broken (every stop had a visible ring, no traps), but they
+are not pinned by a test the way the podcasts findings above are. Real assistive technology is
+still out of scope, as in both earlier passes.
+
 **The holistic `docs/DESIGN.md` comparison is done for the web surfaces
 (`docs/research/WEB_DESIGN_AUDIT.md`, merged `27bde64`).** Six surfaces — Home, book detail,
 Now Playing collapsed and expanded, Search, Music home and album, Settings — at 1440x900 and
