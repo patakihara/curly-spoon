@@ -1583,6 +1583,39 @@ and `boundingBox` settle it, and they disagreed with the eye on the single large
 - **Settings still reads "Source colour (Phase 5 will set this automatically from artwork)"** —
   stale copy naming an internal phase number to the user, for work that shipped.
 
+**All four defects are fixed (`47179c7`), and a browser pass measured the result rather than
+trusting the tests.** The mini player is `position: fixed` and docks to the rail's 220px edge at
+1440 (measured x:0, width 220, bottom:0) — the original defect condition was reproduced first, on
+the same 921px-tall item page the audit found it on. Music artwork now goes through a shared
+`CoverImage` that reuses Home's fallback, and every Music surface renders the tonal placeholder
+instead of the browser's broken-image glyph. `document.body.scrollWidth` is exactly 390 at a
+390px viewport on **every** route checked, not just the two originally flagged. Settings no
+longer names an internal phase number to the user.
+
+**Two gaps the same pass found, neither a regression, both open:**
+
+- **The medium breakpoint has the identical bug that was just fixed at expanded.** At 1024x768
+  the mini player is `fixed` but its width computes to ~347.5px against an 80px rail, so it
+  overlaps ~267px into the content column — the exact defect class the fix was written for, at
+  a breakpoint the fix deliberately did not scope. The stated reason (80px cannot hold a cover
+  plus a button) is a real constraint, so closing this needs a narrower medium-specific layout,
+  not just another width rule.
+- **At compact, content scrolls behind the mini player.** `.auralis-shell--compact` reserves
+  80px of bottom padding for the navigation bar but not the mini player's 64px stacked above
+  it, so the last ~48px of a long page is obscured. Pre-existing and unchanged by this work,
+  confirmed against the diff — but real.
+
+Also noted and not fixed: `MiniPlayer`'s own cover `<img>` still lacks the fallback the Music
+cards just gained.
+
+**On the tests**: this repo has **no DOM test environment** — `vitest.config.ts` runs
+`environment: 'node'` with no jsdom anywhere — so the layout tests assert that the CSS rules
+causing the right layout are present in `app.css`. Reviewed and judged honest revert-guards
+rather than tautologies (they parse rule bodies through selector-anchored regexes and would fail
+if a rule were weakened), but they cannot catch either gap above, because both are about a
+rule's real-world sufficiency rather than its presence. **Layout work here needs a Playwright
+pass to be believed; the suite cannot supply one.**
+
 **One design decision left to the user**: what a missing-artwork placeholder should actually
 look like. The defect above is that Music has no fallback at all; what the fallback _is_ was
 never decided.
