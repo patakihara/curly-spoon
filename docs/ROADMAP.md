@@ -3,20 +3,20 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status      |
-| --- | --------------------------------------------------------------- | ----------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
-| 3   | Server BFF core + Audiobookshelf client                         | done        |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
-| 5   | Audiobooks experience + player                                  | done        |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done        |
-| 8   | Podcast client (web + Android)                                  | done        |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done        |
-| 10  | Release polish — performance budgets, a11y audit                | in progress |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | blocked     |
+| #   | Phase                                                           | Status  |
+| --- | --------------------------------------------------------------- | ------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
+| 3   | Server BFF core + Audiobookshelf client                         | done    |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
+| 5   | Audiobooks experience + player                                  | done    |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done    |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done    |
+| 8   | Podcast client (web + Android)                                  | done    |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done    |
+| 10  | Release polish — performance budgets, a11y audit                | done    |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | blocked |
 
 ### Why Android sits at 7 rather than last
 
@@ -1798,6 +1798,31 @@ Still uncovered: Android, motion/cross-fade, hover states, the light colour sche
 assistive technology, and the Podcasts/Lyrics/Playlists/Favourites/Requests pages specifically
 at tablet widths (this pass covered Home/Search/Settings/item-detail/Music only, the same set
 the desktop/phone passes used).
+
+**Phase 10 is done (2026-08-06).** Everything this section named has landed: bundle-size and
+Lighthouse budgets enforced in CI (two pages x two form factors, the signed-in page included),
+`arm64` published alongside `amd64`, tag-driven release automation, the accessibility audit
+across the player, search, overlays, music, playlists, favourites, settings, podcasts and a
+keyboard tab-walk, the web design comparison against `DESIGN.md` with its defects fixed, the
+600-1240px tablet range, and the Android half of the design comparison.
+
+What remains is genuinely outside this phase rather than deferred within it, and each item is
+blocked on something this environment cannot supply:
+
+- **Real assistive technology.** Every accessibility claim here is Chromium DOM/ARIA/computed-
+  style verification. VoiceOver, NVDA and JAWS have exercised none of it.
+- **Android on hardware.** No JDK, SDK or emulator exists on this machine, so every Android
+  visual claim is source-derived. `docs/research/ANDROID_DESIGN_AUDIT.md` found real gaps —
+  no full Now Playing surface, no persistent navigation shell — and closing them is feature
+  work on a surface nobody here can look at. `docs/HANDOVER.md` carries the summary and the
+  three product questions it raised.
+- **Open-ended polish** that has no completion criterion: motion and cross-fade, hover states,
+  the light colour scheme, and the remaining pages at tablet width. Worth doing; not worth
+  calling a phase.
+- **The mobile Lighthouse score, ~0.58 on both pages measured.** Diagnosed rather than fixed:
+  the app shell pulls the whole design system in before first paint, splitting it was tried and
+  measured nothing, and improving it means changing what the shell depends on. That is product
+  work, not build config.
 
 ### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
 
