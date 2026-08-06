@@ -3,20 +3,20 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status  |
-| --- | --------------------------------------------------------------- | ------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
-| 3   | Server BFF core + Audiobookshelf client                         | done    |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
-| 5   | Audiobooks experience + player                                  | done    |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done    |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done    |
-| 8   | Podcast client (web + Android)                                  | done    |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done    |
-| 10  | Release polish — performance budgets, a11y audit                | planned |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | planned |
+| #   | Phase                                                           | Status      |
+| --- | --------------------------------------------------------------- | ----------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done        |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done        |
+| 3   | Server BFF core + Audiobookshelf client                         | done        |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done        |
+| 5   | Audiobooks experience + player                                  | done        |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done        |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done        |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done        |
+| 8   | Podcast client (web + Android)                                  | done        |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done        |
+| 10  | Release polish — performance budgets, a11y audit                | in progress |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | blocked     |
 
 ### Why Android sits at 7 rather than last
 
@@ -1270,6 +1270,24 @@ stay open and are deliberately _not_ phase-9 work:
   tested, wired and running, but only against fakes.
 - **A music request's import can never be confirmed**, by design: Jellyfin exposes no API to
   observe scan progress, so `importRequested` is the honest terminal state.
+
+### What is actually left, as of 2026-08-06
+
+Phase 10 has shipped its bundle budget, Lighthouse budgets, `arm64` publishing, release
+automation, two accessibility passes and the web design comparison. **Two things remain**, and
+neither is startable from this machine by a session reading this now:
+
+- The accessibility audit's last surfaces — the podcasts UI and a full keyboard tab-walk — were
+  claimed by a concurrent session on 2026-08-06. Check `docs/HANDOVER.md`'s claim list before
+  touching them.
+- **The Android half of the holistic `DESIGN.md` comparison has not been done and cannot be
+  done here**: no JDK, no Android SDK, no emulator. It needs either a machine with the SDK
+  installed or a real device. Do not substitute a source-level reading for it — the web pass
+  showed that reading source and screenshots produced a confidently wrong headline finding that
+  measuring the live DOM overturned.
+
+Phase 11 is **blocked on a decision only the user can make**, not on effort — see below and
+`docs/HANDOVER.md`.
 
 ### 10 — Release polish
 
