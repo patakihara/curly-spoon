@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T23:35:28Z` · `a91ca918da4364ef2` · general-purpose · ended · That's a different, unrelated process from the audit worktree — not mine. My server process is gone. Good. **Verdict:** sound with named corrections…
 - `2026-08-05T23:41:38Z` · `a623d0d03e48b3297` · general-purpose · running · —
 - `2026-08-05T23:46:45Z` · `a50deddeeb6332027` · general-purpose · ended · Branch 'worktree-agent-a50deddeeb6332027', commit '68ab86d'. Not pushed. - Corrected verdict: the desktop layout is close to 'DESIGN.md''s intent (re…
 - `2026-08-06T00:05:22Z` · `a2fe054c4fd3ba454` · general-purpose · ended · That branch is still checked out somewhere locally (the '+' marker) — confirms the 'a98736a' object is only reachable via a live local worktree branc…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-06T07:55:14Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for that notification before continuing.
 - `2026-08-06T08:04:47Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · Waiting for the Playwright suite to finish; will proceed with verification and commit once it completes.
 - `2026-08-06T08:12:15Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for this clean, isolated run to finish before drawing conclusions.
+- `2026-08-06T08:28:46Z` · `a00337b81ce622c0f` · general-purpose · ended · - Branch/commit: 'worktree-agent-a00337b81ce622c0f' @ '1925402', based on '587b202'. Not pushed, per instructions. - **Defect 1**: 'docs/DESIGN.md' o…
 
 <!-- AGENT_LOG_END -->
 
@@ -324,11 +324,6 @@ nothing on `main` is stale — take it.
 - **2026-08-06** — phase 10, the accessibility audit's remaining surfaces: the podcasts UI
   and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
   touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
-
-- **2026-08-06** — phase 10, the mini player's three remaining gaps: the medium-breakpoint
-  overlap, the compact bottom-padding gap, and its own missing cover fallback
-  (`apps/web/src/styles/app.css`, `apps/web/src/features/player/`, `apps/web/src/components/`).
-  Does not touch `apps/web/src/features/podcasts/` or `e2e/app/`.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that

@@ -1592,7 +1592,27 @@ instead of the browser's broken-image glyph. `document.body.scrollWidth` is exac
 390px viewport on **every** route checked, not just the two originally flagged. Settings no
 longer names an internal phase number to the user.
 
-**Two gaps the same pass found, neither a regression, both open:**
+**All three follow-ups are now fixed (`1925402`), verified by interaction rather than
+geometry.** At medium the mini player docks to the rail's right edge and spans the content
+column (`left: var(--auralis-rail-width); right: 0`) — measured `x:80, width:944` against an
+80px rail, flush, with 1440 and 390 unchanged. `DESIGN.md` says only "docked above the bottom
+bar or at the foot of the rail" and does not settle medium; shrinking the bar to 80px is not
+possible without a new narrower layout, so spanning was chosen and the reasoning is in the CSS.
+Compact now reserves the mini player's own height on top of the navigation bar's, but only when
+playback is active — driven off the same store field `MiniPlayer` renders from, so padding is
+never reserved for a bar that is not there. `MiniPlayer`'s cover is on the shared `CoverImage`.
+
+The acceptance check was **clicking** the play toggle and the expand control at 1024, 1440 and
+390 and asserting the state change, not measuring boxes — measuring is what passed the broken
+version a commit earlier.
+
+**One trap found on the way**: the first medium rule used a selector with _lower_ specificity
+than the base `:not(.auralis-shell--compact)` rule it had to override, so `left` silently
+stayed `0` no matter the source order. Chaining `.auralis-shell.auralis-shell--medium` matched
+specificity. A CSS override that appears later and still loses is a specificity problem, not an
+ordering one.
+
+**The two gaps that prompted this work, for the record:**
 
 - **The medium breakpoint has the identical bug that was just fixed at expanded.** At 1024x768
   the mini player is `fixed` but its width computes to ~347.5px against an 80px rail, so it
