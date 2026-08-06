@@ -81,9 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-06T00:05:22Z` · `a2fe054c4fd3ba454` · general-purpose · ended · That branch is still checked out somewhere locally (the '+' marker) — confirms the 'a98736a' object is only reachable via a live local worktree branc…
-- `2026-08-06T00:13:54Z` · `acb70db81676e779a` · general-purpose · ended · The full suite ('pnpm test:e2e' equivalent) is running in the background. I'll pick back up once it completes.
-- `2026-08-06T00:49:12Z` · `acb70db81676e779a` · general-purpose · ended · Diff is clean and scoped correctly. Now waiting for the monitor notification.
 - `2026-08-06T00:50:07Z` · `acb70db81676e779a` · general-purpose · ended · Committed: 'worktree-agent-acb70db81676e779a' @ '052c428'. **Files changed:** - 'apps/web/src/features/podcasts/PodcastDiscoverPage.tsx' - 'apps/web/…
 - `2026-08-06T06:29:17Z` · `a66b2d3bf9be4b715` · general-purpose · ended · Committed cleanly, working tree is clean, not pushed as instructed. ## Report **Branch/commit:** 'worktree-agent-a66b2d3bf9be4b715' @ '5816937', base…
 - `2026-08-06T06:32:17Z` · `a5c905c9a94d01f15` · general-purpose · ended · Matches. Review complete. **Verdict: merge with named corrections** (all minor/stylistic — nothing here fails on the first real tag). **Defects, most…
@@ -96,6 +93,9 @@ in-context scan of the current one.
 - `2026-08-06T08:28:46Z` · `a00337b81ce622c0f` · general-purpose · ended · - Branch/commit: 'worktree-agent-a00337b81ce622c0f' @ '1925402', based on '587b202'. Not pushed, per instructions. - **Defect 1**: 'docs/DESIGN.md' o…
 - `2026-08-06T08:54:49Z` · `a492187bc55352a9d` · general-purpose · ended · Committed, not pushed, as instructed. ## Report - **Branch/commit**: 'worktree-agent-a492187bc55352a9d' @ '315eaea', based on 'e961b37'. Not pushed.…
 - `2026-08-06T09:00:27Z` · `a206a1dfd1c175b23` · general-purpose · ended · **Verdict:** merge as-is. **Foreign-key question, answered definitively:** 'apps/server/src/db/connection.ts:14' sets 'db.pragma('foreign_keys = ON')…
+- `2026-08-06T10:23:51Z` · `a07bbcc0e37985f4f` · general-purpose · ended · I'll pause here and wait for the monitor/background task notification before proceeding.
+- `2026-08-06T10:32:50Z` · `a07bbcc0e37985f4f` · general-purpose · ended · I'll wait for the monitor notification for the background Lighthouse run rather than continuing to poll.
+- `2026-08-06T10:34:22Z` · `a07bbcc0e37985f4f` · general-purpose · ended · Working tree is clean, not pushed, on the worktree's own branch. ## Report **Branch/commit**: 'worktree-agent-a07bbcc0e37985f4f' @ 'f65bf1d', based o…
 
 <!-- AGENT_LOG_END -->
 
@@ -321,9 +321,7 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-- **2026-08-06** — phase 10, extending the Lighthouse budget past the signed-out
-  onboarding screen to an authenticated page (`scripts/lighthouse-budget*`,
-  `.github/workflows/ci.yml`). Touches no `apps/` or `packages/` file.
+_No wave is currently claimed._
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
@@ -358,22 +356,28 @@ whole route is not worth it. `ROADMAP.md` §11 has the rest, including two findi
 regardless of the answer — the Android dependencies clear the FOSS bar outright, and the app
 has no launcher icon at all.
 
-### The mobile Lighthouse score is 62, and that is the phase 10 finding (2026-08-06)
+### Mobile scores ~0.58 on every page measured, and that is the phase 10 finding (2026-08-06)
 
-The Lighthouse budgets landed (`6f0d466`) and pass, but the number they pin is not a good one.
-On simulated mobile hardware and network the app scores **0.62**, with first contentful paint
-at ~6.1s and largest contentful paint at ~6.5s. Desktop is fine (0.95, ~1.1s FCP). Blocking
-time is near zero and layout shift is zero, so nothing is janky — it is purely how much has to
-arrive before anything renders.
+Two pages are now audited — the signed-out onboarding screen and the signed-in home page,
+both desktop and mobile. Desktop is fine on both (~0.94, ~1.1s first contentful paint).
+**Mobile is ~0.58 on both**, with first contentful paint around 6.0s and largest contentful
+paint around 6.9s. Blocking time is modest and layout shift is near zero, so nothing is janky
+— it is purely how much has to arrive before anything renders.
 
-The cause is already documented next to the bundle budget: the entry chunk is ~949 KB raw /
-248 KB gzip, because the app shell uses `@auralis/ui` (and so Mantine, React, react-query, the
-router, zustand and `material-color-utilities`) eagerly. Route-level splitting already exists
-and is working — the largest lazy chunk is 13 KB. The entry chunk is the whole story.
+That the two pages land within a few percent of each other is the informative part. The home
+page does strictly more work, and it does not measurably cost more, because both pay for
+React, Mantine, react-query, the router and zustand before anything paints and under mobile's
+simulated throttle that shared cost dominates whatever the page itself does. It is also why
+lazy-loading the app shell took ~62 KB out of the entry chunk and moved no score.
 
-The budget is deliberately set as a **floor at the current value**, not an aspiration. It stops
-this getting worse; making it better is real work — vendor `manualChunks`, or making the shell
-itself lazier — and it is the obvious next phase 10 wave.
+The remaining entry chunk is ~887 KB raw / ~231 KB gzip. Route-level splitting already works
+— the largest lazy chunk is 34 KB — and vendor `manualChunks` was tried and rejected for
+measuring nothing. What is left is not a splitting problem but a weight problem: the app shell
+pulls the whole design system in before first paint. Improving it means changing what the shell
+depends on, which is real product work rather than a build-config change.
+
+The budgets are deliberately floors at the current values, not aspirations. They stop this
+getting worse; they do not claim it is good.
 
 ### A subagent pushed to `main` after being told not to (2026-08-05)
 
