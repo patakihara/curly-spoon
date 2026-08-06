@@ -36,7 +36,12 @@ export const migrations: Migration[] = [
           UNIQUE (upstream, upstream_user_id)
         );
 
-        -- The upstream API token, AES-256-GCM-encrypted (db/crypto.ts). One per user.
+        -- The upstream API token, AES-256-GCM-encrypted (db/crypto.ts). One per user at the
+        -- time this migration was written; migration 5 below recreates this table with a
+        -- composite (user_id, upstream) primary key, so a user can hold one token per
+        -- upstream. Left as originally written here — this is what ran on every existing
+        -- installation before migration 5 fixed it, and migration 5's own comment explains
+        -- why and how.
         CREATE TABLE IF NOT EXISTS secrets (
           user_id    TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
           upstream   TEXT NOT NULL,
@@ -171,6 +176,42 @@ export const migrations: Migration[] = [
 
         CREATE INDEX IF NOT EXISTS idx_requests_media_type ON requests(media_type);
       `);
+    },
+  },
+  {
+    id: 5,
+    name: 'secrets-composite-key',
+    up: (db) => {
+      // `secrets` was `PRIMARY KEY (user_id)` alone, even though `setUpstreamToken` already
+      // took an `upstream` parameter — a promise the schema couldn't keep: storing a second
+      // upstream's token for the same user silently clobbered the first via
+      // `ON CONFLICT(user_id)`. The key becomes `(user_id, upstream)` so one user can hold a
+      // token per upstream, matching the parameter that was already there.
+      //
+      // SQLite can't ALTER a PRIMARY KEY in place, so this is the standard
+      // create-new/copy/drop/rename dance, wrapped in a transaction so a failure partway
+      // leaves the original `secrets` table intact rather than half-migrated. Every existing
+      // row carries a real `upstream` value already (`NOT NULL` since migration 1), so the
+      // copy is a straight `INSERT ... SELECT` — no backfill needed, unlike migration 4's
+      // `ALTER ... DEFAULT`.
+      db.transaction(() => {
+        db.exec(`
+          CREATE TABLE secrets_new (
+            user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            upstream   TEXT NOT NULL,
+            ciphertext TEXT NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY (user_id, upstream)
+          );
+
+          INSERT INTO secrets_new (user_id, upstream, ciphertext, updated_at)
+            SELECT user_id, upstream, ciphertext, updated_at FROM secrets;
+
+          DROP TABLE secrets;
+
+          ALTER TABLE secrets_new RENAME TO secrets;
+        `);
+      })();
     },
   },
 ];

@@ -55,4 +55,42 @@ describe('secretsRepo', () => {
     const row = db.prepare('SELECT * FROM secrets WHERE user_id = ?').get(user.id);
     expect(row).toBeUndefined();
   });
+
+  it('keeps two different upstreams for one user apart, each readable under its own name', () => {
+    const db = openDatabase(':memory:');
+    const user = upsertUser(db, { username: 'kara', upstreamUserId: 'u1' });
+
+    setUpstreamToken(db, user.id, 'abs-token', sessionSecret, 'audiobookshelf');
+    setUpstreamToken(db, user.id, 'jellyfin-token', sessionSecret, 'jellyfin');
+
+    expect(getUpstreamToken(db, user.id, sessionSecret, 'audiobookshelf')).toBe('abs-token');
+    expect(getUpstreamToken(db, user.id, sessionSecret, 'jellyfin')).toBe('jellyfin-token');
+  });
+
+  it('updates rather than duplicates when the same (user, upstream) pair is written twice', () => {
+    const db = openDatabase(':memory:');
+    const user = upsertUser(db, { username: 'kara', upstreamUserId: 'u1' });
+
+    setUpstreamToken(db, user.id, 'first', sessionSecret, 'jellyfin');
+    setUpstreamToken(db, user.id, 'second', sessionSecret, 'jellyfin');
+
+    const rows = db
+      .prepare('SELECT ciphertext FROM secrets WHERE user_id = ? AND upstream = ?')
+      .all(user.id, 'jellyfin');
+    expect(rows).toHaveLength(1);
+    expect(getUpstreamToken(db, user.id, sessionSecret, 'jellyfin')).toBe('second');
+  });
+
+  it("deletes only the named upstream, leaving the user's other one intact", () => {
+    const db = openDatabase(':memory:');
+    const user = upsertUser(db, { username: 'kara', upstreamUserId: 'u1' });
+
+    setUpstreamToken(db, user.id, 'abs-token', sessionSecret, 'audiobookshelf');
+    setUpstreamToken(db, user.id, 'jellyfin-token', sessionSecret, 'jellyfin');
+
+    deleteUpstreamToken(db, user.id, 'jellyfin');
+
+    expect(getUpstreamToken(db, user.id, sessionSecret, 'jellyfin')).toBeNull();
+    expect(getUpstreamToken(db, user.id, sessionSecret, 'audiobookshelf')).toBe('abs-token');
+  });
 });

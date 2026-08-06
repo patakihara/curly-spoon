@@ -12,15 +12,15 @@
  *   wrong owner: its `kind` column is typed `ProviderKind = 'indexer' | 'download'`
  *   (`requests/types.ts`) — the request pipeline's two provider roles. Jellyfin is a media
  *   source, not a request provider; reusing that table would be a type-level misuse.
- * - Not a widened `secrets`, either. That table's schema only ever supported one credential
- *   per user (`PRIMARY KEY (user_id)`) — even though `setUpstreamToken` already took an
- *   `upstream` parameter, calling it for a second upstream would silently clobber the
- *   first, a latent bug worth fixing on its own but out of scope here. Widening it to a
- *   composite key is a real migration with a data-copy step this test harness can't
- *   meaningfully exercise (every test opens a fresh `:memory:` DB and runs every migration
- *   at once, so that step would only ever run against an empty table) — for zero benefit
- *   over a second table scoped to exactly what's new. `secrets` and every Audiobookshelf
- *   auth read/write stay untouched.
+ * - Not a widened `secrets`, either — at the time this table was added, `secrets` was still
+ *   `PRIMARY KEY (user_id)` alone, even though `setUpstreamToken` already took an `upstream`
+ *   parameter, so calling it for a second upstream would have silently clobbered the first.
+ *   That has since been fixed directly (migration 5: `secrets` is now keyed on
+ *   `(user_id, upstream)`), but this table is still the right shape for Jellyfin regardless:
+ *   `jellyfin_secrets` never held anything but a single per-user Jellyfin token, and folding
+ *   it into `secrets` now would be a migration with no benefit over leaving two tables that
+ *   already do the right thing. `secrets` and every Audiobookshelf auth read/write are
+ *   unaffected by Jellyfin's own storage staying separate.
  *
  * `getJellyfinToken` degrades an undecryptable ciphertext to `null` rather than throwing —
  * matching `providerConfigRepo.ts`'s established behaviour for exactly this situation
