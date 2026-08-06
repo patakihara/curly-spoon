@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T23:41:38Z` · `a623d0d03e48b3297` · general-purpose · running · —
-- `2026-08-05T23:46:45Z` · `a50deddeeb6332027` · general-purpose · ended · Branch 'worktree-agent-a50deddeeb6332027', commit '68ab86d'. Not pushed. - Corrected verdict: the desktop layout is close to 'DESIGN.md''s intent (re…
 - `2026-08-06T00:05:22Z` · `a2fe054c4fd3ba454` · general-purpose · ended · That branch is still checked out somewhere locally (the '+' marker) — confirms the 'a98736a' object is only reachable via a live local worktree branc…
 - `2026-08-06T00:13:54Z` · `acb70db81676e779a` · general-purpose · ended · The full suite ('pnpm test:e2e' equivalent) is running in the background. I'll pick back up once it completes.
 - `2026-08-06T00:49:12Z` · `acb70db81676e779a` · general-purpose · ended · Diff is clean and scoped correctly. Now waiting for the monitor notification.
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-06T08:04:47Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · Waiting for the Playwright suite to finish; will proceed with verification and commit once it completes.
 - `2026-08-06T08:12:15Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for this clean, isolated run to finish before drawing conclusions.
 - `2026-08-06T08:28:46Z` · `a00337b81ce622c0f` · general-purpose · ended · - Branch/commit: 'worktree-agent-a00337b81ce622c0f' @ '1925402', based on '587b202'. Not pushed, per instructions. - **Defect 1**: 'docs/DESIGN.md' o…
+- `2026-08-06T08:54:49Z` · `a492187bc55352a9d` · general-purpose · ended · Committed, not pushed, as instructed. ## Report - **Branch/commit**: 'worktree-agent-a492187bc55352a9d' @ '315eaea', based on 'e961b37'. Not pushed.…
+- `2026-08-06T09:00:27Z` · `a206a1dfd1c175b23` · general-purpose · ended · **Verdict:** merge as-is. **Foreign-key question, answered definitively:** 'apps/server/src/db/connection.ts:14' sets 'db.pragma('foreign_keys = ON')…
 
 <!-- AGENT_LOG_END -->
 
@@ -325,9 +325,6 @@ nothing on `main` is stale — take it.
   and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
   touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
 
-- **2026-08-06** — the `secrets` composite-key bug (`apps/server/src/db/`,
-  `apps/server/src/db/migrations.ts`). Server-side only; touches no web or Android code.
-
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
 it is idle. Check the worktree's own `git status --short`, the mtimes on the files it is
@@ -473,10 +470,15 @@ there — a real, contained bug rather than a question for anyone.
 
 **Two latent bugs, neither fixed:**
 
-- `apps/server/src/db/secretsRepo.ts`'s `setUpstreamToken` takes an `upstream` parameter but
-  the table's primary key is `user_id` alone, so calling it twice for one user with different
-  upstreams silently clobbers the first token via `ON CONFLICT(user_id)`. Nothing calls it
-  that way today.
+- ~~`setUpstreamToken`'s `upstream` parameter was a promise the schema could not keep.~~
+  **Fixed 2026-08-06 (`315eaea`)**: migration 5 rebuilds `secrets` with a composite
+  `(user_id, upstream)` primary key, and `getUpstreamToken`/`deleteUpstreamToken` take the
+  upstream too, defaulted so no call site changed. The schema was changed rather than the
+  signature deleted — a silently-clobbering write is worse to leave than a migration. Rows
+  survive: the test seeds one in the old shape through the real migrations 1–4 and asserts it
+  still decrypts afterwards. `secrets` is a leaf table with nothing referencing it, so the
+  create/copy/drop/rename needs no `PRAGMA foreign_keys=OFF` — verified empirically, not
+  assumed, since `connection.ts` does enable foreign keys before migrations run.
 - The Dockerfile enumerates workspace packages by hand. Every future package `apps/server`
   depends on needs the same three-line addition — missing it produces exactly the `586742e`
   failure mode (image builds, container dies on boot) rather than a build error.
