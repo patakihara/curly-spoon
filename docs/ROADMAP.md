@@ -1290,6 +1290,21 @@ aspiration. The emulated half makes `publish` the slowest job in the workflow by
 that is accepted rather than worked around, since it falls only on `main` pushes and is cached
 between runs.
 
+Verified on the registry rather than on a green job: `ghcr.io/patakihara/auralis:latest` is an
+OCI image index listing `linux/amd64` and `linux/arm64` (plus buildx's two attestation
+manifests), pulled anonymously from GHCR on 2026-08-06.
+
+**Adding it exposed a second, worse bug, now fixed in the same file.** `publish` was cancelled
+on three consecutive runs and nobody would have noticed: `concurrency.cancel-in-progress` was
+`true` for every branch, so a superseded run took its `publish` job down with it, and `publish`
+is coupled to a live deployment — mediaserver auto-updates from `:latest`. Under back-to-back
+pushes the registry silently stops updating while every run still reports green, because the
+cancelled jobs are not the ones anyone reads. `arm64` widened the window sharply, since the
+emulated build made `publish` by far the longest job here. `main` now queues rather than
+cancels; every other branch is unchanged. **The general shape is worth remembering: a job
+coupled to a deployment must not be cancellable by the next push, and a cancelled job is not a
+failed one, so nothing in the UI calls it out.**
+
 What is left here is release automation proper (tags, changelogs, a release flow rather than
 publishing straight off every green `main` push).
 
