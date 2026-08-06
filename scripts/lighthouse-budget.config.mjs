@@ -1,34 +1,57 @@
 /**
- * Lighthouse performance budget for the built `apps/web` app, desktop and mobile
- * form factors.
+ * Lighthouse performance budget for the built `apps/web` app: two pages
+ * (`signedOut`, `home`), desktop and mobile form factors each.
  *
  * A `.mjs` module rather than JSON, same reasoning as `bundle-budget.config.mjs`:
  * the reasoning for each number lives next to the number, so a budget nobody can
  * explain gets raised the first time it fails, which makes it worthless. Re-derive
  * by running `scripts/lighthouse-budget.sh -- --runs 5` (or more) with no budget
- * failures, reading the "measured:" line each form factor prints, and repeating
- * the arithmetic below — do not just nudge a failing number up to make CI pass.
+ * failures, reading each page/form-factor's "measured:" line, and repeating the
+ * arithmetic below — do not just nudge a failing number up to make CI pass.
  *
- * **What was audited, and what was not.** Every number below came from auditing a
- * single URL, `/`, on a freshly-booted server with `AURALIS_FAKE_UPSTREAMS=1` and
+ * **What is audited, and what still is not.** Both pages are the app's own root
+ * URL (`/`) on a freshly-booted server with `AURALIS_FAKE_UPSTREAMS=1` and
  * `DATA_DIR=:memory:` (`scripts/lighthouse-budget.sh`'s own boot, mirroring
- * `playwright.config.ts`'s second `webServer` entry). A fresh in-memory server
- * starts **unconfigured**, so `/` serves the onboarding/setup screen
- * (`SetupPage`), not the authenticated library/home experience a real user
- * spends most of their time in — this budget says nothing about the audiobook
- * library grid, the player, or any Jellyfin-backed music page, all of which are
- * heavier and unaudited. It also says nothing about the real production app
+ * `playwright.config.ts`'s second `webServer` entry) — the SPA renders an
+ * entirely different page at that one URL depending on server/session state,
+ * not on the path:
+ *   - **`signedOut`** — a fresh in-memory server starts unconfigured, so an
+ *     unauthenticated `/` serves the onboarding/setup screen (`SetupPage`).
+ *     This is the only page the budget covered before 2026-08-06.
+ *   - **`home`** — `scripts/lighthouse-budget.mjs`'s `establishAuthenticatedSession`
+ *     drives `POST /api/v1/setup` then `POST /api/v1/auth/login` directly over
+ *     `fetch` (Lighthouse launches its own Chrome, not Playwright's, so there is
+ *     no `page.context()` to hand a `storageState` file to) and attaches the
+ *     resulting session cookie via Lighthouse's `extraHeaders`, so `/` instead
+ *     serves the authenticated Home/library shelf experience a returning user
+ *     actually spends their time in. `scripts/lighthouse-budget.mjs`'s
+ *     `assertAuthenticated` checks every single run's `finalDisplayedUrl` and
+ *     fails loudly (exit 2) rather than silently reporting `signedOut` numbers
+ *     under a `home` label if the cookie ever stops working.
+ *
+ * **This closes a real hole, not a hypothetical one.** A previous wave moved
+ * `Shell` (the whole authenticated app chrome) to a lazy import, taking ~62 KB
+ * raw out of the entry chunk — and the score below did not move at all, because
+ * this budget audited only `signedOut`, which never renders `Shell` regardless.
+ * `docs/ROADMAP.md` §10 has the incident. `home` is still not the *heaviest*
+ * authenticated page (the player and any Jellyfin-backed music page are
+ * unaudited, and both are heavier), but it is the first thing a returning user
+ * sees and it exercises the shell, nav chrome, mini player and a real content
+ * grid — one page audited properly rather than three audited shallowly, per
+ * this wave's own scoping (each extra page multiplies run time by samples ×
+ * form factors). It also still says nothing about the real production app
  * against a real Audiobookshelf/Jellyfin over a real network: the fake upstreams
  * respond near-instantly from the same process, so this measures the client's
  * own rendering cost, not upstream latency. Only the `performance` category is
  * budgeted — no accessibility, best-practices, SEO or PWA category.
  *
- * Baseline re-measured 2026-08-06, commit `a25d2ea` (phase 10, `Shell` moved from a
- * static import to `lazy()` — see that commit and `bundle-budget.config.mjs`'s own
- * re-derivation next to it), on the same laptop CI numbers are expected to roughly
- * track (`docs/HANDOVER.md` §4's "SofiaThinkPad"), via two independent verification
- * passes: `scripts/lighthouse-budget.sh -- --runs 6` then `-- --runs 5`. **The
- * budget numbers below are unchanged from the previous (`814a595`) baseline** —
+ * **`signedOut` baseline**, re-measured 2026-08-06, commit `a25d2ea` (phase 10,
+ * `Shell` moved from a static import to `lazy()` — see that commit and
+ * `bundle-budget.config.mjs`'s own re-derivation next to it), on the same laptop
+ * CI numbers are expected to roughly track (`docs/HANDOVER.md` §4's
+ * "SofiaThinkPad"), via two independent verification passes:
+ * `scripts/lighthouse-budget.sh -- --runs 6` then `-- --runs 5`. **The `signedOut`
+ * budget numbers are unchanged from the previous (`814a595`) baseline** —
  * re-measuring found no value outside the range that baseline's own numbers already
  * cover, mobile `score` included (see that metric's own comment for why this is an
  * honest, not a manufactured, non-result). Most numbers below follow `<worst single
@@ -41,6 +64,10 @@
  * single sample" has no fixed value to converge on; every attempt to pin one down
  * was beaten by the next run.
  *
+ * **`home` baseline**, measured 2026-08-06 on the same commit and machine, via two
+ * independent passes (`-- --runs 6` then `-- --runs 5`), same method as `signedOut`
+ * above — each metric's own comment has the numbers.
+ *
  * Headroom is wider for mobile than desktop throughout, for two compounding
  * reasons: mobile's `throttling` is *simulated* (Lighthouse models slow-4G
  * network and 4x CPU slowdown on top of whatever this machine's CPU actually
@@ -50,9 +77,20 @@
  * mobile applies to it is not guaranteed to land on the same absolute numbers
  * this laptop saw, even for an unchanged build. Desktop is far less exposed to
  * that gap since it throttles almost nothing.
+ *
+ * **CI runs the same `--runs 3` default for both pages** — deliberately not
+ * reduced for `home` even though two pages cost roughly twice what one did:
+ * `home`'s own numbers (see below) are close enough to `signedOut`'s that a
+ * thinner CI sample would make `home` noisier precisely where noise is least
+ * affordable (a heavier page, on an unmeasured runner CPU, under mobile's
+ * simulated throttling). If CI run time becomes a real problem, drop the
+ * *pass count* on `bundle-budget`-style checks before dropping Lighthouse's
+ * `--runs`, which trades directly against how much a false failure costs to
+ * chase down.
  */
 export const budget = {
-  desktop: {
+  signedOut: {
+    desktop: {
     /**
      * Performance category score, 0–1, a floor (higher is better). Original
      * 5-run baseline: median 0.95, range 0.95–0.95. Post-`a25d2ea`
@@ -212,6 +250,15 @@ export const budget = {
      * in every run observed, same reason as desktop's `si` above, so it gets
      * the same budget as `fcp` here too.
      */
-    si: 8500,
+      si: 8500,
+    },
+  },
+  home: {
+    desktop: {
+      /** PLACEHOLDER_HOME_DESKTOP */
+    },
+    mobile: {
+      /** PLACEHOLDER_HOME_MOBILE */
+    },
   },
 };
