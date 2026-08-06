@@ -20,6 +20,7 @@ import { useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Card, ListItem, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import {
   useJellyfinFavoriteAlbumsQuery,
   useJellyfinFavoriteArtistsQuery,
@@ -136,12 +137,10 @@ export function MusicFavoritesPage() {
                     }
                   >
                     {artist.imageTag ? (
-                      <img
+                      <CoverImage
                         src={api.jellyfinArtworkUrl(artist.id)}
-                        alt=""
-                        width={120}
-                        height={120}
-                        style={{ borderRadius: 8, objectFit: 'cover' }}
+                        size={120}
+                        fallbackIcon="music_note"
                       />
                     ) : null}
                     <div
@@ -187,12 +186,10 @@ export function MusicFavoritesPage() {
                     }
                   >
                     {album.imageTag ? (
-                      <img
+                      <CoverImage
                         src={api.jellyfinArtworkUrl(album.id)}
-                        alt=""
-                        width={120}
-                        height={120}
-                        style={{ borderRadius: 8, objectFit: 'cover' }}
+                        size={120}
+                        fallbackIcon="music_note"
                       />
                     ) : null}
                     <div

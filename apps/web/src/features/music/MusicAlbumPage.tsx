@@ -34,6 +34,7 @@ import { useParams } from '@tanstack/react-router';
 import { Button, ListItem, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import type { JellyfinTrack, LibraryItem, PlaybackSession } from '../../api/types.js';
 import { useApi } from '../../api/ApiContext.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import {
   TRACK_ORDER_SORT_BY,
   useJellyfinAlbumQuery,
@@ -134,13 +135,7 @@ export function MusicAlbumPage() {
   return (
     <div className="auralis-page" data-testid="music-album-page">
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <img
-          src={api.jellyfinArtworkUrl(albumId)}
-          alt=""
-          width={96}
-          height={96}
-          style={{ borderRadius: 8, objectFit: 'cover' }}
-        />
+        <CoverImage src={api.jellyfinArtworkUrl(albumId)} size={96} fallbackIcon="music_note" />
         <div>
           <h1 data-testid="music-album-name">{albumName}</h1>
           {artistNames ? <p>{artistNames}</p> : null}

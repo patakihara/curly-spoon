@@ -61,9 +61,7 @@ export function SettingsPage() {
             </Button>
           ))}
         </div>
-        <p className="auralis-field__hint">
-          Source colour (Phase 5 will set this automatically from artwork):
-        </p>
+        <p className="auralis-field__hint">Accent colour:</p>
         <div className="auralis-settings-row" data-testid="theme-color-controls">
           {COLOR_SWATCHES.map((swatch) => (
             <button

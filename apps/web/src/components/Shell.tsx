@@ -4,7 +4,7 @@
  * Playing region above that — all driven by the one `useBreakpoint` hook, never
  * a component-local media query.
  */
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
@@ -16,6 +16,7 @@ import {
   type NavigationItem,
 } from '@auralis/ui';
 import { useBreakpoint } from '../hooks/useBreakpoint.js';
+import { railWidth } from './shellLayout.js';
 import {
   useJellyfinConfigQuery,
   useLibrariesQuery,
@@ -112,6 +113,9 @@ export function Shell({ children }: { children: ReactNode }) {
       className={`auralis-shell auralis-shell--${breakpoint}`}
       data-testid="shell"
       data-breakpoint={breakpoint}
+      // The mini player's dock width (app.css, non-compact breakpoints) reads
+      // this rather than hardcoding its own — see `shellLayout.ts`'s doc comment.
+      style={{ '--auralis-rail-width': `${railWidth(breakpoint)}px` } as CSSProperties}
     >
       {breakpoint === 'compact' ? (
         <>
@@ -150,7 +154,7 @@ export function Shell({ children }: { children: ReactNode }) {
              * assertions, which this file must keep passing unmodified.
              */}
             <MantineAppShell
-              navbar={{ width: breakpoint === 'expanded' ? 220 : 80, breakpoint: 0 }}
+              navbar={{ width: railWidth(breakpoint), breakpoint: 0 }}
               mode="static"
               padding={0}
               style={{ height: '100%' }}

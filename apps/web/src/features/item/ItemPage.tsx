@@ -66,7 +66,7 @@ export function ItemPage() {
           width={200}
           height={200}
         />
-        <div>
+        <div className="auralis-item-header__meta">
           <h1>{item.media.title}</h1>
           {item.media.subtitle ? <p>{item.media.subtitle}</p> : null}
           {item.media.authors?.length ? (

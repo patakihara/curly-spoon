@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button, Card, SearchField, Skeleton } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import { ApiError } from '../../api/errors.js';
 import {
   useJellyfinArtistsQuery,
@@ -91,9 +92,9 @@ export function MusicHomePage() {
 
   return (
     <div className="auralis-page" data-testid="music-page">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="auralis-music-header">
         <h1>Music</h1>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className="auralis-music-header__links">
           <Button
             variant="text"
             size="sm"
@@ -121,10 +122,7 @@ export function MusicHomePage() {
         </div>
       </div>
 
-      <div
-        data-testid="music-search-field"
-        style={{ display: 'flex', gap: 8, alignItems: 'center' }}
-      >
+      <div data-testid="music-search-field" className="auralis-music-search-row">
         <SearchField
           value={term}
           onChange={setTerm}
@@ -178,12 +176,10 @@ export function MusicHomePage() {
                       }
                     >
                       {artist.imageTag ? (
-                        <img
+                        <CoverImage
                           src={api.jellyfinArtworkUrl(artist.id)}
-                          alt=""
-                          width={120}
-                          height={120}
-                          style={{ borderRadius: 8, objectFit: 'cover' }}
+                          size={120}
+                          fallbackIcon="music_note"
                         />
                       ) : null}
                       <h3>{artist.name}</h3>
@@ -211,12 +207,10 @@ export function MusicHomePage() {
                       }
                     >
                       {album.imageTag ? (
-                        <img
+                        <CoverImage
                           src={api.jellyfinArtworkUrl(album.id)}
-                          alt=""
-                          width={120}
-                          height={120}
-                          style={{ borderRadius: 8, objectFit: 'cover' }}
+                          size={120}
+                          fallbackIcon="music_note"
                         />
                       ) : null}
                       <h3>{album.name}</h3>
@@ -289,12 +283,10 @@ export function MusicHomePage() {
                 }
               >
                 {artist.imageTag ? (
-                  <img
+                  <CoverImage
                     src={api.jellyfinArtworkUrl(artist.id)}
-                    alt=""
-                    width={120}
-                    height={120}
-                    style={{ borderRadius: 8, objectFit: 'cover' }}
+                    size={120}
+                    fallbackIcon="music_note"
                   />
                 ) : null}
                 <h3>{artist.name}</h3>

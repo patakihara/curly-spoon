@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Button, Card, Skeleton, Snackbar, useSnackbar } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import { useJellyfinAlbumsQuery, useJellyfinArtistQuery } from '../../api/queries.js';
 import { FavoriteToggle } from './FavoriteToggle.js';
 import { summarizePage } from './pagination.js';
@@ -72,12 +73,10 @@ export function MusicArtistPage() {
                 }
               >
                 {album.imageTag ? (
-                  <img
+                  <CoverImage
                     src={api.jellyfinArtworkUrl(album.id)}
-                    alt=""
-                    width={160}
-                    height={160}
-                    style={{ borderRadius: 8, objectFit: 'cover' }}
+                    size={160}
+                    fallbackIcon="music_note"
                   />
                 ) : null}
                 <div

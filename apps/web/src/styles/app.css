@@ -119,10 +119,27 @@ html body {
   width: 100%;
 }
 
+/*
+ * `flex-wrap: wrap` (the audit's own recommendation): the default `nowrap`
+ * let a long title/byline push `body.scrollWidth` past the viewport at 390px
+ * (405px measured against 390px) rather than shrinking or wrapping — a flex
+ * item's automatic minimum width is its content's min-content width, which a
+ * long title can exceed the available column by. `.auralis-item-header__meta`
+ * below gives the text column `min-width: 0` and `flex-basis`, so it wraps
+ * onto its own row under the cover on a narrow viewport instead of forcing
+ * the row wider (web design audit, 2026-08-06).
+ */
 .auralis-item-header {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--m3-space-lg);
   align-items: flex-start;
+}
+
+.auralis-item-header__meta {
+  min-width: 0;
+  flex: 1 1 200px;
+  overflow-wrap: break-word;
 }
 
 .auralis-item-cover {
@@ -134,6 +151,40 @@ html body {
 .auralis-item-description {
   max-width: 65ch;
   line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------------------
+ * Music page header/search rows — `flex-wrap: wrap` for the same reason as
+ * `.auralis-item-header` above: at 390px the un-wrapped row (h1 + three link
+ * buttons, and separately the search field + its submit button) pushed
+ * `body.scrollWidth` to 419px, visibly clipping "Requests"/"Search" (web
+ * design audit, 2026-08-06).
+ * ------------------------------------------------------------------------- */
+
+.auralis-music-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--m3-space-sm);
+}
+
+.auralis-music-header__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.auralis-music-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.auralis-music-search-row .m3-search-field {
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -359,8 +410,50 @@ html body {
   z-index: 9;
 }
 
+/*
+ * Non-compact (medium/expanded): previously `position: relative`, rendered as a
+ * plain sibling after `.auralis-shell__row` — on any page tall enough to scroll
+ * (e.g. the item detail page at 921px against a 900px viewport) that pushed the
+ * mini player below the fold entirely: present in the DOM but unreachable
+ * without scrolling to the very bottom (web design audit, 2026-08-06). `fixed`
+ * at the viewport's bottom-left, mirroring the compact rule above, makes it
+ * reachable regardless of page height.
+ */
 .auralis-shell:not(.auralis-shell--compact) .auralis-mini-player {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 9;
   max-width: 360px;
+}
+
+/*
+ * At expanded widths the audit measured the mini player (360px, from x:0)
+ * overlapping ~140px past the rail's real 220px edge into the content column.
+ * `--auralis-rail-width` is set by `Shell.tsx` from `shellLayout.ts`'s
+ * `railWidth()` — the same function that sizes the Mantine rail navbar — so
+ * this can't drift from the rail's actual width again.
+ *
+ * Medium's 80px collapsed rail is deliberately left alone: the audit measured
+ * the overlap only at expanded (1440px/220px rail), and an 80px-wide dock can't
+ * hold a 48px cover plus a 48px play button without inventing a new, narrower
+ * layout for the mini player's contents — out of scope here. Medium keeps the
+ * existing 360px cap above; it still gets the below-the-fold fix, just not the
+ * rail-width scoping.
+ */
+.auralis-shell--expanded .auralis-mini-player {
+  width: var(--auralis-rail-width);
+  max-width: none;
+}
+
+/*
+ * The mini player is now fixed rather than occupying page flow, so it would
+ * otherwise permanently cover whatever content or rail item sits at the
+ * viewport's bottom-left. Reserve space for it, the same way the compact
+ * shell already reserves room for the fixed bottom nav bar above.
+ */
+.auralis-shell:not(.auralis-shell--compact) .auralis-shell__content {
+  padding-bottom: 88px;
 }
 
 .auralis-mini-player__body {
