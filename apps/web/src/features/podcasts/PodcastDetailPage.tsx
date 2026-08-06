@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { Chip, Icon, ListItem, Skeleton } from '@auralis/ui';
 import { RichDescription } from '../../components/RichDescription.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import { useApi } from '../../api/ApiContext.js';
 import { useItemQuery, useMyProgressQuery, usePlayEpisodeMutation } from '../../api/queries.js';
 import { ApiError } from '../../api/errors.js';
@@ -102,12 +103,12 @@ export function PodcastDetailPage() {
   return (
     <div className="auralis-page" data-testid="podcast-detail-page">
       <div className="auralis-item-header">
-        <img
-          className="auralis-item-cover"
+        <CoverImage
           src={api.coverUrl(item.id, { width: 400 })}
           alt=""
-          width={200}
-          height={200}
+          size={200}
+          fallbackIcon="podcasts"
+          style={{ borderRadius: 'var(--m3-shape-lg)' }}
         />
         <div>
           <h1>{item.media.title}</h1>

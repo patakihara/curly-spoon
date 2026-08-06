@@ -1730,6 +1730,41 @@ note for whoever picks it up: the fake upstreams serve synthetic random bytes la
 colour cannot be checked there at all, and a "broken image" seen in that environment is the
 fixture, not the app.
 
+**The 600–1240px tablet breakpoint is now audited, in a real browser, at 600/768/900/1024/1200px
+on Home, Search, Settings, an item detail page, and Music (browse and album) — the pages the
+earlier desktop/phone passes covered at other widths.** `docs/DESIGN.md`'s three-tier layout
+(bottom bar / rail / expanded rail, with the mini player "docked ... at the foot of the rail")
+holds across the whole range, not just the 900px width `player.spec.ts` already pinned:
+`.auralis-card-grid`'s `repeat(auto-fill, minmax(200px, 1fr))` produced 2–5 columns with card
+widths measured 200–250px at every width checked — never a single giant column, never an
+unreadable six-up — and the medium-breakpoint mini-player docking fix (`1925402`) holds
+edge-to-edge at 768/1024/1200px too, confirmed by clicking the play toggle through it at each
+width rather than trusting `boundingBox`, per this project's own lesson that geometry
+assertions passed the broken version once already. No horizontal overflow at any width on any
+page checked. `e2e/app/tablet-breakpoint.spec.ts` pins all of this.
+
+**The two follow-up items this section used to carry forward — the ~48px of content obscured
+behind the docked mini player at compact width, and `MiniPlayer`'s own cover lacking a
+fallback — were already fixed by `1925402`, before this wave started.** Read in a real browser
+rather than assumed from the commit message: `app.css`'s `.auralis-shell--compact
+[data-mini-player-active='true']` rule reserves 144px (80px bottom bar + ~64px mini player) only
+while a track is loaded, and `MiniPlayer.tsx` already renders through the shared `CoverImage`
+component. Nothing to fix there.
+
+**One real defect was found instead, by the same real-browser pass, and is fixed.** `ItemPage.tsx`
+(book detail) and `PodcastDetailPage.tsx` (podcast detail) both still rendered their cover as a
+bare `<img>` — the exact pattern the Music cards and `MiniPlayer` were fixed for, just not
+carried to these two pages. Confirmed by forcing the cover request to fail and watching the
+browser's native broken-image glyph render at 600px, on `item-dune`'s detail page. Both now go
+through `CoverImage`, with `book_2`/`podcasts` fallback icons matching `MiniPlayer`'s own
+mapping. `e2e/app/tablet-breakpoint.spec.ts`'s last two tests pin this — verified to fail
+without the fix (reverted, watched both go red, restored) before being trusted.
+
+Still uncovered: Android, motion/cross-fade, hover states, the light colour scheme, real
+assistive technology, and the Podcasts/Lyrics/Playlists/Favourites/Requests pages specifically
+at tablet widths (this pass covered Home/Search/Settings/item-detail/Music only, the same set
+the desktop/phone passes used).
+
 ### 11 — Alternative app-store distribution (F-Droid / Droid-ify)
 
 Sideloading an APK from a CI artifact is fine for the person who builds it and hostile to
