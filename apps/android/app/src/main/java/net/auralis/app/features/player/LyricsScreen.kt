@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -189,8 +188,8 @@ private fun LyricsList(
             Text(
                 text = lines[index].text,
                 modifier = Modifier.padding(vertical = 8.dp),
+                style = if (isActive) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
                 fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                fontSize = if (isActive) 20.sp else 16.sp,
                 color =
                     if (isActive) {
                         MaterialTheme.colorScheme.primary

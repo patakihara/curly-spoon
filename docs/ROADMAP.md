@@ -1354,6 +1354,38 @@ not just the per-surface checks noted against phase 7's waves above, but the who
 web and Android together, side by side with YouTube Music and Symfonium one more time before
 release.
 
+**The Android half of the holistic comparison is done, as a source-level audit
+(`docs/research/ANDROID_DESIGN_AUDIT.md`), and it turns up more than the per-surface checks
+above ever surfaced.** No JDK/SDK/emulator exists on this machine, so nothing here is a visual
+verification — every claim is labelled source-verified (read directly, or a whole-tree grep
+proving a pattern's absence) or inferred, per the same honesty convention
+`docs/research/WEB_DESIGN_AUDIT.md` used. Three structural gaps, all confirmed from source
+rather than assumed: **there is no full Now Playing surface at all** — `MiniPlayerBar` (94
+lines: a title and text play/pause/shuffle/repeat/lyrics buttons) is the entirety of Android's
+playback UI, with no artwork, no seek bar, no split-view, self-acknowledged in the app's own
+doc comments as unbuilt; **there is no persistent navigation shell** — every one of the 16
+screens is an independent `Scaffold`+`TopAppBar` reached by pushing onto the back stack, no
+`NavigationBar`/`NavigationRail` exists anywhere, and the mini player is wired into only
+`HomeScreen`'s own `Scaffold`, so it vanishes the moment you navigate anywhere else while
+something plays; and **only colour is themed, and it's the wrong colour model** — Android uses
+wallpaper-derived Material You dynamic colour, not the artwork-derived
+`@material/material-color-utilities` pipeline `DESIGN.md`/Symfonium call for, while type, shape
+and the whole spring-motion table are entirely unwired (`MaterialTheme(colorScheme = ...)` is
+the one call site, no `typography`/`shapes` argument). Most of the smaller, surface-level
+divergences (every control rendering as `TextButton` rather than `IconButton`, no back-arrow
+icons anywhere) trace to one repeated, documented decision: `material-icons-extended` was never
+added as a dependency, out of caution over an unconfirmed glyph set. **One fix was made, in the
+only class safe to apply blind**: `LyricsScreen.kt`'s active/inactive lyric line size was two
+hardcoded `fontSize` literals, the single instance in the entire tree not using a
+`MaterialTheme.typography` role that every sibling screen already uses — changed to reference
+the theme's own `titleLarge`/`bodyLarge` roles, which needed no rendered check because it
+swaps which existing token applies rather than inventing a new visual value. Two product-scope
+questions named for the user rather than decided: Android's search is Jellyfin-music-only where
+web's is unified across books/podcasts/music, and Android has no Settings screen at all. Every
+genuinely visual finding — building a real Now Playing surface, a persistent nav shell, an
+artwork-derived theme — is named and left for a session with a device or emulator, per this
+wave's own constraint that a source-level reading must not be mistaken for a visual one.
+
 **The web bundle-size budget is done.** `scripts/bundle-budget.mjs` measures
 `apps/web`'s production build straight from `dist/index.html` and `dist/assets` (entry
 chunk vs. every lazily-loaded route, both raw and gzip, plus a per-chunk ceiling on the
