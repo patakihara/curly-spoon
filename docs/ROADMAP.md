@@ -1685,13 +1685,15 @@ ordering one.
   a breakpoint the fix deliberately did not scope. The stated reason (80px cannot hold a cover
   plus a button) is a real constraint, so closing this needs a narrower medium-specific layout,
   not just another width rule.
-- **At compact, content scrolls behind the mini player.** `.auralis-shell--compact` reserves
+- **At compact, content scrolled behind the mini player** — `.auralis-shell--compact` reserved
   80px of bottom padding for the navigation bar but not the mini player's 64px stacked above
-  it, so the last ~48px of a long page is obscured. Pre-existing and unchanged by this work,
-  confirmed against the diff — but real.
+  it, obscuring the last ~48px of a long page. **Fixed in `1925402`**, which reserves the full
+  height and only while a mini player is actually rendered
+  (`.auralis-shell--compact[data-mini-player-active='true']` in `apps/web/src/styles/app.css`).
 
-Also noted and not fixed: `MiniPlayer`'s own cover `<img>` still lacks the fallback the Music
-cards just gained.
+`MiniPlayer`'s own cover was noted here as still lacking the fallback the Music cards gained.
+**That was fixed in the same commit** — it renders through `CoverImage`. Both were re-verified
+in the source on 2026-08-06 rather than taken from a report.
 
 **The docking fix shipped broken once, and the reason generalises (`aebee4a`).** Moving the
 mini player to `position: fixed` put it in a new stacking context, and at `z-index: 9` it lost
