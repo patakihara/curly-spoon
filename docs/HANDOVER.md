@@ -245,20 +245,20 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                    | Status      |
-| ----- | ------------------------------------------------------- | ----------- |
-| 1     | Monorepo, tooling, CI, test harness                     | done        |
-| 2     | `@auralis/ui` — Material 3 Expressive design system     | done        |
-| 3     | BFF + Audiobookshelf client                             | done        |
-| 4     | Web shell + Docker image                                | done        |
-| 5     | Audiobooks experience + player                          | done        |
-| 5a    | Android build skeleton + APK pipeline                   | done        |
-| 6     | Book requests                                           | done        |
-| 7     | Android — audiobooks, requests, Auto, offline downloads | done        |
-| 8     | Podcasts — backend, web, Android                        | done        |
-| 9     | Music — Jellyfin, lyrics, requests (web + Android)      | done        |
-| 10    | Release polish — perf budgets, a11y audit               | in progress |
-| 11    | F-Droid / Droid-ify distribution                        | not started |
+| Phase | What                                                    | Status  |
+| ----- | ------------------------------------------------------- | ------- |
+| 1     | Monorepo, tooling, CI, test harness                     | done    |
+| 2     | `@auralis/ui` — Material 3 Expressive design system     | done    |
+| 3     | BFF + Audiobookshelf client                             | done    |
+| 4     | Web shell + Docker image                                | done    |
+| 5     | Audiobooks experience + player                          | done    |
+| 5a    | Android build skeleton + APK pipeline                   | done    |
+| 6     | Book requests                                           | done    |
+| 7     | Android — audiobooks, requests, Auto, offline downloads | done    |
+| 8     | Podcasts — backend, web, Android                        | done    |
+| 9     | Music — Jellyfin, lyrics, requests (web + Android)      | done    |
+| 10    | Release polish — perf budgets, a11y audit               | done    |
+| 11    | F-Droid / Droid-ify distribution                        | blocked |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
