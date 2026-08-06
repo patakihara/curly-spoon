@@ -418,12 +418,28 @@ html body {
  * without scrolling to the very bottom (web design audit, 2026-08-06). `fixed`
  * at the viewport's bottom-left, mirroring the compact rule above, makes it
  * reachable regardless of page height.
+ *
+ * `z-index: 101` (not the compact rule's `9`): Mantine's `AppShellNavbar`
+ * (`Shell.tsx`'s rail, `mode="static"`) sits at the same x:0 column and, even
+ * in static/normal-flow position, sets its own stacking context at
+ * `calc(<AppShell zIndex, default 100> + 1)` — 101 — via a `--app-shell-navbar-
+ * z-index` custom property AppShellNavbar always writes regardless of `mode`.
+ * That z-index beat this rule's old `9` at exactly the rectangle the mini
+ * player occupies (left:0, the rail's own width, the viewport's bottom edge),
+ * so the rail silently painted over the docked mini player and swallowed every
+ * click aimed at it — Play/Pause, "expand", cover art — without the rail
+ * itself changing size or appearance, and Playwright's actionability check
+ * correctly refused to click through it (found 2026-08-06, three specs timing
+ * out on `locator.click`: `player.spec.ts`, `lyrics.spec.ts`,
+ * `music-queue.spec.ts`). 101 clears the rail; still well under Mantine's
+ * `modal`/`popover`/`overlay` bands (200/300/400), so `Dialog`/`Sheet`
+ * surfaces still stack above the mini player as before.
  */
 .auralis-shell:not(.auralis-shell--compact) .auralis-mini-player {
   position: fixed;
   left: 0;
   bottom: 0;
-  z-index: 9;
+  z-index: 101;
   max-width: 360px;
 }
 
