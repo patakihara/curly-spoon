@@ -1608,6 +1608,23 @@ longer names an internal phase number to the user.
 Also noted and not fixed: `MiniPlayer`'s own cover `<img>` still lacks the fallback the Music
 cards just gained.
 
+**The docking fix shipped broken once, and the reason generalises (`aebee4a`).** Moving the
+mini player to `position: fixed` put it in a new stacking context, and at `z-index: 9` it lost
+to Mantine's `AppShellNavbar` — which writes its own `z-index: 101` **regardless of `mode`**,
+including the static, in-flow mode the rail uses here. The rail occupies exactly the rectangle
+the docked mini player does (left:0, the rail's width, the viewport's bottom edge), so it
+painted over the mini player and swallowed every click aimed at it — play/pause, expand, cover
+art — while neither element changed size or appearance.
+
+The browser verification pass measured `boundingBox` and computed `position` and passed it
+clean, because the geometry _was_ right. Three Playwright specs caught it, timing out on
+`locator.click`, and `main` was red for one run.
+
+**`position: fixed` is a stacking change, not just a layout change.** Geometry assertions
+cannot see it; only an interaction can. The fix is `z-index: 101`, which clears the rail on DOM
+order and stays under Mantine's modal/popover/overlay bands (200/300/400) so `Dialog` and
+`Sheet` still stack above.
+
 **On the tests**: this repo has **no DOM test environment** — `vitest.config.ts` runs
 `environment: 'node'` with no jsdom anywhere — so the layout tests assert that the CSS rules
 causing the right layout are present in `app.css`. Reviewed and judged honest revert-guards
