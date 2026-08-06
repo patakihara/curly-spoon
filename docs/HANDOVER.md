@@ -325,6 +325,9 @@ nothing on `main` is stale — take it.
   and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
   touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
 
+- **2026-08-06** — the `secrets` composite-key bug (`apps/server/src/db/`,
+  `apps/server/src/db/migrations.ts`). Server-side only; touches no web or Android code.
+
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
 it is idle. Check the worktree's own `git status --short`, the mtimes on the files it is
