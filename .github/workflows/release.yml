@@ -1,0 +1,227 @@
+# Tag-driven release automation — additive to `ci.yml`'s `publish` job, not a replacement
+# for it. `ci.yml` keeps writing `:latest` on every green push to `main`, and mediaserver's
+# Watchtower keeps auto-updating from that tag exactly as it does today; nothing here changes
+# what `:latest` means or how it gets written. This workflow is a second, slower channel for
+# anyone who wants to pin a specific, named version instead of riding continuous deployment —
+# see docs/SELF_HOSTING.md's "Release channels" section for who should pick which.
+name: Release
+
+# Tags only, never a branch push and never a pull_request — a `v*` tag is a deliberate act
+# ("I am cutting a release"), unlike a push to `main`, which happens on every merge. Building
+# on every push here would duplicate `ci.yml`'s job for no reason; building on a `pull_request`
+# would mean a fork's PR could trigger a job with `packages: write`/`contents: write` scopes.
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Deliberately no `cancel-in-progress: true`, and deliberately no `cancel-in-progress` key at
+# all — same reasoning as `ci.yml`'s `publish` job (see that file's `concurrency` comment): a
+# release is coupled to an artifact someone will actually download and a GitHub Release page
+# someone will actually read. Cancelling it mid-run because a second tag landed would leave a
+# half-published release (maybe the image pushed, maybe not; maybe the GitHub Release exists
+# with no APK attached) with nothing left running to finish or clean it up. Two tags pushed in
+# quick succession should both complete, in order, not race.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  # Fork guard: a `v*` tag pushed to a fork also matches `on.push.tags` in that fork's own copy
+  # of this workflow, but forks cannot fork *permissions* — a fork's GITHUB_TOKEN never has
+  # `packages: write` against this repo's GHCR namespace or `contents: write` against this
+  # repo's releases, so a forked run would fail loudly at the push/release step regardless.
+  # This job is a second, earlier guard: it fails fast with a readable reason instead of
+  # letting the build run for several minutes before the permission error surfaces.
+  guard-fork:
+    name: Refuse to run from a fork
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm this is the upstream repo
+        run: |
+          if [ "${{ github.repository }}" != "patakihara/curly-spoon" ]; then
+            echo "::error::Refusing to run release automation from a fork (${{ github.repository }})."
+            exit 1
+          fi
+
+  # A pushed tag says nothing about whether the commit it points at ever passed CI — `git tag`
+  # and `git push --tags` work on any commit, clean or red, and this workflow has no way to
+  # look up a past `ci.yml` run for that sha and block on it (there is no reliable "did this
+  # sha go green" query without also risking false negatives for shas CI simply hasn't reached
+  # yet). So this job does not re-run the test suite — that would just be `ci.yml` a second
+  # time under a different name — it only makes the assumption visible: tagging a commit that
+  # never went green produces a real, downloadable release built from broken code, and nothing
+  # in this workflow will notice. The operator tagging the release is who has to know that.
+  validate-version:
+    name: Validate the tag as a version
+    runs-on: ubuntu-latest
+    needs: [guard-fork]
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      prerelease: ${{ steps.parse.outputs.prerelease }}
+    steps:
+      - name: Parse and validate the tag
+        id: parse
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          # Require v<major>.<minor>.<patch> with an optional -<prerelease> suffix
+          # (e.g. v0.2.0, v1.0.0-beta.1). A tag that doesn't match this fails the job
+          # loudly here rather than reaching the image-tag or release-title steps below
+          # with something unparseable baked into them silently (e.g. a typo'd tag
+          # producing a GHCR tag nobody can find, or a release titled after garbage).
+          if [[ ! "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$tag' is not a valid version (expected v<major>.<minor>.<patch>[-prerelease])."
+            exit 1
+          fi
+          version="${tag#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Mirrors `ci.yml`'s `publish` job deliberately — same mechanics, same reasoning, different
+  # tags. Read that job's comments for the full explanation of each step; this one only notes
+  # where it differs.
+  publish-image:
+    name: Build & push versioned image
+    runs-on: ubuntu-latest
+    needs: [validate-version]
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      # QEMU before buildx, same ordering requirement as `ci.yml`: buildx enumerates the
+      # platforms it can emulate when it starts, so registering the binfmt handlers after
+      # buildx has already started would leave it advertising amd64 only and the arm64 build
+      # would fail with "no match for platform".
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # `:<version>` and `:stable` — never `:latest`. `:latest` is `ci.yml`'s `publish` job's
+      # tag alone, and mediaserver's Watchtower auto-updates from it; writing it here too would
+      # mean an unrelated tag push could silently redeploy that live box outside the continuous
+      # path it currently follows. `:stable` exists as the moving pointer for someone who wants
+      # "the newest tagged release" without hardcoding a version string in their own compose
+      # file — the tagged-release equivalent of what `:latest` is to `main`, just on the slower
+      # channel.
+      #
+      # Same hardcoded lowercase `ghcr.io/patakihara/auralis` path as `ci.yml`, for the same
+      # reason: GHCR rejects uppercase image paths, and interpolating `github.repository_owner`
+      # is not guaranteed to stay lowercase.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/patakihara/auralis:${{ needs.validate-version.outputs.version }}
+            ghcr.io/patakihara/auralis:stable
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Same build as `android.yml`'s `build` job — read that file's header comment for why this is
+  # still the only place Android compiles at all. This job does not add signing: it produces the
+  # exact same debug-signed APK `android.yml` already produces on every push, just attached to a
+  # release page instead of left as a CI artifact. `docs/research/FDROID_DISTRIBUTION.md` is
+  # where the real signing-key decision lives; this job does not restate it, only points at it
+  # in the release notes below.
+  build-android:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    needs: [validate-version]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test
+        working-directory: apps/android
+        run: ./gradlew test assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auralis-debug-apk
+          path: apps/android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-version, publish-image, build-android]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need full history to find the previous tag and diff commits against it
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: auralis-debug-apk
+          path: apk/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          # `git describe` finds the nearest reachable tag before this one; on the very first
+          # release there is none, and `git describe` exits non-zero — handled explicitly
+          # rather than let with `set -e` kill the step, since "no previous tag" is an expected
+          # state, not a failure.
+          prev_tag="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
+
+          {
+            echo "changelog<<CHANGELOG_EOF"
+            if [ -z "$prev_tag" ]; then
+              echo "First release."
+              echo
+              echo "$(git log --pretty='format:- %s (%h)' "$tag")"
+            else
+              echo "Changes since \`$prev_tag\`:"
+              echo
+              echo "$(git log --pretty='format:- %s (%h)' "${prev_tag}..${tag}")"
+            fi
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          prerelease: ${{ needs.validate-version.outputs.prerelease }}
+          files: apk/*.apk
+          body: |
+            ## Image
+
+            ```
+            ghcr.io/patakihara/auralis:${{ needs.validate-version.outputs.version }}
+            ```
+
+            Also tagged `:stable`. See `docs/SELF_HOSTING.md`'s "Release channels" section for
+            how this differs from `:latest`.
+
+            ## Android APK
+
+            The attached APK is **debug-signed**, the same build `android.yml` produces on every
+            push — not a release-signed build. Release signing is an open decision; see
+            `docs/research/FDROID_DISTRIBUTION.md` before treating this APK as anything other
+            than a sideload-and-test artifact.
+
+            ## Changelog
+
+            ${{ steps.changelog.outputs.changelog }}

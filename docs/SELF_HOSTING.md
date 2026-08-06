@@ -90,6 +90,32 @@ One thing _not_ to copy from the neighbouring services: Auralis doesn't need `PU
 Those are a linuxserver.io-image convention; Auralis's container runs as its own baked-in
 non-root user, so setting them does nothing.
 
+## Release channels
+
+There are two ways to get the image, and they update differently:
+
+| Channel                  | Written by                         | Updates                                    | Pick this if                                                                                                                                                                                 |
+| ------------------------ | ---------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `:latest`                | Every green build of `main`        | Continuously, on every merged change       | You want the newest working code and are fine tracking active development. This is what the compose snippet above uses, and what mediaserver's own Watchtower auto-updates from — unchanged. |
+| `:stable` / `:<version>` | Pushing a `v*` tag (e.g. `v0.2.0`) | Only when a version is deliberately tagged | You want to pin a specific, named version and upgrade on your own schedule, with a changelog to read before you do.                                                                          |
+
+`:stable` always points at the most recently tagged release; `:<version>` (e.g. `:0.2.0`) pins
+one exact release forever, the way most self-hosted software expects a version tag to behave.
+Both are multi-arch (`linux/amd64` + `linux/arm64`), same as `:latest`.
+
+To switch a running deployment from continuous to tagged releases, change one line in
+`compose.yaml`:
+
+```diff
+- image: ghcr.io/patakihara/auralis:latest
++ image: ghcr.io/patakihara/auralis:stable
+```
+
+Each tagged release also gets a [GitHub Release](https://github.com/patakihara/curly-spoon/releases)
+with a changelog and a debug-signed Android APK attached, for anyone who'd rather sideload a
+named version than build from a checkout or run against whatever `android.yml` last built on
+`main`.
+
 ## Reverse proxy
 
 Auralis speaks plain HTTP and expects to sit behind your existing TLS terminator. It
