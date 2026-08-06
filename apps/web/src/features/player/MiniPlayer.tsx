@@ -5,11 +5,22 @@
  * directly — per `useAudioElement.ts`'s header: this app's e2e fixture audio
  * never actually decodes, so every interaction has to work from store state.
  */
-import { Icon, IconButton, LinearProgress, Marquee } from '@auralis/ui';
+import { Icon, IconButton, LinearProgress, Marquee, type IconName } from '@auralis/ui';
 import { useApi } from '../../api/ApiContext.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { trackAt } from './playback.js';
 import { playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
+
+/** Same glyph-per-kind mapping `Shell.tsx`'s `DESTINATION_ICONS` uses, for the
+ * tonal fallback `CoverImage` renders when this cover 404s or otherwise fails
+ * to decode — a bare `<img>` fell through to the browser's broken-image glyph
+ * instead (web design audit, 2026-08-06). */
+const COVER_FALLBACK_ICON: Record<'book' | 'podcast' | 'track', IconName> = {
+  book: 'book_2',
+  podcast: 'podcasts',
+  track: 'music_note',
+};
 
 export interface MiniPlayerProps {
   /** Opens the full Now Playing surface — owned by whichever shell region hosts this. */
@@ -52,16 +63,16 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
         onClick={onExpand}
         aria-label={`Open ${primary}`}
       >
-        <img
-          className="auralis-mini-player__cover"
+        <CoverImage
           src={playerArtworkUrl(api, {
             kind: currentItem.media.kind,
             itemId: currentItem.id,
             width: 96,
           })}
           alt=""
-          width={48}
-          height={48}
+          size={48}
+          fallbackIcon={COVER_FALLBACK_ICON[currentItem.media.kind]}
+          style={{ flexShrink: 0 }}
         />
         <span className="auralis-mini-player__text">
           <span className="auralis-mini-player__title" data-testid="mini-player-title">

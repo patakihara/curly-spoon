@@ -28,6 +28,7 @@ import { NowPlaying } from '../features/player/NowPlaying.js';
 import { useAudioElement } from '../features/player/useAudioElement.js';
 import { useMediaSession } from '../features/player/useMediaSession.js';
 import { useProgressSync } from '../features/player/useProgressSync.js';
+import { usePlayerStore } from '../state/playerStore.js';
 import { useUiStore } from '../state/uiStore.js';
 import {
   lookupLibraries,
@@ -55,6 +56,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
   const railSearchQuery = useUiStore((s) => s.query);
   const setSearchQuery = useUiStore((s) => s.setSearchQuery);
+  // `MiniPlayer` decides its own visibility from this same field (returns
+  // null when nothing is loaded). The compact shell needs to know it too, to
+  // reserve bottom padding only when the mini player is actually rendered
+  // above the bottom nav bar — padding reserved for a bar that isn't there
+  // would itself be a bug (app.css's `data-mini-player-active` rule).
+  const miniPlayerActive = usePlayerStore((s) => s.currentItem !== null);
 
   // The single shared `<audio>` element, the OS media-session integration and
   // progress sync — all three take no arguments and read the player store
@@ -113,6 +120,7 @@ export function Shell({ children }: { children: ReactNode }) {
       className={`auralis-shell auralis-shell--${breakpoint}`}
       data-testid="shell"
       data-breakpoint={breakpoint}
+      data-mini-player-active={miniPlayerActive}
       // The mini player's dock width (app.css, non-compact breakpoints) reads
       // this rather than hardcoding its own — see `shellLayout.ts`'s doc comment.
       style={{ '--auralis-rail-width': `${railWidth(breakpoint)}px` } as CSSProperties}

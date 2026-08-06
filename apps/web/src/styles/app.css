@@ -41,6 +41,21 @@ html body {
   padding-bottom: 80px; /* room for the docked bottom bar */
 }
 
+/*
+ * The compact mini player is `position: fixed`, stacked *above* the bottom
+ * nav bar (see the `.auralis-shell--compact .auralis-mini-player` rule
+ * below), so its own ~64px footprint is not covered by the 80px reserved
+ * above — the last ~48px of a long page sits behind it, unreachable by
+ * scrolling. Reserve the extra height, but only while the mini player is
+ * actually rendered: `Shell.tsx` sets `data-mini-player-active` from the
+ * same `playerStore.currentItem` field `MiniPlayer` itself uses to decide
+ * whether to render at all, so this can't reserve space for a bar that
+ * isn't there (a real bug on its own, distinct from reserving too little).
+ */
+.auralis-shell--compact[data-mini-player-active='true'] {
+  padding-bottom: 144px; /* 80px bottom bar + ~64px mini player */
+}
+
 .auralis-shell__row {
   flex: 1;
   display: flex;
@@ -448,17 +463,50 @@ html body {
  * overlapping ~140px past the rail's real 220px edge into the content column.
  * `--auralis-rail-width` is set by `Shell.tsx` from `shellLayout.ts`'s
  * `railWidth()` — the same function that sizes the Mantine rail navbar — so
- * this can't drift from the rail's actual width again.
- *
- * Medium's 80px collapsed rail is deliberately left alone: the audit measured
- * the overlap only at expanded (1440px/220px rail), and an 80px-wide dock can't
- * hold a 48px cover plus a 48px play button without inventing a new, narrower
- * layout for the mini player's contents — out of scope here. Medium keeps the
- * existing 360px cap above; it still gets the below-the-fold fix, just not the
- * rail-width scoping.
+ * this can't drift from the rail's actual width again. Docking the mini
+ * player's own footprint to exactly the rail's width is what DESIGN.md means
+ * by "at the foot of the rail": it occupies the same column the rail does,
+ * stacked above it (z-index 101), rather than spilling into the content grid.
  */
 .auralis-shell--expanded .auralis-mini-player {
   width: var(--auralis-rail-width);
+  max-width: none;
+}
+
+/*
+ * Medium (600–1240px, 80px collapsed icon-only rail): the same "foot of the
+ * rail" docking expanded uses doesn't fit here — 80px can't hold a 48px cover
+ * plus a 48px play control without inventing a narrower layout for the mini
+ * player's contents, which is out of scope for this fix. The base rule above
+ * left the player's *left edge* at x:0 with only a 360px cap, so its width
+ * (driven by its own content, ~347.5px, not the cap) ran ~267px past the real
+ * 80px rail edge and overlapped the content column underneath it — the same
+ * class of bug the expanded rule above fixes, just left unhandled at this
+ * breakpoint.
+ *
+ * The fix here: offset the player's left edge to the rail's real width and
+ * let it span the rest of the viewport, docked to the rail's right edge,
+ * rather than trying to cram cover + text + two controls into the rail's own
+ * 80px column. This is the other defensible reading of "docked ... at the
+ * foot of the rail" — anchored to the rail's edge rather than occupying the
+ * rail's own footprint — and it guarantees no overlap with either the rail or
+ * the content column, since the two now share one boundary instead of one
+ * being cropped over the other.
+ *
+ * Selector specificity, not just source order: the base rule above is
+ * `.auralis-shell:not(.auralis-shell--compact) .auralis-mini-player` — three
+ * classes' worth of specificity (`:not()` counts its argument). A plain
+ * `.auralis-shell--medium .auralis-mini-player` (two classes) loses to it
+ * regardless of source order, so `left: 0` from the base rule would silently
+ * win over this rule's `left`, which is exactly the medium-breakpoint bug
+ * this rule exists to fix. `Shell.tsx` puts both `auralis-shell` and
+ * `auralis-shell--medium` on the same element, so chaining them here matches
+ * the base rule's specificity and this rule's later position in the
+ * cascade then decides it, as intended.
+ */
+.auralis-shell.auralis-shell--medium .auralis-mini-player {
+  left: var(--auralis-rail-width);
+  right: 0;
   max-width: none;
 }
 
@@ -485,15 +533,6 @@ html body {
   cursor: pointer;
   text-align: left;
   color: inherit;
-}
-
-.auralis-mini-player__cover {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--m3-shape-sm);
-  object-fit: cover;
-  flex-shrink: 0;
-  background: var(--m3-surface-container);
 }
 
 .auralis-mini-player__text {

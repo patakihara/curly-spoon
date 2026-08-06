@@ -67,6 +67,26 @@ describe('mini player docking (defect 1 — was position: relative, pushed below
   });
 });
 
+describe('mini player docking at medium widths (defect: overlapped the 80px collapsed rail)', () => {
+  it("does not repeat the expanded fix's rail-width scoping — 80px can't hold the player's contents", () => {
+    const rule = ruleBodyContaining('.auralis-shell--medium .auralis-mini-player');
+    expect(rule).not.toMatch(/width:\s*var\(--auralis-rail-width\)/);
+  });
+
+  it("docks to the rail's right edge instead, so the two share a boundary rather than overlapping", () => {
+    const rule = ruleBodyContaining('.auralis-shell--medium .auralis-mini-player');
+    expect(rule).toMatch(/left:\s*var\(--auralis-rail-width\)/);
+    expect(rule).toMatch(/right:\s*0/);
+  });
+});
+
+describe('compact bottom padding reserves room for the mini player (defect: content scrolled behind it)', () => {
+  it('adds extra bottom padding only while the mini player is actually rendered', () => {
+    const rule = ruleBodyContaining(".auralis-shell--compact[data-mini-player-active='true']");
+    expect(rule).toMatch(/padding-bottom:/);
+  });
+});
+
 describe('390px overflow (defect 3)', () => {
   it("wraps the item detail header instead of forcing the page wider (was flex-wrap's nowrap default)", () => {
     const rule = ruleBodyContaining('.auralis-item-header');
