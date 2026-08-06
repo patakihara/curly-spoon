@@ -30,13 +30,14 @@ more forgiving than an unstyled HTML page would be) or, just as plausibly, large
 every **inferred** claim below as a hypothesis for the first device/emulator session, not a
 settled finding.
 
-What *is* source-verified and does not need a device to be trusted: which components exist,
+What _is_ source-verified and does not need a device to be trusted: which components exist,
 which don't, what a `MaterialTheme(...)` call actually passes, whether a given file imports a
 given API, and what a route table actually contains. Most of this document's substantive
 findings are of that kind — structural presence/absence, not visual judgement — which is why a
 useful audit was possible here at all.
 
 ## 1. Headline: most of the app's structure was decided once, for compile-safety, and never
+
 revisited against `DESIGN.md`
 
 Four things below look like four separate findings. They are one decision, made early and
@@ -57,7 +58,7 @@ made once and forgotten.
 That decision, followed consistently, is why:
 
 - **No screen has a navigation icon (back arrow).** `grep -rn "navigationIcon"
-  apps/android/app/src/main/java/net/auralis/app` returns nothing across all 16
+apps/android/app/src/main/java/net/auralis/app` returns nothing across all 16
   `TopAppBar(` call sites. Every sub-screen relies entirely on the system/gesture back
   affordance, with zero in-app back button. **Inferred**: on a phone with gesture navigation
   this is unremarkable; on a 3-button-nav device it is a real, if minor, discoverability gap
@@ -70,7 +71,7 @@ That decision, followed consistently, is why:
   verified**, directly contradicts `DESIGN.md`'s YouTube Music row: "icon-only toggles instead
   of text tabs."
 - **No shape customization exists anywhere.** `grep -rn "RoundedCornerShape\|clip(\|shape ="
-  apps/android/app/src/main/java/net/auralis/app` returns nothing. `DESIGN.md`'s shape scale
+apps/android/app/src/main/java/net/auralis/app` returns nothing. `DESIGN.md`'s shape scale
   (`none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`, artwork at `lg`, Now Playing
   artwork at `xl` morphing to a squircle) is entirely unwired — every `AsyncImage` (album art,
   podcast covers, book covers) renders with Compose Material3's un-customized default shapes,
@@ -91,12 +92,12 @@ choice it would unlock is itself a visual judgement call this session cannot ver
 
 ## 2. Headline: there is no full Now Playing surface at all
 
-**Source-verified, and stated in the app's own comments.** `LyricsScreen.kt:44-47`: *"There is
+**Source-verified, and stated in the app's own comments.** `LyricsScreen.kt:44-47`: _"There is
 no full Now Playing surface in this app yet — only `MiniPlayerBar` — so this is deliberately the
 smaller of the two options the wave's spec offered: a standalone screen ... rather than folding
-lyrics into a Now Playing surface that would have to be built from scratch first."*
-`PlayerViewModel.kt:46`'s doc comment: *"What the mini player (and, later, a full Now Playing
-surface) renders."* `grep -rln "MiniPlayerBar(" apps/android/app/src/main/java/net/auralis/app`
+lyrics into a Now Playing surface that would have to be built from scratch first."_
+`PlayerViewModel.kt:46`'s doc comment: _"What the mini player (and, later, a full Now Playing
+surface) renders."_ `grep -rln "MiniPlayerBar(" apps/android/app/src/main/java/net/auralis/app`
 returns exactly two files — the component itself and `HomeScreen.kt` — confirming it renders
 nowhere else.
 
@@ -114,7 +115,7 @@ play/pause `TextButton`, and — music only — shuffle/repeat/lyrics `TextButto
 - **No equaliser glyph or any other playing-state indicator on list rows.** `DESIGN.md`,
   Accessibility: "Colour is never the only signal — playing state also carries an animated
   equaliser glyph." `grep -rln "equaliser\|equalizer\|isCurrentlyPlaying\|nowPlayingTrackId"
-  apps/android/app/src/main/java/net/auralis/app` returns nothing; `AlbumDetailScreen.kt`'s
+apps/android/app/src/main/java/net/auralis/app` returns nothing; `AlbumDetailScreen.kt`'s
   `TrackRow` (`AlbumDetailScreen.kt:226-` ) has no concept of "this is the track currently
   playing" at all — colour, glyph, or otherwise.
 
@@ -126,6 +127,7 @@ highly visual undertaking exactly of the kind this wave's spec rules out doing w
 see the result.
 
 ## 3. Headline: there is no persistent navigation shell — no bottom bar, no rail, and the mini
+
 player disappears the moment you leave Home
 
 **Source-verified.** `grep -rln "NavigationBar\|NavigationRail\|BottomNavigation\|
@@ -237,8 +239,8 @@ inconsistent styling of what does exist.
 - **Search** (`MusicSearchScreen.kt`). **Source-verified, a real cross-platform gap**: this
   screen is reachable only from `MusicLibraryScreen`'s own top bar (`MUSIC_SEARCH` route,
   `AuralisNavHost.kt:154`) and searches only Jellyfin artists/albums/tracks
-  (`MusicSearchScreen.kt:36`: *"Search across the connected Jellyfin library's artists, albums
-  and tracks"*). Web's `apps/web/src/features/search/SearchPage.tsx` is a **unified** search
+  (`MusicSearchScreen.kt:36`: _"Search across the connected Jellyfin library's artists, albums
+  and tracks"_). Web's `apps/web/src/features/search/SearchPage.tsx` is a **unified** search
   covering books, podcasts and music together in one field with three sections
   (`SearchPage.tsx:116-259`: `search-results-books`/`search-results-podcasts`/
   `search-results-music` test ids). Android has no audiobook or podcast search at all, and no
@@ -272,7 +274,7 @@ inconsistent styling of what does exist.
   nuance in `FavoriteToggleButton.kt:30-34`'s doc comment, which lists this control alongside
   `MiniPlayerBar`'s play/pause toggle as sharing "the same gap" (missing `Role.Switch`/
   `stateDescription`). **Inferred, not applied as a fix**: that framing is arguably imprecise —
-  both controls already name the *action* in their visible label (an M3-conventional pattern for
+  both controls already name the _action_ in their visible label (an M3-conventional pattern for
   a two-state action button, not a switch), so adding `Role.Switch`/`stateDescription` to either
   would risk announcing state information that contradicts the action-phrased label a screen
   reader also hears. Left alone rather than "fixed" per that comment's suggestion, because
@@ -281,9 +283,9 @@ inconsistent styling of what does exist.
   (`docs/ROADMAP.md:439`: "no book-detail screen exists yet"; `HomeScreen.kt:53-55`'s own doc
   comment repeats it) — not re-reported as new here, only cross-referenced since it bears
   directly on §3's "no persistent shell" finding: there is nowhere for a persistent mini player
-  or nav bar to be *tested against* a book flow yet, only music/podcast flows.
+  or nav bar to be _tested against_ a book flow yet, only music/podcast flows.
 - **Settings — does not exist on Android at all.** **Source-verified**: `find
-  apps/android/app/src/main/java/net/auralis/app -iname "*settings*"` matches only
+apps/android/app/src/main/java/net/auralis/app -iname "*settings*"` matches only
   `data/settings/ServerConfigRepository.kt` (server URL/token storage, no UI) — there is no
   `SettingsScreen.kt`, no `Routes.SETTINGS`, nothing reachable from any top bar. Web has a
   Settings page (source colour, theme mode — referenced in `docs/ROADMAP.md`'s web-audit section
@@ -314,7 +316,7 @@ in the tree.
   emphasis) and are not literal-value defects. The now-unused `androidx.compose.ui.unit.sp`
   import was removed in the same change.
 
-  **Why this was safe to make blind**: it changes which typography *role* renders, not layout,
+  **Why this was safe to make blind**: it changes which typography _role_ renders, not layout,
   spacing, or anything requiring a rendered check — the sizes chosen are Compose Material3's own
   standard scale values (not invented numbers), and the pattern of "use a `MaterialTheme.typography`
   role, not a literal `.sp`" is the codebase's own, already-universal convention this file was the
@@ -338,21 +340,21 @@ fixed): this app cannot be localized without a resource-extraction pass across t
 
 ## 7. Summary
 
-| Class | Verdict |
-| --- | --- |
-| Now Playing surface (§2) | Missing entirely — DESIGN.md's largest single ask, unbuilt, self-acknowledged in code. Named for a device session. |
-| Persistent nav shell + always-present mini player (§3) | Missing entirely — every screen is independent TopAppBar+backstack; mini player lives only on Home. Named for a device session. |
-| Theming — colour model (§4) | Wrong model, not just unfinished: wallpaper-derived Material You, not artwork-derived per DESIGN.md/Symfonium. Named. |
-| Theming — type/shape/motion (§4) | Entirely unwired; stock Compose Material3 defaults throughout. Named. |
-| Icon-only controls (§1) | Deliberately avoided app-wide for a real, documented reason (unconfirmed icon dependency). Root cause of most surface-level DESIGN.md divergence. Recommendation given, not applied. |
-| Search scope (§5) | Music-only on Android vs. unified on web — a product-scope question, named for the user. |
-| Settings screen (§5) | Does not exist on Android — missing what web has. Named. |
-| Component-level styling consistency | Good — MaterialTheme tokens used consistently everywhere they're wired at all; no hardcoded colours, no sub-48dp targets, no styling inconsistency between sibling screens. |
-| Blind-safe fixes | One: `LyricsScreen.kt`'s hardcoded `fontSize` → `MaterialTheme.typography` role (§6). |
+| Class                                                  | Verdict                                                                                                                                                                              |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Now Playing surface (§2)                               | Missing entirely — DESIGN.md's largest single ask, unbuilt, self-acknowledged in code. Named for a device session.                                                                   |
+| Persistent nav shell + always-present mini player (§3) | Missing entirely — every screen is independent TopAppBar+backstack; mini player lives only on Home. Named for a device session.                                                      |
+| Theming — colour model (§4)                            | Wrong model, not just unfinished: wallpaper-derived Material You, not artwork-derived per DESIGN.md/Symfonium. Named.                                                                |
+| Theming — type/shape/motion (§4)                       | Entirely unwired; stock Compose Material3 defaults throughout. Named.                                                                                                                |
+| Icon-only controls (§1)                                | Deliberately avoided app-wide for a real, documented reason (unconfirmed icon dependency). Root cause of most surface-level DESIGN.md divergence. Recommendation given, not applied. |
+| Search scope (§5)                                      | Music-only on Android vs. unified on web — a product-scope question, named for the user.                                                                                             |
+| Settings screen (§5)                                   | Does not exist on Android — missing what web has. Named.                                                                                                                             |
+| Component-level styling consistency                    | Good — MaterialTheme tokens used consistently everywhere they're wired at all; no hardcoded colours, no sub-48dp targets, no styling inconsistency between sibling screens.          |
+| Blind-safe fixes                                       | One: `LyricsScreen.kt`'s hardcoded `fontSize` → `MaterialTheme.typography` role (§6).                                                                                                |
 
 **Everything reported as "missing" or "wrong" above is source-verified — checked by reading the
 file or by a whole-tree grep proving absence, not inferred from expectation.** Everything that
-would require judging how it *looks* (whether the gaps above read as jarring on a real screen,
+would require judging how it _looks_ (whether the gaps above read as jarring on a real screen,
 whether Compose's default type/shape actually clashes with `DESIGN.md`'s intent in practice, any
 spacing/layout opinion) is explicitly labelled inferred and left alone, per this wave's
 instructions. **No emulator or device exercised any of this app during this audit** — that
