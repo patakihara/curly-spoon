@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-05T18:34:18Z` · `a63cd56eb719ac304` · general-purpose · ended · Pushed. Fix landed on 'main' at commit '226fcd5'. **What was fixed:** Web music queue tracks were carrying the album-level artist instead of each tra…
 - `2026-08-05T20:21:37Z` · `a909bf25206c507fb` · general-purpose · ended · Clean. No stray processes, no scratch files left, working tree has only the pre-existing hook-modified 'docs/HANDOVER.md' (from 'agent-log.sh' firing…
 - `2026-08-05T20:44:15Z` · `ad534b90bcb5548ca` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-ad534b90bcb5548ca' @ '663ffad', based on 'origin/main''s '1b1ccdb'. Working tree clean, not pushed as in…
 - `2026-08-05T21:21:39Z` · `a907d5ff4e6be11b5` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a907d5ff4e6be11b5' @ '0ed8304', based on 'origin/main''s 'ac1639e'. Working tree clean, not pushed. **2.…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-05T23:41:38Z` · `a623d0d03e48b3297` · general-purpose · running · —
 - `2026-08-05T23:46:45Z` · `a50deddeeb6332027` · general-purpose · ended · Branch 'worktree-agent-a50deddeeb6332027', commit '68ab86d'. Not pushed. - Corrected verdict: the desktop layout is close to 'DESIGN.md''s intent (re…
 - `2026-08-06T00:05:22Z` · `a2fe054c4fd3ba454` · general-purpose · ended · That branch is still checked out somewhere locally (the '+' marker) — confirms the 'a98736a' object is only reachable via a live local worktree branc…
+- `2026-08-06T00:13:54Z` · `acb70db81676e779a` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -324,6 +324,9 @@ nothing on `main` is stale — take it.
 - **2026-08-06** — phase 10, the accessibility audit's remaining surfaces: the podcasts UI
   and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
   touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
+
+- **2026-08-06** — CI concurrency: stop cancelling `main` runs
+  (`.github/workflows/ci.yml`, `concurrency:` block only).
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that

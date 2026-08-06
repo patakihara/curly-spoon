@@ -5,9 +5,22 @@ on:
     branches: ['**']
   pull_request:
 
+# Redundant runs are cancelled on every branch except `main`, where they queue instead.
+#
+# `main` is the exception because the last job here, `publish`, is coupled to a live
+# deployment: mediaserver auto-updates from `:latest`. Cancelling a superseded run also
+# cancels that publish, so under back-to-back pushes the registry silently stops being
+# updated while every run still reports green — the jobs that were cancelled are not the
+# jobs anyone reads. Adding `linux/arm64` widened the window a lot, since the emulated
+# build made `publish` by far the longest job in the workflow: it was cancelled three
+# consecutive times on 2026-08-06 with two sessions pushing to `main`, and nothing about
+# those runs looked wrong.
+#
+# Queuing is the right trade for a delivery branch. It costs runner minutes on
+# superseded commits; the alternative costs deployments, invisibly.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '0'
