@@ -321,9 +321,9 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-- **2026-08-06** — phase 10, the accessibility audit's remaining surfaces: the podcasts UI
-  and a full keyboard tab-walk (`apps/web/src/features/podcasts/`, `e2e/app/`). Does not
-  touch `apps/android/`, `apps/server/`, `scripts/` or `docs/research/`.
+- **2026-08-06** — phase 10, extending the Lighthouse budget past the signed-out
+  onboarding screen to an authenticated page (`scripts/lighthouse-budget*`,
+  `.github/workflows/ci.yml`). Touches no `apps/` or `packages/` file.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
