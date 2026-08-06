@@ -13,14 +13,35 @@
 # system time*, a submitted prompt is captured with a timestamp instead of
 # being processed this turn, and the user is told plainly that it was queued.
 #
-# ## What happens after the 1-hour mark
+# ## Where a gated prompt goes
 #
-# Nothing automatic, by the user's own explicit choice (asked and answered
-# directly — see the session that wrote this file). A queued prompt does not
-# wake anything up and is not processed on a schedule: no cron job, no
-# scheduler, nothing autonomous. It simply becomes fair game to read the next
-# time a real turn happens in this checkout, once `visibleAt` has passed nothing
-# reads the queue back in automatically — that is deliberate scope, not a gap.
+# Into the queue plugin's `auralis` instance, via `queuelib.submit_entry` —
+# the same store, flock, atomic-rename and autocommit path every other queue
+# write uses. It is filed with `submitted_by: user` and blocked on the
+# `quiet_hours` sentinel, which a clock-driven sweep clears an hour later; it
+# then surfaces through the ordinary queue hand-over (`/queue:list`,
+# `queue next`).
+#
+# `.claude/deferred-prompts.jsonl` is a **fallback sink only**: if the queue
+# plugin is missing or its write fails, the prompt is appended there rather
+# than lost, and the block still happens. That path matters because this is a
+# public repo — anyone cloning it has no queue plugin, and this hook must
+# degrade rather than crash for them. Nothing reads that file back
+# automatically, so anything landing in it needs picking up by hand.
+#
+# Ordering is the invariant: a prompt is blocked only AFTER it has been
+# durably written to one sink or the other. Never block on nothing.
+#
+# ## One owner for Auralis gating
+#
+# The queue plugin ships its own `UserPromptSubmit` gate
+# (`hooks/queue-prompt-gate.sh`). That hook deliberately passes through
+# whenever the resolved instance is not `main`, so it never fires here — this
+# hook is the sole gate for this checkout, and there is no double-block. The
+# two are NOT the same policy and are not meant to converge: the plugin's gate
+# has no clock at all (it gates every prompt, always), while this one gates
+# only outside a local-time window. Auralis's quiet hours differ from the
+# main instance's by design; only the mechanism is shared.
 #
 # ## Personal, not shared policy
 #
@@ -113,6 +134,11 @@
 #   AURALIS_TIME_GATE_QUEUE  path to the queue file (default under this repo)
 #   AURALIS_TIME_GATE_JOBS_DIR  jobs directory for rule A's lookup (default
 #                            ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/jobs)
+#   AURALIS_TIME_GATE_QUEUE_LIB  directory holding queuelib.py (default
+#                            ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/queue/lib).
+#                            Set to an empty or nonexistent path to force the
+#                            deferred-prompts.jsonl fallback.
+#   AURALIS_TIME_GATE_INSTANCE   queue instance to file into (default auralis)
 
 set -uo pipefail
 
@@ -124,6 +150,8 @@ WINDOW_END="${AURALIS_TIME_GATE_END:-18:00}"
 command -v python3 >/dev/null 2>&1 || exit 0
 
 JOBS_DIR="${AURALIS_TIME_GATE_JOBS_DIR:-${CLAUDE_CONFIG_DIR:-${HOME:-}/.claude}/jobs}"
+QUEUE_LIB="${AURALIS_TIME_GATE_QUEUE_LIB-${CLAUDE_CONFIG_DIR:-${HOME:-}/.claude}/skills/queue/lib}"
+QUEUE_INSTANCE="${AURALIS_TIME_GATE_INSTANCE:-auralis}"
 
 # Capture stdin to a temp file rather than piping it straight into python3.
 # `python3 - ... <<'PY'` reads the *script itself* from stdin, which conflicts
@@ -140,16 +168,67 @@ cat >"$payload_file" 2>/dev/null || exit 0
 # wrapper below always treats as "allow, no output". Nothing here can make
 # the hook deny anything: the only two outcomes are silence (allow) or a
 # `decision: block` JSON payload (queued).
-out="$(python3 - "$payload_file" "$QUEUE_FILE" "$WINDOW_START" "$WINDOW_END" "${AURALIS_TIME_GATE_NOW:-}" "$JOBS_DIR" <<'PY'
+out="$(python3 - "$payload_file" "$QUEUE_FILE" "$WINDOW_START" "$WINDOW_END" "${AURALIS_TIME_GATE_NOW:-}" "$JOBS_DIR" "$QUEUE_LIB" "$QUEUE_INSTANCE" <<'PY'
 import datetime
 import glob
 import json
 import os
 import sys
 
-payload_file, queue_file, start_s, end_s, now_override, jobs_dir = (
-    sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
+(payload_file, queue_file, start_s, end_s, now_override, jobs_dir,
+ queue_lib, queue_instance) = (
+    sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5],
+    sys.argv[6], sys.argv[7], sys.argv[8]
 )
+
+
+def file_into_queue(prompt, visible_at):
+    """File the gated prompt into the queue plugin's `auralis` instance.
+
+    Returns the new entry id, or None if the plugin is unavailable or the
+    write fails for any reason — the caller then falls back to appending
+    deferred-prompts.jsonl. Never raises: a public-repo clone with no queue
+    plugin installed must degrade, not crash.
+    """
+    try:
+        if not queue_lib or not os.path.isdir(queue_lib):
+            return None
+        if queue_lib not in sys.path:
+            sys.path.insert(0, queue_lib)
+        import queuelib
+
+        instances = queuelib.load_instances()
+        cfg = instances.get(queue_instance)
+        if not cfg:
+            return None
+
+        # v2 API. `initial_prompt` is the user's verbatim words and is
+        # deliberately uncapped; `submitted_by: "user"` is what makes
+        # submit_entry never raise (it degrades to a defaulted field plus a
+        # note rather than dropping the prompt). The 1h delay is expressed
+        # as the `quiet_hours` blocked_by sentinel, which the queue's own
+        # clock-driven sweep clears — not as a timestamp this hook computes.
+        return queuelib.submit_entry(cfg, {
+            "initial_prompt": prompt,
+            "submitted_by": "user",
+            "blocked_by": ["quiet_hours"],
+            "reason_blocked": ["submitted during quiet hours; held for 1h"],
+        })
+    except Exception:
+        return None
+
+
+def append_fallback(prompt, now, visible_at):
+    """The pre-2026-08-06 behaviour, kept as a sink of last resort so a
+    gated prompt is never silently dropped when the queue write fails."""
+    record = {
+        "queuedAt": now.isoformat(timespec="seconds"),
+        "visibleAt": visible_at.isoformat(timespec="seconds"),
+        "prompt": prompt,
+    }
+    os.makedirs(os.path.dirname(queue_file), exist_ok=True)
+    with open(queue_file, "a") as f:
+        f.write(json.dumps(record) + "\n")
 
 
 def parse_hm(s):
@@ -232,34 +311,47 @@ try:
 
     visible_at = now + datetime.timedelta(hours=1)
 
-    record = {
-        "queuedAt": now.isoformat(timespec="seconds"),
-        "visibleAt": visible_at.isoformat(timespec="seconds"),
-        "prompt": prompt,
-    }
-
-    os.makedirs(os.path.dirname(queue_file), exist_ok=True)
-    with open(queue_file, "a") as f:
-        f.write(json.dumps(record) + "\n")
+    # Durability before blocking, in that order: a prompt is only ever
+    # swallowed once it is safely written somewhere. Queue first; the
+    # jsonl append is the fallback sink when the plugin is absent (public
+    # clone) or its write failed. If BOTH fail, raise into the except below
+    # and let the prompt through ungated — never block on nothing.
+    entry_id = file_into_queue(prompt, visible_at)
+    if entry_id is None:
+        append_fallback(prompt, now, visible_at)
 
     visible_at_human = visible_at.strftime("%H:%M")
     if visible_at.date() != now.date():
         visible_at_human += " (tomorrow)"
 
+    if entry_id is None:
+        where = (
+            "Saved to .claude/deferred-prompts.jsonl (fallback — the queue "
+            "plugin was unavailable, so this needs picking up by hand)."
+        )
+        ack = f"Queued to file — readable from {visible_at_human}."
+    else:
+        where = (
+            f"Filed as queue entry #{entry_id} in the `{queue_instance}` "
+            f"instance, visible from {visible_at_human} and surfaced through "
+            f"the normal queue hand-over (`/queue:list`, `queue next`)."
+        )
+        ack = f"Filed as #{entry_id} — visible {visible_at_human}."
+
     reason = (
         f"Queued, not delivered live — outside the {start_s}-{end_s} local-time "
         f"window (now {now.strftime('%H:%M')}, this machine's local system "
-        f"clock). Saved to .claude/deferred-prompts.jsonl. Nothing automatic "
-        f"will wake a session to read it: it just becomes fair game to pick up "
-        f"the next time a real turn happens here, from {visible_at_human} "
-        f"onward."
+        f"clock). {where}"
+        f"\n\nReply with exactly this one line and nothing else: \"{ack}\" "
+        f"Do not answer the prompt's actual content, and do not add "
+        f"commentary — filing already happened."
     )
     out = {
         "decision": "block",
         "reason": reason,
         "systemMessage": (
             f"Message queued, not sent live — outside {start_s}-{end_s}. "
-            f"Readable starting {visible_at_human}."
+            f"{ack}"
         ),
     }
     print(json.dumps(out))

@@ -22,6 +22,18 @@ set -uo pipefail
 
 HOOK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/time-gate.sh"
 
+# Since 2026-08-06 the hook files a gated prompt into the queue plugin's
+# `auralis` instance and only falls back to the JSONL file when the plugin is
+# unavailable. Every test below this line predates that and asserts against the
+# JSONL file, so pin them to the fallback path by blanking the queue-lib
+# location. Without this the suite writes junk entries into the *live* auralis
+# store — which is exactly what happened the first time it was run against the
+# new hook (8 test entries had to be purged by hand).
+#
+# The queue path gets its own isolated coverage in the final section, against a
+# throwaway instance, never the real store.
+export AURALIS_TIME_GATE_QUEUE_LIB=""
+
 passed=0
 failed=0
 fail() {
@@ -293,6 +305,94 @@ if [ -f "$local_settings" ]; then
   fi
 else
   ok "settings.local.json: absent (expected on a fresh/unconfigured checkout — skipping)"
+fi
+
+
+# --- the queue path: filing into an ISOLATED queue instance -------------------
+#
+# Everything above pins AURALIS_TIME_GATE_QUEUE_LIB="" and so exercises the
+# JSONL fallback. These check the real path: filing into the queue plugin's
+# instance. They point QUEUE_INSTANCES at a throwaway config with stores under
+# mktemp -d, so they can never touch the live store — a suite run against the
+# live store once wrote 8 junk entries that had to be purged by hand.
+
+if [ -d "${HOME}/.claude/skills/queue/lib" ]; then
+  qroot="$(mktemp -d)"
+  mkdir -p "$qroot/store"
+  cat > "$qroot/instances.json" <<JSON
+{"auralis": {"match_prefix": null,
+             "store": "$qroot/store/store.jsonl",
+             "archive": "$qroot/store/archive.jsonl",
+             "archive_after_days": 30, "archive_min_terminal": 40,
+             "stale_claim_seconds": 3600}}
+JSON
+  git init -q "$qroot/store" 2>/dev/null
+
+  qdir="$(mktemp -d)"; q="$qdir/deferred-prompts.jsonl"
+  out="$(printf '%s' '{"prompt":"a gated prompt that must reach the queue","session_id":"qs1"}' \
+    | AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" \
+      AURALIS_TIME_GATE_QUEUE="$q" \
+      AURALIS_TIME_GATE_QUEUE_LIB="${HOME}/.claude/skills/queue/lib" \
+      QUEUE_INSTANCES="$qroot/instances.json" \
+      "$HOOK")"
+
+  # the store really is the temp one, not the live one
+  if grep -q "$qroot" "$qroot/instances.json"; then
+    ok "queue path: test instance points at a temp store (live store untouchable)"
+  else
+    fail "queue path: temp instance config is wrong"
+  fi
+
+  if printf '%s' "$out" | grep -q '"decision": *"block"'; then
+    ok "queue path: outside the window the prompt is still blocked"
+  else
+    fail "queue path: expected a block, got: $out"
+  fi
+
+  # Count via queuelib itself rather than hand-parsing the store: the record
+  # shape is the library's business, and a hand-rolled parser here silently
+  # counted zero when v2 stopped wrapping entries in {"kind": "entry"}.
+  n=$(QUEUE_INSTANCES="$qroot/instances.json" python3 - "${HOME}/.claude/skills/queue/lib" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import queuelib
+cfg = queuelib.load_instances()["auralis"]
+print(len(queuelib.entries_only(queuelib.read_store(cfg["store"]))))
+PY
+)
+  [ "$n" = "1" ] && ok "queue path: exactly one entry was filed into the queue" \
+                 || fail "queue path: expected 1 filed entry, found $n"
+
+  # the user's words must survive verbatim
+  if QUEUE_INSTANCES="$qroot/instances.json" python3 - "${HOME}/.claude/skills/queue/lib" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import queuelib
+cfg = queuelib.load_instances()["auralis"]
+es = queuelib.entries_only(queuelib.read_store(cfg["store"]))
+raise SystemExit(0 if es and es[0].get("initial_prompt") == "a gated prompt that must reach the queue" else 1)
+PY
+  then ok "queue path: initial_prompt stored verbatim"
+  else fail "queue path: initial_prompt was not stored verbatim"
+  fi
+
+  # with the queue available, the JSONL fallback must NOT be written
+  [ -f "$q" ] && fail "queue path: fallback JSONL was written even though the queue succeeded" \
+              || ok "queue path: fallback JSONL untouched when the queue write succeeds"
+
+  # and rule B still wins over the queue path
+  out2="$(printf '%s' '{"prompt":"<task-notification>result</task-notification>","session_id":"qs2"}' \
+    | AURALIS_TIME_GATE_NOW="2026-08-03T22:15:00" \
+      AURALIS_TIME_GATE_QUEUE="$q" \
+      AURALIS_TIME_GATE_QUEUE_LIB="${HOME}/.claude/skills/queue/lib" \
+      QUEUE_INSTANCES="$qroot/instances.json" \
+      "$HOOK")"
+  [ -z "$out2" ] && ok "queue path: rule B (<task-notification>) still exempt, nothing filed" \
+                 || fail "queue path: rule B was gated: $out2"
+
+  rm -rf "$qroot" "$qdir"
+else
+  ok "queue path: queue plugin not installed — skipping (fallback path is covered above)"
 fi
 
 echo

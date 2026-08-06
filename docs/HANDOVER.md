@@ -866,8 +866,12 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
   stay synthetic.
 - **A quiet-hours prompt gate is armed on `UserPromptSubmit`.** `scripts/hooks/time-gate.sh`
   is registered via `.claude/settings.local.json` (gitignored, machine-local). Outside
-  17:00–18:00 local time, a typed prompt is queued to `.claude/deferred-prompts.jsonl` and
-  blocked rather than delivered; nothing wakes a session to drain the queue. Exemptions are
+  17:00–18:00 local time, a typed prompt is filed into the task queue and blocked rather
+  than delivered, becoming visible an hour later and surfacing through the normal queue
+  hand-over. `.claude/deferred-prompts.jsonl` is a fallback sink, used only when that queue
+  is unavailable: this is a public repo and a fresh clone has no such queue, so the hook
+  degrades to a local file rather than crashing. A prompt is blocked only after it has been
+  durably written to one or the other — never before. Exemptions are
   per-prompt, not per-session: a `claude --bg` session's own kickoff prompt (matched against
   its job's `intent` in `~/.claude/jobs/<jobId>/state.json`) and any `<task-notification>`
   result a subagent hands back. An earlier `AURALIS_AUTONOMOUS=1` environment-marker
