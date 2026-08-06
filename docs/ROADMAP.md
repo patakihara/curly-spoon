@@ -1469,6 +1469,53 @@ except `performance` (no accessibility, best-practices, SEO or PWA score budget 
 accessibility audit above is separate, manual, and covers more ground than Lighthouse's own
 automated a11y category would).
 
+**The Lighthouse budget now audits an authenticated page too — done (2026-08-06, base
+commit `daa7c8b`).** The gap the two paragraphs above name (every number came from the
+unauthenticated onboarding screen, so `a25d2ea`'s `Shell` lazy-load bought nothing this
+budget could see) is now closed for the page that matters most: `scripts/lighthouse-budget.mjs`
+audits both `signedOut` (unchanged) and a new `home` page — the signed-in Home/library
+screen, chosen over the player or a music page because it is the first thing a returning
+user sees and it already exercises `Shell`, the nav chrome, the mini player and a real shelf
+grid; auditing it properly beat auditing three pages shallowly, since each extra page
+multiplies run time by samples × form factors.
+
+Both pages sit at the app's own root URL (`/`) — the SPA renders an entirely different page
+there depending on session state, not on the path. Lighthouse drives its own Chrome, not
+Playwright's, so there is no `page.context()` to hand a `storageState` file to; instead
+`establishAuthenticatedSession` drives `POST /api/v1/setup` then `POST /api/v1/auth/login`
+directly over `fetch` (the same calls `e2e/app/onboarding.spec.ts` makes through a browser),
+once per script invocation — `POST /auth/login` is rate-limited to 10/min per IP, so signing
+in per sample would 429 well before `--runs 6` — and attaches the resulting cookie to `home`
+audits via Lighthouse's `extraHeaders`. **Every single run's `finalDisplayedUrl` is checked**
+(`assertAuthenticated`) and a redirect to `/login` or `/setup` fails the whole run loudly
+(exit 2, not exit 0/1) instead of silently reporting `signedOut` numbers under the `home`
+label — this is the exact failure mode the wave exists to close, and it was verified by
+deliberately handing the script a garbage cookie: `signedOut` still audited and passed, and
+the `home` audit failed immediately with `finalDisplayedUrl` reported as
+`http://127.0.0.1:4320/login`, exit code 2.
+
+Measured 2026-08-06 on the same commit and machine as the baseline above, two independent
+passes (`--runs 6` then `--runs 5`): desktop `home` — score median 0.94 (0.93–0.95), FCP
+median 1125–1134ms, LCP median 1303–1316ms, TBT median 1–3ms, CLS 0.001 (non-zero, unlike
+`signedOut`'s 0.000 — real shelf content shifts slightly on load), SI same as FCP. Mobile
+`home` — score median 0.59–0.61, FCP median ~6.0s, LCP median 6.78–6.85s, TBT median
+137–179ms (samples ranged 112–355ms, the same simulated-4x-CPU heavy-tailed noise the
+`signedOut` mobile `tbt` paragraph above documents), CLS 0.008, SI same as FCP. **`home` is
+not meaningfully heavier than `signedOut` on this machine** — both pages pay for React,
+Mantine, react-query, the router and zustand before anything paints, and that shared cost
+dominates mobile's simulated throttle regardless of which page sits on top of it, so `home`'s
+budgets landed within a few percent of `signedOut`'s own numbers rather than measurably
+worse. `scripts/lighthouse-budget.config.mjs`'s `home` comments carry the full per-metric
+reasoning and flag that this baseline rests on two verification passes, not `signedOut`'s
+longer multi-commit history — a future CI failure here should be treated as needing
+re-derivation before being trusted as a real regression.
+
+CI keeps the same `--runs 3` default for both pages (not reduced for `home`) since the two
+pages' numbers are close enough that a thinner sample would add noise exactly where it is
+least affordable. **Still not covered**: the player, any Jellyfin-backed music page, and a
+real Audiobookshelf/Jellyfin over a real network — `home` closes the specific hole the
+`Shell` lazy-load exposed, not every authenticated page.
+
 **The accessibility audit has started: done (`d3b2791`).** Two real defects fixed: search
 state changes were invisible to a screen reader (a plain paragraph, no live region), and the
 sleep timer's menu had no `aria-haspopup`/`aria-expanded` with Escape closing the entire Now

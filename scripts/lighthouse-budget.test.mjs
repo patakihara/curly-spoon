@@ -27,6 +27,13 @@ import {
   parseArgs,
   UsageError,
   METRICS,
+  PAGES,
+  assertAuthenticated,
+  establishAuthenticatedSession,
+  SessionAuthenticationError,
+  SessionSetupError,
+  formatReport,
+  formatMeasuredLine,
 } from './lighthouse-budget.mjs';
 
 describe('median', () => {
@@ -159,5 +166,154 @@ describe('parseArgs', () => {
 
   test('a non-integer --runs throws a UsageError', () => {
     assert.throws(() => parseArgs(['--runs', '2.5']), UsageError);
+  });
+});
+
+describe('PAGES', () => {
+  test('has exactly one unauthenticated and one authenticated page, each with a distinct key', () => {
+    const keys = PAGES.map((p) => p.key);
+    assert.deepEqual(new Set(keys).size, keys.length, 'page keys must be unique');
+    assert.equal(PAGES.filter((p) => p.authenticated).length, 1);
+    assert.equal(PAGES.filter((p) => !p.authenticated).length, 1);
+  });
+});
+
+describe('assertAuthenticated', () => {
+  const unauthenticatedPage = { key: 'signedOut', label: 'Signed-out', authenticated: false };
+  const authenticatedPage = { key: 'home', label: 'Signed-in Home', authenticated: true };
+
+  test('is a no-op for an unauthenticated page, whatever finalDisplayedUrl says', () => {
+    assert.doesNotThrow(() =>
+      assertAuthenticated(unauthenticatedPage, {
+        finalDisplayedUrl: 'http://127.0.0.1:4320/login',
+      }),
+    );
+  });
+
+  test('passes for an authenticated page whose finalDisplayedUrl is the app itself', () => {
+    assert.doesNotThrow(() =>
+      assertAuthenticated(authenticatedPage, { finalDisplayedUrl: 'http://127.0.0.1:4320/' }),
+    );
+  });
+
+  test('throws SessionAuthenticationError when an authenticated page redirected to /login', () => {
+    assert.throws(
+      () =>
+        assertAuthenticated(authenticatedPage, {
+          finalDisplayedUrl: 'http://127.0.0.1:4320/login',
+        }),
+      SessionAuthenticationError,
+    );
+  });
+
+  test('throws SessionAuthenticationError when an authenticated page redirected to /setup', () => {
+    assert.throws(
+      () =>
+        assertAuthenticated(authenticatedPage, {
+          finalDisplayedUrl: 'http://127.0.0.1:4320/setup',
+        }),
+      SessionAuthenticationError,
+    );
+  });
+
+  test('throws SessionAuthenticationError when finalDisplayedUrl is missing entirely', () => {
+    assert.throws(() => assertAuthenticated(authenticatedPage, {}), SessionAuthenticationError);
+  });
+
+  test('does not false-positive on a path that merely contains "login" or "setup" as a substring', () => {
+    // A page at e.g. /music/loginhistory or /setupguide must not be mistaken for the
+    // auth-flow redirect targets, which are exactly /login and /setup (optionally with
+    // a trailing slash, query or fragment).
+    assert.doesNotThrow(() =>
+      assertAuthenticated(authenticatedPage, {
+        finalDisplayedUrl: 'http://127.0.0.1:4320/music/loginhistory',
+      }),
+    );
+  });
+});
+
+describe('establishAuthenticatedSession', () => {
+  function fakeFetch({
+    setupOk = true,
+    loginOk = true,
+    setCookies = ['auralis_session=abc123; Path=/; HttpOnly'],
+  } = {}) {
+    return async (url) => {
+      if (url.endsWith('/api/v1/setup')) {
+        return {
+          ok: setupOk,
+          status: setupOk ? 200 : 500,
+          text: async () => (setupOk ? '{}' : 'setup failed'),
+        };
+      }
+      if (url.endsWith('/api/v1/auth/login')) {
+        return {
+          ok: loginOk,
+          status: loginOk ? 200 : 401,
+          text: async () => (loginOk ? '{}' : 'invalid credentials'),
+          headers: { getSetCookie: () => setCookies },
+        };
+      }
+      throw new Error(`fakeFetch: unexpected URL ${url}`);
+    };
+  }
+
+  test('returns a "name=value" Cookie header parsed from the login response', async () => {
+    const cookie = await establishAuthenticatedSession('http://127.0.0.1:4320', fakeFetch());
+    assert.equal(cookie, 'auralis_session=abc123');
+  });
+
+  test('ignores other cookies and picks out only the session cookie', async () => {
+    const cookie = await establishAuthenticatedSession(
+      'http://127.0.0.1:4320',
+      fakeFetch({ setCookies: ['other_cookie=xyz; Path=/', 'auralis_session=abc123; Path=/'] }),
+    );
+    assert.equal(cookie, 'auralis_session=abc123');
+  });
+
+  test('throws SessionSetupError when POST /api/v1/setup fails', async () => {
+    await assert.rejects(
+      () => establishAuthenticatedSession('http://127.0.0.1:4320', fakeFetch({ setupOk: false })),
+      SessionSetupError,
+    );
+  });
+
+  test('throws SessionSetupError when POST /api/v1/auth/login fails', async () => {
+    await assert.rejects(
+      () => establishAuthenticatedSession('http://127.0.0.1:4320', fakeFetch({ loginOk: false })),
+      SessionSetupError,
+    );
+  });
+
+  test('throws SessionSetupError when login succeeds but sets no session cookie', async () => {
+    await assert.rejects(
+      () =>
+        establishAuthenticatedSession(
+          'http://127.0.0.1:4320',
+          fakeFetch({ setCookies: ['other_cookie=xyz; Path=/'] }),
+        ),
+      SessionSetupError,
+    );
+  });
+});
+
+describe('formatReport / formatMeasuredLine', () => {
+  const stat = (value) => ({ median: value, min: value, max: value });
+  const results = evaluateBudget(
+    Object.fromEntries(METRICS.map(({ key }) => [key, stat(key === 'score' ? 0.95 : 1)])),
+    Object.fromEntries(METRICS.map(({ key }) => [key, key === 'score' ? 0.9 : 1000])),
+  );
+
+  test('formatReport includes the page label alongside the form factor', () => {
+    const report = formatReport('Signed-in Home (/)', 'mobile', results);
+    assert.match(report, /Signed-in Home \(\/\) — mobile/);
+  });
+
+  test('formatMeasuredLine includes the page key alongside the form factor and run count', () => {
+    const summary = summarizeFormFactor(
+      Object.fromEntries(METRICS.map(({ key }) => [key, [1, 2, 3]])),
+    );
+    const line = formatMeasuredLine('home', 'desktop', 5, summary);
+    assert.match(line, /^measured: home desktop \(5 runs\)/);
   });
 });
