@@ -66,3 +66,8 @@ apps/android/.kotlin/
 # python bytecode from scripts/
 __pycache__/
 *.pyc
+
+# The user's own Spotify screenshots, used as phase 12 design references.
+# Personal listening data; this repo is public. Kept on disk, out of git,
+# pending the user's decision -- see docs/ROADMAP.md §12.
+docs/research/spec-addendum/

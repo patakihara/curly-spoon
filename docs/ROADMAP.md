@@ -1926,10 +1926,14 @@ this addendum contradicts, the addendum is the spec and the section above is the
 what was built. Phase 12 is the work of closing that gap; nothing here is optional, and none
 of it is a question.
 
-The four reference screenshots the user attached are checked into
-`docs/research/spec-addendum/` — they are Spotify's Home screen under its `All`, `Music` and
-`Podcasts` filters. Read them rather than inferring from this prose; a written description of
-a layout defaults to a generic one.
+The user attached four reference screenshots — Spotify's Home screen under its `All`,
+`Music` and `Podcasts` filters. **They are deliberately not in git.** They are screenshots of
+the user's own Spotify account, showing their subscriptions and playlist names, and this repo
+is public; that is personal data they shared as a design reference, not something to publish.
+They sit at `docs/research/spec-addendum/` on the development machine and are gitignored, so
+a session working there should read them rather than infer from this prose — a written
+description of a layout defaults to a generic one. A session working from a fresh clone will
+not have them, and that is the accepted cost until the user says otherwise.
 
 ### 12 — Product-spec addendum: five views, unified search, per-type queues
 
