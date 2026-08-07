@@ -80,6 +80,15 @@ const QUICK_TILE_STYLE: CSSProperties = {
   font: 'inherit',
   color: 'inherit',
   minWidth: 0,
+  // A `<button>` shrink-wraps to its content's width by default even with
+  // `display: flex` set on itself — that default width, not the grid column,
+  // is what a tile actually rendered at. Each `role="listitem"` grid cell above
+  // it already stretches to fill its column (CSS Grid's default
+  // `justify-items: stretch`), so this is the one property standing between a
+  // ~260px tile and the ~422px column it sits in — found by screenshotting the
+  // desktop width pass at 1440px, where the shortfall left a wide dead gap next
+  // to every quick pick (web design audit, 2026-08-07).
+  width: '100%',
 };
 
 const QUICK_TITLE_STYLE: CSSProperties = {

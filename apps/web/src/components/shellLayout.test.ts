@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { railWidth } from './shellLayout.js';
+import { contentMaxWidth, railWidth } from './shellLayout.js';
 
 describe('railWidth', () => {
   it('matches the collapsed icon-only rail width at medium widths (docs/DESIGN.md § Layout)', () => {
@@ -15,5 +15,11 @@ describe('railWidth', () => {
     // 'compact' today — asserted anyway so an accidental fallthrough branch
     // never silently returns something else.
     expect(railWidth('compact')).toBe(80);
+  });
+});
+
+describe('contentMaxWidth', () => {
+  it('caps the content column wider than the old 1200px so it fills more of a very wide viewport', () => {
+    expect(contentMaxWidth()).toBe(1320);
   });
 });
