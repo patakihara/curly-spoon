@@ -169,6 +169,18 @@ of an extra spawn is a small constant; the quadratic is what dominates. Splittin
    keep talking to.
 6. **Do small, well-understood fixes inline.** The sheet-detent fix cost cents done
    directly; delegating it would have cost dollars.
+7. **Tell every agent to commit before it backgrounds a long-running command.** An agent that
+   starts a full Playwright run in the background and then waits for the notification is
+   liable to stop there — and a stopped agent holding uncommitted work holds it in a worktree
+   that is deleted with its session. This happened twice in one session on 2026-08-07, each
+   time costing an entire wave that had to be salvaged by the orchestrator committing on the
+   agent's behalf. The instruction that prevents it is one line in the spec: *commit your work
+   first, then run the suite, then amend or follow up with the result.* A draft commit is
+   free; a lost wave is not.
+8. **Assume an agent may die at any point and check its worktree yourself.** `SubagentStop`
+   is not proof of completion — the agent's own final message can be unrelated to its task.
+   Read `git -C <worktree> status --short` and `git log --oneline -1` before believing any
+   report, and commit anything uncommitted before doing anything else.
 
 ## Hooks — what is armed in this repo
 

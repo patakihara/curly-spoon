@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T16:37:26Z` · `a8781e77885029281` · general-purpose · ended · Wave 12f-1 implementation is dispatched to a Sonnet subagent (running in the background). I'll wait for its completion notification before reviewing/…
 - `2026-08-07T16:37:32Z` · `ac3e01ac9d3ae7de6` · general-purpose · ended · Typecheck clean. I have enough to write the report. ## Verdict: merge with named corrections **1. (Real, but pre-existing/inherited — flag, don't blo…
 - `2026-08-07T16:38:21Z` · `a952a997487a7b762` · general-purpose · ended · ## Report **Checkout/branch:** Already isolated in '.claude/worktrees/agent-a8781e77885029281' on branch 'worktree-agent-a8781e77885029281', based on…
 - `2026-08-07T16:45:34Z` · `a4f95edff3a0ddd4a` · general-purpose · ended · I'll pause here and wait for the background Playwright run to finish before continuing.
@@ -94,8 +93,9 @@ in-context scan of the current one.
 - `2026-08-07T17:19:52Z` · `a8c77417a11444a16` · general-purpose · ended · Good — this confirms all requirement-4 isolation coverage is duplicated at the unit level too. I have everything needed for the report. ## Verdict: *…
 - `2026-08-07T17:26:35Z` · `acec92fccf95bb06e` · general-purpose · ended · Committed on the worktree branch, not pushed. ## Report **Branch/sha:** 'worktree-agent-acec92fccf95bb06e' @ 'afaa3f4', based on '8002385' (the reset…
 - `2026-08-07T17:41:07Z` · `a642e9f1b3b736355` · general-purpose · ended · Committed, working tree clean, not pushed as instructed. ## Report **Reset sha:** '1fd1b54' (the claim commit). **Branch/commit:** 'worktree-agent-a6…
-- `2026-08-07T17:57:05Z` · `a93643ecadd8a4da5` · general-purpose · running · —
+- `2026-08-07T17:57:05Z` · `a93643ecadd8a4da5` · general-purpose · ended · The full Playwright suite is running in the background ('bxuwur3dn'). I'll wait for its completion notification before finalizing the commit and repo…
 - `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
+- `2026-08-07T18:24:38Z` · `acfb30c8ef236b965` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -397,6 +397,32 @@ branch-log check is how the same feature gets built twice.
 The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
+
+### Agents keep dying while waiting on a backgrounded Playwright run (2026-08-07)
+
+Three times in one session, an agent backgrounded the full Playwright suite, said it would
+wait for the notification, and stopped there — twice holding its **entire wave** as
+uncommitted files in a worktree that is deleted along with its session. One of them returned
+a final message that had nothing to do with its task at all ("I don't see a task or question
+in your message"), so the report was no signal either way.
+
+Both waves were recovered only because the orchestrator checked the worktree instead of
+trusting the report:
+
+```bash
+git -C .claude/worktrees/agent-<id> status --short
+git -C .claude/worktrees/agent-<id> log --oneline -1
+```
+
+and then committed on the agent's behalf. Do this on **every** agent report, before reading
+the report — it costs one command and it is the difference between a draft commit and a lost
+wave. `CLAUDE.md`'s delegation rules 7 and 8 now carry the standing version: specs must tell
+agents to commit *before* backgrounding a long run, and a `SubagentStop` is not evidence of
+completion.
+
+A related cleanup step: a dead agent can leave its Playwright and vite processes running,
+holding CPU and ports against the next agent. `pgrep -af "worktrees/agent-<id>"` finds them;
+kill them before dispatching the next wave.
 
 ### Wave 12f — the model is merged, the fix it claims is not yet wired (2026-08-07)
 
