@@ -419,6 +419,10 @@ persistent-shell requirement **is** the Android design audit's "no persistent na
 shell", and unified search **is** the audit's open question about Android's music-only
 search — the user has now answered it.
 
+**The next spec is written and parked**: `docs/agent-specs/01-phase12b-web-search-view.md`
+is wave 12b (the web Search view, absorbing requests), ready to launch once 12a has merged.
+Reset the agent to the branch tip at launch, not to any sha in the file.
+
 ### Phase 11 is unblocked — the user chose a self-hosted repo (2026-08-06)
 
 `019f22b`: _"we will not violate IzzyOnDroid's anti-AI policy. We won't submit the app there.
