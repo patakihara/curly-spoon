@@ -1986,7 +1986,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12c — In-view search and artist/author full discography | todo   |
 | 12d — For You: uniform album-card carousels             | todo   |
 | 12e — Context menus (long-press / right-click)          | todo   |
-| 12f — Per-content-type queues                           | todo   |
+| 12f — Per-content-type queues                           | wip    |
 
 #### 12a — The five views
 
@@ -2073,6 +2073,28 @@ guaranteed — song queues are ephemeral and may be discarded.
 The queue view must be able to **clear the queue, for every content type**.
 
 **Audiobook chapters must be queueable.**
+
+**12f is split in two, web first.** 12f-1 is the model — a `createQueueStore` factory, the
+podcast and audiobook queues, `clearQueue()` on all three stores, and the two auto-advance
+controllers. 12f-2 is the surface, parked at
+`docs/agent-specs/03-phase12f2-web-queue-view.md`.
+
+The scouting behind that split turned up two things worth recording, because neither is
+obvious from the requirement text:
+
+- **There is no queue view in the web app at all.** The only queue UI today is the shuffle
+  and repeat controls inside `NowPlaying.tsx`. "The queue view must be able to clear the
+  queue" is therefore net-new surface, not a button added to an existing panel.
+- **Podcasts and audiobooks have no queue construct whatsoever** — each episode or book is a
+  single `playerStore.load()`. So §12f's "switching content type must not clear the podcast
+  queue" is not describing a clearing bug to fix; there is no podcast queue to clear. The
+  work is to create one.
+
+A real latent bug fell out of the same read. `playerStore.load()` resets `onTrackEnded` to
+`null` on every call, for every content type, and nothing re-attaches it — so playing a
+podcast in the middle of a music queue silently kills that queue's auto-advance, today, with
+one queue in existence. 12f-1 fixes it with a `queueRouter` that re-attaches the handler
+belonging to whatever content type is now loaded.
 
 #### Sequencing — web first, Android second
 

@@ -461,7 +461,10 @@ shell", and unified search **is** the audit's open question about Android's musi
 search — the user has now answered it.
 
 **12a (web) has shipped** — the five-destination shell is on `main`. **The next two specs
-are written and parked**: `docs/agent-specs/01-phase12b1-web-search-filters.md` (the Search
+are written and parked**, alongside a third — `docs/agent-specs/03-phase12f2-web-queue-view.md`,
+the web queue view, clear-queue and queueable chapters, which needs 12f-1's model on `main`
+before it can start. The two Search ones are
+`docs/agent-specs/01-phase12b1-web-search-filters.md` (the Search
 view's two chip rows and grouped results) and `02-phase12b2-web-search-requests.md` (library
 vs requestable separation, and requesting from Search). Run them **in sequence** — 12b-2
 builds on 12b-1's view. Split in two deliberately: agent cost is quadratic in turns, and 12a
