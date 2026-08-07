@@ -23,11 +23,16 @@
  * For you and Search are always visible — neither depends on any upstream
  * being configured. Search doubles as the requests view (§12a), so there is
  * no separate `requests` destination any more: `hasEnabledIndexer` /
- * `hasEnabledDownloadClient` gating is gone from this file. `lookupProviders`
- * stays, and still derives those two flags from `GET /api/v1/providers` —
- * `Shell.tsx` still calls it to build the context this module used to also
- * use for Requests visibility; whatever now decides when to show a "make a
- * request" affordance inside Search is out of this wave's scope.
+ * `hasEnabledDownloadClient` gating is gone from this file.
+ *
+ * `lookupProviders` is kept, and `Shell.tsx` still calls it — but **nothing
+ * reads its two flags yet.** `visibleDestinations` never looks at them; they
+ * are spread into `ctx` only because `DestinationContext` still declares
+ * them. That is deliberate: wave 12b folds requests into Search and will need
+ * exactly this "is a request even fulfillable" signal, and deleting the
+ * derivation now means rewriting it then. Until 12b lands they are computed
+ * and passed for no consumer — so if 12b is abandoned, delete them rather
+ * than leaving dead weight behind.
  */
 
 export type DestinationKey = 'forYou' | 'books' | 'podcasts' | 'music' | 'search';

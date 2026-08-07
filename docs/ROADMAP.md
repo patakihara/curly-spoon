@@ -2003,6 +2003,24 @@ independent `Scaffold`s and `MiniPlayerBar` is wired into `HomeScreen` alone, so
 vanishes on any navigation. That finding (`docs/research/ANDROID_DESIGN_AUDIT.md`, phase 10)
 and this requirement are **one piece of work, not two**.
 
+**12a (web) shipped 2026-08-07.** Five destinations in the rail and the bottom bar, Search
+last in the bar and a search input at the top of the rail; Settings moved to the rail footer
+and a compact top-right button; new `/books` and `/podcasts` routes resolving the first
+library of their media type at render time, with `/library/$libraryId` still working. Full
+Playwright suite green (286).
+
+**One finding left open, deliberately, because it is older than this wave.** On a cold cache
+the nav rail shows only "For you" until `GET /api/v1/libraries` resolves — Books and Podcasts
+are gated on that query, and always were. What 12a adds is that a deep link to
+`/library/:id` now marks **"For you"** as `aria-current="page"` during that window, because the
+active-item match for `/library/:id` is resolved from the library's real `mediaType` and that
+lookup comes from the same query. Verified in a browser against an artificially delayed
+response: ~2.7s of a visibly wrong highlight, self-correcting when the fetch lands.
+`staleTime` is 60s so it only bites a cold cache — first load, deep link, hard refresh — but
+phase 10 measured ~6s to first paint on mobile, so the window is not negligible on a phone.
+Fixing it properly means deciding what the rail shows _before_ it knows what libraries exist,
+which is a design question rather than a patch, and it belongs with 12d's For You work.
+
 #### 12b — Search doubles as the requests view
 
 There is no separate requests destination. Search _is_ the requests surface, and the same
