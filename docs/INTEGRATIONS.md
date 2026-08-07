@@ -55,6 +55,20 @@ the real server) instead of a live authenticated response. This is a real check 
 the actual serializer code the server runs — but it is not a substitute for hitting the live
 endpoints once a credential exists; a future session with one should still do that.
 
+- `GET /authors/:id?include=items` (`rawAuthorDetailSchema`): the endpoint the series and
+  author detail pages are built on (2026-08-07). It is used because **minified library items
+  do not carry `authors[]` or `series[]`** — only the flattened `authorName`/`seriesName`
+  strings — so an author's books cannot be found by id from any list endpoint. Building a
+  page on that assumption is what broke `/author/:id` completely before this was traced; see
+  `docs/ROADMAP.md` §12c.
+- `GET /libraries/:id/series` ordering: the series detail page **trusts the server's order**
+  rather than re-deriving a sequence, because `seriesFilters.js`'s `getFilteredSeries` sorts
+  server-side before minifying. **This one has a named risk**: if that trace is wrong, or a
+  later Audiobookshelf changes it, the page silently shows whatever order the array arrives
+  in, with nothing to signal it. The e2e test pins the fake server's fixture order, which was
+  written to match the assumption, so it cannot catch the assumption being wrong. A session
+  with a real credential should check this first.
+
 - `POST /items/:id/play` (`rawPlaybackSessionSchema`): confirmed `currentTime` is
   **seconds**, matching this project's "unsuffixed = seconds" convention. Traced
   `server/objects/PlaybackSession.js` → `PlaybackSessionManager.js`
