@@ -316,6 +316,35 @@ Jellyfin cannot search lyric text at all, so Auralis would need its own index an
 about whether to backfill from an external provider (a privacy opt-in). The synced lyrics
 _view_ is unaffected and has shipped.
 
+### Phase 12: what is startable, and what is waiting on the user (2026-08-07)
+
+**12a and 12b are done** — the five-destination shell, and Search carrying both library
+results and requestable ones. `docs/ROADMAP.md` §12 has each wave's detail and its open
+findings. What remains is **not** evenly available:
+
+- **12e (context menus)** — long-press / right-click offering Play next, Play last, Go to
+  album, Go to artist. **Startable now.** It depends on nothing outstanding, and it is the
+  natural next wave for a session that wants to keep moving.
+- **12c (in-view search, artist/author pages)** — **blocked on a user answer.** Its core is
+  showing an artist's or author's full discography with non-library items greyed out and
+  requestable, behind a setting. But 12b-2's review surfaced that nothing de-duplicates a
+  requestable result against the library, and whether a title already on the shelf should
+  still be offered is the same unresolved question in a different place. Deciding it twice,
+  differently, is the failure mode. There is also nowhere to navigate to yet: no
+  `/series/:id` or `/author/:id` route exists, which is what makes 12c a real wave rather
+  than a tweak.
+- **12d (For You carousels)** — **blocked on a user answer.** The four reference screenshots
+  are the spec, and they are deliberately not in git (see §12's own note): they are the
+  user's own Spotify screenshots and this repo is public. A session on this machine can read
+  them at `docs/research/spec-addendum/`; a fresh clone cannot. That is also where 12a's open
+  finding lands — what the rail shows before it knows which libraries exist.
+
+**Four queue entries are waiting on the user** and two of them gate the above: the reported
+Android post-login crash (`a41192a` — needs a reinstall of the current APK, or a logcat),
+NewPipeExtractor's intended scope (`35c9634`), and two context-free objections from 2026-08-06
+(`cbf5de6`, `e5c69a0`). Check `queue list` — note that `queue_list` returns no items once
+nothing is `todo`, so `input_needed` entries are reachable only by `queue show <id>`.
+
 ### Claimed work — check here before starting a wave
 
 A lightweight lock, because two sessions share this checkout. Claim a wave here **before**
@@ -324,15 +353,10 @@ nothing on `main` is stale — take it.
 
 **Claimed — 2026-08-07 ~16:35Z.**
 
-- **12b-1 (web Search filters) — landed** at `ba8c2b3`/`218dc2b`, reviewed and merged. Its
-  worktree and branch are gone. Thank you for claiming it on my behalf; the file list you
-  wrote was exactly right.
-- **12b-2 (library vs requestable results in Search)** — claimed by session `0e7913a4`,
-  spec at `docs/agent-specs/02-phase12b2-web-search-requests.md`. Touches
-  `features/search/**`, `features/requests/**`, `features/music/` (the `/music/requests`
-  path only) and `e2e/app/search-view.spec.ts`; **reads** `components/destinations.ts` for
-  `lookupProviders` but does not change it. Does **not** touch `state/`, `features/player/`
-  or `features/podcasts/`.
+- **12b is done and released.** 12b-1 landed at `ba8c2b3`/`218dc2b`, 12b-2 at
+  `2d836b0`/`2438f2a`, both reviewed and merged, both worktrees and branches gone. Session
+  `0e7913a4` holds nothing now — **12c, 12d and 12e are all free to take.** Read the note
+  below on which of them are actually startable first.
 - **12f (web per-content-type queues)** — claimed by session `16f272ea`. Disjoint by
   construction: `apps/web/src/state/*QueueStore.ts`, `features/music/musicQueue*`,
   `features/podcasts/`, `features/player/`. Explicitly does **not** touch
