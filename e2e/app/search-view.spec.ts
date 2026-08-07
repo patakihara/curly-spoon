@@ -151,6 +151,148 @@ test('clearing the primary filter (toggling it off) clears the secondary row too
   await expect(page.getByTestId('search-result-item-dune')).toBeVisible();
 });
 
+/**
+ * §12b's "requests" half: library results and requestable results are visually
+ * separated, and pressing a requestable item requests it (docs/ROADMAP.md §12b,
+ * `searchRequestability.ts`). Configures prowlarr/qbittorrent the same way
+ * `requests.spec.ts` does, and slskd the same way `music-requests.spec.ts` does —
+ * both idempotent (a save with the same values twice is harmless), so this file
+ * doesn't need to assume it runs before or after those files.
+ *
+ * Same `AURALIS_FAKE_UPSTREAMS` constraint those two files document: there is no
+ * fake Prowlarr, qBittorrent or slskd, so every request-search here genuinely
+ * fails to reach its provider. That rules out ever seeing a real release or
+ * candidate — this file's own "press it to request" coverage is therefore the
+ * book "Request anyway" path (`RequestableBooksSection.tsx`), which needs no
+ * reachable indexer at all, exactly as `requests.spec.ts`'s own "Request anyway"
+ * test does. The per-release/per-candidate "press the item" path (both books and
+ * music) is inherently untestable in this environment, same documented gap as
+ * `requests.spec.ts` and `music-requests.spec.ts` already carry for the same
+ * reason.
+ */
+test('configuring an indexer, a download client, and a music provider saves without error', async ({
+  page,
+}) => {
+  await page.goto('/settings');
+  await expect(page.getByTestId('settings-page')).toBeVisible();
+
+  const prowlarr = page.getByTestId('provider-prowlarr');
+  await expect(prowlarr).toBeVisible();
+  await prowlarr.getByTestId('provider-prowlarr-baseurl-input').fill('http://prowlarr:9696');
+  await prowlarr.getByTestId('provider-prowlarr-secret-apiKey-input').fill('test-api-key');
+  await prowlarr.getByTestId('provider-prowlarr-enabled-toggle').check();
+  await prowlarr.getByTestId('provider-prowlarr-save').click();
+  await expect(prowlarr.getByTestId('provider-prowlarr-save-error')).toHaveCount(0);
+
+  const qbittorrent = page.getByTestId('provider-qbittorrent');
+  await expect(qbittorrent).toBeVisible();
+  await qbittorrent.getByTestId('provider-qbittorrent-baseurl-input').fill('http://gluetun:8080');
+  await qbittorrent.getByTestId('provider-qbittorrent-secret-username-input').fill('admin');
+  await qbittorrent
+    .getByTestId('provider-qbittorrent-secret-password-input')
+    .fill('test-password');
+  await qbittorrent.getByTestId('provider-qbittorrent-enabled-toggle').check();
+  await qbittorrent.getByTestId('provider-qbittorrent-save').click();
+  await expect(qbittorrent.getByTestId('provider-qbittorrent-save-error')).toHaveCount(0);
+
+  const slskd = page.getByTestId('provider-slskd');
+  await expect(slskd).toBeVisible();
+  await slskd.getByTestId('provider-slskd-baseurl-input').fill('http://slskd.invalid.local:5030');
+  await slskd.getByTestId('provider-slskd-secret-apiKey-input').fill('test-slskd-api-key');
+  await slskd.getByTestId('provider-slskd-enabled-toggle').check();
+  await slskd.getByTestId('provider-slskd-save').click();
+  await expect(slskd.getByTestId('provider-slskd-save-error')).toHaveCount(0);
+});
+
+test('a query matching a library book also shows a distinctly-headed "Available to request" group for the same term', async ({
+  page,
+}) => {
+  await page.goto('/search');
+  await page.getByTestId('search-field').getByRole('combobox').fill('dune');
+
+  // The library match, under its own "Books" heading — unaffected by this wave.
+  await expect(page.getByTestId('search-results-books')).toBeVisible();
+  await expect(page.getByTestId('search-result-item-dune')).toBeVisible();
+
+  // The requestable group sits inside the Books section but under its own,
+  // differently-worded heading and its own bordered container
+  // (`.auralis-requestable-section`) — the "heading and a distinct treatment,
+  // not a subtle badge" the spec calls for. No reachable indexer exists in this
+  // environment, so this always settles as the title-only "Request anyway"
+  // outcome, never a specific release.
+  const requestable = page.getByTestId('search-requestable-books');
+  await expect(requestable).toBeVisible({ timeout: 10_000 });
+  await expect(requestable.locator('h2')).toHaveText('Available to request');
+  await expect(requestable).toHaveClass(/auralis-requestable-section/);
+
+  const anywayButton = page.getByTestId('search-requestable-book-anyway-button');
+  await expect(anywayButton).toBeVisible();
+  await expect(anywayButton).toContainText('dune');
+});
+
+test('pressing the requestable "dune" card creates a request and shows "Requested" feedback', async ({
+  page,
+}) => {
+  await page.goto('/search');
+  await page.getByTestId('search-field').getByRole('combobox').fill('dune');
+
+  const anywayButton = page.getByTestId('search-requestable-book-anyway-button');
+  await expect(anywayButton).toBeVisible({ timeout: 10_000 });
+  await anywayButton.click();
+
+  await expect(page.getByTestId('search-requestable-book-anyway-requested')).toBeVisible();
+  await expect(page.getByTestId('search-requestable-book-anyway-button')).toHaveCount(0);
+
+  // The same mutation `AskForBookPanel.tsx` uses — confirm it actually landed,
+  // not just that the button flipped state client-side.
+  await page.goto('/requests');
+  await expect(page.getByTestId('requests-list')).toContainText('dune');
+});
+
+test('a query matching nothing in the library still offers to request it, with providers enabled', async ({
+  page,
+}) => {
+  // Books requesting is enabled from the earlier test in this file, so this is
+  // the "library has nothing, but you can still ask for it" case `AskForBookPanel`'s
+  // own "Request anyway" already covers on `/requests` — unified search offers the
+  // same outcome. The library section itself must not render a phantom "Books"
+  // heading with nothing under it.
+  await page.goto('/search');
+  await page
+    .getByTestId('search-field')
+    .getByRole('combobox')
+    .fill('completely-unmatched-nonsense-term-zzz');
+
+  await expect(page.getByTestId('search-status')).toContainText('No matches');
+  await expect(page.getByTestId('search-results-books')).toContainText('No book matches.');
+
+  const requestable = page.getByTestId('search-requestable-books');
+  await expect(requestable).toBeVisible({ timeout: 10_000 });
+  await expect(requestable.locator('h2')).toHaveText('Available to request');
+  await expect(page.getByTestId('search-requestable-book-anyway-button')).toContainText(
+    'completely-unmatched-nonsense-term-zzz',
+  );
+});
+
+test('music search never shows an empty "Available to request" heading when slskd is unreachable', async ({
+  page,
+}) => {
+  // No fake slskd exists (this file's header comment) — a search always comes
+  // back with zero candidates, so the requestable group must not render at all
+  // rather than flashing an empty "Available to request" section (§12b: gated
+  // on `requestabilitySections`'s own "nothing to show yet" check, mirroring
+  // `RequestableBooksSection.tsx`'s reasoning).
+  await page.goto('/search');
+  await page.getByTestId('search-field').getByRole('combobox').fill('fields');
+  await clickChip(page, 'search-filter-primary-music');
+
+  await expect(page.getByTestId('search-results-music-artists')).toBeVisible();
+  // Give the debounced request-search time to settle before asserting its
+  // absence — otherwise this would pass trivially before the fan-out even fired.
+  await page.waitForTimeout(1000);
+  await expect(page.getByTestId('search-requestable-music')).toHaveCount(0);
+});
+
 test('with nothing selected, every kind of result groups by content type and renders as a list, not a grid', async ({
   page,
 }) => {
