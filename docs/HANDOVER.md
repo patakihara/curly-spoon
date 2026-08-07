@@ -362,11 +362,16 @@ nothing on `main` is stale — take it.
   `insertTrackNext`/`insertTrackLast` transforms live in `features/music/musicQueue.ts` and
   install through `applyQueue`, so 12f-2 inherits no surprises there.
   **Session `0e7913a4` now holds nothing.**
-- **12c (in-view search, artist/author pages)** — free. Still genuinely waiting on one
-  answer, and only one: whether a title already in the library should still be offered as
-  requestable. 12b-2's review raised it for Search and 12c raises it again for artist/author
-  pages, so deciding it twice, differently, is the thing to avoid. There is also no
-  `/series/:id` or `/author/:id` route yet, which is what makes it a wave rather than a tweak.
+- **12c is split, and half of it is startable now.**
+  **12c-1 (series and author detail pages)** — free, spec parked at
+  `docs/agent-specs/04-phase12c1-web-series-author-pages.md`. No `/series/:id` or
+  `/author/:id` route exists, which is why 12b-1's series and author search results render
+  inert; this closes that, for library content only, and does not depend on any pending
+  answer.
+  **12c-2 (non-library content on those pages)** — genuinely blocked on **queue `440b217`**:
+  whether a title already in the library should still be offered as requestable. 12b-2's
+  review raised it for Search and 12c-2 raises it again for artist/author pages, so deciding
+  it twice, differently, is the thing to avoid. Do not guess it.
 - **12d (For You carousels) — landed** at `694e042`; claim released. It touched
   `apps/web/src/features/home/HomePage.tsx`, a new carousel component under
   `apps/web/src/features/home/`, `packages/ui/` only if a card primitive is genuinely
