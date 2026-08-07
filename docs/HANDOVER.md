@@ -385,12 +385,7 @@ nothing on `main` is stale — take it.
   this machine can read; and 12a's open cold-cache rail finding, which is a real design
   question but does not gate the carousels. Only the second is genuinely waiting on anyone.
 
-- **Desktop shell width pass** — claimed by session `16f272ea`, 2026-08-07 ~21:45Z. Touches
-  `apps/web/src/components/Shell.tsx`, `shellLayout.ts` and the shell's own rules in
-  `apps/web/src/styles/app.css`, plus `e2e/app/desktop-width.spec.ts`. Scoped to the content
-  column's width at desktop widths only; it deliberately does **not** answer 12a's
-  cold-cache rail question, which is a design decision and stays open. Does not touch
-  `features/music/` or `packages/ui/`, so it is disjoint from 12e.
+- **Desktop shell width pass — landed** at `58d3fd7`; claim released. It turned out not to be a shell-width problem at all — see `docs/ROADMAP.md` §12d. Verified: 1449 unit tests, 331 Playwright, typecheck and lint clean.
 
 - **12c remains free but is waiting on a user answer** — see the section above
   for which and why.

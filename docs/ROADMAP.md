@@ -2162,10 +2162,26 @@ it reads as sparse rather than distorted — but "the web app includes desktop, 
 real desktop experience" is an explicit product requirement, not an afterthought, so this is
 worth fixing rather than filing as taste.
 
-It is deliberately **not** fixed here. Widening the content column touches the shell's own
-layout, which is shared with every other destination, so it belongs with 12a's open rail
-question in one pass over the desktop shell rather than as a change made from inside the For
-You view.
+**Fixed in `58d3fd7`, and the diagnosis above was wrong.** The content column was never too
+narrow — it measured 900 of 1440, which is correct. The real cause was a quick-pick tile: a
+`<button>` shrink-wraps to its content by default, so each tile left dead space inside a grid
+column that was the right size all along. Confirmed by measurement and by stashing the fix to
+check that only the tile assertion regressed. A shell-width change would have left the page
+pixel-identical.
+
+Worth keeping as method: *a gap next to content is not evidence that the container is too
+small.* Measure the container before assuming it is the thing at fault — the wave for this
+was dispatched on the container theory and only avoided building the wrong fix because the
+agent measured first.
+
+Two things came with it: `contentMaxWidth()` in `shellLayout.ts` is a tested pure function
+capped at 1320 rather than an unbounded stretch, and `margin-inline: auto` fixes a real
+secondary bug where the whole gutter landed on one side at very wide viewports. Verified at
+390/834/1440/1920 on two destinations, and the e2e spec asserts on measured bounding boxes —
+its header records why the obvious column-width assertion would have been tautological, since
+it was already true before the fix.
+
+12a's cold-cache rail question is untouched and still open.
 
 Worth repeating as method: the automated suite passed completely and the code review said
 merge as-is, and neither surfaced this. It took rendering the page and looking at it.
