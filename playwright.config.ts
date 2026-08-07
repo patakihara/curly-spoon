@@ -75,7 +75,19 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: CI,
   retries: CI ? 2 : 0,
-  workers: CI ? 2 : undefined,
+  // One worker per core, measured rather than guessed. Playwright's default is
+  // half the cores, and both this machine and a GitHub `ubuntu-latest` runner
+  // have four — which is where the two workers everyone kept seeing came from.
+  // Timed full-suite runs here on 2026-08-07: 2 workers took 8m50s, 4 took
+  // 6m25s, a 27% saving, and the 4-worker run was the one that went fully
+  // green (284/284) while the 2-worker run flaked two specs under load.
+  // The suite is not embarrassingly parallel — `app-onboarding` and
+  // `app-jellyfin-unconfigured` are barriers before `app`, and the `app`
+  // webServer builds the web app before it boots — so the ceiling here is the
+  // dependency chain, not this number. Dial it back if CI turns intermittent:
+  // the `app` project's files are order-independent, which is not the same as
+  // concurrency-safe against one single-tenant stateful BFF.
+  workers: '100%',
   reporter: CI
     ? [['github'], ['html', { open: 'never' }]]
     : [['list'], ['html', { open: 'never' }]],

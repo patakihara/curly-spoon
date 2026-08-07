@@ -18,34 +18,43 @@ the source.
 The starting assumption going into this was "we need a GitHub releases page." That's true
 for the plain sideloaded-APK route (`release.yml` already does this — every tag gets a
 GitHub Release with the APK attached), but it is **not** what makes a URL addable as an
-F-Droid/Droid-ify *repository*. A repository is a different, stricter thing:
+F-Droid/Droid-ify _repository_. A repository is a different, stricter thing:
 
 - A client adding a repository URL fetches a **signed index** from it — `index-v2.json`
   plus a signed `entry.jar`/`entry.json` pair in the current format (`index-v1.jar`/
   `index-v1.json` in the older one), not a directory listing and not a GitHub Releases
   page. `fdroid update` (part of `fdroidserver`) is what generates these files from a
   directory of APKs. A plain folder of `.apk` files with no index will not be recognized
-  as a repository at all. ([Setup an F-Droid App Repo](https://f-droid.org/en/docs/Setup_an_F-Droid_App_Repo/) — "Running `fdroid update` ... creates
-  the repository index files"; fetched 2026-08-07.)
+  as a repository at all — that last sentence is an inference, not a quotation: the cited
+  page says "Running `fdroid update` ... creates the repository index files" and does not
+  separately spell out what happens without them.
+  ([Setup an F-Droid App Repo](https://f-droid.org/en/docs/Setup_an_F-Droid_App_Repo/),
+  fetched 2026-08-07.)
 - **The repository signing key is a separate key from any APK signing key.** `fdroid init`
   generates (or `keytool -genkey` manually creates) a keystore used only to sign the repo's
   index — it has nothing to do with the key(s), if any, used to sign the APKs the repo
-  serves. F-Droid's own documentation draws this distinction directly: the *repository*
-  signing key signs the index metadata, while each *app's* signing key signs that app's
-  package, and F-Droid's own official repo uses different keys for each purpose.
-  ([Release Channels and Signing Keys](https://f-droid.org/en/docs/Release_Channels_and_Signing_Keys/), fetched 2026-08-07.) Auralis currently has **no** APK release-signing key
+  serves. F-Droid's own documentation states this directly: there are "two kinds of signing
+  involved in running a repository: the signing of the repo index itself" and "the standard
+  Android APK signing process".
+  ([Signing Process](https://f-droid.org/docs/Signing_Process/), fetched 2026-08-07. The
+  `Release_Channels_and_Signing_Keys` page shows a repo fingerprint and an APK fingerprint
+  side by side but never says in words that they are different keys — cite `Signing_Process`
+  for this, not that page.) Auralis currently has **no** APK release-signing key
   at all (`docs/research/FDROID_DISTRIBUTION.md` §5 — still an open, undecided question) —
   every APK this repo serves is the same debug-signed build `android.yml` already produces.
   The repo signing key this document is about is unrelated to that decision and does not
   require it to be resolved first.
 - **The `?fingerprint=` parameter in a repo URL is the SHA-256 fingerprint of the
-  *repository* signing certificate** — not of any APK's certificate. It lets a client
+  _repository_ signing certificate** — not of any APK's certificate. It lets a client
   verify, out of band, that the index it downloaded over plain HTTPS was actually signed by
-  the key its owner intended, the same role a TLS certificate pin plays. `fdroidserver`
-  computes and stores this as `repo_key_sha256` in its own config, and prints it when the
-  key is generated. (Corroborated via `fdroidserver`'s `config.py`/`common.py` source and
-  its `apksigner verify --print-certs`-based tooling for the equivalent APK-side check;
-  [fdroidserver on GitHub](https://github.com/f-droid/fdroidserver), fetched 2026-08-07.)
+  the key its owner intended, the same role a TLS certificate pin plays. It is **not** a
+  stored config field — `fdroidserver` computes it at index-build time: `index.py` calls
+  `extract_pubkey()`, keeps the result in a local `repo_pubkey_fingerprint`, and formats the
+  link as `'{link}?fingerprint={fingerprint}'`. (`config.yml`'s optional key is
+  `repo_pubkey`, the full public key; there is no `repo_key_sha256` field anywhere in the
+  project. Read directly from
+  [fdroidserver on GitHub](https://github.com/f-droid/fdroidserver) — `fdroidserver/index.py`,
+  `fdroidserver/init.py`, `examples/config.yml` — 2026-08-07.)
 - **Plain static hosting is sufficient.** An F-Droid repository is nothing but static files
   — `index-v2.json`, `entry.jar`, an `icons/` directory, and the APKs themselves — served
   over HTTPS. No server-side logic, no database, no special MIME types. GitHub Pages (or
@@ -56,7 +65,7 @@ F-Droid/Droid-ify *repository*. A repository is a different, stricter thing:
 
 So the user's instinct was half right: a GitHub Releases page is necessary for
 `release.yml`'s existing sideload flow (and stays exactly as it is — nothing here replaces
-it), but it is not what Droid-ify needs for a *repository* URL. That needs a signed index,
+it), but it is not what Droid-ify needs for a _repository_ URL. That needs a signed index,
 which needs a repository signing key the user has to generate once, by hand, and never
 commit to the repo.
 
@@ -91,12 +100,12 @@ CI-generated-and-forgotten key is unrecoverable).
 4. **Add four repository secrets** at
    `github.com/patakihara/curly-spoon/settings/secrets/actions`:
 
-   | Secret name                   | Value                                                          |
-   | ------------------------------ | --------------------------------------------------------------- |
-   | `FDROID_REPO_KEYSTORE_BASE64` | `base64 -w0 keystore.p12` (the whole output, one line)          |
-   | `FDROID_REPO_KEYSTORE_PASSWORD` | the keystore password you chose in step 2                     |
-   | `FDROID_REPO_KEY_ALIAS`       | the key alias `fdroid init` used — check `config.yml`'s `repo_keyalias` (usually `repo`) |
-   | `FDROID_REPO_KEY_PASSWORD`    | the key password you chose in step 2                           |
+   | Secret name                     | Value                                                                                    |
+   | ------------------------------- | ---------------------------------------------------------------------------------------- |
+   | `FDROID_REPO_KEYSTORE_BASE64`   | `base64 -w0 keystore.p12` (the whole output, one line)                                   |
+   | `FDROID_REPO_KEYSTORE_PASSWORD` | the keystore password you chose in step 2                                                |
+   | `FDROID_REPO_KEY_ALIAS`         | the key alias `fdroid init` used — check `config.yml`'s `repo_keyalias` (usually `repo`) |
+   | `FDROID_REPO_KEY_PASSWORD`      | the key password you chose in step 2                                                     |
 
 5. **Enable GitHub Pages via Actions**, once, at
    `github.com/patakihara/curly-spoon/settings/pages` → Build and deployment → Source →
@@ -149,7 +158,7 @@ workflow log — it will not publish a partial or broken repo.
 - **No release-signed APK.** Every APK this repo serves is the same debug-signed build CI
   always produces. This is orthogonal to the repo signing key covered above — see
   `docs/research/FDROID_DISTRIBUTION.md` §5 for that separate, still-open decision. Droid-ify
-  does not care: it trusts the *repository* index's signature, and installs whatever APK
+  does not care: it trusts the _repository_ index's signature, and installs whatever APK
   that index points to, debug-signed or not.
 - **No IzzyOnDroid or official F-Droid submission.** Both remain closed per
   `docs/HANDOVER.md`'s phase 11 entry; nothing here changes that.

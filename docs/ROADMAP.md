@@ -16,7 +16,7 @@ self-contained, tested increment.
 | 8   | Podcast client (web + Android)                                  | done   |
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done   |
 | 10  | Release polish — performance budgets, a11y audit                | done   |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | todo   |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | done\* |
 | 12  | **Spec addendum** — five views, unified search, per-type queues | todo   |
 
 ### Why Android sits at 7 rather than last
@@ -1943,6 +1943,39 @@ They sit at `docs/research/spec-addendum/` on the development machine and are gi
 a session working there should read them rather than infer from this prose — a written
 description of a layout defaults to a generic one. A session working from a fresh clone will
 not have them, and that is the accepted cost until the user says otherwise.
+
+#### Phase 11 shipped — the self-hosted repo, built (2026-08-07)
+
+**done\*** means: everything that does not need a key only the user can generate.
+`docs/FDROID_REPO.md` is the operator's guide and the working document now.
+
+What landed: `.github/workflows/fdroid-repo.yml` (tag-triggered — fork guard, tag and
+versionCode validation, a `check-secrets` job that fails before anything is built, the APK
+build, `fdroid update`, publish to GitHub Pages); `scripts/fdroid-versioncode.mjs` plus its
+CLI wrapper and 14 `node --test` cases; `metadata/net.auralis.app.yml`; and optional
+`auralisVersionCode`/`auralisVersionName` Gradle properties whose fallbacks are byte-identical
+to the previous hardcoded values, so `android.yml` is unaffected.
+
+**The user's assumption was half right, and the correction is the useful part.** A GitHub
+Releases page is necessary for the sideload flow but is _not_ a repository: a client adding a
+repo URL fetches a **signed index** (`index-v2.json` + a signed `entry.jar`), which
+`fdroid update` generates. The **repo signing key is a separate key from any APK signing key**
+and signs only the index — so this is _not_ blocked on the still-open APK release-signing
+decision. The `?fingerprint=` parameter is the SHA-256 fingerprint of the _repository_
+certificate. Plain static HTTPS (GitHub Pages) is sufficient. Citations live in
+`docs/FDROID_REPO.md`; three were tightened after review found them claiming more directness
+than the cited pages had — the same defect class the original investigation hit, so verify
+citations here rather than trusting them.
+
+**Six manual steps remain and they are the user's**, listed in full in `docs/FDROID_REPO.md`:
+`fdroid init` on a machine with `fdroidserver` (not this laptop) to generate the repo keystore
+and print its fingerprint, back that keystore up outside GitHub, add four repo secrets, enable
+Pages, push a `v*` tag, then add the repo URL plus fingerprint to Droid-ify. **Nothing here
+generates a key.**
+
+**Two things could not be verified from this machine**, and the first real tag is their first
+test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flags match current
+`fdroidserver` behaviour. Neither `fdroidserver` nor Gradle exists here.
 
 ### 12 — Product-spec addendum: five views, unified search, per-type queues
 
