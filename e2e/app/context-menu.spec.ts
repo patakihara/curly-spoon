@@ -208,3 +208,130 @@ test('Go to artist navigates to the artist route', async ({ page }) => {
   await expect(page.getByTestId('music-artist-page')).toBeVisible();
   await expect(page.getByTestId('music-artist-name')).toHaveText('The Nebula Collective');
 });
+
+// ---------------------------------------------------------------------
+// The 12e follow-up scope cut (`docs/HANDOVER.md`): the same `TrackContextMenu` wired into
+// `MusicPlaylistPage.tsx` and `MusicFavoritesPage.tsx`. Both pages carry a real per-track
+// `albumId` (straight off `JellyfinTrack`) but no `artistId` — a playlist or a favourites
+// list can span many albums/artists, so there is no single page-level id to borrow the way
+// `MusicAlbumPage.tsx` borrows its one album's `artistId` for every row (see those pages'
+// own doc comments). So the menu here always omits "Go to artist" — that is
+// `buildTrackMenuItems`' existing null-omits-the-item behaviour, not a new code path, and
+// the tests below assert its absence rather than its presence.
+//
+// `playlistUrl` is captured once, by the first playlist test, and reused by the ones after
+// it (this file already runs `mode: 'serial'`) — cheaper than creating a fresh playlist and
+// re-adding both Driftwave tracks to it in every test.
+// ---------------------------------------------------------------------
+
+let playlistUrl = '';
+
+test('creating a playlist and adding Driftwave to it, for the playlist-page tests below', async ({
+  page,
+}) => {
+  await page.goto('/music/playlists');
+  await page.getByTestId('music-playlists-create').click();
+  await page.getByTestId('music-playlists-create-name-input').fill('Context Menu Playlist');
+  await page.getByTestId('music-playlists-create-submit').click();
+  // `MusicPlaylistsPage.tsx`'s create form navigates to the new playlist on success.
+  await expect(page).toHaveURL(/\/music\/playlist\/[^/]+$/);
+  playlistUrl = page.url();
+
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-album-add-to-playlist').click();
+  await page.getByRole('button', { name: 'Add Driftwave to Context Menu Playlist' }).click();
+  await expect(page.getByRole('status')).toHaveText('Added to playlist.');
+
+  await page.goto(playlistUrl);
+  await expect(page.getByTestId('music-playlist-name')).toHaveText('Context Menu Playlist');
+  await expect(page.getByTestId('music-track-menu-trigger-track-driftwave-1')).toBeVisible();
+});
+
+test('right-click on a playlist-page track row opens the menu, without "Go to artist"', async ({
+  page,
+}) => {
+  await page.goto(playlistUrl);
+  const trigger = page.getByTestId('music-track-menu-trigger-track-driftwave-1');
+  await trigger.click({ button: 'right' });
+
+  await expect(page.getByRole('menu', { name: 'Actions for Tidal Lines' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Play next' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Play last' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Go to album' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Go to artist' })).toHaveCount(0);
+});
+
+test('Play next on the playlist page confirms via a snackbar, with a queue already playing', async ({
+  page,
+}) => {
+  // Start a music queue from the album page first — `queue === null` is what the menu
+  // refuses on, and nothing on this page's own click handler starts one (it only removes
+  // rows); see `TrackContextMenu.tsx`'s own doc comment.
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-track-track-driftwave-1').click();
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+
+  await page.goto(playlistUrl);
+  await page.getByTestId('music-track-menu-trigger-track-driftwave-2').click();
+  await page.getByRole('menuitem', { name: 'Play next' }).click();
+  await expect(page.getByRole('status')).toHaveText('Added "Static Coast" to play next.');
+});
+
+test('Play next/Play last on the playlist page with nothing playing reports the failure', async ({
+  page,
+}) => {
+  await page.goto(playlistUrl);
+  await page.getByTestId('music-track-menu-trigger-track-driftwave-1').click();
+  await page.getByRole('menuitem', { name: 'Play last' }).click();
+  await expect(page.getByRole('status')).toHaveText(
+    'Nothing is playing — play a track before adding "Tidal Lines" to the queue.',
+  );
+});
+
+test("favouriting Driftwave's tracks, for the favourites-page tests below", async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-track-favorite-track-driftwave-1').click();
+  await page.getByTestId('music-track-favorite-track-driftwave-2').click();
+  await expect(page.getByTestId('music-track-favorite-track-driftwave-2')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('right-click on a favourites-page track row opens the menu, without "Go to artist"', async ({
+  page,
+}) => {
+  await page.goto('/music/favorites');
+  const trigger = page.getByTestId('music-track-menu-trigger-track-driftwave-1');
+  await trigger.click({ button: 'right' });
+
+  await expect(page.getByRole('menu', { name: 'Actions for Tidal Lines' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Play next' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Play last' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Go to album' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Go to artist' })).toHaveCount(0);
+});
+
+test('Play last on the favourites page confirms via a snackbar, with a queue already playing', async ({
+  page,
+}) => {
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-track-track-driftwave-1').click();
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+
+  await page.goto('/music/favorites');
+  await page.getByTestId('music-track-menu-trigger-track-driftwave-2').click();
+  await page.getByRole('menuitem', { name: 'Play last' }).click();
+  await expect(page.getByRole('status')).toHaveText('Added "Static Coast" to play last.');
+});
+
+test('Play next/Play last on the favourites page with nothing playing reports the failure', async ({
+  page,
+}) => {
+  await page.goto('/music/favorites');
+  await page.getByTestId('music-track-menu-trigger-track-driftwave-1').click();
+  await page.getByRole('menuitem', { name: 'Play next' }).click();
+  await expect(page.getByRole('status')).toHaveText(
+    'Nothing is playing — play a track before adding "Tidal Lines" to the queue.',
+  );
+});

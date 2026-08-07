@@ -15,6 +15,14 @@
  * across three unrelated item kinds that Jellyfin itself doesn't provide. Rendered as three
  * sections instead, same shape `MusicHomePage`'s own search results already use for
  * artists/albums/tracks.
+ *
+ * The Tracks section is also wrapped in `TrackContextMenu` (`docs/ROADMAP.md` §12e's
+ * follow-up scope cut, recorded in `docs/HANDOVER.md`) — same component/reuse as
+ * `MusicAlbumPage.tsx` and `MusicPlaylistPage.tsx`. `artistId` is always `null` here for the
+ * same reason as the playlist page: `useJellyfinFavoriteTracksQuery` returns bare
+ * `JellyfinTrack`s with no `artistId` field, favourited tracks span arbitrarily many albums
+ * and artists, and there is no cheap per-row substitute — see `trackContextMenu.ts`'s own
+ * `TrackMenuContext` doc comment. "Go to artist" simply doesn't render for these rows.
  */
 import { useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
@@ -28,6 +36,8 @@ import {
 } from '../../api/queries.js';
 import { formatDuration } from '../player/playback.js';
 import { FavoriteToggle } from './FavoriteToggle.js';
+import { TrackContextMenu } from './TrackContextMenu.js';
+import { toQueueTrack } from './musicQueue.js';
 
 export function MusicFavoritesPage() {
   const navigate = useNavigate();
@@ -51,6 +61,7 @@ export function MusicFavoritesPage() {
 
   const onFavoriteError = () =>
     snackbar.enqueue({ message: "Couldn't update favourite — try again." });
+  const onQueueMessage = (message: string) => snackbar.enqueue({ message });
 
   // Focus targets for `handleUnfavorited`, below. Both `tabIndex={-1}`: focusable
   // programmatically, but not part of the normal Tab order.
@@ -228,45 +239,63 @@ export function MusicFavoritesPage() {
                 style={{ display: 'flex', flexDirection: 'column' }}
               >
                 {tracks.map((track) => (
-                  <ListItem
+                  <TrackContextMenu
                     key={track.id}
-                    data-testid={`music-favorites-track-${track.id}`}
-                    // A favourited track opens its album — this page has no standalone
-                    // single-track player entry point, same as `MusicHomePage`'s own search
-                    // results (see that page's doc comment: "the only place a track can be
-                    // acted on ... is its own album's track list").
-                    aria-label={track.albumId ? `Open the album for ${track.name}` : track.name}
-                    onClick={() => {
-                      if (track.albumId) {
-                        void navigate({
-                          to: '/music/album/$albumId',
-                          params: { albumId: track.albumId },
-                        });
-                      }
+                    track={{
+                      id: track.id,
+                      name: track.name,
+                      albumId: track.albumId,
+                      // Always null here — see this file's own header for why a favourited
+                      // track has no single-row artist id to borrow.
+                      artistId: null,
                     }}
-                    headline={track.name}
-                    supportingText={
-                      [
-                        track.artistNames.join(', '),
-                        track.durationSeconds !== null
-                          ? formatDuration(track.durationSeconds)
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ') || undefined
-                    }
-                    trailing={
-                      <FavoriteToggle
-                        itemId={track.id}
-                        itemName={track.name}
-                        favorite={track.favorite}
-                        onError={onFavoriteError}
-                        onToggle={(nextFavorite) => {
-                          if (!nextFavorite) handleUnfavorited('track', track.name, tracks.length);
+                    queueTrack={toQueueTrack(track)}
+                    onMessage={onQueueMessage}
+                    renderRow={(moreActionsButton) => (
+                      <ListItem
+                        data-testid={`music-favorites-track-${track.id}`}
+                        // A favourited track opens its album — this page has no standalone
+                        // single-track player entry point, same as `MusicHomePage`'s own
+                        // search results (see that page's doc comment: "the only place a
+                        // track can be acted on ... is its own album's track list").
+                        aria-label={track.albumId ? `Open the album for ${track.name}` : track.name}
+                        onClick={() => {
+                          if (track.albumId) {
+                            void navigate({
+                              to: '/music/album/$albumId',
+                              params: { albumId: track.albumId },
+                            });
+                          }
                         }}
-                        data-testid={`music-favorites-track-toggle-${track.id}`}
+                        headline={track.name}
+                        supportingText={
+                          [
+                            track.artistNames.join(', '),
+                            track.durationSeconds !== null
+                              ? formatDuration(track.durationSeconds)
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') || undefined
+                        }
+                        trailing={
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <FavoriteToggle
+                              itemId={track.id}
+                              itemName={track.name}
+                              favorite={track.favorite}
+                              onError={onFavoriteError}
+                              onToggle={(nextFavorite) => {
+                                if (!nextFavorite)
+                                  handleUnfavorited('track', track.name, tracks.length);
+                              }}
+                              data-testid={`music-favorites-track-toggle-${track.id}`}
+                            />
+                            {moreActionsButton}
+                          </div>
+                        }
                       />
-                    }
+                    )}
                   />
                 ))}
               </div>

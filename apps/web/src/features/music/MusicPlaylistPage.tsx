@@ -28,6 +28,17 @@
  * first 40 with no signal more existed — see the wave-review defect this fixes. Playing a
  * row now queues the *whole playlist*, not just the page it was clicked from — see the
  * queue-wave header above.
+ *
+ * Each row is also wrapped in `TrackContextMenu` (`docs/ROADMAP.md` §12e's follow-up scope
+ * cut, recorded in `docs/HANDOVER.md`) — same component `MusicAlbumPage.tsx` uses, same
+ * `toQueueTrack`/`insertTrackNext`/`insertTrackLast` reuse. Unlike that page, `artistId` is
+ * always passed as `null` here: a playlist mixes tracks from many albums/artists, so there
+ * is no single page-level artist id to borrow the way `MusicAlbumPage.tsx` borrows its
+ * album's own `artistId` for every row. `JellyfinTrack` itself carries no `artistId` at all
+ * (see `trackContextMenu.ts`'s own `TrackMenuContext` doc comment), and recovering a real
+ * one here would mean an extra per-album fetch this follow-up's scope doesn't cover — "Go to
+ * artist" simply doesn't render for these rows, which is `buildTrackMenuItems`' existing,
+ * already-tested degrade rather than a new special case.
  */
 import { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -47,6 +58,7 @@ import { isOptimisticPlaylistItem } from './playlists.js';
 import { summarizePage } from './pagination.js';
 import { attachMusicQueueEndedHandler, beginMusicQueue } from './musicQueueController.js';
 import { toQueueTrack, type QueueTrack } from './musicQueue.js';
+import { TrackContextMenu } from './TrackContextMenu.js';
 
 export function MusicPlaylistPage() {
   const { playlistId } = useParams({ from: '/music/playlist/$playlistId' });
@@ -68,6 +80,7 @@ export function MusicPlaylistPage() {
 
   const onRemoveError = () =>
     snackbar.enqueue({ message: "Couldn't remove that track — try again." });
+  const onQueueMessage = (message: string) => snackbar.enqueue({ message });
 
   const removeItem = (playlistItemId: string) => {
     removeMutation.mutate(
@@ -157,39 +170,56 @@ export function MusicPlaylistPage() {
             {items.map((item) => {
               const optimistic = isOptimisticPlaylistItem(item.playlistItemId);
               return (
-                <ListItem
+                <TrackContextMenu
                   key={item.playlistItemId}
-                  data-testid={`music-playlist-item-${item.playlistItemId}`}
-                  aria-label={`Play ${item.track.name}`}
-                  onClick={() => playFrom(item.playlistItemId)}
-                  headline={item.track.name}
-                  supportingText={
-                    [
-                      item.track.artistNames.join(', '),
-                      item.track.durationSeconds !== null
-                        ? formatDuration(item.track.durationSeconds)
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ') || undefined
-                  }
-                  trailing={
-                    <IconButton
-                      aria-label={
-                        optimistic
-                          ? `${item.track.name} is still being added`
-                          : `Remove ${item.track.name} from this playlist`
+                  track={{
+                    id: item.track.id,
+                    name: item.track.name,
+                    albumId: item.track.albumId,
+                    // Always null here — see this file's own header for why a playlist has
+                    // no single page-level artist id to borrow the way the album page does.
+                    artistId: null,
+                  }}
+                  queueTrack={toQueueTrack(item.track)}
+                  onMessage={onQueueMessage}
+                  renderRow={(moreActionsButton) => (
+                    <ListItem
+                      data-testid={`music-playlist-item-${item.playlistItemId}`}
+                      aria-label={`Play ${item.track.name}`}
+                      onClick={() => playFrom(item.playlistItemId)}
+                      headline={item.track.name}
+                      supportingText={
+                        [
+                          item.track.artistNames.join(', '),
+                          item.track.durationSeconds !== null
+                            ? formatDuration(item.track.durationSeconds)
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || undefined
                       }
-                      disabled={optimistic}
-                      data-testid={`music-playlist-remove-${item.playlistItemId}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        removeItem(item.playlistItemId);
-                      }}
-                    >
-                      <Icon name="close" />
-                    </IconButton>
-                  }
+                      trailing={
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <IconButton
+                            aria-label={
+                              optimistic
+                                ? `${item.track.name} is still being added`
+                                : `Remove ${item.track.name} from this playlist`
+                            }
+                            disabled={optimistic}
+                            data-testid={`music-playlist-remove-${item.playlistItemId}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              removeItem(item.playlistItemId);
+                            }}
+                          >
+                            <Icon name="close" />
+                          </IconButton>
+                          {moreActionsButton}
+                        </div>
+                      }
+                    />
+                  )}
                 />
               );
             })}
