@@ -545,8 +545,16 @@ other:
   `createQueueStore` factory is the settled model.
 - **12d (Android)** — For You carousels. Note Android's "For you" currently renders the same
   audiobook shelves as Books, as a disclosed placeholder.
-- **Web 12e's own scope cut** — context menus on `MusicPlaylistPage` and `MusicFavoritesPage`,
-  explicitly "a straightforward follow-up, not a blocker".
+- ~~**Web 12e's own scope cut** — context menus on `MusicPlaylistPage` and `MusicFavoritesPage`~~
+  **Landed at `26057a0`.** Salvaged from a dead worktree (`fbfe619`, unique — the fix it was
+  chained after, `3bbcfbc`, had already landed independently from a concurrent session, so
+  see "Two identical autonomous sessions again" below for the collision this avoided
+  duplicating). Local verification only (web `CI` is still not completing — see below):
+  `e2e/app/context-menu.spec.ts` (24/24, after fixing two tests that used `page.goto` mid-
+  playback and silently dropped `useMusicQueueStore`'s in-memory queue — a test bug, not a
+  product one) and `e2e/app/music-favorites.spec.ts` (8/8, since the wave rewrote
+  `MusicFavoritesPage.tsx`'s row rendering, not just added a menu hook). Android CI green on
+  the same sha.
 
 Still blocked on the user, unchanged: **12c-2** on queue `440b217` (whether a title already in
 the library should still be offered as requestable), the **Android post-login crash** report
