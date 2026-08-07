@@ -235,7 +235,11 @@ class UnifiedSearchViewModel(
     // query can never land — a plain field read at the write site, holding regardless of how
     // two searches' many concurrent requests actually interleave. The same field guards
     // fetchRequestableBooks/fetchRequestableMusic's writes too — one sequence number covers
-    // every fan-out a single search fires.
+    // every fan-out a single search fires. requestRelease/requestAnyway/requestCandidate capture
+    // the value at the moment the user presses the row (not inside their own launch) and their
+    // update* callbacks re-check it the same way, so a slow create/grab call resolving after the
+    // user has already moved on to a new, already-settled search can never splice its guid into
+    // that new search's state.
     private var searchSequence: Int = 0
 
     /** Called on every keystroke. Updates the visible field text unconditionally, then either
@@ -411,6 +415,11 @@ class UnifiedSearchViewModel(
     fun requestRelease(release: Release) {
         val current = _uiState.value.requestableBooksState
         if (current !is RequestableBooksUiState.Loaded) return
+        // Captured now, not re-read inside the launch below: guards this request's own eventual
+        // write against a query the user has since changed — see searchSequence's own doc
+        // comment. Without this, a slow createRequest resolving after a new search has already
+        // settled to its own fresh Loaded state would splice this stale guid into it.
+        val sequence = searchSequence
         _uiState.value =
             _uiState.value.copy(
                 requestableBooksState =
@@ -419,17 +428,19 @@ class UnifiedSearchViewModel(
         viewModelScope.launch {
             try {
                 apiClient.createRequest(release.title, release = release)
-                updateReleaseState(release.guid, ReleaseRequestState.Requested)
+                updateReleaseState(sequence, release.guid, ReleaseRequestState.Requested)
             } catch (e: ApiException) {
-                updateReleaseState(release.guid, ReleaseRequestState.Failed(e.message))
+                updateReleaseState(sequence, release.guid, ReleaseRequestState.Failed(e.message))
             }
         }
     }
 
     private fun updateReleaseState(
+        sequence: Int,
         guid: String,
         state: ReleaseRequestState,
     ) {
+        if (sequence != searchSequence) return
         val current = _uiState.value.requestableBooksState
         if (current !is RequestableBooksUiState.Loaded) return
         _uiState.value =
@@ -446,20 +457,27 @@ class UnifiedSearchViewModel(
     fun requestAnyway() {
         val current = _uiState.value.requestableBooksState
         if (current !is RequestableBooksUiState.Loaded) return
+        // See requestRelease's identical comment on why this is captured now rather than
+        // re-read inside the launch below.
+        val sequence = searchSequence
         _uiState.value =
             _uiState.value.copy(requestableBooksState = current.copy(titleRequestState = TitleRequestState.Pending))
         val term = _uiState.value.query.trim()
         viewModelScope.launch {
             try {
                 apiClient.createRequest(term)
-                updateTitleRequestState(TitleRequestState.Requested)
+                updateTitleRequestState(sequence, TitleRequestState.Requested)
             } catch (e: ApiException) {
-                updateTitleRequestState(TitleRequestState.Failed(e.message))
+                updateTitleRequestState(sequence, TitleRequestState.Failed(e.message))
             }
         }
     }
 
-    private fun updateTitleRequestState(state: TitleRequestState) {
+    private fun updateTitleRequestState(
+        sequence: Int,
+        state: TitleRequestState,
+    ) {
+        if (sequence != searchSequence) return
         val current = _uiState.value.requestableBooksState
         if (current !is RequestableBooksUiState.Loaded) return
         _uiState.value = _uiState.value.copy(requestableBooksState = current.copy(titleRequestState = state))
@@ -485,6 +503,9 @@ class UnifiedSearchViewModel(
     fun requestCandidate(candidate: MusicCandidate) {
         val current = _uiState.value.requestableMusicState
         if (current !is RequestableMusicUiState.Loaded) return
+        // See requestRelease's identical comment on why this is captured now rather than
+        // re-read inside the launch below.
+        val sequence = searchSequence
         _uiState.value =
             _uiState.value.copy(
                 requestableMusicState =
@@ -496,38 +517,56 @@ class UnifiedSearchViewModel(
         viewModelScope.launch {
             try {
                 val created = apiClient.createMusicRequest(candidate)
-                updateCandidateState(candidate.guid, CandidateRequestState.Requested)
+                // The grab attempt happens *before* the row is flipped to Requested, not after —
+                // both the create and the grab-or-warn have to have already happened by the time
+                // any observer (a screen, or a test's own `first { ... Requested }`) can see
+                // Requested at all. Writing Requested first and the grab outcome in a second,
+                // later write left a real window — this class's own launch is a genuine
+                // fire-and-forget on a real dispatcher, so a caller awaiting "Requested" could
+                // observe it before the grab (a second, separate network round trip) had even
+                // been attempted, exactly the race `docs/HANDOVER.md`'s "Android CI" section
+                // warns about for a *different* leak but is the identical shape of bug here: an
+                // observable state that promises more than has actually happened yet.
+                var grabWarning: String? = null
                 if (created.status == "approved") {
                     try {
                         apiClient.grabMusicRequest(created.id)
                     } catch (e: ApiException) {
-                        addGrabWarning(candidate.guid, "Requested, but the download could not be started.")
+                        grabWarning = "Requested, but the download could not be started."
                     }
                 }
+                updateCandidateState(sequence, candidate.guid, CandidateRequestState.Requested, grabWarning)
             } catch (e: ApiException) {
-                updateCandidateState(candidate.guid, CandidateRequestState.Failed(e.message))
+                updateCandidateState(sequence, candidate.guid, CandidateRequestState.Failed(e.message))
             }
         }
     }
 
+    /** Writes [state] and, when non-null, [grabWarning] in the same [_uiState] update — see
+     * [requestCandidate]'s own comment on why the two must never be observable as two separate
+     * writes. */
     private fun updateCandidateState(
+        sequence: Int,
         guid: String,
         state: CandidateRequestState,
+        grabWarning: String? = null,
     ) {
+        if (sequence != searchSequence) return
         val current = _uiState.value.requestableMusicState
         if (current !is RequestableMusicUiState.Loaded) return
         _uiState.value =
-            _uiState.value.copy(requestableMusicState = current.copy(candidateStates = current.candidateStates + (guid to state)))
-    }
-
-    private fun addGrabWarning(
-        guid: String,
-        message: String,
-    ) {
-        val current = _uiState.value.requestableMusicState
-        if (current !is RequestableMusicUiState.Loaded) return
-        _uiState.value =
-            _uiState.value.copy(requestableMusicState = current.copy(grabWarnings = current.grabWarnings + (guid to message)))
+            _uiState.value.copy(
+                requestableMusicState =
+                    current.copy(
+                        candidateStates = current.candidateStates + (guid to state),
+                        grabWarnings =
+                            if (grabWarning != null) {
+                                current.grabWarnings + (guid to grabWarning)
+                            } else {
+                                current.grabWarnings
+                            },
+                    ),
+            )
     }
 
     private data class LibraryFanOutResult(

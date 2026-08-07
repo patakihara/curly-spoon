@@ -49,8 +49,21 @@ class UnifiedSearchViewModelTest {
     private lateinit var serverConfigRepository: ServerConfigRepository
     private lateinit var testDispatcher: TestDispatcher
 
+    // Set by viewModel() below, so tearDown() can drain whichever instance the running test
+    // created — see tearDown()'s own comment for why this exists at all.
+    private var lastViewModel: UnifiedSearchViewModel? = null
+
     @Before
     fun setUp() {
+        // ioDispatcher is deliberately left at its default (real Dispatchers.IO), unlike most
+        // ViewModel test files in this package — this class's own delay-based staleness tests
+        // ("a stale search's slow library response...", "library results settle while the
+        // requestable fan-out is still waiting...") need the library and requestable fan-outs to
+        // run on genuinely concurrent background threads; forcing ioDispatcher onto the same
+        // Unconfined dispatcher as Main would make every call run synchronously to completion
+        // (see e.g. PlaylistDetailViewModelTest's identical doc comment on that effect) and
+        // collapse exactly the interleaving those two tests exist to pin. tearDown() below is
+        // what keeps that choice from leaking a request past this test into the next one.
         testDispatcher = UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
@@ -64,13 +77,41 @@ class UnifiedSearchViewModelTest {
         runTest { serverConfigRepository.setBaseUrl(mockWebServer.url("/").toString()) }
     }
 
+    /**
+     * Real Dispatchers.IO (see setUp()'s comment) means every requestable fan-out
+     * (fetchRequestableBooks/fetchRequestableMusic, and requestRelease/requestCandidate's own
+     * launches) runs on a real background thread this test's own `runTest` cannot see or wait
+     * on structurally. A test that only awaits `resultsState` — several in this file do,
+     * legitimately, since that is all *their* assertions need — can return while one of those
+     * is still in flight. `Dispatchers.resetMain()` then tears down the Main dispatcher that
+     * in-flight call's continuation needs to resume on, and the resulting
+     * `IllegalStateException` (not an `ApiException`, so nothing in this class's own
+     * try/catch blocks catches it) surfaces as `UncaughtExceptionsBeforeTest` against
+     * whichever *other* test runs next — see `docs/HANDOVER.md`'s "Android CI" section for the
+     * general shape of this failure class. Draining both requestable states to a settled
+     * (non-Loading) value here, once per test regardless of what that test itself checked,
+     * closes the gap structurally rather than relying on every current and future test in this
+     * file to remember its own explicit await.
+     */
     @After
     fun tearDown() {
+        lastViewModel?.let { viewModel ->
+            runTest {
+                viewModel.uiState.first {
+                    it.requestableBooksState !is RequestableBooksUiState.Loading &&
+                        it.requestableMusicState !is RequestableMusicUiState.Loading
+                }
+            }
+        }
         Dispatchers.resetMain()
         mockWebServer.shutdown()
     }
 
-    private fun viewModel() = UnifiedSearchViewModel(apiClient, musicRepository, serverConfigRepository)
+    private fun viewModel(): UnifiedSearchViewModel {
+        val created = UnifiedSearchViewModel(apiClient, musicRepository, serverConfigRepository)
+        lastViewModel = created
+        return created
+    }
 
     private fun advanceDebounce() = testDispatcher.scheduler.advanceUntilIdle()
 
@@ -613,6 +654,81 @@ class UnifiedSearchViewModelTest {
 
             val finalState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
             assertTrue(finalState.releaseStates[release.guid] is ReleaseRequestState.Failed)
+        }
+
+    /**
+     * Pins the sequence guard on [UnifiedSearchViewModel.requestRelease]'s eventual write —
+     * `docs/HANDOVER.md`'s review of `664e817` found this missing: [performSearch]'s own three
+     * fetch write-sites all check `sequence != searchSequence` before writing `_uiState`, but the
+     * mutation callbacks (`requestRelease`/`updateReleaseState` and their music counterparts)
+     * checked only `current is Loaded` — true for *any* settled search, not just the one that
+     * fired the request. A `POST /requests` resolving after the user has already typed a new
+     * query, and after that new query has already settled its own fresh
+     * [RequestableBooksUiState.Loaded], would splice the old guid into the new search's
+     * `releaseStates` map even though the new search's own `releases` list never contained it.
+     */
+    @Test
+    fun `a slow release request resolving after a new search settles never leaks into that search's state`() =
+        runTest {
+            val otherRelease =
+                """[{"guid":"g2","indexerId":"idx1","sourceName":"Prowlarr","title":"Other Book",
+                    "seeders":3,"leechers":0,"categories":[]}]"""
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") -> MockResponse().setBody(searchLibraryBody())
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledBookProviders))
+                            path.contains("/requests/search") -> {
+                                // Keyed on the request's own "term" param, same reasoning as this
+                                // class's own "a stale search's slow library response..." test —
+                                // "dune"'s requestable release must never appear for "other".
+                                when (request.requestUrl?.queryParameter("term")) {
+                                    "dune" -> MockResponse().setBody(releaseSearchBody(oneRelease))
+                                    "other" -> MockResponse().setBody(releaseSearchBody(otherRelease))
+                                    else -> MockResponse().setResponseCode(404)
+                                }
+                            }
+                            // Deliberately slow — this is the request this test supersedes
+                            // before it resolves.
+                            path == "/api/v1/requests" ->
+                                MockResponse()
+                                    .setBody(
+                                        """{"request":{"id":"req1","userId":"u1","title":"Dune","status":"pending",
+                                            "progress":0,"createdAt":1,"updatedAt":1}}""",
+                                    ).setBodyDelay(200, TimeUnit.MILLISECONDS)
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+            val release = (viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded).releases.single()
+
+            // Fires the deliberately slow POST /requests above, then immediately supersedes it
+            // with a new search — the sequence this request captured is stale well before its
+            // response ever arrives.
+            viewModel.requestRelease(release)
+            viewModel.onQueryChange("other")
+            advanceDebounce()
+            viewModel.uiState.first {
+                val state = it.requestableBooksState
+                state is RequestableBooksUiState.Loaded && state.releases.map { it.title } == listOf("Other Book")
+            }
+
+            // Let the slow request actually resolve before asserting "never", not just "not
+            // immediately" — identical reasoning to this class's own slow-library test.
+            Thread.sleep(300)
+            val finalState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
+            assertEquals(listOf("Other Book"), finalState.releases.map { it.title })
+            assertTrue(finalState.releaseStates.isEmpty())
         }
 
     @Test
