@@ -49,8 +49,9 @@ sealed interface AudiobookQueueEntry {
  *  runs on Media3's own tested playlist/shuffle/repeat machinery ([PlayerViewModel.playQueue],
  *  [PlaybackHandle.addMediaItems]'s wave I pagination) — this queue exists so music has the same
  *  independent, clearable model the other two content types get, not to replace Media3's own
- *  queue mechanics. Its cursor is kept in sync with Media3's real position by
- *  [PlayerViewModel]'s `onMediaItemTransition` listener, not by driving playback itself. */
+ *  queue mechanics. Its cursor is *not* kept live-synced to Media3's real position in this wave
+ *  (seeded once, at 0, by [PlayerViewModel.playQueue]) and nothing currently reads it — see that
+ *  method's own inline comment. */
 data class MusicQueueEntry(
     val itemId: String,
     val title: String,

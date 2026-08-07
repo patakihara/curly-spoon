@@ -493,6 +493,14 @@ class PlayerViewModel(
         seekToMsAfterLoad: Long? = null,
     ) {
         viewModelScope.launch {
+            // Narrow ordering hazard, not currently guarded: these two fields are assigned here,
+            // before playResolved's network round trip and eventual setMediaItem complete. If the
+            // *previous* item hits STATE_ENDED during that window, handlePlaybackEnded runs using
+            // this new book's identity while the player is still on the old one, and could issue
+            // a seekTo against the wrong item. Harmless in practice today -- the subsequent
+            // setMediaItem overwrites milliseconds later and no timeListened arithmetic sits in
+            // this path -- but it is the same class of hazard queueGeneration exists to close for
+            // playQueue's own background page-fetch race (see that field's own doc comment).
             currentContentType = QueueContentType.AUDIOBOOK
             currentAudiobookItemId = itemId
             playResolved(fallbackTitle = itemId, seekToMsAfterLoad = seekToMsAfterLoad) {
