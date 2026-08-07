@@ -81,12 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T16:54:04Z` · `a17b14e747a44987e` · general-purpose · ended · I'll wait for the background Playwright suite ('bleb153df') to finish before proceeding — no further action needed until that notification arrives.
-- `2026-08-07T17:06:39Z` · `af868eb787d50240d` · general-purpose · ended · ## Verdict: merge with named corrections ## Findings, ranked by severity **1. Selecting a content-type filter before typing anything shows a contradi…
-- `2026-08-07T17:17:14Z` · `a8781e77885029281` · general-purpose · ended · I don't see a task or question in your message yet — just tool/agent context loading in. What would you like me to help with?
-- `2026-08-07T17:19:52Z` · `a8c77417a11444a16` · general-purpose · ended · Good — this confirms all requirement-4 isolation coverage is duplicated at the unit level too. I have everything needed for the report. ## Verdict: *…
-- `2026-08-07T17:26:35Z` · `acec92fccf95bb06e` · general-purpose · ended · Committed on the worktree branch, not pushed. ## Report **Branch/sha:** 'worktree-agent-acec92fccf95bb06e' @ 'afaa3f4', based on '8002385' (the reset…
-- `2026-08-07T17:41:07Z` · `a642e9f1b3b736355` · general-purpose · ended · Committed, working tree clean, not pushed as instructed. ## Report **Reset sha:** '1fd1b54' (the claim commit). **Branch/commit:** 'worktree-agent-a6…
 - `2026-08-07T17:57:05Z` · `a93643ecadd8a4da5` · general-purpose · ended · The full Playwright suite is running in the background ('bxuwur3dn'). I'll wait for its completion notification before finalizing the commit and repo…
 - `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
 - `2026-08-07T18:24:38Z` · `acfb30c8ef236b965` · general-purpose · ended · Clean tree, nothing to note further. Compiling final report. ## Verdict: merge as-is **Findings** (none blocking): - 'apps/web/src/features/home/Caro…
@@ -95,7 +89,13 @@ in-context scan of the current one.
 - `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
 - `2026-08-07T19:14:19Z` · `a19f26f7c17fe56af` · general-purpose · ended · I'll wait for the background test run to complete before proceeding.
 - `2026-08-07T19:28:46Z` · `a0a086b43c492f5ce` · general-purpose · ended · ## Verdict: has a defect that must be fixed The Series and Author pages both depend on structured 'authors[]'/'series[]' arrays on book items — but e…
-- `2026-08-07T19:38:29Z` · `af767a8f2890d20aa` · general-purpose · running · —
+- `2026-08-07T19:38:29Z` · `af767a8f2890d20aa` · general-purpose · ended · Waiting for the full Playwright suite (background run) and the monitor to report. Work is already committed at '253add9', so nothing is at risk while…
+- `2026-08-07T20:07:17Z` · `a1b2a40eb1e9e4e64` · general-purpose · ended · Working tree is clean, both commits are on the worktree branch 'worktree-agent-a1b2a40eb1e9e4e64'. ## Report **Branch/sha:** 'worktree-agent-a1b2a40e…
+- `2026-08-07T20:12:09Z` · `af767a8f2890d20aa` · general-purpose · ended · Already committed before this run, per the rule. I'll wait for the notification.
+- `2026-08-07T20:16:08Z` · `af767a8f2890d20aa` · general-purpose · ended · Waiting for the full Playwright suite run to complete.
+- `2026-08-07T20:18:18Z` · `ad6751579c2cfc636` · general-purpose · ended · **Verdict: merge as-is.** Findings (none blocking, one worth noting): 1. **'BooksScreen.kt'** instantiates its own 'HomeViewModel' (efficiency, not c…
+- `2026-08-07T20:19:07Z` · `a0a086b43c492f5ce` · general-purpose · ended · No boundary violations. ## Merge with named follow-ups **1. Defect gone — confirmed by screenshot, not just tests.** '/author/author-tolkien' now ren…
+- `2026-08-07T20:26:04Z` · `aa742f68e3b1172b9` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -426,11 +426,13 @@ The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
 
-### 12c-1 is written but NOT merged — it reintroduced the minified-item bug (2026-08-07)
+### 12c-1 shipped on the second attempt, after reintroducing the minified-item bug (2026-08-07)
 
-The series and author detail pages exist as a draft at **`c37d922`** on
-`worktree-agent-a19f26f7c17fe56af`. **Do not merge it as it stands.** Independent review,
-confirmed by running it and by screenshotting the result rather than by reading:
+**Resolved and merged** at `7bf6e49`; the account below is kept because this failure mode
+recurs. `docs/ROADMAP.md` §12c has the outcome and the two lessons.
+
+The first draft, `c37d922`, did not work at all. Independent review established that by
+running it and screenshotting the result rather than by reading:
 
 - **`/author/:id` is completely non-functional.** `findAuthorBooks` matches on
   `book.media.authors[].id`, and every path feeding these pages (`getLibrarySeries`,

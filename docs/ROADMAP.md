@@ -1983,7 +1983,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | ------------------------------------------------------- | ------ |
 | 12a — Five-view navigation shell (web + Android)        | web done, Android in progress |
 | 12b — Search view: unified library + request results    | web done, Android todo |
-| 12c — In-view search and artist/author full discography | 12c-1 drafted (defective), 12c-2 blocked |
+| 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
 | 12e — Context menus (long-press / right-click)          | web done (album page only), Android todo |
 | 12f — Per-content-type queues                           | web done, Android todo |
@@ -2111,6 +2111,36 @@ Each content view (Music, Books, Podcasts) has its own search icon. That search 
 **Artist and author pages show the artist's whole discography**, not just what is in the
 library. Content that is not in the library renders **greyed out**, and pressing it requests
 it. This is behind a setting: **"Show non-library content in artist/author pages."**
+
+**12c-1 (series and author detail pages) shipped 2026-08-07**, `7bf6e49`. Library content
+only; 12c-2 — non-library content greyed out and requestable — is still blocked on the user
+decision in queue `440b217`. Verified: web and server typecheck clean, 1455 unit tests, 337
+Playwright, and both pages screenshotted at two widths showing real books.
+
+**It shipped only on the second attempt, and the first attempt is the useful part.** The
+draft matched authors on `media.authors[].id`, and every endpoint feeding these pages returns
+**minified** Audiobookshelf items, which carry only flattened `authorName`/`seriesName`
+strings. So `/author/:id` returned "Author not found" for every author that exists, and every
+series silently collapsed to alphabetical order. That is commit `7e57a78`'s bug in a new
+place — already fixed once, already written up in `HANDOVER.md`, and reintroduced anyway.
+
+Two things are worth carrying forward:
+
+- **A full green suite and a "merge as-is" code review both missed it.** What caught it was a
+  reviewer rendering `/author/author-tolkien` — an author with real books in the fixtures —
+  and looking at the screenshot. That is three consecutive waves where looking at the page
+  found something reading it did not.
+- **`apps/web/src/regressionGuards.test.ts` is a tripwire, not a guarantee.** It text-scans
+  for `.media.(authors|series)` followed closely by a `.find(`/`.some(` with an `.id ===`
+  comparison — the exact shape of both historical bugs. A `.filter`, a destructure into a
+  local, or a helper function defeats it silently, and its own doc comment says so. The
+  durable fix it names but does not build is type-level: a branded type distinguishing a
+  minified item from an expanded one, so reading `authors[]` off a list result is a compile
+  error rather than a runtime `undefined`. Until that exists, this class of bug is still
+  reachable.
+
+The fix trusts the server's ordering, so `seriesOrder.ts` and its test lost their last caller
+and were deleted with the wave.
 
 #### 12d — For You
 
