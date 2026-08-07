@@ -351,6 +351,14 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
+**Claimed — 2026-08-08 ~00:15Z, session `1b29a583`: 12f (Android), per-content-type queues.**
+
+Android still has exactly one queue — §12f's requirement that switching content type must not
+clear the podcast queue cannot even be expressed there yet. Taken before 12e (Android) on purpose:
+12e's Play next / Play last have nothing to insert into until per-type queues exist, which is the
+same ordering web used. Web's `state/createQueueStore.ts` factory plus the three stores and
+`queueRouter.ts` are the settled, tested model to mirror. `apps/android/**` only.
+
 **Landed — 2026-08-08 ~00:05Z, session `1b29a583`. Claim released.**
 
 **12b (Android) is done, both halves.** 12b-A2 — requestable books and music alongside the
