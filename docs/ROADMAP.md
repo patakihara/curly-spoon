@@ -1984,7 +1984,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12a — Five-view navigation shell (web + Android)        | todo   |
 | 12b — Search view: unified library + request results    | todo   |
 | 12c — In-view search and artist/author full discography | todo   |
-| 12d — For You: uniform album-card carousels             | todo   |
+| 12d — For You: uniform album-card carousels             | done   |
 | 12e — Context menus (long-press / right-click)          | todo   |
 | 12f — Per-content-type queues                           | done   |
 
@@ -2124,6 +2124,33 @@ want. One card geometry, one carousel pattern, repeated.
 
 For You mixes content types, and **carries the same content-type filter chips** the Search
 view does (`All / Music / Podcasts / Audiobooks`, per `01`–`04`).
+
+**12d (web) shipped 2026-08-07**, `694e042`. The quick-selection grid keeps its shape, the
+content-type chips filter the view, and everything below is one carousel pattern at one card
+size — a 160×160 cover with fixed-height title, subtitle and progress rows, so a card never
+changes size with its content or its content type. Verified on the merged tree: 1448 unit
+tests, 320 Playwright, typecheck and lint clean.
+
+Two decisions inside it, both reviewed and deliberate:
+
+- **`forYouFilters` does not reuse Search's chip logic.** Different labels ("Audiobooks"
+  versus "Books"), different order, and no secondary filter row — a real difference rather
+  than duplication for its own sake. Sharing them would mean one of the two views getting
+  labels that do not fit it.
+- **No reduced-motion handling, on purpose.** The carousel scrolls natively with no
+  `@keyframes` and no JS animation, so there is nothing to disarm. This is the opposite call
+  from `Skeleton`, whose shimmer *is* a CSS animation Mantine's `respectReducedMotion` does
+  not touch — the precedent is about what the animation actually is, not about which
+  component it lives in.
+
+**The geometry assertions measure real bounding boxes**, across book, podcast and album
+cards, rather than class names — including for the loading skeletons, so the page does not
+reflow when data lands. That distinction is the point: a class-name assertion passes while
+the layout is visibly broken, and this wave's entire requirement is visual.
+
+**Still open from §12a, and it lands here**: on a cold cache the nav rail shows only "For
+you" until `GET /api/v1/libraries` resolves. What the rail should show before it knows which
+libraries exist is a design question, and 12d did not answer it.
 
 #### 12e — Context menus
 
