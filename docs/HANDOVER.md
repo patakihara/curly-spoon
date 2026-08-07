@@ -95,7 +95,7 @@ in-context scan of the current one.
 - `2026-08-07T22:43:17Z` · `a8906ca3e593a8846` · general-purpose · ended · That modified line is pre-existing (present before I started, per the initial git status). Working tree is otherwise clean; my experimental revert le…
 - `2026-08-07T22:44:16Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · Flagging an important complication from a mistaken tool call on my part. Earlier, while researching track types, I sent a stray follow-up 'Agent' cal…
 - `2026-08-07T22:54:58Z` · `a1ac0127d315ceb00` · general-purpose · ended · Committed at '738c28c' on branch 'worktree-agent-a1ac0127d315ceb00', based on 'dc4ec6c'. **Report** - **Single shared cause, confirmed by exact prece…
-- `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · running · —
+- `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · ended · Committed on the worktree branch, not pushed, as instructed. ## Report **Branch/commit:** 'worktree-agent-afb619fd719a4b9b3' at '69e69bf', based on '…
 
 <!-- AGENT_LOG_END -->
 
@@ -363,75 +363,54 @@ nothing on `main` is stale — take it.
   rather than fabricating a link to the wrong artist. This is the *cousin* of the recorded
   album-artist bug, not a recurrence: nothing is mis-credited, an unavailable action is simply
   not offered. Two e2e cases assert the item is absent.
-- **Android 12f (per-content-type queues) — model and wiring landed** at `271aad7`. Its **production
-  code has never been shown to be wrong**: `QueueStoreTest`, `QueueRouterTest` and the pre-existing
-  `PlayerViewModelTest` all pass. But `PlayerViewModelQueueTest`'s six cases went red and have taken
-  **two fix rounds so far**, with a third in flight — see the section below. **`main` is red on
-  Android; do not build on `apps/android` until it is green.**
+- **Android 12f (per-content-type queues) is done** — `271aad7`, fixed in `24d9189` and `ca250f5`.
+  Three independent clearable queues, chapters queueable, a same-book chapter advance that seeks
+  rather than reloads. **Android CI green; `main` is green.** No queue view on Android yet — that is
+  a later wave, and 12e (Android) is the next thing this unblocks. `docs/ROADMAP.md` §12f has the
+  detail, including the real `QueueStore` cursor bug the third round found.
 
-### Android 12f's test file has cost three CI rounds, and the split is the diagnostic
+### Android 12f took three CI rounds, and the third found a real product bug
+
+**Resolved — Android CI green on `ca250f5`. `main` is green.** Kept because the sequence says
+something about what tests are for.
 
 Round one: `PlayerViewModelQueueTest.setUp()` built `ApiClient` **without** `ioDispatcher`, so it ran
 on the real `Dispatchers.IO` while `Dispatchers.Main` was a separate `UnconfinedTestDispatcher` — a
-true suspension `runTest` cannot await. Nine other ViewModel test files in this suite already share
-one dispatcher between `setMain` and `ApiClient`; this file was **the one outlier**. Fixed in
-`24d9189`. That killed `UncaughtExceptionsBeforeTest` outright and turned three of the six green.
+suspension `runTest` cannot await. Nine other ViewModel test files in this suite already share one
+dispatcher between `setMain` and `ApiClient`; this file was **the one outlier**. Fixed in `24d9189`;
+that killed `UncaughtExceptionsBeforeTest` and turned three of six green.
 
-**Worth noting against the review record**: the implementing agent reported that "all three test
-files inject `UnconfinedTestDispatcher`", and independent review **confirmed** that claim and cleared
-the coroutine hygiene. Both were wrong in the same way — the file injects it into `setMain` but not
-into `ApiClient`, and reading it casually looks identical. That is now three consecutive waves where
-review's toolchain-level reasoning lost to CI.
+**Against the review record**: the implementing agent reported "all three test files inject
+`UnconfinedTestDispatcher`", and independent review **confirmed** it and cleared the coroutine
+hygiene. Both were wrong the same way — the file injects into `setMain` but not into `ApiClient`, and
+casual reading cannot tell those apart. Three consecutive waves now where review's toolchain-level
+reasoning lost to CI while getting the hard product questions right.
 
-Round two is in flight against the three that remain:
+Round two, the one that mattered: **a genuine production bug in `QueueStore`.** `enqueueNext` and
+`enqueueLast` bootstrapped an empty queue's first entry at `cursor = 0`, claiming that entry was
+already current. A podcast or audiobook queue never holds the item playing right now — that lives on
+`PlayerViewModel`. So the first `advance()` after a bootstrap stepped past index 0 to a nonexistent
+index 1, returned `null`, and the whole dispatch became a **silent no-op**: queue a podcast episode,
+let the current one end, nothing happens. Bootstrap is `-1` now (`ca250f5`).
 
-```
-a queued podcast episode is loaded when the current episode ends            FAILED
-a same-book chapter seeks within the current item instead of reloading      FAILED
-a cross-book chapter loads the other book, then seeks to the chapter start  FAILED
-```
+**`QueueStoreTest` passed throughout and had locked the wrong value in as correct**, because it
+asserted the shape of the state the function returned and never chained into an `advance()`. The only
+things that caught it were the three integration tests asserting an *effect on the player*. The
+feature was entirely broken while its unit tests were green.
 
-**The pass/fail split says where to look.** The three now passing assert queue *state* — what is in
-which queue, that clearing one leaves the others and playback alone. The three failing assert that
-ending playback **does something to the player**, and they fail as plain `AssertionError`s with no
-exception. `QueueRouter`'s `LoadAudiobookItem` routes through `playItem`, which does a **network
-round-trip before it ever touches the player**; if `MockWebServer` has no branch for that path,
-`ApiClient` throws `ApiException`, the ViewModel catches it, and the whole dispatch is a **silent
-no-op** that looks exactly like this. Note two of the three may share one cause: the same-book seek
-case compares against `currentAudiobookItemId`, which only gets set by a `playItem` that actually
-succeeded.
+Two things follow, and the second is the useful one:
 
-
-
-**Claimed — 2026-08-08 ~00:15Z, session `1b29a583`: 12f (Android), per-content-type queues.**
-
-Android still has exactly one queue — §12f's requirement that switching content type must not
-clear the podcast queue cannot even be expressed there yet. Taken before 12e (Android) on purpose:
-12e's Play next / Play last have nothing to insert into until per-type queues exist, which is the
-same ordering web used. Web's `state/createQueueStore.ts` factory plus the three stores and
-`queueRouter.ts` are the settled, tested model to mirror. `apps/android/**` only.
-
-**Landed — 2026-08-08 ~00:05Z, session `1b29a583`. Claim released.**
-
-**12b (Android) is done, both halves.** 12b-A2 — requestable books and music alongside the
-library results — landed at `664e817` with its fix at `3bbcfbc`; Android CI green. It mirrors
-web's four decisions rather than re-deciding them: no de-duplication against the library, no
-confirm step before a music download starts, separate gates for books
-(`hasEnabledIndexer && hasEnabledDownloadClient`) and music (its own slskd provider), and no
-optimistic flip. `GET /providers` was entirely absent from Android and was added. The requestable
-fan-out runs as `viewModelScope.launch` siblings so the slow indexer and Soulseek searches never
-hold up library results.
-
-**12b-A1 (Android) is done** — `2eacc68`, plus `2baac66` for the one defect review found.
-Android search is unified across music, books and podcasts behind the two chip rows, grouped by
-content type. Android CI green first attempt, which is what the spec-side trap warnings were
-for. `docs/ROADMAP.md` §12b has the detail and one named, deferred test-coverage follow-up.
-
-**12b-A2 — the requestable half — is not started and is the obvious next wave.** Note it runs
-into the same unresolved user question as 12c-2: queue `440b217`, whether a title already in the
-library should still be offered as requestable. Web's 12b-2 shipped *without* de-duplicating and
-recorded that as a decision for the user to confirm; Android mirroring web is the consistent
-choice, but doing it differently in a third place is the failure mode to avoid.
+- My own leading hypothesis was wrong. I told the fix agent the likely cause was a missing
+  `MockWebServer` branch for `playItem`'s path, reasoning from the wave that had failed that way
+  hours earlier. It was not that at all. The instruction that actually earned its place was the
+  standing one — *if the production code is genuinely wrong, say so plainly; that is more valuable
+  than a harness fix* — which is what let the agent contradict the brief instead of bending the
+  tests to it.
+- **A unit test that only inspects what a function returns can pin the wrong value as correct.**
+  Something has to assert through to observable behaviour. This is the same family as the two
+  tautology findings already recorded (the 12f-1 installer nothing called, the stale-response test
+  that stopped observing too early), and it is the sharpest instance yet: every state assertion
+  passed while the feature did nothing.
 
 ### A stray `Agent` call cascaded into unscoped work and three unreviewed pushes to `main`
 

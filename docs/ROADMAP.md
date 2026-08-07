@@ -1986,7 +1986,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
 | 12e — Context menus (long-press / right-click)          | web done (all three pages), Android todo |
-| 12f — Per-content-type queues                           | web done; Android model landed, tests being fixed |
+| 12f — Per-content-type queues                           | done (web + Android model); no Android queue view |
 
 #### 12a — The five views
 
@@ -2493,6 +2493,55 @@ Why it is not a licensing or a size problem:
 If the user would rather not have it, reverting is a one-line dependency removal plus swapping
 the affected composables back to text — contained, and cheaper than having left the Android
 shell unbuilt.
+
+#### 12f (Android) shipped 2026-08-08 — the model and the wiring
+
+`271aad7`, with fixes at `24d9189` and `ca250f5`. Three independent queues — music, podcast,
+audiobook — each its own `MutableStateFlow`, each clearable without stopping playback, and an
+audiobook entry that distinguishes an item from a chapter so a chapter queues as "load the book,
+then seek". `features/player/{QueueStore,QueueEntries,QueueRouter}.kt`.
+
+**Android did not have web's `onTrackEnded`-nulling defect**, and it is worth recording why so
+nobody goes looking for it. `PlayerViewModel`'s `Player.Listener` is installed **once**,
+permanently, on the real `MediaController` — it is not a per-load callback field that gets
+reassigned, and it re-derives what is currently loaded on every `onPlaybackStateChanged`. So there
+was nothing to go stale and nothing to re-attach. `QueueRouter` still earns its place: it holds
+`resolveAdvanceAction` as a pure, testable decision function (which queue to advance, seek versus
+reload).
+
+**The wiring is live**, which web's equivalent wave famously got wrong by shipping an installer
+nothing called: the production `Player.Listener.onPlaybackStateChanged(STATE_ENDED)` override calls
+`handlePlaybackEnded()`. Verified by reading the listener body, not by trusting the test — the test
+calls `handlePlaybackEnded()` directly, which on its own would have been vacuous.
+
+**A same-book chapter advance seeks and does not reload**, dispatched as `seekTo` with no
+`setMediaItem` at all. This is product risk, not polish: a reload restarts the Audiobookshelf
+session and corrupts listening-statistics tracking.
+
+**Deliberate scope cut, and it is safe**: the music queue is seeded on `playQueue()` so it is
+populated and independently clearable, but its cursor is **not** live-synced to Media3's real
+position. `seekToNext` and `seekToPrevious` both surface as
+`MEDIA_ITEM_TRANSITION_REASON_SEEK` and are indistinguishable without a device, and shipping that
+unverified risked a silent direction bug. Review confirmed the cut is inert rather than misleading:
+`resolveAdvanceAction` never takes the music queue as a parameter and nothing reads its cursor, so
+music's cross-track advance continues to run on Media3's own tested playlist. **No queue view on
+Android** — that is a later wave, mirroring web's 12f-1/12f-2 split.
+
+**The bug that took three CI rounds is the part worth keeping.** `QueueStore.enqueueNext` and
+`enqueueLast` bootstrapped an empty queue's first entry at `cursor = 0`, which claims that entry is
+already the current one. But a podcast or audiobook queue never holds the item playing right now —
+that lives on `PlayerViewModel` as `currentAudiobookItemId`/`currentContentType`. So the first
+`advance()` after a bootstrap tried to step past index 0 to a nonexistent index 1, returned `null`,
+`resolveAdvanceAction` returned `None`, and **nothing happened, silently**. Bootstrap is `-1` now.
+
+**And `QueueStoreTest` passed the whole time, because it asserted state shape and never chained
+into an `advance()`.** It had locked the wrong bootstrap value in as correct. Three integration
+tests — "a queued podcast episode is loaded when the current episode ends" and the two chapter
+cases — were the only things that caught it, precisely because they asserted an *effect on the
+player* rather than the contents of a data structure. The tests that assert state passed throughout
+while the feature did not work at all. That is the generalisable lesson: **a unit test that only
+inspects the shape a function returns can pin the wrong value as correct; something has to assert
+through to the observable behaviour.**
 
 #### Sequencing — web first, Android second
 
