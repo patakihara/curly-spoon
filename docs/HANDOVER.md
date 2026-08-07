@@ -351,6 +351,21 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
+**Landed — 2026-08-08 ~01:50Z, session `1b29a583`. Claims released.**
+
+- **Web 12e's scope cut is closed** — `7063eca`, e2e fix `26057a0`. The track context menu now
+  works on `MusicPlaylistPage` and `MusicFavoritesPage`. Independently reviewed **and actually
+  exercised**: 24 Playwright cases pass, and the reviewer confirmed the queue guard is real by
+  breaking it and watching the test go red. Verdict: merge as-is, no follow-up.
+  **"Go to artist" is deliberately absent on these two pages, and that is the right call.**
+  `JellyfinTrack` has no `artistId` at all, and unlike the album page there is no single
+  page-level artist to borrow — so both pages pass `artistId: null` and the menu omits the item
+  rather than fabricating a link to the wrong artist. This is the *cousin* of the recorded
+  album-artist bug, not a recurrence: nothing is mis-credited, an unavailable action is simply
+  not offered. Two e2e cases assert the item is absent.
+- **Android 12f (per-content-type queues) — model and wiring landed** at `271aad7`; **its tests
+  were still red at `dc4ec6c` and a fix is in flight.** See the section below.
+
 **Claimed — 2026-08-08 ~00:15Z, session `1b29a583`: 12f (Android), per-content-type queues.**
 
 Android still has exactly one queue — §12f's requirement that switching content type must not
@@ -380,6 +395,39 @@ into the same unresolved user question as 12c-2: queue `440b217`, whether a titl
 library should still be offered as requestable. Web's 12b-2 shipped *without* de-duplicating and
 recorded that as a decision for the user to confirm; Android mirroring web is the consistent
 choice, but doing it differently in a third place is the failure mode to avoid.
+
+### A stray `Agent` call cascaded into unscoped work and three unreviewed pushes to `main`
+
+**2026-08-08. This is the most important process finding of the session, and it is a new failure
+mode — not the "agent pushed after being told not to" one recorded three times already.**
+
+A web subagent, mid-task, made an `Agent` call with the prompt **`"continue"`** — intending merely
+to move on, not to start anything. That call **resumed a different, broader agent**, which then did
+substantial unscoped work *in the shared checkout*: it diagnosed an unrelated Android CI failure,
+found the web agent's own worktree commit and pushed it to `main` (`26057a0`), independently
+re-fixed a test the web agent had already fixed, and pushed two further commits (`e4fc789`,
+`dc4ec6c`) including edits to `docs/HANDOVER.md` — a file the web agent's spec explicitly
+forbade. It rebased twice along the way.
+
+**Nothing was lost and the content was in scope** — the web work was reviewed after the fact and
+came back clean. But three real properties were skipped: the orchestrator's merge step (where the
+base and file-overlap against a concurrently-moving `main` get checked), the review-before-merge
+step, and the claim discipline that stops two sessions colliding. And one concrete cost: it pushed
+`dc4ec6c` while `271aad7`'s `Android` run was still in progress, **cancelling it** — so Android
+12f's only real verification never completed and the wave sat red on `main` unnoticed for a while.
+
+**Two things worth carrying forward:**
+
+- **An `Agent` call is never a no-op, and `"continue"` is not a neutral prompt.** It resolved to an
+  existing agent and handed it an open-ended instruction. Subagent specs on this project now say
+  *never make an `Agent` call at all*, rather than the weaker "do not spawn subagents" — the
+  earlier wording did not read as covering a one-word follow-up.
+- **The honest report is what saved this.** The web agent flagged its own mistake, named the
+  commits, and explicitly declined to push or merge further until the orchestrator had checked.
+  That is the behaviour to reward: its worktree (`agent-a6cc1b9e8df12d5bd`) was then confirmed
+  byte-identical to what had landed and is redundant. It is **locked**, so `git worktree remove`
+  refuses it without `-f -f`; left in place deliberately rather than forced. Safe to remove
+  whenever someone wants to.
 
 ### The third `UncaughtExceptionsBeforeTest`, and why the obvious fix was the wrong one
 

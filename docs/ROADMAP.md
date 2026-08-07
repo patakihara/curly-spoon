@@ -1985,8 +1985,8 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12b — Search view: unified library + request results    | done (web + Android) |
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
-| 12e — Context menus (long-press / right-click)          | web done (album page only), Android todo |
-| 12f — Per-content-type queues                           | web done, Android todo |
+| 12e — Context menus (long-press / right-click)          | web done (all three pages), Android todo |
+| 12f — Per-content-type queues                           | web done; Android model landed, tests being fixed |
 
 #### 12a — The five views
 
@@ -2301,6 +2301,23 @@ both report through a snackbar rather than risk replacing someone's audiobook.
 `MusicFavoritesPage` have the same track-row shape and are a straightforward follow-up; they
 were a scope cut, not a blocker. No fifth menu item: "Go to lyrics" was the obvious candidate
 and there is no route for it — lyrics render inline in `NowPlaying` for the current track only.
+
+**12e's scope cut is closed (2026-08-08)** — `7063eca`, with an e2e fix in `26057a0`. The track
+context menu now works on `MusicPlaylistPage` and `MusicFavoritesPage` as well as `MusicAlbumPage`.
+Reviewed and genuinely exercised: 24 Playwright cases pass, and the reviewer verified the
+no-queue refusal guard is load-bearing by breaking it and watching the test fail.
+
+**"Go to artist" is deliberately omitted on the playlist and favourites pages.** `JellyfinTrack`
+carries no `artistId`, and unlike the album page there is no single page-level artist to borrow —
+so both pages pass `artistId: null` and `buildTrackMenuItems` omits the item. That is the correct
+resolution rather than a gap: the alternative would have been linking every row to an artist it
+may not belong to, which is the recorded album-artist bug in a new place. "Go to album" *is*
+per-row, from each track's own `albumId`.
+
+The e2e fix is worth a line because the failure was non-obvious: two tests used `page.goto()` to
+reach a page while something was playing, and a real page load discards `useMusicQueueStore`'s
+in-memory queue — which was the precondition those tests needed. They now navigate through the
+app's own client-side router instead, with the assertions unchanged.
 
 #### 12f — Queues are per content type
 
