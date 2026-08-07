@@ -2,10 +2,15 @@
  * The audiobook browse surfaces: home shelves, library filter/sort, and search.
  *
  * Fixture data (apps/server/src/testSupport/fakes/fixtures): `lib-books` has
- * three books — Dune (item-dune, 1260s), The Fellowship of the Ring
- * (item-fellowship, 720s), The Hobbit (item-hobbit, 660s) — split across a
- * "Continue Listening" shelf (Fellowship only) and a "Recently Added" shelf
- * (all three). `lib-podcasts` holds item-dailytech.
+ * five books — Dune (item-dune, 1260s), The Fellowship of the Ring
+ * (item-fellowship, 720s), The Two Towers (item-twotowers, 750s), The Return
+ * of the King (item-return, 780s) and The Hobbit (item-hobbit, 660s) — split
+ * across a "Continue Listening" shelf (Fellowship only) and a "Recently
+ * Added" shelf (Dune/Fellowship/Hobbit only — the two Lord of the Rings
+ * sequels added for the series/author detail-page wave, docs/HANDOVER.md
+ * 2026-08-07, were never added to that shelf's fixture, deliberately, so
+ * this file's existing shelf assertions didn't need to change). `lib-podcasts`
+ * holds item-dailytech.
  *
  * Two behaviours from the spec are NOT covered here and are called out in the
  * phase report rather than faked: a progress bar on a continue-listening card,
@@ -71,22 +76,27 @@ test('the Duration sort chip reorders the cards shortest to longest', async ({ p
   const cards = page.getByTestId('library-item-cards');
   await expect(cards).toBeVisible();
 
-  // Title is the default sort: alphabetical puts Dune first.
+  // Title is the default sort: alphabetical.
   await expect(cards.locator('h2')).toHaveText([
     'Dune',
     'The Fellowship of the Ring',
     'The Hobbit',
+    'The Return of the King',
+    'The Two Towers',
   ]);
 
   // Mantine's Chip is a styled checkbox (`<input type="checkbox">` + `<label>`), not a
   // `<button>` — click the label, same as chip.spec.ts's fix for the identical DOM drift.
   await page.getByTestId('sort-duration').locator('label').first().click();
 
-  // The Hobbit (660s) < The Fellowship of the Ring (720s) < Dune (1260s) — a
-  // genuinely different order from the title default, not a coincidental match.
+  // The Hobbit (660s) < The Fellowship of the Ring (720s) < The Two Towers
+  // (750s) < The Return of the King (780s) < Dune (1260s) — a genuinely
+  // different order from the title default, not a coincidental match.
   await expect(cards.locator('h2')).toHaveText([
     'The Hobbit',
     'The Fellowship of the Ring',
+    'The Two Towers',
+    'The Return of the King',
     'Dune',
   ]);
 });
