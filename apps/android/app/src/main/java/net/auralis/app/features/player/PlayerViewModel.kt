@@ -222,9 +222,42 @@ class PlayerViewModel(
      * [playQueue]'s real generation-guard logic runs without ever touching `Uri`.
      */
     private val toPlayableMediaItem: (ResolvedPlayback) -> MediaItem = { it.toMediaItem() },
+    /**
+     * Android wave 12f — one independent [QueueStore] per content type (`docs/ROADMAP.md`
+     * §12f, requirement 1: switching content types must never clear an unrelated queue). Public
+     * so a future queue-view/context-menu surface (web's 12e/12f-2 counterparts) can read and
+     * mutate them directly without this ViewModel growing a wrapper method per action; this
+     * ViewModel's own use of them is limited to [handlePlaybackEnded] (podcast/audiobook advance)
+     * and [playQueue] (seeding the music queue at load time — see [MusicQueueEntry]'s own doc
+     * comment for why its cursor isn't kept live-synced to Media3's real position in this wave).
+     * Defaulted, matching [controllerOverride]'s own pattern, so no existing construction site
+     * (`AuralisNavHost.kt`) needs to change.
+     */
+    val podcastQueue: QueueStore<PodcastQueueEntry> = createQueueStore(),
+    val audiobookQueue: QueueStore<AudiobookQueueEntry> = createQueueStore(),
+    val musicQueue: QueueStore<MusicQueueEntry> = createQueueStore(),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Idle)
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+
+    /**
+     * Which queue [handlePlaybackEnded] should advance when the currently loaded item finishes —
+     * set explicitly by each of the three play entry points below ([playItem], [playEpisode],
+     * [playQueue]), never inferred from the Media3 media id: see [QueueContentType]'s own doc
+     * comment for why inferring it a second way would risk disagreement with the type each
+     * function already knows statically.
+     */
+    private var currentContentType: QueueContentType? = null
+
+    /**
+     * The audiobook item id currently loaded, when [currentContentType] is
+     * [QueueContentType.AUDIOBOOK] — set by [playItem]. Lets [resolveAdvanceAction] tell a
+     * same-book chapter (seek within the current item) from a different book or a cross-book
+     * chapter (load, then seek) without asking the controller what `MediaItem` it currently
+     * holds, which [PlaybackHandle] deliberately doesn't expose (see that interface's own doc
+     * comment on why its seam stays narrow).
+     */
+    private var currentAudiobookItemId: String? = null
 
     /**
      * A dedicated scope for [jellyfinPlaybackReporter], deliberately *not* [viewModelScope]:
@@ -398,6 +431,11 @@ class PlayerViewModel(
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         if (playbackState == Player.STATE_ENDED) {
                             jellyfinPlaybackReporter.onStopped(newController.currentPosition / 1000.0)
+                            // Android wave 12f: the production call site that makes the
+                            // podcast/audiobook queue router live. See handlePlaybackEnded's own
+                            // doc comment for why STATE_ENDED — not onMediaItemTransition — is
+                            // the right listener callback for this.
+                            handlePlaybackEnded()
                         }
                     }
                 },
@@ -443,10 +481,23 @@ class PlayerViewModel(
      * folds what used to be two distinct error messages here (a track-less item vs. a network/
      * API failure) into one; the resolver has no way to tell this caller which failure occurred,
      * and it shouldn't grow one just to preserve wording nobody could act on differently.
+     *
+     * [seekToMsAfterLoad] (Android wave 12f) is set only by [handlePlaybackEnded], for a
+     * cross-book chapter queue entry — "load this other book, then seek to this chapter's
+     * start" (see [AudiobookQueueEntry.Chapter]'s own doc comment). Every other caller
+     * ([HomeScreen]/[BooksScreen]'s shelf `onClick`, matching this function's own original doc
+     * comment) omits it and gets ordinary "play from the start" behaviour, unchanged.
      */
-    fun playItem(itemId: String) {
+    fun playItem(
+        itemId: String,
+        seekToMsAfterLoad: Long? = null,
+    ) {
         viewModelScope.launch {
-            playResolved(fallbackTitle = itemId) { playbackItemResolver.resolve(itemId) }
+            currentContentType = QueueContentType.AUDIOBOOK
+            currentAudiobookItemId = itemId
+            playResolved(fallbackTitle = itemId, seekToMsAfterLoad = seekToMsAfterLoad) {
+                playbackItemResolver.resolve(itemId)
+            }
         }
     }
 
@@ -460,6 +511,7 @@ class PlayerViewModel(
         episodeId: String,
     ) {
         viewModelScope.launch {
+            currentContentType = QueueContentType.PODCAST
             playResolved(fallbackTitle = episodeId) { playbackItemResolver.resolveEpisode(itemId, episodeId) }
         }
     }
@@ -478,6 +530,7 @@ class PlayerViewModel(
      */
     private suspend fun playResolved(
         fallbackTitle: String,
+        seekToMsAfterLoad: Long? = null,
         resolve: suspend () -> ResolvedPlayback?,
     ) {
         // Invalidates any wave I background queue-append still in flight from a previous
@@ -497,6 +550,11 @@ class PlayerViewModel(
             ctrl.setMediaItem(mediaItem)
             ctrl.prepare()
             ctrl.play()
+            // Android wave 12f: a cross-book chapter queue entry resolves as "load the book,
+            // then seek" (see AudiobookQueueEntry.Chapter's own doc comment) — the seek happens
+            // once the new item is already playing, not before, matching seekTo's own contract
+            // of operating on the currently loaded item.
+            if (seekToMsAfterLoad != null) ctrl.seekTo(seekToMsAfterLoad)
             val title = mediaItem.mediaMetadata.title?.toString() ?: fallbackTitle
             _uiState.value =
                 PlayerUiState.Playing(
@@ -561,6 +619,7 @@ class PlayerViewModel(
         fetchRemaining: (suspend (onPage: suspend (List<ResolvedPlayback>) -> Unit) -> Unit)? = null,
     ) {
         viewModelScope.launch {
+            currentContentType = QueueContentType.MUSIC
             val myGeneration = ++queueGeneration
             try {
                 val queue = buildQueue()
@@ -568,6 +627,16 @@ class PlayerViewModel(
                     _uiState.value = PlayerUiState.Error("This item has no playable audio track.")
                     return@launch
                 }
+                // Android wave 12f: seeds the independent music queue model at cursor 0 (the
+                // first track, about to play below) — see MusicQueueEntry's own doc comment for
+                // why this store's cursor isn't kept live-synced to Media3's real position in
+                // this wave.
+                musicQueue.setQueue(
+                    SimpleQueueState(
+                        order = queue.map { MusicQueueEntry(itemId = it.mediaId, title = it.title, artist = it.artist) },
+                        cursor = 0,
+                    ),
+                )
                 val mediaItems = queue.map(toPlayableMediaItem)
                 val ctrl = activeController()
                 ctrl.setMediaItems(mediaItems)
@@ -608,6 +677,58 @@ class PlayerViewModel(
                 // there returns quietly rather than throwing, so it never reaches this catch.
                 _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
             }
+        }
+    }
+
+    /**
+     * Android wave 12f — the podcast/audiobook queue router's production entry point, called
+     * from the [Player.Listener] above's `onPlaybackStateChanged` on `STATE_ENDED`. Deliberately
+     * a plain method rather than logic inlined into that listener callback: a JVM unit test has
+     * no way to drive a real Media3 `STATE_ENDED` (see [PlaybackHandle]'s own doc comment — this
+     * project has no Robolectric), but it *can* call [handlePlaybackEnded] directly against the
+     * [controllerOverride] fake to simulate "playback just ended" and assert on what got
+     * dispatched, the same pattern every other method in this class already tests against.
+     *
+     * `STATE_ENDED`, not `onMediaItemTransition`, is the right callback to call this from: a
+     * multi-item Media3 playlist (music) already advances itself internally on every item but
+     * the last, and only reaches `STATE_ENDED` once the whole playlist is exhausted — by which
+     * point [resolveAdvanceAction] already has nothing to do for [QueueContentType.MUSIC] (see
+     * [QueueAdvanceAction.None]'s own doc comment). For a single-item load (podcast episode,
+     * audiobook item — today's only shape for those two types), `STATE_ENDED` is the *only*
+     * moment "this finished, what's next" is ever true.
+     *
+     * `internal`, not `private`: this project's Kotlin test source set is compiled against
+     * `internal` members of the main source set (a plain Gradle/Kotlin capability, no
+     * `@VisibleForTesting` needed), which is exactly what a JVM test calling this directly (see
+     * this doc comment's own opening paragraph) needs.
+     */
+    internal fun handlePlaybackEnded() {
+        val action =
+            resolveAdvanceAction(
+                finishedContentType = currentContentType,
+                currentAudiobookItemId = currentAudiobookItemId,
+                podcastQueue = podcastQueue,
+                audiobookQueue = audiobookQueue,
+            )
+        when (action) {
+            is QueueAdvanceAction.None -> Unit
+            is QueueAdvanceAction.SeekWithinCurrent -> {
+                // Same-book chapter: seek only, never reload — see AudiobookQueueEntry.Chapter's
+                // own doc comment for why a reload would corrupt Audiobookshelf's
+                // timeListened tracking. currentAudiobookItemId is left as-is: the book itself
+                // hasn't changed.
+                viewModelScope.launch {
+                    try {
+                        activeController().seekTo(action.positionMs)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+                    }
+                }
+            }
+            is QueueAdvanceAction.LoadAudiobookItem -> playItem(action.itemId, seekToMsAfterLoad = action.thenSeekToMs)
+            is QueueAdvanceAction.LoadPodcastEpisode -> playEpisode(action.itemId, action.episodeId)
         }
     }
 
