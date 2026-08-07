@@ -4,6 +4,7 @@ import { registerAuthRoutes } from './auth.js';
 import { registerSetupRoutes } from './setup.js';
 import { registerLibraryRoutes } from './libraries.js';
 import { registerItemRoutes } from './items.js';
+import { registerAuthorRoutes } from './authors.js';
 import { registerPlaybackRoutes } from './playback.js';
 import { registerProgressRoutes } from './progress.js';
 import { registerMediaRoutes } from './media.js';
@@ -19,6 +20,7 @@ export function registerRoutes(app: FastifyInstance): void {
   registerSetupRoutes(app);
   registerLibraryRoutes(app);
   registerItemRoutes(app);
+  registerAuthorRoutes(app);
   registerPlaybackRoutes(app);
   registerProgressRoutes(app);
   registerMediaRoutes(app);

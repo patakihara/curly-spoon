@@ -8,6 +8,7 @@
  */
 import { ApiError, apiErrorFromNetworkFailure, apiErrorFromResponse } from './errors.js';
 import type {
+  AuthorBooks,
   BookRequest,
   JellyfinAlbum,
   JellyfinArtist,
@@ -224,6 +225,18 @@ export class ApiClient {
       query: { limit: 500 },
       signal,
     });
+  }
+
+  /**
+   * `GET /authors/:id` — an author's own page. Not library-scoped (Audiobookshelf
+   * author ids are global), unlike every other method on this section. A 404
+   * here is a real "author not found", not an empty match — see
+   * `AbsClient.getAuthor`'s doc comment (`packages/abs-client`) for why this
+   * replaces client-side matching against `media.authors[]` entirely rather
+   * than being an alternative to it.
+   */
+  getAuthor(authorId: string, signal?: AbortSignal): Promise<AuthorBooks> {
+    return this.request(`/authors/${encodeURIComponent(authorId)}`, { signal });
   }
 
   // ---------------------------------------------------------------------

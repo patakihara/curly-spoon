@@ -33,6 +33,7 @@ export type {
   Shelf,
   Series,
   Author,
+  AuthorDetail,
   Collection,
   Playlist,
   FilterData,

@@ -61,7 +61,10 @@ describe('GET /api/v1/libraries/:id/items', () => {
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.items).toHaveLength(2);
-    expect(body.total).toBe(3);
+    // 5 fixture books as of the multi-book "The Lord of the Rings" series added
+    // for the series/author detail-page wave (docs/HANDOVER.md 2026-08-07) —
+    // was 3 before item-twotowers/item-return existed.
+    expect(body.total).toBe(5);
     expect(body.items[0].media.tracks).toBeUndefined();
   });
 

@@ -10,7 +10,7 @@
       "id": "series-lotr",
       "name": "The Lord of the Rings",
       "description": "The epic fantasy trilogy.",
-      "bookIds": ["item-fellowship"]
+      "bookIds": ["item-fellowship", "item-twotowers", "item-return"]
     }
   ]
 }

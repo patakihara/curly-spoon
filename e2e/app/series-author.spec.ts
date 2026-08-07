@@ -7,21 +7,37 @@
  * Fixture data (`apps/server/src/testSupport/fakes/fixtures`):
  * - series "Dune" (`series-dune`) has one member, the book "Dune" (`item-dune`,
  *   author "Frank Herbert" / `author-herbert`).
- * - series "The Lord of the Rings" (`series-lotr`) has one member, "The
- *   Fellowship of the Ring" (`item-fellowship`).
- * - author "J.R.R. Tolkien" (`author-tolkien`) has two books in the library:
- *   "The Fellowship of the Ring" (in `series-lotr`) and "The Hobbit"
- *   (`item-hobbit`, no series) — this is what exercises "an author's page lists
- *   theirs" with more than one book, since neither fixture series has more than
- *   one member.
+ * - series "The Lord of the Rings" (`series-lotr`) has three members, in
+ *   sequence order: "The Fellowship of the Ring" (`item-fellowship`, #1),
+ *   "The Two Towers" (`item-twotowers`, #2), "The Return of the King"
+ *   (`item-return`, #3) — deliberately *not* alphabetical order (alphabetically
+ *   "Fellowship" < "Return" < "Two", which would put book #3 before book #2).
+ *   This is what exercises "the series page trusts the server's order" rather
+ *   than a client-side re-sort: an all-null client-derived sequence would
+ *   collapse to alphabetical and silently swap #2 and #3.
+ * - author "J.R.R. Tolkien" (`author-tolkien`) has four books in the library:
+ *   the three "Lord of the Rings" volumes above and "The Hobbit"
+ *   (`item-hobbit`, no series) — this is what exercises "an author's page
+ *   lists theirs" with more than one book.
+ *
+ * Series/author results only render once the "Books" primary chip is
+ * selected (`searchFilters.ts`'s `ALL_KINDS_VISIBLE` deliberately excludes
+ * them from the unfiltered view — see that module's header comment), so
+ * every test that expects a series/author result to be visible selects it
+ * first, the same way `e2e/app/search-view.spec.ts` does.
  */
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+function clickBooksChip(page: Page) {
+  return page.getByTestId('search-filter-primary-books').locator('label').first().click();
+}
 
 test('a Search "Series" result navigates to the series page, listing its book', async ({
   page,
 }) => {
   await page.goto('/search');
   await page.getByTestId('search-field').getByRole('combobox').fill('dune');
+  await clickBooksChip(page);
 
   await page.getByTestId('search-result-series-dune').click();
 
@@ -35,6 +51,7 @@ test('a Search "Authors" result navigates to the author page, listing their book
 }) => {
   await page.goto('/search');
   await page.getByTestId('search-field').getByRole('combobox').fill('tolkien');
+  await clickBooksChip(page);
 
   await page.getByTestId('search-result-author-tolkien').click();
 
@@ -44,7 +61,7 @@ test('a Search "Authors" result navigates to the author page, listing their book
   await expect(page.getByTestId('author-book-item-hobbit')).toBeVisible();
 });
 
-test('a series book card navigates to that book\'s item page', async ({ page }) => {
+test("a series book card navigates to that book's item page", async ({ page }) => {
   await page.goto('/series/series-dune');
 
   await page.getByTestId('series-book-item-dune').click();
@@ -53,13 +70,27 @@ test('a series book card navigates to that book\'s item page', async ({ page }) 
   await expect(page.getByTestId('item-page').getByRole('heading', { name: 'Dune' })).toBeVisible();
 });
 
-test('an author book card navigates to that book\'s item page', async ({ page }) => {
+test("an author book card navigates to that book's item page", async ({ page }) => {
   await page.goto('/author/author-herbert');
 
   await page.getByTestId('author-book-item-dune').click();
 
   await expect(page).toHaveURL(/\/item\/item-dune$/);
   await expect(page.getByTestId('item-page')).toBeVisible();
+});
+
+test('a multi-book series renders in sequence order, not alphabetical order', async ({ page }) => {
+  await page.goto('/series/series-lotr');
+
+  await expect(page.getByTestId('series-name')).toHaveText('The Lord of the Rings');
+  const cards = page.getByTestId('series-book-cards').locator('[data-testid^="series-book-"]');
+  await expect(cards).toHaveCount(3);
+  // Sequence order: Fellowship (#1), Two Towers (#2), Return of the King (#3).
+  // Alphabetical order would put Return before Two Towers — if this ever
+  // regresses to a client-side re-sort of an all-null sequence, it fails here.
+  await expect(cards.nth(0)).toHaveAttribute('data-testid', 'series-book-item-fellowship');
+  await expect(cards.nth(1)).toHaveAttribute('data-testid', 'series-book-item-twotowers');
+  await expect(cards.nth(2)).toHaveAttribute('data-testid', 'series-book-item-return');
 });
 
 test('an unknown series id shows a not-found state, not a blank page', async ({ page }) => {

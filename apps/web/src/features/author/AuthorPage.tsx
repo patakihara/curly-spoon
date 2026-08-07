@@ -3,38 +3,36 @@
  * Reached from a Search "Authors" result, the same way `SeriesPage` is reached
  * from a "Series" one.
  *
- * There is no "fetch one author" or "books by author" route on the BFF, and no
- * `filter=` support wired up on the web client for `GET /libraries/:id/items`
- * either — so, deliberately, this fetches every item in the book library once
- * (capped at the BFF's max page size, 500 — see `useAllLibraryItemsQuery`'s doc
- * comment) and derives both the author's name and their book list client-side
- * with `findAuthorBooks`, the same "no dedicated entity fetch, derive from the
- * children" shape `MusicArtistPage.tsx` already uses for a Jellyfin artist. This
- * is out-of-scope-12c-2 content only in the sense that it's still *library*
- * content; no non-library/requestable books are shown here.
+ * Backed by `GET /authors/:id` (`useAuthorQuery`), a real per-entity fetch —
+ * not the "fetch every item, match client-side" shape this page used to use
+ * (`findAuthorBooks`, now deleted). That matching could never work: every path
+ * that lists items returns *minified* Audiobookshelf items, and a minified
+ * item's `media.authors[]` is a single fallback entry whose `id` is the
+ * author's *name*, never a real author id (the trap documented on
+ * `packages/abs-client`'s `domain.ts` header) — so `authorId === author.id`
+ * never matched, and `/author/*` was dead on arrival regardless of which
+ * author was clicked. `AbsClient.getAuthor`'s own doc comment has the full
+ * source trace for the replacement endpoint.
+ *
+ * A 404 from that endpoint is a real "author not found" (an unknown/removed
+ * author id), distinct from any other fetch failure — see the two error
+ * branches below.
  */
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Card, Skeleton } from '@auralis/ui';
 import { CoverImage } from '../../components/CoverImage.js';
-import { useAllLibraryItemsQuery, useLibrariesQuery } from '../../api/queries.js';
-import { findAuthorBooks } from './authorBooks.js';
+import { useAuthorQuery } from '../../api/queries.js';
 import { useApi } from '../../api/ApiContext.js';
+import { ApiError } from '../../api/errors.js';
 
 export function AuthorPage() {
   const { authorId } = useParams({ from: '/author/$authorId' });
   const navigate = useNavigate();
   const api = useApi();
 
-  const librariesQuery = useLibrariesQuery(true);
-  const bookLibraryId = librariesQuery.data?.libraries.find(
-    (library) => library.mediaType === 'book',
-  )?.id;
+  const authorQuery = useAuthorQuery(authorId);
 
-  const itemsQuery = useAllLibraryItemsQuery(bookLibraryId);
-
-  const loading = librariesQuery.isLoading || (Boolean(bookLibraryId) && itemsQuery.isLoading);
-
-  if (loading) {
+  if (authorQuery.isLoading) {
     return (
       <div className="auralis-page" data-testid="author-page">
         <Skeleton shape="text" width={240} height={32} />
@@ -47,49 +45,37 @@ export function AuthorPage() {
     );
   }
 
-  if (librariesQuery.isError) {
+  if (authorQuery.isError) {
+    if (authorQuery.error instanceof ApiError && authorQuery.error.status === 404) {
+      return (
+        <div className="auralis-page" data-testid="author-page">
+          <h1>Author not found</h1>
+          <p data-testid="author-not-found">
+            This author isn't in your library — the link may be old, or it may have been removed.
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="auralis-page" data-testid="author-page">
-        <p role="alert">Couldn't load your libraries: {librariesQuery.error.message}</p>
+        <p role="alert">Couldn't load this author: {authorQuery.error.message}</p>
       </div>
     );
   }
 
-  if (!bookLibraryId) {
-    return (
-      <div className="auralis-page" data-testid="author-page">
-        <p>No book library is set up on this server yet.</p>
-      </div>
-    );
-  }
-
-  if (itemsQuery.isError) {
-    return (
-      <div className="auralis-page" data-testid="author-page">
-        <p role="alert">Couldn't load this author's books: {itemsQuery.error.message}</p>
-      </div>
-    );
-  }
-
-  const result = findAuthorBooks(authorId, itemsQuery.data?.items ?? []);
-
-  if (!result) {
-    return (
-      <div className="auralis-page" data-testid="author-page">
-        <h1>Author not found</h1>
-        <p data-testid="author-not-found">
-          This author isn't in your library — the link may be old, or it may have been removed.
-        </p>
-      </div>
-    );
-  }
+  const author = authorQuery.data;
+  // Unreachable in practice — `isLoading`/`isError` above are exhaustive over
+  // this query's states — but `data` is still typed `T | undefined`, so this
+  // is here purely to satisfy that rather than asserting past it.
+  if (!author) return null;
 
   return (
     <div className="auralis-page" data-testid="author-page">
-      <h1 data-testid="author-name">{result.authorName}</h1>
+      <h1 data-testid="author-name">{author.name}</h1>
+      {author.description ? <p>{author.description}</p> : null}
 
       <div className="auralis-card-grid" data-testid="author-book-cards">
-        {result.books.map((book) => (
+        {author.books.map((book) => (
           <Card
             key={book.id}
             interactive
@@ -102,7 +88,7 @@ export function AuthorPage() {
               size={160}
               fallbackIcon="book_2"
             />
-            <h3>{book.title}</h3>
+            <h3>{book.media.title}</h3>
           </Card>
         ))}
       </div>

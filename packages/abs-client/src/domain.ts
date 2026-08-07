@@ -9,6 +9,25 @@
  * only present when the source payload was the *expanded* variant" — the
  * minified list endpoints never populate it. Treat `undefined` as "not
  * fetched", and `[]` as "fetched, genuinely empty".
+ *
+ * `Book.authors` and `Book.series` do NOT follow that convention, and this is
+ * a real trap, not a nuance — it is what let the series/author detail pages
+ * ship broken (see `docs/HANDOVER.md`, "author and series detail pages",
+ * 2026-08-07). A minified item never sends the structured `authors`/`series`
+ * arrays either (verified against Audiobookshelf 2.36.0 source), but
+ * `normalizeMedia` always fills them in from the flattened `authorName`/
+ * `seriesName` strings rather than leaving them `undefined` — so they are
+ * *never* absent, and code that only checks "is this array non-empty" will
+ * not notice it's looking at fallback data. The fabricated entries are
+ * detectable only by field: their `id` equals the display name (a minified
+ * item carries no real author/series id at all, so there is nothing else to
+ * put there), and their `sequence` is always `null`. Comparing that `id`
+ * against a real entity id (an author id from a route param, a series id
+ * from a route param) will *never* match on a minified item — this is
+ * exactly the bug `findAuthorBooks` and `SeriesPage`'s old `seriesId`
+ * lookup had. Fetch the entity's own detail endpoint instead of matching
+ * against these fields when you need real identity; they're fine for
+ * display (a name badge) and unsafe for identity lookups.
  */
 
 export interface Chapter {
@@ -132,6 +151,24 @@ export interface Author {
   description: string | null;
   imagePath: string | null;
   numBooks: number;
+}
+
+/**
+ * `GET /authors/:id?include=items` — the author's own real page. Unlike `Author`
+ * above (a summary row from the library-wide author list), this carries the
+ * author's actual books, fetched server-side by Audiobookshelf itself
+ * (`AuthorController.findOne`'s `Database.libraryItemModel.getForAuthor`) rather
+ * than derived by matching `Book.authors[].id` against minified items — which,
+ * per the trap documented on this file's header comment, can never work.
+ * `books` is minified (Audiobookshelf's own `toOldJSONMinified()`), same as
+ * every other list/shelf response.
+ */
+export interface AuthorDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  imagePath: string | null;
+  books: LibraryItem[];
 }
 
 export interface Collection {

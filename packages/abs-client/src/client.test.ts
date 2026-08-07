@@ -317,6 +317,44 @@ describe('AbsClient.getLibraryCollections / getLibraryPlaylists / getLibraryAuth
   });
 });
 
+describe('AbsClient.getAuthor', () => {
+  it('normalises the author and requests include=items', async () => {
+    let seenQuery: URLSearchParams | undefined;
+    const fetchFn = router({
+      'GET /api/authors/author-1': ({ url }) => {
+        seenQuery = url.searchParams;
+        return json({
+          id: 'author-1',
+          name: 'J.R.R. Tolkien',
+          description: 'English writer.',
+          imagePath: null,
+          libraryItems: [minifiedBookItem],
+        });
+      },
+    });
+    const client = makeClient(fetchFn);
+    const author = await client.getAuthor('author-1');
+    expect(author).toEqual({
+      id: 'author-1',
+      name: 'J.R.R. Tolkien',
+      description: 'English writer.',
+      imagePath: null,
+      books: expect.any(Array),
+    });
+    expect(author.books).toHaveLength(1);
+    expect(seenQuery?.get('include')).toBe('items');
+  });
+
+  it('maps an unknown author (404) to a not_found AbsError', async () => {
+    const fetchFn = router({
+      'GET /api/authors/ghost': () => new Response('gone', { status: 404 }),
+    });
+    const client = makeClient(fetchFn);
+    const err = await client.getAuthor('ghost').catch((e: unknown) => e);
+    expect((err as AbsError).code).toBe('not_found');
+  });
+});
+
 describe('AbsClient.searchLibrary', () => {
   it('normalises book/podcast/series/author matches and forwards q/limit', async () => {
     let seenQuery: URLSearchParams | undefined;

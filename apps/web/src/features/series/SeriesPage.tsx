@@ -12,12 +12,33 @@
  * `LibraryPage` already use for a library id. An id absent from that list (a
  * stale link, a typo, a series since deleted upstream) is a real "not found"
  * state, not a blank page — see the `notFound` branch below.
+ *
+ * **Book order is the array order `getLibrarySeries` returns, not a client-side
+ * re-sort.** This page used to feed each book's `orderSeriesBooks` a
+ * `seriesSequence` read off `book.media.series?.find((s) => s.id === seriesId)`
+ * — but every book here comes back *minified* (Audiobookshelf's own
+ * `getFilteredSeries`, source-derived from v2.36.0, not live-verified: no
+ * credential is available to this session), and a minified item's `media.series`
+ * is always a single fallback entry whose `id` is the *series name*, never the
+ * real series id (see the trap documented on `packages/abs-client`'s `domain.ts`
+ * header). That lookup could therefore never match, so every book's sequence
+ * was always `null`, and `orderSeriesBooks` — correct, and untouched here —
+ * degrades an all-null input to alphabetical-by-title, silently destroying the
+ * real order.
+ *
+ * The real order isn't lost, though: Audiobookshelf sorts `books` by sequence
+ * server-side before stripping the sequence number out of the minified
+ * response (`seriesFilters.js`'s `getFilteredSeries`, same source trace). So
+ * the array order *is* the correct order — this page now trusts it directly
+ * instead of re-deriving (and mangling) it. The cost is real and worth naming:
+ * there's no per-book sequence number left to display ("Book 3"), because
+ * Audiobookshelf's own API doesn't send one on this endpoint. Omitting the
+ * label is more honest than inventing one.
  */
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Card, Skeleton } from '@auralis/ui';
 import { CoverImage } from '../../components/CoverImage.js';
 import { useLibrariesQuery, useLibrarySeriesQuery } from '../../api/queries.js';
-import { orderSeriesBooks } from './seriesOrder.js';
 import { useApi } from '../../api/ApiContext.js';
 
 export function SeriesPage() {
@@ -84,44 +105,34 @@ export function SeriesPage() {
     );
   }
 
-  const orderedBooks = orderSeriesBooks(
-    series.books.map((book) => ({
-      id: book.id,
-      title: book.media.title,
-      seriesSequence: book.media.series?.find((s) => s.id === seriesId)?.sequence ?? null,
-    })),
-  );
-  const booksById = new Map(series.books.map((book) => [book.id, book]));
-
+  // `series.books` arrives already in the right order — see this file's header
+  // comment for why re-deriving a sequence here would be wrong, not merely
+  // redundant.
   return (
     <div className="auralis-page" data-testid="series-page">
       <h1 data-testid="series-name">{series.name}</h1>
       {series.description ? <p>{series.description}</p> : null}
 
-      {orderedBooks.length === 0 ? (
+      {series.books.length === 0 ? (
         <p>No books found in this series.</p>
       ) : (
         <div className="auralis-card-grid" data-testid="series-book-cards">
-          {orderedBooks.map((ordered) => {
-            const book = booksById.get(ordered.id)!;
-            return (
-              <Card
-                key={book.id}
-                interactive
-                variant="elevated"
-                data-testid={`series-book-${book.id}`}
-                onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: book.id } })}
-              >
-                <CoverImage
-                  src={api.coverUrl(book.id, { width: 200 })}
-                  size={160}
-                  fallbackIcon="book_2"
-                />
-                <h3>{book.media.title}</h3>
-                {ordered.seriesSequence !== null ? <p>Book {ordered.seriesSequence}</p> : null}
-              </Card>
-            );
-          })}
+          {series.books.map((book) => (
+            <Card
+              key={book.id}
+              interactive
+              variant="elevated"
+              data-testid={`series-book-${book.id}`}
+              onClick={() => void navigate({ to: '/item/$itemId', params: { itemId: book.id } })}
+            >
+              <CoverImage
+                src={api.coverUrl(book.id, { width: 200 })}
+                size={160}
+                fallbackIcon="book_2"
+              />
+              <h3>{book.media.title}</h3>
+            </Card>
+          ))}
         </div>
       )}
     </div>

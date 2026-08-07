@@ -311,6 +311,26 @@ export const rawAuthorsResponseSchema = z
   })
   .passthrough();
 
+/**
+ * `GET /authors/:id?include=items` — a single level of nesting (an object with
+ * one array of library items), unlike `rawSeriesResponseSchema`/
+ * `rawCollectionsResponseSchema` above, which nest an array of objects that
+ * each hold their own array of items — that double nesting is what triggers
+ * the TS7056 workaround those two use. This schema doesn't need it, same as
+ * `rawLibraryItemsResponseSchema`.
+ */
+export const rawAuthorDetailSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    imagePath: z.string().nullable().optional(),
+    libraryItems: z.array(rawLibraryItemSchema).optional(),
+  })
+  .passthrough();
+
+export type RawAuthorDetail = z.infer<typeof rawAuthorDetailSchema>;
+
 // ---------------------------------------------------------------------------
 // Collections / playlists (lighter normalisation — see abs-client README note)
 // ---------------------------------------------------------------------------

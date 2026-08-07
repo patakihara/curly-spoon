@@ -13,6 +13,7 @@ import type {
   rawShelfSchema,
   rawSeriesSchema,
   rawAuthorSchema,
+  rawAuthorDetailSchema,
   rawCollectionSchema,
   rawFilterDataSchema,
   rawBookmarkSchema,
@@ -37,6 +38,7 @@ import type {
   Shelf,
   Series,
   Author,
+  AuthorDetail,
   Collection,
   FilterData,
   MediaProgress,
@@ -214,6 +216,16 @@ export function normalizeAuthor(raw: z.infer<typeof rawAuthorSchema>): Author {
     description: raw.description ?? null,
     imagePath: raw.imagePath ?? null,
     numBooks: raw.numBooks ?? 0,
+  };
+}
+
+export function normalizeAuthorDetail(raw: z.infer<typeof rawAuthorDetailSchema>): AuthorDetail {
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description ?? null,
+    imagePath: raw.imagePath ?? null,
+    books: raw.libraryItems?.map(normalizeLibraryItem) ?? [],
   };
 }
 

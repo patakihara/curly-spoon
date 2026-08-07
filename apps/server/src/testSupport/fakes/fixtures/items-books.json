@@ -87,6 +87,80 @@
     }
   },
   {
+    "id": "item-twotowers",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1700200000000,
+    "updatedAt": 1700200000000,
+    "size": 490000000,
+    "media": {
+      "metadata": {
+        "title": "The Two Towers",
+        "subtitle": null,
+        "authorName": "J.R.R. Tolkien",
+        "authors": [{ "id": "author-tolkien", "name": "J.R.R. Tolkien" }],
+        "narratorName": "Rob Inglis",
+        "seriesName": "The Lord of the Rings #2",
+        "series": [{ "id": "series-lotr", "name": "The Lord of the Rings", "sequence": "2" }],
+        "genres": ["Fantasy"],
+        "publishedYear": "1954",
+        "description": "The second volume of The Lord of the Rings.",
+        "isbn": "9780618346264"
+      },
+      "coverPath": "/covers/item-twotowers.jpg",
+      "duration": 750,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 750,
+          "title": "Book Three",
+          "contentUrl": "/api/items/item-twotowers/file/file-twotowers-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 750, "title": "Book Three" }]
+    }
+  },
+  {
+    "id": "item-return",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1700300000000,
+    "updatedAt": 1700300000000,
+    "size": 470000000,
+    "media": {
+      "metadata": {
+        "title": "The Return of the King",
+        "subtitle": null,
+        "authorName": "J.R.R. Tolkien",
+        "authors": [{ "id": "author-tolkien", "name": "J.R.R. Tolkien" }],
+        "narratorName": "Rob Inglis",
+        "seriesName": "The Lord of the Rings #3",
+        "series": [{ "id": "series-lotr", "name": "The Lord of the Rings", "sequence": "3" }],
+        "genres": ["Fantasy"],
+        "publishedYear": "1955",
+        "description": "The third volume of The Lord of the Rings.",
+        "isbn": "9780618346271"
+      },
+      "coverPath": "/covers/item-return.jpg",
+      "duration": 780,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 780,
+          "title": "Book Six",
+          "contentUrl": "/api/items/item-return/file/file-return-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 780, "title": "Book Six" }]
+    }
+  },
+  {
     "id": "item-hobbit",
     "libraryId": "lib-books",
     "mediaType": "book",
