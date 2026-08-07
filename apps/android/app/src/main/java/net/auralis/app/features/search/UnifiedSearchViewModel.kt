@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import net.auralis.app.data.model.LibraryItem
+import net.auralis.app.data.model.MusicCandidate
+import net.auralis.app.data.model.ProviderEntry
+import net.auralis.app.data.model.Release
 import net.auralis.app.data.network.ApiClient
 import net.auralis.app.data.network.ApiException
 import net.auralis.app.data.settings.ServerConfigRepository
@@ -23,6 +26,9 @@ import net.auralis.app.features.music.MusicSearchTrackUi
 import net.auralis.app.features.music.musicErrorMessage
 import net.auralis.app.features.music.toSearchUi
 import net.auralis.app.features.music.toUi
+import net.auralis.app.features.musicrequests.CandidateRequestState
+import net.auralis.app.features.requests.ReleaseRequestState
+import net.auralis.app.features.requests.TitleRequestState
 
 /** How long [UnifiedSearchViewModel.onQueryChange] waits, after the most recent keystroke,
  * before firing the whole fan-out (one call per book/podcast library, plus one Jellyfin
@@ -52,6 +58,72 @@ data class SearchSeriesUi(val id: String, val name: String)
 /** One author on [UnifiedSearchScreen]. See [SearchSeriesUi]'s doc comment — same reasoning,
  * no `/author/:id` route exists. */
 data class SearchAuthorUi(val id: String, val name: String)
+
+/**
+ * The Search view's "available to request" books group (`docs/ROADMAP.md` §12b/12b-A2) — a
+ * separate, independently-loading side channel from [UnifiedSearchResultsUiState]. See
+ * [UnifiedSearchViewModel]'s own doc comment for why this has to be a *sibling* fetch rather
+ * than a slice of [UnifiedSearchResultsUiState.Results]: the book-request search fans out to
+ * real indexers and can take several seconds, and gating the (fast) library results on it
+ * finishing would be exactly the coupling this class exists to avoid.
+ */
+sealed interface RequestableBooksUiState {
+    /** Nothing has been typed, or the server has no usable indexer+download-client pair —
+     * [net.auralis.app.features.search.canRequestBooks] said no, so there is nothing to show
+     * and no request search was even issued. */
+    data object Idle : RequestableBooksUiState
+
+    data object Loading : RequestableBooksUiState
+
+    /**
+     * A settled request search. [error] is non-null only when the search call itself failed
+     * (not when it simply found nothing) — mirrors [UnifiedSearchResultsUiState.Results]'
+     * `libraryError`/`musicError` fields rather than a separate `Failed` variant, so a search
+     * failure and "offer to request the typed title anyway" can coexist: see
+     * [offerRequestAnyway]'s own doc comment.
+     */
+    data class Loaded(
+        val releases: List<Release> = emptyList(),
+        val error: String? = null,
+        val releaseStates: Map<String, ReleaseRequestState> = emptyMap(),
+        val titleRequestState: TitleRequestState = TitleRequestState.Idle,
+    ) : RequestableBooksUiState {
+        /** Offered whenever the search came back with zero releases — deliberately
+         * indifferent to *why* (nothing matched, or [error] is set because every indexer
+         * errored): a user whose indexer is down is exactly the user who most needs to queue
+         * the request anyway rather than being turned away. Mirrors
+         * `RequestsUiState.offerRequestAnyway` / `apps/web/src/features/requests/
+         * requestAnyway.ts`'s `shouldOfferRequestAnyway`. */
+        val offerRequestAnyway: Boolean
+            get() = releases.isEmpty()
+    }
+}
+
+/** The Search view's "available to request" music group. See [RequestableBooksUiState]'s
+ * doc comment for why this is its own independent side channel — the music-request search is
+ * a real Soulseek search that can take on the order of seventeen seconds. There is no
+ * "request anyway" counterpart here: see [UnifiedSearchViewModel.requestCandidate]'s doc
+ * comment for why a music candidate has nothing to fall back to. */
+sealed interface RequestableMusicUiState {
+    /** Nothing has been typed, or no enabled+configured music provider exists. */
+    data object Idle : RequestableMusicUiState
+
+    data object Loading : RequestableMusicUiState
+
+    /** [error] is non-null only when the search call itself failed — see
+     * [RequestableBooksUiState.Loaded]'s identical doc comment. */
+    data class Loaded(
+        val candidates: List<MusicCandidate> = emptyList(),
+        val error: String? = null,
+        val candidateStates: Map<String, CandidateRequestState> = emptyMap(),
+        /** Set only when [UnifiedSearchViewModel.requestCandidate] created the request
+         * successfully but the automatic post-create grab failed. The row still shows
+         * Requested — the request genuinely exists in the pipeline — with this as a separate,
+         * additional note; collapsing it into [CandidateRequestState.Failed] would be a false
+         * negative, the same "no optimistic flip" rule violated from the other direction. */
+        val grabWarnings: Map<String, String> = emptyMap(),
+    ) : RequestableMusicUiState
+}
 
 sealed interface UnifiedSearchResultsUiState {
     /** Nothing has been typed (or the field was cleared) — an inviting empty state, not "no
@@ -100,6 +172,10 @@ data class UnifiedSearchUiState(
     val query: String = "",
     val filters: SearchFilterState = DEFAULT_SEARCH_FILTER_STATE,
     val resultsState: UnifiedSearchResultsUiState = UnifiedSearchResultsUiState.Idle,
+    /** Independent of [resultsState] on purpose — see [RequestableBooksUiState]'s own doc
+     * comment for why the two must never be coupled into one settle point. */
+    val requestableBooksState: RequestableBooksUiState = RequestableBooksUiState.Idle,
+    val requestableMusicState: RequestableMusicUiState = RequestableMusicUiState.Idle,
 )
 
 /**
@@ -123,6 +199,17 @@ data class UnifiedSearchUiState(
  * the whole search. Within the library half, each library's own `searchLibrary` call is *also*
  * independent — one library failing (a transient upstream hiccup) drops only that library's
  * contribution, not every book/podcast result across the whole account.
+ *
+ * **12b-A2 adds a third and fourth fan-out** ([fetchRequestableBooks]/[fetchRequestableMusic]):
+ * whether a non-library title could be *requested*, behind the same availability gates web's
+ * `searchRequestability.ts` uses (`net.auralis.app.features.search.canRequestBooks` /
+ * `hasEnabledMusicProvider`). These are deliberately **not** folded into [performSearch]'s own
+ * `coroutineScope` — a book-request search fans out to real indexers and a music-request search
+ * is a real Soulseek search that can take on the order of seventeen seconds, and awaiting either
+ * inside that block would hold up writing the (fast) library/music results too. They are
+ * launched as siblings of that block instead, each tracked in its own `Job` so a superseding
+ * search can cancel a stale one, and each writes [UnifiedSearchUiState.requestableBooksState]/
+ * [UnifiedSearchUiState.requestableMusicState] independently, on its own schedule.
  */
 class UnifiedSearchViewModel(
     private val apiClient: ApiClient,
@@ -136,29 +223,49 @@ class UnifiedSearchViewModel(
     // see that class's doc comment for why this alone doesn't guarantee staleness-freedom.
     private var searchJob: Job? = null
 
+    // Cancelled and replaced alongside searchJob — see this class's own doc comment for why
+    // these are separate jobs rather than children awaited inside performSearch's own
+    // coroutineScope.
+    private var requestableBooksJob: Job? = null
+    private var requestableMusicJob: Job? = null
+
     // Bumped on every new "live" search (a debounced onQueryChange, or onQueryChange clearing
     // the field). performSearch captures the value at launch and compares it against this field
     // immediately before writing to _uiState, so a fan-out response for a since-superseded
     // query can never land — a plain field read at the write site, holding regardless of how
-    // two searches' many concurrent requests actually interleave.
+    // two searches' many concurrent requests actually interleave. The same field guards
+    // fetchRequestableBooks/fetchRequestableMusic's writes too — one sequence number covers
+    // every fan-out a single search fires.
     private var searchSequence: Int = 0
 
     /** Called on every keystroke. Updates the visible field text unconditionally, then either
-     * settles [UnifiedSearchResultsUiState] back to [UnifiedSearchResultsUiState.Idle] (an empty
-     * or blank field) or schedules a debounced fan-out for the trimmed term. */
+     * settles [UnifiedSearchResultsUiState] (and the two requestable states) back to their Idle
+     * variants (an empty or blank field) or schedules a debounced fan-out for the trimmed term. */
     fun onQueryChange(newQuery: String) {
         _uiState.value = _uiState.value.copy(query = newQuery)
         searchJob?.cancel()
+        requestableBooksJob?.cancel()
+        requestableMusicJob?.cancel()
         val term = newQuery.trim()
         if (term.isEmpty()) {
             // Supersedes any still-in-flight fan-out even though nothing new is being issued —
             // otherwise a response for the just-abandoned term could still land after the field
             // has already gone Idle.
             searchSequence++
-            _uiState.value = _uiState.value.copy(resultsState = UnifiedSearchResultsUiState.Idle)
+            _uiState.value =
+                _uiState.value.copy(
+                    resultsState = UnifiedSearchResultsUiState.Idle,
+                    requestableBooksState = RequestableBooksUiState.Idle,
+                    requestableMusicState = RequestableMusicUiState.Idle,
+                )
             return
         }
-        _uiState.value = _uiState.value.copy(resultsState = UnifiedSearchResultsUiState.Searching)
+        _uiState.value =
+            _uiState.value.copy(
+                resultsState = UnifiedSearchResultsUiState.Searching,
+                requestableBooksState = RequestableBooksUiState.Loading,
+                requestableMusicState = RequestableMusicUiState.Loading,
+            )
         val sequence = ++searchSequence
         searchJob =
             viewModelScope.launch {
@@ -182,6 +289,18 @@ class UnifiedSearchViewModel(
         sequence: Int,
     ) {
         val baseUrl = serverConfigRepository.getBaseUrl()
+
+        // Launched before (and as siblings of, not children awaited inside) the
+        // coroutineScope below — see this class's own doc comment for why. Both share one
+        // `providers()` call via this single Deferred rather than each fetching it
+        // separately: it is one small, cheap, shared precondition for two otherwise fully
+        // independent fetches, not something either "owns".
+        val providersDeferred = viewModelScope.async { fetchProvidersSafely() }
+        requestableBooksJob =
+            viewModelScope.launch { fetchRequestableBooks(term, sequence, providersDeferred.await()) }
+        requestableMusicJob =
+            viewModelScope.launch { fetchRequestableMusic(term, sequence, providersDeferred.await()) }
+
         coroutineScope {
             val libraryDeferred = async { fetchLibraryResults(term, baseUrl) }
             val musicDeferred = async { fetchMusicResults(term, baseUrl) }
@@ -207,6 +326,208 @@ class UnifiedSearchViewModel(
                         ),
                 )
         }
+    }
+
+    /** Fails closed to an empty provider list — see [canRequestBooks]/[hasEnabledMusicProvider]'s
+     * own doc comment on why that's the same "nothing requestable" degrade as web's
+     * `providersQuery.data?.providers ?? []`, rather than a top-level error blocking both
+     * requestable sections over what is usually a transient hiccup on an endpoint neither
+     * section's own result actually needs to render. */
+    private suspend fun fetchProvidersSafely(): List<ProviderEntry> =
+        try {
+            apiClient.providers()
+        } catch (e: ApiException) {
+            emptyList()
+        }
+
+    /**
+     * The book half of 12b-A2's requestable fan-out. Gated on [canRequestBooks] — when the
+     * server has no usable indexer+download-client pair, this settles straight to
+     * [RequestableBooksUiState.Idle] without ever calling `searchReleases`, the same
+     * "don't even ask" choice [fetchRequestableMusic] makes for its own gate.
+     */
+    private suspend fun fetchRequestableBooks(
+        term: String,
+        sequence: Int,
+        providers: List<ProviderEntry>,
+    ) {
+        if (sequence != searchSequence) return
+        if (!canRequestBooks(providers)) {
+            _uiState.value = _uiState.value.copy(requestableBooksState = RequestableBooksUiState.Idle)
+            return
+        }
+        try {
+            val result = apiClient.searchReleases(term)
+            if (sequence != searchSequence) return
+            _uiState.value =
+                _uiState.value.copy(requestableBooksState = RequestableBooksUiState.Loaded(releases = result.releases))
+        } catch (e: ApiException) {
+            if (sequence != searchSequence) return
+            _uiState.value =
+                _uiState.value.copy(
+                    requestableBooksState = RequestableBooksUiState.Loaded(releases = emptyList(), error = e.message),
+                )
+        }
+    }
+
+    /** The music half of 12b-A2's requestable fan-out. See [fetchRequestableBooks]'s doc
+     * comment — identical shape, gated on [hasEnabledMusicProvider] instead. */
+    private suspend fun fetchRequestableMusic(
+        term: String,
+        sequence: Int,
+        providers: List<ProviderEntry>,
+    ) {
+        if (sequence != searchSequence) return
+        if (!hasEnabledMusicProvider(providers)) {
+            _uiState.value = _uiState.value.copy(requestableMusicState = RequestableMusicUiState.Idle)
+            return
+        }
+        try {
+            val result = apiClient.searchMusicRequests(term)
+            if (sequence != searchSequence) return
+            _uiState.value =
+                _uiState.value.copy(
+                    requestableMusicState = RequestableMusicUiState.Loaded(candidates = result.candidates),
+                )
+        } catch (e: ApiException) {
+            if (sequence != searchSequence) return
+            _uiState.value =
+                _uiState.value.copy(
+                    requestableMusicState = RequestableMusicUiState.Loaded(candidates = emptyList(), error = e.message),
+                )
+        }
+    }
+
+    /**
+     * Requests one specific [Release] from the "available to request" books section. Mirrors
+     * `RequestsViewModel.requestRelease` — same per-guid Idle→Pending→Requested/Failed shape —
+     * but keyed into [RequestableBooksUiState.Loaded.releaseStates] rather than a top-level map,
+     * since this screen can show requestable rows for books *and* music at once. A no-op if
+     * [RequestableBooksUiState] isn't [RequestableBooksUiState.Loaded] (there is nothing to
+     * request against) — a caller only ever presses a row that is actually on screen, so this
+     * degrades rather than throws for the same reason every other state-shape guard in this
+     * file does.
+     */
+    fun requestRelease(release: Release) {
+        val current = _uiState.value.requestableBooksState
+        if (current !is RequestableBooksUiState.Loaded) return
+        _uiState.value =
+            _uiState.value.copy(
+                requestableBooksState =
+                    current.copy(releaseStates = current.releaseStates + (release.guid to ReleaseRequestState.Pending)),
+            )
+        viewModelScope.launch {
+            try {
+                apiClient.createRequest(release.title, release = release)
+                updateReleaseState(release.guid, ReleaseRequestState.Requested)
+            } catch (e: ApiException) {
+                updateReleaseState(release.guid, ReleaseRequestState.Failed(e.message))
+            }
+        }
+    }
+
+    private fun updateReleaseState(
+        guid: String,
+        state: ReleaseRequestState,
+    ) {
+        val current = _uiState.value.requestableBooksState
+        if (current !is RequestableBooksUiState.Loaded) return
+        _uiState.value =
+            _uiState.value.copy(requestableBooksState = current.copy(releaseStates = current.releaseStates + (guid to state)))
+    }
+
+    /**
+     * "Request anyway" — queues the current query term with no release attached, the same
+     * `POST /requests` with `release: null` [RequestsViewModel.requestAnyway] uses. Offered
+     * whenever [RequestableBooksUiState.Loaded.offerRequestAnyway] says so; see that
+     * property's own doc comment for why it doesn't care whether releases came back empty
+     * because nothing matched or because the search failed outright.
+     */
+    fun requestAnyway() {
+        val current = _uiState.value.requestableBooksState
+        if (current !is RequestableBooksUiState.Loaded) return
+        _uiState.value =
+            _uiState.value.copy(requestableBooksState = current.copy(titleRequestState = TitleRequestState.Pending))
+        val term = _uiState.value.query.trim()
+        viewModelScope.launch {
+            try {
+                apiClient.createRequest(term)
+                updateTitleRequestState(TitleRequestState.Requested)
+            } catch (e: ApiException) {
+                updateTitleRequestState(TitleRequestState.Failed(e.message))
+            }
+        }
+    }
+
+    private fun updateTitleRequestState(state: TitleRequestState) {
+        val current = _uiState.value.requestableBooksState
+        if (current !is RequestableBooksUiState.Loaded) return
+        _uiState.value = _uiState.value.copy(requestableBooksState = current.copy(titleRequestState = state))
+    }
+
+    /**
+     * Requests one [MusicCandidate] from the "available to request" music section. Starts the
+     * slskd download immediately on success — mirrors
+     * `apps/web/src/features/search/RequestableMusicSection.tsx`'s `handleRequest`, which
+     * chains straight into a grab once the freshly created request lands `approved` (the
+     * default auto-approval policy — `docs/HANDOVER.md`'s phase-6 decisions). No confirm step:
+     * a search hit is one specific file held by one specific peer right now, and a confirm
+     * dialog only gives that peer time to disconnect before the grab ever fires.
+     *
+     * If the create call itself fails, the row reports that failure and nothing was requested.
+     * If create succeeds but the follow-up grab fails, the row still shows
+     * [CandidateRequestState.Requested] — the request genuinely exists in the pipeline — with
+     * [RequestableMusicUiState.Loaded.grabWarnings] carrying a separate, additional note.
+     * Collapsing that into [CandidateRequestState.Failed] would be a false negative — this
+     * class's own "no optimistic flip" rule violated from the other direction, since it would
+     * claim the request never happened when it did.
+     */
+    fun requestCandidate(candidate: MusicCandidate) {
+        val current = _uiState.value.requestableMusicState
+        if (current !is RequestableMusicUiState.Loaded) return
+        _uiState.value =
+            _uiState.value.copy(
+                requestableMusicState =
+                    current.copy(
+                        candidateStates = current.candidateStates + (candidate.guid to CandidateRequestState.Pending),
+                        grabWarnings = current.grabWarnings - candidate.guid,
+                    ),
+            )
+        viewModelScope.launch {
+            try {
+                val created = apiClient.createMusicRequest(candidate)
+                updateCandidateState(candidate.guid, CandidateRequestState.Requested)
+                if (created.status == "approved") {
+                    try {
+                        apiClient.grabMusicRequest(created.id)
+                    } catch (e: ApiException) {
+                        addGrabWarning(candidate.guid, "Requested, but the download could not be started.")
+                    }
+                }
+            } catch (e: ApiException) {
+                updateCandidateState(candidate.guid, CandidateRequestState.Failed(e.message))
+            }
+        }
+    }
+
+    private fun updateCandidateState(
+        guid: String,
+        state: CandidateRequestState,
+    ) {
+        val current = _uiState.value.requestableMusicState
+        if (current !is RequestableMusicUiState.Loaded) return
+        _uiState.value =
+            _uiState.value.copy(requestableMusicState = current.copy(candidateStates = current.candidateStates + (guid to state)))
+    }
+
+    private fun addGrabWarning(
+        guid: String,
+        message: String,
+    ) {
+        val current = _uiState.value.requestableMusicState
+        if (current !is RequestableMusicUiState.Loaded) return
+        _uiState.value =
+            _uiState.value.copy(requestableMusicState = current.copy(grabWarnings = current.grabWarnings + (guid to message)))
     }
 
     private data class LibraryFanOutResult(

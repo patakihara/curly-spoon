@@ -383,6 +383,32 @@ data class RequestResponse(
 )
 
 // -----------------------------------------------------------------------------
+// Providers (routes/requests.ts `GET /providers`) — Android wave 12b-A2. Only the three
+// fields the availability gate actually reads (`net.auralis.app.features.search.
+// SearchRequestability`) are declared; the server's `toProviderEntry` also sends
+// `id`/`displayName`/`requiresBaseUrl`/`requiresSecret`/`secretFields`/`summary`/`baseUrl`/
+// `hasSecret`, all silently dropped by `auralisJson`'s `ignoreUnknownKeys` since nothing on
+// Android needs them yet — this is a read-only availability check, not a settings screen.
+// -----------------------------------------------------------------------------
+
+/** One provider descriptor plus what is actually configured for it. `kind` is left as a
+ * plain `String` (`"indexer"` | `"download"` | `"music"`) rather than a Kotlin enum, same
+ * reasoning as [BookRequest.status] — an upstream provider kind this build doesn't know
+ * about yet should decode as an entry the availability gate simply never matches, not throw. */
+@Serializable
+data class ProviderEntry(
+    val kind: String,
+    val configured: Boolean,
+    val enabled: Boolean,
+)
+
+/** GET /providers response envelope. */
+@Serializable
+data class ProvidersResponse(
+    val providers: List<ProviderEntry>,
+)
+
+// -----------------------------------------------------------------------------
 // Music requests (routes/musicRequests.ts) — Android wave K
 // -----------------------------------------------------------------------------
 

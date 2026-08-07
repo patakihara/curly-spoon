@@ -13,6 +13,8 @@ import net.auralis.app.data.network.FakeKeyValueStore
 import net.auralis.app.data.network.SessionCookieJar
 import net.auralis.app.data.settings.ServerConfigRepository
 import net.auralis.app.features.music.MusicRepository
+import net.auralis.app.features.musicrequests.CandidateRequestState
+import net.auralis.app.features.requests.ReleaseRequestState
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -92,6 +94,37 @@ class UnifiedSearchViewModelTest {
         """[{"id":"lib-book","name":"Books","mediaType":"book"},
             {"id":"lib-podcast","name":"Podcasts","mediaType":"podcast"}]"""
 
+    // -----------------------------------------------------------------------------
+    // 12b-A2 — the requestable fan-out. Every dispatcher below still needs the plain library/
+    // music branches above (searchLibraryBody()/jellyfinSearchBody() with no arguments is
+    // "found nothing"), since fetchRequestableBooks/fetchRequestableMusic are siblings of that
+    // fan-out, not a replacement for it — a query this file's tests fire always triggers both.
+    // -----------------------------------------------------------------------------
+
+    private fun providersBody(providers: String = "[]") = """{"providers":$providers}"""
+
+    private fun releaseSearchBody(
+        releases: String = "[]",
+        errors: String = "[]",
+    ) = """{"releases":$releases,"errors":$errors}"""
+
+    private fun musicRequestSearchBody(
+        candidates: String = "[]",
+        errors: String = "[]",
+    ) = """{"candidates":$candidates,"errors":$errors}"""
+
+    private val enabledBookProviders =
+        """[{"kind":"indexer","configured":true,"enabled":true},
+            {"kind":"download","configured":true,"enabled":true}]"""
+
+    private val enabledMusicProvider = """[{"kind":"music","configured":true,"enabled":true}]"""
+
+    private val oneRelease =
+        """[{"guid":"g1","indexerId":"idx1","sourceName":"Prowlarr","title":"Dune",
+            "seeders":5,"leechers":0,"categories":[]}]"""
+
+    private val oneCandidate = """[{"guid":"c1","providerId":"slskd","sourceName":"slskd","title":"Arrakis"}]"""
+
     /** Routes every request by path, always returning [libraries] for `GET /libraries` and
      * delegating everything else to [onOther] — the shared skeleton every test in this file
      * builds its own [Dispatcher] from. */
@@ -134,10 +167,15 @@ class UnifiedSearchViewModelTest {
 
             advanceDebounce()
             viewModel.uiState.first { it.resultsState is UnifiedSearchResultsUiState.Results }
+            viewModel.uiState.first { it.requestableBooksState !is RequestableBooksUiState.Loading }
 
-            // GET /libraries, GET /libraries/lib-book/search and GET /jellyfin/search — exactly
-            // one fan-out, not one per keystroke and not one per intermediate value either.
-            assertEquals(3, mockWebServer.requestCount)
+            // GET /libraries, GET /libraries/lib-book/search, GET /jellyfin/search and one
+            // shared GET /providers (fetchRequestableBooks/fetchRequestableMusic await the same
+            // Deferred — see UnifiedSearchViewModel's own doc comment) — exactly one fan-out,
+            // not one per keystroke and not one per intermediate value either. The 404 default
+            // dispatch branch below closes both requestable gates, so neither
+            // GET /requests/search nor GET /music-requests/search ever fires.
+            assertEquals(4, mockWebServer.requestCount)
         }
 
     @Test
@@ -151,6 +189,10 @@ class UnifiedSearchViewModelTest {
             viewModel.onQueryChange("")
 
             assertEquals(UnifiedSearchResultsUiState.Idle, viewModel.uiState.value.resultsState)
+            // The requestable sections must not render on an empty query either — both settle
+            // back to Idle alongside resultsState, not merely "whatever they last were".
+            assertEquals(RequestableBooksUiState.Idle, viewModel.uiState.value.requestableBooksState)
+            assertEquals(RequestableMusicUiState.Idle, viewModel.uiState.value.requestableMusicState)
             assertEquals(0, mockWebServer.requestCount)
         }
 
@@ -377,5 +419,290 @@ class UnifiedSearchViewModelTest {
             Thread.sleep(300)
             val finalState = viewModel.uiState.value.resultsState as UnifiedSearchResultsUiState.Results
             assertEquals(listOf("Right Book"), finalState.books.map { it.title })
+        }
+
+    // -----------------------------------------------------------------------------
+    // 12b-A2 — the requestable fan-out (docs/ROADMAP.md §12b/12b-A2).
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `library results settle while the requestable fan-out is still waiting on a deliberately slow providers response`() =
+        runTest {
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") -> MockResponse().setBody(searchLibraryBody())
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            // Deliberately slow — this is the only thing standing between the
+                            // requestable sections and settling, and it must never hold up the
+                            // library fan-out above, which has no dependency on it at all.
+                            path.contains("/providers") ->
+                                MockResponse().setBody(providersBody(enabledBookProviders))
+                                    .setBodyDelay(200, TimeUnit.MILLISECONDS)
+                            path.contains("/requests/search") -> MockResponse().setBody(releaseSearchBody(oneRelease))
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.resultsState is UnifiedSearchResultsUiState.Results }
+
+            // Library has settled; the requestable fan-out is still waiting on the deliberately
+            // delayed GET /providers above — this is the property this whole wave exists for.
+            assertEquals(RequestableBooksUiState.Loading, viewModel.uiState.value.requestableBooksState)
+            assertEquals(RequestableMusicUiState.Loading, viewModel.uiState.value.requestableMusicState)
+
+            viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+            val booksState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
+            assertEquals(listOf("Dune"), booksState.releases.map { it.title })
+        }
+
+    @Test
+    fun `a requestable book search failure leaves the library results intact`() =
+        runTest {
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") ->
+                                MockResponse().setBody(
+                                    searchLibraryBody(
+                                        books = """[{"id":"book1","libraryId":"lib-book",
+                                            "media":{"kind":"book","title":"Dune"}}]""",
+                                    ),
+                                )
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledBookProviders))
+                            path.contains("/requests/search") ->
+                                MockResponse().setResponseCode(500).setBody(
+                                    """{"error":{"code":"upstream_error","message":"boom"}}""",
+                                )
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+
+            val results = viewModel.uiState.value.resultsState as UnifiedSearchResultsUiState.Results
+            assertEquals(listOf("Dune"), results.books.map { it.title })
+            assertEquals(null, results.libraryError)
+
+            val booksState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
+            assertTrue(booksState.releases.isEmpty())
+            assertTrue(booksState.error != null)
+            // The search itself failed, not "nothing matched" — but the two are deliberately
+            // indistinguishable here: see RequestableBooksUiState.Loaded.offerRequestAnyway's
+            // own doc comment on why a user whose indexer is down still gets offered the button.
+            assertTrue(booksState.offerRequestAnyway)
+        }
+
+    @Test
+    fun `a library search failure leaves the requestable book results intact`() =
+        runTest {
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setResponseCode(500).setBody(
+                                    """{"error":{"code":"upstream_error","message":"boom"}}""",
+                                )
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledBookProviders))
+                            path.contains("/requests/search") -> MockResponse().setBody(releaseSearchBody(oneRelease))
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+
+            val results = viewModel.uiState.value.resultsState as UnifiedSearchResultsUiState.Results
+            assertTrue(results.books.isEmpty())
+            assertTrue(results.libraryError != null)
+
+            val booksState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
+            assertEquals(listOf("Dune"), booksState.releases.map { it.title })
+            assertEquals(null, booksState.error)
+        }
+
+    @Test
+    fun `the book and music request gates are honoured independently`() =
+        runTest {
+            // Only the book gate is satisfied here — no "music"-kind provider entry at all —
+            // so the music side must settle to Idle without ever calling GET
+            // /music-requests/search, while the book side searches and finds a release.
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") -> MockResponse().setBody(searchLibraryBody())
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledBookProviders))
+                            path.contains("/requests/search") -> MockResponse().setBody(releaseSearchBody(oneRelease))
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+
+            val booksState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
+            assertEquals(listOf("Dune"), booksState.releases.map { it.title })
+            assertEquals(RequestableMusicUiState.Idle, viewModel.uiState.value.requestableMusicState)
+        }
+
+    @Test
+    fun `a failed release request leaves the row Failed, not Requested`() =
+        runTest {
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") -> MockResponse().setBody(searchLibraryBody())
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledBookProviders))
+                            path.contains("/requests/search") -> MockResponse().setBody(releaseSearchBody(oneRelease))
+                            path == "/api/v1/requests" ->
+                                MockResponse().setResponseCode(500).setBody(
+                                    """{"error":{"code":"upstream_error","message":"boom"}}""",
+                                )
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+            val release = (viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded).releases.single()
+
+            viewModel.requestRelease(release)
+            viewModel.uiState.first {
+                val state = it.requestableBooksState
+                state is RequestableBooksUiState.Loaded && state.releaseStates[release.guid] is ReleaseRequestState.Failed
+            }
+
+            val finalState = viewModel.uiState.value.requestableBooksState as RequestableBooksUiState.Loaded
+            assertTrue(finalState.releaseStates[release.guid] is ReleaseRequestState.Failed)
+        }
+
+    @Test
+    fun `requesting a music candidate creates the request and immediately grabs it when approved`() =
+        runTest {
+            var grabbed = false
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") -> MockResponse().setBody(searchLibraryBody())
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledMusicProvider))
+                            path.contains("/music-requests/search") ->
+                                MockResponse().setBody(musicRequestSearchBody(oneCandidate))
+                            path == "/api/v1/music-requests" ->
+                                MockResponse().setBody(
+                                    """{"request":{"id":"req1","userId":"u1","title":"Arrakis",
+                                        "status":"approved","progress":0,"createdAt":1,"updatedAt":1}}""",
+                                )
+                            path == "/api/v1/music-requests/req1/grab" -> {
+                                grabbed = true
+                                MockResponse().setBody(
+                                    """{"request":{"id":"req1","userId":"u1","title":"Arrakis",
+                                        "status":"downloading","progress":0,"createdAt":1,"updatedAt":1}}""",
+                                )
+                            }
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableMusicState is RequestableMusicUiState.Loaded }
+            val candidate = (viewModel.uiState.value.requestableMusicState as RequestableMusicUiState.Loaded).candidates.single()
+
+            viewModel.requestCandidate(candidate)
+            viewModel.uiState.first {
+                val state = it.requestableMusicState
+                state is RequestableMusicUiState.Loaded && state.candidateStates[candidate.guid] is CandidateRequestState.Requested
+            }
+
+            assertTrue(grabbed)
+            val finalState = viewModel.uiState.value.requestableMusicState as RequestableMusicUiState.Loaded
+            assertEquals(CandidateRequestState.Requested, finalState.candidateStates[candidate.guid])
+            assertEquals(null, finalState.grabWarnings[candidate.guid])
+        }
+
+    @Test
+    fun `a failed candidate request leaves the row Failed, not Requested`() =
+        runTest {
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val path = request.path ?: return MockResponse().setResponseCode(404)
+                        return when {
+                            path.startsWith("/api/v1/libraries") && !path.contains("/search") ->
+                                MockResponse().setBody(librariesBody(oneBookLibrary))
+                            path.contains("/libraries/lib-book/search") -> MockResponse().setBody(searchLibraryBody())
+                            path.contains("/jellyfin/search") -> MockResponse().setBody(jellyfinSearchBody())
+                            path.contains("/providers") -> MockResponse().setBody(providersBody(enabledMusicProvider))
+                            path.contains("/music-requests/search") ->
+                                MockResponse().setBody(musicRequestSearchBody(oneCandidate))
+                            path == "/api/v1/music-requests" ->
+                                MockResponse().setResponseCode(500).setBody(
+                                    """{"error":{"code":"upstream_error","message":"boom"}}""",
+                                )
+                            else -> MockResponse().setResponseCode(404)
+                        }
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("dune")
+            advanceDebounce()
+            viewModel.uiState.first { it.requestableMusicState is RequestableMusicUiState.Loaded }
+            val candidate = (viewModel.uiState.value.requestableMusicState as RequestableMusicUiState.Loaded).candidates.single()
+
+            viewModel.requestCandidate(candidate)
+            viewModel.uiState.first {
+                val state = it.requestableMusicState
+                state is RequestableMusicUiState.Loaded && state.candidateStates[candidate.guid] is CandidateRequestState.Failed
+            }
+
+            val finalState = viewModel.uiState.value.requestableMusicState as RequestableMusicUiState.Loaded
+            assertTrue(finalState.candidateStates[candidate.guid] is CandidateRequestState.Failed)
         }
 }

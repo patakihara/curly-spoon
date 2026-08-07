@@ -51,6 +51,8 @@ import net.auralis.app.data.model.PodcastFeedPreview
 import net.auralis.app.data.model.PodcastFeedPreviewResponse
 import net.auralis.app.data.model.PodcastSearchResponse
 import net.auralis.app.data.model.PreviewPodcastFeedBody
+import net.auralis.app.data.model.ProviderEntry
+import net.auralis.app.data.model.ProvidersResponse
 import net.auralis.app.data.model.Release
 import net.auralis.app.data.model.RequestResponse
 import net.auralis.app.data.model.RequestSearchResult
@@ -294,6 +296,12 @@ class ApiClient(
     suspend fun deleteRequest(id: String) {
         executeNoContent(Request.Builder().url(apiUrl("/requests/$id")).delete().build())
     }
+
+    /** GET /providers — every indexer/download-client/music-provider descriptor this build
+     * knows, each paired with whatever is actually configured for it. Wave 12b-A2's
+     * availability gate (`net.auralis.app.features.search.SearchRequestability`) is the only
+     * consumer so far. */
+    suspend fun providers(): List<ProviderEntry> = get<ProvidersResponse>("/providers").providers
 
     // -----------------------------------------------------------------------------
     // Music requests (routes/musicRequests.ts) — Android wave K. Only search/list/create/
