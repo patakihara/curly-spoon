@@ -1982,7 +1982,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | Area                                                    | Status |
 | ------------------------------------------------------- | ------ |
 | 12a — Five-view navigation shell (web + Android)        | done (web + Android) |
-| 12b — Search view: unified library + request results    | web done; Android library half done, 12b-A2 todo |
+| 12b — Search view: unified library + request results    | done (web + Android) |
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
 | 12e — Context menus (long-press / right-click)          | web done (album page only), Android todo |
@@ -2138,6 +2138,24 @@ path, which is correct — the gap is coverage, not a known defect.
 Review also found one real UX defect, fixed in `2baac66`: book results rendered through
 `MusicRow` with an empty `onClick`, and `MusicRow` wired `onClick` unconditionally into
 `.clickable`, so an inert row rippled under a finger. `MusicRow`'s `onClick` is nullable now.
+
+**12b-A2 (Android) shipped 2026-08-08** — `664e817`, fixed in `3bbcfbc`. Requestable books and
+music now sit alongside the library results in one view, visually separated, and pressing a row
+requests it. It mirrors web's four already-shipped decisions rather than re-deciding them, and
+`GET /providers` — absent from Android entirely, though the server has always exposed it — was
+added to drive the gates.
+
+The behavioural requirement worth knowing: the requestable fan-out is launched as
+`viewModelScope.launch` **siblings** of the library fetch, never awaited children, because a book
+request fans out to real indexers and a music request is a real Soulseek search that can take
+around seventeen seconds. Library results must render first and requestable results fill in. A
+test pins it by delaying `/providers` and asserting library results have settled while both
+requestable sections are still loading.
+
+It cost one red CI round, and `docs/HANDOVER.md` has the write-up: the failure was a dispatcher
+teardown race rather than the usual `runTest` visibility problem, and the conventional fix —
+injecting a test dispatcher — would have quietly turned two timing-dependent tests into
+tautologies.
 
 #### 12c — In-view search, and artist/author pages
 

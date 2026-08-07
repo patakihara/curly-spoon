@@ -81,9 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T19:14:19Z` · `a19f26f7c17fe56af` · general-purpose · ended · I'll wait for the background test run to complete before proceeding.
-- `2026-08-07T19:28:46Z` · `a0a086b43c492f5ce` · general-purpose · ended · ## Verdict: has a defect that must be fixed The Series and Author pages both depend on structured 'authors[]'/'series[]' arrays on book items — but e…
-- `2026-08-07T19:38:29Z` · `af767a8f2890d20aa` · general-purpose · ended · Waiting for the full Playwright suite (background run) and the monitor to report. Work is already committed at '253add9', so nothing is at risk while…
 - `2026-08-07T20:07:17Z` · `a1b2a40eb1e9e4e64` · general-purpose · ended · Working tree is clean, both commits are on the worktree branch 'worktree-agent-a1b2a40eb1e9e4e64'. ## Report **Branch/sha:** 'worktree-agent-a1b2a40e…
 - `2026-08-07T20:12:09Z` · `af767a8f2890d20aa` · general-purpose · ended · Already committed before this run, per the rule. I'll wait for the notification.
 - `2026-08-07T20:16:08Z` · `af767a8f2890d20aa` · general-purpose · ended · Waiting for the full Playwright suite run to complete.
@@ -95,7 +92,10 @@ in-context scan of the current one.
 - `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
 - `2026-08-07T21:44:44Z` · `a3acefbcb5f4b4419` · general-purpose · ended · Clean working tree, on branch 'worktree-agent-a3acefbcb5f4b4419' at commit '2f327c4', based on '91663b6'. Not pushed, as instructed. ## Report **Bran…
 - `2026-08-07T22:05:52Z` · `aa590b527eef7f0d1` · general-purpose · ended · Confirmed — the mutation paths ('requestRelease'/'updateReleaseState'/'requestAnyway'/'updateTitleRequestState'/'requestCandidate'/'updateCandidateSt…
-- `2026-08-07T22:09:11Z` · `a23f9d40a38873131` · general-purpose · running · —
+- `2026-08-07T22:09:11Z` · `a23f9d40a38873131` · general-purpose · ended · Committed on the worktree branch (not pushed, not merged, as instructed). Final report: ## Findings **Test 1 & 2 ('UncaughtExceptionsBeforeTest' at '…
+- `2026-08-07T22:11:08Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · ## Report **Branch/commits:** 'worktree-agent-a6cc1b9e8df12d5bd', HEAD '0da3db8', with the substantive change at 'fbfe619' (both on top of '879655e')…
+- `2026-08-07T22:12:04Z` · `abe76a1fb774d2ff7` · general-purpose · ended · I have everything needed. Now the final report. ## Report **1. 'JellyfinTrack'** ('apps/web/src/api/types.ts:563-575'): '''ts export interface Jellyf…
+- `2026-08-07T22:12:55Z` · `a7ca465024383f9a7` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -351,7 +351,16 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-**Landed — 2026-08-07 ~22:00Z, session `1b29a583`. Claim released.**
+**Landed — 2026-08-08 ~00:05Z, session `1b29a583`. Claim released.**
+
+**12b (Android) is done, both halves.** 12b-A2 — requestable books and music alongside the
+library results — landed at `664e817` with its fix at `3bbcfbc`; Android CI green. It mirrors
+web's four decisions rather than re-deciding them: no de-duplication against the library, no
+confirm step before a music download starts, separate gates for books
+(`hasEnabledIndexer && hasEnabledDownloadClient`) and music (its own slskd provider), and no
+optimistic flip. `GET /providers` was entirely absent from Android and was added. The requestable
+fan-out runs as `viewModelScope.launch` siblings so the slow indexer and Soulseek searches never
+hold up library results.
 
 **12b-A1 (Android) is done** — `2eacc68`, plus `2baac66` for the one defect review found.
 Android search is unified across music, books and podcasts behind the two chip rows, grouped by
@@ -364,34 +373,53 @@ library should still be offered as requestable. Web's 12b-2 shipped *without* de
 recorded that as a decision for the user to confirm; Android mirroring web is the consistent
 choice, but doing it differently in a third place is the failure mode to avoid.
 
-### `main` is RED on Android as of `664e817` — a fix is in flight (2026-08-07 ~23:15Z)
+### The third `UncaughtExceptionsBeforeTest`, and why the obvious fix was the wrong one
 
-**Do not build on `apps/android` until this is green.** Wave 12b-A2 (requestable results on
-unified search) merged at `664e817` and the `Android` workflow failed. It **compiled cleanly** —
-this is a test-runtime failure, not a compile error:
+**Resolved — Android CI is green on `3bbcfbc`.** Recorded because the diagnosis is not the one
+this project's existing notes would lead you to, and the fix deliberately departs from the
+established convention.
 
-```
-UnifiedSearchViewModelTest > a settled search with no matches anywhere reaches an empty Results state, not Idle or Failed  FAILED
-UnifiedSearchViewModelTest > jellyfin unconfigured still returns book results, degrading only the music side  FAILED
-UnifiedSearchViewModelTest > requesting a music candidate creates the request and immediately grabs it when approved  FAILED
-    java.lang.AssertionError at UnifiedSearchViewModelTest.kt:620
-    kotlinx.coroutines.test.UncaughtExceptionsBeforeTest at UnifiedSearchViewModelTest.kt:64
-```
+12b-A2 merged at `664e817` and failed three unit tests. It **compiled cleanly** — a test-runtime
+failure. Two of the three were older tests from 12b-A1 that had shipped green, which was the
+diagnostic: the wave gave an existing ViewModel new outbound requests (`/providers`,
+`/requests/search`, `/music-requests/search`) fired on every search, as fire-and-forget
+`viewModelScope.launch` siblings that `performSearch` does not await.
 
-**The first two failing tests are older than the change that broke them** — they shipped green in
-12b-A1 and cover the library half. That is the diagnostic: 12b-A2 added fire-and-forget
-`viewModelScope.launch` fetches for `/providers`, `/requests/search` and `/music-requests/search`
-that now fire on *every* search, and the older tests' `MockWebServer` dispatchers have no branch
-for those paths. `UncaughtExceptionsBeforeTest` is this project's already-documented signature for
-exactly that — a request in flight when `@After` shuts the server down, reported against whichever
-test ran **next**, so the test named is usually not the test at fault.
+**But the mechanism was not the usual one.** The prior two occurrences were about work being
+invisible to `runTest`. Here `UnifiedSearchViewModelTest.setUp()` builds `ApiClient` with the
+default real `Dispatchers.IO`, two tests awaited only `resultsState` and returned while the
+requestable fan-out was still in flight, and then `tearDown()`'s **`Dispatchers.resetMain()` tore
+down the Main dispatcher that the in-flight continuation needed to resume onto**. That throws
+`IllegalStateException` — *not* `ApiException`, so nothing in the app's error handling catches it
+— reported against whichever test ran next.
 
-**This is the third occurrence of that failure class**, after the `ApiClient` dispatcher leak and
-the `SharedFlow` collector one. The lesson it adds: a wave that gives an existing ViewModel **new
-outbound requests** silently invalidates every existing test's dispatcher, and nothing in review
-catches it because each test looks correct in isolation. A shared default branch answering
-unrecognised paths with a valid empty body would make this class impossible by construction —
-which is what the in-flight fix was asked to consider.
+**The obvious fix is wrong here, and this is the part worth keeping.** Injecting
+`ioDispatcher = testDispatcher`, as roughly nine other ViewModel test files in this package do,
+would make every call run synchronously — and **two tests in this very file depend on real
+background-thread concurrency**: the stale-search guard and the "library results settle while the
+requestable fan-out is still loading" test both assert on interleaving produced by
+`MockWebServer` body delays. Forcing the unconfined dispatcher collapses exactly the interleaving
+they exist to pin, turning both into tautologies that pass for the wrong reason. So the
+convention is not universal: **a file containing timing-dependent tests cannot use it.** The fix
+instead has `tearDown()` drain both requestable states to non-`Loading` before shutdown.
+
+A second, unrelated race was in the same failure set: `requestCandidate` wrote `Requested` before
+attempting the follow-up grab, so an assertion could resolve before the grab had started. The
+grab and the `Requested` write are now one `_uiState` write.
+
+**And the staleness gap independent review found is fixed in the same commit.** The three *fetch*
+write-sites checked `searchSequence`; the seven *mutation* callbacks did not, so a slow
+`createRequest`/`grabMusicRequest` resolving after a newer query had settled spliced the old guid
+into the new query's state maps. Narrow in practice — guids essentially never collide across two
+search terms — but a real asymmetry against the file's own discipline. `sequence` is threaded
+through all of them now, with a regression test that fails without it.
+
+**Worth generalising:** a wave that gives an existing ViewModel **new outbound requests** silently
+invalidates every existing test's `MockWebServer` dispatcher, and review cannot catch it because
+each test still reads correctly in isolation. Independent review of this wave explicitly examined
+the leak question and concluded there was none, reasoning from the established idiom — CI proved
+otherwise. That is now two waves running where review's toolchain-level reasoning was wrong and
+CI was right.
 
 ### The web `CI` workflow has not completed since `8712716`, and the concurrency policy is why
 
