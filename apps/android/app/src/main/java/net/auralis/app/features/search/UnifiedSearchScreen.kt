@@ -184,7 +184,7 @@ private fun LazyListScope.searchResultsSection(
                         imageLoader = imageLoader,
                         // No book-detail route exists yet — non-interactive rather than a dead
                         // tap target, per this file's own doc comment.
-                        onClick = {},
+                        onClick = null,
                     )
                 }
             }

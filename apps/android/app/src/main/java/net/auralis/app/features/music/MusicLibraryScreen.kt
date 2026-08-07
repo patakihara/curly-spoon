@@ -279,7 +279,13 @@ internal fun MusicRow(
     subtitle: String?,
     coverUrl: String?,
     imageLoader: ImageLoader,
-    onClick: () -> Unit,
+    /**
+     * Null means the row has nowhere to go, and must therefore not look tappable.
+     * Unified search renders book, series and author results this way: Android has no
+     * detail route for any of them yet, and a row that ripples under a finger and then
+     * does nothing reads as a broken app rather than as an unavailable feature.
+     */
+    onClick: (() -> Unit)? = null,
     trailing: @Composable () -> Unit = {},
 ) {
     Row(
@@ -287,7 +293,10 @@ internal fun MusicRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            modifier = Modifier.weight(1f).clickable(onClick = onClick),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AsyncImage(
