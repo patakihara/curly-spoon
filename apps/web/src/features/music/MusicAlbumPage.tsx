@@ -45,6 +45,7 @@ import { formatDuration } from '../player/playback.js';
 import { usePlayerStore } from '../../state/playerStore.js';
 import { AddToPlaylistButton } from './AddToPlaylistButton.js';
 import { FavoriteToggle } from './FavoriteToggle.js';
+import { TrackContextMenu } from './TrackContextMenu.js';
 import { summarizePage } from './pagination.js';
 import { attachMusicQueueEndedHandler, beginMusicQueue } from './musicQueueController.js';
 import { toQueueTrack, type QueueTrack } from './musicQueue.js';
@@ -68,6 +69,10 @@ export function MusicAlbumPage() {
   const albumName = tracks[0]?.albumName ?? 'Album';
   const artistNames = tracks[0]?.artistNames.join(', ') ?? '';
   const albumFavorite = albumQuery.data?.items[0]?.favorite ?? false;
+  // Every track on this page belongs to this one album, so its artist id (unlike
+  // `JellyfinTrack`, which carries none — see `trackContextMenu.ts`'s own doc comment) is
+  // available here from the album fetch and the same for every row's context menu.
+  const albumArtistId = albumQuery.data?.items[0]?.artistId ?? null;
   const page = tracksQuery.data
     ? summarizePage({ startIndex, limit: 40 }, tracksQuery.data.total, tracks.length)
     : null;
@@ -77,6 +82,7 @@ export function MusicAlbumPage() {
   const onPlaylistError = () =>
     snackbar.enqueue({ message: "Couldn't update that playlist — try again." });
   const onAdded = () => snackbar.enqueue({ message: 'Added to playlist.' });
+  const onQueueMessage = (message: string) => snackbar.enqueue({ message });
 
   const playTrack = (clicked: JellyfinTrack) => {
     const queueTracks: QueueTrack[] = tracks.map(toQueueTrack);
@@ -172,34 +178,49 @@ export function MusicAlbumPage() {
         <>
           <div data-testid="music-track-list" style={{ display: 'flex', flexDirection: 'column' }}>
             {tracks.map((track) => (
-              <ListItem
+              <TrackContextMenu
                 key={track.id}
-                data-testid={`music-track-${track.id}`}
-                aria-label={`Play ${track.name}`}
-                onClick={() => playTrack(track)}
-                leading={<span>{trackPosition(track.discNumber, track.trackNumber)}</span>}
-                headline={track.name}
-                supportingText={
-                  track.durationSeconds !== null ? formatDuration(track.durationSeconds) : undefined
-                }
-                trailing={
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <AddToPlaylistButton
-                      tracks={[track]}
-                      label={track.name}
-                      onError={onPlaylistError}
-                      onAdded={onAdded}
-                      data-testid={`music-track-add-to-playlist-${track.id}`}
-                    />
-                    <FavoriteToggle
-                      itemId={track.id}
-                      itemName={track.name}
-                      favorite={track.favorite}
-                      onError={onFavoriteError}
-                      data-testid={`music-track-favorite-${track.id}`}
-                    />
-                  </div>
-                }
+                track={{
+                  id: track.id,
+                  name: track.name,
+                  albumId: track.albumId,
+                  artistId: albumArtistId,
+                }}
+                queueTrack={toQueueTrack(track)}
+                onMessage={onQueueMessage}
+                renderRow={(moreActionsButton) => (
+                  <ListItem
+                    data-testid={`music-track-${track.id}`}
+                    aria-label={`Play ${track.name}`}
+                    onClick={() => playTrack(track)}
+                    leading={<span>{trackPosition(track.discNumber, track.trackNumber)}</span>}
+                    headline={track.name}
+                    supportingText={
+                      track.durationSeconds !== null
+                        ? formatDuration(track.durationSeconds)
+                        : undefined
+                    }
+                    trailing={
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <AddToPlaylistButton
+                          tracks={[track]}
+                          label={track.name}
+                          onError={onPlaylistError}
+                          onAdded={onAdded}
+                          data-testid={`music-track-add-to-playlist-${track.id}`}
+                        />
+                        <FavoriteToggle
+                          itemId={track.id}
+                          itemName={track.name}
+                          favorite={track.favorite}
+                          onError={onFavoriteError}
+                          data-testid={`music-track-favorite-${track.id}`}
+                        />
+                        {moreActionsButton}
+                      </div>
+                    }
+                  />
+                )}
               />
             ))}
           </div>

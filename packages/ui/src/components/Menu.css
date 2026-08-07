@@ -1,0 +1,15 @@
+.m3-menu-dropdown {
+  border-radius: var(--m3-shape-md);
+  background: var(--m3-surface-container-high);
+  color: var(--m3-on-surface);
+  box-shadow: var(--m3-elevation-2, 0 2px 8px rgba(0, 0, 0, 0.24));
+  padding: 8px;
+  min-width: 200px;
+}
+
+.m3-menu-item {
+  min-height: 48px;
+  border-radius: var(--m3-shape-sm);
+  font-size: var(--m3-type-body-medium-size);
+  color: var(--m3-on-surface);
+}

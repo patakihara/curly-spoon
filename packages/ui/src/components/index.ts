@@ -18,3 +18,4 @@ export { CircularProgress, type CircularProgressProps } from './CircularProgress
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton.js';
 export { Icon, ICON_NAMES, type IconProps, type IconName } from './Icon.js';
 export { Marquee, type MarqueeProps } from './Marquee.js';
+export { Menu, MenuTarget, type MenuProps, type MenuItemDescriptor } from './Menu.js';
