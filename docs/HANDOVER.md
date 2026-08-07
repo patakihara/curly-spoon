@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-06T08:54:49Z` · `a492187bc55352a9d` · general-purpose · ended · Committed, not pushed, as instructed. ## Report - **Branch/commit**: 'worktree-agent-a492187bc55352a9d' @ '315eaea', based on 'e961b37'. Not pushed.…
-- `2026-08-06T09:00:27Z` · `a206a1dfd1c175b23` · general-purpose · ended · **Verdict:** merge as-is. **Foreign-key question, answered definitively:** 'apps/server/src/db/connection.ts:14' sets 'db.pragma('foreign_keys = ON')…
 - `2026-08-06T10:23:51Z` · `a07bbcc0e37985f4f` · general-purpose · ended · I'll pause here and wait for the monitor/background task notification before proceeding.
 - `2026-08-06T10:32:50Z` · `a07bbcc0e37985f4f` · general-purpose · ended · I'll wait for the monitor notification for the background Lighthouse run rather than continuing to poll.
 - `2026-08-06T10:34:22Z` · `a07bbcc0e37985f4f` · general-purpose · ended · Working tree is clean, not pushed, on the worktree's own branch. ## Report **Branch/commit**: 'worktree-agent-a07bbcc0e37985f4f' @ 'f65bf1d', based o…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T15:15:06Z` · `adcc809c96c8526e1` · general-purpose · ended · Waiting for the full Playwright suite (background run + monitor) to finish before continuing.
 - `2026-08-07T15:32:25Z` · `adcc809c96c8526e1` · general-purpose · ended · Committed and working tree clean, not pushed. Final report follows. ## Report **Branch/commit:** 'worktree-agent-adcc809c96c8526e1' @ 'b82f936'. Rese…
 - `2026-08-07T15:44:39Z` · `a3c6727d2bea7862c` · general-purpose · ended · Cleaned up. Worktree is back to a clean state matching commit b82f936. ## Verdict: merge with named corrections The implementation is solid and match…
+- `2026-08-07T16:02:18Z` · `a07dae5b8f3764c2b` · general-purpose · ended · ## Report **Reset sha:** '1390a78'. **Branch/commit:** 'worktree-agent-a07dae5b8f3764c2b' @ '796ad4a'. Committed, not pushed. **Files changed:** - 'a…
+- `2026-08-07T16:33:50Z` · `aa0a07f6fbf21c41c` · general-purpose · ended · Confirmed — podcasts have no queue concept at all today; each episode is a single 'load()'. Enough evidence gathered. ## Report **1. Current queue to…
 
 <!-- AGENT_LOG_END -->
 
@@ -322,7 +322,19 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-_No wave is currently claimed._
+**Claimed — 2026-08-07 ~16:35Z.**
+
+- **12b-1 (web Search filters)** — live in `agent-a07dae5b8f3764c2b`, owned by session
+  `0e7913a4`. Verified live, not inferred: its worktree has uncommitted `searchFilters.ts`,
+  `searchFilters.test.ts`, `SearchPage.tsx` and `e2e/app/search-view.spec.ts`, and a
+  Playwright run was in flight at 16:31Z. **12b-2 is sequenced behind it** and touches the
+  same `SearchPage.tsx`, so both of `docs/agent-specs/01-*` and `02-*` belong to that
+  session. Do not dispatch either.
+- **12f (web per-content-type queues)** — claimed by session `16f272ea`. Disjoint by
+  construction: `apps/web/src/state/*QueueStore.ts`, `features/music/musicQueue*`,
+  `features/podcasts/`, `features/player/`. Explicitly does **not** touch
+  `features/search/**`, `api/types.ts`, `styles/app.css`, `fakeAbs.ts` or
+  `e2e/app/search-view.spec.ts`.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
@@ -333,6 +345,35 @@ branch-log check is how the same feature gets built twice.
 The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
+
+### Two identical autonomous sessions again, and how the collision was handled (2026-08-07)
+
+`auralis-autorun` started session `16f272ea` at ~16:30Z with a prompt byte-identical to
+`0e7913a4`'s, while that session was still mid-flight inside a subagent — its idle check
+still cannot see a session that is busy in subagents rather than in its own transcript, the
+same blind spot the 2026-08-05 duplicate-playlists incident found. This is now the second
+occurrence, so treat it as a property of the runner rather than a one-off.
+
+**What caught it this time, and is the check worth repeating**: `pgrep -af claude` from a
+starting session, read for `node .../worktrees/<name>/...` child processes. A live Playwright
+or vite process rooted in a worktree path is positive proof that wave is taken — stronger
+than `git log main..<branch>` (which is empty for an agent that has not committed yet) and
+stronger than a mtime. Cross-check the owner with
+`ls -lt ~/.claude/projects/-home-sofiapata-src-auralis-src/*.jsonl`: a transcript written in
+the last few minutes is a session still alive, so its agent's work will be merged by someone
+and must not be salvaged or duplicated.
+
+The second session took a disjoint roadmap item rather than stopping — see the claim block
+above. That is the intended resolution: the collision is in the runner, not in the work.
+
+### The stale worktree `agent-a623d0d03e48b3297` is safe to ignore
+
+Its two commits, `a25d2ea`/`7daa127` (lazy-load the app shell, re-derive the perf budgets),
+are on `main` under those same titles — landed by re-commit rather than by merge, so they
+share no ancestry with the branch. `scripts/hooks/worktree-gc.sh` therefore refuses it
+("not a confirmed ancestor of main") and will refuse it forever. That is the safety rail
+working, not a fault. Nothing is unmerged; removing it needs a deliberate
+`git worktree remove` plus `git branch -D`, which is the user's call, not a session's.
 
 ### Android's UI is further behind than the roadmap suggests (2026-08-06)
 
