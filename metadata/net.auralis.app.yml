@@ -1,0 +1,39 @@
+# fdroidserver app metadata for the self-hosted repo published by
+# `.github/workflows/fdroid-repo.yml`. See `docs/FDROID_REPO.md` for the operator's guide
+# and `docs/research/FDROID_DISTRIBUTION.md` for the investigation this is built from.
+#
+# This is a *binary* repo entry, not a source one: there is deliberately no `Builds:` list.
+# `fdroid update` matches a prebuilt APK already sitting in `repo/` to this file by
+# `applicationId` and pulls the description/license/links from here — it does not compile
+# anything, unlike an official-F-Droid `fdroiddata` entry, which would need a full
+# reproducible `Builds:` recipe (see the "Reproducible builds" section of
+# `docs/research/FDROID_DISTRIBUTION.md`). That is deliberately out of scope for this repo:
+# it is what an eventual official-F-Droid submission would add, not what this one needs.
+Categories:
+  - Multimedia
+License: CC0-1.0
+AuthorName: patakihara
+WebSite: https://github.com/patakihara/curly-spoon
+SourceCode: https://github.com/patakihara/curly-spoon
+IssueTracker: https://github.com/patakihara/curly-spoon/issues
+Changelog: https://github.com/patakihara/curly-spoon/releases
+
+AutoName: Auralis
+Summary: Audiobook, podcast and music client for your own media server
+Description: |
+  Auralis is a Material 3 Expressive client for a self-hosted media server: audiobooks and
+  podcasts from Audiobookshelf, and music from Jellyfin, in one app with one search.
+
+  Play audiobooks and podcasts with chapter-aware seeking and cross-device progress sync,
+  browse and play your Jellyfin music library with synced lyrics, and request new
+  audiobooks or albums to be added to your library — all from a single home screen.
+
+  Auralis is a client only: it does not host or bundle any media, and it does not work
+  without a media server (Audiobookshelf, and optionally Jellyfin) already running
+  somewhere reachable from your device. See the project's `docs/SELF_HOSTING.md` for the
+  server side.
+
+RepoType: git
+Repo: https://github.com/patakihara/curly-spoon.git
+
+# No `Builds:` — see the header comment above.

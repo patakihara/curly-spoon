@@ -5,6 +5,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// A release run (`.github/workflows/fdroid-repo.yml`) passes these as
+// `-PauralisVersionCode=<n> -PauralisVersionName=<version>`, derived from the pushed release
+// tag by `scripts/fdroid-versioncode.mjs` — see that file's header for why versionCode is a
+// tag *count*, not the semver number itself, and `docs/FDROID_REPO.md` for the full release
+// flow. Every other build (a plain local `./gradlew assembleDebug`, `android.yml`'s CI job)
+// passes neither property, so it falls back to the same hardcoded values this file always
+// had — nothing about a normal debug build changes.
+val releaseVersionCode = (project.findProperty("auralisVersionCode") as String?)?.toIntOrNull() ?: 1
+val releaseVersionName = (project.findProperty("auralisVersionName") as String?) ?: "0.1.0"
+
 android {
     namespace = "net.auralis.app"
     compileSdk = 35
@@ -13,8 +23,8 @@ android {
         applicationId = "net.auralis.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
     }
 
     buildTypes {
