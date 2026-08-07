@@ -351,6 +351,19 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
+**Claimed — 2026-08-07 ~21:35Z, session `1b29a583`: 12b (Android), unified search.**
+
+Replacing Android's music-only `MusicSearchScreen` with the unified search the spec addendum
+requires. Split the way web split it: **12b-A1** is the library half (the two chip rows and
+grouped results across music, books and podcasts), **12b-A2** the requestable half.
+`apps/android/**` only, so disjoint from any web work.
+
+**One thing scouted so the next session need not re-derive it: there is no unified search
+endpoint on the BFF.** Web's `SearchPage` fans out client-side across
+`GET /libraries/:id/search` (books and podcasts, via Audiobookshelf) and
+`GET /jellyfin/search` (music), then groups the results itself. Android has to do the same
+fan-out; do not go looking for a single endpoint to call.
+
 **Landed — 2026-08-07 ~20:45Z, session `1b29a583`. Claim released.**
 
 - **12a (Android) is done** — `a83e416`/`523baa5` (the shell) and `ce77e6c`/`6b1c3c6` (the Now
