@@ -354,9 +354,15 @@ nothing on `main` is stale — take it.
 **Claimed — 2026-08-07 ~16:35Z.**
 
 - **12b is done and released.** 12b-1 landed at `ba8c2b3`/`218dc2b`, 12b-2 at
-  `2d836b0`/`2438f2a`, both reviewed and merged, both worktrees and branches gone. Session
-  `0e7913a4` holds nothing now — **12c, 12d and 12e are all free to take.** Read the note
-  above on which of them are actually startable first.
+  `2d836b0`/`2438f2a`, both reviewed and merged, both worktrees and branches gone.
+- **12e (context menus)** — claimed by session `0e7913a4`. Touches
+  `apps/web/src/features/music/` (the track rows), `packages/ui/` (a new Menu primitive if
+  one is needed) and `e2e/app/context-menu.spec.ts`. **Reads** `state/musicQueueStore.ts` for
+  the play-next / play-last actions 12f-1 just landed, and does **not** change it — if that
+  store needs a new action, this wave will say so rather than add one, since 12f-2 owns it.
+  Does not touch `features/search/`, `features/player/` or `features/podcasts/`.
+- **12c and 12d remain free but are each waiting on a user answer** — see the section above
+  for which and why.
 - **12f-1 (web queue model) — landed** at `705e4fe`, reviewed (verdict: merge as-is, no
   findings) and merged. Its worktree is gone; nothing else touched it.
 - **12f-2 (web queue view, clear-queue, queueable chapters)** — not yet claimed. Spec at
