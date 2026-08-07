@@ -1985,7 +1985,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12b — Search view: unified library + request results    | done (web + Android) |
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
-| 12e — Context menus (long-press / right-click)          | web done (all three pages), Android todo |
+| 12e — Context menus (long-press / right-click)          | done (web + Android) |
 | 12f — Per-content-type queues                           | done (web + Android model); no Android queue view |
 
 #### 12a — The five views
@@ -2318,6 +2318,42 @@ The e2e fix is worth a line because the failure was non-obvious: two tests used 
 reach a page while something was playing, and a real page load discards `useMusicQueueStore`'s
 in-memory queue — which was the precondition those tests needed. They now navigate through the
 app's own client-side router instead, with the assertions unchanged.
+
+**12e (Android) shipped 2026-08-08** — `aad6bce`/`54cf683`, with a real defect fixed in `51b2358`.
+Long-press on a music track row on the album, playlist and favourites screens offers Play next,
+Play last, Go to album and Go to artist. `features/music/TrackContextMenu.kt` is the shared
+primitive; the item-visibility decision is a pure tested function, mirroring how web separated
+`trackContextMenu.ts` from its component.
+
+**The gesture layer is new on Android, not ported.** Web got long-press and right-click free from
+Mantine's `Menu.ContextMenu`; Android had no `combinedClickable`, no `onLongClick` and no
+`DropdownMenu` anywhere in the tree before this. The three screens also shared no row composable —
+each had its own private one — so all three were wired individually.
+
+**"Go to artist" resolves differently per screen, and that is correct rather than inconsistent.** On
+the album page `AlbumDetailViewModel` already fetched the raw `JellyfinAlbum` for favourite state, so
+it now also reads `artistId` into `albumArtistId` and the action works — the same thing
+`MusicAlbumPage.tsx` does. On the playlist and favourites pages `JellyfinTrack` carries no `artistId`
+and the lists are mixed-artist, so the item is **omitted**. No fallback to the album's artist was
+used anywhere: that fallback is the recorded live bug Android fixed in `2c1b476`, and inventing it
+here would have reintroduced it. "Go to album" is per-track everywhere.
+
+**As first shipped, Play next and Play last reported success and did nothing** — they inserted into
+the `musicQueue` `QueueStore` from 12f, which nothing consumes. Fixed in `51b2358` by inserting into
+**Media3's real playlist**, which is what actually plays: `addMediaItem(currentMediaItemIndex + 1, …)`
+for Play next, append for Play last, threaded through the `PlaybackHandle` abstraction so tests
+observe real recorded `(index, item)` calls rather than a no-op fake.
+
+Two decisions in that fix are worth keeping:
+
+- **The music `QueueStore` was left unmirrored, on purpose**, and its doc comment now says plainly
+  that it is write-once (seeded only by `playQueue`) and read-never, and that Media3's playlist is the
+  right foundation for any future Android queue view. A mirror nobody reads is worse than no mirror,
+  because the next caller assumes it stays in sync — which is precisely how the defect shipped.
+- **The refusal guard now asks the right question.** It was `musicQueue.state.value == null`; it is
+  now `currentContentType != QueueContentType.MUSIC`, which covers both "nothing playing" and "a book
+  or podcast is playing" in one check. Inserting a song into an audiobook's playlist would be worse
+  than doing nothing, and the user still gets a message rather than a silent no-op.
 
 #### 12f — Queues are per content type
 

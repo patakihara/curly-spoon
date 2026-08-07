@@ -95,7 +95,7 @@ in-context scan of the current one.
 - `2026-08-07T22:54:58Z` · `a1ac0127d315ceb00` · general-purpose · ended · Committed at '738c28c' on branch 'worktree-agent-a1ac0127d315ceb00', based on 'dc4ec6c'. **Report** - **Single shared cause, confirmed by exact prece…
 - `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · ended · Committed on the worktree branch, not pushed, as instructed. ## Report **Branch/commit:** 'worktree-agent-afb619fd719a4b9b3' at '69e69bf', based on '…
 - `2026-08-07T23:18:17Z` · `a84176025894b086a` · general-purpose · ended · Clean tree, everything committed. ## Report **Branch/commits:** 'worktree-agent-a84176025894b086a', 'aad6bce' (implementation) + '54cf683' (test clea…
-- `2026-08-07T23:35:14Z` · `adf013230a4368e95` · general-purpose · running · —
+- `2026-08-07T23:35:14Z` · `adf013230a4368e95` · general-purpose · ended · Committed cleanly on the worktree branch ('worktree-agent-adf013230a4368e95' @ '56f2889', based on '54cf683'). Not pushed, not merged, per instructio…
 
 <!-- AGENT_LOG_END -->
 
@@ -351,10 +351,10 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-**Landed with a known defect — 2026-08-08 ~02:55Z, session `1b29a583`: 12e (Android).** `aad6bce`
-/`54cf683`. Long-press context menus on all three music track-row screens. **`Go to album` and
-`Go to artist` work. `Play next` and `Play last` currently report success and do nothing** — a fix
-is in flight; see the section below. Claim released.
+**Landed — 2026-08-08 ~03:30Z, session `1b29a583`: 12e (Android) is done.** `aad6bce`/`54cf683`,
+with the queue-action defect fixed in `51b2358`. Long-press context menus on all three music
+track-row screens; **all four actions now work**, Play next and Play last inserting into Media3's
+real playlist. Android CI green. Claim released.
 
 Android had **no** `combinedClickable`, `onLongClick` or `DropdownMenu` anywhere before this, so the
 gesture layer is new rather than ported. The three screens shared no row composable — each had its
@@ -388,12 +388,14 @@ explicitly cut cursor-syncing as unverifiable without a device; 12e then treated
 were authoritative. Neither wave was wrong in isolation — the gap is exactly at the seam between
 them, which is where "is this reachable from the running app?" has to be asked.
 
-**The fix in flight** redirects both actions to Media3: `addMediaItem(currentMediaItemIndex + 1, …)`
+**Fixed in `51b2358`** by redirecting both actions to Media3: `addMediaItem(currentMediaItemIndex + 1, …)`
 for Play next, append for Play last, threaded through the `PlaybackHandle` abstraction so tests can
-observe the calls. It also has to correct the refusal guard, which currently asks
-`musicQueue.state.value == null` — the wrong question now; the real one is whether Media3 has a
-*music* playlist to insert into, since inserting a song into an audiobook's playlist would be worse
-than doing nothing.
+observe the calls. The refusal guard was also corrected: it asked
+`musicQueue.state.value == null` and now asks `currentContentType != QueueContentType.MUSIC`, which
+covers both "nothing playing" and "a book or podcast is playing" — inserting a song into an
+audiobook's playlist would be worse than doing nothing. And the music `QueueStore` was deliberately
+**not** mirrored; its doc comment now records that it is write-once and read-never, because a mirror
+nobody reads is worse than no mirror.
 
 **Worth stating as a rule, given four instances:** on this project, a wave that adds a *writer* to a
 store must name its *reader*, in the spec and in the report. Three of the four instances were a
