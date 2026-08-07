@@ -2014,6 +2014,19 @@ The queue view must be able to **clear the queue, for every content type**.
 
 **Audiobook chapters must be queueable.**
 
+#### Sequencing — web first, Android second
+
+Not an arbitrary order. Playwright runs on the development machine, so every web change here
+can be verified in a real browser before it is committed; Android cannot be built, run or
+looked at on that machine at all. Doing web first means the layout, the chip behaviour and
+the search grouping are settled against something observable, and the Android wave then
+implements a decided design rather than inventing one blind — which is exactly what produced
+the gaps the phase 10 audit found.
+
+12a is the exception to "one wave per item": the navigation shell and the Now Playing surface
+have to land together on Android, because the shell is what makes a persistent mini player
+possible and the mini player is the only playback UI that exists there.
+
 ### What this addendum changes about phases already marked done
 
 Recorded here rather than by editing those sections, so the history stays readable:
