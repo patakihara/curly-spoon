@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T20:26:04Z` · `aa742f68e3b1172b9` · general-purpose · ended · Everything is committed. Final report: **Branch/commits:** 'worktree-agent-aa742f68e3b1172b9', HEAD 'd270559' ('cc494dd' is the substantive commit; '…
 - `2026-08-07T20:41:18Z` · `a1fe3079f7d9ab8a7` · general-purpose · ended · **Verdict: merge as-is.** Reviewed all eight files in the diff ('9db833b..worktree-agent-aa742f68e3b1172b9', commits 'cc494dd'/'d270559') plus the tw…
 - `2026-08-07T21:11:20Z` · `ae4ce333f6eb9e0eb` · general-purpose · ended · Clean tree, everything committed at '2eacc68'. Work is complete for this wave. ## Report **Branch/commit:** 'worktree-agent-ae4ce333f6eb9e0eb' at '2e…
 - `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
@@ -95,7 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T22:42:41Z` · `a14bb5ff62c763633` · general-purpose · ended · ## Verdict: merge with named corrections Already on 'main'; no revert needed, but one doc defect and one edge case are worth a small follow-up commit…
 - `2026-08-07T22:43:17Z` · `a8906ca3e593a8846` · general-purpose · ended · That modified line is pre-existing (present before I started, per the initial git status). Working tree is otherwise clean; my experimental revert le…
 - `2026-08-07T22:44:16Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · Flagging an important complication from a mistaken tool call on my part. Earlier, while researching track types, I sent a stray follow-up 'Agent' cal…
-- `2026-08-07T22:54:58Z` · `a1ac0127d315ceb00` · general-purpose · running · —
+- `2026-08-07T22:54:58Z` · `a1ac0127d315ceb00` · general-purpose · ended · Committed at '738c28c' on branch 'worktree-agent-a1ac0127d315ceb00', based on 'dc4ec6c'. **Report** - **Single shared cause, confirmed by exact prece…
+- `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -363,8 +363,45 @@ nothing on `main` is stale — take it.
   rather than fabricating a link to the wrong artist. This is the *cousin* of the recorded
   album-artist bug, not a recurrence: nothing is mis-credited, an unavailable action is simply
   not offered. Two e2e cases assert the item is absent.
-- **Android 12f (per-content-type queues) — model and wiring landed** at `271aad7`; **its tests
-  were still red at `dc4ec6c` and a fix is in flight.** See the section below.
+- **Android 12f (per-content-type queues) — model and wiring landed** at `271aad7`. Its **production
+  code has never been shown to be wrong**: `QueueStoreTest`, `QueueRouterTest` and the pre-existing
+  `PlayerViewModelTest` all pass. But `PlayerViewModelQueueTest`'s six cases went red and have taken
+  **two fix rounds so far**, with a third in flight — see the section below. **`main` is red on
+  Android; do not build on `apps/android` until it is green.**
+
+### Android 12f's test file has cost three CI rounds, and the split is the diagnostic
+
+Round one: `PlayerViewModelQueueTest.setUp()` built `ApiClient` **without** `ioDispatcher`, so it ran
+on the real `Dispatchers.IO` while `Dispatchers.Main` was a separate `UnconfinedTestDispatcher` — a
+true suspension `runTest` cannot await. Nine other ViewModel test files in this suite already share
+one dispatcher between `setMain` and `ApiClient`; this file was **the one outlier**. Fixed in
+`24d9189`. That killed `UncaughtExceptionsBeforeTest` outright and turned three of the six green.
+
+**Worth noting against the review record**: the implementing agent reported that "all three test
+files inject `UnconfinedTestDispatcher`", and independent review **confirmed** that claim and cleared
+the coroutine hygiene. Both were wrong in the same way — the file injects it into `setMain` but not
+into `ApiClient`, and reading it casually looks identical. That is now three consecutive waves where
+review's toolchain-level reasoning lost to CI.
+
+Round two is in flight against the three that remain:
+
+```
+a queued podcast episode is loaded when the current episode ends            FAILED
+a same-book chapter seeks within the current item instead of reloading      FAILED
+a cross-book chapter loads the other book, then seeks to the chapter start  FAILED
+```
+
+**The pass/fail split says where to look.** The three now passing assert queue *state* — what is in
+which queue, that clearing one leaves the others and playback alone. The three failing assert that
+ending playback **does something to the player**, and they fail as plain `AssertionError`s with no
+exception. `QueueRouter`'s `LoadAudiobookItem` routes through `playItem`, which does a **network
+round-trip before it ever touches the player**; if `MockWebServer` has no branch for that path,
+`ApiClient` throws `ApiException`, the ViewModel catches it, and the whole dispatch is a **silent
+no-op** that looks exactly like this. Note two of the three may share one cause: the same-book seek
+case compares against `currentAudiobookItemId`, which only gets set by a `playItem` that actually
+succeeded.
+
+
 
 **Claimed — 2026-08-08 ~00:15Z, session `1b29a583`: 12f (Android), per-content-type queues.**
 
