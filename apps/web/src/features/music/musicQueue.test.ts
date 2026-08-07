@@ -4,6 +4,8 @@ import {
   appendTracks,
   createQueue,
   currentTrack,
+  insertTrackLast,
+  insertTrackNext,
   materialize,
   nextRepeatMode,
   setRepeatMode,
@@ -224,6 +226,46 @@ describe('appendTracks', () => {
   it('is a no-op for an empty append', () => {
     const state = createQueue(tracks(2), 2, 0);
     expect(appendTracks(state, [])).toBe(state);
+  });
+});
+
+describe('insertTrackNext / insertTrackLast', () => {
+  it('insertTrackNext plays immediately after the current track, ahead of what was queued next', () => {
+    const state = createQueue(tracks(3), 3, 0); // cursor at 0
+    const inserted = insertTrackNext(state, { id: 'new', title: 'New', durationSeconds: 10 });
+    // order: [t0, t1, t2, new]; positions: cursor 0 (t0), then new (index 3), then t1, t2.
+    expect(inserted.order.map((t) => t.id)).toEqual(['t0', 't1', 't2', 'new']);
+    expect(inserted.positions).toEqual([0, 3, 1, 2]);
+    expect(currentTrack(inserted)?.id).toBe('t0');
+  });
+
+  it('insertTrackLast plays after everything currently queued', () => {
+    const state = createQueue(tracks(3), 3, 0);
+    const inserted = insertTrackLast(state, { id: 'new', title: 'New', durationSeconds: 10 });
+    expect(inserted.positions).toEqual([0, 1, 2, 3]);
+    expect(inserted.order.at(-1)?.id).toBe('new');
+  });
+
+  it('bumps total, so advance still asks the caller to fetch the rest of a partially loaded source', () => {
+    // 2 of 3 source tracks loaded, cursor on the last loaded one, plus one ad-hoc insert.
+    // Without the total bump, order.length (3, after insert) reaches total (3) exactly, so
+    // advancing past the insert would wrongly read as "nothing left" instead of asking the
+    // caller to fetch the still-real, still-unloaded third source track.
+    const state = createQueue(tracks(2), 3, 1);
+    const inserted = insertTrackLast(state, { id: 'new', title: 'New', durationSeconds: 10 });
+    expect(inserted.total).toBe(4); // was 3
+
+    const afterInsert = advance(inserted); // plays the inserted track next
+    if (afterInsert.kind !== 'track') throw new Error('expected the inserted track to play next');
+    expect(afterInsert.track.id).toBe('new');
+    expect(advance(afterInsert.state)).toEqual({ kind: 'needsFetch' }); // source track 3 unloaded
+  });
+
+  it('both are correct under an active shuffle — inserted tracks land in the shuffled tail', () => {
+    const state = setShuffled(createQueue(tracks(4), 4, 0), true, sequenceRandom([0, 0, 0]));
+    const next = insertTrackNext(state, { id: 'new', title: 'New', durationSeconds: 10 });
+    expect(next.positions[state.cursor + 1]).toBe(4); // the new track's order-index
+    expect(currentTrack(next)?.id).toBe(currentTrack(state)?.id); // current track unchanged
   });
 });
 

@@ -208,6 +208,40 @@ export function appendTracks(state: MusicQueueState, tracks: QueueTrack[]): Musi
 }
 
 /**
+ * Inserts a track that isn't part of this queue's own source (an album/playlist context
+ * menu's "Play next"/"Play last") — distinct from `appendTracks`, which only ever grows a
+ * queue with *more of the same source* fetched lazily as playback advances past what's
+ * loaded so far. `total` is bumped by one here, unlike `appendTracks`: `total` is read in
+ * exactly one place (`advance`'s `order.length < state.total` check, "is there more of this
+ * source upstream to fetch"), and if an ad-hoc insert left it unchanged, `order.length` could
+ * reach `total` while the source itself still has unfetched tracks — silently truncating the
+ * source's remainder into a false "nothing left" the next time `advance` runs off the end.
+ * Bumping `total` alongside `order` keeps that check meaning what it always meant.
+ *
+ * Never called on a `null` queue (nothing to insert into) — see `TrackContextMenu.tsx`'s own
+ * doc comment for why "start a fresh queue from a context-menu action" was rejected instead.
+ */
+function insertTrack(state: MusicQueueState, track: QueueTrack, at: number): MusicQueueState {
+  const newIndex = state.order.length;
+  const positions = [...state.positions];
+  positions.splice(at, 0, newIndex);
+  return { ...state, order: [...state.order, track], positions, total: state.total + 1 };
+}
+
+/** "Play next" — inserts immediately after the currently playing track, i.e. at
+ *  `positions[cursor + 1]`, so it plays as soon as the current track ends without disturbing
+ *  anything already queued after it. */
+export function insertTrackNext(state: MusicQueueState, track: QueueTrack): MusicQueueState {
+  return insertTrack(state, track, state.cursor + 1);
+}
+
+/** "Play last" — appended to the very end of `positions`, playing after everything else
+ *  currently queued (including anything a previous "Play next" already inserted). */
+export function insertTrackLast(state: MusicQueueState, track: QueueTrack): MusicQueueState {
+  return insertTrack(state, track, state.positions.length);
+}
+
+/**
  * What plays after the current track ends, given `state.repeat`/`state.shuffled` — the pure
  * decision `musicQueueController.ts`'s `handleTrackEnded` acts on. Never mutates `state` in
  * place and never fetches; see `AdvanceResult`'s own doc comment for `'needsFetch'`/`'none'`.
