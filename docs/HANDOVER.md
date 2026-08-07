@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-06T07:14:49Z` · `a1e34f364c8ab1953` · general-purpose · ended · Working tree is clean. Final report: **Verdict: merge with named corrections.** The core fix (mini player fixed positioning) is correct and well-test…
-- `2026-08-06T07:39:05Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · Waiting for the full Playwright suite to finish in the background before proceeding to commit.
 - `2026-08-06T07:55:14Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for that notification before continuing.
 - `2026-08-06T08:04:47Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · Waiting for the Playwright suite to finish; will proceed with verification and commit once it completes.
 - `2026-08-06T08:12:15Z` · `a0f22c77bcbd20ba8` · general-purpose · ended · I'll wait for this clean, isolated run to finish before drawing conclusions.
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-06T11:25:39Z` · `af2890bf38c7143e5` · general-purpose · ended · Working tree is clean (committed at '853ee41'). Full report follows. ## Report **Branch/commit:** 'worktree-agent-af2890bf38c7143e5' @ '853ee41', bas…
 - `2026-08-06T11:36:40Z` · `a91d7ad792bed92e5` · general-purpose · ended · ## Findings — Phase 10 tablet-breakpoint audit ('853ee41' / merge '2067998') **Repo state note (not mine):** '.claude/settings.json', 'docs/HANDOVER.…
 - `2026-08-06T11:59:46Z` · `a0cb36dc44aca4722` · general-purpose · ended · Committed, working tree clean. Not pushed, not merged, as instructed. ## Report **Branch/sha:** 'worktree-agent-a0cb36dc44aca4722' @ 'b7d49ed', based…
+- `2026-08-07T14:54:06Z` · `a2357b4c0fbbafd32` · general-purpose · running · —
+- `2026-08-07T14:54:22Z` · `afaf06c5ecc86cd36` · general-purpose · ended · ## Findings **1. Which commit the user was likely running.** Commit timestamps in this repo are already Helsinki-local (+0300/EEST). At "9:12 Helsink…
 
 <!-- AGENT_LOG_END -->
 
@@ -364,6 +364,40 @@ problem.
 
 Closing these is real feature work on a surface nobody here can look at. It wants a session
 with a device or emulator, not another blind wave.
+
+### The reported Android post-login crash: audited, not reproduced (2026-08-07)
+
+The user reported (queue `a41192a`, restated `aaf378b`) that the APK built around 09:12
+Helsinki on 2026-08-04 **crashes after login**, and that they have not reinstalled since. A
+source-level audit ran on 2026-08-07; there is no device, emulator, JDK or SDK here, so it
+could not be reproduced.
+
+**The obvious suspect does not apply.** `5794f10` — the Audiobookshelf `metadata` schema
+accepting `undefined` but not a literal `null` — lives entirely in `packages/abs-client`,
+which only `apps/server` imports. Android talks JSON to the BFF through its own kotlinx
+models in `data/model/ApiModels.kt`. Same _class_ of bug, no shared code path, so that fix
+could not have fixed anything on Android. Do not repeat the guess.
+
+**Their build is `316cc33c`, and 37 commits have landed since** — the rest of phase 7, all
+of phase 8, all of phase 9. Their APK predates nearly all of Android's music feature set.
+
+**The current post-login path has no confirmed crash candidate**, and is better guarded than
+expected: `ApiClient.execute()` wraps every call and rethrows `IOException` and
+`SerializationException` as `ApiException`, which both `LoginViewModel` and `HomeViewModel`
+catch; `auralisJson` sets `ignoreUnknownKeys = true`; kotlinx's `MissingFieldException` is a
+`SerializationException`, so a missing required field surfaces as `HomeUiState.Error` rather
+than a force-close. `PlayerViewModel.kt:373`'s single `!!` is assigned two lines above and is
+not on the post-login path.
+
+**So it is one of three things and static reading cannot separate them**: already fixed
+incidentally somewhere in those 37 commits; a real force-close outside readable code
+(Compose recomposition, a ViewModel factory throwing before any `try`, Media3 service
+binding, a device-specific fault); or "crashes" describing the `HomeUiState.Error` screen,
+which is a real reachable state.
+
+**The cheapest next step is the user reinstalling the current CI APK.** If it still fails,
+a logcat is the only thing that separates those three. Asked via the queue; do not spend
+another audit on this without one.
 
 ### The user clarified the product spec, and it supersedes shipped work (2026-08-06)
 
