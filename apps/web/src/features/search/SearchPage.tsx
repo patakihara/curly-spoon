@@ -45,6 +45,7 @@ import {
   useJellyfinSearchQuery,
   useLibrariesQuery,
   useLibrarySearchQuery,
+  useProvidersQuery,
   useSetupQuery,
 } from '../../api/queries.js';
 import { useUiStore } from '../../state/uiStore.js';
@@ -58,6 +59,16 @@ import {
   visibleKinds,
   type SearchFilterState,
 } from './searchFilters.js';
+import { requestabilitySections } from './searchRequestability.js';
+import { RequestableBooksSection } from './RequestableBooksSection.js';
+import { RequestableMusicSection } from './RequestableMusicSection.js';
+import { useDebouncedValue } from './useDebouncedValue.js';
+
+/** How long the unified search field must sit still before a debounced term feeds the
+ * request-search fan-outs — see `useDebouncedValue.ts`'s header comment for why this
+ * exists at all. 400ms mirrors a typical "user paused typing" debounce; there is no
+ * spec'd number to match, so this is a judgement call, not a measured constant. */
+const REQUEST_SEARCH_DEBOUNCE_MS = 400;
 
 export function SearchPage() {
   // `query` lives in `uiStore`, not local state: the desktop rail's own
@@ -87,6 +98,21 @@ export function SearchPage() {
   const jellyfinConfigQuery = useJellyfinConfigQuery();
   const jellyfinConfigured = jellyfinConfigQuery.data?.configured ?? false;
   const jellyfinSearchQuery = useJellyfinSearchQuery(jellyfinConfigured ? query : '');
+
+  // Whether a book/music request could actually be fulfilled right now — see
+  // `searchRequestability.ts`'s header comment. Gates whether the "Available to
+  // request" groups render at all, independent of whether the debounced term below
+  // has produced any candidates yet.
+  const providersQuery = useProvidersQuery();
+  const providers = providersQuery.data?.providers ?? [];
+  const requestable = requestabilitySections(providers, visible);
+
+  // The request-search fan-outs (real indexers, real Soulseek) are debounced
+  // separately from the undebounced library search above — see
+  // `useDebouncedValue.ts`'s header comment for why the two can't share one timing.
+  const debouncedTrimmedQuery = useDebouncedValue(trimmedQuery, REQUEST_SEARCH_DEBOUNCE_MS);
+  const bookRequestTerm = requestable.showBookRequestable ? debouncedTrimmedQuery : '';
+  const musicRequestTerm = requestable.showMusicRequestable ? debouncedTrimmedQuery : '';
 
   // Books/podcasts/series/authors share one Audiobookshelf query and settle
   // together; music is a second, independent query that can resolve before or
@@ -197,7 +223,7 @@ export function SearchPage() {
         {statusMessage}
       </p>
 
-      {hasResults ? (
+      {hasResults || requestable.showBookRequestable || requestable.showMusicRequestable ? (
         <div data-testid="search-results">
           {visible.books ? (
             <section data-testid="search-results-books">
@@ -218,6 +244,9 @@ export function SearchPage() {
                   ))}
                 </div>
               )}
+              {requestable.showBookRequestable ? (
+                <RequestableBooksSection term={bookRequestTerm} />
+              ) : null}
             </section>
           ) : null}
 
@@ -370,6 +399,10 @@ export function SearchPage() {
                   ) : null}
                 </>
               )}
+
+              {requestable.showMusicRequestable ? (
+                <RequestableMusicSection term={musicRequestTerm} />
+              ) : null}
             </section>
           ) : null}
         </div>

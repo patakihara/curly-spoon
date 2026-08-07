@@ -152,6 +152,26 @@ html body {
   flex-direction: column;
 }
 
+/* "Available to request" groups (docs/ROADMAP.md §12b): the spec calls for a
+ * *clear* separation from library results — "a heading and a distinct
+ * treatment, not a subtle badge" — so this gets its own heading (already
+ * distinct: "Available to request" rather than the content type's own name)
+ * plus a bordered, tinted container, rather than sitting as an unmarked
+ * continuation of the library list above it. */
+.auralis-requestable-section {
+  margin-top: var(--m3-space-sm);
+  padding: var(--m3-space-md);
+  border: 1px solid var(--m3-outline-variant);
+  border-radius: var(--m3-shape-md);
+  background: var(--m3-surface-container-low);
+}
+
+.auralis-requestable-section__hint {
+  margin-top: 0;
+  color: var(--m3-on-surface-variant);
+  font-size: var(--m3-type-body-small-size);
+}
+
 /*
  * `flex-wrap: wrap` (the audit's own recommendation): the default `nowrap`
  * let a long title/byline push `body.scrollWidth` past the viewport at 390px
