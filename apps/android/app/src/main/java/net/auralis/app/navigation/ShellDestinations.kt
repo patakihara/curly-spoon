@@ -3,7 +3,7 @@ package net.auralis.app.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 enum class ShellDestination(val route: String, val label: String, val icon: ImageVector) {
     FOR_YOU(Routes.HOME, "For you", Icons.Filled.Home),
     MUSIC(Routes.MUSIC, "Music", Icons.Filled.LibraryMusic),
-    BOOKS(Routes.BOOKS, "Books", Icons.Filled.MenuBook),
+    BOOKS(Routes.BOOKS, "Books", Icons.AutoMirrored.Filled.MenuBook),
     PODCASTS(Routes.PODCASTS, "Podcasts", Icons.Filled.Podcasts),
     SEARCH(Routes.MUSIC_SEARCH, "Search", Icons.Filled.Search),
 }

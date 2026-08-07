@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forward30
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -98,7 +98,7 @@ fun NowPlayingScreen(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Collapse Now Playing")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Collapse Now Playing")
             }
 
             Spacer(modifier = Modifier.height(24.dp))

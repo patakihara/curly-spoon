@@ -39,7 +39,7 @@ class NowPlayingFormatTest {
     }
 
     @Test
-    fun `slider fraction never leaves the 0..1 range for any input`() {
+    fun `slider fraction never leaves the zero to one range for any input`() {
         val fraction = sliderFraction(positionMs = -500, durationMs = 10_000)
         assertTrue(fraction in 0f..1f)
     }
@@ -58,7 +58,7 @@ class NowPlayingFormatTest {
     }
 
     @Test
-    fun `position from fraction clamps a fraction outside 0..1`() {
+    fun `position from fraction clamps a fraction outside zero to one`() {
         assertEquals(10_000L, positionMsFromFraction(fraction = 1.5f, durationMs = 10_000))
         assertEquals(0L, positionMsFromFraction(fraction = -0.5f, durationMs = 10_000))
     }
