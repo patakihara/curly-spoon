@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T18:41:56Z` · `a257737f99b848dd9` · general-purpose · ended · The full Playwright suite is running in the background (task 'b274pajz7'); work is already committed at '38bb7ed'. I'll wait for the completion notif…
-- `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
 - `2026-08-07T19:14:19Z` · `a19f26f7c17fe56af` · general-purpose · ended · I'll wait for the background test run to complete before proceeding.
 - `2026-08-07T19:28:46Z` · `a0a086b43c492f5ce` · general-purpose · ended · ## Verdict: has a defect that must be fixed The Series and Author pages both depend on structured 'authors[]'/'series[]' arrays on book items — but e…
 - `2026-08-07T19:38:29Z` · `af767a8f2890d20aa` · general-purpose · ended · Waiting for the full Playwright suite (background run) and the monitor to report. Work is already committed at '253add9', so nothing is at risk while…
@@ -95,7 +93,9 @@ in-context scan of the current one.
 - `2026-08-07T20:41:18Z` · `a1fe3079f7d9ab8a7` · general-purpose · ended · **Verdict: merge as-is.** Reviewed all eight files in the diff ('9db833b..worktree-agent-aa742f68e3b1172b9', commits 'cc494dd'/'d270559') plus the tw…
 - `2026-08-07T21:11:20Z` · `ae4ce333f6eb9e0eb` · general-purpose · ended · Clean tree, everything committed at '2eacc68'. Work is complete for this wave. ## Report **Branch/commit:** 'worktree-agent-ae4ce333f6eb9e0eb' at '2e…
 - `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
-- `2026-08-07T21:44:44Z` · `a3acefbcb5f4b4419` · general-purpose · running · —
+- `2026-08-07T21:44:44Z` · `a3acefbcb5f4b4419` · general-purpose · ended · Clean working tree, on branch 'worktree-agent-a3acefbcb5f4b4419' at commit '2f327c4', based on '91663b6'. Not pushed, as instructed. ## Report **Bran…
+- `2026-08-07T22:05:52Z` · `aa590b527eef7f0d1` · general-purpose · ended · Confirmed — the mutation paths ('requestRelease'/'updateReleaseState'/'requestAnyway'/'updateTitleRequestState'/'requestCandidate'/'updateCandidateSt…
+- `2026-08-07T22:09:11Z` · `a23f9d40a38873131` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -363,6 +363,35 @@ into the same unresolved user question as 12c-2: queue `440b217`, whether a titl
 library should still be offered as requestable. Web's 12b-2 shipped *without* de-duplicating and
 recorded that as a decision for the user to confirm; Android mirroring web is the consistent
 choice, but doing it differently in a third place is the failure mode to avoid.
+
+### `main` is RED on Android as of `664e817` — a fix is in flight (2026-08-07 ~23:15Z)
+
+**Do not build on `apps/android` until this is green.** Wave 12b-A2 (requestable results on
+unified search) merged at `664e817` and the `Android` workflow failed. It **compiled cleanly** —
+this is a test-runtime failure, not a compile error:
+
+```
+UnifiedSearchViewModelTest > a settled search with no matches anywhere reaches an empty Results state, not Idle or Failed  FAILED
+UnifiedSearchViewModelTest > jellyfin unconfigured still returns book results, degrading only the music side  FAILED
+UnifiedSearchViewModelTest > requesting a music candidate creates the request and immediately grabs it when approved  FAILED
+    java.lang.AssertionError at UnifiedSearchViewModelTest.kt:620
+    kotlinx.coroutines.test.UncaughtExceptionsBeforeTest at UnifiedSearchViewModelTest.kt:64
+```
+
+**The first two failing tests are older than the change that broke them** — they shipped green in
+12b-A1 and cover the library half. That is the diagnostic: 12b-A2 added fire-and-forget
+`viewModelScope.launch` fetches for `/providers`, `/requests/search` and `/music-requests/search`
+that now fire on *every* search, and the older tests' `MockWebServer` dispatchers have no branch
+for those paths. `UncaughtExceptionsBeforeTest` is this project's already-documented signature for
+exactly that — a request in flight when `@After` shuts the server down, reported against whichever
+test ran **next**, so the test named is usually not the test at fault.
+
+**This is the third occurrence of that failure class**, after the `ApiClient` dispatcher leak and
+the `SharedFlow` collector one. The lesson it adds: a wave that gives an existing ViewModel **new
+outbound requests** silently invalidates every existing test's dispatcher, and nothing in review
+catches it because each test looks correct in isolation. A shared default branch answering
+unrecognised paths with a valid empty body would make this class impossible by construction —
+which is what the in-flight fix was asked to consider.
 
 ### The web `CI` workflow has not completed since `8712716`, and the concurrency policy is why
 
