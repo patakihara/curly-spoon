@@ -363,7 +363,8 @@ nothing on `main` is stale — take it.
   install through `applyQueue`, so 12f-2 inherits no surprises there.
   **Session `0e7913a4` now holds nothing.**
 - **12c is split, and half of it is startable now.**
-  **12c-1 (series and author detail pages)** — free, spec parked at
+  **12c-1 (series and author detail pages)** — **claimed by session `16f272ea`,
+  2026-08-07 ~22:15Z**, dispatched against `0068392` from the parked spec at
   `docs/agent-specs/04-phase12c1-web-series-author-pages.md`. No `/series/:id` or
   `/author/:id` route exists, which is why 12b-1's series and author search results render
   inert; this closes that, for library content only, and does not depend on any pending
