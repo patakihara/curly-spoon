@@ -31,6 +31,11 @@ export const queryKeys = {
   libraryItems: (libraryId: string, page: number) =>
     ['libraries', libraryId, 'items', page] as const,
   librarySearch: (libraryId: string, q: string) => ['libraries', libraryId, 'search', q] as const,
+  librarySeries: (libraryId: string) => ['libraries', libraryId, 'series'] as const,
+  /** Distinct from `libraryItems(libraryId, page)` above — this is the unpaginated
+   * "everything" fetch `AuthorPage` filters client-side, not one page of a browse list,
+   * so it gets its own key rather than colliding with `page: 0`. */
+  allLibraryItems: (libraryId: string) => ['libraries', libraryId, 'items', 'all'] as const,
   item: (itemId: string) => ['items', itemId] as const,
   requests: (status?: RequestStatus) => ['requests', status ?? 'all'] as const,
   requestSearch: (term: string, author: string) => ['requests', 'search', term, author] as const,
@@ -183,6 +188,39 @@ export function useMyProgressQuery() {
   return useQuery({
     queryKey: queryKeys.myProgress,
     queryFn: ({ signal }) => api.getMyProgress(signal),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * The full series list for a library — `SeriesPage`'s only fetch, since there is no
+ * per-id series route on the BFF (see `ApiClient.getLibrarySeries`'s own doc comment).
+ * `enabled` gates on `libraryId` being resolved yet, the same pattern
+ * `useLibrarySearchQuery` below already uses.
+ */
+export function useLibrarySeriesQuery(libraryId: string | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.librarySeries(libraryId ?? ''),
+    queryFn: ({ signal }) => api.getLibrarySeries(libraryId!, signal),
+    enabled: Boolean(libraryId),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Every book in a library, unfiltered — `AuthorPage`'s source of truth, since the BFF
+ * exposes no "books by author" filter (see that page's own doc comment for why).
+ * Capped at the BFF's max page size (500); a library larger than that would need a
+ * real server-side filter, out of reach for this wave. `enabled` mirrors
+ * `useLibrarySeriesQuery` above.
+ */
+export function useAllLibraryItemsQuery(libraryId: string | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.allLibraryItems(libraryId ?? ''),
+    queryFn: ({ signal }) => api.getLibraryItems(libraryId!, { limit: 500 }, signal),
+    enabled: Boolean(libraryId),
     staleTime: 30_000,
   });
 }

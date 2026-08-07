@@ -31,11 +31,12 @@
  * Results render as `ListItem` rows, not the `Card` grid this used to be — the
  * spec calls for a "list", and grouping by content type already gives each
  * section its own heading, so a grid's extra columns were adding nothing. Series
- * and authors are new sections (Audiobookshelf's `/search` returns both
- * alongside books/podcasts — see `packages/abs-client`'s `SearchResults` — but
- * nothing rendered them before this wave); neither has a detail page anywhere in
- * this app yet, so their rows render inert (`interactive={false}`), matching the
- * existing pattern for a track search result with no `albumId` to navigate to.
+ * and authors are their own sections (Audiobookshelf's `/search` returns both
+ * alongside books/podcasts — see `packages/abs-client`'s `SearchResults`). Since
+ * phase 12c-1 both navigate to a real detail page (`/series/$seriesId`,
+ * `/author/$authorId`); before that wave neither had anywhere to go and the rows
+ * rendered inert, the same pattern a track result with no `albumId` still uses
+ * below.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
@@ -268,9 +269,11 @@ export function SearchPage() {
                   {series.map((item) => (
                     <ListItem
                       key={item.id}
-                      interactive={false}
                       data-testid={`search-result-${item.id}`}
                       headline={item.name}
+                      onClick={() =>
+                        void navigate({ to: '/series/$seriesId', params: { seriesId: item.id } })
+                      }
                     />
                   ))}
                 </div>
@@ -288,9 +291,11 @@ export function SearchPage() {
                   {authors.map((item) => (
                     <ListItem
                       key={item.id}
-                      interactive={false}
                       data-testid={`search-result-${item.id}`}
                       headline={item.name}
+                      onClick={() =>
+                        void navigate({ to: '/author/$authorId', params: { authorId: item.id } })
+                      }
                     />
                   ))}
                 </div>

@@ -49,6 +49,33 @@ import type {
 /** Deliberately narrower than `typeof fetch` (matches `@auralis/abs-client`'s own `FetchLike`) — a real `fetch` satisfies this, and so does a simple test stub. */
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
+/**
+ * One `series[]` entry on a book's own metadata — the BFF sends this on every book
+ * returned by `getLibrarySeries` (`packages/abs-client`'s `Book.series`), but it isn't
+ * on the shared `LibraryItem`/`MediaSummary` shape in `types.ts` because nothing read
+ * it before this wave. Declared locally rather than widening the shared type — see
+ * `types.ts`'s own doc comment on keeping it narrowed to what's actually consumed.
+ */
+export interface LibrarySeriesBookSequence {
+  id: string;
+  name: string;
+  /** e.g. "3" or "3.5"; `null` when this book has no number within the series. */
+  sequence: string | null;
+}
+
+/** A book as it appears inside a `getLibrarySeries` response — `LibraryItem` plus the
+ * `series` sequence array `SeriesPage` needs to order its shelf. */
+export interface LibrarySeriesBook extends Omit<LibraryItem, 'media'> {
+  media: LibraryItem['media'] & { series?: LibrarySeriesBookSequence[] };
+}
+
+export interface LibrarySeriesEntry {
+  id: string;
+  name: string;
+  description: string | null;
+  books: LibrarySeriesBook[];
+}
+
 export interface ApiClientOptions {
   fetch: FetchLike;
   /** Defaults to `/api/v1`, i.e. same-origin — this app is always served by the BFF. */
@@ -176,6 +203,25 @@ export class ApiClient {
   searchLibrary(libraryId: string, q: string, signal?: AbortSignal): Promise<SearchResults> {
     return this.request(`/libraries/${encodeURIComponent(libraryId)}/search`, {
       query: { q },
+      signal,
+    });
+  }
+
+  /**
+   * `GET /libraries/:id/series` — every series in the library, each with its member
+   * books already nested (`docs/agent-specs/04-phase12c1-web-series-author-pages.md`
+   * confirmed this against `apps/server/src/routes/libraries.test.ts`: the real
+   * Audiobookshelf listing endpoint returns full book membership, not just a count).
+   * There is no per-id "fetch one series" route on the BFF, so `SeriesPage` fetches the
+   * whole list (capped at the BFF's own max of 500) and finds its id client-side — the
+   * same shape `getLibraryItems` already returns, just not filterable by id.
+   */
+  getLibrarySeries(
+    libraryId: string,
+    signal?: AbortSignal,
+  ): Promise<{ series: LibrarySeriesEntry[]; total: number }> {
+    return this.request(`/libraries/${encodeURIComponent(libraryId)}/series`, {
+      query: { limit: 500 },
       signal,
     });
   }
