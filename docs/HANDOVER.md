@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T16:47:39Z` · `a8781e77885029281` · general-purpose · ended · Reviewer dispatched, running in background. I'll wait for it before integrating.
-- `2026-08-07T16:48:22Z` · `a379bc3e7b2497c6d` · general-purpose · ended · Typecheck is clean too. ## Verdict: merge as-is Reviewed 'createQueueStore.ts', 'queueRouter.ts', 'queueEntries.ts', both new controllers, 'musicQueu…
 - `2026-08-07T16:49:47Z` · `a8781e77885029281` · general-purpose · ended · Wave 12f-1 shipped at '0eb1d9d' (docs updated) and wave 12f-2 is now dispatched to a background Sonnet agent. I'll review and integrate when it repor…
 - `2026-08-07T16:54:04Z` · `a17b14e747a44987e` · general-purpose · ended · I'll wait for the background Playwright suite ('bleb153df') to finish before proceeding — no further action needed until that notification arrives.
 - `2026-08-07T17:06:39Z` · `af868eb787d50240d` · general-purpose · ended · ## Verdict: merge with named corrections ## Findings, ranked by severity **1. Selecting a content-type filter before typing anything shows a contradi…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · ended · **Verdict: matches the references, with only cosmetic notes.** Screenshots: '/home/sofiapata/.claude/jobs/16f272ea/tmp/phone-390.png', 'tablet-834.pn…
 - `2026-08-07T18:41:56Z` · `a257737f99b848dd9` · general-purpose · ended · The full Playwright suite is running in the background (task 'b274pajz7'); work is already committed at '38bb7ed'. I'll wait for the completion notif…
 - `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
+- `2026-08-07T19:14:19Z` · `a19f26f7c17fe56af` · general-purpose · ended · I'll wait for the background test run to complete before proceeding.
+- `2026-08-07T19:28:46Z` · `a0a086b43c492f5ce` · general-purpose · ended · ## Verdict: has a defect that must be fixed The Series and Author pages both depend on structured 'authors[]'/'series[]' arrays on book items — but e…
 
 <!-- AGENT_LOG_END -->
 
@@ -363,9 +363,9 @@ nothing on `main` is stale — take it.
   install through `applyQueue`, so 12f-2 inherits no surprises there.
   **Session `0e7913a4` now holds nothing.**
 - **12c is split, and half of it is startable now.**
-  **12c-1 (series and author detail pages)** — **claimed by session `16f272ea`,
-  2026-08-07 ~22:15Z**, dispatched against `0068392` from the parked spec at
-  `docs/agent-specs/04-phase12c1-web-series-author-pages.md`. No `/series/:id` or
+  **12c-1 (series and author detail pages)** — written, reviewed, **not merged**: it
+  reintroduced the minified-item bug. Draft at `c37d922`; see the section above. Claim
+  released. No `/series/:id` or
   `/author/:id` route exists, which is why 12b-1's series and author search results render
   inert; this closes that, for library content only, and does not depend on any pending
   answer.
@@ -405,6 +405,42 @@ branch-log check is how the same feature gets built twice.
 The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
+
+### 12c-1 is written but NOT merged — it reintroduced the minified-item bug (2026-08-07)
+
+The series and author detail pages exist as a draft at **`c37d922`** on
+`worktree-agent-a19f26f7c17fe56af`. **Do not merge it as it stands.** Independent review,
+confirmed by running it and by screenshotting the result rather than by reading:
+
+- **`/author/:id` is completely non-functional.** `findAuthorBooks` matches on
+  `book.media.authors[].id`, and every path feeding these pages (`getLibrarySeries`,
+  `getAllLibraryItems`) returns **minified** items, which never carry `authors[]` — only the
+  flattened `authorName` string. So the lookup returns `null` for every author, always. A
+  screenshot of `/author/author-tolkien`, an author with two books in the fixtures, renders
+  "Author not found."
+- **`/series/:id` ordering is silently wrong** for the same reason: `media.series` is stripped
+  from minified items, so `seriesSequence` is always null and every series collapses to
+  alphabetical-by-title. The pure `orderSeriesBooks` function is correct and well tested — it
+  is simply never given a real sequence.
+
+**This is the same bug as `7e57a78`, in a new place.** That commit fixed exactly this for the
+shelf and browse cards, with a `seriesName` fallback mirroring the existing `authorName` one,
+and the finding is already written up in this file. A wave built on top of the minified
+endpoints reintroduced it, which says the lesson did not survive as a property of the code —
+only as prose. Anything reading `media.authors[]` or `media.series[]` from a list endpoint is
+wrong by construction, and that is worth enforcing in the types rather than remembering.
+
+The real fix is in the normalization layer, not in the pages: either preserve author ids
+through minification, or have these two pages fetch expanded data for the single series or
+author they are displaying. It touches `apps/server`/`packages/abs-client`, so it is a
+separate wave rather than a patch.
+
+**Also in the draft, and smaller:** the two "Search result navigates" e2e cases fail because
+the spec never clicks the "Books" primary chip, and `ALL_KINDS_VISIBLE` (pre-existing, from
+12b-1) deliberately hides series and author results until it is selected. That is a
+test-authoring bug, not a product one. Everything else in the wave conforms: the routes are
+correctly wired, the not-found states genuinely degrade, the Search wiring is right, and
+there is no leak into 12c-2's out-of-scope requestable content.
 
 ### Agents keep dying while waiting on a backgrounded Playwright run (2026-08-07)
 
