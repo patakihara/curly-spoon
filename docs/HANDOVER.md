@@ -333,11 +333,12 @@ nothing on `main` is stale — take it.
   path only) and `e2e/app/search-view.spec.ts`; **reads** `components/destinations.ts` for
   `lookupProviders` but does not change it. Does **not** touch `state/`, `features/player/`
   or `features/podcasts/`.
-- **12f (web per-content-type queues)** — claimed by session `16f272ea`. Disjoint by
-  construction: `apps/web/src/state/*QueueStore.ts`, `features/music/musicQueue*`,
-  `features/podcasts/`, `features/player/`. Explicitly does **not** touch
-  `features/search/**`, `api/types.ts`, `styles/app.css`, `fakeAbs.ts` or
-  `e2e/app/search-view.spec.ts`.
+- **12f-1 (web queue model) — landed** at `705e4fe`, reviewed (verdict: merge as-is, no
+  findings) and merged. Its worktree is gone; nothing else touched it.
+- **12f-2 (web queue view, clear-queue, queueable chapters)** — not yet claimed. Spec at
+  `docs/agent-specs/03-phase12f2-web-queue-view.md`; fill in the reset sha from
+  `git log --oneline origin/main -1` at launch time. Now unblocked — 12f-1's model is on
+  `main`.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
