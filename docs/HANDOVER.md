@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
-- `2026-08-07T18:24:38Z` · `acfb30c8ef236b965` · general-purpose · ended · Clean tree, nothing to note further. Compiling final report. ## Verdict: merge as-is **Findings** (none blocking): - 'apps/web/src/features/home/Caro…
 - `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · ended · **Verdict: matches the references, with only cosmetic notes.** Screenshots: '/home/sofiapata/.claude/jobs/16f272ea/tmp/phone-390.png', 'tablet-834.pn…
 - `2026-08-07T18:41:56Z` · `a257737f99b848dd9` · general-purpose · ended · The full Playwright suite is running in the background (task 'b274pajz7'); work is already committed at '38bb7ed'. I'll wait for the completion notif…
 - `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T20:19:07Z` · `a0a086b43c492f5ce` · general-purpose · ended · No boundary violations. ## Merge with named follow-ups **1. Defect gone — confirmed by screenshot, not just tests.** '/author/author-tolkien' now ren…
 - `2026-08-07T20:26:04Z` · `aa742f68e3b1172b9` · general-purpose · ended · Everything is committed. Final report: **Branch/commits:** 'worktree-agent-aa742f68e3b1172b9', HEAD 'd270559' ('cc494dd' is the substantive commit; '…
 - `2026-08-07T20:41:18Z` · `a1fe3079f7d9ab8a7` · general-purpose · ended · **Verdict: merge as-is.** Reviewed all eight files in the diff ('9db833b..worktree-agent-aa742f68e3b1172b9', commits 'cc494dd'/'d270559') plus the tw…
+- `2026-08-07T21:11:20Z` · `ae4ce333f6eb9e0eb` · general-purpose · ended · Clean tree, everything committed at '2eacc68'. Work is complete for this wave. ## Report **Branch/commit:** 'worktree-agent-ae4ce333f6eb9e0eb' at '2e…
+- `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
 
 <!-- AGENT_LOG_END -->
 
@@ -351,12 +351,43 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-**Claimed — 2026-08-07 ~21:35Z, session `1b29a583`: 12b (Android), unified search.**
+**Landed — 2026-08-07 ~22:00Z, session `1b29a583`. Claim released.**
 
-Replacing Android's music-only `MusicSearchScreen` with the unified search the spec addendum
-requires. Split the way web split it: **12b-A1** is the library half (the two chip rows and
-grouped results across music, books and podcasts), **12b-A2** the requestable half.
-`apps/android/**` only, so disjoint from any web work.
+**12b-A1 (Android) is done** — `2eacc68`, plus `2baac66` for the one defect review found.
+Android search is unified across music, books and podcasts behind the two chip rows, grouped by
+content type. Android CI green first attempt, which is what the spec-side trap warnings were
+for. `docs/ROADMAP.md` §12b has the detail and one named, deferred test-coverage follow-up.
+
+**12b-A2 — the requestable half — is not started and is the obvious next wave.** Note it runs
+into the same unresolved user question as 12c-2: queue `440b217`, whether a title already in the
+library should still be offered as requestable. Web's 12b-2 shipped *without* de-duplicating and
+recorded that as a decision for the user to confirm; Android mirroring web is the consistent
+choice, but doing it differently in a third place is the failure mode to avoid.
+
+### The web `CI` workflow has not completed since `8712716`, and the concurrency policy is why
+
+Established 2026-08-07, and it undermines "CI is the authoritative signal" if left unknown.
+**Eight consecutive `CI` runs on `main` ended `cancelled` without ever allocating a job.** The
+last run that actually succeeded is `8712716` at 17:56Z — hours and many commits behind. The
+`Android` workflow is unaffected and green throughout, so this is not runner starvation.
+
+`ci.yml`'s concurrency block sets `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}`,
+so on `main` runs queue instead of cancelling. Its comment explains why — a cancelled run also
+cancels `publish`, and mediaserver auto-updates from `:latest`, so superseded runs silently stop
+updating the registry while everything still reports green. That reasoning is sound and the
+2026-08-06 incident it describes was real.
+
+**But queuing does not do what the comment assumes.** GitHub allows only **one pending run per
+concurrency group**: when a new run queues, any *already-pending* run in that group is cancelled.
+So `cancel-in-progress: false` protects the run that is genuinely *in progress* and nothing else
+— under back-to-back pushes every queued run in between is still discarded. This session pushed
+eight times in about fifty minutes and every one of those runs was cancelled while pending.
+
+**This is a design question, deliberately not answered here.** The obvious fix is to move
+`publish` into its own workflow with its own concurrency group, so the read-for-verification jobs
+may cancel freely while the deployment-coupled job queues. That changes deployment behaviour on a
+live host, which is not an autonomous call. In the meantime: **do not read a green `Android` run
+as the branch being verified**, and space pushes to `main` out if the web CI result matters.
 
 **One thing scouted so the next session need not re-derive it: there is no unified search
 endpoint on the BFF.** Web's `SearchPage` fans out client-side across

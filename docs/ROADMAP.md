@@ -1982,7 +1982,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | Area                                                    | Status |
 | ------------------------------------------------------- | ------ |
 | 12a — Five-view navigation shell (web + Android)        | done (web + Android) |
-| 12b — Search view: unified library + request results    | web done, Android todo |
+| 12b — Search view: unified library + request results    | web done; Android library half done, 12b-A2 todo |
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
 | 12e — Context menus (long-press / right-click)          | web done (album page only), Android todo |
@@ -2102,6 +2102,40 @@ reach. Now gated on a non-empty query.
 
 The 400ms request-search debounce is a judgement call, not a measured constant — nobody has
 watched it against a real indexer's latency.
+
+**12b-A1 (Android) shipped 2026-08-07** — the library half of unified search. Android's search
+was Jellyfin-music-only; it now covers music, books and podcasts behind the two chip rows the
+spec describes, with results grouped by content type. `features/search/SearchFilters.kt` holds
+the chip state as pure tested functions mirroring web's `searchFilters.ts`;
+`UnifiedSearchViewModel.kt` fans out and merges; `UnifiedSearchScreen.kt` renders. Android CI
+green first attempt.
+
+Three things about it worth not rediscovering:
+
+- **No `ApiClient` work was needed.** `libraries()` and `searchLibrary(id, query)` already
+  existed — added for Android Auto and unused until now.
+- **The route string stayed `"music/search"`**; only the composable behind it changed. So
+  `ShellDestinations.kt` and its test needed no edit, since resolution is by route rather than
+  by what is mounted. `MusicSearchScreen.kt`/`MusicSearchViewModel.kt` are now referenced only
+  from doc comments — dead, deliberately left in the tree rather than deleted in the same wave.
+- **Per-source degradation is structurally correct, and the reason is subtle.** A failing
+  `async` child cancels its `coroutineScope` parent *and its siblings*, so a per-library
+  `try`/`catch` placed around the enclosing `coroutineScope` would silently lose the other
+  source's results too. It is placed inside each `async` instead. Confirmed by reading
+  `ApiClient.execute()` directly: it only ever throws `ApiException`, so neither half can throw
+  past its own catch. A user with no Jellyfin server still gets book results, and a failing
+  `GET /libraries` still yields music results; both have tests.
+
+**One named follow-up, deferred rather than forgotten**: no test exercises **two** book
+libraries returning same-kind results concurrently. `MockWebServer` serves responses in
+request-arrival order rather than enqueue order, and this ViewModel issues three or more
+concurrent requests per query, so per-library mis-attribution is the failure this wave is most
+exposed to and least pinned against. The existing tests key their dispatcher on the full request
+path, which is correct — the gap is coverage, not a known defect.
+
+Review also found one real UX defect, fixed in `2baac66`: book results rendered through
+`MusicRow` with an empty `onClick`, and `MusicRow` wired `onClick` unconditionally into
+`.clickable`, so an inert row rippled under a finger. `MusicRow`'s `onClick` is nullable now.
 
 #### 12c — In-view search, and artist/author pages
 
