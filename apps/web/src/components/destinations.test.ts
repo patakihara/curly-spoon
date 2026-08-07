@@ -2,32 +2,35 @@ import { describe, expect, it } from 'vitest';
 import { lookupLibraries, lookupProviders, visibleDestinations } from './destinations.js';
 
 describe('visibleDestinations', () => {
-  it('shows only Home, Search and Settings when Audiobookshelf is not configured', () => {
+  it('shows only For you and Search when nothing else is configured', () => {
     const keys = visibleDestinations({ audiobookshelfConfigured: false }).map((d) => d.key);
-    expect(keys).toEqual(['home', 'search', 'settings']);
+    expect(keys).toEqual(['forYou', 'search']);
   });
 
   it('hides Books and Podcasts when configured but no matching library exists yet', () => {
     const keys = visibleDestinations({ audiobookshelfConfigured: true }).map((d) => d.key);
-    expect(keys).toEqual(['home', 'search', 'settings']);
+    expect(keys).toEqual(['forYou', 'search']);
   });
 
-  it('shows Books once a book library is known, linking to its real id', () => {
+  it('shows Books once a book library is known, linking to the stable /books path', () => {
     const destinations = visibleDestinations({
       audiobookshelfConfigured: true,
       bookLibraryId: 'lib-books',
     });
     const books = destinations.find((d) => d.key === 'books');
-    expect(books?.to).toBe('/library/lib-books');
+    // Not a library id baked into the link — router/routeTree.ts's `booksRoute`
+    // resolves the real id from `GET /api/v1/libraries` at render time instead,
+    // so a nav destination never hard-codes one.
+    expect(books?.to).toBe('/books');
   });
 
-  it('shows Podcasts once a podcast library is known, linking to its real id', () => {
+  it('shows Podcasts once a podcast library is known, linking to the stable /podcasts path', () => {
     const destinations = visibleDestinations({
       audiobookshelfConfigured: true,
       podcastLibraryId: 'lib-podcasts',
     });
     const podcasts = destinations.find((d) => d.key === 'podcasts');
-    expect(podcasts?.to).toBe('/library/lib-podcasts');
+    expect(podcasts?.to).toBe('/podcasts');
   });
 
   it('hides Music until Jellyfin is configured', () => {
@@ -57,58 +60,46 @@ describe('visibleDestinations', () => {
     expect(keys).toContain('music');
   });
 
-  it('always shows Home, Search and Settings, in a stable relative order', () => {
+  it('always shows For you and Search, in a stable relative order — For you first, Search last', () => {
     const keys = visibleDestinations({
       audiobookshelfConfigured: true,
       bookLibraryId: 'lib-books',
       podcastLibraryId: 'lib-podcasts',
+      jellyfinConfigured: true,
     }).map((d) => d.key);
-    expect(keys.indexOf('home')).toBeLessThan(keys.indexOf('search'));
-    expect(keys.indexOf('search')).toBeLessThan(keys.indexOf('settings'));
-  });
-});
-
-describe('visibleDestinations — Requests', () => {
-  it('hides Requests when neither an indexer nor a download client is configured', () => {
-    const keys = visibleDestinations({ audiobookshelfConfigured: false }).map((d) => d.key);
-    expect(keys).not.toContain('requests');
+    expect(keys[0]).toBe('forYou');
+    expect(keys[keys.length - 1]).toBe('search');
   });
 
-  it('hides Requests when only an indexer is enabled — a request could never be fulfilled', () => {
+  it('renders the full five in order — For you, Music, Books, Podcasts, Search — once everything is configured', () => {
     const keys = visibleDestinations({
-      audiobookshelfConfigured: false,
-      hasEnabledIndexer: true,
-      hasEnabledDownloadClient: false,
+      audiobookshelfConfigured: true,
+      bookLibraryId: 'lib-books',
+      podcastLibraryId: 'lib-podcasts',
+      jellyfinConfigured: true,
     }).map((d) => d.key);
-    expect(keys).not.toContain('requests');
+    expect(keys).toEqual(['forYou', 'music', 'books', 'podcasts', 'search']);
   });
 
-  it('hides Requests when only a download client is enabled — nothing could ever be found', () => {
+  it('never shows Settings — it is reachable, but not one of the five primary destinations', () => {
     const keys = visibleDestinations({
-      audiobookshelfConfigured: false,
-      hasEnabledIndexer: false,
-      hasEnabledDownloadClient: true,
-    }).map((d) => d.key);
-    expect(keys).not.toContain('requests');
-  });
-
-  it('shows Requests once both an indexer and a download client are configured and enabled', () => {
-    const destinations = visibleDestinations({
-      audiobookshelfConfigured: false,
-      hasEnabledIndexer: true,
-      hasEnabledDownloadClient: true,
-    });
-    const requests = destinations.find((d) => d.key === 'requests');
-    expect(requests?.to).toBe('/requests');
-  });
-
-  it('does not require Audiobookshelf to be configured — requests are independent of it', () => {
-    const keys = visibleDestinations({
-      audiobookshelfConfigured: false,
+      audiobookshelfConfigured: true,
+      bookLibraryId: 'lib-books',
+      podcastLibraryId: 'lib-podcasts',
+      jellyfinConfigured: true,
       hasEnabledIndexer: true,
       hasEnabledDownloadClient: true,
     }).map((d) => d.key);
-    expect(keys).toContain('requests');
+    expect(keys).not.toContain('settings');
+  });
+
+  it('never shows a separate Requests destination — Search absorbs it (§12a)', () => {
+    const keys = visibleDestinations({
+      audiobookshelfConfigured: true,
+      hasEnabledIndexer: true,
+      hasEnabledDownloadClient: true,
+    }).map((d) => d.key);
+    expect(keys).not.toContain('requests');
   });
 });
 

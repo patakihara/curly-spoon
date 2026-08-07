@@ -18,6 +18,18 @@ const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
 
 export function LibraryPage() {
   const { libraryId } = useParams({ from: '/library/$libraryId' });
+  return <LibraryView libraryId={libraryId} />;
+}
+
+/**
+ * The actual library browse UI, factored out of `LibraryPage` so `/books` and
+ * `/podcasts` (`docs/ROADMAP.md` §12a) can render the same content for a
+ * library id resolved at render time — from `GET /api/v1/libraries` — rather
+ * than one baked into the route path the way `/library/$libraryId` is. That
+ * route, and every existing link to it, is unchanged; this is purely an
+ * extra way to reach the same view.
+ */
+export function LibraryView({ libraryId }: { libraryId: string }) {
   const navigate = useNavigate();
   const itemsQuery = useLibraryItemsQuery(libraryId);
   // Only used to decide whether this is the podcast library, so "Add podcast" shows

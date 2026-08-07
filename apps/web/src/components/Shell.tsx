@@ -8,6 +8,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
+  IconButton,
   MantineAppShell,
   MantineNavLink,
   NavigationBar,
@@ -40,13 +41,11 @@ import { NowPlayingPanel } from './NowPlayingPanel.js';
 import { ShortcutSheet } from './ShortcutSheet.js';
 
 const DESTINATION_ICONS: Record<DestinationKey, IconName> = {
-  home: 'home',
+  forYou: 'home',
   books: 'book_2',
   podcasts: 'podcasts',
   music: 'music_note',
-  requests: 'queue',
   search: 'search',
-  settings: 'settings',
 };
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -91,10 +90,30 @@ export function Shell({ children }: { children: ReactNode }) {
     icon: <Icon name={DESTINATION_ICONS[d.key]} />,
   }));
 
+  // `/library/$libraryId` still works (docs/ROADMAP.md §12a keeps every old
+  // deep link alive) but Books/Podcasts nav items now point at the stable
+  // `/books`/`/podcasts` paths instead, so a plain `startsWith` match against
+  // `d.to` no longer finds either of them there. Resolve which nav item a
+  // `/library/:id` URL belongs to from the id's actual `mediaType`, the same
+  // lookup `BooksPage`/`PodcastsPage` themselves use to pick that id in the
+  // first place.
+  const libraryRouteMatch = /^\/library\/([^/]+)/.exec(location.pathname);
+  const libraryRouteMediaType = libraryRouteMatch
+    ? librariesQuery.data?.libraries.find((l) => l.id === libraryRouteMatch[1])?.mediaType
+    : undefined;
+  const libraryRouteKey: DestinationKey | undefined =
+    libraryRouteMediaType === 'book'
+      ? 'books'
+      : libraryRouteMediaType === 'podcast'
+        ? 'podcasts'
+        : undefined;
+
   const activeDestination =
     destinations.find((d) => d.to === location.pathname) ??
+    (libraryRouteKey && destinations.find((d) => d.key === libraryRouteKey)) ??
     destinations.filter((d) => d.to !== '/').find((d) => location.pathname.startsWith(d.to));
-  const activeKey = activeDestination?.key ?? 'home';
+  const activeKey = activeDestination?.key ?? 'forYou';
+  const isSettingsActive = location.pathname.startsWith('/settings');
 
   const handleActiveChange = (key: string) => {
     const destination = destinations.find((d) => d.key === key);
@@ -127,6 +146,23 @@ export function Shell({ children }: { children: ReactNode }) {
     >
       {breakpoint === 'compact' ? (
         <>
+          {/*
+           * The compact bottom bar's five slots are already full with the
+           * five primary destinations, so Settings gets its own small,
+           * fixed, always-on-top affordance here instead (`app.css`'s
+           * `.auralis-shell__settings-button` rule) — the mobile
+           * counterpart to the rail footer link above.
+           */}
+          <div className="auralis-shell__settings-button">
+            <IconButton
+              aria-label="Settings"
+              variant="standard"
+              onClick={() => void navigate({ to: '/settings' })}
+              data-testid="compact-settings-button"
+            >
+              <Icon name="settings" />
+            </IconButton>
+          </div>
           <main className="auralis-shell__content" data-testid="shell-content">
             {children}
           </main>
@@ -167,7 +203,10 @@ export function Shell({ children }: { children: ReactNode }) {
               padding={0}
               style={{ height: '100%' }}
             >
-              <MantineAppShell.Navbar p="xs" style={{ height: '100%' }}>
+              <MantineAppShell.Navbar
+                p="xs"
+                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              >
                 <div className="auralis-nav-rail-search" data-testid="nav-rail-search">
                   <SearchField
                     value={railSearchQuery}
@@ -175,18 +214,48 @@ export function Shell({ children }: { children: ReactNode }) {
                     aria-label="Search"
                   />
                 </div>
-                {railNavItems.map((item) => (
+                {/*
+                 * A dedicated wrapper, distinct from the Settings footer link
+                 * below it — `e2e/app/navigation.spec.ts` scopes to this
+                 * testid when it wants exactly the five primary destinations
+                 * and nothing else that also happens to render as a `button`
+                 * in this rail.
+                 */}
+                <div data-testid="nav-rail-destinations">
+                  {railNavItems.map((item) => (
+                    <MantineNavLink
+                      key={item.key}
+                      component="button"
+                      type="button"
+                      label={item.label}
+                      leftSection={item.icon}
+                      active={item.key === activeKey}
+                      aria-current={item.key === activeKey ? 'page' : undefined}
+                      onClick={() => handleActiveChange(item.key)}
+                    />
+                  ))}
+                </div>
+                {/*
+                 * Settings is deliberately not one of the five primary
+                 * destinations (docs/ROADMAP.md §12a), but it must stay
+                 * reachable — parked in the rail's footer, below the real
+                 * nav items (`marginTop: auto` on the flex column above), so
+                 * it never competes with them for one of the five slots.
+                 * There is no top app bar in this shell to put it in instead
+                 * (`RootLayout.tsx` mounts none).
+                 */}
+                <div style={{ marginTop: 'auto' }}>
                   <MantineNavLink
-                    key={item.key}
                     component="button"
                     type="button"
-                    label={item.label}
-                    leftSection={item.icon}
-                    active={item.key === activeKey}
-                    aria-current={item.key === activeKey ? 'page' : undefined}
-                    onClick={() => handleActiveChange(item.key)}
+                    label="Settings"
+                    leftSection={<Icon name="settings" />}
+                    active={isSettingsActive}
+                    aria-current={isSettingsActive ? 'page' : undefined}
+                    onClick={() => void navigate({ to: '/settings' })}
+                    data-testid="nav-rail-settings"
                   />
-                ))}
+                </div>
               </MantineAppShell.Navbar>
             </MantineAppShell>
           </div>
