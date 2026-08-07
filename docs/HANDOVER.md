@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · ended · **Verdict: matches the references, with only cosmetic notes.** Screenshots: '/home/sofiapata/.claude/jobs/16f272ea/tmp/phone-390.png', 'tablet-834.pn…
 - `2026-08-07T18:41:56Z` · `a257737f99b848dd9` · general-purpose · ended · The full Playwright suite is running in the background (task 'b274pajz7'); work is already committed at '38bb7ed'. I'll wait for the completion notif…
 - `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
 - `2026-08-07T19:14:19Z` · `a19f26f7c17fe56af` · general-purpose · ended · I'll wait for the background test run to complete before proceeding.
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-07T20:41:18Z` · `a1fe3079f7d9ab8a7` · general-purpose · ended · **Verdict: merge as-is.** Reviewed all eight files in the diff ('9db833b..worktree-agent-aa742f68e3b1172b9', commits 'cc494dd'/'d270559') plus the tw…
 - `2026-08-07T21:11:20Z` · `ae4ce333f6eb9e0eb` · general-purpose · ended · Clean tree, everything committed at '2eacc68'. Work is complete for this wave. ## Report **Branch/commit:** 'worktree-agent-ae4ce333f6eb9e0eb' at '2e…
 - `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
+- `2026-08-07T21:44:44Z` · `a3acefbcb5f4b4419` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -383,11 +383,30 @@ So `cancel-in-progress: false` protects the run that is genuinely *in progress* 
 — under back-to-back pushes every queued run in between is still discarded. This session pushed
 eight times in about fifty minutes and every one of those runs was cancelled while pending.
 
-**This is a design question, deliberately not answered here.** The obvious fix is to move
-`publish` into its own workflow with its own concurrency group, so the read-for-verification jobs
-may cancel freely while the deployment-coupled job queues. That changes deployment behaviour on a
-live host, which is not an autonomous call. In the meantime: **do not read a green `Android` run
-as the branch being verified**, and space pushes to `main` out if the web CI result matters.
+**Concurrency is not the whole story, though — allocation is also failing.** The run for
+`7edc96e` sat `pending` for over forty minutes with **nothing else in its concurrency group to
+supersede it** and zero jobs ever allocated, while `android.yml` runs on the same shas were
+picked up and finished green throughout. So a second, independent thing is wrong: the `CI`
+workflow specifically is not getting runners. That points at the account or the workflow itself
+rather than at the concurrency policy, and it is the user's infrastructure to look at.
+
+**This is a design question, deliberately not answered here.** The obvious fix for the
+concurrency half is to move `publish` into its own workflow with its own concurrency group, so
+the read-for-verification jobs may cancel freely while the deployment-coupled job queues. That
+changes deployment behaviour on a live host, which is not an autonomous call. In the meantime:
+**do not read a green `Android` run as the branch being verified**, and space pushes to `main`
+out if the web CI result matters.
+
+**The gap was covered locally instead, on `main` at `91663b6`** — the honest substitute, since
+`CLAUDE.md` is explicit that local running is a faster first look and not a replacement for CI:
+
+- per-package `tsc --noEmit` across `packages/core`, `packages/abs-client`,
+  `packages/jellyfin-client`, `packages/ui`, `apps/server`, `apps/web` — **all six clean**
+  (the root `pnpm typecheck` still does not complete on this box; see §6);
+- `pnpm test` — **117 files, 1455 tests, all passing**.
+
+Not run locally: Playwright, the container smoke test, the bundle and Lighthouse budgets, and
+Gradle. So the web CI gap is narrowed, not closed.
 
 **One thing scouted so the next session need not re-derive it: there is no unified search
 endpoint on the BFF.** Web's `SearchPage` fans out client-side across
