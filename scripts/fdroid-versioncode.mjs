@@ -78,7 +78,7 @@ export function computeVersionCode(allTags, targetTag) {
       } catch {
         return false;
       }
-    })
+    }),
   );
   validTags.add(targetTag); // ensures targetTag is present even if allTags predates it
   const sorted = [...validTags].sort(compareTags);
