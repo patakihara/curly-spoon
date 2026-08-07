@@ -12,17 +12,39 @@ class QueueStoreTest {
     }
 
     @Test
-    fun `enqueueNext on an empty queue bootstraps a one-entry queue at cursor 0`() {
+    fun `enqueueNext on an empty queue bootstraps a one-entry queue at cursor -1, not yet current`() {
+        // cursor -1, not 0: this store never carries the item actually playing right now (that
+        // lives outside it, on PlayerViewModel's own currentAudiobookItemId/currentContentType)
+        // -- only what comes after it. A bootstrap at cursor 0 would claim "a" is already
+        // current, so the very next advance() would try to move past it and return null instead
+        // of "a" itself. See the next test, and enqueueNext's own doc comment.
         val store = createQueueStore<String>()
         store.enqueueNext("a")
-        assertEquals(SimpleQueueState(order = listOf("a"), cursor = 0), store.state.value)
+        assertEquals(SimpleQueueState(order = listOf("a"), cursor = -1), store.state.value)
     }
 
     @Test
-    fun `enqueueLast on an empty queue bootstraps a one-entry queue at cursor 0`() {
+    fun `enqueueNext on an empty queue -- the very next advance returns that entry`() {
+        // Pins the regression PlayerViewModelQueueTest.kt hit: queueing an episode/chapter while
+        // something else (untracked by this store) plays must make it the next advance() result,
+        // not a no-op.
+        val store = createQueueStore<String>()
+        store.enqueueNext("a")
+        assertEquals("a", store.advance())
+    }
+
+    @Test
+    fun `enqueueLast on an empty queue bootstraps a one-entry queue at cursor -1, not yet current`() {
         val store = createQueueStore<String>()
         store.enqueueLast("a")
-        assertEquals(SimpleQueueState(order = listOf("a"), cursor = 0), store.state.value)
+        assertEquals(SimpleQueueState(order = listOf("a"), cursor = -1), store.state.value)
+    }
+
+    @Test
+    fun `enqueueLast on an empty queue -- the very next advance returns that entry`() {
+        val store = createQueueStore<String>()
+        store.enqueueLast("a")
+        assertEquals("a", store.advance())
     }
 
     @Test

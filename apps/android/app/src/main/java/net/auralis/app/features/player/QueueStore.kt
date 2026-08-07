@@ -43,14 +43,22 @@ class QueueStore<T> {
     }
 
     /** Inserts [entry] immediately after the current cursor — "play this next" — without
-     *  moving the cursor itself. Bootstraps a one-entry queue at `cursor = 0` if nothing is
-     *  queued yet, matching [createQueueStore]'s web counterpart: an empty queue has no "after
-     *  the cursor" position to insert at, so starting one is the only sense in which "next" is
-     *  meaningful. */
+     *  moving the cursor itself. Bootstraps a one-entry queue at `cursor = -1` if nothing is
+     *  queued yet: this store never carries the item that is *currently* playing (that lives
+     *  outside it — [PlayerViewModel]'s own `currentAudiobookItemId`/`currentContentType` — a
+     *  podcast/audiobook queue only ever holds what comes *after* it), so a freshly-queued
+     *  entry has not been reached yet and must be what the very next [advance] call returns,
+     *  not what it is already sitting on. `cursor = 0` here would claim [entry] itself is
+     *  already current, so [advance] would try to move past it to a nonexistent index 1 and
+     *  return `null` instead — this was a real bug (see `PlayerViewModelQueueTest.kt`'s
+     *  "a queued podcast episode is loaded when the current episode ends" and the two
+     *  same/cross-book chapter tests, all three silently no-op'd by it) rather than a design
+     *  choice; fixed here rather than in a caller because every consumer of an empty queue's
+     *  first [enqueueNext]/[enqueueLast] shares the same expectation. */
     fun enqueueNext(entry: T) {
         val current = _state.value
         if (current == null) {
-            _state.value = SimpleQueueState(order = listOf(entry), cursor = 0)
+            _state.value = SimpleQueueState(order = listOf(entry), cursor = -1)
             return
         }
         val order = current.order.toMutableList()
@@ -59,11 +67,12 @@ class QueueStore<T> {
     }
 
     /** Appends [entry] to the end of the queue — "add to queue" — regardless of where the
-     *  cursor currently sits. Same empty-queue bootstrap as [enqueueNext]. */
+     *  cursor currently sits. Same empty-queue bootstrap as [enqueueNext], and for the same
+     *  reason: see that method's doc comment. */
     fun enqueueLast(entry: T) {
         val current = _state.value
         if (current == null) {
-            _state.value = SimpleQueueState(order = listOf(entry), cursor = 0)
+            _state.value = SimpleQueueState(order = listOf(entry), cursor = -1)
             return
         }
         _state.value = current.copy(order = current.order + entry)
