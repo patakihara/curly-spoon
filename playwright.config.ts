@@ -79,8 +79,14 @@ export default defineConfig({
   // half the cores, and both this machine and a GitHub `ubuntu-latest` runner
   // have four — which is where the two workers everyone kept seeing came from.
   // Timed full-suite runs here on 2026-08-07: 2 workers took 8m50s, 4 took
-  // 6m25s, a 27% saving, and the 4-worker run was the one that went fully
-  // green (284/284) while the 2-worker run flaked two specs under load.
+  // 6m25s, a 27% saving. **Do not read that 4-worker run's clean sheet as
+  // evidence of stability** — later runs at 4 flaked too (one
+  // `requests.spec.ts` failure that passed in isolation; a separate agent saw
+  // four `browse.spec.ts` failures at the auto worker count and none at
+  // `--workers=1`). The confound is this box: four cores, with subagents and
+  // sometimes a second session competing for them, so flakes track CPU
+  // pressure rather than cleanly tracking this number. CI is green at 4, but
+  // `retries: 2` there would mask exactly this.
   // The suite is not embarrassingly parallel — `app-onboarding` and
   // `app-jellyfin-unconfigured` are barriers before `app`, and the `app`
   // webServer builds the web app before it boots — so the ceiling here is the

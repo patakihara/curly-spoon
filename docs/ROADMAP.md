@@ -2037,6 +2037,41 @@ query returns both.
 This supersedes the shipped web `/requests` and `/music/requests` pages as the _primary_
 entry point, and supersedes Android's music-only search entirely.
 
+**12b-1 (web) shipped 2026-08-07** — the two chip rows and the grouped, list-shaped results.
+`searchFilters.ts` holds the chip state as a pure, tested function; `SearchPage.tsx` renders
+from it.
+
+**Podcasts deliberately gets no second row.** Audiobookshelf's `/search` returns whole shows
+in one flat `podcast` bucket — there are no episode- or category-level matches to filter
+between — so a row offering only "All" would control nothing. If podcast search ever returns
+episodes, that decision should be revisited.
+
+**"Sorted by relevance" is not yet true, and this is the open half of 12b.** Independent
+review established it: `packages/jellyfin-client`'s `search()` reuses the generic `/Items`
+query, which pins `sortBy: 'SortName'` whenever no sort is passed — so **music results are
+alphabetical, not ranked**. Search "the" and a barely-matching "The Zzz Band" can outrank an
+exact hit. That is a `jellyfin-client` limitation this wave inherited rather than introduced,
+and fixing it means deciding what Jellyfin's relevance ordering actually is — omitting
+`sortBy` entirely is the obvious candidate, but Jellyfin exposes no explicit relevance sort,
+so it wants a wave with a test against real behaviour rather than a guess. Books, podcasts,
+series and authors render in whatever order Audiobookshelf's `/search` returns, which is
+**assumed** to be ranked and has never been verified against a real server — same standing
+caveat as the rest of the ABS client.
+
+Series and author results render inert: no `/series/:id` or `/author/:id` route exists
+anywhere in the app yet. 12c is where they get somewhere to go.
+
+**The e2e suite is flaky under CPU pressure, and the worker count is not cleanly the
+cause.** Recorded because the obvious next move — blame `workers: '100%'` and revert it — is
+not supported by what was actually observed on 2026-08-07. At 2 workers: `music.spec.ts` and
+`player.spec.ts` failed. At 4: one full green run, then a later run with one
+`requests.spec.ts` failure that passed on its own; separately, an agent saw four
+`browse.spec.ts` failures at the auto count and none at `--workers=1`. Every one of those
+runs shared four cores with a subagent or a second session. So the honest reading is that
+flakes track **contention**, not worker count, and that CI's `retries: 2` is currently what
+keeps this invisible there. Anyone chasing it should first reproduce on an otherwise idle
+box; the suspect is shared state on the single-tenant BFF, not the number in the config.
+
 #### 12c — In-view search, and artist/author pages
 
 Each content view (Music, Books, Podcasts) has its own search icon. That search covers the
