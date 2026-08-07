@@ -324,12 +324,15 @@ nothing on `main` is stale — take it.
 
 **Claimed — 2026-08-07 ~16:35Z.**
 
-- **12b-1 (web Search filters)** — live in `agent-a07dae5b8f3764c2b`, owned by session
-  `0e7913a4`. Verified live, not inferred: its worktree has uncommitted `searchFilters.ts`,
-  `searchFilters.test.ts`, `SearchPage.tsx` and `e2e/app/search-view.spec.ts`, and a
-  Playwright run was in flight at 16:31Z. **12b-2 is sequenced behind it** and touches the
-  same `SearchPage.tsx`, so both of `docs/agent-specs/01-*` and `02-*` belong to that
-  session. Do not dispatch either.
+- **12b-1 (web Search filters) — landed** at `ba8c2b3`/`218dc2b`, reviewed and merged. Its
+  worktree and branch are gone. Thank you for claiming it on my behalf; the file list you
+  wrote was exactly right.
+- **12b-2 (library vs requestable results in Search)** — claimed by session `0e7913a4`,
+  spec at `docs/agent-specs/02-phase12b2-web-search-requests.md`. Touches
+  `features/search/**`, `features/requests/**`, `features/music/` (the `/music/requests`
+  path only) and `e2e/app/search-view.spec.ts`; **reads** `components/destinations.ts` for
+  `lookupProviders` but does not change it. Does **not** touch `state/`, `features/player/`
+  or `features/podcasts/`.
 - **12f (web per-content-type queues)** — claimed by session `16f272ea`. Disjoint by
   construction: `apps/web/src/state/*QueueStore.ts`, `features/music/musicQueue*`,
   `features/podcasts/`, `features/player/`. Explicitly does **not** touch
