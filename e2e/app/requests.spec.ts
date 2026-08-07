@@ -63,17 +63,21 @@ test('configuring an indexer and a download client saves without error', async (
   await expect(qbittorrent.getByTestId('provider-qbittorrent-save-error')).toHaveCount(0);
 });
 
-test('the Requests destination appears in navigation once both providers are enabled', async ({
+test('/requests stays reachable directly, though it no longer has a nav destination of its own', async ({
   page,
 }) => {
-  // Scoped to whichever nav container this viewport renders (Shell.tsx picks
-  // nav-bar/nav-rail/nav-rail-expanded by breakpoint) — not to the page body,
-  // which after the previous test also contains an unrelated "Requests" h2 and
-  // hint text in `RequestSettingsSection`/`ProviderSettingsSection`.
+  // §12a folded Requests into Search — there is no separate "Requests" nav
+  // item any more (`components/destinations.ts`'s `DestinationKey` no longer
+  // includes it). The route itself is untouched by this wave, though: wave
+  // 12b/12d is what actually folds its content into Search, so `/requests`
+  // must keep working as a direct link until that lands.
+  await page.goto('/requests');
+  await expect(page.getByTestId('requests-page')).toBeVisible();
+
   const nav = page.locator(
     '[data-testid="nav-bar"], [data-testid="nav-rail"], [data-testid="nav-rail-expanded"]',
   );
-  await expect(nav.getByText('Requests', { exact: true })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Requests', exact: true })).toHaveCount(0);
 });
 
 test('an unreachable indexer surfaces a non-blocking error notice, not "no results"', async ({

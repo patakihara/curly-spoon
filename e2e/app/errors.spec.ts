@@ -30,7 +30,7 @@ test('the error boundary is scoped to the route, so navigating away recovers', a
   await page.goto('/item/no-such-item');
   await expect(page.getByTestId('route-error-boundary')).toBeVisible();
 
-  await page.getByTestId('nav-rail-expanded').getByRole('button', { name: 'Home' }).click();
+  await page.getByTestId('nav-rail-expanded').getByRole('button', { name: 'For you' }).click();
 
   await expect(page.getByTestId('home-page')).toBeVisible();
   await expect(page.getByTestId('route-error-boundary')).toHaveCount(0);

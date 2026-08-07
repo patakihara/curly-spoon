@@ -31,6 +31,32 @@ const libraryRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// The `/books` destination (docs/ROADMAP.md §12a) — a stable nav path,
+// unlike `libraryRoute` below which bakes a library id into the URL.
+// `BooksPage` resolves the actual book library id at render time from
+// `GET /api/v1/libraries`. `libraryRoute` is unchanged and still works for
+// every existing deep link.
+const booksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/books',
+  component: lazyRouteComponent(() => import('../features/library/BooksPage.js'), 'BooksPage'),
+  errorComponent: RouteErrorBoundary,
+});
+
+// The `/podcasts` destination — the podcast twin of `booksRoute` above. Not
+// to be confused with `podcastDiscoverRoute`'s `/podcasts/discover`, which
+// TanStack Router matches as a more specific sibling path, not a child of
+// this one.
+const podcastsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/podcasts',
+  component: lazyRouteComponent(
+    () => import('../features/library/PodcastsPage.js'),
+    'PodcastsPage',
+  ),
+  errorComponent: RouteErrorBoundary,
+});
+
 const itemRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/item/$itemId',
@@ -206,6 +232,8 @@ const loginRoute = createRoute({
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
+  booksRoute,
+  podcastsRoute,
   libraryRoute,
   itemRoute,
   podcastDetailRoute,

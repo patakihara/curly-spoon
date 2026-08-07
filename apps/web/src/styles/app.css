@@ -93,6 +93,16 @@ html body {
   z-index: 10;
 }
 
+/* Settings' compact-breakpoint affordance (Shell.tsx) — the five bottom-bar
+ * slots are all spoken for by the primary destinations, so this sits fixed
+ * in the top-right corner instead, above the page content. */
+.auralis-shell__settings-button {
+  position: fixed;
+  top: var(--m3-space-md);
+  right: var(--m3-space-md);
+  z-index: 10;
+}
+
 .auralis-now-playing-panel {
   width: 320px;
   flex-shrink: 0;

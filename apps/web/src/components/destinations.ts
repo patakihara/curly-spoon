@@ -1,5 +1,6 @@
 /**
- * The shell's primary destinations, and which of them are visible.
+ * The shell's five primary destinations (`docs/ROADMAP.md` §12a), and which
+ * of them are visible.
  *
  * "Never show a section that will only error": Books and Podcasts are both
  * served through Audiobookshelf (docs/ARCHITECTURE.md's priority table), so
@@ -8,7 +9,10 @@
  * configured-but-library-less server would otherwise show a destination that
  * immediately 404s. Library ids are never hard-coded: they come from whatever
  * `GET /api/v1/libraries` actually returns, so this holds for any real server,
- * not just the fixture used in tests.
+ * not just the fixture used in tests. (`Destination.to` for each is now a
+ * stable `/books`/`/podcasts` path rather than a library id baked into the
+ * link — see `router/routeTree.ts`'s `booksRoute`/`podcastsRoute` — but the
+ * *visibility* rule is unchanged: still gated on a matching library existing.)
  *
  * Music is served through Jellyfin, an independent upstream from Audiobookshelf
  * (its own base URL and its own per-user credential — see
@@ -16,15 +20,17 @@
  * `jellyfinConfigured` flag, not on `audiobookshelfConfigured`, and shown at a
  * flat `/music` regardless of whether any Audiobookshelf library exists.
  *
-
- * Requests (Phase 6) follows the same rule with its own condition: a request can
- * be *created* the moment any indexer exists, but it can never be *fulfilled*
- * without a download client too — so the destination stays hidden until both an
- * indexer and a download client are configured and enabled, not just one.
+ * For you and Search are always visible — neither depends on any upstream
+ * being configured. Search doubles as the requests view (§12a), so there is
+ * no separate `requests` destination any more: `hasEnabledIndexer` /
+ * `hasEnabledDownloadClient` gating is gone from this file. `lookupProviders`
+ * stays, and still derives those two flags from `GET /api/v1/providers` —
+ * `Shell.tsx` still calls it to build the context this module used to also
+ * use for Requests visibility; whatever now decides when to show a "make a
+ * request" affordance inside Search is out of this wave's scope.
  */
 
-export type DestinationKey =
-  'home' | 'books' | 'podcasts' | 'music' | 'requests' | 'search' | 'settings';
+export type DestinationKey = 'forYou' | 'books' | 'podcasts' | 'music' | 'search';
 
 export interface Destination {
   key: DestinationKey;
@@ -51,30 +57,25 @@ export interface DestinationContext extends LibraryLookup {
   jellyfinConfigured?: boolean;
 }
 
-/** The destinations to render in nav, in a fixed order, filtered by what's actually usable. */
+/**
+ * The destinations to render in nav, in a fixed order, filtered by what's
+ * actually usable. Order: For you, Music, Books, Podcasts, Search — Search
+ * last, so it lands at the far right of the compact bottom bar (§12a).
+ */
 export function visibleDestinations(ctx: DestinationContext): Destination[] {
-  const destinations: Destination[] = [{ key: 'home', label: 'Home', to: '/' }];
+  const destinations: Destination[] = [{ key: 'forYou', label: 'For you', to: '/' }];
 
-  if (ctx.audiobookshelfConfigured && ctx.bookLibraryId) {
-    destinations.push({ key: 'books', label: 'Books', to: `/library/${ctx.bookLibraryId}` });
-  }
-  if (ctx.audiobookshelfConfigured && ctx.podcastLibraryId) {
-    destinations.push({
-      key: 'podcasts',
-      label: 'Podcasts',
-      to: `/library/${ctx.podcastLibraryId}`,
-    });
-  }
   if (ctx.jellyfinConfigured) {
     destinations.push({ key: 'music', label: 'Music', to: '/music' });
   }
-
-  if (ctx.hasEnabledIndexer && ctx.hasEnabledDownloadClient) {
-    destinations.push({ key: 'requests', label: 'Requests', to: '/requests' });
+  if (ctx.audiobookshelfConfigured && ctx.bookLibraryId) {
+    destinations.push({ key: 'books', label: 'Books', to: '/books' });
+  }
+  if (ctx.audiobookshelfConfigured && ctx.podcastLibraryId) {
+    destinations.push({ key: 'podcasts', label: 'Podcasts', to: '/podcasts' });
   }
 
   destinations.push({ key: 'search', label: 'Search', to: '/search' });
-  destinations.push({ key: 'settings', label: 'Settings', to: '/settings' });
   return destinations;
 }
 
@@ -89,10 +90,13 @@ export function lookupLibraries(
 }
 
 /**
- * Derives the two `DestinationContext` provider flags from `GET /api/v1/providers`.
- * `configured` and `enabled` are independent on `ProviderEntry` (a provider can be
- * enabled with nothing filled in yet, or configured but switched off) — both must
- * hold for the provider to actually be usable.
+ * Derives the two provider flags from `GET /api/v1/providers`. `configured`
+ * and `enabled` are independent on `ProviderEntry` (a provider can be
+ * enabled with nothing filled in yet, or configured but switched off) — both
+ * must hold for the provider to actually be usable. No destination in this
+ * file is gated on these any more (Search absorbed Requests, §12a) — kept
+ * because `Shell.tsx` and other callers still use the flags for whatever
+ * Search itself now decides to show.
  */
 export function lookupProviders(
   // Accepts the full `ProviderKind` union (now including `'music'`, phase 9's slskd
@@ -100,8 +104,7 @@ export function lookupProviders(
   // `Shell.tsx` passes the whole `GET /providers` list, which includes music providers
   // since `apps/server/src/routes/requests.ts`'s `allDescriptors()` already did. `usable`
   // below still only ever checks for `'indexer'`/`'download'`, so a music entry is simply
-  // ignored here, exactly as it was before this type accepted it — the Requests
-  // destination's visibility rule is unchanged.
+  // ignored here, exactly as it was before this type accepted it.
   providers: Array<{
     kind: 'indexer' | 'download' | 'music';
     configured: boolean;
