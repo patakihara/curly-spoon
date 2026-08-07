@@ -29,7 +29,6 @@ import net.auralis.app.features.music.AlbumDetailScreen
 import net.auralis.app.features.music.ArtistDetailScreen
 import net.auralis.app.features.music.FavoritesScreen
 import net.auralis.app.features.music.MusicLibraryScreen
-import net.auralis.app.features.music.MusicSearchScreen
 import net.auralis.app.features.music.PlaylistDetailScreen
 import net.auralis.app.features.music.PlaylistsScreen
 import net.auralis.app.features.player.LyricsScreen
@@ -38,6 +37,7 @@ import net.auralis.app.features.musicrequests.MusicRequestsScreen
 import net.auralis.app.features.podcasts.PodcastDetailScreen
 import net.auralis.app.features.podcasts.PodcastsScreen
 import net.auralis.app.features.requests.RequestsScreen
+import net.auralis.app.features.search.UnifiedSearchScreen
 
 /** Route name constants for [AuralisNavHost]'s graph. */
 object Routes {
@@ -178,7 +178,7 @@ fun AuralisNavHost(
                     PodcastDetailScreen(container, playerViewModel, itemId)
                 }
                 composable(Routes.MUSIC) { MusicLibraryScreen(container, navController) }
-                composable(Routes.MUSIC_SEARCH) { MusicSearchScreen(container, navController) }
+                composable(Routes.MUSIC_SEARCH) { UnifiedSearchScreen(container, navController) }
                 composable(Routes.MUSIC_FAVORITES) { FavoritesScreen(container, navController) }
                 composable(Routes.MUSIC_PLAYLISTS) { PlaylistsScreen(container, navController) }
                 composable(Routes.MUSIC_REQUESTS) { MusicRequestsScreen(container) }

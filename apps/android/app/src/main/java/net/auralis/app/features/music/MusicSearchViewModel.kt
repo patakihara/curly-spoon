@@ -32,7 +32,10 @@ data class MusicSearchTrackUi(
     val albumId: String?,
 )
 
-private fun JellyfinTrack.toSearchUi(): MusicSearchTrackUi =
+/** `internal`, not `private`: [net.auralis.app.features.search.UnifiedSearchViewModel] (wave
+ * 12b-A1) reuses this exact mapping for its own music-track search results, since a track
+ * search hit is the identical shape regardless of which screen's query produced it. */
+internal fun JellyfinTrack.toSearchUi(): MusicSearchTrackUi =
     MusicSearchTrackUi(
         id = id,
         title = name,
