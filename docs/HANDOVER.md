@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T16:49:47Z` · `a8781e77885029281` · general-purpose · ended · Wave 12f-1 shipped at '0eb1d9d' (docs updated) and wave 12f-2 is now dispatched to a background Sonnet agent. I'll review and integrate when it repor…
 - `2026-08-07T16:54:04Z` · `a17b14e747a44987e` · general-purpose · ended · I'll wait for the background Playwright suite ('bleb153df') to finish before proceeding — no further action needed until that notification arrives.
 - `2026-08-07T17:06:39Z` · `af868eb787d50240d` · general-purpose · ended · ## Verdict: merge with named corrections ## Findings, ranked by severity **1. Selecting a content-type filter before typing anything shows a contradi…
 - `2026-08-07T17:17:14Z` · `a8781e77885029281` · general-purpose · ended · I don't see a task or question in your message yet — just tool/agent context loading in. What would you like me to help with?
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
 - `2026-08-07T19:14:19Z` · `a19f26f7c17fe56af` · general-purpose · ended · I'll wait for the background test run to complete before proceeding.
 - `2026-08-07T19:28:46Z` · `a0a086b43c492f5ce` · general-purpose · ended · ## Verdict: has a defect that must be fixed The Series and Author pages both depend on structured 'authors[]'/'series[]' arrays on book items — but e…
+- `2026-08-07T19:38:29Z` · `af767a8f2890d20aa` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -350,6 +350,26 @@ nothing is `todo`, so `input_needed` entries are reachable only by `queue show <
 A lightweight lock, because two sessions share this checkout. Claim a wave here **before**
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
+
+**Claimed — 2026-08-07 ~20:05Z, session `1b29a583`.**
+
+- **12a (Android) — the persistent navigation shell and the Now Playing surface.** Claimed,
+  dispatching now. This is the first unfinished roadmap item by §12's own "web first, Android
+  second" sequencing: every web wave of phase 12 has landed, and Android has neither a
+  navigation shell nor any playback surface beyond `MiniPlayerBar`'s title and text buttons.
+  Split into **A1** (the shell: `NavigationBar`/`NavigationRail`, five destinations, the
+  `NavHost` and a hoisted persistent `MiniPlayerBar`) and **A2** (the expanded Now Playing
+  surface) as two sequential agents merged as one unit — §12a's "these land together" is a
+  constraint on the merge, not on how many agents write it.
+  Touches `apps/android/**` only, so it is disjoint from every live web worktree.
+- **The `material-icons-extended` question is answered, autonomously.** It was one of the
+  phase 10 audit's three open questions and it blocks every icon in the shell; `ROADMAP.md`
+  §12a now carries the decision and the reasoning. Do not re-open it as a user question.
+- **Three other sessions' worktrees were live when this claim was written** —
+  `agent-af767a8f2890d20aa` in particular held ~20 uncommitted files including the real
+  minified-item normalization fix (`packages/abs-client/src/normalize.ts`, `domain.ts`,
+  `schemas/raw.ts`). Not touched: its owner was alive. If a later session finds it stale,
+  committing it in place is the salvage — do not merge it unreviewed.
 
 **Claimed — 2026-08-07 ~16:35Z.**
 

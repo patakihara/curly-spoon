@@ -1981,12 +1981,12 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 
 | Area                                                    | Status |
 | ------------------------------------------------------- | ------ |
-| 12a — Five-view navigation shell (web + Android)        | todo   |
-| 12b — Search view: unified library + request results    | todo   |
-| 12c — In-view search and artist/author full discography | todo   |
-| 12d — For You: uniform album-card carousels             | done   |
-| 12e — Context menus (long-press / right-click)          | todo   |
-| 12f — Per-content-type queues                           | done   |
+| 12a — Five-view navigation shell (web + Android)        | web done, Android in progress |
+| 12b — Search view: unified library + request results    | web done, Android todo |
+| 12c — In-view search and artist/author full discography | 12c-1 drafted (defective), 12c-2 blocked |
+| 12d — For You: uniform album-card carousels             | web done, Android todo |
+| 12e — Context menus (long-press / right-click)          | web done (album page only), Android todo |
+| 12f — Per-content-type queues                           | web done, Android todo |
 
 #### 12a — The five views
 
@@ -2294,6 +2294,35 @@ by toggling the wiring off and watching it fail. Deleting the code under test an
 test goes red is the only thing that distinguishes a guard from a decoration.
 
 **Android's 12f is not started** — these queues are web-only. Android still has one queue.
+
+#### 12a (Android) — the decision taken to unblock it, stated rather than assumed
+
+**`material-icons-extended` is being added.** The phase 10 audit listed this as one of three
+open questions for the user, on the grounds that icon-only controls are blocked on it. It is
+being decided here rather than waited on, because the wait blocks the whole Android half of
+phase 12 and the decision is cheap and reversible.
+
+The evidence that it is genuinely required, rather than a convenience: **no screen in
+`apps/android` imports `Icons.*` at all today**, and `MiniPlayerBar.kt`'s own header comment
+records why — `Icons.Default.Pause` could not be confirmed present in the core set, so the
+whole file fell back to text buttons. The core artifact carries roughly forty general-purpose
+glyphs (Home, Search, PlayArrow, ArrowBack, MoreVert, Favorite, Settings and similar) and does
+**not** carry `Pause`, `SkipNext`, `SkipPrevious`, `MusicNote`, `Book` or `Podcasts`. A
+five-destination navigation bar and a real transport control row need all six. Building them
+from hand-authored vector drawables instead would reimplement, worse, exactly what the
+artifact provides.
+
+Why it is not a licensing or a size problem:
+
+- **Licence**: Apache-2.0 AndroidX, the same family already cleared in
+  `docs/research/FDROID_DISTRIBUTION.md` §3. Nothing about the F-Droid route changes.
+- **Size**: the artifact is large as a dependency but each icon is a separate top-level
+  declaration, so R8 tree-shakes every unreferenced one out of a release build. The debug APK
+  grows; the shipped one grows by roughly the icons actually used.
+
+If the user would rather not have it, reverting is a one-line dependency removal plus swapping
+the affected composables back to text — contained, and cheaper than having left the Android
+shell unbuilt.
 
 #### Sequencing — web first, Android second
 
