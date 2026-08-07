@@ -364,10 +364,45 @@ nothing on `main` is stale — take it.
 - **A2 grew the playback layer, not just the UI.** `PlayerViewModel` had no seek, next or
   previous at all before this. Anything touching `features/player/` next should read §12a's
   paragraph on it first.
-- **Nothing on Android was run** — no JDK, SDK or device here, so CI is the sole compile gate.
-  The one residual risk is `Icons.Filled.*` symbol resolution against `material-icons-extended`;
-  every symbol was cross-checked against real compiling projects, but that is evidence rather
-  than a build.
+- **Android CI is green on `9573fea`.** It took three red runs to get there, and *what* was red
+  is the point — see the section below. The `material-icons-extended` decision is vindicated:
+  every icon symbol resolved, including `Podcasts`, `LibraryMusic`, `MenuBook`, `Replay10` and
+  `Forward30`.
+- **The web `CI` workflow for `9573fea` has been stuck `pending` with zero jobs allocated for
+  over half an hour**, and the three runs before it all ended `cancelled` rather than passing.
+  Nothing of this session's is in it — the change is `apps/android` plus docs — but **the last
+  genuinely green web `CI` run is older than the last few pushes**, so do not read a green
+  `Android` run as the branch being fully verified. Check for an allocated runner before
+  concluding anything from a pending run; repeated `cancelled` results look like the
+  concurrency group cancelling superseded runs on rapid successive pushes.
+
+### Two independent source reviews read straight past a one-line compile error (2026-08-07)
+
+Worth recording because it is the cleanest evidence yet for a rule this project already has.
+Android 12a went through the full process — a spec naming the files and the failure modes, a
+separate Sonnet reviewer per wave with the traps enumerated, both returning **"merge as-is, no
+defects"** — and CI rejected it in about a minute, three times running:
+
+1. **`import androidx.compose.foundation.layout.weight`** in `AuralisShell.kt`. `Modifier.weight`
+   is a `RowScope`/`ColumnScope` member, so that import resolves instead to the *internal*
+   `RowColumnParentData.weight` property. It fails as an **access** error, not an unresolved
+   reference, which is why it reads like a perfectly ordinary import. The call site was already
+   inside a `Row`, so deleting the import was the entire fix (`da31133`).
+2. **Two backtick test names containing `..`** (`` `...the 0..1 range...` ``). Kotlin permits a
+   dot in a quoted function name; the JVM does not permit it in a method name. Compiles as
+   Kotlin, fails as bytecode (`9573fea`).
+3. Two directional icons wanting their `AutoMirrored` variants — a warning, not a failure, but a
+   real right-to-left correctness point, fixed in the same commit.
+
+None of these three is a logic defect, and that is exactly the shape of thing review cannot
+catch: they are facts about the toolchain, not about the code's intent. A reviewer reasoning
+carefully about drag latching, division by zero and Jellyfin reporting — all of which it got
+right — has no way to know which of two plausible imports the compiler will accept.
+
+So `CLAUDE.md`'s existing rule stands and should not be softened: **for `apps/android`, CI is
+the gate and review is not a substitute.** The practical consequence is scheduling, not process:
+budget for two or three red Android runs after any sizeable Android wave, and push early enough
+that those iterations fit inside the usage window rather than landing at the end of it.
 
 ### What is genuinely next
 
