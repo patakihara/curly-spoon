@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import net.auralis.app.data.model.JellyfinAlbum
 import net.auralis.app.data.model.JellyfinTrack
 import net.auralis.app.data.settings.ServerConfigRepository
 import net.auralis.app.playback.ResolvedPlayback
@@ -76,6 +77,15 @@ sealed interface AlbumDetailUiState {
          * to "not favourited" rather than blocking the rest of the page — see [load]'s own
          * comment on that fetch. */
         val albumFavorite: Boolean = false,
+        /** This album's own Jellyfin `artistId` — fetched alongside [albumFavorite] via the
+         *  same [MusicRepository.albums] single-item lookup (that call already returns the raw
+         *  [net.auralis.app.data.model.JellyfinAlbum], which carries `artistId`; nothing extra
+         *  is fetched for this). Feeds `TrackContextMenu`'s "Go to artist" (wave 12e) — every
+         *  track on this screen belongs to this one album, so its artist id is this album's,
+         *  not a per-track one. `null` when the fetch failed or the album genuinely has none;
+         *  either way "Go to artist" is omitted rather than guessing, matching
+         *  `apps/web/src/features/music/MusicAlbumPage.tsx`'s identical `albumArtistId` fetch. */
+        val albumArtistId: String? = null,
     ) : AlbumDetailUiState {
         val hasMore: Boolean get() = hasMoreMusicPages(tracks.size, total)
     }
@@ -121,6 +131,7 @@ class AlbumDetailViewModel(
                 is TracksPageResult.Loaded -> {
                     val tracks = result.items.map { it.toTrackUi() }
                     val firstTrack = result.items.firstOrNull()
+                    val album = fetchAlbum()
                     _uiState.value =
                         AlbumDetailUiState.Loaded(
                             albumName = firstTrack?.albumName ?: "Album",
@@ -132,7 +143,8 @@ class AlbumDetailViewModel(
                             coverUrl = jellyfinItemArtworkUrl(cachedBaseUrl, albumId),
                             tracks = tracks,
                             total = result.total,
-                            albumFavorite = fetchAlbumFavorite(),
+                            albumFavorite = album?.favorite ?: false,
+                            albumArtistId = album?.artistId,
                         )
                 }
                 is TracksPageResult.Failed ->
@@ -147,8 +159,9 @@ class AlbumDetailViewModel(
     }
 
     /**
-     * A second, sequential fetch of just this album's own favourite state, via
-     * [MusicRepository.albums]' single-item `id` filter — the same "list filtered to one id"
+     * A second, sequential fetch of this album's own record — its favourite state and, since
+     * wave 12e, its `artistId` (see [AlbumDetailUiState.Loaded.albumArtistId]'s doc comment) —
+     * via [MusicRepository.albums]' single-item `id` filter — the same "list filtered to one id"
      * shape `apps/web/src/api/queries.ts`'s `useJellyfinAlbumQuery` already uses for its own
      * header favourite toggle, since there is no dedicated single-album route (see
      * [ArtistDetailUiState.Loaded.artistName]'s doc comment on the same gap). Deliberately
@@ -157,14 +170,15 @@ class AlbumDetailViewModel(
      * request-arrival order, not enqueue order, so two genuinely concurrent requests from this
      * method race unpredictably in a test — see `MusicSearchViewModelTest`'s
      * "a stale response for a superseded query" test for where that bit this project before.
-     * Sequential avoids the whole class of bug for one extra field that isn't on the critical
-     * path to showing the album's tracks. Degrades to `false` on any failure — a favourite-state
-     * fetch failing must never block the rest of the page from loading.
+     * Sequential avoids the whole class of bug for two extra fields that aren't on the critical
+     * path to showing the album's tracks. Degrades to `null` on any failure — a fetch failing
+     * must never block the rest of the page from loading; callers treat `null` the same as "no
+     * artist id known" for [albumArtistId] and `false` for favourite state.
      */
-    private suspend fun fetchAlbumFavorite(): Boolean =
+    private suspend fun fetchAlbum(): JellyfinAlbum? =
         when (val result = musicRepository.albums(id = albumId, limit = 1)) {
-            is AlbumsPageResult.Loaded -> result.items.firstOrNull()?.favorite ?: false
-            is AlbumsPageResult.Failed -> false
+            is AlbumsPageResult.Loaded -> result.items.firstOrNull()
+            is AlbumsPageResult.Failed -> null
         }
 
     /** See [MusicLibraryViewModel.loadMoreArtists] — identical shape and identical

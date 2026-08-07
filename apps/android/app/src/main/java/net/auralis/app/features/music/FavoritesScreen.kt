@@ -1,6 +1,5 @@
 package net.auralis.app.features.music
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,12 +14,16 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,7 +32,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import coil.ImageLoader
+import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
+import net.auralis.app.features.player.MusicQueueEntry
+import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.navigation.Routes
 import net.auralis.app.util.formatDuration
 
@@ -49,6 +55,7 @@ import net.auralis.app.util.formatDuration
 fun FavoritesScreen(
     container: AppContainer,
     navController: NavHostController,
+    playerViewModel: PlayerViewModel,
 ) {
     val viewModel: FavoritesViewModel =
         viewModel(
@@ -58,11 +65,14 @@ fun FavoritesScreen(
                 },
         )
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { viewModel.load() }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Favourites") }) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (val state = uiState) {
             is FavoritesUiState.Loading ->
@@ -99,6 +109,26 @@ fun FavoritesScreen(
                             onToggleArtistFavorite = viewModel::toggleArtistFavorite,
                             onToggleAlbumFavorite = viewModel::toggleAlbumFavorite,
                             onToggleTrackFavorite = viewModel::toggleTrackFavorite,
+                            onPlayNextTrack = { track ->
+                                enqueueMusicTrack(
+                                    musicQueue = playerViewModel.musicQueue,
+                                    entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
+                                    position = TrackMenuAction.PLAY_NEXT,
+                                    onMessage = { message ->
+                                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                                    },
+                                )
+                            },
+                            onPlayLastTrack = { track ->
+                                enqueueMusicTrack(
+                                    musicQueue = playerViewModel.musicQueue,
+                                    entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
+                                    position = TrackMenuAction.PLAY_LAST,
+                                    onMessage = { message ->
+                                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+                                    },
+                                )
+                            },
                         )
                     }
                 }
@@ -114,6 +144,8 @@ private fun LazyListScope.favoritesSections(
     onToggleArtistFavorite: (String) -> Unit,
     onToggleAlbumFavorite: (String) -> Unit,
     onToggleTrackFavorite: (String) -> Unit,
+    onPlayNextTrack: (MusicFavoriteTrackUi) -> Unit,
+    onPlayLastTrack: (MusicFavoriteTrackUi) -> Unit,
 ) {
     if (state.artists.isNotEmpty()) {
         item {
@@ -168,6 +200,8 @@ private fun LazyListScope.favoritesSections(
                 track = track,
                 onOpenAlbum = onOpenAlbum,
                 onToggleFavorite = { onToggleTrackFavorite(track.id) },
+                onPlayNext = { onPlayNextTrack(track) },
+                onPlayLast = { onPlayLastTrack(track) },
             )
         }
     }
@@ -175,29 +209,45 @@ private fun LazyListScope.favoritesSections(
 
 /** One favourited-track row. See [AlbumDetailScreen]'s `TrackRow` doc comment for why the
  * clickable-to-open-album area and [FavoriteToggleButton] are siblings, not nested. A track
- * with no [MusicFavoriteTrackUi.albumId] has nowhere to navigate to, so — like
- * [MusicSearchScreen]'s identical `SearchTrackRow` — its clickable area is dropped entirely
- * rather than left as a dead tap target; the favourite toggle still works regardless, since
- * toggling never depended on the album id. */
+ * with no [MusicFavoriteTrackUi.albumId] has nowhere to navigate to, so tapping it is a no-op
+ * (matching the pre-context-menu behaviour, where the clickable area was omitted outright) —
+ * long-press still opens the menu regardless, since "Play next"/"Play last" don't depend on
+ * having an album id. [TrackMenuContext.artistId] is always `null` here for the same reason
+ * [PlaylistDetailScreen]'s rows pass `null` — a favourited track's own `JellyfinTrack` never
+ * carries an `artistId`, and there is no single page-level artist to borrow on a mixed-artist
+ * favourites list. */
 @Composable
 private fun FavoriteTrackRow(
     track: MusicFavoriteTrackUi,
     onOpenAlbum: (String) -> Unit,
     onToggleFavorite: () -> Unit,
+    onPlayNext: () -> Unit,
+    onPlayLast: () -> Unit,
 ) {
     val albumId = track.albumId
+    val menuState = rememberTrackContextMenuState()
+    val menuContext = TrackMenuContext(albumId = albumId, artistId = null)
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val infoModifier =
-            Modifier.weight(1f).let { base -> if (albumId != null) base.clickable(onClick = { onOpenAlbum(albumId) }) else base }
-        Row(modifier = infoModifier, verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(track.title, style = MaterialTheme.typography.titleSmall)
-                track.artistNames?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        TrackContextMenu(
+            state = menuState,
+            context = menuContext,
+            onClick = { albumId?.let(onOpenAlbum) },
+            onPlayNext = onPlayNext,
+            onPlayLast = onPlayLast,
+            onGoToAlbum = onOpenAlbum,
+            onGoToArtist = {},
+            rowModifier = Modifier.weight(1f),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(track.title, style = MaterialTheme.typography.titleSmall)
+                    track.artistNames?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                }
+                Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
             }
-            Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
         }
         FavoriteToggleButton(favorite = track.favorite, itemName = track.title, onToggle = onToggleFavorite)
     }

@@ -1,6 +1,5 @@
 package net.auralis.app.features.music
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,12 +33,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
+import net.auralis.app.features.player.MusicQueueEntry
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.navigation.Routes
 import net.auralis.app.util.formatDuration
 
 /**
@@ -59,6 +61,7 @@ import net.auralis.app.util.formatDuration
 fun AlbumDetailScreen(
     container: AppContainer,
     playerViewModel: PlayerViewModel,
+    navController: NavHostController,
     albumId: String,
 ) {
     val viewModel: AlbumDetailViewModel =
@@ -122,6 +125,7 @@ fun AlbumDetailScreen(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
                     imageLoader = container.imageLoader,
                     state = state,
+                    albumId = albumId,
                     onLoadMore = viewModel::loadMoreTracks,
                     onTrackClick = { track ->
                         playerViewModel.playQueue(
@@ -133,6 +137,24 @@ fun AlbumDetailScreen(
                     onToggleTrackFavorite = viewModel::toggleTrackFavorite,
                     onAddTrackToPlaylist = { track -> addToPlaylistItemIds = listOf(track.id) },
                     onAddAlbumToPlaylist = { addToPlaylistItemIds = state.tracks.map { it.id } },
+                    onPlayNext = { track ->
+                        enqueueMusicTrack(
+                            musicQueue = playerViewModel.musicQueue,
+                            entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
+                            position = TrackMenuAction.PLAY_NEXT,
+                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
+                        )
+                    },
+                    onPlayLast = { track ->
+                        enqueueMusicTrack(
+                            musicQueue = playerViewModel.musicQueue,
+                            entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
+                            position = TrackMenuAction.PLAY_LAST,
+                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
+                        )
+                    },
+                    onGoToAlbum = { id -> navController.navigate(Routes.musicAlbumDetail(id)) },
+                    onGoToArtist = { id -> navController.navigate(Routes.musicArtistDetail(id)) },
                 )
         }
     }
@@ -154,11 +176,16 @@ private fun AlbumDetailContent(
     imageLoader: ImageLoader,
     state: AlbumDetailUiState.Loaded,
     onLoadMore: () -> Unit,
+    albumId: String,
     onTrackClick: (MusicTrackUi) -> Unit,
     onToggleAlbumFavorite: () -> Unit,
     onToggleTrackFavorite: (String) -> Unit,
     onAddTrackToPlaylist: (MusicTrackUi) -> Unit,
     onAddAlbumToPlaylist: () -> Unit,
+    onPlayNext: (MusicTrackUi) -> Unit,
+    onPlayLast: (MusicTrackUi) -> Unit,
+    onGoToAlbum: (String) -> Unit,
+    onGoToArtist: (String) -> Unit,
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
@@ -191,9 +218,14 @@ private fun AlbumDetailContent(
         items(state.tracks, key = { it.id }) { track ->
             TrackRow(
                 track,
+                menuContext = TrackMenuContext(albumId = albumId, artistId = state.albumArtistId),
                 onClick = { onTrackClick(track) },
                 onToggleFavorite = { onToggleTrackFavorite(track.id) },
                 onAddToPlaylist = { onAddTrackToPlaylist(track) },
+                onPlayNext = { onPlayNext(track) },
+                onPlayLast = { onPlayLast(track) },
+                onGoToAlbum = onGoToAlbum,
+                onGoToArtist = onGoToArtist,
             )
         }
 
@@ -225,27 +257,41 @@ private fun AlbumDetailContent(
 @Composable
 private fun TrackRow(
     track: MusicTrackUi,
+    menuContext: TrackMenuContext,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit,
+    onPlayNext: () -> Unit,
+    onPlayLast: () -> Unit,
+    onGoToAlbum: (String) -> Unit,
+    onGoToArtist: (String) -> Unit,
 ) {
+    val menuState = rememberTrackContextMenuState()
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.weight(1f).clickable(onClick = onClick),
-            verticalAlignment = Alignment.CenterVertically,
+        TrackContextMenu(
+            state = menuState,
+            context = menuContext,
+            onClick = onClick,
+            onPlayNext = onPlayNext,
+            onPlayLast = onPlayLast,
+            onGoToAlbum = onGoToAlbum,
+            onGoToArtist = onGoToArtist,
+            rowModifier = Modifier.weight(1f),
         ) {
-            Text(
-                track.position,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(end = 16.dp),
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(track.title, style = MaterialTheme.typography.titleSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    track.position,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(end = 16.dp),
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(track.title, style = MaterialTheme.typography.titleSmall)
+                }
+                Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
             }
-            Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
         }
         TextButton(onClick = onAddToPlaylist) { Text("Add") }
         FavoriteToggleButton(

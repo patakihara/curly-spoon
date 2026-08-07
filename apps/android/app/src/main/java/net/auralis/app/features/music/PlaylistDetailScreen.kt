@@ -1,6 +1,5 @@
 package net.auralis.app.features.music
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,15 +23,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
+import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
+import net.auralis.app.features.player.MusicQueueEntry
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.navigation.Routes
 import net.auralis.app.util.formatDuration
 
 /**
@@ -51,6 +55,7 @@ import net.auralis.app.util.formatDuration
 fun PlaylistDetailScreen(
     container: AppContainer,
     playerViewModel: PlayerViewModel,
+    navController: NavHostController,
     playlistId: String,
 ) {
     val viewModel: PlaylistDetailViewModel =
@@ -63,6 +68,7 @@ fun PlaylistDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val playerUiState by playerViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(playlistId) { viewModel.load() }
 
@@ -121,6 +127,23 @@ fun PlaylistDetailScreen(
                         )
                     },
                     onRemove = viewModel::removeTrack,
+                    onPlayNext = { entry ->
+                        enqueueMusicTrack(
+                            musicQueue = playerViewModel.musicQueue,
+                            entry = MusicQueueEntry(itemId = entry.trackId, title = entry.title, artist = entry.artistNames),
+                            position = TrackMenuAction.PLAY_NEXT,
+                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
+                        )
+                    },
+                    onPlayLast = { entry ->
+                        enqueueMusicTrack(
+                            musicQueue = playerViewModel.musicQueue,
+                            entry = MusicQueueEntry(itemId = entry.trackId, title = entry.title, artist = entry.artistNames),
+                            position = TrackMenuAction.PLAY_LAST,
+                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
+                        )
+                    },
+                    onGoToAlbum = { id -> navController.navigate(Routes.musicAlbumDetail(id)) },
                 )
         }
     }
@@ -133,6 +156,9 @@ private fun PlaylistDetailContent(
     onLoadMore: () -> Unit,
     onEntryClick: (MusicPlaylistEntryUi) -> Unit,
     onRemove: (MusicPlaylistEntryUi) -> Unit,
+    onPlayNext: (MusicPlaylistEntryUi) -> Unit,
+    onPlayLast: (MusicPlaylistEntryUi) -> Unit,
+    onGoToAlbum: (String) -> Unit,
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
@@ -159,6 +185,9 @@ private fun PlaylistDetailContent(
                 entry,
                 onClick = { onEntryClick(entry) },
                 onRemove = { onRemove(entry) },
+                onPlayNext = { onPlayNext(entry) },
+                onPlayLast = { onPlayLast(entry) },
+                onGoToAlbum = onGoToAlbum,
             )
         }
 
@@ -183,20 +212,36 @@ private fun PlaylistEntryRow(
     entry: MusicPlaylistEntryUi,
     onClick: () -> Unit,
     onRemove: () -> Unit,
+    onPlayNext: () -> Unit,
+    onPlayLast: () -> Unit,
+    onGoToAlbum: (String) -> Unit,
 ) {
+    val menuState = rememberTrackContextMenuState()
+    // artistId is deliberately null -- see TrackMenuContext's own doc comment: a playlist entry's
+    // JellyfinTrack never carries its own artistId, and there is no page-level artist to borrow
+    // (unlike AlbumDetailScreen), so "Go to artist" is omitted rather than guessing.
+    val menuContext = TrackMenuContext(albumId = entry.albumId, artistId = null)
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.weight(1f).clickable(onClick = onClick),
-            verticalAlignment = Alignment.CenterVertically,
+        TrackContextMenu(
+            state = menuState,
+            context = menuContext,
+            onClick = onClick,
+            onPlayNext = onPlayNext,
+            onPlayLast = onPlayLast,
+            onGoToAlbum = onGoToAlbum,
+            onGoToArtist = {},
+            rowModifier = Modifier.weight(1f),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(entry.title, style = MaterialTheme.typography.titleSmall)
-                entry.artistNames?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(entry.title, style = MaterialTheme.typography.titleSmall)
+                    entry.artistNames?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                }
+                Text(formatDuration(entry.durationSeconds), style = MaterialTheme.typography.bodySmall)
             }
-            Text(formatDuration(entry.durationSeconds), style = MaterialTheme.typography.bodySmall)
         }
         TextButton(onClick = onRemove) { Text("Remove") }
     }

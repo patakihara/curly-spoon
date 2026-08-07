@@ -179,7 +179,7 @@ fun AuralisNavHost(
                 }
                 composable(Routes.MUSIC) { MusicLibraryScreen(container, navController) }
                 composable(Routes.MUSIC_SEARCH) { UnifiedSearchScreen(container, navController) }
-                composable(Routes.MUSIC_FAVORITES) { FavoritesScreen(container, navController) }
+                composable(Routes.MUSIC_FAVORITES) { FavoritesScreen(container, navController, playerViewModel) }
                 composable(Routes.MUSIC_PLAYLISTS) { PlaylistsScreen(container, navController) }
                 composable(Routes.MUSIC_REQUESTS) { MusicRequestsScreen(container) }
                 composable(Routes.LYRICS) { LyricsScreen(container, playerViewModel) }
@@ -201,7 +201,7 @@ fun AuralisNavHost(
                     val albumId =
                         backStackEntry.arguments?.getString(Routes.MUSIC_ALBUM_DETAIL_ARG_ALBUM_ID)
                             ?: return@composable
-                    AlbumDetailScreen(container, playerViewModel, albumId)
+                    AlbumDetailScreen(container, playerViewModel, navController, albumId)
                 }
                 composable(
                     Routes.playlistDetailRoute(),
@@ -211,7 +211,7 @@ fun AuralisNavHost(
                     val playlistId =
                         backStackEntry.arguments?.getString(Routes.PLAYLIST_DETAIL_ARG_PLAYLIST_ID)
                             ?: return@composable
-                    PlaylistDetailScreen(container, playerViewModel, playlistId)
+                    PlaylistDetailScreen(container, playerViewModel, navController, playlistId)
                 }
             }
             }
