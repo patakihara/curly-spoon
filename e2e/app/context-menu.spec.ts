@@ -271,7 +271,13 @@ test('Play next on the playlist page confirms via a snackbar, with a queue alrea
   await page.getByTestId('music-track-track-driftwave-1').click();
   await expect(page.getByTestId('mini-player')).toBeVisible();
 
-  await page.goto(playlistUrl);
+  // Reach the playlist via the app's own client-side router, not page.goto — `goto` is a
+  // real browser navigation that reloads the page and drops `useMusicQueueStore`'s in-memory
+  // queue, which is exactly the "already playing" precondition this test exists to cover.
+  await page.getByTestId('nav-rail-expanded').getByRole('button', { name: 'Music' }).click();
+  await page.getByTestId('music-playlists-link').click();
+  await page.getByTestId(`music-playlist-${playlistUrl.split('/').pop()}`).click();
+
   await page.getByTestId('music-track-menu-trigger-track-driftwave-2').click();
   await page.getByRole('menuitem', { name: 'Play next' }).click();
   await expect(page.getByRole('status')).toHaveText('Added "Static Coast" to play next.');
@@ -319,7 +325,11 @@ test('Play last on the favourites page confirms via a snackbar, with a queue alr
   await page.getByTestId('music-track-track-driftwave-1').click();
   await expect(page.getByTestId('mini-player')).toBeVisible();
 
-  await page.goto('/music/favorites');
+  // See the playlist-page test above's identical comment: page.goto would reload and drop
+  // the in-memory queue this test depends on.
+  await page.getByTestId('nav-rail-expanded').getByRole('button', { name: 'Music' }).click();
+  await page.getByTestId('music-favorites-link').click();
+
   await page.getByTestId('music-track-menu-trigger-track-driftwave-2').click();
   await page.getByRole('menuitem', { name: 'Play last' }).click();
   await expect(page.getByRole('status')).toHaveText('Added "Static Coast" to play last.');
