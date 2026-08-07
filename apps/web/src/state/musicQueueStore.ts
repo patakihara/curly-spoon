@@ -46,6 +46,13 @@ interface MusicQueueStoreState {
   setQueue: (queue: MusicQueueState | null, fetcher?: QueueFetcher | null) => void;
   toggleShuffle: () => void;
   setRepeat: (mode: RepeatMode) => void;
+  /** Clears this queue only — `podcastQueueStore.ts`/`audiobookQueueStore.ts` are separate
+   *  store instances and are never touched by this call (`docs/ROADMAP.md` §12f, requirement
+   *  1: switching content types must never clear an unrelated queue). Added alongside those
+   *  two stores' `createQueueStore.ts`-supplied `clearQueue` so all three content types have
+   *  the same clearing affordance, without folding this store's own shuffle/repeat machinery
+   *  into that shared factory. */
+  clearQueue: () => void;
 }
 
 export const useMusicQueueStore = create<MusicQueueStoreState>((set, get) => ({
@@ -65,6 +72,8 @@ export const useMusicQueueStore = create<MusicQueueStoreState>((set, get) => ({
     if (!queue) return;
     set({ queue: setRepeatMode(queue, mode) });
   },
+
+  clearQueue: () => set({ queue: null, fetcher: null }),
 }));
 
 /** Writes a new `MusicQueueState` into this store *and* materializes it into `playerStore`'s

@@ -2145,6 +2145,23 @@ podcast and audiobook queues, `clearQueue()` on all three stores, and the two au
 controllers. 12f-2 is the surface, parked at
 `docs/agent-specs/03-phase12f2-web-queue-view.md`.
 
+**12f-1 (web) shipped 2026-08-07** at `705e4fe`. `createQueueStore<T>()`
+(`apps/web/src/state/createQueueStore.ts`) backs new `podcastQueueStore.ts` and
+`audiobookQueueStore.ts`; `musicQueueStore.ts` gained `clearQueue()` and nothing else.
+`queueEntries.ts` holds `PodcastQueueEntry`/`AudiobookQueueEntry` (the latter a
+`kind: 'item' | 'chapter'` union, so a chapter queues as "load the book, then seek"). The
+real bug this wave fixes: `playerStore.load()` nulls `onTrackEnded` on every load, so with
+one shared queue, playing a podcast mid-music-queue silently killed that queue's
+auto-advance — `queueRouter.ts`'s `installQueueRouter()` re-attaches the right content
+type's ended-handler on every `currentItem` change, and is not yet wired to a call site
+(that's 12f-2's job, alongside the queue view itself and its clear button). New
+`podcastQueueController.ts` / `audiobookQueueController.ts` mirror
+`musicQueueController.ts`'s shape; the audiobook one is the one with real product-risk logic
+— a same-book chapter advance seeks rather than reloads, since a reload would restart the
+Audiobookshelf session and corrupt listening-stats tracking. 254 targeted tests pass,
+`tsc`/`lint` clean, reviewed by an independent Sonnet agent (verdict: merge as-is, no
+findings). No UI yet — 12f-2 is next, and now unblocked.
+
 The scouting behind that split turned up two things worth recording, because neither is
 obvious from the requirement text:
 
