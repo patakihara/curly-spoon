@@ -174,8 +174,8 @@ of an extra spawn is a small constant; the quadratic is what dominates. Splittin
    liable to stop there — and a stopped agent holding uncommitted work holds it in a worktree
    that is deleted with its session. This happened twice in one session on 2026-08-07, each
    time costing an entire wave that had to be salvaged by the orchestrator committing on the
-   agent's behalf. The instruction that prevents it is one line in the spec: *commit your work
-   first, then run the suite, then amend or follow up with the result.* A draft commit is
+   agent's behalf. The instruction that prevents it is one line in the spec: _commit your work
+   first, then run the suite, then amend or follow up with the result._ A draft commit is
    free; a lost wave is not.
 8. **Assume an agent may die at any point and check its worktree yourself.** `SubagentStop`
    is not proof of completion — the agent's own final message can be unrelated to its task.

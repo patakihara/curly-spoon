@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T16:38:21Z` · `a952a997487a7b762` · general-purpose · ended · ## Report **Checkout/branch:** Already isolated in '.claude/worktrees/agent-a8781e77885029281' on branch 'worktree-agent-a8781e77885029281', based on…
-- `2026-08-07T16:45:34Z` · `a4f95edff3a0ddd4a` · general-purpose · ended · I'll pause here and wait for the background Playwright run to finish before continuing.
 - `2026-08-07T16:47:39Z` · `a8781e77885029281` · general-purpose · ended · Reviewer dispatched, running in background. I'll wait for it before integrating.
 - `2026-08-07T16:48:22Z` · `a379bc3e7b2497c6d` · general-purpose · ended · Typecheck is clean too. ## Verdict: merge as-is Reviewed 'createQueueStore.ts', 'queueRouter.ts', 'queueEntries.ts', both new controllers, 'musicQueu…
 - `2026-08-07T16:49:47Z` · `a8781e77885029281` · general-purpose · ended · Wave 12f-1 shipped at '0eb1d9d' (docs updated) and wave 12f-2 is now dispatched to a background Sonnet agent. I'll review and integrate when it repor…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
 - `2026-08-07T18:24:38Z` · `acfb30c8ef236b965` · general-purpose · ended · Clean tree, nothing to note further. Compiling final report. ## Verdict: merge as-is **Findings** (none blocking): - 'apps/web/src/features/home/Caro…
 - `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · ended · **Verdict: matches the references, with only cosmetic notes.** Screenshots: '/home/sofiapata/.claude/jobs/16f272ea/tmp/phone-390.png', 'tablet-834.pn…
+- `2026-08-07T18:41:56Z` · `a257737f99b848dd9` · general-purpose · ended · The full Playwright suite is running in the background (task 'b274pajz7'); work is already committed at '38bb7ed'. I'll wait for the completion notif…
+- `2026-08-07T18:57:56Z` · `a8bf06dec501500a2` · general-purpose · ended · All confirmed. Final report. ## Verdict: merge as-is **The "quick-pick tile that never stretched" diagnosis is correct and well-evidenced.** The comm…
 
 <!-- AGENT_LOG_END -->
 
@@ -424,7 +424,7 @@ git -C .claude/worktrees/agent-<id> log --oneline -1
 and then committed on the agent's behalf. Do this on **every** agent report, before reading
 the report — it costs one command and it is the difference between a draft commit and a lost
 wave. `CLAUDE.md`'s delegation rules 7 and 8 now carry the standing version: specs must tell
-agents to commit *before* backgrounding a long run, and a `SubagentStop` is not evidence of
+agents to commit _before_ backgrounding a long run, and a `SubagentStop` is not evidence of
 completion.
 
 A related cleanup step: a dead agent can leave its Playwright and vite processes running,

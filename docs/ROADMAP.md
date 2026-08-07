@@ -2139,7 +2139,7 @@ Two decisions inside it, both reviewed and deliberate:
   labels that do not fit it.
 - **No reduced-motion handling, on purpose.** The carousel scrolls natively with no
   `@keyframes` and no JS animation, so there is nothing to disarm. This is the opposite call
-  from `Skeleton`, whose shimmer *is* a CSS animation Mantine's `respectReducedMotion` does
+  from `Skeleton`, whose shimmer _is_ a CSS animation Mantine's `respectReducedMotion` does
   not touch — the precedent is about what the animation actually is, not about which
   component it lives in.
 
