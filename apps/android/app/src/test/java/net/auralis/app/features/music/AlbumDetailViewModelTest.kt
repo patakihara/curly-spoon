@@ -62,19 +62,21 @@ class AlbumDetailViewModelTest {
 
     /**
      * Response for the second, sequential request [AlbumDetailViewModel.load] issues after a
-     * successful tracks page — [AlbumDetailViewModel.fetchAlbumFavorite]'s own
+     * successful tracks page — [AlbumDetailViewModel.fetchAlbum]'s own
      * `musicRepository.albums(id = albumId, limit = 1)` call. Every test below that reaches
      * [AlbumDetailUiState.Loaded] via [AlbumDetailViewModel.load] must enqueue one of these
      * *after* its tracks-page response — both requests are sent from the same coroutine, in
      * this order, so FIFO enqueue order matches arrival order and there is no race to key a
      * `Dispatcher` against (see `MusicSearchViewModelTest`'s own doc comment for the case where
-     * that guard *would* be needed: concurrent, not sequential, requests). An empty page is
-     * enough for every existing test here, since none of them assert on [favorite] and
-     * [AlbumDetailViewModel.fetchAlbumFavorite] already degrades a missing item to `false`.
+     * that guard *would* be needed: concurrent, not sequential, requests). An empty page (no
+     * `artistId`) is enough for every existing test here, since none of them assert on
+     * [favorite]/`artistId` and [AlbumDetailViewModel.fetchAlbum] already degrades a missing
+     * item to `false`/`null` respectively.
      */
-    private fun albumByIdResponse(favorite: Boolean = false) =
+    private fun albumByIdResponse(favorite: Boolean = false, artistId: String? = null) =
         MockResponse().setBody(
-            """{"items":[{"id":"alb1","name":"OK Computer","favorite":$favorite}],"total":1,"startIndex":0}""",
+            """{"items":[{"id":"alb1","name":"OK Computer","favorite":$favorite,
+                "artistId":${artistId?.let { "\"$it\"" }}}],"total":1,"startIndex":0}""",
         )
 
     @Test
@@ -103,6 +105,43 @@ class AlbumDetailViewModelTest {
             assertEquals(listOf("1", "2"), loaded.tracks.map { it.position })
             assertEquals(384L, loaded.tracks[1].durationSeconds)
             assertFalse(loaded.hasMore)
+        }
+
+    @Test
+    fun `load carries the album's own artistId through to albumArtistId`() =
+        runTest {
+            // Feeds TrackContextMenu's "Go to artist" (wave 12e): every track on this screen
+            // belongs to this one album, so its artist id is this album's, fetched via the same
+            // musicRepository.albums() call load() already makes for albumFavorite -- not a
+            // per-track field, since JellyfinTrack never carries its own artistId.
+            mockWebServer.enqueue(
+                tracksPageResponse(
+                    total = 1,
+                    items =
+                        """[{"id":"trk1","name":"Airbag","albumId":"alb1","albumName":"OK Computer",
+                            "artistNames":["Radiohead"],"trackNumber":1,"discNumber":1,"durationSeconds":284.0}]""",
+                ),
+            )
+            mockWebServer.enqueue(albumByIdResponse(artistId = "artist-radiohead"))
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+
+            viewModel.load()
+            val state = viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            assertEquals("artist-radiohead", (state as AlbumDetailUiState.Loaded).albumArtistId)
+        }
+
+    @Test
+    fun `a missing artistId on the album record degrades to null, not an error`() =
+        runTest {
+            mockWebServer.enqueue(tracksPageResponse(total = 0, items = "[]"))
+            mockWebServer.enqueue(albumByIdResponse())
+            val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
+
+            viewModel.load()
+            val state = viewModel.uiState.first { it !is AlbumDetailUiState.Loading }
+
+            assertNull((state as AlbumDetailUiState.Loaded).albumArtistId)
         }
 
     @Test
@@ -174,8 +213,9 @@ class AlbumDetailViewModelTest {
             val viewModel = AlbumDetailViewModel(musicRepository, serverConfigRepository, "alb1")
             viewModel.load()
             // `_uiState` only leaves Loading once the whole Loaded object is constructed, and
-            // `albumFavorite = fetchAlbumFavorite()` (load()'s second, sequential request) is
-            // one of that constructor's own arguments — so this single await already guarantees
+            // `albumFavorite`/`albumArtistId` (both sourced from `fetchAlbum()`, load()'s second,
+            // sequential request) are among that constructor's own arguments — so this single
+            // await already guarantees
             // both of load()'s requests have been consumed before the queue is touched again,
             // unlike MusicLibraryViewModelTest's two-independent-state-fields case, which needs
             // two separate awaits for the same reason.
