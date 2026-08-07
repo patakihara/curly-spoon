@@ -17,7 +17,7 @@ import {
   type NavigationItem,
 } from '@auralis/ui';
 import { useBreakpoint } from '../hooks/useBreakpoint.js';
-import { railWidth } from './shellLayout.js';
+import { contentMaxWidth, railWidth } from './shellLayout.js';
 import {
   useJellyfinConfigQuery,
   useLibrariesQuery,
@@ -151,7 +151,14 @@ export function Shell({ children }: { children: ReactNode }) {
       data-mini-player-active={miniPlayerActive}
       // The mini player's dock width (app.css, non-compact breakpoints) reads
       // this rather than hardcoding its own — see `shellLayout.ts`'s doc comment.
-      style={{ '--auralis-rail-width': `${railWidth(breakpoint)}px` } as CSSProperties}
+      // `--auralis-content-max-width` is read by `.auralis-page` in app.css, same
+      // pattern — one function decides the number, the CSS variable carries it.
+      style={
+        {
+          '--auralis-rail-width': `${railWidth(breakpoint)}px`,
+          '--auralis-content-max-width': `${contentMaxWidth()}px`,
+        } as CSSProperties
+      }
     >
       {breakpoint === 'compact' ? (
         <>

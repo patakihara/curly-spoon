@@ -125,11 +125,22 @@ html body {
  * Generic page/content primitives
  * ------------------------------------------------------------------------- */
 
+/*
+ * `max-width` reads Shell.tsx's `--auralis-content-max-width` (from
+ * `shellLayout.ts`'s `contentMaxWidth()`) rather than a bare number, same pattern
+ * as the rail width below — the 1200px fallback only matters if this ever renders
+ * outside `Shell.tsx` (it doesn't today). `margin-inline: auto` centers the column
+ * once the cap actually binds (viewport wide enough that content would otherwise
+ * exceed it), so the leftover gutter splits evenly instead of landing entirely on
+ * one side against the Now Playing panel (web design audit, 2026-08-07).
+ */
 .auralis-page {
   display: flex;
   flex-direction: column;
   gap: var(--m3-space-lg);
-  max-width: 1200px;
+  max-width: var(--auralis-content-max-width, 1200px);
+  margin-inline: auto;
+  width: 100%;
 }
 
 .auralis-card-grid {
