@@ -481,8 +481,7 @@ class PlayerViewModel(
      * folds what used to be two distinct error messages here (a track-less item vs. a network/
      * API failure) into one; the resolver has no way to tell this caller which failure occurred,
      * and it shouldn't grow one just to preserve wording nobody could act on differently.
-     */
-    /**
+     *
      * [seekToMsAfterLoad] (Android wave 12f) is set only by [handlePlaybackEnded], for a
      * cross-book chapter queue entry — "load this other book, then seek to this chapter's
      * start" (see [AudiobookQueueEntry.Chapter]'s own doc comment). Every other caller
@@ -697,8 +696,13 @@ class PlayerViewModel(
      * [QueueAdvanceAction.None]'s own doc comment). For a single-item load (podcast episode,
      * audiobook item — today's only shape for those two types), `STATE_ENDED` is the *only*
      * moment "this finished, what's next" is ever true.
+     *
+     * `internal`, not `private`: this project's Kotlin test source set is compiled against
+     * `internal` members of the main source set (a plain Gradle/Kotlin capability, no
+     * `@VisibleForTesting` needed), which is exactly what a JVM test calling this directly (see
+     * this doc comment's own opening paragraph) needs.
      */
-    private fun handlePlaybackEnded() {
+    internal fun handlePlaybackEnded() {
         val action =
             resolveAdvanceAction(
                 finishedContentType = currentContentType,

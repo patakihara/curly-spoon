@@ -30,7 +30,11 @@ import org.junit.Test
  * `MediaController` (impossible under this project's plain JVM unit tests; see [PlaybackHandle]'s
  * own doc comment).
  */
-private class FakePlaybackHandle : PlaybackHandle {
+// internal, not private: PlayerViewModelQueueTest.kt (Android wave 12f) reuses this fake
+// rather than duplicating it -- a duplicate top-level *class* with the same name in another
+// file of this package would collide at the JVM level (unlike a duplicate top-level
+// *function*, which compiles into a per-file synthetic host class and never collides).
+internal class FakePlaybackHandle : PlaybackHandle {
     val setMediaItemsCalls = mutableListOf<List<MediaItem>>()
     val addMediaItemsCalls = mutableListOf<List<MediaItem>>()
     val seekToCalls = mutableListOf<Long>()
@@ -81,8 +85,9 @@ private class FakePlaybackHandle : PlaybackHandle {
     }
 }
 
-/** No-op — these tests never involve a music item, so nothing should ever call this. */
-private class NoOpJellyfinPlaybackReportSender : JellyfinPlaybackReportSender {
+/** No-op — these tests never involve a music item, so nothing should ever call this. `internal`
+ *  for the same cross-file reuse reason as [FakePlaybackHandle] above. */
+internal class NoOpJellyfinPlaybackReportSender : JellyfinPlaybackReportSender {
     override suspend fun reportStart(
         itemId: String,
         positionSeconds: Double,
