@@ -361,14 +361,26 @@ nothing on `main` is stale — take it.
   the play-next / play-last actions 12f-1 just landed, and does **not** change it — if that
   store needs a new action, this wave will say so rather than add one, since 12f-2 owns it.
   Does not touch `features/search/`, `features/player/` or `features/podcasts/`.
-- **12c and 12d remain free but are each waiting on a user answer** — see the section above
+- **12d (For You carousels)** — claimed by session `16f272ea`, 2026-08-07 ~17:58Z. Touches
+  `apps/web/src/features/home/HomePage.tsx`, a new carousel component under
+  `apps/web/src/features/home/`, `packages/ui/` only if a card primitive is genuinely
+  missing, and `e2e/app/for-you.spec.ts`. Does **not** touch `features/music/`,
+  `features/search/`, `features/player/` or `features/podcasts/`, so it is disjoint from
+  12e.
+
+  **Its "blocked on a user answer" status was overstated and is withdrawn.** Two separate
+  things were being treated as one: the carousel design, which the four reference
+  screenshots at `docs/research/spec-addendum/` settle completely and which any session on
+  this machine can read; and 12a's open cold-cache rail finding, which is a real design
+  question but does not gate the carousels. Only the second is genuinely waiting on anyone.
+
+- **12c remains free but is waiting on a user answer** — see the section above
   for which and why.
 - **12f-1 (web queue model) — landed** at `705e4fe`, reviewed (verdict: merge as-is, no
   findings) and merged. Its worktree is gone; nothing else touched it.
-- **12f-2 (web queue view, clear-queue, queueable chapters)** — not yet claimed. Spec at
-  `docs/agent-specs/03-phase12f2-web-queue-view.md`; fill in the reset sha from
-  `git log --oneline origin/main -1` at launch time. Now unblocked — 12f-1's model is on
-  `main`.
+- **12f-2 (web queue view, clear-queue, queueable chapters) — landed** at `034c4cf`,
+  verified on the merged tree (1420 unit, 307 Playwright, typecheck and lint clean). Claim
+  released. Spec `03` can be deleted once someone confirms nothing else references it.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
