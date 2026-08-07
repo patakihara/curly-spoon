@@ -424,7 +424,30 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
           return title.includes(q);
         });
         const key = libraryId === 'lib-podcasts' ? 'podcast' : 'book';
-        return json({ [key]: matches.map((item) => ({ libraryItem: stripToMinified(item) })) });
+        const body: JsonRecord = {
+          [key]: matches.map((item) => ({ libraryItem: stripToMinified(item) })),
+        };
+        // The real endpoint also returns series/author name matches alongside
+        // book/podcast matches (`rawSearchResponseSchema` in `packages/abs-client`)
+        // — books-only, since Audiobookshelf has no concept of a podcast series or
+        // author. Matched the same way as titles above: a lowercase substring of
+        // the fixture's `name`.
+        if (libraryId !== 'lib-podcasts') {
+          const seriesList =
+            (seriesFixture as Record<string, Array<JsonRecord & { name: string }>>)[libraryId] ??
+            [];
+          const seriesMatches = seriesList.filter((series) =>
+            String(series.name).toLowerCase().includes(q),
+          );
+          body.series = seriesMatches.map((series) => ({ series }));
+
+          const authorsList = (authorsFixture as Record<string, JsonRecord[]>)[libraryId] ?? [];
+          const authorMatches = authorsList.filter((author) =>
+            String(author.name).toLowerCase().includes(q),
+          );
+          body.authors = authorMatches;
+        }
+        return json(body);
       }
     }
 
