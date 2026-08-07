@@ -95,7 +95,7 @@ in-context scan of the current one.
 - `2026-08-07T17:57:05Z` · `a93643ecadd8a4da5` · general-purpose · ended · The full Playwright suite is running in the background ('bxuwur3dn'). I'll wait for its completion notification before finalizing the commit and repo…
 - `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
 - `2026-08-07T18:24:38Z` · `acfb30c8ef236b965` · general-purpose · ended · Clean tree, nothing to note further. Compiling final report. ## Verdict: merge as-is **Findings** (none blocking): - 'apps/web/src/features/home/Caro…
-- `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · running · —
+- `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · ended · **Verdict: matches the references, with only cosmetic notes.** Screenshots: '/home/sofiapata/.claude/jobs/16f272ea/tmp/phone-390.png', 'tablet-834.pn…
 
 <!-- AGENT_LOG_END -->
 
@@ -379,6 +379,13 @@ nothing on `main` is stale — take it.
   screenshots at `docs/research/spec-addendum/` settle completely and which any session on
   this machine can read; and 12a's open cold-cache rail finding, which is a real design
   question but does not gate the carousels. Only the second is genuinely waiting on anyone.
+
+- **Desktop shell width pass** — claimed by session `16f272ea`, 2026-08-07 ~21:45Z. Touches
+  `apps/web/src/components/Shell.tsx`, `shellLayout.ts` and the shell's own rules in
+  `apps/web/src/styles/app.css`, plus `e2e/app/desktop-width.spec.ts`. Scoped to the content
+  column's width at desktop widths only; it deliberately does **not** answer 12a's
+  cold-cache rail question, which is a design decision and stays open. Does not touch
+  `features/music/` or `packages/ui/`, so it is disjoint from 12e.
 
 - **12c remains free but is waiting on a user answer** — see the section above
   for which and why.
