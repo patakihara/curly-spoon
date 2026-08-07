@@ -43,6 +43,27 @@ internal class FakePlaybackHandle : PlaybackHandle {
     var seekToNextCallCount = 0
     var seekToPreviousCallCount = 0
 
+    /** Recorded (index, item) pairs from [addMediaItem] -- the "Play next" primitive. A real
+     *  call, not a no-op stub: a fake whose new method does nothing would make every assertion
+     *  against it vacuous (see `docs/HANDOVER.md`'s tautological-test findings). */
+    val addMediaItemCalls = mutableListOf<Pair<Int, MediaItem>>()
+
+    /** Settable by a test to simulate "the controller currently has N items loaded and is on
+     *  index M" -- see [PlaybackHandle.currentMediaItemIndex]'s own doc comment for why
+     *  "Play next" needs this rather than a fixed insertion position. Defaults to -1, matching a
+     *  real, empty Media3 playlist. */
+    var currentMediaItemIndexValue: Int = -1
+
+    override val currentMediaItemIndex: Int
+        get() = currentMediaItemIndexValue
+
+    override fun addMediaItem(
+        index: Int,
+        item: MediaItem,
+    ) {
+        addMediaItemCalls.add(index to item)
+    }
+
     override var shuffleModeEnabled: Boolean = false
     override var repeatMode: Int = Player.REPEAT_MODE_OFF
     override val isPlaying: Boolean

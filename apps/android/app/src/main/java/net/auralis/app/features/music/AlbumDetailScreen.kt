@@ -38,7 +38,6 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
-import net.auralis.app.features.player.MusicQueueEntry
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.navigation.Routes
@@ -138,20 +137,40 @@ fun AlbumDetailScreen(
                     onAddTrackToPlaylist = { track -> addToPlaylistItemIds = listOf(track.id) },
                     onAddAlbumToPlaylist = { addToPlaylistItemIds = state.tracks.map { it.id } },
                     onPlayNext = { track ->
-                        enqueueMusicTrack(
-                            musicQueue = playerViewModel.musicQueue,
-                            entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
-                            position = TrackMenuAction.PLAY_NEXT,
-                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
-                        )
+                        coroutineScope.launch {
+                            enqueueTrackViaMediaController(
+                                playerViewModel = playerViewModel,
+                                musicRepository = container.musicRepository,
+                                track =
+                                    EnqueueableTrack(
+                                        itemId = track.id,
+                                        title = track.title,
+                                        artist = track.artistNames,
+                                        albumOrPlaylistName = state.albumName,
+                                        artworkUrl = state.coverUrl,
+                                    ),
+                                position = TrackMenuAction.PLAY_NEXT,
+                                onMessage = { message -> snackbarHostState.showSnackbar(message) },
+                            )
+                        }
                     },
                     onPlayLast = { track ->
-                        enqueueMusicTrack(
-                            musicQueue = playerViewModel.musicQueue,
-                            entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
-                            position = TrackMenuAction.PLAY_LAST,
-                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
-                        )
+                        coroutineScope.launch {
+                            enqueueTrackViaMediaController(
+                                playerViewModel = playerViewModel,
+                                musicRepository = container.musicRepository,
+                                track =
+                                    EnqueueableTrack(
+                                        itemId = track.id,
+                                        title = track.title,
+                                        artist = track.artistNames,
+                                        albumOrPlaylistName = state.albumName,
+                                        artworkUrl = state.coverUrl,
+                                    ),
+                                position = TrackMenuAction.PLAY_LAST,
+                                onMessage = { message -> snackbarHostState.showSnackbar(message) },
+                            )
+                        }
                     },
                     onGoToAlbum = { id -> navController.navigate(Routes.musicAlbumDetail(id)) },
                     onGoToArtist = { id -> navController.navigate(Routes.musicArtistDetail(id)) },

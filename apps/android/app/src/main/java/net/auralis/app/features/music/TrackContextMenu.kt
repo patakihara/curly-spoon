@@ -12,8 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import net.auralis.app.features.player.MusicQueueEntry
-import net.auralis.app.features.player.QueueStore
+import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.playback.ResolvedPlayback
 
 /**
  * The long-press context menu for a song row (`docs/ROADMAP.md` §12e) — Play next, Play last,
@@ -149,30 +149,83 @@ fun TrackContextMenu(
 }
 
 /**
- * The shared "insert into the music queue, or refuse" behaviour every call site needs —
- * mirrors `apps/web/src/features/music/TrackContextMenu.tsx`'s `enqueue` closure exactly: a
- * `null` [net.auralis.app.features.player.QueueStore.state] means either nothing is playing or
- * something non-music is playing, and this function can't and doesn't need to tell those apart —
- * either way there is nothing safe to enqueue into, so it reports failure through [onMessage]
- * rather than starting a fresh one-track queue that would risk silently interrupting a book or
- * podcast (see that file's doc comment for the full reasoning this mirrors, including why a
- * future queue-model change might revisit it).
+ * The minimal per-track shape [resolvePlaybackFor] needs to build a real, insertable Media3
+ * item — deliberately not any one screen's own UI model ([MusicTrackUi],
+ * [MusicPlaylistEntryUi], [net.auralis.app.features.music.MusicFavoriteTrackUi]), since an
+ * album row, a playlist row and a favourites row each carry the same information in a
+ * different shape. Each call site (`AlbumDetailScreen.kt`/`PlaylistDetailScreen.kt`/
+ * `FavoritesScreen.kt`) builds one from whatever it already has on hand rather than this file
+ * depending on three unrelated screen-local types.
  */
-fun enqueueMusicTrack(
-    musicQueue: QueueStore<MusicQueueEntry>,
-    entry: MusicQueueEntry,
+data class EnqueueableTrack(
+    val itemId: String,
+    val title: String,
+    val artist: String?,
+    val albumOrPlaylistName: String?,
+    val artworkUrl: String?,
+)
+
+/**
+ * Resolves [track] into the [ResolvedPlayback] that [PlayerViewModel.enqueueTrackNext]/
+ * [PlayerViewModel.enqueueTrackLast] insert into Media3's real playlist — the same
+ * `mediaId = "track:$id"` scheme [albumPlaybackQueue] uses, so a track enqueued from a context
+ * menu is indistinguishable, once playing, from one queued the ordinary "tap to play" way (the
+ * `isMusicMediaId`/Jellyfin-progress-reporting gate in `PlayerViewModel.kt` keys off that same
+ * prefix). [MusicRepository.trackStreamUrl] never awaits a network response (see that method's
+ * own doc comment) — this is `suspend` only because that method's signature is, matching every
+ * other queue builder in this app ([AlbumDetailViewModel.buildQueueFrom] etc.) that calls it the
+ * same way.
+ */
+suspend fun resolvePlaybackFor(
+    musicRepository: MusicRepository,
+    track: EnqueueableTrack,
+): ResolvedPlayback =
+    ResolvedPlayback(
+        mediaId = "track:${track.itemId}",
+        uri = musicRepository.trackStreamUrl(track.itemId),
+        title = track.title,
+        artist = track.artist,
+        subtitle = track.albumOrPlaylistName,
+        artworkUrl = track.artworkUrl,
+        startPositionMs = 0L,
+    )
+
+/**
+ * The Compose-facing "insert [track] into Media3's real playlist, or refuse" action every
+ * [TrackContextMenu] call site wires its `onPlayNext`/`onPlayLast` to. Replaces a shipped
+ * defect: the previous version of this function inserted into
+ * [net.auralis.app.features.player.PlayerViewModel.musicQueue] instead of into Media3, which
+ * nothing ever reads back into playback — the action reported success and queued nothing (see
+ * that field's own doc comment for the full account). This version resolves [track] and hands
+ * it to [PlayerViewModel.enqueueTrackNext]/`enqueueTrackLast`, which insert into the actual
+ * playlist and refuse (with [onMessage] still reporting it) when there is no music playlist to
+ * insert into — see those methods' own doc comments for the refusal rule.
+ *
+ * `suspend`, not a plain callback: both resolving [track] (a `MusicRepository.trackStreamUrl`
+ * call) and inserting it are suspend calls. Every call site wraps this in its own
+ * `coroutineScope.launch`, and [onMessage] is itself `suspend` so a call site can show the
+ * result via `SnackbarHostState.showSnackbar` directly, without a second nested `launch`.
+ */
+suspend fun enqueueTrackViaMediaController(
+    playerViewModel: PlayerViewModel,
+    musicRepository: MusicRepository,
+    track: EnqueueableTrack,
     position: TrackMenuAction,
-    onMessage: (String) -> Unit,
+    onMessage: suspend (String) -> Unit,
 ) {
-    if (musicQueue.state.value == null) {
-        onMessage("Nothing is playing — play a track before adding \"${entry.title}\" to the queue.")
-        return
-    }
-    when (position) {
-        TrackMenuAction.PLAY_NEXT -> musicQueue.enqueueNext(entry)
-        TrackMenuAction.PLAY_LAST -> musicQueue.enqueueLast(entry)
-        else -> return
-    }
-    val positionLabel = if (position == TrackMenuAction.PLAY_NEXT) "next" else "last"
-    onMessage("Added \"${entry.title}\" to play $positionLabel.")
+    val resolved = resolvePlaybackFor(musicRepository, track)
+    val inserted =
+        when (position) {
+            TrackMenuAction.PLAY_NEXT -> playerViewModel.enqueueTrackNext(resolved)
+            TrackMenuAction.PLAY_LAST -> playerViewModel.enqueueTrackLast(resolved)
+            else -> return
+        }
+    onMessage(
+        if (inserted) {
+            val positionLabel = if (position == TrackMenuAction.PLAY_NEXT) "next" else "last"
+            "Added \"${track.title}\" to play $positionLabel."
+        } else {
+            "Nothing is playing — play a track before adding \"${track.title}\" to the queue."
+        },
+    )
 }

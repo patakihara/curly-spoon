@@ -34,7 +34,6 @@ import androidx.navigation.NavHostController
 import coil.ImageLoader
 import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
-import net.auralis.app.features.player.MusicQueueEntry
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.navigation.Routes
 import net.auralis.app.util.formatDuration
@@ -110,24 +109,40 @@ fun FavoritesScreen(
                             onToggleAlbumFavorite = viewModel::toggleAlbumFavorite,
                             onToggleTrackFavorite = viewModel::toggleTrackFavorite,
                             onPlayNextTrack = { track ->
-                                enqueueMusicTrack(
-                                    musicQueue = playerViewModel.musicQueue,
-                                    entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
-                                    position = TrackMenuAction.PLAY_NEXT,
-                                    onMessage = { message ->
-                                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-                                    },
-                                )
+                                coroutineScope.launch {
+                                    enqueueTrackViaMediaController(
+                                        playerViewModel = playerViewModel,
+                                        musicRepository = container.musicRepository,
+                                        track =
+                                            EnqueueableTrack(
+                                                itemId = track.id,
+                                                title = track.title,
+                                                artist = track.artistNames,
+                                                albumOrPlaylistName = null,
+                                                artworkUrl = null,
+                                            ),
+                                        position = TrackMenuAction.PLAY_NEXT,
+                                        onMessage = { message -> snackbarHostState.showSnackbar(message) },
+                                    )
+                                }
                             },
                             onPlayLastTrack = { track ->
-                                enqueueMusicTrack(
-                                    musicQueue = playerViewModel.musicQueue,
-                                    entry = MusicQueueEntry(itemId = track.id, title = track.title, artist = track.artistNames),
-                                    position = TrackMenuAction.PLAY_LAST,
-                                    onMessage = { message ->
-                                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
-                                    },
-                                )
+                                coroutineScope.launch {
+                                    enqueueTrackViaMediaController(
+                                        playerViewModel = playerViewModel,
+                                        musicRepository = container.musicRepository,
+                                        track =
+                                            EnqueueableTrack(
+                                                itemId = track.id,
+                                                title = track.title,
+                                                artist = track.artistNames,
+                                                albumOrPlaylistName = null,
+                                                artworkUrl = null,
+                                            ),
+                                        position = TrackMenuAction.PLAY_LAST,
+                                        onMessage = { message -> snackbarHostState.showSnackbar(message) },
+                                    )
+                                }
                             },
                         )
                     }

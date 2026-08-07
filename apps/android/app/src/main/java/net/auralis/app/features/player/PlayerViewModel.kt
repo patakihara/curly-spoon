@@ -140,6 +140,27 @@ interface PlaybackHandle {
     /** The [seekToNext] counterpart. */
     fun seekToPrevious()
 
+    /**
+     * Index of the currently loaded item within Media3's real playlist, or `-1` if nothing is
+     * loaded. Added for [PlayerViewModel.enqueueTrackNext] — "play next" means "insert
+     * immediately after whatever is playing right now", which needs this index rather than a
+     * fixed position (index 0 would insert *before* the current item on a queue already past
+     * its first entry).
+     */
+    val currentMediaItemIndex: Int
+
+    /**
+     * Inserts [item] at [index] in Media3's real playlist without disturbing what is currently
+     * playing or the items already queued elsewhere — [Player.addMediaItem]'s own index
+     * overload. The actual "play next" primitive: unlike [addMediaItems] (append-only, used for
+     * wave I's background page fetch and now also for "play last"), this can land in the middle
+     * of the playlist.
+     */
+    fun addMediaItem(
+        index: Int,
+        item: MediaItem,
+    )
+
     var shuffleModeEnabled: Boolean
 
     var repeatMode: Int
@@ -166,6 +187,14 @@ private class MediaControllerPlaybackHandle(private val controller: MediaControl
     override fun seekToNext() = controller.seekToNext()
 
     override fun seekToPrevious() = controller.seekToPrevious()
+
+    override val currentMediaItemIndex: Int
+        get() = controller.currentMediaItemIndex
+
+    override fun addMediaItem(
+        index: Int,
+        item: MediaItem,
+    ) = controller.addMediaItem(index, item)
 
     override var shuffleModeEnabled: Boolean
         get() = controller.shuffleModeEnabled
@@ -232,6 +261,25 @@ class PlayerViewModel(
      * comment for why its cursor isn't kept live-synced to Media3's real position in this wave).
      * Defaulted, matching [controllerOverride]'s own pattern, so no existing construction site
      * (`AuralisNavHost.kt`) needs to change.
+     *
+     * **[musicQueue] is write-once and read-never in production, and that is now a settled
+     * finding, not an open question.** It is seeded exactly once, in [playQueue], and nothing —
+     * not [handlePlaybackEnded], not [enqueueTrackNext]/[enqueueTrackLast] — ever advances or
+     * inserts into it again, because cross-track music advance and mid-playlist insertion both
+     * run on Media3's own real playlist (see [PlaybackHandle.currentMediaItemIndex]/
+     * [PlaybackHandle.addMediaItem]), which is the actual thing the app plays from. A wave 12e
+     * defect shipped `enqueueMusicTrack` writing "Play next"/"Play last" into *this* store
+     * instead of into Media3 — the insert reported success and genuinely did nothing, because
+     * nothing ever reads this store's order back into the controller. The fix (see
+     * [enqueueTrackNext]) inserts into Media3 directly and leaves this store untouched, rather
+     * than trying to keep a second copy of the same queue in sync with it — a mirror nobody
+     * reads is strictly worse than no mirror, since a future caller could reasonably assume it
+     * *is* kept in sync and trust it. If Android music ever needs a real, driveable queue model
+     * (a queue-view surface, matching web's), the right foundation is Media3's own playlist —
+     * read via [PlaybackHandle] or the controller directly — not this class; [QueueStore]<[MusicQueueEntry]>
+     * is very likely the wrong abstraction for Android music specifically, unlike its podcast/
+     * audiobook siblings, which genuinely are the source of truth for their content types
+     * because Media3 there only ever holds one item at a time.
      */
     val podcastQueue: QueueStore<PodcastQueueEntry> = createQueueStore(),
     val audiobookQueue: QueueStore<AudiobookQueueEntry> = createQueueStore(),
@@ -737,6 +785,54 @@ class PlayerViewModel(
             }
             is QueueAdvanceAction.LoadAudiobookItem -> playItem(action.itemId, seekToMsAfterLoad = action.thenSeekToMs)
             is QueueAdvanceAction.LoadPodcastEpisode -> playEpisode(action.itemId, action.episodeId)
+        }
+    }
+
+    /**
+     * Inserts [resolved] immediately after the currently-playing item in Media3's real
+     * playlist — the "Play next" action from a track's long-press context menu
+     * (`features/music/TrackContextMenu.kt`'s `enqueueTrackViaMediaController`). This is the
+     * fix for a shipped defect: the wave that added the menu wrote into [musicQueue] instead,
+     * which nothing ever reads back into playback, so the action reported success and queued
+     * nothing (see [musicQueue]'s own doc comment for the full account). Inserting into the
+     * *real* Media3 playlist is what actually changes what plays next.
+     *
+     * Refuses — returns `false`, inserts nothing — unless [currentContentType] is
+     * [QueueContentType.MUSIC]. That covers both "nothing is playing" (`currentContentType` is
+     * `null`) and "a book or podcast is playing" (`AUDIOBOOK`/`PODCAST`): in both cases there is
+     * no music playlist to insert a track into, and splicing a song into an audiobook's Media3
+     * timeline would be worse than doing nothing — the caller is expected to tell the user
+     * rather than silently swallow the refusal, matching `apps/web/src/features/music/
+     * TrackContextMenu.tsx`'s identical one-message-covers-both-cases choice.
+     */
+    suspend fun enqueueTrackNext(resolved: ResolvedPlayback): Boolean {
+        if (currentContentType != QueueContentType.MUSIC) return false
+        return try {
+            val ctrl = activeController()
+            ctrl.addMediaItem(ctrl.currentMediaItemIndex + 1, toPlayableMediaItem(resolved))
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * The [enqueueTrackNext] counterpart for "Play last" — appends [resolved] to the end of
+     * Media3's real playlist via [PlaybackHandle.addMediaItems] instead of inserting after the
+     * current item. Same refusal rule and reasoning as [enqueueTrackNext]; see that method's
+     * doc comment.
+     */
+    suspend fun enqueueTrackLast(resolved: ResolvedPlayback): Boolean {
+        if (currentContentType != QueueContentType.MUSIC) return false
+        return try {
+            activeController().addMediaItems(listOf(toPlayableMediaItem(resolved)))
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
         }
     }
 

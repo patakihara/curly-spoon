@@ -1,10 +1,13 @@
 package net.auralis.app.features.music
 
-import net.auralis.app.features.player.MusicQueueEntry
-import net.auralis.app.features.player.SimpleQueueState
-import net.auralis.app.features.player.createQueueStore
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
+import net.auralis.app.data.network.ApiClient
+import net.auralis.app.data.network.FakeKeyValueStore
+import net.auralis.app.data.network.SessionCookieJar
+import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -60,102 +63,41 @@ class TrackContextMenuTest {
         )
     }
 
-    // -- enqueueMusicTrack: the refusal path and the queue-order guarantee ------------------
+    // -- resolvePlaybackFor: the shape handed to Media3 --------------------------------------
+    //
+    // enqueueTrackViaMediaController's own insert-or-refuse behaviour is covered in
+    // PlayerViewModelEnqueueTest.kt instead: it needs a real PlayerViewModel (currentContentType,
+    // activeController) to exercise meaningfully, and that setup already lives in the player
+    // package's test files, not here.
 
     @Test
-    fun `play next refuses with a message when no music queue is playing`() {
-        val musicQueue = createQueueStore<MusicQueueEntry>()
-        var message: String? = null
-        enqueueMusicTrack(
-            musicQueue = musicQueue,
-            entry = MusicQueueEntry(itemId = "t1", title = "Track One", artist = "Artist"),
-            position = TrackMenuAction.PLAY_NEXT,
-            onMessage = { message = it },
-        )
-        // The refusal must be reported, not silent, and nothing must have been queued.
-        assertTrue(message != null && message!!.contains("Track One"))
-        assertNull(musicQueue.state.value)
-    }
+    fun `resolvePlaybackFor builds a track-prefixed media id and streams from trackStreamUrl`() =
+        runTest {
+            val mockWebServer = MockWebServer()
+            mockWebServer.start()
+            val cookieJar = SessionCookieJar(FakeKeyValueStore(), TestScope())
+            val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
+            val apiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+            val musicRepository = MusicRepository(apiClient)
 
-    @Test
-    fun `play last refuses with a message when no music queue is playing`() {
-        val musicQueue = createQueueStore<MusicQueueEntry>()
-        var message: String? = null
-        enqueueMusicTrack(
-            musicQueue = musicQueue,
-            entry = MusicQueueEntry(itemId = "t1", title = "Track One", artist = "Artist"),
-            position = TrackMenuAction.PLAY_LAST,
-            onMessage = { message = it },
-        )
-        assertTrue(message != null)
-        assertNull(musicQueue.state.value)
-    }
+            val resolved =
+                resolvePlaybackFor(
+                    musicRepository,
+                    EnqueueableTrack(
+                        itemId = "t1",
+                        title = "Track One",
+                        artist = "Artist",
+                        albumOrPlaylistName = "Album",
+                        artworkUrl = "https://example.invalid/cover.jpg",
+                    ),
+                )
 
-    @Test
-    fun `play next inserts into an already-playing music queue and reports success`() {
-        val musicQueue = createQueueStore<MusicQueueEntry>()
-        musicQueue.setQueue(
-            SimpleQueueState(
-                order = listOf(MusicQueueEntry(itemId = "current", title = "Current", artist = null)),
-                cursor = 0,
-            ),
-        )
-        var message: String? = null
-        enqueueMusicTrack(
-            musicQueue = musicQueue,
-            entry = MusicQueueEntry(itemId = "t1", title = "Track One", artist = "Artist"),
-            position = TrackMenuAction.PLAY_NEXT,
-            onMessage = { message = it },
-        )
-        assertTrue(message != null && message!!.contains("Track One"))
-        // Assert through advance(), not just the order list -- QueueStoreTest's own header
-        // records that a state-shape-only assertion pinned a real cursor bug as "correct" for a
-        // whole CI round. advance() from cursor 0 must yield the just-queued track next.
-        assertEquals(MusicQueueEntry(itemId = "t1", title = "Track One", artist = "Artist"), musicQueue.advance())
-    }
-
-    @Test
-    fun `play next then play last on an empty queue produces next-then-last order, proven via advance`() {
-        val musicQueue = createQueueStore<MusicQueueEntry>()
-        // Bootstraps the queue so it counts as "already playing" for the refusal check -- a
-        // single already-loaded entry, matching how PlayerViewModel.playQueue seeds it.
-        musicQueue.setQueue(
-            SimpleQueueState(
-                order = listOf(MusicQueueEntry(itemId = "current", title = "Current", artist = null)),
-                cursor = 0,
-            ),
-        )
-        val next = MusicQueueEntry(itemId = "next", title = "Next Track", artist = null)
-        val last = MusicQueueEntry(itemId = "last", title = "Last Track", artist = null)
-
-        enqueueMusicTrack(musicQueue, next, TrackMenuAction.PLAY_NEXT, onMessage = {})
-        enqueueMusicTrack(musicQueue, last, TrackMenuAction.PLAY_LAST, onMessage = {})
-
-        // "Next" must be reached by the very first advance() after the current item, and "last"
-        // only after that -- inspecting `.order` alone would not catch a cursor bootstrapped
-        // wrong (QueueStore's own recorded defect), so this chains through the real API instead.
-        assertEquals(next, musicQueue.advance())
-        assertEquals(last, musicQueue.advance())
-        assertNull(musicQueue.advance())
-    }
-
-    @Test
-    fun `go to album and go to artist are never offered as menu actions to enqueueMusicTrack`() {
-        // enqueueMusicTrack only handles PLAY_NEXT/PLAY_LAST; a caller passing a navigation
-        // action must be a no-op, not a crash -- pins the `else -> return` branch.
-        val musicQueue = createQueueStore<MusicQueueEntry>()
-        musicQueue.setQueue(SimpleQueueState(order = listOf(MusicQueueEntry("current", "Current", null)), cursor = 0))
-        var messaged = false
-        enqueueMusicTrack(
-            musicQueue = musicQueue,
-            entry = MusicQueueEntry(itemId = "t1", title = "Track One", artist = null),
-            position = TrackMenuAction.GO_TO_ALBUM,
-            onMessage = { messaged = true },
-        )
-        assertTrue(!messaged)
-        assertEquals(
-            SimpleQueueState(order = listOf(MusicQueueEntry("current", "Current", null)), cursor = 0),
-            musicQueue.state.value,
-        )
-    }
+            assertEquals("track:t1", resolved.mediaId)
+            assertTrue(resolved.uri.endsWith("/jellyfin/tracks/t1/stream"))
+            assertEquals("Track One", resolved.title)
+            assertEquals("Artist", resolved.artist)
+            assertEquals("Album", resolved.subtitle)
+            assertEquals("https://example.invalid/cover.jpg", resolved.artworkUrl)
+            mockWebServer.shutdown()
+        }
 }

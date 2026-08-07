@@ -33,7 +33,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import net.auralis.app.AppContainer
-import net.auralis.app.features.player.MusicQueueEntry
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
 import net.auralis.app.navigation.Routes
@@ -128,20 +127,40 @@ fun PlaylistDetailScreen(
                     },
                     onRemove = viewModel::removeTrack,
                     onPlayNext = { entry ->
-                        enqueueMusicTrack(
-                            musicQueue = playerViewModel.musicQueue,
-                            entry = MusicQueueEntry(itemId = entry.trackId, title = entry.title, artist = entry.artistNames),
-                            position = TrackMenuAction.PLAY_NEXT,
-                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
-                        )
+                        coroutineScope.launch {
+                            enqueueTrackViaMediaController(
+                                playerViewModel = playerViewModel,
+                                musicRepository = container.musicRepository,
+                                track =
+                                    EnqueueableTrack(
+                                        itemId = entry.trackId,
+                                        title = entry.title,
+                                        artist = entry.artistNames,
+                                        albumOrPlaylistName = state.playlistName,
+                                        artworkUrl = null,
+                                    ),
+                                position = TrackMenuAction.PLAY_NEXT,
+                                onMessage = { message -> snackbarHostState.showSnackbar(message) },
+                            )
+                        }
                     },
                     onPlayLast = { entry ->
-                        enqueueMusicTrack(
-                            musicQueue = playerViewModel.musicQueue,
-                            entry = MusicQueueEntry(itemId = entry.trackId, title = entry.title, artist = entry.artistNames),
-                            position = TrackMenuAction.PLAY_LAST,
-                            onMessage = { message -> coroutineScope.launch { snackbarHostState.showSnackbar(message) } },
-                        )
+                        coroutineScope.launch {
+                            enqueueTrackViaMediaController(
+                                playerViewModel = playerViewModel,
+                                musicRepository = container.musicRepository,
+                                track =
+                                    EnqueueableTrack(
+                                        itemId = entry.trackId,
+                                        title = entry.title,
+                                        artist = entry.artistNames,
+                                        albumOrPlaylistName = state.playlistName,
+                                        artworkUrl = null,
+                                    ),
+                                position = TrackMenuAction.PLAY_LAST,
+                                onMessage = { message -> snackbarHostState.showSnackbar(message) },
+                            )
+                        }
                     },
                     onGoToAlbum = { id -> navController.navigate(Routes.musicAlbumDetail(id)) },
                 )
