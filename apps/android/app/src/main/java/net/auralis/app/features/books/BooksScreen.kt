@@ -1,4 +1,4 @@
-package net.auralis.app.features.home
+package net.auralis.app.features.books
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -10,7 +10,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,27 +23,25 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import net.auralis.app.AppContainer
+import net.auralis.app.features.home.HomeShelvesContent
+import net.auralis.app.features.home.HomeViewModel
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
-import net.auralis.app.navigation.Routes
 
 /**
- * The "For you" shell destination (`docs/ROADMAP.md` §12a): the first library's home shelves
- * ("Continue listening", "Recently added", etc.), each rendered as a horizontally-scrolling row
- * of covers via [HomeShelvesContent] — shared with [net.auralis.app.features.books.BooksScreen]
- * ("Books"), which reads the identical [HomeViewModel] shelves for now (see that ViewModel's own
- * doc comment on why there is no separate recommendation source yet). Tapping a shelf item
- * starts it playing via [playerViewModel]. Each item also carries a download action (Wave F2b) —
- * see [HomeViewModel]'s own doc comment for why it lives here rather than a book-detail screen
- * that doesn't exist yet.
- *
- * Wave 12a-A1 removed this screen's own `MiniPlayerBar` — `AuralisShell` now hosts one persistent
- * mini player above the nav bar/rail for every destination, so a screen-local one would render
- * it twice.
+ * The "Books" shell destination (`docs/ROADMAP.md` §12a). Wave 12a-A1 needed a real, separate
+ * `Routes.BOOKS` destination so `shellDestinationFor` has exactly one owner per route — but there
+ * is no book-specific data source or ViewModel yet, only [HomeViewModel]'s audiobook-library
+ * shelves, which "For you" ([net.auralis.app.features.home.HomeScreen]) already reads. So this
+ * screen owns its **own** [HomeViewModel] instance (a fresh load, not a shared one — the two
+ * destinations are independent nav-graph nodes with independent ViewModelStores) and renders the
+ * exact same [HomeShelvesContent] body. A real "For you" recommendation mix that actually differs
+ * from the shelf list is later product work (see `docs/HANDOVER.md`'s phase 12a note); until
+ * then the two destinations are intentionally the same shelves under a different tab and title.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+fun BooksScreen(
     container: AppContainer,
     playerViewModel: PlayerViewModel,
     navController: NavHostController,
@@ -64,18 +61,9 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    // Android 13+ requires POST_NOTIFICATIONS to be requested at runtime before
-    // AuralisDownloadService's progress notification can show (it's declared in the manifest
-    // already — see AndroidManifest.xml's own comment — but declaring alone isn't enough from
-    // API 33 on). The result is intentionally ignored: a refusal must not block the download
-    // itself, only its notification — see startDownloadWithPermissionPrompt below.
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: download proceeds regardless */ }
 
-    // Surfaces player-side failures (no playable track, a network error, a failed
-    // MediaController connection) as a snackbar. Without this, PlayerUiState.Error is set
-    // correctly by the ViewModel but nothing ever renders it, so a failed tap looks like
-    // nothing happened at all.
     LaunchedEffect(playerUiState) {
         val state = playerUiState
         if (state is PlayerUiState.Error) {
@@ -83,21 +71,12 @@ fun HomeScreen(
         }
     }
 
-    // Surfaces every download outcome as a snackbar — all four DownloadEnqueueResult cases
-    // produce a distinct message (see HomeViewModel.startDownload). A SharedFlow, not
-    // downloadStates itself, because collect never completes: LaunchedEffect(Unit) is correct
-    // here precisely because this effect is meant to run for the composable's whole lifetime.
     LaunchedEffect(Unit) {
         viewModel.downloadEvents.collect { event ->
             snackbarHostState.showSnackbar(event.message)
         }
     }
 
-    /**
-     * Requests notification permission the first time this item is downloaded — not at app
-     * launch, matching Android's own guidance to ask in context rather than up front — then
-     * starts the download regardless of what the user picks.
-     */
     fun startDownloadWithPermissionPrompt(itemId: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted =
@@ -112,20 +91,7 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("For you") },
-                actions = {
-                    // A stock Material 3 icon set is not used for these two — they aren't among
-                    // the five shell destinations, so they have no icon-only home elsewhere in
-                    // the chrome and a text action keeps them discoverable.
-                    TextButton(onClick = { navController.navigate(Routes.DOWNLOADS) }) {
-                        Text("Downloads")
-                    }
-                    TextButton(onClick = { navController.navigate(Routes.REQUESTS) }) {
-                        Text("Requests")
-                    }
-                },
-            )
+            TopAppBar(title = { Text("Books") })
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->

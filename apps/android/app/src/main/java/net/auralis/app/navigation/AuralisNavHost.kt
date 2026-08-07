@@ -2,6 +2,7 @@ package net.auralis.app.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -19,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import net.auralis.app.AppContainer
+import net.auralis.app.features.books.BooksScreen
 import net.auralis.app.features.downloads.DownloadsScreen
 import net.auralis.app.features.login.LoginScreen
 import net.auralis.app.features.home.HomeScreen
@@ -42,6 +44,14 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val LOGIN = "login"
     const val HOME = "home"
+
+    /** Android wave 12a-A1 — the "Books" shell destination. Its own route, not shared with
+     * [HOME]: two `ShellDestination`s pointing at one route would make active-item resolution
+     * ambiguous (`shellDestinationFor` returns the first/longest match, and there could only
+     * ever be one). Renders the same audiobook shelves as [HOME] for now, via
+     * [net.auralis.app.features.books.BooksScreen] — a real "For you" recommendation mix is a
+     * later wave. */
+    const val BOOKS = "books"
     const val REQUESTS = "requests"
     const val DOWNLOADS = "downloads"
     const val PODCASTS = "podcasts"
@@ -134,10 +144,23 @@ fun AuralisNavHost(
     when (val state = startViewModel.state.collectAsState().value) {
         is StartState.Loading -> LoadingScreen()
         is StartState.Ready -> {
-            NavHost(navController = navController, startDestination = state.destination) {
+            AuralisShell(navController = navController, playerViewModel = playerViewModel) { shellPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = state.destination,
+                // The shell reserves its own bottom chrome (nav bar/rail + mini player) via
+                // Scaffold's bottomBar slot, and hands that reservation back here as
+                // [shellPadding] rather than clipping it itself — Scaffold's content slot is
+                // *not* auto-clipped to the area above bottomBar, so a NavHost that ignored this
+                // would let every screen render underneath the nav bar. Each individual screen
+                // keeps its own inner Scaffold/topBar untouched; this padding only ever reserves
+                // the bottom, since the shell's own Scaffold has no topBar of its own.
+                modifier = Modifier.padding(shellPadding),
+            ) {
                 composable(Routes.ONBOARDING) { OnboardingScreen(container, navController) }
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
                 composable(Routes.HOME) { HomeScreen(container, playerViewModel, navController) }
+                composable(Routes.BOOKS) { BooksScreen(container, playerViewModel, navController) }
                 composable(Routes.REQUESTS) { RequestsScreen(container) }
                 composable(Routes.DOWNLOADS) { DownloadsScreen(container) }
                 composable(Routes.PODCASTS) { PodcastsScreen(container, navController) }
@@ -186,6 +209,7 @@ fun AuralisNavHost(
                             ?: return@composable
                     PlaylistDetailScreen(container, playerViewModel, playlistId)
                 }
+            }
             }
         }
     }
