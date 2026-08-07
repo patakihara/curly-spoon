@@ -43,6 +43,17 @@ private const val JELLYFIN_PROGRESS_TICK_MS = 15_000L
  */
 private const val LYRICS_POSITION_TICK_MS = 200L
 
+/**
+ * How often [PlayerViewModel.playbackProgressFlow] samples position+duration for the Now
+ * Playing seek bar (Android wave 12a-A2). Deliberately the same cadence as, but a distinct
+ * constant from, [LYRICS_POSITION_TICK_MS] — the two flows serve different screens that happen
+ * to want similarly smooth updates today; keeping them separate constants means raising one for
+ * its own screen's needs (e.g. a coarser seek-bar tick to save battery) can never silently drag
+ * the other along, the same reasoning [LYRICS_POSITION_TICK_MS]'s own doc comment already gives
+ * for staying independent of [JELLYFIN_PROGRESS_TICK_MS].
+ */
+private const val NOW_PLAYING_PROGRESS_TICK_MS = 200L
+
 /** What the mini player (and, later, a full Now Playing surface) renders. */
 sealed interface PlayerUiState {
     data object Idle : PlayerUiState
@@ -63,6 +74,16 @@ sealed interface PlayerUiState {
      * state; the lyrics screen needs the plain Jellyfin id to call
      * [net.auralis.app.features.music.MusicRepository.lyrics] with.
      */
+    /**
+     * [artist], [subtitle] and [artworkUri] (Android wave 12a-A2) mirror the same
+     * [androidx.media3.common.MediaMetadata] fields [net.auralis.app.playback.MediaItemConversions]
+     * already sets on every [MediaItem] this app plays — [PlayerUiState] simply hadn't exposed
+     * them yet, because nothing before the Now Playing surface needed more than [title]. Read
+     * from the controller's current [MediaItem], not re-derived: [ResolvedPlayback] and
+     * `albumPlaybackQueue` already resolved "author vs. artist vs. album name" correctly per
+     * media type (see those files' own doc comments), so this state just carries that decision
+     * forward rather than re-deciding it.
+     */
     data class Playing(
         val title: String,
         val isPlaying: Boolean,
@@ -70,6 +91,9 @@ sealed interface PlayerUiState {
         val musicItemId: String? = null,
         val shuffleEnabled: Boolean = false,
         val repeatMode: Int = Player.REPEAT_MODE_OFF,
+        val artist: String? = null,
+        val subtitle: String? = null,
+        val artworkUri: String? = null,
     ) : PlayerUiState
 
     data class Error(val message: String) : PlayerUiState
@@ -99,6 +123,23 @@ interface PlaybackHandle {
 
     fun pause()
 
+    /**
+     * Seeks within the currently loaded item (Android wave 12a-A2). Distinct from
+     * [seekToNext]/[seekToPrevious], which move to a different queue item — the Now Playing
+     * seek bar and its skip-back/skip-forward buttons only ever move the position within one
+     * item, computed by the caller (see `NowPlayingFormat.clampSeekTarget`) from a position this
+     * interface never needs to expose a getter for.
+     */
+    fun seekTo(positionMs: Long)
+
+    /** Advances to the next queue item, honouring repeat mode — a no-op on a single-item queue
+     * (every audiobook/podcast play today), which is exactly what a disabled-looking "next"
+     * button on those items should do without this app special-casing queue length itself. */
+    fun seekToNext()
+
+    /** The [seekToNext] counterpart. */
+    fun seekToPrevious()
+
     var shuffleModeEnabled: Boolean
 
     var repeatMode: Int
@@ -119,6 +160,12 @@ private class MediaControllerPlaybackHandle(private val controller: MediaControl
     override fun play() = controller.play()
 
     override fun pause() = controller.pause()
+
+    override fun seekTo(positionMs: Long) = controller.seekTo(positionMs)
+
+    override fun seekToNext() = controller.seekToNext()
+
+    override fun seekToPrevious() = controller.seekToPrevious()
 
     override var shuffleModeEnabled: Boolean
         get() = controller.shuffleModeEnabled
@@ -288,8 +335,12 @@ class PlayerViewModel(
                         if (current is PlayerUiState.Playing) {
                             _uiState.value =
                                 current.copy(
+                                    title = mediaItem?.mediaMetadata?.title?.toString() ?: current.title,
                                     isMusic = isMusicMediaId(mediaItem?.mediaId),
                                     musicItemId = jellyfinItemIdFromMediaId(mediaItem?.mediaId),
+                                    artist = mediaItem?.mediaMetadata?.artist?.toString(),
+                                    subtitle = mediaItem?.mediaMetadata?.subtitle?.toString(),
+                                    artworkUri = mediaItem?.mediaMetadata?.artworkUri?.toString(),
                                 )
                         }
                     }
@@ -455,6 +506,9 @@ class PlayerViewModel(
                     musicItemId = jellyfinItemIdFromMediaId(mediaItem.mediaId),
                     shuffleEnabled = ctrl.shuffleModeEnabled,
                     repeatMode = ctrl.repeatMode,
+                    artist = mediaItem.mediaMetadata.artist?.toString(),
+                    subtitle = mediaItem.mediaMetadata.subtitle?.toString(),
+                    artworkUri = mediaItem.mediaMetadata.artworkUri?.toString(),
                 )
         } catch (e: CancellationException) {
             throw e
@@ -519,15 +573,19 @@ class PlayerViewModel(
                 ctrl.setMediaItems(mediaItems)
                 ctrl.prepare()
                 ctrl.play()
-                val title = mediaItems.first().mediaMetadata.title?.toString() ?: queue.first().title
+                val firstMediaItem = mediaItems.first()
+                val title = firstMediaItem.mediaMetadata.title?.toString() ?: queue.first().title
                 _uiState.value =
                     PlayerUiState.Playing(
                         title = title,
                         isPlaying = true,
-                        isMusic = isMusicMediaId(mediaItems.first().mediaId),
-                        musicItemId = jellyfinItemIdFromMediaId(mediaItems.first().mediaId),
+                        isMusic = isMusicMediaId(firstMediaItem.mediaId),
+                        musicItemId = jellyfinItemIdFromMediaId(firstMediaItem.mediaId),
                         shuffleEnabled = ctrl.shuffleModeEnabled,
                         repeatMode = ctrl.repeatMode,
+                        artist = firstMediaItem.mediaMetadata.artist?.toString(),
+                        subtitle = firstMediaItem.mediaMetadata.subtitle?.toString(),
+                        artworkUri = firstMediaItem.mediaMetadata.artworkUri?.toString(),
                     )
                 if (fetchRemaining != null) {
                     fetchRemaining { page ->
@@ -568,6 +626,75 @@ class PlayerViewModel(
             }
         }
     }
+
+    /**
+     * Seeks within the currently loaded item to [positionMs] (Android wave 12a-A2) — the Now
+     * Playing seek bar's `onValueChangeFinished` and its skip-back/skip-forward buttons both
+     * call this with a target already clamped by `NowPlayingFormat.clampSeekTarget`/
+     * `positionMsFromFraction`, so this method does no clamping of its own: [PlaybackHandle]'s
+     * own [PlaybackHandle.seekTo] simply forwards to [Player.seekTo], which already clamps to
+     * `[0, duration]` internally. A no-op when nothing is loaded, matching [togglePlayPause]'s
+     * own early return.
+     */
+    fun seekTo(positionMs: Long) {
+        viewModelScope.launch {
+            if (_uiState.value !is PlayerUiState.Playing) return@launch
+            try {
+                activeController().seekTo(positionMs)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+            }
+        }
+    }
+
+    /** Advances to the next queue item — the Now Playing transport row's "next" button. */
+    fun skipToNext() {
+        viewModelScope.launch {
+            if (_uiState.value !is PlayerUiState.Playing) return@launch
+            try {
+                activeController().seekToNext()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+            }
+        }
+    }
+
+    /** The [skipToNext] counterpart — the Now Playing transport row's "previous" button. */
+    fun skipToPrevious() {
+        viewModelScope.launch {
+            if (_uiState.value !is PlayerUiState.Playing) return@launch
+            try {
+                activeController().seekToPrevious()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = PlayerUiState.Error("Could not connect to the player: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * A cold flow of [PlaybackProgress] (Android wave 12a-A2), sampled every
+     * [NOW_PLAYING_PROGRESS_TICK_MS] while collected — the Now Playing seek bar's data source.
+     * Same "fresh `flow {}` per collector, runs only while collected" shape as
+     * [lyricsPositionMsFlow], and the same reason: a Compose `collectAsState` call site stops
+     * collecting (and this loop stops running) the instant Now Playing leaves composition, with
+     * no manual start/stop bookkeeping needed. Reads [controller] directly rather than through
+     * [PlaybackHandle], matching [lyricsPositionMsFlow]'s own doc comment on why that widening
+     * isn't worth it for a read-only position/duration sample no test here needs to fake.
+     * Emits nothing while [controller] is null, degrading to "no update" rather than throwing.
+     */
+    fun playbackProgressFlow(): Flow<PlaybackProgress> =
+        flow {
+            while (true) {
+                controller?.let { emit(PlaybackProgress(positionMs = it.currentPosition, durationMs = it.duration)) }
+                delay(NOW_PLAYING_PROGRESS_TICK_MS)
+            }
+        }
 
     /**
      * Toggles shuffle on the underlying [MediaController] — Media3's own shuffle, not a

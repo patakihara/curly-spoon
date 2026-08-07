@@ -33,8 +33,11 @@ import org.junit.Test
 private class FakePlaybackHandle : PlaybackHandle {
     val setMediaItemsCalls = mutableListOf<List<MediaItem>>()
     val addMediaItemsCalls = mutableListOf<List<MediaItem>>()
+    val seekToCalls = mutableListOf<Long>()
     var prepareCallCount = 0
     var playCallCount = 0
+    var seekToNextCallCount = 0
+    var seekToPreviousCallCount = 0
 
     override var shuffleModeEnabled: Boolean = false
     override var repeatMode: Int = Player.REPEAT_MODE_OFF
@@ -64,6 +67,18 @@ private class FakePlaybackHandle : PlaybackHandle {
     override fun pause() {
         // Unused by these tests.
     }
+
+    override fun seekTo(positionMs: Long) {
+        seekToCalls.add(positionMs)
+    }
+
+    override fun seekToNext() {
+        seekToNextCallCount++
+    }
+
+    override fun seekToPrevious() {
+        seekToPreviousCallCount++
+    }
 }
 
 /** No-op — these tests never involve a music item, so nothing should ever call this. */
@@ -90,25 +105,40 @@ private class NoOpJellyfinPlaybackReportSender : JellyfinPlaybackReportSender {
 
 /**
  * Builds a bare, Uri-free [MediaItem] from [resolved] — real
- * [net.auralis.app.playback.MediaItemConversions.toMediaItem] calls `MediaItem.Builder.setUri`,
- * which reaches `android.net.Uri.parse` and throws under this project's unmocked test
- * `android.jar` (no Robolectric here). This fake conversion carries only `mediaId`/title, which
- * is all these tests need to tell queue pages apart, and is exactly the seam
- * [PlayerViewModel]'s `toPlayableMediaItem` constructor parameter exists for.
+ * [net.auralis.app.playback.MediaItemConversions.toMediaItem] calls `MediaItem.Builder.setUri`
+ * *and* `MediaMetadata.Builder.setArtworkUri`, both of which reach `android.net.Uri` and throw
+ * under this project's unmocked test `android.jar` (no Robolectric here). This fake carries
+ * `mediaId`/title/artist/subtitle — everything these tests need, including the Android
+ * wave 12a-A2 `PlayerUiState.Playing.artist`/`subtitle` propagation, none of which touches
+ * `Uri` — but deliberately never calls `setArtworkUri`: [ResolvedPlayback.artworkUrl] stays
+ * untested end-to-end at this layer for exactly the same Uri reason `toMediaItem` itself is
+ * isolated into its own untested file (see that file's own doc comment).
  */
 private fun fakeMediaItem(resolved: ResolvedPlayback): MediaItem =
     MediaItem.Builder()
         .setMediaId(resolved.mediaId)
-        .setMediaMetadata(MediaMetadata.Builder().setTitle(resolved.title).build())
+        .setMediaMetadata(
+            MediaMetadata.Builder()
+                .setTitle(resolved.title)
+                .apply {
+                    resolved.artist?.let { setArtist(it) }
+                    resolved.subtitle?.let { setSubtitle(it) }
+                }
+                .build(),
+        )
         .build()
 
-private fun resolvedTrack(id: String): ResolvedPlayback =
+private fun resolvedTrack(
+    id: String,
+    artist: String? = null,
+    subtitle: String? = null,
+): ResolvedPlayback =
     ResolvedPlayback(
         mediaId = id,
         uri = "https://example.invalid/$id.mp3",
         title = id,
-        artist = null,
-        subtitle = null,
+        artist = artist,
+        subtitle = subtitle,
         artworkUrl = null,
         startPositionMs = 0,
     )
@@ -384,5 +414,84 @@ class PlayerViewModelTest {
                 Player.REPEAT_MODE_OFF,
                 handle.repeatMode,
             )
+        }
+
+    /**
+     * [PlayerViewModel.seekTo]/[PlayerViewModel.skipToNext]/[PlayerViewModel.skipToPrevious]
+     * (Android wave 12a-A2) are the command surface the Now Playing seek bar and transport row
+     * call. This pins that they forward straight to [PlaybackHandle] with no clamping or
+     * optimistic `_uiState` write of their own — [NowPlayingFormat]'s pure functions already own
+     * clamping, and `PlaybackHandle.seekTo` documents that `Player.seekTo` clamps internally, so
+     * a second clamp here would be dead code duplicating a contract [PlaybackHandle] already
+     * states.
+     */
+    @Test
+    fun `seekTo, skipToNext and skipToPrevious forward straight to the handle`() =
+        runTest {
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("a1")) })
+
+            viewModel.seekTo(42_000L)
+            viewModel.skipToNext()
+            viewModel.skipToPrevious()
+
+            assertEquals(listOf(42_000L), handle.seekToCalls)
+            assertEquals(1, handle.seekToNextCallCount)
+            assertEquals(1, handle.seekToPreviousCallCount)
+        }
+
+    @Test
+    fun `seekTo, skipToNext and skipToPrevious are no-ops when nothing is playing`() =
+        runTest {
+            viewModel.seekTo(1_000L)
+            viewModel.skipToNext()
+            viewModel.skipToPrevious()
+
+            assertTrue("seekTo must not reach the handle with nothing loaded", handle.seekToCalls.isEmpty())
+            assertEquals(0, handle.seekToNextCallCount)
+            assertEquals(0, handle.seekToPreviousCallCount)
+        }
+
+    /**
+     * [PlayerUiState.Playing.artist]/[PlayerUiState.Playing.subtitle] (Android wave 12a-A2) —
+     * the Now Playing subtitle line's data source. Populated straight from the played
+     * [MediaItem]'s own [MediaMetadata], which [fakeMediaItem] sets from [ResolvedPlayback]'s
+     * `artist`/`subtitle` without touching `Uri` (see [fakeMediaItem]'s own doc comment for why
+     * `artworkUri` stays untested here).
+     */
+    @Test
+    fun `Playing state carries the played item's artist and subtitle`() =
+        runTest {
+            viewModel.playQueue(
+                buildQueue = {
+                    listOf(resolvedTrack("book:b1", artist = "J.R.R. Tolkien", subtitle = "An Audiobook"))
+                },
+            )
+
+            val state = viewModel.uiState.value as PlayerUiState.Playing
+            assertEquals("J.R.R. Tolkien", state.artist)
+            assertEquals("An Audiobook", state.subtitle)
+        }
+
+    /**
+     * The [PlayerUiState.Playing.artist]/[subtitle] counterpart to the pre-existing
+     * `onMediaItemTransition` coverage this file lacked for `isMusic`/`musicItemId`: a queue
+     * advance (not just the initial `playQueue` call) must refresh them for the new item, not
+     * leave the previous item's values stuck. Exercised through [PlayerViewModel.playQueue]'s
+     * own append path (`fetchRemaining`) rather than a raw `Player.Listener` invocation — this
+     * suite has no way to fire Media3 listener callbacks directly, since `controllerOverride`
+     * bypasses the whole `connectedController()` listener-registration block (see this file's
+     * class doc comment) — so this test instead pins the *state carried at play time* for a
+     * second, distinct item, which is the part `onMediaItemTransition`'s mirrored `.copy(...)`
+     * and `playResolved`/`playQueue`'s own initial write are meant to agree on.
+     */
+    @Test
+    fun `a second playQueue call replaces the previous item's artist and subtitle, not merges them`() =
+        runTest {
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("a1", artist = "Artist A")) })
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("b1", subtitle = "Subtitle B")) })
+
+            val state = viewModel.uiState.value as PlayerUiState.Playing
+            assertEquals(null, state.artist)
+            assertEquals("Subtitle B", state.subtitle)
         }
 }

@@ -1,5 +1,11 @@
 package net.auralis.app.navigation
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,11 +22,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import coil.ImageLoader
 import net.auralis.app.features.player.MiniPlayerBar
+import net.auralis.app.features.player.NowPlayingScreen
 import net.auralis.app.features.player.PlayerUiState
 import net.auralis.app.features.player.PlayerViewModel
 
@@ -50,11 +61,25 @@ private val RAIL_BREAKPOINT = 600.dp
  * [PaddingValues] a screen's own `Scaffold` should treat as outer insets, exactly as a bare
  * `Scaffold`'s content slot would — a screen underneath keeps its own `topBar` and internal
  * `Scaffold`, this shell only owns the bottom chrome (nav bar/rail + mini player).
+ *
+ * Also owns the expanded [NowPlayingScreen] surface (Android wave 12a-A2), hoisted here rather
+ * than as a route on [AuralisNavHost]: it has to render *over* the nav bar/rail as well as the
+ * content slot, and a route would only ever reach the content slot, leaving the nav chrome
+ * visible underneath it — wrong for a surface `docs/DESIGN.md` calls a full-screen sheet.
+ * Rendered as an [AnimatedVisibility] `Box` overlay sized to this whole composable rather than a
+ * `ModalBottomSheet`: a bottom sheet's own scrim/drag-handle chrome doesn't match "full-screen
+ * sheet" either, and a plain overlay is the simplest thing that can cover both the rail and
+ * bottom-bar branches below with one piece of state. `spring(dampingRatio = 0.9f, stiffness =
+ * 300f)` on the fade matches `docs/DESIGN.md`'s own `spring.slow` token (300/0.9), documented
+ * there as "Sheets, Now Playing expansion" — this project has no shared spring-token constants
+ * for Compose (the web client's own token layer is CSS-only), so the numbers are inlined here
+ * rather than invented fresh.
  */
 @Composable
 fun AuralisShell(
     navController: NavHostController,
     playerViewModel: PlayerViewModel,
+    imageLoader: ImageLoader,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -66,6 +91,21 @@ fun AuralisShell(
     val activeDestination = shellDestinationFor(currentRoute)
     val playerUiState by playerViewModel.uiState.collectAsState()
     val playingState = playerUiState as? PlayerUiState.Playing
+
+    // rememberSaveable so rotating the device (a config change) doesn't silently collapse an
+    // open Now Playing surface. Forced back to false the moment playback stops (below): once
+    // playingState is null there is nothing left to show, and leaving this true would leave a
+    // stale expanded surface with no state to render the next time something plays.
+    var isNowPlayingExpanded by rememberSaveable { mutableStateOf(false) }
+    if (playingState == null && isNowPlayingExpanded) {
+        isNowPlayingExpanded = false
+    }
+
+    // Collapses Now Playing on back rather than letting the press fall through to the nav
+    // host underneath (which would navigate away, or exit the app) — this is what makes the
+    // expanded surface feel like a real screen instead of a stuck overlay. Only enabled while
+    // actually expanded, so back behaves completely normally the rest of the time.
+    BackHandler(enabled = isNowPlayingExpanded) { isNowPlayingExpanded = false }
 
     // launchSingleTop avoids stacking a second copy of a destination already at the top of the
     // back stack; popUpTo(Routes.HOME) { saveState = true } + restoreState clears everything
@@ -91,54 +131,72 @@ fun AuralisShell(
                 onToggleShuffle = playerViewModel::toggleShuffle,
                 onCycleRepeat = playerViewModel::cycleRepeatMode,
                 onOpenLyrics = { navController.navigate(Routes.LYRICS) },
+                onExpand = { isNowPlayingExpanded = true },
             )
         }
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isWide = maxWidth >= RAIL_BREAKPOINT
-        if (isWide) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                NavigationRail {
-                    // The spec's rail ordering: Search at the top, then the remaining four in
-                    // their usual order — the opposite of the bottom bar, which puts Search last.
-                    // This is purely a rendering-order choice for this composable; ShellDestination
-                    // itself stays declared in bottom-bar order.
-                    val railOrder =
-                        listOf(ShellDestination.SEARCH) +
-                            ShellDestination.entries.filter { it != ShellDestination.SEARCH }
-                    railOrder.forEach { destination ->
-                        NavigationRailItem(
-                            selected = destination == activeDestination,
-                            onClick = { navigateTo(destination) },
-                            icon = { Icon(destination.icon, contentDescription = destination.label) },
-                            label = { Text(destination.label) },
-                        )
-                    }
-                }
-                Scaffold(
-                    modifier = Modifier.weight(1f),
-                    bottomBar = miniPlayer,
-                ) { innerPadding -> content(innerPadding) }
-            }
-        } else {
-            Scaffold(
-                bottomBar = {
-                    Column {
-                        miniPlayer()
-                        NavigationBar {
-                            ShellDestination.entries.forEach { destination ->
-                                NavigationBarItem(
-                                    selected = destination == activeDestination,
-                                    onClick = { navigateTo(destination) },
-                                    icon = { Icon(destination.icon, contentDescription = destination.label) },
-                                    label = { Text(destination.label) },
-                                )
-                            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isWide = maxWidth >= RAIL_BREAKPOINT
+            if (isWide) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    NavigationRail {
+                        // The spec's rail ordering: Search at the top, then the remaining four in
+                        // their usual order — the opposite of the bottom bar, which puts Search last.
+                        // This is purely a rendering-order choice for this composable; ShellDestination
+                        // itself stays declared in bottom-bar order.
+                        val railOrder =
+                            listOf(ShellDestination.SEARCH) +
+                                ShellDestination.entries.filter { it != ShellDestination.SEARCH }
+                        railOrder.forEach { destination ->
+                            NavigationRailItem(
+                                selected = destination == activeDestination,
+                                onClick = { navigateTo(destination) },
+                                icon = { Icon(destination.icon, contentDescription = destination.label) },
+                                label = { Text(destination.label) },
+                            )
                         }
                     }
-                },
-            ) { innerPadding -> content(innerPadding) }
+                    Scaffold(
+                        modifier = Modifier.weight(1f),
+                        bottomBar = miniPlayer,
+                    ) { innerPadding -> content(innerPadding) }
+                }
+            } else {
+                Scaffold(
+                    bottomBar = {
+                        Column {
+                            miniPlayer()
+                            NavigationBar {
+                                ShellDestination.entries.forEach { destination ->
+                                    NavigationBarItem(
+                                        selected = destination == activeDestination,
+                                        onClick = { navigateTo(destination) },
+                                        icon = { Icon(destination.icon, contentDescription = destination.label) },
+                                        label = { Text(destination.label) },
+                                    )
+                                }
+                            }
+                        }
+                    },
+                ) { innerPadding -> content(innerPadding) }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isNowPlayingExpanded && playingState != null,
+            enter = fadeIn(animationSpec = spring(dampingRatio = 0.9f, stiffness = 300f)),
+            exit = fadeOut(animationSpec = spring(dampingRatio = 0.9f, stiffness = 300f)),
+        ) {
+            playingState?.let { state ->
+                NowPlayingScreen(
+                    state = state,
+                    playerViewModel = playerViewModel,
+                    imageLoader = imageLoader,
+                    onDismiss = { isNowPlayingExpanded = false },
+                )
+            }
         }
     }
 }

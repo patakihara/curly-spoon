@@ -144,7 +144,11 @@ fun AuralisNavHost(
     when (val state = startViewModel.state.collectAsState().value) {
         is StartState.Loading -> LoadingScreen()
         is StartState.Ready -> {
-            AuralisShell(navController = navController, playerViewModel = playerViewModel) { shellPadding ->
+            AuralisShell(
+                navController = navController,
+                playerViewModel = playerViewModel,
+                imageLoader = container.imageLoader,
+            ) { shellPadding ->
             NavHost(
                 navController = navController,
                 startDestination = state.destination,
