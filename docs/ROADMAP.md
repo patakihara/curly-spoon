@@ -2072,6 +2072,37 @@ flakes track **contention**, not worker count, and that CI's `retries: 2` is cur
 keeps this invisible there. Anyone chasing it should first reproduce on an otherwise idle
 box; the suspect is shared state on the single-tenant BFF, not the number in the config.
 
+**12b-2 (web) shipped 2026-08-07** — Search now carries both halves. Library results and
+requestable results sit in separately headed, visually distinct sections
+(`.auralis-requestable-section`), and pressing a requestable item creates the request and
+reports success or failure per row rather than silently. Books requestability is gated on
+`hasEnabledIndexer && hasEnabledDownloadClient`; music has its own gate, because a music
+request goes through the slskd `music` provider rather than an indexer plus a download
+client. Neither flips optimistically: a row shows "Requested" only after the mutation
+resolves, so a failure cannot leave a false success behind.
+
+**One regression was found in review and fixed before the merge landed**, with a test that did
+not exist: `requestabilitySections` answers "could this kind be requested on this server",
+which has nothing to do with whether anything has been searched for. Selecting a content-type
+chip with an empty search box therefore rendered an "Available to request" group and a "No
+book matches." under a status line still reading "Start typing to search". Two clicks to
+reach. Now gated on a non-empty query.
+
+**Two product decisions the user should confirm, neither a bug:**
+
+- **Nothing de-duplicates a requestable result against the library.** Search "dune" with
+  providers enabled and the book appears in the library section _and_ as "Request anyway" in
+  the requestable one. This is inherited — `AskForBookPanel`'s "request anyway" never checked
+  ownership either — but it was tucked away on `/requests` before and is now side by side in
+  one view, which makes it far more visible. Being offered a book already on the shelf may
+  read as a bug even though it is deliberate.
+- **A music candidate starts downloading the instant it is pressed**, with no confirm step —
+  mirroring `MusicRequestSearchPanel`'s existing behaviour, but now one tap from the main
+  search box rather than behind a dedicated request page.
+
+The 400ms request-search debounce is a judgement call, not a measured constant — nobody has
+watched it against a real indexer's latency.
+
 #### 12c — In-view search, and artist/author pages
 
 Each content view (Music, Books, Podcasts) has its own search icon. That search covers the

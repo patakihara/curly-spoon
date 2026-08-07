@@ -188,9 +188,7 @@ test('configuring an indexer, a download client, and a music provider saves with
   await expect(qbittorrent).toBeVisible();
   await qbittorrent.getByTestId('provider-qbittorrent-baseurl-input').fill('http://gluetun:8080');
   await qbittorrent.getByTestId('provider-qbittorrent-secret-username-input').fill('admin');
-  await qbittorrent
-    .getByTestId('provider-qbittorrent-secret-password-input')
-    .fill('test-password');
+  await qbittorrent.getByTestId('provider-qbittorrent-secret-password-input').fill('test-password');
   await qbittorrent.getByTestId('provider-qbittorrent-enabled-toggle').check();
   await qbittorrent.getByTestId('provider-qbittorrent-save').click();
   await expect(qbittorrent.getByTestId('provider-qbittorrent-save-error')).toHaveCount(0);
@@ -314,4 +312,44 @@ test('with nothing selected, every kind of result groups by content type and ren
   // area, replaced by the list container.
   await expect(results.locator('.auralis-card-grid')).toHaveCount(0);
   await expect(results.locator('.auralis-result-list').first()).toBeVisible();
+});
+
+test('picking a content-type chip before typing shows no results block at all', async ({
+  page,
+}) => {
+  // A regression, found in review and reachable in two clicks. `requestabilitySections`
+  // answers "could this kind be requested on this server", which has nothing to do with
+  // whether anything has been searched for — so selecting Books with an empty box used
+  // to render an "Available to request" group, and under it "No book matches.", directly
+  // beneath the status line still saying "Start typing to search".
+  // Configures its own providers rather than inheriting them from the test
+  // above. Provider config is process-global BFF state, so inheriting it looks
+  // like it works — but under `fullyParallel` this test can run first, and then
+  // nothing is requestable, and the assertion below passes for the wrong
+  // reason. It did: the first version of this test passed with the fix
+  // reverted. Saving the same config twice is idempotent, so this is safe.
+  await page.goto('/settings');
+  await expect(page.getByTestId('settings-page')).toBeVisible();
+
+  const prowlarr = page.getByTestId('provider-prowlarr');
+  await prowlarr.getByTestId('provider-prowlarr-baseurl-input').fill('http://prowlarr:9696');
+  await prowlarr.getByTestId('provider-prowlarr-secret-apiKey-input').fill('test-api-key');
+  await prowlarr.getByTestId('provider-prowlarr-enabled-toggle').check();
+  await prowlarr.getByTestId('provider-prowlarr-save').click();
+  await expect(prowlarr.getByTestId('provider-prowlarr-save-error')).toHaveCount(0);
+
+  const qbittorrent = page.getByTestId('provider-qbittorrent');
+  await qbittorrent.getByTestId('provider-qbittorrent-baseurl-input').fill('http://gluetun:8080');
+  await qbittorrent.getByTestId('provider-qbittorrent-secret-username-input').fill('admin');
+  await qbittorrent.getByTestId('provider-qbittorrent-secret-password-input').fill('test-password');
+  await qbittorrent.getByTestId('provider-qbittorrent-enabled-toggle').check();
+  await qbittorrent.getByTestId('provider-qbittorrent-save').click();
+  await expect(qbittorrent.getByTestId('provider-qbittorrent-save-error')).toHaveCount(0);
+
+  await page.goto('/search');
+  await clickChip(page, 'search-filter-primary-books');
+
+  await expect(page.getByTestId('search-status')).toContainText('Start typing');
+  await expect(page.getByTestId('search-results')).toHaveCount(0);
+  await expect(page.getByTestId('search-requestable-books')).toHaveCount(0);
 });

@@ -105,7 +105,15 @@ export function SearchPage() {
   // has produced any candidates yet.
   const providersQuery = useProvidersQuery();
   const providers = providersQuery.data?.providers ?? [];
-  const requestable = requestabilitySections(providers, visible);
+  // Gated on there being a query at all. `requestabilitySections` deliberately
+  // does not look at the search term — it answers "could this kind be requested
+  // on this server", not "is anything being searched for" — so without this an
+  // empty box plus a selected content-type chip renders an "Available to
+  // request / No book matches." block directly under the status line that says
+  // "Start typing to search". Reachable in two clicks, and it was.
+  const requestable = trimmedQuery
+    ? requestabilitySections(providers, visible)
+    : { showBookRequestable: false, showMusicRequestable: false };
 
   // The request-search fan-outs (real indexers, real Soulseek) are debounced
   // separately from the undebounced library search above — see
