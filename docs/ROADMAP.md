@@ -1986,7 +1986,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12c — In-view search and artist/author full discography | todo   |
 | 12d — For You: uniform album-card carousels             | todo   |
 | 12e — Context menus (long-press / right-click)          | todo   |
-| 12f — Per-content-type queues                           | wip    |
+| 12f — Per-content-type queues                           | done   |
 
 #### 12a — The five views
 
@@ -2191,6 +2191,21 @@ This is worth generalising: a subscription installer that nothing calls passes e
 test it has, because the tests call it themselves. "Is this reachable from the running app?"
 is a separate question from "is this correct," and only the second one is testable by the
 agent that writes it.
+
+**12f (web) shipped 2026-08-07**, `034c4cf`. Three independent queues, each clearable without
+stopping playback; audiobook chapters queueable via Play next / Play last; `installQueueRouter()`
+wired into `Shell.tsx` so the cross-type auto-advance fix is live rather than dead code. Verified
+on the merged tree: 1420 unit tests, 307 Playwright, typecheck and lint clean.
+
+The wiring test is the part worth remembering. Its first version passed with the wiring commented
+out, because `MusicAlbumPage`'s click handler attaches the music ended-handler itself on every
+click — so the test exercised a path that never needed the router. It was rewritten around
+`ItemPage`'s `handlePlay`, which calls `load()` and `play()` but never attaches the audiobook
+handler, leaving the router as the only thing that can make the queue advance, and then confirmed
+by toggling the wiring off and watching it fail. Deleting the code under test and checking the
+test goes red is the only thing that distinguishes a guard from a decoration.
+
+**Android's 12f is not started** — these queues are web-only. Android still has one queue.
 
 #### Sequencing — web first, Android second
 

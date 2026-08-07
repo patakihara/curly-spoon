@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T15:44:39Z` · `a3c6727d2bea7862c` · general-purpose · ended · Cleaned up. Worktree is back to a clean state matching commit b82f936. ## Verdict: merge with named corrections The implementation is solid and match…
 - `2026-08-07T16:02:18Z` · `a07dae5b8f3764c2b` · general-purpose · ended · ## Report **Reset sha:** '1390a78'. **Branch/commit:** 'worktree-agent-a07dae5b8f3764c2b' @ '796ad4a'. Committed, not pushed. **Files changed:** - 'a…
 - `2026-08-07T16:33:50Z` · `aa0a07f6fbf21c41c` · general-purpose · ended · Confirmed — podcasts have no queue concept at all today; each episode is a single 'load()'. Enough evidence gathered. ## Report **1. Current queue to…
 - `2026-08-07T16:37:26Z` · `a8781e77885029281` · general-purpose · ended · Wave 12f-1 implementation is dispatched to a Sonnet subagent (running in the background). I'll wait for its completion notification before reviewing/…
@@ -95,7 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T17:06:39Z` · `af868eb787d50240d` · general-purpose · ended · ## Verdict: merge with named corrections ## Findings, ranked by severity **1. Selecting a content-type filter before typing anything shows a contradi…
 - `2026-08-07T17:17:14Z` · `a8781e77885029281` · general-purpose · ended · I don't see a task or question in your message yet — just tool/agent context loading in. What would you like me to help with?
 - `2026-08-07T17:19:52Z` · `a8c77417a11444a16` · general-purpose · ended · Good — this confirms all requirement-4 isolation coverage is duplicated at the unit level too. I have everything needed for the report. ## Verdict: *…
-- `2026-08-07T17:26:35Z` · `acec92fccf95bb06e` · general-purpose · running · —
+- `2026-08-07T17:26:35Z` · `acec92fccf95bb06e` · general-purpose · ended · Committed on the worktree branch, not pushed. ## Report **Branch/sha:** 'worktree-agent-acec92fccf95bb06e' @ 'afaa3f4', based on '8002385' (the reset…
+- `2026-08-07T17:41:07Z` · `a642e9f1b3b736355` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -387,13 +387,18 @@ audiobook queues, `clearQueue()` on all three stores, a `queueRouter`, and two a
 controllers. 254 tests pass across `state`/`player`/`music`/`podcasts`; typecheck and lint
 clean; independent review found no defect in it and no tautological tests.
 
-**But `installQueueRouter()` is never called in production**, so the cross-type auto-advance
+**`installQueueRouter()` was never called in production** when 12f-1 landed, so the cross-type auto-advance
 bug it was written to fix is still live in the running app. The model is correct and the
 wiring is one `useEffect` in `apps/web/src/components/Shell.tsx`, next to the existing
 `useProgressSync()` call. It is folded into 12f-2, not landed separately, so it gets verified
 against a visible queue rather than in isolation.
 
-**12f-2 exists as a draft on `worktree-agent-a8781e77885029281` at `8002385`** — queue view,
+**12f-2 shipped in `034c4cf`** — queue view, clear-queue, chapter enqueue, and the `Shell.tsx`
+wiring that makes 12f-1's fix live. Verified on the merged tree: 1420 unit tests, 307 Playwright,
+typecheck and lint clean, Android CI green. The paragraph below is kept for the salvage story,
+which is the reusable part.
+
+It began as a draft on `worktree-agent-a8781e77885029281` at `8002385` — queue view,
 clear-queue, chapter enqueue, ~1000 lines. The 12f-1 agent wrote it past its own spec and then
 died mid-Playwright, leaving it uncommitted in a worktree that would have been deleted with its
 session. It was committed there to survive, and is **unverified**: never run, and it touches two
