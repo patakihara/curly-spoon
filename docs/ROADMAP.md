@@ -2116,8 +2116,10 @@ Three things about it worth not rediscovering:
   existed — added for Android Auto and unused until now.
 - **The route string stayed `"music/search"`**; only the composable behind it changed. So
   `ShellDestinations.kt` and its test needed no edit, since resolution is by route rather than
-  by what is mounted. `MusicSearchScreen.kt`/`MusicSearchViewModel.kt` are now referenced only
-  from doc comments — dead, deliberately left in the tree rather than deleted in the same wave.
+  by what is mounted. **`MusicSearchScreen.kt` is now dead** — nothing routes to it — and was
+  deliberately left in the tree rather than deleted in the same wave. **`MusicSearchViewModel.kt`
+  is not dead**: its `toSearchUi` was bumped `private`→`internal` precisely so the new unified
+  search could use it. Deleting the pair together breaks the build.
 - **Per-source degradation is structurally correct, and the reason is subtle.** A failing
   `async` child cancels its `coroutineScope` parent *and its siblings*, so a per-library
   `try`/`catch` placed around the enclosing `coroutineScope` would silently lose the other
