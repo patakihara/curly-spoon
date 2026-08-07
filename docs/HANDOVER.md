@@ -981,11 +981,11 @@ and a paused track reporting to Jellyfin as playing. `docs/ROADMAP.md` §9 has e
 what it turned up.
 
 The album-level-artist caveat earlier drafts recorded here as an open product decision was
-**neither open nor a decision** — it was a bug, and it is fixed on Android (`2c1b476`). The
-reasoning behind it ("the track model has no per-track artist") was stale: `artistNames` is
-normalized per track and already reached both clients; Android simply dropped it when building
-the queue. **Web still does**, so a compilation still credits the album artist on every track
-there — a real, contained bug rather than a question for anyone.
+**neither open nor a decision** — it was a bug, fixed on both clients: Android at `2c1b476`,
+web at `226fcd5` (`musicQueue.ts`'s `toQueueTrack` now joins each track's own `artistNames`
+rather than crediting the album/playlist artist to every row). This paragraph was stale for
+a while — checked again 2026-08-07 after being cited as still-open work, and it is not; do
+not re-derive or re-fix it.
 
 `docs/ROADMAP.md` §9 has the wave-by-wave detail.
 
