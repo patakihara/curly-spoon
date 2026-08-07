@@ -1981,7 +1981,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 
 | Area                                                    | Status |
 | ------------------------------------------------------- | ------ |
-| 12a — Five-view navigation shell (web + Android)        | web done, Android in progress |
+| 12a — Five-view navigation shell (web + Android)        | done (web + Android) |
 | 12b — Search view: unified library + request results    | web done, Android todo |
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
 | 12d — For You: uniform album-card carousels             | web done, Android todo |
@@ -2324,6 +2324,75 @@ by toggling the wiring off and watching it fail. Deleting the code under test an
 test goes red is the only thing that distinguishes a guard from a decoration.
 
 **Android's 12f is not started** — these queues are web-only. Android still has one queue.
+
+#### 12a (Android) shipped 2026-08-07 — the shell and the Now Playing surface
+
+Two sequential waves, merged as one unit because §12a's "these land together" is a constraint
+on the merge rather than on how many agents write it.
+
+**A1 — the persistent shell.** `navigation/AuralisShell.kt` renders the five destinations —
+For you, Music, Books, Podcasts, Search — as a Material 3 `NavigationBar` on phones and a
+`NavigationRail` above a 600dp breakpoint, with Search last in the bar and first in the rail
+per the spec. `MiniPlayerBar` is hoisted out of `HomeScreen` into the shell's `bottomBar`, so
+playback UI no longer vanishes on navigation — the phase 10 audit's headline finding.
+
+`navigation/ShellDestinations.kt` is the pure, tested core: it resolves the active destination
+from the current route, and hides all chrome on onboarding and login. Two traps it exists to
+survive, both pinned by tests. `Routes.MUSIC` is `"music"` and `MUSIC_SEARCH` is
+`"music/search"`, so a naive `startsWith` resolves Search to Music — matching is
+longest-prefix-first with a delimiter check, which also makes a hypothetical `"musicvideo"`
+unable to false-match. And `"podcasts"` (the destination) and `"podcast/{itemId}"` (the detail
+route) are **different words, not a shared prefix**, so a resolver built only from the
+destinations' own routes would leave the nav bar showing nothing selected on any podcast detail
+screen; that needed its own explicit entry.
+
+**The sixteen existing `Scaffold`s were deliberately not rewritten.** A screen's `Scaffold`
+nests inside the shell's content slot and keeps providing that screen's own `topBar`; the shell
+owns only the bottom chrome. That is what kept this wave to nine files instead of twenty-five.
+
+**Books got its own route**, because two destinations pointing at one route breaks active-item
+resolution. `HomeScreen`'s shelf body was extracted into a shared `HomeShelvesContent.kt` that
+both it and the new `BooksScreen` render. Known and accepted cost: the two screens hold
+separate `HomeViewModel` instances and therefore fetch the same shelves twice. It is a
+disclosed placeholder — "For you" on Android renders the same shelves as Books until there is a
+real recommendation source, which is a later wave.
+
+**A2 — the Now Playing surface.** `features/player/NowPlayingScreen.kt`: large artwork through
+the existing `MusicArtwork`, title and subtitle, a working seek bar with elapsed/remaining
+labels, and a transport row of real icons including skip-back and skip-forward. It is an
+`AnimatedVisibility` overlay hoisted in `AuralisShell`, **not** a nav route — a route renders
+inside the shell's content slot and would leave the nav bar visible underneath it.
+`BackHandler` collapses it before the nav host sees the press.
+
+**A2 turned out to be more than a UI wave, and that is the part to know.** `PlayerViewModel`
+had **no seek, next or previous at all**, and `PlayerUiState.Playing` carried no position,
+duration, artwork or artist — so the surface could not have been built without growing the
+playback layer. Added: `PlaybackHandle.seekTo`/`seekToNext`/`seekToPrevious`, the matching
+ViewModel methods, a `playbackProgressFlow()` mirroring `lyricsPositionMsFlow`'s shape, and the
+missing fields on `Playing` (read from the `MediaItem.mediaMetadata` that `MediaItemConversions`
+already populated — exposed, not newly computed). `onMediaItemTransition` also never refreshed
+`title` on queue advance; fixed in passing.
+
+**No progress arithmetic was added anywhere**, deliberately. Seek and skip forward to
+`PlaybackHandle` and drive the *existing* `Player.Listener`, so Jellyfin reporting is unchanged
+and this repo's rule — `timeListened` is wall-clock time spent playing, never a position delta,
+because a seek moves the position with nobody listening — is inherited rather than
+re-implemented.
+
+**Two recorded defect classes were checked for and are absent.** The seek bar latches a local
+drag state that wins over the incoming position stream and commits on `onValueChangeFinished`,
+so it cannot repeat the earlier wave's `Slider` that rendered and did nothing, nor snap the
+thumb back on every position tick. And `sliderFraction` clamps against zero, negative and
+unset durations — an unclamped fraction outside a `Slider`'s `valueRange` is a runtime crash,
+not a cosmetic bug, and `NowPlayingFormatTest.kt` pins every degenerate case.
+
+**What Android still does not have on this surface**: no queue/up-next view (Android's 12f is
+not started — the per-type queues are web-only), and no artwork shape-morph on playing state.
+Both are scope, not defects.
+
+**Nothing here was run.** There is no JDK, SDK, emulator or device on this machine, so both
+waves are source-reviewed only and CI is the sole compile gate. The icon symbols were verified
+against real-world usage in compiling open-source projects rather than against a build.
 
 #### 12a (Android) — the decision taken to unblock it, stated rather than assumed
 

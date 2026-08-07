@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T17:57:05Z` · `a93643ecadd8a4da5` · general-purpose · ended · The full Playwright suite is running in the background ('bxuwur3dn'). I'll wait for its completion notification before finalizing the commit and repo…
 - `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
 - `2026-08-07T18:24:38Z` · `acfb30c8ef236b965` · general-purpose · ended · Clean tree, nothing to note further. Compiling final report. ## Verdict: merge as-is **Findings** (none blocking): - 'apps/web/src/features/home/Caro…
 - `2026-08-07T18:36:39Z` · `a2ff7f37534821e0c` · general-purpose · ended · **Verdict: matches the references, with only cosmetic notes.** Screenshots: '/home/sofiapata/.claude/jobs/16f272ea/tmp/phone-390.png', 'tablet-834.pn…
@@ -95,7 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T20:16:08Z` · `af767a8f2890d20aa` · general-purpose · ended · Waiting for the full Playwright suite run to complete.
 - `2026-08-07T20:18:18Z` · `ad6751579c2cfc636` · general-purpose · ended · **Verdict: merge as-is.** Findings (none blocking, one worth noting): 1. **'BooksScreen.kt'** instantiates its own 'HomeViewModel' (efficiency, not c…
 - `2026-08-07T20:19:07Z` · `a0a086b43c492f5ce` · general-purpose · ended · No boundary violations. ## Merge with named follow-ups **1. Defect gone — confirmed by screenshot, not just tests.** '/author/author-tolkien' now ren…
-- `2026-08-07T20:26:04Z` · `aa742f68e3b1172b9` · general-purpose · running · —
+- `2026-08-07T20:26:04Z` · `aa742f68e3b1172b9` · general-purpose · ended · Everything is committed. Final report: **Branch/commits:** 'worktree-agent-aa742f68e3b1172b9', HEAD 'd270559' ('cc494dd' is the substantive commit; '…
+- `2026-08-07T20:41:18Z` · `a1fe3079f7d9ab8a7` · general-purpose · ended · **Verdict: merge as-is.** Reviewed all eight files in the diff ('9db833b..worktree-agent-aa742f68e3b1172b9', commits 'cc494dd'/'d270559') plus the tw…
 
 <!-- AGENT_LOG_END -->
 
@@ -351,25 +351,44 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-**Claimed — 2026-08-07 ~20:05Z, session `1b29a583`.**
+**Landed — 2026-08-07 ~20:45Z, session `1b29a583`. Claim released.**
 
-- **12a (Android) — the persistent navigation shell and the Now Playing surface.** Claimed,
-  dispatching now. This is the first unfinished roadmap item by §12's own "web first, Android
-  second" sequencing: every web wave of phase 12 has landed, and Android has neither a
-  navigation shell nor any playback surface beyond `MiniPlayerBar`'s title and text buttons.
-  Split into **A1** (the shell: `NavigationBar`/`NavigationRail`, five destinations, the
-  `NavHost` and a hoisted persistent `MiniPlayerBar`) and **A2** (the expanded Now Playing
-  surface) as two sequential agents merged as one unit — §12a's "these land together" is a
-  constraint on the merge, not on how many agents write it.
-  Touches `apps/android/**` only, so it is disjoint from every live web worktree.
-- **The `material-icons-extended` question is answered, autonomously.** It was one of the
-  phase 10 audit's three open questions and it blocks every icon in the shell; `ROADMAP.md`
-  §12a now carries the decision and the reasoning. Do not re-open it as a user question.
-- **Three other sessions' worktrees were live when this claim was written** —
-  `agent-af767a8f2890d20aa` in particular held ~20 uncommitted files including the real
-  minified-item normalization fix (`packages/abs-client/src/normalize.ts`, `domain.ts`,
-  `schemas/raw.ts`). Not touched: its owner was alive. If a later session finds it stale,
-  committing it in place is the salvage — do not merge it unreviewed.
+- **12a (Android) is done** — `a83e416`/`523baa5` (the shell) and `ce77e6c`/`6b1c3c6` (the Now
+  Playing surface), merged as one unit. Android now has a persistent five-destination
+  navigation shell with a mini player that survives navigation, and a real Now Playing surface
+  with artwork, a working seek bar and icon transport controls. Both waves were independently
+  reviewed by separate Sonnet agents; neither review found a defect. `docs/ROADMAP.md` §12a has
+  the detail, the traps, and what is deliberately still missing.
+- **`material-icons-extended` was added and the audit's open question is closed.** Reasoning is
+  in `ROADMAP.md` §12a. Do not re-open it as a user question.
+- **A2 grew the playback layer, not just the UI.** `PlayerViewModel` had no seek, next or
+  previous at all before this. Anything touching `features/player/` next should read §12a's
+  paragraph on it first.
+- **Nothing on Android was run** — no JDK, SDK or device here, so CI is the sole compile gate.
+  The one residual risk is `Icons.Filled.*` symbol resolution against `material-icons-extended`;
+  every symbol was cross-checked against real compiling projects, but that is evidence rather
+  than a build.
+
+### What is genuinely next
+
+Android is now the whole of the remaining phase 12, and the waves are independent of each
+other:
+
+- **12b (Android)** — unified search, replacing today's music-only `MusicSearchScreen`. The
+  user answered this question directly in the spec addendum; web's `SearchPage` is the settled
+  design to mirror.
+- **12e (Android)** — long-press context menus. Web shipped these for `MusicAlbumPage` only.
+- **12f (Android)** — per-content-type queues. Android still has exactly one queue; web's
+  `createQueueStore` factory is the settled model.
+- **12d (Android)** — For You carousels. Note Android's "For you" currently renders the same
+  audiobook shelves as Books, as a disclosed placeholder.
+- **Web 12e's own scope cut** — context menus on `MusicPlaylistPage` and `MusicFavoritesPage`,
+  explicitly "a straightforward follow-up, not a blocker".
+
+Still blocked on the user, unchanged: **12c-2** on queue `440b217` (whether a title already in
+the library should still be offered as requestable), the **Android post-login crash** report
+(needs a reinstall of the current APK or a logcat), and **phase 11**'s two irreversible
+decisions (release signing key, `applicationId`).
 
 **Claimed — 2026-08-07 ~16:35Z.**
 
