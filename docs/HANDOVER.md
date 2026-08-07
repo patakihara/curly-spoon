@@ -351,6 +351,18 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
+**Claimed — 2026-08-08 ~02:30Z, session `1b29a583`: 12e (Android), context menus.**
+
+Now genuinely unblocked: Play next / Play last had nothing to insert into until 12f's queues
+existed. Web shipped this design on all three track-row pages, so it is a mirror rather than a
+design task. `apps/android/**` only.
+
+**Scouted so the next session need not**: Android has **no** `combinedClickable`, no `onLongClick`
+and no `DropdownMenu` anywhere yet — long-press is entirely new surface there, unlike web where
+Mantine's `Menu.ContextMenu` already implemented both gestures. Track rows live in
+`features/music/{AlbumDetailScreen,PlaylistDetailScreen,FavoritesScreen}.kt`. The queues are
+exposed as public `val`s on `PlayerViewModel` (`musicQueue`/`podcastQueue`/`audiobookQueue`).
+
 **Landed — 2026-08-08 ~01:50Z, session `1b29a583`. Claims released.**
 
 - **Web 12e's scope cut is closed** — `7063eca`, e2e fix `26057a0`. The track context menu now
