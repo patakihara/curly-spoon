@@ -2179,6 +2179,19 @@ podcast in the middle of a music queue silently kills that queue's auto-advance,
 one queue in existence. 12f-1 fixes it with a `queueRouter` that re-attaches the handler
 belonging to whatever content type is now loaded.
 
+**Correction — 12f-1 as merged does not actually fix that.** Review found
+`installQueueRouter()` is never called anywhere in production code, so the router never
+subscribes and the fix is inert in the running app. The model is right and fully tested; only
+the wiring is missing. The claim above, and 12f-1's own commit message, both overstated what
+landed. The one-line wiring into `Shell.tsx` is folded into 12f-2 rather than landed
+separately, because 12f-2 is what makes the queue visible and therefore where the fix can be
+verified end to end.
+
+This is worth generalising: a subscription installer that nothing calls passes every unit
+test it has, because the tests call it themselves. "Is this reachable from the running app?"
+is a separate question from "is this correct," and only the second one is testable by the
+agent that writes it.
+
 #### Sequencing — web first, Android second
 
 Not an arbitrary order. Playwright runs on the development machine, so every web change here

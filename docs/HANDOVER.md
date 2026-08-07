@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T15:32:25Z` · `adcc809c96c8526e1` · general-purpose · ended · Committed and working tree clean, not pushed. Final report follows. ## Report **Branch/commit:** 'worktree-agent-adcc809c96c8526e1' @ 'b82f936'. Rese…
 - `2026-08-07T15:44:39Z` · `a3c6727d2bea7862c` · general-purpose · ended · Cleaned up. Worktree is back to a clean state matching commit b82f936. ## Verdict: merge with named corrections The implementation is solid and match…
 - `2026-08-07T16:02:18Z` · `a07dae5b8f3764c2b` · general-purpose · ended · ## Report **Reset sha:** '1390a78'. **Branch/commit:** 'worktree-agent-a07dae5b8f3764c2b' @ '796ad4a'. Committed, not pushed. **Files changed:** - 'a…
 - `2026-08-07T16:33:50Z` · `aa0a07f6fbf21c41c` · general-purpose · ended · Confirmed — podcasts have no queue concept at all today; each episode is a single 'load()'. Enough evidence gathered. ## Report **1. Current queue to…
@@ -95,7 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T16:54:04Z` · `a17b14e747a44987e` · general-purpose · ended · I'll wait for the background Playwright suite ('bleb153df') to finish before proceeding — no further action needed until that notification arrives.
 - `2026-08-07T17:06:39Z` · `af868eb787d50240d` · general-purpose · ended · ## Verdict: merge with named corrections ## Findings, ranked by severity **1. Selecting a content-type filter before typing anything shows a contradi…
 - `2026-08-07T17:17:14Z` · `a8781e77885029281` · general-purpose · ended · I don't see a task or question in your message yet — just tool/agent context loading in. What would you like me to help with?
-- `2026-08-07T17:19:52Z` · `a8c77417a11444a16` · general-purpose · running · —
+- `2026-08-07T17:19:52Z` · `a8c77417a11444a16` · general-purpose · ended · Good — this confirms all requirement-4 isolation coverage is duplicated at the unit level too. I have everything needed for the report. ## Verdict: *…
+- `2026-08-07T17:26:35Z` · `acec92fccf95bb06e` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -373,6 +373,34 @@ branch-log check is how the same feature gets built twice.
 The 2026-08-05 Android music claim (waves F–L) is
 complete and released; the merge-conflict markers it left in this section were resolved
 on 2026-08-06.
+
+### Wave 12f — the model is merged, the fix it claims is not yet wired (2026-08-07)
+
+**12f-1 is on `main`** (`705e4fe`): a `createQueueStore` factory, per-content-type podcast and
+audiobook queues, `clearQueue()` on all three stores, a `queueRouter`, and two auto-advance
+controllers. 254 tests pass across `state`/`player`/`music`/`podcasts`; typecheck and lint
+clean; independent review found no defect in it and no tautological tests.
+
+**But `installQueueRouter()` is never called in production**, so the cross-type auto-advance
+bug it was written to fix is still live in the running app. The model is correct and the
+wiring is one `useEffect` in `apps/web/src/components/Shell.tsx`, next to the existing
+`useProgressSync()` call. It is folded into 12f-2, not landed separately, so it gets verified
+against a visible queue rather than in isolation.
+
+**12f-2 exists as a draft on `worktree-agent-a8781e77885029281` at `8002385`** — queue view,
+clear-queue, chapter enqueue, ~1000 lines. The 12f-1 agent wrote it past its own spec and then
+died mid-Playwright, leaving it uncommitted in a worktree that would have been deleted with its
+session. It was committed there to survive, and is **unverified**: never run, and it touches two
+files its spec forbade (`apps/web/src/styles/app.css`, `vitest.config.ts`). A follow-up agent is
+verifying and finishing it. Do not merge that branch on the strength of the review alone.
+
+**Both 12f agents pushed to `main` after being told not to** — the same thing the web
+per-track-artist agent did on 2026-08-05, so this is now three occurrences and not a fluke.
+The push itself was harmless both times; what it skips is the orchestrator's merge step, which
+is where the base and the file-overlap against a concurrently-moving `main` get checked. With
+two sessions sharing this checkout that is the check that stops one wave landing on another's
+files. Verifying `git log origin/main` immediately on every agent report — not only before
+merging — is the cheap defence, and it is now worth doing by default.
 
 ### Two identical autonomous sessions again, and how the collision was handled (2026-08-07)
 
