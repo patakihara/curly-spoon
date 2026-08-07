@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T16:02:18Z` · `a07dae5b8f3764c2b` · general-purpose · ended · ## Report **Reset sha:** '1390a78'. **Branch/commit:** 'worktree-agent-a07dae5b8f3764c2b' @ '796ad4a'. Committed, not pushed. **Files changed:** - 'a…
-- `2026-08-07T16:33:50Z` · `aa0a07f6fbf21c41c` · general-purpose · ended · Confirmed — podcasts have no queue concept at all today; each episode is a single 'load()'. Enough evidence gathered. ## Report **1. Current queue to…
 - `2026-08-07T16:37:26Z` · `a8781e77885029281` · general-purpose · ended · Wave 12f-1 implementation is dispatched to a Sonnet subagent (running in the background). I'll wait for its completion notification before reviewing/…
 - `2026-08-07T16:37:32Z` · `ac3e01ac9d3ae7de6` · general-purpose · ended · Typecheck clean. I have enough to write the report. ## Verdict: merge with named corrections **1. (Real, but pre-existing/inherited — flag, don't blo…
 - `2026-08-07T16:38:21Z` · `a952a997487a7b762` · general-purpose · ended · ## Report **Checkout/branch:** Already isolated in '.claude/worktrees/agent-a8781e77885029281' on branch 'worktree-agent-a8781e77885029281', based on…
@@ -95,7 +93,9 @@ in-context scan of the current one.
 - `2026-08-07T17:17:14Z` · `a8781e77885029281` · general-purpose · ended · I don't see a task or question in your message yet — just tool/agent context loading in. What would you like me to help with?
 - `2026-08-07T17:19:52Z` · `a8c77417a11444a16` · general-purpose · ended · Good — this confirms all requirement-4 isolation coverage is duplicated at the unit level too. I have everything needed for the report. ## Verdict: *…
 - `2026-08-07T17:26:35Z` · `acec92fccf95bb06e` · general-purpose · ended · Committed on the worktree branch, not pushed. ## Report **Branch/sha:** 'worktree-agent-acec92fccf95bb06e' @ 'afaa3f4', based on '8002385' (the reset…
-- `2026-08-07T17:41:07Z` · `a642e9f1b3b736355` · general-purpose · running · —
+- `2026-08-07T17:41:07Z` · `a642e9f1b3b736355` · general-purpose · ended · Committed, working tree clean, not pushed as instructed. ## Report **Reset sha:** '1fd1b54' (the claim commit). **Branch/commit:** 'worktree-agent-a6…
+- `2026-08-07T17:57:05Z` · `a93643ecadd8a4da5` · general-purpose · running · —
+- `2026-08-07T18:10:13Z` · `a50bc854d310e6c49` · general-purpose · ended · Verdict: **merge as-is.** Findings, ranked (none rise above "worth noting"): 1. **e2e test quality (item 1) — both suspect tests are genuine, checked…
 
 <!-- AGENT_LOG_END -->
 
@@ -355,12 +355,18 @@ nothing on `main` is stale — take it.
 
 - **12b is done and released.** 12b-1 landed at `ba8c2b3`/`218dc2b`, 12b-2 at
   `2d836b0`/`2438f2a`, both reviewed and merged, both worktrees and branches gone.
-- **12e (context menus)** — claimed by session `0e7913a4`. Touches
-  `apps/web/src/features/music/` (the track rows), `packages/ui/` (a new Menu primitive if
-  one is needed) and `e2e/app/context-menu.spec.ts`. **Reads** `state/musicQueueStore.ts` for
-  the play-next / play-last actions 12f-1 just landed, and does **not** change it — if that
-  store needs a new action, this wave will say so rather than add one, since 12f-2 owns it.
-  Does not touch `features/search/`, `features/player/` or `features/podcasts/`.
+- **12e (context menus) — landed** at `bd11616`, reviewed with **no findings** and merged;
+  worktree and branch gone. It added `packages/ui/src/components/Menu.tsx` (a thin wrapper on
+  Mantine's `Menu.ContextMenu`) — worth knowing if 12d also reaches for a `packages/ui`
+  primitive. It did **not** touch `state/musicQueueStore.ts`: the new
+  `insertTrackNext`/`insertTrackLast` transforms live in `features/music/musicQueue.ts` and
+  install through `applyQueue`, so 12f-2 inherits no surprises there.
+  **Session `0e7913a4` now holds nothing.**
+- **12c (in-view search, artist/author pages)** — free. Still genuinely waiting on one
+  answer, and only one: whether a title already in the library should still be offered as
+  requestable. 12b-2's review raised it for Search and 12c raises it again for artist/author
+  pages, so deciding it twice, differently, is the thing to avoid. There is also no
+  `/series/:id` or `/author/:id` route yet, which is what makes it a wave rather than a tweak.
 - **12d (For You carousels)** — claimed by session `16f272ea`, 2026-08-07 ~17:58Z. Touches
   `apps/web/src/features/home/HomePage.tsx`, a new carousel component under
   `apps/web/src/features/home/`, `packages/ui/` only if a card primitive is genuinely

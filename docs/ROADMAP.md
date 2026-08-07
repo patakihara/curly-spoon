@@ -2130,6 +2130,33 @@ view does (`All / Music / Podcasts / Audiobooks`, per `01`–`04`).
 Long-press (Android, and touch on web) or right-click (web) on a song shows **at least**:
 Play next · Play last · Go to album · Go to artist.
 
+**12e (web) shipped 2026-08-07**, and came through review with no findings — the only wave
+this session that did. Right-click and touch long-press on a track row open a menu offering
+Play next, Play last, Go to album and Go to artist.
+
+**No pointer-event code was hand-rolled.** Mantine's `Menu.ContextMenu` already implements
+both gestures (`@mantine/hooks`' `useLongPress`, 500ms, timer armed on `touchstart` alone).
+`packages/ui/src/components/Menu.tsx` is a thin wrapper over it. Neither of this repo's two
+recorded Mantine traps applies: no `unstyled` prop, so `Dialog.tsx`'s permanent
+click-blocking overlay cannot recur, and Menu's open/close genuinely routes through Mantine's
+JS `Transition`, so `respectReducedMotion` does cover it — unlike `Skeleton`'s CSS shimmer.
+
+**`state/musicQueueStore.ts` was deliberately not touched** — the other session owned it
+mid-wave. The new `insertTrackNext`/`insertTrackLast` transforms live in
+`features/music/musicQueue.ts` and install through `applyQueue`, the store's own already-used
+write path. They bump `total`, which matters: without it a queue with unfetched pages would
+report `{ kind: 'none' }` from `advance` instead of `{ kind: 'needsFetch' }` and silently skip
+a real track. A unit test pins exactly that, and was confirmed to fail without the bump.
+
+**Play next / Play last refuse when no music queue is playing.** `queue === null` covers both
+"nothing playing" and "a book or podcast is playing", indistinguishable at that layer, and
+both report through a snackbar rather than risk replacing someone's audiobook.
+
+**Scope actually shipped: `MusicAlbumPage` only.** `MusicPlaylistPage` and
+`MusicFavoritesPage` have the same track-row shape and are a straightforward follow-up; they
+were a scope cut, not a blocker. No fifth menu item: "Go to lyrics" was the obvious candidate
+and there is no route for it — lyrics render inline in `NowPlaying` for the current track only.
+
 #### 12f — Queues are per content type
 
 **Each content type has its own queue; they never share one.** Switching from a podcast to a
