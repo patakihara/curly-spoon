@@ -2152,6 +2152,24 @@ the layout is visibly broken, and this wave's entire requirement is visual.
 you" until `GET /api/v1/libraries` resolves. What the rail should show before it knows which
 libraries exist is a design question, and 12d did not answer it.
 
+**A second finding, from actually looking at it rendered** rather than from the tests. The
+page was screenshotted at 390px, 834px and 1440px and compared against the reference images:
+the shape matches, the cards are visibly uniform across books, podcasts and albums, and
+nothing clips, overflows or scrolls horizontally at any width. But **at 1440px the
+quick-pick grid and the carousels stay locked to a roughly mobile-width column**, ending
+around x≈935 and leaving a large empty gap before the Now Playing rail. Nothing is broken —
+it reads as sparse rather than distorted — but "the web app includes desktop, and must be a
+real desktop experience" is an explicit product requirement, not an afterthought, so this is
+worth fixing rather than filing as taste.
+
+It is deliberately **not** fixed here. Widening the content column touches the shell's own
+layout, which is shared with every other destination, so it belongs with 12a's open rail
+question in one pass over the desktop shell rather than as a change made from inside the For
+You view.
+
+Worth repeating as method: the automated suite passed completely and the code review said
+merge as-is, and neither surfaced this. It took rendering the page and looking at it.
+
 #### 12e — Context menus
 
 Long-press (Android, and touch on web) or right-click (web) on a song shows **at least**:
