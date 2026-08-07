@@ -79,6 +79,24 @@ const podcastDetailRoute = createRoute({
   errorComponent: RouteErrorBoundary,
 });
 
+// A series' own page (docs/agent-specs/04-phase12c1…) — reached from a Search
+// "Series" result, which previously had nowhere to send a click.
+const seriesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/series/$seriesId',
+  component: lazyRouteComponent(() => import('../features/series/SeriesPage.js'), 'SeriesPage'),
+  errorComponent: RouteErrorBoundary,
+});
+
+// An author's own page — same reasoning as `seriesRoute` above, for a Search
+// "Authors" result.
+const authorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/author/$authorId',
+  component: lazyRouteComponent(() => import('../features/author/AuthorPage.js'), 'AuthorPage'),
+  errorComponent: RouteErrorBoundary,
+});
+
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/search',
@@ -246,6 +264,8 @@ export const routeTree = rootRoute.addChildren([
   musicPlaylistsRoute,
   musicPlaylistRoute,
   musicRequestsRoute,
+  seriesRoute,
+  authorRoute,
   searchRoute,
   settingsRoute,
   setupRoute,

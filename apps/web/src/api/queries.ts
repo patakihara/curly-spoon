@@ -31,7 +31,9 @@ export const queryKeys = {
   libraryItems: (libraryId: string, page: number) =>
     ['libraries', libraryId, 'items', page] as const,
   librarySearch: (libraryId: string, q: string) => ['libraries', libraryId, 'search', q] as const,
+  librarySeries: (libraryId: string) => ['libraries', libraryId, 'series'] as const,
   item: (itemId: string) => ['items', itemId] as const,
+  author: (authorId: string) => ['authors', authorId] as const,
   requests: (status?: RequestStatus) => ['requests', status ?? 'all'] as const,
   requestSearch: (term: string, author: string) => ['requests', 'search', term, author] as const,
   providers: ['providers'] as const,
@@ -183,6 +185,34 @@ export function useMyProgressQuery() {
   return useQuery({
     queryKey: queryKeys.myProgress,
     queryFn: ({ signal }) => api.getMyProgress(signal),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * The full series list for a library — `SeriesPage`'s only fetch, since there is no
+ * per-id series route on the BFF (see `ApiClient.getLibrarySeries`'s own doc comment).
+ * `enabled` gates on `libraryId` being resolved yet, the same pattern
+ * `useLibrarySearchQuery` below already uses.
+ */
+export function useLibrarySeriesQuery(libraryId: string | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.librarySeries(libraryId ?? ''),
+    queryFn: ({ signal }) => api.getLibrarySeries(libraryId!, signal),
+    enabled: Boolean(libraryId),
+    staleTime: 30_000,
+  });
+}
+
+/** An author's own page — `AuthorPage`'s source of truth. Not library-scoped
+ * (see `ApiClient.getAuthor`'s own doc comment), so unlike
+ * `useLibrarySeriesQuery` this needs no library id and no `enabled` gate. */
+export function useAuthorQuery(authorId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.author(authorId),
+    queryFn: ({ signal }) => api.getAuthor(authorId, signal),
     staleTime: 30_000,
   });
 }

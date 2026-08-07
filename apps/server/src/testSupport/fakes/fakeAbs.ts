@@ -137,6 +137,8 @@ const AUDIO_FILES: Record<string, { size: number; mimeType: string }> = {
   'file-dune-1': { size: 6300, mimeType: 'audio/mp4' },
   'file-dune-2': { size: 6300, mimeType: 'audio/mp4' },
   'file-fellowship-1': { size: 7200, mimeType: 'audio/mp4' },
+  'file-twotowers-1': { size: 7500, mimeType: 'audio/mp4' },
+  'file-return-1': { size: 7800, mimeType: 'audio/mp4' },
   'file-hobbit-1': { size: 6600, mimeType: 'audio/mp4' },
   'file-dailytech-ep1': { size: 3000, mimeType: 'audio/mpeg' },
   'file-dailytech-ep2': { size: 3600, mimeType: 'audio/mpeg' },
@@ -449,6 +451,36 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
         }
         return json(body);
       }
+    }
+
+    // /api/authors/:id?include=items — global (not library-scoped), mirroring
+    // real Audiobookshelf's `AuthorController.findOne`. `authorsFixture` only
+    // carries the summary rows (no book membership), so this looks up the
+    // author's books the same way the real server does: filter the *full*
+    // (non-minified) book catalog by `media.metadata.authors[].id`, then
+    // minify each match — `getForAuthor` + `toOldJSONMinified()` in source.
+    if (parts[0] === 'api' && parts[1] === 'authors' && parts[2] && parts.length === 3) {
+      const authorId = parts[2];
+      const allAuthors = Object.values(authorsFixture as Record<string, JsonRecord[]>).flat();
+      const author = allAuthors.find((a) => a.id === authorId);
+      if (!author || method !== 'GET') return notFound();
+
+      const include = (url.searchParams.get('include') ?? '').split(',');
+      const result: JsonRecord = {
+        id: author.id,
+        name: author.name,
+        description: author.description,
+        imagePath: author.imagePath,
+      };
+      if (include.includes('items')) {
+        const books = (booksFixture as JsonRecord[]).filter((item) => {
+          const metadata = (item.media as JsonRecord).metadata as JsonRecord;
+          const authors = (metadata.authors as Array<{ id: string }> | undefined) ?? [];
+          return authors.some((a) => a.id === authorId);
+        });
+        result.libraryItems = books.map(stripToMinified);
+      }
+      return json(result);
     }
 
     // /api/items/:id...

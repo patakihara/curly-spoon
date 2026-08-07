@@ -2169,8 +2169,8 @@ column that was the right size all along. Confirmed by measurement and by stashi
 check that only the tile assertion regressed. A shell-width change would have left the page
 pixel-identical.
 
-Worth keeping as method: *a gap next to content is not evidence that the container is too
-small.* Measure the container before assuming it is the thing at fault — the wave for this
+Worth keeping as method: _a gap next to content is not evidence that the container is too
+small._ Measure the container before assuming it is the thing at fault — the wave for this
 was dispatched on the container theory and only avoided building the wrong fix because the
 agent measured first.
 

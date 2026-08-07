@@ -189,6 +189,18 @@ export interface LibraryItemsPage {
   page: number | null;
 }
 
+/** `GET /authors/:id` — an author's own page: their name plus every book of
+ * theirs already scoped server-side by Audiobookshelf (`AbsClient.getAuthor`'s
+ * own doc comment has the source trace). `AuthorPage.tsx` renders this
+ * directly; there's no client-side author matching involved. */
+export interface AuthorBooks {
+  id: string;
+  name: string;
+  description: string | null;
+  imagePath: string | null;
+  books: LibraryItem[];
+}
+
 /** Narrowed to what the Search view actually renders — the BFF's full series/author
  * shape (`packages/abs-client`'s `Series`/`Author`) carries description, cover image
  * and book-membership fields this client has no page to send either result to yet

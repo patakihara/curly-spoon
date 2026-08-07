@@ -19,6 +19,7 @@ import {
   rawCollectionsResponseSchema,
   rawPlaylistsResponseSchema,
   rawAuthorsResponseSchema,
+  rawAuthorDetailSchema,
   rawFilterDataSchema,
   rawSearchResponseSchema,
   rawLibraryItemSchema,
@@ -39,6 +40,7 @@ import {
   normalizeSeries,
   normalizeCollection,
   normalizeAuthor,
+  normalizeAuthorDetail,
   normalizeFilterData,
   normalizeSearchResults,
   normalizePlaybackSession,
@@ -56,6 +58,7 @@ import type {
   Collection,
   Playlist,
   Author,
+  AuthorDetail,
   FilterData,
   SearchResults,
   PlaybackSession,
@@ -300,6 +303,31 @@ export class AbsClient {
       { schema: rawAuthorsResponseSchema },
     );
     return raw.authors.map(normalizeAuthor);
+  }
+
+  /**
+   * `GET /authors/:id?include=items` — an author's own real page: their name plus
+   * every book of theirs in the library, resolved server-side by Audiobookshelf
+   * itself. Source-derived from `v2.36.0`'s `AuthorController.findOne`
+   * (`docs/INTEGRATIONS.md` has the full trace), not live-verified — no
+   * Audiobookshelf credential is available to this session.
+   *
+   * Deliberately *not* `getLibraryAuthors` plus a client-side match on
+   * `Book.authors[].id`: minified items (every list/shelf/browse response) never
+   * carry a real author id in that field, only a fallback entry whose `id` is the
+   * author's *name* (see the trap documented on `domain.ts`'s header comment) — a
+   * match against a real author id can never succeed. This method replaces that
+   * broken matching entirely rather than working around it.
+   *
+   * An unknown author id 404s upstream; `AbsError.notFound` propagates through
+   * unchanged, so callers get a real not-found signal instead of an empty list.
+   */
+  async getAuthor(authorId: string): Promise<AuthorDetail> {
+    const raw = await this.http.requestJson(`/api/authors/${encodeURIComponent(authorId)}`, {
+      schema: rawAuthorDetailSchema,
+      query: { include: 'items' },
+    });
+    return normalizeAuthorDetail(raw);
   }
 
   async getLibraryFilterData(libraryId: string): Promise<FilterData> {
