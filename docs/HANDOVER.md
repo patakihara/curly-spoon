@@ -419,9 +419,13 @@ persistent-shell requirement **is** the Android design audit's "no persistent na
 shell", and unified search **is** the audit's open question about Android's music-only
 search — the user has now answered it.
 
-**The next spec is written and parked**: `docs/agent-specs/01-phase12b-web-search-view.md`
-is wave 12b (the web Search view, absorbing requests), ready to launch once 12a has merged.
-Reset the agent to the branch tip at launch, not to any sha in the file.
+**12a (web) has shipped** — the five-destination shell is on `main`. **The next two specs
+are written and parked**: `docs/agent-specs/01-phase12b1-web-search-filters.md` (the Search
+view's two chip rows and grouped results) and `02-phase12b2-web-search-requests.md` (library
+vs requestable separation, and requesting from Search). Run them **in sequence** — 12b-2
+builds on 12b-1's view. Split in two deliberately: agent cost is quadratic in turns, and 12a
+as a single agent ran 236k tokens. Fill the reset sha in from `git log --oneline origin/main -1`
+at launch; the files carry a placeholder, not a sha.
 
 ### Phase 11 is unblocked — the user chose a self-hosted repo (2026-08-06)
 
