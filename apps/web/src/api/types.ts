@@ -189,9 +189,25 @@ export interface LibraryItemsPage {
   page: number | null;
 }
 
+/** Narrowed to what the Search view actually renders — the BFF's full series/author
+ * shape (`packages/abs-client`'s `Series`/`Author`) carries description, cover image
+ * and book-membership fields this client has no page to send either result to yet
+ * (docs/ROADMAP.md §12b: neither has a detail route in this app). */
+export interface SearchSeriesResult {
+  id: string;
+  name: string;
+}
+
+export interface SearchAuthorResult {
+  id: string;
+  name: string;
+}
+
 export interface SearchResults {
   books: LibraryItem[];
   podcasts: LibraryItem[];
+  series: SearchSeriesResult[];
+  authors: SearchAuthorResult[];
 }
 
 // ---------------------------------------------------------------------

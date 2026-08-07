@@ -144,6 +144,14 @@ html body {
   width: 100%;
 }
 
+/* Search results (docs/ROADMAP.md §12b): a plain vertical stack of
+ * `ListItem` rows, not a grid — the spec calls for a list, and each section
+ * already has its own heading, so extra columns add nothing. */
+.auralis-result-list {
+  display: flex;
+  flex-direction: column;
+}
+
 /*
  * `flex-wrap: wrap` (the audit's own recommendation): the default `nowrap`
  * let a long title/byline push `body.scrollWidth` past the viewport at 390px
