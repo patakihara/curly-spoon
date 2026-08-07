@@ -245,20 +245,21 @@ Treat these as standing instructions, not one-off remarks.
 
 ## 2. Where the project is
 
-| Phase | What                                                    | Status  |
-| ----- | ------------------------------------------------------- | ------- |
-| 1     | Monorepo, tooling, CI, test harness                     | done    |
-| 2     | `@auralis/ui` — Material 3 Expressive design system     | done    |
-| 3     | BFF + Audiobookshelf client                             | done    |
-| 4     | Web shell + Docker image                                | done    |
-| 5     | Audiobooks experience + player                          | done    |
-| 5a    | Android build skeleton + APK pipeline                   | done    |
-| 6     | Book requests                                           | done    |
-| 7     | Android — audiobooks, requests, Auto, offline downloads | done    |
-| 8     | Podcasts — backend, web, Android                        | done    |
-| 9     | Music — Jellyfin, lyrics, requests (web + Android)      | done    |
-| 10    | Release polish — perf budgets, a11y audit               | done    |
-| 11    | F-Droid / Droid-ify distribution                        | blocked |
+| Phase | What                                                        | Status |
+| ----- | ----------------------------------------------------------- | ------ |
+| 1     | Monorepo, tooling, CI, test harness                         | done   |
+| 2     | `@auralis/ui` — Material 3 Expressive design system         | done   |
+| 3     | BFF + Audiobookshelf client                                 | done   |
+| 4     | Web shell + Docker image                                    | done   |
+| 5     | Audiobooks experience + player                              | done   |
+| 5a    | Android build skeleton + APK pipeline                       | done   |
+| 6     | Book requests                                               | done   |
+| 7     | Android — audiobooks, requests, Auto, offline downloads     | done   |
+| 8     | Podcasts — backend, web, Android                            | done   |
+| 9     | Music — Jellyfin, lyrics, requests (web + Android)          | done   |
+| 10    | Release polish — perf budgets, a11y audit                   | done   |
+| 11    | F-Droid / Droid-ify distribution                            | todo   |
+| 12    | Spec addendum — five views, unified search, per-type queues | todo   |
 
 The phase5/phase6 worktrees mentioned in earlier drafts of this file are gone — this repo
 now lives directly in `~/src/auralis-src`'s own checkout, per that project's own `CLAUDE.md`
@@ -364,7 +365,39 @@ problem.
 Closing these is real feature work on a surface nobody here can look at. It wants a session
 with a device or emulator, not another blind wave.
 
-### Phase 11 is blocked on a decision only the user can make (2026-08-06)
+### The user clarified the product spec, and it supersedes shipped work (2026-08-06)
+
+An addendum arrived through the task queue (`dd2397e`, `72c7211`, `d8bde0d`) and is written
+up in full as **`docs/ROADMAP.md` §12**, with the user's four reference screenshots checked
+in at `docs/research/spec-addendum/`. Read it before touching navigation, search, the home
+screen or the queue — it contradicts parts of phases 4, 8, 9 and 10 that are marked done.
+
+The short version: **five nav destinations** (For you, Music, Books, Podcasts, Search) in a
+persistent shell; **Search doubles as the requests view**, with content-type chips that
+reveal a second row of type-specific filters, library and requestable results clearly
+separated; **artist/author pages show the full discography** with non-library items greyed
+out and requestable, behind a setting; **For You is uniform album-card carousels** below the
+quick-selection grid, nothing else; **context menus** on long-press/right-click; and **one
+queue per content type**, clearable, with audiobook chapters queueable.
+
+Two of these merge with findings already recorded here rather than adding to them: the
+persistent-shell requirement **is** the Android design audit's "no persistent navigation
+shell", and unified search **is** the audit's open question about Android's music-only
+search — the user has now answered it.
+
+### Phase 11 is unblocked — the user chose a self-hosted repo (2026-08-06)
+
+`019f22b`: _"we will not violate IzzyOnDroid's anti-AI policy. We won't submit the app there.
+I'll just add it as a custom repo to my droidify. Please figure out what is needed for that
+instead; my assumption is that we need a 'releases' page on github, but I don't know what
+else."_
+
+So the route is **our own F-Droid repository**, and the section below records only why
+IzzyOnDroid is closed. `docs/research/FDROID_DISTRIBUTION.md` §2 and §5 are the working
+spec now. The two irreversible decisions it names — release signing key and `applicationId`
+— are still the user's, and still unmade.
+
+#### Why IzzyOnDroid is closed — the investigation that produced that decision
 
 The investigation landed (`docs/research/FDROID_DISTRIBUTION.md`, merged `d40a515`,
 recorded in `ROADMAP.md` §11). It is research; nothing was built and neither irreversible

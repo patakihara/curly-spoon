@@ -3,20 +3,21 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status  |
-| --- | --------------------------------------------------------------- | ------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done    |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done    |
-| 3   | Server BFF core + Audiobookshelf client                         | done    |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done    |
-| 5   | Audiobooks experience + player                                  | done    |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done    |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done    |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done    |
-| 8   | Podcast client (web + Android)                                  | done    |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done    |
-| 10  | Release polish — performance budgets, a11y audit                | done    |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | blocked |
+| #   | Phase                                                           | Status |
+| --- | --------------------------------------------------------------- | ------ |
+| 1   | Monorepo foundations, tooling, CI, test harness                 | done   |
+| 2   | `@auralis/ui` — Material 3 Expressive design system             | done   |
+| 3   | Server BFF core + Audiobookshelf client                         | done   |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done   |
+| 5   | Audiobooks experience + player                                  | done   |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done   |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done   |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done   |
+| 8   | Podcast client (web + Android)                                  | done   |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done   |
+| 10  | Release polish — performance budgets, a11y audit                | done   |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | todo   |
+| 12  | **Spec addendum** — five views, unified search, per-type queues | todo   |
 
 ### Why Android sits at 7 rather than last
 
@@ -1880,9 +1881,16 @@ not a rule about spam submissions. Auralis was written almost entirely by Claude
 a plain reading it is exactly what the policy excludes. IzzyOnDroid was the recommended first
 route precisely because it is the cheap one that is enabled by default in most Droid-ify installs;
 if it is closed, the recommendation collapses to "own repo, or official F-Droid, or neither."
-**This is the user's call and nobody else's** — whether to ask IzzyOnDroid rather than assume,
-whether to disclose, whether to go straight to a self-hosted repo, or whether sideloading the CI
-APK is simply good enough. Do not resolve it by inference.
+**The user has since decided, and the phase is no longer blocked (2026-08-06, queue entry
+`019f22b`):** _"we will not violate IzzyOnDroid's anti-AI policy. We won't submit the app
+there. I'll just add it as a custom repo to my droidify."_ So the route is **our own F-Droid
+repository**, added to Droid-ify by URL. IzzyOnDroid and official F-Droid are both out of
+scope; the paragraphs above are the record of why, not an open question.
+
+Two decisions remain the user's and are still unmade: the **release signing key** (where the
+keystore lives, who holds it) and the **`applicationId`**. Both are one-way doors — F-Droid
+identifies an app by package name plus signature — so nothing generates a key on the user's
+behalf. Everything that does not depend on them can proceed.
 
 Findings that stand independently of that decision:
 
@@ -1907,3 +1915,109 @@ Findings that stand independently of that decision:
   `AllowedAPKSigningKeys`/`Binaries` mechanism lets a project ship its own signed binaries
   verified against an F-Droid-built one. That is less disruptive to our Gradle config than the
   phase description above assumed.
+
+---
+
+## Spec addendum — navigation, search-as-requests, For You, and queues (2026-08-06)
+
+**This is the user's own clarification of the product, given after phases 4–10 were marked
+done. It supersedes parts of them.** Where a section above describes a shipped surface that
+this addendum contradicts, the addendum is the spec and the section above is the record of
+what was built. Phase 12 is the work of closing that gap; nothing here is optional, and none
+of it is a question.
+
+The four reference screenshots the user attached are checked into
+`docs/research/spec-addendum/` — they are Spotify's Home screen under its `All`, `Music` and
+`Podcasts` filters. Read them rather than inferring from this prose; a written description of
+a layout defaults to a generic one.
+
+### 12 — Product-spec addendum: five views, unified search, per-type queues
+
+| Area                                                    | Status |
+| ------------------------------------------------------- | ------ |
+| 12a — Five-view navigation shell (web + Android)        | todo   |
+| 12b — Search view: unified library + request results    | todo   |
+| 12c — In-view search and artist/author full discography | todo   |
+| 12d — For You: uniform album-card carousels             | todo   |
+| 12e — Context menus (long-press / right-click)          | todo   |
+| 12f — Per-content-type queues                           | todo   |
+
+#### 12a — The five views
+
+The nav bar (phone) and side bar (desktop/tablet) expose exactly five destinations:
+**For you, Music, Books, Podcasts, Search.**
+
+- In the **side bar**, Search sits at the **top**, rendered as a search _bar_ rather than a
+  nav item.
+- In the **nav bar**, Search sits on the **far right**.
+
+This is a persistent shell: the navigation and the mini player stay put across every
+destination. **On Android that shell does not exist at all today** — all sixteen screens are
+independent `Scaffold`s and `MiniPlayerBar` is wired into `HomeScreen` alone, so playback UI
+vanishes on any navigation. That finding (`docs/research/ANDROID_DESIGN_AUDIT.md`, phase 10)
+and this requirement are **one piece of work, not two**.
+
+#### 12b — Search doubles as the requests view
+
+There is no separate requests destination. Search _is_ the requests surface, and the same
+query returns both.
+
+- **Chips at the top filter by content type.** Selecting one reveals a second row of
+  type-specific filters: `Music` → All / Songs / Albums / Artists; `Books` → All / Books /
+  Series / Authors.
+- **With no filter selected**, every kind of result shows, grouped by content type and sorted
+  by relevance, as a list.
+- **Library items and requestable items are visually and clearly separated.** Pressing a
+  requestable item requests it.
+
+This supersedes the shipped web `/requests` and `/music/requests` pages as the _primary_
+entry point, and supersedes Android's music-only search entirely.
+
+#### 12c — In-view search, and artist/author pages
+
+Each content view (Music, Books, Podcasts) has its own search icon. That search covers the
+**library only** — it is not the unified search of 12b.
+
+**Artist and author pages show the artist's whole discography**, not just what is in the
+library. Content that is not in the library renders **greyed out**, and pressing it requests
+it. This is behind a setting: **"Show non-library content in artist/author pages."**
+
+#### 12d — For You
+
+The **quick-selection grid** at the top of the view — the two-column rows of small thumbnail
+plus title, as in `01-for-you.jpg` — is correct as a shape and stays.
+
+**Everything below it must be album-card carousels, all of the same card size.** The
+reference screenshots show Spotify doing the opposite (`04-for-you.jpg`: a four-column icon
+grid for shows, then full-width episode cards) and that is explicitly what the user does not
+want. One card geometry, one carousel pattern, repeated.
+
+For You mixes content types, and **carries the same content-type filter chips** the Search
+view does (`All / Music / Podcasts / Audiobooks`, per `01`–`04`).
+
+#### 12e — Context menus
+
+Long-press (Android, and touch on web) or right-click (web) on a song shows **at least**:
+Play next · Play last · Go to album · Go to artist.
+
+#### 12f — Queues are per content type
+
+**Each content type has its own queue; they never share one.** Switching from a podcast to a
+song and back to the same podcast does **not** clear the podcast queue. The reverse is not
+guaranteed — song queues are ephemeral and may be discarded.
+
+The queue view must be able to **clear the queue, for every content type**.
+
+**Audiobook chapters must be queueable.**
+
+### What this addendum changes about phases already marked done
+
+Recorded here rather than by editing those sections, so the history stays readable:
+
+- **§4 (web shell)** — the shell's navigation is not the five destinations above.
+- **§8 / §9 (podcasts, music)** — search is per-type and separate from requests; this
+  addendum unifies them.
+- **§9 (music, Android)** — Android search is Jellyfin-music-only; 12b makes it unified.
+- **§10 (release polish)** — the Android design audit's "no persistent navigation shell" and
+  "no full Now Playing surface" findings are prerequisites of 12a, not separate polish.
+- **§7 / §9 player work** — the queue is currently one queue; 12f makes it one per type.
