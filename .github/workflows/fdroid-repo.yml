@@ -1,0 +1,249 @@
+# Publishes a self-hosted F-Droid repository to GitHub Pages on every release tag, so the
+# user can add it to Droid-ify as a custom repo — see `docs/FDROID_REPO.md` for what that
+# means and what the user has to do by hand first.
+#
+# Deliberately NOT IzzyOnDroid and NOT official F-Droid: `docs/HANDOVER.md`'s phase 11 entry
+# and `docs/research/FDROID_DISTRIBUTION.md` §8 record why IzzyOnDroid is closed (its
+# inclusion policy opposes AI-authored apps) and official F-Droid was never pursued. This is
+# a *binary* repo — it indexes the same debug-signed APK `android.yml`/`release.yml` already
+# build, it does not compile anything from source, and it needs no `Builds:` recipe.
+#
+# Separate from `release.yml` on purpose: `release.yml` (Docker image + GitHub Release) has
+# no dependency on the F-Droid repo signing key existing, and must keep working even before
+# the user has generated one. This workflow adds the repo-publishing step *only if* the
+# required secrets are present, and fails loudly rather than silently skipping when a tag is
+# pushed without them — see the `check-secrets` job below.
+name: F-Droid repo
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Same reasoning as `release.yml`'s `concurrency` block: a release is coupled to a repo
+# index someone's Droid-ify will actually sync against. No `cancel-in-progress` — cancelling
+# mid-publish could leave GitHub Pages serving a half-written index.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Same fork guard as `release.yml` — a fork's GITHUB_TOKEN can't deploy to this repo's
+  # Pages site or read its secrets regardless, but failing fast here gives a readable reason
+  # instead of a confusing permission error several minutes into the run.
+  guard-fork:
+    name: Refuse to run from a fork
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Confirm this is the upstream repo
+        run: |
+          if [ "${{ github.repository }}" != "patakihara/curly-spoon" ]; then
+            echo "::error::Refusing to run F-Droid repo publishing from a fork (${{ github.repository }})."
+            exit 1
+          fi
+
+  validate-version:
+    name: Validate the tag and derive versionCode
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [guard-fork]
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      version_code: ${{ steps.versioncode.outputs.version_code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need every tag for scripts/fdroid-versioncode.mjs's semver ordering
+
+      - name: Parse and validate the tag
+        id: parse
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          # Mirrors release.yml's validate-version job exactly, so a tag that release.yml
+          # would refuse never gets this far either — the two workflows fire on the same
+          # push and must agree on what counts as a real release.
+          if [[ ! "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$tag' is not a valid version (expected v<major>.<minor>.<patch>[-prerelease])."
+            exit 1
+          fi
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # `scripts/fdroid-versioncode-cli.mjs` wraps the tested `computeVersionCode` function
+      # from `scripts/fdroid-versioncode.mjs` — see that file's header for why versionCode is
+      # a semver-sorted tag count, not the semver number itself. `git tag --list 'v*'`
+      # unquoted below is deliberate: it word-splits into separate CLI arguments, which is
+      # exactly what the CLI expects and is safe here since every real tag name is
+      # already constrained to `v<digits>.<digits>.<digits>[-...]` with no whitespace.
+      - name: Derive versionCode from the full tag history
+        id: versioncode
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version_code="$(node scripts/fdroid-versioncode-cli.mjs "$tag" $(git tag --list 'v*'))"
+          if ! [[ "$version_code" =~ ^[0-9]+$ ]]; then
+            echo "::error::Failed to derive a versionCode for tag '$tag'."
+            exit 1
+          fi
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+
+  # Fails loudly, before any build or checkout of significant work, if the repo signing key
+  # the user must generate and store by hand (docs/FDROID_REPO.md, step 1) is missing. A
+  # silent skip here would be worse than a hard failure: a pushed release tag would look
+  # successful (release.yml still runs) while the F-Droid repo silently stops updating,
+  # and Droid-ify would keep serving a stale index with no error visible anywhere.
+  check-secrets:
+    name: Verify the repo signing secrets are configured
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [guard-fork]
+    steps:
+      - name: Check required secrets
+        run: |
+          missing=()
+          [ -z "${{ secrets.FDROID_REPO_KEYSTORE_BASE64 }}" ] && missing+=("FDROID_REPO_KEYSTORE_BASE64")
+          [ -z "${{ secrets.FDROID_REPO_KEYSTORE_PASSWORD }}" ] && missing+=("FDROID_REPO_KEYSTORE_PASSWORD")
+          [ -z "${{ secrets.FDROID_REPO_KEY_ALIAS }}" ] && missing+=("FDROID_REPO_KEY_ALIAS")
+          [ -z "${{ secrets.FDROID_REPO_KEY_PASSWORD }}" ] && missing+=("FDROID_REPO_KEY_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::F-Droid repo publishing is not configured. Missing secret(s): ${missing[*]}."
+            echo "::error::See docs/FDROID_REPO.md for how to generate the repo signing key and add these secrets. Nothing was published."
+            exit 1
+          fi
+
+  build-android:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [validate-version, check-secrets]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Same debug-signed build android.yml/release.yml already produce, but stamped with
+      # the release's own versionCode/versionName rather than the hardcoded 1/0.1.0 a plain
+      # `assembleDebug` would use — see build.gradle.kts's `releaseVersionCode`/
+      # `releaseVersionName` properties. Still debug-signed: this repo has no release
+      # keystore (docs/research/FDROID_DISTRIBUTION.md §5 is why that's still an open,
+      # deliberately-undecided question), so every install from this repo is, for now, the
+      # same debug-signed artifact a sideloaded CI APK already is.
+      - name: Build versioned debug APK
+        working-directory: apps/android
+        run: |
+          ./gradlew assembleDebug \
+            -PauralisVersionCode=${{ needs.validate-version.outputs.version_code }} \
+            -PauralisVersionName=${{ needs.validate-version.outputs.version }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-apk
+          path: apps/android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
+  publish-repo:
+    name: Build and publish the F-Droid repo index
+    runs-on: ubuntu-latest
+    needs: [validate-version, build-android]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # changelog step below diffs against the previous tag
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fdroid-apk
+          path: apk/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install fdroidserver
+        run: pip install fdroidserver
+
+      - name: Assemble the fdroidserver working directory
+        run: |
+          mkdir -p fdroid-repo/repo
+          cp apk/*.apk fdroid-repo/repo/
+          cp -r metadata fdroid-repo/metadata
+
+      - name: Decode the repo signing keystore
+        run: |
+          echo "${{ secrets.FDROID_REPO_KEYSTORE_BASE64 }}" | base64 -d > fdroid-repo/keystore.p12
+
+      - name: Write fdroidserver config
+        working-directory: fdroid-repo
+        run: |
+          cat > config.yml <<EOF
+          repo_url: "https://patakihara.github.io/curly-spoon/repo"
+          repo_name: "Auralis"
+          repo_description: >
+            Self-hosted F-Droid repository for Auralis — a Material 3 Expressive
+            audiobook, podcast and music client. See
+            https://github.com/patakihara/curly-spoon/blob/main/docs/FDROID_REPO.md.
+          repo_keyalias: "${{ secrets.FDROID_REPO_KEY_ALIAS }}"
+          keystore: "keystore.p12"
+          keystorepass: "${{ secrets.FDROID_REPO_KEYSTORE_PASSWORD }}"
+          keypass: "${{ secrets.FDROID_REPO_KEY_PASSWORD }}"
+          make_current_version_link: false
+          EOF
+
+      - name: Write this release's changelog entry
+        run: |
+          tag="${{ github.ref_name }}"
+          prev_tag="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
+          mkdir -p fdroid-repo/metadata/en-US/changelogs
+          out="fdroid-repo/metadata/en-US/changelogs/${{ needs.validate-version.outputs.version_code }}.txt"
+          if [ -z "$prev_tag" ]; then
+            echo "First release." > "$out"
+          else
+            git log --pretty='format:- %s' "${prev_tag}..${tag}" >> "$out"
+          fi
+          # Fastlane/F-Droid changelog convention caps entries at 500 characters (see
+          # docs/research/FDROID_DISTRIBUTION.md §6) — truncate rather than let a large
+          # release produce a file the client won't render in full anyway.
+          head -c 500 "$out" > "$out.trunc" && mv "$out.trunc" "$out"
+
+      - name: Build the repo index
+        working-directory: fdroid-repo
+        run: fdroid update --verbose
+
+      - name: Print the repo signing key fingerprint
+        run: |
+          # Same certificate `fdroid update` just signed the index with — this is the value
+          # that belongs in Droid-ify's `?fingerprint=` field. Printed on every run (not just
+          # the first) so it's always easy to find in the workflow log without keeping a
+          # separate copy in sync.
+          keytool -list -v -keystore fdroid-repo/keystore.p12 -storetype PKCS12 \
+            -storepass "${{ secrets.FDROID_REPO_KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.FDROID_REPO_KEY_ALIAS }}" 2>/dev/null | grep -A1 "SHA256:"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: fdroid-repo/repo
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
