@@ -1319,8 +1319,17 @@ on three consecutive runs and nobody would have noticed: `concurrency.cancel-in-
 is coupled to a live deployment — mediaserver auto-updates from `:latest`. Under back-to-back
 pushes the registry silently stops updating while every run still reports green, because the
 cancelled jobs are not the ones anyone reads. `arm64` widened the window sharply, since the
-emulated build made `publish` by far the longest job here. `main` now queues rather than
-cancels; every other branch is unchanged. **The general shape is worth remembering: a job
+emulated build made `publish` by far the longest job here. `main` now protects a _running_ job; every other branch is unchanged.
+**Corrected 2026-08-07 — "queues rather than cancels" was too strong.** A _pending_ run is
+still cancelled: GitHub keeps at most one queued run per concurrency group, and "any existing
+`pending` job or workflow in the same concurrency group will be canceled and the new queued job
+or workflow will take its place" regardless of `cancel-in-progress`
+(<https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency>).
+Observed here: run `31190701266` on `main` went pending → cancelled with zero jobs when the next
+push arrived. That is harmless — the superseding run builds a superset of the same code, so
+`:latest` still ends up current — and the hazard the fix was written for, a _running_ `publish`
+being killed mid-deploy, is genuinely closed. But do not read a cancelled run on `main` as a
+regression of this fix, and do not expect true queueing; Actions does not offer it. **The general shape is worth remembering: a job
 coupled to a deployment must not be cancellable by the next push, and a cancelled job is not a
 failed one, so nothing in the UI calls it out.**
 
