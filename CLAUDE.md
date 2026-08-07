@@ -177,6 +177,11 @@ of an extra spawn is a small constant; the quadratic is what dominates. Splittin
    agent's behalf. The instruction that prevents it is one line in the spec: _commit your work
    first, then run the suite, then amend or follow up with the result._ A draft commit is
    free; a lost wave is not.
+
+   **The instruction helps but does not hold.** Of the two agents dispatched with it stated
+   verbatim in their specs, one complied and one backgrounded a run and stopped anyway. So
+   rule 8 is the load-bearing one: the spec-side instruction lowers the frequency, the
+   orchestrator-side check is what actually prevents the loss.
 8. **Assume an agent may die at any point and check its worktree yourself.** `SubagentStop`
    is not proof of completion — the agent's own final message can be unrelated to its task.
    Read `git -C <worktree> status --short` and `git log --oneline -1` before believing any
