@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T20:41:18Z` · `a1fe3079f7d9ab8a7` · general-purpose · ended · **Verdict: merge as-is.** Reviewed all eight files in the diff ('9db833b..worktree-agent-aa742f68e3b1172b9', commits 'cc494dd'/'d270559') plus the tw…
-- `2026-08-07T21:11:20Z` · `ae4ce333f6eb9e0eb` · general-purpose · ended · Clean tree, everything committed at '2eacc68'. Work is complete for this wave. ## Report **Branch/commit:** 'worktree-agent-ae4ce333f6eb9e0eb' at '2e…
 - `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
 - `2026-08-07T21:44:44Z` · `a3acefbcb5f4b4419` · general-purpose · ended · Clean working tree, on branch 'worktree-agent-a3acefbcb5f4b4419' at commit '2f327c4', based on '91663b6'. Not pushed, as instructed. ## Report **Bran…
 - `2026-08-07T22:05:52Z` · `aa590b527eef7f0d1` · general-purpose · ended · Confirmed — the mutation paths ('requestRelease'/'updateReleaseState'/'requestAnyway'/'updateTitleRequestState'/'requestCandidate'/'updateCandidateSt…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T22:44:16Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · Flagging an important complication from a mistaken tool call on my part. Earlier, while researching track types, I sent a stray follow-up 'Agent' cal…
 - `2026-08-07T22:54:58Z` · `a1ac0127d315ceb00` · general-purpose · ended · Committed at '738c28c' on branch 'worktree-agent-a1ac0127d315ceb00', based on 'dc4ec6c'. **Report** - **Single shared cause, confirmed by exact prece…
 - `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · ended · Committed on the worktree branch, not pushed, as instructed. ## Report **Branch/commit:** 'worktree-agent-afb619fd719a4b9b3' at '69e69bf', based on '…
+- `2026-08-07T23:18:17Z` · `a84176025894b086a` · general-purpose · ended · Clean tree, everything committed. ## Report **Branch/commits:** 'worktree-agent-a84176025894b086a', 'aad6bce' (implementation) + '54cf683' (test clea…
+- `2026-08-07T23:35:14Z` · `adf013230a4368e95` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -351,7 +351,56 @@ A lightweight lock, because two sessions share this checkout. Claim a wave here 
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
 nothing on `main` is stale — take it.
 
-**Claimed — 2026-08-08 ~02:30Z, session `1b29a583`: 12e (Android), context menus.**
+**Landed with a known defect — 2026-08-08 ~02:55Z, session `1b29a583`: 12e (Android).** `aad6bce`
+/`54cf683`. Long-press context menus on all three music track-row screens. **`Go to album` and
+`Go to artist` work. `Play next` and `Play last` currently report success and do nothing** — a fix
+is in flight; see the section below. Claim released.
+
+Android had **no** `combinedClickable`, `onLongClick` or `DropdownMenu` anywhere before this, so the
+gesture layer is new rather than ported. The three screens shared no row composable — each had its
+own private one — so `features/music/TrackContextMenu.kt` is the new shared primitive.
+
+**The artist-id question was resolved per screen, correctly and differently:**
+
+- **Album page**: "Go to artist" **works**. `AlbumDetailViewModel` already fetched the raw
+  `JellyfinAlbum` for favourite state, so it now also reads `artistId` into
+  `AlbumDetailUiState.Loaded.albumArtistId` — mirroring what `MusicAlbumPage.tsx` does on web.
+- **Playlist and favourites pages**: "Go to artist" is **omitted**. `JellyfinTrack` carries no
+  `artistId` and these lists are mixed-artist, so there is nothing correct to link to. **No fallback
+  to the album's artist was used**, which is the important part: that fallback is the recorded live
+  bug (`2c1b476` fixed Android's version) and inventing it here would have reintroduced it.
+- "Go to album" is per-track everywhere, from each row's own `albumId`.
+
+### `Play next` / `Play last` on Android write to a store nothing reads (2026-08-08)
+
+**A fourth instance of this project's most persistent failure class**, and the one with the most
+direct user impact so far: the action reports success and nothing is queued.
+
+`TrackContextMenu.kt`'s `enqueueMusicTrack()` inserts into `PlayerViewModel.musicQueue`, the
+`QueueStore<MusicQueueEntry>` from wave 12f. **Nothing consumes that store.** `musicQueue` is
+`setQueue(...)` exactly once, in `playQueue`, and nothing advances it or reads its cursor.
+`QueueRouter.kt`'s own doc comment states the reason plainly — *"there is never a music action for
+this router to take"* — because **on Android, Media3 owns the music queue**: cross-track advance runs
+on `MediaController`'s real playlist, not on any store this app keeps.
+
+So the music `QueueStore` was the wrong target from the start. 12f seeded it as a mirror and
+explicitly cut cursor-syncing as unverifiable without a device; 12e then treated the mirror as if it
+were authoritative. Neither wave was wrong in isolation — the gap is exactly at the seam between
+them, which is where "is this reachable from the running app?" has to be asked.
+
+**The fix in flight** redirects both actions to Media3: `addMediaItem(currentMediaItemIndex + 1, …)`
+for Play next, append for Play last, threaded through the `PlaybackHandle` abstraction so tests can
+observe the calls. It also has to correct the refusal guard, which currently asks
+`musicQueue.state.value == null` — the wrong question now; the real one is whether Media3 has a
+*music* playlist to insert into, since inserting a song into an audiobook's playlist would be worse
+than doing nothing.
+
+**Worth stating as a rule, given four instances:** on this project, a wave that adds a *writer* to a
+store must name its *reader*, in the spec and in the report. Three of the four instances were a
+writer with no reader (`installQueueRouter` uncalled, a cursor that made `advance()` a no-op, and
+this one), and every one of them passed its unit tests.
+
+
 
 Now genuinely unblocked: Play next / Play last had nothing to insert into until 12f's queues
 existed. Web shipped this design on all three track-row pages, so it is a mirror rather than a
