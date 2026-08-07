@@ -4,7 +4,7 @@
  * Playing region above that — all driven by the one `useBreakpoint` hook, never
  * a component-local media query.
  */
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
@@ -28,6 +28,7 @@ import { MiniPlayer } from '../features/player/MiniPlayer.js';
 import { NowPlaying } from '../features/player/NowPlaying.js';
 import { useAudioElement } from '../features/player/useAudioElement.js';
 import { useMediaSession } from '../features/player/useMediaSession.js';
+import { installQueueRouter } from '../features/player/queueRouter.js';
 import { useProgressSync } from '../features/player/useProgressSync.js';
 import { usePlayerStore } from '../state/playerStore.js';
 import { useUiStore } from '../state/uiStore.js';
@@ -69,6 +70,14 @@ export function Shell({ children }: { children: ReactNode }) {
   useAudioElement();
   useMediaSession();
   useProgressSync();
+  // Subscribes the queue router to `playerStore.currentItem` changes so the right
+  // content type's `onTrackEnded` handler is re-attached after every `load()` — see
+  // `queueRouter.ts`'s header for the bug this fixes. `installQueueRouter` is idempotent
+  // (a module-level guard no-ops a second call), but the subscription is still a side
+  // effect that belongs in an effect, not the render body.
+  useEffect(() => {
+    installQueueRouter();
+  }, []);
 
   const setupQuery = useSetupQuery();
   const audiobookshelfConfigured = setupQuery.data?.configured ?? false;

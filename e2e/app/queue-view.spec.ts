@@ -40,6 +40,23 @@ test.beforeEach(async ({ page }) => {
         this._auralisSrc = value;
       },
     });
+    // `useAudioElement.ts` creates its one shared element with `new Audio()` and never
+    // appends it to the document, so a page locator can't find it. Wrapping the global
+    // constructor captures the real instance the app actually plays through, onto
+    // `window.__auralisAudio`, so a test can dispatch a genuine `ended` Event at it — the
+    // same event `useAudioElement.ts`'s own `ended` listener reacts to in production, and
+    // the only way to prove `installQueueRouter`'s wiring end to end without a real decode
+    // (the fixture audio never completes one; see this file's own header).
+    const OriginalAudio = window.Audio;
+    function CapturingAudio(this: unknown, ...args: unknown[]) {
+      const el = new (OriginalAudio as unknown as { new (...a: unknown[]): HTMLAudioElement })(
+        ...args,
+      );
+      (window as unknown as { __auralisAudio?: HTMLAudioElement }).__auralisAudio = el;
+      return el;
+    }
+    CapturingAudio.prototype = OriginalAudio.prototype;
+    window.Audio = CapturingAudio as unknown as typeof Audio;
   });
 });
 
@@ -168,4 +185,50 @@ test('a chapter’s "Play next" inserts right after the cursor and "Play last" a
   await expect(page.getByTestId('now-playing').getByRole('heading', { level: 1 })).toHaveText(
     'Dune',
   );
+});
+
+test('a queued chapter auto-advances when the current one ends, even though starting playback from the item page never itself attaches the audiobook queue handler — proves installQueueRouter is actually wired into the running app', async ({
+  page,
+}) => {
+  // `ItemPage.tsx`'s `handlePlay` calls `playerStore.load()` and `.play()` but — unlike
+  // `MusicAlbumPage.tsx`/`MusicPlaylistPage.tsx`, which call `attachMusicQueueEndedHandler()`
+  // themselves right after `load()` — never calls `attachAudiobookQueueEndedHandler()`. So
+  // starting a book this way leaves `onTrackEnded` exactly however `load()` reset it (see
+  // that field's own doc comment), and the *only* thing that can attach the audiobook queue's
+  // handler here is `queueRouter.ts`'s `attachQueueForCurrentItem`, subscribed by
+  // `installQueueRouter()`. Deleting the `useEffect` this wave adds to `Shell.tsx` makes this
+  // test fail — a queued chapter would sit in the list forever, never advanced into — where a
+  // test that only spied on `installQueueRouter` would not.
+  await page.setViewportSize({ width: 900, height: 900 });
+
+  await startDune(page);
+  await page.getByTestId('mini-player-expand').click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+  await expect(page.getByTestId('queue-empty')).toBeVisible();
+
+  // Bootstraps a two-entry queue: chapter 1 becomes current (cursor 0), chapter 2 follows.
+  await page.getByTestId('chapter-play-next-1').click();
+  await page.getByTestId('chapter-play-last-2').click();
+
+  const list = page.getByTestId('queue-list');
+  await expect(list.locator('li')).toHaveCount(2);
+  await expect(list.locator('li').nth(0)).toContainText('Part One');
+  await expect(list.locator('li').nth(0).locator('[aria-current="true"]')).toBeVisible();
+
+  // Fire a genuine `ended` event at the real `<audio>` element the app is playing through.
+  // The queued chapter is for the *same* book that's already loaded, so
+  // `handleAudiobookQueueEnded` takes its seek-not-reload branch (`audiobookQueueController.ts`'s
+  // own header) — but it still only runs at all if something attached it to `onTrackEnded` in
+  // the first place, which nothing on this page's own code path does.
+  await page.evaluate(() => {
+    const audio = (window as unknown as { __auralisAudio?: HTMLAudioElement }).__auralisAudio;
+    audio?.dispatchEvent(new Event('ended'));
+  });
+
+  // The queue's cursor advanced: only chapter 2 remains, now marked current.
+  await expect(list.locator('li')).toHaveCount(1);
+  await expect(list.locator('li').nth(0)).toContainText('Part Two');
+  await expect(list.locator('li').nth(0).locator('[aria-current="true"]')).toBeVisible();
+  // Advancing into a same-book chapter seeks and resumes play, it doesn't stop playback.
+  await expect(page.getByTestId('player-play-toggle')).toHaveAttribute('aria-label', 'Pause');
 });
