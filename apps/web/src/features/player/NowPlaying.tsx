@@ -22,6 +22,7 @@ import { ChapterList } from './ChapterList.js';
 import { LyricsView } from './LyricsView.js';
 import { chapterAt, formatDuration, nextRate, trackAt } from './playback.js';
 import { formatRemaining, playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
+import { QueueView } from './QueueView.js';
 import { SleepTimerControl } from './SleepTimerControl.js';
 
 /** `aria-label` for the repeat control at each mode — see this file's own render for why a
@@ -197,6 +198,8 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
           </IconButton>
         </div>
       ) : null}
+
+      <QueueView />
 
       <div className="auralis-now-playing__rate">
         <IconButton
