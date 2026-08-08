@@ -366,15 +366,346 @@ compromise rather than the natural shape, and a listener-based version is the be
 anyone touches it. And no test exercises `QueueScreen.kt` itself; there is no Compose test
 harness in this project.
 
-**How to tell a claim is live rather than stale**, learned the same day: an empty
-`git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
-it is idle. Check the worktree's own `git status --short`, the mtimes on the files it is
-writing, and `pgrep -af chrome|node` before concluding a wave is free. Doing only the
-branch-log check is how the same feature gets built twice.
+A lightweight lock, because two sessions share this checkout. Claim a wave here **before**
+dispatching it, and delete the line when it lands. A claim older than a couple of hours with
+nothing on `main` is stale — take it.
 
-The 2026-08-05 Android music claim (waves F–L) is
-complete and released; the merge-conflict markers it left in this section were resolved
-on 2026-08-06.
+**Landed — 2026-08-08 ~03:30Z, session `1b29a583`: 12e (Android) is done.** `aad6bce`/`54cf683`,
+with the queue-action defect fixed in `51b2358`. Long-press context menus on all three music
+track-row screens; **all four actions now work**, Play next and Play last inserting into Media3's
+real playlist. Android CI green. Claim released.
+
+Android had **no** `combinedClickable`, `onLongClick` or `DropdownMenu` anywhere before this, so the
+gesture layer is new rather than ported. The three screens shared no row composable — each had its
+own private one — so `features/music/TrackContextMenu.kt` is the new shared primitive.
+
+**The artist-id question was resolved per screen, correctly and differently:**
+
+- **Album page**: "Go to artist" **works**. `AlbumDetailViewModel` already fetched the raw
+  `JellyfinAlbum` for favourite state, so it now also reads `artistId` into
+  `AlbumDetailUiState.Loaded.albumArtistId` — mirroring what `MusicAlbumPage.tsx` does on web.
+- **Playlist and favourites pages**: "Go to artist" is **omitted**. `JellyfinTrack` carries no
+  `artistId` and these lists are mixed-artist, so there is nothing correct to link to. **No fallback
+  to the album's artist was used**, which is the important part: that fallback is the recorded live
+  bug (`2c1b476` fixed Android's version) and inventing it here would have reintroduced it.
+- "Go to album" is per-track everywhere, from each row's own `albumId`.
+
+### `Play next` / `Play last` on Android write to a store nothing reads (2026-08-08)
+
+**A fourth instance of this project's most persistent failure class**, and the one with the most
+direct user impact so far: the action reports success and nothing is queued.
+
+`TrackContextMenu.kt`'s `enqueueMusicTrack()` inserts into `PlayerViewModel.musicQueue`, the
+`QueueStore<MusicQueueEntry>` from wave 12f. **Nothing consumes that store.** `musicQueue` is
+`setQueue(...)` exactly once, in `playQueue`, and nothing advances it or reads its cursor.
+`QueueRouter.kt`'s own doc comment states the reason plainly — _"there is never a music action for
+this router to take"_ — because **on Android, Media3 owns the music queue**: cross-track advance runs
+on `MediaController`'s real playlist, not on any store this app keeps.
+
+So the music `QueueStore` was the wrong target from the start. 12f seeded it as a mirror and
+explicitly cut cursor-syncing as unverifiable without a device; 12e then treated the mirror as if it
+were authoritative. Neither wave was wrong in isolation — the gap is exactly at the seam between
+them, which is where "is this reachable from the running app?" has to be asked.
+
+**Fixed in `51b2358`** by redirecting both actions to Media3: `addMediaItem(currentMediaItemIndex + 1, …)`
+for Play next, append for Play last, threaded through the `PlaybackHandle` abstraction so tests can
+observe the calls. The refusal guard was also corrected: it asked
+`musicQueue.state.value == null` and now asks `currentContentType != QueueContentType.MUSIC`, which
+covers both "nothing playing" and "a book or podcast is playing" — inserting a song into an
+audiobook's playlist would be worse than doing nothing. And the music `QueueStore` was deliberately
+**not** mirrored; its doc comment now records that it is write-once and read-never, because a mirror
+nobody reads is worse than no mirror.
+
+**Worth stating as a rule, given four instances:** on this project, a wave that adds a _writer_ to a
+store must name its _reader_, in the spec and in the report. Three of the four instances were a
+writer with no reader (`installQueueRouter` uncalled, a cursor that made `advance()` a no-op, and
+this one), and every one of them passed its unit tests.
+
+Now genuinely unblocked: Play next / Play last had nothing to insert into until 12f's queues
+existed. Web shipped this design on all three track-row pages, so it is a mirror rather than a
+design task. `apps/android/**` only.
+
+**Scouted so the next session need not**: Android has **no** `combinedClickable`, no `onLongClick`
+and no `DropdownMenu` anywhere yet — long-press is entirely new surface there, unlike web where
+Mantine's `Menu.ContextMenu` already implemented both gestures. Track rows live in
+`features/music/{AlbumDetailScreen,PlaylistDetailScreen,FavoritesScreen}.kt`. The queues are
+exposed as public `val`s on `PlayerViewModel` (`musicQueue`/`podcastQueue`/`audiobookQueue`).
+
+**Landed — 2026-08-08 ~01:50Z, session `1b29a583`. Claims released.**
+
+- **Web 12e's scope cut is closed** — `7063eca`, e2e fix `26057a0`. The track context menu now
+  works on `MusicPlaylistPage` and `MusicFavoritesPage`. Independently reviewed **and actually
+  exercised**: 24 Playwright cases pass, and the reviewer confirmed the queue guard is real by
+  breaking it and watching the test go red. Verdict: merge as-is, no follow-up.
+  **"Go to artist" is deliberately absent on these two pages, and that is the right call.**
+  `JellyfinTrack` has no `artistId` at all, and unlike the album page there is no single
+  page-level artist to borrow — so both pages pass `artistId: null` and the menu omits the item
+  rather than fabricating a link to the wrong artist. This is the _cousin_ of the recorded
+  album-artist bug, not a recurrence: nothing is mis-credited, an unavailable action is simply
+  not offered. Two e2e cases assert the item is absent.
+- **Android 12f (per-content-type queues) is done** — `271aad7`, fixed in `24d9189` and `ca250f5`.
+  Three independent clearable queues, chapters queueable, a same-book chapter advance that seeks
+  rather than reloads. **Android CI green; `main` is green.** No queue view on Android yet — that is
+  a later wave, and 12e (Android) is the next thing this unblocks. `docs/ROADMAP.md` §12f has the
+  detail, including the real `QueueStore` cursor bug the third round found.
+
+### Android 12f took three CI rounds, and the third found a real product bug
+
+**Resolved — Android CI green on `ca250f5`. `main` is green.** Kept because the sequence says
+something about what tests are for.
+
+Round one: `PlayerViewModelQueueTest.setUp()` built `ApiClient` **without** `ioDispatcher`, so it ran
+on the real `Dispatchers.IO` while `Dispatchers.Main` was a separate `UnconfinedTestDispatcher` — a
+suspension `runTest` cannot await. Nine other ViewModel test files in this suite already share one
+dispatcher between `setMain` and `ApiClient`; this file was **the one outlier**. Fixed in `24d9189`;
+that killed `UncaughtExceptionsBeforeTest` and turned three of six green.
+
+**Against the review record**: the implementing agent reported "all three test files inject
+`UnconfinedTestDispatcher`", and independent review **confirmed** it and cleared the coroutine
+hygiene. Both were wrong the same way — the file injects into `setMain` but not into `ApiClient`, and
+casual reading cannot tell those apart. Three consecutive waves now where review's toolchain-level
+reasoning lost to CI while getting the hard product questions right.
+
+Round two, the one that mattered: **a genuine production bug in `QueueStore`.** `enqueueNext` and
+`enqueueLast` bootstrapped an empty queue's first entry at `cursor = 0`, claiming that entry was
+already current. A podcast or audiobook queue never holds the item playing right now — that lives on
+`PlayerViewModel`. So the first `advance()` after a bootstrap stepped past index 0 to a nonexistent
+index 1, returned `null`, and the whole dispatch became a **silent no-op**: queue a podcast episode,
+let the current one end, nothing happens. Bootstrap is `-1` now (`ca250f5`).
+
+**`QueueStoreTest` passed throughout and had locked the wrong value in as correct**, because it
+asserted the shape of the state the function returned and never chained into an `advance()`. The only
+things that caught it were the three integration tests asserting an _effect on the player_. The
+feature was entirely broken while its unit tests were green.
+
+Two things follow, and the second is the useful one:
+
+- My own leading hypothesis was wrong. I told the fix agent the likely cause was a missing
+  `MockWebServer` branch for `playItem`'s path, reasoning from the wave that had failed that way
+  hours earlier. It was not that at all. The instruction that actually earned its place was the
+  standing one — _if the production code is genuinely wrong, say so plainly; that is more valuable
+  than a harness fix_ — which is what let the agent contradict the brief instead of bending the
+  tests to it.
+- **A unit test that only inspects what a function returns can pin the wrong value as correct.**
+  Something has to assert through to observable behaviour. This is the same family as the two
+  tautology findings already recorded (the 12f-1 installer nothing called, the stale-response test
+  that stopped observing too early), and it is the sharpest instance yet: every state assertion
+  passed while the feature did nothing.
+
+### A stray `Agent` call cascaded into unscoped work and three unreviewed pushes to `main`
+
+**2026-08-08. This is the most important process finding of the session, and it is a new failure
+mode — not the "agent pushed after being told not to" one recorded three times already.**
+
+A web subagent, mid-task, made an `Agent` call with the prompt **`"continue"`** — intending merely
+to move on, not to start anything. That call **resumed a different, broader agent**, which then did
+substantial unscoped work _in the shared checkout_: it diagnosed an unrelated Android CI failure,
+found the web agent's own worktree commit and pushed it to `main` (`26057a0`), independently
+re-fixed a test the web agent had already fixed, and pushed two further commits (`e4fc789`,
+`dc4ec6c`) including edits to `docs/HANDOVER.md` — a file the web agent's spec explicitly
+forbade. It rebased twice along the way.
+
+**Nothing was lost and the content was in scope** — the web work was reviewed after the fact and
+came back clean. But three real properties were skipped: the orchestrator's merge step (where the
+base and file-overlap against a concurrently-moving `main` get checked), the review-before-merge
+step, and the claim discipline that stops two sessions colliding. And one concrete cost: it pushed
+`dc4ec6c` while `271aad7`'s `Android` run was still in progress, **cancelling it** — so Android
+12f's only real verification never completed and the wave sat red on `main` unnoticed for a while.
+
+**Two things worth carrying forward:**
+
+- **An `Agent` call is never a no-op, and `"continue"` is not a neutral prompt.** It resolved to an
+  existing agent and handed it an open-ended instruction. Subagent specs on this project now say
+  _never make an `Agent` call at all_, rather than the weaker "do not spawn subagents" — the
+  earlier wording did not read as covering a one-word follow-up.
+- **The honest report is what saved this.** The web agent flagged its own mistake, named the
+  commits, and explicitly declined to push or merge further until the orchestrator had checked.
+  That is the behaviour to reward: its worktree (`agent-a6cc1b9e8df12d5bd`) was then confirmed
+  byte-identical to what had landed and is redundant. It is **locked**, so `git worktree remove`
+  refuses it without `-f -f`; left in place deliberately rather than forced. Safe to remove
+  whenever someone wants to.
+
+### The third `UncaughtExceptionsBeforeTest`, and why the obvious fix was the wrong one
+
+**Resolved — Android CI is green on `3bbcfbc`.** Recorded because the diagnosis is not the one
+this project's existing notes would lead you to, and the fix deliberately departs from the
+established convention.
+
+12b-A2 merged at `664e817` and failed three unit tests. It **compiled cleanly** — a test-runtime
+failure. Two of the three were older tests from 12b-A1 that had shipped green, which was the
+diagnostic: the wave gave an existing ViewModel new outbound requests (`/providers`,
+`/requests/search`, `/music-requests/search`) fired on every search, as fire-and-forget
+`viewModelScope.launch` siblings that `performSearch` does not await.
+
+**But the mechanism was not the usual one.** The prior two occurrences were about work being
+invisible to `runTest`. Here `UnifiedSearchViewModelTest.setUp()` builds `ApiClient` with the
+default real `Dispatchers.IO`, two tests awaited only `resultsState` and returned while the
+requestable fan-out was still in flight, and then `tearDown()`'s **`Dispatchers.resetMain()` tore
+down the Main dispatcher that the in-flight continuation needed to resume onto**. That throws
+`IllegalStateException` — _not_ `ApiException`, so nothing in the app's error handling catches it
+— reported against whichever test ran next.
+
+**The obvious fix is wrong here, and this is the part worth keeping.** Injecting
+`ioDispatcher = testDispatcher`, as roughly nine other ViewModel test files in this package do,
+would make every call run synchronously — and **two tests in this very file depend on real
+background-thread concurrency**: the stale-search guard and the "library results settle while the
+requestable fan-out is still loading" test both assert on interleaving produced by
+`MockWebServer` body delays. Forcing the unconfined dispatcher collapses exactly the interleaving
+they exist to pin, turning both into tautologies that pass for the wrong reason. So the
+convention is not universal: **a file containing timing-dependent tests cannot use it.** The fix
+instead has `tearDown()` drain both requestable states to non-`Loading` before shutdown.
+
+A second, unrelated race was in the same failure set: `requestCandidate` wrote `Requested` before
+attempting the follow-up grab, so an assertion could resolve before the grab had started. The
+grab and the `Requested` write are now one `_uiState` write.
+
+**And the staleness gap independent review found is fixed in the same commit.** The three _fetch_
+write-sites checked `searchSequence`; the seven _mutation_ callbacks did not, so a slow
+`createRequest`/`grabMusicRequest` resolving after a newer query had settled spliced the old guid
+into the new query's state maps. Narrow in practice — guids essentially never collide across two
+search terms — but a real asymmetry against the file's own discipline. `sequence` is threaded
+through all of them now, with a regression test that fails without it.
+
+**Worth generalising:** a wave that gives an existing ViewModel **new outbound requests** silently
+invalidates every existing test's `MockWebServer` dispatcher, and review cannot catch it because
+each test still reads correctly in isolation. Independent review of this wave explicitly examined
+the leak question and concluded there was none, reasoning from the established idiom — CI proved
+otherwise. That is now two waves running where review's toolchain-level reasoning was wrong and
+CI was right.
+
+### The web `CI` workflow has not completed since `8712716`, and the concurrency policy is why
+
+Established 2026-08-07, and it undermines "CI is the authoritative signal" if left unknown.
+**Eight consecutive `CI` runs on `main` ended `cancelled` without ever allocating a job.** The
+last run that actually succeeded is `8712716` at 17:56Z — hours and many commits behind. The
+`Android` workflow is unaffected and green throughout, so this is not runner starvation.
+
+`ci.yml`'s concurrency block sets `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}`,
+so on `main` runs queue instead of cancelling. Its comment explains why — a cancelled run also
+cancels `publish`, and mediaserver auto-updates from `:latest`, so superseded runs silently stop
+updating the registry while everything still reports green. That reasoning is sound and the
+2026-08-06 incident it describes was real.
+
+**But queuing does not do what the comment assumes.** GitHub allows only **one pending run per
+concurrency group**: when a new run queues, any _already-pending_ run in that group is cancelled.
+So `cancel-in-progress: false` protects the run that is genuinely _in progress_ and nothing else
+— under back-to-back pushes every queued run in between is still discarded. This session pushed
+eight times in about fifty minutes and every one of those runs was cancelled while pending.
+
+**Concurrency is not the whole story, though — allocation is also failing.** The run for
+`7edc96e` sat `pending` for over forty minutes with **nothing else in its concurrency group to
+supersede it** and zero jobs ever allocated, while `android.yml` runs on the same shas were
+picked up and finished green throughout. So a second, independent thing is wrong: the `CI`
+workflow specifically is not getting runners. That points at the account or the workflow itself
+rather than at the concurrency policy, and it is the user's infrastructure to look at.
+
+**This is a design question, deliberately not answered here.** The obvious fix for the
+concurrency half is to move `publish` into its own workflow with its own concurrency group, so
+the read-for-verification jobs may cancel freely while the deployment-coupled job queues. That
+changes deployment behaviour on a live host, which is not an autonomous call. In the meantime:
+**do not read a green `Android` run as the branch being verified**, and space pushes to `main`
+out if the web CI result matters.
+
+**The gap was covered locally instead, on `main` at `91663b6`** — the honest substitute, since
+`CLAUDE.md` is explicit that local running is a faster first look and not a replacement for CI:
+
+- per-package `tsc --noEmit` across `packages/core`, `packages/abs-client`,
+  `packages/jellyfin-client`, `packages/ui`, `apps/server`, `apps/web` — **all six clean**
+  (the root `pnpm typecheck` still does not complete on this box; see §6);
+- `pnpm test` — **117 files, 1455 tests, all passing**.
+
+Not run locally: Playwright, the container smoke test, the bundle and Lighthouse budgets, and
+Gradle. So the web CI gap is narrowed, not closed.
+
+**One thing scouted so the next session need not re-derive it: there is no unified search
+endpoint on the BFF.** Web's `SearchPage` fans out client-side across
+`GET /libraries/:id/search` (books and podcasts, via Audiobookshelf) and
+`GET /jellyfin/search` (music), then groups the results itself. Android has to do the same
+fan-out; do not go looking for a single endpoint to call.
+
+**Landed — 2026-08-07 ~20:45Z, session `1b29a583`. Claim released.**
+
+- **12a (Android) is done** — `a83e416`/`523baa5` (the shell) and `ce77e6c`/`6b1c3c6` (the Now
+  Playing surface), merged as one unit. Android now has a persistent five-destination
+  navigation shell with a mini player that survives navigation, and a real Now Playing surface
+  with artwork, a working seek bar and icon transport controls. Both waves were independently
+  reviewed by separate Sonnet agents; neither review found a defect. `docs/ROADMAP.md` §12a has
+  the detail, the traps, and what is deliberately still missing.
+- **`material-icons-extended` was added and the audit's open question is closed.** Reasoning is
+  in `ROADMAP.md` §12a. Do not re-open it as a user question.
+- **A2 grew the playback layer, not just the UI.** `PlayerViewModel` had no seek, next or
+  previous at all before this. Anything touching `features/player/` next should read §12a's
+  paragraph on it first.
+- **Android CI is green on `9573fea`.** It took three red runs to get there, and _what_ was red
+  is the point — see the section below. The `material-icons-extended` decision is vindicated:
+  every icon symbol resolved, including `Podcasts`, `LibraryMusic`, `MenuBook`, `Replay10` and
+  `Forward30`.
+- **The web `CI` workflow for `9573fea` has been stuck `pending` with zero jobs allocated for
+  over half an hour**, and the three runs before it all ended `cancelled` rather than passing.
+  Nothing of this session's is in it — the change is `apps/android` plus docs — but **the last
+  genuinely green web `CI` run is older than the last few pushes**, so do not read a green
+  `Android` run as the branch being fully verified. Check for an allocated runner before
+  concluding anything from a pending run; repeated `cancelled` results look like the
+  concurrency group cancelling superseded runs on rapid successive pushes.
+
+### Two independent source reviews read straight past a one-line compile error (2026-08-07)
+
+Worth recording because it is the cleanest evidence yet for a rule this project already has.
+Android 12a went through the full process — a spec naming the files and the failure modes, a
+separate Sonnet reviewer per wave with the traps enumerated, both returning **"merge as-is, no
+defects"** — and CI rejected it in about a minute, three times running:
+
+1. **`import androidx.compose.foundation.layout.weight`** in `AuralisShell.kt`. `Modifier.weight`
+   is a `RowScope`/`ColumnScope` member, so that import resolves instead to the _internal_
+   `RowColumnParentData.weight` property. It fails as an **access** error, not an unresolved
+   reference, which is why it reads like a perfectly ordinary import. The call site was already
+   inside a `Row`, so deleting the import was the entire fix (`da31133`).
+2. **Two backtick test names containing `..`** (`` `...the 0..1 range...` ``). Kotlin permits a
+   dot in a quoted function name; the JVM does not permit it in a method name. Compiles as
+   Kotlin, fails as bytecode (`9573fea`).
+3. Two directional icons wanting their `AutoMirrored` variants — a warning, not a failure, but a
+   real right-to-left correctness point, fixed in the same commit.
+
+None of these three is a logic defect, and that is exactly the shape of thing review cannot
+catch: they are facts about the toolchain, not about the code's intent. A reviewer reasoning
+carefully about drag latching, division by zero and Jellyfin reporting — all of which it got
+right — has no way to know which of two plausible imports the compiler will accept.
+
+So `CLAUDE.md`'s existing rule stands and should not be softened: **for `apps/android`, CI is
+the gate and review is not a substitute.** The practical consequence is scheduling, not process:
+budget for two or three red Android runs after any sizeable Android wave, and push early enough
+that those iterations fit inside the usage window rather than landing at the end of it.
+
+### What is genuinely next — every roadmap item is now blocked on the user (2026-08-08)
+
+**This is a verified state, not a session giving up.** Phases 1–10 are done, 11 is `done*`, and
+as of `7fc91be` every implementable wave in phase 12 has shipped on both clients. What remains
+needs something no session can supply:
+
+| Item                                                             | Blocked on                                                                                                                                                                         |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **12c-2** — non-library content on artist/author pages           | Queue `440b217`: should a title already in the library still be offered as requestable? The same question arises in Search, so deciding it twice differently is the failure mode.  |
+| **Phase 11**'s remaining six steps                               | A release signing key and an `applicationId` — one-way doors. `docs/FDROID_REPO.md` lists all six.                                                                                 |
+| **12b**'s "sorted by relevance"                                  | Music results are alphabetical (`jellyfin-client` pins `sortBy: 'SortName'`). Fixing it wants a test against a real Jellyfin server, and **no session has a Jellyfin credential**. |
+| **12d (Android)** visual conformance                             | A device or emulator. None exists here, and that wave's whole requirement is visual.                                                                                               |
+| **12a**'s cold-cache nav rail                                    | A design decision: what the rail shows before it knows which libraries exist.                                                                                                      |
+| **Auto-updating deployment** (§7)                                | A live change on mediaserver, needing that host's own rules and the user's go-ahead.                                                                                               |
+| Direct play vs transcode; lyrics search; `GET /requests` scoping | Product decisions already written up above.                                                                                                                                        |
+
+**The highest-value unblocked work left is not a feature — it is this file.** `CLAUDE.md`
+`@`-imports `HANDOVER.md` into every session in this repo, so its length is paid for on every
+turn of every session, and it has grown to ~1,570 lines. Much of it is wave-by-wave narrative
+that `docs/ROADMAP.md` also carries. A consolidation pass — keeping every hard-won lesson,
+moving per-wave detail to `ROADMAP.md`, deleting only what is genuinely spent — is the best use
+of a fresh session's budget.
+
+**Do it at the start of a session with a full window, and do it surgically.** On 2026-08-08 a
+single careless anchored replacement in this file silently deleted seven sections and 406 lines,
+including the `UncaughtExceptionsBeforeTest` diagnosis and the stray-`Agent`-call finding — the
+exact lessons that session was telling its own subagents to go read. It was caught only by
+diffing the commit afterwards. **Diff every edit to this file before committing it**
+(`git show <sha> -- docs/HANDOVER.md | grep '^-### '` is enough), because an anchored
+`str.replace` spanning two headings looks identical to a correct one until you look.
 
 ### 12c-1 shipped on the second attempt, after reintroducing the minified-item bug (2026-08-07)
 
@@ -760,9 +1091,12 @@ not re-derive or re-fix it.
   still decrypts afterwards. `secrets` is a leaf table with nothing referencing it, so the
   create/copy/drop/rename needs no `PRAGMA foreign_keys=OFF` — verified empirically, not
   assumed, since `connection.ts` does enable foreign keys before migrations run.
-- The Dockerfile enumerates workspace packages by hand. Every future package `apps/server`
-  depends on needs the same three-line addition — missing it produces exactly the `586742e`
-  failure mode (image builds, container dies on boot) rather than a build error.
+- ~~The Dockerfile enumerates workspace packages by hand.~~ **Fixed, and this note was stale as
+  of 2026-08-08** — the Dockerfile copies `packages/` wholesale, with a doc comment explaining
+  why that is correct rather than merely convenient (`prod-deps` installs with
+  `--prod --filter "@auralis/server..."`, so pnpm has already resolved exactly which workspace
+  packages the server needs; the COPY just stops restating that by hand and getting it wrong).
+  The `586742e` failure mode it warned about cannot recur.
 
 ### Mantine — full migration complete (`2a0d2e0`, follow-up fixes `2bea957`/`278e3fc`)
 
