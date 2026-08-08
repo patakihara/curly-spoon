@@ -132,7 +132,11 @@ test('every card below the grid shares one geometry, across every content type',
     boxes.push(box!);
   }
 
-  const { width, height } = boxes[0];
+  // `noUncheckedIndexedAccess` types boxes[0] as possibly-undefined even though
+  // the count assertion above rules it out. Narrow it rather than assert it away.
+  const first = boxes[0];
+  if (!first) throw new Error('no card bounding boxes were measured');
+  const { width, height } = first;
   for (const box of boxes) {
     expect(box.width).toBeCloseTo(width, 0);
     expect(box.height).toBeCloseTo(height, 0);
