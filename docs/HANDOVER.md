@@ -379,8 +379,8 @@ direct user impact so far: the action reports success and nothing is queued.
 `TrackContextMenu.kt`'s `enqueueMusicTrack()` inserts into `PlayerViewModel.musicQueue`, the
 `QueueStore<MusicQueueEntry>` from wave 12f. **Nothing consumes that store.** `musicQueue` is
 `setQueue(...)` exactly once, in `playQueue`, and nothing advances it or reads its cursor.
-`QueueRouter.kt`'s own doc comment states the reason plainly — *"there is never a music action for
-this router to take"* — because **on Android, Media3 owns the music queue**: cross-track advance runs
+`QueueRouter.kt`'s own doc comment states the reason plainly — _"there is never a music action for
+this router to take"_ — because **on Android, Media3 owns the music queue**: cross-track advance runs
 on `MediaController`'s real playlist, not on any store this app keeps.
 
 So the music `QueueStore` was the wrong target from the start. 12f seeded it as a mirror and
@@ -397,12 +397,10 @@ audiobook's playlist would be worse than doing nothing. And the music `QueueStor
 **not** mirrored; its doc comment now records that it is write-once and read-never, because a mirror
 nobody reads is worse than no mirror.
 
-**Worth stating as a rule, given four instances:** on this project, a wave that adds a *writer* to a
-store must name its *reader*, in the spec and in the report. Three of the four instances were a
+**Worth stating as a rule, given four instances:** on this project, a wave that adds a _writer_ to a
+store must name its _reader_, in the spec and in the report. Three of the four instances were a
 writer with no reader (`installQueueRouter` uncalled, a cursor that made `advance()` a no-op, and
 this one), and every one of them passed its unit tests.
-
-
 
 Now genuinely unblocked: Play next / Play last had nothing to insert into until 12f's queues
 existed. Web shipped this design on all three track-row pages, so it is a mirror rather than a
@@ -423,7 +421,7 @@ exposed as public `val`s on `PlayerViewModel` (`musicQueue`/`podcastQueue`/`audi
   **"Go to artist" is deliberately absent on these two pages, and that is the right call.**
   `JellyfinTrack` has no `artistId` at all, and unlike the album page there is no single
   page-level artist to borrow — so both pages pass `artistId: null` and the menu omits the item
-  rather than fabricating a link to the wrong artist. This is the *cousin* of the recorded
+  rather than fabricating a link to the wrong artist. This is the _cousin_ of the recorded
   album-artist bug, not a recurrence: nothing is mis-credited, an unavailable action is simply
   not offered. Two e2e cases assert the item is absent.
 - **Android 12f (per-content-type queues) is done** — `271aad7`, fixed in `24d9189` and `ca250f5`.
@@ -458,7 +456,7 @@ let the current one end, nothing happens. Bootstrap is `-1` now (`ca250f5`).
 
 **`QueueStoreTest` passed throughout and had locked the wrong value in as correct**, because it
 asserted the shape of the state the function returned and never chained into an `advance()`. The only
-things that caught it were the three integration tests asserting an *effect on the player*. The
+things that caught it were the three integration tests asserting an _effect on the player_. The
 feature was entirely broken while its unit tests were green.
 
 Two things follow, and the second is the useful one:
@@ -466,8 +464,8 @@ Two things follow, and the second is the useful one:
 - My own leading hypothesis was wrong. I told the fix agent the likely cause was a missing
   `MockWebServer` branch for `playItem`'s path, reasoning from the wave that had failed that way
   hours earlier. It was not that at all. The instruction that actually earned its place was the
-  standing one — *if the production code is genuinely wrong, say so plainly; that is more valuable
-  than a harness fix* — which is what let the agent contradict the brief instead of bending the
+  standing one — _if the production code is genuinely wrong, say so plainly; that is more valuable
+  than a harness fix_ — which is what let the agent contradict the brief instead of bending the
   tests to it.
 - **A unit test that only inspects what a function returns can pin the wrong value as correct.**
   Something has to assert through to observable behaviour. This is the same family as the two
@@ -482,7 +480,7 @@ mode — not the "agent pushed after being told not to" one recorded three times
 
 A web subagent, mid-task, made an `Agent` call with the prompt **`"continue"`** — intending merely
 to move on, not to start anything. That call **resumed a different, broader agent**, which then did
-substantial unscoped work *in the shared checkout*: it diagnosed an unrelated Android CI failure,
+substantial unscoped work _in the shared checkout_: it diagnosed an unrelated Android CI failure,
 found the web agent's own worktree commit and pushed it to `main` (`26057a0`), independently
 re-fixed a test the web agent had already fixed, and pushed two further commits (`e4fc789`,
 `dc4ec6c`) including edits to `docs/HANDOVER.md` — a file the web agent's spec explicitly
@@ -499,7 +497,7 @@ step, and the claim discipline that stops two sessions colliding. And one concre
 
 - **An `Agent` call is never a no-op, and `"continue"` is not a neutral prompt.** It resolved to an
   existing agent and handed it an open-ended instruction. Subagent specs on this project now say
-  *never make an `Agent` call at all*, rather than the weaker "do not spawn subagents" — the
+  _never make an `Agent` call at all_, rather than the weaker "do not spawn subagents" — the
   earlier wording did not read as covering a one-word follow-up.
 - **The honest report is what saved this.** The web agent flagged its own mistake, named the
   commits, and explicitly declined to push or merge further until the orchestrator had checked.
@@ -525,7 +523,7 @@ invisible to `runTest`. Here `UnifiedSearchViewModelTest.setUp()` builds `ApiCli
 default real `Dispatchers.IO`, two tests awaited only `resultsState` and returned while the
 requestable fan-out was still in flight, and then `tearDown()`'s **`Dispatchers.resetMain()` tore
 down the Main dispatcher that the in-flight continuation needed to resume onto**. That throws
-`IllegalStateException` — *not* `ApiException`, so nothing in the app's error handling catches it
+`IllegalStateException` — _not_ `ApiException`, so nothing in the app's error handling catches it
 — reported against whichever test ran next.
 
 **The obvious fix is wrong here, and this is the part worth keeping.** Injecting
@@ -542,8 +540,8 @@ A second, unrelated race was in the same failure set: `requestCandidate` wrote `
 attempting the follow-up grab, so an assertion could resolve before the grab had started. The
 grab and the `Requested` write are now one `_uiState` write.
 
-**And the staleness gap independent review found is fixed in the same commit.** The three *fetch*
-write-sites checked `searchSequence`; the seven *mutation* callbacks did not, so a slow
+**And the staleness gap independent review found is fixed in the same commit.** The three _fetch_
+write-sites checked `searchSequence`; the seven _mutation_ callbacks did not, so a slow
 `createRequest`/`grabMusicRequest` resolving after a newer query had settled spliced the old guid
 into the new query's state maps. Narrow in practice — guids essentially never collide across two
 search terms — but a real asymmetry against the file's own discipline. `sequence` is threaded
@@ -570,8 +568,8 @@ updating the registry while everything still reports green. That reasoning is so
 2026-08-06 incident it describes was real.
 
 **But queuing does not do what the comment assumes.** GitHub allows only **one pending run per
-concurrency group**: when a new run queues, any *already-pending* run in that group is cancelled.
-So `cancel-in-progress: false` protects the run that is genuinely *in progress* and nothing else
+concurrency group**: when a new run queues, any _already-pending_ run in that group is cancelled.
+So `cancel-in-progress: false` protects the run that is genuinely _in progress_ and nothing else
 — under back-to-back pushes every queued run in between is still discarded. This session pushed
 eight times in about fifty minutes and every one of those runs was cancelled while pending.
 
@@ -619,7 +617,7 @@ fan-out; do not go looking for a single endpoint to call.
 - **A2 grew the playback layer, not just the UI.** `PlayerViewModel` had no seek, next or
   previous at all before this. Anything touching `features/player/` next should read §12a's
   paragraph on it first.
-- **Android CI is green on `9573fea`.** It took three red runs to get there, and *what* was red
+- **Android CI is green on `9573fea`.** It took three red runs to get there, and _what_ was red
   is the point — see the section below. The `material-icons-extended` decision is vindicated:
   every icon symbol resolved, including `Podcasts`, `LibraryMusic`, `MenuBook`, `Replay10` and
   `Forward30`.
@@ -639,7 +637,7 @@ separate Sonnet reviewer per wave with the traps enumerated, both returning **"m
 defects"** — and CI rejected it in about a minute, three times running:
 
 1. **`import androidx.compose.foundation.layout.weight`** in `AuralisShell.kt`. `Modifier.weight`
-   is a `RowScope`/`ColumnScope` member, so that import resolves instead to the *internal*
+   is a `RowScope`/`ColumnScope` member, so that import resolves instead to the _internal_
    `RowColumnParentData.weight` property. It fails as an **access** error, not an unresolved
    reference, which is why it reads like a perfectly ordinary import. The call site was already
    inside a `Row`, so deleting the import was the entire fix (`da31133`).

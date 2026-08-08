@@ -1979,13 +1979,13 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 
 ### 12 — Product-spec addendum: five views, unified search, per-type queues
 
-| Area                                                    | Status |
-| ------------------------------------------------------- | ------ |
-| 12a — Five-view navigation shell (web + Android)        | done (web + Android) |
-| 12b — Search view: unified library + request results    | done (web + Android) |
-| 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked |
-| 12d — For You: uniform album-card carousels             | web done, Android todo |
-| 12e — Context menus (long-press / right-click)          | done (web + Android) |
+| Area                                                    | Status                                            |
+| ------------------------------------------------------- | ------------------------------------------------- |
+| 12a — Five-view navigation shell (web + Android)        | done (web + Android)                              |
+| 12b — Search view: unified library + request results    | done (web + Android)                              |
+| 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked                         |
+| 12d — For You: uniform album-card carousels             | web done, Android todo                            |
+| 12e — Context menus (long-press / right-click)          | done (web + Android)                              |
 | 12f — Per-content-type queues                           | done (web + Android model); no Android queue view |
 
 #### 12a — The five views
@@ -2121,7 +2121,7 @@ Three things about it worth not rediscovering:
   is not dead**: its `toSearchUi` was bumped `private`→`internal` precisely so the new unified
   search could use it. Deleting the pair together breaks the build.
 - **Per-source degradation is structurally correct, and the reason is subtle.** A failing
-  `async` child cancels its `coroutineScope` parent *and its siblings*, so a per-library
+  `async` child cancels its `coroutineScope` parent _and its siblings_, so a per-library
   `try`/`catch` placed around the enclosing `coroutineScope` would silently lose the other
   source's results too. It is placed inside each `async` instead. Confirmed by reading
   `ApiClient.execute()` directly: it only ever throws `ApiException`, so neither half can throw
@@ -2311,7 +2311,7 @@ no-queue refusal guard is load-bearing by breaking it and watching the test fail
 carries no `artistId`, and unlike the album page there is no single page-level artist to borrow —
 so both pages pass `artistId: null` and `buildTrackMenuItems` omits the item. That is the correct
 resolution rather than a gap: the alternative would have been linking every row to an artist it
-may not belong to, which is the recorded album-artist bug in a new place. "Go to album" *is*
+may not belong to, which is the recorded album-artist bug in a new place. "Go to album" _is_
 per-row, from each track's own `albumId`.
 
 The e2e fix is worth a line because the failure was non-obvious: two tests used `page.goto()` to
@@ -2481,7 +2481,7 @@ already populated — exposed, not newly computed). `onMediaItemTransition` also
 `title` on queue advance; fixed in passing.
 
 **No progress arithmetic was added anywhere**, deliberately. Seek and skip forward to
-`PlaybackHandle` and drive the *existing* `Player.Listener`, so Jellyfin reporting is unchanged
+`PlaybackHandle` and drive the _existing_ `Player.Listener`, so Jellyfin reporting is unchanged
 and this repo's rule — `timeListened` is wall-clock time spent playing, never a position delta,
 because a seek moves the position with nobody listening — is inherited rather than
 re-implemented.
@@ -2573,8 +2573,8 @@ that lives on `PlayerViewModel` as `currentAudiobookItemId`/`currentContentType`
 **And `QueueStoreTest` passed the whole time, because it asserted state shape and never chained
 into an `advance()`.** It had locked the wrong bootstrap value in as correct. Three integration
 tests — "a queued podcast episode is loaded when the current episode ends" and the two chapter
-cases — were the only things that caught it, precisely because they asserted an *effect on the
-player* rather than the contents of a data structure. The tests that assert state passed throughout
+cases — were the only things that caught it, precisely because they asserted an _effect on the
+player_ rather than the contents of a data structure. The tests that assert state passed throughout
 while the feature did not work at all. That is the generalisable lesson: **a unit test that only
 inspects the shape a function returns can pin the wrong value as correct; something has to assert
 through to the observable behaviour.**
