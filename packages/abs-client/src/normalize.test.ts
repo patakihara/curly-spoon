@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { rawLibraryItemSchema, rawShelfSchema, rawSearchResponseSchema } from './schemas/raw.js';
 import { normalizeLibraryItem, normalizeShelf, normalizeSearchResults } from './normalize.js';
+import type { Book } from './domain.js';
 
 const minifiedBook = {
   id: 'item-1',
@@ -146,6 +147,47 @@ describe('normalizeLibraryItem — books', () => {
     expect(item.media.series).toEqual([
       { id: 'The Lord of the Rings #2', name: 'The Lord of the Rings #2', sequence: null },
     ]);
+  });
+});
+
+/**
+ * `Book.authors`/`Book.series` no longer admit an `id` field at the type level — see
+ * `domain.ts`'s header. This is what makes the `findAuthorBooks`/`SeriesPage`
+ * id-matching bug (`7bf6e49`, and `7e57a78` before it) impossible to reintroduce
+ * *by construction*: code shaped like the original bug fails to compile rather than
+ * relying on a reader having noticed the doc comment.
+ *
+ * A compile error can't turn a vitest assertion red, so this is a type-only check.
+ * `Extract<keyof T, 'id'>` resolves to `'id'` when that key exists and to `never`
+ * otherwise; `AssertNever<T extends never>` only accepts `never`, so
+ * `AssertNever<Extract<...>>` fails to compile — TS2344, "Type 'id' does not satisfy
+ * the constraint 'never'" — the moment `id` reappears on either element type.
+ * **Verified by reverting**: temporarily restoring `id: string` on `AuthorBadge` in
+ * `domain.ts` and rerunning `npx tsc -p packages/abs-client/tsconfig.json --noEmit`
+ * turns this file red at exactly that line, confirming the guard actually guards
+ * something rather than trivially passing.
+ */
+type AssertNever<T extends never> = T;
+type _AuthorBadgeHasNoId = AssertNever<Extract<keyof Book['authors'][number], 'id'>>;
+type _SeriesBadgeHasNoId = AssertNever<Extract<keyof Book['series'][number], 'id'>>;
+
+describe('Book.authors / Book.series — wire compatibility for the fabricated fallback', () => {
+  // The JSON response still carries the fabricated `id` at runtime (equal to the
+  // display name on a minified item) even though the TypeScript type no longer
+  // admits reading it — Android's `AuthorRef`/`SeriesSequence` Kotlin models declare
+  // `id` as non-nullable with no default, so dropping the wire key would throw
+  // `MissingFieldException` there. This test pins that runtime shape directly so a
+  // future change to `normalizeMedia` can't silently drop the key without a test
+  // going red, even though nothing in this package's own types would catch it.
+  it('still serialises a fabricated `id` (equal to the display name) on a minified fallback entry', () => {
+    const raw = rawLibraryItemSchema.parse(minifiedBook);
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'book') throw new Error('expected book');
+
+    // Cast through `unknown` — `Book.authors`/`Book.series` no longer type `id`, but the
+    // runtime object still carries it (see this describe block's own comment).
+    const seriesWithId = item.media.series as unknown as Array<{ id: string; name: string }>;
+    expect(seriesWithId[0]?.id).toBe('series-1');
   });
 });
 

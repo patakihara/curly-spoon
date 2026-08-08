@@ -10,24 +10,39 @@
  * minified list endpoints never populate it. Treat `undefined` as "not
  * fetched", and `[]` as "fetched, genuinely empty".
  *
- * `Book.authors` and `Book.series` do NOT follow that convention, and this is
- * a real trap, not a nuance — it is what let the series/author detail pages
- * ship broken (see `docs/HANDOVER.md`, "author and series detail pages",
- * 2026-08-07). A minified item never sends the structured `authors`/`series`
- * arrays either (verified against Audiobookshelf 2.36.0 source), but
- * `normalizeMedia` always fills them in from the flattened `authorName`/
- * `seriesName` strings rather than leaving them `undefined` — so they are
- * *never* absent, and code that only checks "is this array non-empty" will
- * not notice it's looking at fallback data. The fabricated entries are
- * detectable only by field: their `id` equals the display name (a minified
- * item carries no real author/series id at all, so there is nothing else to
- * put there), and their `sequence` is always `null`. Comparing that `id`
- * against a real entity id (an author id from a route param, a series id
- * from a route param) will *never* match on a minified item — this is
- * exactly the bug `findAuthorBooks` and `SeriesPage`'s old `seriesId`
- * lookup had. Fetch the entity's own detail endpoint instead of matching
- * against these fields when you need real identity; they're fine for
- * display (a name badge) and unsafe for identity lookups.
+ * `Book.authors` and `Book.series` do NOT follow that convention: a minified
+ * item never sends the structured `authors`/`series` arrays either (verified
+ * against Audiobookshelf 2.36.0 source), but `normalizeMedia` always fills
+ * them in from the flattened `authorName`/`seriesName` strings rather than
+ * leaving them `undefined` — so they are *never* absent. On a minified item
+ * this is a single fabricated entry whose display name stands in for
+ * everything else, including — historically — a fake `id` equal to that same
+ * name, because a minified item carries no real author/series id at all.
+ *
+ * That fabricated `id` is what shipped the bug twice: `findAuthorBooks` and
+ * `SeriesPage`'s old `seriesId` lookup both compared it against a real entity
+ * id (a route param) and could never match, because "the display name" is
+ * never equal to a real id — see `docs/HANDOVER.md`'s two write-ups
+ * (`7e57a78`, `7bf6e49`). Prose documented the trap after the first
+ * occurrence and the second one shipped anyway, so the fake id is now simply
+ * not part of this type: `Book.authors`/`Book.series` are typed as
+ * `AuthorBadge[]`/`SeriesBadge[]` — display-only shapes with no `id` field at
+ * all. `book.media.authors[0].id` is a compile error, on an expanded item as
+ * much as a minified one, because *this layer* never gives you a trustworthy
+ * id either way — even an expanded item's per-book author entry is a
+ * secondary reference, not the entity's own record. Get real identity from a
+ * dedicated fetch instead: `AbsClient.getAuthor` for an author, or the
+ * top-level `Series` list (whose `id` fields are genuine) for a series.
+ *
+ * The wire response still carries the fabricated `id` key at runtime —
+ * `normalizeMedia` was left constructing it unchanged, because Android's
+ * `AuthorRef`/`SeriesSequence` Kotlin models (`ApiModels.kt`) declare `id` as
+ * a non-nullable, no-default field: dropping the key from the JSON would
+ * throw `MissingFieldException` on every book with authors. Only the
+ * TypeScript type stops admitting it; nothing was removed from the payload
+ * itself, so Android is unaffected. `AuthorRef`/`SeriesSequence` (below,
+ * unchanged) remain the correct types for contexts that *do* carry a real id
+ * — `FilterData.authors`, the top-level `Author`/`Series` listings.
  */
 
 export interface Chapter {
@@ -47,11 +62,15 @@ export interface AudioTrack {
   mimeType: string | null;
 }
 
+/** A genuinely-identified author reference — a real, matchable author id.
+ * NOT the type of `Book.authors`; see this file's header and `AuthorBadge`. */
 export interface AuthorRef {
   id: string;
   name: string;
 }
 
+/** A genuinely-identified series reference — a real, matchable series id.
+ * NOT the type of `Book.series`; see this file's header and `SeriesBadge`. */
 export interface SeriesSequence {
   id: string;
   name: string;
@@ -59,13 +78,28 @@ export interface SeriesSequence {
   sequence: string | null;
 }
 
+/** A book's own author badge — display only. See this file's header for why
+ * this carries no `id`: `Book.authors` is never a safe source of author
+ * identity, on a minified item or an expanded one. */
+export interface AuthorBadge {
+  name: string;
+}
+
+/** A book's own series badge — display only, same reasoning as `AuthorBadge`. */
+export interface SeriesBadge {
+  name: string;
+  /** e.g. "3" or "3.5"; `null` when the item isn't numbered within the series,
+   * or when this badge is a minified-item fallback (which never carries one). */
+  sequence: string | null;
+}
+
 export interface Book {
   kind: 'book';
   title: string;
   subtitle: string | null;
-  authors: AuthorRef[];
+  authors: AuthorBadge[];
   narrator: string | null;
-  series: SeriesSequence[];
+  series: SeriesBadge[];
   genres: string[];
   publishedYear: string | null;
   description: string | null;
