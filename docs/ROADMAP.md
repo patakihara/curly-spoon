@@ -2157,6 +2157,39 @@ teardown race rather than the usual `runTest` visibility problem, and the conven
 injecting a test dispatcher — would have quietly turned two timing-dependent tests into
 tautologies.
 
+**The minified-item bug now fails to compile (2026-08-08, `0f215f6`/`954c845`).** It had
+shipped twice (`7e57a78`, `7bf6e49`) and been reintroduced once in between, which said prose
+in `HANDOVER.md` was not holding it.
+
+`Book.authors` and `Book.series` carry `AuthorBadge`/`SeriesBadge` — display-only shapes with
+**no `id` field**. `book.media.authors[0].id` is now a compile error, so the specific mistake
+both bugs made cannot be written again. `AuthorRef`/`SeriesSequence` remain where a real id
+exists: `FilterData.authors`, and the top-level `Author`/`Series` listings. A type-only guard
+in `normalize.test.ts` fails to compile if `id` ever returns to either badge, and it was
+verified by putting `id` back and reproducing the error.
+
+**The wire is deliberately unchanged.** `normalizeMedia` still emits the fabricated `id` at
+runtime, because Android's Kotlin `AuthorRef`/`SeriesSequence` declare it non-nullable with no
+default — dropping the key would throw `MissingFieldException` on every book with authors, and
+Android compiles only on CI. Only the TypeScript type stopped admitting it.
+
+**Two things review corrected, both worth carrying:**
+
+- **The original rationale was wrong.** It claimed this layer never yields a trustworthy author
+  id. It does: `normalizeMedia` passes `metadata.authors[].id` through verbatim when the array
+  is present, and those ids match `authors.json`. Only the `authorName` fallback — the minified
+  path — fabricates `id = displayName`. The type still drops `id` in both cases, because the
+  two shapes are indistinguishable once normalized, so a type admitting `id` admits the fake
+  one. But that is an over-correction with a real cost, not a free win.
+- **The cost is named rather than hidden.** An expanded item already holds the id needed to
+  deep-link `/author/:id` without a second fetch, and nothing can reach it now. Nothing needs it
+  today. If something does, the fix is a discriminated `AuthorRef | AuthorBadge` on
+  `Book.authors` — **not** putting `id` back on the badge. `domain.ts`'s comment says so.
+
+`fakeAbs.ts`'s `stripToMinified` was re-audited across every Audiobookshelf-shaped endpoint and
+found faithful this round — worth re-checking whenever this area is touched, since a fake more
+generous than the real server is why `7e57a78` went uncaught.
+
 #### 12c — In-view search, and artist/author pages
 
 Each content view (Music, Books, Podcasts) has its own search icon. That search covers the
