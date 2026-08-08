@@ -1457,6 +1457,20 @@ the session trailer. Deliver phase by phase; keep `docs/ROADMAP.md` statuses cur
 
 ## 6. Environment gotchas
 
+- **The per-package typecheck does not cover `e2e/`. CI's does.** This is the gap between
+  "the checks I ran" and "the checks CI runs", and it turned `main` red on 2026-08-08 while
+  every local check passed. The workaround above — typecheck one package at a time, because
+  the root `pnpm typecheck` was unreliable here — silently drops the `e2e` project, and
+  `e2e/` is where Playwright specs live, so a spec with a type error passes locally and fails
+  in CI's `Lint · format · typecheck` job. If the root command works for you now, prefer it;
+  otherwise run `pnpm --filter e2e typecheck` (or whatever `pnpm -r --if-present typecheck`
+  resolves for that project) as well as the per-package ones before pushing a spec.
+- **Run `pnpm format` before pushing docs, every time.** Twice in one day `CLAUDE.md`,
+  `HANDOVER.md` and `ROADMAP.md` landed unformatted and turned CI red. The cost is not a red
+  badge: `format:check` gates the `publish` job, `publish` writes
+  `ghcr.io/patakihara/auralis:latest`, and mediaserver's `auralis-update.timer` pulls that
+  tag every fifteen minutes. **A red CI on `main` quietly stops the live deployment
+  updating**, and nothing surfaces that except the badge nobody reads on a docs commit.
 - **`pnpm typecheck` from the repo root did not complete on this machine**, across three
   attempts on 2026-08-03; it runs five `tsc` processes in parallel. Typechecking one package
   at a time — `npx tsc -p apps/server/tsconfig.json --noEmit`, and the same for `apps/web`,
