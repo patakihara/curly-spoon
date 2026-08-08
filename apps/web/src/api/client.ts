@@ -56,9 +56,18 @@ export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
  * on the shared `LibraryItem`/`MediaSummary` shape in `types.ts` because nothing read
  * it before this wave. Declared locally rather than widening the shared type — see
  * `types.ts`'s own doc comment on keeping it narrowed to what's actually consumed.
+ *
+ * No `id` field, deliberately — this mirrors `packages/abs-client`'s `Book.series:
+ * SeriesBadge[]`, not its id-carrying `SeriesSequence`. A minified item's per-book
+ * series entry has always been a single fabricated fallback (historically with an
+ * `id` equal to the display name), and comparing that against a real series id is
+ * exactly the bug `SeriesPage`'s old `seriesId` lookup shipped — see this file's own
+ * `SeriesPage.tsx` header comment and `docs/HANDOVER.md`. `SeriesPage` now trusts
+ * `getLibrarySeries`'s array order instead of re-deriving a sequence, so nothing
+ * here currently reads `id` or `sequence` either — kept for the wire shape, not
+ * because anything consumes it.
  */
-export interface LibrarySeriesBookSequence {
-  id: string;
+export interface LibrarySeriesBookBadge {
   name: string;
   /** e.g. "3" or "3.5"; `null` when this book has no number within the series. */
   sequence: string | null;
@@ -67,7 +76,7 @@ export interface LibrarySeriesBookSequence {
 /** A book as it appears inside a `getLibrarySeries` response — `LibraryItem` plus the
  * `series` sequence array `SeriesPage` needs to order its shelf. */
 export interface LibrarySeriesBook extends Omit<LibraryItem, 'media'> {
-  media: LibraryItem['media'] & { series?: LibrarySeriesBookSequence[] };
+  media: LibraryItem['media'] & { series?: LibrarySeriesBookBadge[] };
 }
 
 export interface LibrarySeriesEntry {

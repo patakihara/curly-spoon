@@ -30,6 +30,8 @@ export type {
   Chapter,
   AuthorRef,
   SeriesSequence,
+  AuthorBadge,
+  SeriesBadge,
   Shelf,
   Series,
   Author,

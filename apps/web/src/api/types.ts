@@ -47,8 +47,25 @@ export interface Library {
   folders: LibraryFolder[];
 }
 
-export interface AuthorRef {
-  id: string;
+/**
+ * A book's own author badge — display only, no `id`.
+ *
+ * This mirrors `@auralis/abs-client`'s `Book.authors: AuthorBadge[]` (see that
+ * package's `domain.ts` header) rather than that package's own `AuthorRef`
+ * (which *does* carry a real id, for contexts like `FilterData.authors`). The
+ * distinction is load-bearing: a minified Audiobookshelf item's per-book
+ * author entry has always been a single fabricated fallback — historically
+ * with an `id` equal to the display name — and comparing that fake id against
+ * a real author id (a route param) is exactly the bug that shipped twice
+ * (`findAuthorBooks`, `SeriesPage`'s old `seriesId` lookup; see
+ * `docs/HANDOVER.md`). Naming this `AuthorRef` and giving it an `id` would
+ * silently re-open the same trap in this file alone, independent of whatever
+ * `packages/abs-client` does — this is a hand-maintained mirror of the BFF's
+ * JSON contract, not an import of that package's types. There is nothing to
+ * migrate: nothing in this codebase reads `.id` off a book's own `authors[]`
+ * today (confirmed via `apps/web/src/regressionGuards.test.ts`'s tripwire).
+ */
+export interface AuthorBadge {
   name: string;
 }
 
@@ -126,7 +143,7 @@ export interface MediaSummary {
   kind: 'book' | 'podcast' | 'track';
   title: string;
   subtitle?: string | null;
-  authors?: AuthorRef[];
+  authors?: AuthorBadge[];
   author?: string | null;
   narrator?: string | null;
   description?: string | null;
