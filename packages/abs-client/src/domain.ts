@@ -27,12 +27,25 @@
  * occurrence and the second one shipped anyway, so the fake id is now simply
  * not part of this type: `Book.authors`/`Book.series` are typed as
  * `AuthorBadge[]`/`SeriesBadge[]` — display-only shapes with no `id` field at
- * all. `book.media.authors[0].id` is a compile error, on an expanded item as
- * much as a minified one, because *this layer* never gives you a trustworthy
- * id either way — even an expanded item's per-book author entry is a
- * secondary reference, not the entity's own record. Get real identity from a
- * dedicated fetch instead: `AbsClient.getAuthor` for an author, or the
- * top-level `Series` list (whose `id` fields are genuine) for a series.
+ * all. `book.media.authors[0].id` is a compile error.
+ *
+ * **It is a compile error on an expanded item too, and that is a deliberate
+ * over-correction rather than a claim that the id is fake there.** An earlier
+ * draft of this comment asserted the id is never trustworthy; review
+ * established that is wrong. `normalizeMedia` passes `metadata.authors[].id`
+ * through verbatim when the array is present, and those ids are real and
+ * matchable — only the `authorName` fallback branch, taken for minified items,
+ * fabricates `id = displayName`. The two shapes are indistinguishable at the
+ * type level once normalized, so a type that admits `id` admits the fabricated
+ * one; that is precisely how the bug shipped twice. This trades a real
+ * capability for that safety: an expanded item already holds the author id
+ * needed to deep-link `/author/:id` without a second fetch, and no consumer
+ * can reach it now. Nothing needs it today. If something does, the fix is to
+ * make the two shapes distinguishable — a discriminated `AuthorRef |
+ * AuthorBadge` on `Book.authors` — **not** to put `id` back on the badge.
+ *
+ * Until then, get real identity from a dedicated fetch: `AbsClient.getAuthor`
+ * for an author, or the top-level `Series` list for a series.
  *
  * The wire response still carries the fabricated `id` key at runtime —
  * `normalizeMedia` was left constructing it unchanged, because Android's
