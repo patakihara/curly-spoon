@@ -81,8 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T21:24:30Z` · `a96077a311fa7514d` · general-purpose · ended · ## Verdict: merge with named corrections The wave is well-built. Its core risk areas — the concurrent 'MockWebServer' fan-out, the staleness guard, a…
-- `2026-08-07T21:44:44Z` · `a3acefbcb5f4b4419` · general-purpose · ended · Clean working tree, on branch 'worktree-agent-a3acefbcb5f4b4419' at commit '2f327c4', based on '91663b6'. Not pushed, as instructed. ## Report **Bran…
 - `2026-08-07T22:05:52Z` · `aa590b527eef7f0d1` · general-purpose · ended · Confirmed — the mutation paths ('requestRelease'/'updateReleaseState'/'requestAnyway'/'updateTitleRequestState'/'requestCandidate'/'updateCandidateSt…
 - `2026-08-07T22:09:11Z` · `a23f9d40a38873131` · general-purpose · ended · Committed on the worktree branch (not pushed, not merged, as instructed). Final report: ## Findings **Test 1 & 2 ('UncaughtExceptionsBeforeTest' at '…
 - `2026-08-07T22:11:08Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · ## Report **Branch/commits:** 'worktree-agent-a6cc1b9e8df12d5bd', HEAD '0da3db8', with the substantive change at 'fbfe619' (both on top of '879655e')…
@@ -96,6 +94,8 @@ in-context scan of the current one.
 - `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · ended · Committed on the worktree branch, not pushed, as instructed. ## Report **Branch/commit:** 'worktree-agent-afb619fd719a4b9b3' at '69e69bf', based on '…
 - `2026-08-07T23:18:17Z` · `a84176025894b086a` · general-purpose · ended · Clean tree, everything committed. ## Report **Branch/commits:** 'worktree-agent-a84176025894b086a', 'aad6bce' (implementation) + '54cf683' (test clea…
 - `2026-08-07T23:35:14Z` · `adf013230a4368e95` · general-purpose · ended · Committed cleanly on the worktree branch ('worktree-agent-adf013230a4368e95' @ '56f2889', based on '54cf683'). Not pushed, not merged, per instructio…
+- `2026-08-08T00:55:04Z` · `a29269fefb68cb389` · general-purpose · ended · The Playwright suite is running in the background (task 'boogp0fzf'); I'll wait for its completion notification rather than polling.
+- `2026-08-08T01:15:42Z` · `a19d3c44dbe3b9109` · general-purpose · ended · All pass. Now let me write up the final report. ## Verdict: merge with named corrections The fix genuinely closes the mechanism that shipped the bug…
 
 <!-- AGENT_LOG_END -->
 
@@ -346,6 +346,23 @@ NewPipeExtractor's intended scope (`35c9634`), and two context-free objections f
 nothing is `todo`, so `input_needed` entries are reachable only by `queue show <id>`.
 
 ### Claimed work — check here before starting a wave
+
+**Claimed — 2026-08-08 ~02:15Z, session `4425f405`: 12d (Android), For You carousels.** The
+last unblocked wave in §12. Touches `apps/android/app/src/main/java/net/auralis/app/features/home/`
+and one line of `navigation/AuralisNavHost.kt`; nothing under `apps/web`, `packages/` or
+`apps/server`. The spec is committed at `docs/agent-specs/04-phase12d-android-for-you.md` — so if
+this session is lost, the wave is still dispatchable from disk.
+
+**Dispatched with one implementer and no review agent, deliberately.** Weekly usage was at 79%
+with the hand-off band at 85%, which is not enough headroom for an implementer, a reviewer and
+the two-or-three red Android CI rounds this project budgets for. Android review has lost to CI
+three waves running (§12a's two "merge as-is" reviews against three red runs), so the reviewer is
+the cheaper thing to drop than the CI iterations.
+
+**The reference screenshots are gitignored**, so a worktree agent cannot see them. The spec
+points at `/home/sofiapata/src/auralis-src/docs/research/spec-addendum/` by absolute path in the
+main checkout. Anything else dispatched against those images needs the same treatment — the
+`design_specs_need_images` lesson fails silently otherwise, producing a generic library layout.
 
 A lightweight lock, because two sessions share this checkout. Claim a wave here **before**
 dispatching it, and delete the line when it lands. A claim older than a couple of hours with
