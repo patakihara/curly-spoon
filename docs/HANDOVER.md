@@ -698,12 +698,8 @@ decisions (release signing key, `applicationId`).
   install through `applyQueue`, so 12f-2 inherits no surprises there.
   **Session `0e7913a4` now holds nothing.**
 - **12c is split, and half of it is startable now.**
-  **12c-1 (series and author detail pages)** — written, reviewed, **not merged**: it
-  reintroduced the minified-item bug. Draft at `c37d922`; see the section above. Claim
-  released. No `/series/:id` or
-  `/author/:id` route exists, which is why 12b-1's series and author search results render
-  inert; this closes that, for library content only, and does not depend on any pending
-  answer.
+  **12c-1 (series and author detail pages) — landed** at `7bf6e49` on the second attempt.
+  Its parked spec is deleted; the wave is done.
   **12c-2 (non-library content on those pages)** — genuinely blocked on **queue `440b217`**:
   whether a title already in the library should still be offered as requestable. 12b-2's
   review raised it for Search and 12c-2 raises it again for artist/author pages, so deciding
@@ -730,6 +726,14 @@ decisions (release signing key, `applicationId`).
 - **12f-2 (web queue view, clear-queue, queueable chapters) — landed** at `034c4cf`,
   verified on the merged tree (1420 unit, 307 Playwright, typecheck and lint clean). Claim
   released. Spec `03` can be deleted once someone confirms nothing else references it.
+
+- **Minified-item normalization (root-cause fix)** — claimed by session `0e7913a4`,
+  2026-08-08. Touches `packages/abs-client/src/normalize.ts` and its schemas, the
+  `apps/server` routes that serve series and author data, and their tests. Does **not** touch
+  `apps/web/src/features/`, `apps/android/` or anything under `state/`. This is the wave
+  §12c-1's own write-up called for: the bug has now been fixed twice in two places
+  (`7e57a78`, `7bf6e49`) and reintroduced once, which says prose is not holding it — the
+  goal is to make it wrong _by construction_ rather than by memory.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
