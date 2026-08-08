@@ -23,7 +23,7 @@ import net.auralis.app.AppContainer
 import net.auralis.app.features.books.BooksScreen
 import net.auralis.app.features.downloads.DownloadsScreen
 import net.auralis.app.features.login.LoginScreen
-import net.auralis.app.features.home.HomeScreen
+import net.auralis.app.features.home.ForYouScreen
 import net.auralis.app.features.onboarding.OnboardingScreen
 import net.auralis.app.features.music.AlbumDetailScreen
 import net.auralis.app.features.music.ArtistDetailScreen
@@ -163,7 +163,7 @@ fun AuralisNavHost(
             ) {
                 composable(Routes.ONBOARDING) { OnboardingScreen(container, navController) }
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
-                composable(Routes.HOME) { HomeScreen(container, playerViewModel, navController) }
+                composable(Routes.HOME) { ForYouScreen(container, playerViewModel, navController) }
                 composable(Routes.BOOKS) { BooksScreen(container, playerViewModel, navController) }
                 composable(Routes.REQUESTS) { RequestsScreen(container) }
                 composable(Routes.DOWNLOADS) { DownloadsScreen(container) }

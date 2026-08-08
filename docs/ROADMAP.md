@@ -1984,7 +1984,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12a — Five-view navigation shell (web + Android)        | done (web + Android)                              |
 | 12b — Search view: unified library + request results    | done (web + Android)                              |
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked                         |
-| 12d — For You: uniform album-card carousels             | web done, Android todo                            |
+| 12d — For You: uniform album-card carousels             | web done, Android drafted, unverified on a device |
 | 12e — Context menus (long-press / right-click)          | done (web + Android)                              |
 | 12f — Per-content-type queues                           | done (web + Android model); no Android queue view |
 
@@ -2257,6 +2257,24 @@ Worth keeping as method: _a gap next to content is not evidence that the contain
 small._ Measure the container before assuming it is the thing at fault — the wave for this
 was dispatched on the container theory and only avoided building the wrong fix because the
 agent measured first.
+
+**12d (Android) drafted 2026-08-08**, mirroring the web wave above: `features/home/ForYouFeed.kt`
+(pure aggregation), `ForYouFilters.kt` (pure chip state), `ForYouCarousel.kt` (the single
+`ForYouCard`/`ForYouCarouselRow`/`QuickPickGrid` composables and every geometry constant),
+`ForYouViewModel.kt` (the three-source fan-out: first book library's shelves, first podcast
+library's shelves, Jellyfin favourite albums — each with its own `try`/`catch`, degrading
+independently), and `ForYouScreen.kt`, now mounted at `Routes.HOME` in place of `HomeScreen`
+(deleted — it had become unreferenced; its "Downloads"/"Requests" top-bar actions moved onto
+`ForYouScreen` so those two routes stay reachable). `HomeShelvesContent.kt`/`HomeViewModel.kt`
+are untouched and still serve `BooksScreen`.
+
+**Visual conformance is unverified on this machine** — no JDK/SDK/emulator here, so nothing
+in this wave has been compiled, run, or looked at rendered. The structural substitute the web
+wave's own geometry-assertion lesson calls for: every card dimension lives in named `Dp`
+constants in `ForYouCarouselDimens` (one object, one file), and there is exactly one card
+composable (`ForYouCard`) for all three content types — no per-type branch that changes size.
+Unit tests assert the pure aggregation/filter/round-robin logic and the ViewModel's per-source
+degradation; they cannot assert pixels. Budget the usual two-or-three red Android CI rounds.
 
 Two things came with it: `contentMaxWidth()` in `shellLayout.ts` is a tested pure function
 capped at 1320 rather than an unbounded stretch, and `margin-inline: auto` fixes a real
