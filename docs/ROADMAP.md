@@ -1986,7 +1986,7 @@ test: the exact path Pages serves `repo/` at, and whether `fdroid update`'s flag
 | 12c — In-view search and artist/author full discography | 12c-1 done, 12c-2 blocked                         |
 | 12d — For You: uniform album-card carousels             | web done, Android drafted, unverified on a device |
 | 12e — Context menus (long-press / right-click)          | done (web + Android)                              |
-| 12f — Per-content-type queues                           | done (web + Android model); no Android queue view |
+| 12f — Per-content-type queues                           | done (web + Android, incl. Android queue view)    |
 
 #### 12a — The five views
 

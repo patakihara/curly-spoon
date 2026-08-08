@@ -81,7 +81,6 @@ in-context scan of the current one.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T22:11:08Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · ## Report **Branch/commits:** 'worktree-agent-a6cc1b9e8df12d5bd', HEAD '0da3db8', with the substantive change at 'fbfe619' (both on top of '879655e')…
 - `2026-08-07T22:12:04Z` · `abe76a1fb774d2ff7` · general-purpose · ended · I have everything needed. Now the final report. ## Report **1. 'JellyfinTrack'** ('apps/web/src/api/types.ts:563-575'): '''ts export interface Jellyf…
 - `2026-08-07T22:12:55Z` · `a7ca465024383f9a7` · general-purpose · ended · Summary of this session's work in '~/src/auralis-src' (worktree 'agent-a6cc1b9e8df12d5bd'): - Diagnosed the red Android build (12b-A2's fire-and-forg…
 - `2026-08-07T22:28:32Z` · `a055dfe99bdf283ae` · general-purpose · ended · Clean tree, everything committed. ## Report **Branch/commit:** 'worktree-agent-a055dfe99bdf283ae' (this worktree's branch), HEAD '22c7ff6', on top of…
@@ -96,6 +95,7 @@ in-context scan of the current one.
 - `2026-08-08T01:15:42Z` · `a19d3c44dbe3b9109` · general-purpose · ended · All pass. Now let me write up the final report. ## Verdict: merge with named corrections The fix genuinely closes the mechanism that shipped the bug…
 - `2026-08-08T02:06:28Z` · `a3611acd6116bcddb` · general-purpose · ended · Work is complete and committed on the worktree branch (not pushed). **Branch/commit:** 'worktree-agent-a3611acd6116bcddb' @ '2725f0b', based on '08dd…
 - `2026-08-08T02:24:58Z` · `a7c79fdbae07e4da4` · general-purpose · ended · Committed cleanly, clean tree. ## Report **Branch/commit:** 'worktree-agent-a7c79fdbae07e4da4' at '39798b7', on top of '2725f0b' (confirmed via 'git…
+- `2026-08-08T02:33:00Z` · `a86f0a330c35152e9` · general-purpose · ended · Committed cleanly, working tree clean, not pushed. Now let me write the final report. ## Report **Branch/commit:** 'worktree-agent-a86f0a330c35152e9'…
 
 <!-- AGENT_LOG_END -->
 
@@ -347,68 +347,24 @@ nothing is `todo`, so `input_needed` entries are reachable only by `queue show <
 
 ### Claimed work — check here before starting a wave
 
-**Claimed — 2026-08-08 ~03:00Z, session `4425f405`: the Android queue view** (12f's remaining
-half). Spec committed at `docs/agent-specs/05-phase12f-android-queue-view.md`. Touches
-`apps/android/.../features/player/` and one route in `AuralisNavHost.kt`; nothing on web.
+**Landed — 2026-08-08 ~03:25Z, session `4425f405`: the Android queue view is done.** `de0ce06`,
+**Android CI green first attempt.** `QueueScreen` at `Routes.QUEUE`, reached from a queue button
+on `NowPlayingScreen` (same shape as the existing Lyrics button). Clear-queue works for all three
+content types. Claim released. **This closes 12f.**
 
-**The trap this wave is built around, stated here because it has bitten four times:** Android's
-music queue is **Media3's playlist, not a `QueueStore`**. `musicQueue` is write-once and
-read-never. A queue view that renders `musicQueue.state` shows an empty list forever, and a
-clear-queue that resets the store leaves Media3 playing. So this is deliberately _not_ a
-structural mirror of web's `QueueView.tsx` — web's music queue really is a store, and Android's
-is not. The spec makes the reader for each of the three content types an explicit reporting
-requirement.
+**It reads three different sources on purpose, and that is the whole point of the wave.** Music
+rows come from Media3's real playlist through `PlaybackHandle` (`mediaItemCount`/`getMediaItemAt`/
+`currentMediaItemIndex`, all newly added to that seam); podcast and audiobook rows come from their
+`QueueStore`s. Clear dispatches the same way — `clearMediaItems()` for music, `clearQueue()` for
+the other two. The test that pins it asserts on the **fake handle's call count**, not on
+`musicQueue.state`, so it fails if anyone "simplifies" the clear back into the dead store.
+`musicQueue` remains write-once and read-never; nothing in this wave changed that.
 
-**Landed — 2026-08-08 ~02:45Z, session `4425f405`: 12d (Android) is done.** `2725f0b`, with the
-CI fix in `39798b7`. **Android CI green.** For You now has the quick-pick grid, the
-`All / Music / Podcasts / Audiobooks` chip row and uniform album-card carousels across books,
-podcasts and music — a mirror of web's shipped `694e042`, not a new design. `HomeScreen.kt` is
-deleted; `BooksScreen` keeps `HomeViewModel`/`HomeShelvesContent`. Claim released.
-
-**Visual conformance is unverified and cannot be verified here** — no JDK, SDK or emulator, so
-nothing was ever looked at rendered. Web's version of this wave was checked by measuring
-bounding boxes at three widths, and this project has three recorded waves where looking at the
-page found what reading it did not. The structural substitute is all that CI can enforce: one
-`ForYouCard` composable for every content type, every geometry number in one
-`ForYouCarouselDimens` object, and no per-type size branch. Treat the layout as a draft until
-someone opens it on a device.
-
-**The screenshots that specify this wave are gitignored**, so a worktree agent cannot see them.
-The spec pointed at `/home/sofiapata/src/auralis-src/docs/research/spec-addendum/` by absolute
-path in the main checkout. Anything else dispatched against those images needs the same
-treatment — otherwise the `design_specs_need_images` lesson fails silently and the agent
-invents a generic library layout.
-
-**One implementer, no reviewer — and on this wave that was the right trade.** Weekly usage was
-79% against an 85% hand-off band, which does not cover an implementer, a reviewer and the two or
-three red Android rounds this project budgets for. Android review has lost to CI three waves
-running, so the reviewer was the cheaper thing to drop. It cost exactly one red round, and what
-CI caught was not something a reviewer would have.
-
-### A green wave turned an existing test red, and 12d did not break it (2026-08-08)
-
-`2725f0b` compiled clean and every one of its own tests passed, but `UnifiedSearchViewModelTest`
-— a file the wave never touches — failed with a `ClassCastException`. Android had been green on
-the immediately preceding commit.
-
-The test awaited only `requestableBooksState` settling and then cast `resultsState` to
-`Results`. Those are **two deliberately independent async paths**: 12b-A2 made the requestable
-fan-out a `viewModelScope.launch` sibling of the library fetch precisely so library results
-render first. On a busier runner the requestable half can settle first, leaving `resultsState`
-still `Loading` when the cast runs. The race was always there; 12d's three new test classes
-added enough load to expose it. Fixed in `39798b7` by awaiting both states, in that test and in
-the identically-shaped one below it.
-
-**The conventional fix would have been wrong**, and that is the reusable part. Injecting a test
-dispatcher into `ApiClient` is what nine ViewModel test files here do — but two tests in _this_
-file rely on real `MockWebServer`-delay interleaving, and forcing an unconfined dispatcher
-collapses exactly what they exist to pin. `HANDOVER` had recorded that from an earlier round and
-it held. `.first {}` returns immediately when its condition is already met, so awaiting the
-extra state adds no artificial synchronisation to the tests that were passing.
-
-**Worth generalising: adding test classes is not an inert change.** It shifts scheduling, and
-this suite has latent races that only surface under load. A wave whose own tests all pass can
-still turn a untouched file red.
+**Two soft spots, neither a defect:** `musicQueueRowsFlow()` polls the controller on a delay and
+has no test of its own (the pure mapping under it does) — a polling flow over Media3 is a
+compromise rather than the natural shape, and a listener-based version is the better wave if
+anyone touches it. And no test exercises `QueueScreen.kt` itself; there is no Compose test
+harness in this project.
 
 **How to tell a claim is live rather than stale**, learned the same day: an empty
 `git log main..<worktree-branch>` proves only that the agent has not committed yet, not that
