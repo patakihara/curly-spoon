@@ -54,6 +54,16 @@ private const val LYRICS_POSITION_TICK_MS = 200L
  */
 private const val NOW_PLAYING_PROGRESS_TICK_MS = 200L
 
+/**
+ * How often [PlayerViewModel.musicQueueRowsFlow] rebuilds the queue view's music rows from
+ * Media3's real playlist (Android wave 12f) while collected. A coarse, independent constant from
+ * [NOW_PLAYING_PROGRESS_TICK_MS]/[LYRICS_POSITION_TICK_MS] for the same reason those two stay
+ * independent of each other and of [JELLYFIN_PROGRESS_TICK_MS]: this is not a latency-sensitive
+ * surface (the queue view is not visible during ordinary playback), so it costs nothing to sample
+ * far less often than a seek bar or lyric highlight would need.
+ */
+private const val QUEUE_VIEW_POLL_TICK_MS = 1_000L
+
 /** What the mini player (and, later, a full Now Playing surface) renders. */
 sealed interface PlayerUiState {
     data object Idle : PlayerUiState
@@ -161,6 +171,35 @@ interface PlaybackHandle {
         item: MediaItem,
     )
 
+    /**
+     * Number of items in Media3's real playlist right now (Android wave 12f) — the queue view's
+     * read side. `0` on an empty/not-yet-connected controller, matching a real, empty Media3
+     * playlist ([currentMediaItemIndex] is `-1` in that same state).
+     */
+    val mediaItemCount: Int
+
+    /** The [MediaItem] at [index] in Media3's real playlist — paired with [mediaItemCount] so a
+     *  caller can enumerate the whole playlist without Media3's own [Player] type leaking past
+     *  this seam. */
+    fun getMediaItemAt(index: Int): MediaItem
+
+    /** Removes the item at [index] from Media3's real playlist. Not wired to any UI action in
+     *  this wave (the queue view's "clear" action removes everything via [clearMediaItems], not
+     *  one row at a time) — added alongside it because both are the same "make the real Media3
+     *  playlist mutable/readable through this seam" step, and a single-row remove is the obvious
+     *  next queue-view action once one exists. */
+    fun removeMediaItem(index: Int)
+
+    /**
+     * Clears Media3's real playlist outright — the music half of the queue view's "Clear queue"
+     * action (Android wave 12f). **This, not [QueueStore.clearQueue] on [PlayerViewModel.musicQueue],
+     * is what actually empties what plays next for music**: [PlayerViewModel.musicQueue] is
+     * write-once and read-never (see that property's own doc comment for the full account of why
+     * a wave 12e defect already shipped a "Play next" that wrote into it and did nothing), so a
+     * clear action that only reset that store would leave Media3 happily playing on regardless.
+     */
+    fun clearMediaItems()
+
     var shuffleModeEnabled: Boolean
 
     var repeatMode: Int
@@ -195,6 +234,15 @@ private class MediaControllerPlaybackHandle(private val controller: MediaControl
         index: Int,
         item: MediaItem,
     ) = controller.addMediaItem(index, item)
+
+    override val mediaItemCount: Int
+        get() = controller.mediaItemCount
+
+    override fun getMediaItemAt(index: Int): MediaItem = controller.getMediaItemAt(index)
+
+    override fun removeMediaItem(index: Int) = controller.removeMediaItem(index)
+
+    override fun clearMediaItems() = controller.clearMediaItems()
 
     override var shuffleModeEnabled: Boolean
         get() = controller.shuffleModeEnabled
@@ -296,6 +344,19 @@ class PlayerViewModel(
      * function already knows statically.
      */
     private var currentContentType: QueueContentType? = null
+
+    /**
+     * Observable mirror of [currentContentType] (Android wave 12f) — the private `var` above is
+     * read synchronously by [resolveAdvanceAction]/[enqueueTrackNext]/[enqueueTrackLast], all of
+     * which run inside a `viewModelScope.launch` and need no recomposition trigger, so it stays
+     * as-is rather than being rewritten into a `StateFlow` itself. The queue view is a Compose
+     * screen that needs to recompose when the live content type changes (e.g. a book finishes and
+     * a queued podcast episode starts), which a private `var` can never signal on its own — this
+     * `StateFlow` is written at the same three assignment sites as [currentContentType] itself
+     * ([playItem], [playEpisode], [playQueue]) and nowhere else, so the two can never disagree.
+     */
+    private val _currentContentTypeFlow = MutableStateFlow<QueueContentType?>(null)
+    val currentContentTypeFlow: StateFlow<QueueContentType?> = _currentContentTypeFlow.asStateFlow()
 
     /**
      * The audiobook item id currently loaded, when [currentContentType] is
@@ -550,6 +611,7 @@ class PlayerViewModel(
             // this path -- but it is the same class of hazard queueGeneration exists to close for
             // playQueue's own background page-fetch race (see that field's own doc comment).
             currentContentType = QueueContentType.AUDIOBOOK
+            _currentContentTypeFlow.value = QueueContentType.AUDIOBOOK
             currentAudiobookItemId = itemId
             playResolved(fallbackTitle = itemId, seekToMsAfterLoad = seekToMsAfterLoad) {
                 playbackItemResolver.resolve(itemId)
@@ -568,6 +630,7 @@ class PlayerViewModel(
     ) {
         viewModelScope.launch {
             currentContentType = QueueContentType.PODCAST
+            _currentContentTypeFlow.value = QueueContentType.PODCAST
             playResolved(fallbackTitle = episodeId) { playbackItemResolver.resolveEpisode(itemId, episodeId) }
         }
     }
@@ -676,6 +739,7 @@ class PlayerViewModel(
     ) {
         viewModelScope.launch {
             currentContentType = QueueContentType.MUSIC
+            _currentContentTypeFlow.value = QueueContentType.MUSIC
             val myGeneration = ++queueGeneration
             try {
                 val queue = buildQueue()
@@ -833,6 +897,72 @@ class PlayerViewModel(
             throw e
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * A cold flow of the queue view's music rows (Android wave 12f), sampled every
+     * [QUEUE_VIEW_POLL_TICK_MS] while collected — same "fresh `flow {}` per collector, runs only
+     * while collected" shape as [playbackProgressFlow]/[lyricsPositionMsFlow], for the same reason:
+     * the queue screen only needs this ticking while it's on screen. Unlike those two, this reads
+     * through [activeController] (a [PlaybackHandle]), not [controller] directly — the whole point
+     * of wave 12f's [PlaybackHandle.mediaItemCount]/[PlaybackHandle.getMediaItemAt] additions is to
+     * make "what is Media3's playlist right now" reachable through the same tested seam every other
+     * command in this file already goes through, per this class's own `musicQueue` doc comment on
+     * why a music queue view has to be built on Media3's real playlist rather than a [QueueStore].
+     * Emits an empty list rather than throwing when nothing is connected yet, matching this file's
+     * "total, degrades rather than throws" style throughout.
+     */
+    fun musicQueueRowsFlow(): Flow<List<QueueRowUi>> =
+        flow {
+            while (true) {
+                val rows =
+                    try {
+                        val ctrl = activeController()
+                        val items =
+                            (0 until ctrl.mediaItemCount).map { index ->
+                                val mediaItem = ctrl.getMediaItemAt(index)
+                                MediaItemSummary(
+                                    id = mediaItem.mediaId,
+                                    title = mediaItem.mediaMetadata.title?.toString() ?: mediaItem.mediaId,
+                                    artist = mediaItem.mediaMetadata.artist?.toString(),
+                                )
+                            }
+                        musicQueueRows(items, ctrl.currentMediaItemIndex)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                emit(rows)
+                delay(QUEUE_VIEW_POLL_TICK_MS)
+            }
+        }
+
+    /**
+     * Clears whichever queue [currentContentType] says is live right now — the queue view's one
+     * "Clear queue" action, covering all three content types (`docs/ROADMAP.md` §12f's own
+     * requirement). Dispatches to [QueueStore.clearQueue] for podcast/audiobook, but to
+     * [PlaybackHandle.clearMediaItems] for music: **this is the assertion that pins the whole
+     * point of this wave** (see `musicQueue`'s own doc comment) — a clear that only reset
+     * [musicQueue] would leave Media3 happily playing its real playlist on regardless, exactly the
+     * wave 12e defect already shipped once for "Play next"/"Play last". A no-op when nothing is
+     * currently playing ([currentContentType] is `null`).
+     */
+    suspend fun clearActiveQueue() {
+        when (currentContentType) {
+            QueueContentType.PODCAST -> podcastQueue.clearQueue()
+            QueueContentType.AUDIOBOOK -> audiobookQueue.clearQueue()
+            QueueContentType.MUSIC -> {
+                try {
+                    activeController().clearMediaItems()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Degrade silently, matching every other activeController() dispatch above.
+                }
+            }
+            null -> {}
         }
     }
 

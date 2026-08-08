@@ -194,6 +194,7 @@ fun AuralisShell(
                     playerViewModel = playerViewModel,
                     imageLoader = imageLoader,
                     onDismiss = { isNowPlayingExpanded = false },
+                    onOpenQueue = { navController.navigate(Routes.QUEUE) },
                 )
             }
         }

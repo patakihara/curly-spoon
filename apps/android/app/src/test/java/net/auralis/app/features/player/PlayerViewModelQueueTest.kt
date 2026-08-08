@@ -254,6 +254,44 @@ class PlayerViewModelQueueTest {
             // Playback itself is untouched by clearing the queue.
             assertEquals(1, handle.playCallCount)
         }
+
+    /**
+     * Android wave 12f's queue-view "Clear queue" action, music branch. This is the assertion
+     * that pins the whole point of the wave (see [PlayerViewModel.clearActiveQueue]'s own doc
+     * comment): a redirect back to resetting [PlayerViewModel.musicQueue] instead of calling
+     * [PlaybackHandle.clearMediaItems] would pass a `musicQueue.state`-only assertion while doing
+     * nothing to what Media3 actually plays next -- so this asserts on [FakePlaybackHandle]
+     * directly, never on the store.
+     */
+    @Test
+    fun `clearing the active queue while music is playing calls clearMediaItems on the handle`() =
+        runTest {
+            viewModel.playQueue(buildQueue = { listOf(resolvedTrack("t1"), resolvedTrack("t2")) })
+
+            viewModel.clearActiveQueue()
+
+            assertEquals(1, handle.clearMediaItemsCallCount)
+        }
+
+    /**
+     * The [QueueContentType.PODCAST] counterpart -- clearing while a podcast is the live content
+     * type must empty [podcastQueue] and must **not** reach the handle at all, matching
+     * `docs/HANDOVER.md`'s "writer must name its reader" lesson: a podcast queue's real source of
+     * truth is [QueueStore], not Media3, so the music-only [PlaybackHandle.clearMediaItems] path
+     * has no business firing here.
+     */
+    @Test
+    fun `clearing the active queue while a podcast is playing empties the podcast queue and does not touch the handle`() =
+        runTest {
+            enqueuePlayEpisode("show-1", "ep-1")
+            viewModel.playEpisode("show-1", "ep-1")
+            podcastQueue.enqueueNext(PodcastQueueEntry("show-1", "ep-2", "Episode Two", "Show"))
+
+            viewModel.clearActiveQueue()
+
+            assertNull(podcastQueue.state.value)
+            assertEquals(0, handle.clearMediaItemsCallCount)
+        }
 }
 
 private fun fakeMediaItem(resolved: ResolvedPlayback): MediaItem =

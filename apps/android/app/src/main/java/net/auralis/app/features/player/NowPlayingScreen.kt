@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forward30
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -74,6 +75,9 @@ fun NowPlayingScreen(
     playerViewModel: PlayerViewModel,
     imageLoader: ImageLoader,
     onDismiss: () -> Unit,
+    // Android wave 12f -- navigates to Routes.QUEUE, matching onOpenLyrics's identical
+    // "AuralisShell owns the navController, this composable just gets a lambda" shape.
+    onOpenQueue: () -> Unit,
 ) {
     // remember(playerViewModel) so the same Flow instance survives recomposition: a fresh
     // flow{} on every call (this composable recomposes on every progress tick it collects)
@@ -97,8 +101,13 @@ fun NowPlayingScreen(
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Collapse Now Playing")
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Collapse Now Playing")
+                }
+                IconButton(onClick = onOpenQueue) {
+                    Icon(Icons.Filled.QueueMusic, contentDescription = "Queue")
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

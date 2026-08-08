@@ -64,6 +64,37 @@ internal class FakePlaybackHandle : PlaybackHandle {
         addMediaItemCalls.add(index to item)
     }
 
+    /** Backing list for [mediaItemCount]/[getMediaItemAt]/[removeMediaItem] (Android wave 12f) --
+     *  a real, mutable playlist simulation, not a stub: [removeMediaItem]/[clearMediaItems]
+     *  actually shrink it, so a test asserting against [mediaItemCount] after either call is
+     *  exercising real behaviour rather than a vacuously-passing no-op (see
+     *  `docs/HANDOVER.md`'s tautological-test findings). A test that wants a non-empty playlist
+     *  populates this directly. */
+    val playlist = mutableListOf<MediaItem>()
+
+    /** Count of [clearMediaItems] calls -- the assertion that pins wave 12f's whole point: the
+     *  queue view's "Clear queue" action for music must call this, not merely reset
+     *  [PlayerViewModel.musicQueue]. */
+    var clearMediaItemsCallCount = 0
+
+    /** Recorded indices passed to [removeMediaItem]. */
+    val removeMediaItemCalls = mutableListOf<Int>()
+
+    override val mediaItemCount: Int
+        get() = playlist.size
+
+    override fun getMediaItemAt(index: Int): MediaItem = playlist[index]
+
+    override fun removeMediaItem(index: Int) {
+        removeMediaItemCalls.add(index)
+        playlist.removeAt(index)
+    }
+
+    override fun clearMediaItems() {
+        clearMediaItemsCallCount++
+        playlist.clear()
+    }
+
     override var shuffleModeEnabled: Boolean = false
     override var repeatMode: Int = Player.REPEAT_MODE_OFF
     override val isPlaying: Boolean

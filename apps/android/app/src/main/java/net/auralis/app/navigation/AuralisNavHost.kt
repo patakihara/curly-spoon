@@ -33,6 +33,7 @@ import net.auralis.app.features.music.PlaylistDetailScreen
 import net.auralis.app.features.music.PlaylistsScreen
 import net.auralis.app.features.player.LyricsScreen
 import net.auralis.app.features.player.PlayerViewModel
+import net.auralis.app.features.player.QueueScreen
 import net.auralis.app.features.musicrequests.MusicRequestsScreen
 import net.auralis.app.features.podcasts.PodcastDetailScreen
 import net.auralis.app.features.podcasts.PodcastsScreen
@@ -67,6 +68,13 @@ object Routes {
      * a nav argument — see [net.auralis.app.features.player.LyricsScreen]'s own doc comment for
      * why. */
     const val LYRICS = "music/lyrics"
+
+    /** Android wave 12f — the queue view, reached from [net.auralis.app.features.player
+     * .NowPlayingScreen]'s queue button. Same "no argument, reads live state off `PlayerViewModel`"
+     * shape as [LYRICS] — see [net.auralis.app.features.player.QueueScreen]'s own doc comment for
+     * why: which queue to show is [net.auralis.app.features.player.PlayerViewModel.currentContentTypeFlow],
+     * not a nav argument. */
+    const val QUEUE = "player/queue"
 
     /** Argument name within [PODCAST_DETAIL_PATTERN] — the podcast library item's id. */
     const val PODCAST_DETAIL_ARG_ITEM_ID = "itemId"
@@ -183,6 +191,7 @@ fun AuralisNavHost(
                 composable(Routes.MUSIC_PLAYLISTS) { PlaylistsScreen(container, navController) }
                 composable(Routes.MUSIC_REQUESTS) { MusicRequestsScreen(container) }
                 composable(Routes.LYRICS) { LyricsScreen(container, playerViewModel) }
+                composable(Routes.QUEUE) { QueueScreen(playerViewModel) }
                 composable(
                     Routes.musicArtistDetailRoute(),
                     arguments =
