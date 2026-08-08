@@ -347,6 +347,18 @@ nothing is `todo`, so `input_needed` entries are reachable only by `queue show <
 
 ### Claimed work — check here before starting a wave
 
+**Claimed — 2026-08-08 ~03:00Z, session `4425f405`: the Android queue view** (12f's remaining
+half). Spec committed at `docs/agent-specs/05-phase12f-android-queue-view.md`. Touches
+`apps/android/.../features/player/` and one route in `AuralisNavHost.kt`; nothing on web.
+
+**The trap this wave is built around, stated here because it has bitten four times:** Android's
+music queue is **Media3's playlist, not a `QueueStore`**. `musicQueue` is write-once and
+read-never. A queue view that renders `musicQueue.state` shows an empty list forever, and a
+clear-queue that resets the store leaves Media3 playing. So this is deliberately _not_ a
+structural mirror of web's `QueueView.tsx` — web's music queue really is a store, and Android's
+is not. The spec makes the reader for each of the three content types an explicit reporting
+requirement.
+
 **Landed — 2026-08-08 ~02:45Z, session `4425f405`: 12d (Android) is done.** `2725f0b`, with the
 CI fix in `39798b7`. **Android CI green.** For You now has the quick-pick grid, the
 `All / Music / Podcasts / Audiobooks` chip row and uniform album-card carousels across books,
