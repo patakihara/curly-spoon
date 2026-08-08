@@ -36,7 +36,7 @@ describe('sortItems', () => {
     const items = [
       item({
         id: 'has-authors',
-        media: { kind: 'book', title: 't', authors: [{ id: 'x', name: 'Zed' }] },
+        media: { kind: 'book', title: 't', authors: [{ name: 'Zed' }] },
       }),
       item({ id: 'has-author-string', media: { kind: 'book', title: 't', author: 'Ann' } }),
       item({ id: 'has-neither', media: { kind: 'book', title: 't' } }),

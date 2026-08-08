@@ -12,7 +12,7 @@ function bookItem(id: string, title: string, progress: number | null = null): Li
     id,
     libraryId: 'lib-books',
     coverPath: null,
-    media: { kind: 'book', title, authors: [{ id: 'a1', name: 'Ann Author' }] },
+    media: { kind: 'book', title, authors: [{ name: 'Ann Author' }] },
     progress:
       progress === null
         ? null
