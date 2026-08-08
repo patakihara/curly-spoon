@@ -536,7 +536,17 @@ class UnifiedSearchViewModelTest {
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
+            // The library fetch and the requestable fan-out are two independent async paths
+            // (see the "12b-A2 — the requestable fan-out" tests above) — one settling says
+            // nothing about the other. Awaiting only `requestableBooksState` and then casting
+            // `resultsState` immediately after is a race: on a slower/busier CI runner the
+            // requestable path can settle first, and `resultsState` is still `Loading` when
+            // the cast below runs, throwing ClassCastException. Both `.first{}` calls are
+            // needed — each already returns immediately if its condition is already true, so
+            // this adds no artificial synchronisation and does not touch the real concurrency
+            // the sibling test above exists to pin.
             viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+            viewModel.uiState.first { it.resultsState is UnifiedSearchResultsUiState.Results }
 
             val results = viewModel.uiState.value.resultsState as UnifiedSearchResultsUiState.Results
             assertEquals(listOf("Dune"), results.books.map { it.title })
@@ -574,7 +584,11 @@ class UnifiedSearchViewModelTest {
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
+            // Same race as "a requestable book search failure leaves the library results
+            // intact" above: the library fetch and the requestable fan-out settle
+            // independently, so both conditions must be awaited before either state is cast.
             viewModel.uiState.first { it.requestableBooksState is RequestableBooksUiState.Loaded }
+            viewModel.uiState.first { it.resultsState is UnifiedSearchResultsUiState.Results }
 
             val results = viewModel.uiState.value.resultsState as UnifiedSearchResultsUiState.Results
             assertTrue(results.books.isEmpty())
