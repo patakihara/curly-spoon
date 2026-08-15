@@ -94,6 +94,17 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            // Load-bearing: Robolectric cannot inflate any Android resource (a theme, a
+            // string, a layout) without the real resource table, and Compose UI tests need
+            // exactly that to render. Without this flag every Robolectric-backed Compose test
+            // fails before the test body even runs.
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -125,4 +136,16 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    // Compose UI test harness (Robolectric — runs under `gradlew test`, no device/emulator).
+    // The BOM has to be applied to testImplementation too, the same way it is applied to
+    // implementation above, or ui-test-junit4/ui-test-manifest cannot resolve a version.
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+    // Required so createComposeRule() has an activity to host the composable under test;
+    // omitting it fails at runtime with a missing-activity error, not a compile error.
+    testImplementation(libs.androidx.ui.test.manifest)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.test.core.ktx)
 }
