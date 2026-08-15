@@ -101,15 +101,20 @@ test('Music appears in navigation once Jellyfin is configured', async ({ page })
   await expect(page.getByTestId('music-page')).toBeVisible();
 });
 
-test('the artist grid shows both fixture artists with a range label', async ({ page }) => {
+test('the artist grid shows every fixture artist with a range label', async ({ page }) => {
   await page.goto('/music');
   await expect(page.getByTestId('music-artist-cards')).toBeVisible();
   await expect(page.getByTestId('music-artist-artist-nebula')).toContainText(
     'The Nebula Collective',
   );
   await expect(page.getByTestId('music-artist-artist-echo')).toContainText('Echo Fields');
+  // `artist-lumen` exists so the recommender has two same-genre candidates to work with —
+  // see the comment above `ARTISTS` in `apps/server/src/testSupport/fakes/fakeJellyfin.ts`.
+  // Asserted here rather than left implicit in the count, so that adding a fourth artist
+  // fails on a named missing card instead of only on an off-by-one in the range label.
+  await expect(page.getByTestId('music-artist-artist-lumen')).toContainText('Lumen Cascade');
 
-  await expect(page.getByTestId('music-artists-pagination')).toContainText('1–2 of 2');
+  await expect(page.getByTestId('music-artists-pagination')).toContainText('1–3 of 3');
   await expect(page.getByTestId('music-artists-prev')).toBeDisabled();
   await expect(page.getByTestId('music-artists-next')).toBeDisabled();
 });
