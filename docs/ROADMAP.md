@@ -2754,13 +2754,13 @@ Each wave names its **reader** — the thing that consumes what it writes. A wav
 writer with no named reader has shipped four times on this project, green tests each time,
 doing nothing. See `docs/HANDOVER.md`.
 
-| Wave    | What                                                                                                                                                                                  | Reader                                      | Status           |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------- |
-| **13a** | Pure scoring core in `apps/server/src/features/recommendations/` — build an affinity profile from `mediaProgress[]` + items; score candidates; emit ranked, reasoned shelves. No I/O. | 13b's route handler                         | done (`8d071b8`) |
-| **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | done (`0be4fc6`) |
-| **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | done (`8bbad08`) |
-| **13d** | Android — same, in `features/home/`, through `ApiClient`.                                                                                                                             | `ForYouScreen`                              | done (`8335184`) |
-| **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | todo             |
+| Wave    | What                                                                                                                                                                                  | Reader                                      | Status                      |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------- |
+| **13a** | Pure scoring core in `apps/server/src/features/recommendations/` — build an affinity profile from `mediaProgress[]` + items; score candidates; emit ranked, reasoned shelves. No I/O. | 13b's route handler                         | done (`8d071b8`)            |
+| **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | done (`0be4fc6`)            |
+| **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | done (`8bbad08`)            |
+| **13d** | Android — same, in `features/home/`, through `ApiClient`.                                                                                                                             | `ForYouScreen`                              | done (`8335184`)            |
+| **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | **reverted** — see HANDOVER |
 
 **What 13a established, so 13b–13e do not rediscover it.** The scoring core is merged and
 its `RecommendationCandidate` is an **adapted** shape, not a re-export of `LibraryItem`. A

@@ -77,7 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T14:08:43Z` · `ac47918293666b36d` · general-purpose · ended · Committed cleanly, working tree clean. Not pushed, not merged, no 'Agent' calls made. ## Report **New sha:** '8f91489' on 'worktree-agent-ac479182936…
 - `2026-08-15T14:17:38Z` · `a3ac2f0cdeb78d7a8` · general-purpose · ended · Clean working tree, both commits landed on the worktree branch. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-agent-a…
 - `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
 - `2026-08-15T14:33:44Z` · `abfc1e3c98500edeb` · general-purpose · running · —
@@ -89,43 +88,84 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T15:03:51Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:06:49Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:12:06Z` · `aee8bf94663049be8` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-aee8bf94663049be8' at 'bce0e16', based on '4b419e1'. Working tree is clean. Not pushed, not merged, no 'A…
-- `2026-08-15T15:19:13Z` · `a82d88635348acc78` · general-purpose · running · —
+- `2026-08-15T15:19:13Z` · `a82d88635348acc78` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-a82d88635348acc78' at 'd43dd81', based on 'ecdbb02'. Working tree is clean. Not pushed, not merged, no 'A…
 - `2026-08-15T15:32:08Z` · `a24c42170d77b3afe` · general-purpose · ended · Working tree clean, committed on 'worktree-agent-a24c42170d77b3afe' at '9d98a0b', based on 'c7f16ff'. Not pushed, not merged, no 'Agent' calls made.…
-- `2026-08-15T15:34:57Z` · `a6168e2a5df25b40c` · general-purpose · running · —
+- `2026-08-15T15:34:57Z` · `a6168e2a5df25b40c` · general-purpose · ended · Still running; I'll wait for the monitor's completion notification rather than poll further.
+- `2026-08-15T15:44:26Z` · `a6168e2a5df25b40c` · general-purpose · ended · I'll wait for the monitor's notification rather than poll further.
 
 <!-- AGENT_LOG_END -->
 
 ---
 
-## Phase 13 — personalized recommendations (the current work)
+## Phase 13 — personalized recommendations: **13a–13d landed, 13e reverted**
 
-`ROADMAP.md` §13 is the spec; read it before picking up a wave. The short version, so a
-session knows whether §13 is worth opening:
+`ROADMAP.md` §13 is the spec. On `main`: **13a** `8d071b8` (pure scoring core), **13b**
+`0be4fc6` (`GET /libraries/:id/recommended` + `toCandidate`), **13c** `8bbad08` (web),
+**13d** `8335184` (Android). All CI-verified.
 
-**The For You screen is a passthrough wearing a name.** `GET /api/v1/libraries/:id/home`
-returns Audiobookshelf's `/personalized` shelves unchanged; the music half is one hardcoded
-favourites carousel stitched on the client. There is no ranking or scoring anywhere in the
-tree — `AuralisNavHost.kt` and `BooksScreen.kt` each carry a comment saying so.
+**What works today.** The BFF computes book recommendations from Audiobookshelf's per-user
+`mediaProgress[]` — signal that already existed and nothing read. Ranking is one pure, I/O-free
+core (`apps/server/src/features/recommendations/`) that the route calls; it is deliberately not
+reimplemented per client. Shelves are served `Shelf`-shaped plus a `reason`, appended after the
+existing For You feed, so cold start is a visual no-op and a signal-less user sees exactly
+today's behaviour. Web and Android both render it.
 
-**The signal is already there and nothing reads it.** `getMe()` returns per-user
-`mediaProgress[]` with `progress`/`isFinished`/`finishedAt`; every `LibraryItem` carries
-normalized genres, authors, series, narrators. That is enough to rank a library. **No
-credential, no device, no external metadata provider is needed** for 13a–13e.
+### 13e was merged, broke two e2e specs, and was reverted — pick it up from here
 
-**Do not reach for the MusicBrainz/PodcastIndex/Audnexus layer.** It stays researched-not-
-decided in `INTEGRATIONS.md` with a named Audible-ToS risk; adopting it is the user's call.
+**Both 13e commits are still in `main`'s history and are recovered by reverting the reverts**
+(`git revert 30b8f3d` for 13e-2, `git revert 163d633` for 13e-1). Nothing is lost; the
+worktrees and branches are gone but `d43dd81` (13e-2) and `bce0e16` (13e-1) are reachable.
 
-Two things the waves must not undo: recommendations are computed **in the BFF and served
-`Shelf`-shaped** (web and Android each already have a client-side `forYouFeed` stitcher and
-they have drifted once — a third parallel ranking implementation is how they drift for good),
-and new shelves are **appended** to the existing feed, so a cold-start user sees exactly
-today's behaviour rather than an empty screen.
+Reverted because **a red CI on `main` silently stops the live deployment updating** —
+`format:check`/CI gate `publish`, which writes `ghcr.io/patakihara/auralis:latest`, which
+mediaserver pulls every fifteen minutes. Leaving `main` red to preserve a half-verified wave
+was the worse trade.
 
-**Quality is not assessable here.** The fakes have ~20 books across two genres. The waves
-build a recommender that is correct and explainable; whether it is _clever_ wants the user's
-real 231-item library, which wants a credential. No wave should claim otherwise.
+**Two separate regressions, both real, neither caught by any unit test** (`jellyfin-client`
+120/120, `apps/server` 678/678 — that gap is itself part of the story):
 
----
+1. **13e-1 broke `e2e/app/music-favorites.spec.ts:45`.** Deterministic, re-run three times.
+   Passed on CI at `d6d8e21`, fails after `ecdbb02`. 13e-1 touched only
+   `packages/jellyfin-client` (added `playCount`/`lastPlayedAt` to `Artist`/`Album`/`Track`,
+   extended `rawUserItemDataDtoSchema`). It fails at
+   `getByTestId('music-track-favorite-track-driftwave-1').click()` timing out after
+   `goto('/music/album/album-driftwave')` — **the track rows never render**, so it is a load
+   or shape failure, not an assertion mismatch. `apps/web` does **not** use `.strict()`, so
+   "web rejected two new keys" is ruled out. First suspect: the
+   `.optional()`-accepts-`undefined`-but-not-`null` class of bug that broke playback here for
+   weeks (see the abs-client section below).
+2. **13e-2 broke `e2e/app/jellyfin-unconfigured.spec.ts:29`** ("an unconfigured Jellyfin sends
+   /music to the connect prompt, not an empty library"). 13e-2's report explicitly claimed the
+   unconfigured path needed no special-casing because `forUser()` throws before any upstream
+   call and `handleUpstreamError` maps it to 409/401. That reasoning was wrong _somewhere_ —
+   most likely the client now issues `/music/recommended`, gets a 409, and renders an error
+   state instead of the connect prompt. **Check the client side, not just the route.**
+
+**13e-2 was also never independently reviewed** — the only wave in the phase that wasn't,
+because the session hit its usage ceiling. It touches three shared files (`types.ts`,
+`shelves.ts`, `index.ts`). Review it before re-landing.
+
+**A dispatched fix agent died producing nothing** — it backgrounded a Playwright run and
+stopped, leaving Playwright and vite holding port 4310. `fuser -k 4310/tcp` clears it. This is
+the third time on this project; the orchestrator-side worktree check is the load-bearing guard.
+
+### Decisions from 13a–13d worth not re-deciding
+
+- **`RecommendationCandidate` is an _adapted_ shape, not `LibraryItem`.** A book satisfies it;
+  a **podcast does not** (`Podcast` carries a flat `author: string | null`). A type assertion
+  pins both halves. Anything handing a podcast in must fold `author` into a one-element
+  `authors` array first.
+- **The `reason` strings in `shelves.ts`'s `reasonFor` are a first draft.** Never assert exact
+  reason text in a client test — web and Android both assert presence/absence/order only, so
+  copy can change server-side without breaking a client.
+- **Accessibility contract, set by web's browser pass, mirrored by Android:** the reason is
+  _not_ tied to the `h2`; the card list carries `aria-describedby` → the reason paragraph, so
+  title and reason announce as name + description.
+- **Reason lines wrap to two lines at 375px** when they carry the "— because you finished _X_"
+  suffix. Nothing clips (there is deliberately no clamping), but headers get uneven. If that
+  should change, the fix is `reasonFor` — once, serving both clients — not a clamp in either.
+- **Quality is not assessable here.** Ten synthetic books prove mechanism, not taste. Judging
+  whether the ranking is any _good_ wants the real 231-item library, which wants a credential.
 
 ## Claimed work — check here before starting a wave
 
