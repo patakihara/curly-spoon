@@ -26,6 +26,8 @@ export const FAKE_JELLYFIN_MUSIC_LIBRARY_ID = 'lib-fake-music';
 
 interface RawUserData {
   IsFavorite: boolean;
+  PlayCount: number;
+  LastPlayedDate: string | null;
 }
 
 interface RawArtist {
@@ -71,6 +73,15 @@ interface RawTrack {
 const ARTISTS: Array<{ id: string; name: string; overview: string }> = [
   { id: 'artist-nebula', name: 'The Nebula Collective', overview: 'A synth duo.' },
   { id: 'artist-echo', name: 'Echo Fields', overview: 'Ambient guitar.' },
+  // Added for `routes/jellyfin.test.ts`'s `GET /music/recommended` coverage (wave
+  // 13e-2): a *third* artist sharing the 'Synthwave' genre with artist-nebula's two
+  // albums, so seeding a play on one nebula album still leaves two unplayed
+  // same-genre candidates (nightglass + this artist's album) — `shelves.ts` drops
+  // any facet with fewer than two matching candidates, so the existing two-artist
+  // fixture (each with exactly two albums) could never produce a real genre shelf
+  // without adding a third genre-sharing album. Doesn't touch artist-nebula's or
+  // artist-echo's own album counts, which `jellyfin.test.ts` asserts exactly.
+  { id: 'artist-lumen', name: 'Lumen Cascade', overview: 'A one-person synth project.' },
 ];
 
 const ALBUMS: Array<{
@@ -115,6 +126,14 @@ const ALBUMS: Array<{
     artistId: 'artist-echo',
     year: 2022,
     genres: ['Ambient'],
+  },
+  {
+    // See `artist-lumen`'s own comment above `ARTISTS` for why this exists.
+    id: 'album-lumenfall',
+    name: 'Lumenfall',
+    artistId: 'artist-lumen',
+    year: 2024,
+    genres: ['Synthwave'],
   },
 ];
 
@@ -163,6 +182,15 @@ const TRACKS: Array<{
     durationSeconds: 90,
     audio: { size: 2200, mimeType: 'audio/mpeg' },
   },
+  {
+    id: 'track-lumenfall-1',
+    name: 'Afterglow',
+    albumId: 'album-lumenfall',
+    discNumber: 1,
+    trackNumber: 1,
+    durationSeconds: 180,
+    audio: { size: 3600, mimeType: 'audio/mpeg' },
+  },
 ];
 
 const artistName = (id: string): string => ARTISTS.find((a) => a.id === id)?.name ?? '';
@@ -170,7 +198,27 @@ const albumName = (id: string): string => ALBUMS.find((a) => a.id === id)?.name 
 const albumArtistId = (albumId: string): string =>
   ALBUMS.find((a) => a.id === albumId)?.artistId ?? '';
 
-function artistDto(a: (typeof ARTISTS)[number], favorites: ReadonlySet<string>): RawArtist {
+/** Per-item play state — `playCount`/`lastPlayedAt` (already an ISO string, matching
+ * `LastPlayedDate`'s wire shape), seeded only by `POST /Sessions/Playing/Stopped` (see
+ * that handler below), never by a module-level default. Mirrors `fakeAbs.ts`'s
+ * `progressByKey` convention (wave 13b's own comment on why: a module-level default
+ * leaks into every unrelated test that shares this fake via `buildTestApp()`). */
+type PlayState = ReadonlyMap<string, { playCount: number; lastPlayedAt: string | null }>;
+
+function userData(id: string, favorites: ReadonlySet<string>, playState: PlayState): RawUserData {
+  const play = playState.get(id);
+  return {
+    IsFavorite: favorites.has(id),
+    PlayCount: play?.playCount ?? 0,
+    LastPlayedDate: play?.lastPlayedAt ?? null,
+  };
+}
+
+function artistDto(
+  a: (typeof ARTISTS)[number],
+  favorites: ReadonlySet<string>,
+  playState: PlayState,
+): RawArtist {
   return {
     Id: a.id,
     Name: a.name,
@@ -178,11 +226,15 @@ function artistDto(a: (typeof ARTISTS)[number], favorites: ReadonlySet<string>):
     Overview: a.overview,
     ImageTags: { Primary: `${a.id}-tag` },
     ChildCount: ALBUMS.filter((al) => al.artistId === a.id).length,
-    UserData: { IsFavorite: favorites.has(a.id) },
+    UserData: userData(a.id, favorites, playState),
   };
 }
 
-function albumDto(al: (typeof ALBUMS)[number], favorites: ReadonlySet<string>): RawAlbum {
+function albumDto(
+  al: (typeof ALBUMS)[number],
+  favorites: ReadonlySet<string>,
+  playState: PlayState,
+): RawAlbum {
   return {
     Id: al.id,
     Name: al.name,
@@ -194,11 +246,15 @@ function albumDto(al: (typeof ALBUMS)[number], favorites: ReadonlySet<string>): 
     Genres: al.genres,
     ImageTags: { Primary: `${al.id}-tag` },
     ChildCount: TRACKS.filter((t) => t.albumId === al.id).length,
-    UserData: { IsFavorite: favorites.has(al.id) },
+    UserData: userData(al.id, favorites, playState),
   };
 }
 
-function trackDto(t: (typeof TRACKS)[number], favorites: ReadonlySet<string>): RawTrack {
+function trackDto(
+  t: (typeof TRACKS)[number],
+  favorites: ReadonlySet<string>,
+  playState: PlayState,
+): RawTrack {
   const artistId = albumArtistId(t.albumId);
   return {
     Id: t.id,
@@ -213,7 +269,7 @@ function trackDto(t: (typeof TRACKS)[number], favorites: ReadonlySet<string>): R
     RunTimeTicks: t.durationSeconds * 10_000_000,
     ImageTags: { Primary: `${t.albumId}-tag` },
     Genres: [],
-    UserData: { IsFavorite: favorites.has(t.id) },
+    UserData: userData(t.id, favorites, playState),
   };
 }
 
@@ -302,6 +358,10 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
   // resolves to the same one fake user (`jellyfin-user-1`), matching this fake's existing
   // single-tenant shape elsewhere (no per-user branching in `/Items` either).
   const favorites = new Set<string>();
+  // Play state, keyed by item id — seeded only by `POST /Sessions/Playing/Stopped` below
+  // (the real API path a client reports a finished listen through), never by a
+  // module-level default. See `PlayState`'s doc comment above.
+  const playState = new Map<string, { playCount: number; lastPlayedAt: string | null }>();
   const playlists = new Map<string, FakePlaylist>();
   let nextPlaylistId = 1;
   let nextEntryId = 1;
@@ -324,7 +384,7 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
       Type: 'Playlist',
       ChildCount: p.entries.length,
       ImageTags: {},
-      UserData: { IsFavorite: false },
+      UserData: { IsFavorite: false, PlayCount: 0, LastPlayedDate: null },
     };
   }
 
@@ -446,7 +506,7 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
         const dtos = playlist.entries.flatMap((entry) => {
           const track = TRACKS.find((t) => t.id === entry.itemId);
           if (!track) return [];
-          return [{ ...trackDto(track, favorites), PlaylistItemId: entry.entryId }];
+          return [{ ...trackDto(track, favorites, playState), PlaylistItemId: entry.entryId }];
         });
         return json({ Items: dtos, TotalRecordCount: dtos.length, StartIndex: 0 });
       }
@@ -505,17 +565,17 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
 
       let items: Array<RawArtist | RawAlbum | RawTrack | ReturnType<typeof playlistDto>> = [];
       if (includeItemTypes.includes('MusicArtist')) {
-        items = items.concat(ARTISTS.map((a) => artistDto(a, favorites)));
+        items = items.concat(ARTISTS.map((a) => artistDto(a, favorites, playState)));
       }
       if (includeItemTypes.includes('MusicAlbum')) {
         let albums = ALBUMS;
         if (albumArtistIds) albums = albums.filter((a) => a.artistId === albumArtistIds);
-        items = items.concat(albums.map((a) => albumDto(a, favorites)));
+        items = items.concat(albums.map((a) => albumDto(a, favorites, playState)));
       }
       if (includeItemTypes.includes('Audio')) {
         let tracks = TRACKS;
         if (albumIds) tracks = tracks.filter((t) => t.albumId === albumIds);
-        items = items.concat(tracks.map((t) => trackDto(t, favorites)));
+        items = items.concat(tracks.map((t) => trackDto(t, favorites, playState)));
       }
       if (includeItemTypes.includes('Playlist')) {
         items = items.concat([...playlists.values()].map(playlistDto));
@@ -584,6 +644,19 @@ export function createFakeJellyfinUpstream(): FakeJellyfinUpstream {
       return new Response(null, { status: 204 });
     }
     if (method === 'POST' && path === '/Sessions/Playing/Stopped') {
+      // Wave 13e-2: records a play, mirroring real Jellyfin's `PlaystateController`
+      // incrementing `UserData.PlayCount`/`LastPlayedDate` on a stop report. This is the
+      // one real API path route tests use to seed music listening history for
+      // `GET /api/v1/music/recommended` — never a module-level fixture default, per this
+      // fake's own `PlayState` doc comment above.
+      const { ItemId } = body() as { ItemId?: string };
+      if (ItemId) {
+        const existing = playState.get(ItemId) ?? { playCount: 0, lastPlayedAt: null };
+        playState.set(ItemId, {
+          playCount: existing.playCount + 1,
+          lastPlayedAt: new Date().toISOString(),
+        });
+      }
       return new Response(null, { status: 204 });
     }
 

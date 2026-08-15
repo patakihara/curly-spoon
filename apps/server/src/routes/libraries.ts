@@ -5,10 +5,14 @@ import { handleUpstreamError } from '../httpErrors.js';
 import { parseInput } from '../validation.js';
 import { toCandidate } from '../features/recommendations/adapt.js';
 import {
+  albumToCandidate,
+  buildMusicProgressSignals,
   buildRecommendationShelves,
   buildTasteProfile,
+  mergeGenreAffinity,
   scoreCandidates,
   type ProgressSignal,
+  type TasteProfile,
 } from '../features/recommendations/index.js';
 import {
   idParamSchema,
@@ -44,6 +48,52 @@ const ITEMS_PER_SHELF = 10;
  * downstream branches on it today, but a distinct constant means one can
  * later without re-deriving what "ours" looks like. */
 const RECOMMENDATION_SHELF_TYPE = 'recommended';
+
+/** Same caps `routes/jellyfin.ts`'s `/music/recommended` route uses for the same fetch —
+ * duplicated as constants (not imported) because that route doesn't export them and this
+ * is a small, independent best-effort fetch, not a shared code path. */
+const MUSIC_ALBUM_LIMIT = 500;
+const MUSIC_TRACK_LIMIT = 5000;
+
+/**
+ * Best-effort cross-media genre signal for wave 13e-2's "taste in one medium informs
+ * another" requirement (`docs/HANDOVER.md`). Builds a music `TasteProfile` from the
+ * user's Jellyfin play history, exactly the way `routes/jellyfin.ts`'s own
+ * `/music/recommended` route does, and returns it — or `null` on **any** failure.
+ *
+ * `null` covers Jellyfin being unconfigured (`JellyfinNotConfiguredError`), this user
+ * having no stored Jellyfin credentials (`JellyfinNoCredentialsError`), a network/upstream
+ * failure, or genuinely having no music listening history yet (`totalSignal <= 0`, folded
+ * in here rather than left for the caller to re-check). The books route must work exactly
+ * as it did before this wave when none of that is true — see this function's caller for
+ * why `mergeGenreAffinity` is skipped entirely on `null`, not called with an empty
+ * profile: `buildTasteProfile([], [], ...)` also has `totalSignal === 0`, but skipping the
+ * merge call outright avoids the one extra Jellyfin round-trip on every books-route
+ * request for a household that has never connected Jellyfin at all.
+ */
+async function tryBuildMusicGenreProfile(
+  app: FastifyInstance,
+  userId: string,
+  now: number,
+): Promise<TasteProfile | null> {
+  try {
+    const client = app.jellyfin.forUser(userId);
+    const [albumsPage, tracksPage] = await Promise.all([
+      client.getAlbums({ limit: MUSIC_ALBUM_LIMIT }),
+      client.getTracks({ limit: MUSIC_TRACK_LIMIT }),
+    ]);
+    const candidates = albumsPage.items.map(albumToCandidate);
+    const signals = buildMusicProgressSignals(tracksPage.items);
+    const profile = buildTasteProfile(signals, candidates, { now });
+    return profile.totalSignal > 0 ? profile : null;
+  } catch {
+    // Deliberately swallowed — see this function's doc comment. The books route's own
+    // Audiobookshelf calls, a few lines below wherever this is awaited, still run and
+    // still throw into their own `handleUpstreamError` normally; only this optional
+    // enrichment degrades silently.
+    return null;
+  }
+}
 
 export function registerLibraryRoutes(app: FastifyInstance): void {
   const requireSession = createRequireSession(app.db, app.config.nodeEnv === 'production');
@@ -99,7 +149,17 @@ export function registerLibraryRoutes(app: FastifyInstance): void {
 
       const candidates = pool.items.map(toCandidate);
       const now = Date.now();
-      const profile = buildTasteProfile(signals, candidates, { now });
+      let profile = buildTasteProfile(signals, candidates, { now });
+      // Wave 13e-2: fold in cross-media genre affinity from the user's Jellyfin music
+      // history, if any exists and Jellyfin is reachable — see
+      // `tryBuildMusicGenreProfile`'s doc comment for exactly what "if any" covers and
+      // why a failure here must never break this route. Skipped entirely (not merged
+      // with an empty profile) when there's nothing to add, so a household that has
+      // never touched Jellyfin sees byte-identical output to before this wave.
+      const musicProfile = await tryBuildMusicGenreProfile(app, request.userId!, now);
+      if (musicProfile) {
+        profile = mergeGenreAffinity(profile, musicProfile);
+      }
       const scored = scoreCandidates(profile, candidates);
       const shelves = buildRecommendationShelves(profile, scored, candidates, {
         maxShelves: MAX_SHELVES,
