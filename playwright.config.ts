@@ -130,6 +130,13 @@ export default defineConfig({
       // the `vite build` in this command, which would silently test a stale
       // bundle.
       reuseExistingServer: false,
+      // Off by default (Playwright's own default) so CI logs stay readable, but
+      // switchable from the environment: when this server dies mid-run every
+      // subsequent test fails with `ERR_CONNECTION_REFUSED` and, with output
+      // ignored, the reason is unrecoverable. `E2E_SERVER_LOG=1 pnpm test:e2e`
+      // pipes its stdout/stderr into the run's output so the crash survives.
+      stdout: process.env.E2E_SERVER_LOG ? 'pipe' : 'ignore',
+      stderr: process.env.E2E_SERVER_LOG ? 'pipe' : 'pipe',
       timeout: 120_000,
       env: {
         PORT: '4310',
