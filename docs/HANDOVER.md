@@ -18,7 +18,14 @@ enforced by hooks at 90%, with a hand-off band from 85%).
 Phases 1–10 **done**. Phase 11 **done\*** — the route is a self-hosted F-Droid repo, and
 the six remaining steps are blocked (below). Phase 12 (the user's spec addendum — five nav
 destinations, unified search, artist/author discography, For You carousels, context menus,
-per-content-type queues) is **shipped on web and Android except 12c-2**.
+per-content-type queues) is **shipped on web and Android except 12c-2**. **Phase 13
+(personalized recommendations) is done** — all six waves, CI-verified, on both clients.
+
+**Every phase on the roadmap is now finished to the limit of what this machine can do.**
+Nothing is half-built and no wave is in flight. What remains is the table below: each item
+needs a decision, a device, a credential, or a live change on another host. A session picking
+this up should read that table first and expect to find nothing it can start alone — that is
+the honest state, not a gap in the notes.
 
 `docs/ROADMAP.md` §12 has each wave, its sha and its open findings. Everything is on
 **`main`**; do not push elsewhere without asking.
@@ -47,11 +54,13 @@ recommendation, so read it before picking up a branded-type refactor.
 every remaining one is in the table above and needs a decision, a device, a credential, or a
 live change on another host.
 
-**But the roadmap was not finished — it was missing a phase.** `HANDOVER` has carried
+**The roadmap was missing a phase, and it no longer is.** `HANDOVER` had long carried
 "personalized recommendations are part of the goal, not scope creep for a later phase to
-invent" as an explicit user requirement with nothing scoping it. **`ROADMAP.md` §13 now
-scopes it** (`2ae7ad6`), in five waves, on signal that already exists and needs no
-credential. That is the current work — see "Phase 13" below.
+invent" as an explicit user requirement with nothing scoping it. `ROADMAP.md` §13 scoped it
+(`2ae7ad6`) and **it is now delivered** — six waves, on signal that already existed and
+needed no credential. Books recommend from Audiobookshelf progress, music from Jellyfin play
+history, and genre affinity crosses between them, which is the user's own sentence about one
+medium informing another. See "Phase 13" below for what that does and does not prove.
 
 **`ROADMAP.md`'s top-of-file status table is fine now** — it reads `done*` for 11 and 12,
 matching §12. The older note in this file saying it still called phase 12 "todo" was itself
