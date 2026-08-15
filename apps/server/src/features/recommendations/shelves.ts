@@ -30,8 +30,18 @@ function reasonFor(kind: AffinityKind, value: string, seedTitle: string | null):
   switch (kind) {
     case 'genre':
       return `Because you enjoy ${value}${because}`;
+    // Wave 13e-2 touch: was "Because you liked books by ${value}" — this shelf-building
+    // core is now shared by the music route too (`routes/jellyfin.ts`'s
+    // `/music/recommended`), where the author facet holds an artist name, not a book
+    // author, and "liked books by Radiohead" would be a visible, wrong-medium string in
+    // a real response. Generalizing away the word "books" costs nothing on the book side
+    // (no test pins the old exact string — checked `shelves.test.ts` before changing this)
+    // and makes the phrasing correct for both callers, which is preferable to duplicating
+    // this whole shelf-building module per medium — see `docs/HANDOVER.md`'s "web and
+    // Android... drifted once" for why a second implementation of shared logic is the
+    // failure mode this phase avoids.
     case 'author':
-      return `Because you liked books by ${value}${because}`;
+      return `Because you liked ${value}${because}`;
     case 'narrator':
       return `Because you enjoyed narration by ${value}${because}`;
     case 'series':

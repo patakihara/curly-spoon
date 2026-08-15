@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
 import { FAKE_NON_ADMIN_CREDENTIALS } from '../testSupport/fakes/fakeAbs.js';
+import {
+  FAKE_JELLYFIN_BASE_URL,
+  FAKE_JELLYFIN_CREDENTIALS,
+} from '../testSupport/fakes/fakeJellyfin.js';
 
 async function authedApp() {
   const { app } = buildTestApp();
@@ -243,6 +247,50 @@ describe('GET /api/v1/libraries/:id/recommended', () => {
     });
 
     expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ shelves: [] });
+  });
+
+  // Wave 13e-2: cross-media genre affinity. `mergeGenreAffinity`'s own correctness
+  // (a matching genre transfers, scaled by `CROSS_MEDIA_GENRE_WEIGHT`; totalSignal is
+  // untouched; author/narrator/series never leak across media) is already proven at the
+  // pure-core level in `features/recommendations/crossMediaGenre.test.ts`, against a
+  // fixture built specifically to overlap — this fixture library's real book genres
+  // (Fantasy, Mystery, Horror, War, Science Fiction) and the Jellyfin fake's real music
+  // genres (Synthwave, Ambient) do not share a single string, matching the real-world
+  // thin-overlap concern `crossMediaGenre.ts`'s doc comment names. So this route-level
+  // test proves the *wiring* instead: connecting Jellyfin and having real music listening
+  // history must not change this route's cold-start behaviour, error, or leak into a
+  // response when nothing here can actually match.
+  it('a connected Jellyfin account with music listening history does not break or change the cold-start response', async () => {
+    const { app } = buildTestApp();
+    const cookie = await authedAppAsMorty(app);
+
+    const jellyfinLogin = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    expect(jellyfinLogin.statusCode).toBe(200);
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/stopped',
+      cookies: { auralis_session: cookie },
+      payload: { itemId: 'track-driftwave-1', positionSeconds: 200 },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    // Still cold start on the books side — a non-overlapping music genre must not
+    // conjure a book shelf out of nothing, and `mergeGenreAffinity` deliberately never
+    // raises `totalSignal`, so the books route's own cold-start gate is unaffected by
+    // Jellyfin listening history alone.
     expect(response.json()).toEqual({ shelves: [] });
   });
 });

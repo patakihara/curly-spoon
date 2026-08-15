@@ -215,8 +215,10 @@ describe('GET /api/v1/jellyfin/artists|albums|tracks', () => {
     });
     expect(response.statusCode).toBe(200);
     const { items, total } = response.json();
-    expect(total).toBe(2);
-    expect(items).toHaveLength(2);
+    // 3, not 2: `artist-lumen` (wave 13e-2's `GET /music/recommended` fixture addition,
+    // see that artist's own comment in `fakeJellyfin.ts`) is a third fixture artist.
+    expect(total).toBe(3);
+    expect(items).toHaveLength(3);
     expect(items.map((a: { name: string }) => a.name)).toContain('The Nebula Collective');
   });
 
@@ -319,8 +321,8 @@ describe('GET /api/v1/jellyfin/artists|albums|tracks', () => {
     });
     expect(response.statusCode).toBe(200);
     const { items, total } = response.json();
-    expect(total).toBe(2);
-    expect(items).toHaveLength(2);
+    expect(total).toBe(3); // see the previous test's comment on `artist-lumen`.
+    expect(items).toHaveLength(3);
   });
 
   // The empty-ids short-circuit is implemented once per route (artists/albums/tracks each
@@ -1190,5 +1192,95 @@ describe('no route ever leaks the stored Jellyfin access token into a response b
     });
     expect(playlistResponse.statusCode).toBe(409);
     expect(playlistResponse.body).not.toMatch(/not-the-fake-upstream/);
+  });
+});
+
+describe('GET /api/v1/music/recommended', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({ method: 'GET', url: '/api/v1/music/recommended' });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('409s with jellyfin_not_configured when no Jellyfin server has ever been connected', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music/recommended',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('jellyfin_not_configured');
+  });
+
+  it('returns no shelves for a user with no listening history (cold start)', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music/recommended',
+      cookies: { auralis_session: cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ shelves: [] });
+  });
+
+  it('returns shelves with real albums and non-empty reasons, and excludes an album the user already plays heavily', async () => {
+    const { app, cookie } = await jellyfinConnectedApp();
+
+    // Seed listening history through the real playback-report path (not a fixture
+    // default — see fakeJellyfin.ts's `PlayState` comment). Both of Driftwave's tracks
+    // get multiple stop reports: `buildMusicProgressSignals` maps *any* nonzero play
+    // count to `isFinished: true` (see adaptMusic.ts's own doc comment on why magnitude
+    // isn't weighted), so playing one track five times and the other once are meant to
+    // produce the same base weight for the album either way — asserted below by the
+    // album still being excluded, not by a higher score.
+    for (let i = 0; i < 5; i += 1) {
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playback/stopped',
+        cookies: { auralis_session: cookie },
+        payload: { itemId: 'track-driftwave-1', positionSeconds: 200 },
+      });
+    }
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/playback/stopped',
+      cookies: { auralis_session: cookie },
+      payload: { itemId: 'track-driftwave-2', positionSeconds: 190 },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.length).toBeGreaterThan(0);
+
+    for (const shelf of shelves) {
+      expect(shelf.type).toBe('recommended');
+      expect(shelf.items.length).toBeGreaterThanOrEqual(2);
+      expect(typeof shelf.reason).toBe('string');
+      expect(shelf.reason.length).toBeGreaterThan(0);
+      for (const item of shelf.items) {
+        expect(typeof item.name).toBe('string');
+      }
+    }
+
+    // The wiring this test exists to catch, same as the books route's own version of
+    // this assertion: a route that built shelves but forgot to exclude known items
+    // would still return 200 with plausible-looking carousels.
+    const allAlbumIds = shelves.flatMap((s: { items: { id: string }[] }) =>
+      s.items.map((i) => i.id),
+    );
+    expect(allAlbumIds).not.toContain('album-driftwave');
+
+    // The Synthwave genre shelf should surface the two other same-genre albums this
+    // fixture exists to provide (see `artist-lumen`'s comment in fakeJellyfin.ts) —
+    // Nightglass (same artist as the played album) and Lumenfall (a different artist,
+    // proving this is genre-driven, not just "everything by this artist").
+    expect(allAlbumIds).toEqual(expect.arrayContaining(['album-nightglass', 'album-lumenfall']));
   });
 });
