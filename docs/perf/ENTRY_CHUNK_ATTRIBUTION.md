@@ -16,7 +16,7 @@ approximation, stated explicitly: it assumes minifiers emit a mapping at (close 
 every token boundary, which is true enough in practice for Vite's esbuild/Rollup
 minification to give directionally reliable, roughly-proportional numbers — but a
 byte attributed to package X really means "the generated code between this mapping
-and the next one, which is *probably* still inside X." Treat single-digit-percent
+and the next one, which is _probably_ still inside X." Treat single-digit-percent
 differences between neighbouring rows as noise; the order-of-magnitude picture is
 solid.
 
@@ -30,33 +30,33 @@ directory under `apps/web/src/*` or `packages/*/src/*`.
 
 ## Top 25 rows (bytes, cumulative % of raw file size)
 
-| # | Bytes | Cum% | Group |
-|---|------:|-----:|-------|
-| 1 | 181,760 | 27.3% | `react-dom` |
-| 2 | 153,192 | 50.2% | `@mantine/core` |
-| 3 | 59,891 | 59.2% | `@tanstack/router-core` |
-| 4 | 51,848 | 67.0% | `@material/material-color-utilities` |
-| 5 | 38,626 | 72.8% | `@tanstack/query-core` |
-| 6 | 24,923 | 76.5% | `packages/ui/src/components` |
-| 7 | 21,849 | 79.8% | `@floating-ui/react` |
-| 8 | 20,632 | 82.9% | `apps/web/src/api` |
-| 9 | 16,746 | 85.4% | `@tanstack/react-router` |
-| 10 | 9,581 | 86.9% | `@floating-ui/core` |
-| 11 | 8,893 | 88.2% | `react` |
-| 12 | 7,333 | 89.3% | `@floating-ui/dom` |
-| 13 | 6,011 | 90.2% | `@mantine/hooks` |
-| 14 | 5,824 | 91.1% | `react-remove-scroll` |
-| 15 | 5,097 | 91.8% | `packages/ui/src/tokens` |
-| 16 | 4,685 | 92.5% | `@tanstack/store` |
-| 17 | 4,522 | 93.2% | `@tanstack/history` |
-| 18 | 4,191 | 93.8% | `apps/web/src/router` |
-| 19 | 3,926 | 94.4% | `@floating-ui/utils` |
-| 20 | 3,903 | 95.0% | `scheduler` |
-| 21 | 3,593 | 95.6% | `apps/web/src/components` |
-| 22 | 3,273 | 96.1% | `@floating-ui/react-dom` |
-| 23 | 2,758 | 96.5% | `@tanstack/react-query` |
-| 24 | 2,666 | 96.9% | `zustand` |
-| 25 | 2,398 | 97.2% | `packages/ui/src/theme` |
+| #   |   Bytes |  Cum% | Group                                |
+| --- | ------: | ----: | ------------------------------------ |
+| 1   | 181,760 | 27.3% | `react-dom`                          |
+| 2   | 153,192 | 50.2% | `@mantine/core`                      |
+| 3   |  59,891 | 59.2% | `@tanstack/router-core`              |
+| 4   |  51,848 | 67.0% | `@material/material-color-utilities` |
+| 5   |  38,626 | 72.8% | `@tanstack/query-core`               |
+| 6   |  24,923 | 76.5% | `packages/ui/src/components`         |
+| 7   |  21,849 | 79.8% | `@floating-ui/react`                 |
+| 8   |  20,632 | 82.9% | `apps/web/src/api`                   |
+| 9   |  16,746 | 85.4% | `@tanstack/react-router`             |
+| 10  |   9,581 | 86.9% | `@floating-ui/core`                  |
+| 11  |   8,893 | 88.2% | `react`                              |
+| 12  |   7,333 | 89.3% | `@floating-ui/dom`                   |
+| 13  |   6,011 | 90.2% | `@mantine/hooks`                     |
+| 14  |   5,824 | 91.1% | `react-remove-scroll`                |
+| 15  |   5,097 | 91.8% | `packages/ui/src/tokens`             |
+| 16  |   4,685 | 92.5% | `@tanstack/store`                    |
+| 17  |   4,522 | 93.2% | `@tanstack/history`                  |
+| 18  |   4,191 | 93.8% | `apps/web/src/router`                |
+| 19  |   3,926 | 94.4% | `@floating-ui/utils`                 |
+| 20  |   3,903 | 95.0% | `scheduler`                          |
+| 21  |   3,593 | 95.6% | `apps/web/src/components`            |
+| 22  |   3,273 | 96.1% | `@floating-ui/react-dom`             |
+| 23  |   2,758 | 96.5% | `@tanstack/react-query`              |
+| 24  |   2,666 | 96.9% | `zustand`                            |
+| 25  |   2,398 | 97.2% | `packages/ui/src/theme`              |
 
 (Rows 26–41, each under 1% of total, omitted here — `react-remove-scroll-bar`,
 `use-sync-external-store`, `apps/web/src/features`, `apps/web/src/main.tsx`,
@@ -67,14 +67,14 @@ directory under `apps/web/src/*` or `packages/*/src/*`.
 
 ## Named-package sizes asked for explicitly
 
-| Package | Bytes | Note |
-|---|---:|---|
-| `@material/material-color-utilities` | 51,848 | present, rank 4 |
-| `@mantine/core` | 153,192 | present, rank 2 |
-| `@tanstack/react-query` (+`query-core`, `react-store`, `store`) | 2,758 + 38,626 + 250 + 4,685 = 46,319 | most of the weight is `query-core`, the framework-agnostic engine `@tanstack/react-query` wraps |
-| `@tanstack/react-router` (+`router-core`, `history`) | 16,746 + 59,891 + 4,522 = 81,159 | this is the router in use (confirmed: `apps/web/src/main.tsx` imports `RouterProvider` from `@tanstack/react-router`) |
-| `zustand` | 2,666 | present, rank 24, small |
-| Icon package | **none found as a separate npm dependency** | icons render through `packages/ui/src/components/Icon.tsx` (part of the `packages/ui/src/components` 24,923-byte group), not a third-party icon font/package |
+| Package                                                         |                                       Bytes | Note                                                                                                                                                         |
+| --------------------------------------------------------------- | ------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@material/material-color-utilities`                            |                                      51,848 | present, rank 4                                                                                                                                              |
+| `@mantine/core`                                                 |                                     153,192 | present, rank 2                                                                                                                                              |
+| `@tanstack/react-query` (+`query-core`, `react-store`, `store`) |       2,758 + 38,626 + 250 + 4,685 = 46,319 | most of the weight is `query-core`, the framework-agnostic engine `@tanstack/react-query` wraps                                                              |
+| `@tanstack/react-router` (+`router-core`, `history`)            |            16,746 + 59,891 + 4,522 = 81,159 | this is the router in use (confirmed: `apps/web/src/main.tsx` imports `RouterProvider` from `@tanstack/react-router`)                                        |
+| `zustand`                                                       |                                       2,666 | present, rank 24, small                                                                                                                                      |
+| Icon package                                                    | **none found as a separate npm dependency** | icons render through `packages/ui/src/components/Icon.tsx` (part of the `packages/ui/src/components` 24,923-byte group), not a third-party icon font/package |
 
 `@floating-ui/*` (react/core/dom/utils/react-dom) sums to 21,849 + 9,581 + 7,333 +
 3,926 + 3,273 = **45,962 bytes**, none imported directly by first-party code (see
@@ -91,7 +91,7 @@ Method: `Grep` on the import specifier against `apps/web/src/main.tsx`,
    discuss — there is no alternative.
 
 2. **`@mantine/core` (153,192 B, 22.9% alone) — not deferrable as currently wired,
-   but the *how* is the finding.** Not imported by `main.tsx` directly. It's
+   but the _how_ is the finding.** Not imported by `main.tsx` directly. It's
    imported by `packages/ui/src/theme/ThemeProvider.tsx:24`
    (`import { MantineProvider } from '@mantine/core'`), and `ThemeProvider` is
    imported eagerly by `apps/web/src/components/RootLayout.tsx:24` — which is
