@@ -295,13 +295,22 @@ test('Play next/Play last on the playlist page with nothing playing reports the 
 });
 
 test("favouriting Driftwave's tracks, for the favourites-page tests below", async ({ page }) => {
+  // Forced to `true` per-track, rather than blindly clicked: the fake Jellyfin's favourite
+  // state is process-global and shared with every other spec file in this project (see
+  // `playwright.config.ts`'s "order-independent, not concurrency-safe" note), and
+  // `music-favorites.spec.ts` un-favourites these same two tracks for its own test. A blind
+  // `.click()` here would toggle an already-favourited track *off* if that file happened to
+  // run first, taking every later test in this file that depends on `/music/favorites`
+  // having both tracks with it. Checking `aria-pressed` first makes this test's own
+  // precondition true regardless of what any other file left behind.
   await page.goto('/music/album/album-driftwave');
-  await page.getByTestId('music-track-favorite-track-driftwave-1').click();
-  await page.getByTestId('music-track-favorite-track-driftwave-2').click();
-  await expect(page.getByTestId('music-track-favorite-track-driftwave-2')).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  for (const trackId of ['track-driftwave-1', 'track-driftwave-2']) {
+    const toggle = page.getByTestId(`music-track-favorite-${trackId}`);
+    if ((await toggle.getAttribute('aria-pressed')) !== 'true') {
+      await toggle.click();
+    }
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  }
 });
 
 test('right-click on a favourites-page track row opens the menu, without "Go to artist"', async ({
