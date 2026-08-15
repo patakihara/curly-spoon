@@ -2233,8 +2233,18 @@ Two things are worth carrying forward:
   local, or a helper function defeats it silently, and its own doc comment says so. The
   durable fix it names but does not build is type-level: a branded type distinguishing a
   minified item from an expanded one, so reading `authors[]` off a list result is a compile
-  error rather than a runtime `undefined`. Until that exists, this class of bug is still
-  reachable.
+  error rather than a runtime `undefined`.
+
+  **Superseded 2026-08-15 — the branded-type recommendation is withdrawn.** A narrower fix
+  already shipped: `AuthorBadge`/`SeriesBadge` no longer declare an `id` at all, so the
+  `.id ===` comparison at the heart of both historical bugs is a compile error everywhere,
+  and every surviving read of `media.authors`/`media.series` in the tree is a display-only
+  `.name`. What a `Minified<T>`/`Expanded<T>` refactor would still buy does not cover its
+  cost — `apps/web` does not import `@auralis/abs-client` at all (it hand-mirrors the BFF's
+  JSON contract), so branding could not reach the very files this guard scans. The residual
+  risk is a consumer casting through `unknown` to read the fabricated id as if it were real,
+  and a lint or grep-based CI check is the cheap way to close that. `docs/HANDOVER.md` has
+  the full reasoning, including why the fabricated `id` must stay on the wire.
 
 The fix trusts the server's ordering, so `seriesOrder.ts` and its test lost their last caller
 and were deleted with the wave.

@@ -38,14 +38,14 @@ Verified 2026-08-15 against `ROADMAP.md`, not inherited from a previous session'
 | **Auto-updating deployment**                                                              | A live change on mediaserver, needing that host's own rules and the user's go-ahead. See "Deployment" below.                                                                      |
 | Direct play vs transcode; lyrics search; `GET /requests` scoping; `LinearProgress` `wavy` | Product decisions, written up under "Open product decisions" below.                                                                                                               |
 
-**Two items are implementable now**, both scoped in `ROADMAP.md`'s own prose and needing no
-decision, device or credential:
+**Both items that were implementable on 2026-08-15 are done** (`50e74e0`, `3cda65c`), and
+each turned out to be a coverage problem rather than the live bug the roadmap prose implied.
+See "The minified-item bug" below for what that pass established — it corrects the standing
+recommendation, so read it before picking up a branded-type refactor.
 
-1. **Brand the Audiobookshelf item types** so minified-vs-expanded is a compile error rather
-   than a thing to remember. See "The minified-item bug" below — this is its durable fix, and
-   `regressionGuards.test.ts` is explicitly only a tripwire.
-2. **A regression test for 12b-A1's concurrent same-kind book libraries** (a `MockWebServer`
-   request-ordering race). A coverage gap, not a known live bug.
+**No implementable roadmap item is currently outstanding.** That is a verified state, not a
+session giving up: every remaining item is in the table above, and each needs a user decision,
+a device, a credential, or a live change on another host.
 
 **`ROADMAP.md`'s top-of-file status table is stale** — it still calls phase 12 "todo",
 contradicting its own detailed §12 table. Trust §12.
@@ -70,9 +70,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-07T22:42:41Z` · `a14bb5ff62c763633` · general-purpose · ended · ## Verdict: merge with named corrections Already on 'main'; no revert needed, but one doc defect and one edge case are worth a small follow-up commit…
-- `2026-08-07T22:43:17Z` · `a8906ca3e593a8846` · general-purpose · ended · That modified line is pre-existing (present before I started, per the initial git status). Working tree is otherwise clean; my experimental revert le…
-- `2026-08-07T22:44:16Z` · `a6cc1b9e8df12d5bd` · general-purpose · ended · Flagging an important complication from a mistaken tool call on my part. Earlier, while researching track types, I sent a stray follow-up 'Agent' cal…
 - `2026-08-07T22:54:58Z` · `a1ac0127d315ceb00` · general-purpose · ended · Committed at '738c28c' on branch 'worktree-agent-a1ac0127d315ceb00', based on 'dc4ec6c'. **Report** - **Single shared cause, confirmed by exact prece…
 - `2026-08-07T23:04:26Z` · `afb619fd719a4b9b3` · general-purpose · ended · Committed on the worktree branch, not pushed, as instructed. ## Report **Branch/commit:** 'worktree-agent-afb619fd719a4b9b3' at '69e69bf', based on '…
 - `2026-08-07T23:18:17Z` · `a84176025894b086a` · general-purpose · ended · Clean tree, everything committed. ## Report **Branch/commits:** 'worktree-agent-a84176025894b086a', 'aad6bce' (implementation) + '54cf683' (test clea…
@@ -85,6 +82,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T10:20:56Z` · `af51f8fbf81138b80` · general-purpose · ended · ## Findings: docs/ROADMAP.md remaining work (phases 11–12) **Status-table disagreement with HANDOVER**: The top-of-file summary table (line 20) still…
 - `2026-08-15T10:28:43Z` · `a1c5f8044105dc888` · general-purpose · ended · Confirmed — the Dockerfile does copy 'packages/' wholesale now (line 85, with explanatory comment at 72-74), which directly contradicts ROADMAP.md's…
 - `2026-08-15T10:29:09Z` · `a06477e5fdb64fe18` · general-purpose · ended · I have everything needed. Final report. ## Report **Critical finding first: the task's premise is partly stale.** 'docs/HANDOVER.md'/'ROADMAP.md' in…
+- `2026-08-15T10:38:15Z` · `a02f9c8999148bda0` · general-purpose · ended · Committed. Final report: **1. §1 answer — yes, but it's already a deliberate, documented design, not an unnoticed bug.** 'normalizeMedia' in 'package…
+- `2026-08-15T10:39:10Z` · `a0edf63595b976e4e` · general-purpose · ended · ## Report **1. §2 answer — coverage gap, not a live bug.** 'fetchLibraryResults' fires one 'async' per matching library, and each 'async' closure cap…
+- `2026-08-15T10:44:59Z` · `a53710d7e5d134b7a` · general-purpose · ended · ## Report **Change A ('50e74e0') — merge as-is.** 1. **Claim verified true.** Checked the pre-change fixture ('minifiedBook', lines 6–24 of the file…
 
 <!-- AGENT_LOG_END -->
 
@@ -96,10 +96,7 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed — 2026-08-15, session `198bb53e`:** `packages/abs-client/src/normalize.ts`, the
-synthesized-badge-id question (does the minified fallback still emit `id: authorName` at
-runtime while `AuthorBadge` no longer declares one, and does that reach the BFF's JSON?).
-`packages/abs-client/**` and `apps/server/**` only.
+**Nothing is currently claimed.**
 
 Before dispatching a wave **and again before merging it**, check what is already on `main`
 (`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`
@@ -155,10 +152,33 @@ was always null. The pure `orderSeriesBooks` function was correct and well teste
 simply never given a real sequence.
 
 **Anything reading `media.authors[]` or `media.series[]` off a list endpoint is wrong by
-construction.** The lesson did not survive as a property of the code, only as prose, which is
-why it recurred. `regressionGuards.test.ts` is a tripwire, not a guarantee; the real fix is a
-branded type distinguishing minified from expanded items, and it is listed above as
-implementable now.
+construction.**
+
+**The `.id` half of this is now closed at the type level, and the standing "build a branded type"
+recommendation is withdrawn** — established 2026-08-15 by reading the code rather than the prose
+about it. `AuthorBadge` and `SeriesBadge` in `packages/abs-client/src/domain.ts` no longer declare
+an `id` at all, so `book.media.authors[0].id` is a compile error everywhere, and a type-only
+assertion in `normalize.test.ts` pins that. Every surviving read of `media.authors`/`media.series`
+in the tree is a display-only `.name`, safe on either shape. `tracks`/`chapters`/`episodes` already
+follow the `T[] | undefined` convention.
+
+**But `id` is still deliberately emitted on the wire, and must stay.** `normalizeMedia`'s fallback
+constructs `{ id: <the name string>, name: <the name string> }`, and the BFF serializes that to
+JSON. It looks like a bug and is not: **Android's Kotlin models declare `id: String` non-nullable
+with no default**, so dropping the key throws `MissingFieldException` on deserialization. The type
+says no `id`, the wire has one, and the gap is intentional. Do not "fix" it without changing
+`ApiModels.kt` first.
+
+So a `Minified<T>`/`Expanded<T>` refactor would buy little for its cost. The residual risk is not
+"is `id` present" but that a consumer casts through `unknown` and treats the fabricated id as real
+— which a lint or grep-based CI check would catch far more cheaply than a type refactor.
+`apps/web` maintains its own hand-mirrored types and does not import `@auralis/abs-client` at all,
+so branding would not reach it anyway.
+
+`regressionGuards.test.ts` remains a tripwire, not a guarantee: it is a **text scan** over
+`apps/web/src` only, matching `.media.authors|series` followed within 100 characters by an
+`.id ===` comparison. It does not see a `.filter()`, a destructured local, a helper wrapping the
+same logic, or anything in `apps/server` or Android.
 
 The first draft's other defect is worth knowing separately: two e2e cases failed because the
 spec never clicked the "Books" primary chip, and `ALL_KINDS_VISIBLE` deliberately hides series
@@ -596,8 +616,13 @@ unknown. Two independent things are wrong:
    and finished green. So the `CI` workflow specifically is not getting runners — an account or
    workflow problem, and the user's infrastructure to look at.
 
+**Reconfirmed 2026-08-15.** Allocation looks recovered — runs now pick up runners and finish. The
+concurrency half is very much live: three back-to-back doc pushes that day produced exactly the
+predicted pattern, the in-progress run surviving while both queued ones were cancelled without ever
+allocating a job. The mechanism is understood and reproducible, not intermittent.
+
 **Do not read a green `Android` run as the branch being verified**, and space pushes to `main` out
-if the web CI result matters. The obvious fix for half of it — move `publish` into its own workflow
+if the web CI result matters — one push, wait for it, then the next. The obvious fix for half of it — move `publish` into its own workflow
 with its own concurrency group, so verification jobs may cancel freely while the deployment-coupled
 job queues — **changes deployment behaviour on a live host and is not an autonomous call.**
 
