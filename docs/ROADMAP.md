@@ -2901,6 +2901,31 @@ So 14a starts by measuring instead.
   while keeping the CSS imports honest. Sub-path exports are the fallback if that measures
   nothing.
 
+  **It landed, it worked, and it moved no score — and that is the finding.** Entry raw
+  914.2 KB → 782.5 KB (−131.7 KB, −14.4%), entry gzip 237.0 → 198.9 KB (−16.1%), with
+  `@floating-ui/react` gone from the entry chunk entirely. A same-machine, same-commit,
+  same-hour A/B (five Lighthouse runs each, the only difference being that one line):
+
+  |                          | without `sideEffects` | with `sideEffects` |
+  | ------------------------ | --------------------- | ------------------ |
+  | entry raw                | 914.2 KB              | **782.5 KB**       |
+  | `signedOut` mobile score | 0.58                  | 0.55               |
+  | `home` mobile score      | 0.58                  | 0.56               |
+  | `home` mobile LCP        | 7156 ms               | 7570 ms            |
+  | `home` desktop CLS       | 0.067                 | 0.067              |
+
+  Every score difference is inside the documented 0.55–0.62 mobile band. **Shrinking the entry
+  chunk by 14% bought nothing measurable.** That is now the _third_ independent confirmation of
+  the same thing — after lazy-loading `Shell` (~62 KB, no movement) and after `manualChunks`
+  (rejected for measuring nothing). 14a-1's attribution says why in one line: `react-dom`
+  (181.8 KB) and `@mantine/core` (153.2 KB) are 335 KB of the 666 KB, and neither is deferrable
+  without restructuring `main.tsx`'s boot sequence.
+
+  **So: entry-chunk weight is not the lever, and a future wave should not try it again.** What is
+  left is either changing what the app shell depends on — real product work, not a build-config
+  change — or accepting the mobile score. The change is kept anyway: 131.7 KB of dead weight off
+  every first paint is worth having even when the score does not notice, and it costs one line.
+
   **The budgets are deliberately not tightened in this wave.** `bundle-budget.config.mjs` and
   `lighthouse-budget.config.mjs` both say, in their own headers, that a number nobody can explain
   gets raised the first time it fails — and the converse holds too: a number tightened on one
@@ -2934,12 +2959,29 @@ observation while its web half is a browser assertion.
   resolved via `onNodeWithContentDescription`. A harness that cannot make that assertion would be
   worthless for the thing it exists to unblock, so it is proved on the way in rather than assumed.
 
-  **Be precise about what this buys.** The claim that survives a green `./gradlew test` is
-  "**Compose semantics are now assertable in CI**" — not "Android UI is now verifiable." Robolectric
-  renders on the JVM against a shadowed framework; it will tell you a node exists with the
-  contentDescription you meant, and it will not tell you what TalkBack announces, how the row looks,
-  or whether anything is reachable by touch. It closes the gap between "a reviewer read it" and "a
-  machine checked it," which is the gap that mattered, and it does not close the gap to a device.
+  **It took four CI rounds, and the fourth was not the harness's fault.** Round 1: an unresolvable
+  `import androidx.compose.ui.test.assertExists` (it is a member of `SemanticsNodeInteraction`, not
+  a top-level function, unlike the `onNodeWith*` lines either side of it). Round 2: it compiled and
+  both tests died at `RoboMonitoringInstrumentation:102` with a bare `RuntimeException` — because
+  `ui-test-manifest` must be `debugImplementation`, not `testImplementation`: what it contributes is
+  an `AndroidManifest` declaring the `ComponentActivity` `createComposeRule()` hosts the composable
+  in, and unit tests read the **debug variant's merged manifest**, so on `testImplementation` the jar
+  resolves and its manifest never reaches the merger. Round 3: debug went green and
+  `testReleaseUnitTest` failed the same two tests at the same line, which is why the log looked
+  unchanged — fixed by moving the file to the **`src/testDebug` source set**, since a debug-only
+  manifest makes this a debug-only harness. Round 4: **`AppStartViewModelTest` failed with
+  `UncaughtExceptionsBeforeTest`**, the latent race this project already documented from 13d — a
+  coroutine outliving its own test and throwing into a later one. A plain re-run of the identical
+  commit went green. So the harness is verified, and the race is confirmed to be **intermittent and
+  now firing on CI**, which it was not before: adding Robolectric added suite wall-time, exactly the
+  mechanism 13d's write-up describes. That is a real loose end, and it is not 14b-1's to fix.
+
+**Be precise about what this buys.** The claim that survives a green `./gradlew test` is
+"**Compose semantics are now assertable in CI**" — not "Android UI is now verifiable." Robolectric
+renders on the JVM against a shadowed framework; it will tell you a node exists with the
+contentDescription you meant, and it will not tell you what TalkBack announces, how the row looks,
+or whether anything is reachable by touch. It closes the gap between "a reviewer read it" and "a
+machine checked it," which is the gap that mattered, and it does not close the gap to a device.
 
 - **14b-2** — **not started, and deliberately not started in the session that opened this phase.**
   The fix: group each For You card's title and reason line into one
@@ -2949,6 +2991,16 @@ observation while its web half is a browser assertion.
   test harness first. It should wait until 14b-1's harness has more than one CI run of history
   behind it: a cross-cutting change to a surface nobody here can look at, verified by a harness
   itself one run old, is two unproven things stacked.
+
+**Home's CLS has regressed since the phase-10 baseline, and 14a-2 is not the cause.** The A/B
+above measured `home` desktop CLS at **0.067 with the change and 0.067 without it**, and mobile at
+0.053 both ways — against `lighthouse-budget.config.mjs`'s documented 2026-08-06 baseline of
+**0.001 desktop / 0.008 mobile**. Still inside the 0.1 budget, so nothing fails, which is exactly
+why it went unnoticed. `signedOut` is 0.000 on both form factors, so it is content, not bundling:
+the likeliest source is the shelves phases 12 and 13 added to the home feed, whose cover art loads
+in after first paint. `home` mobile LCP has drifted the same way (~7150 ms against a 6851 ms
+documented median). **Neither is measured against an older commit yet** — that is the wave, and it
+is startable on this machine.
 
 **Expect red CI rounds on 14b.** This machine has no JDK and no Android SDK, so 14b-1 was written
 blind by construction; the project's own history is three consecutive Android waves where review

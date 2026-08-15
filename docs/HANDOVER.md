@@ -130,6 +130,15 @@ between what this project can build and what it can prove.
   `Menu.tsx` is a member of the barrel — left the entry chunk entirely. Total bundle is ~unchanged
   (bytes moved into `Shell`, whose lazy chunk grew 37.8 → 52.7 KB, still under its 72 KB budget).
 
+  **It bought no Lighthouse score, and that is the durable finding.** A same-machine, same-commit
+  A/B (five runs each, the one line the only difference) put `signedOut` mobile at 0.58 without and
+  0.55 with, `home` mobile at 0.58 without and 0.56 with — every difference inside the documented
+  0.55–0.62 band. **Third independent confirmation that entry-chunk weight is not the lever**,
+  after lazy-loading `Shell` and after `manualChunks`. `react-dom` + `@mantine/core` are 335 KB of
+  the 666 KB and neither defers without restructuring `main.tsx`'s boot. **Do not spend another
+  wave shrinking the entry chunk.** Kept anyway — 131.7 KB off every first paint for one line is
+  worth having even when the score does not notice.
+
   **The CSS-loss risk was real and was checked, because the e2e suite cannot see it.** Marking JS
   pure lets Rollup drop a component module _and its `import './Foo.css'` with it_ — and Playwright
   asserts on testids and text, never computed styles, so a component rendering unstyled passes
@@ -142,6 +151,21 @@ between what this project can build and what it can prove.
   Found in passing, not acted on: `Chip.tsx`, `CircularProgress.tsx`, `LinearProgress.tsx` and
   `Skeleton.tsx` each has a colocated `.css` file the component never imports. Already absent from
   the bundle before this wave. Dead files, safe to delete, nobody's wave yet.
+
+### Home's CLS regressed since phase 10, and nobody noticed because it still passes
+
+Found while A/B-ing 14a-2, and **not caused by it** — measured 0.067 desktop / 0.053 mobile both
+with and without that change, against `lighthouse-budget.config.mjs`'s documented 2026-08-06
+baseline of **0.001 desktop / 0.008 mobile**. The budget is 0.1, so nothing fails; that is why it
+sat unseen. `signedOut` is 0.000 on both form factors, so this is **content, not bundling** — the
+likeliest source is the shelves phases 12 and 13 added to the home feed, loading cover art in after
+first paint. `home` mobile LCP has drifted the same way (~7150 ms against a 6851 ms documented
+median).
+
+**This is startable here** and wants no credential: bisect by measuring an older commit, then fix
+the shift at its source (reserved space for shelf rows, or intrinsic dimensions on cover images).
+It is the most product-visible thing left on this machine — "the UI must be beautiful" is the
+user's own sentence.
 
 ### 14b — Android had no way to verify UI at all, and now has a narrow one
 
@@ -177,6 +201,15 @@ in CI**" — not "Android UI is now verifiable." Robolectric renders on the JVM 
 framework: it will confirm a node exists with the contentDescription you meant; it will not tell
 you what TalkBack announces, how the row looks, or what is reachable by touch. It closes the gap
 between "a reviewer read it" and "a machine checked it". It does not close the gap to a device.
+
+**14b-1 took four red CI rounds and the fourth exonerates it.** In order: (1) `assertExists` is a
+member of `SemanticsNodeInteraction`, not a top-level import; (2) `ui-test-manifest` must be
+`debugImplementation` — see above; (3) `gradlew test` runs `testReleaseUnitTest` too, so the file
+belongs in the **`src/testDebug` source set**; (4) `AppStartViewModelTest` failed with
+`UncaughtExceptionsBeforeTest` and **a plain re-run of the identical commit went green**. That
+fourth one is the latent race 13d already documented, and it is now **firing intermittently on
+CI** where it was not before — Robolectric added suite wall-time, which is precisely the mechanism
+13d's write-up names. Real loose end; not the harness's fault; nobody's wave yet.
 
 - **14b-2 — not started, deliberately.** Grouping each For You card's title and reason line into
   one accessibility node on `ForYouCarouselRow` (shared by the book, podcast and music shelves).
@@ -1029,6 +1062,15 @@ allocating a job. The mechanism is understood and reproducible, not intermittent
 if the web CI result matters — one push, wait for it, then the next. The obvious fix for half of it — move `publish` into its own workflow
 with its own concurrency group, so verification jobs may cancel freely while the deployment-coupled
 job queues — **changes deployment behaviour on a live host and is not an autonomous call.**
+
+### `android.yml` cancels its own in-flight runs on every push, unlike `ci.yml`
+
+`android.yml` sets `cancel-in-progress: true` unconditionally, where `ci.yml` makes it conditional
+on the ref so `main` queues instead. The consequence, seen three times in one session on 2026-08-16:
+**a docs-only push to `main` kills the Android run verifying the previous commit**, mid-flight. So
+Android verification on `main` only ever reflects the most recent push — a green Android run two
+commits back is not evidence about the commit you are looking at, and an Android result you are
+waiting on will vanish if you push anything at all. Batch pushes when an Android result matters.
 
 ### Deployment
 
