@@ -7,7 +7,13 @@
 # or put it in a sibling `.env` file that stays out of version control.
 services:
   auralis:
-    build: .
+    # Deliberately `image:` with no `build:`. With both keys present, a plain
+    # `docker compose up` builds from source whenever the tag is absent locally
+    # instead of pulling it — so a self-hoster who copied this file got a local
+    # build of whatever their checkout happened to contain, silently, while
+    # docs/SELF_HOSTING.md's snippet (image-only) pulled the published image.
+    # Two different things called the same name. To build from source instead,
+    # be explicit: `docker build -t ghcr.io/patakihara/auralis:latest .`
     image: ghcr.io/patakihara/auralis:latest
     # Host port is overridable because 8787 is a popular choice — Readarr and
     # its forks use it — so a self-hoster running Auralis next to one of those
