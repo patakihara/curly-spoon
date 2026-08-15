@@ -27,16 +27,16 @@ per-content-type queues) is **shipped on web and Android except 12c-2**.
 
 Verified 2026-08-15 against `ROADMAP.md`, not inherited from a previous session's summary.
 
-| Item                                                                                      | Blocked on                                                                                                                                                                        |
-| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **12c-2** — requestable content on artist/author pages                                    | Queue `440b217`: should a title already in the library still be offered as requestable? The same question arises in Search — deciding it twice, differently, is the failure mode. |
-| **Phase 11**'s six remaining steps                                                        | A release signing key and an `applicationId` — one-way doors. `docs/FDROID_REPO.md` lists all six.                                                                                |
-| **Launcher icon**                                                                         | There is none; the app ships Android's default. Adding a file is mechanical, deciding what the icon _is_ is not.                                                                  |
-| **12b** "sorted by relevance"                                                             | Music results are alphabetical (`jellyfin-client` pins `sortBy: 'SortName'`). Testing a fix wants a real Jellyfin server; no session has a credential.                            |
-| **12d (Android)** visual conformance                                                      | A device or emulator. None exists here, and that wave's whole requirement is visual.                                                                                              |
-| **12a**'s cold-cache nav rail                                                             | A design decision: what the rail shows before it knows which libraries exist. Deferred twice already.                                                                             |
-| **Auto-updating deployment**                                                              | A live change on mediaserver, needing that host's own rules and the user's go-ahead. See "Deployment" below.                                                                      |
-| Direct play vs transcode; lyrics search; `GET /requests` scoping; `LinearProgress` `wavy` | Product decisions, written up under "Open product decisions" below.                                                                                                               |
+| Item                                                                                      | Blocked on                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **12c-2** — requestable content on artist/author pages                                    | Queue `440b217`: should a title already in the library still be offered as requestable? The same question arises in Search — deciding it twice, differently, is the failure mode.      |
+| **Phase 11**'s remaining steps                                                            | Two keys the user must generate, plus enabling Pages and pushing a tag. Everything automatable is built — see "Android distribution" below. `docs/FDROID_REPO.md` has the eight steps. |
+| **Launcher icon**                                                                         | There is none; the app ships Android's default. Adding a file is mechanical, deciding what the icon _is_ is not.                                                                       |
+| **12b** "sorted by relevance"                                                             | Music results are alphabetical (`jellyfin-client` pins `sortBy: 'SortName'`). Testing a fix wants a real Jellyfin server; no session has a credential.                                 |
+| **12d (Android)** visual conformance                                                      | A device or emulator. None exists here, and that wave's whole requirement is visual.                                                                                                   |
+| **12a**'s cold-cache nav rail                                                             | A design decision: what the rail shows before it knows which libraries exist. Deferred twice already.                                                                                  |
+| **Auto-updating deployment**                                                              | A live change on mediaserver, needing that host's own rules and the user's go-ahead. See "Deployment" below.                                                                           |
+| Direct play vs transcode; lyrics search; `GET /requests` scoping; `LinearProgress` `wavy` | Product decisions, written up under "Open product decisions" below.                                                                                                                    |
 
 **Both items that were implementable on 2026-08-15 are done** (`50e74e0`, `3cda65c`), and
 each turned out to be a coverage problem rather than the live bug the roadmap prose implied.
@@ -96,9 +96,7 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed — 2026-08-15:** Android release-signing plumbing (`apps/android/app/build.gradle.kts`,
-`.github/workflows/release.yml`, `.github/workflows/fdroid-repo.yml`). Does not touch
-`android.yml`'s branch/PR path or any `apps/android` source.
+**Nothing is currently claimed.**
 
 Before dispatching a wave **and again before merging it**, check what is already on `main`
 (`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`
@@ -376,6 +374,57 @@ None of these blocks the two implementable items above.
 - **Ebooks?** Audiobookshelf handles them; the roadmap covers audio only.
 - **Chromecast / DLNA?** Symfonium has it and the user cited Symfonium, but never asked directly.
 - **Android's own open questions**: whether it should have a Settings screen at all (it has none).
+
+### Android distribution — everything automatable is now built
+
+Settled 2026-08-15. The pipeline is complete and inert, waiting only on the user.
+
+**A GitHub Releases tab is not sufficient for Droid-ify**, which is what prompted this work.
+Droid-ify adds _repositories_, and a repository must serve a signed index (`index-v2.json` +
+`entry.jar`) generated by `fdroid update`. A Releases page has no index and no signature.
+`fdroid-repo.yml` already builds and publishes that index to GitHub Pages on a `v*` tag, and
+`release.yml` creates the GitHub Release on the same tag. Neither has ever run — there are no
+tags. (Obtainium _does_ consume GitHub Releases directly and is the fallback if the repo route
+is ever abandoned; nothing in `docs/research/` mentions it.)
+
+**The trap that was not in the documented steps.** The build declared no release signing config
+at all, and CI built `assembleDebug`. On an ephemeral runner AGP generates a fresh random
+`~/.android/debug.keystore` per run, so **every release would carry a different certificate** —
+the first install works, the second fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, and the
+user must uninstall and lose all app state. Through Droid-ify that reads as a client bug rather
+than a signing problem. `280c1e7` closes it: a `release` signing config reading
+`ANDROID_KEYSTORE_FILE`/`_PASSWORD`, `ANDROID_KEY_ALIAS`/`_PASSWORD` from the environment, both
+tag workflows building the signed release APK, and a fail-loudly `check-secrets` guard so a tag
+without secrets refuses to publish rather than shipping an un-updatable APK.
+
+**The fallback is the load-bearing half and it is verified.** With no secrets — every PR, every
+branch push, every local build — the config falls back to debug signing with a logged warning
+and never throws. `android.yml` carries no secrets, so every branch run exercises exactly that
+path; it went green on `280c1e7`, which is what settles the DSL question no reviewer could.
+
+**There are two independent keys, and conflating them is the easy mistake.** The **app signing
+key** (`ANDROID_*`) signs the APK and fixes app identity forever. The **F-Droid repo key**
+(`FDROID_REPO_*`) signs the repository index and could be rotated by re-adding the repo. Eight
+secrets total.
+
+**`applicationId` is `net.develivarr.auralis`** as of `ece8f94`, derived from the domain the
+user actually controls. The old `net.auralis.app` implied `auralis.net`, which the research doc
+had flagged as unverified. It was renamed while free to do so: `applicationId` + certificate
+together are app identity, so after a key exists and anyone installs, changing either forces an
+uninstall.
+
+**Hosting is GitHub Pages now, the user's own domain later** — their explicit call. Note the repo
+URL is baked into Droid-ify, so moving it later means re-adding the repo on the device.
+
+**No anti-AI policy blocks any of this**, verified against live sources 2026-08-15 —
+`docs/research/FDROID_DISTRIBUTION.md` §7b has it. The short version: the policy is
+IzzyOnDroid's, not F-Droid's; official F-Droid has no documented AI-authorship policy at all
+(an open question, so "no rule today" rather than "fine"); and F-Droid's own Inclusion Policy
+names a separate repository as the sanctioned route for apps that do not meet its criteria, so
+self-hosting is outside any inclusion policy by design rather than by evasion.
+
+**Still missing: a launcher icon.** The app ships Android's default, which is what would appear
+in Droid-ify's listing.
 
 ### The reported Android post-login crash — audited, not reproduced
 
