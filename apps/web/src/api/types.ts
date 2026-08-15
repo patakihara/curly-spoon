@@ -198,6 +198,19 @@ export interface RecommendedShelf extends Shelf {
   reason: string;
 }
 
+/** `GET /music/recommended`'s shelf shape (docs/ROADMAP.md §13, wave 13f-1) — the music
+ * equivalent of `RecommendedShelf`, but its `items` are Jellyfin albums, not Audiobookshelf
+ * `LibraryItem`s, so it can't just extend `Shelf` (whose `items: LibraryItem[]` wouldn't
+ * fit). Kept as its own type rather than a generic `Shelf<T>` for the same reason the rest
+ * of this file avoids that: every other shelf-shaped response here is concrete too. */
+export interface MusicRecommendedShelf {
+  id: string;
+  label: string;
+  type: string;
+  reason: string;
+  items: JellyfinAlbum[];
+}
+
 export interface MediaProgress {
   id: string;
   libraryItemId: string;

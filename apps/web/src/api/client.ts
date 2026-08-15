@@ -29,6 +29,7 @@ import type {
   LoginResponse,
   MediaProgress,
   MusicCandidate,
+  MusicRecommendedShelf,
   MusicRequest,
   MusicSearchResult,
   PlaybackSession,
@@ -489,6 +490,18 @@ export class ApiClient {
 
   getJellyfinConfig(signal?: AbortSignal): Promise<JellyfinConfig> {
     return this.request('/jellyfin/config', { signal });
+  }
+
+  /** `GET /music/recommended` (docs/ROADMAP.md §13, wave 13f-1) — Auralis's own ranked
+   * album shelves, the music equivalent of `getLibraryRecommended`. Rejects with a typed
+   * `ApiError` (`jellyfin_not_configured`, 409, or `jellyfin_unauthenticated`, 401) when
+   * Jellyfin isn't reachable for this user — same as every other `/jellyfin/*` method
+   * here, not a special case. Callers must treat that rejection as "no shelves", the same
+   * degrade-to-empty `MusicHomePage.tsx` already gives an unconfigured Jellyfin, never as
+   * an error to surface: see `docs/HANDOVER.md`'s standing rule that `/music` must never
+   * show an error state where a connect prompt or a quiet no-op belongs. */
+  getMusicRecommended(signal?: AbortSignal): Promise<{ shelves: MusicRecommendedShelf[] }> {
+    return this.request('/music/recommended', { signal });
   }
 
   /** Configures the shared Jellyfin base URL (if `baseUrl` is given) and signs the

@@ -27,9 +27,13 @@ import {
   useJellyfinArtistsQuery,
   useJellyfinConfigQuery,
   useJellyfinSearchQuery,
+  useMusicRecommendedQuery,
 } from '../../api/queries.js';
 import { formatDuration } from '../player/playback.js';
 import { summarizePage } from './pagination.js';
+import { Carousel } from '../home/Carousel.js';
+import { musicRecommendedShelvesToCarousels } from './musicRecommendedFeed.js';
+import type { FeedItem } from '../home/forYouFeed.js';
 
 export function MusicHomePage() {
   const navigate = useNavigate();
@@ -43,6 +47,11 @@ export function MusicHomePage() {
 
   const artistsQuery = useJellyfinArtistsQuery(startIndex, configured && submittedTerm === '');
   const searchQuery = useJellyfinSearchQuery(submittedTerm);
+  // Wave 13f-1: Auralis's own ranked album shelves — same `enabled` gate as
+  // `artistsQuery` above (only once Jellyfin is known configured, and not while a
+  // search is active), so this never fires against an unconfigured Jellyfin before
+  // this page's own connect-prompt guard below has a chance to render.
+  const recommendedQuery = useMusicRecommendedQuery(configured && submittedTerm === '');
 
   const submitSearch = () => setSubmittedTerm(term.trim());
   const clearSearch = () => {
@@ -89,6 +98,18 @@ export function MusicHomePage() {
     results &&
     (results.artists.length > 0 || results.albums.length > 0 || results.tracks.length > 0),
   );
+
+  // `isSuccess ? …shelves : null` is what turns a 409/401 (Jellyfin unconfigured, or a
+  // credential lost mid-session) into "no shelves" rather than an error — see
+  // `musicRecommendedFeed.ts`'s own doc comment for why `null` is the deliberate signal
+  // for "unknown or failed", not `[]`. Nothing below ever reads `recommendedQuery.error`.
+  const recommendedCarousels = musicRecommendedShelvesToCarousels(
+    recommendedQuery.isSuccess ? recommendedQuery.data.shelves : null,
+    (albumId) => api.jellyfinArtworkUrl(albumId),
+  );
+  const handleSelectRecommended = (item: FeedItem) => {
+    void navigate({ to: '/music/album/$albumId', params: { albumId: item.id } });
+  };
 
   return (
     <div className="auralis-page" data-testid="music-page">
@@ -144,6 +165,31 @@ export function MusicHomePage() {
           </Button>
         ) : null}
       </div>
+
+      {/* Wave 13f-1 — Auralis's own recommended album shelves. Sits above the browse
+          grid and hidden while a search is active, the same "recommendations lead,
+          browsing follows" placement `HomePage.tsx` uses for its own recommended
+          carousels; unlike that page these are music-only, so there's no filter chip
+          to coordinate with. Renders nothing at all — not a skeleton, not an empty
+          section — until shelves actually resolve, which is what keeps an
+          unconfigured Jellyfin's `/music` at exactly its pre-13f-1 rendering. */}
+      {!submittedTerm && recommendedCarousels.length > 0 ? (
+        <div
+          data-testid="music-recommended-shelves"
+          style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 24 }}
+        >
+          {recommendedCarousels.map((carousel) => (
+            <Carousel
+              key={carousel.id}
+              id={`music-recommended-${carousel.id}`}
+              label={carousel.label}
+              items={carousel.items}
+              reason={carousel.reason}
+              onSelect={handleSelectRecommended}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {submittedTerm ? (
         searchQuery.isLoading ? (

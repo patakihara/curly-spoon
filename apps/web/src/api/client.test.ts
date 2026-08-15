@@ -620,6 +620,70 @@ describe('ApiClient', () => {
       expect(result).toEqual({ artists: [], albums: [], tracks: [] });
     });
 
+    it('fetches recommended album shelves from /music/recommended (wave 13f-1)', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              shelves: [
+                {
+                  id: 'shelf-1',
+                  label: 'Because you liked Nova Drift',
+                  type: 'recommended',
+                  reason: 'Because you played Nova Drift a lot',
+                  items: [],
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      const result = await client.getMusicRecommended();
+
+      const [url] = fetchFn.mock.calls[0]!;
+      expect(url).toBe('/api/v1/music/recommended');
+      expect(result.shelves).toHaveLength(1);
+      expect(result.shelves[0]!.reason).toBe('Because you played Nova Drift a lot');
+    });
+
+    it('rejects with the BFF-typed 409 when Jellyfin is not configured', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              error: { code: 'jellyfin_not_configured', message: 'Jellyfin is not configured' },
+            }),
+            { status: 409 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await expect(client.getMusicRecommended()).rejects.toMatchObject({
+        code: 'jellyfin_not_configured',
+        status: 409,
+      });
+    });
+
+    it('rejects with the BFF-typed 401 when this user has no Jellyfin credentials', async () => {
+      const fetchFn = fakeFetch(
+        () =>
+          new Response(
+            JSON.stringify({
+              error: { code: 'jellyfin_unauthenticated', message: 'Not signed in to Jellyfin' },
+            }),
+            { status: 401 },
+          ),
+      );
+      const client = new ApiClient({ fetch: fetchFn });
+
+      await expect(client.getMusicRecommended()).rejects.toMatchObject({
+        code: 'jellyfin_unauthenticated',
+        status: 401,
+      });
+    });
+
     it('builds a same-origin artwork URL without making a request', () => {
       const client = new ApiClient({ fetch: fakeFetch(() => new Response('', { status: 200 })) });
 

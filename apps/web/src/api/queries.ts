@@ -44,6 +44,10 @@ export const queryKeys = {
   podcastDirectorySearch: (term: string) => ['podcasts', 'search', term] as const,
   myProgress: ['me', 'progress'] as const,
   jellyfinConfig: ['jellyfin', 'config'] as const,
+  /** `GET /music/recommended` (docs/ROADMAP.md §13, wave 13f-1) — a single key, not
+   * parameterized: the route takes no arguments (it's scoped to the signed-in user's
+   * own Jellyfin session, same as `jellyfinFavoriteAlbums` below). */
+  musicRecommended: ['jellyfin', 'music', 'recommended'] as const,
   jellyfinArtists: (startIndex: number) => ['jellyfin', 'artists', startIndex] as const,
   jellyfinAlbums: (artistId: string, startIndex: number) =>
     ['jellyfin', 'albums', artistId, startIndex] as const,
@@ -554,6 +558,30 @@ export function useJellyfinConfigQuery() {
     queryKey: queryKeys.jellyfinConfig,
     queryFn: ({ signal }) => api.getJellyfinConfig(signal),
     staleTime: 10_000,
+  });
+}
+
+/**
+ * `GET /music/recommended` (docs/ROADMAP.md §13, wave 13f-1). `enabled` is left to the
+ * caller — `MusicHomePage.tsx` passes `configured && submittedTerm === ''`, mirroring
+ * `useJellyfinArtistsQuery`'s own gate, so this never fires before Jellyfin is known
+ * configured and never competes with an active search.
+ *
+ * A 409 (`jellyfin_not_configured`) or 401 (`jellyfin_unauthenticated`) rejection is
+ * **not** special-cased here — `retry: false` for 4xx is already the app-wide
+ * `QueryClient` default (`queryClient.ts`'s `shouldRetry`), so this settles to `isError`
+ * quickly with no retry spinner. The caller is what turns that into "no shelves": see
+ * `musicRecommendedShelvesToCarousels`'s `null`-means-unknown-or-failed contract, the
+ * same pattern `useOptionalLibraryRecommendedQuery` in `HomePage.tsx` already uses for
+ * the book side. Nothing here renders an error — a query hook shouldn't decide that.
+ */
+export function useMusicRecommendedQuery(enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.musicRecommended,
+    queryFn: ({ signal }) => api.getMusicRecommended(signal),
+    enabled,
+    staleTime: 30_000,
   });
 }
 
