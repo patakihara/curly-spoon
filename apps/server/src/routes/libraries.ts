@@ -70,63 +70,59 @@ export function registerLibraryRoutes(app: FastifyInstance): void {
     }
   });
 
-  app.get(
-    '/libraries/:id/recommended',
-    { preHandler: requireSession },
-    async (request, reply) => {
-      const params = parseInput(reply, idParamSchema, request.params);
-      if (!params) return undefined;
-      try {
-        const client = app.abs.forUser(request.userId!);
-        const [me, pool] = await Promise.all([
-          client.getMe(),
-          client.getLibraryItems(params.id, { limit: RECOMMENDATION_CANDIDATE_LIMIT }),
-        ]);
+  app.get('/libraries/:id/recommended', { preHandler: requireSession }, async (request, reply) => {
+    const params = parseInput(reply, idParamSchema, request.params);
+    if (!params) return undefined;
+    try {
+      const client = app.abs.forUser(request.userId!);
+      const [me, pool] = await Promise.all([
+        client.getMe(),
+        client.getLibraryItems(params.id, { limit: RECOMMENDATION_CANDIDATE_LIMIT }),
+      ]);
 
-        const poolIds = new Set(pool.items.map((item) => item.id));
-        const signals: ProgressSignal[] = me.mediaProgress
-          .filter((p) => poolIds.has(p.libraryItemId))
-          .map((p) => ({
-            itemId: p.libraryItemId,
-            progress: p.progress,
-            isFinished: p.isFinished,
-            // `lastUpdate` is refreshed by every progress sync, so it's the
-            // freshest signal of "when did this activity happen"; `finishedAt`
-            // is set once and never touched again, so it's the fallback rather
-            // than the primary. Both absent (never synced, e.g. a
-            // manually-marked-finished item) maps to `null`, which
-            // `buildTasteProfile` already treats as maximally stale — the safe
-            // default, not a crash.
-            lastActivityAt: p.lastUpdate ?? p.finishedAt ?? null,
-          }));
-
-        const candidates = pool.items.map(toCandidate);
-        const now = Date.now();
-        const profile = buildTasteProfile(signals, candidates, { now });
-        const scored = scoreCandidates(profile, candidates);
-        const shelves = buildRecommendationShelves(profile, scored, candidates, {
-          maxShelves: MAX_SHELVES,
-          itemsPerShelf: ITEMS_PER_SHELF,
-        });
-
-        const itemsById = new Map<string, LibraryItem>(pool.items.map((item) => [item.id, item]));
-        const responseShelves = shelves.map((shelf) => ({
-          id: shelf.id,
-          label: shelf.label,
-          type: RECOMMENDATION_SHELF_TYPE,
-          reason: shelf.reason,
-          items: shelf.itemIds
-            .map((id) => itemsById.get(id))
-            .filter((item): item is LibraryItem => item !== undefined),
+      const poolIds = new Set(pool.items.map((item) => item.id));
+      const signals: ProgressSignal[] = me.mediaProgress
+        .filter((p) => poolIds.has(p.libraryItemId))
+        .map((p) => ({
+          itemId: p.libraryItemId,
+          progress: p.progress,
+          isFinished: p.isFinished,
+          // `lastUpdate` is refreshed by every progress sync, so it's the
+          // freshest signal of "when did this activity happen"; `finishedAt`
+          // is set once and never touched again, so it's the fallback rather
+          // than the primary. Both absent (never synced, e.g. a
+          // manually-marked-finished item) maps to `null`, which
+          // `buildTasteProfile` already treats as maximally stale — the safe
+          // default, not a crash.
+          lastActivityAt: p.lastUpdate ?? p.finishedAt ?? null,
         }));
 
-        return reply.send({ shelves: responseShelves });
-      } catch (err) {
-        handleUpstreamError(reply, err);
-        return undefined;
-      }
-    },
-  );
+      const candidates = pool.items.map(toCandidate);
+      const now = Date.now();
+      const profile = buildTasteProfile(signals, candidates, { now });
+      const scored = scoreCandidates(profile, candidates);
+      const shelves = buildRecommendationShelves(profile, scored, candidates, {
+        maxShelves: MAX_SHELVES,
+        itemsPerShelf: ITEMS_PER_SHELF,
+      });
+
+      const itemsById = new Map<string, LibraryItem>(pool.items.map((item) => [item.id, item]));
+      const responseShelves = shelves.map((shelf) => ({
+        id: shelf.id,
+        label: shelf.label,
+        type: RECOMMENDATION_SHELF_TYPE,
+        reason: shelf.reason,
+        items: shelf.itemIds
+          .map((id) => itemsById.get(id))
+          .filter((item): item is LibraryItem => item !== undefined),
+      }));
+
+      return reply.send({ shelves: responseShelves });
+    } catch (err) {
+      handleUpstreamError(reply, err);
+      return undefined;
+    }
+  });
 
   app.get('/libraries/:id/items', { preHandler: requireSession }, async (request, reply) => {
     const params = parseInput(reply, idParamSchema, request.params);

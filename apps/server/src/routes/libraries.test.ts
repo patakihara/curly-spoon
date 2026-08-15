@@ -183,6 +183,25 @@ describe('GET /api/v1/libraries/:id/recommended', () => {
 
   it('returns shelves with real items and non-empty reasons, and excludes the progressed item', async () => {
     const { app, cookie } = await authedApp();
+
+    // Seed listening history through the real PATCH path (not fixture
+    // defaults, which would leak into every other test using this fake —
+    // see fakeAbs.ts's comment on `progressByKey`). item-crimson (finished)
+    // and item-emberwars1 (in progress) each share an author/narrator/series
+    // with another fixture book, so the scorer has something to rank.
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-crimson',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 500, duration: 500, progress: 1, isFinished: true },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-emberwars1',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 240, duration: 600, progress: 0.4, isFinished: false },
+    });
+
     const response = await app.inject({
       method: 'GET',
       url: '/api/v1/libraries/lib-books/recommended',
@@ -203,11 +222,10 @@ describe('GET /api/v1/libraries/:id/recommended', () => {
       }
     }
 
-    // 'kara' (the fixture's default sign-in user, see fakeAbs.ts's seeded
-    // progress) has finished item-crimson. The wiring this test exists to
-    // catch: a route that built shelves but forgot to exclude known items
-    // would still return 200 with plausible-looking carousels — this is the
-    // one assertion that would fail if that exclusion silently broke.
+    // The wiring this test exists to catch: a route that built shelves but
+    // forgot to exclude known items would still return 200 with
+    // plausible-looking carousels — this is the one assertion that would
+    // fail if that exclusion silently broke.
     const allItemIds = shelves.flatMap((s: { items: { id: string }[] }) =>
       s.items.map((i) => i.id),
     );
