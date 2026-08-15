@@ -272,9 +272,13 @@ deliberately did not fold into a wave that was not about them:
 2. **Recommendation quality is still unassessable here.** Ten synthetic books and three fake
    albums prove the mechanism, not the taste. Judging whether the ranking is any _good_ wants
    the real 231-item library, which wants a credential.
-3. **`tryBuildMusicGenreProfile`'s bare `catch` swallows every error class**, including a real
-   programming error inside `albumToCandidate`. Intentional today, but it means a genuine bug
-   there degrades silently and invisibly. A log line would fix that.
+3. ~~**`tryBuildMusicGenreProfile`'s bare `catch` swallows every error class.**~~ **Done.** It
+   now discriminates: `JellyfinNotConfiguredError`/`JellyfinNoCredentialsError` stay silent,
+   because a household that never connected Jellyfin hits them on every books-route request and
+   logging that is noise, not signal. **Anything else** — a network failure, an upstream shape
+   change, a genuine bug in `albumToCandidate` or the scoring core — is logged at `warn` while
+   still degrading to `null`. Two tests pin both halves, and the fault-logging one was confirmed
+   to fail with the log line removed rather than merely passing alongside it.
 
 **Phase 13 is four waves done of five.** 13a (`8d071b8`), 13b (`0be4fc6`), 13d (`8335184`),
 13c (`8bbad08`). **13e is the only one left** — widen `packages/jellyfin-client` to normalize

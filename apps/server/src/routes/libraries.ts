@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { LibraryItem } from '@auralis/abs-client';
 import { createRequireSession } from '../auth/requireSession.js';
 import { handleUpstreamError } from '../httpErrors.js';
+import { JellyfinNoCredentialsError, JellyfinNotConfiguredError } from '../jellyfinUpstream.js';
 import { parseInput } from '../validation.js';
 import { toCandidate } from '../features/recommendations/adapt.js';
 import {
@@ -86,11 +87,27 @@ async function tryBuildMusicGenreProfile(
     const signals = buildMusicProgressSignals(tracksPage.items);
     const profile = buildTasteProfile(signals, candidates, { now });
     return profile.totalSignal > 0 ? profile : null;
-  } catch {
+  } catch (err) {
     // Deliberately swallowed — see this function's doc comment. The books route's own
     // Audiobookshelf calls, a few lines below wherever this is awaited, still run and
     // still throw into their own `handleUpstreamError` normally; only this optional
     // enrichment degrades silently.
+    //
+    // But "degrades silently" must not mean "is undiagnosable". The two configuration
+    // errors below are the overwhelmingly common case and are not faults at all — a
+    // household that has never connected Jellyfin hits them on every single books-route
+    // request, so logging them would be pure noise. **Anything else is a real fault**:
+    // a network failure, an upstream shape change, or a genuine bug in `albumToCandidate`
+    // or the scoring core. Those produce exactly the same `null` and would otherwise be
+    // invisible forever, which is how a broken feature goes on reporting success — the
+    // failure mode `docs/HANDOVER.md` records four times over.
+    if (err instanceof JellyfinNotConfiguredError || err instanceof JellyfinNoCredentialsError) {
+      return null;
+    }
+    app.log.warn(
+      { err },
+      'cross-media genre enrichment failed; serving book recommendations without music signal',
+    );
     return null;
   }
 }

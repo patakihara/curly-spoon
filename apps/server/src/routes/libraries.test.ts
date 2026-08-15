@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
 import { FAKE_NON_ADMIN_CREDENTIALS } from '../testSupport/fakes/fakeAbs.js';
@@ -292,5 +292,56 @@ describe('GET /api/v1/libraries/:id/recommended', () => {
     // raises `totalSignal`, so the books route's own cold-start gate is unaffected by
     // Jellyfin listening history alone.
     expect(response.json()).toEqual({ shelves: [] });
+  });
+
+  // The cross-media enrichment swallows every failure so the books route keeps working
+  // without Jellyfin — correct, and the reason it must not swallow *quietly*. An
+  // unconfigured Jellyfin is not a fault and is silent; anything else is a real fault
+  // that would otherwise be invisible forever, which is precisely how a broken feature
+  // goes on reporting success (`docs/HANDOVER.md`, four occurrences).
+  it('logs a real enrichment fault instead of hiding it, while still serving recommendations', async () => {
+    const { app } = buildTestApp();
+    const cookie = await authedAppAsMorty(app);
+
+    const warn = vi.spyOn(app.log, 'warn');
+    // Not a configuration error — this stands in for a network failure, an upstream
+    // shape change, or a genuine bug inside the music adapter.
+    vi.spyOn(app.jellyfin, 'forUser').mockImplementation(() => {
+      throw new Error('upstream exploded');
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    // The books route is unaffected: the enrichment is optional by design.
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ shelves: [] });
+    // ...but the fault reached the log rather than vanishing.
+    expect(warn).toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+
+  it('stays silent when Jellyfin is simply not configured, which is not a fault', async () => {
+    const { app } = buildTestApp();
+    const cookie = await authedAppAsMorty(app);
+
+    const warn = vi.spyOn(app.log, 'warn');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    // A household that has never connected Jellyfin hits this on every single request,
+    // so logging it would be pure noise rather than a signal.
+    expect(warn).not.toHaveBeenCalled();
+
+    vi.restoreAllMocks();
   });
 });
