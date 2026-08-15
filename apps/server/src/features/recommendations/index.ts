@@ -12,3 +12,5 @@ export type {
 export { buildTasteProfile } from './profile.js';
 export { scoreCandidates } from './score.js';
 export { buildRecommendationShelves } from './shelves.js';
+export { albumToCandidate, buildMusicProgressSignals } from './adaptMusic.js';
+export { mergeGenreAffinity, CROSS_MEDIA_GENRE_WEIGHT } from './crossMediaGenre.js';
