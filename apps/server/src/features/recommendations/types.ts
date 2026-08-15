@@ -38,12 +38,7 @@
 export interface RecommendationCandidate {
   id: string;
   media: {
-    /** `'album'` added in wave 13e-2 for the music adapter
-     * (`adaptMusic.ts`'s `albumToCandidate`) — nothing in this feature's pure core
-     * (`profile.ts`/`score.ts`/`shelves.ts`) branches on `kind` today, so widening
-     * this union is type-level honesty about the candidate's real media type, not
-     * a behaviour change. */
-    kind: 'book' | 'podcast' | 'album';
+    kind: 'book' | 'podcast';
     title: string;
     genres: string[];
     /** Book only, pre-adaptation — `[]` for a podcast that hasn't been folded (see

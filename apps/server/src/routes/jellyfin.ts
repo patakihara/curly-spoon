@@ -17,7 +17,6 @@
 
 import { Readable } from 'node:stream';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { Album } from '@auralis/jellyfin-client';
 import { JellyfinError } from '@auralis/jellyfin-client';
 import { createRequireSession } from '../auth/requireSession.js';
 import { handleUpstreamError, sendError } from '../httpErrors.js';
@@ -25,13 +24,6 @@ import { getSettings, setSettings } from '../db/settingsRepo.js';
 import { getJellyfinToken, setJellyfinToken } from '../db/jellyfinSecretsRepo.js';
 import { AURALIS_JELLYFIN_DEVICE, JELLYFIN_UPSTREAM_KEY } from '../jellyfinUpstream.js';
 import { parseInput } from '../validation.js';
-import {
-  albumToCandidate,
-  buildMusicProgressSignals,
-  buildRecommendationShelves,
-  buildTasteProfile,
-  scoreCandidates,
-} from '../features/recommendations/index.js';
 import {
   jellyfinAddToPlaylistBodySchema,
   jellyfinAlbumsQuerySchema,
@@ -49,28 +41,6 @@ import {
 } from './schemas.js';
 
 const PASSTHROUGH_HEADERS = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
-
-/**
- * Candidate pool caps for `GET /music/recommended` — same reasoning as
- * `routes/libraries.ts`'s `RECOMMENDATION_CANDIDATE_LIMIT`, sized independently because
- * albums and tracks are different populations of one library (a 231-item audiobook
- * library and a music library of unknown size are not comparable). `MUSIC_TRACK_LIMIT` is
- * larger than `MUSIC_ALBUM_LIMIT` because `buildMusicProgressSignals` needs every track
- * that might carry play history, not just the tracks belonging to the album page fetched —
- * an album with plays whose tracks fall outside a smaller track page would silently look
- * unplayed. Neither is paginated further; revisit if a much larger library shows this
- * pass being slow, exactly as the books-route comment already says.
- */
-const MUSIC_ALBUM_LIMIT = 500;
-const MUSIC_TRACK_LIMIT = 5000;
-
-/** Same reasoning as `libraries.ts`'s `MAX_SHELVES`/`ITEMS_PER_SHELF`. */
-const MUSIC_MAX_SHELVES = 5;
-const MUSIC_ITEMS_PER_SHELF = 10;
-
-/** Mirrors `libraries.ts`'s `RECOMMENDATION_SHELF_TYPE` — distinguishes this route's own
- * shelves from anything else a music "for you" surface might one day show. */
-const MUSIC_RECOMMENDATION_SHELF_TYPE = 'recommended';
 
 function copyHeaders(reply: FastifyReply, upstream: Response): void {
   for (const name of PASSTHROUGH_HEADERS) {
@@ -328,64 +298,6 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
     try {
       const client = app.jellyfin.forUser(request.userId!);
       return reply.send(await client.search(query.term, { limit: query.limit }));
-    } catch (err) {
-      handleUpstreamError(reply, err);
-      return undefined;
-    }
-  });
-
-  // ---------------------------------------------------------------------
-  // Recommendations — wave 13e-2. `/music/recommended`, not `/jellyfin/recommended`:
-  // named after the medium, mirroring `libraries.ts`'s `/libraries/:id/recommended`
-  // (named after the medium's own resource), rather than after this file's `/jellyfin/*`
-  // prefix — there is no per-library `:id` here because nothing else in this file scopes
-  // browsing to one Jellyfin library either (`/jellyfin/albums` etc. search recursively
-  // across every music library the user can see).
-  //
-  // Reuses the exact same pure scoring core `libraries.ts`'s `/recommended` route uses
-  // (`buildTasteProfile` -> `scoreCandidates` -> `buildRecommendationShelves`) via
-  // `adaptMusic.ts`'s album/track adapter — see that file's doc comments for the
-  // candidate/signal mapping and its justification. One ranking implementation, two
-  // adapters: `docs/HANDOVER.md`'s phase-13 standing decision.
-  //
-  // Jellyfin unconfigured, or this user has no stored Jellyfin credentials: `app.jellyfin
-  // .forUser` throws `JellyfinNotConfiguredError`/`JellyfinNoCredentialsError` before any
-  // upstream call, and `handleUpstreamError` already maps both to a structured response
-  // (409 `jellyfin_not_configured` / 401 `jellyfin_unauthenticated`) — the same behaviour
-  // every other route in this file gets from the same catch block, not a special case
-  // invented for this route.
-  // ---------------------------------------------------------------------
-
-  app.get('/music/recommended', { preHandler: requireSession }, async (request, reply) => {
-    try {
-      const client = app.jellyfin.forUser(request.userId!);
-      const [albumsPage, tracksPage] = await Promise.all([
-        client.getAlbums({ limit: MUSIC_ALBUM_LIMIT }),
-        client.getTracks({ limit: MUSIC_TRACK_LIMIT }),
-      ]);
-
-      const candidates = albumsPage.items.map(albumToCandidate);
-      const signals = buildMusicProgressSignals(tracksPage.items);
-      const now = Date.now();
-      const profile = buildTasteProfile(signals, candidates, { now });
-      const scored = scoreCandidates(profile, candidates);
-      const shelves = buildRecommendationShelves(profile, scored, candidates, {
-        maxShelves: MUSIC_MAX_SHELVES,
-        itemsPerShelf: MUSIC_ITEMS_PER_SHELF,
-      });
-
-      const albumsById = new Map<string, Album>(albumsPage.items.map((a) => [a.id, a]));
-      const responseShelves = shelves.map((shelf) => ({
-        id: shelf.id,
-        label: shelf.label,
-        type: MUSIC_RECOMMENDATION_SHELF_TYPE,
-        reason: shelf.reason,
-        items: shelf.itemIds
-          .map((id) => albumsById.get(id))
-          .filter((album): album is Album => album !== undefined),
-      }));
-
-      return reply.send({ shelves: responseShelves });
     } catch (err) {
       handleUpstreamError(reply, err);
       return undefined;
