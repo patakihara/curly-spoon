@@ -39,11 +39,10 @@ F-Droid/Droid-ify _repository_. A repository is a different, stricter thing:
   ([Signing Process](https://f-droid.org/docs/Signing_Process/), fetched 2026-08-07. The
   `Release_Channels_and_Signing_Keys` page shows a repo fingerprint and an APK fingerprint
   side by side but never says in words that they are different keys — cite `Signing_Process`
-  for this, not that page.) Auralis currently has **no** APK release-signing key
-  at all (`docs/research/FDROID_DISTRIBUTION.md` §5 — still an open, undecided question) —
-  every APK this repo serves is the same debug-signed build `android.yml` already produces.
-  The repo signing key this document is about is unrelated to that decision and does not
-  require it to be resolved first.
+  for this, not that page.) Auralis's APK release-signing key is a separate by-hand step
+  below ("What you have to do by hand", step 1) from the repo signing key this section is
+  about — the two must never be conflated, and generating one does not require the other to
+  exist first.
 - **The `?fingerprint=` parameter in a repo URL is the SHA-256 fingerprint of the
   _repository_ signing certificate** — not of any APK's certificate. It lets a client
   verify, out of band, that the index it downloaded over plain HTTPS was actually signed by
@@ -77,9 +76,47 @@ automated further without generating a key on your behalf, which this implementa
 deliberately does not do (see `docs/research/FDROID_DISTRIBUTION.md` §5 on why a lost or
 CI-generated-and-forgotten key is unrecoverable).
 
-1. **Install `fdroidserver` locally** (not on this machine — see `CLAUDE.md`'s environment
+1. **Generate the app signing key**, in an empty directory outside this git repo (never
+   commit it — same rule as step 3 below):
+
+   ```
+   keytool -genkey -v -keystore release.keystore -alias auralis \
+     -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+   `keytool` prompts for a keystore password, a key password, and a distinguished name (the
+   name fields don't matter — Droid-ify never shows them). Use two different, strong,
+   randomly generated passwords, same as the repo key below.
+
+   **This key cannot be skipped, deferred, or regenerated later without cost.** Android
+   ties app identity to `applicationId` + signing certificate together — every release built
+   with this key installs as an update over the last one, and a release built with a
+   _different_ key does not. The moment a second, different key ever signs a published
+   `net.auralis.app` release, every existing install fails `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
+   on the next update, and the only fix is uninstalling first, which deletes the app's local
+   data. Generate it once, back it up (same durability as step 3 below — a password manager
+   attachment or an encrypted offline copy, never only on one machine), and reuse it for
+   every release from here on.
+
+   Add four repository secrets at
+   `github.com/patakihara/curly-spoon/settings/secrets/actions`:
+
+   | Secret name                 | Value                                                      |
+   | --------------------------- | ---------------------------------------------------------- |
+   | `ANDROID_KEYSTORE_BASE64`   | `base64 -w0 release.keystore` (the whole output, one line) |
+   | `ANDROID_KEYSTORE_PASSWORD` | the keystore password you chose above                      |
+   | `ANDROID_KEY_ALIAS`         | `auralis` (or whatever `-alias` you used above)            |
+   | `ANDROID_KEY_PASSWORD`      | the key password you chose above                           |
+
+   Until these four exist, `.github/workflows/release.yml`'s `check-secrets` job fails
+   loudly and builds nothing — it does not fall back to publishing a debug-signed APK.
+   `apps/android/app/build.gradle.kts`'s own fallback (debug signing, with a build-time
+   warning) exists only for local developer builds and `android.yml`'s branch/PR runs, which
+   carry no secrets and were never meant to produce a distributable artifact.
+
+2. **Install `fdroidserver` locally** (not on this machine — see `CLAUDE.md`'s environment
    notes; do this on any machine with Python): `pip install fdroidserver`.
-2. **Generate the repo signing key**, in an empty directory outside this git repo (it must
+3. **Generate the repo signing key**, in an empty directory outside this git repo (it must
    never be committed — `.gitignore` already excludes `*.keystore`, but this key is a
    `.p12` file, so double-check before adding anything to git):
    ```
@@ -90,33 +127,32 @@ CI-generated-and-forgotten key is unrecoverable).
    strong, randomly generated values — a password manager's generator is fine) and writes
    `keystore.p12` plus a `config.yml` in that directory. It also prints the **repo
    fingerprint** — the SHA-256 value from the section above. **Write that fingerprint down
-   somewhere durable** (a password manager note); you'll need it for step 4.
-3. **Back up `keystore.p12` redundantly, outside of GitHub.** A password manager's file
+   somewhere durable** (a password manager note); you'll need it for step 5.
+4. **Back up `keystore.p12` redundantly, outside of GitHub.** A password manager's file
    attachment or an encrypted offline copy. If this file is lost, there is no recovery path
    — a new key means Droid-ify (and anyone else) sees the repo's future publishes as an
-   entirely different, untrusted repository, the same one-way-door reasoning
-   `docs/research/FDROID_DISTRIBUTION.md` applies to the (separate, still-undecided) APK
-   signing key.
-4. **Add four repository secrets** at
+   entirely different, untrusted repository. This is the repo-index key's own version of the
+   same one-way-door reasoning step 1 above applies to the (separate) app signing key.
+5. **Add four repository secrets** at
    `github.com/patakihara/curly-spoon/settings/secrets/actions`:
 
    | Secret name                     | Value                                                                                    |
    | ------------------------------- | ---------------------------------------------------------------------------------------- |
    | `FDROID_REPO_KEYSTORE_BASE64`   | `base64 -w0 keystore.p12` (the whole output, one line)                                   |
-   | `FDROID_REPO_KEYSTORE_PASSWORD` | the keystore password you chose in step 2                                                |
+   | `FDROID_REPO_KEYSTORE_PASSWORD` | the keystore password you chose in step 3                                                |
    | `FDROID_REPO_KEY_ALIAS`         | the key alias `fdroid init` used — check `config.yml`'s `repo_keyalias` (usually `repo`) |
-   | `FDROID_REPO_KEY_PASSWORD`      | the key password you chose in step 2                                                     |
+   | `FDROID_REPO_KEY_PASSWORD`      | the key password you chose in step 3                                                     |
 
-5. **Enable GitHub Pages via Actions**, once, at
+6. **Enable GitHub Pages via Actions**, once, at
    `github.com/patakihara/curly-spoon/settings/pages` → Build and deployment → Source →
    "GitHub Actions". (Not "Deploy from a branch" — the workflow uses
    `actions/deploy-pages`, which needs the Actions source mode.)
-6. **Push a release tag** (`git tag v0.2.0 && git push origin v0.2.0`, or whatever the next
+7. **Push a release tag** (`git tag v0.2.0 && git push origin v0.2.0`, or whatever the next
    version is). This is the same tag `release.yml` already reacts to for the Docker image
    and the GitHub Release — nothing new to remember there.
-7. **Add the repo to Droid-ify**: Settings → Repositories → `+` → URL
+8. **Add the repo to Droid-ify**: Settings → Repositories → `+` → URL
    `https://patakihara.github.io/curly-spoon/repo`, fingerprint = the value `fdroid init`
-   printed in step 2 (or re-derive it any time from the workflow's own log — see
+   printed in step 3 (or re-derive it any time from the workflow's own log — see
    "How to verify it worked" below).
 
 ## What CI does automatically, on every `v*` tag push, once the above is done
@@ -125,19 +161,23 @@ CI-generated-and-forgotten key is unrecoverable).
 2. Derives this release's `versionCode` from the full semver-sorted tag history
    (`scripts/fdroid-versioncode.mjs` — a plain incrementing count is not used because it
    isn't safe against a hotfix tag landing after a later release; see that file's header).
-3. Builds the debug-signed APK (`./gradlew assembleDebug`) stamped with that `versionCode`
-   and the tag's `versionName`.
+3. Builds the release-signed APK (`./gradlew assembleRelease`, keystore decoded from
+   `ANDROID_KEYSTORE_BASE64`) stamped with that `versionCode` and the tag's `versionName` —
+   the same app signing key and the same artifact `release.yml` attaches to the GitHub
+   Release, so an install from this repo updates in place across both channels.
 4. Writes this release's changelog entry to `metadata/en-US/changelogs/<versionCode>.txt`
    from the same `git log` diff `release.yml`'s changelog step already computes, truncated
    to the 500-character convention F-Droid/fastlane changelogs use.
 5. Runs `fdroid update` to build a signed `index-v2.json`/`entry.jar` from the APK plus
-   `metadata/net.auralis.app.yml`, using the keystore decoded from
-   `FDROID_REPO_KEYSTORE_BASE64`.
+   `metadata/net.auralis.app.yml`, using the _repo_ keystore decoded from
+   `FDROID_REPO_KEYSTORE_BASE64` — this signs the index, not the APK inside it; the APK
+   keeps the app signing key from step 3.
 6. Publishes the resulting `repo/` directory to GitHub Pages.
 
-If any of the four secrets is missing, the workflow's `check-secrets` job fails
-immediately, before building anything, and names exactly which secret is absent in the
-workflow log — it will not publish a partial or broken repo.
+If any of the eight secrets (four `ANDROID_*` app-signing, four `FDROID_REPO_*` repo-index)
+is missing, the workflow's `check-secrets` job fails immediately, before building anything,
+and names exactly which secret is absent in the workflow log — it will not publish a
+partial or broken repo.
 
 ## How to verify it worked
 

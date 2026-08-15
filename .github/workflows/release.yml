@@ -133,21 +133,45 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Same build as `android.yml`'s `build` job — read that file's header comment for why this is
-  # still the only place Android compiles at all. This job does not add signing: it produces the
-  # exact same debug-signed APK `android.yml` already produces on every push, just attached to a
-  # release page instead of left as a CI artifact. `docs/research/FDROID_DISTRIBUTION.md` is
-  # where the real signing-key decision lives; this job does not restate it, only points at it
-  # in the release notes below.
+  # Fails loudly, before any build, if the app signing key the user must generate and store by
+  # hand (docs/FDROID_REPO.md, "the app signing key" step) is missing. Same idiom as
+  # `fdroid-repo.yml`'s `check-secrets` job for the (separate, repo-index) `FDROID_REPO_*`
+  # secrets — a silent fallback to debug signing here would publish an un-updatable APK to a
+  # public Releases page, which is the exact failure this whole wave exists to prevent.
+  check-secrets:
+    name: Verify the app signing secrets are configured
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [guard-fork]
+    steps:
+      - name: Check required secrets
+        run: |
+          missing=()
+          [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] && missing+=("ANDROID_KEYSTORE_BASE64")
+          [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && missing+=("ANDROID_KEYSTORE_PASSWORD")
+          [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] && missing+=("ANDROID_KEY_ALIAS")
+          [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ] && missing+=("ANDROID_KEY_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Release APK signing is not configured. Missing secret(s): ${missing[*]}."
+            echo "::error::See docs/FDROID_REPO.md for how to generate the app signing key and add these secrets. Nothing was built."
+            exit 1
+          fi
+
+  # Same build as `android.yml`'s `build` job otherwise — read that file's header comment for
+  # why this is still the only place Android compiles at all. Unlike `android.yml`, this job
+  # decodes the app signing key from a secret and builds the **release** variant, so the APK
+  # attached to a GitHub Release carries a stable, real signing certificate across releases
+  # instead of a fresh random one AGP would generate per CI run (see build.gradle.kts's
+  # `signingConfigs.release` for why that per-run randomness would break every install).
   build-android:
-    name: Build debug APK
+    name: Build release APK
     runs-on: ubuntu-latest
     # `contents: read` and nothing else: enough for `actions/checkout` to fetch the
     # repo, and uploading a workflow artifact needs no token scope. The release job
     # that consumes the artifact is the only one holding `contents: write`.
     permissions:
       contents: read
-    needs: [validate-version]
+    needs: [validate-version, check-secrets]
     steps:
       - uses: actions/checkout@v4
 
@@ -162,14 +186,30 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Decoded to a runner-local temp path, never into the checkout (nothing under a git
+      # working tree should ever hold this file, even transiently) and removed again in the
+      # `if: always()` step below regardless of whether the build succeeds.
+      - name: Decode the app signing keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
       - name: Build and test
         working-directory: apps/android
-        run: ./gradlew test assembleDebug
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew test assembleRelease
+
+      - name: Delete the decoded keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: auralis-debug-apk
-          path: apps/android/app/build/outputs/apk/debug/*.apk
+          name: auralis-release-apk
+          path: apps/android/app/build/outputs/apk/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -186,7 +226,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: auralis-debug-apk
+          name: auralis-release-apk
           path: apk/
 
       - name: Generate changelog
@@ -230,10 +270,9 @@ jobs:
 
             ## Android APK
 
-            The attached APK is **debug-signed**, the same build `android.yml` produces on every
-            push — not a release-signed build. Release signing is an open decision; see
-            `docs/research/FDROID_DISTRIBUTION.md` before treating this APK as anything other
-            than a sideload-and-test artifact.
+            The attached APK is **release-signed** with this project's app signing key — see
+            `docs/FDROID_REPO.md` for the key's storage and rotation notes. Installs update
+            in place over any previous release-signed install of this app.
 
             ## Changelog
 

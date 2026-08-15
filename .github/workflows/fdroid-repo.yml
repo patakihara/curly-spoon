@@ -5,8 +5,10 @@
 # Deliberately NOT IzzyOnDroid and NOT official F-Droid: `docs/HANDOVER.md`'s phase 11 entry
 # and `docs/research/FDROID_DISTRIBUTION.md` §8 record why IzzyOnDroid is closed (its
 # inclusion policy opposes AI-authored apps) and official F-Droid was never pursued. This is
-# a *binary* repo — it indexes the same debug-signed APK `android.yml`/`release.yml` already
-# build, it does not compile anything from source, and it needs no `Builds:` recipe.
+# a *binary* repo — it indexes the same release-signed APK `release.yml` builds (the app
+# signing key, `ANDROID_KEYSTORE_*`, not this file's own `FDROID_REPO_*` repo-index key — see
+# docs/FDROID_REPO.md for how the two differ), it does not compile anything from source, and
+# it needs no `Builds:` recipe.
 #
 # Separate from `release.yml` on purpose: `release.yml` (Docker image + GitHub Release) has
 # no dependency on the F-Droid repo signing key existing, and must keep working even before
@@ -116,8 +118,27 @@ jobs:
             exit 1
           fi
 
+      # A separate, additive check for the *app* signing secrets (`release.yml`'s
+      # `ANDROID_KEYSTORE_*` — see docs/FDROID_REPO.md). This job now also gates the APK build
+      # below, which signs with that key rather than debug: the F-Droid repo indexes the same
+      # release-signed artifact `release.yml` publishes, so it needs the same secrets. Kept as
+      # its own step rather than folded into the check above so the two failure messages never
+      # get confused for one another.
+      - name: Check required app-signing secrets
+        run: |
+          missing=()
+          [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] && missing+=("ANDROID_KEYSTORE_BASE64")
+          [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && missing+=("ANDROID_KEYSTORE_PASSWORD")
+          [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] && missing+=("ANDROID_KEY_ALIAS")
+          [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ] && missing+=("ANDROID_KEY_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::The F-Droid repo indexes the release-signed APK, so app signing must be configured too. Missing secret(s): ${missing[*]}."
+            echo "::error::See docs/FDROID_REPO.md for how to generate the app signing key and add these secrets. Nothing was published."
+            exit 1
+          fi
+
   build-android:
-    name: Build debug APK
+    name: Build release APK
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -134,24 +155,40 @@ jobs:
       - uses: gradle/actions/wrapper-validation@v4
       - uses: gradle/actions/setup-gradle@v4
 
-      # Same debug-signed build android.yml/release.yml already produce, but stamped with
-      # the release's own versionCode/versionName rather than the hardcoded 1/0.1.0 a plain
-      # `assembleDebug` would use — see build.gradle.kts's `releaseVersionCode`/
-      # `releaseVersionName` properties. Still debug-signed: this repo has no release
-      # keystore (docs/research/FDROID_DISTRIBUTION.md §5 is why that's still an open,
-      # deliberately-undecided question), so every install from this repo is, for now, the
-      # same debug-signed artifact a sideloaded CI APK already is.
-      - name: Build versioned debug APK
-        working-directory: apps/android
+      # Same decode-to-temp-file, delete-when-done pattern as `release.yml`'s build-android
+      # job — see that job's comments. The two workflows build independently rather than one
+      # consuming the other's artifact, so each decodes its own copy.
+      - name: Decode the app signing keystore
         run: |
-          ./gradlew assembleDebug \
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
+      # Same release-signed build `release.yml` produces, but stamped with the release's own
+      # versionCode/versionName rather than the hardcoded 1/0.1.0 a plain `assembleRelease`
+      # would use — see build.gradle.kts's `releaseVersionCode`/`releaseVersionName`
+      # properties. Release-signed, not debug-signed: this repo indexes the same
+      # `ANDROID_KEYSTORE_*`-signed artifact `release.yml` publishes to the Releases page, so
+      # an install from this F-Droid repo updates in place across the app's other release
+      # channel rather than certificate-conflicting with it.
+      - name: Build versioned release APK
+        working-directory: apps/android
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
             -PauralisVersionCode=${{ needs.validate-version.outputs.version_code }} \
             -PauralisVersionName=${{ needs.validate-version.outputs.version }}
+
+      - name: Delete the decoded keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
 
       - uses: actions/upload-artifact@v4
         with:
           name: fdroid-apk
-          path: apps/android/app/build/outputs/apk/debug/*.apk
+          path: apps/android/app/build/outputs/apk/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
