@@ -1,10 +1,29 @@
 import { describe, expect, it } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
+import { FAKE_NON_ADMIN_CREDENTIALS } from '../testSupport/fakes/fakeAbs.js';
 
 async function authedApp() {
   const { app } = buildTestApp();
   const cookie = await loginTestUser(app);
   return { app, cookie };
+}
+
+/** Logs in as 'morty' — the fixture's non-admin user, seeded with zero progress
+ * (see fakeAbs.ts's progress-seeding comment) — for exercising the cold-start
+ * path of GET /libraries/:id/recommended without a second fixture user. */
+async function authedAppAsMorty(app: FastifyInstance): Promise<string> {
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/login',
+    payload: FAKE_NON_ADMIN_CREDENTIALS,
+  });
+  const setCookieHeader = response.headers['set-cookie'];
+  const cookieHeader = Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader;
+  if (!cookieHeader) throw new Error(`test login failed: ${response.statusCode} ${response.body}`);
+  const match = /auralis_session=([^;]+)/.exec(cookieHeader);
+  if (!match?.[1]) throw new Error('login response carried no session cookie');
+  return match[1];
 }
 
 describe('GET /api/v1/libraries', () => {
@@ -61,10 +80,11 @@ describe('GET /api/v1/libraries/:id/items', () => {
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.items).toHaveLength(2);
-    // 5 fixture books as of the multi-book "The Lord of the Rings" series added
-    // for the series/author detail-page wave (docs/HANDOVER.md 2026-08-07) —
-    // was 3 before item-twotowers/item-return existed.
-    expect(body.total).toBe(5);
+    // 10 fixture books as of wave 13b, which widened the catalog (more genres,
+    // authors, and shared-author/series/narrator items) to give the
+    // recommendations scorer something to rank — was 5 before item-crimson
+    // through item-emberwars2 existed.
+    expect(body.total).toBe(10);
     expect(body.items[0].media.tracks).toBeUndefined();
   });
 
@@ -148,5 +168,63 @@ describe('GET /api/v1/libraries/:id/search', () => {
       cookies: { auralis_session: cookie },
     });
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('GET /api/v1/libraries/:id/recommended', () => {
+  it('requires authentication', async () => {
+    const { app } = buildTestApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('returns shelves with real items and non-empty reasons, and excludes the progressed item', async () => {
+    const { app, cookie } = await authedApp();
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.length).toBeGreaterThan(0);
+
+    for (const shelf of shelves) {
+      expect(shelf.items.length).toBeGreaterThanOrEqual(2);
+      expect(typeof shelf.reason).toBe('string');
+      expect(shelf.reason.length).toBeGreaterThan(0);
+      // Every returned item must be a real, resolved LibraryItem, not a bare id.
+      for (const item of shelf.items) {
+        expect(typeof item.media.title).toBe('string');
+      }
+    }
+
+    // 'kara' (the fixture's default sign-in user, see fakeAbs.ts's seeded
+    // progress) has finished item-crimson. The wiring this test exists to
+    // catch: a route that built shelves but forgot to exclude known items
+    // would still return 200 with plausible-looking carousels — this is the
+    // one assertion that would fail if that exclusion silently broke.
+    const allItemIds = shelves.flatMap((s: { items: { id: string }[] }) =>
+      s.items.map((i) => i.id),
+    );
+    expect(allItemIds).not.toContain('item-crimson');
+    expect(allItemIds).not.toContain('item-emberwars1');
+  });
+
+  it('returns no shelves for a user with no listening history (cold start)', async () => {
+    const { app } = buildTestApp();
+    const cookie = await authedAppAsMorty(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ shelves: [] });
   });
 });

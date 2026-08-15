@@ -226,6 +226,47 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
   }>;
   const tokens = new Map<string, string>(); // token -> userId
   const progressByKey = new Map<string, ProgressRecord>(); // `${userId}:${itemId}:${episodeId ?? ''}`
+
+  // Seed listening history for 'kara' (the fixture's default sign-in user) so
+  // GET /api/me returns a non-empty mediaProgress[] out of the box — needed to
+  // exercise the recommendations route (apps/server/src/routes/libraries.ts's
+  // GET /libraries/:id/recommended), which is otherwise untestable against a
+  // permanently cold-start fake. 'morty' is left with zero progress on
+  // purpose: the recommendations route test needs a real cold-start user, and
+  // a second fixture user is cheaper than reaching for a third.
+  //
+  // - item-crimson: finished, so it seeds strong genre/author/narrator
+  //   affinities (Mystery / Mara Voss / Elena Cross) and is itself excluded
+  //   from every shelf as a known item.
+  // - item-emberwars1: in progress (not finished), so it seeds weaker
+  //   genre/author/narrator/series affinities (War / Doyle Ashworth / Priya
+  //   Kapoor / The Ember Wars) via IN_PROGRESS_BASE_CAP, and is likewise
+  //   excluded as known.
+  progressByKey.set('abs-user-kara:item-crimson:', {
+    id: 'abs-user-kara:item-crimson:',
+    libraryItemId: 'item-crimson',
+    episodeId: null,
+    duration: 500,
+    currentTime: 500,
+    progress: 1,
+    isFinished: true,
+    lastUpdate: 1701050000000,
+    startedAt: 1701040000000,
+    finishedAt: 1701050000000,
+  });
+  progressByKey.set('abs-user-kara:item-emberwars1:', {
+    id: 'abs-user-kara:item-emberwars1:',
+    libraryItemId: 'item-emberwars1',
+    episodeId: null,
+    duration: 600,
+    currentTime: 240,
+    progress: 0.4,
+    isFinished: false,
+    lastUpdate: 1701350000000,
+    startedAt: 1701340000000,
+    finishedAt: null,
+  });
+
   const bookmarksByUser = new Map<string, JsonRecord[]>();
   const sessions = new Map<string, SessionRecord>();
   let sessionSeq = 0;

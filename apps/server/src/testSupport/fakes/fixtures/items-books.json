@@ -196,5 +196,190 @@
       ],
       "chapters": [{ "id": 1, "start": 0, "end": 660, "title": "There and Back Again" }]
     }
+  },
+  {
+    "id": "item-crimson",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1701000000000,
+    "updatedAt": 1701000000000,
+    "size": 350000000,
+    "media": {
+      "metadata": {
+        "title": "The Crimson Ledger",
+        "subtitle": null,
+        "authorName": "Mara Voss",
+        "authors": [{ "id": "author-voss", "name": "Mara Voss" }],
+        "narratorName": "Elena Cross",
+        "seriesName": null,
+        "series": [],
+        "genres": ["Mystery"],
+        "publishedYear": "2018",
+        "description": "A ledger with a body count.",
+        "isbn": "9780000000101"
+      },
+      "coverPath": "/covers/item-crimson.jpg",
+      "duration": 500,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 500,
+          "title": "Full text",
+          "contentUrl": "/api/items/item-crimson/file/file-crimson-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 500, "title": "Full text" }]
+    }
+  },
+  {
+    "id": "item-silence",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1701100000000,
+    "updatedAt": 1701100000000,
+    "size": 340000000,
+    "media": {
+      "metadata": {
+        "title": "A Silence Kept",
+        "subtitle": null,
+        "authorName": "Mara Voss",
+        "authors": [{ "id": "author-voss", "name": "Mara Voss" }],
+        "narratorName": "Elena Cross",
+        "seriesName": null,
+        "series": [],
+        "genres": ["Mystery"],
+        "publishedYear": "2020",
+        "description": "What the neighbours didn't say.",
+        "isbn": "9780000000102"
+      },
+      "coverPath": "/covers/item-silence.jpg",
+      "duration": 510,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 510,
+          "title": "Full text",
+          "contentUrl": "/api/items/item-silence/file/file-silence-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 510, "title": "Full text" }]
+    }
+  },
+  {
+    "id": "item-nightloom",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1701200000000,
+    "updatedAt": 1701200000000,
+    "size": 330000000,
+    "media": {
+      "metadata": {
+        "title": "Nightloom",
+        "subtitle": null,
+        "authorName": "Mara Voss",
+        "authors": [{ "id": "author-voss", "name": "Mara Voss" }],
+        "narratorName": "Priya Kapoor",
+        "seriesName": null,
+        "series": [],
+        "genres": ["Horror"],
+        "publishedYear": "2021",
+        "description": "The woods remember.",
+        "isbn": "9780000000103"
+      },
+      "coverPath": "/covers/item-nightloom.jpg",
+      "duration": 520,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 520,
+          "title": "Full text",
+          "contentUrl": "/api/items/item-nightloom/file/file-nightloom-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 520, "title": "Full text" }]
+    }
+  },
+  {
+    "id": "item-emberwars1",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1701300000000,
+    "updatedAt": 1701300000000,
+    "size": 400000000,
+    "media": {
+      "metadata": {
+        "title": "The Ember Wars: Kindling",
+        "subtitle": null,
+        "authorName": "Doyle Ashworth",
+        "authors": [{ "id": "author-ashworth", "name": "Doyle Ashworth" }],
+        "narratorName": "Priya Kapoor",
+        "seriesName": "The Ember Wars",
+        "series": [{ "id": "series-emberwars", "name": "The Ember Wars", "sequence": "1" }],
+        "genres": ["War"],
+        "publishedYear": "2019",
+        "description": "The first spark.",
+        "isbn": "9780000000104"
+      },
+      "coverPath": "/covers/item-emberwars1.jpg",
+      "duration": 600,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 600,
+          "title": "Full text",
+          "contentUrl": "/api/items/item-emberwars1/file/file-emberwars1-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 600, "title": "Full text" }]
+    }
+  },
+  {
+    "id": "item-emberwars2",
+    "libraryId": "lib-books",
+    "mediaType": "book",
+    "addedAt": 1701400000000,
+    "updatedAt": 1701400000000,
+    "size": 410000000,
+    "media": {
+      "metadata": {
+        "title": "The Ember Wars: Firestorm",
+        "subtitle": null,
+        "authorName": "Doyle Ashworth",
+        "authors": [{ "id": "author-ashworth", "name": "Doyle Ashworth" }],
+        "narratorName": "Priya Kapoor",
+        "seriesName": "The Ember Wars",
+        "series": [{ "id": "series-emberwars", "name": "The Ember Wars", "sequence": "2" }],
+        "genres": ["War"],
+        "publishedYear": "2020",
+        "description": "It spreads.",
+        "isbn": "9780000000105"
+      },
+      "coverPath": "/covers/item-emberwars2.jpg",
+      "duration": 610,
+      "numTracks": 1,
+      "tracks": [
+        {
+          "index": 0,
+          "startOffset": 0,
+          "duration": 610,
+          "title": "Full text",
+          "contentUrl": "/api/items/item-emberwars2/file/file-emberwars2-1",
+          "mimeType": "audio/mp4"
+        }
+      ],
+      "chapters": [{ "id": 1, "start": 0, "end": 610, "title": "Full text" }]
+    }
   }
 ]
