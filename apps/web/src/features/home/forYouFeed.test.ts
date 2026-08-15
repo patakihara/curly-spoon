@@ -248,23 +248,40 @@ describe('recommendedShelvesToCarousels', () => {
 
 describe('buildForYouCarousels', () => {
   const existingBook = shelfToCarousel(
-    { id: 'shelf-continue', label: 'Continue Listening', type: 'book', items: [bookItem('b1', 'B1')] },
+    {
+      id: 'shelf-continue',
+      label: 'Continue Listening',
+      type: 'book',
+      items: [bookItem('b1', 'B1')],
+    },
     'books',
     coverUrl,
   );
   const existingPodcast = shelfToCarousel(
-    { id: 'shelf-episodes', label: 'Newest Episodes', type: 'episode', items: [podcastItem('p1', 'P1')] },
+    {
+      id: 'shelf-episodes',
+      label: 'Newest Episodes',
+      type: 'episode',
+      items: [podcastItem('p1', 'P1')],
+    },
     'podcasts',
     coverUrl,
   );
-  const existingMusic = albumsToCarousel('music-favorites', 'Your albums', [album('al1', 'Album One')], artworkUrl);
+  const existingMusic = albumsToCarousel(
+    'music-favorites',
+    'Your albums',
+    [album('al1', 'Album One')],
+    artworkUrl,
+  );
 
   it('appends recommended carousels after the existing book/podcast/music carousels, preserving their order', () => {
     const result = buildForYouCarousels({
       book: [existingBook],
       podcast: [existingPodcast],
       music: [existingMusic],
-      recommendedShelves: [recommendedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune')],
+      recommendedShelves: [
+        recommendedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune'),
+      ],
       coverUrl,
     });
 
