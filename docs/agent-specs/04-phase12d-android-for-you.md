@@ -13,7 +13,7 @@ this project's history. Run, as your literal first command:
 ```bash
 git reset --hard <BRANCH_TIP_SHA>
 git log --oneline -1
-ls apps/android/app/src/main/java/net/auralis/app/features/home/
+ls apps/android/app/src/main/java/net/develivarr/auralis/features/home/
 ```
 
 The third command must list `HomeScreen.kt`, `HomeShelvesContent.kt`, `HomeViewModel.kt`. If it

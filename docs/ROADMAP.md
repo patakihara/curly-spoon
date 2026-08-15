@@ -213,9 +213,9 @@ Podcast and music screens follow in phases 8 and 9 as their APIs land.
 
 **Delivered in waves, each a disjoint directory so review stays cheap:**
 
-- **Wave A — networking + settings data layer: done (`ca9ba61`).** `net.auralis.app.data.network`
+- **Wave A — networking + settings data layer: done (`ca9ba61`).** `net.develivarr.auralis.data.network`
   (`ApiClient`, `SessionCookieJar`, `KeyValueStore`/`DataStoreKeyValueStore`, `ApiException`)
-  and `net.auralis.app.data.settings` (`ServerConfigRepository`), covering `/setup`,
+  and `net.develivarr.auralis.data.settings` (`ServerConfigRepository`), covering `/setup`,
   `/auth/*` and `/libraries*` over session-cookie auth, persisted across process death via
   DataStore. No Compose UI yet. Written blind (no local JDK/SDK), reviewed by an independent
   subagent that caught two real defects before they landed — an uncaught
@@ -401,7 +401,7 @@ setUri(String)` reaches `android.net.Uri.parse`, and this project's unit tests r
 - **Wave F — offline downloads: complete (`a762cbb`).** Split data-layer-first, same as every
   prior wave.
   - **Wave F1 — data layer: done (`eb211ef`, fix `66829da`).** New
-    `net.auralis.app.data.downloads`: `DownloadState`/`DownloadedItem`, a pure
+    `net.develivarr.auralis.data.downloads`: `DownloadState`/`DownloadedItem`, a pure
     `downloadProgress` (total on zero/unknown totals, clamps to 0..1),
     `downloadStateFromMedia3(Int)` mapping Media3's `Download.STATE_*` constants, and a
     `DownloadRepository` behind a narrow `DownloadEngine` interface, persisted through wave
@@ -1962,7 +1962,7 @@ not have them, and that is the accepted cost until the user says otherwise.
 What landed: `.github/workflows/fdroid-repo.yml` (tag-triggered — fork guard, tag and
 versionCode validation, a `check-secrets` job that fails before anything is built, the APK
 build, `fdroid update`, publish to GitHub Pages); `scripts/fdroid-versioncode.mjs` plus its
-CLI wrapper and 14 `node --test` cases; `metadata/net.auralis.app.yml`; and optional
+CLI wrapper and 14 `node --test` cases; `metadata/net.develivarr.auralis.yml`; and optional
 `auralisVersionCode`/`auralisVersionName` Gradle properties whose fallbacks are byte-identical
 to the previous hardcoded values, so `android.yml` is unaffected.
 

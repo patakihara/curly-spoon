@@ -10,7 +10,7 @@ web half, already merged.
 `apps/android` compiles on CI only. Every claim below is either:
 
 - **source-verified** — read directly from the Kotlin/Gradle/XML source, or derived from a
-  `grep` across the whole `apps/android/app/src/main/java/net/auralis/app/` tree confirming
+  `grep` across the whole `apps/android/app/src/main/java/net/develivarr/auralis/` tree confirming
   a pattern's absence (a negative grep is still a source-verified claim: e.g. "no file in this
   tree calls `NavigationBar(`" is checked, not assumed); or
 - **inferred** — a judgement about how compiled, rendered output would look or feel, which
@@ -58,20 +58,20 @@ made once and forgotten.
 That decision, followed consistently, is why:
 
 - **No screen has a navigation icon (back arrow).** `grep -rn "navigationIcon"
-apps/android/app/src/main/java/net/auralis/app` returns nothing across all 16
+apps/android/app/src/main/java/net/develivarr/auralis` returns nothing across all 16
   `TopAppBar(` call sites. Every sub-screen relies entirely on the system/gesture back
   affordance, with zero in-app back button. **Inferred**: on a phone with gesture navigation
   this is unremarkable; on a 3-button-nav device it is a real, if minor, discoverability gap
   next to YouTube Music/Symfonium, which both show a back chevron.
 - **Every toggle and action renders as `TextButton`, not the M3 `IconButton`/`Icon` DESIGN.md
-  calls for.** `grep -rn "IconButton" apps/android/app/src/main/java/net/auralis/app` returns
+  calls for.** `grep -rn "IconButton" apps/android/app/src/main/java/net/develivarr/auralis` returns
   one hit, and it is a doc-comment reference to a hypothetical, not a real usage
   (`FavoriteToggleButton.kt:17`). Play/pause, shuffle, repeat, lyrics, favourite, the top bar's
   Downloads/Requests/Podcasts/Music actions, the episode-order toggle — all text. **Source-
   verified**, directly contradicts `DESIGN.md`'s YouTube Music row: "icon-only toggles instead
   of text tabs."
 - **No shape customization exists anywhere.** `grep -rn "RoundedCornerShape\|clip(\|shape ="
-apps/android/app/src/main/java/net/auralis/app` returns nothing. `DESIGN.md`'s shape scale
+apps/android/app/src/main/java/net/develivarr/auralis` returns nothing. `DESIGN.md`'s shape scale
   (`none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`, artwork at `lg`, Now Playing
   artwork at `xl` morphing to a squircle) is entirely unwired — every `AsyncImage` (album art,
   podcast covers, book covers) renders with Compose Material3's un-customized default shapes,
@@ -97,7 +97,7 @@ no full Now Playing surface in this app yet — only `MiniPlayerBar` — so this
 smaller of the two options the wave's spec offered: a standalone screen ... rather than folding
 lyrics into a Now Playing surface that would have to be built from scratch first."_
 `PlayerViewModel.kt:46`'s doc comment: _"What the mini player (and, later, a full Now Playing
-surface) renders."_ `grep -rln "MiniPlayerBar(" apps/android/app/src/main/java/net/auralis/app`
+surface) renders."_ `grep -rln "MiniPlayerBar(" apps/android/app/src/main/java/net/develivarr/auralis`
 returns exactly two files — the component itself and `HomeScreen.kt` — confirming it renders
 nowhere else.
 
@@ -115,7 +115,7 @@ play/pause `TextButton`, and — music only — shuffle/repeat/lyrics `TextButto
 - **No equaliser glyph or any other playing-state indicator on list rows.** `DESIGN.md`,
   Accessibility: "Colour is never the only signal — playing state also carries an animated
   equaliser glyph." `grep -rln "equaliser\|equalizer\|isCurrentlyPlaying\|nowPlayingTrackId"
-apps/android/app/src/main/java/net/auralis/app` returns nothing; `AlbumDetailScreen.kt`'s
+apps/android/app/src/main/java/net/develivarr/auralis` returns nothing; `AlbumDetailScreen.kt`'s
   `TrackRow` (`AlbumDetailScreen.kt:226-` ) has no concept of "this is the track currently
   playing" at all — colour, glyph, or otherwise.
 
@@ -131,7 +131,7 @@ see the result.
 player disappears the moment you leave Home
 
 **Source-verified.** `grep -rln "NavigationBar\|NavigationRail\|BottomNavigation\|
-NavigationSuiteScaffold" apps/android/app/src/main/java/net/auralis/app` returns nothing. Every
+NavigationSuiteScaffold" apps/android/app/src/main/java/net/develivarr/auralis` returns nothing. Every
 one of the app's 16 `TopAppBar(` screens (`AuralisNavHost.kt:138-188`) is a flat
 `Scaffold(topBar = ..., content = ...)` reached by pushing onto Compose Navigation's back stack;
 there is no persistent chrome surrounding the content at all.
@@ -165,7 +165,7 @@ rather than each of the 16 screens each re-deciding for itself.
 `typography` or `shapes` parameter is passed**, so Compose Material3's own defaults apply
 everywhere `MaterialTheme.typography.*`/implicit shapes are used (which is everywhere — every
 screen references `MaterialTheme.typography.titleMedium` etc., confirmed via
-`grep -c "MaterialTheme.typography" apps/android/app/src/main/java/net/auralis/app -r` returning
+`grep -c "MaterialTheme.typography" apps/android/app/src/main/java/net/develivarr/auralis -r` returning
 matches in the majority of screen files). `DESIGN.md`'s Type table (a specific scale built on
 `Inter Variable`, with named tracking/weight per role) and Shape scale are simply not present on
 Android; the app renders in stock Material3 Roboto-based defaults for both.
@@ -199,7 +199,7 @@ one of five named references, and "theme colour from artwork" is its only listed
 and it is entirely absent on Android, not partially implemented.
 
 **No motion/spring system exists on Android.** `grep -rln "spring(\|Animatable\|
-animate.*AsState\|Spring\." apps/android/app/src/main/java/net/auralis/app` returns nothing.
+animate.*AsState\|Spring\." apps/android/app/src/main/java/net/develivarr/auralis` returns nothing.
 `DESIGN.md`'s one spring table (`fast`/`default`/`slow`/`bouncy`, each a stiffness/damping pair)
 has no Android counterpart at all — no shape morphing, no cross-fade, no spring-driven list/card
 animation. Every transition on Android is whatever Compose Navigation's and Material3's own
@@ -285,7 +285,7 @@ inconsistent styling of what does exist.
   directly on §3's "no persistent shell" finding: there is nowhere for a persistent mini player
   or nav bar to be _tested against_ a book flow yet, only music/podcast flows.
 - **Settings — does not exist on Android at all.** **Source-verified**: `find
-apps/android/app/src/main/java/net/auralis/app -iname "*settings*"` matches only
+apps/android/app/src/main/java/net/develivarr/auralis -iname "*settings*"` matches only
   `data/settings/ServerConfigRepository.kt` (server URL/token storage, no UI) — there is no
   `SettingsScreen.kt`, no `Routes.SETTINGS`, nothing reachable from any top bar. Web has a
   Settings page (source colour, theme mode — referenced in `docs/ROADMAP.md`'s web-audit section
@@ -299,10 +299,10 @@ One fix, in the one class this wave's spec allows without seeing the result: a h
 size duplicating an already-established `MaterialTheme.typography` pattern used everywhere else
 in the tree.
 
-- **`apps/android/app/src/main/java/net/auralis/app/features/player/LyricsScreen.kt`** (was
+- **`apps/android/app/src/main/java/net/develivarr/auralis/features/player/LyricsScreen.kt`** (was
   `LyricsScreen.kt:193`): the active/inactive lyric line used two literal `fontSize` values
   (`20.sp`/`16.sp`) instead of a `MaterialTheme.typography` role, the only spot in the entire
-  Android tree doing this (`grep -rn "\.sp\b" apps/android/app/src/main/java/net/auralis/app`
+  Android tree doing this (`grep -rn "\.sp\b" apps/android/app/src/main/java/net/develivarr/auralis`
   returned exactly this one hit before the fix, and none after). Every other screen in the app
   sizes text via `MaterialTheme.typography.titleMedium`/`bodySmall`/etc.
   (`HomeScreen.kt:183/215`, `MusicSearchScreen.kt:131/149/167`, `AlbumDetailScreen.kt`'s
@@ -328,7 +328,7 @@ No other change in this class was found. Every `contentDescription = null` in th
 each is a cover-art `AsyncImage` sitting directly beside a visible `Text` title in the same row
 (confirmed by reading the surrounding `Row`/`Column` in each file) — correctly decorative, not a
 missing-description defect. No `.size(...)` call below 48dp was found
-(`grep -rn "\.size(" apps/android/app/src/main/java/net/auralis/app` — smallest is 56dp, all on
+(`grep -rn "\.size(" apps/android/app/src/main/java/net/develivarr/auralis` — smallest is 56dp, all on
 non-interactive-adjacent cover art). No raw `Color(0x...)` or named-colour literal
 (`Color.Red`/`Gray`/etc.) exists anywhere in the tree. No hardcoded UI string duplicates an
 established resource-driven pattern — `strings.xml` holds exactly two entries

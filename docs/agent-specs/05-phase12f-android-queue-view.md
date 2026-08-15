@@ -14,7 +14,7 @@ this project's history. Run, as your literal first command:
 ```bash
 git reset --hard <BRANCH_TIP_SHA>
 git log --oneline -1
-ls apps/android/app/src/main/java/net/auralis/app/features/player/
+ls apps/android/app/src/main/java/net/develivarr/auralis/features/player/
 ```
 
 The `ls` must list `PlayerViewModel.kt`, `QueueStore.kt`, `QueueEntries.kt`, `QueueRouter.kt`,

@@ -16,7 +16,7 @@ e2e/.auth/
 
 # runtime data — anchored to apps/server specifically: a bare `data/` matches any
 # directory named `data` anywhere in the tree, which silently swallowed the Android
-# app's `net.auralis.app.data` package (phase 7 wave A) until this was caught.
+# app's `net.develivarr.auralis.data` package (phase 7 wave A) until this was caught.
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

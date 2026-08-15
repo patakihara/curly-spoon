@@ -16,11 +16,11 @@ val releaseVersionCode = (project.findProperty("auralisVersionCode") as String?)
 val releaseVersionName = (project.findProperty("auralisVersionName") as String?) ?: "0.1.0"
 
 android {
-    namespace = "net.auralis.app"
+    namespace = "net.develivarr.auralis"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "net.auralis.app"
+        applicationId = "net.develivarr.auralis"
         minSdk = 26
         targetSdk = 35
         versionCode = releaseVersionCode

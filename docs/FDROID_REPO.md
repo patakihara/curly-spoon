@@ -92,7 +92,7 @@ CI-generated-and-forgotten key is unrecoverable).
    ties app identity to `applicationId` + signing certificate together — every release built
    with this key installs as an update over the last one, and a release built with a
    _different_ key does not. The moment a second, different key ever signs a published
-   `net.auralis.app` release, every existing install fails `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
+   `net.develivarr.auralis` release, every existing install fails `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
    on the next update, and the only fix is uninstalling first, which deletes the app's local
    data. Generate it once, back it up (same durability as step 3 below — a password manager
    attachment or an encrypted offline copy, never only on one machine), and reuse it for
@@ -169,7 +169,7 @@ CI-generated-and-forgotten key is unrecoverable).
    from the same `git log` diff `release.yml`'s changelog step already computes, truncated
    to the 500-character convention F-Droid/fastlane changelogs use.
 5. Runs `fdroid update` to build a signed `index-v2.json`/`entry.jar` from the APK plus
-   `metadata/net.auralis.app.yml`, using the _repo_ keystore decoded from
+   `metadata/net.develivarr.auralis.yml`, using the _repo_ keystore decoded from
    `FDROID_REPO_KEYSTORE_BASE64` — this signs the index, not the APK inside it; the APK
    keeps the app signing key from step 3.
 6. Publishes the resulting `repo/` directory to GitHub Pages.

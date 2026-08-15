@@ -184,7 +184,7 @@ discipline, most of it front-loaded into step 1.
 
 F-Droid (and IzzyOnDroid, and Android's own package manager) identify one app as the
 _continuation_ of a previous install by two things together: the `applicationId`
-(`net.auralis.app`) and the certificate that signs the APK. Android refuses to install an
+(`net.develivarr.auralis`) and the certificate that signs the APK. Android refuses to install an
 update whose signature doesn't match the one already on the device — that's not an F-Droid
 policy, it's how `PackageManager` works. Change either the id or the key and every existing
 user's client sees it as a _different app_: no update path, forced uninstall, and every piece
@@ -218,7 +218,7 @@ requiring F-Droid to hold a key we don't also possess. **This is the user's deci
 not this document's** — it has not been taken, and nothing should generate a keystore until
 it is.
 
-**Package name**: `net.auralis.app` reads as reverse-DNS on the domain `auralis.net`.
+**Package name**: `net.develivarr.auralis` reads as reverse-DNS on the domain `auralis.net`.
 Whether this project or the user controls `auralis.net` is not established anywhere in this
 repo or its docs — `docs/setup/` and `CLAUDE.md` never mention domain ownership, and this
 investigation did not check WHOIS (out of scope for a code-audit agent, and irrelevant to
@@ -356,7 +356,7 @@ inclusion policy, so nothing about the current plan needs changing on policy gro
   project like this one — it can only surface that the policy exists and quote it exactly.
   Worth asking IzzyOnDroid directly (their inclusion issue process) before investing in steps
   1–5 above if this is a hard blocker, since it would change the recommended route in §1.
-- **Do we control `auralis.net`?** Determines whether `net.auralis.app` is a safe
+- **Do we control `auralis.net`?** Determines whether `net.develivarr.auralis` is a safe
   `applicationId` to commit to permanently, or whether a different id
   (e.g. `net.patakihara.auralis`) should be chosen instead, per §5.
 - **Own key vs. F-Droid reproducible-build signing vs. both?** §5 recommends generating our
