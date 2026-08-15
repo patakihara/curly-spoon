@@ -77,6 +77,18 @@ const TITLE_STYLE: CSSProperties = {
   textOverflow: 'ellipsis',
 };
 
+/** The recommendation reason ("Because you finished Dune") sits directly under the
+ * section heading, smaller and muted — visually subordinate to the title, the same
+ * treatment `SUBTITLE_STYLE` gives a card's byline under its title. Unlike the fixed-
+ * height rows below (`TITLE_STYLE`/`SUBTITLE_STYLE`/`PROGRESS_ROW_STYLE`), this has no
+ * "every card is the same size" constraint to satisfy — it renders once per section,
+ * not once per card — so it wraps naturally instead of being clipped to one line. */
+const REASON_STYLE: CSSProperties = {
+  margin: '0 0 8px',
+  fontSize: 13,
+  color: 'var(--m3-on-surface-variant)',
+};
+
 /** See `TITLE_STYLE`'s doc comment — same fixed-height reasoning. */
 const SUBTITLE_STYLE: CSSProperties = {
   margin: 0,
@@ -117,6 +129,11 @@ export interface CarouselProps {
   id: string;
   label: string;
   items: FeedItem[];
+  /** Why this carousel was chosen, e.g. "Because you finished Dune" — present only
+   * on recommended carousels (`FeedCarousel.reason`, `docs/ROADMAP.md` §13). Renders
+   * as a subordinate line under the heading; absent entirely for an ordinary
+   * Audiobookshelf/Jellyfin shelf, which has no `<p>` where this would go. */
+  reason?: string;
   /** While true, renders `skeletonCount` placeholder cards — same box size as a
    * loaded card — instead of `items`. */
   loading?: boolean;
@@ -138,6 +155,7 @@ export function Carousel({
   id,
   label,
   items,
+  reason,
   loading = false,
   skeletonCount = 4,
   onSelect,
@@ -147,15 +165,27 @@ export function Carousel({
   if (!loading && items.length === 0) return null;
 
   const headingId = `shelf-heading-${id}`;
+  const reasonId = `shelf-reason-${id}`;
 
   return (
     <section data-testid={`shelf-${id}`}>
-      <h2 id={headingId} style={{ margin: '0 0 8px' }}>
+      <h2 id={headingId} style={{ margin: reason ? '0 0 2px' : '0 0 8px' }}>
         {label}
       </h2>
+      {/* Reading order matters more than styling here: this sits in the DOM
+          immediately after the heading and before the card list, so a screen
+          reader announces title, then reason, then cards — the same order a
+          sighted user reads top-to-bottom. `aria-describedby` on the list below
+          makes that relationship explicit rather than merely positional. */}
+      {reason ? (
+        <p id={reasonId} style={REASON_STYLE} data-testid={`shelf-reason-${id}`}>
+          {reason}
+        </p>
+      ) : null}
       <div
         role="list"
         aria-labelledby={headingId}
+        aria-describedby={reason ? reasonId : undefined}
         tabIndex={0}
         style={TRACK_STYLE}
         data-testid={`shelf-track-${id}`}

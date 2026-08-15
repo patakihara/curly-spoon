@@ -37,6 +37,7 @@ import { CoverImage } from '../../components/CoverImage.js';
 import { Carousel } from './Carousel.js';
 import {
   albumsToCarousel,
+  buildForYouCarousels,
   buildQuickPicks,
   filterCarousels,
   shelfToCarousel,
@@ -125,6 +126,23 @@ function useOptionalLibraryHomeQuery(libraryId: string | undefined) {
   });
 }
 
+/** Same shape as `useOptionalLibraryHomeQuery` above, for `GET /libraries/:id/recommended`
+ * (docs/ROADMAP.md §13). Deliberately its own query, not merged into the home query: a
+ * recommendation failure must not touch the shelves `useOptionalLibraryHomeQuery` already
+ * fetched successfully — react-query already isolates failures per query key, this is just
+ * two independent `useQuery` calls rather than one that could fail as a unit. */
+function useOptionalLibraryRecommendedQuery(libraryId: string | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: libraryId
+      ? queryKeys.libraryRecommended(libraryId)
+      : (['libraries', 'recommended', 'none'] as const),
+    queryFn: ({ signal }) => api.getLibraryRecommended(libraryId as string, signal),
+    enabled: Boolean(libraryId),
+    staleTime: 30_000,
+  });
+}
+
 function QuickPickGrid({
   items,
   loading,
@@ -201,6 +219,11 @@ export function HomePage() {
 
   const bookHomeQuery = useOptionalLibraryHomeQuery(bookLibrary?.id);
   const podcastHomeQuery = useOptionalLibraryHomeQuery(podcastLibrary?.id);
+  // Recommendations are book-only through 13d (13e widens this to music) — scoped to
+  // the book library the same way bookHomeQuery is. Its own query, its own failure
+  // domain: see the hook's doc comment for why this must not be folded into
+  // bookHomeQuery.
+  const recommendedQuery = useOptionalLibraryRecommendedQuery(bookLibrary?.id);
 
   const jellyfinConfigQuery = useJellyfinConfigQuery();
   const jellyfinConfigured = jellyfinConfigQuery.data?.configured ?? false;
@@ -239,9 +262,28 @@ export function HomePage() {
     ];
   }, [jellyfinConfigured, favoriteAlbumsQuery.data, favoriteAlbumsQuery.isError, api]);
 
+  // `recommendedShelves: null` — not `[]` — is what an errored or not-yet-settled
+  // request degrades to: `buildForYouCarousels` treats `null` as "nothing to add",
+  // producing exactly the pre-13c feed, and never as "the user has zero
+  // recommendations" (that case is a real `[]` from the server, once the request
+  // has actually succeeded).
   const carousels = useMemo(
-    () => [...bookCarousels, ...podcastCarousels, ...musicCarousels],
-    [bookCarousels, podcastCarousels, musicCarousels],
+    () =>
+      buildForYouCarousels({
+        book: bookCarousels,
+        podcast: podcastCarousels,
+        music: musicCarousels,
+        recommendedShelves: recommendedQuery.isSuccess ? recommendedQuery.data.shelves : null,
+        coverUrl: (id) => api.coverUrl(id, { width: 240 }),
+      }),
+    [
+      bookCarousels,
+      podcastCarousels,
+      musicCarousels,
+      recommendedQuery.isSuccess,
+      recommendedQuery.data,
+      api,
+    ],
   );
   const visibleCarousels = useMemo(() => filterCarousels(carousels, filter), [carousels, filter]);
   const quickPicks = useMemo(
@@ -349,6 +391,7 @@ export function HomePage() {
                   id={carousel.id}
                   label={carousel.label}
                   items={carousel.items}
+                  reason={carousel.reason}
                   onSelect={handleSelect}
                 />
               ))}

@@ -36,6 +36,7 @@ import type {
   PodcastFeedPreview,
   ProviderEntry,
   ProviderUpdateBody,
+  RecommendedShelf,
   Release,
   RequestSearchResult,
   RequestSettings,
@@ -200,6 +201,16 @@ export class ApiClient {
 
   getLibraryHome(libraryId: string, signal?: AbortSignal): Promise<{ shelves: Shelf[] }> {
     return this.request(`/libraries/${encodeURIComponent(libraryId)}/home`, { signal });
+  }
+
+  /** `GET /libraries/:id/recommended` (docs/ROADMAP.md §13) — Auralis's own ranked
+   * shelves, each a `Shelf` plus a `reason` string. A cold-start user (no listening
+   * history) gets `{ shelves: [] }` back, which is correct and not an error. */
+  getLibraryRecommended(
+    libraryId: string,
+    signal?: AbortSignal,
+  ): Promise<{ shelves: RecommendedShelf[] }> {
+    return this.request(`/libraries/${encodeURIComponent(libraryId)}/recommended`, { signal });
   }
 
   getLibraryItems(

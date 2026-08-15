@@ -189,6 +189,15 @@ export interface Shelf {
   items: LibraryItem[];
 }
 
+/** `GET /libraries/:id/recommended`'s shelf shape (docs/ROADMAP.md §13) — a `Shelf`
+ * plus the `reason` string the server always attaches ("Because you finished …").
+ * `shelfToCarousel` accepts a plain `Shelf`, so this widens rather than replaces it;
+ * the reason is carried separately through `forYouFeed.ts` rather than folded into
+ * `Shelf` itself, since ordinary Audiobookshelf shelves have no reason to show. */
+export interface RecommendedShelf extends Shelf {
+  reason: string;
+}
+
 export interface MediaProgress {
   id: string;
   libraryItemId: string;

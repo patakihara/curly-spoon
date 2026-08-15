@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   albumsToCarousel,
+  buildForYouCarousels,
   buildQuickPicks,
   filterCarousels,
+  recommendedShelvesToCarousels,
   shelfToCarousel,
 } from './forYouFeed.js';
-import type { JellyfinAlbum, LibraryItem, Shelf } from '../../api/types.js';
+import type { JellyfinAlbum, LibraryItem, RecommendedShelf, Shelf } from '../../api/types.js';
 
 function bookItem(id: string, title: string, progress: number | null = null): LibraryItem {
   return {
@@ -206,5 +208,125 @@ describe('buildQuickPicks', () => {
 
   it('returns nothing for no carousels, rather than throwing', () => {
     expect(buildQuickPicks([], 8)).toEqual([]);
+  });
+});
+
+function recommendedShelf(id: string, label: string, reason: string): RecommendedShelf {
+  return {
+    id,
+    label,
+    type: 'recommended',
+    reason,
+    items: [bookItem(`${id}-1`, 'Rec One'), bookItem(`${id}-2`, 'Rec Two')],
+  };
+}
+
+describe('recommendedShelvesToCarousels', () => {
+  it('maps a recommended shelf to a books carousel, carrying the reason onto the carousel', () => {
+    const carousels = recommendedShelvesToCarousels(
+      [recommendedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune')],
+      coverUrl,
+    );
+
+    expect(carousels).toHaveLength(1);
+    expect(carousels[0]?.reason).toBe('Because you finished Dune');
+    expect(carousels[0]?.contentType).toBe('books');
+    expect(carousels[0]?.items.map((i) => i.id)).toEqual(['rec-1-1', 'rec-1-2']);
+  });
+
+  it('drops a shelf with no items, defensively, rather than rendering an empty carousel', () => {
+    const empty: RecommendedShelf = {
+      id: 'rec-empty',
+      label: 'Empty',
+      type: 'recommended',
+      reason: 'no items should never happen',
+      items: [],
+    };
+    expect(recommendedShelvesToCarousels([empty], coverUrl)).toEqual([]);
+  });
+});
+
+describe('buildForYouCarousels', () => {
+  const existingBook = shelfToCarousel(
+    {
+      id: 'shelf-continue',
+      label: 'Continue Listening',
+      type: 'book',
+      items: [bookItem('b1', 'B1')],
+    },
+    'books',
+    coverUrl,
+  );
+  const existingPodcast = shelfToCarousel(
+    {
+      id: 'shelf-episodes',
+      label: 'Newest Episodes',
+      type: 'episode',
+      items: [podcastItem('p1', 'P1')],
+    },
+    'podcasts',
+    coverUrl,
+  );
+  const existingMusic = albumsToCarousel(
+    'music-favorites',
+    'Your albums',
+    [album('al1', 'Album One')],
+    artworkUrl,
+  );
+
+  it('appends recommended carousels after the existing book/podcast/music carousels, preserving their order', () => {
+    const result = buildForYouCarousels({
+      book: [existingBook],
+      podcast: [existingPodcast],
+      music: [existingMusic],
+      recommendedShelves: [
+        recommendedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune'),
+      ],
+      coverUrl,
+    });
+
+    expect(result.map((c) => c.id)).toEqual([
+      'shelf-continue',
+      'shelf-episodes',
+      'music-favorites',
+      'rec-1',
+    ]);
+    expect(result.at(-1)?.reason).toBe('Because you finished Dune');
+  });
+
+  it('a cold-start user (empty recommended shelves) adds nothing — the existing feed is unchanged', () => {
+    const result = buildForYouCarousels({
+      book: [existingBook],
+      podcast: [existingPodcast],
+      music: [existingMusic],
+      recommendedShelves: [],
+      coverUrl,
+    });
+
+    expect(result).toEqual([existingBook, existingPodcast, existingMusic]);
+  });
+
+  it('a failed/unknown recommendation request (null) degrades to just the existing carousels', () => {
+    const result = buildForYouCarousels({
+      book: [existingBook],
+      podcast: [existingPodcast],
+      music: [existingMusic],
+      recommendedShelves: null,
+      coverUrl,
+    });
+
+    expect(result).toEqual([existingBook, existingPodcast, existingMusic]);
+  });
+
+  it('with nothing existing at all, still surfaces the recommended carousels', () => {
+    const result = buildForYouCarousels({
+      book: [],
+      podcast: [],
+      music: [],
+      recommendedShelves: [recommendedShelf('rec-1', 'x', 'Because you finished Dune')],
+      coverUrl,
+    });
+
+    expect(result.map((c) => c.id)).toEqual(['rec-1']);
   });
 });
