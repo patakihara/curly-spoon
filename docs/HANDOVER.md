@@ -77,7 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T14:17:38Z` · `a3ac2f0cdeb78d7a8` · general-purpose · ended · Clean working tree, both commits landed on the worktree branch. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-agent-a…
 - `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
 - `2026-08-15T14:33:44Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T14:34:18Z` · `a9f59f4f15c66ad3a` · general-purpose · running · —
@@ -92,6 +91,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T15:32:08Z` · `a24c42170d77b3afe` · general-purpose · ended · Working tree clean, committed on 'worktree-agent-a24c42170d77b3afe' at '9d98a0b', based on 'c7f16ff'. Not pushed, not merged, no 'Agent' calls made.…
 - `2026-08-15T15:34:57Z` · `a6168e2a5df25b40c` · general-purpose · ended · Still running; I'll wait for the monitor's completion notification rather than poll further.
 - `2026-08-15T15:44:26Z` · `a6168e2a5df25b40c` · general-purpose · ended · I'll wait for the monitor's notification rather than poll further.
+- `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
 
 <!-- AGENT_LOG_END -->
 
@@ -148,6 +148,50 @@ because the session hit its usage ceiling. It touches three shared files (`types
 **A dispatched fix agent died producing nothing** — it backgrounded a Playwright run and
 stopped, leaving Playwright and vite holding port 4310. `fuser -k 4310/tcp` clears it. This is
 the third time on this project; the orchestrator-side worktree check is the load-bearing guard.
+
+### CORRECTION — the 13e-1 revert rests on a repro that was wrong
+
+Established **after** the revert was pushed, by the agent that finally reported. Read this
+before acting on the diagnosis above; parts of it are unsound.
+
+**`music-favorites.spec.ts` is `test.describe.configure({ mode: 'serial' })`.** Its _first_
+test does `goto('/settings')` and connects Jellyfin; the click at line 51 is in the _second_.
+Running it with `-g "unfavouriting a track announces"` selects only the second test and skips
+the connect step, so the album page correctly renders "Couldn't load this album's tracks:
+Jellyfin connection has not been configured yet" and the testid never appears. **The timeout
+was my repro command, not the app.** Running the whole file at `c7f16ff` passes **8/8**.
+
+So: **there is no evidence 13e-1 broke anything.** Its schema work also checks out on
+inspection — `PlayCount`/`LastPlayedDate` are both `.nullable().optional()` and the
+normalizers degrade to `0`/`null`, so the null-vs-undefined trap does not apply.
+**Reverting 13e-1 (`163d633`) was probably unnecessary and can likely be undone** with
+`git revert 163d633` — but re-run the _whole file_, never `-g` into a serial block, to confirm.
+
+**Treat the 13e-2 finding with the same suspicion.** `jellyfin-unconfigured.spec.ts:29` failed
+under the same flawed `-g` invocation. It is a different project and may well be a genuine
+regression — 13e-2 does add a `/music/recommended` call the unconfigured path now makes — but
+**it has not been confirmed with a clean run**, and the revert rationale in the commit message
+is stronger than the evidence supports.
+
+### The real open problem, and it is bigger than either wave
+
+Running the full `--project=app` suite, **`for-you.spec.ts:128`** ("every card below the grid
+shares one geometry, across every content type") fails on `shelf-shelf-continue-listening`
+never becoming visible — and then **every subsequent test dies with
+`net::ERR_CONNECTION_REFUSED` at `localhost:4310`**. The e2e web server or the BFF behind it
+**crashes mid-run and never recovers**, taking 130+ tests with it.
+
+That is consistent with both "CI passed the full suite on `d6d8e21`" and with file-scoped runs
+passing, which is exactly why it has stayed invisible. **This is the thing to chase**, not the
+two waves. Next step: `pnpm test:e2e --workers=1 --project=app` and read the WebServer's own
+stdout/stderr in the Playwright log around `for-you.spec.ts:128` for the crash.
+
+**Lesson worth keeping regardless of how this resolves: never `-g` into a `serial` describe
+block.** It silently drops the setup test and the failure looks like a product bug. Run the
+file. This cost a revert.
+
+Housekeeping: a stray gitignored `test-results/` directory may be sitting in the shared
+checkout from an agent that accidentally ran Playwright there. Harmless, deletable.
 
 ### Decisions from 13a–13d worth not re-deciding
 
