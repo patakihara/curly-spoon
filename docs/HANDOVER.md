@@ -585,7 +585,8 @@ tree is fine; writing outside it is not.
 
 ### Worktrees currently on disk
 
-Three, none of them holding unmerged work:
+Three, none of them holding unmerged work. All three are **safe to ignore** — `worktree-gc.sh`
+refuses each of them, correctly, and will forever:
 
 - `agent-a623d0d03e48b3297` — its two commits are on `main` under the same titles, landed by
   re-commit rather than merge, so they share no ancestry. `worktree-gc.sh` therefore refuses it
@@ -594,6 +595,17 @@ Three, none of them holding unmerged work:
 - `agent-a8781e77885029281` — the 12f-2 draft, since superseded by `034c4cf`. **Locked**, so
   `git worktree remove` refuses it without `-f -f`; left in place deliberately rather than forced.
 - `agent-a1b2a40eb1e9e4e64` — confirmed redundant against what landed on `main`.
+- `agent-a0edf63595b976e4e` — the concurrent-libraries test, on `main` as `3cda65c`. Refused for
+  the same reason as the first: it was **cherry-picked rather than fast-forwarded**, so it shares
+  no ancestry.
+
+**That last one is a lesson, not a fault.** Two agents based on the same commit cannot both
+ff-merge — the first moves `main`, and the second is no longer a descendant. Cherry-picking the
+second lands identical content but permanently strips `worktree-gc.sh`'s ability to prune it, so
+the worktree lingers as apparent unmerged work forever. If two waves are dispatched from one base,
+either merge the second with a real merge commit, or rebase it onto the new tip before merging —
+and either way `git worktree remove` plus `git branch -D` is then a deliberate manual step, which
+is the user's call rather than a session's.
 
 ---
 
