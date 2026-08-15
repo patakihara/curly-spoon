@@ -76,9 +76,16 @@ test('the Duration sort chip reorders the cards shortest to longest', async ({ p
   const cards = page.getByTestId('library-item-cards');
   await expect(cards).toBeVisible();
 
-  // Title is the default sort: alphabetical.
+  // Title is the default sort: alphabetical. All ten fixture books — wave 13b widened
+  // `items-books.json` from five to ten so the recommender had real author/series/narrator
+  // overlap to rank, and this assertion enumerates the whole library rather than a prefix.
   await expect(cards.locator('h2')).toHaveText([
+    'A Silence Kept',
     'Dune',
+    'Nightloom',
+    'The Crimson Ledger',
+    'The Ember Wars: Firestorm',
+    'The Ember Wars: Kindling',
     'The Fellowship of the Ring',
     'The Hobbit',
     'The Return of the King',
@@ -89,10 +96,18 @@ test('the Duration sort chip reorders the cards shortest to longest', async ({ p
   // `<button>` — click the label, same as chip.spec.ts's fix for the identical DOM drift.
   await page.getByTestId('sort-duration').locator('label').first().click();
 
-  // The Hobbit (660s) < The Fellowship of the Ring (720s) < The Two Towers
-  // (750s) < The Return of the King (780s) < Dune (1260s) — a genuinely
-  // different order from the title default, not a coincidental match.
+  // The Crimson Ledger (500s) < A Silence Kept (510) < Nightloom (520) < Ember Wars:
+  // Kindling (600) < Ember Wars: Firestorm (610) < The Hobbit (660) < Fellowship (720)
+  // < The Two Towers (750) < The Return of the King (780) < Dune (1260) — a genuinely
+  // different order from the title default, not a coincidental match. The two Ember Wars
+  // books sort the opposite way round from their titles, which is what makes this
+  // assertion sensitive to the sort actually being applied rather than passing by luck.
   await expect(cards.locator('h2')).toHaveText([
+    'The Crimson Ledger',
+    'A Silence Kept',
+    'Nightloom',
+    'The Ember Wars: Kindling',
+    'The Ember Wars: Firestorm',
     'The Hobbit',
     'The Fellowship of the Ring',
     'The Two Towers',
