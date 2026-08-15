@@ -92,32 +92,12 @@ export const rawAuthenticationResultSchema = z
 // ---------------------------------------------------------------------------
 
 /** `MediaBrowser.Model/Dto/UserItemDataDto.cs` — the body of both
- * `POST /UserFavoriteItems/{itemId}` and `DELETE /UserFavoriteItems/{itemId}`, and also the
- * `UserData` fragment attached to every ordinary `BaseItemDto` (see that field's comment
- * below). `IsFavorite`, `PlayCount` and `LastPlayedDate` are modeled — the play-count/recency
- * signal wave 13e-2 uses to build a music taste profile, mirroring the audiobook side's use of
- * Audiobookshelf's `mediaProgress[]`. The DTO's remaining fields (`Rating`,
- * `PlaybackPositionTicks`, ...) stay unmodeled: no consumer needs them, and this package's
- * "a wave that adds a writer must name its reader" convention (`docs/HANDOVER.md`) treats an
- * unused normalized field the same as an unused writer. `PlaybackPositionTicks` specifically is
- * a *resume* position within whatever item was last played, not a taste signal a recommender can
- * use directly — it says where playback stopped, not how much the user liked the item — so it's
- * left out rather than normalized and ignored.
- *
- * `PlayCount` is a non-nullable C# `int` (defaults to `0`, never absent per the model) and
- * `LastPlayedDate` a nullable `DateTime?`, serialized as an ISO-8601 string when present. Kept
- * `.nullable().optional()` on both anyway, matching `IsFavorite`'s deliberately-more-lenient
- * stance immediately above: this client has never been run against a real server (see
- * `docs/HANDOVER.md`'s "only partly verified against reality"), and a `null`/absent value here
- * should degrade rather than fail the whole item's schema. */
+ * `POST /UserFavoriteItems/{itemId}` and `DELETE /UserFavoriteItems/{itemId}`. Only
+ * `IsFavorite` is modeled; the DTO's other fields (`Rating`, `PlaybackPositionTicks`,
+ * `PlayCount`, ...) are progress/rating data this package doesn't otherwise track. */
 export const rawUserItemDataDtoSchema = z
   .object({
     IsFavorite: z.boolean().nullable().optional(),
-    PlayCount: z.number().nullable().optional(),
-    /** ISO-8601 datetime string (or `null`/absent) — see `normalize.ts`'s
-     * `normalizeLastPlayedAt` for why this is converted to epoch milliseconds rather than kept
-     * as a string, and how an unparseable value is handled. */
-    LastPlayedDate: z.string().nullable().optional(),
   })
   .passthrough();
 

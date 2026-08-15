@@ -21,15 +21,6 @@ export interface Artist {
    * a missing/absent upstream `UserData.IsFavorite` normalizes to `false` rather than a
    * third "unknown" state a consumer would otherwise have to handle. */
   favorite: boolean;
-  /** Total play count for this artist's own item row. `0` when absent, matching `favorite`'s
-   * "always a definite value" convention — see `normalize.ts`'s `normalizePlayCount`. Wave
-   * 13e-2 reads this (and `Album`/`Track`'s copies) to build a music taste profile alongside
-   * the audiobook-side `mediaProgress[]` signal. */
-  playCount: number;
-  /** Epoch milliseconds of this item's last play, or `null` if it has never been played (or
-   * the server didn't report a date) — see `normalize.ts`'s `normalizeLastPlayedAt`. Never
-   * `NaN`: an unparseable upstream date degrades to `null`, the same as an absent one. */
-  lastPlayedAt: number | null;
 }
 
 export interface Album {
@@ -49,10 +40,6 @@ export interface Album {
   trackCount: number | null;
   /** See `Artist.favorite`'s doc comment — same "always a definite boolean" guarantee. */
   favorite: boolean;
-  /** See `Artist.playCount`'s doc comment — same convention, this album's own play count. */
-  playCount: number;
-  /** See `Artist.lastPlayedAt`'s doc comment. */
-  lastPlayedAt: number | null;
 }
 
 export interface Track {
@@ -72,13 +59,6 @@ export interface Track {
   genres: string[];
   /** See `Artist.favorite`'s doc comment — same "always a definite boolean" guarantee. */
   favorite: boolean;
-  /** See `Artist.playCount`'s doc comment — same convention, this track's own play count. This
-   * is the field wave 13e-2 actually reads: a track is the finest-grained unit Jellyfin reports
-   * `UserData` on, so track-level `playCount`/`lastPlayedAt` roll up into per-genre/per-artist
-   * taste the same way the artist/album copies would, without losing resolution. */
-  playCount: number;
-  /** See `Artist.lastPlayedAt`'s doc comment. */
-  lastPlayedAt: number | null;
 }
 
 export interface Playlist {
