@@ -225,7 +225,17 @@ export function createFakeAbsUpstream(): FakeAbsUpstream {
     type?: string;
   }>;
   const tokens = new Map<string, string>(); // token -> userId
-  const progressByKey = new Map<string, ProgressRecord>(); // `${userId}:${itemId}:${episodeId ?? ''}`
+  // `${userId}:${itemId}:${episodeId ?? ''}` -> record. Deliberately seeded
+  // empty for every fixture user, including 'kara' — several existing tests
+  // (`progress.test.ts`'s "returns an empty list before anything has been
+  // synced" among them) assert an exact, small `mediaProgress`/`progress`
+  // array for a freshly-built app, and a module-level default here would
+  // silently break every one of them for every test in the suite, not just
+  // the recommendations route's. Tests that want progress present (the
+  // recommendations route test in `libraries.test.ts`) seed it themselves via
+  // `PATCH /api/v1/progress/:itemId`, the same real path any other caller
+  // uses — no separate seeding mechanism to keep in sync with reality.
+  const progressByKey = new Map<string, ProgressRecord>();
   const bookmarksByUser = new Map<string, JsonRecord[]>();
   const sessions = new Map<string, SessionRecord>();
   let sessionSeq = 0;
