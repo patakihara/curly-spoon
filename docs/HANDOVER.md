@@ -21,8 +21,10 @@ destinations, unified search, artist/author discography, For You carousels, cont
 per-content-type queues) is **shipped on web and Android except 12c-2**. **Phase 13
 (personalized recommendations) is done** — all six waves, CI-verified, on both clients.
 
-**Every phase on the roadmap is now finished to the limit of what this machine can do.**
-Nothing is half-built and no wave is in flight. What remains is the table below: each item
+**Phases 1–13 are finished to the limit of what this machine can do**, and **phase 14** was
+opened on 2026-08-16 by a session that found that to be true — it is infrastructure (measurement
+and test capability), not product, and `ROADMAP.md` §14 says why. 14a is done; 14b has its harness
+and one open wave (14b-2). Nothing is half-built and no wave is in flight. What remains is the table below: each item
 needs a decision, a device, a credential, or a live change on another host. A session picking
 this up should read that table first and expect to find nothing it can start alone — that is
 the honest state, not a gap in the notes.
@@ -103,6 +105,84 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
 
 <!-- AGENT_LOG_END -->
+
+---
+
+## Phase 14 — verification and weight (opened 2026-08-16, self-directed)
+
+`ROADMAP.md` §14 is the spec and says why the phase exists. Short version: phases 1–13 are done
+to the limit of this machine, every remaining roadmap item needs a decision/device/credential/
+another host, and the two things a session here _can_ move are not features — they are the gap
+between what this project can build and what it can prove.
+
+### 14a — the web entry chunk: **done, and it worked better than expected**
+
+- **14a-1** (`43861d6`) — `docs/perf/ENTRY_CHUNK_ATTRIBUTION.md`: the entry chunk byte-attributed
+  by decoding its sourcemap's VLQ mappings, 99.5% of 666,616 bytes accounted for. Read that file
+  before proposing any further weight work; it is the map.
+- **14a-2** (`8708a7b`, `a5a3843`) — **one line**: `packages/ui/package.json` had no `sideEffects`
+  field, so a bundler must assume every module in it is impure and cannot shake unused re-exports
+  out of the barrel. `"sideEffects": ["**/*.css"]` marks the JS pure and keeps the CSS honest.
+
+  **Entry raw 914.2 KB → 782.5 KB (−131.7 KB, −14.4%); entry gzip 237.0 KB → 198.9 KB
+  (−38.1 KB, −16.1%).** Verified independently by the orchestrator, not taken from the report.
+  `@floating-ui/react` — 21.8 KB that nothing in the app imports, riding in purely because
+  `Menu.tsx` is a member of the barrel — left the entry chunk entirely. Total bundle is ~unchanged
+  (bytes moved into `Shell`, whose lazy chunk grew 37.8 → 52.7 KB, still under its 72 KB budget).
+
+  **The CSS-loss risk was real and was checked, because the e2e suite cannot see it.** Marking JS
+  pure lets Rollup drop a component module _and its `import './Foo.css'` with it_ — and Playwright
+  asserts on testids and text, never computed styles, so a component rendering unstyled passes
+  188/188. Total CSS across `dist/assets/*.css` went 269,523 → 268,482 B; the entire 1,041 B delta
+  is `TopAppBar`, which `apps/web` does not reference at all (only `packages/ui`'s own gallery
+  does). `Sheet`/`Snackbar`/`Menu` were checked specifically and their CSS is present in their own
+  lazy chunks. **If a future wave touches bundling in `packages/ui`, repeat that check — a green
+  Playwright run is not evidence here.**
+
+  Found in passing, not acted on: `Chip.tsx`, `CircularProgress.tsx`, `LinearProgress.tsx` and
+  `Skeleton.tsx` each has a colocated `.css` file the component never imports. Already absent from
+  the bundle before this wave. Dead files, safe to delete, nobody's wave yet.
+
+### 14b — Android had no way to verify UI at all, and now has a narrow one
+
+**The finding is the valuable part.** `apps/android` contained **no Compose UI test harness** —
+no `createComposeRule`, no Robolectric — and `android.yml` runs `./gradlew test assembleDebug`,
+JVM unit tests only. So every Compose change on Android was verifiable by exactly "it compiles"
+plus "a reviewer read it": the standard that passed on all four writer-with-no-reader failures.
+The carousel-a11y follow-up was recorded as blocked on _a device_; it was really blocked on this.
+
+- **14b-1** (`92fbe30`, then `ab3fd7b` and `604f290`) — Robolectric 4.14.1, `ui-test-junit4`,
+  `ui-test-manifest`, `androidx.test.ext:junit`, `androidx.test:core-ktx`, plus
+  `testOptions { unitTests.isIncludeAndroidResources = true }` (load-bearing — Robolectric
+  inflates nothing without it). One test file, no product file touched. Its second test asserts
+  the exact `semantics(mergeDescendants = true)` grouping 14b-2 needs, so the harness is proved
+  for its purpose on the way in rather than assumed.
+
+**Two red CI rounds, both toolchain facts, both worth not relearning:**
+
+1. `import androidx.compose.ui.test.assertExists` does not resolve — `assertExists` is a **member
+   of `SemanticsNodeInteraction`**, while `onNodeWithText`/`onNodeWithContentDescription` on the
+   lines either side of it genuinely are top-level and genuinely do need importing. It is the odd
+   one out in a block of near-identical lines, which is why it reads as correct.
+2. **`ui-test-manifest` must be `debugImplementation`, never `testImplementation`.** Its whole
+   contribution is an `AndroidManifest` declaring the `ComponentActivity` that `createComposeRule()`
+   hosts the composable in, and unit tests read the **debug variant's merged manifest**. On
+   `testImplementation` the jar is on the classpath but its manifest never reaches the merger — so
+   it compiles, resolves, and both tests die at `RoboMonitoringInstrumentation:102` with a bare
+   `RuntimeException` naming neither an activity nor a manifest. The spec that produced this
+   **named the missing-activity failure mode explicitly** and still got the configuration wrong.
+
+**Be precise about what the harness buys.** The claim is "**Compose semantics are now assertable
+in CI**" — not "Android UI is now verifiable." Robolectric renders on the JVM against a shadowed
+framework: it will confirm a node exists with the contentDescription you meant; it will not tell
+you what TalkBack announces, how the row looks, or what is reachable by touch. It closes the gap
+between "a reviewer read it" and "a machine checked it". It does not close the gap to a device.
+
+- **14b-2 — not started, deliberately.** Grouping each For You card's title and reason line into
+  one accessibility node on `ForYouCarouselRow` (shared by the book, podcast and music shelves).
+  It should wait until the harness has more than one green CI run behind it: a cross-cutting
+  change to a surface nobody here can look at, verified by a harness one run old, is two unproven
+  things stacked.
 
 ---
 
@@ -267,13 +347,8 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed 2026-08-16 by the session that opened phase 14:**
-
-- **14a-1** — measure `apps/web`'s entry-chunk composition by sourcemap attribution (writes only
-  `docs/perf/ENTRY_CHUNK_ATTRIBUTION.md`, no product code).
-- **14b-1** — give `apps/android` a Compose UI test harness that runs under `gradlew test`
-  (Robolectric + `ui-test-junit4`); touches only `apps/android/gradle/libs.versions.toml`,
-  `apps/android/app/build.gradle.kts` and one new test file.
+**Nothing is currently claimed.** 14a-1, 14a-2 and 14b-1 all landed on `main`; see
+`ROADMAP.md` §14 and "Phase 14" below.
 
 **Phase 13 is done** — 13a–13f, all CI-verified. The `app` Playwright project sits at
 **190 passed, 0 failed** at full parallelism, up from the 186/1/1 that greeted this session.
