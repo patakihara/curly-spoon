@@ -83,7 +83,7 @@ sealed interface TracksPageResult {
  * "wave that adds a writer must name its reader" rule). Unlike every other `Failed` case in this
  * file, a caller must **not** surface [Failed] as an error — a Jellyfin-unconfigured or
  * credential-less user gets a 409/401 here exactly as often as they would on any other
- * `/jellyfin/*` call, and this is a "nice to have" carousel, not a screen precondition. See
+ * `/jellyfin` call, and this is a "nice to have" carousel, not a screen precondition. See
  * [MusicLibraryViewModel]'s use of this for how it degrades to "no shelves" rather than an error
  * state, mirroring [net.develivarr.auralis.features.home.ForYouViewModel
  * .fetchRecommendedCarousels]'s identical reasoning for the book/podcast counterpart.

@@ -130,7 +130,7 @@ class ApiClient(
     /** GET /music/recommended — the Jellyfin-music counterpart to [libraryRecommended]. Unlike
      * that call, there is no library id to scope by: `routes/jellyfin.ts`'s handler searches
      * recursively across every music library the signed-in user can see, matching every other
-     * `/jellyfin/*` route in this file. A Jellyfin-unconfigured or credential-less user gets a
+     * `/jellyfin` route in this file. A Jellyfin-unconfigured or credential-less user gets a
      * 409/401, surfaced to the caller as [ApiException] same as any other call — see
      * [net.develivarr.auralis.features.music.MusicRepository.recommended] for how that degrades
      * to "no shelves" rather than an error state. Reader:

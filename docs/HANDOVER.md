@@ -375,6 +375,34 @@ waves** — review got the hard product questions right and lost to CI on toolch
 every time. The consequence is scheduling, not process: budget for two or three red Android
 runs after any sizeable Android wave, and push early enough that they fit in the usage window.
 
+### Kotlin block comments **nest** — a `/*` inside a KDoc silently eats the rest of the file
+
+Found the hard way on 13f-2, and it is the same shape as the backtick-dot trap below: a fact
+about the toolchain that no amount of reading the logic will surface.
+
+A doc comment mentioning a route glob — the entirely natural `` `/jellyfin/*` route `` — contains
+the character pair `/*`. **Kotlin, unlike Java, supports nested block comments**, so that opens a
+second comment inside the KDoc. The comment's own closing `*/` then closes only the _inner_ one,
+and the outer comment swallows everything to the end of the file. What the compiler reports is
+`Syntax error: Unclosed comment` at the **last line of the file** plus a bogus `Missing '}'`
+somewhere near the top — neither of which points anywhere near the actual text.
+
+Both an implementing agent and a thorough reviewer read straight past it, because as prose it is
+correct and as Kotlin it looks like every other doc comment in the file.
+
+**The check is arithmetic, costs nothing, and does not need a compiler:**
+
+```bash
+for f in <changed .kt files>; do
+  echo "$f open=$(grep -o '/\*' "$f" | wc -l) close=$(grep -o '\*/' "$f" | wc -l)"
+done
+```
+
+Unequal counts means an unclosed comment. Run it on every Kotlin file a wave touches — this
+machine cannot compile Kotlin, so a cheap textual invariant is worth far more here than it would
+be on a codebase where `gradlew compileKotlin` is one command away. Write route globs as
+`` `/jellyfin` `` or `/jellyfin/…` instead.
+
 ### Android test traps — read before touching an Android test
 
 - **`ApiClient` takes its dispatcher as a constructor parameter** (defaulting to
