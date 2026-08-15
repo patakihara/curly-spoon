@@ -77,8 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
-- `2026-08-15T14:33:44Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T14:34:18Z` · `a9f59f4f15c66ad3a` · general-purpose · running · —
 - `2026-08-15T14:37:27Z` · `a15279db42c93b454` · general-purpose · ended · Committed cleanly, working tree clean, on branch 'worktree-agent-a15279db42c93b454' at '48c688e', based on '241f3fb'. Not pushed, not merged, no 'Age…
 - `2026-08-15T14:43:47Z` · `aaa306978fec88190` · general-purpose · ended · No suppressions, no illegal backtick dots, no 'weight' import trap (not touched here). No '.' character issues in new test names (checked visually to…
@@ -92,106 +90,108 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T15:34:57Z` · `a6168e2a5df25b40c` · general-purpose · ended · Still running; I'll wait for the monitor's completion notification rather than poll further.
 - `2026-08-15T15:44:26Z` · `a6168e2a5df25b40c` · general-purpose · ended · I'll wait for the monitor's notification rather than poll further.
 - `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
+- `2026-08-15T19:13:48Z` · `ad3375be8178ba426` · general-purpose · ended · Confirmed: 'forUser()' is fully synchronous — 'getSettings'/'getJellyfinToken' are local DB reads, throws before constructing a client, no network I/…
+- `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
 ---
 
-## Phase 13 — personalized recommendations: **13a–13d landed, 13e reverted**
+## Phase 13 — personalized recommendations: **all five waves landed**
 
 `ROADMAP.md` §13 is the spec. On `main`: **13a** `8d071b8` (pure scoring core), **13b**
 `0be4fc6` (`GET /libraries/:id/recommended` + `toCandidate`), **13c** `8bbad08` (web),
-**13d** `8335184` (Android). All CI-verified.
+**13d** `8335184` (Android), **13e** restored 2026-08-15 as `640c751` (13e-1) and `9b086df`
+(13e-2).
 
 **What works today.** The BFF computes book recommendations from Audiobookshelf's per-user
-`mediaProgress[]` — signal that already existed and nothing read. Ranking is one pure, I/O-free
-core (`apps/server/src/features/recommendations/`) that the route calls; it is deliberately not
-reimplemented per client. Shelves are served `Shelf`-shaped plus a `reason`, appended after the
-existing For You feed, so cold start is a visual no-op and a signal-less user sees exactly
-today's behaviour. Web and Android both render it.
+`mediaProgress[]` — signal that already existed and nothing read — and, since 13e, folds the
+Jellyfin side's genre affinity into the same profile so taste in music informs the book feed.
+Ranking is one pure, I/O-free core (`apps/server/src/features/recommendations/`) that the
+route calls; it is deliberately not reimplemented per client. Shelves are served `Shelf`-shaped
+plus a `reason`, appended after the existing For You feed, so cold start is a visual no-op and
+a signal-less user sees exactly today's behaviour. Web and Android both render it.
 
-### 13e was merged, broke two e2e specs, and was reverted — pick it up from here
+### The 13e revert was unfounded, and both halves are restored
 
-**Both 13e commits are still in `main`'s history and are recovered by reverting the reverts**
-(`git revert 30b8f3d` for 13e-2, `git revert 163d633` for 13e-1). Nothing is lost; the
-worktrees and branches are gone but `d43dd81` (13e-2) and `bce0e16` (13e-1) are reachable.
+This is the correction that matters, established by evidence rather than by re-reading the
+prose. Earlier sessions reverted both 13e commits on the strength of two e2e failures. **Both
+findings were artefacts of a bad repro command, and the suite-wide crash blamed on the wave
+does not exist.**
 
-Reverted because **a red CI on `main` silently stops the live deployment updating** —
-`format:check`/CI gate `publish`, which writes `ghcr.io/patakihara/auralis:latest`, which
-mediaserver pulls every fifteen minutes. Leaving `main` red to preserve a half-verified wave
-was the worse trade.
+**The baseline that settles it.** A full `--project=app --workers=1` run on `3858f7e` — 13e
+fully reverted, the tree the revert produced — gives **186 passed, 1 failed, 1 skipped**. There
+is no `ERR_CONNECTION_REFUSED` cascade, the web server does not crash, and
+**`for-you.spec.ts:128` passes**. The "e2e server dies mid-run and takes 130+ tests with it"
+problem that the previous handover called "the thing to chase, not the two waves" **is not
+reproducible and should not be chased.** It was almost certainly the tail of the same bad
+invocation: a run that never established its preconditions, whose cascade of failures read as
+a crash.
 
-**Two separate regressions, both real, neither caught by any unit test** (`jellyfin-client`
-120/120, `apps/server` 678/678 — that gap is itself part of the story):
+**`music-favorites.spec.ts` fails with 13e-1 already reverted**, which exonerates 13e-1
+outright — its schema work was never involved. See "The one real suite defect" below for what
+that failure actually is.
 
-1. **13e-1 broke `e2e/app/music-favorites.spec.ts:45`.** Deterministic, re-run three times.
-   Passed on CI at `d6d8e21`, fails after `ecdbb02`. 13e-1 touched only
-   `packages/jellyfin-client` (added `playCount`/`lastPlayedAt` to `Artist`/`Album`/`Track`,
-   extended `rawUserItemDataDtoSchema`). It fails at
-   `getByTestId('music-track-favorite-track-driftwave-1').click()` timing out after
-   `goto('/music/album/album-driftwave')` — **the track rows never render**, so it is a load
-   or shape failure, not an assertion mismatch. `apps/web` does **not** use `.strict()`, so
-   "web rejected two new keys" is ruled out. First suspect: the
-   `.optional()`-accepts-`undefined`-but-not-`null` class of bug that broke playback here for
-   weeks (see the abs-client section below).
-2. **13e-2 broke `e2e/app/jellyfin-unconfigured.spec.ts:29`** ("an unconfigured Jellyfin sends
-   /music to the connect prompt, not an empty library"). 13e-2's report explicitly claimed the
-   unconfigured path needed no special-casing because `forUser()` throws before any upstream
-   call and `handleUpstreamError` maps it to 409/401. That reasoning was wrong _somewhere_ —
-   most likely the client now issues `/music/recommended`, gets a 409, and renders an error
-   state instead of the connect prompt. **Check the client side, not just the route.**
+**`jellyfin-unconfigured.spec.ts` was never touched by 13e-2 either**, and this was confirmed
+by reading code rather than by re-running: 13e-2 changed **no client file at all**, so nothing
+new is issued from the `/music` page, and the one new server path reachable from an existing
+route (`tryBuildMusicGenreProfile` in `routes/libraries.ts`) calls `app.jellyfin.forUser()`,
+which is **fully synchronous** — two local DB reads, throwing before any network call or client
+construction — and whose error its `catch` swallows into `null`. An unconfigured Jellyfin
+cannot reach that route's response. The revert commit's stated cause ("the client now issues
+`/music/recommended`") describes a call that does not exist in the diff.
 
-**13e-2 was also never independently reviewed** — the only wave in the phase that wasn't,
-because the session hit its usage ceiling. It touches three shared files (`types.ts`,
-`shelves.ts`, `index.ts`). Review it before re-landing.
+**Never `-g` into a `describe.serial` block.** That is the lesson that cost two reverts and a
+day. `-g` silently drops the setup test, the app then correctly renders "Jellyfin connection
+has not been configured yet", and the failure reads exactly like a product regression. Run the
+file.
 
-**A dispatched fix agent died producing nothing** — it backgrounded a Playwright run and
-stopped, leaving Playwright and vite holding port 4310. `fuser -k 4310/tcp` clears it. This is
-the third time on this project; the orchestrator-side worktree check is the load-bearing guard.
+### 13e-2's review, finally done
 
-### CORRECTION — the 13e-1 revert rests on a repro that was wrong
+13e-2 was the only wave in the phase never independently reviewed (the session hit its usage
+ceiling). Reviewed 2026-08-15: **no correctness defects.** Traps explicitly checked and
+cleared, so no one re-checks them:
 
-Established **after** the revert was pushed, by the agent that finally reported. Read this
-before acting on the diagnosis above; parts of it are unsound.
+- Both new `rawUserItemDataDtoSchema` fields are `.nullable().optional()`, and
+  `normalizeLastPlayedAt` folds `Date.parse`'s `NaN` into `null` — the null-vs-undefined class
+  of bug that broke playback for weeks does not apply here.
+- `albumToCandidate` folds `artistName` into a one-element `authors[]`, blank-guarded, so the
+  adapted-shape trap is handled. Nothing in `profile.ts`/`score.ts`/`shelves.ts` branches on
+  `media.kind`, so widening to `'album'` is inert by construction.
+- The tests assert through to behaviour: route tests hit real HTTP and pin status codes and a
+  known-item exclusion; `crossMediaGenre.test.ts` pins actual weighted-sum arithmetic. Deleting
+  the logic fails them.
+- `mergeGenreAffinity` never increases `target.totalSignal`, so a music-only user still sees an
+  empty book feed. Cold start stays a visual no-op.
 
-**`music-favorites.spec.ts` is `test.describe.configure({ mode: 'serial' })`.** Its _first_
-test does `goto('/settings')` and connects Jellyfin; the click at line 51 is in the _second_.
-Running it with `-g "unfavouriting a track announces"` selects only the second test and skips
-the connect step, so the album page correctly renders "Couldn't load this album's tracks:
-Jellyfin connection has not been configured yet" and the testid never appears. **The timeout
-was my repro command, not the app.** Running the whole file at `c7f16ff` passes **8/8**.
+**One open finding: `GET /music/recommended` has no consumer.** Grep finds no hit in
+`apps/web/src` or `apps/android`, and 13e-2 touched neither. This is the project's
+most-repeated failure mode — a writer with no reader — though a milder form than the four
+historical instances: the route works and is genuinely tested, it is simply inert in
+production. `ROADMAP.md` names 13e's reader as the cross-media merge into the **books** route,
+which _is_ wired and consumed; the music-facing endpoint is scope the wave invented beyond its
+spec. **It must either gain a consumer or be deleted — silence is the one option the project's
+own rule forbids.**
 
-So: **there is no evidence 13e-1 broke anything.** Its schema work also checks out on
-inspection — `PlayCount`/`LastPlayedDate` are both `.nullable().optional()` and the
-normalizers degrade to `0`/`null`, so the null-vs-undefined trap does not apply.
-**Reverting 13e-1 (`163d633`) was probably unnecessary and can likely be undone** with
-`git revert 163d633` — but re-run the _whole file_, never `-g` into a serial block, to confirm.
+### The one real suite defect, and it is nobody's wave
 
-**Treat the 13e-2 finding with the same suspicion.** `jellyfin-unconfigured.spec.ts:29` failed
-under the same flawed `-g` invocation. It is a different project and may well be a genuine
-regression — 13e-2 does add a `/music/recommended` call the unconfigured path now makes — but
-**it has not been confirmed with a clean run**, and the revert rationale in the commit message
-is stronger than the evidence supports.
+`music-favorites.spec.ts:45` expects `/music/favorites` to show `track-driftwave-1` and
+`-2` already favourited. It **passes 8/8 when the file runs alone and fails in the full suite**
+— cross-file state contamination, not a bug in the file. The `app` project runs every spec
+against **one** shared single-tenant BFF whose fake-Jellyfin favourite state is process-global,
+and `playwright.config.ts`'s own comment already prescribes the rule being broken here: files
+are order-independent only if **each makes its own preconditions true rather than inheriting
+them**. Some other spec toggles that favourite off and leaves it off.
 
-### The real open problem, and it is bigger than either wave
+This is pre-existing, predates 13e, and is the only thing standing between this suite and a
+clean sheet.
 
-Running the full `--project=app` suite, **`for-you.spec.ts:128`** ("every card below the grid
-shares one geometry, across every content type") fails on `shelf-shelf-continue-listening`
-never becoming visible — and then **every subsequent test dies with
-`net::ERR_CONNECTION_REFUSED` at `localhost:4310`**. The e2e web server or the BFF behind it
-**crashes mid-run and never recovers**, taking 130+ tests with it.
+### `E2E_SERVER_LOG=1` — why nobody could ever diagnose this
 
-That is consistent with both "CI passed the full suite on `d6d8e21`" and with file-scoped runs
-passing, which is exactly why it has stayed invisible. **This is the thing to chase**, not the
-two waves. Next step: `pnpm test:e2e --workers=1 --project=app` and read the WebServer's own
-stdout/stderr in the Playwright log around `for-you.spec.ts:128` for the crash.
-
-**Lesson worth keeping regardless of how this resolves: never `-g` into a `serial` describe
-block.** It silently drops the setup test and the failure looks like a product bug. Run the
-file. This cost a revert.
-
-Housekeeping: a stray gitignored `test-results/` directory may be sitting in the shared
-checkout from an agent that accidentally ran Playwright there. Harmless, deletable.
+Playwright's `webServer.stdout` defaults to `'ignore'`, so when the e2e BFF misbehaves its own
+output is discarded and every downstream failure is a bare `ERR_CONNECTION_REFUSED`. `8899880`
+makes it switchable: `E2E_SERVER_LOG=1 pnpm test:e2e` pipes the server's stdout into the run.
+Off by default so CI logs stay readable. Redirect the run to a file — the server is chatty.
 
 ### Decisions from 13a–13d worth not re-deciding
 

@@ -2760,7 +2760,7 @@ doing nothing. See `docs/HANDOVER.md`.
 | **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | done (`0be4fc6`)            |
 | **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | done (`8bbad08`)            |
 | **13d** | Android — same, in `features/home/`, through `ApiClient`.                                                                                                                             | `ForYouScreen`                              | done (`8335184`)            |
-| **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | **reverted** — see HANDOVER |
+| **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | done (`640c751`, `9b086df`) |
 
 **What 13a established, so 13b–13e do not rediscover it.** The scoring core is merged and
 its `RecommendationCandidate` is an **adapted** shape, not a re-export of `LibraryItem`. A
@@ -2785,6 +2785,26 @@ tied to the `h2`. The card list carries it: `role="list"` has `aria-describedby`
 reason paragraph, so a screen reader announces the title and reason together as name plus
 description. Android's equivalent is the list/row-group's content description — not a
 `contentDescription` on the heading.
+
+**13e was reverted on 2026-08-15 and restored the same day; the revert was unfounded.** Both
+e2e failures it was based on came from running `-g` into a `describe.serial` block, which drops
+the setup test and makes a correctly-rendered "not configured yet" state look like a regression.
+A full `--project=app` baseline on the reverted tree reproduces neither the failures attributed
+to 13e-1 nor the suite-wide server crash that was attributed to the wave at large. 13e-2's
+review — the one wave in this phase that never got one — found no correctness defects.
+`docs/HANDOVER.md` has the evidence and the traps it cleared.
+
+**One thing 13e-2 shipped is still unread: `GET /music/recommended`.** No web or Android code
+calls it. The reader `ROADMAP` names for 13e is the cross-media merge into
+`GET /libraries/:id/recommended`, which _is_ wired and consumed by both clients — the
+music-facing endpoint is scope the wave invented beyond this spec. Per this project's own rule
+that a writer must name its reader, it gets one wave to gain a consumer (**13f**, below) or it
+should be deleted; `albumToCandidate`/`buildMusicProgressSignals` in `adaptMusic.ts` stay either
+way, since the cross-media path genuinely uses them.
+
+| Wave    | What                                                                                                                                                           | Reader                  | Status |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------ |
+| **13f** | Web + Android consume `GET /music/recommended`, rendering its album shelves on the music home surface the same way 13c/13d render the book shelves on For You. | The rendered music page | todo   |
 
 **13e is the wave that actually delivers the user's sentence.** 13a–13d make Auralis
 recommend audiobooks from audiobook behaviour, which is useful but is not what was asked
