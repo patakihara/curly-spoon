@@ -77,10 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T14:34:18Z` · `a9f59f4f15c66ad3a` · general-purpose · running · —
-- `2026-08-15T14:37:27Z` · `a15279db42c93b454` · general-purpose · ended · Committed cleanly, working tree clean, on branch 'worktree-agent-a15279db42c93b454' at '48c688e', based on '241f3fb'. Not pushed, not merged, no 'Age…
-- `2026-08-15T14:43:47Z` · `aaa306978fec88190` · general-purpose · ended · No suppressions, no illegal backtick dots, no 'weight' import trap (not touched here). No '.' character issues in new test names (checked visually to…
-- `2026-08-15T14:45:36Z` · `ac4faa08e011ceae9` · general-purpose · ended · Working tree clean, one new commit on top of the dead session's two. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-ag…
 - `2026-08-15T14:57:32Z` · `abb8b444e681940b8` · general-purpose · ended · Committed cleanly on 'worktree-agent-abb8b444e681940b8' at 'b03c60d', based on 'c8114ec'. Working tree is clean. Not pushed, not merged, no 'Agent' c…
 - `2026-08-15T15:03:51Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:06:49Z` · `abfc1e3c98500edeb` · general-purpose · running · —
@@ -92,6 +88,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
 - `2026-08-15T19:13:48Z` · `ad3375be8178ba426` · general-purpose · ended · Confirmed: 'forUser()' is fully synchronous — 'getSettings'/'getJellyfinToken' are local DB reads, throws before constructing a client, no network I/…
 - `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · ended · I'll stop checking and wait for the notification.
+- `2026-08-15T19:43:25Z` · `a3e749172e175a6e5` · general-purpose · ended · I'll wait for the notification from the background Playwright run rather than poll.
+- `2026-08-15T19:44:06Z` · `a37ea47ff04d29baa` · general-purpose · ended · Committed. Not pushed, not merged, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a37ea47ff04d29baa' at '60b368f', based on '966…
+- `2026-08-15T19:54:17Z` · `a24c2902cadc0c877` · general-purpose · ended · ## Review: Wave 13f-2 ('60b368f') **Verdict: merge as-is.** No compile-blocking defect found, no test-logic defect found, and the writer reaches a re…
+- `2026-08-15T19:55:31Z` · `a0838ed6164b30f53` · general-purpose · ended · ## Review: wave 13f-1 web music recommendations ('e4bd22e', 'bc0695b') ### Blocking **1. 'e2e/app/music-recommended.spec.ts' is missing 'test.describ…
 
 <!-- AGENT_LOG_END -->
 
@@ -224,9 +224,21 @@ Off by default so CI logs stay readable. Redirect the run to a file — the serv
 - **The `reason` strings in `shelves.ts`'s `reasonFor` are a first draft.** Never assert exact
   reason text in a client test — web and Android both assert presence/absence/order only, so
   copy can change server-side without breaking a client.
-- **Accessibility contract, set by web's browser pass, mirrored by Android:** the reason is
-  _not_ tied to the `h2`; the card list carries `aria-describedby` → the reason paragraph, so
-  title and reason announce as name + description.
+- **Accessibility contract, set by web's browser pass — and Android does _not_ mirror it, despite
+  what this file and `ROADMAP.md` both claimed until 2026-08-15.** On web the reason is _not_
+  tied to the `h2`; the card list carries `aria-describedby` → the reason paragraph, so title
+  and reason announce as name + description. That half is real and shipped.
+  **Android has no equivalent.** Verified twice by grep, independently, while reviewing 13f-2:
+  `ForYouCarousel.kt`/`ForYouScreen.kt`/`ForYouFeed.kt` contain **no** `semantics` or
+  `clearAndSetSemantics` at all, the only `contentDescription`s are `= null` on decorative cover
+  art, and `feedItemContentDescription()` builds its name from `title`/`subtitle` only — never
+  from `carouselReasonText()`, which renders as a plain sibling `Text` with no grouping to the
+  card. So on Android the reason is announced, if at all, as an unrelated loose string.
+  This is a **pre-existing gap from 13d**, not something 13f introduced. It was deliberately not
+  fixed inside 13f-2: `ForYouCarouselRow` is shared by the book and podcast shelves too, so
+  retrofitting semantics onto it is a cross-cutting change that wants its own wave and its own
+  verification — on a surface nobody here can actually look at. **It is a real open item, and
+  the lesson is that a doc claiming parity is not evidence of parity.**
 - **Reason lines wrap to two lines at 375px** when they carry the "— because you finished _X_"
   suffix. Nothing clips (there is deliberately no clamping), but headers get uneven. If that
   should change, the fix is `reasonFor` — once, serving both clients — not a clamp in either.

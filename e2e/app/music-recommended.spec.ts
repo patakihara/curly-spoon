@@ -25,6 +25,25 @@ const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
 const FAKE_JELLYFIN_USERNAME = 'nova';
 const FAKE_JELLYFIN_PASSWORD = 'stardust1';
 
+/**
+ * Serial, and load-bearing rather than stylistic. The first test asserts the *cold start*
+ * case — a signal-less user sees no shelves — and the second seeds listening signal to make
+ * shelves appear. That signal is play history on the shared, single-tenant fake Jellyfin:
+ * process-global, and additive only. There is no un-reporting a play, so `beforeEach` can
+ * make this file's *configuration* precondition true (`POST /jellyfin/config` is idempotent)
+ * but cannot restore the empty-signal state the first test needs.
+ *
+ * `fullyParallel` is on globally, so without this the two tests can run concurrently or in
+ * different workers, and the cold-start assertion fails or flakes depending purely on
+ * scheduling. `music.spec.ts` and `music-favorites.spec.ts` are serial for the same reason.
+ *
+ * Note for anyone debugging a failure here: never `-g` into this block. Selecting one test
+ * out of a serial describe silently drops the setup the others perform, the app then
+ * correctly renders "Jellyfin connection has not been configured yet", and the failure looks
+ * exactly like a product bug. That mistake cost this project two reverted waves.
+ */
+test.describe.configure({ mode: 'serial' });
+
 test.beforeEach(async ({ page }) => {
   // Connects (or reconnects — idempotent) Jellyfin for this session, exactly as
   // `music.spec.ts`'s first test does. Every test below needs both a configured
@@ -67,7 +86,9 @@ test('recommended album shelves render on /music once there is listening signal,
   const shelvesContainer = page.getByTestId('music-recommended-shelves');
   await expect(shelvesContainer).toBeVisible({ timeout: 10_000 });
 
-  const shelf = shelvesContainer.locator('section[data-testid^="shelf-music-recommended-"]').first();
+  const shelf = shelvesContainer
+    .locator('section[data-testid^="shelf-music-recommended-"]')
+    .first();
   await expect(shelf).toBeVisible();
   const shelfTestId = await shelf.getAttribute('data-testid');
   const shelfId = shelfTestId!.replace('shelf-', '');

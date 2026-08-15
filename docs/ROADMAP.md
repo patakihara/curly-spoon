@@ -2780,11 +2780,17 @@ clamping — but if it should be shorter, the fix is `reasonFor` in
 `apps/server/src/features/recommendations/shelves.ts`, once, serving both clients. Do not fix it
 in a client.
 
-**The accessibility relationship web settled, which Android must mirror.** The reason is _not_
-tied to the `h2`. The card list carries it: `role="list"` has `aria-describedby` pointing at the
-reason paragraph, so a screen reader announces the title and reason together as name plus
-description. Android's equivalent is the list/row-group's content description — not a
-`contentDescription` on the heading.
+**The accessibility relationship web settled, which Android still has not mirrored.** The reason
+is _not_ tied to the `h2`. The card list carries it: `role="list"` has `aria-describedby`
+pointing at the reason paragraph, so a screen reader announces the title and reason together as
+name plus description. Android's equivalent would be the list/row-group's content description —
+not a `contentDescription` on the heading.
+
+**Android does not do this, and an earlier version of this paragraph wrongly implied it did.**
+Confirmed by grep during 13f-2's review: there is no `semantics` grouping anywhere on the For
+You carousel composables, and the reason renders as a loose sibling `Text`. It is a pre-existing
+gap from 13d and it remains open. Fixing it touches `ForYouCarouselRow`, which the book and
+podcast shelves share, so it is its own wave rather than a rider on whatever comes next.
 
 **13e was reverted on 2026-08-15 and restored the same day; the revert was unfounded.** Both
 e2e failures it was based on came from running `-g` into a `describe.serial` block, which drops
