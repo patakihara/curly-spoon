@@ -58,6 +58,36 @@ export function normalizeFavoriteState(
   return raw?.IsFavorite ?? false;
 }
 
+/**
+ * Reads total play count off a raw `UserData` fragment, defaulting to a definite `0` when
+ * absent — same convention as `normalizeFavoriteState` immediately above, and for the same
+ * reason: a `BaseItemDto` whose `UserData` never populated is indistinguishable from an item
+ * that was checked and found never-played, so there's no third "unknown" state to preserve.
+ */
+export function normalizePlayCount(
+  raw: z.infer<typeof rawUserItemDataDtoSchema> | null | undefined,
+): number {
+  return raw?.PlayCount ?? 0;
+}
+
+/**
+ * Converts Jellyfin's `LastPlayedDate` (an ISO-8601 string, or absent/`null`) to epoch
+ * milliseconds, or `null` if there's nothing to report — including when the string is present
+ * but unparseable. `Date.parse` returns `NaN` for a malformed string rather than throwing, and
+ * `NaN` would silently poison every downstream recency calculation (e.g. "days since last
+ * played") while looking like a valid number to any check that isn't `Number.isNaN` — so this
+ * function catches that case explicitly and folds it into the same `null` an absent date gets,
+ * per this package's "total functions degrade rather than throw" convention.
+ */
+export function normalizeLastPlayedAt(
+  raw: z.infer<typeof rawUserItemDataDtoSchema> | null | undefined,
+): number | null {
+  const iso = raw?.LastPlayedDate;
+  if (iso == null) return null;
+  const ms = Date.parse(iso);
+  return Number.isNaN(ms) ? null : ms;
+}
+
 export function normalizeArtist(raw: RawItem): Artist {
   return {
     id: raw.Id,
@@ -66,6 +96,8 @@ export function normalizeArtist(raw: RawItem): Artist {
     imageTag: primaryImageTag(raw),
     albumCount: raw.ChildCount ?? null,
     favorite: normalizeFavoriteState(raw.UserData),
+    playCount: normalizePlayCount(raw.UserData),
+    lastPlayedAt: normalizeLastPlayedAt(raw.UserData),
   };
 }
 
@@ -92,6 +124,8 @@ export function normalizeAlbum(raw: RawItem): Album {
     imageTag: primaryImageTag(raw),
     trackCount: raw.ChildCount ?? null,
     favorite: normalizeFavoriteState(raw.UserData),
+    playCount: normalizePlayCount(raw.UserData),
+    lastPlayedAt: normalizeLastPlayedAt(raw.UserData),
   };
 }
 
@@ -108,6 +142,8 @@ export function normalizeTrack(raw: RawItem): Track {
     imageTag: primaryImageTag(raw),
     genres: raw.Genres ?? [],
     favorite: normalizeFavoriteState(raw.UserData),
+    playCount: normalizePlayCount(raw.UserData),
+    lastPlayedAt: normalizeLastPlayedAt(raw.UserData),
   };
 }
 
