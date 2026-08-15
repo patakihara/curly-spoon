@@ -77,9 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T10:44:59Z` · `a53710d7e5d134b7a` · general-purpose · ended · ## Report **Change A ('50e74e0') — merge as-is.** 1. **Claim verified true.** Checked the pre-change fixture ('minifiedBook', lines 6–24 of the file…
-- `2026-08-15T11:19:31Z` · `adccc234b7e45501b` · general-purpose · ended · Now I have enough. Report follows. ## Findings **1. The six remaining steps ('docs/FDROID_REPO.md', "What you have to do by hand"):** 1. Install 'fdr…
-- `2026-08-15T11:20:18Z` · `adccc234b7e45501b` · general-purpose · ended · ## Addendum: 'release.yml' and 'fdroid-repo.yml' ### 'release.yml' 1. **Trigger:** 'push: tags: - 'v*'' — exact same pattern as 'fdroid-repo.yml'. 2.…
 - `2026-08-15T11:25:32Z` · `a6f871e8051e5bdb6` · general-purpose · ended · Committed cleanly on 'worktree-agent-a6f871e8051e5bdb6' at '0bebf5d', based on '8e95dc1'. Working tree is clean, nothing pushed, nothing merged. ## R…
 - `2026-08-15T11:26:09Z` · `a0282a08e8853b706` · general-purpose · ended · I have everything needed. Final report below. ## Part 1 — what the repo already records **IzzyOnDroid's policy**, quoted verbatim in three places ('d…
 - `2026-08-15T11:36:39Z` · `ab7e094b5afb30335` · general-purpose · ended · ## Review: commit 280c1e7 — Android release signing **Verdict: merge as-is.** No compile-breaking or silently-broken-release issues found. Everything…
@@ -92,6 +89,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
 - `2026-08-15T14:33:44Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T14:34:18Z` · `a9f59f4f15c66ad3a` · general-purpose · running · —
+- `2026-08-15T14:37:27Z` · `a15279db42c93b454` · general-purpose · ended · Committed cleanly, working tree clean, on branch 'worktree-agent-a15279db42c93b454' at '48c688e', based on '241f3fb'. Not pushed, not merged, no 'Age…
+- `2026-08-15T14:43:47Z` · `aaa306978fec88190` · general-purpose · ended · No suppressions, no illegal backtick dots, no 'weight' import trap (not touched here). No '.' character issues in new test names (checked visually to…
+- `2026-08-15T14:45:36Z` · `ac4faa08e011ceae9` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -133,24 +133,30 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed: wave 13c** (web recommendations surface) — dispatched 2026-08-15 from base
-`241f3fb`. Delete this line when it lands.
+**Claimed: wave 13c (finishing it)** — the session that built 13c **ended mid-wave**. Its two
+commits are safe on `worktree-agent-abfc1e3c98500edeb` (`32a25e6`), tree clean, web unit tests
+green — but it never added `Carousel.test.tsx` coverage for the reason line, never wrote the
+e2e spec, and never ran the browser pass. An agent is finishing exactly those three things from
+that branch. Delete this line when it lands.
 
-**Claimed: wave 13d** (Android recommendations surface, `apps/android/.../features/home/`) —
-dispatched 2026-08-15 from base `241f3fb` by a second session. Delete this line when it lands.
+**Wave 13d is done** (`8335184`) — Android, reviewed, merged. Not yet CI-verified; Android CI
+has rejected each of the last three Android waves on a toolchain fact, so expect red runs.
 
-**Two sessions are working this checkout right now.** 13c (web) and 13d (Android) share no
-files, and were split that way after both sessions nearly dispatched 13c at the same moment —
-the second spotted the other's claim line and running worktree and killed its own agent 16
-seconds in. Whoever merges second: `main` will have moved, so `git merge --no-ff`, never a
-cherry-pick. Space pushes out and say so before pushing; only one run may be pending per
-concurrency group, so a second push cancels the first's queued run before it allocates.
+**Two sessions were working this checkout simultaneously**, and the lessons are worth more than
+the incident. Both nearly dispatched 13c at the same moment against the same base; the second
+spotted the other's claim line and running worktree and killed its own agent 16 seconds in.
+Then two _attribution_ errors followed, in opposite directions — one session believed it had
+authored commits a fork of its context had made, and the other reported "you pushed this" about
+a commit its own push had carried up. The general form is the durable finding:
 
-Phase 13 progress: **13a** (pure scoring core) landed as `8d071b8`, CI green. **13b**
-(`GET /libraries/:id/recommended`, the `toCandidate` adapter, widened fakes) landed as
-`0be4fc6`, 659/659 locally. **13c (web) is next** — fetch the new route, append its shelves
-to the existing For You feed, render the `reason` line. The response is `Shelf`-shaped plus
-`reason`, so `shelfToCarousel` takes it unchanged.
+**A shared checkout defeats inference about actors from state.** There is one `main` and one
+working tree, so a push from either session publishes _both_ sessions' local commits — "I have
+not pushed" does not mean a commit is unpublished, and "it is on `origin`" does not identify who
+put it there. Two consequences: **never commit to `main` what is not ready to publish** (holding
+a commit back is not a mechanism that exists when someone else's push carries it), and since
+merging is what puts a wave on `main`, **merge only when ready to push, not before**. The only
+evidence that settled authorship was the `Claude-Session` trailer on the commits — a fork
+carrying the full transcript is otherwise indistinguishable from the original from the inside.
 
 Before dispatching a wave **and again before merging it**, check what is already on `main`
 (`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`
