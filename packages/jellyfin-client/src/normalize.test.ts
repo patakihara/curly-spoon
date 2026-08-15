@@ -3,8 +3,10 @@ import {
   normalizeAlbum,
   normalizeArtist,
   normalizeFavoriteState,
+  normalizeLastPlayedAt,
   normalizeLogin,
   normalizeLyrics,
+  normalizePlayCount,
   normalizePlaylist,
   normalizePlaylistItem,
   normalizeTrack,
@@ -32,7 +34,7 @@ describe('normalizeArtist', () => {
         Overview: 'Scottish electronic duo',
         ImageTags: { Primary: 'tag-abc' },
         ChildCount: 5,
-        UserData: { IsFavorite: true },
+        UserData: { IsFavorite: true, PlayCount: 42, LastPlayedDate: '2026-08-01T12:00:00Z' },
       }),
     );
     expect(artist).toEqual({
@@ -42,6 +44,8 @@ describe('normalizeArtist', () => {
       imageTag: 'tag-abc',
       albumCount: 5,
       favorite: true,
+      playCount: 42,
+      lastPlayedAt: Date.parse('2026-08-01T12:00:00Z'),
     });
   });
 
@@ -50,7 +54,7 @@ describe('normalizeArtist', () => {
     expect(artist.name).toBe('(unknown artist)');
   });
 
-  it('defaults every other optional field to null (and favorite to false) when the server omits them', () => {
+  it('defaults every other optional field to null (favorite to false, playCount to 0, lastPlayedAt to null) when the server omits them', () => {
     const artist = normalizeArtist(rawItem({ Id: 'artist-3' }));
     expect(artist).toEqual({
       id: 'artist-3',
@@ -59,7 +63,16 @@ describe('normalizeArtist', () => {
       imageTag: null,
       albumCount: null,
       favorite: false,
+      playCount: 0,
+      lastPlayedAt: null,
     });
+  });
+
+  it('normalizes an unparseable LastPlayedDate to null, never NaN', () => {
+    const artist = normalizeArtist(
+      rawItem({ Id: 'artist-4', UserData: { LastPlayedDate: 'not-a-date' } }),
+    );
+    expect(artist.lastPlayedAt).toBeNull();
   });
 });
 
@@ -77,7 +90,7 @@ describe('normalizeAlbum', () => {
         ChildCount: 17,
         AlbumArtists: [{ Id: 'artist-1', Name: 'Boards of Canada' }],
         ArtistItems: [{ Id: 'other-artist', Name: 'Someone Else' }],
-        UserData: { IsFavorite: true },
+        UserData: { IsFavorite: true, PlayCount: 3, LastPlayedDate: '2026-07-15T08:30:00Z' },
       }),
     );
     expect(album.artistId).toBe('artist-1');
@@ -85,6 +98,8 @@ describe('normalizeAlbum', () => {
     expect(album.genres).toEqual(['IDM', 'Ambient']);
     expect(album.trackCount).toBe(17);
     expect(album.favorite).toBe(true);
+    expect(album.playCount).toBe(3);
+    expect(album.lastPlayedAt).toBe(Date.parse('2026-07-15T08:30:00Z'));
   });
 
   it('falls back to ArtistItems when AlbumArtists is absent', () => {
@@ -104,6 +119,8 @@ describe('normalizeAlbum', () => {
     expect(album.artistName).toBeNull();
     expect(album.genres).toEqual([]);
     expect(album.favorite).toBe(false);
+    expect(album.playCount).toBe(0);
+    expect(album.lastPlayedAt).toBeNull();
   });
 });
 
@@ -121,7 +138,7 @@ describe('normalizeTrack', () => {
         RunTimeTicks: 25_000_000, // 2.5 seconds
         ImageTags: { Primary: 'tag-ghi' },
         Genres: ['IDM'],
-        UserData: { IsFavorite: true },
+        UserData: { IsFavorite: true, PlayCount: 11, LastPlayedDate: '2026-08-10T20:00:00Z' },
       }),
     );
     expect(track).toEqual({
@@ -136,10 +153,12 @@ describe('normalizeTrack', () => {
       imageTag: 'tag-ghi',
       genres: ['IDM'],
       favorite: true,
+      playCount: 11,
+      lastPlayedAt: Date.parse('2026-08-10T20:00:00Z'),
     });
   });
 
-  it('defaults duration and every optional field to null/[]/false when the server omits them', () => {
+  it('defaults duration and every optional field to null/[]/false/0 when the server omits them', () => {
     const track = normalizeTrack(rawItem({ Id: 'track-2', Name: 'Untitled' }));
     expect(track.durationSeconds).toBeNull();
     expect(track.albumId).toBeNull();
@@ -148,6 +167,26 @@ describe('normalizeTrack', () => {
     expect(track.artistNames).toEqual([]);
     expect(track.genres).toEqual([]);
     expect(track.favorite).toBe(false);
+    expect(track.playCount).toBe(0);
+    expect(track.lastPlayedAt).toBeNull();
+  });
+
+  it('normalizes an entirely absent UserData fragment to playCount: 0 and lastPlayedAt: null', () => {
+    const track = normalizeTrack(rawItem({ Id: 'track-3', UserData: undefined }));
+    expect(track.playCount).toBe(0);
+    expect(track.lastPlayedAt).toBeNull();
+  });
+
+  it('normalizes UserData present with all new fields explicitly null', () => {
+    const track = normalizeTrack(
+      rawItem({
+        Id: 'track-4',
+        UserData: { IsFavorite: null, PlayCount: null, LastPlayedDate: null },
+      }),
+    );
+    expect(track.favorite).toBe(false);
+    expect(track.playCount).toBe(0);
+    expect(track.lastPlayedAt).toBeNull();
   });
 });
 
@@ -289,5 +328,55 @@ describe('normalizeFavoriteState', () => {
   it('defaults to false when the whole UserData fragment is null or absent', () => {
     expect(normalizeFavoriteState(null)).toBe(false);
     expect(normalizeFavoriteState(undefined)).toBe(false);
+  });
+});
+
+describe('normalizePlayCount', () => {
+  it('reads a positive PlayCount through', () => {
+    expect(normalizePlayCount({ PlayCount: 7 })).toBe(7);
+  });
+
+  it('reads PlayCount: 0 through as a definite 0, not just falsy', () => {
+    expect(normalizePlayCount({ PlayCount: 0 })).toBe(0);
+  });
+
+  it('defaults to 0 when PlayCount is absent', () => {
+    expect(normalizePlayCount({})).toBe(0);
+  });
+
+  it('defaults to 0 when PlayCount is null', () => {
+    expect(normalizePlayCount({ PlayCount: null })).toBe(0);
+  });
+
+  it('defaults to 0 when the whole UserData fragment is null or absent', () => {
+    expect(normalizePlayCount(null)).toBe(0);
+    expect(normalizePlayCount(undefined)).toBe(0);
+  });
+});
+
+describe('normalizeLastPlayedAt', () => {
+  it('converts a real ISO-8601 date to the correct epoch milliseconds', () => {
+    expect(normalizeLastPlayedAt({ LastPlayedDate: '2026-08-01T12:00:00Z' })).toBe(
+      Date.parse('2026-08-01T12:00:00Z'),
+    );
+  });
+
+  it('returns null when LastPlayedDate is absent', () => {
+    expect(normalizeLastPlayedAt({})).toBeNull();
+  });
+
+  it('returns null when LastPlayedDate is null', () => {
+    expect(normalizeLastPlayedAt({ LastPlayedDate: null })).toBeNull();
+  });
+
+  it('returns null, never NaN, when LastPlayedDate is an unparseable string', () => {
+    const result = normalizeLastPlayedAt({ LastPlayedDate: 'definitely-not-a-date' });
+    expect(result).toBeNull();
+    expect(Number.isNaN(result)).toBe(false);
+  });
+
+  it('returns null when the whole UserData fragment is null or absent', () => {
+    expect(normalizeLastPlayedAt(null)).toBeNull();
+    expect(normalizeLastPlayedAt(undefined)).toBeNull();
   });
 });

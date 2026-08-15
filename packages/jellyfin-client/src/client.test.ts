@@ -140,6 +140,8 @@ describe('JellyfinClient.getArtists', () => {
         imageTag: 'tag-artist',
         albumCount: 3,
         favorite: false,
+        playCount: 0,
+        lastPlayedAt: null,
       },
     ]);
   });
