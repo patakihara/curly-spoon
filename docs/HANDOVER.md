@@ -77,9 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T11:25:32Z` · `a6f871e8051e5bdb6` · general-purpose · ended · Committed cleanly on 'worktree-agent-a6f871e8051e5bdb6' at '0bebf5d', based on '8e95dc1'. Working tree is clean, nothing pushed, nothing merged. ## R…
-- `2026-08-15T11:26:09Z` · `a0282a08e8853b706` · general-purpose · ended · I have everything needed. Final report below. ## Part 1 — what the repo already records **IzzyOnDroid's policy**, quoted verbatim in three places ('d…
-- `2026-08-15T11:36:39Z` · `ab7e094b5afb30335` · general-purpose · ended · ## Review: commit 280c1e7 — Android release signing **Verdict: merge as-is.** No compile-breaking or silently-broken-release issues found. Everything…
 - `2026-08-15T13:51:11Z` · `ac1079e015154b835` · general-purpose · ended · Confirmed: 'sortBy: query.sortBy ?? 'SortName'' at 'packages/jellyfin-client/src/client.ts:217' still pins alphabetical ordering — 12b's relevance-so…
 - `2026-08-15T13:53:14Z` · `abc00e87fae68838f` · general-purpose · ended · I have everything needed. Final report. ## Findings **1. BFF "For You"/home endpoints — pure passthrough, no Auralis logic.** 'apps/server/src/routes…
 - `2026-08-15T13:57:39Z` · `ac47918293666b36d` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-ac47918293666b36d' at 'c855f8f', based on '2ae7ad6'. Working tree is clean. Not pushed, not merged, no 'A…
@@ -91,7 +88,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T14:34:18Z` · `a9f59f4f15c66ad3a` · general-purpose · running · —
 - `2026-08-15T14:37:27Z` · `a15279db42c93b454` · general-purpose · ended · Committed cleanly, working tree clean, on branch 'worktree-agent-a15279db42c93b454' at '48c688e', based on '241f3fb'. Not pushed, not merged, no 'Age…
 - `2026-08-15T14:43:47Z` · `aaa306978fec88190` · general-purpose · ended · No suppressions, no illegal backtick dots, no 'weight' import trap (not touched here). No '.' character issues in new test names (checked visually to…
-- `2026-08-15T14:45:36Z` · `ac4faa08e011ceae9` · general-purpose · running · —
+- `2026-08-15T14:45:36Z` · `ac4faa08e011ceae9` · general-purpose · ended · Working tree clean, one new commit on top of the dead session's two. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-ag…
+- `2026-08-15T14:57:32Z` · `abb8b444e681940b8` · general-purpose · ended · Committed cleanly on 'worktree-agent-abb8b444e681940b8' at 'b03c60d', based on 'c8114ec'. Working tree is clean. Not pushed, not merged, no 'Agent' c…
+- `2026-08-15T15:03:51Z` · `abfc1e3c98500edeb` · general-purpose · running · —
+- `2026-08-15T15:06:49Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -133,30 +133,24 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed: wave 13c (finishing it)** — the session that built 13c **ended mid-wave**. Its two
-commits are safe on `worktree-agent-abfc1e3c98500edeb` (`32a25e6`), tree clean, web unit tests
-green — but it never added `Carousel.test.tsx` coverage for the reason line, never wrote the
-e2e spec, and never ran the browser pass. An agent is finishing exactly those three things from
-that branch. Delete this line when it lands.
+**Nothing is currently claimed.**
 
-**Wave 13d is done** (`8335184`) — Android, reviewed, merged. Not yet CI-verified; Android CI
-has rejected each of the last three Android waves on a toolchain fact, so expect red runs.
+**Phase 13 is four waves done of five.** 13a (`8d071b8`), 13b (`0be4fc6`), 13d (`8335184`),
+13c (`8bbad08`). **13e is the only one left** — widen `packages/jellyfin-client` to normalize
+`PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks` and feed the music side into the profile.
+It is the wave that actually delivers the user's sentence about taste in one medium informing
+another; everything before it recommends audiobooks from audiobook behaviour.
 
-**Two sessions were working this checkout simultaneously**, and the lessons are worth more than
-the incident. Both nearly dispatched 13c at the same moment against the same base; the second
-spotted the other's claim line and running worktree and killed its own agent 16 seconds in.
-Then two _attribution_ errors followed, in opposite directions — one session believed it had
-authored commits a fork of its context had made, and the other reported "you pushed this" about
-a commit its own push had carried up. The general form is the durable finding:
-
-**A shared checkout defeats inference about actors from state.** There is one `main` and one
-working tree, so a push from either session publishes _both_ sessions' local commits — "I have
-not pushed" does not mean a commit is unpublished, and "it is on `origin`" does not identify who
-put it there. Two consequences: **never commit to `main` what is not ready to publish** (holding
-a commit back is not a mechanism that exists when someone else's push carries it), and since
-merging is what puts a wave on `main`, **merge only when ready to push, not before**. The only
-evidence that settled authorship was the `Claude-Session` trailer on the commits — a fork
-carrying the full transcript is otherwise indistinguishable from the original from the inside.
+**A latent Android test race was revealed, not introduced, by 13d** (`d6d8e21`).
+`UnifiedSearchViewModelTest` deliberately runs its class-wide `ApiClient` on the **real**
+`Dispatchers.IO`, so a request can outlive its own test and throw during a later one —
+`ApiClient`'s own doc comment names this failure class. 13d merely added suite wall-time,
+widening the window until two tests failed with `UncompletedCoroutinesError` (the
+`ClassCastException` in the log is a secondary symptom, not the cause). The fix scopes a test
+dispatcher to those two tests only, leaving the two that genuinely pin real interleaving alone.
+**The loose end: the await-then-re-read pattern is not unique to those two call sites.** If that
+file goes red again, the question is whether the race is more pervasive, not whether the patch
+was wrong.
 
 Before dispatching a wave **and again before merging it**, check what is already on `main`
 (`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`

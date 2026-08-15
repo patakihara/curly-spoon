@@ -2758,7 +2758,7 @@ doing nothing. See `docs/HANDOVER.md`.
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------- |
 | **13a** | Pure scoring core in `apps/server/src/features/recommendations/` — build an affinity profile from `mediaProgress[]` + items; score candidates; emit ranked, reasoned shelves. No I/O. | 13b's route handler                         | done (`8d071b8`) |
 | **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | done (`0be4fc6`) |
-| **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | todo             |
+| **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | done (`8bbad08`) |
 | **13d** | Android — same, in `features/home/`, through `ApiClient`.                                                                                                                             | `ForYouScreen`                              | done (`8335184`) |
 | **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | todo             |
 
@@ -2772,6 +2772,19 @@ runtime. Whatever hands a podcast to the recommender must fold `author` into a o
 carried a doc comment claiming the folding already happened inside `profile.ts`, which it did
 not, alongside a second comment claiming a type check existed when nothing in the feature
 imported from `@auralis/abs-client` at all.
+
+**Found by 13c's browser pass, and it belongs to the server, not either client.** The reason
+strings carrying the "— because you finished _X_" suffix wrap to two lines at 375px, making some
+carousel headers noticeably taller than others. Nothing clips — there is deliberately no
+clamping — but if it should be shorter, the fix is `reasonFor` in
+`apps/server/src/features/recommendations/shelves.ts`, once, serving both clients. Do not fix it
+in a client.
+
+**The accessibility relationship web settled, which Android must mirror.** The reason is _not_
+tied to the `h2`. The card list carries it: `role="list"` has `aria-describedby` pointing at the
+reason paragraph, so a screen reader announces the title and reason together as name plus
+description. Android's equivalent is the list/row-group's content description — not a
+`contentDescription` on the heading.
 
 **13e is the wave that actually delivers the user's sentence.** 13a–13d make Auralis
 recommend audiobooks from audiobook behaviour, which is useful but is not what was asked
