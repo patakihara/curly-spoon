@@ -3,21 +3,22 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                           | Status |
-| --- | --------------------------------------------------------------- | ------ |
-| 1   | Monorepo foundations, tooling, CI, test harness                 | done   |
-| 2   | `@auralis/ui` — Material 3 Expressive design system             | done   |
-| 3   | Server BFF core + Audiobookshelf client                         | done   |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding | done   |
-| 5   | Audiobooks experience + player                                  | done   |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)         | done   |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                | done   |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)          | done   |
-| 8   | Podcast client (web + Android)                                  | done   |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done   |
-| 10  | Release polish — performance budgets, a11y audit                | done   |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | done\* |
-| 12  | **Spec addendum** — five views, unified search, per-type queues | done\* |
+| #   | Phase                                                             | Status |
+| --- | ----------------------------------------------------------------- | ------ |
+| 1   | Monorepo foundations, tooling, CI, test harness                   | done   |
+| 2   | `@auralis/ui` — Material 3 Expressive design system               | done   |
+| 3   | Server BFF core + Audiobookshelf client                           | done   |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding   | done   |
+| 5   | Audiobooks experience + player                                    | done   |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)           | done   |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                  | done   |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)            | done   |
+| 8   | Podcast client (web + Android)                                    | done   |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)       | done   |
+| 10  | Release polish — performance budgets, a11y audit                  | done   |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores     | done\* |
+| 12  | **Spec addendum** — five views, unified search, per-type queues   | done\* |
+| 13  | **Personalized recommendations** — the reason the user wants this | todo   |
 
 **`done\*` means: everything that does not need something only the user can supply.** Phase 11
 waits on two signing keys the user must generate, on GitHub Pages being enabled, and on a `v*`
@@ -2675,3 +2676,112 @@ Recorded here rather than by editing those sections, so the history stays readab
 - **§10 (release polish)** — the Android design audit's "no persistent navigation shell" and
   "no full Now Playing surface" findings are prerequisites of 12a, not separate polish.
 - **§7 / §9 player work** — the queue is currently one queue; 12f makes it one per type.
+
+---
+
+## Phase 13 — personalized recommendations (2026-08-15)
+
+### Why this is a phase and not scope creep
+
+The user's stated goal is not "an Audiobookshelf client with a Jellyfin tab." It is to
+**replace Spotify**, and they named the thing Spotify does that keeps them there:
+
+> "spotify now very conveniently (tho sometimes intrusively) bundles together music,
+> podcasts, and audiobooks. one of the things that it does is cleverly serve me audiobooks
+> it thinks i will enjoy."
+
+`docs/HANDOVER.md` has carried that as an explicit requirement — "personalized
+recommendations are part of the goal, not scope creep for a later phase to invent" — with
+no phase scoping it. Phases 1–12 built the three media types and the surfaces that show
+them; none of them decides _what to show_. This phase is that missing piece, and it is the
+reason phase 12's For You screen currently exists in name only.
+
+**What is there today is a passthrough, and the code says so.** `GET /api/v1/libraries/:id/home`
+calls Audiobookshelf's `/personalized` and returns its shelves unchanged; the music half is
+one hardcoded "Your albums" favourites carousel stitched in on the client. There is no
+ranking, no scoring, and no Auralis-side selection anywhere in the tree — grep finds only
+the relabelling. `AuralisNavHost.kt` and `BooksScreen.kt` each carry a comment conceding
+that a real For You mix does not exist. So "For You" today is Audiobookshelf's opinion with
+Auralis's name on it, and on the music side it is not even an opinion.
+
+### The signal that already exists, unused
+
+This phase needs **no new credential and no external metadata provider.** Audiobookshelf
+already returns real per-user behaviour that nothing in Auralis reads:
+
+- `getMe()` → `UserProfile.mediaProgress[]` — per item: `progress` (0..1), `isFinished`,
+  `finishedAt`, `lastUpdate`.
+- `getItemsInProgress()` → `/api/me/items-in-progress`.
+- Every `LibraryItem` already carries normalized `media.genres`, `media.authors`,
+  `media.series`, `media.narrators`.
+
+Finished and abandoned items, with their genres and authors, is enough to build an affinity
+profile and rank the rest of the catalogue against it. That is the whole of waves 13a–13d.
+
+Music is thinner and is deliberately last: `packages/jellyfin-client` normalizes only
+`favorite`, and its own doc comments name `PlayCount`, `LastPlayedDate` and
+`PlaybackPositionTicks` as fields it does not track. Widening that is real client surface,
+which is why it is its own wave rather than a footnote.
+
+### Decisions made here, so no wave re-litigates them
+
+- **Local signal only. No external metadata catalogue in this phase.**
+  `docs/INTEGRATIONS.md`'s MusicBrainz/PodcastIndex/Audnexus layer stays researched-not-
+  decided, and it carries a named risk (Audnexus builds on Audible-scraping against
+  Audible's ToS). Adopting a third-party catalogue is a product decision with a legal edge
+  and it is the user's to make — it is listed under "Open product decisions", not assumed
+  here. Everything in 13a–13e works without it.
+- **Recommendations are computed in the BFF and served `Shelf`-shaped.** Not stitched on
+  each client. Web and Android each already have a `forYouFeed` module doing client-side
+  stitching, and they have already drifted once; a third parallel implementation of ranking
+  is how they drift permanently. `shelfToCarousel` accepts anything `Shelf`-shaped, so a
+  server-computed shelf renders through the existing carousel with no new rendering code.
+- **New shelves are appended to the existing For You feed, not a replacement for it.**
+  Audiobookshelf's `/personalized` shelves stay. This is reversible, it degrades to today's
+  behaviour if the recommender returns nothing, and it means a cold-start user (no progress
+  at all) sees exactly what they see now rather than an empty screen.
+- **Every recommendation carries its reason.** "Because you finished _Dune_" — a `reason`
+  field on the shelf, not a bare list. This is not decoration: an unexplained recommendation
+  is unfalsifiable to the user and undebuggable to us, and it is the specific thing the user
+  called "sometimes intrusive" about Spotify.
+- **Ranking is a pure function, tested independently of any I/O.** The scoring core takes a
+  profile and a candidate list and returns a ranked list. No `fetch`, no client, no clock
+  passed implicitly.
+
+### Waves
+
+Each wave names its **reader** — the thing that consumes what it writes. A wave that adds a
+writer with no named reader has shipped four times on this project, green tests each time,
+doing nothing. See `docs/HANDOVER.md`.
+
+| Wave    | What                                                                                                                                                                                  | Reader                                      | Status |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------ |
+| **13a** | Pure scoring core in `apps/server/src/features/recommendations/` — build an affinity profile from `mediaProgress[]` + items; score candidates; emit ranked, reasoned shelves. No I/O. | 13b's route handler                         | todo   |
+| **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | todo   |
+| **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | todo   |
+| **13d** | Android — same, in `features/home/`, through `ApiClient`.                                                                                                                             | `ForYouScreen`                              | todo   |
+| **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | todo   |
+
+**13e is the wave that actually delivers the user's sentence.** 13a–13d make Auralis
+recommend audiobooks from audiobook behaviour, which is useful but is not what was asked
+for. "Bundles together music, podcasts and audiobooks" means taste in one should inform the
+others. That needs the Jellyfin side to produce signal, which is why it is scoped and not
+dropped — but it is sequenced last because it is the only wave that adds new upstream
+surface, and everything before it is verifiable without it.
+
+### What is deliberately not in this phase
+
+- **Collaborative filtering / anything cross-user.** This is one person's server. There is
+  no second user's behaviour to learn from, and `GET /requests` being unscoped by caller is
+  already an open privacy question — this phase does not add a second one.
+- **Any persisted per-user event table.** Auralis's SQLite has `settings`, `users`,
+  `secrets`, `sessions`, `provider_configs`, `requests`, `app_settings`, `jellyfin_secrets`
+  — and no history table. It does not need one: the upstreams are the system of record for
+  what was played, and duplicating that into a second store is a sync problem with no
+  payoff at this scale. If ranking later needs signal the upstreams genuinely do not have,
+  that is a decision to take deliberately, not to arrive at by accident.
+- **Tuning against the real library.** The fake upstreams have ~20 books across two genres;
+  that is enough to prove the mechanism and nowhere near enough to judge whether the ranking
+  is any _good_. Quality tuning wants the user's real 231-item library, which wants a
+  credential. The waves below build a recommender that is correct and explainable; whether
+  it is _clever_ is not assessable here, and no wave should claim it is.
