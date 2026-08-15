@@ -86,7 +86,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T15:03:51Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:06:49Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:12:06Z` · `aee8bf94663049be8` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-aee8bf94663049be8' at 'bce0e16', based on '4b419e1'. Working tree is clean. Not pushed, not merged, no 'A…
 - `2026-08-15T15:19:13Z` · `a82d88635348acc78` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-a82d88635348acc78' at 'd43dd81', based on 'ecdbb02'. Working tree is clean. Not pushed, not merged, no 'A…
@@ -101,6 +100,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T19:54:17Z` · `a24c2902cadc0c877` · general-purpose · ended · ## Review: Wave 13f-2 ('60b368f') **Verdict: merge as-is.** No compile-blocking defect found, no test-logic defect found, and the writer reaches a re…
 - `2026-08-15T19:55:31Z` · `a0838ed6164b30f53` · general-purpose · ended · ## Review: wave 13f-1 web music recommendations ('e4bd22e', 'bc0695b') ### Blocking **1. 'e2e/app/music-recommended.spec.ts' is missing 'test.describ…
 - `2026-08-15T21:14:42Z` · `a7e86b0ad34a5d1a5` · general-purpose · running · —
+- `2026-08-15T21:16:52Z` · `a51dab7f5fb349b6f` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -267,7 +267,13 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Nothing is currently claimed.**
+**Claimed 2026-08-16 by the session that opened phase 14:**
+
+- **14a-1** — measure `apps/web`'s entry-chunk composition by sourcemap attribution (writes only
+  `docs/perf/ENTRY_CHUNK_ATTRIBUTION.md`, no product code).
+- **14b-1** — give `apps/android` a Compose UI test harness that runs under `gradlew test`
+  (Robolectric + `ui-test-junit4`); touches only `apps/android/gradle/libs.versions.toml`,
+  `apps/android/app/build.gradle.kts` and one new test file.
 
 **Phase 13 is done** — 13a–13f, all CI-verified. The `app` Playwright project sits at
 **190 passed, 0 failed** at full parallelism, up from the 186/1/1 that greeted this session.
