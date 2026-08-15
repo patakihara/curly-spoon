@@ -18,6 +18,19 @@
  * `/music/album/album-driftwave` first — the same route `music-favorites.spec.ts`
  * uses. Jellyfin's connect state is process-global (see `search-music.spec.ts`'s
  * header for why), so the connect step is written idempotently.
+ *
+ * Recommended carousels (docs/ROADMAP.md section 13, wave 13c) need their own seed:
+ * GET /libraries/:id/recommended returns nothing for a cold-start user, so the last
+ * test below drives listening progress through the real
+ * PATCH /api/v1/progress/:itemId route (via page.request, which shares the signed-in
+ * browser context's cookies) rather than a fixture default -- a module-level fixture
+ * seed silently broke three unrelated server suites when wave 13b tried that
+ * (docs/HANDOVER.md). item-crimson (finished) and item-emberwars1 (in progress) are
+ * the exact pair apps/server/src/routes/libraries.test.ts's /recommended describe
+ * block already proves produces real shelves: each shares an author/genre/series
+ * with another fixture book, and neither id is referenced by any other test in this
+ * file or by any other e2e/app spec, so this seed cannot collide with anything else
+ * running against the same single-tenant BFF process.
  */
 import { expect, type Page, test } from '@playwright/test';
 
@@ -233,4 +246,76 @@ test('a loading skeleton occupies the same box as a loaded card', async ({ page 
 
   expect(skeletonBox!.width).toBeCloseTo(loadedBox!.width, 0);
   expect(skeletonBox!.height).toBeCloseTo(loadedBox!.height, 0);
+});
+
+test('recommended carousels appear below the ordinary shelves, each with a visible reason line', async ({
+  page,
+}) => {
+  // Seed listening history through the real API -- see this file's header for why a
+  // fixture default is the wrong tool here. PATCH sets an absolute progress value,
+  // so re-running this test (or another test file re-running the same server
+  // process) is harmless.
+  const finished = await page.request.patch('/api/v1/progress/item-crimson', {
+    data: { currentTime: 500, duration: 500, progress: 1, isFinished: true },
+  });
+  expect(finished.ok()).toBe(true);
+  const inProgress = await page.request.patch('/api/v1/progress/item-emberwars1', {
+    data: { currentTime: 240, duration: 600, progress: 0.4, isFinished: false },
+  });
+  expect(inProgress.ok()).toBe(true);
+
+  await page.goto('/');
+  await expect(page.getByTestId('home-page')).toBeVisible();
+
+  // The ordinary shelves this file's other tests already assert on are still there
+  // -- appending never displaces them. `shelf-music-favorite-albums` is the last
+  // ordinary carousel HomePage.tsx renders (book, then podcast, then music, then
+  // recommended appended last -- forYouFeed.ts's `buildForYouCarousels`), so it is
+  // the correct "everything ordinary is above this line" reference point, not
+  // whichever ordinary shelf happens to be declared first in this file.
+  const lastOrdinaryShelf = page.getByTestId('shelf-music-favorite-albums');
+  await expect(lastOrdinaryShelf).toBeVisible();
+  const lastOrdinaryBox = await lastOrdinaryShelf.boundingBox();
+  expect(lastOrdinaryBox).not.toBeNull();
+
+  // Recommended shelf ids are `shelf-<kind>-<slug>` (`shelves.ts`'s `labelFor`/
+  // `reasonFor` cover all four `AffinityKind`s: genre, author, narrator, series) --
+  // which specific kind(s) the scorer picks for this seed isn't something this test
+  // pins down, only that at least one recommended shelf renders.
+  const recommendedShelves = page.locator(
+    'section[data-testid^="shelf-shelf-genre-"], ' +
+      'section[data-testid^="shelf-shelf-author-"], ' +
+      'section[data-testid^="shelf-shelf-narrator-"], ' +
+      'section[data-testid^="shelf-shelf-series-"]',
+  );
+  await expect(recommendedShelves.first()).toBeVisible({ timeout: 10_000 });
+  const recommendedCount = await recommendedShelves.count();
+  expect(recommendedCount).toBeGreaterThan(0);
+
+  // Every recommended shelf sits below the ordinary shelf measured above, and each
+  // carries a visible, non-empty reason line as the section's second child.
+  for (let i = 0; i < recommendedCount; i += 1) {
+    const shelf = recommendedShelves.nth(i);
+    const shelfBox = await shelf.boundingBox();
+    expect(shelfBox).not.toBeNull();
+    expect(shelfBox!.y).toBeGreaterThan(lastOrdinaryBox!.y);
+
+    const testId = await shelf.getAttribute('data-testid');
+    const reason = page.getByTestId(`shelf-reason-${testId!.replace('shelf-', '')}`);
+    await expect(reason).toBeVisible();
+    const reasonText = await reason.textContent();
+    expect(reasonText).not.toBeNull();
+    expect(reasonText!.trim().length).toBeGreaterThan(0);
+  }
+});
+
+test('an ordinary shelf never renders a reason line', async ({ page }) => {
+  await page.goto('/');
+  const ordinaryShelf = page.getByTestId('shelf-shelf-continue-listening');
+  await expect(ordinaryShelf).toBeVisible();
+  // Absence, not merely empty text: `Carousel.tsx` renders no `<p>` at all when
+  // `reason` is undefined, rather than an empty one -- an empty node would still
+  // occupy layout space and would still be found by a `data-testid` locator with
+  // `toHaveCount(0)`, so this is the correct way to assert the negative.
+  await expect(ordinaryShelf.getByTestId('shelf-reason-shelf-continue-listening')).toHaveCount(0);
 });
