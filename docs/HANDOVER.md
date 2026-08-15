@@ -97,12 +97,19 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 ---
 
-## Phase 13 — personalized recommendations: **all five waves landed**
+## Phase 13 — personalized recommendations: **done**, all six waves landed
 
 `ROADMAP.md` §13 is the spec. On `main`: **13a** `8d071b8` (pure scoring core), **13b**
 `0be4fc6` (`GET /libraries/:id/recommended` + `toCandidate`), **13c** `8bbad08` (web),
 **13d** `8335184` (Android), **13e** restored 2026-08-15 as `640c751` (13e-1) and `9b086df`
-(13e-2).
+(13e-2), **13f** `2e3f97b` (both clients read `GET /music/recommended`) with its Android
+compile fix in `5b92e1d`. All CI-verified.
+
+**The one asymmetry to keep in mind:** web's half of 13f is verified by a real browser asserting
+on rendered testids; Android's is verified by unit tests plus a reviewer tracing the render path
+by eye. There is no device or emulator here. That is the same standard the four historical
+writer-with-no-reader failures all passed, so treat "the shelves render on Android" as a
+well-argued claim rather than an observation.
 
 **What works today.** The BFF computes book recommendations from Audiobookshelf's per-user
 `mediaProgress[]` — signal that already existed and nothing read — and, since 13e, folds the
@@ -252,6 +259,22 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 hours with nothing on `main` is stale — take it.
 
 **Nothing is currently claimed.**
+
+**Phase 13 is done** — 13a–13f, all CI-verified. The `app` Playwright project sits at
+**190 passed, 0 failed** at full parallelism, up from the 186/1/1 that greeted this session.
+There is no unfinished wave in phases 1–13. What remains across the whole roadmap is the
+blocked-on table near the top of this file, plus three follow-ups this session opened and
+deliberately did not fold into a wave that was not about them:
+
+1. **Android has no accessibility grouping on the For You carousels** — a pre-existing 13d gap
+   that the docs wrongly claimed was closed. Touches `ForYouCarouselRow`, shared by the book,
+   podcast and now music shelves. Wants a device to verify, which is why it is not a quick fix.
+2. **Recommendation quality is still unassessable here.** Ten synthetic books and three fake
+   albums prove the mechanism, not the taste. Judging whether the ranking is any _good_ wants
+   the real 231-item library, which wants a credential.
+3. **`tryBuildMusicGenreProfile`'s bare `catch` swallows every error class**, including a real
+   programming error inside `albumToCandidate`. Intentional today, but it means a genuine bug
+   there degrades silently and invisibly. A log line would fix that.
 
 **Phase 13 is four waves done of five.** 13a (`8d071b8`), 13b (`0be4fc6`), 13d (`8335184`),
 13c (`8bbad08`). **13e is the only one left** — widen `packages/jellyfin-client` to normalize

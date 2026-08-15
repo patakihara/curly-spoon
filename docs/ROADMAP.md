@@ -3,22 +3,22 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                             | Status                 |
-| --- | ----------------------------------------------------------------- | ---------------------- |
-| 1   | Monorepo foundations, tooling, CI, test harness                   | done                   |
-| 2   | `@auralis/ui` — Material 3 Expressive design system               | done                   |
-| 3   | Server BFF core + Audiobookshelf client                           | done                   |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding   | done                   |
-| 5   | Audiobooks experience + player                                    | done                   |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)           | done                   |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                  | done                   |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)            | done                   |
-| 8   | Podcast client (web + Android)                                    | done                   |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)       | done                   |
-| 10  | Release polish — performance budgets, a11y audit                  | done                   |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores     | done\*                 |
-| 12  | **Spec addendum** — five views, unified search, per-type queues   | done\*                 |
-| 13  | **Personalized recommendations** — the reason the user wants this | 13a–13e done, 13f todo |
+| #   | Phase                                                             | Status |
+| --- | ----------------------------------------------------------------- | ------ |
+| 1   | Monorepo foundations, tooling, CI, test harness                   | done   |
+| 2   | `@auralis/ui` — Material 3 Expressive design system               | done   |
+| 3   | Server BFF core + Audiobookshelf client                           | done   |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding   | done   |
+| 5   | Audiobooks experience + player                                    | done   |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)           | done   |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                  | done   |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)            | done   |
+| 8   | Podcast client (web + Android)                                    | done   |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)       | done   |
+| 10  | Release polish — performance budgets, a11y audit                  | done   |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores     | done\* |
+| 12  | **Spec addendum** — five views, unified search, per-type queues   | done\* |
+| 13  | **Personalized recommendations** — the reason the user wants this | done\* |
 
 **`done\*` means: everything that does not need something only the user can supply.** Phase 11
 waits on two signing keys the user must generate, on GitHub Pages being enabled, and on a `v*`
@@ -2808,9 +2808,18 @@ that a writer must name its reader, it gets one wave to gain a consumer (**13f**
 should be deleted; `albumToCandidate`/`buildMusicProgressSignals` in `adaptMusic.ts` stay either
 way, since the cross-media path genuinely uses them.
 
-| Wave    | What                                                                                                                                                           | Reader                  | Status |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------ |
-| **13f** | Web + Android consume `GET /music/recommended`, rendering its album shelves on the music home surface the same way 13c/13d render the book shelves on For You. | The rendered music page | todo   |
+| Wave    | What                                                                                                                                                           | Reader                  | Status           |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------- |
+| **13f** | Web + Android consume `GET /music/recommended`, rendering its album shelves on the music home surface the same way 13c/13d render the book shelves on For You. | The rendered music page | done (`2e3f97b`) |
+
+**13f's two halves are not verified to the same standard, and the difference is worth stating.**
+Web's is genuinely verified: `e2e/app/music-recommended.spec.ts` drives a real browser and
+asserts against rendered testids, including that a signal-less user sees nothing and that the
+reason paragraph is the card list's `aria-describedby` target. **Android's is not.** Its unit
+tests run on CI and its render path was traced by a reviewer reading the code — which is exactly
+the evidentiary standard all four historical writer-with-no-reader failures also met. Nothing
+here has a device or an emulator, so "the shelves appear on the Android music screen" remains a
+claim from reading rather than from looking.
 
 **13e is the wave that actually delivers the user's sentence.** 13a–13d make Auralis
 recommend audiobooks from audiobook behaviour, which is useful but is not what was asked
