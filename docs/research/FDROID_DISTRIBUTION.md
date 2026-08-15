@@ -319,6 +319,33 @@ proceed in parallel with that question being open.
    (needs the `./gradlew :app:dependencies` transitive audit from §3 first), and open the
    `fdroiddata` merge request.
 
+## 7b. The anti-AI policy question, settled (2026-08-15)
+
+Re-verified against live sources rather than this document's earlier reading, because the user
+asked directly whether publishing Auralis would violate anyone's policy and wanted an accurate
+answer rather than a favourable one. Three routes, three different answers:
+
+- **A self-hosted repo violates nothing, and this is confirmed rather than inferred.** F-Droid's
+  own Inclusion Policy states that an app not meeting its criteria "can still make the app
+  available to F-Droid users via a separate repository" — self-hosting is the sanctioned
+  alternative, in as many words. IzzyOnDroid's policy is scoped entirely to its own catalogue
+  and claims no reach beyond it. Nothing is submitted, reviewed or listed, so no inclusion
+  policy is engaged at all. `fdroidserver` is AGPL/GPL, which governs redistributing modified
+  copies of the tool, not the apps it packages.
+- **A GitHub Releases tab is outside both policies** for the same reason, more obviously.
+- **IzzyOnDroid would be a real violation if submitted** — the policy is current and explicit,
+  and Auralis falls squarely inside it. Re-fetched 2026-08-15, wording unchanged from §1's
+  record. The decision not to submit stands.
+- **Official F-Droid has no documented AI-authorship policy** — its Inclusion Policy does not
+  mention AI-generated or AI-assisted code at all, and the question is an open, unresolved
+  community thread with no maintainer position. That is "no rule today", **not** "definitely
+  fine": the topic is under active discussion and a policy could be adopted before or during
+  any review. Moot while official F-Droid is out of scope, but this is the honest
+  characterisation if it is ever revisited.
+
+The practical consequence: the route already chosen is structurally outside the reach of any
+inclusion policy, so nothing about the current plan needs changing on policy grounds.
+
 ## 8. Open questions for the user
 
 - **Does IzzyOnDroid's stated opposition to apps "fully or in part created by generative AI
