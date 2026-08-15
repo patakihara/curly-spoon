@@ -43,12 +43,19 @@ each turned out to be a coverage problem rather than the live bug the roadmap pr
 See "The minified-item bug" below for what that pass established — it corrects the standing
 recommendation, so read it before picking up a branded-type refactor.
 
-**No implementable roadmap item is currently outstanding.** That is a verified state, not a
-session giving up: every remaining item is in the table above, and each needs a user decision,
-a device, a credential, or a live change on another host.
+**No item in phases 1–12 is implementable without the user.** Verified again 2026-08-15:
+every remaining one is in the table above and needs a decision, a device, a credential, or a
+live change on another host.
 
-**`ROADMAP.md`'s top-of-file status table is stale** — it still calls phase 12 "todo",
-contradicting its own detailed §12 table. Trust §12.
+**But the roadmap was not finished — it was missing a phase.** `HANDOVER` has carried
+"personalized recommendations are part of the goal, not scope creep for a later phase to
+invent" as an explicit user requirement with nothing scoping it. **`ROADMAP.md` §13 now
+scopes it** (`2ae7ad6`), in five waves, on signal that already exists and needs no
+credential. That is the current work — see "Phase 13" below.
+
+**`ROADMAP.md`'s top-of-file status table is fine now** — it reads `done*` for 11 and 12,
+matching §12. The older note in this file saying it still called phase 12 "todo" was itself
+stale and has been removed rather than repeated.
 
 ## Background agent log (auto-maintained)
 
@@ -70,7 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-08T02:24:58Z` · `a7c79fdbae07e4da4` · general-purpose · ended · Committed cleanly, clean tree. ## Report **Branch/commit:** 'worktree-agent-a7c79fdbae07e4da4' at '39798b7', on top of '2725f0b' (confirmed via 'git…
 - `2026-08-08T02:33:00Z` · `a86f0a330c35152e9` · general-purpose · ended · Committed cleanly, working tree clean, not pushed. Now let me write the final report. ## Report **Branch/commit:** 'worktree-agent-a86f0a330c35152e9'…
 - `2026-08-15T10:20:56Z` · `af51f8fbf81138b80` · general-purpose · ended · ## Findings: docs/ROADMAP.md remaining work (phases 11–12) **Status-table disagreement with HANDOVER**: The top-of-file summary table (line 20) still…
 - `2026-08-15T10:28:43Z` · `a1c5f8044105dc888` · general-purpose · ended · Confirmed — the Dockerfile does copy 'packages/' wholesale now (line 85, with explanatory comment at 72-74), which directly contradicts ROADMAP.md's…
@@ -85,8 +91,39 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T11:36:39Z` · `ab7e094b5afb30335` · general-purpose · ended · ## Review: commit 280c1e7 — Android release signing **Verdict: merge as-is.** No compile-breaking or silently-broken-release issues found. Everything…
 - `2026-08-15T13:51:11Z` · `ac1079e015154b835` · general-purpose · ended · Confirmed: 'sortBy: query.sortBy ?? 'SortName'' at 'packages/jellyfin-client/src/client.ts:217' still pins alphabetical ordering — 12b's relevance-so…
 - `2026-08-15T13:53:14Z` · `abc00e87fae68838f` · general-purpose · ended · I have everything needed. Final report. ## Findings **1. BFF "For You"/home endpoints — pure passthrough, no Auralis logic.** 'apps/server/src/routes…
+- `2026-08-15T13:57:39Z` · `ac47918293666b36d` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
+
+---
+
+## Phase 13 — personalized recommendations (the current work)
+
+`ROADMAP.md` §13 is the spec; read it before picking up a wave. The short version, so a
+session knows whether §13 is worth opening:
+
+**The For You screen is a passthrough wearing a name.** `GET /api/v1/libraries/:id/home`
+returns Audiobookshelf's `/personalized` shelves unchanged; the music half is one hardcoded
+favourites carousel stitched on the client. There is no ranking or scoring anywhere in the
+tree — `AuralisNavHost.kt` and `BooksScreen.kt` each carry a comment saying so.
+
+**The signal is already there and nothing reads it.** `getMe()` returns per-user
+`mediaProgress[]` with `progress`/`isFinished`/`finishedAt`; every `LibraryItem` carries
+normalized genres, authors, series, narrators. That is enough to rank a library. **No
+credential, no device, no external metadata provider is needed** for 13a–13e.
+
+**Do not reach for the MusicBrainz/PodcastIndex/Audnexus layer.** It stays researched-not-
+decided in `INTEGRATIONS.md` with a named Audible-ToS risk; adopting it is the user's call.
+
+Two things the waves must not undo: recommendations are computed **in the BFF and served
+`Shelf`-shaped** (web and Android each already have a client-side `forYouFeed` stitcher and
+they have drifted once — a third parallel ranking implementation is how they drift for good),
+and new shelves are **appended** to the existing feed, so a cold-start user sees exactly
+today's behaviour rather than an empty screen.
+
+**Quality is not assessable here.** The fakes have ~20 books across two genres. The waves
+build a recommender that is correct and explainable; whether it is _clever_ wants the user's
+real 231-item library, which wants a credential. No wave should claim otherwise.
 
 ---
 
@@ -96,7 +133,8 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Nothing is currently claimed.**
+**Claimed: wave 13a** (recommendation scoring core, `apps/server/src/features/recommendations/`)
+— dispatched 2026-08-15 ~14:00 UTC from base `2ae7ad6`. Delete this line when it lands.
 
 Before dispatching a wave **and again before merging it**, check what is already on `main`
 (`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`
