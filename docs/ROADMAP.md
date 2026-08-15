@@ -17,7 +17,13 @@ self-contained, tested increment.
 | 9   | Music client (Jellyfin) + lyrics + requests (web + Android)     | done   |
 | 10  | Release polish — performance budgets, a11y audit                | done   |
 | 11  | **F-Droid / Droid-ify distribution** — alternative app stores   | done\* |
-| 12  | **Spec addendum** — five views, unified search, per-type queues | todo   |
+| 12  | **Spec addendum** — five views, unified search, per-type queues | done\* |
+
+**`done\*` means: everything that does not need something only the user can supply.** Phase 11
+waits on a release signing key and an `applicationId`; phase 12 waits on the 12c-2 dedup
+question (queue `440b217`), a device for 12d's visual conformance, and a Jellyfin credential
+for 12b's relevance sort. §11 and §12 have the per-item detail; `docs/HANDOVER.md` has the
+consolidated blocked-on table.
 
 ### Why Android sits at 7 rather than last
 
