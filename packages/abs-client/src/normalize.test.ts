@@ -179,15 +179,49 @@ describe('Book.authors / Book.series — wire compatibility for the fabricated f
   // `MissingFieldException` there. This test pins that runtime shape directly so a
   // future change to `normalizeMedia` can't silently drop the key without a test
   // going red, even though nothing in this package's own types would catch it.
-  it('still serialises a fabricated `id` (equal to the display name) on a minified fallback entry', () => {
-    const raw = rawLibraryItemSchema.parse(minifiedBook);
+  //
+  // Note this test previously used `minifiedBook`, whose fixture carries a real
+  // `series` array alongside `seriesName` — that is a passthrough of a genuine id
+  // ('series-1'), not the fabricated fallback the test claimed to pin, and the
+  // `authors` fallback (the one path `minifiedBook` *did* exercise) was never
+  // asserted on at all. A fixture with neither `authors` nor `series` present — the
+  // real shape of a minified list/shelf/browse response — is used below instead, so
+  // both fabricated ids are actually exercised.
+  it('still serialises a fabricated `id` (equal to the display name) on a minified fallback entry, for both authors and series', () => {
+    const raw = rawLibraryItemSchema.parse({
+      id: 'item-4',
+      libraryId: 'lib-1',
+      mediaType: 'book' as const,
+      media: {
+        metadata: {
+          title: 'The Two Towers',
+          authorName: 'J.R.R. Tolkien',
+          seriesName: 'The Lord of the Rings #2',
+          // no `authors`/`series` arrays — this is the real shape of a minified response.
+        },
+        coverPath: '/covers/item-4.jpg',
+        duration: 36000,
+        numTracks: 12,
+      },
+    });
     const item = normalizeLibraryItem(raw);
     if (item.media.kind !== 'book') throw new Error('expected book');
 
     // Cast through `unknown` — `Book.authors`/`Book.series` no longer type `id`, but the
-    // runtime object still carries it (see this describe block's own comment).
-    const seriesWithId = item.media.series as unknown as Array<{ id: string; name: string }>;
-    expect(seriesWithId[0]?.id).toBe('series-1');
+    // runtime object still carries it (see this describe block's own comment). Assert
+    // presence with `in`, not just the value with `toBe`, so a future change that sets
+    // `id: undefined` instead of omitting the key entirely can't slip past this test —
+    // `JSON.stringify` treats those two differently even though `toBe(undefined)` would not.
+    const authorsWithId = item.media.authors as unknown as Array<{ id?: string; name: string }>;
+    const seriesWithId = item.media.series as unknown as Array<{
+      id?: string;
+      name: string;
+      sequence: string | null;
+    }>;
+    expect('id' in authorsWithId[0]!).toBe(true);
+    expect(authorsWithId[0]?.id).toBe('J.R.R. Tolkien');
+    expect('id' in seriesWithId[0]!).toBe(true);
+    expect(seriesWithId[0]?.id).toBe('The Lord of the Rings #2');
   });
 });
 
