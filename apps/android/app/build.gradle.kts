@@ -142,9 +142,14 @@ dependencies {
     // implementation above, or ui-test-junit4/ui-test-manifest cannot resolve a version.
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.ui.test.junit4)
-    // Required so createComposeRule() has an activity to host the composable under test;
-    // omitting it fails at runtime with a missing-activity error, not a compile error.
-    testImplementation(libs.androidx.ui.test.manifest)
+    // Required so createComposeRule() has an activity to host the composable under test.
+    // It must be debugImplementation, NOT testImplementation: what it contributes is an
+    // AndroidManifest declaring ComponentActivity, and unit tests read the *debug variant's*
+    // merged manifest. On testImplementation the jar is on the classpath but its manifest
+    // never reaches the merger, so both harness tests died at
+    // RoboMonitoringInstrumentation:102 with a bare RuntimeException that names neither the
+    // activity nor the manifest. Compiles either way — this is a packaging fact, not a code one.
+    debugImplementation(libs.androidx.ui.test.manifest)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core.ktx)
