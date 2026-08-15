@@ -10,7 +10,7 @@
  * not through rendered JSX.
  */
 import type { IconName } from '@auralis/ui';
-import type { JellyfinAlbum, LibraryItem, Shelf } from '../../api/types.js';
+import type { JellyfinAlbum, LibraryItem, RecommendedShelf, Shelf } from '../../api/types.js';
 
 export type ForYouContentType = 'books' | 'podcasts' | 'music';
 
@@ -30,6 +30,10 @@ export interface FeedCarousel {
   label: string;
   contentType: ForYouContentType;
   items: FeedItem[];
+  /** Why this carousel was chosen for this user, e.g. "Because you finished Dune" —
+   * present only on recommended carousels (docs/ROADMAP.md §13). An ordinary
+   * Audiobookshelf/Jellyfin shelf carries no reason, since Auralis didn't choose it. */
+  reason?: string;
 }
 
 /** `authors[]` is the richer, structured field and wins when present; `author`
@@ -66,6 +70,53 @@ export function shelfToCarousel(
       progress: item.progress?.progress ?? null,
     })),
   };
+}
+
+/** `GET /libraries/:id/recommended` (docs/ROADMAP.md §13) returns shelves that are
+ * `Shelf`-shaped plus a `reason` string, always about audiobooks (13a–13d; music's
+ * turn is 13e) — so this reuses `shelfToCarousel`'s 'books' mapping and carries the
+ * `reason` through onto the resulting `FeedCarousel`. A shelf with no items (the
+ * server guarantees at least 2, but this stays defensive rather than trusting that
+ * forever) is dropped, same as `HomePage.tsx` already does for ordinary shelves. */
+export function recommendedShelvesToCarousels(
+  shelves: RecommendedShelf[],
+  coverUrl: (itemId: string) => string,
+): FeedCarousel[] {
+  return shelves
+    .filter((shelf) => shelf.items.length > 0)
+    .map((shelf) => ({
+      ...shelfToCarousel(shelf, 'books', coverUrl),
+      reason: shelf.reason,
+    }));
+}
+
+/**
+ * The whole For You feed's carousel list, in the order the page renders them:
+ * Audiobookshelf's own book/podcast shelves, then Jellyfin's music, then Auralis's
+ * own recommended shelves last. Recommended goes last rather than first so a
+ * cold-start user (no listening history, `recommendedShelves: []`) sees exactly
+ * today's feed with nothing missing from the top, and a user who does have
+ * recommendations finds them as a continuation of "what's already true about your
+ * library" rather than displacing it — this is the "append, don't replace" decision
+ * `docs/ROADMAP.md` §13 already made, made concrete as one testable function instead
+ * of an inline spread in `HomePage.tsx`.
+ *
+ * `recommendedShelves` is `null` to mean "unknown or failed" (the query is loading,
+ * errored, or hasn't run yet) — passing `null` here, rather than `[]`, is what a
+ * failed `/recommended` request degrades to, and it produces exactly the same
+ * carousel list as if no recommended carousels existed at all.
+ */
+export function buildForYouCarousels(params: {
+  book: FeedCarousel[];
+  podcast: FeedCarousel[];
+  music: FeedCarousel[];
+  recommendedShelves: RecommendedShelf[] | null;
+  coverUrl: (itemId: string) => string;
+}): FeedCarousel[] {
+  const recommended = params.recommendedShelves
+    ? recommendedShelvesToCarousels(params.recommendedShelves, params.coverUrl)
+    : [];
+  return [...params.book, ...params.podcast, ...params.music, ...recommended];
 }
 
 /** Jellyfin has no "shelf" concept — this wraps whatever album list the

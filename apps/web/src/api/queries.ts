@@ -28,6 +28,7 @@ export const queryKeys = {
   authMe: ['auth', 'me'] as const,
   libraries: ['libraries'] as const,
   libraryHome: (libraryId: string) => ['libraries', libraryId, 'home'] as const,
+  libraryRecommended: (libraryId: string) => ['libraries', libraryId, 'recommended'] as const,
   libraryItems: (libraryId: string, page: number) =>
     ['libraries', libraryId, 'items', page] as const,
   librarySearch: (libraryId: string, q: string) => ['libraries', libraryId, 'search', q] as const,
@@ -127,6 +128,15 @@ export function useLibraryHomeQuery(libraryId: string) {
   return useQuery({
     queryKey: queryKeys.libraryHome(libraryId),
     queryFn: ({ signal }) => api.getLibraryHome(libraryId, signal),
+    staleTime: 30_000,
+  });
+}
+
+export function useLibraryRecommendedQuery(libraryId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.libraryRecommended(libraryId),
+    queryFn: ({ signal }) => api.getLibraryRecommended(libraryId, signal),
     staleTime: 30_000,
   });
 }
