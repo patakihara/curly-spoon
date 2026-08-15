@@ -113,6 +113,35 @@ class UnifiedSearchViewModelTest {
         return created
     }
 
+    /**
+     * Same as [viewModel], but backs the [UnifiedSearchViewModel] with a fresh [ApiClient] whose
+     * `ioDispatcher` is [testDispatcher] instead of the real [Dispatchers.IO] this class's
+     * [apiClient] deliberately uses (see [setUp]'s doc comment on why the class-wide default is
+     * real). Two tests below don't need — and never existed to pin — real background-thread
+     * interleaving, only a deterministic final state; sharing the real-IO [apiClient] with them
+     * left a real request able to resolve on a genuine background thread *after* that test's own
+     * `runTest` body had already returned, which `runTest` reports as a leftover job
+     * (`UncompletedCoroutinesError`, occasionally alongside a second exception surfaced by
+     * whatever that leftover coroutine's continuation raced with — CI caught exactly this on both
+     * tests once this file gained two sibling test classes elsewhere in the module and total
+     * suite wall time grew enough to widen the window). `ApiClient`'s own doc comment on
+     * `ioDispatcher` names this exact failure class. Building a request-scoped client here —
+     * rather than changing the class-wide [apiClient] — leaves every other test in this file,
+     * including the two that genuinely do pin real interleaving ("a stale search's slow library
+     * response...", "a slow release request resolving after a new search settles..."), untouched.
+     */
+    private fun deterministicViewModel(): UnifiedSearchViewModel {
+        val keyValueStore = FakeKeyValueStore()
+        val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
+        val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
+        val localApiClient =
+            ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { mockWebServer.url("/").toString() }
+        val created =
+            UnifiedSearchViewModel(localApiClient, MusicRepository(localApiClient), serverConfigRepository)
+        lastViewModel = created
+        return created
+    }
+
     private fun advanceDebounce() = testDispatcher.scheduler.advanceUntilIdle()
 
     private fun librariesBody(libraries: String) = """{"libraries":$libraries}"""
@@ -583,7 +612,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -780,7 +809,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
