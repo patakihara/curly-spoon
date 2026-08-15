@@ -86,7 +86,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T14:57:32Z` · `abb8b444e681940b8` · general-purpose · ended · Committed cleanly on 'worktree-agent-abb8b444e681940b8' at 'b03c60d', based on 'c8114ec'. Working tree is clean. Not pushed, not merged, no 'Agent' c…
 - `2026-08-15T15:03:51Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:06:49Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 - `2026-08-15T15:12:06Z` · `aee8bf94663049be8` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-aee8bf94663049be8' at 'bce0e16', based on '4b419e1'. Working tree is clean. Not pushed, not merged, no 'A…
@@ -101,6 +100,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T19:44:06Z` · `a37ea47ff04d29baa` · general-purpose · ended · Committed. Not pushed, not merged, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a37ea47ff04d29baa' at '60b368f', based on '966…
 - `2026-08-15T19:54:17Z` · `a24c2902cadc0c877` · general-purpose · ended · ## Review: Wave 13f-2 ('60b368f') **Verdict: merge as-is.** No compile-blocking defect found, no test-logic defect found, and the writer reaches a re…
 - `2026-08-15T19:55:31Z` · `a0838ed6164b30f53` · general-purpose · ended · ## Review: wave 13f-1 web music recommendations ('e4bd22e', 'bc0695b') ### Blocking **1. 'e2e/app/music-recommended.spec.ts' is missing 'test.describ…
+- `2026-08-15T21:14:42Z` · `a7e86b0ad34a5d1a5` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -277,7 +277,19 @@ deliberately did not fold into a wave that was not about them:
 
 1. **Android has no accessibility grouping on the For You carousels** — a pre-existing 13d gap
    that the docs wrongly claimed was closed. Touches `ForYouCarouselRow`, shared by the book,
-   podcast and now music shelves. Wants a device to verify, which is why it is not a quick fix.
+   podcast and now music shelves. **It is not startable here, and now for a stated reason rather
+   than a vague one.** Checked 2026-08-16: `apps/android` has **no Compose UI test harness at
+   all** — no `createComposeRule`, no `createAndroidComposeRule`, no Robolectric dependency (the
+   single `Robolectric` string in the tree is a comment in `ExampleUnitTest.kt`), and
+   `android.yml` runs `./gradlew test assembleDebug`, i.e. JVM unit tests only, never an
+   instrumented run. So semantics code written here could be verified by nothing but "it
+   compiles" plus a reviewer's reading — which is precisely the standard that passed on all four
+   of this project's writer-with-no-reader failures. **The prerequisite wave is a Compose test
+   harness** (Robolectric + `androidx.compose.ui:ui-test-junit4` running under `gradlew test`),
+   not the semantics change itself. That is a real, startable piece of work for a session with
+   more window than this one had — but it adds dependencies to `libs.versions.toml`, so it needs
+   a lockfile-safe single-agent wave, and it cannot be smoke-tested locally (no JDK, no SDK),
+   meaning several red CI rounds should be budgeted.
 2. **Recommendation quality is still unassessable here.** Ten synthetic books and three fake
    albums prove the mechanism, not the taste. Judging whether the ranking is any _good_ wants
    the real 231-item library, which wants a credential.
@@ -583,8 +595,12 @@ chaptered MP3 rather than M4B, so weight that check accordingly. The library is 
 do not assume performance measured against it generalises to a large one.
 
 `packages/jellyfin-client/src/schemas/raw.ts`'s lyrics schemas
-(`LyricMetadata`/`LyricLine`/`LyricDto`) are **a draft to verify**: schema-only, no consumer, no
-test, never exercised against a real `LyricDto`.
+(`LyricMetadata`/`LyricLine`/`LyricDto`) are **source-derived but not orphaned** — an earlier note
+here called them "schema-only, no consumer, no test", and that was stale. Checked 2026-08-16:
+`client.ts` parses the lyrics response with `rawLyricDtoSchema`, `normalizeLyrics` in
+`normalize.ts` consumes it, and `normalize.test.ts` covers four shapes including the empty one.
+What remains true is only the part no session here can fix: **they have never been exercised
+against a real `LyricDto`**, because no session has a Jellyfin credential.
 
 ---
 
@@ -839,8 +855,16 @@ not a replacement.
   always-mounted root, leaving a permanent full-viewport click-blocking overlay; and
   `respectReducedMotion` only disarms Mantine's JS `Transition` machinery, not plain CSS
   `@keyframes` (so `Skeleton` drives its `animate` prop from `ThemeProvider`'s own
-  `prefersReducedMotion`). The same reduced-motion gap is untested but likely present in `Loader`'s
-  spin and `Progress`'s stripe scroll.
+  `prefersReducedMotion`). An older note here guessed the same gap was "untested but likely
+  present" in `Loader`'s spin and `Progress`'s stripe scroll. Checked 2026-08-16: **it is not.**
+  `packages/ui/src/styles/index.css` carries a blanket `@media (prefers-reduced-motion: reduce)`
+  rule collapsing `animation-duration`/`animation-iteration-count`/`transition-duration` on `*`
+  with `!important`, `apps/web/src/main.tsx` imports that stylesheet, and four e2e specs
+  (`progress`, `marquee`, `skeleton`, `lyrics`) assert through `page.emulateMedia({ reducedMotion:
+'reduce' })`. Neither Mantine `Loader` nor Mantine `Progress` is used in `apps/web` at all. The
+  component-level `prefersReducedMotion` hooks exist because the blanket rule cannot stop work JS
+  is _doing_ (Marquee's measurement, Skeleton's shimmer prop) — not because CSS coverage is
+  missing.
 
 ### Working in this checkout
 
