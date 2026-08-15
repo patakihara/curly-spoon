@@ -136,16 +136,46 @@ class ForYouViewModel(
     ): SourceResult {
         if (libraries == null) return SourceResult(emptyList(), failed = true)
         val library = libraries.firstOrNull { it.mediaType == mediaType } ?: return EMPTY_OK
-        return try {
-            val shelves = apiClient.libraryHome(library.id).filter { it.items.isNotEmpty() }
-            SourceResult(
-                shelves.map { shelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } },
-                failed = false,
-            )
-        } catch (e: ApiException) {
-            SourceResult(emptyList(), failed = true)
-        }
+        val homeCarousels =
+            try {
+                apiClient
+                    .libraryHome(library.id)
+                    .filter { it.items.isNotEmpty() }
+                    .map { shelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } }
+            } catch (e: ApiException) {
+                // The home shelves call itself failed — nothing to append recommended shelves
+                // to, and this source as a whole is failed. Distinct from the recommended-only
+                // failure below, which must NOT flip this source to failed (see
+                // fetchRecommendedCarousels's doc comment).
+                return SourceResult(emptyList(), failed = true)
+            }
+        val recommendedCarousels = fetchRecommendedCarousels(library.id, baseUrl, contentType)
+        return SourceResult(homeCarousels + recommendedCarousels, failed = false)
     }
+
+    /**
+     * Wave 13d's addition: `GET /libraries/{id}/recommended`, appended **after** [library]'s
+     * home carousels rather than replacing them (`docs/ROADMAP.md` §13 — reversible, degrades to
+     * today's behaviour on a cold-start user). A failure here degrades to "no recommended
+     * carousel" rather than propagating as [SourceResult.failed] — the existing home shelves
+     * must render even if this call fails or times out, so this function never throws and its
+     * caller never treats it as the source's own failure. A cold-start `{"shelves":[]}` maps to
+     * an empty list here, which [ForYouCarouselRow] already renders as nothing (see its own doc
+     * comment) — the required "visual no-op", with no special-casing needed in this file.
+     */
+    private suspend fun fetchRecommendedCarousels(
+        libraryId: String,
+        baseUrl: String,
+        contentType: ForYouContentType,
+    ): List<FeedCarousel> =
+        try {
+            apiClient
+                .libraryRecommended(libraryId)
+                .filter { it.items.isNotEmpty() }
+                .map { shelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } }
+        } catch (e: ApiException) {
+            emptyList()
+        }
 
     /** The Jellyfin half of the fan-out — one carousel ("Your albums") of favourite albums, or
      * none if there aren't any. `favoritesOnly = true` is also re-checked client-side, matching

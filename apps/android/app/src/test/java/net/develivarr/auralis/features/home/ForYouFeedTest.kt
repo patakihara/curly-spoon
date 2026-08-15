@@ -35,7 +35,8 @@ class ForYouFeedTest {
         label: String = "Shelf $id",
         type: String = "book",
         items: List<LibraryItem>,
-    ) = Shelf(id = id, label = label, type = type, items = items)
+        reason: String? = null,
+    ) = Shelf(id = id, label = label, type = type, items = items, reason = reason)
 
     @Test
     fun `shelfToCarousel uses the passed contentType, not shelf type`() {
@@ -69,6 +70,41 @@ class ForYouFeedTest {
         val emptyStructured = libraryItem("b1", authors = emptyList(), author = "Free Text Author")
         val carousel = shelfToCarousel(shelf(id = "s1", items = listOf(emptyStructured)), ForYouContentType.BOOKS) { null }
         assertEquals("Free Text Author", carousel.items.single().subtitle)
+    }
+
+    @Test
+    fun `shelfToCarousel carries a recommended shelf's reason through to the carousel`() {
+        // Deliberately not asserting the exact wording — that string is composed server-side
+        // (apps/server/src/features/recommendations/shelves.ts) and is a first draft, not final
+        // copy (see the coordinator's note on this wave). Only presence and identity matter here.
+        val recommended = shelf(id = "s1", items = listOf(libraryItem("b1")), reason = "Because you finished a book")
+        val carousel = shelfToCarousel(recommended, ForYouContentType.BOOKS) { null }
+        assertEquals("Because you finished a book", carousel.reason)
+    }
+
+    @Test
+    fun `shelfToCarousel yields a null reason for an ordinary home shelf`() {
+        val home = shelf(id = "s1", items = listOf(libraryItem("b1")))
+        val carousel = shelfToCarousel(home, ForYouContentType.BOOKS) { null }
+        assertNull(carousel.reason)
+    }
+
+    @Test
+    fun `carouselReasonText returns a non-blank reason unchanged`() {
+        val carousel = FeedCarousel("s", "Shelf", ForYouContentType.BOOKS, emptyList(), reason = "Some reason")
+        assertEquals("Some reason", carouselReasonText(carousel))
+    }
+
+    @Test
+    fun `carouselReasonText treats a null reason as nothing to render`() {
+        val carousel = FeedCarousel("s", "Shelf", ForYouContentType.BOOKS, emptyList(), reason = null)
+        assertNull(carouselReasonText(carousel))
+    }
+
+    @Test
+    fun `carouselReasonText treats a blank reason as nothing to render`() {
+        val carousel = FeedCarousel("s", "Shelf", ForYouContentType.BOOKS, emptyList(), reason = "   ")
+        assertNull(carouselReasonText(carousel))
     }
 
     @Test
