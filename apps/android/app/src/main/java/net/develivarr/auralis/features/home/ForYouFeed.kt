@@ -91,12 +91,21 @@ fun albumsToCarousel(
     id: String,
     label: String,
     albums: List<JellyfinAlbum>,
+    /** Wave 13f-2's addition, for [net.develivarr.auralis.features.music.MusicLibraryViewModel]'s
+     * `GET /music/recommended` shelves — `null` for every pre-existing caller (Jellyfin
+     * favourites have no such concept), same convention as [Shelf.reason]/[FeedCarousel.reason].
+     * Placed before the trailing lambda, not after, so every existing call site's trailing-
+     * lambda syntax (`albumsToCarousel(id, label, albums) { ... }`) keeps compiling unchanged —
+     * Kotlin resolves a trailing lambda to the last parameter regardless of a defaulted
+     * parameter in between. */
+    reason: String? = null,
     artworkUrl: (albumId: String) -> String?,
 ): FeedCarousel =
     FeedCarousel(
         id = id,
         label = label,
         contentType = ForYouContentType.MUSIC,
+        reason = reason,
         items =
             albums.map { album ->
                 FeedItem(

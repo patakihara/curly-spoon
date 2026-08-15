@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import net.develivarr.auralis.data.settings.ServerConfigRepository
+import net.develivarr.auralis.features.home.FeedCarousel
+import net.develivarr.auralis.features.home.albumsToCarousel
 
 /** Whether a Jellyfin server is reachable at all — checked once, on screen entry, via
  * [MusicRepository.availability]. See that method's own doc comment for why this is a
@@ -64,6 +66,17 @@ data class MusicLibraryUiState(
     val availability: MusicAvailabilityUiState = MusicAvailabilityUiState.Loading,
     val artistsState: ArtistsSectionUiState = ArtistsSectionUiState.Loading,
     val albumsState: AlbumsSectionUiState = AlbumsSectionUiState.Loading,
+    /**
+     * Wave 13f-2 — `GET /music/recommended`'s shelves, the Android reader the BFF route had
+     * shipped without (`docs/HANDOVER.md`'s "a wave that adds a writer must name its reader").
+     * Deliberately not its own [ArtistsSectionUiState]/[AlbumsSectionUiState]-shaped sealed
+     * state: unlike those two sections, this one has no meaningful `Failed`/retry UI of its own
+     * — see [MusicLibraryViewModel.loadRecommended]'s doc comment for why a 409/401/network
+     * failure degrades silently to this staying empty rather than surfacing an error. A plain
+     * list that starts empty and may be filled in after [availability] resolves is the whole
+     * state this needs.
+     */
+    val recommendedCarousels: List<FeedCarousel> = emptyList(),
 )
 
 /**
@@ -100,6 +113,7 @@ class MusicLibraryViewModel(
                     _uiState.value = _uiState.value.copy(availability = MusicAvailabilityUiState.Available)
                     loadFirstArtistsPage()
                     loadFirstAlbumsPage()
+                    loadRecommended()
                 }
                 // Neither section's own state is touched here — [MusicLibraryScreen] only
                 // renders them once `availability` is `Available`, so leaving them at their
@@ -160,6 +174,38 @@ class MusicLibraryViewModel(
     fun retryArtists() {
         _uiState.value = _uiState.value.copy(artistsState = ArtistsSectionUiState.Loading)
         viewModelScope.launch { loadFirstArtistsPage() }
+    }
+
+    /**
+     * Wave 13f-2 — `GET /music/recommended`, fetched once availability is confirmed, the same
+     * way [loadFirstArtistsPage]/[loadFirstAlbumsPage] are. A 409 (`jellyfin_not_configured`), a
+     * 401 (`jellyfin_unauthenticated`), or any other [ApiException] all degrade the same way —
+     * to [MusicLibraryUiState.recommendedCarousels] staying `emptyList()` — never to an error
+     * state: this call only ever reaches Jellyfin once [MusicAvailability.Available] is already
+     * known, so a failure here is "the recommended shelf couldn't load," not "Jellyfin is
+     * unreachable," and the rest of the screen (artists/albums, already loading independently)
+     * must render exactly as if this call didn't exist. Mirrors
+     * [net.develivarr.auralis.features.home.ForYouViewModel.fetchRecommendedCarousels]'s
+     * identical reasoning for the book/podcast counterpart. Empty-item shelves are dropped
+     * before mapping, same as that function — [net.develivarr.auralis.features.home
+     * .ForYouCarouselRow] already renders an empty carousel as nothing, but there is no reason
+     * to carry dead shelves in state at all.
+     */
+    private suspend fun loadRecommended() {
+        when (val result = musicRepository.recommended()) {
+            is MusicRecommendedResult.Loaded -> {
+                val carousels =
+                    result.shelves
+                        .filter { it.items.isNotEmpty() }
+                        .map { shelf ->
+                            albumsToCarousel(shelf.id, shelf.label, shelf.items, shelf.reason) { albumId ->
+                                jellyfinItemArtworkUrl(cachedBaseUrl, albumId)
+                            }
+                        }
+                _uiState.value = _uiState.value.copy(recommendedCarousels = carousels)
+            }
+            is MusicRecommendedResult.Failed -> Unit // see this function's own doc comment
+        }
     }
 
     /** See [retryArtists] — identical shape, for the albums section. */

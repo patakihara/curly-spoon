@@ -454,4 +454,54 @@ class MusicRepositoryTest {
 
             assertEquals(PlaylistMutationResult.Failed("upstream_auth_expired"), result)
         }
+
+    // -----------------------------------------------------------------------------
+    // recommended() — wave 13f-2, the Android reader for GET /music/recommended
+    // -----------------------------------------------------------------------------
+
+    @Test
+    fun `recommended reports Loaded with the shelves and reasons as sent`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"shelves":[
+                        {"id":"rec-1","label":"More like Driftwave","type":"recommended",
+                         "reason":"Because you played Driftwave",
+                         "items":[{"id":"alb1","name":"Recommended Album","artistName":"Some Artist"}]}
+                    ]}""",
+                ),
+            )
+
+            val result = repository.recommended()
+
+            val loaded = result as? MusicRecommendedResult.Loaded
+            assertEquals(1, loaded?.shelves?.size)
+            assertEquals("rec-1", loaded?.shelves?.get(0)?.id)
+            assertEquals("Because you played Driftwave", loaded?.shelves?.get(0)?.reason)
+            assertEquals("alb1", loaded?.shelves?.get(0)?.items?.get(0)?.id)
+        }
+
+    @Test
+    fun `recommended reports Loaded with an empty list for a cold-start user`() =
+        runTest {
+            mockWebServer.enqueue(MockResponse().setBody("""{"shelves":[]}"""))
+
+            val result = repository.recommended()
+
+            assertEquals(MusicRecommendedResult.Loaded(emptyList()), result)
+        }
+
+    @Test
+    fun `recommended reports Failed with the upstream error code on an unconfigured Jellyfin`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse()
+                    .setResponseCode(409)
+                    .setBody("""{"error":{"code":"jellyfin_not_configured","message":"Jellyfin is not configured"}}"""),
+            )
+
+            val result = repository.recommended()
+
+            assertEquals(MusicRecommendedResult.Failed("jellyfin_not_configured"), result)
+        }
 }

@@ -746,6 +746,29 @@ data class JellyfinAlbum(
     val favorite: Boolean = false,
 )
 
+/** One shelf from GET /music/recommended — the Jellyfin-music counterpart to [Shelf], kept as
+ * its own type rather than reusing [Shelf] because the item shape differs: a book/podcast
+ * shelf's [Shelf.items] are [LibraryItem] (Audiobookshelf's shape), while this route's items are
+ * Jellyfin [JellyfinAlbum]s (the same shape GET /jellyfin/albums already returns) — see
+ * `apps/server/src/routes/jellyfin.ts`'s `/music/recommended` handler, which maps its scored
+ * candidates back through an `albumsById` lookup before serializing. [reason] is nullable
+ * defensively, same as [Shelf.reason], even though this route always fills it in today. */
+@Serializable
+data class MusicRecommendedShelf(
+    val id: String,
+    val label: String,
+    val type: String,
+    val items: List<JellyfinAlbum>,
+    val reason: String? = null,
+)
+
+/** GET /music/recommended response envelope. See [MusicRecommendedShelf]'s doc comment for why
+ * this isn't [RecommendedResponse]. */
+@Serializable
+data class MusicRecommendedResponse(
+    val shelves: List<MusicRecommendedShelf>,
+)
+
 /** One entry from GET /jellyfin/tracks. Mirrors `@auralis/jellyfin-client`'s `Track`.
  * `durationSeconds` is a `Double` (not `Int`) because the upstream client derives it by
  * dividing .NET ticks by a constant (`normalize.ts`'s `TICKS_PER_SECOND`), not a whole number.

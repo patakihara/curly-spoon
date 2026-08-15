@@ -75,12 +75,36 @@ class MusicLibraryViewModelTest {
                 "imageTag":null,"trackCount":12}]""",
     ) = MockResponse().setBody("""{"items":$items,"total":$total,"startIndex":$startIndex}""")
 
+    /** Wave 13f-2 — `GET /music/recommended`'s cold-start (no shelves) response, the fourth
+     * request [MusicLibraryViewModel.load] now sends whenever availability resolves to
+     * [MusicAvailability.Available], right after the albums page. Every test below that reaches
+     * `Available` must enqueue one of these (or a shelf-bearing variant) after its albums
+     * response, or the next request in that test's own sequence would consume a MockWebServer
+     * response meant for `/music/recommended` — see this file's own `loadMoreArtists`/
+     * `retryArtists`/`retryAlbums` tests' comments for exactly this class of bug against the
+     * three pre-existing requests. */
+    private fun recommendedResponse(shelvesJson: String = "[]") =
+        MockResponse().setBody("""{"shelves":$shelvesJson}""")
+
+    /** A non-empty variant of [recommendedResponse] — needed wherever a test must *observe*
+     * `load()`'s fourth request having actually completed before touching the MockWebServer
+     * queue again (an empty-shelves response is indistinguishable from
+     * [MusicLibraryUiState]'s own default `recommendedCarousels = emptyList()`, so a `StateFlow`
+     * `.first { it.recommendedCarousels.isNotEmpty() }` wait needs real content to trigger on;
+     * `StateFlow` never re-emits a structurally-equal value). */
+    private fun oneShelfRecommendedResponse() =
+        recommendedResponse(
+            """[{"id":"rec-1","label":"More like this","type":"recommended",
+                "reason":"Because you played something","items":[{"id":"alb-rec","name":"Recommended Album"}]}]""",
+        )
+
     @Test
     fun `load with an available Jellyfin server loads artists and albums`() =
         runTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(artistsPageResponse())
             mockWebServer.enqueue(albumsPageResponse())
+            mockWebServer.enqueue(recommendedResponse())
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
 
             viewModel.load()
@@ -132,21 +156,24 @@ class MusicLibraryViewModelTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(artistsPageResponse(total = 2, items = """[{"id":"art1","name":"Radiohead"}]"""))
             mockWebServer.enqueue(albumsPageResponse(total = 0, items = "[]"))
+            mockWebServer.enqueue(oneShelfRecommendedResponse())
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
             viewModel.load()
             viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }
-            // load() runs one coroutine that fetches artists and *then* albums, sequentially.
-            // Awaiting only artistsState here would let this test enqueue and consume the
-            // MockWebServer response below while that same coroutine is still in flight
-            // fetching the albums page — racing two in-flight requests against MockWebServer's
-            // strictly-FIFO queue, so one request gets the response meant for the other, its
-            // parse fails, and the exception surfaces asynchronously after @After has already
-            // torn down MockWebServer/Dispatchers.Main, landing on whichever test's runTest
-            // happens to run next as UncaughtExceptionsBeforeTest. Awaiting albumsState too
-            // proves the whole of load() has settled before the queue is touched again. See
-            // PodcastsViewModelTest's `startPreview then subscribe succeeds and reloads the
-            // podcast list` test for the same mechanism, diagnosed first.
+            // load() runs one coroutine that fetches artists, then albums, then recommended,
+            // sequentially. Awaiting only artistsState here would let this test enqueue and
+            // consume the MockWebServer response below while that same coroutine is still in
+            // flight fetching a later request — racing two in-flight requests against
+            // MockWebServer's strictly-FIFO queue, so one request gets the response meant for
+            // the other, its parse fails, and the exception surfaces asynchronously after @After
+            // has already torn down MockWebServer/Dispatchers.Main, landing on whichever test's
+            // runTest happens to run next as UncaughtExceptionsBeforeTest. Awaiting albumsState
+            // and recommendedCarousels too proves the whole of load() has settled before the
+            // queue is touched again. See PodcastsViewModelTest's `startPreview then subscribe
+            // succeeds and reloads the podcast list` test for the same mechanism, diagnosed
+            // first.
             viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }
+            viewModel.uiState.first { it.recommendedCarousels.isNotEmpty() }
 
             mockWebServer.enqueue(
                 artistsPageResponse(total = 2, startIndex = 1, items = """[{"id":"art2","name":"Sigur Rós"}]"""),
@@ -168,13 +195,16 @@ class MusicLibraryViewModelTest {
             mockWebServer.enqueue(configuredResponse())
             mockWebServer.enqueue(artistsPageResponse(total = 2, items = """[{"id":"art1","name":"Radiohead"}]"""))
             mockWebServer.enqueue(albumsPageResponse(total = 0, items = "[]"))
+            mockWebServer.enqueue(oneShelfRecommendedResponse())
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
             viewModel.load()
             viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }
             // See the identical comment in `loadMoreArtists appends the next page...` above:
-            // load()'s albums fetch can still be in flight here, and touching the MockWebServer
-            // queue before it settles races it against loadMoreArtists()'s own request.
+            // load()'s albums/recommended fetches can still be in flight here, and touching the
+            // MockWebServer queue before they settle races it against loadMoreArtists()'s own
+            // request.
             viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }
+            viewModel.uiState.first { it.recommendedCarousels.isNotEmpty() }
 
             mockWebServer.enqueue(
                 MockResponse()
@@ -202,13 +232,15 @@ class MusicLibraryViewModelTest {
                     .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
             )
             mockWebServer.enqueue(albumsPageResponse())
+            mockWebServer.enqueue(oneShelfRecommendedResponse())
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
             viewModel.load()
             viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Failed }
-            // load() fetches artists then albums sequentially regardless of the artists outcome —
-            // await albums settling too before touching the queue again, same race as the
-            // loadMoreArtists tests above.
+            // load() fetches artists, then albums, then recommended, sequentially regardless of
+            // the artists outcome — await albums and recommended settling too before touching
+            // the queue again, same race as the loadMoreArtists tests above.
             viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Loaded }
+            viewModel.uiState.first { it.recommendedCarousels.isNotEmpty() }
 
             // Retry on a Failed first page used to be wired to loadMoreArtists(), which starts
             // with `artistsState as? Loaded ?: return` — a silent no-op against a Failed state,
@@ -232,10 +264,15 @@ class MusicLibraryViewModelTest {
                     .setResponseCode(500)
                     .setBody("""{"error":{"code":"upstream_error","message":"boom"}}"""),
             )
+            mockWebServer.enqueue(oneShelfRecommendedResponse())
             val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
             viewModel.load()
             viewModel.uiState.first { it.artistsState is ArtistsSectionUiState.Loaded }
             viewModel.uiState.first { it.albumsState is AlbumsSectionUiState.Failed }
+            // load() still fetches recommended after a Failed albums page (see loadRecommended's
+            // own doc comment — it never depends on the albums outcome) — await it settling too
+            // before touching the queue again, same race as the tests above.
+            viewModel.uiState.first { it.recommendedCarousels.isNotEmpty() }
 
             mockWebServer.enqueue(albumsPageResponse())
             viewModel.retryAlbums()

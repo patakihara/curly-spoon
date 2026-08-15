@@ -6,6 +6,7 @@ import net.develivarr.auralis.data.model.JellyfinLyrics
 import net.develivarr.auralis.data.model.JellyfinPlaylist
 import net.develivarr.auralis.data.model.JellyfinPlaylistItem
 import net.develivarr.auralis.data.model.JellyfinTrack
+import net.develivarr.auralis.data.model.MusicRecommendedShelf
 import net.develivarr.auralis.data.network.ApiClient
 import net.develivarr.auralis.data.network.ApiException
 
@@ -74,6 +75,23 @@ sealed interface TracksPageResult {
     data class Loaded(val items: List<JellyfinTrack>, val total: Int, val startIndex: Int) : TracksPageResult
 
     data class Failed(val code: String) : TracksPageResult
+}
+
+/**
+ * Outcome of [MusicRepository.recommended] (wave 13f-2 — the Android reader for the BFF's
+ * `GET /music/recommended`, which had shipped with no consumer at all; see `docs/HANDOVER.md`'s
+ * "wave that adds a writer must name its reader" rule). Unlike every other `Failed` case in this
+ * file, a caller must **not** surface [Failed] as an error — a Jellyfin-unconfigured or
+ * credential-less user gets a 409/401 here exactly as often as they would on any other
+ * `/jellyfin/*` call, and this is a "nice to have" carousel, not a screen precondition. See
+ * [MusicLibraryViewModel]'s use of this for how it degrades to "no shelves" rather than an error
+ * state, mirroring [net.develivarr.auralis.features.home.ForYouViewModel
+ * .fetchRecommendedCarousels]'s identical reasoning for the book/podcast counterpart.
+ */
+sealed interface MusicRecommendedResult {
+    data class Loaded(val shelves: List<MusicRecommendedShelf>) : MusicRecommendedResult
+
+    data class Failed(val code: String) : MusicRecommendedResult
 }
 
 /** Outcome of [MusicRepository.search]. */
@@ -272,6 +290,15 @@ class MusicRepository(private val apiClient: ApiClient) {
             TracksPageResult.Loaded(page.items, page.total, page.startIndex)
         } catch (e: ApiException) {
             TracksPageResult.Failed(e.code)
+        }
+
+    /** GET /music/recommended — see [MusicRecommendedResult]'s doc comment for why [Failed] is
+     * not to be treated as an error by callers. */
+    suspend fun recommended(): MusicRecommendedResult =
+        try {
+            MusicRecommendedResult.Loaded(apiClient.musicRecommended())
+        } catch (e: ApiException) {
+            MusicRecommendedResult.Failed(e.code)
         }
 
     /** GET /jellyfin/search — artists, albums and tracks matching [term] in one call. */
