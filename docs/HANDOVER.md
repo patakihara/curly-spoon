@@ -77,7 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T10:29:09Z` · `a06477e5fdb64fe18` · general-purpose · ended · I have everything needed. Final report. ## Report **Critical finding first: the task's premise is partly stale.** 'docs/HANDOVER.md'/'ROADMAP.md' in…
 - `2026-08-15T10:38:15Z` · `a02f9c8999148bda0` · general-purpose · ended · Committed. Final report: **1. §1 answer — yes, but it's already a deliberate, documented design, not an unnoticed bug.** 'normalizeMedia' in 'package…
 - `2026-08-15T10:39:10Z` · `a0edf63595b976e4e` · general-purpose · ended · ## Report **1. §2 answer — coverage gap, not a live bug.** 'fetchLibraryResults' fires one 'async' per matching library, and each 'async' closure cap…
 - `2026-08-15T10:44:59Z` · `a53710d7e5d134b7a` · general-purpose · ended · ## Report **Change A ('50e74e0') — merge as-is.** 1. **Claim verified true.** Checked the pre-change fixture ('minifiedBook', lines 6–24 of the file…
@@ -91,7 +90,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T13:57:39Z` · `ac47918293666b36d` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-ac47918293666b36d' at 'c855f8f', based on '2ae7ad6'. Working tree is clean. Not pushed, not merged, no 'A…
 - `2026-08-15T14:05:19Z` · `aae27b3ced47799df` · general-purpose · ended · ## Verdict: merge with named corrections Both test files run green (19/19), 'pnpm --filter @auralis/server typecheck' is clean, and no 'any'/'@ts-'/'…
 - `2026-08-15T14:08:43Z` · `ac47918293666b36d` · general-purpose · ended · Committed cleanly, working tree clean. Not pushed, not merged, no 'Agent' calls made. ## Report **New sha:** '8f91489' on 'worktree-agent-ac479182936…
-- `2026-08-15T14:17:38Z` · `a3ac2f0cdeb78d7a8` · general-purpose · running · —
+- `2026-08-15T14:17:38Z` · `a3ac2f0cdeb78d7a8` · general-purpose · ended · Clean working tree, both commits landed on the worktree branch. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-agent-a…
+- `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
 
 <!-- AGENT_LOG_END -->
 
@@ -133,10 +133,13 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed: wave 13b** (recommendations BFF route + adapter + fake-upstream widening) —
-dispatched 2026-08-15 from base `8d071b8`. Delete this line when it lands.
+**Nothing is currently claimed.**
 
-Wave 13a landed as `8d071b8`.
+Phase 13 progress: **13a** (pure scoring core) landed as `8d071b8`, CI green. **13b**
+(`GET /libraries/:id/recommended`, the `toCandidate` adapter, widened fakes) landed as
+`0be4fc6`, 659/659 locally. **13c (web) is next** — fetch the new route, append its shelves
+to the existing For You feed, render the `reason` line. The response is `Shelf`-shaped plus
+`reason`, so `shelfToCarousel` takes it unchanged.
 
 Before dispatching a wave **and again before merging it**, check what is already on `main`
 (`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`

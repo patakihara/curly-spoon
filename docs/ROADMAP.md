@@ -2757,7 +2757,7 @@ doing nothing. See `docs/HANDOVER.md`.
 | Wave    | What                                                                                                                                                                                  | Reader                                      | Status           |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------- |
 | **13a** | Pure scoring core in `apps/server/src/features/recommendations/` — build an affinity profile from `mediaProgress[]` + items; score candidates; emit ranked, reasoned shelves. No I/O. | 13b's route handler                         | done (`8d071b8`) |
-| **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | todo             |
+| **13b** | `GET /api/v1/libraries/:id/recommended` returning `{ shelves }`, wired to `getMe()`/`getLibraryItems()`. Widen the fake upstreams enough to exercise it.                              | 13c and 13d; the route test asserts through | done (`0be4fc6`) |
 | **13c** | Web — fetch the new route in `apps/web/src/features/home/`, append its shelves to the feed, render the reason line. Playwright.                                                       | The rendered home page                      | todo             |
 | **13d** | Android — same, in `features/home/`, through `ApiClient`.                                                                                                                             | `ForYouScreen`                              | todo             |
 | **13e** | Music — widen `packages/jellyfin-client` to normalize `PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks`, feed the music side of the profile so the mix is genuinely cross-media.   | 13a's profile builder                       | todo             |
@@ -2791,7 +2791,9 @@ surface, and everything before it is verifiable without it.
   what was played, and duplicating that into a second store is a sync problem with no
   payoff at this scale. If ranking later needs signal the upstreams genuinely do not have,
   that is a decision to take deliberately, not to arrive at by accident.
-- **Tuning against the real library.** The fake upstreams have ~20 books across two genres;
+- **Tuning against the real library.** The fake upstreams held **five** books across two
+  genres before 13b widened them to ten across five (an earlier draft of this section
+  said "~20 across two"; that figure was wrong, and review caught it). Even widened,
   that is enough to prove the mechanism and nowhere near enough to judge whether the ranking
   is any _good_. Quality tuning wants the user's real 231-item library, which wants a
   credential. The waves below build a recommender that is correct and explainable; whether
