@@ -43,6 +43,22 @@ describe('scoreCandidates', () => {
     expect(profile.knownItemIds).toContain('cand-genre-match');
   });
 
+  it('never returns an item the user has finished, not just an in-progress one', () => {
+    const profile = buildTasteProfile(
+      [
+        signal('seed-finished', { progress: 1, isFinished: true, lastActivityAt: NOW - DAY_MS }),
+        // The user finished this candidate outright — the case users would
+        // actually notice: recommending a book they just finished.
+        signal('cand-genre-match', { progress: 1, isFinished: true, lastActivityAt: NOW - DAY_MS }),
+      ],
+      library,
+      { now: NOW },
+    );
+    const scored = scoreCandidates(profile, library);
+    expect(scored.some((s) => s.itemId === 'cand-genre-match')).toBe(false);
+    expect(profile.knownItemIds).toContain('cand-genre-match');
+  });
+
   it('gives every returned item at least one reason; zero-facet-match items score zero and are excluded', () => {
     const profile = baseProfile();
     const scored = scoreCandidates(profile, library);

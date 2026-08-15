@@ -110,6 +110,16 @@ export function buildTasteProfile(
   const bestWeightByItem = new Map<string, number>();
 
   for (const signal of signals) {
+    // Deliberate: added to `knownItemIds` even if `itemsById` never has a match
+    // for this id (checked below, when building `seeds`/`affinities`). The two
+    // lists this feature ultimately draws from — "items with a progress signal"
+    // and "items eligible as a candidate" — are fetched separately by wave 13b's
+    // route handler, and can disagree (an item removed from the library since,
+    // or simply not included in this candidate batch). `knownItemIds` exists so
+    // `scoreCandidates` can exclude already-progressed items from whatever
+    // candidate set it's given; that exclusion has to hold even when this
+    // profile-building call itself couldn't resolve the item to compute a facet
+    // weight for it.
     knownItemIds.add(signal.itemId);
     const weight = signalWeight(signal, options.now);
     const existing = bestWeightByItem.get(signal.itemId);

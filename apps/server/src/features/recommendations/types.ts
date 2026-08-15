@@ -7,13 +7,25 @@
 /**
  * The candidate/library-item shape this feature depends on. Deliberately narrower
  * than `@auralis/abs-client`'s `LibraryItem`: only the fields the scorer actually
- * reads, so any real `LibraryItem` (minified or expanded) structurally satisfies it
- * without a cast. `types.test.ts`-style assertions aren't needed here because the
- * structural check happens for free at every call site that passes a real
- * `LibraryItem` in — see `profile.test.ts`'s import of the real type.
+ * reads.
+ *
+ * **This is the *adapted* shape, not `LibraryItem` itself — and only half of
+ * `LibraryItem` satisfies it directly.** `packages/abs-client/src/domain.ts`'s
+ * `Media` is a discriminated union: `Book` carries `authors: AuthorBadge[]`,
+ * `series: SeriesBadge[]` and `narrator: string | null`, so a `Book`-armed
+ * `LibraryItem` structurally satisfies `RecommendationCandidate` with no cast —
+ * pinned by the compile-time check in `profile.test.ts` (`expectTypeOf<LibraryItem
+ * & { media: Book }>().toExtend<RecommendationCandidate>()`). `Podcast` has none
+ * of those three fields, only a flat `author: string | null`, so a `Podcast`-armed
+ * `LibraryItem` does **not** satisfy `RecommendationCandidate` as-is — also pinned,
+ * as a `.not.toExtend<...>()` assertion on the full (`Book | Podcast`) `LibraryItem`.
+ * Folding a podcast's `author` into a one-element `authors` array (so both media
+ * kinds share one affinity path) is real adaptation work this module does not do —
+ * it is wave 13b's, where a real `LibraryItem` is actually available to adapt.
  *
  * Every field here is guaranteed present even on Audiobookshelf's *minified* items
- * (the shape every shelf/browse/personalized response returns):
+ * (the shape every shelf/browse/personalized response returns), once a `Book` has
+ * been adapted:
  * - `genres` normalizes to `[]`, never absent (`normalizeMedia` in
  *   `packages/abs-client/src/normalize.ts` defaults `metadata.genres ?? []`).
  * - `authors`/`series` carry only `.name` (`AuthorBadge`/`SeriesBadge` deliberately
@@ -29,9 +41,9 @@ export interface RecommendationCandidate {
     kind: 'book' | 'podcast';
     title: string;
     genres: string[];
-    /** Book only; `[]` for podcasts (podcasts have no `authors` field upstream —
-     * `Podcast.author` is a single flat string, folded in by `profile.ts`/`score.ts`
-     * as a one-element list so the two media kinds share one affinity path). */
+    /** Book only, pre-adaptation — `[]` for a podcast that hasn't been folded (see
+     * this interface's doc comment: wave 13b folds `Podcast.author` into a
+     * one-element list before a podcast reaches this feature). */
     authors: { name: string }[];
     series: { name: string }[];
     narrator: string | null;

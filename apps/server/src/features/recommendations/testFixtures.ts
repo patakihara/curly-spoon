@@ -95,6 +95,15 @@ export const library: RecommendationCandidate[] = [
     genres: ['Mystery'],
     authors: ['Rin Calder'],
   }),
+  // A second narrator match, independent of the genre/author candidates above —
+  // gives the shelves tests a *third* qualifying (>=2-item) facet pool
+  // (genre:Fantasy, author:Rin Calder, narrator:Jo Marsh), so a maxShelves cap of
+  // 2 has something real to cap rather than landing on 2 by coincidence.
+  book('cand-narrator-match-2', {
+    title: 'The Second Voice',
+    genres: ['Thriller'],
+    narrator: 'Jo Marsh',
+  }),
   book('cand-no-match', {
     title: 'Unrelated Cookbook',
     genres: ['Cooking'],

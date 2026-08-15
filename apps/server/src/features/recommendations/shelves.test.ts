@@ -41,12 +41,8 @@ describe('buildRecommendationShelves', () => {
     }
   });
 
-  it('never places one item in two shelves, and respects maxShelves/itemsPerShelf exactly', () => {
-    const { shelves } = buildAll({ maxShelves: 2, itemsPerShelf: 1 });
-    expect(shelves.length).toBeLessThanOrEqual(2);
-    for (const shelf of shelves) {
-      expect(shelf.itemIds.length).toBeLessThanOrEqual(1);
-    }
+  it('never places one item in two shelves', () => {
+    const { shelves } = buildAll({ maxShelves: 5, itemsPerShelf: 5 });
     const seen = new Set<string>();
     for (const shelf of shelves) {
       for (const id of shelf.itemIds) {
@@ -54,6 +50,23 @@ describe('buildRecommendationShelves', () => {
         seen.add(id);
       }
     }
+  });
+
+  it('respects maxShelves and itemsPerShelf as reached bounds, not just upper bounds', () => {
+    // The fixture library (with these two seed signals) has three independent
+    // facet pools with >=2 matching, not-yet-used candidates each: genre:Fantasy
+    // (cand-genre-match, cand-multi-match), author:Rin Calder (cand-author-match,
+    // cand-author-match-2), and narrator:Jo Marsh (cand-narrator-match,
+    // cand-narrator-match-2). That is strictly more than maxShelves:2, so an
+    // implementation that ignored the cap (or ignored itemsPerShelf and always
+    // returned zero/all shelves) cannot pass this by accident — it must actually
+    // stop at 2 shelves and actually fill each one to 2 items.
+    const { shelves } = buildAll({ maxShelves: 2, itemsPerShelf: 2 });
+    expect(shelves.length).toBe(2);
+    for (const shelf of shelves) {
+      expect(shelf.itemIds.length).toBeLessThanOrEqual(2);
+    }
+    expect(shelves.some((s) => s.itemIds.length === 2)).toBe(true);
   });
 
   it('drops a shelf that would have fewer than 2 items', () => {

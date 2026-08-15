@@ -1,6 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import type { Book, LibraryItem } from '@auralis/abs-client';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { buildTasteProfile } from './profile.js';
+import type { RecommendationCandidate } from './types.js';
 import { book, signal, DAY_MS, NOW } from './testFixtures.js';
+
+describe('RecommendationCandidate against the real @auralis/abs-client LibraryItem', () => {
+  it('a Book-armed LibraryItem structurally satisfies RecommendationCandidate with no cast', () => {
+    expectTypeOf<LibraryItem & { media: Book }>().toExtend<RecommendationCandidate>();
+  });
+
+  it('a bare LibraryItem (Book | Podcast media) does NOT satisfy RecommendationCandidate — Podcast has no authors/series/narrator, only a flat `author` string, and needs 13b to adapt it', () => {
+    expectTypeOf<LibraryItem>().not.toExtend<RecommendationCandidate>();
+  });
+});
 
 describe('buildTasteProfile', () => {
   it('gives a finished item more weight than a 20%-progress item at the same recency', () => {
