@@ -91,7 +91,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T15:44:26Z` · `a6168e2a5df25b40c` · general-purpose · ended · I'll wait for the monitor's notification rather than poll further.
 - `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
 - `2026-08-15T19:13:48Z` · `ad3375be8178ba426` · general-purpose · ended · Confirmed: 'forUser()' is fully synchronous — 'getSettings'/'getJellyfinToken' are local DB reads, throws before constructing a client, no network I/…
-- `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · running · —
+- `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · ended · I'll stop checking and wait for the notification.
 
 <!-- AGENT_LOG_END -->
 
@@ -173,18 +173,40 @@ which _is_ wired and consumed; the music-facing endpoint is scope the wave inven
 spec. **It must either gain a consumer or be deleted — silence is the one option the project's
 own rule forbids.**
 
-### The one real suite defect, and it is nobody's wave
+### The suite is green — 188/188 — and two real defects were fixed to get there
 
-`music-favorites.spec.ts:45` expects `/music/favorites` to show `track-driftwave-1` and
-`-2` already favourited. It **passes 8/8 when the file runs alone and fails in the full suite**
-— cross-file state contamination, not a bug in the file. The `app` project runs every spec
-against **one** shared single-tenant BFF whose fake-Jellyfin favourite state is process-global,
-and `playwright.config.ts`'s own comment already prescribes the rule being broken here: files
-are order-independent only if **each makes its own preconditions true rather than inheriting
-them**. Some other spec toggles that favourite off and leaves it off.
+`pnpm exec playwright test --project=app --workers=1` on `main` now passes **188, with none
+failed and none skipped**. The baseline before this work was 186/1/1. Two genuinely distinct
+defects were in the way, and neither was what the 13e revert claimed:
 
-This is pre-existing, predates 13e, and is the only thing standing between this suite and a
-clean sheet.
+1. **Cross-file favourite-state contamination.** `music-favorites.spec.ts:45` expected
+   `/music/favorites` to already show `track-driftwave-1` and `-2` favourited, and
+   `context-menu.spec.ts` toggled one off and left it off. The file passed 8/8 alone and failed
+   in the suite. The `app` project runs every spec against **one** shared single-tenant BFF
+   whose fake-Jellyfin favourite state is process-global, and `playwright.config.ts` already
+   states the rule that was broken: files are order-independent only if **each makes its own
+   preconditions true rather than inheriting them**. Both specs now do. Pre-existing; predates
+   13e entirely.
+
+2. **A widened fixture silently invalidated a count assertion — a real 13e-2 regression.**
+   13e-2 added a third fake artist, `artist-lumen`, on purpose: `shelves.ts` drops any facet
+   with fewer than two matching candidates, so without it the music recommendation path cannot
+   be exercised at all. Its comment shows it checked `jellyfin.test.ts`'s exact album counts
+   and correctly left them alone. It never checked the **Playwright** side, where
+   `music.spec.ts` pinned `'1–2 of 2'` on the artist grid's pagination label. Fixed in
+   `f77474d`, which also asserts the third artist by name so a future fourth fails on a named
+   missing card rather than on an off-by-one.
+
+**That second one is the generalisable lesson, and it is the same shape as the Android
+`MockWebServer` trap already recorded below: widening a shared fixture invalidates every
+existing assertion that counted it, and review of the diff cannot catch it** — both halves read
+as correct in isolation, and every unit suite stays green (`jellyfin-client` 120/120,
+`apps/server` 678/678). Only a full e2e run sees it. **A wave that widens a fixture must run
+the full `--project=app` suite before it is called done.**
+
+So the honest summary of the 13e revert: the wave did carry one real e2e regression, and the
+revert caught none of it — it diagnosed two failures that were repro artefacts, attributed a
+non-existent server crash to the wave, and missed the actual defect entirely.
 
 ### `E2E_SERVER_LOG=1` — why nobody could ever diagnose this
 

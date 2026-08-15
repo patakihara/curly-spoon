@@ -3,22 +3,22 @@
 Delivery is phase by phase; each phase lands on `main` as a
 self-contained, tested increment.
 
-| #   | Phase                                                             | Status |
-| --- | ----------------------------------------------------------------- | ------ |
-| 1   | Monorepo foundations, tooling, CI, test harness                   | done   |
-| 2   | `@auralis/ui` — Material 3 Expressive design system               | done   |
-| 3   | Server BFF core + Audiobookshelf client                           | done   |
-| 4   | Web app shell + **Docker image** — routing, theming, onboarding   | done   |
-| 5   | Audiobooks experience + player                                    | done   |
-| 5a  | Android build skeleton + APK pipeline (parallel with 5)           | done   |
-| 6   | Book requests — Prowlarr, AudiobookBay, torrents                  | done   |
-| 7   | **Android — audiobooks + requests** (Compose + Media3)            | done   |
-| 8   | Podcast client (web + Android)                                    | done   |
-| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)       | done   |
-| 10  | Release polish — performance budgets, a11y audit                  | done   |
-| 11  | **F-Droid / Droid-ify distribution** — alternative app stores     | done\* |
-| 12  | **Spec addendum** — five views, unified search, per-type queues   | done\* |
-| 13  | **Personalized recommendations** — the reason the user wants this | todo   |
+| #   | Phase                                                             | Status                 |
+| --- | ----------------------------------------------------------------- | ---------------------- |
+| 1   | Monorepo foundations, tooling, CI, test harness                   | done                   |
+| 2   | `@auralis/ui` — Material 3 Expressive design system               | done                   |
+| 3   | Server BFF core + Audiobookshelf client                           | done                   |
+| 4   | Web app shell + **Docker image** — routing, theming, onboarding   | done                   |
+| 5   | Audiobooks experience + player                                    | done                   |
+| 5a  | Android build skeleton + APK pipeline (parallel with 5)           | done                   |
+| 6   | Book requests — Prowlarr, AudiobookBay, torrents                  | done                   |
+| 7   | **Android — audiobooks + requests** (Compose + Media3)            | done                   |
+| 8   | Podcast client (web + Android)                                    | done                   |
+| 9   | Music client (Jellyfin) + lyrics + requests (web + Android)       | done                   |
+| 10  | Release polish — performance budgets, a11y audit                  | done                   |
+| 11  | **F-Droid / Droid-ify distribution** — alternative app stores     | done\*                 |
+| 12  | **Spec addendum** — five views, unified search, per-type queues   | done\*                 |
+| 13  | **Personalized recommendations** — the reason the user wants this | 13a–13e done, 13f todo |
 
 **`done\*` means: everything that does not need something only the user can supply.** Phase 11
 waits on two signing keys the user must generate, on GitHub Pages being enabled, and on a `v*`
