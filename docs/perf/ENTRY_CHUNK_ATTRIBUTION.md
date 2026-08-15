@@ -195,3 +195,35 @@ Method: `Grep` on the import specifier against `apps/web/src/main.tsx`,
   the score move together.
 - The VLQ-mapping-gap approximation is not exact; do not treat two rows within a
   few percent of each other as meaningfully ordered.
+
+## What 14a-2 changed
+
+Acted on shortlist item #1. `packages/ui/package.json` had no `sideEffects`
+field, so Rollup assumed every module might have side effects and could not
+tree-shake unused re-exports out of the barrel (`packages/ui/src/index.ts`).
+Added `"sideEffects": ["**/*.css"]` — every non-CSS module is now pure, CSS
+imports stay side-effectful. Entry raw dropped 914.2 KB → 782.5 KB (-131.7 KB,
+-14.4%), entry gzip 237.0 KB → 198.9 KB (-38.1 KB, -16.1%). `@floating-ui/react`
+left the entry chunk's sourcemap sources entirely (confirmed via
+`vite build --sourcemap`, then inspecting the entry map's `sources` array).
+
+**A CSS-loss check was run before this was called done**, because a purity
+declaration can silently drop a component's CSS import along with its module
+if something reaches that component only through a path Rollup can't see
+statically. Total CSS bytes across `dist/assets/*.css` were compared byte-for-
+byte and by class-name diff between a clean baseline build and this change:
+269,523 → 268,482 (-1,041 B), entirely `TopAppBar`'s four `.m3-top-app-bar*`
+rules — a component with no reference anywhere in `apps/web` (only the `ui`
+package's own gallery imports it), so its removal is correct, not a loss.
+Every other component's CSS was confirmed still present somewhere in
+`dist/assets/*.css`, including `Sheet`/`Snackbar`/`Menu` specifically (present
+in their own lazy chunks' `.css` files) since those were flagged as the most
+likely to be reached only through an indirection.
+
+Found in passing, not caused by this change: `Chip.tsx`, `CircularProgress.tsx`,
+`LinearProgress.tsx` and `Skeleton.tsx` each has a colocated `.css` file that
+the component itself never imports — confirmed identical (i.e. already absent
+from the bundle) in a clean baseline build made before this wave's edit. Their
+current visuals come entirely from Mantine's own styling; `Skeleton.tsx`'s own
+comment already documents this for that one. Dead files, pre-existing, out of
+this wave's scope — worth a follow-up to delete them.
