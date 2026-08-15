@@ -38,6 +38,8 @@ import net.develivarr.auralis.data.model.LoginResponse
 import net.develivarr.auralis.data.model.MeResponse
 import net.develivarr.auralis.data.model.MediaProgress
 import net.develivarr.auralis.data.model.MusicCandidate
+import net.develivarr.auralis.data.model.MusicRecommendedResponse
+import net.develivarr.auralis.data.model.MusicRecommendedShelf
 import net.develivarr.auralis.data.model.MusicRequest
 import net.develivarr.auralis.data.model.MusicRequestResponse
 import net.develivarr.auralis.data.model.MusicRequestsResponse
@@ -124,6 +126,17 @@ class ApiClient(
      * existing home shelves rather than replacing them. */
     suspend fun libraryRecommended(libraryId: String): List<Shelf> =
         get<RecommendedResponse>("/libraries/$libraryId/recommended").shelves
+
+    /** GET /music/recommended — the Jellyfin-music counterpart to [libraryRecommended]. Unlike
+     * that call, there is no library id to scope by: `routes/jellyfin.ts`'s handler searches
+     * recursively across every music library the signed-in user can see, matching every other
+     * `/jellyfin/*` route in this file. A Jellyfin-unconfigured or credential-less user gets a
+     * 409/401, surfaced to the caller as [ApiException] same as any other call — see
+     * [net.develivarr.auralis.features.music.MusicRepository.recommended] for how that degrades
+     * to "no shelves" rather than an error state. Reader:
+     * [net.develivarr.auralis.features.music.MusicLibraryViewModel]. */
+    suspend fun musicRecommended(): List<MusicRecommendedShelf> =
+        get<MusicRecommendedResponse>("/music/recommended").shelves
 
     /** GET /libraries/{id}/items — used by Android Auto's browse tree (a later wave) to
      * list a library's items page by page. */

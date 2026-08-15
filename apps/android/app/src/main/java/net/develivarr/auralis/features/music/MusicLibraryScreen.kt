@@ -33,6 +33,8 @@ import androidx.navigation.NavHostController
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import net.develivarr.auralis.AppContainer
+import net.develivarr.auralis.features.home.FeedCarousel
+import net.develivarr.auralis.features.home.ForYouCarouselRow
 import net.develivarr.auralis.navigation.Routes
 
 /**
@@ -123,6 +125,20 @@ fun MusicLibraryScreen(
                 }
             is MusicAvailabilityUiState.Available ->
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp)) {
+                    // Wave 13f-2 — GET /music/recommended's shelves, the reader the BFF route
+                    // had shipped without (docs/HANDOVER.md's "a wave that adds a writer must
+                    // name its reader" rule). Rendered above Artists/Albums, using the exact same
+                    // ForYouCarouselRow this screen's own "For you" tab uses for the book/podcast
+                    // counterpart, rather than a second carousel composable — this LazyColumn's
+                    // own `.padding(horizontal = 16.dp)` above additionally insets
+                    // ForYouCarouselRow's own internal content padding, which is an acceptable
+                    // (if not pixel-perfect) cost given nothing here can render on a device to
+                    // check it.
+                    recommendedSection(
+                        carousels = uiState.recommendedCarousels,
+                        imageLoader = container.imageLoader,
+                        onOpen = { albumId -> navController.navigate(Routes.musicAlbumDetail(albumId)) },
+                    )
                     item {
                         Text(
                             "Artists",
@@ -154,6 +170,30 @@ fun MusicLibraryScreen(
                     )
                 }
         }
+    }
+}
+
+/**
+ * Wave 13f-2 — one [ForYouCarouselRow] per `GET /music/recommended` shelf, or nothing at all
+ * when [carousels] is empty (a Jellyfin-unconfigured/credential-less user, a cold-start user
+ * with no play history, or the call simply failing — [MusicLibraryViewModel.loadRecommended]'s
+ * doc comment covers why every one of those degrades to an empty list rather than a distinct
+ * UI state). No section heading of its own — each carousel's own [FeedCarousel.label] already
+ * serves as its heading, same as on the "For you" screen, so a second "Recommended" heading
+ * above them would be redundant.
+ */
+private fun LazyListScope.recommendedSection(
+    carousels: List<FeedCarousel>,
+    imageLoader: ImageLoader,
+    onOpen: (String) -> Unit,
+) {
+    items(carousels, key = { "recommended:${it.id}" }) { carousel ->
+        ForYouCarouselRow(
+            carousel = carousel,
+            imageLoader = imageLoader,
+            onSelect = { item -> onOpen(item.id) },
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
     }
 }
 
