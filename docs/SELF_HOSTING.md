@@ -112,9 +112,17 @@ To switch a running deployment from continuous to tagged releases, change one li
 ```
 
 Each tagged release also gets a [GitHub Release](https://github.com/patakihara/curly-spoon/releases)
-with a changelog and a debug-signed Android APK attached, for anyone who'd rather sideload a
-named version than build from a checkout or run against whatever `android.yml` last built on
+with a changelog and a **release-signed** Android APK attached, for anyone who'd rather sideload
+a named version than build from a checkout or run against whatever `android.yml` last built on
 `main`.
+
+That APK is signed with the app signing key held in the `ANDROID_KEYSTORE_*` secrets, so it
+updates in place like any normally-distributed app. This paragraph used to say _debug_-signed,
+which was true when written and became wrong once `release.yml` grew a signing config —
+and it mattered: a debug-signed release is signed with a keystore CI regenerates per run, so
+each build would carry a different certificate and the second install would fail with
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE`. See `docs/FDROID_REPO.md` for the key's storage and
+rotation notes.
 
 ## Reverse proxy
 
