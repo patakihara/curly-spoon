@@ -134,6 +134,9 @@ class UnifiedSearchViewModelTest {
     private val bookAndPodcastLibraries =
         """[{"id":"lib-book","name":"Books","mediaType":"book"},
             {"id":"lib-podcast","name":"Podcasts","mediaType":"podcast"}]"""
+    private val twoBookLibraries =
+        """[{"id":"lib-book-a","name":"Books A","mediaType":"book"},
+            {"id":"lib-book-b","name":"Books B","mediaType":"book"}]"""
 
     // -----------------------------------------------------------------------------
     // 12b-A2 — the requestable fan-out. Every dispatcher below still needs the plain library/
@@ -834,5 +837,66 @@ class UnifiedSearchViewModelTest {
 
             val finalState = viewModel.uiState.value.requestableMusicState as RequestableMusicUiState.Loaded
             assertTrue(finalState.candidateStates[candidate.guid] is CandidateRequestState.Failed)
+        }
+
+    /**
+     * Named follow-up from wave 12b-A1 (`docs/ROADMAP.md` §12b): no test covered two
+     * *concurrent* book libraries of the same kind. `fetchLibraryResults` fires one
+     * `GET /libraries/{id}/search` per matching library via `async`, so each library's own
+     * result is paired with its own closure over `library.id` rather than by the order
+     * responses happen to arrive at the server — but that is exactly the kind of thing this
+     * project's own history says not to assume without a test that can actually catch a
+     * mismatch (see `docs/HANDOVER.md`'s Android test-trap notes on `MockWebServer` serving
+     * responses in request-arrival order, not enqueue order).
+     *
+     * This deliberately makes library A's response slow and library B's instant, so B's
+     * response reaches the server first even though A is first in `apiClient.libraries()`'s
+     * own list — the out-of-arrival-order case the attribution has to survive. Each library's
+     * path already carries its own id (`/libraries/lib-book-a/search` vs
+     * `/libraries/lib-book-b/search`), so no extra query-parameter keying is needed the way
+     * the staleness tests above need `q`.
+     */
+    @Test
+    fun `two concurrent book libraries of the same kind never swap results`() =
+        runTest {
+            mockWebServer.dispatcher =
+                routingDispatcher(twoBookLibraries) { request ->
+                    when {
+                        request.path?.contains("/libraries/lib-book-a/search") == true ->
+                            MockResponse()
+                                .setBody(
+                                    searchLibraryBody(
+                                        books = """[{"id":"book-a","libraryId":"lib-book-a",
+                                            "media":{"kind":"book","title":"Alpha Book","author":"Author A"}}]""",
+                                    ),
+                                )
+                                .setBodyDelay(200, TimeUnit.MILLISECONDS)
+                        request.path?.contains("/libraries/lib-book-b/search") == true ->
+                            MockResponse().setBody(
+                                searchLibraryBody(
+                                    books = """[{"id":"book-b","libraryId":"lib-book-b",
+                                        "media":{"kind":"book","title":"Beta Book","author":"Author B"}}]""",
+                                ),
+                            )
+                        request.path?.contains("/jellyfin/search") == true ->
+                            MockResponse().setBody(jellyfinSearchBody())
+                        else -> MockResponse().setResponseCode(404)
+                    }
+                }
+            val viewModel = viewModel()
+
+            viewModel.onQueryChange("book")
+            advanceDebounce()
+            val state =
+                viewModel.uiState.first { it.resultsState is UnifiedSearchResultsUiState.Results }
+                    .resultsState as UnifiedSearchResultsUiState.Results
+
+            assertEquals(setOf("Alpha Book", "Beta Book"), state.books.map { it.title }.toSet())
+            val alpha = state.books.single { it.title == "Alpha Book" }
+            val beta = state.books.single { it.title == "Beta Book" }
+            // The point of the test: each title is paired with *its own* library's author, never
+            // the other library's — a swap would show "Author B" on Alpha or vice versa.
+            assertEquals("Author A", alpha.subtitle)
+            assertEquals("Author B", beta.subtitle)
         }
 }
