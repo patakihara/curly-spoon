@@ -77,7 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T10:39:10Z` · `a0edf63595b976e4e` · general-purpose · ended · ## Report **1. §2 answer — coverage gap, not a live bug.** 'fetchLibraryResults' fires one 'async' per matching library, and each 'async' closure cap…
 - `2026-08-15T10:44:59Z` · `a53710d7e5d134b7a` · general-purpose · ended · ## Report **Change A ('50e74e0') — merge as-is.** 1. **Claim verified true.** Checked the pre-change fixture ('minifiedBook', lines 6–24 of the file…
 - `2026-08-15T11:19:31Z` · `adccc234b7e45501b` · general-purpose · ended · Now I have enough. Report follows. ## Findings **1. The six remaining steps ('docs/FDROID_REPO.md', "What you have to do by hand"):** 1. Install 'fdr…
 - `2026-08-15T11:20:18Z` · `adccc234b7e45501b` · general-purpose · ended · ## Addendum: 'release.yml' and 'fdroid-repo.yml' ### 'release.yml' 1. **Trigger:** 'push: tags: - 'v*'' — exact same pattern as 'fdroid-repo.yml'. 2.…
@@ -92,6 +91,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T14:17:38Z` · `a3ac2f0cdeb78d7a8` · general-purpose · ended · Clean working tree, both commits landed on the worktree branch. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-agent-a…
 - `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
 - `2026-08-15T14:33:44Z` · `abfc1e3c98500edeb` · general-purpose · running · —
+- `2026-08-15T14:34:18Z` · `a9f59f4f15c66ad3a` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -135,6 +135,16 @@ hours with nothing on `main` is stale — take it.
 
 **Claimed: wave 13c** (web recommendations surface) — dispatched 2026-08-15 from base
 `241f3fb`. Delete this line when it lands.
+
+**Claimed: wave 13d** (Android recommendations surface, `apps/android/.../features/home/`) —
+dispatched 2026-08-15 from base `241f3fb` by a second session. Delete this line when it lands.
+
+**Two sessions are working this checkout right now.** 13c (web) and 13d (Android) share no
+files, and were split that way after both sessions nearly dispatched 13c at the same moment —
+the second spotted the other's claim line and running worktree and killed its own agent 16
+seconds in. Whoever merges second: `main` will have moved, so `git merge --no-ff`, never a
+cherry-pick. Space pushes out and say so before pushing; only one run may be pending per
+concurrency group, so a second push cancels the first's queued run before it allocates.
 
 Phase 13 progress: **13a** (pure scoring core) landed as `8d071b8`, CI green. **13b**
 (`GET /libraries/:id/recommended`, the `toCandidate` adapter, widened fakes) landed as
