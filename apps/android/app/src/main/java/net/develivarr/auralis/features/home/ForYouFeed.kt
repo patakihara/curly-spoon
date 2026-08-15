@@ -32,6 +32,12 @@ data class FeedCarousel(
     val label: String,
     val contentType: ForYouContentType,
     val items: List<FeedItem>,
+    /** Wave 13d — set only for shelves that came from `GET /libraries/{id}/recommended`
+     * ([Shelf.reason] on the wire); `null` for every ordinary Audiobookshelf home shelf and for
+     * [albumsToCarousel]'s Jellyfin favourites, both of which have no such concept. Display-only,
+     * server-composed text of unspecified length and exact wording (`docs/ROADMAP.md` §13's
+     * `buildRecommendationShelves`) — never asserted on verbatim, never assumed short. */
+    val reason: String? = null,
 )
 
 /** `authors[]` is the richer, structured field and wins when present; `author` is the free-text
@@ -59,6 +65,7 @@ fun shelfToCarousel(
         id = shelf.id,
         label = shelf.label,
         contentType = contentType,
+        reason = shelf.reason,
         items =
             shelf.items.map { item ->
                 FeedItem(

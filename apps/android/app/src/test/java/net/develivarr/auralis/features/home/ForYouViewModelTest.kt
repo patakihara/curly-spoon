@@ -18,6 +18,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -71,6 +72,17 @@ class ForYouViewModelTest {
             {"id":"p1","libraryId":"lib-pod","media":{"kind":"podcast","title":"Sample Episode","author":"Show One"}}
         ]}]}"""
 
+    /** The default `/recommended` body for both libraries in [routingDispatcher] — cold start,
+     * matching what the real BFF route sends a user with no listening progress at all
+     * (`docs/ROADMAP.md` §13: "deliberately no fallback inside the route"). Individual tests
+     * override this via [routingDispatcher]'s `bookRecommendedBody`/`podcastRecommendedBody`. */
+    private val emptyRecommended = """{"shelves":[]}"""
+
+    private val bookRecommended =
+        """{"shelves":[{"id":"rec-book","label":"Because you finished","type":"recommended","reason":"Because you finished a book","items":[
+            {"id":"b2","libraryId":"lib-book","media":{"kind":"book","title":"Recommended Book","author":"Author Two"}}
+        ]}]}"""
+
     private val favoriteAlbums =
         """{"items":[{"id":"al1","name":"Album One","artistName":"Artist One","favorite":true}],
             "total":1,"startIndex":0}"""
@@ -88,6 +100,8 @@ class ForYouViewModelTest {
         jellyfin: MockResponse,
         bookHomeBody: String = bookHome,
         podcastHomeBody: String = podcastHome,
+        bookRecommendedResponse: MockResponse = MockResponse().setBody(emptyRecommended),
+        podcastRecommendedResponse: MockResponse = MockResponse().setBody(emptyRecommended),
     ) = object : Dispatcher() {
         override fun dispatch(request: RecordedRequest): MockResponse {
             val path = request.path?.substringBefore("?") ?: return MockResponse().setResponseCode(404)
@@ -95,6 +109,8 @@ class ForYouViewModelTest {
                 path == "/api/v1/libraries" -> libraries
                 path == "/api/v1/libraries/lib-book/home" -> MockResponse().setBody(bookHomeBody)
                 path == "/api/v1/libraries/lib-pod/home" -> MockResponse().setBody(podcastHomeBody)
+                path == "/api/v1/libraries/lib-book/recommended" -> bookRecommendedResponse
+                path == "/api/v1/libraries/lib-pod/recommended" -> podcastRecommendedResponse
                 path.startsWith("/api/v1/jellyfin/albums") -> jellyfin
                 else -> MockResponse().setResponseCode(404)
             }
@@ -126,6 +142,75 @@ class ForYouViewModelTest {
             val viewModel = ForYouViewModel(apiClient, serverConfigRepository)
             val state = viewModel.uiState.first { it !is ForYouUiState.Loading } as ForYouUiState.Loaded
 
+            assertEquals(3, state.allCarousels.size)
+            assertEquals(
+                setOf(ForYouContentType.BOOKS, ForYouContentType.PODCASTS, ForYouContentType.MUSIC),
+                state.allCarousels.map { it.contentType }.toSet(),
+            )
+        }
+
+    @Test
+    fun `a cold-start recommended response of no shelves is a visual no-op`() =
+        runTest {
+            // Both /recommended endpoints default to {"shelves":[]} via routingDispatcher's
+            // defaults — the exact response docs/ROADMAP.md §13 says a user with no listening
+            // progress gets, with deliberately no fallback inside the BFF route. Nothing here
+            // should add a carousel, an empty-state card, or anything else on top of the
+            // pre-13d feed.
+            serverConfigRepository.setBaseUrl(baseUrl)
+            mockWebServer.dispatcher =
+                routingDispatcher(
+                    libraries = MockResponse().setBody(twoLibraries),
+                    jellyfin = MockResponse().setBody(favoriteAlbums),
+                )
+
+            val viewModel = ForYouViewModel(apiClient, serverConfigRepository)
+            val state = viewModel.uiState.first { it !is ForYouUiState.Loading } as ForYouUiState.Loaded
+
+            assertEquals(3, state.allCarousels.size)
+            assertTrue(state.allCarousels.none { it.id == "rec-book" })
+        }
+
+    @Test
+    fun `a recommended shelf is appended after the book library's home shelf, reason intact`() =
+        runTest {
+            serverConfigRepository.setBaseUrl(baseUrl)
+            mockWebServer.dispatcher =
+                routingDispatcher(
+                    libraries = MockResponse().setBody(twoLibraries),
+                    jellyfin = MockResponse().setBody(favoriteAlbums),
+                    bookRecommendedResponse = MockResponse().setBody(bookRecommended),
+                )
+
+            val viewModel = ForYouViewModel(apiClient, serverConfigRepository)
+            val state = viewModel.uiState.first { it !is ForYouUiState.Loading } as ForYouUiState.Loaded
+
+            val bookCarousels = state.allCarousels.filter { it.contentType == ForYouContentType.BOOKS }
+            // Existing home shelf first, recommended shelf appended after it — never replacing.
+            assertEquals(listOf("shelf-book", "rec-book"), bookCarousels.map { it.id })
+            assertEquals("Because you finished a book", bookCarousels.last().reason)
+            assertNull(bookCarousels.first().reason)
+            assertEquals(4, state.allCarousels.size)
+        }
+
+    @Test
+    fun `a failing recommended request does not break or drop the existing home carousel`() =
+        runTest {
+            serverConfigRepository.setBaseUrl(baseUrl)
+            mockWebServer.dispatcher =
+                routingDispatcher(
+                    libraries = MockResponse().setBody(twoLibraries),
+                    jellyfin = MockResponse().setBody(favoriteAlbums),
+                    bookRecommendedResponse = MockResponse().setResponseCode(500).setBody(serverError),
+                    podcastRecommendedResponse = MockResponse().setResponseCode(500).setBody(serverError),
+                )
+
+            val viewModel = ForYouViewModel(apiClient, serverConfigRepository)
+            val state = viewModel.uiState.first { it !is ForYouUiState.Loading } as ForYouUiState.Loaded
+
+            // Same 3 carousels as if /recommended didn't exist at all — the failure degrades to
+            // "no recommended carousel", not to ForYouUiState.Error and not to dropping the
+            // book/podcast home carousels it would otherwise have been appended to.
             assertEquals(3, state.allCarousels.size)
             assertEquals(
                 setOf(ForYouContentType.BOOKS, ForYouContentType.PODCASTS, ForYouContentType.MUSIC),

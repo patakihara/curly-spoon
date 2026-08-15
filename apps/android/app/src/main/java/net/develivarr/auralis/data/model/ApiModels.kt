@@ -248,17 +248,32 @@ data class LibraryItem(
     val progress: MediaProgress? = null,
 )
 
+/** Shared by GET /libraries/{id}/home (no `reason` on the wire — [reason] defaults to `null`
+ * rather than being a separate model, since dropping a key `auralisJson` never declared is a
+ * no-op for deserialization, not the `MissingFieldException` trap that applies to a
+ * non-nullable, no-default field) and GET /libraries/{id}/recommended (always sends `reason`,
+ * but still nullable here defensively — a route that always fills it in today does not have to
+ * forever, and a nullable field degrades to "no reason line" rather than a parse failure). */
 @Serializable
 data class Shelf(
     val id: String,
     val label: String,
     val type: String,
     val items: List<LibraryItem>,
+    val reason: String? = null,
 )
 
 /** GET /libraries/{id}/home response envelope. */
 @Serializable
 data class HomeResponse(
+    val shelves: List<Shelf>,
+)
+
+/** GET /libraries/{id}/recommended response envelope — same shape as [HomeResponse], kept as a
+ * distinct type (rather than reusing [HomeResponse]) so the two routes' response models don't
+ * silently become the same type by coincidence and drift unnoticed if one changes. */
+@Serializable
+data class RecommendedResponse(
     val shelves: List<Shelf>,
 )
 

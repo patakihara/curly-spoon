@@ -83,6 +83,13 @@ private fun fallbackIconFor(contentType: ForYouContentType): ImageVector =
 internal fun feedItemContentDescription(item: FeedItem): String =
     if (item.subtitle != null) "${item.title}, ${item.subtitle}" else item.title
 
+/** The reason line's presence/absence decision, pulled out of [ForYouCarouselRow] so it is
+ * testable without a Compose test harness (this project has none for `features/home/` — see
+ * [ForYouFeedTest] for the equivalent pattern on [feedItemContentDescription]). `null` and a
+ * blank string both mean "nothing worth rendering"; never asserted on verbatim wording — see
+ * [FeedCarousel.reason]'s doc comment for why. */
+internal fun carouselReasonText(carousel: FeedCarousel): String? = carousel.reason?.takeIf { it.isNotBlank() }
+
 /**
  * The **single** card composable for every "For you" carousel, regardless of content type — the
  * requirement this wave exists to satisfy is "one card geometry, one carousel pattern,
@@ -186,6 +193,27 @@ fun ForYouCarouselRow(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = ForYouCarouselDimens.CARD_ROW_CONTENT_PADDING),
         )
+        // The "Because you finished …" line (docs/ROADMAP.md §13) — subordinate to the shelf
+        // title, one typographic step down, same as ForYouCard's title/subtitle pairing. Not a
+        // second heading: no fixed height (unlike the per-card rows above, which need identical
+        // card geometry regardless of content), because this is prose of server-composed,
+        // unknown length, not a short label — wrapping onto two lines rather than forcing every
+        // "for you" shelf's header to the height of its longest possible reason. A blank string
+        // is treated the same as absent: nothing worth rendering.
+        val reason = carouselReasonText(carousel)
+        if (reason != null) {
+            Text(
+                text = reason,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier =
+                    Modifier
+                        .padding(horizontal = ForYouCarouselDimens.CARD_ROW_CONTENT_PADDING)
+                        .padding(top = ForYouCarouselDimens.TEXT_LINE_SPACING),
+            )
+        }
         LazyRow(
             contentPadding = PaddingValues(horizontal = ForYouCarouselDimens.CARD_ROW_CONTENT_PADDING),
             horizontalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.CARD_SPACING),
