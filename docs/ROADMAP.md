@@ -598,9 +598,13 @@ decision, not on remaining build time — see the bullet at the end of this sect
   `start` runs `tsx` against TypeScript sources, so a workspace import is a **runtime**
   dependency, not just a build-time one. The image built fine and the container died on
   boot. Its own `node_modules` must come along too, since pnpm's isolated layout means its
-  `zod` is only reachable through it. The Dockerfile enumerates workspace packages by hand,
-  so this same failure mode — image builds, container dies on boot — recurs for every
-  future package `apps/server` depends on until that's automated.
+  `zod` is only reachable through it. **The hand-enumeration this paragraph used to warn
+  about is gone as of 2026-08-08**: the Dockerfile copies `packages/` wholesale, with a doc
+  comment explaining why that is correct rather than merely convenient — `prod-deps` installs
+  with `--prod --filter "@auralis/server..."`, so pnpm has already resolved exactly which
+  workspace packages the server needs, and the `COPY` just stops restating that by hand and
+  getting it wrong. The failure mode described here — image builds, container dies on boot —
+  cannot recur for a future package.
 - **Web wave A — connect flow, browse, search: done (`d99888e`).** The connect flow (in
   Settings, following the existing provider pattern), artist/album/track browse with
   `TotalRecordCount`-driven pagination, and search. Shipped with **no play affordance**,
