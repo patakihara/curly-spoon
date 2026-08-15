@@ -77,7 +77,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T10:38:15Z` · `a02f9c8999148bda0` · general-purpose · ended · Committed. Final report: **1. §1 answer — yes, but it's already a deliberate, documented design, not an unnoticed bug.** 'normalizeMedia' in 'package…
 - `2026-08-15T10:39:10Z` · `a0edf63595b976e4e` · general-purpose · ended · ## Report **1. §2 answer — coverage gap, not a live bug.** 'fetchLibraryResults' fires one 'async' per matching library, and each 'async' closure cap…
 - `2026-08-15T10:44:59Z` · `a53710d7e5d134b7a` · general-purpose · ended · ## Report **Change A ('50e74e0') — merge as-is.** 1. **Claim verified true.** Checked the pre-change fixture ('minifiedBook', lines 6–24 of the file…
 - `2026-08-15T11:19:31Z` · `adccc234b7e45501b` · general-purpose · ended · Now I have enough. Report follows. ## Findings **1. The six remaining steps ('docs/FDROID_REPO.md', "What you have to do by hand"):** 1. Install 'fdr…
@@ -92,6 +91,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T14:08:43Z` · `ac47918293666b36d` · general-purpose · ended · Committed cleanly, working tree clean. Not pushed, not merged, no 'Agent' calls made. ## Report **New sha:** '8f91489' on 'worktree-agent-ac479182936…
 - `2026-08-15T14:17:38Z` · `a3ac2f0cdeb78d7a8` · general-purpose · ended · Clean working tree, both commits landed on the worktree branch. Not pushed, not merged, per instructions. ## Report **Branch/sha:** 'worktree-agent-a…
 - `2026-08-15T14:27:40Z` · `a39fc79307647adbc` · general-purpose · ended · Confirmed: '/recommended' is a fully separate route from '/home' (which retains the existing 'getLibraryHome' passthrough). No fallback contamination…
+- `2026-08-15T14:33:44Z` · `abfc1e3c98500edeb` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -133,7 +133,8 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Nothing is currently claimed.**
+**Claimed: wave 13c** (web recommendations surface) — dispatched 2026-08-15 from base
+`241f3fb`. Delete this line when it lands.
 
 Phase 13 progress: **13a** (pure scoring core) landed as `8d071b8`, CI green. **13b**
 (`GET /libraries/:id/recommended`, the `toCandidate` adapter, widened fakes) landed as
