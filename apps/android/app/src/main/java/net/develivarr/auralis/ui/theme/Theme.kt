@@ -1,39 +1,40 @@
 package net.develivarr.auralis.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
-private val DarkColors = darkColorScheme()
-private val LightColors = lightColorScheme()
+import androidx.compose.ui.graphics.Color
 
 /**
- * Wraps content in Material 3 theming, preferring the device's dynamic (Material You)
- * palette on API 31+ since that is the platform default users expect; below that Android
- * has no wallpaper-derived palette API, so a static scheme is the only option.
+ * Wraps content in Sonora's theming (`docs/design/SONORA.md`, wave 16b-2-A —
+ * `docs/ROADMAP.md` §16): color, type and shape, replacing Compose's Material defaults.
+ *
+ * This **replaces** the previous wallpaper-derived Material You palette
+ * (`dynamicLightColorScheme`/`dynamicDarkColorScheme`) rather than layering on top of it: Sonora
+ * is a fixed design system the app owns, the same way web's `ThemeProvider` doesn't defer to the
+ * browser's OS theme for anything beyond light/dark. `darkTheme` still follows
+ * [isSystemInDarkTheme] by default — that is Sonora's own light/dark switch, not Material You.
+ *
+ * [accent] defaults to Sonora's own default (violet, §1.3) and exists as a parameter — not a
+ * hardcoded constant — because the design names accent as a **user-picked** color (Symphony's
+ * 17-hue preset, [SonoraAccentPresets]); nothing in this wave adds a picker UI, but the seam for
+ * one to plug into later is here rather than something a later wave has to retrofit.
  */
 @Composable
 fun AuralisTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    accent: Color = SonoraDefaultAccent,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
+    val colorScheme = if (darkTheme) sonoraDarkColorScheme() else sonoraLightColorScheme()
+    val appTokens = sonoraAppTokens(darkTheme = darkTheme, accent = accent)
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content,
-    )
+    ProvideSonoraAppTokens(tokens = appTokens) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = SonoraTypography,
+            shapes = SonoraShapes,
+            content = content,
+        )
+    }
 }
