@@ -12,10 +12,36 @@ frontend file, and before believing anything older in this document about design
 instruction, verbatim: _"Write a note in the handover asking the next auralis devs to resurect
 you if you've died due to usage."_
 
-**Wave 16a has landed** (2026-08-16) and the trap below no longer applies to you: the design is
-vendored in `docs/design/sonora/` and distilled into **`docs/design/SONORA.md`**. Read that file;
-it is the design authority for every wave of this phase, and it names its own gaps rather than
-implying full coverage. **The next wave is 16b, the token layer.**
+**The design is in the repo — you do not need `DesignSync`.** Wave 16a vendored it to
+`docs/design/sonora/` and distilled it into **`docs/design/SONORA.md`**, which is the design
+authority for every wave and names its own gaps rather than implying full coverage. Also vendored,
+after Sofia asked whether the `.dc` components were actually used: `Auralis-Redesign.dc.html`
+byte-for-byte, the nine Auralis component cards, and **five of Sonora's own eleven imported
+primitives** under `docs/design/sonora/primitives/`. **Read that directory's README before copying
+any value out of a primitive** — Sonora's components reference `--m3-*` names that mean something
+different in this app, and it carries the substitution table.
+
+### The three things a session picking this up now must know
+
+1. **Web and Android are built together from here.** A standing instruction from Sofia on
+   2026-08-17, recorded in `CLAUDE.md`'s "Frontend parity" section. Frontend work is a `-W`/`-A`
+   pair from one shared behaviour spec plus a `-P` parity review by an agent that wrote neither
+   half. **This is not optional and not phase-scoped.** `ROADMAP.md` §16 has the review checklist.
+2. **A user-reported bug is unfixed and is 16d's headline:** the nav rail and the Now Playing
+   sidebar scroll away with the main content. Verified in the tree — `.auralis-shell` is
+   `min-height: 100vh` and `.auralis-shell__content` has no `overflow` rule, so the whole document
+   scrolls; only the _compact_ chrome is `position: fixed`. **16d comes before the screens**, since
+   a screen rebuilt inside a wrongly-scrolling document must be revisited when the scroll container
+   moves.
+3. **Where the phase actually is.** 16a done; **16b done on web** (fonts, tokens, icons) and
+   **16b-2-A done on Android** (its first typography and shape scale); **16c-1-W** in flight;
+   **16c-1-P** owed, and it must rule on one known divergence — web's token wave was additive and
+   still renders pre-Sonora colours, while Compose cannot express that middle state, so Android's
+   chroma roles jumped ahead to where web is going.
+
+**Phase 15 is open in parallel and is backend, so it does not contend.** 15a landed the
+external-candidate seam and ListenBrainz tier 1; **15b-2 is blocked** (see §15) and **15a's readers
+are 15c and 15e**.
 
 ### The operational trap that cost a wave once — now closed, kept as history
 
