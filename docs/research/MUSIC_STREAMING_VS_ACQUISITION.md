@@ -15,7 +15,7 @@ layer") — now that her own message lifts the Audible-ToS blocker that was the 
 holding Audnexus back. That layer covers all three media types decision 1 needs; a
 NewPipeExtractor source covers at most one.
 
-**A NewPipeExtractor-based *streaming* path is a real, separate idea — a fourth playback
+**A NewPipeExtractor-based _streaming_ path is a real, separate idea — a fourth playback
 backend that lets a user hear a track that isn't in the library at all, before requesting or
 owning it — and it is worth a future spike, but not this one and not as part of decision 1.**
 It is JVM-only with no trustworthy TypeScript port (§2.3), so it can only live on Android
@@ -67,7 +67,7 @@ original, actively-stewarded project any more.
   actively maintained app in this family. Same caveat as InnerTune: not NewPipeExtractor.
 - **NewPipe itself** (`TeamNewPipe/NewPipe`) — the original YouTube/SoundCloud/PeerTube/
   Bandcamp client. It is not a music-specific app, but background audio playback of a YouTube
-  video *is* a way to "stream music" with NewPipe, and this is the one unambiguous case where
+  video _is_ a way to "stream music" with NewPipe, and this is the one unambiguous case where
   the app really is called NewPipe. Possible she meant literally this.
 - **Tubular** — a NewPipe fork adding SponsorBlock/ReturnYouTubeDislike, same multi-platform
   scope (YouTube, YouTube Music, SoundCloud, Bandcamp, PeerTube) and the same NewPipeExtractor
@@ -193,19 +193,19 @@ less.
 
 ## 3. Streaming vs acquisition — the actual comparison
 
-| | **Streaming** (e.g. NewPipeExtractor → YouTube/SoundCloud) | **Acquisition** (existing slskd pipeline → Jellyfin) |
-| --- | --- | --- |
-| **Offline playback** | Only if a separate download/cache layer is built on top — the brief explicitly wants offline downloads and background playback on Android, and this doesn't come free with a stream URL | Native: the file lands on disk, Android's existing download machinery applies unchanged |
-| **Storage** | None consumed | Consumes disk per acquired title; the tradeoff acquisition always accepts |
-| **Library coherence** | **A streamed track does not exist in Jellyfin at all.** It has no artwork pipeline, no play-history entry, no place in the recommendation core's Jellyfin-play-history signal (13a–13f). Half the library-affinity mechanism phase 13 built would simply not see it. | A first-class Jellyfin item: artwork, metadata, play history, and everything phase 13's scoring core already reads |
-| **Latency/reliability, first play** | Depends entirely on the upstream site staying scrapable that day (§2.3); when it breaks, it breaks for every user simultaneously, with no local fallback | Depends on Soulseek/slskd finding a source; slower to first play (a request-and-wait pipeline), but once acquired it's reliable indefinitely |
-| **Metadata quality** | Whatever YouTube/SoundCloud/Bandcamp expose per-item — titles, channel names, thumbnails; no clean mapping to Auralis's normalized `authors[]`/`series[]`/genre domain types, and no album-artist structure to speak of on YouTube | Whatever the acquired file's own tags carry, refined by Jellyfin's own metadata providers — closer to Auralis's existing normalized shapes |
-| **Failure mode the user sees** | A scraper-broken day means playback of that source silently stops working, project-wide, until upstream is patched (§2.3) | A download that never seeds sits in `importRequested` indefinitely — visible, not silent, and scoped to that one title |
-| **ToS exposure** | She has explicitly lifted this for her own install ("I do not care about audible's or youtube's TOS") — noted as her decision, not a licence to redistribute publicly | Already the accepted model (Soulseek/slskd), no change |
+|                                     | **Streaming** (e.g. NewPipeExtractor → YouTube/SoundCloud)                                                                                                                                                                                                           | **Acquisition** (existing slskd pipeline → Jellyfin)                                                                                         |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Offline playback**                | Only if a separate download/cache layer is built on top — the brief explicitly wants offline downloads and background playback on Android, and this doesn't come free with a stream URL                                                                              | Native: the file lands on disk, Android's existing download machinery applies unchanged                                                      |
+| **Storage**                         | None consumed                                                                                                                                                                                                                                                        | Consumes disk per acquired title; the tradeoff acquisition always accepts                                                                    |
+| **Library coherence**               | **A streamed track does not exist in Jellyfin at all.** It has no artwork pipeline, no play-history entry, no place in the recommendation core's Jellyfin-play-history signal (13a–13f). Half the library-affinity mechanism phase 13 built would simply not see it. | A first-class Jellyfin item: artwork, metadata, play history, and everything phase 13's scoring core already reads                           |
+| **Latency/reliability, first play** | Depends entirely on the upstream site staying scrapable that day (§2.3); when it breaks, it breaks for every user simultaneously, with no local fallback                                                                                                             | Depends on Soulseek/slskd finding a source; slower to first play (a request-and-wait pipeline), but once acquired it's reliable indefinitely |
+| **Metadata quality**                | Whatever YouTube/SoundCloud/Bandcamp expose per-item — titles, channel names, thumbnails; no clean mapping to Auralis's normalized `authors[]`/`series[]`/genre domain types, and no album-artist structure to speak of on YouTube                                   | Whatever the acquired file's own tags carry, refined by Jellyfin's own metadata providers — closer to Auralis's existing normalized shapes   |
+| **Failure mode the user sees**      | A scraper-broken day means playback of that source silently stops working, project-wide, until upstream is patched (§2.3)                                                                                                                                            | A download that never seeds sits in `importRequested` indefinitely — visible, not silent, and scoped to that one title                       |
+| **ToS exposure**                    | She has explicitly lifted this for her own install ("I do not care about audible's or youtube's TOS") — noted as her decision, not a licence to redistribute publicly                                                                                                | Already the accepted model (Soulseek/slskd), no change                                                                                       |
 
 **Are they mutually exclusive?** No, and the honest answer is they solve different problems
-rather than compete for the same one. Streaming is a *preview/discovery* primitive — hear
-something now, decide if it's worth keeping. Acquisition is a *library* primitive — own it,
+rather than compete for the same one. Streaming is a _preview/discovery_ primitive — hear
+something now, decide if it's worth keeping. Acquisition is a _library_ primitive — own it,
 have Jellyfin track it, have Android download it for good. **A hybrid (stream to preview, then
 request to acquire what she keeps) is coherent as a product idea** — it maps cleanly onto "For
 you" showing an external recommendation she can either tap-to-preview or tap-to-request — but
@@ -223,7 +223,7 @@ Decision 1 (`docs/USER_DECISIONS.md` §1) needs a source that returns titles **n
 library**, mixed into For You, and it explicitly spans **books, podcasts and music** — the same
 requirement phase 13's ranking core was built for, just widened past what's already owned.
 
-**A NewPipeExtractor-based source is a plausible future *playback route* for one of those three
+**A NewPipeExtractor-based source is a plausible future _playback route_ for one of those three
 media types. It is not a good foundation for the recommendation source itself, for three
 independent reasons, any one of which would be disqualifying alone:**
 
@@ -268,6 +268,6 @@ untouched.
   researched here.
 - **Recommendation quality of any of this against Auralis's real 231-item library.** Same
   standing blocker as everywhere else in this project: no session here has an Audiobookshelf or
-  Jellyfin credential (`docs/HANDOVER.md`), so nothing about how *good* any of these sources
+  Jellyfin credential (`docs/HANDOVER.md`), so nothing about how _good_ any of these sources
   would feel in practice — including the already-recommended MusicBrainz path — can be judged
   from this machine.
