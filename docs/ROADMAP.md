@@ -3010,12 +3010,12 @@ machine checked it," which is the gap that mattered, and it does not close the g
 
   **The review caught a false assertion, and the tell was already in the tree.** The first draft
   asserted that after merging, the bare title is unreachable via `onNodeWithText`. It is not:
-  `mergeDescendants` collapses the child *nodes*, but the merge policy for the `Text` property
+  `mergeDescendants` collapses the child _nodes_, but the merge policy for the `Text` property
   concatenates rather than replaces, so the merged node still carries every child's text. Setting
   `contentDescription` **adds to** the config; only `clearAndSetSemantics {}` clears it, and this
   card must not use that — it would discard `clickable`'s onClick action, so the card would stop
   reporting as clickable. The giveaway: 14b-1's harness test uses the identical
-  Column-of-two-`Text`s shape, is green on CI, and asserts *only* that the grouped
+  Column-of-two-`Text`s shape, is green on CI, and asserts _only_ that the grouped
   `contentDescription` resolves. **14b-2 added the assertion its own proven template declined to
   make** — a good smell to watch for. Dropped in `a2d2378`; the surviving `assertExists` still
   fails if the `semantics` modifier is deleted, which is the regression the test exists to catch.

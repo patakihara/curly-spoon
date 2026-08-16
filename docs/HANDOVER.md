@@ -535,7 +535,7 @@ Every remaining roadmap item is in the blocked-on table near the top of this fil
 **decision, a device, a credential, or a live change on another host** — not more engineering. A
 session picking this up should read that table and expect to find nothing it can start; that is the
 finding, not a gap in the notes. The nearest thing to startable is the launcher icon, and it is
-blocked on deciding what the icon *is*.
+blocked on deciding what the icon _is_.
 
 **Done, and no longer claimed: the `UnifiedSearchViewModelTest` race.** `main` was red on Android
 at `9e87fdc` with `UncompletedCoroutinesError` on "a library fetch failure still returns music
@@ -547,12 +547,12 @@ by draining `resultsState` in `tearDown()` and fixing the same gap in `HomeViewM
 `RequestsViewModelTest`. **Four tests remain on real `Dispatchers.IO` deliberately** — each keys a
 `setBodyDelay()` on a specific path to pin real interleaving, and collapsing them onto a test
 dispatcher would turn them into tautologies. **Not yet proven fixed, and the bar is not what it looks like.**
-Consecutive green runs are **not** the unit of evidence — *uncached executions* are. Gradle serves
+Consecutive green runs are **not** the unit of evidence — _uncached executions_ are. Gradle serves
 `:app:testDebugUnitTest` `FROM-CACHE` on any sha that did not touch `apps/android`, so a green
 Android badge on a docs or web push executed nothing, and a run of such pushes manufactures
 exactly the pattern that looks like an intermittent fault settling down. Since rerunning a sha
 reuses the same inputs and therefore the same cache, **the only thing that draws a fresh sample is
-a change under `apps/android`.** So the bar is several *uncached* executions, each confirmed by
+a change under `apps/android`.** So the bar is several _uncached_ executions, each confirmed by
 grepping the job log for a bare `> Task :app:testDebugUnitTest` — and name the variant, because
 debug and release cache independently.
 
@@ -783,7 +783,6 @@ be on a codebase where `gradlew compileKotlin` is one command away. Write route 
   run must never be read as "fixed". Fixed in `e71837f` by widening 13d's scoped-dispatcher
   treatment from two tests to twelve; **four tests remain on real `Dispatchers.IO` deliberately**,
   each keying a `setBodyDelay()` to pin real interleaving.
-
 
 - **`ApiClient` takes its dispatcher as a constructor parameter** (defaulting to
   `Dispatchers.IO`). Nine ViewModel test files pass their own `UnconfinedTestDispatcher`, which
