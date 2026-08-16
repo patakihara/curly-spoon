@@ -26,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -91,6 +93,30 @@ internal fun feedItemContentDescription(item: FeedItem): String =
 internal fun carouselReasonText(carousel: FeedCarousel): String? = carousel.reason?.takeIf { it.isNotBlank() }
 
 /**
+ * The single accessible announcement for one [ForYouCard] — [feedItemContentDescription] plus,
+ * when the owning shelf carries one, its [reason] (already blank-filtered by
+ * [carouselReasonText]).
+ *
+ * **This deliberately diverges from `apps/web/src/features/home/Carousel.tsx`'s mechanism, not
+ * its intent.** Web ties the reason to the *card list* via `aria-describedby` (one shared
+ * description on the `role="list"` container, set once per shelf) and gives each card button its
+ * own `aria-label` of title/subtitle only — so on web, name and description are two DOM nodes.
+ * Compose's semantics tree has no equivalent of "this list is described by that paragraph";
+ * `mergeDescendants` only merges a subtree into its own ancestor, and [ForYouCard] does not
+ * contain the reason `Text` — [ForYouCarouselRow] renders it once, as a sibling of the whole
+ * [androidx.compose.foundation.lazy.LazyRow]. Re-parenting the reason under every card just to
+ * get an `aria-describedby` analogue would announce the same sentence once per card while
+ * scrolling, which is worse than what it replaces. Folding it into each card's own merged
+ * `contentDescription` is the closest single-node equivalent TalkBack has, so a listener still
+ * hears why the shelf is showing this item — do not "fix" this back into a name/description split
+ * without a mechanism that avoids that repetition.
+ */
+internal fun feedItemAnnouncement(item: FeedItem, reason: String?): String {
+    val name = feedItemContentDescription(item)
+    return if (reason != null) "$name — $reason" else name
+}
+
+/**
  * The **single** card composable for every "For you" carousel, regardless of content type — the
  * requirement this wave exists to satisfy is "one card geometry, one carousel pattern,
  * repeated" (docs/ROADMAP.md §12d), and the reference screenshots' own anti-pattern
@@ -98,6 +124,14 @@ internal fun carouselReasonText(carousel: FeedCarousel): String? = carousel.reas
  * what a second card composable would risk drifting into. Every card is a fixed
  * [ForYouCarouselDimens.CARD_WIDTH]x[ForYouCarouselDimens.COVER_SIZE] box regardless of the
  * source artwork's aspect ratio (`ContentScale.Crop` crops rather than pads).
+ *
+ * Wave 14b-2: the whole card — cover, title, subtitle and (when the owning shelf has one) the
+ * recommendation reason — is one merged accessibility node ([feedItemAnnouncement], applied via
+ * `Modifier.semantics(mergeDescendants = true)`), proved by
+ * `ForYouCarouselAccessibilityTest`. Before this wave the title and subtitle `Text`s were two
+ * loose sibling nodes and the reason (rendered once per shelf in [ForYouCarouselRow]) was
+ * unreachable from any individual card at all — see [feedItemAnnouncement]'s doc comment for why
+ * this folds the reason in rather than mirroring web's separate name/description DOM nodes.
  */
 @Composable
 fun ForYouCard(
@@ -105,12 +139,17 @@ fun ForYouCard(
     imageLoader: ImageLoader,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    reason: String? = null,
 ) {
+    val announcement = feedItemAnnouncement(item, reason)
     Column(
         modifier =
             modifier
                 .width(ForYouCarouselDimens.CARD_WIDTH)
-                .clickable(onClickLabel = feedItemContentDescription(item), onClick = onClick),
+                .clickable(onClickLabel = announcement, onClick = onClick)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = announcement
+                },
     ) {
         Box(
             modifier =
@@ -220,7 +259,12 @@ fun ForYouCarouselRow(
             modifier = Modifier.padding(top = ForYouCarouselDimens.TEXT_TOP_SPACING),
         ) {
             items(carousel.items, key = { it.id }) { item ->
-                ForYouCard(item = item, imageLoader = imageLoader, onClick = { onSelect(item) })
+                ForYouCard(
+                    item = item,
+                    imageLoader = imageLoader,
+                    onClick = { onSelect(item) },
+                    reason = reason,
+                )
             }
         }
     }
