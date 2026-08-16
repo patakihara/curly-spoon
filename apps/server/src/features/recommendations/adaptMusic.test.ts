@@ -17,6 +17,8 @@ function album(overrides: Partial<Album>): Album {
     favorite: false,
     playCount: 0,
     lastPlayedAt: null,
+    musicBrainzAlbumId: null,
+    musicBrainzReleaseGroupId: null,
     ...overrides,
   };
 }
@@ -36,6 +38,7 @@ function track(overrides: Partial<Track>): Track {
     favorite: false,
     playCount: 0,
     lastPlayedAt: null,
+    musicBrainzTrackId: null,
     ...overrides,
   };
 }

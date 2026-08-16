@@ -22,6 +22,7 @@ function bookItem(overrides: Partial<LibraryItem> = {}): LibraryItem {
       publishedYear: null,
       description: null,
       isbn: null,
+      asin: null,
       duration: 100,
       tracks: undefined,
       chapters: undefined,
@@ -47,6 +48,7 @@ function podcastItem(author: string | null, overrides: Partial<LibraryItem> = {}
       genres: ['News'],
       numEpisodes: 3,
       episodes: undefined,
+      feedUrl: null,
     },
     ...overrides,
   };
