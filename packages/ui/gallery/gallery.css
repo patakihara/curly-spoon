@@ -57,3 +57,33 @@ body {
   font-size: 11px;
   text-align: center;
 }
+
+/* ---------------------------------------------------------------------------------
+ * Wave 16b-2: Sonora token specimens (docs/ROADMAP.md §16).
+ * ------------------------------------------------------------------------------- */
+.sonora-token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.sonora-token-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.sonora-token-sample {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--m3-outline-variant);
+}
+
+.sonora-token-label {
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}
