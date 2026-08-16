@@ -525,6 +525,15 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
+**The `UnifiedSearchViewModelTest` race is not fixed to this file's own bar, and the bar is
+currently unreachable.** There has been exactly **one** uncached Android execution since the fix
+landed in `e71837f` — `e87a551`, green. The bar below says _several_ uncached executions, and only
+a change under `apps/android` produces one, because Gradle serves the task `FROM-CACHE` for
+everything else. Since 14b-2 was the last planned Android work, **there is no way to draw a second
+sample without new Android work.** So: the fix is well-argued and has one real green behind it,
+which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
+wave happens, it is the next sample — read its log before reading its badge.
+
 **Nothing is currently claimed.** 14b-2 landed as `e87a551` (see `ROADMAP.md` §14) and its Android
 run was verified as an **uncached** execution, not just a green badge. **Phase 14 is done**: 14a-1,
 14a-2 (measured, then reverted — see below), 14b-1 and 14b-2 are all on `main`, and 14c is written
