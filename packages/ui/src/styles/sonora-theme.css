@@ -43,9 +43,14 @@
  * `initialValue`. **The tokens in this file have neither fallback** — deliberately, since
  * adding one would let a token missing its light (or dark) value silently inherit the
  * other theme's value instead of resolving empty, which defeats the whole point of the
- * non-empty-in-both-themes reader above. `Dialog.tsx` (wraps Mantine's `Modal`, which
- * portals to `document.body`), `Sheet.tsx`, `Menu.tsx` and `SearchField.tsx` (its
- * suggestion listbox) all `createPortal` today. **Whoever rebuilds any of those in 16c
+ * non-empty-in-both-themes reader above. **Three** components portal today: `Dialog.tsx`
+ * (wraps Mantine's `Modal`, which portals to `document.body`), `Sheet.tsx` (Mantine
+ * `Drawer.Root`), and `Menu.tsx` (explicit `withinPortal`). **`SearchField.tsx` does not** —
+ * it passes `withinPortal={false}` deliberately, because `e2e/ui/search-field.spec.ts` makes
+ * DOM-scoped assertions that a portal would break, so its tokens resolve with no extra work.
+ * An earlier draft of this comment listed all four; it was corrected on review, and the
+ * correction is worth keeping visible because a comment describing an intention reads exactly
+ * like one describing the code. **Whoever rebuilds any of those in 16c
  * against `var(--surface-*)`/`var(--accent-ink)`/`var(--tone-*)` needs either the
  * component's portalled root re-parented inside `.auralis-theme-root`, or these tokens
  * re-emitted onto whatever element it does portal to** — silently getting neither reads as
@@ -78,7 +83,14 @@
   --accent-ink: var(--accent);
   --tone-library: var(--accent);
   --tone-progress: var(--state-warning);
-  --tone-request: var(--m3-tertiary);
+  /* Sonora's fixed tertiary, inlined rather than `var(--m3-tertiary)` as the redesign writes
+     it. In Sonora's own stylesheet `--m3-tertiary` *is* this literal; in this app it is set as
+     inline style by `ThemeProvider`, computed at runtime from the user's chosen accent — so the
+     reference would make the "requested" pill track the accent and land indistinguishable from
+     `--tone-library` (`var(--accent)`) right beside it, collapsing two tones into one. Nor does
+     it self-correct: §16's plan for `--m3-*` is deletion, not migration to Sonora's values, so
+     keeping the reference would schedule a silent fallback to `unset` when 16c retires it. */
+  --tone-request: #ffb7db;
   --tone-error: var(--state-error);
 }
 

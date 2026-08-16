@@ -209,7 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T10:36:32Z` · `a8b2dea9cf2eea6f9` · general-purpose · ended · None found — the core stays pure. I have everything needed for the verdict. ## Verdict: merge as-is All claims independently verified: 12/12 in 'shel…
 - `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
 - `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
@@ -223,7 +222,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · ended · ## Report — Wave 15a: the external-candidate seam **Branch/commit:** 'worktree-agent-a0120e561b6bac637' at '91af5c1' (follow-up) on top of '1709c0d',…
 - `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · ended · Clean tree, three commits on top of the claimed baseline. The wave is complete and verified. Here's the final report. ## Report — Wave 16b-2, the Son…
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
-- `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · running · —
+- `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
+- `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
 
 <!-- AGENT_LOG_END -->
 
@@ -694,12 +694,20 @@ tokens, migrating them off `--m3-*` one component at a time.
 
 **Three things 16b-2 handed forward that 16c must not rediscover:**
 
-- **Portalled components cannot see the theme-scoped tokens.** `Dialog`, `Sheet`, `Menu` and
-  `SearchField` `createPortal` outside `.auralis-theme-root`, and the `--surface-*` and app-level
-  tokens are scoped to `.auralis-theme-root[data-theme=…]` with **no `:root` fallback** — deliberate,
-  because a fallback would mask exactly the missing-value bug the gallery test exists to catch.
-  Rebuilding any of those four means re-parenting the portal inside the theme root or re-emitting
-  the tokens where it lands.
+- **Portalled components cannot see the theme-scoped tokens.** **Three** of them — `Dialog`,
+  `Sheet`, `Menu` — render outside `.auralis-theme-root`, and the `--surface-*` and app-level tokens
+  are scoped to `.auralis-theme-root[data-theme=…]` with **no `:root` fallback**, deliberately: a
+  fallback would mask exactly the missing-value bug the gallery test exists to catch. Rebuilding any
+  of those three means re-parenting the portal inside the theme root or re-emitting the tokens where
+  it lands. **`SearchField` is not one of them** — it passes `withinPortal={false}` on purpose, so
+  its tokens resolve for free. Both this note and the source comment first listed all four; the
+  review caught it.
+- **The gallery's token list is hand-maintained, and the reader depends on it.** The e2e spec
+  enumerates `[data-token]` from the live DOM, so it genuinely fails on a token missing a value in
+  either theme — but only for tokens the gallery renders. The gallery's 14 arrays match the CSS 1:1
+  today (97 names, verified); a token added to the CSS later with no gallery entry is simply
+  uncovered, silently. **Deriving that list from the CSS instead is a small, worthwhile wave** and
+  is the difference between a reader and a complete one.
 - **`--m3-*` is still the app's only substrate and is unchanged.** 391 usages across 185 names. 16c
   migrates components onto `--surface-*`/`--accent` one at a time; `--m3-*` is deleted when the last
   one leaves, not before.
