@@ -5,22 +5,29 @@ on:
     branches: ['**']
   pull_request:
 
-# Redundant runs are cancelled on every branch except `main`, where they queue instead.
+# Redundant runs are cancelled on every branch, `main` included.
 #
-# `main` is the exception because the last job here, `publish`, is coupled to a live
-# deployment: mediaserver auto-updates from `:latest`. Cancelling a superseded run also
-# cancels that publish, so under back-to-back pushes the registry silently stops being
-# updated while every run still reports green — the jobs that were cancelled are not the
-# jobs anyone reads. Adding `linux/arm64` widened the window a lot, since the emulated
-# build made `publish` by far the longest job in the workflow: it was cancelled three
-# consecutive times on 2026-08-06 with two sessions pushing to `main`, and nothing about
-# those runs looked wrong.
+# `main` used to be an exception: runs queued rather than cancelled, because the workflow's
+# last job was `publish`, which is coupled to a live deployment (mediaserver auto-updates
+# from `:latest`). Cancelling a superseded run also cancelled that publish, so under
+# back-to-back pushes the registry silently stopped being updated while every run still
+# reported green. That reasoning was correct, and the trade it bought was bad: it put a
+# slow, network-dependent, deployment-coupled job in the same concurrency group as every
+# verification job. On 2026-08-16 `docker/build-push-action` hung for over two hours after
+# all six verification jobs had passed, and since a run is not complete until all its jobs
+# are, that one step held the group and three subsequent CI runs sat `pending` with nothing
+# allocated — the authoritative signal for the whole project, unavailable, with a symptom
+# indistinguishable from a runner-allocation failure.
 #
-# Queuing is the right trade for a delivery branch. It costs runner minutes on
-# superseded commits; the alternative costs deployments, invisibly.
+# `publish` now lives in `publish.yml`, triggered by this workflow completing successfully
+# on `main`, with its own concurrency group. So verification can cancel freely again — only
+# the newest commit's result is interesting — and a slow or hung image build can no longer
+# block a test run. The deployment property the old policy protected is preserved there
+# rather than here; `publish.yml`'s own comments explain why cancelling is safe in that
+# group and was not in this one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: true
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '0'
@@ -153,75 +160,3 @@ jobs:
       # `docker run` inside the script would not find it. The runner's own Docker
       # is BuildKit-enabled already, which is all the Dockerfile's cache mounts need.
       - run: scripts/docker-smoke.sh auralis:ci
-
-  # Publishes the image `compose.yaml` names (`ghcr.io/patakihara/auralis:latest`) so a
-  # self-hoster's Watchtower has something to pull.
-  #
-  # `e2e` is in `needs` as of 2026-08-05. It was not, and the omission was invisible
-  # because this comment claimed the opposite ("passes its tests"): two consecutive builds
-  # with a failing Playwright suite published anyway, and the mediaserver box — which
-  # auto-updates from `:latest` — pulled and ran both. A red run reported failure while
-  # shipping. Every job that can say the build is wrong must gate the registry, or the
-  # overall run conclusion means nothing about what is deployed.
-  #
-  # `bundle-budget` joined the same list on 2026-08-05, for the same reason: it is a job
-  # that can say "this build is wrong" (a regressed web bundle), so it gates the registry
-  # like every other one here. `lighthouse-budget` joined on 2026-08-06 for the identical
-  # reason, one level up the stack: a regressed *performance* budget is just as much a
-  # reason to withhold a release as a regressed bundle size.
-  publish:
-    name: Publish image to GHCR
-    needs: [static, unit, e2e, container, bundle-budget, lighthouse-budget]
-    runs-on: ubuntu-latest
-    # Push events only, and only on `main` — the branch this project delivers on. A
-    # pull_request run has no write-scoped GITHUB_TOKEN and must never attempt this.
-    #
-    # This gate is coupled to a live deployment: mediaserver auto-updates from `:latest`,
-    # so whatever reaches the registry is running on that box within ~15 minutes.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      # QEMU is what lets an amd64 runner build the arm64 half of the manifest. It must
-      # come before buildx: buildx enumerates the platforms it can emulate when it starts,
-      # so registering the binfmt handlers afterwards leaves it advertising amd64 only and
-      # the arm64 build fails with "no match for platform".
-      - uses: docker/setup-qemu-action@v3
-      # Unlike the `container` job above, this one *does* want buildx: it pushes straight
-      # to the registry rather than loading into the local daemon for `docker run`, and
-      # buildx is what makes the GitHub Actions layer cache (below) available.
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      # `linux/amd64` + `linux/arm64` since 2026-08-06, which is what makes a Pi or an
-      # arm64 NAS a supported target rather than an aspiration — docs/ROADMAP.md phase 10's
-      # remaining half of the release story. The arm64 half is emulated through QEMU above,
-      # so this job is now the slowest thing in the workflow by a wide margin. That cost is
-      # accepted rather than worked around: it falls only on `main` pushes, it is fully
-      # cached between runs, and the alternative (a native arm64 runner) is not available
-      # on this account.
-      #
-      # `docker/build-push-action` writes both architectures under one tag as a multi-arch
-      # manifest list, so `ghcr.io/patakihara/auralis:latest` keeps meaning exactly what it
-      # meant before — a client pulls the image matching its own architecture. Nothing in
-      # `compose.yaml`, `docs/SELF_HOSTING.md` or mediaserver's Watchtower setup has to
-      # change, and an amd64 host pulling `:latest` gets the same bytes it did yesterday.
-      #
-      # Both tags hardcode the lowercase `patakihara/auralis` path rather than interpolating
-      # `github.repository_owner` — GHCR rejects uppercase, and the owner's account casing
-      # isn't guaranteed to stay lowercase.
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/patakihara/auralis:latest
-            ghcr.io/patakihara/auralis:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
