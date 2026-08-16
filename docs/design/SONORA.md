@@ -278,10 +278,12 @@ string (`frameStyle`/`mobileFrameStyle`, around line 1715–1717). Read directly
 | `--accent-ink`    | `color-mix(in oklch, var(--accent) 58%, black)` |
 
 The light branch _also_ overrides `--m3-tertiary: var(--m3-tertiary-container)` and re-points
-all five `--surface-*` tokens at their `-light` counterparts on this same frame element — i.e.
+all **six** `--surface-*` tokens — `--surface-bg`, `--surface-bg-alt`, `--surface-card`,
+`--surface-fg`, `--surface-fg-muted`, `--surface-border` — at their `-light` counterparts on this
+same frame element — i.e.
 the redesign's root frame does its own light/dark switching by inline custom property, layered
 independently of Sonora's own `[data-theme='dark']` `:root` rule. A rebuilder choosing where to
-set these five tokens should follow this pattern (component-scoped custom properties on a theme
+set these six tokens should follow this pattern (component-scoped custom properties on a theme
 root), not invent a different mechanism.
 
 **What breaks without these:** `RailItem` (§3.6) sets `color: var(--accent-ink)` for the active
@@ -436,7 +438,7 @@ Label: `10px` (hardcoded, not a token), weight 700.
 | `meta`        | `string`                                    | — (example: `'Audiobook · Frank Herbert · Simon Vance · 14 h 02 m'`)                                                                                                                      |
 | `status`      | `string`                                    | — (example: `'Requested · 87%'`)                                                                                                                                                          |
 | `tone`        | `'library'\|'request'\|'progress'\|'error'` | **Contradiction: the `// props:` comment declares the default as `'progress'`, but the actual `renderVals()` code is `p.tone \|\| 'library'` — the real runtime default is `'library'`.** |
-| `actionGlyph` | `string`                                    | `'play_arrow'`                                                                                                                                                                            |
+| `actionGlyph` | `string`                                    | **Contradiction, same shape as `tone`: the `// props:` comment declares `'downloading'`, the code is `p.actionGlyph \|\| 'play_arrow'` — the real runtime default is `'play_arrow'`.**    |
 | `platform`    | `'desktop'\|'mobile'`                       | `'desktop'`                                                                                                                                                                               |
 | `onClick`     | `() => void`                                | —                                                                                                                                                                                         |
 
@@ -661,7 +663,7 @@ pointed straight at a detail page); Podcasts was rebuilt to match Music's struct
 
 ### Collision 1 — `--m3-*` name overlap: REAL, quantified, and silent
 
-Sonora defines **30** `--m3-*` names; this app's existing token layer uses **184**. **22 names
+Sonora defines **29** `--m3-*` names; this app's existing token layer uses **184**. **22 names
 overlap exactly**:
 
 ```
@@ -673,7 +675,7 @@ overlap exactly**:
 --m3-surface-container-low, --m3-surface-container-lowest, --m3-surface-variant
 ```
 
-Sonora-only (8 more names, not in today's app): `--m3-background`, `--m3-on-background`,
+Sonora-only (**7** more names, not in today's app — 22 shared + 7 = the 29 total): `--m3-background`, `--m3-on-background`,
 `--m3-on-error`, `--m3-on-tertiary`, `--m3-on-tertiary-container`, `--m3-tertiary`,
 `--m3-tertiary-container`. (A "`--m3-dark-`" hit some greps turn up is a false positive — it's
 inside a prose comment in `tokens/colors.css`, not a real token; see §1.6.)
@@ -689,15 +691,36 @@ see this (it renders, and produces the pre-Sonora color, which passes every exis
 assertion). **16b must replace `ThemeProvider`'s own token-emission logic** to move Sonora's
 values in, not add a parallel stylesheet.
 
-### Collision 2 — artwork-derived color: retracted, do not re-open
+**`--m3-*` is defined in two places, not one.** Besides `ThemeProvider.tsx`'s inline JS,
+`packages/ui/src/styles/index.css:55-76` carries a static `:root` fallback block of the same
+colour names. Its own comment says `ThemeProvider` overwrites every one of them on its wrapper
+element, so it does not change the conclusion above — but a 16b implementer grepping for "where
+is `--m3-*` defined" will find both, and needs to change both.
+
+### Collision 2 — artwork-derived color: not a blocker, but still genuinely unasked
 
 §16 of `ROADMAP.md` already retracted this. `packages/ui/src/tokens/artwork.ts` exports one
 function, `sourceColorFromImageData`. Grepped for callers 2026-08-16: **zero**, outside its own
 `artwork.test.ts`. Whatever color pipeline ships today is already a user-picked accent (fed
 into `ThemeProvider`'s `sourceColor` prop from elsewhere), which is Sonora's own model
 (`--accent`, Symphony's 17-hue picker). There is no live artwork-derived-color code to reconcile
-against. **Do not re-open this or escalate it to the user** — it was already asked and
-answered.
+against.
+
+**So it does not block anything**: 16b can adopt Sonora's accent model without removing a
+feature, because the feature is not wired. Build on that and do not wait for an answer.
+
+**But do not record it as answered, because it is not.** An earlier draft of this section said
+it "was already asked and answered"; that is wrong and was corrected on review. Grepping
+`docs/USER_DECISIONS.md` finds nothing on it, `ROADMAP.md` §16 says the question "can be asked
+later, cheaply" — future tense — and `HANDOVER.md` still lists it as a live one-sentence ask.
+What §16 retracted was the _premise_ (that a beloved feature would be deleted), not the
+question.
+
+The question that remains, and it is one sentence: **should album-art-derived colour ever be
+wired up as the accent's source, or is a picker the final answer?** She named artwork-derived
+colour as something she loved about Symfonium, and Sonora's model is a user-picked hue, so by
+her own test — _would she have an opinion, and does the answer change what she gets?_ — this
+is worth asking. Ask it the next time there is a channel to her; do not block on it.
 
 ### Collision 3 — external font loading: REAL, two requests, self-hosting required
 

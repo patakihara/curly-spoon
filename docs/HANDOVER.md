@@ -50,12 +50,17 @@ The two project ids, so nobody re-derives them:
    `--m3-surface-container*`; this app already has a Material 3 token layer. If the names overlap,
    adopting Sonora's stylesheet redefines tokens the app already consumes, and **nothing in this
    repo's test suite can see that** — it renders, and some of it is wrong. Diff the property sets first.
-2. **Artwork-derived colour is contradicted by the design.** `Decisions already made` below records
-   colour derived from album art at runtime — the Symfonium behaviour she named as something she
-   loved. **Sonora's accent is a user-picked colour** (Symphony's 17 preset hues; `--accent` is the
-   one customizable brand colour). These are different products. This meets her own escalation test
-   — she would have an opinion and it changes what she gets — so **ask, in one sentence**, and get
-   on with everything else meanwhile.
+2. **Artwork-derived colour — the one open question in this phase, and it blocks nothing.**
+   `Decisions already made` below records colour derived from album art at runtime, the Symfonium
+   behaviour she named as loving. **Sonora's accent is a user-picked colour** (Symphony's 17 preset
+   hues). **But the premise was wrong**: `packages/ui/src/tokens/artwork.ts` has zero callers
+   outside its own test, so nothing derives colour from artwork today and what ships is _already_ a
+   user-picked accent — Sonora's own model. Nothing is being deleted and 16b is unblocked.
+   What survives is one sentence worth asking whenever there is a channel to her: **should
+   album-art-derived colour ever be wired up as the accent's source, or is the picker the final
+   answer?** It meets her own test — she would have an opinion and it changes what she gets.
+   **Ask it; do not block on it.** A review caught `SONORA.md` claiming this had been asked and
+   answered; it has not, and recording a live question as closed is worse than leaving it open.
 3. **Sonora loads Inter, Roboto Flex and Material Symbols Rounded from Google's CDN.** This product
    is self-hosted, one container, one port. Offline or LAN-only, the icons degrade to the literal
    words `play_arrow`, `skip_next` on screen, because Sonora uses glyph-name-as-element-text.
@@ -218,7 +223,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
 - `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
 - `2026-08-16T18:25:51Z` · `a62f69f223749e664` · Explore · ended · # Recon report — wave 15b-2 (mapping table at request time) Note up front: 'docs/ROADMAP.md' §15 names waves '15a', '15a-0', '15b', '15c', '15c-1', '…
-- `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · running · —
+- `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · ended · ## Verdict: fix these 4 things first (one is substantive, three are minor/arithmetic) I read every vendored token CSS file in full, all nine 'compone…
 
 <!-- AGENT_LOG_END -->
 
