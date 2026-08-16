@@ -23,7 +23,9 @@ different in this app, and it carries the substitution table.
 
 ### Session hand-off, 2026-08-17 — everything below is pushed and CI-verified
 
-Nothing is claimed and nothing is in flight. `main` is at `d5fbbb1`. **The next wave is `16c-2-W`**
+Nothing is claimed, nothing is in flight, and no unlaunched subagent spec was left behind —
+`docs/agent-specs/` is empty because every spec written this session was dispatched. **`main` is at
+`83683e0`, and both `CI` and `Android` are green on it** (verified, not assumed). **The next wave is `16c-2-W`**
 — finish web's migration off `--m3-*`, including completing the five primitives 16c-1-W only partly
 moved. It is ahead of `16c-1-A` deliberately; see the "16c-2" bullet in `ROADMAP.md` §16 for why.
 
