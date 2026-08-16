@@ -208,11 +208,22 @@ state until all four sources settle — **visibly changes what the user's primar
 before content arrives**. That is a product call. It is written up here so the user can make it;
 a session should not make it unilaterally.
 
-What landed instead is the reader: `e2e/app/home-cls.spec.ts` drives a real signed-in Home and
-sums `layout-shift` entries through a `PerformanceObserver` the way Lighthouse computes CLS,
-asserting under a **0.7 smoke ceiling** — chosen well above the worst measured run (0.409) so it
-stays quiet through this page's genuine run-to-run timing noise and fails on a structural
-regression. Verified passing locally before it landed.
+**The regression test that was meant to land with it was reverted too (`19ae5bb`), and that is the
+third revert of the day.** `e2e/app/home-cls.spec.ts` drove a real signed-in Home and summed
+`layout-shift` entries through a `PerformanceObserver`. It passed locally. On CI the run went 2
+failed / 3 flaky, with the new spec flaky and `for-you.spec.ts:229` and `context-menu.spec.ts:316`
+failing beside it — on a commit whose only web change was that one file, immediately after a green
+run.
+
+**The mechanism is already documented and was not thought about:** `playwright.config.ts` runs
+every `app` spec against **one shared, stateful, single-tenant BFF**, so a spec that repeatedly
+loads Home to measure paint timing is precisely the neighbour that perturbs everything else.
+**Timing measurement does not belong in a project whose timing is shared.** If it comes back it
+needs its own Playwright project with its own server, the way `onboarding.spec.ts` already has.
+
+The general lesson, paid for twice today: **a regression test that makes the suite unreliable costs
+more than the regression it guards**, because an unreliable suite is how a real failure gets waved
+through as flake.
 
 ### 14d — the Android test race, fixed twice by two sessions at once
 
