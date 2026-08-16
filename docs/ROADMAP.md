@@ -3164,6 +3164,29 @@ What they establish, which settles several questions without asking her:
   test proves we read our own fixture, not that the field arrives as expected. This is another
   reason the Audiobookshelf credential matters.
 
+  **Done** (`f1fc527`, merged as `6fe1be6`). Six fields now survive normalization: `Book.asin`,
+  `Podcast.feedUrl`, `PodcastEpisode.guid`, `Artist.musicBrainzArtistId`,
+  `Album.musicBrainzAlbumId`/`musicBrainzReleaseGroupId`, `Track.musicBrainzTrackId`. Every one is
+  `.nullable().optional()` folding `null` and absent alike, with tests feeding explicit `null`.
+
+  **Two claims are reasoned, not observed, and both degrade safely.** The Jellyfin `ProviderIds`
+  key names come from Jellyfin's `MetadataProvider` enum and cannot be checked without a
+  credential — an unmatched key yields `null` rather than throwing, and tests pin that unknown keys
+  do not clobber known ones. `asin`'s presence on _minified_ items is argued by analogy with
+  `isbn`: both sit on the same scalar metadata object, and Audiobookshelf's minification strips
+  only structured fields (`authors[]`, `series[]`). Structurally sound; still unobserved.
+
+  **One risk named and accepted:** `queryItems()` parses a whole `/Items` page in a single
+  `.parse()`, so a non-string `ProviderIds` value on any one item would fail the entire page rather
+  than that item. That is how every other field in this schema already behaves, and Jellyfin
+  documents `ProviderIds` as `Dictionary<string,string>`, so it is consistent rather than new —
+  but per-item error isolation is a real gap if a page ever fails inexplicably.
+
+  **These fields reach the wire already.** Unlike `shelves.ts` — whose routes rebuild the response
+  as an explicit object literal and silently drop new fields — the Jellyfin and library routes
+  `reply.send()` the client's return value directly. So **15b is consumption only, not consumption
+  plus plumbing**, which makes it smaller than the 15c-1 experience would suggest.
+
 - **15b — identity and dedupe. This is the hard part and the likeliest place to fail.** A recommended
   title has **two identities**: a provider catalogue entry, and a library item if it is ever acquired.
   The spec must settle, explicitly:
