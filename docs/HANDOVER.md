@@ -88,7 +88,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
 - `2026-08-15T19:13:48Z` · `ad3375be8178ba426` · general-purpose · ended · Confirmed: 'forUser()' is fully synchronous — 'getSettings'/'getJellyfinToken' are local DB reads, throws before constructing a client, no network I/…
 - `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · ended · I'll stop checking and wait for the notification.
 - `2026-08-15T19:43:25Z` · `a3e749172e175a6e5` · general-purpose · ended · I'll wait for the notification from the background Playwright run rather than poll.
@@ -98,11 +97,12 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T21:14:42Z` · `a7e86b0ad34a5d1a5` · general-purpose · ended · Clean commit, exactly one file changed. Working tree is clean, no long-running command backgrounded. ## Report **Branch/commit:** 'worktree-agent-a7e…
 - `2026-08-15T21:16:52Z` · `a51dab7f5fb349b6f` · general-purpose · ended · Committed. Exactly three files changed, no doc file touched (per the "no dedicated place" finding). ## Report **Branch/commit:** 'worktree-agent-a51d…
 - `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
-- `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · running · —
+- `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · ended · I've committed my work. Now I'll wait for the notification that the backgrounded Playwright run ('bavxriny6') has completed, rather than poll for it.
 - `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · ended · Committed. Final report: ## Report — Wave 14d **Branch/commit:** 'worktree-agent-a1e9c7904b31b3620' at 'f56132a', based on '9e87fdc'. ### Audit table…
 - `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · ended · Working tree clean. Not pushed. ## Report **Branch/commit:** 'worktree-agent-a7bfb028ca2b25a26' at '6004577', based on '9e87fdc'. Working tree clean,…
 - `2026-08-16T06:40:47Z` · `ada9aa18e890f1985` · general-purpose · running · —
 - `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
+- `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -428,18 +428,73 @@ Off by default so CI logs stay readable. Redirect the run to a file — the serv
 - **Quality is not assessable here.** Ten synthetic books prove mechanism, not taste. Judging
   whether the ranking is any _good_ wants the real 231-item library, which wants a credential.
 
+## Two autonomous sessions can run in this one checkout at once — this happened
+
+**`CLAUDE.md` line 291 is factually false and is the user's to correct, not a session's.** It
+reads "There is no parallelism to protect: only one session runs here at a time, and the runner
+skips while one is busy." On **2026-08-16 two `auralis-autorun` sessions were live simultaneously
+in `~/src/auralis-src`**, both committing directly to `main` in the shared working tree, both
+started from the identical kickoff prompt. Session `198bb53e` (started 2026-08-15 22:24) and
+session `5466206d` (started 2026-08-16 09:35) overlapped for the better part of an hour.
+
+That claim is the entire justification for the "do not create a worktree" rule, so it matters. The
+rule is still right for its other reasons (main-checkout rot, per-directory auto-memory, the
+runner's directory-based lookup, a worktree's `.claude/settings.json` being invisible elsewhere) —
+but "there is no parallelism to protect" is not one of them any more.
+
+**What actually went wrong, concretely:**
+
+- **Both sessions independently dispatched a wave on the same thing.** Two `UnifiedSearchViewModelTest`
+  race waves, and two Home-CLS attribution waves. One of each was killed once contact was made.
+  The claim discipline below did not prevent it: it says to check `main` before dispatching **and**
+  before merging, and one session checked only before merging.
+- **A push carried the other session's commits.** `e71837f`'s push reported
+  `261555d..e71837f` — three commits authored by the other session, already in the shared HEAD,
+  went to `origin` under a push neither session intended as theirs. Nothing was lost or reordered,
+  but no one reviewed them at the moment they landed.
+- **`git merge` ran against a tree the other session could have been mid-write on.** This is the
+  sharp edge. **Never `git add -A` in this checkout** — stage explicit paths only. That is now a
+  standing rule, not a stylistic preference.
+- **Pushes cancel each other's CI.** `android.yml` has `cancel-in-progress: true` unconditionally,
+  and two sessions pushing independently cancelled the `CI` and `Android` runs for both `e71837f`
+  and `e4bf86d` before either allocated a useful result. With one session this is a nuisance you
+  can schedule around; with two it means **no sha gets verified until both sessions agree to hold
+  a push**, which requires them to be talking.
+
+**What worked, and is the thing to repeat.** `ListAgents` lists the other live sessions on this
+machine and `SendMessage` reaches them by name. One message resolved the whole collision: the
+duplicated waves were identified, one of each was killed, `apps/android` and `apps/web` were split
+between the two sessions, and both agreed to hold pushes until the in-flight CI run finished.
+**A session that finds unexplained commits in this checkout's `git log` or reflog should run
+`ListAgents` before doing anything else** — the reflog entries were made _in this checkout's HEAD_,
+which is what distinguishes a concurrent session from a subagent working in its worktree.
+
+**Do not "fix" the runner.** `auralis-autorun.timer`/`.service` live under the host's own tooling,
+which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
+
 ## Claimed work — check here before starting a wave
 
 A lightweight lock, because two sessions can share this checkout. Claim a wave here
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed: the `UnifiedSearchViewModelTest` race** (2026-08-16). `main` is **red on Android** at
-`9e87fdc` — `UnifiedSearchViewModelTest > a library fetch failure still returns music results,
-degrading only the library side` failed `testReleaseUnitTest` with `UncompletedCoroutinesError`
-(607 tests, 1 failed, CI run 31911008835). This is the 13d race the roadmap named as a loose end
-with no owner; it is now firing on CI, and while it flakes no Android wave has a trustworthy
-signal. Being fixed ahead of 14b-2 and the CLS wave for exactly that reason.
+**Claimed by session `5466206d`: 14b-2** (Android For You carousel accessibility grouping) —
+in flight 2026-08-16. **Session `198bb53e` holds 14c** (Home CLS attribution, touching `apps/web`,
+`e2e`, `scripts`, `docs/perf`). That split was agreed by `SendMessage` after both sessions had
+independently dispatched waves on the same two things; see the section above.
+
+**Done, and no longer claimed: the `UnifiedSearchViewModelTest` race.** `main` was red on Android
+at `9e87fdc` with `UncompletedCoroutinesError` on "a library fetch failure still returns music
+results, degrading only the library side". `9e87fdc` and `b2561b8` carry **identical Kotlin** and
+went red and green respectively, which is a clean demonstration that the race is a coin toss
+rather than a deterministic break. Fixed in `6004577` (merged as `e71837f`) by widening 13d's
+scoped-dispatcher treatment from two tests to twelve, and in `e4bf86d` (the other session's 14d)
+by draining `resultsState` in `tearDown()` and fixing the same gap in `HomeViewModelTest` and
+`RequestsViewModelTest`. **Four tests remain on real `Dispatchers.IO` deliberately** — each keys a
+`setBodyDelay()` on a specific path to pin real interleaving, and collapsing them onto a test
+dispatcher would turn them into tautologies. **Not yet proven fixed**: the bar is several
+consecutive green `android.yml` runs on one sha, with each log showing the test-execution line
+rather than a cached `UP-TO-DATE` skip.
 
 14a-1, 14a-2 and 14b-1 all landed on `main`; see `ROADMAP.md` §14 and "Phase 14" below.
 
