@@ -146,7 +146,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T07:02:23Z` · `ad37ea8c4b5608f21` · general-purpose · ended · ## Verdict **Product code ('ForYouCarousel.kt'): merge as-is.** No defect found. **Test code ('ForYouCarouselAccessibilityTest.kt'): do not merge as-…
 - `2026-08-16T09:54:47Z` · `a23f4c8990b7c630c` · general-purpose · ended · ## Findings — Phase 11 / Android signing key archaeology **Method:** grepped 'history.jsonl' and per-session JSONL transcripts under '~/.claude/proje…
 - `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · ended · ## Findings — Android release / F-Droid pipeline audit ### BLOCKING **1. 'metadata/net.auralis.app.yml' — stale filename, doesn't match 'applicationI…
-- `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · running · —
+- `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-af8c398b2886e60db' at '…
 
 <!-- AGENT_LOG_END -->
 
@@ -546,6 +546,18 @@ but "there is no parallelism to protect" is not one of them any more.
 - **`git merge` ran against a tree the other session could have been mid-write on.** This is the
   sharp edge. **Never `git add -A` in this checkout** — stage explicit paths only. That is now a
   standing rule, not a stylistic preference.
+- **`git add <explicit paths>` is not enough on its own, and this is the subtler half.** A plain
+  `git commit -m …` with no paths commits **the whole index**, including whatever another session
+  has staged and not yet committed. That happened on `9f49625`, which swallowed another session's
+  staged `metadata/` rename — the change was correct and wanted, but it landed under a commit
+  message describing something else entirely, so **the reasoning behind it was separated from the
+  content and lost**. Four cross-session contaminations happened in one day; three were pushes
+  carrying commits, which can be reconstructed from shas. This one was a commit carrying another
+  session's work, and a commit message cannot be reconstructed.
+
+  **The fix is `git commit -- <paths>`** (or `git commit <paths>`), which commits only those paths
+  regardless of what else sits in the index. Use it for every commit in this checkout.
+
 - **Pushes cancel each other's CI.** `android.yml` has `cancel-in-progress: true` unconditionally,
   and two sessions pushing independently cancelled the `CI` and `Android` runs for both `e71837f`
   and `e4bf86d` before either allocated a useful result. With one session this is a nuisance you
@@ -1223,6 +1235,28 @@ Use Playwright to verify UI work directly — a screenshot beats inferring from 
 not a replacement.
 
 ### Gotchas
+
+- **Git hooks are armed in `.githooks/`, and they are not the same thing as `scripts/hooks/`.**
+  `scripts/hooks/` holds Claude Code hooks (usage gate, quiet hours, agent log); `.githooks/` holds
+  two plain git hooks, added 2026-08-16 at the user's direct request because CI's lint/format job
+  was its most frequent failure and every one of them emails her.
+  - `pre-commit` — prettier (and eslint) over **staged files only**, auto-fixing and re-staging.
+    A file that is **partially staged** is reported rather than fixed, because fixing it would
+    sweep the unstaged half into the commit.
+  - `pre-push` — `prettier --check` and `eslint` over the **whole repo**, because `git merge` does
+    **not** run `pre-commit`, so a subagent's worktree branch can carry unformatted files onto
+    `main` unchecked. That is not hypothetical: it happened within the hour, since an agent in a
+    fresh worktree has no `node_modules` and cannot run prettier at all.
+  - Both **fail open** with no `node_modules`, and both are bypassable with `--no-verify`.
+  - Armed by `package.json`'s `prepare` script (`git config core.hooksPath .githooks`) on every
+    `pnpm install`. `core.hooksPath` lives in the shared config, so **every worktree inherits it**.
+  - **Known limitation:** `git commit -- <paths>` builds a temporary index, so `pre-commit`'s
+    auto-fix does not reach the commit. It still blocks, telling you to run `pnpm format`. Since
+    path-limited commits are the standing rule here, expect the hook to report rather than fix.
+  - **Concurrency caveat:** a whole-repo lint can trip over a file another session is mid-write on.
+    `pre-push` blocked once on an eslint failure that did not reproduce. It prints eslint's real
+    output so a spurious failure is tellable from a real one — re-run if it names a file you did
+    not touch.
 
 - **The per-package typecheck does not cover `e2e/`. CI's does.** The root `pnpm typecheck` was
   unreliable here (five parallel `tsc` processes; cause never established — do not repeat the
