@@ -35,6 +35,7 @@ describe('normalizeArtist', () => {
         ImageTags: { Primary: 'tag-abc' },
         ChildCount: 5,
         UserData: { IsFavorite: true, PlayCount: 42, LastPlayedDate: '2026-08-01T12:00:00Z' },
+        ProviderIds: { MusicBrainzArtist: 'mbid-artist-1' },
       }),
     );
     expect(artist).toEqual({
@@ -46,6 +47,7 @@ describe('normalizeArtist', () => {
       favorite: true,
       playCount: 42,
       lastPlayedAt: Date.parse('2026-08-01T12:00:00Z'),
+      musicBrainzArtistId: 'mbid-artist-1',
     });
   });
 
@@ -65,6 +67,7 @@ describe('normalizeArtist', () => {
       favorite: false,
       playCount: 0,
       lastPlayedAt: null,
+      musicBrainzArtistId: null,
     });
   });
 
@@ -73,6 +76,27 @@ describe('normalizeArtist', () => {
       rawItem({ Id: 'artist-4', UserData: { LastPlayedDate: 'not-a-date' } }),
     );
     expect(artist.lastPlayedAt).toBeNull();
+  });
+
+  // wave 15a-0: ListenBrainz keys artist lookups on MusicBrainz's own artist id.
+  it('normalizes a missing MusicBrainzArtist provider id to null, never throwing', () => {
+    const artist = normalizeArtist(rawItem({ Id: 'artist-5', ProviderIds: {} }));
+    expect(artist.musicBrainzArtistId).toBeNull();
+  });
+
+  it('normalizes an entirely absent ProviderIds to musicBrainzArtistId: null, never throwing', () => {
+    const artist = normalizeArtist(rawItem({ Id: 'artist-6', ProviderIds: undefined }));
+    expect(artist.musicBrainzArtistId).toBeNull();
+  });
+
+  it('ignores unrecognised ProviderIds keys without losing the known one', () => {
+    const artist = normalizeArtist(
+      rawItem({
+        Id: 'artist-7',
+        ProviderIds: { MusicBrainzArtist: 'mbid-artist-7', SomeFutureProvider: 'xyz' },
+      }),
+    );
+    expect(artist.musicBrainzArtistId).toBe('mbid-artist-7');
   });
 });
 
@@ -91,6 +115,10 @@ describe('normalizeAlbum', () => {
         AlbumArtists: [{ Id: 'artist-1', Name: 'Boards of Canada' }],
         ArtistItems: [{ Id: 'other-artist', Name: 'Someone Else' }],
         UserData: { IsFavorite: true, PlayCount: 3, LastPlayedDate: '2026-07-15T08:30:00Z' },
+        ProviderIds: {
+          MusicBrainzAlbum: 'mbid-album-1',
+          MusicBrainzReleaseGroup: 'mbid-releasegroup-1',
+        },
       }),
     );
     expect(album.artistId).toBe('artist-1');
@@ -100,6 +128,8 @@ describe('normalizeAlbum', () => {
     expect(album.favorite).toBe(true);
     expect(album.playCount).toBe(3);
     expect(album.lastPlayedAt).toBe(Date.parse('2026-07-15T08:30:00Z'));
+    expect(album.musicBrainzAlbumId).toBe('mbid-album-1');
+    expect(album.musicBrainzReleaseGroupId).toBe('mbid-releasegroup-1');
   });
 
   it('falls back to ArtistItems when AlbumArtists is absent', () => {
@@ -121,6 +151,26 @@ describe('normalizeAlbum', () => {
     expect(album.favorite).toBe(false);
     expect(album.playCount).toBe(0);
     expect(album.lastPlayedAt).toBeNull();
+    expect(album.musicBrainzAlbumId).toBeNull();
+    expect(album.musicBrainzReleaseGroupId).toBeNull();
+  });
+
+  // wave 15a-0: Audnexus-style catalogues and ListenBrainz key album lookups on these.
+  it('normalizes an explicit-null ProviderIds field to null, never throwing', () => {
+    const album = normalizeAlbum(rawItem({ Id: 'album-4', ProviderIds: null }));
+    expect(album.musicBrainzAlbumId).toBeNull();
+    expect(album.musicBrainzReleaseGroupId).toBeNull();
+  });
+
+  it('ignores unrecognised ProviderIds keys without losing the known ones', () => {
+    const album = normalizeAlbum(
+      rawItem({
+        Id: 'album-5',
+        ProviderIds: { MusicBrainzAlbum: 'mbid-album-5', Tmdb: 'irrelevant' },
+      }),
+    );
+    expect(album.musicBrainzAlbumId).toBe('mbid-album-5');
+    expect(album.musicBrainzReleaseGroupId).toBeNull();
   });
 });
 
@@ -139,6 +189,7 @@ describe('normalizeTrack', () => {
         ImageTags: { Primary: 'tag-ghi' },
         Genres: ['IDM'],
         UserData: { IsFavorite: true, PlayCount: 11, LastPlayedDate: '2026-08-10T20:00:00Z' },
+        ProviderIds: { MusicBrainzTrack: 'mbid-track-1' },
       }),
     );
     expect(track).toEqual({
@@ -155,6 +206,7 @@ describe('normalizeTrack', () => {
       favorite: true,
       playCount: 11,
       lastPlayedAt: Date.parse('2026-08-10T20:00:00Z'),
+      musicBrainzTrackId: 'mbid-track-1',
     });
   });
 
@@ -187,6 +239,19 @@ describe('normalizeTrack', () => {
     expect(track.favorite).toBe(false);
     expect(track.playCount).toBe(0);
     expect(track.lastPlayedAt).toBeNull();
+  });
+
+  // wave 15a-0: ListenBrainz keys track (recording) lookups on MusicBrainzTrack.
+  it('normalizes a missing MusicBrainzTrack provider id to null, never throwing', () => {
+    const track = normalizeTrack(
+      rawItem({ Id: 'track-5', ProviderIds: { MusicBrainzAlbum: 'x' } }),
+    );
+    expect(track.musicBrainzTrackId).toBeNull();
+  });
+
+  it('normalizes an explicit-null ProviderIds field to null, never throwing', () => {
+    const track = normalizeTrack(rawItem({ Id: 'track-6', ProviderIds: null }));
+    expect(track.musicBrainzTrackId).toBeNull();
   });
 });
 

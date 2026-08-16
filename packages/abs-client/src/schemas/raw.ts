@@ -127,6 +127,7 @@ export const rawPodcastEpisodeSchema = z
     duration: z.number().optional(),
     audioFile: z.unknown().optional(),
     audioTrack: rawAudioTrackSchema.optional(),
+    guid: z.string().nullable().optional(),
   })
   .passthrough();
 

@@ -44,6 +44,17 @@ function primaryImageTag(raw: Pick<RawItem, 'ImageTags'>): string | null {
 }
 
 /**
+ * Reads one named entry off `ProviderIds` (a loose `Dictionary<string, string>`), defaulting
+ * to `null` when the whole field is absent/`null` or the specific key was never populated —
+ * the overwhelming common case, since population depends on Jellyfin's scanner finding a
+ * match. See `schemas/raw.ts`'s `ProviderIds` doc comment for the well-known MusicBrainz key
+ * names this reads.
+ */
+function providerId(raw: Pick<RawItem, 'ProviderIds'>, key: string): string | null {
+  return raw.ProviderIds?.[key] ?? null;
+}
+
+/**
  * Reads favourite state off a raw `UserData` fragment (present on a `BaseItemDto`, or the
  * whole body of a mark/unmark-favourite response) and defaults it to a definite `false`
  * when absent — never `undefined`. This is the one place that default is made, per this
@@ -98,6 +109,7 @@ export function normalizeArtist(raw: RawItem): Artist {
     favorite: normalizeFavoriteState(raw.UserData),
     playCount: normalizePlayCount(raw.UserData),
     lastPlayedAt: normalizeLastPlayedAt(raw.UserData),
+    musicBrainzArtistId: providerId(raw, 'MusicBrainzArtist'),
   };
 }
 
@@ -126,6 +138,8 @@ export function normalizeAlbum(raw: RawItem): Album {
     favorite: normalizeFavoriteState(raw.UserData),
     playCount: normalizePlayCount(raw.UserData),
     lastPlayedAt: normalizeLastPlayedAt(raw.UserData),
+    musicBrainzAlbumId: providerId(raw, 'MusicBrainzAlbum'),
+    musicBrainzReleaseGroupId: providerId(raw, 'MusicBrainzReleaseGroup'),
   };
 }
 
@@ -144,6 +158,7 @@ export function normalizeTrack(raw: RawItem): Track {
     favorite: normalizeFavoriteState(raw.UserData),
     playCount: normalizePlayCount(raw.UserData),
     lastPlayedAt: normalizeLastPlayedAt(raw.UserData),
+    musicBrainzTrackId: providerId(raw, 'MusicBrainzTrack'),
   };
 }
 

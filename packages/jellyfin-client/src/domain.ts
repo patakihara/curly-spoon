@@ -30,6 +30,10 @@ export interface Artist {
    * the server didn't report a date) — see `normalize.ts`'s `normalizeLastPlayedAt`. Never
    * `NaN`: an unparseable upstream date degrades to `null`, the same as an absent one. */
   lastPlayedAt: number | null;
+  /** `ProviderIds.MusicBrainzArtist`, when Jellyfin's scanner found a match — what
+   * ListenBrainz keys artist lookups on. `null` far more often than not: population depends
+   * on the scanner's metadata match, not every library entry has one. */
+  musicBrainzArtistId: string | null;
 }
 
 export interface Album {
@@ -53,6 +57,14 @@ export interface Album {
   playCount: number;
   /** See `Artist.lastPlayedAt`'s doc comment. */
   lastPlayedAt: number | null;
+  /** `ProviderIds.MusicBrainzAlbum` — see `Artist.musicBrainzArtistId`'s doc comment for the
+   * general shape; `null` unless the scanner found a match. */
+  musicBrainzAlbumId: string | null;
+  /** `ProviderIds.MusicBrainzReleaseGroup` — MusicBrainz's release-group id, distinct from
+   * `musicBrainzAlbumId` (a specific release): a release group is what ties different
+   * editions/pressings of the same album together, which some catalogue lookups key on
+   * instead of a specific release. */
+  musicBrainzReleaseGroupId: string | null;
 }
 
 export interface Track {
@@ -79,6 +91,9 @@ export interface Track {
   playCount: number;
   /** See `Artist.lastPlayedAt`'s doc comment. */
   lastPlayedAt: number | null;
+  /** `ProviderIds.MusicBrainzTrack` — MusicBrainz's recording id, what ListenBrainz keys
+   * track-level scrobble/lookup matching on. `null` unless the scanner found a match. */
+  musicBrainzTrackId: string | null;
 }
 
 export interface Playlist {

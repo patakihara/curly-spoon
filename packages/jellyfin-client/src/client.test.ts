@@ -142,6 +142,7 @@ describe('JellyfinClient.getArtists', () => {
         favorite: false,
         playCount: 0,
         lastPlayedAt: null,
+        musicBrainzArtistId: null,
       },
     ]);
   });

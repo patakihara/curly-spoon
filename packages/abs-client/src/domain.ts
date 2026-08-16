@@ -117,6 +117,11 @@ export interface Book {
   publishedYear: string | null;
   description: string | null;
   isbn: string | null;
+  /** Amazon's catalogue identifier — what Audnexus/AudiMeta key their metadata lookups
+   * on. Present on the same `metadata` object as `isbn`; Audiobookshelf's minified
+   * summary strips *structured* fields (`authors[]`/`series[]`), not scalar ones, so
+   * this is expected on minified items too, same as `isbn` already is. */
+  asin: string | null;
   duration: number;
   tracks: AudioTrack[] | undefined;
   chapters: Chapter[] | undefined;
@@ -133,6 +138,11 @@ export interface PodcastEpisode {
   publishedAt: number | null;
   duration: number;
   audioTrack: AudioTrack | null;
+  /** The RSS `<guid>` for this specific episode — what PodcastIndex keys episode
+   * lookups on, alongside the podcast's own `feedUrl`. Distinct from
+   * `PodcastFeedEpisode.enclosure`/no `guid` at all in that pre-import shape's older
+   * sibling; this one is a library episode's own real identifier. */
+  guid: string | null;
 }
 
 export interface Podcast {
@@ -143,6 +153,10 @@ export interface Podcast {
   genres: string[];
   numEpisodes: number;
   episodes: PodcastEpisode[] | undefined;
+  /** The RSS feed URL — what PodcastIndex keys podcast (not episode) lookups on.
+   * Already parsed for the pre-subscribe preview shapes (`PodcastDirectoryResult`,
+   * `PodcastFeedPreview`) but dropped for a library item's own `Podcast` until 15a-0. */
+  feedUrl: string | null;
 }
 
 export type Media = Book | Podcast;

@@ -150,6 +150,47 @@ describe('normalizeLibraryItem — books', () => {
   });
 });
 
+// wave 15a-0: `asin` is the identifier Audnexus/AudiMeta are keyed on. It lives on the same
+// `metadata` object as `isbn`, which this codebase already carries through minified and
+// expanded alike — see `oldMetadataToJSONMinified()` reasoning above, which only strips
+// *structured* fields (`authors[]`/`series[]`), never scalar metadata like `isbn`/`asin`.
+describe('Book.asin — the identifier phase 15 needs for provider matching', () => {
+  it('carries `asin` through when the fixture has it', () => {
+    const raw = rawLibraryItemSchema.parse({
+      ...minifiedBook,
+      media: {
+        ...minifiedBook.media,
+        metadata: { ...minifiedBook.media.metadata, asin: 'B002V1S3GY' },
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'book') throw new Error('expected book');
+    expect(item.media.asin).toBe('B002V1S3GY');
+  });
+
+  it('normalises to `null` when `asin` is absent, never throwing', () => {
+    const raw = rawLibraryItemSchema.parse(minifiedBook);
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'book') throw new Error('expected book');
+    expect(item.media.asin).toBeNull();
+  });
+
+  // The exact bug class that broke playback for weeks: `.optional()` accepts `undefined`
+  // but not a real server's literal `null`.
+  it('normalises to `null` when the server sends an explicit `null`, never throwing', () => {
+    const raw = rawLibraryItemSchema.parse({
+      ...minifiedBook,
+      media: {
+        ...minifiedBook.media,
+        metadata: { ...minifiedBook.media.metadata, asin: null },
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'book') throw new Error('expected book');
+    expect(item.media.asin).toBeNull();
+  });
+});
+
 /**
  * `Book.authors`/`Book.series` no longer admit an `id` field at the type level — see
  * `domain.ts`'s header. This is what makes the `findAuthorBooks`/`SeriesPage`
@@ -252,6 +293,77 @@ describe('normalizeLibraryItem — podcasts', () => {
     const item = normalizeLibraryItem(raw);
     if (item.media.kind !== 'podcast') throw new Error('expected podcast');
     expect(item.media.numEpisodes).toBe(1);
+  });
+});
+
+// wave 15a-0: PodcastIndex is keyed on feed URL + episode GUID. Both were parsed for the
+// unsubscribed-feed-preview shape already (`PodcastFeedPreview`/`PodcastFeedEpisode` in
+// domain.ts) but silently dropped for a library item's own `Podcast`/`PodcastEpisode`.
+describe('Podcast.feedUrl / PodcastEpisode.guid — the identifiers phase 15 needs for provider matching', () => {
+  it('carries `feedUrl` through when the fixture has it', () => {
+    const raw = rawLibraryItemSchema.parse({
+      ...minifiedPodcast,
+      media: {
+        ...minifiedPodcast.media,
+        metadata: { ...minifiedPodcast.media.metadata, feedUrl: 'https://example.com/feed.xml' },
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'podcast') throw new Error('expected podcast');
+    expect(item.media.feedUrl).toBe('https://example.com/feed.xml');
+  });
+
+  it('normalises `feedUrl` to `null` when absent, never throwing', () => {
+    const raw = rawLibraryItemSchema.parse(minifiedPodcast);
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'podcast') throw new Error('expected podcast');
+    expect(item.media.feedUrl).toBeNull();
+  });
+
+  it('normalises `feedUrl` to `null` when the server sends an explicit `null`, never throwing', () => {
+    const raw = rawLibraryItemSchema.parse({
+      ...minifiedPodcast,
+      media: {
+        ...minifiedPodcast.media,
+        metadata: { ...minifiedPodcast.media.metadata, feedUrl: null },
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'podcast') throw new Error('expected podcast');
+    expect(item.media.feedUrl).toBeNull();
+  });
+
+  it('carries an episode `guid` through when present on an expanded podcast', () => {
+    const raw = rawLibraryItemSchema.parse({
+      ...expandedPodcast,
+      media: {
+        ...expandedPodcast.media,
+        episodes: [{ ...expandedPodcast.media.episodes[0], guid: 'urn:uuid:abc-123' }],
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'podcast') throw new Error('expected podcast');
+    expect(item.media.episodes?.[0]?.guid).toBe('urn:uuid:abc-123');
+  });
+
+  it('normalises episode `guid` to `null` when absent, never throwing', () => {
+    const raw = rawLibraryItemSchema.parse(expandedPodcast);
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'podcast') throw new Error('expected podcast');
+    expect(item.media.episodes?.[0]?.guid).toBeNull();
+  });
+
+  it('normalises episode `guid` to `null` when the server sends an explicit `null`, never throwing', () => {
+    const raw = rawLibraryItemSchema.parse({
+      ...expandedPodcast,
+      media: {
+        ...expandedPodcast.media,
+        episodes: [{ ...expandedPodcast.media.episodes[0], guid: null }],
+      },
+    });
+    const item = normalizeLibraryItem(raw);
+    if (item.media.kind !== 'podcast') throw new Error('expected podcast');
+    expect(item.media.episodes?.[0]?.guid).toBeNull();
   });
 });
 
