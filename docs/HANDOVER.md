@@ -150,9 +150,14 @@ between what this project can build and what it can prove.
   lazy chunks. **If a future wave touches bundling in `packages/ui`, repeat that check — a green
   Playwright run is not evidence here.**
 
-  Found in passing, not acted on: `Chip.tsx`, `CircularProgress.tsx`, `LinearProgress.tsx` and
-  `Skeleton.tsx` each has a colocated `.css` file the component never imports. Already absent from
-  the bundle before this wave. Dead files, safe to delete, nobody's wave yet.
+  Found in passing by this wave, and **now done** (`aa2f598`): `Chip.css`, `CircularProgress.css`,
+  `LinearProgress.css` and `Skeleton.css` had no importer anywhere in the repo and are deleted.
+  The "already absent from the bundle" claim was re-established rather than inherited — built
+  before and after, total `dist/assets/*.css` is 269,523 B both times. One wrinkle worth knowing:
+  `Chip.tsx` still applies `m3-chip-wrapper`, whose only rule lived in the deleted `Chip.css`, so
+  that layout has been inert for months. It is unobservable because no caller uses
+  `variant="input"` with `onRemove`; the class is kept as a `className` hook and the component now
+  carries a comment saying what the first such caller will need to restore.
 
   **Why it was reverted, and this is the lesson worth keeping.** Web CI was green on **six
   consecutive runs before** the field landed and failed on **two of the three after**, every time on
@@ -382,14 +387,21 @@ cleared, so no one re-checks them:
 - `mergeGenreAffinity` never increases `target.totalSignal`, so a music-only user still sees an
   empty book feed. Cold start stays a visual no-op.
 
-**One open finding: `GET /music/recommended` has no consumer.** Grep finds no hit in
-`apps/web/src` or `apps/android`, and 13e-2 touched neither. This is the project's
-most-repeated failure mode — a writer with no reader — though a milder form than the four
-historical instances: the route works and is genuinely tested, it is simply inert in
-production. `ROADMAP.md` names 13e's reader as the cross-media merge into the **books** route,
-which _is_ wired and consumed; the music-facing endpoint is scope the wave invented beyond its
-spec. **It must either gain a consumer or be deleted — silence is the one option the project's
-own rule forbids.**
+**~~One open finding: `GET /music/recommended` has no consumer.~~ Closed — and this file
+contradicted itself about it for a day.** When 13e-2 was reviewed the route genuinely was a
+writer with no reader, and this section said so. **13f then built the reader on both clients**
+(`2e3f97b`), which the "Where the project is" section above has said all along — but nobody
+deleted the open finding, so the same document asserted both. Re-verified by grep 2026-08-16:
+web has `getMusicRecommended` in `api/client.ts`, `useMusicRecommendedQuery` in `api/queries.ts`
+and a consumer in `features/music/MusicHomePage.tsx`; Android has `MusicRepository.recommended()`
+feeding `MusicLibraryViewModel` and rendered by `MusicLibraryScreen`; `e2e/app/music-recommended.spec.ts`
+covers the web path in a browser. Nothing is inert.
+
+**The lesson is the contradiction, not the route.** A stale open finding is more expensive than
+a missing one: two sessions in a row could have "fixed" a reader that already existed, and this
+file is `@`-imported into every session, so the wrong half was being paid for on every turn.
+When a wave closes a finding recorded elsewhere in this file, delete the finding in the same
+commit — the same discipline the claim list already has.
 
 ### The suite is green — 188/188 — and two real defects were fixed to get there
 
