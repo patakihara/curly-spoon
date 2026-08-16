@@ -15,37 +15,81 @@ enforced by hooks at 90%, with a hand-off band from 85%).
 
 ## Where the project is
 
-Phases 1–10 **done**. Phase 11 **done\*** — the route is a self-hosted F-Droid repo, and
-the six remaining steps are blocked (below). Phase 12 (the user's spec addendum — five nav
-destinations, unified search, artist/author discography, For You carousels, context menus,
-per-content-type queues) is **shipped on web and Android except 12c-2**. **Phase 13
-(personalized recommendations) is done** — all six waves, CI-verified, on both clients.
+Phases 1–10 **done**. Phase 11 **done\*** — the route is a self-hosted F-Droid repo; **all eight
+secrets exist and Pages is enabled, and the only remaining gap is that no `v*` tag has ever been
+pushed.** Phase 12 (the user's spec addendum) is **shipped on web and Android except 12c-2**, which
+is now **answered** (below). Phase 13 **shipped as specced, and the spec was wrong** — see the next
+paragraph, because it is the single most important thing in this file. Phase 14 **done** (14a, 14b,
+14c). **Phase 15 is open and is the priority.**
 
-**Phases 1–13 are finished to the limit of what this machine can do**, and **phase 14** was
-opened on 2026-08-16 by a session that found that to be true — it is infrastructure (measurement
-and test capability), not product, and `ROADMAP.md` §14 says why. 14a is done; 14b has its harness
-and one open wave (14b-2). Nothing is half-built and no wave is in flight. What remains is the table below: each item
-needs a decision, a device, a credential, or a live change on another host. A session picking
-this up should read that table first and expect to find nothing it can start alone — that is
-the honest state, not a gap in the notes.
+**Phase 13 built the wrong thing, correctly.** It ranks items **already in the library**, so every
+shelf it produces re-sorts what the user already owns. Her words: _"It is not useful to me if
+recommendations only show things already in my library."_ Nothing is deleted — the profile, the
+scoring core and the shelf machinery are reusable and the library-derived shelves stay — but a
+session reading "phase 13 delivered personalized recommendations" and stopping there will build on a
+premise the user has rejected. **`ROADMAP.md` §15 is the corrected spec.**
 
-`docs/ROADMAP.md` §12 has each wave, its sha and its open findings. Everything is on
-**`main`**; do not push elsewhere without asking.
+**`docs/USER_DECISIONS.md` is the authority over anything here or in `ROADMAP.md` that predates
+2026-08-16.** Sofia answered the entire open-decisions list in one message and said she would not
+message again in that session. Read it before picking anything up. Her priority order, explicit and
+overriding the roadmap's own: **backend recommendations and requests first**, then **phase 11 /
+F-Droid**, and **frontend explicitly not now** — a design system is coming from her that may
+overhaul it, so cosmetic work started before it lands is likely to be thrown away. Shelf composition
+and loading behaviour are behaviour, not styling, and survive it.
+
+**There is plenty to start, and that is a change.** Until 2026-08-16 this file correctly said every
+remaining item needed a decision, a device, a credential or another host. That is no longer true:
+phase 15 is fully startable, phase 11 needs only a tag, and several long-parked items are now
+decided.
+
+`docs/ROADMAP.md` §15 is the current spec; §12 has each older wave, its sha and its open findings.
+Everything is on **`main`**; do not push elsewhere without asking.
+
+### What we owe the user — the credential ask, still unmade
+
+**This is on us and has been for weeks.** `docs/setup/MY_SETUP.md` names it as the first ask and no
+session has followed through, so it is stated here concretely enough to act on. Two tokens, both
+**read-only**, both hers to issue:
+
+1. **An Audiobookshelf API token** for `192.168.100.34:13378` — Settings → Users → her user → API
+   token. This is the important one. `packages/abs-client` was written from fixtures; playback was
+   completely broken from the client's creation until 2026-08-06 because a schema said `.optional()`
+   where the real server sends literal `null`. Everything beyond `/status` and `/ping` is still
+   unverified against reality.
+2. **A Jellyfin API key** for `192.168.100.34:8096` — Dashboard → API Keys → New. The lyrics schemas
+   have never seen a real `LyricDto`, and 12b's "sorted by relevance" cannot be tested without one.
+
+**What they unblock:** recording real responses, diffing them against
+`apps/server/src/testSupport/fakes/fixtures/*.json`, fixing fixtures **and** schemas — and, for the
+first time, judging whether recommendations are any _good_ against her real 231-item library instead
+of ten synthetic books. That last one is why this matters more for phase 15 than it did for 13.
 
 ### What remains, and what each item is blocked on
 
-Verified 2026-08-15 against `ROADMAP.md`, not inherited from a previous session's summary.
+**Re-derived 2026-08-16 against `docs/USER_DECISIONS.md`.** The previous version of this table
+predated her answers and half of it was stale.
 
-| Item                                                                                          | Blocked on                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **12c-2** — requestable content on artist/author pages                                        | Queue `440b217`: should a title already in the library still be offered as requestable? The same question arises in Search — deciding it twice, differently, is the failure mode.      |
-| **Phase 11**'s remaining steps                                                                | Two keys the user must generate, plus enabling Pages and pushing a tag. Everything automatable is built — see "Android distribution" below. `docs/FDROID_REPO.md` has the eight steps. |
-| **Launcher icon**                                                                             | There is none; the app ships Android's default. Adding a file is mechanical, deciding what the icon _is_ is not.                                                                       |
-| **12b** "sorted by relevance"                                                                 | Music results are alphabetical (`jellyfin-client` pins `sortBy: 'SortName'`). Testing a fix wants a real Jellyfin server; no session has a credential.                                 |
-| **12d (Android)** visual conformance                                                          | A device or emulator. None exists here, and that wave's whole requirement is visual.                                                                                                   |
-| **12a**'s cold-cache nav rail                                                                 | A design decision: what the rail shows before it knows which libraries exist. Deferred twice already.                                                                                  |
-| **Auto-updating deployment**                                                                  | A live change on mediaserver, needing that host's own rules and the user's go-ahead. See "Deployment" below.                                                                           |
-| ~~Direct play vs transcode; lyrics search; `GET /requests` scoping; `LinearProgress` `wavy`~~ | **All answered 2026-08-16** — see `docs/USER_DECISIONS.md`. Every other row in this table is also affected; the table predates her answers and has not been re-derived against them.   |
+| Item                                    | Blocked on                                                                                                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phase 15** — external recommendations | **Nothing. It is the top priority and fully startable.** `ROADMAP.md` §15 has the waves. Quality is unassessable without the Audiobookshelf credential above; mechanism is not. |
+| **Phase 11**'s last step                | **A `v*` tag.** Secrets and Pages are confirmed present; there are zero tags. Being taken now.                                                                                  |
+| **12b** "sorted by relevance"           | A Jellyfin credential — see the ask above.                                                                                                                                      |
+| **12d (Android)** visual conformance    | A device or emulator. The Compose harness (14b) asserts semantics in CI; it does not close the gap to a device.                                                                 |
+| **Auto-updating deployment**            | **Go-ahead given** — _"You have my go ahead for doing that on Jellyfin."_ Still read mediaserver's own `~/CLAUDE.md` first, and still do not take Jellyfin down.                |
+| **Launcher icon**                       | Deliberately parked — _"let's leave it hanging for now."_ Does **not** block the F-Droid listing.                                                                               |
+| **Android post-login crash**            | A logcat, or her reinstalling the current CI APK. Do not spend another source audit without one.                                                                                |
+| **Ebooks + read-along sync**            | In scope, low priority. The read-along half is far bigger than "render EPUB" and needs its own research.                                                                        |
+| **Android Settings screen**             | Approved, unscoped. Needs a wave; content undecided.                                                                                                                            |
+| **Search suggestions**                  | New requirement from her; needs a wave. Folded into phase 15's orbit, not yet specced.                                                                                          |
+
+**Answered and closed, so nobody re-opens them:** 12c-2 (an owned title shows in search but is not
+requestable — same rule for artist/author pages), direct play vs transcode (transcode is fine),
+`LinearProgress`'s `wavy` (drop the prop rather than leave one that lies), `GET /requests` scoping
+(parked while she is the only user), lyrics search (approved, get an external provider), 12a's
+cold-cache nav rail (**ours to decide** — she could not parse the question; pick the known
+destinations unfilled and stop asking). **We escalate too much**: she reversed the framing on two of
+nine long-deferred questions. The test is not "is this a product question" but **"would she have an
+opinion, and does the answer change what she gets?"**
 
 **Both items that were implementable on 2026-08-15 are done** (`50e74e0`, `3cda65c`), and
 each turned out to be a coverage problem rather than the live bug the roadmap prose implied.
@@ -100,8 +144,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
 - `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · ended · Only the two intended files under 'apps/android/' changed. Not pushed, no 'Agent' calls made, no dependency/build files touched. ## Report **Branch/c…
 - `2026-08-16T07:02:23Z` · `ad37ea8c4b5608f21` · general-purpose · ended · ## Verdict **Product code ('ForYouCarousel.kt'): merge as-is.** No defect found. **Test code ('ForYouCarouselAccessibilityTest.kt'): do not merge as-…
-- `2026-08-16T09:54:47Z` · `a23f4c8990b7c630c` · general-purpose · running · —
-- `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · running · —
+- `2026-08-16T09:54:47Z` · `a23f4c8990b7c630c` · general-purpose · ended · ## Findings — Phase 11 / Android signing key archaeology **Method:** grepped 'history.jsonl' and per-session JSONL transcripts under '~/.claude/proje…
+- `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · ended · ## Findings — Android release / F-Droid pipeline audit ### BLOCKING **1. 'metadata/net.auralis.app.yml' — stale filename, doesn't match 'applicationI…
 - `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
