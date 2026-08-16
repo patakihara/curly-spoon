@@ -88,7 +88,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T15:44:26Z` · `a6168e2a5df25b40c` · general-purpose · ended · I'll wait for the monitor's notification rather than poll further.
 - `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
 - `2026-08-15T19:13:48Z` · `ad3375be8178ba426` · general-purpose · ended · Confirmed: 'forUser()' is fully synchronous — 'getSettings'/'getJellyfinToken' are local DB reads, throws before constructing a client, no network I/…
 - `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · ended · I'll stop checking and wait for the notification.
@@ -100,9 +99,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T21:16:52Z` · `a51dab7f5fb349b6f` · general-purpose · ended · Committed. Exactly three files changed, no doc file touched (per the "no dedicated place" finding). ## Report **Branch/commit:** 'worktree-agent-a51d…
 - `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
 - `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · running · —
-- `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · running · —
+- `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · ended · Committed. Final report: ## Report — Wave 14d **Branch/commit:** 'worktree-agent-a1e9c7904b31b3620' at 'f56132a', based on '9e87fdc'. ### Audit table…
 - `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · ended · Working tree clean. Not pushed. ## Report **Branch/commit:** 'worktree-agent-a7bfb028ca2b25a26' at '6004577', based on '9e87fdc'. Working tree clean,…
 - `2026-08-16T06:40:47Z` · `ada9aa18e890f1985` · general-purpose · running · —
+- `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
 
 <!-- AGENT_LOG_END -->
 
@@ -189,6 +189,37 @@ median).
 the shift at its source (reserved space for shelf rows, or intrinsic dimensions on cover images).
 It is the most product-visible thing left on this machine — "the UI must be beautiful" is the
 user's own sentence.
+
+### 14d — the Android test race, fixed twice by two sessions at once
+
+**Two background sessions worked this checkout simultaneously on 2026-08-16 and both fixed the
+same bug.** No work was lost and the two fixes are complementary, but the near-miss is the useful
+part: `HANDOVER` already says to check `git log origin/main` and the claim list **before
+dispatching a wave and again before merging**, and the session that collided had only done the
+second. **A claim written between your dispatch and your merge is invisible unless you look for
+it, and dispatching is where the money is spent.**
+
+What each session landed:
+
+- `b2561b8`/`6004577` (the other session) — the precise root cause. `viewModelScope` runs on
+  `Dispatchers.Main`, which `setUp()` overrides with the test dispatcher, so every
+  `viewModelScope.launch` is tracked by `runTest`'s scheduler **right up until it hops onto the
+  class-wide `ApiClient`'s real `Dispatchers.IO`**. A test awaiting only `resultsState` can return
+  while that launch is still suspended off-scheduler, and `runTest`'s completion check throws
+  **inside that test**. The consequence worth remembering: **`tearDown()`'s drain can never rescue
+  the test that fails — it only protects the next one.**
+- `e4bf86d` (wave 14d) — two more files with the same latent defect that nobody had noticed:
+  `HomeViewModelTest` and `RequestsViewModelTest` each built a class-wide `ApiClient` on the **real
+  `Dispatchers.IO`** while injecting a test dispatcher into `setMain`. Neither needed real
+  interleaving (no `setBodyDelay` in `HomeViewModelTest` at all); `RequestsViewModelTest`'s one
+  genuine interleaving test now builds its own request-scoped real-IO client, the pattern
+  `MusicRequestsViewModelTest` already used. **`MusicRequestsViewModelTest`'s doc comment already
+  claimed `RequestsViewModelTest` did this** — it never did. A comment describing an intention
+  reads exactly like a comment describing the code.
+
+**The race is intermittent, so a single green run proves nothing.** The bar is several consecutive
+green `android.yml` runs, and when using `gh run rerun`, check the log actually shows a
+test-execution line rather than a cached `UP-TO-DATE` skip — the Gradle cache is restored by sha.
 
 ### 14b — Android had no way to verify UI at all, and now has a narrow one
 
