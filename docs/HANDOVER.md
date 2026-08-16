@@ -146,7 +146,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T10:36:32Z` · `a8b2dea9cf2eea6f9` · general-purpose · ended · None found — the core stays pure. I have everything needed for the verdict. ## Verdict: merge as-is All claims independently verified: 12/12 in 'shel…
 - `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
-- `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · running · —
+- `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
 
 <!-- AGENT_LOG_END -->
 
@@ -604,10 +604,17 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Claimed: 15b-1** (the ownership matcher) by session `5466206d`, dispatched at ~72% session usage
-2026-08-16. Its agent commits to `worktree-agent-a61f282c8a1f29cbf`; **if that branch has commits
-and no merge on `main`, the dispatching session hit its usage ceiling before it could merge — take
-it.** Everything else in phase 15 is unclaimed.
+**Nothing is currently claimed.** **15b-1 landed** (`c15e5e3`) — the pure ownership matcher, with
+`owned` / `possible` / `new` kept genuinely distinct and identifier matches beating title matches.
+
+**A wave that changes a shared domain type must typecheck its _consumers_.** 15a-0 added six fields
+to `packages/*-client`'s domain types and its spec told the agent to typecheck the packages it
+touched. `apps/server` consumes both, constructs `Book`/`Podcast`/`Album`/`Track` literals in test
+fixtures, and was never typechecked — so `main` went red on `89fdee4` with the wave's own checks all
+green. Fixed in `2bc0017`. **`pnpm --filter @auralis/server exec tsc --noEmit -p .` is not implied
+by typechecking the packages**, and this repo's own gotcha note already records that the
+per-package typecheck silently drops projects, which is how `main` went red the same way on
+2026-08-08.
 
 **Phase 15 progress so far:** the spec is `ROADMAP.md` §15, corrected twice by the user (browse is
 one destination, and per-medium providers are the design). **15a-0 done** (`6fe1be6`) — six upstream
