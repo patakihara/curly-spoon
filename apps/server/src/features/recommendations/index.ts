@@ -14,3 +14,12 @@ export { scoreCandidates } from './score.js';
 export { buildRecommendationShelves } from './shelves.js';
 export { albumToCandidate, buildMusicProgressSignals } from './adaptMusic.js';
 export { mergeGenreAffinity, CROSS_MEDIA_GENRE_WEIGHT } from './crossMediaGenre.js';
+export { matchOwnership } from './ownership.js';
+export type {
+  OwnershipIdentifierField,
+  OwnershipIdentifiers,
+  OwnershipItem,
+  OwnershipLibraryItem,
+  OwnershipMatchReason,
+  OwnershipVerdict,
+} from './ownership.js';
