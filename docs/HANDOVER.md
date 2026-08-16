@@ -681,7 +681,12 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Nothing is claimed. 16b-1 and 16b-3 are both landed and reviewed** — `d1dae5a` (Inter + Roboto
+**Claimed: 15a — the external-candidate seam** (`apps/server/src/features/recommendations/`),
+Sonnet agent dispatched 2026-08-16 ~22:55 UTC. Disjoint from phase 16, which is entirely
+`packages/ui` + `apps/web`. **16b-2 is next on the frontend side and is not yet claimed;**
+`ROADMAP.md` §16 has its architecture already decided, from measurement — read it before speccing.
+
+**16b-1 and 16b-3 are both landed and reviewed** — `d1dae5a` (Inter + Roboto
 Flex self-hosted, 276 KB, `--font-body` wired, plus `c1f51eb` shipping the OFL text the review
 caught missing) and `17a3d0e` (fourteen glyphs, and a type-safe filled/outlined toggle for the five
 nav destinations). Root typecheck, lint and 1626 unit tests green on the merged tree.
