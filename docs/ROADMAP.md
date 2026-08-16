@@ -3484,6 +3484,62 @@ The properties that will decide the integration:
    files and the icon font.** This is not a preference; it is the difference between the product
    working and not working on the network it is designed for.
 
+### Web and Android are built together from here — a standing change, not a preference
+
+**Set by the user directly on 2026-08-17:** _"Make sure that there is alignment between android and
+web. You may need to introduce some waves into the roadmap where you explicitly request that someone
+perform that review, and that from then on you adopt a position where the front end is developed
+concurrently for both platforms, ensuring there's parity."_
+
+**The wave plan below was written the wrong way round and has been restructured.** It ran
+16c/16d/16e on web and left **all** of Android to a single wave, 16f, at the end. That is the shape
+that produces divergence, and this project already has the receipts:
+
+- **13d/13f.** Web's half was verified by a real browser asserting on rendered testids; Android's by
+  unit tests plus a reviewer reading the render path. Same feature, two standards of proof.
+- **The accessibility claim that was false for months.** `HANDOVER.md` and this file both stated
+  that Android mirrored web's For You reason/`aria-describedby` contract. It did not — Android had
+  **no** `semantics` call on those carousels at all. Two documents asserted parity; a grep refuted
+  it. **A doc claiming parity is not evidence of parity.**
+- **Android playlists were built twice** on 2026-08-05, because nobody checked what had landed.
+
+So, from here:
+
+1. **Every frontend wave is specified for both platforms or is explicitly scoped as
+   platform-specific with a stated reason.** A wave that changes what the user sees on web and does
+   not say what happens on Android is incomplete, not merely web-first.
+2. **Paired waves are dispatched together** — `-W` for web, `-A` for Android — from one shared spec
+   naming the behaviour, so both agents implement against the same description rather than one
+   against the other's output.
+3. **Each pair is followed by a parity review, `-P`,** which is a real wave with its own agent and
+   its own report. See the checklist below.
+4. **Parity claims must cite evidence, never a document.** A parity report that says "both render
+   the reason line" without naming what it ran or grepped is rejected.
+
+### The parity review wave (`-P`) — what it must actually do
+
+Dispatch one **after each `-W`/`-A` pair lands**, as a separate agent that wrote neither half. It
+reports findings, not file contents, and it must answer all of:
+
+- **Structure.** For each element the wave touched: does the Android surface present the same
+  information, in the same order, with the same grouping? Name the file and symbol on each side.
+- **Tokens and values.** Do both consume the same design values — spacing, radius, type scale,
+  colour role? Web reads CSS custom properties; Android reads a Compose theme. **They can drift
+  silently and no test on either side sees it**, so the check is a literal value comparison.
+- **Accessibility.** Web's contract is `aria-*` and rendered semantics; Android's is
+  `semantics {}` / `contentDescription` / `mergeDescendants`. Confirm the _announced_ result matches
+  — this is the exact thing that was falsely claimed before, so grep for the mechanism, do not
+  reason about intent.
+- **States.** Loading, empty, error, and offline. Divergence hides here, because the happy path is
+  what gets screenshotted.
+- **What is verified how, on each side.** State the asymmetry plainly. Android has no device here;
+  Robolectric asserts semantics in CI and does not tell you what TalkBack announces or what is
+  reachable by touch. **Say so rather than implying equivalence.**
+
+**Escalate a genuine design divergence rather than inventing a reconciliation.** Some things
+_should_ differ — a bottom tab bar is not a navigation rail. The review's job is to separate
+deliberate platform idiom from accidental drift, and to say which each one is.
+
 ### The wave plan
 
 Sized to this repo's own rule — each wave completable in well under ~150 turns, split at file
@@ -3537,9 +3593,18 @@ boundaries, disjoint directories where waves run in parallel.
   the Material Symbols font (collision 3), behind `[data-theme="dark"]` / bare `:root`. Resolve the
   `--m3-*` overlap the way 16a decided. Nothing visual should change yet beyond colour and type;
   the point is that the substrate is Sonora's before any component is rebuilt.
-- **16c — `packages/ui` primitives.** Button, IconButton, Chip, Card, Badge, Input, Switch, Slider,
-  SectionHeader, QuickTile against the new tokens. `packages/ui` is a shared package, so this is a
-  single-agent wave, not a parallel one.
+- **16c — primitives, both platforms.**
+  - **16c-1-W (in flight)** — `Button`, `IconButton`, `Chip`, `Card`, `Slider` in `packages/ui`
+    against the new tokens. `Dialog`/`Sheet`/`Menu` are excluded: they portal outside
+    `.auralis-theme-root`, where the theme-scoped tokens do not resolve.
+  - **16c-1-A** — the same five in Compose. Android's `MaterialTheme` today receives **only a colour
+    scheme — no typography, no shapes** — so this wave gives Android a type scale and a shape scale
+    for the first time, carrying Sonora's exact values. Read
+    `docs/design/sonora/primitives/*.jsx` for the real numbers; the prop tables in `SONORA.md` give
+    the API and **not** the values.
+  - **16c-1-P** — parity review over the pair.
+  - **16c-2-W / -A / -P** — the remaining primitives (`Badge`, `Input`, `Switch`, `SectionHeader`,
+    `QuickTile`), same shape.
 - **16d — web shell and chrome. It has two inputs already built and waiting, and naming them here
   is the point of this note** — an unread capability is this repo's most-repeated failure, and
   16b-3's toggle is the fifth entry in that ledger if nobody comes for it.
@@ -3553,19 +3618,53 @@ boundaries, disjoint directories where waves run in parallel.
   - **`--accent-ink`** (from 16b-2). The active rail item's colour, and the only correct token for
     it — `--accent` itself is the raw hue and is not guaranteed readable on the surface.
 
-- **16d — web shell and chrome.** The docked three-region shell, the adaptive rig, the rail, the
-  player bar. `github.md` records the specific fixes the redesign made here: **chrome is docked and
-  only content scrolls**, and the rig breaks at **1440 / 1280 / 1024 / 768 px — the panel drops
-  below 1240, the rail collapses below 1024**. Selected nav destinations use the **Material Symbols
-  FILL axis** (see `screenshots/nav-fill.png`).
-- **16e — web screens.** For You, Music/Album, Book detail, Podcasts, Search, Now Playing/Queue/
-  Mini player, Settings/Onboarding. Splittable across two or three agents on disjoint feature dirs.
-- **16f — Android.** The same language in Compose: `MaterialTheme` currently receives **only a
-  colour scheme, no typography and no shapes**, and its colour is Android's wallpaper-derived
-  Material You rather than the pipeline `DESIGN.md` specifies (see §14 and the Android design
-  audit). Sonora gives Android its typography and shape scales for the first time. **The Compose
-  test harness from 14b is what makes this verifiable at all** — before it, an Android restyle was
-  checkable only by "it compiles" plus a reviewer reading it.
+- **16d — shell and chrome, both platforms. This now carries a bug the user reported directly, and
+  it is the highest-value thing in the phase.**
+
+  **The scroll bug, in her words (2026-08-17):** _"a major bug on the frontend UI that I hope has
+  been fixed is that the side navbar and the 'now playing' sidebar both scrolled with the main
+  content."_ **It is not fixed.** Verified in the tree the same day: `.auralis-shell` is
+  `min-height: 100vh` with `.auralis-shell__row` also `min-height: 100vh` and
+  `.auralis-shell__content` carrying no `overflow` or `height` rule at all, so **the whole document
+  scrolls**. The only `position: fixed` elements are the _compact_ (mobile) bottom nav, the compact
+  settings button and the compact mini player — so on desktop and tablet the rail and the Now
+  Playing panel scroll away with the content, exactly as she describes.
+
+  This is precisely what the redesign fixed: `github.md` records _"chrome (rail, mini player, bottom
+  nav) is now docked; only content scrolls"_ as one of its audit fixes. So the fix is specified,
+  not invented — dock the three regions and make `.auralis-shell__content` the single scroll
+  container.
+
+  **Do this before the screens.** A screen rebuilt inside a document that scrolls wrongly has to be
+  revisited once the scroll container moves, and anything measuring or scrolling depends on it.
+
+  - **16d-W** — the docked three-region shell, the rail, the player bar, and the adaptive rig. The
+    rig has **two** thresholds, not four: `railWide = w >= 1024`, `showPanel = w >= 1240`. Its two
+    inputs are already built (see below). Expect `desktop-width.spec.ts` and
+    `tablet-breakpoint.spec.ts` to break **by design** — they pin the breakpoints being re-cut — and
+    budget them into the wave rather than treating them as regressions.
+  - **16d-A** — the Android equivalent: the persistent bottom tab bar, the mini player docked above
+    it, and the full-screen Now Playing sheet. **Check Android for the same class of bug** — whether
+    its chrome is genuinely pinned or scrolls with a `LazyColumn` — rather than assuming the report
+    is web-only.
+  - **16d-P** — parity review over the pair. `github.md` records the specific fixes the redesign made here: **chrome is docked and
+    only content scrolls**, and the rig breaks at **1440 / 1280 / 1024 / 768 px — the panel drops
+    below 1240, the rail collapses below 1024**. Selected nav destinations use the **Material Symbols
+    FILL axis** (see `screenshots/nav-fill.png`).
+
+- **16e — screens, paired per screen rather than per platform.** For You/browse, Music/Album, Book
+  detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding. **Split by screen,
+  not by platform** — each screen is one `-W`/`-A`/`-P` triple from one shared spec describing the
+  behaviour, so neither client is implemented against the other's output. Screens are disjoint
+  enough to run several triples in parallel.
+- **16f — Android's remaining gap, and it is no longer "all of Android".** With 16c–16e paired,
+  what is left here is what has no web counterpart: `MaterialTheme` receiving a full typography and
+  shape scale (it gets neither today), and Android's colour coming from the platform's
+  wallpaper-derived Material You rather than Sonora's accent. **The Compose harness from 14b is what
+  makes any of this verifiable** — before it, an Android restyle was checkable only by "it compiles"
+  plus a reviewer reading it. Be precise about what that harness buys: it confirms a node exists
+  with the semantics you meant; it does not tell you what TalkBack announces or how the row looks.
+
 - **16g — reconcile the docs.** `DESIGN.md` describes a Material 3 Expressive system with
   artwork-derived colour and spring physics; Sonora is flat, accent-driven, and explicitly
   anti-spring. One of them has to stop being the spec. Also update `README.md` — see below.

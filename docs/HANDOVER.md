@@ -1512,7 +1512,8 @@ repo-signing passwords in cleartext. Stage a clean directory containing only `re
   `e2e` project, where Playwright specs live. That turned `main` red on 2026-08-08 while every local
   check passed. Run `pnpm --filter e2e typecheck` too, or prefer the root command if it works now.
 - **Run `pnpm format` before pushing docs, every time.** Twice in one day unformatted docs turned CI
-  red. The cost is not a badge: `format:check` gates `publish`, `publish` writes
+  red. The cost is not a badge: `format:check` gates CI, a green CI on `main` is what triggers
+  `.github/workflows/publish.yml`, and that writes
   `ghcr.io/patakihara/auralis:latest`, and mediaserver pulls that tag every fifteen minutes — **a red
   CI on `main` quietly stops the live deployment updating**.
 - **`SESSION_SECRET`** keys the AES-256-GCM encryption of stored upstream credentials; changing it
@@ -1635,11 +1636,21 @@ published nothing, so `:latest` was unchanged either way, and the next green bui
 republishes it. The alternative was waiting out GitHub's six-hour job timeout with the project's
 authoritative verification signal blocked the whole time.
 
-**What is not a session's call**: changing `ci.yml`. The obvious fix — move `publish` into its own
-workflow with its own concurrency group, so verification jobs may cancel freely while the
-deployment-coupled job queues alone — **changes deployment behaviour on a live host** and belongs
-to the user. Note it also has a second-order benefit: a hung publish would then stop only future
-publishes, not all verification.
+**Fixed the same day, at the user's explicit direction** (_"No, that's your fix"_), in `affece6`.
+`publish` now lives in **`.github/workflows/publish.yml`**, triggered by `workflow_run` when CI
+completes, gated on `conclusion == success && event == push && head_branch == 'main'` — that gate
+is the whole safety property, since `workflow_run` fires on failures and cancellations too. It
+checks out `workflow_run.head_sha` explicitly, because a `workflow_run` job starts from the default
+branch; taking the default would build `main`'s tip and publish it under the tested commit's tag,
+which is green and wrong. `ci.yml` goes back to `cancel-in-progress: true` unconditionally, and the
+publish job carries `timeout-minutes: 60` so a hang fails visibly instead of stalling toward
+GitHub's six-hour default.
+
+**Why cancelling is safe in the new group and was not in the old one** — the crux, and worth not
+re-litigating. Before, a cancel came from a superseded _verification_ run and nothing replaced the
+lost publish. Now the only thing that can cancel a publish is a _newer_ publish, which by
+definition pushes a newer commit to the same tags, so `:latest` converges on the most recent green
+build instead of going stale. That is the outcome the old queuing policy was trying to protect.
 
 ### The self-hosted fonts are CI-verified, including Lighthouse — the one signal local cannot give
 

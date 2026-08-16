@@ -67,6 +67,40 @@ project, so anything it reads is paid for on every remaining turn of the phase. 
 subagent reads the same files once, in a context that is discarded when it finishes, and
 returns a paragraph. The orchestrator specs, integrates, and decides — it does not read.
 
+## Frontend parity — web and Android are built together
+
+**Set by the user directly on 2026-08-17**, and it binds beyond the phase it was given in:
+_"Make sure that there is alignment between android and web. You may need to introduce some waves
+into the roadmap where you explicitly request that someone perform that review, and that from then
+on you adopt a position where the front end is developed concurrently for both platforms, ensuring
+there's parity."_
+
+So the default shape for any frontend work is a **pair plus a review**: a `-W` wave, an `-A` wave,
+dispatched together from one shared spec that describes the _behaviour_, and then a `-P` parity
+review by an agent that wrote neither half. A wave that changes what the user sees on one platform
+and says nothing about the other is incomplete, not merely first.
+
+**Why this is a rule and not a preference — it has failed here three times:**
+
+- Both `ROADMAP.md` and `HANDOVER.md` stated for months that Android mirrored web's For You
+  accessibility contract. It did not: Android had **no** `semantics` call on those carousels at all.
+  Two documents asserted parity and a single grep refuted it. **A doc claiming parity is not
+  evidence of parity.**
+- Phase 13f shipped the same feature to both clients with two standards of proof — web verified by a
+  real browser asserting on rendered testids, Android by unit tests plus a reviewer reading the
+  render path.
+- Android playlists were built twice on 2026-08-05, because nobody checked what had already landed.
+
+**Parity claims must cite evidence.** Name what you ran or grepped, on each side. And state the
+asymmetry rather than papering over it: there is no Android device here, so Robolectric confirms a
+node exists with the semantics you meant and tells you nothing about what TalkBack announces or what
+is reachable by touch.
+
+**Deliberate divergence is fine and must be labelled.** A bottom tab bar is not a navigation rail.
+The review's job is to separate platform idiom from accidental drift, and to say which each one is.
+
+`docs/ROADMAP.md` §16 has the checklist a `-P` wave works through.
+
 ## Compaction — compact at every phase boundary
 
 Session quality degrades as context fills. **After finishing each phase — once it is
