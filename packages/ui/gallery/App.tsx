@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Dialog,
   Fab,
+  FILLABLE_ICON_NAMES,
   Icon,
   ICON_NAMES,
   IconButton,
@@ -464,6 +465,16 @@ function IconGallery() {
           <div key={name} className="gallery-icon-cell" data-testid={`icon-${name}`}>
             <Icon name={name} title={name} />
             <span>{name}</span>
+          </div>
+        ))}
+      </div>
+      {/* Outline (FILL 0) variants, for the nav-rail-style filled/unselected distinction —
+          separate testids so e2e can diff a filled cell's `d` against its outline twin. */}
+      <div className="gallery-icon-grid" data-testid="icon-outline-grid">
+        {FILLABLE_ICON_NAMES.map((name) => (
+          <div key={name} className="gallery-icon-cell" data-testid={`icon-outline-${name}`}>
+            <Icon name={name} title={`${name} outline`} filled={false} />
+            <span>{name} (outline)</span>
           </div>
         ))}
       </div>
