@@ -30,29 +30,29 @@ a value is inferred rather than read, it says so.
 
 ### 1.1 Neutral scale (`tokens/colors.css`)
 
-| Token | Value |
-| --- | --- |
-| `--neutral-950` | `rgb(8, 8, 8)` |
-| `--neutral-900` | `rgb(12, 12, 12)` |
-| `--neutral-850` | `rgb(20, 20, 20)` |
-| `--neutral-700` | `rgb(45, 45, 45)` |
-| `--neutral-500` | `rgb(90, 90, 90)` |
+| Token           | Value                |
+| --------------- | -------------------- |
+| `--neutral-950` | `rgb(8, 8, 8)`       |
+| `--neutral-900` | `rgb(12, 12, 12)`    |
+| `--neutral-850` | `rgb(20, 20, 20)`    |
+| `--neutral-700` | `rgb(45, 45, 45)`    |
+| `--neutral-500` | `rgb(90, 90, 90)`    |
 | `--neutral-300` | `rgb(150, 150, 150)` |
 | `--neutral-100` | `rgb(215, 215, 215)` |
-| `--neutral-50` | `rgb(225, 225, 225)` |
-| `--neutral-0` | `rgb(255, 255, 255)` |
+| `--neutral-50`  | `rgb(225, 225, 225)` |
+| `--neutral-0`   | `rgb(255, 255, 255)` |
 
 ### 1.2 Flat surface system — dark (default) and light
 
-| Token | Dark (default) | Light (`-light` suffix) |
-| --- | --- | --- |
-| `--surface-bg` | `var(--neutral-900)` = `rgb(12,12,12)` | `--surface-bg-light: rgb(235,235,235)` |
-| `--surface-bg-alt` | `var(--neutral-950)` = `rgb(8,8,8)` | `--surface-bg-alt-light: rgb(240,240,240)` |
-| `--surface-card` | `var(--neutral-850)` = `rgb(20,20,20)` | `--surface-card-light: rgb(225,225,225)` |
-| `--surface-fg` | `var(--neutral-50)` = `rgb(225,225,225)` | `--surface-fg-light: rgb(25,25,25)` |
-| `--surface-fg-muted` | `var(--neutral-300)` = `rgb(150,150,150)` | `--surface-fg-muted-light: rgb(80,80,80)` |
-| `--surface-border` | `rgb(255 255 255 / 8%)` | `--surface-border-light: rgb(0 0 0 / 8%)` |
-| `--surface-overlay-header` | `linear-gradient(transparent 0%, rgb(0 0 0 / 85%) 100%)` | (no light variant defined) |
+| Token                      | Dark (default)                                           | Light (`-light` suffix)                    |
+| -------------------------- | -------------------------------------------------------- | ------------------------------------------ |
+| `--surface-bg`             | `var(--neutral-900)` = `rgb(12,12,12)`                   | `--surface-bg-light: rgb(235,235,235)`     |
+| `--surface-bg-alt`         | `var(--neutral-950)` = `rgb(8,8,8)`                      | `--surface-bg-alt-light: rgb(240,240,240)` |
+| `--surface-card`           | `var(--neutral-850)` = `rgb(20,20,20)`                   | `--surface-card-light: rgb(225,225,225)`   |
+| `--surface-fg`             | `var(--neutral-50)` = `rgb(225,225,225)`                 | `--surface-fg-light: rgb(25,25,25)`        |
+| `--surface-fg-muted`       | `var(--neutral-300)` = `rgb(150,150,150)`                | `--surface-fg-muted-light: rgb(80,80,80)`  |
+| `--surface-border`         | `rgb(255 255 255 / 8%)`                                  | `--surface-border-light: rgb(0 0 0 / 8%)`  |
+| `--surface-overlay-header` | `linear-gradient(transparent 0%, rgb(0 0 0 / 85%) 100%)` | (no light variant defined)                 |
 
 **These are two distinct token namespaces, not a single set that flips.** The `-light` names
 are separate custom properties, always defined, on both themes — nothing switches their value
@@ -61,54 +61,54 @@ point at (§1.4) — the raw `--surface-*`/`--surface-*-light` tokens themselves
 
 ### 1.3 Accent (`tokens/colors.css`)
 
-| Token | Value |
-| --- | --- |
-| `--accent` | `#8b5cf6` (violet — one pick from the preset family below) |
-| `--accent-contrast` | `#fff` |
+| Token               | Value                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| `--accent`          | `#8b5cf6` (violet — one pick from the preset family below) |
+| `--accent-contrast` | `#fff`                                                     |
 
 Preset palette — Symphony's 17-hue picker, offered as swatches, not fixed brand colors:
 
-| Token | Value | Token | Value |
-| --- | --- | --- | --- |
-| `--accent-red` | `#ef4444` | `--accent-sky` | `#0ea5e9` |
-| `--accent-orange` | `#f97316` | `--accent-blue` | `#3b82f6` |
-| `--accent-amber` | `#f59e0b` | `--accent-indigo` | `#6366f1` |
-| `--accent-yellow` | `#eab308` | `--accent-violet` | `#8b5cf6` |
-| `--accent-lime` | `#84cc16` | `--accent-purple` | `#a855f7` |
-| `--accent-green` | `#22c55e` | `--accent-fuchsia` | `#d946ef` |
-| `--accent-emerald` | `#10b981` | `--accent-pink` | `#ec4899` |
-| `--accent-teal` | `#14b8a6` | `--accent-rose` | `#f43f5e` |
-| `--accent-cyan` | `#06b6d4` | | |
+| Token              | Value     | Token              | Value     |
+| ------------------ | --------- | ------------------ | --------- |
+| `--accent-red`     | `#ef4444` | `--accent-sky`     | `#0ea5e9` |
+| `--accent-orange`  | `#f97316` | `--accent-blue`    | `#3b82f6` |
+| `--accent-amber`   | `#f59e0b` | `--accent-indigo`  | `#6366f1` |
+| `--accent-yellow`  | `#eab308` | `--accent-violet`  | `#8b5cf6` |
+| `--accent-lime`    | `#84cc16` | `--accent-purple`  | `#a855f7` |
+| `--accent-green`   | `#22c55e` | `--accent-fuchsia` | `#d946ef` |
+| `--accent-emerald` | `#10b981` | `--accent-pink`    | `#ec4899` |
+| `--accent-teal`    | `#14b8a6` | `--accent-rose`    | `#f43f5e` |
+| `--accent-cyan`    | `#06b6d4` |                    |           |
 
 ### 1.4 Semantic state colors (`tokens/colors.css`)
 
-| Token | Value |
-| --- | --- |
-| `--state-error` | `#e12f43` |
-| `--state-success` | `#42e477` |
-| `--state-warning` | `#ffcc8b` |
-| `--state-info` | `var(--accent)` |
+| Token             | Value           |
+| ----------------- | --------------- |
+| `--state-error`   | `#e12f43`       |
+| `--state-success` | `#42e477`       |
+| `--state-warning` | `#ffcc8b`       |
+| `--state-info`    | `var(--accent)` |
 
 ### 1.5 `--m3-*` chroma roles — light (`:root`) and dark (`[data-theme='dark']`)
 
-| Token | Light | Dark |
-| --- | --- | --- |
-| `--m3-primary` | `#4d5c92` | `#b6c4ff` |
-| `--m3-on-primary` | `#ffffff` | `#1d2d61` |
-| `--m3-primary-container` | `#dce1ff` | `#354479` |
-| `--m3-on-primary-container` | `#354479` | `#dce1ff` |
-| `--m3-secondary` | `#595d72` | `#c2c5dd` |
-| `--m3-on-secondary` | *(not declared light)* | `#3f434e` |
-| `--m3-secondary-container` | `#dee1f9` | `#565a70` |
-| `--m3-on-secondary-container` | *(not declared light)* | `#dee1f9` |
-| `--m3-tertiary` | `#75546f` | `#ffb7db` |
-| `--m3-on-tertiary` | *(not declared light)* | `#472b50` |
-| `--m3-tertiary-container` | `#ffd7f5` | `#603e67` |
-| `--m3-on-tertiary-container` | *(not declared light)* | `#ffd7f5` |
-| `--m3-error` | `#ba1a1a` | `#ffb4ab` |
-| `--m3-on-error` | *(not declared light)* | `#690005` |
-| `--m3-error-container` | `#ffdad6` | `#93000a` |
-| `--m3-on-error-container` | *(not declared light)* | `#ffdad6` |
+| Token                         | Light                  | Dark      |
+| ----------------------------- | ---------------------- | --------- |
+| `--m3-primary`                | `#4d5c92`              | `#b6c4ff` |
+| `--m3-on-primary`             | `#ffffff`              | `#1d2d61` |
+| `--m3-primary-container`      | `#dce1ff`              | `#354479` |
+| `--m3-on-primary-container`   | `#354479`              | `#dce1ff` |
+| `--m3-secondary`              | `#595d72`              | `#c2c5dd` |
+| `--m3-on-secondary`           | _(not declared light)_ | `#3f434e` |
+| `--m3-secondary-container`    | `#dee1f9`              | `#565a70` |
+| `--m3-on-secondary-container` | _(not declared light)_ | `#dee1f9` |
+| `--m3-tertiary`               | `#75546f`              | `#ffb7db` |
+| `--m3-on-tertiary`            | _(not declared light)_ | `#472b50` |
+| `--m3-tertiary-container`     | `#ffd7f5`              | `#603e67` |
+| `--m3-on-tertiary-container`  | _(not declared light)_ | `#ffd7f5` |
+| `--m3-error`                  | `#ba1a1a`              | `#ffb4ab` |
+| `--m3-on-error`               | _(not declared light)_ | `#690005` |
+| `--m3-error-container`        | `#ffdad6`              | `#93000a` |
+| `--m3-on-error-container`     | _(not declared light)_ | `#ffdad6` |
 
 **Three light-side roles genuinely have no `--m3-on-secondary`/`-on-tertiary`/`-on-error`
 declaration on `:root`** — read directly from `tokens/colors.css`; not an omission in this
@@ -118,21 +118,21 @@ whichever wave first needs one of those three on light.
 
 ### 1.6 `--m3-*` surface aliases — these are where light/dark actually differs mechanically
 
-| Token | Light (`:root`) | Dark (`[data-theme='dark']`) |
-| --- | --- | --- |
-| `--m3-background` | `var(--surface-bg-light)` | `var(--surface-bg)` |
-| `--m3-on-background` | `var(--surface-fg-light)` | `var(--surface-fg)` |
-| `--m3-surface` | `var(--surface-bg-light)` | `var(--surface-bg)` |
-| `--m3-on-surface` | `var(--surface-fg-light)` | `var(--surface-fg)` |
-| `--m3-surface-variant` | `var(--surface-card-light)` | `var(--surface-card)` |
-| `--m3-on-surface-variant` | `var(--surface-fg-muted-light)` | `var(--surface-fg-muted)` |
-| `--m3-outline` | `var(--surface-fg-muted-light)` | `var(--neutral-500)` |
-| `--m3-outline-variant` | `var(--surface-card-light)` | `var(--neutral-700)` |
-| `--m3-surface-container-lowest` | `var(--surface-bg-alt-light)` | `var(--surface-bg-alt)` |
-| `--m3-surface-container-low` | `var(--surface-bg-light)` | `var(--surface-bg)` |
-| `--m3-surface-container` | `var(--surface-card-light)` | `var(--surface-card)` |
-| `--m3-surface-container-high` | `color-mix(in oklch, var(--surface-card-light) 94%, var(--surface-fg-light))` | `color-mix(in oklch, var(--surface-card) 80%, var(--neutral-700))` |
-| `--m3-surface-container-highest` | `color-mix(in oklch, var(--surface-card-light) 88%, var(--surface-fg-light))` | `var(--neutral-700)` |
+| Token                            | Light (`:root`)                                                               | Dark (`[data-theme='dark']`)                                       |
+| -------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `--m3-background`                | `var(--surface-bg-light)`                                                     | `var(--surface-bg)`                                                |
+| `--m3-on-background`             | `var(--surface-fg-light)`                                                     | `var(--surface-fg)`                                                |
+| `--m3-surface`                   | `var(--surface-bg-light)`                                                     | `var(--surface-bg)`                                                |
+| `--m3-on-surface`                | `var(--surface-fg-light)`                                                     | `var(--surface-fg)`                                                |
+| `--m3-surface-variant`           | `var(--surface-card-light)`                                                   | `var(--surface-card)`                                              |
+| `--m3-on-surface-variant`        | `var(--surface-fg-muted-light)`                                               | `var(--surface-fg-muted)`                                          |
+| `--m3-outline`                   | `var(--surface-fg-muted-light)`                                               | `var(--neutral-500)`                                               |
+| `--m3-outline-variant`           | `var(--surface-card-light)`                                                   | `var(--neutral-700)`                                               |
+| `--m3-surface-container-lowest`  | `var(--surface-bg-alt-light)`                                                 | `var(--surface-bg-alt)`                                            |
+| `--m3-surface-container-low`     | `var(--surface-bg-light)`                                                     | `var(--surface-bg)`                                                |
+| `--m3-surface-container`         | `var(--surface-card-light)`                                                   | `var(--surface-card)`                                              |
+| `--m3-surface-container-high`    | `color-mix(in oklch, var(--surface-card-light) 94%, var(--surface-fg-light))` | `color-mix(in oklch, var(--surface-card) 80%, var(--neutral-700))` |
+| `--m3-surface-container-highest` | `color-mix(in oklch, var(--surface-card-light) 88%, var(--surface-fg-light))` | `var(--neutral-700)`                                               |
 
 Note `--m3-outline`/`--m3-outline-variant` and both `-high`/`-highest` steps use **different
 mix formulas** light vs. dark (not just a namespace swap) — copy these exactly, don't infer a
@@ -172,27 +172,27 @@ Inter needs no substitution — it's Symphony's actual built-in font choice
 
 ### 1.8 Typography (`tokens/typography.css`)
 
-| Token | Value | | Token | Value |
-| --- | --- | --- | --- | --- |
-| `--text-xs` | `0.6875rem` (11px) | | `--leading-xs` | `0.875rem` (14px) |
-| `--text-sm` | `0.8125rem` (13px) | | `--leading-sm` | `1rem` (16px) |
-| `--text-md` | `0.875rem` (14px) | | `--leading-md` | `1.125rem` (18px) |
-| `--text-lg` | `1rem` (16px) | | `--leading-lg` | `1.25rem` (20px) |
-| `--text-xl` | `1.125rem` (18px) | | `--leading-xl` | `1.5rem` (24px) |
-| `--text-2xl` | `1.25rem` (20px) | | | |
-| `--text-3xl` | `1.5rem` (24px) | | | |
-| `--text-4xl` | `1.75rem` (28px) | | | |
-| `--text-5xl` | `2rem` (32px) | | | |
+| Token        | Value              |     | Token          | Value             |
+| ------------ | ------------------ | --- | -------------- | ----------------- |
+| `--text-xs`  | `0.6875rem` (11px) |     | `--leading-xs` | `0.875rem` (14px) |
+| `--text-sm`  | `0.8125rem` (13px) |     | `--leading-sm` | `1rem` (16px)     |
+| `--text-md`  | `0.875rem` (14px)  |     | `--leading-md` | `1.125rem` (18px) |
+| `--text-lg`  | `1rem` (16px)      |     | `--leading-lg` | `1.25rem` (20px)  |
+| `--text-xl`  | `1.125rem` (18px)  |     | `--leading-xl` | `1.5rem` (24px)   |
+| `--text-2xl` | `1.25rem` (20px)   |     |                |                   |
+| `--text-3xl` | `1.5rem` (24px)    |     |                |                   |
+| `--text-4xl` | `1.75rem` (28px)   |     |                |                   |
+| `--text-5xl` | `2rem` (32px)      |     |                |                   |
 
 Headings (weight 900 throughout, no separate light/dark values):
 
-| Token | Value |
-| --- | --- |
-| `--h1-size` / `--h1-leading` | `2.25rem` / `2.75rem` (36/44) |
+| Token                        | Value                           |
+| ---------------------------- | ------------------------------- |
+| `--h1-size` / `--h1-leading` | `2.25rem` / `2.75rem` (36/44)   |
 | `--h2-size` / `--h2-leading` | `1.875rem` / `2.375rem` (30/38) |
-| `--h3-size` / `--h3-leading` | `1.5rem` / `2rem` (24/32) |
-| `--h4-size` / `--h4-leading` | `1.25rem` / `1.875rem` (20/30) |
-| `--heading-weight` | `900` |
+| `--h3-size` / `--h3-leading` | `1.5rem` / `2rem` (24/32)       |
+| `--h4-size` / `--h4-leading` | `1.25rem` / `1.875rem` (20/30)  |
+| `--heading-weight`           | `900`                           |
 
 No italics anywhere in the source apps (per `readme.md`).
 
@@ -200,34 +200,34 @@ No italics anywhere in the source apps (per `readme.md`).
 
 Two parallel scales exist — **not aliases of each other**, both real, sourced separately:
 
-| "Feishin" scale | Value | | "Layout" scale | Value |
-| --- | --- | --- | --- | --- |
-| `--space-0` | `0px` | | `--spacing-xs` | `4px` |
-| `--space-xs` | `0.25rem` (4px) | | `--spacing-sm` | `8px` |
-| `--space-sm` | `0.5rem` (8px) | | `--spacing-md` | `12px` |
-| `--space-md` | `0.75rem` (12px) | | `--spacing-lg` | `16px` |
-| `--space-lg` | `1rem` (16px) | | `--spacing-xl` | `20px` |
-| `--space-xl` | `1.5rem` (24px) | | `--spacing-2xl` | `24px` |
-| `--space-2xl` | `2rem` (32px) | | `--grid-gap` | `12px` |
-| `--space-3xl` | `2.25rem` (36px) | | | |
-| `--space-4xl` | `2.5rem` (40px) | | | |
+| "Feishin" scale | Value            |     | "Layout" scale  | Value  |
+| --------------- | ---------------- | --- | --------------- | ------ |
+| `--space-0`     | `0px`            |     | `--spacing-xs`  | `4px`  |
+| `--space-xs`    | `0.25rem` (4px)  |     | `--spacing-sm`  | `8px`  |
+| `--space-sm`    | `0.5rem` (8px)   |     | `--spacing-md`  | `12px` |
+| `--space-md`    | `0.75rem` (12px) |     | `--spacing-lg`  | `16px` |
+| `--space-lg`    | `1rem` (16px)    |     | `--spacing-xl`  | `20px` |
+| `--space-xl`    | `1.5rem` (24px)  |     | `--spacing-2xl` | `24px` |
+| `--space-2xl`   | `2rem` (32px)    |     | `--grid-gap`    | `12px` |
+| `--space-3xl`   | `2.25rem` (36px) |     |                 |        |
+| `--space-4xl`   | `2.5rem` (40px)  |     |                 |        |
 
 Other:
 
-| Token | Value |
-| --- | --- |
-| `--icon-sm` | `24px` (Material Symbols glyph font-size) |
-| `--icon-md` | `28px` |
-| `--miniplayer-album-size` | `44px` |
+| Token                     | Value                                     |
+| ------------------------- | ----------------------------------------- |
+| `--icon-sm`               | `24px` (Material Symbols glyph font-size) |
+| `--icon-md`               | `28px`                                    |
+| `--miniplayer-album-size` | `44px`                                    |
 
 ### 1.10 Radius (`tokens/radius.css`) — one scale, both platforms
 
-| Token | Value |
-| --- | --- |
-| `--radius-xs` | `8px` |
-| `--radius-sm` | `16px` |
-| `--radius-md` | `24px` |
-| `--radius-lg` | `32px` |
+| Token           | Value   |
+| --------------- | ------- |
+| `--radius-xs`   | `8px`   |
+| `--radius-sm`   | `16px`  |
+| `--radius-md`   | `24px`  |
+| `--radius-lg`   | `32px`  |
 | `--radius-pill` | `999px` |
 
 Desktop chrome uses the small end; mobile uses the large end + `--radius-pill`, per `readme.md`
@@ -238,14 +238,14 @@ readme's generalization holds everywhere.
 
 ### 1.11 Shadows (`tokens/shadows.css`) — desktop only; mobile uses none
 
-| Token | Value |
-| --- | --- |
-| `--shadow-xs` | `0 1px 2px rgba(0,0,0,0.05)` |
-| `--shadow-sm` | `0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)` |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)` |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05)` |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.04)` |
-| `--shadow-xxl` | `0 25px 50px rgba(0,0,0,0.25)` |
+| Token          | Value                                                       |
+| -------------- | ----------------------------------------------------------- |
+| `--shadow-xs`  | `0 1px 2px rgba(0,0,0,0.05)`                                |
+| `--shadow-sm`  | `0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)`     |
+| `--shadow-md`  | `0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)`     |
+| `--shadow-lg`  | `0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05)`   |
+| `--shadow-xl`  | `0 20px 25px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.04)` |
+| `--shadow-xxl` | `0 25px 50px rgba(0,0,0,0.25)`                              |
 
 Mobile depth comes from `--m3-surface-container*` steps, never a shadow (`readme.md`).
 
@@ -259,25 +259,25 @@ string (`frameStyle`/`mobileFrameStyle`, around line 1715–1717). Read directly
 
 **Dark (base values, no theme override applied):**
 
-| Token | Value |
-| --- | --- |
-| `--accent-ink` | `var(--accent)` |
-| `--tone-library` | `var(--accent)` |
+| Token             | Value                  |
+| ----------------- | ---------------------- |
+| `--accent-ink`    | `var(--accent)`        |
+| `--tone-library`  | `var(--accent)`        |
 | `--tone-progress` | `var(--state-warning)` |
-| `--tone-request` | `var(--m3-tertiary)` |
-| `--tone-error` | `var(--state-error)` |
+| `--tone-request`  | `var(--m3-tertiary)`   |
+| `--tone-error`    | `var(--state-error)`   |
 
 **Light (dark values above, then these overrides applied when `theme === 'light'`):**
 
-| Token | Value |
-| --- | --- |
-| `--tone-library` | `#6B4300` |
-| `--tone-progress` | `#7A4A00` |
-| `--tone-request` | `#5B3B57` |
-| `--tone-error` | `var(--state-error)` (unchanged) |
-| `--accent-ink` | `color-mix(in oklch, var(--accent) 58%, black)` |
+| Token             | Value                                           |
+| ----------------- | ----------------------------------------------- |
+| `--tone-library`  | `#6B4300`                                       |
+| `--tone-progress` | `#7A4A00`                                       |
+| `--tone-request`  | `#5B3B57`                                       |
+| `--tone-error`    | `var(--state-error)` (unchanged)                |
+| `--accent-ink`    | `color-mix(in oklch, var(--accent) 58%, black)` |
 
-The light branch *also* overrides `--m3-tertiary: var(--m3-tertiary-container)` and re-points
+The light branch _also_ overrides `--m3-tertiary: var(--m3-tertiary-container)` and re-points
 all five `--surface-*` tokens at their `-light` counterparts on this same frame element — i.e.
 the redesign's root frame does its own light/dark switching by inline custom property, layered
 independently of Sonora's own `[data-theme='dark']` `:root` rule. A rebuilder choosing where to
@@ -304,13 +304,13 @@ shown, and the code wins** (it's what the component actually does).
 
 ### 3.1 `ArtistCard`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `title` | `string` | — |
-| `sub` | `string` | `'2 albums'` |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` |
-| `width` | `string` | `'160px'` (desktop), `'132px'` (mobile) if unset |
-| `onClick` | `() => void` | — |
+| Prop       | Type                  | Default                                          |
+| ---------- | --------------------- | ------------------------------------------------ |
+| `title`    | `string`              | —                                                |
+| `sub`      | `string`              | `'2 albums'`                                     |
+| `platform` | `'desktop'\|'mobile'` | `'desktop'`                                      |
+| `width`    | `string`              | `'160px'` (desktop), `'132px'` (mobile) if unset |
+| `onClick`  | `() => void`          | —                                                |
 
 Computed styles: root is `flex column, center, cursor: pointer`, width per above. Art is a
 **circle** (`border-radius: 50%`) at `width: 100%; aspect-ratio: 1`, filled with
@@ -322,11 +322,11 @@ in any vendored component). Title: `var(--text-md)`, weight 700, single-line ell
 
 ### 3.2 `BackLink`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `label` | `string` | `'Browse'` |
+| Prop       | Type                  | Default     |
+| ---------- | --------------------- | ----------- |
+| `label`    | `string`              | `'Browse'`  |
 | `platform` | `'desktop'\|'mobile'` | `'desktop'` |
-| `onClick` | `() => void` | — |
+| `onClick`  | `() => void`          | —           |
 
 Renders `arrow_back` (Material Symbols Rounded, 20px, `line-height:1`) + label, inline-flex,
 `gap:8px`, `font-size: var(--text-sm)`, weight 700, color `var(--surface-fg-muted)` desktop /
@@ -334,12 +334,12 @@ Renders `arrow_back` (Material Symbols Rounded, 20px, `line-height:1`) + label, 
 
 ### 3.3 `FieldRow`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `label` | `string` | `'Server URL'` |
-| `placeholder` | `string` | `'https://abs.home.lan'` |
-| `value` | `string` | `''` |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` |
+| Prop          | Type                  | Default                  |
+| ------------- | --------------------- | ------------------------ |
+| `label`       | `string`              | `'Server URL'`           |
+| `placeholder` | `string`              | `'https://abs.home.lan'` |
+| `value`       | `string`              | `''`                     |
+| `platform`    | `'desktop'\|'mobile'` | `'desktop'`              |
 
 Wraps the Sonora primitive `<Input>` (§4). Label: `var(--text-sm)`, weight 700, muted color.
 **Mobile-only wrinkle, noted in the file's own comment:** "The design system's mobile `Input`
@@ -349,15 +349,15 @@ var(--radius-pill); padding: 4px 6px`. Desktop applies no such wrapper.
 
 ### 3.4 `MediaCard`
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `title` | `string` | — | |
-| `sub` | `string` | — | In a mixed shelf, caller prefixes kind: `"Book · 6 h 12 m left"`; single-type shelves pass just the artist. |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` | |
-| `progress` | `number \| null` (0..1) | — | Renders a bottom progress bar only if `typeof progress === 'number'` |
-| `absent` | `boolean` | `false` | Renders a **"Not in library"** pill, top-left, and switches art/title to muted/dashed treatment |
-| `width` | `string` | `'176px'` (desktop), `'152px'` (mobile) | |
-| `onClick` | `() => void` | — | |
+| Prop       | Type                    | Default                                 | Notes                                                                                                       |
+| ---------- | ----------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `title`    | `string`                | —                                       |                                                                                                             |
+| `sub`      | `string`                | —                                       | In a mixed shelf, caller prefixes kind: `"Book · 6 h 12 m left"`; single-type shelves pass just the artist. |
+| `platform` | `'desktop'\|'mobile'`   | `'desktop'`                             |                                                                                                             |
+| `progress` | `number \| null` (0..1) | —                                       | Renders a bottom progress bar only if `typeof progress === 'number'`                                        |
+| `absent`   | `boolean`               | `false`                                 | Renders a **"Not in library"** pill, top-left, and switches art/title to muted/dashed treatment             |
+| `width`    | `string`                | `'176px'` (desktop), `'152px'` (mobile) |                                                                                                             |
+| `onClick`  | `() => void`            | —                                       |                                                                                                             |
 
 This is the card that renders **phase 15 discovery results and 12c-2's owned/not-owned
 distinction.** `absent: true` is what marks a discovered-but-unowned title — not requestable,
@@ -374,17 +374,17 @@ color drops to muted. The absent pill: `position: absolute; left:8px; top:8px`, 
 
 ### 3.5 `MediaHeader`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `kindLabel` | `string` | `'Album'` |
-| `title` | `string` | — |
-| `subtitle` | `string` | — |
-| `meta` | `string` | — (design's own example: `"2021 · Synthwave · 2 tracks · 6 min"`) |
-| `playLabel` | `string` | `'Play'` |
-| `secondLabel` | `string` | `'Shuffle'` |
-| `round` | `boolean` | `false` — art is circular (artist/author headers) vs. `var(--radius-lg)` square (album/book/podcast headers) |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` |
-| `onPlay`, `onSecond`, `onSubtitle` | `() => void` | `onSecond` falls back to `onPlay` if unset |
+| Prop                               | Type                  | Default                                                                                                      |
+| ---------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `kindLabel`                        | `string`              | `'Album'`                                                                                                    |
+| `title`                            | `string`              | —                                                                                                            |
+| `subtitle`                         | `string`              | —                                                                                                            |
+| `meta`                             | `string`              | — (design's own example: `"2021 · Synthwave · 2 tracks · 6 min"`)                                            |
+| `playLabel`                        | `string`              | `'Play'`                                                                                                     |
+| `secondLabel`                      | `string`              | `'Shuffle'`                                                                                                  |
+| `round`                            | `boolean`             | `false` — art is circular (artist/author headers) vs. `var(--radius-lg)` square (album/book/podcast headers) |
+| `platform`                         | `'desktop'\|'mobile'` | `'desktop'`                                                                                                  |
+| `onPlay`, `onSecond`, `onSubtitle` | `() => void`          | `onSecond` falls back to `onPlay` if unset                                                                   |
 
 Art size: `232px` desktop, `208px` mobile. Layout: desktop is a horizontal flex
 (`gap: 28px; align-items: flex-end`); mobile is a centered column. Title uses
@@ -397,12 +397,12 @@ pattern for "this label is a link to another entity" throughout the redesign (al
 
 ### 3.6 `QuickPick`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `title` | `string` | `'The Fellowship of the Ring'` |
-| `sub` | `string` | `'Book · 6 h 12 m left'` |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` |
-| `onClick` | `() => void` | — |
+| Prop       | Type                  | Default                        |
+| ---------- | --------------------- | ------------------------------ |
+| `title`    | `string`              | `'The Fellowship of the Ring'` |
+| `sub`      | `string`              | `'Book · 6 h 12 m left'`       |
+| `platform` | `'desktop'\|'mobile'` | `'desktop'`                    |
+| `onClick`  | `() => void`          | —                              |
 
 Small horizontal row: art `52px` (desktop) / `48px` (mobile) square, `border-radius: 8px`
 (literal px, not a token — the only hardcoded radius among the nine cards). Root padding
@@ -411,12 +411,12 @@ Small horizontal row: art `52px` (desktop) / `48px` (mobile) square, `border-rad
 
 ### 3.7 `RailItem`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `icon` | `string` | `'explore'` (a Material Symbols glyph name) |
-| `label` | `string` | `'Browse'` |
-| `active` | `boolean` | `true` |
-| `onClick` | `() => void` | — |
+| Prop      | Type         | Default                                     |
+| --------- | ------------ | ------------------------------------------- |
+| `icon`    | `string`     | `'explore'` (a Material Symbols glyph name) |
+| `label`   | `string`     | `'Browse'`                                  |
+| `active`  | `boolean`    | `true`                                      |
+| `onClick` | `() => void` | —                                           |
 
 This is the desktop rail's nav destination. Icon uses the **FILL axis**:
 `font-variation-settings: 'FILL' 1, 'wght' 500` when active, `'FILL' 0, 'wght' 400` when
@@ -430,15 +430,15 @@ Label: `10px` (hardcoded, not a token), weight 700.
 
 ### 3.8 `ResultRow`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `title` | `string` | — (design's example: `'Dune Messiah'`) |
-| `meta` | `string` | — (example: `'Audiobook · Frank Herbert · Simon Vance · 14 h 02 m'`) |
-| `status` | `string` | — (example: `'Requested · 87%'`) |
-| `tone` | `'library'\|'request'\|'progress'\|'error'` | **Contradiction: the `// props:` comment declares the default as `'progress'`, but the actual `renderVals()` code is `p.tone \|\| 'library'` — the real runtime default is `'library'`.** |
-| `actionGlyph` | `string` | `'play_arrow'` |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` |
-| `onClick` | `() => void` | — |
+| Prop          | Type                                        | Default                                                                                                                                                                                   |
+| ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | `string`                                    | — (design's example: `'Dune Messiah'`)                                                                                                                                                    |
+| `meta`        | `string`                                    | — (example: `'Audiobook · Frank Herbert · Simon Vance · 14 h 02 m'`)                                                                                                                      |
+| `status`      | `string`                                    | — (example: `'Requested · 87%'`)                                                                                                                                                          |
+| `tone`        | `'library'\|'request'\|'progress'\|'error'` | **Contradiction: the `// props:` comment declares the default as `'progress'`, but the actual `renderVals()` code is `p.tone \|\| 'library'` — the real runtime default is `'library'`.** |
+| `actionGlyph` | `string`                                    | `'play_arrow'`                                                                                                                                                                            |
+| `platform`    | `'desktop'\|'mobile'`                       | `'desktop'`                                                                                                                                                                               |
+| `onClick`     | `() => void`                                | —                                                                                                                                                                                         |
 
 This is what renders **12c-2's owned/discoverable/requestable status labels** wherever search
 or library results are shown as rows rather than cards. The four `tone` values map straight to
@@ -456,13 +456,13 @@ color — this is the row's "resolve/play" action affordance.
 
 ### 3.9 `SettingRow`
 
-| Prop | Type | Default |
-| --- | --- | --- |
-| `title` | `string` | `'Offline mode'` |
-| `sub` | `string` | `'Only play what is downloaded'` |
-| `checked` | `boolean` | `true` |
-| `platform` | `'desktop'\|'mobile'` | `'desktop'` |
-| `onChange` | `(next: boolean) => void` | — |
+| Prop       | Type                      | Default                          |
+| ---------- | ------------------------- | -------------------------------- |
+| `title`    | `string`                  | `'Offline mode'`                 |
+| `sub`      | `string`                  | `'Only play what is downloaded'` |
+| `checked`  | `boolean`                 | `true`                           |
+| `platform` | `'desktop'\|'mobile'`     | `'desktop'`                      |
+| `onChange` | `(next: boolean) => void` | —                                |
 
 Wraps the Sonora `<Switch>` primitive. Row: `flex, space-between`, `gap:16px` mobile /
 `24px` desktop, `padding: 14px 16px`, radius `var(--radius-sm)` mobile / `var(--radius-xs)`
@@ -473,11 +473,11 @@ desktop, background `var(--m3-surface-container)` mobile / `var(--surface-card)`
 ## 4. The 16 Sonora primitives — prop APIs
 
 **Not vendored as component source** — the Sonora project's 16 generic primitives
-(`components/core|forms|media|navigation/*.jsx` + `.d.ts` + `.prompt.md`) live in the *other*
+(`components/core|forms|media|navigation/*.jsx` + `.d.ts` + `.prompt.md`) live in the _other_
 design project and were not pulled into this repo (§9). What follows is mined entirely from
 `_adherence.oxlintrc.json`'s lint selectors, which enumerate each component's allowed prop
 names and, for enum props, allowed values. **This is a lint rule, not a type definition** — it
-tells you what's *rejected*, from which the allowed set is inferred. Every component also
+tells you what's _rejected_, from which the allowed set is inferred. Every component also
 implicitly allows `key`, `ref`, `className`, `style`, `children` (excluded below as noise).
 
 One naming mismatch worth flagging: `readme.md`'s component index names the 16th primitive
@@ -485,24 +485,24 @@ One naming mismatch worth flagging: `readme.md`'s component index names the 16th
 `BottomNavItem` exists in the adherence file; treat `BottomNav` as the readme's shorthand for
 "the thing built from `BottomNavItem`s," not a second, separate primitive.
 
-| Component | Props | Enum constraints |
-| --- | --- | --- |
-| `AlbumArt` | `src, size, platform` | `platform`: `desktop \| mobile` |
-| `AlbumHeader` | `title, artist, meta, image, platform, onPlay, onShuffle` | `platform`: `desktop \| mobile` |
-| `Badge` | `children, tone` | `tone`: `accent \| success \| error \| neutral` |
-| `BottomNavItem` | `key, label, icon` | — |
-| `Button` | `children, variant, size, platform, icon, disabled, onClick` | `variant`: `primary \| secondary \| ghost \| danger`; `size`: `sm \| md \| lg`; `platform`: `desktop \| mobile` |
-| `Card` | `image, title, subtitle, badge, platform, width, onClick` | `platform`: `desktop \| mobile` |
-| `Chip` | `children, color, count, selected, platform, onClick` | `color`: one of the 17 accent hue names (`red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose`); `platform`: `desktop \| mobile` |
-| `IconButton` | `children, size, active, muted, label, onClick` | — |
-| `Input` | `placeholder, icon, platform, value, onChange` | `platform`: `desktop \| mobile` |
-| `MiniPlayer` | `title, artist, image, playing, onTogglePlay, onOpen, platform, progress, onSeek, duration, onPrev, onNext, queueOpen, onToggleQueue` | `platform`: `mobile \| desktop` |
-| `QuickTile` | `icon, label, count, onClick, platform` | `platform`: `mobile \| desktop` |
-| `SectionHeader` | `title, action, actionLabel, onAction, platform` | `platform`: `mobile \| desktop` |
-| `SidebarItem` | `icon, label, active, onClick` | — |
-| `Slider` | `value, onChange, platform` | `platform`: `desktop \| mobile` |
-| `Switch` | `checked, onChange, label` | — |
-| `TrackRow` | `index, title, artist, album, time, active, platform, onClick` | `platform`: `desktop \| mobile` |
+| Component       | Props                                                                                                                                 | Enum constraints                                                                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AlbumArt`      | `src, size, platform`                                                                                                                 | `platform`: `desktop \| mobile`                                                                                                                                                                   |
+| `AlbumHeader`   | `title, artist, meta, image, platform, onPlay, onShuffle`                                                                             | `platform`: `desktop \| mobile`                                                                                                                                                                   |
+| `Badge`         | `children, tone`                                                                                                                      | `tone`: `accent \| success \| error \| neutral`                                                                                                                                                   |
+| `BottomNavItem` | `key, label, icon`                                                                                                                    | —                                                                                                                                                                                                 |
+| `Button`        | `children, variant, size, platform, icon, disabled, onClick`                                                                          | `variant`: `primary \| secondary \| ghost \| danger`; `size`: `sm \| md \| lg`; `platform`: `desktop \| mobile`                                                                                   |
+| `Card`          | `image, title, subtitle, badge, platform, width, onClick`                                                                             | `platform`: `desktop \| mobile`                                                                                                                                                                   |
+| `Chip`          | `children, color, count, selected, platform, onClick`                                                                                 | `color`: one of the 17 accent hue names (`red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose`); `platform`: `desktop \| mobile` |
+| `IconButton`    | `children, size, active, muted, label, onClick`                                                                                       | —                                                                                                                                                                                                 |
+| `Input`         | `placeholder, icon, platform, value, onChange`                                                                                        | `platform`: `desktop \| mobile`                                                                                                                                                                   |
+| `MiniPlayer`    | `title, artist, image, playing, onTogglePlay, onOpen, platform, progress, onSeek, duration, onPrev, onNext, queueOpen, onToggleQueue` | `platform`: `mobile \| desktop`                                                                                                                                                                   |
+| `QuickTile`     | `icon, label, count, onClick, platform`                                                                                               | `platform`: `mobile \| desktop`                                                                                                                                                                   |
+| `SectionHeader` | `title, action, actionLabel, onAction, platform`                                                                                      | `platform`: `mobile \| desktop`                                                                                                                                                                   |
+| `SidebarItem`   | `icon, label, active, onClick`                                                                                                        | —                                                                                                                                                                                                 |
+| `Slider`        | `value, onChange, platform`                                                                                                           | `platform`: `desktop \| mobile`                                                                                                                                                                   |
+| `Switch`        | `checked, onChange, label`                                                                                                            | —                                                                                                                                                                                                 |
+| `TrackRow`      | `index, title, artist, album, time, active, platform, onClick`                                                                        | `platform`: `desktop \| mobile`                                                                                                                                                                   |
 
 The file also forbids raw hex colors, raw px literals, and any `font-family` other than
 `Inter`/`Roboto Flex`/`Material Symbols Rounded` anywhere lint runs — i.e. the adherence
@@ -517,42 +517,42 @@ cards themselves violate that (hardcoded `8px`, `6px`, `10px` radii/font-sizes �
 not counted as a component) — read directly, 2026-08-16. This is a precise count from the file,
 not an estimate; if this spec elsewhere says a different number, this table is the one to trust.
 
-| `packages/ui` export | Sonora equivalent? |
-| --- | --- |
-| `Button` | Has equivalent — Sonora `Button` |
-| `IconButton` | Has equivalent — Sonora `IconButton` |
-| `Card` | Has equivalent — Sonora `Card` |
-| `Chip` | Has equivalent — Sonora `Chip` |
-| `Slider` | Has equivalent — Sonora `Slider` |
-| `NavigationBar` | Approximate equivalent — Sonora `BottomNavItem`/`BottomNav`, but prop shapes are unverified against each other (Sonora's is `key, label, icon` only; `NavigationBar`'s current API is not read here — check before assuming a 1:1 swap) |
-| `ListItem` | No named Sonora equivalent — closest in spirit is `TrackRow` or the Auralis-specific `ResultRow` (§3.8), neither is a drop-in |
-| `SearchField` | No named Sonora equivalent — closest primitive is `Input`, which has no search-specific affordances (no suggestions prop) |
-| `Fab` | No Sonora equivalent — no floating-action-button concept in any of the three source apps |
-| `TopAppBar` | No Sonora equivalent — Sonora's chrome is docked rail + `SectionHeader`, not a top app bar |
-| `Sheet` | No Sonora equivalent named — Now Playing expansion exists in the redesign screens but as bespoke screen markup, not a reusable `Sheet` primitive |
-| `Dialog` | No Sonora equivalent |
-| `Snackbar` | No Sonora equivalent |
-| `LinearProgress` | No Sonora equivalent — progress is drawn inline per-component (`MediaCard`'s bar, `MiniPlayer`'s `progress` prop) rather than a shared bar primitive |
-| `CircularProgress` | No Sonora equivalent |
-| `Skeleton` | No Sonora equivalent — nothing in the vendored files addresses loading states |
-| `Icon` | No Sonora equivalent as a wrapped component — Sonora renders icons as literal Material Symbols glyph-name text nodes, not a component (§6) |
-| `Marquee` | No Sonora equivalent |
-| `Menu` | No Sonora equivalent |
+| `packages/ui` export | Sonora equivalent?                                                                                                                                                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`             | Has equivalent — Sonora `Button`                                                                                                                                                                                                        |
+| `IconButton`         | Has equivalent — Sonora `IconButton`                                                                                                                                                                                                    |
+| `Card`               | Has equivalent — Sonora `Card`                                                                                                                                                                                                          |
+| `Chip`               | Has equivalent — Sonora `Chip`                                                                                                                                                                                                          |
+| `Slider`             | Has equivalent — Sonora `Slider`                                                                                                                                                                                                        |
+| `NavigationBar`      | Approximate equivalent — Sonora `BottomNavItem`/`BottomNav`, but prop shapes are unverified against each other (Sonora's is `key, label, icon` only; `NavigationBar`'s current API is not read here — check before assuming a 1:1 swap) |
+| `ListItem`           | No named Sonora equivalent — closest in spirit is `TrackRow` or the Auralis-specific `ResultRow` (§3.8), neither is a drop-in                                                                                                           |
+| `SearchField`        | No named Sonora equivalent — closest primitive is `Input`, which has no search-specific affordances (no suggestions prop)                                                                                                               |
+| `Fab`                | No Sonora equivalent — no floating-action-button concept in any of the three source apps                                                                                                                                                |
+| `TopAppBar`          | No Sonora equivalent — Sonora's chrome is docked rail + `SectionHeader`, not a top app bar                                                                                                                                              |
+| `Sheet`              | No Sonora equivalent named — Now Playing expansion exists in the redesign screens but as bespoke screen markup, not a reusable `Sheet` primitive                                                                                        |
+| `Dialog`             | No Sonora equivalent                                                                                                                                                                                                                    |
+| `Snackbar`           | No Sonora equivalent                                                                                                                                                                                                                    |
+| `LinearProgress`     | No Sonora equivalent — progress is drawn inline per-component (`MediaCard`'s bar, `MiniPlayer`'s `progress` prop) rather than a shared bar primitive                                                                                    |
+| `CircularProgress`   | No Sonora equivalent                                                                                                                                                                                                                    |
+| `Skeleton`           | No Sonora equivalent — nothing in the vendored files addresses loading states                                                                                                                                                           |
+| `Icon`               | No Sonora equivalent as a wrapped component — Sonora renders icons as literal Material Symbols glyph-name text nodes, not a component (§6)                                                                                              |
+| `Marquee`            | No Sonora equivalent                                                                                                                                                                                                                    |
+| `Menu`               | No Sonora equivalent                                                                                                                                                                                                                    |
 
 Sonora-only, not covered by any current `packages/ui` export — **must be built from scratch**:
 
-| Sonora primitive | Notes |
-| --- | --- |
-| `Badge` | Small count/status pill — `tone` enum only, no `children` type constraint beyond generic |
-| `QuickTile` | Library shortcut tile (see `QuickPick.dc.html`, §3.6, for the closest Auralis-specific analog, though `QuickPick` and `QuickTile` are not confirmed to be the same component under two names) |
-| `SectionHeader` | Heading row above every carousel/grid |
-| `Input` | Text field — `packages/ui` has no bare text-input primitive today (only `SearchField`, which is a distinct, more specialized component) |
-| `Switch` | Toggle — no existing equivalent |
-| `SidebarItem` | Distinct from `RailItem` (§3.7, an Auralis-specific card) — unclear if these name the same thing or two different desktop-nav treatments; check against screenshots (§9) before assuming either supersedes the other |
-| `AlbumArt` | Bare artwork-with-size-variant primitive — `packages/ui` has `CoverImage` in `apps/web/src/components/`, not in `packages/ui`, so it's app-level today, not design-system-level |
-| `TrackRow` | Track list row |
-| `MiniPlayer` | Docked now-playing surface, `platform` variant covers both the mobile pill and desktop transport bar as one component per `readme.md` |
-| `AlbumHeader` | Distinct from the Auralis-specific `MediaHeader` (§3.5) — likely `MediaHeader` is Auralis's app-level wrapper around the generic `AlbumHeader` primitive, but this is inferred, not confirmed, since `AlbumHeader`'s own source wasn't vendored |
+| Sonora primitive | Notes                                                                                                                                                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Badge`          | Small count/status pill — `tone` enum only, no `children` type constraint beyond generic                                                                                                                                                        |
+| `QuickTile`      | Library shortcut tile (see `QuickPick.dc.html`, §3.6, for the closest Auralis-specific analog, though `QuickPick` and `QuickTile` are not confirmed to be the same component under two names)                                                   |
+| `SectionHeader`  | Heading row above every carousel/grid                                                                                                                                                                                                           |
+| `Input`          | Text field — `packages/ui` has no bare text-input primitive today (only `SearchField`, which is a distinct, more specialized component)                                                                                                         |
+| `Switch`         | Toggle — no existing equivalent                                                                                                                                                                                                                 |
+| `SidebarItem`    | Distinct from `RailItem` (§3.7, an Auralis-specific card) — unclear if these name the same thing or two different desktop-nav treatments; check against screenshots (§9) before assuming either supersedes the other                            |
+| `AlbumArt`       | Bare artwork-with-size-variant primitive — `packages/ui` has `CoverImage` in `apps/web/src/components/`, not in `packages/ui`, so it's app-level today, not design-system-level                                                                 |
+| `TrackRow`       | Track list row                                                                                                                                                                                                                                  |
+| `MiniPlayer`     | Docked now-playing surface, `platform` variant covers both the mobile pill and desktop transport bar as one component per `readme.md`                                                                                                           |
+| `AlbumHeader`    | Distinct from the Auralis-specific `MediaHeader` (§3.5) — likely `MediaHeader` is Auralis's app-level wrapper around the generic `AlbumHeader` primitive, but this is inferred, not confirmed, since `AlbumHeader`'s own source wasn't vendored |
 
 ---
 
@@ -596,11 +596,11 @@ treated as targets.
 **Nav destinations** (desktop rail `nav` array, `Auralis-Redesign.dc.html` ~line 1450) — four
 items, always present:
 
-| key | label | icon |
-| --- | --- | --- |
-| `forYou` | Browse | `explore` |
-| `music` | Music | `album` |
-| `books` | Books | `book_2` |
+| key        | label    | icon       |
+| ---------- | -------- | ---------- |
+| `forYou`   | Browse   | `explore`  |
+| `music`    | Music    | `album`    |
+| `books`    | Books    | `book_2`   |
 | `podcasts` | Podcasts | `podcasts` |
 
 **`search` is appended as a fifth item on BOTH the desktop rail and the mobile bottom nav** —
@@ -612,7 +612,11 @@ get it.
 **Browse filter chips**: `All, Books, Podcasts, Music, Requests`, with:
 
 ```js
-const filterKinds = { Books: ['Book'], Podcasts: ['Podcast', 'Episode'], Music: ['Album', 'Artist'] };
+const filterKinds = {
+  Books: ['Book'],
+  Podcasts: ['Podcast', 'Episode'],
+  Music: ['Album', 'Artist'],
+};
 ```
 
 `All` and `Requests` have no `filterKinds` entry and fall through the `keep()` filter unchanged
@@ -633,17 +637,17 @@ forYou, music, album, book, books, podcasts, episode, search, settings, onboardi
 **Screen map** (`github.md`), i.e. which current app file each redesigned screen was built
 from:
 
-| Screen | Built from |
-| --- | --- |
-| Shell (rail, panel, player bar) | `apps/web/src/components/Shell.tsx`, `components/destinations.ts` |
-| For you | `apps/web/src/features/home/HomePage.tsx` |
-| Music / Album | `apps/web/src/features/music/MusicHomePage.tsx`, `MusicAlbumPage.tsx` |
-| Book detail | `apps/web/src/features/item/ItemPage.tsx` |
-| Podcasts | `apps/web/src/features/podcasts/PodcastDetailPage.tsx` |
-| Search | `apps/web/src/features/search/SearchPage.tsx` |
+| Screen                            | Built from                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| Shell (rail, panel, player bar)   | `apps/web/src/components/Shell.tsx`, `components/destinations.ts`                |
+| For you                           | `apps/web/src/features/home/HomePage.tsx`                                        |
+| Music / Album                     | `apps/web/src/features/music/MusicHomePage.tsx`, `MusicAlbumPage.tsx`            |
+| Book detail                       | `apps/web/src/features/item/ItemPage.tsx`                                        |
+| Podcasts                          | `apps/web/src/features/podcasts/PodcastDetailPage.tsx`                           |
+| Search                            | `apps/web/src/features/search/SearchPage.tsx`                                    |
 | Now Playing / Queue / Mini player | `apps/web/src/features/player/NowPlaying.tsx`, `MiniPlayer.tsx`, `QueueView.tsx` |
-| Settings / Onboarding | `apps/web/src/features/settings/SettingsPage.tsx`, `features/onboarding/*` |
-| Content fixtures | `apps/server/src/testSupport/fakes/fakeJellyfin.ts` |
+| Settings / Onboarding             | `apps/web/src/features/settings/SettingsPage.tsx`, `features/onboarding/*`       |
+| Content fixtures                  | `apps/server/src/testSupport/fakes/fakeJellyfin.ts`                              |
 
 `github.md`'s "Updated in this project" notes (dated 2026-08-16T11:22:00Z), for context on
 what changed relative to the pre-Sonora audit: chrome (rail, mini player, bottom nav) is now
@@ -701,7 +705,7 @@ answered.
 directly:
 
 1. `styles.css` line 1 — `Material Symbols Rounded`, variable axes `opsz,wght,FILL@20..48,
-   100..700,0..1`. **The `FILL` axis must survive any self-hosted subset** — it's what makes a
+100..700,0..1`. **The `FILL` axis must survive any self-hosted subset** — it's what makes a
    selected nav destination read as a filled glyph (`RailItem`, §3.7; confirmed live in
    `Auralis-Redesign.dc.html`'s CSS: `'FILL' 1, 'wght' 500` active vs. `'FILL' 0, 'wght' 400`
    inactive).
@@ -734,16 +738,16 @@ English word.
   vendored — neither carries information a rebuilder needs; they're tooling.
 - **The nine `components/*.dc.html` files are reformatted, not byte-identical to the design
   project's originals**: wrapper boilerplate was dropped, `x-import
-  component-from-global-scope="SonoraDesignSystem_6c1435.X"` was rewritten as `<Sonora.X>`, and
+component-from-global-scope="SonoraDesignSystem_6c1435.X"` was rewritten as `<Sonora.X>`, and
   escaped `data-props` JSON was restated as a `// props:` comment. **The `renderVals()` function
   bodies themselves are untouched** — every style string and default value quoted in §3 above is
   exactly what the design project emits.
 - **`Canvas.dc.html` is empty upstream** and was not vendored — nothing was lost by omitting it.
 - **The 16 Sonora primitives' own component source (`.jsx`/`.d.ts`/`.prompt.md`) live in the
-  *other* design project** (the Sonora Design System project, not the Auralis kickoff project)
+  _other_ design project** (the Sonora Design System project, not the Auralis kickoff project)
   **and were not vendored.** Everything in §4 is reconstructed from lint-rule side effects
   (`_adherence.oxlintrc.json`), not read from the components themselves. Treat §4 as a lower
-  bound on each component's real prop surface — a lint rule only lists props it *rejects*
+  bound on each component's real prop surface — a lint rule only lists props it _rejects_
   everything else on, which is a reasonable proxy for "the allowed set" but isn't the same
   guarantee a `.d.ts` file would give.
 - **`_adherence.oxlintrc.json` itself is vendored minus its `x-omelette` block** — a flat list of
