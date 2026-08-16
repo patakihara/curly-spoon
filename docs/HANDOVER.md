@@ -88,7 +88,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T19:13:48Z` · `ad3375be8178ba426` · general-purpose · ended · Confirmed: 'forUser()' is fully synchronous — 'getSettings'/'getJellyfinToken' are local DB reads, throws before constructing a client, no network I/…
 - `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · ended · I'll stop checking and wait for the notification.
 - `2026-08-15T19:43:25Z` · `a3e749172e175a6e5` · general-purpose · ended · I'll wait for the notification from the background Playwright run rather than poll.
 - `2026-08-15T19:44:06Z` · `a37ea47ff04d29baa` · general-purpose · ended · Committed. Not pushed, not merged, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a37ea47ff04d29baa' at '60b368f', based on '966…
@@ -102,7 +101,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · ended · Working tree clean. Not pushed. ## Report **Branch/commit:** 'worktree-agent-a7bfb028ca2b25a26' at '6004577', based on '9e87fdc'. Working tree clean,…
 - `2026-08-16T06:40:47Z` · `ada9aa18e890f1985` · general-purpose · running · —
 - `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
-- `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · running · —
+- `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · ended · Only the two intended files under 'apps/android/' changed. Not pushed, no 'Agent' calls made, no dependency/build files touched. ## Report **Branch/c…
+- `2026-08-16T07:02:23Z` · `ad37ea8c4b5608f21` · general-purpose · ended · ## Verdict **Product code ('ForYouCarousel.kt'): merge as-is.** No defect found. **Test code ('ForYouCarouselAccessibilityTest.kt'): do not merge as-…
 
 <!-- AGENT_LOG_END -->
 
@@ -189,6 +189,30 @@ median).
 the shift at its source (reserved space for shelf rows, or intrinsic dimensions on cover images).
 It is the most product-visible thing left on this machine — "the UI must be beautiful" is the
 user's own sentence.
+
+### 14c — Home's layout shift: attributed, deliberately not fixed
+
+`f2a90d1`. **The hypothesis the wave was dispatched on was wrong, which is the useful part.**
+Cover art is _not_ the cause: `CoverImage` already renders every card at a fixed width and height,
+so the browser reserves the box before the bytes arrive. Measured on both sides of `418b0d1` (the
+14a-2 revert) and the same culprit reproduces on both, so it is independent of that too.
+
+**What shifts is architectural.** `HomePage` stitches four independent async sources — book
+shelves, podcast shelves, Jellyfin favourite albums, recommendation shelves — client-side, and
+whether each lands before or after first paint is an unreserved race. A shelf `<section>` or a
+quick-picks tile appears from a **zero-size rect** rather than replacing an equally-sized skeleton.
+
+**No product fix was applied, and that is a decision rather than an omission.** Every effective fix
+— reserving space for a shelf whose existence is not yet known, or holding Home in its loading
+state until all four sources settle — **visibly changes what the user's primary screen looks like
+before content arrives**. That is a product call. It is written up here so the user can make it;
+a session should not make it unilaterally.
+
+What landed instead is the reader: `e2e/app/home-cls.spec.ts` drives a real signed-in Home and
+sums `layout-shift` entries through a `PerformanceObserver` the way Lighthouse computes CLS,
+asserting under a **0.7 smoke ceiling** — chosen well above the worst measured run (0.409) so it
+stays quiet through this page's genuine run-to-run timing noise and fails on a structural
+regression. Verified passing locally before it landed.
 
 ### 14d — the Android test race, fixed twice by two sessions at once
 
