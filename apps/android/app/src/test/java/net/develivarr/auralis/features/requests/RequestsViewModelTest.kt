@@ -3,6 +3,7 @@ package net.develivarr.auralis.features.requests
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -25,16 +26,26 @@ import java.util.concurrent.TimeUnit
 class RequestsViewModelTest {
     private lateinit var mockWebServer: MockWebServer
     private lateinit var apiClient: ApiClient
+    private lateinit var testDispatcher: TestDispatcher
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // ioDispatcher = testDispatcher, matching MusicRequestsViewModelTest (this file's own
+        // doc comment already claimed this class did this — it didn't; see the one test below
+        // that still needs a real, request-scoped ApiClient). Only one test in this file
+        // ("a slower search cancelled by a faster later one...") needs genuine background-thread
+        // interleaving; every other test gains nothing from the real Dispatchers.IO default and
+        // was carrying its risk for free — a coroutine that outlives its own test method,
+        // throwing during whichever test runs next (docs/HANDOVER.md's "Android test traps").
+        testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
         mockWebServer.start()
         val keyValueStore = FakeKeyValueStore()
         val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
-        apiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+        apiClient =
+            ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { mockWebServer.url("/").toString() }
     }
 
     @After
@@ -127,6 +138,22 @@ class RequestsViewModelTest {
     @Test
     fun `a slower search cancelled by a faster later one does not overwrite the later result`() =
         runTest {
+            // This is the one test in this file that needs a genuinely real-time race between
+            // two in-flight requests, so — unlike every other test here — it builds its own
+            // ApiClient on the real Dispatchers.IO default instead of this class's shared
+            // testDispatcher: under UnconfinedTestDispatcher used as both Main and ioDispatcher,
+            // withContext(ioDispatcher) never actually dispatches (same instance, runs inline),
+            // so the "slow" response would block submitSearch() itself for its whole delay
+            // instead of running concurrently with the second call. See
+            // MusicRequestsViewModelTest's identical test and its own doc comment on this exact
+            // shape. Building a request-scoped client here, rather than reverting the class-wide
+            // apiClient to real IO, keeps every other test in this file off real background
+            // threads — see setUp()'s own comment on why that matters.
+            val keyValueStore = FakeKeyValueStore()
+            val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
+            val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
+            val realIoApiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+
             mockWebServer.enqueue(
                 MockResponse()
                     .setBodyDelay(300, TimeUnit.MILLISECONDS)
@@ -139,7 +166,7 @@ class RequestsViewModelTest {
                     ),
             )
             mockWebServer.enqueue(MockResponse().setBody("""{"releases":[],"errors":[]}"""))
-            val viewModel = RequestsViewModel(apiClient)
+            val viewModel = RequestsViewModel(realIoApiClient)
 
             viewModel.onSearchTermChange("Slow")
             viewModel.submitSearch()
@@ -369,17 +396,18 @@ class RequestsViewModelTest {
             // update — this assertion doesn't need the network call below to have completed.
             assertEquals(TitleRequestState.Idle, viewModel.uiState.value.titleRequestState)
 
-            // Drain the search launched above before the test ends. Left un-awaited, its
-            // viewModelScope coroutine is still suspended in withContext(Dispatchers.IO) —
-            // real background-thread I/O against MockWebServer — when this test method
-            // returns. @After then calls Dispatchers.resetMain() and mockWebServer.shutdown()
-            // while that coroutine is still in flight; when it eventually resumes, dispatching
-            // back onto the now-reset Main dispatcher throws, uncaught, in a SupervisorJob-
-            // rooted scope with no handler — and kotlinx-coroutines-test attributes that to
-            // whichever test's runTest starts next, as UncaughtExceptionsBeforeTest. (Confirmed
-            // by JUnit4's MethodSorters.DEFAULT ordering: this test is the one that runs
-            // immediately before `requestRelease sends the submitted author...`, which is
-            // exactly the test that started failing with that exception.)
+            // Drain the search launched above before the test ends. This used to be load-bearing
+            // for a real cross-test leak: with the class-wide apiClient previously left on the
+            // real Dispatchers.IO default, an un-awaited search here left its viewModelScope
+            // coroutine suspended in withContext(Dispatchers.IO) — real background-thread I/O
+            // against MockWebServer — when this test method returned; @After's
+            // Dispatchers.resetMain() + mockWebServer.shutdown() then ran while that coroutine
+            // was still in flight, and its eventual resumption onto the reset Main dispatcher
+            // threw, uncaught, against whichever test ran next (UncaughtExceptionsBeforeTest).
+            // Now that setUp() passes ioDispatcher = testDispatcher, this call resolves eagerly
+            // and synchronously and the leak this once prevented is structurally impossible — but
+            // the await is left in place: it costs nothing and keeps this test's shape honest
+            // about what submitSearch() actually does.
             viewModel.uiState.first { it.searchState is SearchUiState.Results }
         }
 

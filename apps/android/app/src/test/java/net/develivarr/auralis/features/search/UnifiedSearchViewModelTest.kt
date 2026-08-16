@@ -92,17 +92,35 @@ class UnifiedSearchViewModelTest {
      * `IllegalStateException` (not an `ApiException`, so nothing in this class's own
      * try/catch blocks catches it) surfaces as `UncaughtExceptionsBeforeTest` against
      * whichever *other* test runs next — see `docs/HANDOVER.md`'s "Android CI" section for the
-     * general shape of this failure class. Draining both requestable states to a settled
-     * (non-Loading) value here, once per test regardless of what that test itself checked,
-     * closes the gap structurally rather than relying on every current and future test in this
-     * file to remember its own explicit await.
+     * general shape of this failure class. Draining both requestable states — and, as of Wave
+     * 14d, `resultsState` too — to a settled value here, once per test regardless of what that
+     * test itself checked, closes the gap structurally rather than relying on every current and
+     * future test in this file to remember its own explicit await.
+     *
+     * `resultsState` was missing from this drain until Wave 14d: several tests below
+     * (`the book and music request gates are honoured independently`,
+     * `a failed release request leaves the row Failed, not Requested`,
+     * `a slow release request resolving after a new search settles never leaks into that
+     * search's state`, `a failed candidate request leaves the row Failed, not Requested`) use the
+     * real-IO `viewModel()` and await only one of the two independent fan-outs
+     * (`performSearch` fires the library/Jellyfin results fetch and the requestable fetch
+     * concurrently) before returning — so `resultsState`'s own coroutine could still be
+     * suspended on a real background thread when the test method ended, with nothing here or in
+     * the test itself waiting for it. That is the same "await-then-re-read" shape
+     * `docs/HANDOVER.md` already names for this file's two deliberately-real-interleaving tests,
+     * just at the tearDown() layer instead of an individual test's — and it plausibly explains
+     * failures reported against unrelated test classes (`AppStartViewModelTest`, and this file's
+     * own `a library fetch failure...`) that run next in whatever order Gradle happens to pick:
+     * the leaked coroutine's `IllegalStateException` on resume is reported against whichever
+     * `runTest` starts next, in whichever class that happens to be.
      */
     @After
     fun tearDown() {
         lastViewModel?.let { viewModel ->
             runTest {
                 viewModel.uiState.first {
-                    it.requestableBooksState !is RequestableBooksUiState.Loading &&
+                    it.resultsState !is UnifiedSearchResultsUiState.Searching &&
+                        it.requestableBooksState !is RequestableBooksUiState.Loading &&
                         it.requestableMusicState !is RequestableMusicUiState.Loading
                 }
             }

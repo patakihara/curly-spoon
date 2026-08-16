@@ -34,14 +34,23 @@ class HomeViewModelTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // ioDispatcher = testDispatcher, matching most ViewModel test files in this package
+        // (see docs/HANDOVER.md's "Android test traps"): no test in this file needs real
+        // background-thread interleaving (there's no setBodyDelay() anywhere here), so there is
+        // no reason to leave ApiClient on the real Dispatchers.IO default — doing so was the
+        // outlier this file used to be, and the exact shape of leak that section warns about: a
+        // test that injects into setMain but not into ApiClient looks identical to a safe one
+        // and is the one that leaks a coroutine across a test boundary.
+        val testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
         mockWebServer.start()
         keyValueStore = FakeKeyValueStore()
         serverConfigRepository = ServerConfigRepository(keyValueStore)
         val cookieJar = SessionCookieJar(keyValueStore, CoroutineScope(Dispatchers.Unconfined))
         val httpClient = OkHttpClient.Builder().cookieJar(cookieJar).build()
-        apiClient = ApiClient(httpClient, cookieJar) { mockWebServer.url("/").toString() }
+        apiClient =
+            ApiClient(httpClient, cookieJar, ioDispatcher = testDispatcher) { mockWebServer.url("/").toString() }
         // These tests exercise only the shelf-loading half of HomeViewModel; the download half
         // has its own coverage below. UnavailableDownloadEngine is the same documented no-op
         // stand-in AppContainer used before Wave F2a, sufficient here since nothing in this file
