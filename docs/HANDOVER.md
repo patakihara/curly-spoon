@@ -685,7 +685,13 @@ wave happens, it is the next sample — read its log before reading its badge.
 a real merge commit. Its only consumer is its own tests; **15c and 15e are the readers**, and that
 is stated rather than glossed. One open input for 15b, found by the wave: the music ownership pool
 is built from **albums**, so a ListenBrainz artist-level recommendation can never match as owned
-until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Nothing is claimed. 16g is done** — the README is rewritten, every link verified live, and
+until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Claimed: 16c-1 — migrate five primitives onto Sonora's tokens** (`Button`, `IconButton`, `Chip`,
+`Card`, `Slider` in `packages/ui/src/components/`), dispatched 2026-08-17 ~00:15 UTC. **This is the
+first wave that changes what the app looks like** — everything before it was substrate.
+`Dialog`/`Sheet`/`Menu` are deliberately excluded: they portal outside `.auralis-theme-root` and
+need the portal question answered first.
+
+**16g is done** — the README is rewritten, every link verified live, and
 three unshipped claims taken back out of it on review (external discovery, search suggestions, and
 "some screens reflect the new design"; none of the three is true yet). **16c is next.**
 
