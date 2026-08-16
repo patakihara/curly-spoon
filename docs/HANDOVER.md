@@ -209,8 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-af8c398b2886e60db' at '…
-- `2026-08-16T10:25:18Z` · `a52a5c1114882c847` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a52a5c1114882c847' at '…
 - `2026-08-16T10:27:36Z` · `a7f6e7da38fddff8f` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a7f6e7da38fddff8f' at '25f5956', based on '927081d'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:36:32Z` · `a8b2dea9cf2eea6f9` · general-purpose · ended · None found — the core stays pure. I have everything needed for the verdict. ## Verdict: merge as-is All claims independently verified: 12/12 in 'shel…
 - `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
@@ -223,7 +221,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
 - `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
 - `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
-- `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · running · —
+- `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · ended · ## Report — Wave 15a: the external-candidate seam **Branch/commit:** 'worktree-agent-a0120e561b6bac637' at '91af5c1' (follow-up) on top of '1709c0d',…
+- `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · running · —
+- `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
 
 <!-- AGENT_LOG_END -->
 
@@ -681,9 +681,11 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Claimed: 15a — the external-candidate seam** (`apps/server/src/features/recommendations/`),
-Sonnet agent dispatched 2026-08-16 ~22:55 UTC. Disjoint from phase 16, which is entirely
-`packages/ui` + `apps/web`. **Claimed: 16b-2 — the token layer** (`packages/ui/src/theme/`, `styles/`, `gallery/`, `e2e/ui/`),
+**15a is landed and reviewed** — the external-candidate seam plus ListenBrainz tier 1, merged with
+a real merge commit. Its only consumer is its own tests; **15c and 15e are the readers**, and that
+is stated rather than glossed. One open input for 15b, found by the wave: the music ownership pool
+is built from **albums**, so a ListenBrainz artist-level recommendation can never match as owned
+until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Claimed: 16b-2 — the token layer** (`packages/ui/src/theme/`, `styles/`, `gallery/`, `e2e/ui/`),
 dispatched 2026-08-16 ~23:15 UTC. Its architecture is already decided from measurement — see
 `ROADMAP.md` §16's `16b-2` entry, which is binding rather than advisory.
 
@@ -863,6 +865,30 @@ runs on `MediaController`'s real playlist. Each reported success and did nothing
 gap is always at the seam between two waves, which is where "is this reachable from the
 running app?" has to be asked. `PlayerViewModel.musicQueue` is deliberately write-once and
 read-never now, and its doc comment says so — a mirror nobody reads is worse than no mirror.
+
+### A fixture validates the response and says nothing about the request
+
+Found 2026-08-16 on wave 15a, and it is the mirror image of the `abs-client` `.optional()`-versus-
+`null` bug below. The ListenBrainz provider sent `?mode=easy` and nothing else. The live endpoint
+requires **five** query parameters, each validated separately with no default, and answers a
+missing one with `400 Argument max_similar_artists must be specified.`
+
+**Every safety property held, and that is what made it dangerous.** The provider caught the non-OK
+response, logged it, and degraded to no candidates exactly as specified. So there was no crash, no
+error, no failing test — just a provider that was wired, exported, registered, green on twelve
+tests, and would have returned nothing from the real API forever. That is **worse than this
+project's four writer-with-no-reader failures**, because those at least look unfinished.
+
+Nothing in the suite could have caught it. Unit tests inject `fetch` and build their own `Response`
+objects — correctly, since no network belongs in a unit test — which means **the tests encode our
+idea of the request and can never contradict it.** A fixture constrains the response half of the
+exchange only.
+
+So: **for any client of a real upstream, assert the outgoing request too**, as an exact set rather
+than a subset — partial matching passes with a parameter dropped, which is the failure being
+guarded. And where an endpoint needs no credential, **one `curl` settles in seconds what a document
+cannot**. ListenBrainz's does not. This was the first upstream in this repo ever checked against a
+live server rather than a document, and it found the bug immediately.
 
 ### A test that only inspects a return value can pin the wrong value as correct
 
