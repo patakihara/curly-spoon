@@ -145,7 +145,11 @@ test.describe('Sonora token layer', () => {
     const accentInkColor = await accentInkSample.evaluate(
       (el) => getComputedStyle(el).backgroundColor,
     );
-    expect(accentInkColor).toMatch(/^rgba?\(/);
+    // `color-mix(in oklch, ...)` computes to an `oklch(...)` serialization in Chromium, not
+    // `rgb(...)` — the interpolation colour space is preserved in the computed value. Any
+    // recognised CSS colour-function syntax proves the function evaluated; the value that
+    // actually distinguishes success from failure is the next assertion.
+    expect(accentInkColor).toMatch(/^(rgba?|oklch|oklab|hsla?|lab|lch|color)\(/);
     // The initial/failed-to-apply value for an unset background-color — a malformed
     // color-mix() leaves the property at this, not at an error.
     expect(accentInkColor).not.toBe('rgba(0, 0, 0, 0)');
