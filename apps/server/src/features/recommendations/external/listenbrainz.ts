@@ -161,6 +161,13 @@ export function createListenBrainzProvider(
 
         for (const entries of Object.values(byArtist)) {
           for (const entry of entries) {
+            // `entry.recording_mbid` and `entry.total_listen_count` are parsed but
+            // deliberately unused here. `recording_mbid` is a MusicBrainz **recording** id —
+            // it must never be written to `identifiers.musicBrainzTrackId` (a different
+            // Jellyfin/MusicBrainz identity) without an explicit adapter confirming the two
+            // line up; see this file's header comment on why this provider stops at artist
+            // granularity. `total_listen_count` is real popularity signal a later wave (15c)
+            // can sort candidates by; nothing in 15a's scope orders them.
             const similarArtistMbid = entry.similar_artist_mbid?.trim();
             const similarArtistName = entry.similar_artist_name?.trim();
             if (!similarArtistMbid || !similarArtistName) continue;

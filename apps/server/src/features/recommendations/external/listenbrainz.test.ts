@@ -126,6 +126,20 @@ describe('createListenBrainzProvider', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  // Distinct from the previous test: this body parses as JSON but violates the schema (the
+  // per-artist value is not an array). This is source-derived shape (see this provider's
+  // file header) never observed against a live response, so real drift — ListenBrainz
+  // changing this endpoint's shape — is exactly the failure class this branch has to catch,
+  // and it must degrade the same way a transport failure does rather than throwing.
+  it('degrades to no candidates, without throwing, when the body is valid JSON but violates the schema', async () => {
+    const fetch = fakeFetch(async () => jsonResponse({ [RADIOHEAD_MBID]: 'not-an-array' }));
+    const warn = vi.fn();
+    const provider = createListenBrainzProvider({ fetch, logger: { warn } });
+
+    await expect(provider.recommend([SEED])).resolves.toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   // The exact trap `packages/abs-client` was burned by: a schema that only accepts
   // `undefined` silently rejects a server's literal `null`. Every field on the entry schema
   // must tolerate this.

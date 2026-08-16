@@ -93,10 +93,13 @@ export interface ExternalCandidate {
  */
 export interface RecommendationSeed {
   /**
-   * Human-facing description of why this seed exists, e.g. "Radiohead" or "you listen to
-   * Radiohead" — a provider may fold this into its own `reason` string (ListenBrainz's
-   * provider does exactly that) or ignore it entirely. Never asserted verbatim by a client
-   * test for the same reason `ExternalCandidate.reason` isn't.
+   * **The bare display name of the seed itself** — an artist, author or show name, e.g.
+   * `"Radiohead"`. Never a phrase built around it (not `"you listen to Radiohead"`): a
+   * provider is free to fold this into its own `reason` string however it likes (ListenBrainz's
+   * provider builds `` `Similar to ${label}` ``), and a phrase-shaped label would compose into
+   * "Similar to you listen to Radiohead" on a rendered card. Never asserted verbatim by a
+   * client test for the same reason `ExternalCandidate.reason` isn't — only this contract on
+   * its shape is enforced, here, in prose.
    */
   label: string;
   /**
