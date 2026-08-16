@@ -1,0 +1,83 @@
+/**
+ * Sonora's theme-dependent tokens (wave 16b-2, `docs/ROADMAP.md` §16): the six
+ * `--surface-*` names and the five app-level tokens Sonora itself doesn't ship
+ * (`--accent-ink`, four `--tone-*`) — see `docs/design/SONORA.md` §1.2 and §2.
+ *
+ * ## Where these live, and why — the inline-style precedence trap
+ *
+ * `ThemeProvider.tsx` applies every `--m3-*` colour as **inline style** on the
+ * `.auralis-theme-root` element (`el.style.setProperty(...)`, registered via
+ * `CSS.registerProperty` for cross-fade). Inline style beats any `:root` or
+ * `[data-theme]`-scoped CSS rule short of `!important` — SONORA.md §8 documents this as
+ * the reason a naively-added Sonora stylesheet would silently do nothing for any
+ * `--m3-*` name. **That trap does not apply to the names in this file** — none of them
+ * (`--surface-*`, `--accent-ink`, `--tone-*`) has any inline-styled counterpart anywhere
+ * in this codebase, so a plain CSS rule is not fighting anything.
+ *
+ * Sonora's own source scopes light on bare `:root` and dark under a document-level
+ * `[data-theme='dark']` (see `docs/design/sonora/tokens/colors.css`). **This file
+ * deliberately does not adopt that.** `docs/ROADMAP.md` §16 calls that a delivery
+ * choice, not a visual one, and says to instead use whatever mechanism the app already
+ * uses so its existing light/dark switch drives the new tokens. The app's mechanism is
+ * `ThemeProvider` setting a real `data-theme="light"|"dark"` **attribute** — not a style
+ * property — on `.auralis-theme-root` itself (see `ThemeProvider.tsx`, the `<div
+ * className="auralis-theme-root" data-theme={resolvedMode} ...>`). Scoping these rules to
+ * `.auralis-theme-root[data-theme='light']` / `[data-theme='dark']`, instead of bare
+ * `:root` / `[data-theme='dark']`, reuses that exact attribute and element rather than
+ * introducing a second, document-global theme mechanism — no JS change to
+ * `ThemeProvider.tsx` was needed, since the attribute it already writes is sufficient to
+ * select on.
+ *
+ * Both blocks below declare every token explicitly (no relying on an unscoped default) —
+ * see 16b-2's own e2e reader (`e2e/ui/sonora-tokens.spec.ts`), which asserts every one of
+ * these resolves to a non-empty computed value in **both** themes. A token defined in one
+ * branch and forgotten in the other is exactly the mistake `docs/HANDOVER.md` names as
+ * this wave's real risk (an invalid `var()` falls back to `unset`, i.e. silently loses
+ * the accent highlight / status colour, with no error anywhere).
+ */
+
+.auralis-theme-root[data-theme='dark'] {
+  /* --surface-* (SONORA.md §1.2, "Dark (default)" column) */
+  --surface-bg: var(--neutral-900);
+  --surface-bg-alt: var(--neutral-950);
+  --surface-card: var(--neutral-850);
+  --surface-fg: var(--neutral-50);
+  --surface-fg-muted: var(--neutral-300);
+  --surface-border: rgb(255 255 255 / 8%);
+
+  /* The five app-level tokens Sonora does not ship (SONORA.md §2, dark/base column). */
+  --accent-ink: var(--accent);
+  --tone-library: var(--accent);
+  --tone-progress: var(--state-warning);
+  --tone-request: var(--m3-tertiary);
+  --tone-error: var(--state-error);
+}
+
+.auralis-theme-root[data-theme='light'] {
+  /* --surface-* (SONORA.md §1.2, "Light (`-light` suffix)" column — the raw Sonora
+     source keeps these as separate always-defined `-light`-suffixed properties; this app
+     instead makes the six semantic names themselves theme-switching, per this wave's
+     spec ("each with a light and a dark value"), which is what every consumer wants:
+     `var(--surface-bg)` resolving correctly for the active theme without a component
+     having to pick between two differently-named properties itself. */
+  --surface-bg: rgb(235, 235, 235);
+  --surface-bg-alt: rgb(240, 240, 240);
+  --surface-card: rgb(225, 225, 225);
+  --surface-fg: rgb(25, 25, 25);
+  --surface-fg-muted: rgb(80, 80, 80);
+  --surface-border: rgb(0 0 0 / 8%);
+
+  /* The five app-level tokens (SONORA.md §2, light column). Note --tone-request's light
+     value is its own literal (#5B3B57), not a var(--m3-tertiary) reference — SONORA.md is
+     explicit that the redesign's light branch overrides --m3-tertiary separately and
+     that is not what feeds --tone-request in light. --tone-error is unchanged from dark
+     but re-declared here anyway, since this block declares every token explicitly rather
+     than relying on inheritance from the dark block (the two attribute selectors have
+     equal specificity and only one ever matches a given root, so there is no cascade to
+     rely on regardless). */
+  --accent-ink: color-mix(in oklch, var(--accent) 58%, black);
+  --tone-library: #6b4300;
+  --tone-progress: #7a4a00;
+  --tone-request: #5b3b57;
+  --tone-error: var(--state-error);
+}

@@ -13,6 +13,8 @@
  */
 @import '@mantine/core/styles.css';
 @import './fonts.css';
+@import './sonora-tokens.css';
+@import './sonora-theme.css';
 
 *,
 *::before,

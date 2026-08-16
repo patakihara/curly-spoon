@@ -495,6 +495,332 @@ function MarqueeGallery() {
   );
 }
 
+/**
+ * Wave 16b-2 (docs/ROADMAP.md §16): the reader for Sonora's token layer. Every token name
+ * below is authored once and reused both to render this specimen page and — via
+ * `data-token`/`data-testid` — as the enumeration `e2e/ui/sonora-tokens.spec.ts` reads to
+ * assert each one resolves to a non-empty computed value in both themes. Adding a token
+ * here without a dark (or light) CSS value therefore fails that spec immediately, which is
+ * the point: `docs/HANDOVER.md` names "a token defined in light and forgotten in dark" as
+ * this wave's real risk, and it is invisible to every other test in the repo.
+ */
+const SONORA_NEUTRAL_TOKENS = [
+  'neutral-950',
+  'neutral-900',
+  'neutral-850',
+  'neutral-700',
+  'neutral-500',
+  'neutral-300',
+  'neutral-100',
+  'neutral-50',
+  'neutral-0',
+] as const;
+
+/** Theme-dependent — see `packages/ui/src/styles/sonora-theme.css`. */
+const SONORA_SURFACE_TOKENS = [
+  'surface-bg',
+  'surface-bg-alt',
+  'surface-card',
+  'surface-fg',
+  'surface-fg-muted',
+  'surface-border',
+] as const;
+
+/** Static across themes — see `packages/ui/src/styles/sonora-tokens.css`. */
+const SONORA_ACCENT_TOKENS = ['accent', 'accent-contrast'] as const;
+
+const SONORA_ACCENT_PRESET_TOKENS = [
+  'accent-red',
+  'accent-orange',
+  'accent-amber',
+  'accent-yellow',
+  'accent-lime',
+  'accent-green',
+  'accent-emerald',
+  'accent-teal',
+  'accent-cyan',
+  'accent-sky',
+  'accent-blue',
+  'accent-indigo',
+  'accent-violet',
+  'accent-purple',
+  'accent-fuchsia',
+  'accent-pink',
+  'accent-rose',
+] as const;
+
+const SONORA_STATE_TOKENS = [
+  'state-error',
+  'state-success',
+  'state-warning',
+  'state-info',
+] as const;
+
+/** Theme-dependent — the five app-level tokens Sonora itself doesn't ship (SONORA.md §2). */
+const SONORA_APP_LEVEL_TOKENS = [
+  'accent-ink',
+  'tone-library',
+  'tone-progress',
+  'tone-request',
+  'tone-error',
+] as const;
+
+const SONORA_RADIUS_TOKENS = [
+  'radius-xs',
+  'radius-sm',
+  'radius-md',
+  'radius-lg',
+  'radius-pill',
+] as const;
+
+const SONORA_SPACE_TOKENS = [
+  'space-0',
+  'space-xs',
+  'space-sm',
+  'space-md',
+  'space-lg',
+  'space-xl',
+  'space-2xl',
+  'space-3xl',
+  'space-4xl',
+] as const;
+
+const SONORA_SPACING_TOKENS = [
+  'spacing-xs',
+  'spacing-sm',
+  'spacing-md',
+  'spacing-lg',
+  'spacing-xl',
+  'spacing-2xl',
+  'grid-gap',
+] as const;
+
+const SONORA_SIZE_TOKENS = ['icon-sm', 'icon-md', 'miniplayer-album-size'] as const;
+
+const SONORA_TEXT_TOKENS = [
+  'text-xs',
+  'text-sm',
+  'text-md',
+  'text-lg',
+  'text-xl',
+  'text-2xl',
+  'text-3xl',
+  'text-4xl',
+  'text-5xl',
+] as const;
+
+const SONORA_LEADING_TOKENS = [
+  'leading-xs',
+  'leading-sm',
+  'leading-md',
+  'leading-lg',
+  'leading-xl',
+] as const;
+
+const SONORA_HEADING_TOKENS = [
+  'h1-size',
+  'h1-leading',
+  'h2-size',
+  'h2-leading',
+  'h3-size',
+  'h3-leading',
+  'h4-size',
+  'h4-leading',
+  'heading-weight',
+] as const;
+
+const SONORA_SHADOW_TOKENS = [
+  'shadow-xs',
+  'shadow-sm',
+  'shadow-md',
+  'shadow-lg',
+  'shadow-xl',
+  'shadow-xxl',
+] as const;
+
+/** One specimen tile. `data-token` is the exact custom property name the e2e spec reads. */
+function TokenTile({ name, style }: { name: string; style: React.CSSProperties }) {
+  return (
+    <div className="sonora-token-tile" data-testid={`token-${name}`} data-token={`--${name}`}>
+      <div className="sonora-token-sample" style={style} />
+      <span className="sonora-token-label">{name}</span>
+    </div>
+  );
+}
+
+function ColorTile({ name }: { name: string }) {
+  return <TokenTile name={name} style={{ background: `var(--${name})` }} />;
+}
+
+function SonoraColorGallery() {
+  return (
+    <Section title="Sonora colors">
+      <div className="sonora-token-grid" data-testid="sonora-neutral-grid">
+        {SONORA_NEUTRAL_TOKENS.map((name) => (
+          <ColorTile key={name} name={name} />
+        ))}
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-accent-grid">
+        {SONORA_ACCENT_TOKENS.map((name) => (
+          <ColorTile key={name} name={name} />
+        ))}
+        {SONORA_ACCENT_PRESET_TOKENS.map((name) => (
+          <ColorTile key={name} name={name} />
+        ))}
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-state-grid">
+        {SONORA_STATE_TOKENS.map((name) => (
+          <ColorTile key={name} name={name} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function SonoraSurfaceGallery() {
+  return (
+    <Section title="Sonora surfaces">
+      <div className="sonora-token-grid" data-testid="sonora-surface-grid">
+        {SONORA_SURFACE_TOKENS.map((name) => (
+          <ColorTile key={name} name={name} />
+        ))}
+        <TokenTile
+          name="surface-overlay-header"
+          style={{ background: 'var(--surface-overlay-header)' }}
+        />
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-app-level-grid">
+        {SONORA_APP_LEVEL_TOKENS.map((name) => (
+          <ColorTile key={name} name={name} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function SonoraRadiusGallery() {
+  return (
+    <Section title="Sonora radius">
+      <div className="sonora-token-grid" data-testid="sonora-radius-grid">
+        {SONORA_RADIUS_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{ background: 'var(--accent)', borderRadius: `var(--${name})` }}
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function SonoraSpacingGallery() {
+  return (
+    <Section title="Sonora spacing">
+      <div className="sonora-token-grid" data-testid="sonora-space-grid">
+        {SONORA_SPACE_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{ width: `var(--${name})`, height: 8, background: 'var(--accent)' }}
+          />
+        ))}
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-spacing-scale-grid">
+        {SONORA_SPACING_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{ width: `var(--${name})`, height: 8, background: 'var(--accent-violet)' }}
+          />
+        ))}
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-size-grid">
+        {SONORA_SIZE_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{
+              width: `var(--${name})`,
+              height: `var(--${name})`,
+              background: 'var(--accent-teal)',
+              borderRadius: '50%',
+            }}
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function SonoraTypographyGallery() {
+  return (
+    <Section title="Sonora typography">
+      <div className="sonora-token-grid" data-testid="sonora-text-grid">
+        {SONORA_TEXT_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{ fontSize: `var(--${name})`, color: 'var(--surface-fg, currentColor)' }}
+          />
+        ))}
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-leading-grid">
+        {SONORA_LEADING_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{
+              lineHeight: `var(--${name})`,
+              fontSize: '11px',
+              color: 'var(--surface-fg, currentColor)',
+            }}
+          />
+        ))}
+      </div>
+      <div className="sonora-token-grid" data-testid="sonora-heading-grid">
+        {SONORA_HEADING_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={
+              (name === 'heading-weight'
+                ? { fontWeight: `var(--${name})`, fontFamily: 'var(--font-display)' }
+                : name.endsWith('-leading')
+                  ? { lineHeight: `var(--${name})`, fontSize: '11px' }
+                  : {
+                      fontSize: `var(--${name})`,
+                      fontFamily: 'var(--font-display)',
+                    }) as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function SonoraShadowGallery() {
+  return (
+    <Section title="Sonora shadows">
+      <div className="sonora-token-grid" data-testid="sonora-shadow-grid">
+        {SONORA_SHADOW_TOKENS.map((name) => (
+          <TokenTile
+            key={name}
+            name={name}
+            style={{
+              boxShadow: `var(--${name})`,
+              background: 'var(--surface-card, #333)',
+              width: 48,
+              height: 48,
+            }}
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 function GalleryContent() {
   return (
     <div className="gallery-content">
@@ -516,6 +842,12 @@ function GalleryContent() {
       <SkeletonGallery />
       <IconGallery />
       <MarqueeGallery />
+      <SonoraColorGallery />
+      <SonoraSurfaceGallery />
+      <SonoraRadiusGallery />
+      <SonoraSpacingGallery />
+      <SonoraTypographyGallery />
+      <SonoraShadowGallery />
     </div>
   );
 }
