@@ -681,7 +681,17 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Nothing is currently claimed. Wave 16a is done** — `d8b7b41` and `213e10c` vendor the design
+**Claimed: 16b-1 (self-host Inter + Roboto Flex) and 16b-3 (extend the inline SVG icon set).**
+Two Sonnet agents, dispatched 2026-08-16 ~19:10 UTC, disjoint files inside `packages/ui`. **16b-2**
+— replacing `ThemeProvider`'s token emission with Sonora's — is **not** claimed and is the next one.
+
+**Do not adopt Sonora's icon font.** Measured before dispatch: `Icon.tsx` is already an inline SVG
+set vendored from `@material-symbols/svg-400`, chosen precisely because this is an offline-capable
+PWA. Sonora's font mechanism is 3.08 MB, needs the network, and degrades to the literal words
+`play_arrow`/`skip_next` on screen offline. Same glyphs, worse delivery. `ROADMAP.md` §16 has the
+table and the fourteen missing glyph names.
+
+**Wave 16a is done** — `d8b7b41` and `213e10c` vendor the design
 project into `docs/design/sonora/`, `f0ad9c4` writes `docs/design/SONORA.md`. **No session and no
 subagent needs `DesignSync` again; read the repo.** That was the whole point of the wave.
 

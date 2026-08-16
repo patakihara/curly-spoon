@@ -3569,6 +3569,52 @@ what she sees.
 overhaul the frontend."_ It came. That line stays in the record as history, but it no longer binds —
 this phase is that overhaul.
 
+### Collision 3 resolves in the app's favour for icons — do not adopt Sonora's icon mechanism
+
+**Measured 2026-08-16, before dispatching 16b.** §16 and `SONORA.md` both frame collision 3 as
+"self-host Sonora's three CDN fonts". That is right for the two _text_ families and **wrong for the
+icons**, because this app already solved the icon problem, earlier and better.
+
+`packages/ui/src/components/Icon.tsx` is an **inline SVG icon set** — path data vendored from the
+real `@material-symbols/svg-400` package (a declared dependency of `packages/ui`), rounded style,
+drawn in `currentColor`. Its own doc comment gives the reason, and the reason is this product:
+_"no icon font, no network fetch, so icons render correctly offline (this app is a PWA meant to work
+with no media server **or** CDN reachable)"_. It carries 31 glyphs today.
+
+So adopting Sonora's mechanism — `font-family: 'Material Symbols Rounded'` with the glyph name as
+element text — would be a **regression on three axes at once**:
+
+|         | Sonora's icon font                                                | What the app already does           |
+| ------- | ----------------------------------------------------------------- | ----------------------------------- |
+| Bytes   | **3.08 MB** for the variable woff2 (measured)                     | path strings, tree-shaken per glyph |
+| Offline | degrades to the literal words `play_arrow`, `skip_next` on screen | renders correctly                   |
+| Network | a Google Fonts request per load                                   | none                                |
+
+**The visual result is identical** — both are Material Symbols Rounded — so nothing about Sonora's
+_look_ is given up. Only its delivery mechanism is rejected, and Sonora's own readme says the source
+apps consume "pre-existing open icon sets" rather than drawing their own, which is exactly what
+`@material-symbols/svg-400` is.
+
+**What 16b actually owes on icons, then, is a gap-fill and one new capability:**
+
+- **Fourteen glyph names the design uses are not in `ICON_NAMES`**: `album`, `auto_stories`,
+  `bigtop_updates`, `check_circle`, `download_done`, `explore`, `favorite`, `history`,
+  `keyboard_arrow_down`, `play_arrow`, `queue_music`, `rss_feed`, `schedule`, `trending_up`.
+  (Nine are already there: `book_2`, `download`, `podcasts`, `repeat`, `search`, `settings`,
+  `shuffle`, `skip_next`, `skip_previous`.) `explore` is the one the nav needs first — it is
+  Browse's icon.
+- **The FILL axis needs an outlined variant.** "Selected nav destinations use the Material Symbols
+  FILL axis" is a real behaviour and the current set is filled-only, so it cannot express
+  unselected. That is a **second path string per nav glyph** (`@material-symbols/svg-400`'s
+  outlined style), not a font axis. Four nav destinations plus Search need it.
+
+**The two text families genuinely do need self-hosting, and they are cheap.** Measured against
+Google's `css2` endpoint, latin subsets: **Inter 236 KB** across five static weights (400/500/600/
+700/900, 48 KB each) and **Roboto Flex 82 KB** as one variable file — ~318 KB total, versus 3.08 MB
+for the icon font alone. Include `latin-ext` as well; it is small and the user's own languages want
+it. Inter also ships as a single variable file (`wght@400..900`) which may beat five statics —
+measure rather than assume.
+
 ### 16a is done, and the design is in the repo — read `docs/design/SONORA.md`
 
 **Landed 2026-08-16**: `d8b7b41` and `213e10c` vendor the design project into `docs/design/sonora/`,
