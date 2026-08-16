@@ -88,9 +88,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T15:12:06Z` · `aee8bf94663049be8` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-aee8bf94663049be8' at 'bce0e16', based on '4b419e1'. Working tree is clean. Not pushed, not merged, no 'A…
-- `2026-08-15T15:19:13Z` · `a82d88635348acc78` · general-purpose · ended · Committed cleanly on branch 'worktree-agent-a82d88635348acc78' at 'd43dd81', based on 'ecdbb02'. Working tree is clean. Not pushed, not merged, no 'A…
-- `2026-08-15T15:32:08Z` · `a24c42170d77b3afe` · general-purpose · ended · Working tree clean, committed on 'worktree-agent-a24c42170d77b3afe' at '9d98a0b', based on 'c7f16ff'. Not pushed, not merged, no 'Agent' calls made.…
 - `2026-08-15T15:34:57Z` · `a6168e2a5df25b40c` · general-purpose · ended · Still running; I'll wait for the monitor's completion notification rather than poll further.
 - `2026-08-15T15:44:26Z` · `a6168e2a5df25b40c` · general-purpose · ended · I'll wait for the monitor's notification rather than poll further.
 - `2026-08-15T15:49:41Z` · `a6168e2a5df25b40c` · general-purpose · ended · Clean working tree — nothing to commit. I'm stopping here per the plan-usage hand-off band (85% session usage). Reporting findings now rather than co…
@@ -103,6 +100,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T21:14:42Z` · `a7e86b0ad34a5d1a5` · general-purpose · ended · Clean commit, exactly one file changed. Working tree is clean, no long-running command backgrounded. ## Report **Branch/commit:** 'worktree-agent-a7e…
 - `2026-08-15T21:16:52Z` · `a51dab7f5fb349b6f` · general-purpose · ended · Committed. Exactly three files changed, no doc file touched (per the "no dedicated place" finding). ## Report **Branch/commit:** 'worktree-agent-a51d…
 - `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
+- `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · running · —
+- `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · running · —
+- `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -380,8 +380,14 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Nothing is currently claimed.** 14a-1, 14a-2 and 14b-1 all landed on `main`; see
-`ROADMAP.md` §14 and "Phase 14" below.
+**Claimed: the `UnifiedSearchViewModelTest` race** (2026-08-16). `main` is **red on Android** at
+`9e87fdc` — `UnifiedSearchViewModelTest > a library fetch failure still returns music results,
+degrading only the library side` failed `testReleaseUnitTest` with `UncompletedCoroutinesError`
+(607 tests, 1 failed, CI run 31911008835). This is the 13d race the roadmap named as a loose end
+with no owner; it is now firing on CI, and while it flakes no Android wave has a trustworthy
+signal. Being fixed ahead of 14b-2 and the CLS wave for exactly that reason.
+
+14a-1, 14a-2 and 14b-1 all landed on `main`; see `ROADMAP.md` §14 and "Phase 14" below.
 
 **Phase 13 is done** — 13a–13f, all CI-verified. The `app` Playwright project sits at
 **190 passed, 0 failed** at full parallelism, up from the 186/1/1 that greeted this session.
