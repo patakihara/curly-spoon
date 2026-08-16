@@ -179,6 +179,69 @@ is missing, the workflow's `check-secrets` job fails immediately, before buildin
 and names exactly which secret is absent in the workflow log — it will not publish a
 partial or broken repo.
 
+## Pre-tag audit — done 2026-08-16, before the first tag was ever pushed
+
+**Current state: everything in "What you have to do by hand" is already done.** Verified
+against live GitHub rather than against the record:
+
+- **All eight secrets exist**, set 2026-08-15: the four `ANDROID_*` app-signing secrets and
+  the four `FDROID_REPO_*` index-signing ones.
+- **Pages is enabled** on `patakihara/curly-spoon` with `build_type: "workflow"`, source
+  branch `main`, serving `https://patakihara.github.io/curly-spoon/`.
+- **Both keys were generated** into `~/.auralis-keys/` (app key alias `auralis`, repo key
+  alias `auralisrepo`, both RSA-4096 PKCS#12).
+- **No `v*` tag has ever been pushed**, so neither `release.yml` nor `fdroid-repo.yml` has
+  ever run. Pushing the first tag is the only remaining step.
+
+**One outstanding item that is not a blocker but is genuinely terminal if ignored: there is
+no record that `~/.auralis-keys/` was ever backed up off this laptop.** The ask was made and
+never acknowledged. Note the trap — the keystore is also in GitHub Actions secrets, which
+_looks_ like a backup and is not: Actions secrets are write-only and cannot be read back out.
+If this laptop's disk fails, CI keeps signing releases until someone needs to change a secret,
+and the key itself is gone. Losing it means Auralis can never be updated again under this
+identity; every user would have to uninstall and reinstall, losing all app state.
+
+### What the pipeline audit checked, and what it found
+
+One blocking defect, fixed before tagging: `metadata/` still held `net.auralis.app.yml` after
+`ece8f94` renamed the package to `net.develivarr.auralis` everywhere else. `fdroid update`
+matches a prebuilt APK to its metadata file by `applicationId`, so the first tag would have
+published a listing with no curated description, category or license.
+
+Verified correct, so nobody re-derives it:
+
+- Every `secrets.*` reference in both tag workflows matches one of the eight that exist. This
+  matters more than it looks: a reference to a **nonexistent** secret evaluates to the empty
+  string in GitHub Actions rather than erroring, so a name mismatch here fails silently.
+- The app-signing chain is sound end to end. `ANDROID_KEYSTORE_BASE64` (the secret) is
+  `base64 -d`'d to a runner temp file, and the path is exported as `ANDROID_KEYSTORE_FILE`
+  (the env var), which is the exact name `build.gradle.kts` reads. **`docs/HANDOVER.md`
+  documents only the `_FILE` name and so appears to contradict `gh secret list` — it does
+  not; it elides the decode step.**
+- Both `check-secrets` guards genuinely gate their builds via `needs:`, so nothing publishes
+  before they pass.
+- The debug-signing fallback still cannot throw when secrets are absent.
+- Both workflows validate the tag with the identical regex, so **one `v*` tag fires both** —
+  no second action needed.
+- `fdroid-repo.yml` publishes via `upload-pages-artifact` + `deploy-pages`, which is what
+  Pages' `build_type: "workflow"` expects. There is no `gh-pages` branch push anywhere, which
+  would have silently failed to update the site.
+
+### Known non-blocking defect, deliberately deferred
+
+`release.yml` builds with a plain `assembleRelease` and passes no `-PauralisVersionCode` /
+`-PauralisVersionName`, so the APK attached to a **GitHub Release** always self-reports the
+hardcoded `versionCode=1` / `versionName=0.1.0` from `build.gradle.kts`, while
+`fdroid-repo.yml` stamps the real tag. Both are signed with the same key, so either updates
+over the other; the defect is that the GitHub Release APK misreports its own version in
+Settings → About.
+
+For `v0.1.0` the hardcoded values happen to be correct, so this is inert on the first
+release and becomes real at `v0.2.0`. It is left unfixed on purpose: the fix needs a checkout
+with full tag history and a new `version_code` output in `release.yml`, and that is an
+untested change to the one code path that is a one-shot public act. Cut the first release on
+wiring that was actually audited, then fix the stamp against the evidence of a real run.
+
 ## How to verify it worked
 
 - Check the `F-Droid repo` workflow run in the Actions tab for the pushed tag — every job
@@ -195,11 +258,16 @@ partial or broken repo.
 
 ## What this does **not** do
 
-- **No release-signed APK.** Every APK this repo serves is the same debug-signed build CI
-  always produces. This is orthogonal to the repo signing key covered above — see
-  `docs/research/FDROID_DISTRIBUTION.md` §5 for that separate, still-open decision. Droid-ify
-  does not care: it trusts the _repository_ index's signature, and installs whatever APK
-  that index points to, debug-signed or not.
+- ~~**No release-signed APK.**~~ **Stale — this paragraph was wrong and is the dangerous
+  kind of wrong.** It survived from before `280c1e7` wired up release signing, and it
+  contradicts step 3 of "What you have to do by hand" three sections above. APKs published by
+  a `v*` tag are **release-signed** with the app signing key, which is the whole point: on an
+  ephemeral runner AGP generates a fresh random `~/.android/debug.keystore` per run, so a
+  debug-signed release channel would give every release a different certificate — first
+  install works, second fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, and the user must
+  uninstall and lose all app state. Through Droid-ify that reads as a client bug rather than
+  a signing problem. Anyone acting on the old paragraph would have concluded exactly the
+  opposite of the truth.
 - **No IzzyOnDroid or official F-Droid submission.** Both remain closed per
   `docs/HANDOVER.md`'s phase 11 entry; nothing here changes that.
 - **No launcher icon.** `docs/research/FDROID_DISTRIBUTION.md` §6 already flagged that
