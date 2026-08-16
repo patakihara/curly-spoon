@@ -179,7 +179,31 @@ is missing, the workflow's `check-secrets` job fails immediately, before buildin
 and names exactly which secret is absent in the workflow log — it will not publish a
 partial or broken repo.
 
-## Status 2026-08-16 — `v0.1.0` is tagged; verify the publish before calling it done
+## Status 2026-08-16 — **`v0.1.0` is published and verified. Phase 11 is done.**
+
+Not `done*`. Verified by fetching the live site, not by reading a green badge:
+
+| Check                                              | Result                                                          |
+| -------------------------------------------------- | --------------------------------------------------------------- |
+| `Release` and `F-Droid repo` workflows on `v0.1.0` | both green                                                      |
+| `…/curly-spoon/repo/index-v2.json`                 | HTTP 200                                                        |
+| `…/curly-spoon/repo/entry.jar`                     | HTTP 200                                                        |
+| `repo.address` in the index                        | `https://patakihara.github.io/curly-spoon/repo` — **matches**   |
+| App listed                                         | `net.develivarr.auralis`, versionName `0.1.0`, versionCode `1`  |
+| `…/curly-spoon/repo/app-release.apk`               | HTTP 200, 15,230,707 bytes — the install path actually resolves |
+
+### What to give Droid-ify
+
+- **URL:** `https://patakihara.github.io/curly-spoon/repo`
+- **Fingerprint:** `0C:1F:6A:63:C0:F5:96:19:27:A0:CF:DF:4B:B0:16:60:72:67:D4:83:4B:54:10:3A:4B:BB:44:6F:43:BC:6C:41`
+
+Droid-ify must show that same fingerprint when adding the repo. It is re-printed by the
+`Print the repo signing key fingerprint` step of every `F-Droid repo` run, so it never needs
+keeping in sync by hand.
+
+### The rest of this section is why it took two tags
+
+#### Original hand-off notes, kept for the settings change and the re-cut rationale
 
 **Phase 11 is delivered up to one unverified step.** `v0.1.0` is tagged at `1b1ea5c` (CI green,
 and the commit that fixes the Pages layout) and pushed. The session that did it hit its usage
