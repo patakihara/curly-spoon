@@ -209,7 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T10:27:36Z` · `a7f6e7da38fddff8f` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a7f6e7da38fddff8f' at '25f5956', based on '927081d'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:36:32Z` · `a8b2dea9cf2eea6f9` · general-purpose · ended · None found — the core stays pure. I have everything needed for the verdict. ## Verdict: merge as-is All claims independently verified: 12/12 in 'shel…
 - `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
@@ -222,8 +221,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
 - `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
 - `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · ended · ## Report — Wave 15a: the external-candidate seam **Branch/commit:** 'worktree-agent-a0120e561b6bac637' at '91af5c1' (follow-up) on top of '1709c0d',…
-- `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · running · —
+- `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · ended · Clean tree, three commits on top of the claimed baseline. The wave is complete and verified. Here's the final report. ## Report — Wave 16b-2, the Son…
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
+- `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -685,9 +685,23 @@ wave happens, it is the next sample — read its log before reading its badge.
 a real merge commit. Its only consumer is its own tests; **15c and 15e are the readers**, and that
 is stated rather than glossed. One open input for 15b, found by the wave: the music ownership pool
 is built from **albums**, so a ListenBrainz artist-level recommendation can never match as owned
-until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Claimed: 16b-2 — the token layer** (`packages/ui/src/theme/`, `styles/`, `gallery/`, `e2e/ui/`),
-dispatched 2026-08-16 ~23:15 UTC. Its architecture is already decided from measurement — see
-`ROADMAP.md` §16's `16b-2` entry, which is binding rather than advisory.
+until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Nothing is claimed. Phase 16's wave 16b is complete** — 16b-1 (fonts), 16b-2 (tokens) and 16b-3
+(icons) are all merged. **16c is next**: rebuilding `packages/ui`'s primitives against the new
+tokens, migrating them off `--m3-*` one component at a time.
+
+**Three things 16b-2 handed forward that 16c must not rediscover:**
+
+- **Portalled components cannot see the theme-scoped tokens.** `Dialog`, `Sheet`, `Menu` and
+  `SearchField` `createPortal` outside `.auralis-theme-root`, and the `--surface-*` and app-level
+  tokens are scoped to `.auralis-theme-root[data-theme=…]` with **no `:root` fallback** — deliberate,
+  because a fallback would mask exactly the missing-value bug the gallery test exists to catch.
+  Rebuilding any of those four means re-parenting the portal inside the theme root or re-emitting
+  the tokens where it lands.
+- **`--m3-*` is still the app's only substrate and is unchanged.** 391 usages across 185 names. 16c
+  migrates components onto `--surface-*`/`--accent` one at a time; `--m3-*` is deleted when the last
+  one leaves, not before.
+- **`color-mix(in oklch, …)` computes to `oklch()`, not `rgb()`** — relevant to any test asserting
+  on a resolved colour string.
 
 **Baseline at dispatch:** full `--project=app --workers=1` run on the merged 16b-1 + 16b-3 tree is
 **189 passed, 0 failed, 1 skipped** (5.8 min). The skip is `contrast.spec.ts:110`, a conditional
