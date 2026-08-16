@@ -1,6 +1,6 @@
 /**
- * M3-flavoured chip — thin wrapper around Mantine's `Chip` (itself a styled
- * checkbox pill) plus `CloseButton` for the `input` variant's remove control.
+ * Chip — thin wrapper around Mantine's `Chip` (itself a styled checkbox pill) plus
+ * `CloseButton` for the `input` variant's remove control.
  *
  * Only `filter` chips are genuinely two-state here — `assist`/`input` chips are
  * single-shot action chips, not toggles. Mantine's `Chip` is fundamentally a
@@ -23,10 +23,47 @@
  * still uses Mantine's own default check glyph (by passing no `icon` at all),
  * matching the original "selected filter chips always show a checkmark,
  * ignoring any custom icon" behaviour.
+ *
+ * **Wave 16c-1 (docs/ROADMAP.md §16) colours.** Before this wave `Chip.tsx` had zero
+ * `--m3-*` references — its colour rode entirely on Mantine's own `theme.colors.auralis`
+ * ramp, resolved from `variant`/`checked` with no explicit override (unlike Button.tsx/
+ * IconButton.tsx, which already had an override to migrate). To actually put Chip onto
+ * Sonora rather than leave it untouched, `CHIP_STYLE_VARS` below sets Mantine's own
+ * `Chip` CSS custom properties (`--chip-bg`/`--chip-color`/`--chip-bd`, read from
+ * `Chip.varsResolver` in `@mantine/core`) via the `style` prop, which — same technique as
+ * Button.tsx's `VARIANT_STYLE_OVERRIDE` — wins over Mantine's own resolved values at
+ * equal specificity because it lands later in the merged inline `style`. A checked
+ * `filter` chip becomes `--accent-ink` background + `--accent-contrast` text; every other
+ * state (unchecked filter, assist, input) is a near-invisible `--surface-border` outline
+ * on `--surface-fg` text, matching Sonora's "borders are nearly invisible" guidance
+ * (docs/design/SONORA.md's readme summary).
+ *
+ * `--accent-contrast` (#fff, static) on `--accent`/`--accent-ink` (violet #8b5cf6, dark
+ * mode) measures ~4.23:1 — just under WCAG AA's 4.5:1 text threshold, though clear of the
+ * 3:1 large-text/UI-component one. This is Sonora's own single fixed on-accent colour for
+ * a 17-hue customizable accent; several lighter presets (yellow, lime, amber, cyan) will
+ * fail more severely. Sonora-faithful, not silently changed — see the wave report.
  */
-import { forwardRef, type ReactNode } from 'react';
+import { forwardRef, type CSSProperties, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { Chip as MantineChip, CloseButton } from '@mantine/core';
+
+/** Mantine `Chip`'s own custom-property names (`Chip.varsResolver`), overridden here. */
+function chipStyleVars(checked: boolean): CSSProperties {
+  return (
+    checked
+      ? {
+          '--chip-bg': 'var(--accent-ink, var(--accent))',
+          '--chip-color': 'var(--accent-contrast, #fff)',
+          '--chip-bd': 'var(--accent-ink, var(--accent))',
+        }
+      : {
+          '--chip-bg': 'transparent',
+          '--chip-color': 'var(--surface-fg, rgb(225, 225, 225))',
+          '--chip-bd': 'var(--surface-border, rgb(255 255 255 / 8%))',
+        }
+  ) as CSSProperties;
+}
 
 export type ChipVariant = 'assist' | 'filter' | 'input';
 
@@ -57,6 +94,7 @@ export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
     id,
     type: _type,
     onChange: _onChange,
+    style,
     ...rest
   },
   ref,
@@ -76,6 +114,7 @@ export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
         ref={ref}
         variant={showsCheckGlyph ? 'filled' : 'outline'}
         checked={isFilter ? Boolean(selected) : false}
+        style={{ ...chipStyleVars(showsCheckGlyph), ...style }}
         onChange={(checked) => {
           if (isFilter) onSelectedChange?.(checked);
         }}

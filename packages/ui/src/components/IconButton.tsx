@@ -1,20 +1,23 @@
 /**
- * M3 icon button, now a thin wrapper around Mantine's `ActionIcon`. `toggle` mode
- * (e.g. shuffle, like) is still driven by `selected`/`onSelectedChange` — Mantine has
- * no built-in toggle concept, so that logic (and the `aria-pressed` it implies) stays
- * here, on top of `ActionIcon`.
+ * Icon button, a thin wrapper around Mantine's `ActionIcon`. `toggle` mode (e.g.
+ * shuffle, like) is still driven by `selected`/`onSelectedChange` — Mantine has no
+ * built-in toggle concept, so that logic (and the `aria-pressed` it implies) stays here,
+ * on top of `ActionIcon`.
  *
- * Variant/colour mapping: `filled`/`tonal` already read as the M3 primary colour for
- * free, since the theme's `primaryColor` is the artwork-derived `auralis` ramp
- * (see `ThemeProvider.tsx`). `standard`/`outlined` are visually neutral in M3 (they
- * only turn primary-coloured when *selected*) — for the neutral state that's Mantine's
- * own `gray`, but the *selected* accent colour is applied as an explicit
- * `color: var(--m3-primary)` style override rather than Mantine's default theme
- * colour: verified empirically (see Button.tsx's `text` variant for the same issue),
- * Mantine's `subtle` variant resolves its text from `theme.colors.auralis`'s shade-2
- * stop, which our tone-based ramp (`mantineColors.ts`) makes a near-white pastel at
- * every hue — legible against `subtle`'s own dark-mode background assumption, but not
- * guaranteed against whatever real surface this button actually sits on.
+ * Variant/colour mapping: `filled`/`tonal` still ride Mantine's own `theme.colors.auralis`
+ * ramp (`ThemeProvider.tsx`, out of scope for wave 16c-1) — that infrastructure is
+ * unchanged. `standard`/`outlined` are visually neutral (they only turn accent-coloured
+ * when *selected*) — for the neutral state that's Mantine's own `gray`; the *selected*
+ * colour is an explicit style override, moved in this wave from `var(--m3-primary)` onto
+ * Sonora's `var(--accent-ink, var(--accent))` (docs/design/SONORA.md §2 names
+ * `--accent-ink` as the token every "active/selected" indicator should use — `RailItem`'s
+ * own active-nav treatment is the closest vendored precedent).
+ *
+ * **Portal fallback, deliberate** — same reasoning as Button.tsx: `--accent-ink` has no
+ * `:root` fallback (see `packages/ui/src/styles/sonora-theme.css`'s header), so a
+ * *selected* `standard` IconButton rendered inside `Dialog`/`Sheet`/`Menu` would silently
+ * lose its accent colour without the `var(--accent-ink, var(--accent))` fallback chain —
+ * `--accent` itself is always `:root`-scoped and never resolves empty.
  */
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
 import { ActionIcon, type ActionIconVariant, type MantineColor } from '@mantine/core';
@@ -51,10 +54,10 @@ function resolveMantineProps(
         : { variant: 'outline', color: 'gray' };
     case 'standard':
     default:
-      // Unselected "standard" is neutral; selected turns primary-coloured, matching
+      // Unselected "standard" is neutral; selected turns accent-coloured, matching
       // the old `:not(.selected) { color: on-surface-variant }`.
       return selected
-        ? { variant: 'subtle', style: { color: 'var(--m3-primary)' } }
+        ? { variant: 'subtle', style: { color: 'var(--accent-ink, var(--accent))' } }
         : { variant: 'subtle', color: 'gray' };
   }
 }

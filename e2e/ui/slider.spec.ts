@@ -114,4 +114,32 @@ test.describe('Slider', () => {
     );
     expect(staticAnimationName).toBe('none');
   });
+
+  test('the track and active fill resolve Sonora colours in both themes', async ({ page }) => {
+    // Wave 16c-1 (docs/ROADMAP.md §16): proves --surface-card/--accent resolved to *used*
+    // values on this component in particular — Slider is used inside `Sheet` (the mobile
+    // Now Playing seek bar, NowPlaying.tsx), a portal excluded from this wave, so its
+    // colours must survive being rendered inside a portal-less context here and also not
+    // be the ones at risk there (see the wave report for --accent-ink's portal caveat,
+    // which does not apply to the raw --accent this component uses).
+    const track = page.locator('[data-testid="slider-basic"] .m3-slider__track');
+    const active = page.locator('[data-testid="slider-basic"] .m3-slider__active');
+
+    await expect(page.getByTestId('mode-dark')).toBeVisible();
+    const darkTrack = await track.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const darkActive = await active.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(darkTrack).toBe('rgb(20, 20, 20)'); // --surface-card, dark
+    expect(darkActive).toBe('rgb(139, 92, 246)'); // --accent
+
+    await page.getByTestId('mode-light').click();
+    await page.waitForTimeout(700);
+    const lightTrack = await track.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const lightActive = await active.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(lightTrack).toBe('rgb(225, 225, 225)'); // --surface-card, light
+    // --accent is static (not theme-scoped) — same violet in both themes.
+    expect(lightActive).toBe('rgb(139, 92, 246)');
+
+    // restore for other tests sharing this worker's page context
+    await page.getByTestId('mode-dark').click();
+  });
 });

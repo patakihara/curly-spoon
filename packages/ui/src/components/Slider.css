@@ -1,29 +1,58 @@
+/*
+ * Wave 16c-1 (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1, §2). The two component-local height variables are renamed
+ * from `--m3-slider-height*` to `--slider-height*` — they were never part of the app's
+ * shared `--m3-*` token layer (index.css never defines them), just locally namespaced
+ * with the same prefix by convention, so this keeps the file free of any `--m3-*`
+ * *definition* per the wave's own grep check. The touch-target minimum is now the
+ * literal 48px (matching Button.css's own `min-height: 48px`, not a token reference) —
+ * `packages/ui/src/tokens/spacing.ts`'s `TOUCH_TARGET_MIN` constant is the source of
+ * truth and Sonora has no equivalent token to migrate onto.
+ *
+ * Colour choices, since this is one of the 16 generic Sonora primitives with no vendored
+ * component source (docs/design/SONORA.md §9 — only lint-rule prop names survive): the
+ * unfilled track uses `--surface-card` (a clearly card-like surface, distinct from the
+ * page background); the active/filled portion uses the raw `--accent` (not
+ * `--accent-ink`) to match `MediaCard`'s own progress-bar fill, the one vendored Sonora
+ * component that *does* specify a progress treatment (SONORA.md §3.4: "fill:
+ * background: var(--accent)") — and `--accent` is always `:root`-scoped, so it needs no
+ * portal fallback, unlike `--accent-ink`. The buffered underlay reuses the same
+ * "muted foreground as a translucent fill" technique the old `--m3-on-surface-variant`
+ * used, now `--surface-fg-muted`. The remainder gap dot uses `--surface-bg`, matching
+ * SONORA.md §1.6's own `--m3-surface -> var(--surface-bg)` alias mapping exactly. The
+ * focus ring moves from `--m3-secondary` (a role Sonora doesn't have) onto
+ * `--accent-ink`, the token this wave's other components use for "readable-on-surface
+ * accent."
+ *
+ * The bouncy-spring thickening transition (`--m3-spring-*`) is replaced with a plain,
+ * short duration — Sonora ships no spring/motion tokens (see Button.css's comment for
+ * the same call made there); the thickening effect itself (a real product behaviour,
+ * docs/DESIGN.md) is kept, just without the M3-Expressive overshoot/settle.
+ */
 .m3-slider {
-  --m3-slider-height: 16px;
-  --m3-slider-height-dragging: 24px;
+  --slider-height: 16px;
+  --slider-height-dragging: 24px;
   display: flex;
   align-items: center;
   width: 100%;
   padding: 8px 0;
   /* The touch target extends well past the visible track via this padding. */
-  min-height: var(--m3-touch-target-min);
+  min-height: 48px;
 }
 
 .m3-slider__track {
   position: relative;
   width: 100%;
-  height: var(--m3-slider-height);
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-surface-container-highest);
+  height: var(--slider-height);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-card, rgb(20, 20, 20));
   cursor: pointer;
   touch-action: none;
-  /* The thickening + spring settle: height animates on `.m3-slider--dragging` toggling,
-     using the bouncy spring so release has a visible little overshoot ("settle"). */
-  transition: height var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
+  transition: height 150ms ease-out;
 }
 
 .m3-slider--dragging .m3-slider__track {
-  height: var(--m3-slider-height-dragging);
+  height: var(--slider-height-dragging);
 }
 
 .m3-slider--disabled .m3-slider__track {
@@ -34,17 +63,17 @@
 .m3-slider__buffered {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-on-surface-variant);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-fg-muted, rgb(150, 150, 150));
   opacity: 0.32;
 }
 
 .m3-slider__active {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-primary);
-  transition: width var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--accent, #8b5cf6);
+  transition: width 100ms ease-out;
 }
 
 /* No playhead dot (per docs/DESIGN.md) — just a small rounded gap between active and
@@ -53,16 +82,18 @@
   position: absolute;
   inset: 0 0 0 auto;
   width: 4px;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-surface);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-bg, rgb(12, 12, 12));
   transform: translateX(-2px);
 }
 
-/* Wavy (M3 Expressive) active track: a repeating wave pattern that only scrolls while
-   `animateWave` is set (i.e. actually playing) — a still wave otherwise. */
+/* Wavy active track: a repeating wave pattern that only scrolls while `animateWave` is
+   set (i.e. actually playing) — a still wave otherwise. Kept as a product behaviour
+   (docs/DESIGN.md) even though the M3-Expressive label is retired; only the fill colour
+   moved onto Sonora's `--accent`. */
 .m3-slider--wavy .m3-slider__active {
   background-image:
-    repeating-linear-gradient(var(--m3-primary), var(--m3-primary)),
+    repeating-linear-gradient(var(--accent, #8b5cf6), var(--accent, #8b5cf6)),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16' viewBox='0 0 28 16'%3E%3Cpath d='M0 8 Q7 0 14 8 T28 8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E");
   background-blend-mode: destination-out;
   background-repeat: repeat-x;
@@ -74,6 +105,6 @@
 }
 
 .m3-slider__track:focus-visible {
-  outline: 3px solid var(--m3-secondary);
+  outline: 3px solid var(--accent-ink, var(--accent));
   outline-offset: 3px;
 }

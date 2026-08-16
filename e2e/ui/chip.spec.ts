@@ -40,4 +40,27 @@ test.describe('Chip', () => {
     await chip.focus();
     await expect(chip).toBeFocused();
   });
+
+  test('a checked filter chip resolves Sonora accent colours in both themes', async ({ page }) => {
+    // Wave 16c-1 (docs/ROADMAP.md §16): proves the --chip-bg/--chip-color overrides
+    // (Chip.tsx's chipStyleVars) resolved to *used* values, not just that a var()
+    // reference was written. `chip-filter` starts selected (App.tsx pins
+    // `useState(true)`), so no interaction is needed to see the checked state.
+    const label = page.getByTestId('chip-filter').locator('label').first();
+
+    await expect(page.getByTestId('mode-dark')).toBeVisible();
+    const darkBg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(darkBg).toBe('rgb(139, 92, 246)'); // --accent-ink == --accent in dark
+
+    await page.getByTestId('mode-light').click();
+    await page.waitForTimeout(700);
+    const lightBg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    // --accent-ink in light is color-mix(in oklch, var(--accent) 58%, black) — differs
+    // from dark's raw passthrough, proving the mix actually ran.
+    expect(lightBg).not.toBe(darkBg);
+    expect(lightBg).not.toBe('rgb(139, 92, 246)');
+
+    // restore for other tests sharing this worker's page context
+    await page.getByTestId('mode-dark').click();
+  });
 });
