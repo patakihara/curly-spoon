@@ -2921,6 +2921,16 @@ So 14a starts by measuring instead.
   (181.8 KB) and `@mantine/core` (153.2 KB) are 335 KB of the 666 KB, and neither is deferrable
   without restructuring `main.tsx`'s boot sequence.
 
+  **And then it was reverted (`418b0d1`), because it broke something the A/B could not see.** Web
+  CI was green on six consecutive runs before the field landed and failed on two of the three
+  after, every time on `e2e/app/for-you.spec.ts:229` — _"a loading skeleton occupies the same box
+  as a loaded card"_. Nothing was lost; every component's CSS was still emitted, and the wave's own
+  total-CSS-bytes check was right to pass. What it could not see is **timing**: a component whose
+  stylesheet moved into a lazy chunk can paint before that stylesheet applies. It does not
+  reproduce on this laptop — 188/188 locally, twice, and an identical CLS A/B — only on CI. So the
+  check for any future bundling change is not _"is the CSS present"_ but _"is it present before
+  first paint"_, and the evidence that settles it is CI's outcome history per sha, not a local run.
+
   **So: entry-chunk weight is not the lever, and a future wave should not try it again.** What is
   left is either changing what the app shell depends on — real product work, not a build-config
   change — or accepting the mobile score. The change is kept anyway: 131.7 KB of dead weight off

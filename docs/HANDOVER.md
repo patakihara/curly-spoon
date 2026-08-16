@@ -101,7 +101,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
 - `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · running · —
 - `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · running · —
-- `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · running · —
+- `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · ended · Working tree clean. Not pushed. ## Report **Branch/commit:** 'worktree-agent-a7bfb028ca2b25a26' at '6004577', based on '9e87fdc'. Working tree clean,…
 - `2026-08-16T06:40:47Z` · `ada9aa18e890f1985` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
