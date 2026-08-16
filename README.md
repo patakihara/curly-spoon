@@ -22,9 +22,11 @@ media itself — it's a client for:
   and a pluggable music request provider (slskd today; the interface is written so a
   different backend is a new file, not a refactor).
 
-On top of that: **personalized recommendations** that mix items already in your library
-with external discovery, so "For You" isn't just your own collection re-sorted; and
-**global search with suggestions** across everything Auralis knows about.
+On top of that: **personalized recommendations** on a "For You" feed, built from
+Audiobookshelf listening progress and Jellyfin play history, with genre affinity crossing
+between the two — so taste in music informs the book feed. Today those shelves rank titles
+you already own; pulling in **external** discovery of titles you _don't_ own is in progress,
+not shipped.
 
 It ships two clients against one identical typed API — a web app (installable as a PWA,
 with an offline shell and OS media-key integration) and a native Android app (Compose +
@@ -32,11 +34,16 @@ Media3, with background playback, offline downloads and Android Auto).
 
 ## Status
 
-Actively built, not finished. Audiobooks, podcasts, music, requests and recommendations
-work end to end on both web and Android. Two things are honestly incomplete right now:
+Actively built, not finished. Audiobooks, podcasts, music, requests and library-derived
+recommendations work end to end on both web and Android. Three things are honestly
+incomplete right now:
 
+- **Recommendations don't yet reach beyond your library.** The shelves rank what you own.
+  The seam for external catalogue sources exists and one provider sits behind it, but
+  nothing consumes it yet, so no unowned title is surfaced or requestable from "For You".
 - **The visual design is mid-migration.** A new design system (internally "Sonora") is
-  being adopted component by component; some screens reflect it and some don't yet.
+  being adopted; so far its tokens, self-hosted fonts and icon set have landed as the
+  substrate. **No screen has been rebuilt against it yet** — that work is next.
 - **Android's UI is not verified on a real device.** CI runs JVM unit tests and, for
   Compose UI, semantics assertions under Robolectric (a JVM shadow of the Android
   framework) — that catches a missing accessibility label or a broken layout invariant,
