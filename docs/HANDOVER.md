@@ -209,10 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
-- `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · ended · Only the two intended files under 'apps/android/' changed. Not pushed, no 'Agent' calls made, no dependency/build files touched. ## Report **Branch/c…
-- `2026-08-16T07:02:23Z` · `ad37ea8c4b5608f21` · general-purpose · ended · ## Verdict **Product code ('ForYouCarousel.kt'): merge as-is.** No defect found. **Test code ('ForYouCarouselAccessibilityTest.kt'): do not merge as-…
-- `2026-08-16T09:54:47Z` · `a23f4c8990b7c630c` · general-purpose · ended · ## Findings — Phase 11 / Android signing key archaeology **Method:** grepped 'history.jsonl' and per-session JSONL transcripts under '~/.claude/proje…
 - `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · ended · ## Findings — Android release / F-Droid pipeline audit ### BLOCKING **1. 'metadata/net.auralis.app.yml' — stale filename, doesn't match 'applicationI…
 - `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-af8c398b2886e60db' at '…
 - `2026-08-16T10:25:18Z` · `a52a5c1114882c847` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a52a5c1114882c847' at '…
@@ -224,6 +220,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
 - `2026-08-16T18:25:51Z` · `a62f69f223749e664` · Explore · ended · # Recon report — wave 15b-2 (mapping table at request time) Note up front: 'docs/ROADMAP.md' §15 names waves '15a', '15a-0', '15b', '15c', '15c-1', '…
 - `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · ended · ## Verdict: fix these 4 things first (one is substantive, three are minor/arithmetic) I read every vendored token CSS file in full, all nine 'compone…
+- `2026-08-16T18:46:47Z` · `a5e487ebb2af6f810` · general-purpose · ended · The full '--project=app --workers=1' Playwright suite is still running in the background (I have a Monitor watching for it to finish). While waiting,…
+- `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
+- `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
+- `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
 
 <!-- AGENT_LOG_END -->
 
@@ -681,9 +681,27 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Claimed: 16b-1 (self-host Inter + Roboto Flex) and 16b-3 (extend the inline SVG icon set).**
-Two Sonnet agents, dispatched 2026-08-16 ~19:10 UTC, disjoint files inside `packages/ui`. **16b-2**
-— replacing `ThemeProvider`'s token emission with Sonora's — is **not** claimed and is the next one.
+**Nothing is claimed. 16b-1 and 16b-3 are both landed and reviewed** — `d1dae5a` (Inter + Roboto
+Flex self-hosted, 276 KB, `--font-body` wired, plus `c1f51eb` shipping the OFL text the review
+caught missing) and `17a3d0e` (fourteen glyphs, and a type-safe filled/outlined toggle for the five
+nav destinations). Root typecheck, lint and 1626 unit tests green on the merged tree.
+
+**16b-2 is next and is the riskiest wave of the phase.** It replaces `ThemeProvider.tsx`'s token
+emission with Sonora's values. Two things decide whether it works, both already established and
+neither discoverable by an agent that does not read this:
+
+- **Adding Sonora's stylesheet does nothing.** `ThemeProvider` sets every `--m3-*` as **inline
+  style** on `.auralis-theme-root`, which beats any `:root` or `[data-theme]` rule. The failure
+  mode is silence — it renders, in the old colours. The provider's emission has to be replaced.
+  And `--m3-*` is defined in **two** places: that inline JS, and a static `:root` fallback block at
+  `packages/ui/src/styles/index.css:55-76`. Both need changing.
+- **A green local Playwright run is not evidence here.** 14a-2 passed 188/188 locally and failed
+  twice on CI on a layout-stability assertion, because what changed was _when_ CSS arrived, not
+  whether it existed. Budget CI rounds; do not let the wave call itself done on a local pass.
+
+`docs/design/SONORA.md` has the exact values, including the five app-level tokens Sonora does not
+ship (`--accent-ink`, four `--tone-*`) that 16b-2 must add or the rail and every status pill
+resolve an invalid `var()`.
 
 **Do not adopt Sonora's icon font.** Measured before dispatch: `Icon.tsx` is already an inline SVG
 set vendored from `@material-symbols/svg-400`, chosen precisely because this is an offline-capable
