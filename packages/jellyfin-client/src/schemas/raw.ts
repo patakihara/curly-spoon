@@ -200,6 +200,20 @@ export const rawBaseItemDtoSchema = z
      * `Jellyfin.Data/Enums/CollectionType.cs`, 2026-08-05. See `client.ts`'s `getLibraries`
      * doc comment for the controller this backs. */
     CollectionType: z.string().nullable().optional(),
+    /** `BaseItemDto.ProviderIds` — a `Dictionary<string, string>` of external
+     * metadata-provider identifiers, keyed by `MediaBrowser.Model/Entities/MetadataProvider`
+     * enum member names. For music items the keys this client reads are `MusicBrainzArtist`,
+     * `MusicBrainzAlbum`, `MusicBrainzReleaseGroup` and `MusicBrainzTrack` — what ListenBrainz
+     * and MusicBrainz-keyed catalogues (Audnexus-style lookups for the music side) match
+     * against. Source-derived from the `MetadataProvider` enum's well-known member names, not
+     * verified against a real server response — no session here has a Jellyfin credential (see
+     * `HANDOVER.md`'s "only partly verified against reality" section). Kept as a loose
+     * string-keyed record rather than a zod enum of known keys: an item with no provider match
+     * populates none of these, most items populate none at all, and Jellyfin's own provider
+     * list grows over time, so rejecting an unrecognised key would make this schema brittle
+     * against upstream additions the same way `.passthrough()` already avoids elsewhere in
+     * this file. */
+    ProviderIds: z.record(z.string(), z.string()).nullable().optional(),
   })
   .passthrough();
 

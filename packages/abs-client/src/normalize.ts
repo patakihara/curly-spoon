@@ -82,6 +82,7 @@ export function normalizePodcastEpisode(
     publishedAt: raw.publishedAt ?? null,
     duration: raw.duration ?? raw.audioTrack?.duration ?? 0,
     audioTrack: raw.audioTrack ? normalizeAudioTrack(raw.audioTrack) : null,
+    guid: raw.guid ?? null,
   };
 }
 
@@ -116,6 +117,7 @@ function normalizeMedia(raw: RawLibraryItem): Media {
       publishedYear: metadata.publishedYear ?? null,
       description: metadata.description ?? null,
       isbn: metadata.isbn ?? null,
+      asin: metadata.asin ?? null,
       duration: raw.media.duration ?? 0,
       // `tracks`/`chapters` distinguish presence (expanded) from absence (minified):
       // an expanded item with zero tracks is still `[]`, never confused with "not fetched".
@@ -133,6 +135,7 @@ function normalizeMedia(raw: RawLibraryItem): Media {
     genres: metadata.genres ?? [],
     numEpisodes: raw.media.numEpisodes ?? raw.media.episodes?.length ?? 0,
     episodes: raw.media.episodes?.map(normalizePodcastEpisode),
+    feedUrl: metadata.feedUrl ?? null,
   };
 }
 
