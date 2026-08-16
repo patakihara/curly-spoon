@@ -1,5 +1,76 @@
 # Handover
 
+## READ FIRST — the design system landed, and this session may have died mid-task
+
+**Sofia's design system arrived on 2026-08-16. It is now the source of truth for design.** Her
+words: _"This design doc is the source of truth when it comes to design, ok? Meaning that your
+task is probably to plan a major overhaul to all frontend components, coordinating mobile and
+web."_ The spec is **`ROADMAP.md` §16 — the Sonora redesign**. Read it before touching any
+frontend file, and before believing anything older in this document about design.
+
+**If this session died on the plan-usage ceiling, she has asked you to resurrect it.** Her
+instruction, verbatim: _"Write a note in the handover asking the next auralis devs to resurect
+you if you've died due to usage."_ So: **if you are a fresh session picking this up and §16's
+wave 16a has not landed, that is the unfinished work — start there.** The session that wrote
+§16 was told explicitly not to implement anything (_"Don't do any work yourself, just make sure
+to document and plan for the next start-up"_), so the absence of code is by instruction, not by
+failure. What may be missing is 16a, which is itself a documentation wave.
+
+### The operational trap that will cost you a wave if you miss it
+
+**`DesignSync` — the MCP tool that reads the design project — is available to the orchestrating
+session and NOT to subagents.** Established on 2026-08-16 by dispatching two Sonnet readers at
+the design files: **both came back blocked**, each having run five or more `ToolSearch` variants
+before correctly refusing to fabricate an inventory. The tool is not in a subagent's toolset.
+
+**This inverts `CLAUDE.md`'s central rule for this phase only.** The orchestrator normally does
+not read; here it is the only thing that _can_ read the design. So the shape is: the orchestrator
+reads the design **once**, writes it into **`docs/design/SONORA.md`** (does not exist yet), and
+every wave after that reads that file instead of the MCP. **That is wave 16a, and it is the first
+thing to do.** Skipping it means paying the most expensive context on the project to re-read the
+same design every session.
+
+Sofia has asked that the tool be made available to subagents (_"well, then enable that tool for
+the sub-agents"_). If that is done — the design MCP endpoint is
+`https://api.anthropic.com/v1/design/mcp`, authenticated via `/design-login` — then subagents can
+read it directly and 16a gets much cheaper. **16a is still worth doing anyway**, because a file in
+the repo is readable by a session with no design credential at all, and is diffable.
+
+The two project ids, so nobody re-derives them:
+
+- **Auralis redesign kickoff** — `cdb06ed1-f8ac-45bb-bf88-1a8a43567b15` (the screens;
+  `Auralis Redesign.dc.html` is the deliverable, `github.md` has the screen map)
+- **Sonora Design System** — `6c14357e-f54e-4ad9-99e0-d7fd5ab02144` (also vendored inside the
+  kickoff project under `_ds/sonora-design-system-6c14357e-.../`)
+
+### The three things §16 must settle before any component is rebuilt
+
+1. **`--m3-*` may be a silent name collision.** Sonora defines `--m3-primary`, `--m3-tertiary`,
+   `--m3-surface-container*`; this app already has a Material 3 token layer. If the names overlap,
+   adopting Sonora's stylesheet redefines tokens the app already consumes, and **nothing in this
+   repo's test suite can see that** — it renders, and some of it is wrong. Diff the property sets first.
+2. **Artwork-derived colour is contradicted by the design.** `Decisions already made` below records
+   colour derived from album art at runtime — the Symfonium behaviour she named as something she
+   loved. **Sonora's accent is a user-picked colour** (Symphony's 17 preset hues; `--accent` is the
+   one customizable brand colour). These are different products. This meets her own escalation test
+   — she would have an opinion and it changes what she gets — so **ask, in one sentence**, and get
+   on with everything else meanwhile.
+3. **Sonora loads Inter, Roboto Flex and Material Symbols Rounded from Google's CDN.** This product
+   is self-hosted, one container, one port. Offline or LAN-only, the icons degrade to the literal
+   words `play_arrow`, `skip_next` on screen, because Sonora uses glyph-name-as-element-text.
+   **Self-host the font files and the icon font.** Not a preference — the difference between working
+   and not working on the network this product is designed for.
+
+### `README.md` is stale, and she noticed
+
+Her side-note: _"the README was not updated"_. It is 115 lines and predates most of what shipped.
+Fixing it is folded into §16 as wave **16g**, but it does not depend on the redesign and can be
+done by anyone at any time. It should reflect: phases 1–14 done, phase 11's F-Droid repo live,
+`net.develivarr.auralis`, self-hosting via the GHCR image, and it should point at
+`docs/SELF_HOSTING.md` and `docs/FDROID_REPO.md`.
+
+---
+
 `docs/ROADMAP.md` is the source of truth for **status** and for per-wave detail. This file
 is the **context around it**: what a session needs to know that the code, the commits and
 the roadmap do not say. It is `@`-imported into every session in this repo by `CLAUDE.md`,

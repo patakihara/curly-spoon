@@ -3290,3 +3290,299 @@ What they establish, which settles several questions without asking her:
   not. See `USER_DECISIONS.md`.
 - **Escalate almost nothing.** Her test, recorded after she reversed the framing on two of nine
   long-deferred questions: _would she have an opinion, and does the answer change what she gets?_
+
+---
+
+## Phase 16 — the Sonora redesign: one design language across web and Android (2026-08-16)
+
+**Status: specced, not started.** This section is the spec. It was written from the design
+project itself plus its `github.md`, deliberately **without** implementing anything, at the
+user's explicit instruction (_"Don't do any work yourself, just make sure to document and plan
+for the next start-up"_).
+
+### The one-sentence version
+
+Sofia's design system landed. It is the thing every previous session was told to wait for, and
+it is now **the source of truth for design** — her words: _"This design doc is the source of
+truth when it comes to design, ok? Meaning that your task is probably to plan a major overhaul
+to all frontend components, coordinating mobile and web."_ So this phase is not a restyle of a
+few screens. It is a **coordinated replacement of the visual language on both clients**, and it
+outranks the cosmetic freeze that `§15` and `USER_DECISIONS.md` still record.
+
+### Where the design actually lives, and the trap in reading it
+
+Two Claude Design projects, both reachable from this session through the **`DesignSync`** MCP tool:
+
+| Project                      | id                                     | What                                                                                                                                           |
+| ---------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Auralis redesign kickoff** | `cdb06ed1-f8ac-45bb-bf88-1a8a43567b15` | The redesigned screens. `Auralis Redesign.dc.html` is the deliverable. Type `PROJECT_TYPE_PROJECT`.                                            |
+| **Sonora Design System**     | `6c14357e-f54e-4ad9-99e0-d7fd5ab02144` | The design system itself, also vendored **inside** the kickoff project under `_ds/sonora-design-system-6c14357e-f54e-4ad9-99e0-d7fd5ab02144/`. |
+
+The user's own entry point, for reference:
+`https://claude.ai/design/p/cdb06ed1-f8ac-45bb-bf88-1a8a43567b15?file=Auralis+Redesign.dc.html`
+
+**`DesignSync` is available to the orchestrating session and NOT to subagents.** Established
+the hard way on 2026-08-16: two Sonnet readers were dispatched to inventory the design files and
+**both came back blocked**, each having run five or more `ToolSearch` variants (`select:DesignSync`,
+`design`, `get_file`, …) and found nothing. Neither fabricated an inventory, which is the right
+behaviour and worth saying. The tool simply is not in a subagent's toolset.
+
+**The consequence is a real inversion of this repo's normal rule.** `CLAUDE.md` says the
+orchestrator specs and does not read. Here it has no choice: **only the orchestrator can read the
+design.** So the working shape for this phase is:
+
+1. The orchestrator reads the design files via `DesignSync` **once**, early, in a session with
+   window to spare.
+2. It writes what it read into **a file in this repo** — `docs/design/SONORA.md` is the proposed
+   path, and it does not exist yet.
+3. Every subsequent wave, and every subagent, reads **that file**, never the MCP.
+
+Skipping step 2 means every future session re-reads the design through a tool only it can use,
+in the most expensive context on the project. Do not skip step 2. **The first wave of this phase
+is step 2 and nothing else.**
+
+### The project's file inventory, so nobody re-lists it
+
+Under project `cdb06ed1-…`:
+
+- **Screens**: `Auralis Redesign.dc.html` — the main file, everything else supports it.
+- **Component cards**: `ArtistCard`, `BackLink`, `Canvas`, `FieldRow`, `MediaCard`, `MediaHeader`,
+  `QuickPick`, `RailItem`, `ResultRow`, `SettingRow` — each a `.dc.html`.
+- **Design system**: `_ds/sonora-…/` — `styles.css`, `_ds_bundle.js`, `_ds_manifest.json`,
+  `readme.md`, `_adherence.oxlintrc.json`, and `tokens/{colors,fonts,radius,shadows,spacing,typography}.css`.
+- **Glue**: `support.js`.
+- **Reference screenshots**: `screenshots/` — `01/02-podcast-tiles`, `01/02-search-lyrics`,
+  `bottomnav`, `episode`, `glyphs`, `nav-fill`, `rail-icons`, `rail-icons2`; plus `uploads/`.
+- **Sync record**: `github.md` — names the repo, branch `main`, path `apps/web`, and a screen map.
+
+**`_adherence.oxlintrc.json` is worth a look before any code is written** — the name says the
+design system ships lint rules asserting adherence to itself. If those are usable, they are a far
+cheaper enforcement mechanism than review, and this project's whole history says review loses to
+mechanical checks.
+
+### What Sonora is, in enough detail to plan against
+
+Read `_ds/sonora-…/readme.md` for the full statement; this is the load-bearing summary.
+
+Sonora is **synthesized from three real open-source self-hosted music players** — Feishin
+(Electron/React/Mantine, for Navidrome/Jellyfin/Subsonic), Booming Music (Android, Compose,
+Material 3), and Symphony (Android, Compose, Material 3). It is **not a brand**; "Sonora" names
+the synthesized language only, and the readme is explicit that no unifying logo exists and **none
+is to be invented**.
+
+The properties that will decide the integration:
+
+- **Flat neutral surfaces, one accent, two themes.** Dark: `rgb(12,12,12)` bg / `rgb(8,8,8)`
+  bg-alt / `rgb(20,20,20)` card / `rgb(225,225,225)` text. Light: `rgb(235,235,235)` bg /
+  `rgb(225,225,225)` card / `rgb(25,25,25)` text.
+- **The Material tonal neutral ladder is deliberately not used.** Only the _chroma_ roles survive
+  from Material — `--m3-primary`, `--m3-tertiary` and their containers.
+- **Theming is explicit and never inferred**: light on bare `:root`, dark under
+  `[data-theme="dark"]`. There is **deliberately no `prefers-color-scheme` rule** and **no `theme`
+  prop on components** — a component reads `--m3-*` / `--surface-*` and inherits whatever scope it
+  renders inside. Two themes can therefore sit side by side on one page.
+- **Type is Feishin's Mantine scale copied exactly**: body 14–16px, headings **font-weight 900 at
+  every size**, 36px down to 20px. **No italics anywhere.**
+- **Fonts**: body/UI is **Inter** (real, no substitution). Display/heading substitutes **Roboto
+  Flex** for Booming Music's real **Google Sans Flex**, which is not published on Google Fonts —
+  the readme flags the substitution as functional but not pixel-identical.
+- **Icons are Material Symbols Rounded**, glyph-name-as-element-text, loaded from the Google Fonts
+  icon stylesheet in `tokens/fonts.css`. Sonora deliberately **drops Feishin's `react-icons`
+  vocabulary** so one icon set covers desktop and mobile. _"Never hand-draw an SVG substitute."_
+- **No photography, no illustration, no texture, no gradients in chrome.** The only image surface
+  is user album art. Hero elements are a flat card tinted with the accent.
+- **Animation is minimal** — 0.2s ease-in-out fade, 0.2s colour transition on nav hover. _"No
+  bounce, no spring, no parallax anywhere."_
+- **Borders are nearly invisible** — one `1px` ~50%-alpha border in the whole desktop system, on
+  the player bar's top edge. Mobile separates by flat neutral steps, not borders.
+- **Shadows**: Mantine's 6-step scale on desktop; **mobile uses none at all**.
+- **Radii are one merged scale** (`--radius-xs` … `--radius-2xl`, `--radius-pill`) — desktop uses
+  the small end (3–5px), mobile the large end (16–28px). Same tokens, different ends.
+- **Layout**: desktop is a fixed three-region shell (collapsible sidebar, scrollable content,
+  persistent three-column player bar pinned bottom). Mobile is one scrollable column with a
+  persistent mini-player above a 4–5 item bottom tab bar, expanding to a full-screen Now Playing.
+- **Components**: Button, IconButton, Chip, Card, Badge, QuickTile, SectionHeader, Input, Switch,
+  Slider, SidebarItem, BottomNav, AlbumArt, TrackRow, MiniPlayer, AlbumHeader.
+- **Voice**: instructional, matter-of-fact, second person, almost all nouns and short verb phrases.
+  Title Case for headers, sentence case for body. **No emoji in-product** — emoji are a
+  documentation-only convention. **No filler or reassurance copy**; empty states state facts.
+
+### The three collisions that decide whether this is a phase or a rewrite
+
+**None of these is settled. Settling them is wave 16a's job, before any component is touched.**
+
+1. **`--m3-*` is a name collision, and it may be silent.** Sonora defines `--m3-primary`,
+   `--m3-tertiary`, `--m3-surface-container*` and friends. This app **already has its own Material 3
+   token layer**. If the names overlap, adopting Sonora's stylesheet silently redefines tokens the
+   current app consumes, and the failure mode is "everything still renders, and some of it is
+   wrong" — which no test in this repo can see. **Diff the two property sets before anything else.**
+
+2. **Artwork-derived colour is contradicted, and it is a `Decisions already made` entry.**
+   `HANDOVER.md` records: _"Colour is derived from artwork at runtime with
+   `@material/material-color-utilities` — the Symfonium behaviour the user called out"_, with every
+   generated `on*`/container pair asserted to clear WCAG AA. **Sonora's accent is a user-picked
+   brand colour** — Symphony's 17 preset hues ship as `--accent-*` swatches and `--accent` is _the
+   one customizable_ colour. These are different products. Since the design doc is now the source of
+   truth, the plain reading is that the artwork pipeline is superseded. **But this is exactly the
+   kind of thing she would have an opinion about and it changes what she gets, so it meets her own
+   escalation test** — ask, in one sentence, whether album-art-derived colour survives as the
+   accent's source or is replaced by a picker. Do not silently delete a feature she named as a
+   thing she loved about Symfonium. **Everything else in this phase can proceed without the answer.**
+
+3. **Fonts and icons are external CDN loads, and this app ships in a container.** `tokens/fonts.css`
+   reaches Google Fonts for Inter, Roboto Flex and the Material Symbols Rounded icon stylesheet. The
+   product is **self-hosted, one container, one port**, and a household that self-hosts is precisely
+   the household that may not want a third-party font request on every page load — and an offline or
+   LAN-only client gets unstyled text and **empty boxes where every icon should be**, because
+   glyph-name-as-text degrades to literal words like `play_arrow` on the screen. **Self-host the font
+   files and the icon font.** This is not a preference; it is the difference between the product
+   working and not working on the network it is designed for.
+
+### The wave plan
+
+Sized to this repo's own rule — each wave completable in well under ~150 turns, split at file
+boundaries, disjoint directories where waves run in parallel.
+
+- **16a — vendor the design into the repo. Do this first and alone.** The orchestrator reads the
+  design project through `DesignSync` and writes `docs/design/SONORA.md`: the token tables, the
+  component inventory with each component's real values, the screen-by-screen layout rig, the copy
+  rules. Also resolve collision 1 by diffing Sonora's custom-property names against the app's
+  existing ones, and record the answer in that file. **No product code changes.** Output is a
+  document every later wave and every subagent reads instead of the MCP.
+- **16b — the token layer.** Land Sonora's tokens as the app's token layer, self-hosting fonts and
+  the Material Symbols font (collision 3), behind `[data-theme="dark"]` / bare `:root`. Resolve the
+  `--m3-*` overlap the way 16a decided. Nothing visual should change yet beyond colour and type;
+  the point is that the substrate is Sonora's before any component is rebuilt.
+- **16c — `packages/ui` primitives.** Button, IconButton, Chip, Card, Badge, Input, Switch, Slider,
+  SectionHeader, QuickTile against the new tokens. `packages/ui` is a shared package, so this is a
+  single-agent wave, not a parallel one.
+- **16d — web shell and chrome.** The docked three-region shell, the adaptive rig, the rail, the
+  player bar. `github.md` records the specific fixes the redesign made here: **chrome is docked and
+  only content scrolls**, and the rig breaks at **1440 / 1280 / 1024 / 768 px — the panel drops
+  below 1240, the rail collapses below 1024**. Selected nav destinations use the **Material Symbols
+  FILL axis** (see `screenshots/nav-fill.png`).
+- **16e — web screens.** For You, Music/Album, Book detail, Podcasts, Search, Now Playing/Queue/
+  Mini player, Settings/Onboarding. Splittable across two or three agents on disjoint feature dirs.
+- **16f — Android.** The same language in Compose: `MaterialTheme` currently receives **only a
+  colour scheme, no typography and no shapes**, and its colour is Android's wallpaper-derived
+  Material You rather than the pipeline `DESIGN.md` specifies (see §14 and the Android design
+  audit). Sonora gives Android its typography and shape scales for the first time. **The Compose
+  test harness from 14b is what makes this verifiable at all** — before it, an Android restyle was
+  checkable only by "it compiles" plus a reviewer reading it.
+- **16g — reconcile the docs.** `DESIGN.md` describes a Material 3 Expressive system with
+  artwork-derived colour and spring physics; Sonora is flat, accent-driven, and explicitly
+  anti-spring. One of them has to stop being the spec. Also update `README.md` — see below.
+
+### Two structural changes the redesign makes that are not styling
+
+These are product changes riding inside a design deliverable, and they will be missed if the phase
+is read as cosmetic:
+
+1. **Books gets a real library screen.** `github.md` states the repo's nav **pointed straight at a
+   detail page**, and the redesign adds the browsable library screen that should have been there.
+   Podcasts was rebuilt to match Music for the same reason. Confirm against `destinations.ts` and
+   the router before building — but if true, this is a missing screen, not a restyle.
+2. **Search becomes one relevance-ordered mixed list with per-item status labels**, replacing the
+   per-type groups. This lands **exactly on top of** the already-answered 12c-2 decision — _an owned
+   title is not requestable but still appears in search_ — and the "status label" is that decision's
+   visual form. It also sits next to her newer requirement that **global search needs suggestions**.
+   Whoever takes 16e should read `USER_DECISIONS.md` on search before starting.
+
+### What will break, and the honest cost
+
+**The e2e suite is the real bill.** `e2e/app` is 188+ specs against one shared stateful BFF. They
+assert mostly on testids and text — which is what makes this survivable — but a redesign that
+restructures the DOM will still break any spec that reaches for structure, and the docked-chrome
+change alters the scroll container, which anything scrolling or measuring depends on. **Budget a
+wave for the suite, and do not let a wave call itself done on a subset**: §13's fixture lesson is
+that only a full `--project=app` run sees this class of breakage.
+
+**Two Playwright facts this phase will collide with**, both already paid for once: a green local run
+is **not** evidence about a bundling or CSS change (14a-2 passed 188/188 locally and failed twice on
+CI, on a layout-stability assertion), and **timing measurement does not belong in the shared `app`
+project** (14c's CLS spec was reverted for destabilising its neighbours). A redesign will tempt
+someone into both.
+
+**And the CSS-presence check from 14a-2 applies directly here**: Playwright asserts on testids and
+text, never computed styles, so **a component can render completely unstyled and pass 188/188**.
+Any wave that moves CSS must check total `dist/assets/*.css` bytes before and after — and, per that
+wave's own correction, check that the CSS arrives **before first paint**, not merely that it exists.
+
+### Sequencing against phase 15
+
+**Phase 15 is backend and phase 16 is frontend, so they do not contend for files** — 15's waves live
+in `apps/server` and `packages/*-client`, 16's in `packages/ui`, `apps/web` and `apps/android`. Her
+stated priority order was _backend first — recommendations and requests — with phase 11 alongside,
+frontend explicitly not now_, and the reason given for "not now" was that **this design system was
+coming**. It has arrived, so the reason has expired. The two can run in parallel; if they cannot,
+15's mechanism work is still the thing that changes what she gets, and 16 is the thing that changes
+what she sees.
+
+### The `Frontend restyling waits` decision is now superseded
+
+§15's decision list says _"Frontend restyling waits. A design system is coming from her that may
+overhaul the frontend."_ It came. That line stays in the record as history, but it no longer binds —
+this phase is that overhaul.
+
+### Verified against the code — two claims in this spec were wrong
+
+**A read of the actual tree on 2026-08-16 refuted two things the design's own `github.md` and an
+earlier draft of this section asserted.** Recording both, because a phase spec built on a wrong
+premise is this project's most-repeated failure.
+
+1. **A Books library screen already exists.** `github.md` says _"the repo's nav pointed straight at
+   a detail page"_. It does not: `destinations.ts` routes Books to a stable `/books`, and
+   `router/routeTree.ts` maps it to `BooksPage.tsx`, which resolves the library id at render time
+   and renders `LibraryView` — a real browsable grid. **So 16e is a restyle of an existing screen,
+   not a missing screen.** Podcasts should be re-checked the same way before anyone builds it fresh.
+2. **The artwork-derived colour pipeline is dead code, so collision 2 is much smaller than it
+   looks.** `packages/ui/src/tokens/artwork.ts` computes a source colour via
+   `@material/material-color-utilities`, and **has zero callers outside its own test**. The only
+   thing that calls `setSourceColor` is a **manual swatch picker** in `SettingsPage.tsx`.
+   `themeStore.ts`'s own comment still says phase 5 will wire artwork in; it never did.
+   **What ships today is already a user-picked accent — which is exactly Sonora's model.** The two
+   systems agree in practice. The question for her shrinks from "do we delete a feature you loved"
+   to "do we ever wire up artwork extraction", and that can be asked later, cheaply.
+
+**Collision 1 is confirmed real.** `packages/ui/src/theme/ThemeProvider.tsx` sets `--m3-*` custom
+properties on a `.auralis-theme-root` div via `el.style.setProperty`, registers the colour ones with
+`CSS.registerProperty({syntax:'<color>'})` so they cross-fade, and applies the static scales
+(spacing/shape/elevation/typography/motion — **all also `--m3-*`**) as inline style on that same div.
+`styles/index.css` additionally defines a `:root` fallback set. **Sonora uses `--m3-*` too.** Inline
+style on `.auralis-theme-root` beats a `:root` or `[data-theme]` rule on specificity, so dropping
+Sonora's stylesheet in **will not** override the running theme — it will be silently ignored, which
+is the more confusing of the two failure modes. Wave 16b has to replace the provider's token
+emission, not merely add a stylesheet beside it.
+
+**Three more facts that size the work:**
+
+- **Nothing is docked today.** `.auralis-shell__content` has no `overflow` or `height` rule; `body`,
+  `.auralis-theme-root` and `.auralis-shell` are all `min-height: 100vh`, so **the whole document
+  scrolls**. Only the bottom nav, the compact settings button and the mini player are `fixed`.
+  Sonora's docked-chrome model is therefore a genuine structural change to the shell, not a tweak.
+- **The breakpoints do not line up.** Today: three, defined once in `hooks/breakpoint.ts` and
+  consumed through a `matchMedia`-backed `useBreakpoint()` — compact `<600`, medium `600–1240`,
+  expanded `>1240`. Sonora's rig is **1440 / 1280 / 1024 / 768**, panel dropping below 1240, rail
+  collapsing below 1024. Only the 1240 boundary survives. **`useBreakpoint()` being the single
+  consumer is the good news** — the rig can be re-cut in one file rather than in scattered media
+  queries.
+- **`packages/ui` exports 21 components; Sonora names 16.** They are not the same 16. Ours:
+  Button, IconButton, Fab, Card, ListItem, Slider, NavigationBar, TopAppBar, SearchField, Chip,
+  Sheet, Dialog, Snackbar, useSnackbar, LinearProgress, CircularProgress, Skeleton, Icon, Marquee,
+  Menu, MenuTarget. Sonora adds QuickTile, SectionHeader, TrackRow, AlbumArt, AlbumHeader,
+  MiniPlayer, BottomNav, SidebarItem, Badge, Switch, Input. **16c is a mapping exercise, not a
+  one-for-one port** — and `packages/ui` has **no component tests at all** (its 7 test files cover
+  token math only). What it does have is a hand-rolled Vite **gallery** at `packages/ui/gallery/`
+  with stable testids, driven by **19 specs in `e2e/ui/`**. That gallery is the cheapest place to
+  verify a restyled primitive, and it is the reason 16c is verifiable at all.
+
+**The e2e bill is smaller than feared, and it is concentrated.** 27 specs in `e2e/app`, **763**
+`getByTestId` calls — overwhelmingly testid- and text-driven, which survives a restyle. The
+structurally coupled minority is about **eight** files: `desktop-width.spec.ts`,
+`tablet-breakpoint.spec.ts` and `for-you.spec.ts` assert geometry via `boundingBox()` (31 calls
+across 6 files); `lyrics.spec.ts`, `podcast-detail.spec.ts` and `settings-a11y.spec.ts` assert on
+classes or computed CSS. **`desktop-width` and `tablet-breakpoint` will break by design** — they pin
+the very breakpoints Sonora re-cuts. Budget them into 16d rather than treating them as regressions.
+**There is no visual-regression testing at all** — no `toHaveScreenshot`, no snapshot dirs. For a
+phase that is entirely about appearance, that is the gap worth closing early, and the `packages/ui`
+gallery is where it is cheapest to add.
