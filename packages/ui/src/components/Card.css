@@ -8,27 +8,48 @@
  * keeps this file free of any `--m3-*` *definition*, only leaving `.m3-state-layer`'s own
  * consumption (in index.css) untouched.
  *
- * Radius, surface, shadow and border values below follow Sonora's flat surface system —
- * there is no "elevation" tint scale in Sonora the way M3's surface-container-* steps
- * were, so `elevated` and `filled` share one surface (`--surface-card`) and are
- * distinguished only by whether a shadow is present, which is a deliberate design
- * decision for this wave (see the wave report), not a value pulled from a vendored
- * component — Sonora's own card-shaped components (MediaCard etc., SONORA.md §3) don't
- * cover this generic `Card` wrapper's three-variant API directly.
+ * Surface/shadow values below follow Sonora's flat surface system — there is no
+ * "elevation" tint scale in Sonora the way M3's surface-container-* steps were, so
+ * `elevated` and `filled` share one surface (`--surface-card`) and are distinguished only
+ * by whether a shadow is present.
+ *
+ * **Reconciled against Sonora's own vendored `Card.jsx`** (`docs/design/sonora/
+ * primitives/`, landed after this wave's spec was written) — with one real mismatch worth
+ * stating rather than papering over: **Sonora's `Card` is a specific media tile**
+ * (`image`/`title`/`subtitle`/`badge` props, a fixed accent-gradient art area), not a
+ * generic children-wrapper container. `packages/ui`'s `Card` is the latter — used across
+ * this app as a general panel/section wrapper with `elevated`/`filled`/`outlined`
+ * variants, a shape Sonora's own primitive doesn't have. Rebuilding it as a media tile is
+ * out of this wave's scope (that's a new component, not a token migration) — the
+ * three-variant surface/shadow treatment below is still this wave's own construction, not
+ * pulled from the vendored file. What *did* transfer directly: **`Card.jsx`'s radius is
+ * `var(--radius-md)` (24px)**, not the `--radius-sm` (16px) the first draft guessed —
+ * corrected below. Its title/subtitle colours (`--m3-on-background`/
+ * `--m3-on-surface-variant`) confirm the substitution this wave already had right:
+ * `var(--surface-fg)` (this file already used it; see `docs/design/sonora/primitives/
+ * README.md`'s substitution table for why the raw `--m3-*` references can't be copied
+ * verbatim).
+ *
+ * The text colour's fallback is `currentColor`, not a literal: `Card` is not currently
+ * confirmed to render inside a portal (`Dialog`/`Sheet`/`Menu`), but a literal fallback
+ * commits to one theme and is wrong in the other half the time (see Button.tsx's comment,
+ * where this was verified empirically for `Dialog`) — `currentColor` costs nothing and
+ * removes that risk if a future caller ever does portal one.
  *
  * The spring-based hover/press transition (--m3-spring-default-*) is replaced with a
  * plain, short duration — Sonora ships no spring/motion tokens at all (see Button.css's
- * comment for the same call made there).
+ * comment for the same call made there). The interactive hover `translateY(-2px)` below
+ * is a direct value from `Card.jsx`'s own hover treatment.
  */
 .m3-card {
   display: block;
   width: 100%;
   text-align: inherit;
   border: none;
-  border-radius: var(--radius-sm, 16px);
+  border-radius: var(--radius-md, 24px);
   padding: 16px;
   font: inherit;
-  color: var(--surface-fg, rgb(225, 225, 225));
+  color: var(--surface-fg, currentColor);
   transition:
     box-shadow 150ms ease-out,
     transform 150ms ease-out;
@@ -51,6 +72,7 @@
 }
 .m3-card--interactive:hover {
   box-shadow: var(--shadow-md, 0 4px 6px rgba(0, 0, 0, 0.1));
+  transform: translateY(-2px);
 }
 .m3-card--interactive:active {
   transform: scale(0.99);

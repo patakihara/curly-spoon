@@ -1,0 +1,25 @@
+/*
+ * Wave 16c-1 follow-up (docs/ROADMAP.md §16): `chipLabelStyle` in Chip.tsx sets
+ * `background-color` via Mantine's `styles={{ label: … }}` prop, which lands as an inline
+ * style on the label element. That wins over Mantine's own compiled hover rule
+ * (`.mantine-Chip-label:not([data-disabled]):hover { background-color: var(--mantine-color-dark-5) }`)
+ * at ordinary specificity, so the correct fill silently came with no hover feedback at all —
+ * a real regression the fix introduced, found by review rather than a test (nothing in this
+ * wave's suite asserts on `:hover`).
+ *
+ * `filter: brightness()` is a different CSS property than `background-color`, so it composes
+ * with the inline fill instead of racing it for specificity — no `!important` needed, and it
+ * reads correctly against both the light and dark `--surface-card`/`--accent` fills without a
+ * separate per-theme value.
+ */
+.m3-chip-label {
+  transition: filter 120ms ease-out;
+}
+
+.m3-chip-label:not([data-disabled]):hover {
+  filter: brightness(1.2);
+}
+
+.m3-chip-label:not([data-disabled]):active {
+  filter: brightness(0.92);
+}

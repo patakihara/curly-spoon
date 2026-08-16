@@ -34,7 +34,8 @@ test.describe('IconButton', () => {
     // guidance (RailItem, docs/design/SONORA.md §3.7) is a colour change, not the old
     // M3-Expressive glyph-scale spring. This now asserts the opposite half of what the
     // pre-migration test pinned: the transform stays constant and the colour is what
-    // moves, to the resolved --accent-ink value.
+    // moves, to the resolved --accent value. Reconciled against docs/design/sonora/
+    // primitives/IconButton.jsx: `active` uses plain `var(--accent)`, not `--accent-ink`.
     const toggle = page.getByTestId('icon-button-toggle');
     const glyph = toggle.locator('.m3-icon-button__glyph');
     const transformBefore = await glyph.evaluate((el) => getComputedStyle(el).transform);
@@ -47,15 +48,20 @@ test.describe('IconButton', () => {
     const colorAfter = await toggle.evaluate((el) => getComputedStyle(el).color);
     expect(transformAfter).toBe(transformBefore);
     expect(colorAfter).not.toBe(colorBefore);
-    // Dark is the gallery's default mode; --accent-ink == --accent there (#8b5cf6).
-    expect(colorAfter).toBe('rgb(139, 92, 246)');
+    expect(colorAfter).toBe('rgb(139, 92, 246)'); // --accent, static across both themes
 
     await toggle.click(); // restore
   });
 
-  test('the selected accent colour also resolves in light mode, and differs from dark', async ({
+  test('the selected accent colour is the same static value in light mode (--accent is not theme-scoped)', async ({
     page,
   }) => {
+    // Wave 16c-1: unlike the first draft's --accent-ink (a theme-scoped, colour-mixed
+    // value that differed by mode), the reconciled --accent is defined once on bare
+    // :root (packages/ui/src/styles/sonora-tokens.css) and never varies with
+    // [data-theme]. So the correct invariant is now equality across themes, not
+    // difference — proves the token still resolves after a mode switch, without
+    // depending on a per-theme mix that no longer applies here.
     const toggle = page.getByTestId('icon-button-toggle');
 
     await page.getByTestId('mode-light').click();
@@ -63,11 +69,7 @@ test.describe('IconButton', () => {
 
     await toggle.click();
     const lightColor = await toggle.evaluate((el) => getComputedStyle(el).color);
-    // --accent-ink in light is color-mix(in oklch, var(--accent) 58%, black) — assert it
-    // differs from dark's raw #8b5cf6 passthrough, proving the mix actually ran rather
-    // than resolving to an empty/inherited value.
-    expect(lightColor).not.toBe('rgb(139, 92, 246)');
-    expect(lightColor).not.toBe('');
+    expect(lightColor).toBe('rgb(139, 92, 246)');
 
     await toggle.click(); // restore selected=false
     await page.getByTestId('mode-dark').click(); // restore for other tests

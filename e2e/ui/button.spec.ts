@@ -85,13 +85,15 @@ test.describe('Button', () => {
     // Button.tsx), so it's the one that can prove the Sonora tokens actually reached a
     // *used* value, not just that a var() reference was written — the class of bug
     // docs/HANDOVER.md warns Playwright's testid/text assertions otherwise can't see.
+    // Reconciled against docs/design/sonora/primitives/Button.jsx: text colour is plain
+    // --surface-fg (Sonora's `ghost`/`secondary` variants use it, not an accent colour).
     const button = page.getByTestId('button-elevated');
 
     await expect(page.getByTestId('mode-dark')).toBeVisible();
     const darkBg = await button.evaluate((el) => getComputedStyle(el).backgroundColor);
     const darkColor = await button.evaluate((el) => getComputedStyle(el).color);
     expect(darkBg).toBe('rgb(20, 20, 20)'); // --surface-card, dark
-    expect(darkColor).toBe('rgb(139, 92, 246)'); // --accent-ink == --accent in dark
+    expect(darkColor).toBe('rgb(225, 225, 225)'); // --surface-fg, dark
 
     await page.getByTestId('mode-light').click();
     // Matches e2e/ui/sonora-tokens.spec.ts's own wait: colours registered via
@@ -100,14 +102,57 @@ test.describe('Button', () => {
     const lightBg = await button.evaluate((el) => getComputedStyle(el).backgroundColor);
     const lightColor = await button.evaluate((el) => getComputedStyle(el).color);
     expect(lightBg).toBe('rgb(225, 225, 225)'); // --surface-card, light
-    // --accent-ink in light is color-mix(in oklch, var(--accent) 58%, black) — assert it
-    // differs from the raw accent and from the dark-mode value, proving the mix actually
-    // ran (the same class of "resolves to a non-empty but wrong value" bug the tokens'
-    // own reader guards against), without pinning oklch's exact serialization.
-    expect(lightColor).not.toBe(darkColor);
-    expect(lightColor).not.toBe('rgb(139, 92, 246)');
+    expect(lightColor).toBe('rgb(25, 25, 25)'); // --surface-fg, light
 
     // restore for other tests sharing this worker's page context
     await page.getByTestId('mode-dark').click();
+  });
+
+  test('a `text` button inside Dialog stays legible in light mode (portal fallback check)', async ({
+    page,
+  }) => {
+    // Wave 16c-1: `Dialog` portals to `document.body`, outside `.auralis-theme-root`,
+    // where `--surface-fg` has no `:root` fallback (sonora-theme.css's header). A literal
+    // fallback here would be wrong in whichever theme it doesn't match — this is the
+    // empirical check the comment in Button.tsx (VARIANT_STYLE_OVERRIDE) refers to.
+    // `currentColor` is meant to inherit Mantine's own theme-aware Modal text colour
+    // instead of committing to one theme's literal.
+    await page.getByTestId('mode-light').click();
+    await page.waitForTimeout(700);
+
+    await page.getByTestId('dialog-open').click();
+    const cancel = page.getByTestId('dialog-cancel');
+    await expect(cancel).toBeVisible();
+
+    const color = await cancel.evaluate((el) => getComputedStyle(el).color);
+    // Walk up for the first non-transparent background, same technique as
+    // e2e/app/contrast.spec.ts's effectiveBackground().
+    const bg = await cancel.evaluate((start) => {
+      let el: Element | null = start;
+      while (el) {
+        const c = getComputedStyle(el).backgroundColor;
+        const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec(c);
+        if (m && (m[4] === undefined || Number(m[4]) > 0)) return c;
+        el = el.parentElement;
+      }
+      return 'rgb(255, 255, 255)';
+    });
+
+    const parse = (s: string) => {
+      const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(s);
+      if (!m) throw new Error(`unparseable colour: ${s}`);
+      return [Number(m[1]), Number(m[2]), Number(m[3])] as const;
+    };
+    const [cr, cg, cb] = parse(color);
+    const [br, bg2, bb] = parse(bg);
+    // Not a strict WCAG check (Mantine's own Modal colour is outside this wave's scope
+    // to pin exactly) — just proves the fallback didn't collapse text and background to
+    // the same near-white value, i.e. white-on-white, which a dark-literal fallback for
+    // --surface-fg would have produced here.
+    const distance = Math.abs(cr - br) + Math.abs(cg - bg2) + Math.abs(cb - bb);
+    expect(distance).toBeGreaterThan(60);
+
+    await page.getByTestId('dialog-cancel').click(); // close
+    await page.getByTestId('mode-dark').click(); // restore
   });
 });

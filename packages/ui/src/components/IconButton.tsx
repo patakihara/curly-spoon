@@ -9,15 +9,18 @@
  * unchanged. `standard`/`outlined` are visually neutral (they only turn accent-coloured
  * when *selected*) — for the neutral state that's Mantine's own `gray`; the *selected*
  * colour is an explicit style override, moved in this wave from `var(--m3-primary)` onto
- * Sonora's `var(--accent-ink, var(--accent))` (docs/design/SONORA.md §2 names
- * `--accent-ink` as the token every "active/selected" indicator should use — `RailItem`'s
- * own active-nav treatment is the closest vendored precedent).
+ * Sonora's raw `var(--accent)`.
  *
- * **Portal fallback, deliberate** — same reasoning as Button.tsx: `--accent-ink` has no
- * `:root` fallback (see `packages/ui/src/styles/sonora-theme.css`'s header), so a
- * *selected* `standard` IconButton rendered inside `Dialog`/`Sheet`/`Menu` would silently
- * lose its accent colour without the `var(--accent-ink, var(--accent))` fallback chain —
- * `--accent` itself is always `:root`-scoped and never resolves empty.
+ * **Reconciled against Sonora's own vendored `IconButton.jsx`** (`docs/design/sonora/
+ * primitives/`, landed after this wave's spec was written). The first draft used
+ * `var(--accent-ink, var(--accent))`, following SONORA.md §2's prose ("use `--accent-ink`
+ * for anything that must be readable on a surface"). **The real `IconButton.jsx` uses
+ * plain `var(--accent)` for its `active` state** — `color: active ? 'var(--accent)' : …` —
+ * and, checked across all five vendored primitives, `--accent-ink` appears in none of
+ * them; every accent reference in Sonora's own source is the raw token. `--accent` is
+ * always `:root`-scoped (`packages/ui/src/styles/sonora-tokens.css`), so it never resolves
+ * empty in a portal — no fallback chain needed here, unlike the theme-scoped
+ * `--surface-*`/`--accent-ink` tokens Button.tsx and Chip.tsx have to guard against.
  */
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
 import { ActionIcon, type ActionIconVariant, type MantineColor } from '@mantine/core';
@@ -57,7 +60,7 @@ function resolveMantineProps(
       // Unselected "standard" is neutral; selected turns accent-coloured, matching
       // the old `:not(.selected) { color: on-surface-variant }`.
       return selected
-        ? { variant: 'subtle', style: { color: 'var(--accent-ink, var(--accent))' } }
+        ? { variant: 'subtle', style: { color: 'var(--accent)' } }
         : { variant: 'subtle', color: 'gray' };
   }
 }

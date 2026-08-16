@@ -28,42 +28,90 @@
  * `--m3-*` references — its colour rode entirely on Mantine's own `theme.colors.auralis`
  * ramp, resolved from `variant`/`checked` with no explicit override (unlike Button.tsx/
  * IconButton.tsx, which already had an override to migrate). To actually put Chip onto
- * Sonora rather than leave it untouched, `CHIP_STYLE_VARS` below sets Mantine's own
- * `Chip` CSS custom properties (`--chip-bg`/`--chip-color`/`--chip-bd`, read from
+ * Sonora rather than leave it untouched, `chipStyleVars` below sets Mantine's own `Chip`
+ * CSS custom properties (`--chip-bg`/`--chip-color`/`--chip-bd`/`--chip-radius`, read from
  * `Chip.varsResolver` in `@mantine/core`) via the `style` prop, which — same technique as
- * Button.tsx's `VARIANT_STYLE_OVERRIDE` — wins over Mantine's own resolved values at
- * equal specificity because it lands later in the merged inline `style`. A checked
- * `filter` chip becomes `--accent-ink` background + `--accent-contrast` text; every other
- * state (unchecked filter, assist, input) is a near-invisible `--surface-border` outline
- * on `--surface-fg` text, matching Sonora's "borders are nearly invisible" guidance
- * (docs/design/SONORA.md's readme summary).
+ * Button.tsx's `VARIANT_STYLE_OVERRIDE` — wins over Mantine's own resolved values at equal
+ * specificity because it lands later in the merged inline `style`.
  *
- * `--accent-contrast` (#fff, static) on `--accent`/`--accent-ink` (violet #8b5cf6, dark
- * mode) measures ~4.23:1 — just under WCAG AA's 4.5:1 text threshold, though clear of the
- * 3:1 large-text/UI-component one. This is Sonora's own single fixed on-accent colour for
- * a 17-hue customizable accent; several lighter presets (yellow, lime, amber, cyan) will
- * fail more severely. Sonora-faithful, not silently changed — see the wave report.
+ * **Reconciled against Sonora's own vendored `Chip.jsx`** (`docs/design/sonora/
+ * primitives/`, landed after this wave's spec was written). This corrected a real bug,
+ * not just a token-name preference: the first draft made the *unchecked* chip's background
+ * `transparent`, reasoning from the readme's general "borders are nearly invisible"
+ * guidance — but `--surface-border` at 8% opacity as the chip's *only* visual boundary,
+ * with no fill at all, reads as text rather than a control. **The real `Chip.jsx` gives the
+ * unchecked state a `var(--surface-card)` background** — a real fill, not a near-invisible
+ * outline; the readme's guidance is about chrome borders generally, not this control's own
+ * boundary. Checked state also moves from `--accent-ink` to plain `var(--accent)` —
+ * checked, like `IconButton`'s `active`, and this confirms `--accent-ink` never appears in
+ * any of the five real primitives (see IconButton.tsx's comment). Radius moves from
+ * `--radius-pill` (a guess with no source) to `--radius-md` (24px), the real file's exact
+ * value.
+ *
+ * `--accent-contrast` (#fff, static) on `--accent` (violet #8b5cf6) measures ~4.23:1 —
+ * just under WCAG AA's 4.5:1 text threshold, though clear of the 3:1 large-text/
+ * UI-component one. This is no longer an inference: `Chip.jsx` line 18 literally specifies
+ * `color: color ? '#fff' : selected ? 'var(--accent-contrast)' : 'var(--surface-fg)'` —
+ * the design's own pairing, source-confirmed, not this wave's choice. `--accent-contrast`
+ * is a single fixed on-accent colour for a 17-hue customizable accent; several lighter
+ * presets (yellow, lime, amber, cyan) will fail more severely. See the wave report.
  */
 import { forwardRef, type CSSProperties, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { Chip as MantineChip, CloseButton } from '@mantine/core';
+import './Chip.css';
 
-/** Mantine `Chip`'s own custom-property names (`Chip.varsResolver`), overridden here. */
+/**
+ * Mantine `Chip`'s own custom-property names (`Chip.varsResolver`), set here on the
+ * component's `style` prop. **This alone turned out not to be enough** — see
+ * `chipLabelStyle` below for why — but it's kept because `<MantineChip>`'s `style` prop
+ * lands on the component's *root* wrapper (`Chip.mjs`'s `getStyles('root')`), and a CSS
+ * custom property set there still cascades down to the label via normal inheritance, so
+ * it's harmless insurance for anything in Mantine's own CSS that does read `--chip-bg`
+ * (the `filled`/`light`-variant class, once `[data-checked]`).
+ */
 function chipStyleVars(checked: boolean): CSSProperties {
-  return (
-    checked
-      ? {
-          '--chip-bg': 'var(--accent-ink, var(--accent))',
-          '--chip-color': 'var(--accent-contrast, #fff)',
-          '--chip-bd': 'var(--accent-ink, var(--accent))',
-        }
-      : {
-          '--chip-bg': 'transparent',
-          '--chip-color': 'var(--surface-fg, rgb(225, 225, 225))',
-          '--chip-bd': 'var(--surface-border, rgb(255 255 255 / 8%))',
-        }
-  ) as CSSProperties;
+  return {
+    '--chip-bg': checked ? 'var(--accent)' : 'var(--surface-card, rgb(20, 20, 20))',
+    '--chip-color': checked ? 'var(--accent-contrast, #fff)' : 'var(--surface-fg, currentColor)',
+    '--chip-bd': checked ? 'var(--accent)' : 'var(--surface-border, rgb(255 255 255 / 8%))',
+    '--chip-radius': 'var(--radius-md, 24px)',
+  } as CSSProperties;
 }
+
+/**
+ * The real fix, found empirically while verifying this wave: Mantine's `Chip` paints its
+ * visible surface on a separate **`label`** part (`Chip.mjs`: `...getStyles('label', …)`
+ * on its own `<Box component="label">`), not on the root the `style` prop reaches. Its
+ * compiled `outline`-variant CSS (the unchecked state, since `Chip.tsx` passes
+ * `variant={showsCheckGlyph ? 'filled' : 'outline'}`) hardcodes
+ * `background-color: var(--mantine-color-dark-6)` / `var(--mantine-color-gray-0)` for
+ * that label's *unchecked* background and never reads `--chip-bg` at all in that state
+ * (only the `filled`/`light`-variant CSS does, and only once `[data-checked]`) — so
+ * `chipStyleVars` alone was silently a no-op for the unchecked case
+ * (`e2e/ui/chip.spec.ts` caught it: measured `rgb(46, 46, 46)`, Mantine's own dark-mode
+ * default, instead of the intended `--surface-card`). Mantine's `styles={{ label: {…} }}`
+ * prop is the styles-API mechanism for targeting that part directly, and inline style
+ * wins over any of Mantine's `:where()`-wrapped class rules (zero specificity by design,
+ * so consumers can always override) regardless of which variant's class applies.
+ */
+function chipLabelStyle(checked: boolean): CSSProperties {
+  return {
+    backgroundColor: checked ? 'var(--accent)' : 'var(--surface-card, rgb(20, 20, 20))',
+    color: checked ? 'var(--accent-contrast, #fff)' : 'var(--surface-fg, currentColor)',
+    borderColor: checked ? 'var(--accent)' : 'var(--surface-border, rgb(255 255 255 / 8%))',
+    borderRadius: 'var(--radius-md, 24px)',
+  };
+}
+
+/**
+ * Setting `background-color` as an inline style (above) beats Mantine's own compiled hover
+ * rule at ordinary CSS specificity, so the label had no hover feedback at all until this class
+ * was added — see `Chip.css`'s header comment for why `filter` rather than another
+ * `background-color` override is the fix (it composes with the inline fill instead of
+ * fighting it for specificity).
+ */
+const CHIP_LABEL_CLASS = 'm3-chip-label';
 
 export type ChipVariant = 'assist' | 'filter' | 'input';
 
@@ -115,6 +163,8 @@ export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
         variant={showsCheckGlyph ? 'filled' : 'outline'}
         checked={isFilter ? Boolean(selected) : false}
         style={{ ...chipStyleVars(showsCheckGlyph), ...style }}
+        styles={{ label: chipLabelStyle(showsCheckGlyph) }}
+        classNames={{ label: CHIP_LABEL_CLASS }}
         onChange={(checked) => {
           if (isFilter) onSelectedChange?.(checked);
         }}
