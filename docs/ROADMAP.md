@@ -3652,6 +3652,19 @@ boundaries, disjoint directories where waves run in parallel.
     below 1240, the rail collapses below 1024**. Selected nav destinations use the **Material Symbols
     FILL axis** (see `screenshots/nav-fill.png`).
 
+- **16c-2 — and it is the priority, ahead of 16c-1-A.** The first parity review (`16b-2-P`)
+  established something the wave reports had all understated: **Android is fully re-themed today and
+  web is barely.** `MainActivity` wraps the whole app in `AuralisTheme`, so Compose's single
+  `ColorScheme`/`Typography`/`Shapes` are live on every existing Android screen, while web's five
+  "migrated" primitives all still reference `--m3-*` for shape, elevation, state-layer and spring
+  values. **The two clients do not currently look like the same product.**
+
+  Compose cannot express web's additive middle state — there is no cascade to fall back through —
+  so Android is not held back. That makes **web the platform that is behind**, and closing the gap
+  means finishing web's migration (`16c-2-W`, and completing 16c-1-W's five) before adding more
+  Android surface. Sequencing parity work is not the same as abandoning it: the pair still lands,
+  the lagging half just goes first.
+
 - **16e — screens, paired per screen rather than per platform.** For You/browse, Music/Album, Book
   detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding. **Split by screen,
   not by platform** — each screen is one `-W`/`-A`/`-P` triple from one shared spec describing the
