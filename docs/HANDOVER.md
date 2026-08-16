@@ -675,7 +675,10 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Nothing is currently claimed.** **15b-1 landed** (`c15e5e3`) — the pure ownership matcher, with
+**Claimed: 16a-2 — writing `docs/design/SONORA.md`.** Sonnet agent, dispatched 2026-08-16 ~18:25 UTC.
+Touches `docs/design/SONORA.md` only. **16a-1 has landed** (`d8b7b41`, `213e10c`): the design project
+is vendored into `docs/design/sonora/`, so **no future session or subagent needs `DesignSync` again** —
+read the repo. That was the whole point of the wave. **15b-1 landed** (`c15e5e3`) — the pure ownership matcher, with
 `owned` / `possible` / `new` kept genuinely distinct and identifier matches beating title matches.
 
 **A wave that changes a shared domain type must typecheck its _consumers_.** 15a-0 added six fields
