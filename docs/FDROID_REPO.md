@@ -179,6 +179,51 @@ is missing, the workflow's `check-secrets` job fails immediately, before buildin
 and names exactly which secret is absent in the workflow log — it will not publish a
 partial or broken repo.
 
+## Status 2026-08-16 — `v0.1.0` is tagged; verify the publish before calling it done
+
+**Phase 11 is delivered up to one unverified step.** `v0.1.0` is tagged at `1b1ea5c` (CI green,
+and the commit that fixes the Pages layout) and pushed. The session that did it hit its usage
+ceiling while the tag workflows were running, so **the final verification was not performed.**
+
+### What the next session must do first — three commands
+
+```bash
+gh run list --limit 4          # Release and F-Droid repo, both on tag v0.1.0, must be green
+curl -s https://patakihara.github.io/curly-spoon/repo/index-v2.json | head -c 200
+curl -s https://patakihara.github.io/curly-spoon/repo/index-v2.json \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['repo']['address'])"
+```
+
+The third is the one that matters and is the whole point of the re-cut: **the printed address
+must be `https://patakihara.github.io/curly-spoon/repo`, and that must be the URL that serves
+the JSON.** If they agree, phase 11 is genuinely done. If the address prints but `/repo/…`
+404s, the layout fix did not take effect — check `fdroid-repo.yml`'s "Stage the Pages site"
+step ran and that `upload-pages-artifact` got `path: site`.
+
+**The first `v0.1.0` was deleted and re-cut, deliberately.** The original tag published a repo
+whose index declared `repo.address` as `…/curly-spoon/repo` while the files were served at the
+site root — it would have let a client add the repo, list the app, and fail only at install.
+Nobody had installed, so the release and tag were deleted rather than superseded by `v0.1.1`;
+that keeps `versionCode` at 1, since `scripts/fdroid-versioncode.mjs` derives it from the tag
+count.
+
+**One GitHub _settings_ change was needed and is not in any file.** The `github-pages`
+environment had a deployment branch policy allowing only `main`, so the first run failed with
+_"Tag v0.1.0 is not allowed to deploy to github-pages due to environment protection rules."_ A
+`v*` **tag** policy was added via the API. Nothing in the repo records this, no audit of the
+YAML could have found it, and **it will bite again on any fresh clone or new repo**:
+
+```bash
+gh api repos/<owner>/<repo>/environments/github-pages/deployment-branch-policies \
+  --method POST -f name='v*' -f type='tag'
+```
+
+### Still outstanding, and it is the one genuinely urgent item
+
+**There is no acknowledgement that `~/.auralis-keys/` was ever backed up off this laptop.** See
+the audit section below for why Actions secrets are not a backup. This is terminal rather than
+annoying, and it is a question for Sofia, not a task.
+
 ## Pre-tag audit — done 2026-08-16, before the first tag was ever pushed
 
 **Current state: everything in "What you have to do by hand" is already done.** Verified
