@@ -120,7 +120,9 @@ between what this project can build and what it can prove.
 - **14a-1** (`43861d6`) — `docs/perf/ENTRY_CHUNK_ATTRIBUTION.md`: the entry chunk byte-attributed
   by decoding its sourcemap's VLQ mappings, 99.5% of 666,616 bytes accounted for. Read that file
   before proposing any further weight work; it is the map.
-- **14a-2** (`8708a7b`, `a5a3843`) — **one line**: `packages/ui/package.json` had no `sideEffects`
+- **14a-2** — **landed, then reverted (`418b0d1`). Do not retry it without reading this.**
+
+  **What it was:** `packages/ui/package.json` had no `sideEffects`
   field, so a bundler must assume every module in it is impure and cannot shake unused re-exports
   out of the barrel. `"sideEffects": ["**/*.css"]` marks the JS pure and keeps the CSS honest.
 
@@ -151,6 +153,27 @@ between what this project can build and what it can prove.
   Found in passing, not acted on: `Chip.tsx`, `CircularProgress.tsx`, `LinearProgress.tsx` and
   `Skeleton.tsx` each has a colocated `.css` file the component never imports. Already absent from
   the bundle before this wave. Dead files, safe to delete, nobody's wave yet.
+
+  **Why it was reverted, and this is the lesson worth keeping.** Web CI was green on **six
+  consecutive runs before** the field landed and failed on **two of the three after**, every time on
+  the same assertion: `e2e/app/for-you.spec.ts:229` — _"a loading skeleton occupies the same box as a
+  loaded card"_, a test that exists precisely to pin layout stability.
+
+  **Nothing was lost; it arrived late.** Every component's CSS was still emitted — the wave's own
+  total-CSS-bytes check was correct and passed. What it could not see is _when_ the bytes arrive:
+  moving a component's CSS out of the entry stylesheet into a lazy chunk's means that under a slow
+  enough load the component can paint before its own stylesheet applies. **The check that would have
+  caught it is not "is the CSS present" but "is it present _before first paint_".**
+
+  **It never reproduces on this laptop.** The local `--project=app` suite ran 188/188 twice, and a
+  same-machine five-run Lighthouse A/B measured identical CLS with and without the change. Only CI's
+  slower environment surfaces it. So: **a green local Playwright run is not evidence about a
+  bundling change**, and neither is a local Lighthouse A/B. CI's own history — outcomes per sha,
+  read with `gh run list --workflow=CI` — was the only thing that showed it, and it showed it
+  clearly.
+
+  The trade, stated plainly: no measurable Lighthouse gain against a reproducible regression of a
+  layout invariant on the user's primary screen. Bad at any byte count.
 
 ### Home's CLS regressed since phase 10, and nobody noticed because it still passes
 
