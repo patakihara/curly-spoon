@@ -1671,11 +1671,15 @@ safety property — `workflow_run` fires on **every** CI completion, including f
 And the point of the whole exercise held: `8c9449e`'s CI carried **six jobs and no publish**, so
 verification completed on its own without waiting on an image build.
 
-**Still unobserved, and worth checking the first time it matters:** that the published image is
-built from the _tested_ sha. The job checks out `github.event.workflow_run.head_sha` explicitly
-because a `workflow_run` job otherwise starts from the default branch — taking the default would
-build `main`'s tip and publish it under the tested commit's tag, which is green and wrong. Read the
-checkout step's log on the first completed publish to confirm.
+- **It builds the tested sha, confirmed from the log.** The first successful publish checked out
+  `ref: 8c9449e64689bb1b21582c9d02aefb43d4353ee2` while `main`'s tip had already moved to `b5270ed`.
+  That was the one way this could have been green and wrong: a `workflow_run` job starts from the
+  **default branch**, so without the explicit `ref:` it would have built `main`'s tip and published
+  it under the tested commit's tag.
+
+**So the split is fully verified and needs no further checking.** Four properties, each observed on
+a real run rather than argued: the gate rejects a non-success CI, it fires on a green one, it builds
+the tested commit, and CI itself no longer carries the publish job.
 
 ### The self-hosted fonts are CI-verified, including Lighthouse — the one signal local cannot give
 
