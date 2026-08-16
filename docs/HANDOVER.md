@@ -132,9 +132,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T19:54:17Z` · `a24c2902cadc0c877` · general-purpose · ended · ## Review: Wave 13f-2 ('60b368f') **Verdict: merge as-is.** No compile-blocking defect found, no test-logic defect found, and the writer reaches a re…
-- `2026-08-15T19:55:31Z` · `a0838ed6164b30f53` · general-purpose · ended · ## Review: wave 13f-1 web music recommendations ('e4bd22e', 'bc0695b') ### Blocking **1. 'e2e/app/music-recommended.spec.ts' is missing 'test.describ…
-- `2026-08-15T21:14:42Z` · `a7e86b0ad34a5d1a5` · general-purpose · ended · Clean commit, exactly one file changed. Working tree is clean, no long-running command backgrounded. ## Report **Branch/commit:** 'worktree-agent-a7e…
 - `2026-08-15T21:16:52Z` · `a51dab7f5fb349b6f` · general-purpose · ended · Committed. Exactly three files changed, no doc file touched (per the "no dedicated place" finding). ## Report **Branch/commit:** 'worktree-agent-a51d…
 - `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
 - `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · ended · I've committed my work. Now I'll wait for the notification that the backgrounded Playwright run ('bavxriny6') has completed, rather than poll for it.
@@ -147,6 +144,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T09:54:47Z` · `a23f4c8990b7c630c` · general-purpose · ended · ## Findings — Phase 11 / Android signing key archaeology **Method:** grepped 'history.jsonl' and per-session JSONL transcripts under '~/.claude/proje…
 - `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · ended · ## Findings — Android release / F-Droid pipeline audit ### BLOCKING **1. 'metadata/net.auralis.app.yml' — stale filename, doesn't match 'applicationI…
 - `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-af8c398b2886e60db' at '…
+- `2026-08-16T10:25:18Z` · `a52a5c1114882c847` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a52a5c1114882c847' at '…
+- `2026-08-16T10:27:36Z` · `a7f6e7da38fddff8f` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a7f6e7da38fddff8f' at '25f5956', based on '927081d'. Not pushed, no 'Agent' calls made, working tree cle…
+- `2026-08-16T10:36:32Z` · `a8b2dea9cf2eea6f9` · general-purpose · ended · None found — the core stays pure. I have everything needed for the verdict. ## Verdict: merge as-is All claims independently verified: 12/12 in 'shel…
 
 <!-- AGENT_LOG_END -->
 
@@ -555,8 +555,22 @@ but "there is no parallelism to protect" is not one of them any more.
   carrying commits, which can be reconstructed from shas. This one was a commit carrying another
   session's work, and a commit message cannot be reconstructed.
 
-  **The fix is `git commit -- <paths>`** (or `git commit <paths>`), which commits only those paths
-  regardless of what else sits in the index. Use it for every commit in this checkout.
+  **`git commit -- <paths>`** (or `git commit <paths>`) commits only those paths regardless of what
+  else sits in the index. Use it for every commit here — **but it is a mitigation, not a
+  guarantee, and the session that wrote this rule broke it within three hours.**
+
+- **Path-limiting does nothing when two sessions edit the _same_ file, and this is the fifth
+  contamination.** A path-limited commit takes that file's **working-tree content wholesale**,
+  including another session's uncommitted edits to it. `72d7107` — a revert of a two-line doc fix —
+  swept in a peer's in-flight rewrite of the same file, under a commit message describing only the
+  revert. Staging discipline protects against _other files_; nothing in git protects against _the
+  same file_.
+
+  **So the real rule is: in a shared checkout, do not edit a file another session owns.** Where a
+  cross-boundary fix looks urgent, **hand the other session the exact diff and let them land it**
+  rather than editing and announcing. The urgency is usually real and the judgement is usually
+  still wrong — in the case above the peer replied within minutes, which was faster than the fix
+  needed to be.
 
 - **Pushes cancel each other's CI.** `android.yml` has `cancel-in-progress: true` unconditionally,
   and two sessions pushing independently cancelled the `CI` and `Android` runs for both `e71837f`
@@ -1233,6 +1247,34 @@ Use Playwright to verify UI work directly — a screenshot beats inferring from 
 
 **CI is the authoritative signal** for calling a phase done; local running is a faster first look,
 not a replacement.
+
+### Verifying a release: fetch the URL the docs give a human, and read what the artifact says about itself
+
+Phase 11's first tag (`v0.1.0`, 2026-08-16) is the case worth remembering, because **every
+automated check passed and the user-facing result was still broken.** `Release` and `F-Droid repo`
+both green, a correctly-signed 15.2 MB APK published, the index carrying `net.develivarr.auralis`.
+
+Two defects, neither reachable by CI:
+
+1. **The docs named a URL that 404s.** `fdroid-repo.yml` uploads `path: fdroid-repo/repo`, so that
+   directory's _contents_ become the Pages root — while `FDROID_REPO.md` told the user to add
+   `…/curly-spoon/repo`. No test asserts on prose. **One `curl` of the URL the documentation
+   actually gives finds it.**
+2. **The artifact disagreed with itself, and this one is worse.** The published index declares
+   `repo.address` = `…/curly-spoon/repo` — written by `fdroid update` from `config.yml`'s
+   `repo_url` — while being served from the root. Pointing a client at the root therefore _loads
+   the index and then resolves APKs against an address that 404s_: the repo adds successfully,
+   lists the app, and fails at install. **That is much harder to diagnose than a 404 on add,
+   because the repo appears to work.** The fix is to serve at the path the index claims, never to
+   change the docs to match where the files happen to land.
+
+**The generalisable pair:** fetch the URL a human is told to use, **and** read what the published
+artifact asserts about itself. Green workflows prove the pipeline ran, not that the thing it
+produced is coherent.
+
+One trap for anyone changing that workflow: publishing the **parent** directory instead would put
+`fdroid-repo/keystore.p12` and `config.yml` on a public website, and `config.yml` holds both
+repo-signing passwords in cleartext. Stage a clean directory containing only `repo/`.
 
 ### Gotchas
 
