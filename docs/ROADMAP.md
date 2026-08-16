@@ -3177,12 +3177,30 @@ What they establish, which settles several questions without asking her:
   taunting. Also settles **12c-2** the same way for Search and artist/author pages, which was the
   stated failure mode (deciding it twice, differently).
 
-- **15e — books and podcasts, not just music.** Decision 1 covers all three media types. The NewPipe
-  research (`docs/research/MUSIC_STREAMING_VS_ACQUISITION.md`, in flight) addresses **music at most**.
-  `docs/INTEGRATIONS.md` holds the researched-not-decided MusicBrainz / PodcastIndex / Audnexus
-  options; **the Audnexus blocker is lifted** — she stated _"I do not care about audible's or
+- **15e — a provider per medium, which is the expected design and not a compromise.** Books,
+  podcasts and music each get their own recommendation source. `docs/INTEGRATIONS.md` holds the
+  researched-not-decided options and `docs/research/RECOMMENDATION_PROVIDERS.md` is the per-medium
+  survey. **The Audnexus blocker is lifted** — she stated _"I do not care about audible's or
   youtube's TOS"_ **for her own install**, which is not licence to ship anything public-facing that
   redistributes.
+
+  **A correction worth keeping, because the reasoning it replaces was wrong.** An earlier draft of
+  this section counted a provider being music-only _against_ it, and the first research note argued
+  partly on those grounds. The user rejected it outright: _"'music-only' is a very silly
+  counterargument here. Why would the recommendation services for the THREE different kinds of
+  content we have be the same? that's not an expectation i have."_ She is right, and the error was
+  the orchestrator's framing rather than the researcher's. **A provider covering one medium is
+  simply that medium's provider.** The practical consequence is that the first note was framed as
+  "is this one source the answer for all of decision 1?" and so may never have surveyed the actual
+  field of music recommenders — `ListenBrainz`, a recommendation service with a plain HTTP API and
+  no JVM dependency, went unweighed. Its specific technical findings about NewPipeExtractor may
+  still stand; its coverage does not.
+
+  **What actually decides a provider here** is not breadth: it is (a) whether it _recommends_ or
+  merely _catalogues_, (b) whether it can take a taste profile rather than returning a popularity
+  list, (c) whether it exposes an identifier that maps to something Audiobookshelf or Jellyfin
+  knows — ISBN, ASIN, MBID, podcast GUID — since 15b's matching is a lookup with one and a fuzzy
+  title matcher without one, and (d) whether it needs a credential she must personally create.
 
 ### Decisions already made, so no wave re-opens them
 
