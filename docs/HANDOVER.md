@@ -248,7 +248,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
-- `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · running · —
+- `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
 
 <!-- AGENT_LOG_END -->
@@ -726,13 +726,28 @@ exactly one `ColorScheme` — so Android's chroma roles now hold what `--m3-*` i
 become. **The platforms are briefly out of step by construction**, and that is only the right trade
 if 16c closes it promptly.
 
-**Claimed: 16c-1-W — migrate five primitives onto Sonora's tokens** (`Button`, `IconButton`, `Chip`,
-`Card`, `Slider` in `packages/ui/src/components/`), dispatched 2026-08-17 ~00:15 UTC. **This is the
-first wave that changes what the app looks like** — everything before it was substrate.
-`Dialog`/`Sheet`/`Menu` are deliberately excluded: they portal outside `.auralis-theme-root` and
-need the portal question answered first.
+**16c-1-W is landed** (`e04a9a2`) — `Button`, `IconButton`, `Chip`, `Card`, `Slider` now read
+Sonora's tokens instead of `--m3-*`. **This is the first visible change in the phase.** Its full
+`--project=app` run never finished in the agent's session, so **CI on `e04a9a2` is its verification**
+— check it before building on it. Two findings it returned:
 
-**16g is done** — the README is rewritten, every link verified live, and
+- **Vendoring Sonora's real primitive sources mid-wave corrected concrete guesses.** It had inferred
+  `--radius-sm` (16px) for Card; the real source is `--radius-md` (24px). Prop tables give the API
+  and not the values, which is why `docs/design/sonora/primitives/` now exists.
+- **`--accent-ink` on `--surface-card` fails WCAG AA at the default accent**, so text surfaces use
+  `--surface-fg`. Recorded rather than worked around: `--accent-ink` exists to be readable on a
+  surface, and where it is not, that is the design's problem to answer, not a test to soften.
+
+**16b-2-A is verified properly, not on a badge.** Android CI on `aba5250` shows bare
+`> Task :app:compileDebugKotlin`, `:compileReleaseKotlin`, `:testDebugUnitTest` and
+`:testReleaseUnitTest` — **uncached executions**, so the Compose theme genuinely compiles and its
+Robolectric test genuinely ran. That is the bar this file sets for any Android claim, and it beat
+the two-to-three red rounds budgeted.
+
+**Claimed: 16b-2-P — the first parity review**, over the token pair (web `16b-2` vs Android
+`16b-2-A`). `ROADMAP.md` §16 has the checklist.
+
+**16g is done\****16g is done** — the README is rewritten, every link verified live, and
 three unshipped claims taken back out of it on review (external discovery, search suggestions, and
 "some screens reflect the new design"; none of the three is true yet). **16c is next.**
 
