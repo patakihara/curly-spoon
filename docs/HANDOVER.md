@@ -235,7 +235,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
 - `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
 - `2026-08-16T18:25:51Z` · `a62f69f223749e664` · Explore · ended · # Recon report — wave 15b-2 (mapping table at request time) Note up front: 'docs/ROADMAP.md' §15 names waves '15a', '15a-0', '15b', '15c', '15c-1', '…
 - `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · ended · ## Verdict: fix these 4 things first (one is substantive, three are minor/arithmetic) I read every vendored token CSS file in full, all nine 'compone…
@@ -250,6 +249,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
+- `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
 
 <!-- AGENT_LOG_END -->
 
@@ -744,8 +744,38 @@ Sonora's tokens instead of `--m3-*`. **This is the first visible change in the p
 Robolectric test genuinely ran. That is the bar this file sets for any Android claim, and it beat
 the two-to-three red rounds budgeted.
 
-**Claimed: 16b-2-P — the first parity review**, over the token pair (web `16b-2` vs Android
-`16b-2-A`). `ROADMAP.md` §16 has the checklist.
+**16b-2-P is done — the first parity review, and it earned its cost.** Verdict: **parity holds at
+the token level, zero mismatches across ~74 values compared by hand** (surfaces, all 17 accent
+presets, the five app-level tones in both themes, all 26 `--m3-*` chroma values, the five-step
+radius scale, and the type scale at weight 900). `accentInk`'s OKLCH mix was independently
+recomputed in Python and lands on `#3f2876`, matching Android's pinned golden value.
+
+**But it corrected the divergence's framing, and the correction matters more than the verdict.**
+Two things, both re-verified by the orchestrator rather than taken from the report:
+
+1. **Android is fully re-themed today; web is barely.** `MainActivity.kt` wraps the whole app in
+   `AuralisTheme`, so Compose's single `ColorScheme`/`Typography`/`Shapes` are live across **every**
+   existing Android screen — new palette, weight-900 headings, new radii, app-wide. **If you open
+   both clients right now they will not look like the same product**, and the roadmap's "some chroma
+   roles differ" wording badly understated that.
+2. **16c-1-W's five primitives are only _partially_ migrated.** Every one of them still references
+   `--m3-*`: `Button` (`--m3-shape-full`, `--m3-shape-md`, `--m3-primary`, `--m3-elevation-*`),
+   `Card` (`--m3-on-background`, `--m3-on-surface-variant`, `--m3-state-layer-color`, springs),
+   `Slider` (`--m3-surface`, `--m3-slider-height`, springs), `Chip` and `IconButton` fewer. So
+   "migrated onto Sonora's tokens" is **overstated** — they are _partly_ migrated, and the phase's
+   premise (delete `--m3-*` when its last consumer leaves) is much further off on web than the
+   commit messages imply.
+
+**The ruling, and it is the right one: do not hold Android back.** Compose cannot express web's
+additive middle state — there is no cascade to fall back through — so reverting would buy no
+convergence and lose all forward progress. **But this state must be short-lived by design.** The
+practical consequence is that **16c-2-W matters more than 16c-1-A**: web is the platform that is
+behind, and closing it is what makes the two clients resemble each other again.
+
+**Two smaller findings.** The Robolectric test asserts used values in both themes and would fail on
+a wrong colour, weight or radius — but it does **not** cover the 26 chroma-role values, which are
+verified only by this review's manual pass. And `--surface-overlay-header` has **no consumer on
+either platform** — a pre-existing writer with no reader, not a parity gap.
 
 **16g is done\****16g is done** — the README is rewritten, every link verified live, and
 three unshipped claims taken back out of it on review (external discovery, search suggestions, and
