@@ -1587,6 +1587,24 @@ is the user's call rather than a session's.
 
 ## Infrastructure findings
 
+### The self-hosted fonts are CI-verified, including Lighthouse — the one signal local cannot give
+
+Recorded because §16 warns twice that a green local Playwright run is not evidence about a
+CSS-delivery change, and this is the wave where that was actually settled. On `78e96d6`, which
+carries 16b-1's self-hosted Inter and Roboto Flex, **all six verification jobs passed**: Lint /
+format / typecheck, Unit & integration, **Playwright end-to-end & UI**, **Web Lighthouse
+performance budget**, Web bundle size budget, and the Docker image smoke test.
+
+The Lighthouse job is the one that matters here — it is the only thing on this project that can
+see a font pushing FCP or LCP past budget, and `font-display: swap` keeping the fetch off the
+critical path was an argument until that job went green. It is no longer an argument.
+
+**Unrelated, and the user's to look at, not a session's:** that run's `Publish image to GHCR` job
+sat `in_progress` for over 75 minutes after every verification job had finished. Nothing was wrong
+with the commit. Worth knowing because `publish` is what writes `ghcr.io/patakihara/auralis:latest`
+and mediaserver pulls that tag every fifteen minutes, so a publish job that hangs stops the live
+deployment updating just as surely as a red build does — and unlike a red build, nothing reports it.
+
 ### The web `CI` workflow has been failing to allocate runners
 
 Established 2026-08-07 and **not resolved**; it undermines "CI is the authoritative signal" if left
