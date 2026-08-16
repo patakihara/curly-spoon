@@ -277,9 +277,44 @@ jobs:
             -storepass "${{ secrets.FDROID_REPO_KEYSTORE_PASSWORD }}" \
             -alias "${{ secrets.FDROID_REPO_KEY_ALIAS }}" 2>/dev/null | grep -A1 "SHA256:"
 
+      # Staged into a clean directory rather than uploading `fdroid-repo/` directly, and the
+      # reason is not tidiness: that directory also holds `keystore.p12` and the `config.yml`
+      # that embeds both repo-signing passwords in cleartext, and Pages is a *public* website.
+      # Uploading the parent to fix the path would publish the repo signing key.
+      #
+      # The path shape is load-bearing too. `upload-pages-artifact` makes the uploaded
+      # directory the site *root*, so uploading `fdroid-repo/repo` served the index at
+      # `/index-v2.json` while `fdroid update` had already written `repo.address` as
+      # `.../curly-spoon/repo` — the index disagreeing with where it is served. A client can
+      # then add the repo, list the app, and fail on install, which is a much more confusing
+      # failure than a 404 when adding. Staging `site/repo/` makes the served layout match the
+      # address the index declares about itself.
+      - name: Stage the Pages site
+        run: |
+          rm -rf site
+          mkdir -p site
+          cp -r fdroid-repo/repo site/repo
+          echo "Publishing:"
+          find site -maxdepth 2 -type f | sort
+          # Fail loudly rather than publish a site missing the two files a client fetches
+          # first. `entry.jar` is the signed entry point; `index-v2.json` is the index it
+          # points at. A silently empty publish would look green and serve nothing.
+          for required in site/repo/entry.jar site/repo/index-v2.json; do
+            if [ ! -f "$required" ]; then
+              echo "::error::$required is missing — refusing to publish an incomplete repo."
+              exit 1
+            fi
+          done
+          # Nothing sensitive may reach a public site. Belt and braces against a future
+          # refactor widening what gets staged.
+          if find site -name '*.p12' -o -name 'config.yml' -o -name '*.jks' | grep -q .; then
+            echo "::error::Refusing to publish: a keystore or config file reached the staging directory."
+            exit 1
+          fi
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: fdroid-repo/repo
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
