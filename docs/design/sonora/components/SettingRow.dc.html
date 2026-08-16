@@ -1,0 +1,40 @@
+<div style="{{ rootStyle }}">
+  <div style="min-width: 0">
+    <div style="{{ titleStyle }}">{{ title }}</div>
+    <div style="{{ subStyle }}">{{ sub }}</div>
+  </div>
+  <Sonora.Switch
+    checked="{{ checked }}"
+    onChange="{{ onChange }}"
+    hint-size="52px,32px"
+  ></Sonora.Switch>
+</div>
+<script>
+  // props: title:string='Offline mode', sub:string='Only play what is downloaded',
+  //        checked:boolean=true, platform:'desktop'|'mobile'=desktop, onChange:(next:boolean)=>void
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const mobile = p.platform === 'mobile';
+      return {
+        title: p.title,
+        sub: p.sub,
+        checked: !!p.checked,
+        onChange: p.onChange,
+        rootStyle:
+          'display:flex;align-items:center;justify-content:space-between;gap:' +
+          (mobile ? '16px' : '24px') +
+          ';padding:14px 16px;border-radius:var(--radius-' +
+          (mobile ? 'sm' : 'xs') +
+          ');background:' +
+          (mobile ? 'var(--m3-surface-container)' : 'var(--surface-card)'),
+        titleStyle:
+          'font-size:var(--text-md);font-weight:700;color:' +
+          (mobile ? 'var(--m3-on-background)' : 'var(--surface-fg)'),
+        subStyle:
+          'font-size:var(--text-sm);line-height:1.5;color:' +
+          (mobile ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)'),
+      };
+    }
+  }
+</script>

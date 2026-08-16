@@ -1,0 +1,28 @@
+<div onClick="{{ onClick }}" style="{{ rootStyle }}">
+  <span style="{{ iconStyle }}">{{ icon }}</span>
+  <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.02em">{{ label }}</span>
+</div>
+<script>
+  // props: icon:string='explore', label:string='Browse', active:boolean=true, onClick:()=>void
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const on = !!p.active;
+      return {
+        icon: p.icon,
+        iconStyle:
+          "font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-variation-settings:'FILL' " +
+          (on ? 1 : 0) +
+          ",'wght' " +
+          (on ? 500 : 400),
+        label: p.label,
+        onClick: p.onClick,
+        rootStyle:
+          'display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding:10px 0;border-radius:var(--radius-xs);cursor:pointer;color:' +
+          (on ? 'var(--accent-ink)' : 'var(--surface-fg-muted)') +
+          ';background:' +
+          (on ? 'var(--surface-card)' : 'transparent'),
+      };
+    }
+  }
+</script>

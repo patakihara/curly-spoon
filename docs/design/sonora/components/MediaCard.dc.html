@@ -1,0 +1,69 @@
+<div onClick="{{ onClick }}" style="{{ rootStyle }}">
+  <div style="{{ artStyle }}">
+    <sc-if value="{{ absent }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ absentPillStyle }}">Not in library</div>
+    </sc-if>
+    <sc-if value="{{ hasProgress }}" hint-placeholder-val="{{ false }}">
+      <div
+        style="
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 5px;
+          background: rgb(0 0 0 / 45%);
+        "
+      >
+        <div style="{{ progressStyle }}"></div>
+      </div>
+    </sc-if>
+  </div>
+  <div style="{{ titleStyle }}">{{ title }}</div>
+  <div style="{{ subStyle }}">{{ sub }}</div>
+</div>
+<script>
+  // props: title:string, sub:string, platform:'desktop'|'mobile'=desktop,
+  //        progress:number|null (0..1), absent:boolean=false, width:string='176px', onClick:()=>void
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const mobile = p.platform === 'mobile';
+      const absent = !!p.absent;
+      const fg = mobile ? 'var(--m3-on-background)' : 'var(--surface-fg)';
+      const muted = mobile ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)';
+      const width = p.width || (mobile ? '152px' : '176px');
+      return {
+        onClick: p.onClick,
+        title: p.title,
+        // In a mixed shelf the caller passes the content type as the first part of
+        // the subtitle ("Book · 6 h 12 m left"); single-type shelves just pass the artist.
+        sub: p.sub,
+        absent,
+        hasProgress: typeof p.progress === 'number',
+        rootStyle:
+          'display:flex;flex-direction:column;cursor:pointer;min-width:0;width:' +
+          width +
+          (width === '100%' ? '' : ';flex-shrink:0'),
+        artStyle:
+          'position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' +
+          (mobile ? 'sm' : 'md') +
+          ');background:' +
+          (absent
+            ? 'var(--surface-card)'
+            : 'linear-gradient(135deg,var(--accent),var(--accent-violet))') +
+          (absent ? ';border:1px dashed ' + muted : ''),
+        absentPillStyle:
+          'position:absolute;left:8px;top:8px;white-space:nowrap;padding:3px 10px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:700;background:var(--surface-bg);color:' +
+          muted,
+        titleStyle:
+          'margin-top:10px;font-size:var(--text-md);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' +
+          (absent ? muted : fg),
+        subStyle:
+          'margin-top:2px;font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' +
+          muted,
+        progressStyle:
+          'height:100%;background:var(--accent);width:' + Math.round((p.progress || 0) * 100) + '%',
+      };
+    }
+  }
+</script>

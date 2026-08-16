@@ -1,0 +1,43 @@
+<div onClick="{{ onClick }}" style="{{ rootStyle }}">
+  <div style="{{ artStyle }}"></div>
+  <div style="min-width: 0">
+    <div style="{{ titleStyle }}">{{ title }}</div>
+    <div style="{{ subStyle }}">{{ sub }}</div>
+  </div>
+</div>
+<script>
+  // props: title:string='The Fellowship of the Ring', sub:string='Book · 6 h 12 m left',
+  //        platform:'desktop'|'mobile'=desktop, onClick:()=>void
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const mobile = p.platform === 'mobile';
+      return {
+        onClick: p.onClick,
+        title: p.title,
+        sub: p.sub,
+        rootStyle:
+          'display:flex;align-items:center;gap:' +
+          (mobile ? '10px' : '12px') +
+          ';padding:8px;border-radius:var(--radius-' +
+          (mobile ? 'sm' : 'xs') +
+          ');cursor:pointer;min-width:0;background:' +
+          (mobile ? 'var(--m3-surface-container)' : 'var(--surface-card)'),
+        artStyle:
+          'width:' +
+          (mobile ? 48 : 52) +
+          'px;height:' +
+          (mobile ? 48 : 52) +
+          'px;flex-shrink:0;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-violet))',
+        titleStyle:
+          'font-size:var(--text-' +
+          (mobile ? 'sm' : 'md') +
+          ');font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' +
+          (mobile ? 'var(--m3-on-background)' : 'var(--surface-fg)'),
+        subStyle:
+          'font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' +
+          (mobile ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)'),
+      };
+    }
+  }
+</script>

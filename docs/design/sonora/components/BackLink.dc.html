@@ -1,0 +1,20 @@
+<div onClick="{{ onClick }}" style="{{ rootStyle }}">
+  <span style="font-family: 'Material Symbols Rounded'; font-size: 20px; line-height: 1"
+    >arrow_back</span
+  >{{ label }}
+</div>
+<script>
+  // props: label:string='Browse', platform:'desktop'|'mobile'=desktop, onClick:()=>void
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      return {
+        label: p.label,
+        onClick: p.onClick,
+        rootStyle:
+          'display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--text-sm);font-weight:700;color:' +
+          (p.platform === 'mobile' ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)'),
+      };
+    }
+  }
+</script>

@@ -1,0 +1,35 @@
+<div onClick="{{ onClick }}" style="{{ rootStyle }}">
+  <div style="{{ artStyle }}"></div>
+  <div style="{{ titleStyle }}">{{ title }}</div>
+  <div style="{{ subStyle }}">{{ sub }}</div>
+</div>
+<script>
+  // props: title:string, sub:string='2 albums', platform:'desktop'|'mobile'=desktop,
+  //        width:string='160px', onClick:()=>void
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const mobile = p.platform === 'mobile';
+      const fg = mobile ? 'var(--m3-on-background)' : 'var(--surface-fg)';
+      const muted = mobile ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)';
+      const width = p.width || (mobile ? '132px' : '160px');
+      return {
+        onClick: p.onClick,
+        title: p.title,
+        sub: p.sub,
+        rootStyle:
+          'display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;min-width:0;width:' +
+          width +
+          (width === '100%' ? '' : ';flex-shrink:0'),
+        artStyle:
+          'width:100%;aspect-ratio:1;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-violet))',
+        titleStyle:
+          'margin-top:12px;width:100%;font-size:var(--text-md);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' +
+          fg,
+        subStyle:
+          'margin-top:2px;width:100%;font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' +
+          muted,
+      };
+    }
+  }
+</script>

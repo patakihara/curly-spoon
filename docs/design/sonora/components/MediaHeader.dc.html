@@ -1,0 +1,87 @@
+<div style="{{ rootStyle }}">
+  <div style="{{ artStyle }}"></div>
+  <div style="{{ textStyle }}">
+    <div style="{{ kindStyle }}">{{ kindLabel }}</div>
+    <div style="{{ titleStyle }}">{{ title }}</div>
+    <div onClick="{{ onSubtitle }}" style="{{ subtitleStyle }}">{{ subtitle }}</div>
+    <div style="{{ metaStyle }}">{{ meta }}</div>
+    <div style="{{ actionsStyle }}">
+      <Sonora.Button
+        variant="primary"
+        platform="{{ platform }}"
+        onClick="{{ onPlay }}"
+        hint-size="auto,44px"
+        >{{ playLabel }}</Sonora.Button
+      >
+      <Sonora.Button
+        variant="secondary"
+        platform="{{ platform }}"
+        onClick="{{ onSecond }}"
+        hint-size="auto,44px"
+        >{{ secondLabel }}</Sonora.Button
+      >
+    </div>
+  </div>
+</div>
+<script>
+  // props: kindLabel:string='Album', title:string, subtitle:string, meta:string,
+  //        playLabel:string='Play', secondLabel:string='Shuffle', round:boolean=false,
+  //        platform:'desktop'|'mobile'=desktop, onPlay, onSecond, onSubtitle
+  // meta default from the design: "2021 · Synthwave · 2 tracks · 6 min"
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const mobile = p.platform === 'mobile';
+      const fg = mobile ? 'var(--m3-on-background)' : 'var(--surface-fg)';
+      const muted = mobile ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)';
+      const round = !!p.round;
+      const art = mobile ? 208 : 232;
+      return {
+        kindLabel: p.kindLabel,
+        title: p.title,
+        subtitle: p.subtitle,
+        meta: p.meta,
+        platform: p.platform || 'desktop',
+        playLabel: p.playLabel || 'Play',
+        secondLabel: p.secondLabel || 'Shuffle',
+        onPlay: p.onPlay,
+        onSecond: p.onSecond || p.onPlay,
+        onSubtitle: p.onSubtitle,
+        rootStyle: mobile
+          ? 'display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding-top:4px'
+          : 'display:flex;gap:28px;align-items:flex-end',
+        artStyle:
+          'width:' +
+          art +
+          'px;height:' +
+          art +
+          'px;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-violet));border-radius:' +
+          (round ? '50%' : 'var(--radius-lg)'),
+        textStyle: mobile
+          ? 'width:100%;display:flex;flex-direction:column;align-items:center;gap:6px'
+          : 'flex:1;min-width:0;display:flex;flex-direction:column;gap:8px',
+        kindStyle:
+          'font-size:var(--text-xs);font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:' +
+          muted +
+          (mobile ? ';margin-top:6px' : ''),
+        titleStyle:
+          'font-family:var(--font-display),Inter;font-weight:900;line-height:1.15;color:' +
+          fg +
+          ';font-size:var(--' +
+          (mobile ? 'h4' : 'h2') +
+          '-size)',
+        subtitleStyle:
+          'font-size:var(--text-' +
+          (mobile ? 'md' : 'lg') +
+          ');font-weight:600;color:' +
+          (p.onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg),
+        metaStyle: 'font-size:var(--text-sm);color:' + muted,
+        actionsStyle:
+          'display:flex;gap:' +
+          (mobile ? '10px' : '12px') +
+          ';margin-top:' +
+          (mobile ? '8px' : '10px'),
+      };
+    }
+  }
+</script>

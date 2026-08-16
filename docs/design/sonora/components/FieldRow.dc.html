@@ -1,0 +1,35 @@
+<div style="display: flex; flex-direction: column; gap: 6px">
+  <div style="{{ labelStyle }}">{{ label }}</div>
+  <div style="{{ fieldStyle }}">
+    <Sonora.Input
+      placeholder="{{ placeholder }}"
+      value="{{ value }}"
+      platform="{{ platform }}"
+      hint-size="100%,44px"
+    ></Sonora.Input>
+  </div>
+</div>
+<script>
+  // props: label:string='Server URL', placeholder:string='https://abs.home.lan',
+  //        value:string='', platform:'desktop'|'mobile'=desktop
+  class Component extends DCLogic {
+    renderVals() {
+      const p = this.props;
+      const mobile = p.platform === 'mobile';
+      return {
+        label: p.label,
+        placeholder: p.placeholder,
+        value: p.value,
+        platform: p.platform || 'desktop',
+        labelStyle:
+          'font-size:var(--text-sm);font-weight:700;color:' +
+          (mobile ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)'),
+        // The design system's mobile Input is chromeless by design — it expects to sit
+        // on a filled container, which this row supplies.
+        fieldStyle: mobile
+          ? 'background:var(--m3-surface-container);border-radius:var(--radius-pill);padding:4px 6px'
+          : '',
+      };
+    }
+  }
+</script>
