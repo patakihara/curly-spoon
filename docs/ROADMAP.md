@@ -3659,13 +3659,17 @@ emission, not merely add a stylesheet beside it.
   `.auralis-theme-root` and `.auralis-shell` are all `min-height: 100vh`, so **the whole document
   scrolls**. Only the bottom nav, the compact settings button and the mini player are `fixed`.
   Sonora's docked-chrome model is therefore a genuine structural change to the shell, not a tweak.
-- **The breakpoints do not line up.** Today: three, defined once in `hooks/breakpoint.ts` and
+- **The breakpoints do not line up.** Today: three, defined once in `apps/web/src/hooks/breakpoint.ts` (**not** under `packages/ui`, where an earlier
+  draft of this line put it) and
   consumed through a `matchMedia`-backed `useBreakpoint()` — compact `<600`, medium `600–1240`,
   expanded `>1240`. Sonora's rig is **1440 / 1280 / 1024 / 768**, panel dropping below 1240, rail
   collapsing below 1024. Only the 1240 boundary survives. **`useBreakpoint()` being the single
   consumer is the good news** — the rig can be re-cut in one file rather than in scattered media
   queries.
-- **`packages/ui` exports 21 components; Sonora names 16.** They are not the same 16. Ours:
+- **`packages/ui` exports 19 components; Sonora names 16.** They are not the same 16. (This line
+  first said 21; **19** is the figure verified against `packages/ui/src/index.ts` during 16a-2, plus
+  one hook. The list below was written from the wrong count and should be trusted only as a rough
+  inventory — `SONORA.md`'s mapping table is the checked one.) Ours:
   Button, IconButton, Fab, Card, ListItem, Slider, NavigationBar, TopAppBar, SearchField, Chip,
   Sheet, Dialog, Snackbar, useSnackbar, LinearProgress, CircularProgress, Skeleton, Icon, Marquee,
   Menu, MenuTarget. Sonora adds QuickTile, SectionHeader, TrackRow, AlbumArt, AlbumHeader,
