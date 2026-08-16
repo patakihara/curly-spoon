@@ -209,7 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
 - `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
 - `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
@@ -224,6 +223,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
+- `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -1604,6 +1604,42 @@ is the user's call rather than a session's.
 ---
 
 ## Infrastructure findings
+
+### A hung `publish` job blocks every later CI run on `main` — diagnosed, and it is not "allocation"
+
+**2026-08-16.** Three CI runs in a row sat `pending` with zero jobs allocated, which looks exactly
+like the runner-allocation problem the section below describes. It was not. The cause is specific,
+and it is worth knowing because the symptom is identical and the fix is different:
+
+`ci.yml`'s concurrency group is `CI-refs/heads/main` with **`cancel-in-progress: false` on `main`**
+(deliberately — a cancelled run also cancels `publish`, and mediaserver auto-updates from `:latest`).
+So on `main`, runs **queue**. On `78e96d6` every verification job passed and then
+**`docker/build-push-action@v6` hung for over two hours** in the `Publish image to GHCR` job. A run
+is not complete until all its jobs are, so that single hung step held the concurrency slot and
+**every subsequent CI run on `main` queued behind it**, allocating nothing.
+
+**How to tell the two apart in one command** — if a run is `pending`, look for an older run that is
+still `in_progress`:
+
+```bash
+gh run list --limit 12 --json headSha,workflowName,status,createdAt \
+  -q '.[] | select(.status!="completed") | "\(.headSha[0:7]) \(.workflowName) \(.status) \(.createdAt)"'
+```
+
+An older `in_progress` run means you are queued, not unallocated. `gh run view <id> --json jobs`
+then names the job holding it.
+
+**What was done, and the reasoning, since this touches deployment.** The hung run was cancelled
+(`gh run cancel 31966833421`) and the queue drained immediately. That is safe here: the job had
+published nothing, so `:latest` was unchanged either way, and the next green build of `main`
+republishes it. The alternative was waiting out GitHub's six-hour job timeout with the project's
+authoritative verification signal blocked the whole time.
+
+**What is not a session's call**: changing `ci.yml`. The obvious fix — move `publish` into its own
+workflow with its own concurrency group, so verification jobs may cancel freely while the
+deployment-coupled job queues alone — **changes deployment behaviour on a live host** and belongs
+to the user. Note it also has a second-order benefit: a hung publish would then stop only future
+publishes, not all verification.
 
 ### The self-hosted fonts are CI-verified, including Lighthouse — the one signal local cannot give
 
