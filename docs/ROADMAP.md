@@ -3143,6 +3143,27 @@ What they establish, which settles several questions without asking her:
 
   _Verified by:_ pure unit tests over the seam with a fake provider. Fully assessable here.
 
+- **15a-0 — carry the identifiers we already receive and throw away. Prerequisite for 15b, and
+  independent of which provider wins.** Found by the provider survey
+  (`docs/research/RECOMMENDATION_PROVIDERS.md`): every id that would make 15b's matching a lookup
+  instead of a fuzzy title matcher is discarded at the normalizer.
+
+  - `Book` carries `isbn` but **no `asin`** — Audnexus/AudiMeta are keyed on ASIN, and
+    Audiobookshelf's raw metadata already has it.
+  - `Podcast` carries **no feed URL and no GUID** — PodcastIndex is keyed on exactly those.
+  - `packages/jellyfin-client` **never parses `ProviderIds` at all** (grepped: zero hits), so
+    Jellyfin's MusicBrainz ids are dropped on arrival — and MBIDs are what ListenBrainz is keyed on.
+
+  **This is the minified-item bug's shape again**: the upstream sends the field, the normalizer
+  drops it, nothing notices until something downstream needs it. Doing this first means 15b matches
+  on stable identifiers; skipping it means building a title matcher and then throwing it away.
+
+  _Verified by:_ parse tests against fixtures. **But note the standing caveat** — fixtures were
+  written from documentation, and `packages/abs-client`'s schemas have been wrong against the real
+  server before in exactly this way (`.optional()` where the server sends `null`). A green parse
+  test proves we read our own fixture, not that the field arrives as expected. This is another
+  reason the Audiobookshelf credential matters.
+
 - **15b — identity and dedupe. This is the hard part and the likeliest place to fail.** A recommended
   title has **two identities**: a provider catalogue entry, and a library item if it is ever acquired.
   The spec must settle, explicitly:
@@ -3178,11 +3199,26 @@ What they establish, which settles several questions without asking her:
   stated failure mode (deciding it twice, differently).
 
 - **15e — a provider per medium, which is the expected design and not a compromise.** Books,
-  podcasts and music each get their own recommendation source. `docs/INTEGRATIONS.md` holds the
-  researched-not-decided options and `docs/research/RECOMMENDATION_PROVIDERS.md` is the per-medium
-  survey. **The Audnexus blocker is lifted** — she stated _"I do not care about audible's or
-  youtube's TOS"_ **for her own install**, which is not licence to ship anything public-facing that
-  redistributes.
+  podcasts and music each get their own recommendation source. **The survey is done**
+  (`docs/research/RECOMMENDATION_PROVIDERS.md`) and its conclusion is uncomfortable but useful:
+  **almost nothing external actually recommends.** MusicBrainz, Audnexus, Open Library, Google
+  Books, PodcastIndex, iTunes Search and Deezer's `related` endpoint are all catalogues; Spotify's
+  relevant endpoint returns 403 for any app registered after 2024-11-27; Goodreads' API has been
+  closed since 2020; StoryGraph and Libro.fm publish none.
+
+  So the shape differs by medium, and that is the point of per-medium providers:
+
+  - **Music — ListenBrainz**, the one genuine recommender found, built on cross-user collaborative
+    filtering, keyed on MBIDs, plain HTTP, and **tier 1 needs no credential from her at all**.
+    Tier 2 (personalized) would need her to create a ListenBrainz account and connect scrobbling —
+    flag it, do not build on it unimplemented.
+  - **Books and podcasts — our own taste profile driving catalogue queries** (Audnexus/AudiMeta by
+    ASIN; PodcastIndex by feed GUID). There is no feed to buy in; the ranking stays ours, which is
+    what phase 13's core is already good at. That is a real finding, not a fallback. `docs/INTEGRATIONS.md` holds the
+    researched-not-decided options and `docs/research/RECOMMENDATION_PROVIDERS.md` is the per-medium
+    survey. **The Audnexus blocker is lifted** — she stated _"I do not care about audible's or
+    youtube's TOS"_ **for her own install**, which is not licence to ship anything public-facing that
+    redistributes.
 
   **A correction worth keeping, because the reasoning it replaces was wrong.** An earlier draft of
   this section counted a provider being music-only _against_ it, and the first research note argued
