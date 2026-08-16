@@ -151,7 +151,7 @@ CI-generated-and-forgotten key is unrecoverable).
    version is). This is the same tag `release.yml` already reacts to for the Docker image
    and the GitHub Release — nothing new to remember there.
 8. **Add the repo to Droid-ify**: Settings → Repositories → `+` → URL
-   `https://patakihara.github.io/curly-spoon/repo`, fingerprint = the value `fdroid init`
+   `https://patakihara.github.io/curly-spoon/`, fingerprint = the value `fdroid init`
    printed in step 3 (or re-derive it any time from the workflow's own log — see
    "How to verify it worked" below).
 
@@ -250,9 +250,13 @@ wiring that was actually audited, then fix the stamp against the evidence of a r
   double-check against what Droid-ify shows when you add the repo — they must match
   exactly, or Droid-ify is refusing to trust an index it can't verify (in which case:
   double check you copied the fingerprint `fdroid init` printed, not something else).
-- Open `https://patakihara.github.io/curly-spoon/repo/index-v2.json` directly in a browser
+- Open `https://patakihara.github.io/curly-spoon/index-v2.json` directly in a browser
   — a real repo returns JSON; a 404 means Pages isn't serving from the right path (check
-  step 5's "Source" setting) or the workflow hasn't completed a run yet.
+  step 5's "Source" setting) or the workflow hasn't completed a run yet. **Note there is no
+  `/repo/` path segment**, even though the files live in `fdroid-repo/repo/` in the build:
+  `fdroid-repo.yml` uploads `path: fdroid-repo/repo`, so that directory's _contents_ become the
+  Pages root. Verified live 2026-08-16 — `/index-v2.json` and `/entry.jar` both return 200,
+  `/repo/index-v2.json` returns 404.
 - In Droid-ify, after adding the repo, Auralis should appear in its app list with the
   version you just tagged.
 
