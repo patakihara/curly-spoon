@@ -1,0 +1,83 @@
+/**
+ * Sonora's two text families (`docs/design/sonora/tokens/fonts.css`), self-hosted.
+ *
+ * Sonora's own source loads both from Google's CDN via
+ * `@import url('https://fonts.googleapis.com/css2?family=Inter:...&family=Roboto+Flex:...')`.
+ * This product is one container on one port, designed to run offline or LAN-only
+ * (see docs/HANDOVER.md §16) — a CDN import would degrade every glyph to invisible
+ * or fall back to a system font the moment the network path to Google is unavailable.
+ * The woff2 files below are vendored into the repo and served from this package's own
+ * `fonts/` directory; Vite resolves the relative `url()`s below as build assets and
+ * copies them into `apps/web`'s `dist/assets/` with content-hashed names, so they ship
+ * from the app's own origin with no server configuration needed (the same mechanism
+ * that already serves every other asset `packages/ui`'s CSS references).
+ *
+ * Only the `latin` and `latin-ext` subsets are vendored — cyrillic, greek and
+ * vietnamese are dropped. `unicode-range` values below are copied verbatim from
+ * Google's own served CSS, not invented.
+ *
+ * Roboto Flex stands in for Google Sans Flex (Booming Music's real display font, an
+ * internal Google typeface not published on Google Fonts) — see SONORA.md §1.7.
+ *
+ * Both files are the *variable* fonts, not five discrete static weights. Google's own
+ * static-weight endpoint (`css2?family=Inter:wght@400;500;600;700;900`) turned out to
+ * serve the identical variable-font file for all five requested weights — same bytes,
+ * repeated five times as separate `@font-face` blocks each pinned to a single
+ * `font-weight`. Self-hosting the variable file once, with `font-weight: 400 900`, is
+ * the same download and a quarter of the CSS. See this wave's report for the measured
+ * byte counts; SONORA.md's "~48 KB each, ~236 KB total" estimate for Inter does not
+ * hold against what Google actually serves today.
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('./fonts/inter-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('./fonts/inter-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 900;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('./fonts/roboto-flex-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 900;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('./fonts/roboto-flex-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-body: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Roboto Flex', 'Inter', sans-serif;
+}
