@@ -209,7 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
 - `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
 - `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
 - `2026-08-16T18:25:51Z` · `a62f69f223749e664` · Explore · ended · # Recon report — wave 15b-2 (mapping table at request time) Note up front: 'docs/ROADMAP.md' §15 names waves '15a', '15a-0', '15b', '15c', '15c-1', '…
@@ -224,6 +223,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · running · —
+- `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -1656,6 +1656,26 @@ re-litigating. Before, a cancel came from a superseded _verification_ run and no
 lost publish. Now the only thing that can cancel a publish is a _newer_ publish, which by
 definition pushes a newer commit to the same tags, so `:latest` converges on the most recent green
 build instead of going stale. That is the outcome the old queuing policy was trying to protect.
+
+### The publish split is verified in both directions, not just deployed
+
+`affece6` moved `publish` into `.github/workflows/publish.yml`. Both branches of its gate were then
+observed on real runs rather than reasoned about, which matters because the gate is the entire
+safety property — `workflow_run` fires on **every** CI completion, including failures and cancels:
+
+- **Cancelled CI → `Publish` completed/`skipped`.** The run fired off `b506746`'s cancelled CI and
+  the `conclusion == 'success'` condition rejected it. A red or cancelled build cannot reach a
+  registry a live host pulls from.
+- **Green CI → `Publish` runs.** `8c9449e`'s CI went green and `Publish` started for real.
+
+And the point of the whole exercise held: `8c9449e`'s CI carried **six jobs and no publish**, so
+verification completed on its own without waiting on an image build.
+
+**Still unobserved, and worth checking the first time it matters:** that the published image is
+built from the _tested_ sha. The job checks out `github.event.workflow_run.head_sha` explicitly
+because a `workflow_run` job otherwise starts from the default branch — taking the default would
+build `main`'s tip and publish it under the tested commit's tag, which is green and wrong. Read the
+checkout step's log on the first completed publish to confirm.
 
 ### The self-hosted fonts are CI-verified, including Lighthouse — the one signal local cannot give
 
