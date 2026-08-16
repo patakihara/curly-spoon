@@ -1,0 +1,8 @@
+:root {
+  /* Radius scale — used across all platforms */
+  --radius-xs: 8px;
+  --radius-sm: 16px;
+  --radius-md: 24px;
+  --radius-lg: 32px;
+  --radius-pill: 999px;
+}

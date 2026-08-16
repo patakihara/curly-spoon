@@ -1,0 +1,128 @@
+:root {
+  /* ---- Neutral scale (desktop flat theme, sourced from Feishin default dark) ---- */
+  --neutral-950: rgb(8, 8, 8);
+  --neutral-900: rgb(12, 12, 12);
+  --neutral-850: rgb(20, 20, 20);
+  --neutral-700: rgb(45, 45, 45);
+  --neutral-500: rgb(90, 90, 90);
+  --neutral-300: rgb(150, 150, 150);
+  --neutral-100: rgb(215, 215, 215);
+  --neutral-50: rgb(225, 225, 225);
+  --neutral-0: rgb(255, 255, 255);
+
+  /* ---- Desktop / flat surface system (dark, default — Feishin) ---- */
+  --surface-bg: var(--neutral-900);
+  --surface-bg-alt: var(--neutral-950);
+  --surface-card: var(--neutral-850);
+  --surface-fg: var(--neutral-50);
+  --surface-fg-muted: var(--neutral-300);
+  --surface-border: rgb(255 255 255 / 8%);
+  --surface-overlay-header: linear-gradient(transparent 0%, rgb(0 0 0 / 85%) 100%);
+
+  /* ---- Desktop / flat surface system (light alt — Feishin default-light) ---- */
+  --surface-bg-light: rgb(235, 235, 235);
+  --surface-bg-alt-light: rgb(240, 240, 240);
+  --surface-card-light: rgb(225, 225, 225);
+  --surface-fg-light: rgb(25, 25, 25);
+  --surface-fg-muted-light: rgb(80, 80, 80);
+  --surface-border-light: rgb(0 0 0 / 8%);
+
+  /* ---- Accent (customizable primary — apps let the user pick this) ---- */
+  --accent: #8b5cf6; /* violet — picked from the accent-preset family */
+  --accent-contrast: #fff;
+
+  /* Accent preset palette (sourced from Symphony's 17-hue picker) — offer as swatches, not fixed brand colors */
+  --accent-red: #ef4444;
+  --accent-orange: #f97316;
+  --accent-amber: #f59e0b;
+  --accent-yellow: #eab308;
+  --accent-lime: #84cc16;
+  --accent-green: #22c55e;
+  --accent-emerald: #10b981;
+  --accent-teal: #14b8a6;
+  --accent-cyan: #06b6d4;
+  --accent-sky: #0ea5e9;
+  --accent-blue: #3b82f6;
+  --accent-indigo: #6366f1;
+  --accent-violet: #8b5cf6;
+  --accent-purple: #a855f7;
+  --accent-fuchsia: #d946ef;
+  --accent-pink: #ec4899;
+  --accent-rose: #f43f5e;
+
+  /* ---- Semantic state colors (Feishin) ---- */
+  --state-error: #e12f43;
+  --state-success: #42e477;
+  --state-warning: #ffcc8b;
+  --state-info: var(--accent);
+
+  /* ---- Material chroma roles, light (sourced from Booming Music M3 palette) ---- */
+  --m3-primary: #4d5c92;
+  --m3-on-primary: #ffffff;
+  --m3-primary-container: #dce1ff;
+  --m3-on-primary-container: #354479;
+  --m3-secondary: #595d72;
+  --m3-secondary-container: #dee1f9;
+  --m3-tertiary: #75546f;
+  --m3-tertiary-container: #ffd7f5;
+  --m3-error: #ba1a1a;
+  --m3-error-container: #ffdad6;
+  /* Surfaces come from the desktop (Feishin) flat surface system, not M3 tonal neutrals */
+  --m3-background: var(--surface-bg-light);
+  --m3-on-background: var(--surface-fg-light);
+  --m3-surface: var(--surface-bg-light);
+  --m3-on-surface: var(--surface-fg-light);
+  --m3-surface-variant: var(--surface-card-light);
+  --m3-on-surface-variant: var(--surface-fg-muted-light);
+  --m3-outline: var(--surface-fg-muted-light);
+  --m3-outline-variant: var(--surface-card-light);
+  --m3-surface-container-lowest: var(--surface-bg-alt-light);
+  --m3-surface-container-low: var(--surface-bg-light);
+  --m3-surface-container: var(--surface-card-light);
+  --m3-surface-container-high: color-mix(
+    in oklch,
+    var(--surface-card-light) 94%,
+    var(--surface-fg-light)
+  );
+  --m3-surface-container-highest: color-mix(
+    in oklch,
+    var(--surface-card-light) 88%,
+    var(--surface-fg-light)
+  );
+}
+
+/* Dark theme — set data-theme="dark" on any container (no OS/browser sniffing).
+   These are the only dark values in the system; there is no parallel --m3-dark-* name set. */
+[data-theme='dark'] {
+  /* Material chroma roles, dark (sourced from Booming Music M3 palette) */
+  --m3-primary: #b6c4ff;
+  --m3-on-primary: #1d2d61;
+  --m3-primary-container: #354479;
+  --m3-on-primary-container: #dce1ff;
+  --m3-secondary: #c2c5dd;
+  --m3-on-secondary: #3f434e;
+  --m3-secondary-container: #565a70;
+  --m3-on-secondary-container: #dee1f9;
+  --m3-tertiary: #ffb7db;
+  --m3-on-tertiary: #472b50;
+  --m3-tertiary-container: #603e67;
+  --m3-on-tertiary-container: #ffd7f5;
+  --m3-error: #ffb4ab;
+  --m3-on-error: #690005;
+  --m3-error-container: #93000a;
+  --m3-on-error-container: #ffdad6;
+  /* Surfaces come from the desktop (Feishin) flat surface system, not M3 tonal neutrals */
+  --m3-background: var(--surface-bg);
+  --m3-on-background: var(--surface-fg);
+  --m3-surface: var(--surface-bg);
+  --m3-on-surface: var(--surface-fg);
+  --m3-surface-variant: var(--surface-card);
+  --m3-on-surface-variant: var(--surface-fg-muted);
+  --m3-outline: var(--neutral-500);
+  --m3-outline-variant: var(--neutral-700);
+  --m3-surface-container-lowest: var(--surface-bg-alt);
+  --m3-surface-container-low: var(--surface-bg);
+  --m3-surface-container: var(--surface-card);
+  --m3-surface-container-high: color-mix(in oklch, var(--surface-card) 80%, var(--neutral-700));
+  --m3-surface-container-highest: var(--neutral-700);
+}

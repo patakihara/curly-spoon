@@ -1,0 +1,28 @@
+:root {
+  /* Spacing scale sourced verbatim from Feishin's Mantine theme override */
+  --space-0: 0px;
+  --space-xs: 0.25rem; /* 4px */
+  --space-sm: 0.5rem; /* 8px */
+  --space-md: 0.75rem; /* 12px */
+  --space-lg: 1rem; /* 16px */
+  --space-xl: 1.5rem; /* 24px */
+  --space-2xl: 2rem; /* 32px */
+  --space-3xl: 2.25rem; /* 36px */
+  --space-4xl: 2.5rem; /* 40px */
+
+  /* Layout spacing aliases used by the UI kits and component cards */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --grid-gap: 12px;
+
+  /* Icon sizes — Material Symbols glyph font-size */
+  --icon-sm: 24px;
+  --icon-md: 28px;
+
+  /* Mini-player album thumb */
+  --miniplayer-album-size: 44px;
+}
