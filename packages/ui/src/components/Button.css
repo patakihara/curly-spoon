@@ -27,14 +27,15 @@
 }
 
 /*
- * M3 Expressive shape-morph: the button's corner radius springs from fully round to
- * a smaller radius while pressed. Restored from the pre-Mantine `.m3-button` rules
- * (see git history) using the same design tokens.
+ * Wave 16c-1: a static Sonora pill radius, not a shape-morph. The pre-Mantine M3
+ * Expressive treatment sprang the corner radius from fully round to a smaller radius
+ * while pressed (--m3-shape-full -> --m3-shape-md on :active); Sonora's own guidance for
+ * buttons (docs/design/SONORA.md's readme summary) describes a *fill* change on press —
+ * mobile: "a pill-shaped accent-tinted fill"; desktop: "buttons rely on a ~10% shift" —
+ * not a radius change. `--radius-pill` (999px) is therefore constant at rest and pressed;
+ * e2e/ui/button.spec.ts was rewritten accordingly (asserts the radius stays a pill, not
+ * that it changes).
  */
 .m3-button {
-  border-radius: var(--m3-shape-full);
-  transition: border-radius var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
-}
-.m3-button:active {
-  border-radius: var(--m3-shape-md);
+  border-radius: var(--radius-pill, 999px);
 }

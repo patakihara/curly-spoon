@@ -7,16 +7,18 @@
  */
 
 /*
- * M3 Expressive toggle-glyph spring: the glyph scales up when the button enters its
- * `selected` state. Restored from the pre-Mantine `.m3-icon-button__glyph` rules (see
- * git history) using the same design tokens. Descendant combinator, not a direct-child
- * one, since Mantine's `ActionIcon` may wrap children in its own inner span.
+ * Wave 16c-1 (docs/ROADMAP.md §16): the pre-Sonora M3 Expressive toggle-glyph spring
+ * scaled the glyph up (transform: scale(1.15)) when the button entered its `selected`
+ * state. Sonora ships no spring/motion tokens at all, and its own guidance for
+ * active/selected indicators (RailItem, docs/design/SONORA.md §3.7) is a colour change,
+ * not a scale transform — the `standard`+`selected` colour override in IconButton.tsx
+ * (var(--accent-ink, var(--accent))) is now what signals the state. This rule keeps only
+ * a plain, non-spring colour transition so that switch reads as a fade rather than a
+ * snap; e2e/ui/icon-button.spec.ts was rewritten to assert the colour change instead of
+ * the dropped transform. Descendant combinator, not a direct-child one, since Mantine's
+ * `ActionIcon` may wrap children in its own inner span.
  */
 .m3-icon-button__glyph {
   display: inline-flex;
-  transition: transform var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
-  transform: scale(1);
-}
-[aria-pressed='true'] .m3-icon-button__glyph {
-  transform: scale(1.15);
+  transition: color 150ms ease-out;
 }

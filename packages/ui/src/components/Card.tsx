@@ -1,11 +1,13 @@
 /**
- * M3 card container. `interactive` turns it into a real, keyboard-operable button
+ * Card container. `interactive` turns it into a real, keyboard-operable button
  * (or link, via `href`) rather than a `<div onClick>` — clickable cards must still be
  * reachable and activatable from the keyboard.
  *
  * Thin wrapper around Mantine's `Card` (itself a `Paper`): Mantine supplies the
- * polymorphic `component`/ref plumbing (div/button/a), this file supplies the M3
- * visuals via `Card.css`'s `.m3-card*` classes, same as before the migration.
+ * polymorphic `component`/ref plumbing (div/button/a); this file supplies the visuals
+ * via `Card.css`'s `.m3-card*` classes (class names kept from the pre-Sonora M3
+ * migration — only the CSS custom properties they resolve moved, in wave 16c-1, onto
+ * Sonora's `--surface-*`/`--radius-*`/`--shadow-*`, docs/design/SONORA.md §1).
  * `NEUTRALIZE` below turns off every visual prop Mantine's `Paper` reads (shadow,
  * radius, border, padding) so `.m3-card*` is the only thing painting the card —
  * Paper's own CSS-module rule sets `box-shadow`/`border-radius`/`background-color`

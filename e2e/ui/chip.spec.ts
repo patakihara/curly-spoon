@@ -40,4 +40,57 @@ test.describe('Chip', () => {
     await chip.focus();
     await expect(chip).toBeFocused();
   });
+
+  test('a checked filter chip resolves the Sonora accent as its background in both themes', async ({
+    page,
+  }) => {
+    // Wave 16c-1 (docs/ROADMAP.md §16): proves the --chip-bg/--chip-color overrides
+    // (Chip.tsx's chipStyleVars) resolved to *used* values, not just that a var()
+    // reference was written. `chip-filter` starts selected (App.tsx pins
+    // `useState(true)`), so no interaction is needed to see the checked state.
+    // Reconciled against docs/design/sonora/primitives/Chip.jsx: selected uses plain
+    // `var(--accent)`, not `--accent-ink` — same correction as IconButton's `active`, and
+    // since `--accent` is static (not theme-scoped), the correct invariant is now
+    // equality across themes, not the difference the first draft (wrongly) asserted.
+    const label = page.getByTestId('chip-filter').locator('label').first();
+
+    await expect(page.getByTestId('mode-dark')).toBeVisible();
+    const darkBg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(darkBg).toBe('rgb(139, 92, 246)'); // --accent
+
+    await page.getByTestId('mode-light').click();
+    await page.waitForTimeout(700);
+    const lightBg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(lightBg).toBe('rgb(139, 92, 246)');
+
+    // restore for other tests sharing this worker's page context
+    await page.getByTestId('mode-dark').click();
+  });
+
+  test('an unchecked chip has a real surface-card fill, not a near-invisible outline', async ({
+    page,
+  }) => {
+    // Wave 16c-1: the first draft made the unchecked background `transparent`, reasoning
+    // from the readme's general "borders are nearly invisible" guidance. The real
+    // Chip.jsx gives the unchecked state a var(--surface-card) fill — a control needs a
+    // real boundary, not just an 8%-opacity outline with nothing behind it. This exact
+    // test is what caught the first fix attempt's bug: it measured `rgb(46, 46, 46)`
+    // (Mantine's own unrelated dark-mode default) instead of `--surface-card`'s intended
+    // value, which is what led to the `chipLabelStyle`/Mantine-`styles`-API fix in
+    // Chip.tsx — see that file's comment. `chip-assist` never toggles, so its background
+    // is unconditionally the unchecked treatment.
+    const label = page.getByTestId('chip-assist').locator('label').first();
+
+    await expect(page.getByTestId('mode-dark')).toBeVisible();
+    const darkBg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(darkBg).toBe('rgb(20, 20, 20)'); // --surface-card, dark
+
+    await page.getByTestId('mode-light').click();
+    await page.waitForTimeout(700);
+    const lightBg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(lightBg).toBe('rgb(225, 225, 225)'); // --surface-card, light
+
+    // restore for other tests sharing this worker's page context
+    await page.getByTestId('mode-dark').click();
+  });
 });

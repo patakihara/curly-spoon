@@ -1,29 +1,76 @@
+/*
+ * Wave 16c-1 (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1, §2). The two component-local height variables are renamed
+ * from `--m3-slider-height*` to `--slider-height*` — they were never part of the app's
+ * shared `--m3-*` token layer (index.css never defines them), just locally namespaced
+ * with the same prefix by convention, so this keeps the file free of any `--m3-*`
+ * *definition* per the wave's own grep check. The touch-target minimum is now the
+ * literal 48px (matching Button.css's own `min-height: 48px`, not a token reference) —
+ * `packages/ui/src/tokens/spacing.ts`'s `TOUCH_TARGET_MIN` constant is the source of
+ * truth and Sonora has no equivalent token to migrate onto.
+ *
+ * Colour choices, written before Sonora's own vendored primitive source was available
+ * (docs/design/SONORA.md §9 originally said only lint-rule prop names survived for this
+ * component) and **reconciled below** against `docs/design/sonora/primitives/Slider.jsx`,
+ * landed after this wave's spec was written:
+ *
+ * - **Active/filled fill: `var(--accent)`, confirmed exactly.** The real file's
+ *   `background: 'var(--accent)'` matches what this wave already had, independently
+ *   derived from `MediaCard`'s progress-bar precedent (SONORA.md §3.4). One data point
+ *   for a pattern that turned out to be general: checked across all five vendored
+ *   primitives, `--accent-ink` appears in **none** of them — every accent reference in
+ *   Sonora's own source is the raw token (see IconButton.tsx's comment for the fuller
+ *   accounting). The focus ring below was corrected from `--accent-ink` to plain
+ *   `--accent` for the same reason; `--accent` is always `:root`-scoped, so it needs no
+ *   portal fallback either.
+ * - **Track (unfilled) background: `--surface-card`, a deliberate divergence from the
+ *   real source, not an oversight.** `Slider.jsx` uses a 4px-thin desktop track in
+ *   `var(--surface-border)` (an 8%-opacity near-invisible line) plus a round `#fff` thumb
+ *   — Sonora's own generic slider is a thin line with a visible playhead. This app's
+ *   `Slider` is deliberately not that: its own doc comment (predating this wave) cites
+ *   docs/DESIGN.md for "a thick track with no playhead dot" as this app's own YouTube-
+ *   Music-derived requirement, and `--slider-height`/`--slider-height-dragging` (16–24px)
+ *   are an order of magnitude thicker than Sonora's 4px line. `--surface-border` at 8%
+ *   opacity, stretched across a 16–24px band, would read as barely-there — the wrong
+ *   visual weight for a track this thick. `--surface-card` keeps the existing product
+ *   requirement's visual weight; `--surface-border`/the dot thumb were not adopted, and
+ *   this is a considered choice to flag for the coordinator, not a gap.
+ * - **Buffered underlay and remainder gap** have no equivalent in `Slider.jsx` at all (it
+ *   has no buffered-range or thumb-gap concept). Unchanged from this wave's own earlier
+ *   choices: the buffered underlay reuses the "muted foreground as a translucent fill"
+ *   technique the old `--m3-on-surface-variant` used, now `--surface-fg-muted`; the
+ *   remainder gap dot uses `--surface-bg`, matching SONORA.md §1.6's own
+ *   `--m3-surface -> var(--surface-bg)` alias mapping exactly.
+ *
+ * The bouncy-spring thickening transition (`--m3-spring-*`) is replaced with a plain,
+ * short duration — Sonora ships no spring/motion tokens (see Button.css's comment for
+ * the same call made there); the thickening effect itself (a real product behaviour,
+ * docs/DESIGN.md) is kept, just without the M3-Expressive overshoot/settle.
+ */
 .m3-slider {
-  --m3-slider-height: 16px;
-  --m3-slider-height-dragging: 24px;
+  --slider-height: 16px;
+  --slider-height-dragging: 24px;
   display: flex;
   align-items: center;
   width: 100%;
   padding: 8px 0;
   /* The touch target extends well past the visible track via this padding. */
-  min-height: var(--m3-touch-target-min);
+  min-height: 48px;
 }
 
 .m3-slider__track {
   position: relative;
   width: 100%;
-  height: var(--m3-slider-height);
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-surface-container-highest);
+  height: var(--slider-height);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-card, rgb(20, 20, 20));
   cursor: pointer;
   touch-action: none;
-  /* The thickening + spring settle: height animates on `.m3-slider--dragging` toggling,
-     using the bouncy spring so release has a visible little overshoot ("settle"). */
-  transition: height var(--m3-spring-bouncy-duration) var(--m3-spring-bouncy-easing);
+  transition: height 150ms ease-out;
 }
 
 .m3-slider--dragging .m3-slider__track {
-  height: var(--m3-slider-height-dragging);
+  height: var(--slider-height-dragging);
 }
 
 .m3-slider--disabled .m3-slider__track {
@@ -34,17 +81,17 @@
 .m3-slider__buffered {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-on-surface-variant);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-fg-muted, rgb(150, 150, 150));
   opacity: 0.32;
 }
 
 .m3-slider__active {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-primary);
-  transition: width var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--accent, #8b5cf6);
+  transition: width 100ms ease-out;
 }
 
 /* No playhead dot (per docs/DESIGN.md) — just a small rounded gap between active and
@@ -53,16 +100,18 @@
   position: absolute;
   inset: 0 0 0 auto;
   width: 4px;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-surface);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-bg, rgb(12, 12, 12));
   transform: translateX(-2px);
 }
 
-/* Wavy (M3 Expressive) active track: a repeating wave pattern that only scrolls while
-   `animateWave` is set (i.e. actually playing) — a still wave otherwise. */
+/* Wavy active track: a repeating wave pattern that only scrolls while `animateWave` is
+   set (i.e. actually playing) — a still wave otherwise. Kept as a product behaviour
+   (docs/DESIGN.md) even though the M3-Expressive label is retired; only the fill colour
+   moved onto Sonora's `--accent`. */
 .m3-slider--wavy .m3-slider__active {
   background-image:
-    repeating-linear-gradient(var(--m3-primary), var(--m3-primary)),
+    repeating-linear-gradient(var(--accent, #8b5cf6), var(--accent, #8b5cf6)),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='16' viewBox='0 0 28 16'%3E%3Cpath d='M0 8 Q7 0 14 8 T28 8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E");
   background-blend-mode: destination-out;
   background-repeat: repeat-x;
@@ -74,6 +123,6 @@
 }
 
 .m3-slider__track:focus-visible {
-  outline: 3px solid var(--m3-secondary);
+  outline: 3px solid var(--accent, #8b5cf6);
   outline-offset: 3px;
 }
