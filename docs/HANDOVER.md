@@ -132,9 +132,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T21:16:52Z` · `a51dab7f5fb349b6f` · general-purpose · ended · Committed. Exactly three files changed, no doc file touched (per the "no dedicated place" finding). ## Report **Branch/commit:** 'worktree-agent-a51d…
-- `2026-08-15T21:20:43Z` · `a8bd5abd083ff3ed8` · general-purpose · ended · I'll wait for the run_in_background task's completion notification rather than poll.
-- `2026-08-15T22:01:31Z` · `ab5d9dfca22e6dee6` · general-purpose · ended · I've committed my work. Now I'll wait for the notification that the backgrounded Playwright run ('bavxriny6') has completed, rather than poll for it.
 - `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · ended · Committed. Final report: ## Report — Wave 14d **Branch/commit:** 'worktree-agent-a1e9c7904b31b3620' at 'f56132a', based on '9e87fdc'. ### Audit table…
 - `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · ended · Working tree clean. Not pushed. ## Report **Branch/commit:** 'worktree-agent-a7bfb028ca2b25a26' at '6004577', based on '9e87fdc'. Working tree clean,…
 - `2026-08-16T06:40:47Z` · `ada9aa18e890f1985` · general-purpose · running · —
@@ -147,6 +144,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T10:25:18Z` · `a52a5c1114882c847` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a52a5c1114882c847' at '…
 - `2026-08-16T10:27:36Z` · `a7f6e7da38fddff8f` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a7f6e7da38fddff8f' at '25f5956', based on '927081d'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:36:32Z` · `a8b2dea9cf2eea6f9` · general-purpose · ended · None found — the core stays pure. I have everything needed for the verdict. ## Verdict: merge as-is All claims independently verified: 12/12 in 'shel…
+- `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
+- `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
+- `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -604,7 +604,24 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Nothing is currently claimed.** 14b-2 landed as `e87a551` (see `ROADMAP.md` §14) and its Android
+**Claimed: 15b-1** (the ownership matcher) by session `5466206d`, dispatched at ~72% session usage
+2026-08-16. Its agent commits to `worktree-agent-a61f282c8a1f29cbf`; **if that branch has commits
+and no merge on `main`, the dispatching session hit its usage ceiling before it could merge — take
+it.** Everything else in phase 15 is unclaimed.
+
+**Phase 15 progress so far:** the spec is `ROADMAP.md` §15, corrected twice by the user (browse is
+one destination, and per-medium providers are the design). **15a-0 done** (`6fe1be6`) — six upstream
+identifiers now survive normalization and already reach the wire. **15c-1 done** (`8a38a99`) —
+dedupe-by-parent and mixed-shelf marking, **mechanism only, reachable by nothing yet** (see §15).
+**Provider survey done** — `docs/research/RECOMMENDATION_PROVIDERS.md`; ListenBrainz is the only
+genuine recommender found, and its useful tier needs no credential from her.
+
+**The next wave after 15b-1 is 15b-2, and it is the one most likely to be skipped.** A title she
+requests becomes a library item with an id unrelated to the provider's, so unless the
+correspondence is persisted **at request time**, the next recommendation run offers her the same
+book again and the matcher looks broken. That is a schema change, not a scoring one.
+
+14b-2 landed as `e87a551` (see `ROADMAP.md` §14) and its Android
 run was verified as an **uncached** execution, not just a green badge. **Phase 14 is done**: 14a-1,
 14a-2 (measured, then reverted — see below), 14b-1 and 14b-2 are all on `main`, and 14c is written
 up in `docs/perf/`.
