@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# Pre-push gate: the catch-all that pre-commit structurally cannot be.
+#
+# The pre-commit hook sees staged files. It does NOT see:
+#   * merge commits — `git merge` does not run pre-commit, so a subagent's worktree branch can
+#     carry unformatted files straight onto main. This happened the same hour the hooks landed:
+#     an agent could not run prettier (a fresh worktree has no node_modules and its spec forbade
+#     installing), and the merge brought the unformatted file in unchecked.
+#   * commits made with --no-verify, or by any tool that bypasses hooks.
+#   * anything committed before the hooks were armed.
+#
+# So this runs the same two commands CI runs — `pnpm format:check` and `pnpm lint` — across the
+# whole repo before anything leaves the machine. It is slower than pre-commit, which is the right
+# trade: pushes are rarer than commits, and a push is the last point where a failure is still
+# free. CI's lint/format job is its most frequent failure and every one emails the user; it also
+# gates `publish`, which mediaserver pulls from every fifteen minutes.
+#
+# Fails open when the toolchain is absent, like every other hook in this repo.
+# Bypass with `git push --no-verify`.
+#
+# CONCURRENCY CAVEAT, observed while building this. Several autonomous sessions share this
+# checkout, so a whole-repo lint can transiently trip over a file another session is mid-write
+# on — this hook blocked once on an eslint failure that did not reproduce a minute later. That
+# is why the eslint branch prints its actual output instead of swallowing it: a spurious failure
+# has to be tellable from a real one. If a failure names a file you did not touch, re-run before
+# believing it; if it repeats, it is real.
+
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 0
+cd "$ROOT" || exit 0
+
+if [ ! -x node_modules/.bin/prettier ]; then
+  echo "pre-push: no node_modules — skipping format/lint gate." >&2
+  exit 0
+fi
+
+status=0
+
+echo "pre-push: prettier --check ..." >&2
+if ! node_modules/.bin/prettier --check . >/dev/null 2>&1; then
+  echo "" >&2
+  echo "pre-push: BLOCKED — unformatted files would fail CI's 'Lint · format · typecheck' job:" >&2
+  node_modules/.bin/prettier --list-different . 2>/dev/null | sed 's/^/  /' >&2
+  echo "" >&2
+  echo "  Fix:  pnpm format && git add -u && git commit --amend --no-edit" >&2
+  status=1
+fi
+
+if [ -x node_modules/.bin/eslint ]; then
+  echo "pre-push: eslint ..." >&2
+  if ! eslint_out="$(node_modules/.bin/eslint . 2>&1)"; then
+    echo "" >&2
+    echo "pre-push: BLOCKED — eslint errors would fail CI:" >&2
+    printf '%s\n' "$eslint_out" | tail -40 >&2
+    echo "" >&2
+    echo "  If this names a file you did not touch, re-run: another session sharing this" >&2
+    echo "  checkout may have been mid-write. A repeat failure is real." >&2
+    status=1
+  fi
+fi
+
+if [ "$status" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-push: bypass with 'git push --no-verify' if you must." >&2
+else
+  echo "pre-push: format and lint clean." >&2
+fi
+
+exit "$status"
