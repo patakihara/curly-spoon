@@ -34,6 +34,35 @@
  * branch and forgotten in the other is exactly the mistake `docs/HANDOVER.md` names as
  * this wave's real risk (an invalid `var()` falls back to `unset`, i.e. silently loses
  * the accent highlight / status colour, with no error anywhere).
+ *
+ * ## Known consequence for 16c: these tokens are invisible outside `.auralis-theme-root`
+ *
+ * `--m3-*` survives a React portal that renders outside `.auralis-theme-root` (e.g. into
+ * `document.body`) two ways: the static `:root` fallback block at
+ * `packages/ui/src/styles/index.css:47-88`, and `CSS.registerProperty`'s own
+ * `initialValue`. **The tokens in this file have neither fallback** — deliberately, since
+ * adding one would let a token missing its light (or dark) value silently inherit the
+ * other theme's value instead of resolving empty, which defeats the whole point of the
+ * non-empty-in-both-themes reader above. `Dialog.tsx` (wraps Mantine's `Modal`, which
+ * portals to `document.body`), `Sheet.tsx`, `Menu.tsx` and `SearchField.tsx` (its
+ * suggestion listbox) all `createPortal` today. **Whoever rebuilds any of those in 16c
+ * against `var(--surface-*)`/`var(--accent-ink)`/`var(--tone-*)` needs either the
+ * component's portalled root re-parented inside `.auralis-theme-root`, or these tokens
+ * re-emitted onto whatever element it does portal to** — silently getting neither reads as
+ * "it renders, unstyled," the same failure class this file exists to make loud instead.
+ *
+ * ## A SONORA.md §1.6 contradiction this file creates, for whoever reads that table next
+ *
+ * SONORA.md §1.6 (the `--m3-*` surface alias table) writes light-mode aliases as, e.g.,
+ * `--m3-background: var(--surface-bg-light)` — i.e. it assumes Sonora's original,
+ * always-static `-light`-suffixed names (`--surface-bg-light` alongside a separately
+ * static `--surface-bg`, per SONORA.md §1.2's own "two distinct token namespaces" note).
+ * **This file does not create any `-light`-suffixed name.** Per this wave's spec ("each
+ * [of the six --surface-* names] with a light and a dark value"), `--surface-bg` etc. are
+ * themselves theme-switching here. A future wave implementing §1.6's aliases literally
+ * will find `--surface-bg-light` undefined in this tree; the fix is to reference plain
+ * `var(--surface-bg)` from within the already-existing `[data-theme='light']` scope
+ * instead of a separate `-light` name.
  */
 
 .auralis-theme-root[data-theme='dark'] {

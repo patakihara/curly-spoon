@@ -122,4 +122,41 @@ test.describe('Sonora token layer', () => {
     // restore for other tests sharing this worker's page context
     await page.getByTestId('mode-dark').click();
   });
+
+  test('the two CSS-function tokens (color-mix, gradient) resolve to real used values, not just non-empty strings', async ({
+    page,
+  }) => {
+    // `getComputedStyle(el).getPropertyValue('--accent-ink')` (used by every test above)
+    // reports the *substituted token stream* for a custom property, not a used value — a
+    // malformed `color-mix()` (wrong colour space name, wrong argument order) still comes
+    // back as a non-empty string and would pass every assertion above while resolving to
+    // nothing wherever a component actually consumes it. Each gallery specimen also sets a
+    // *real* CSS property (`background`) from the token, on its `.sonora-token-sample`
+    // child — asserting that element's computed `backgroundColor`/`backgroundImage` is the
+    // only way to prove the function itself evaluated, which is what SONORA.md §2 warns
+    // is otherwise invisible ("no error anywhere").
+
+    // --accent-ink only exercises color-mix() in light mode (dark is a plain var(--accent)
+    // passthrough, which can't catch this class of bug).
+    await page.getByTestId('mode-light').click();
+    await page.waitForTimeout(700);
+
+    const accentInkSample = page.getByTestId('token-accent-ink').locator('.sonora-token-sample');
+    const accentInkColor = await accentInkSample.evaluate(
+      (el) => getComputedStyle(el).backgroundColor,
+    );
+    expect(accentInkColor).toMatch(/^rgba?\(/);
+    // The initial/failed-to-apply value for an unset background-color — a malformed
+    // color-mix() leaves the property at this, not at an error.
+    expect(accentInkColor).not.toBe('rgba(0, 0, 0, 0)');
+
+    const overlaySample = page
+      .getByTestId('token-surface-overlay-header')
+      .locator('.sonora-token-sample');
+    const overlayImage = await overlaySample.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(overlayImage).toMatch(/^linear-gradient\(/);
+
+    // restore for other tests sharing this worker's page context
+    await page.getByTestId('mode-dark').click();
+  });
 });
