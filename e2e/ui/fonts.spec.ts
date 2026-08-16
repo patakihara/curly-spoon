@@ -8,10 +8,15 @@ import { expect, test } from '@playwright/test';
  *
  * Per docs/HANDOVER.md's own warning, a green local Playwright run is not by itself strong
  * evidence about a CSS-delivery change (a bundling change once passed 188/188 locally and
- * still regressed CI twice on a layout-stability assertion). The network-request assertion
- * below is the one that actually pins the property this wave exists to guarantee, and it is
- * a functional assertion (zero requests to a third-party host), not a timing/layout one —
- * it does not share that failure class.
+ * still regressed CI twice on a layout-stability assertion). More specifically here:
+ * `document.fonts.check()`/`.load()` alone are **not** falsifiable guarantees — deleting the
+ * `@font-face` rules entirely still leaves `document.fonts.check('16px Inter')` reporting
+ * `true` (vacuously — there is nothing that "hasn't loaded" if nothing matches), and
+ * `.load()` on an unmatched family resolves with an empty array rather than throwing. Verified
+ * by hand: commenting out `@import './fonts.css';` in packages/ui/src/styles/index.css leaves
+ * two of the three original assertions in this file green. So every test below pairs a
+ * `document.fonts` assertion with a **real same-origin `.woff2` network response**, which is
+ * the only thing that cannot pass on a tree with the `@font-face` rules missing.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -19,8 +24,17 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Self-hosted fonts', () => {
-  test('makes no request to fonts.googleapis.com or fonts.gstatic.com', async ({ page }) => {
+  test('serves Inter and Roboto Flex as same-origin woff2 responses, with no request to a third-party font CDN', async ({
+    page,
+  }) => {
+    const woff2Responses: { url: string; status: number }[] = [];
     const thirdPartyFontRequests: string[] = [];
+    page.on('response', (response) => {
+      const url = response.url();
+      if (url.endsWith('.woff2')) {
+        woff2Responses.push({ url, status: response.status() });
+      }
+    });
     page.on('request', (request) => {
       const url = request.url();
       if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
@@ -28,11 +42,11 @@ test.describe('Self-hosted fonts', () => {
       }
     });
 
-    // Re-navigate under the listener (the beforeEach navigation happened before it attached)
-    // and wait for the fonts to actually settle, so a CDN request racing in after first paint
-    // is still caught. Force both faces to load — nothing in the gallery renders text with
-    // `var(--font-display)` yet, so a Roboto Flex regression would otherwise never be
-    // exercised at all, CDN or not.
+    // Re-navigate under the listeners (the beforeEach navigation happened before they
+    // attached) and force both faces to load. Nothing in the gallery renders text with
+    // `var(--font-display)` yet (that wiring is a later wave), so without an explicit
+    // `document.fonts.load` the browser would never fetch Roboto Flex at all — a CDN
+    // regression on that face specifically would go unexercised either way.
     await page.goto('/');
     await page.evaluate(() =>
       Promise.all([
@@ -41,6 +55,24 @@ test.describe('Self-hosted fonts', () => {
         document.fonts.load('900 16px "Roboto Flex"'),
       ]),
     );
+
+    // The positive assertion: this is the one a deleted `@font-face` block, or a re-added
+    // CDN `@import`, cannot satisfy by accident. `document.fonts.check`/`.load` alone would
+    // still pass on a tree with the fonts.css import removed entirely — see the file-level
+    // comment.
+    const pageOrigin = new URL(page.url()).origin;
+    expect(
+      woff2Responses,
+      'expected at least one same-origin .woff2 response for Inter/Roboto Flex',
+    ).not.toHaveLength(0);
+    for (const { url, status } of woff2Responses) {
+      expect(new URL(url).origin, `expected ${url} to be same-origin`).toBe(pageOrigin);
+      // 304 is a legitimate success (the dev server's cache-revalidation path for a static
+      // asset); only a real failure status should fail this assertion.
+      expect(status, `expected ${url} to respond with success, not ${status}`).toBeLessThan(400);
+    }
+    expect(woff2Responses.some((r) => r.url.includes('inter'))).toBe(true);
+    expect(woff2Responses.some((r) => r.url.includes('roboto-flex'))).toBe(true);
 
     expect(thirdPartyFontRequests).toEqual([]);
   });
@@ -53,7 +85,9 @@ test.describe('Self-hosted fonts', () => {
 
     // Checking `fontFamily` alone would pass even if the font never loaded (the string is set
     // regardless) — pair it with the `document.fonts.check` assertion above, which only
-    // reports true once the browser has actually resolved and loaded the face.
+    // reports true once the browser has actually resolved and loaded the face (or, per the
+    // file-level comment, vacuously — this test's real guarantee is the network-response spec
+    // above; this one just pins that body actually renders in Inter, not a fallback).
     const bodyFontFamily = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
     expect(bodyFontFamily).toContain('Inter');
   });
@@ -62,11 +96,8 @@ test.describe('Self-hosted fonts', () => {
     await page.evaluate(() => document.fonts.ready);
 
     // Nothing in the gallery renders text with `var(--font-display)` yet (that wiring is a
-    // later wave), so the browser would never lazily fetch this face on its own —
-    // `document.fonts.check` alone would report false regardless of whether the `@font-face`
-    // is correct. `document.fonts.load` force-fetches the matching face, which is the
-    // assertion this test actually wants: that the declared `@font-face` resolves and the
-    // vendored file is reachable at all, ahead of the wave that wires up a consumer.
+    // later wave), so `document.fonts.load` is required to force the fetch at all — see the
+    // network-response test above for the assertion that actually proves the file exists.
     //
     // `document.fonts.check` with a single weight only proves that weight resolves; check
     // both ends of the declared `400 900` range so a `font-weight: 400;` (single-value)
