@@ -946,7 +946,27 @@ against a real `LyricDto`**, because no session has a Jellyfin credential.
 
 ## Open product decisions — the user's to make
 
-None of these blocks the two implementable items above.
+**These are now the whole remaining roadmap, not a sidebar to it.** The older line here said "none
+of these blocks the two implementable items above"; there are no implementable items above any
+more, so every one of these is load-bearing.
+
+- **What Home shows before it knows what it has — the newest one, and the most product-visible.**
+  Raised by 14c, which attributed Home's layout shift and then deliberately declined to fix it.
+  The cause is not cover art (`CoverImage` already renders every card at a fixed width and height,
+  so the box is reserved before the bytes arrive). It is architectural: `HomePage` stitches **four
+  independent async sources** — book shelves, podcast shelves, Jellyfin favourite albums,
+  recommendation shelves — client-side, and whether each lands before or after first paint is an
+  unreserved race, so a shelf or a quick-picks tile appears from a zero-size rect instead of
+  replacing an equally-sized skeleton. Reproduces on both sides of `418b0d1`, so it predates that
+  revert and is independent of it.
+
+  **Every effective fix changes what Home looks like while loading**, which is why no session
+  should pick it unilaterally: either reserve space for a shelf whose existence is not yet known
+  (so Home shows placeholder rows that may never fill), or hold the page in its loading state
+  until all four sources settle (so Home shows nothing for longer, but arrives whole). That is a
+  taste question about the user's primary screen, and "the UI must be beautiful" is their own
+  sentence. `e2e/app/home-cls.spec.ts` now pins the measurement under a deliberately loose 0.7
+  smoke ceiling, so whichever way it goes, a structural regression fails rather than drifts.
 
 - **Direct play vs transcode.** Declaring the client's real supported `supportedMimeTypes` would
   flip most sessions from server-side transcode to direct play: less server CPU per listen, and
