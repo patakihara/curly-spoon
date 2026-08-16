@@ -729,6 +729,49 @@ be on a codebase where `gradlew compileKotlin` is one command away. Write route 
 
 ### Android test traps — read before touching an Android test
 
+- **A green `Android` run on a sha that did not touch `apps/android` executed no Android tests.**
+  Gradle's build cache keys on task inputs, so `:app:testDebugUnitTest` comes back `FROM-CACHE`
+  and the badge is green without a single test running. Measured 2026-08-16: of three consecutive
+  green Android runs after the race fix (`f2a90d1`, `19ae5bb`, `aa2f598`), **one genuinely ran and
+  two were replays of it** — the two later shas touched only `packages/ui` and docs. This is
+  actively misleading in the one case where it matters most: **a flaky test cannot fail a run that
+  never executes it**, so a run of docs-and-web pushes accumulates green Android badges that look
+  like an intermittent fault settling down, and are nothing of the kind. Before reading any green
+  Android run as evidence, grep its log:
+
+  ```bash
+  gh api repos/:owner/:repo/actions/jobs/<job-id>/logs | grep 'Task :app:test.*UnitTest'
+  ```
+
+  A bare `> Task :app:testDebugUnitTest` ran; `FROM-CACHE` or `UP-TO-DATE` did not. Note the two
+  variants cache independently — on `b2561b8` the debug task was cached while
+  `testReleaseUnitTest` genuinely ran — so name the task you mean. The corollary is that
+  **rerunning the same sha buys nothing** (same inputs, same cache), and the only way to draw a
+  fresh sample of an Android flake is a change under `apps/android`.
+
+- **Injecting the test dispatcher into `ApiClient` is the right default and is _not_ universal —
+  and the third exception is not discoverable by reading.** The two exceptions above it are
+  semantic: the test asserts real `MockWebServer` interleaving, so collapsing it destroys the
+  assertion, and you can see that by reading the test. Wave 14d found a different species.
+  `HomeViewModelTest`'s three `startDownload` tests **hang** under the unconfined dispatcher —
+  they await something it cannot resolve at all, so they do not leak and they do not assert
+  wrong; they time out, 60s apart in the log, and the run dies with the same
+  `UncompletedCoroutinesError` that a leak produces. Reverted in `f99b8fa`.
+
+  So the rule is not "inject the test dispatcher, except where interleaving is asserted." It is
+  **"inject it, then run the full Android suite, because the exceptions are not all findable by
+  inspection."** An audit that applies the rule mechanically across a suite will discover that
+  class only in CI — which is exactly how this one was discovered.
+
+- **The `UnifiedSearchViewModelTest` race is a coin toss, and there is a clean demonstration of
+  it.** `9e87fdc` and `b2561b8` carry **identical Kotlin** — both are docs-only relative to the
+  Android tree — and `testReleaseUnitTest` ran uncached on both, failing on one and passing on the
+  other. That pair is stronger evidence than any single run, and it is the reason a single green
+  run must never be read as "fixed". Fixed in `e71837f` by widening 13d's scoped-dispatcher
+  treatment from two tests to twelve; **four tests remain on real `Dispatchers.IO` deliberately**,
+  each keying a `setBodyDelay()` to pin real interleaving.
+
+
 - **`ApiClient` takes its dispatcher as a constructor parameter** (defaulting to
   `Dispatchers.IO`). Nine ViewModel test files pass their own `UnconfinedTestDispatcher`, which
   makes the work visible to `runTest` and the leak impossible by construction. A test that
