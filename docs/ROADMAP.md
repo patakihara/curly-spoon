@@ -3494,6 +3494,44 @@ boundaries, disjoint directories where waves run in parallel.
   rules. Also resolve collision 1 by diffing Sonora's custom-property names against the app's
   existing ones, and record the answer in that file. **No product code changes.** Output is a
   document every later wave and every subagent reads instead of the MCP.
+- **16b-2 — the token layer. The architecture is decided; do not re-litigate it in the wave.**
+  Measured on the tree 2026-08-16, and the numbers make the decision rather than taste:
+
+  |               | app today                    | redesign's desktop branch |
+  | ------------- | ---------------------------- | ------------------------- |
+  | `--m3-*`      | **391 usages, 185 distinct** | 19                        |
+  | `--surface-*` | 0                            | **41**                    |
+  | `--accent*`   | 0                            | **24**                    |
+
+  So the app is built entirely on `--m3-*` and Sonora's web surfaces are built mostly on
+  `--surface-*` + `--accent`. **The migration is per-component, and it is 16c's work, not 16b's.**
+
+  **16b-2 therefore adds Sonora's families alongside and does not redefine a single `--m3-*`
+  value.** Redefining them would repaint 391 usages at once, with no component rebuilt and no way
+  to attribute what broke — an uncontrolled visual change dressed up as a substrate change. 16c
+  moves components off `--m3-*` one at a time, and `--m3-*` is deleted when the last one leaves.
+
+  **Keep the existing emission mechanism.** `ThemeProvider` writes tokens as inline style on
+  `.auralis-theme-root` and registers the colour ones with `CSS.registerProperty` so they
+  cross-fade on theme change. Sonora instead scopes light on `:root` and dark under
+  `[data-theme="dark"]`. **That is a delivery choice, not a visual one** — adopting it buys nothing
+  the user can see, and costs the cross-fade and the theme toggle's tested behaviour. The one thing
+  it enables, two themes side by side on one page, is a design-_tool_ need (the kit renders light
+  and dark frames together), not a product need. Revisit only if 16c/16d turns up a real one.
+
+  **What 16b-2 lands:** `--neutral-*`, `--surface-*` (six, with light and dark values), `--accent`
+  - `--accent-contrast` + the 17 preset hues, `--state-*`, `--radius-*`, `--space-*`/`--spacing-*`/
+    `--grid-gap`/`--icon-*`, `--text-*`/`--leading-*`/`--h1..h4-*`/`--heading-weight`, `--shadow-*`,
+    and the five app-level tokens Sonora does not ship (`--accent-ink`, four `--tone-*`), each with
+    its light and dark value. `SONORA.md` has all of them; it, not `colors.css`, is the source to
+    copy from — Sonora's dark block redefines only _some_ roles, and a mechanical "copy both blocks"
+    leaves tokens undefined in dark.
+
+  **Its reader, so this is not another writer without one:** a gallery page rendering every token
+  as a swatch, with an `e2e/ui` assertion that each resolves to a non-empty computed value **in
+  both themes**. That is what catches the real bug here — a token defined in light and forgotten in
+  dark, which renders as nothing and which no existing test can see.
+
 - **16b — the token layer.** Land Sonora's tokens as the app's token layer, self-hosting fonts and
   the Material Symbols font (collision 3), behind `[data-theme="dark"]` / bare `:root`. Resolve the
   `--m3-*` overlap the way 16a decided. Nothing visual should change yet beyond colour and type;
