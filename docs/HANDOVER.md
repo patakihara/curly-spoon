@@ -685,7 +685,10 @@ wave happens, it is the next sample — read its log before reading its badge.
 a real merge commit. Its only consumer is its own tests; **15c and 15e are the readers**, and that
 is stated rather than glossed. One open input for 15b, found by the wave: the music ownership pool
 is built from **albums**, so a ListenBrainz artist-level recommendation can never match as owned
-until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Nothing is claimed. Phase 16's wave 16b is complete** — 16b-1 (fonts), 16b-2 (tokens) and 16b-3
+until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Claimed: 16g — the README rewrite** (`README.md` only), dispatched 2026-08-16 ~23:45 UTC. It
+depends on nothing else in phase 16 and contends with no other wave.
+
+**Phase 16's wave 16b is complete** — 16b-1 (fonts), 16b-2 (tokens) and 16b-3
 (icons) are all merged. **16c is next**: rebuilding `packages/ui`'s primitives against the new
 tokens, migrating them off `--m3-*` one component at a time.
 
