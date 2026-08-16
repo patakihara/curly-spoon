@@ -243,3 +243,43 @@ with recommendations good enough that it _"cleverly serve[s] me audiobooks it th
 enjoy."_ Decision 1 exists because the recommendation work, as built, does not clear that
 bar: re-sorting a library is not what Spotify does. Mixed-content carousels, search
 suggestions, and external discovery are all the same requirement seen from different angles.
+
+---
+
+## Naming — "browse" is the term, and four words we have been treating as distinct are one thing
+
+Her words, sent unprompted: _"when I say 'home / for you / browse / discover' those are all
+interchangeable terms (and different from 'search'!). my preferred term right now is 'browse'
+with the 'explore' icon. document this"_
+
+**This is a vocabulary correction, and it retires a distinction the project invented.**
+`HANDOVER.md`, `ROADMAP.md` and the code have all been treating "Home", "For You", "Browse"
+and "Discover" as separate surfaces with separate specs. They are not. They are four names
+for **one destination**, and she has now picked which name it goes by.
+
+- **The term is "browse".** The icon is Material's **`explore`**.
+- **It is emphatically not Search.** Search is a genuinely separate destination, and she
+  flagged the distinction herself with an exclamation mark — read that as a correction of
+  something we have been blurring, not as an aside. Search is where you go knowing what you
+  want; browse is where you go not knowing.
+- **"my preferred term right now"** — she flagged this as current preference rather than a
+  permanent decision. Do not build the name into anything expensive to rename: it belongs in
+  a UI-string layer, not in route paths, component names, API endpoints or database columns.
+
+**What this actually changes:**
+
+- Everything decision 2 above says about "Home" — holding the loading state, the podcast
+  dedupe, mixed-content carousels — applies to **browse**, because they are the same screen.
+  Likewise everything phase 15 says about mixing external recommendations into "For You".
+  There is no separate Home-versus-For-You design problem to solve; there was never more than
+  one screen.
+- The five-destination nav from phase 12 should present this one as **Browse / `explore`**.
+- Any doc or spec that reads as though Home and For You are different surfaces is describing
+  a distinction she does not make, and is a candidate for consolidation rather than
+  reconciliation.
+
+**Why this is worth a section rather than a line.** Four names for one thing is exactly how a
+project ends up with two implementations of one screen, each spec'd against a different name,
+each with a reader that does not know about the other. That is this codebase's single
+most-repeated failure. She has collapsed the ambiguity for free; the cost of not writing it
+down is discovering it later as duplicated work.
