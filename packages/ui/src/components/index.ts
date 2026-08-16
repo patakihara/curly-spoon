@@ -16,6 +16,14 @@ export { useSnackbar, type SnackbarMessage, type UseSnackbarResult } from './use
 export { LinearProgress, type LinearProgressProps } from './LinearProgress.js';
 export { CircularProgress, type CircularProgressProps } from './CircularProgress.js';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton.js';
-export { Icon, ICON_NAMES, type IconProps, type IconName } from './Icon.js';
+export {
+  Icon,
+  ICON_NAMES,
+  FILLABLE_ICON_NAMES,
+  isFillableIconName,
+  type IconProps,
+  type IconName,
+  type FillableIconName,
+} from './Icon.js';
 export { Marquee, type MarqueeProps } from './Marquee.js';
 export { Menu, MenuTarget, type MenuProps, type MenuItemDescriptor } from './Menu.js';
