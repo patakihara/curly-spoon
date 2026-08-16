@@ -3190,8 +3190,26 @@ What they establish, which settles several questions without asking her:
   to dedupe-by-parent), and **mixed-content shelves**, which per the screenshots means a `Recents`-style
   shelf whose cards name their type in the subtitle.
 
-  _Verified by:_ server unit tests plus a Playwright assertion on For You. Mechanism assessable here;
+  _Verified by:_ server unit tests plus a Playwright assertion on browse. Mechanism assessable here;
   whether the mix feels right is not.
+
+  **15c-1 is done** (`8a38a99`) and is **mechanism only — neither rule is reachable from a running
+  instance yet.** State this plainly to whoever picks up 15c-2, because "wiring is out of scope"
+  undersold it and this project has four historical instances of a writer whose reader never came:
+
+  - **`itemLabels` cannot reach the wire.** `routes/libraries.ts` and `routes/jellyfin.ts` each build
+    their response as an explicit `{ id, label, type, reason, items }` object literal, so the field
+    is dropped before serialization. 15c-2 is therefore **not** just "render it on the clients" — the
+    route response shape has to carry it first.
+  - **No route can produce a mixed shelf.** Both pass single-kind candidate pools (`libraries.ts` is
+    scoped to one Audiobookshelf library, `jellyfin.ts` to albums), so the kind count can never
+    reach two. The cross-media candidate pool is what makes the feature reachable, and that is 15a/
+    15e work, not client work.
+  - **No adapter sets `parentId`.** `adapt.ts` folds a whole podcast show into one candidate and
+    `adaptMusic.ts` a whole album, so there is no episode- or track-granular candidate anywhere.
+    The literal rule she asked for — no two episodes of one podcast — has no data path that can
+    trigger it today; only the book/series fallback exercises dedupe against real data. A future
+    wave adding episode/track candidates only needs to set `parentId`; `shelves.ts` will not change.
 
 - **15d — requestability.** A recommended title not in the library is inherently requestable — that
   is the seam with the phase 6/9 request pipeline, and it is what makes discovery useful rather than
