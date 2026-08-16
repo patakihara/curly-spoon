@@ -3609,11 +3609,17 @@ apps consume "pre-existing open icon sets" rather than drawing their own, which 
   outlined style), not a font axis. Four nav destinations plus Search need it.
 
 **The two text families genuinely do need self-hosting, and they are cheap.** Measured against
-Google's `css2` endpoint, latin subsets: **Inter 236 KB** across five static weights (400/500/600/
-700/900, 48 KB each) and **Roboto Flex 82 KB** as one variable file — ~318 KB total, versus 3.08 MB
-for the icon font alone. Include `latin-ext` as well; it is small and the user's own languages want
-it. Inter also ships as a single variable file (`wght@400..900`) which may beat five statics —
-measure rather than assume.
+Google's `css2` endpoint: **Inter 48 KB latin + 85 KB latin-ext**, **Roboto Flex 84 KB latin +
+58 KB latin-ext** — **276 KB vendored in total**, against 3.08 MB for the icon font alone.
+
+**A correction to this paragraph's own first draft, worth stating rather than quietly fixing:** it
+said "Inter 236 KB across five static weights (400/500/600/700/900, 48 KB each)". That is wrong.
+Requesting `Inter:wght@400;500;600;700;900` returns **the same variable font file five times**, as
+five `@font-face` blocks each pinned to one weight — so the naive measurement summed one file five
+over. The self-hosted form is one file with `font-weight: 400 900`. (Google's genuine static 400 is
+23,664 bytes; its variable latin subset is 48,256, and the vendored file is md5-identical to the
+latter, which settles which one shipped.) The lesson generalises: counting _responses_ is not
+counting _bytes a browser stores_.
 
 ### 16a is done, and the design is in the repo — read `docs/design/SONORA.md`
 
