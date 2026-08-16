@@ -223,7 +223,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · running · —
-- `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · running · —
+- `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
 
 <!-- AGENT_LOG_END -->
 
@@ -685,10 +685,20 @@ wave happens, it is the next sample — read its log before reading its badge.
 a real merge commit. Its only consumer is its own tests; **15c and 15e are the readers**, and that
 is stated rather than glossed. One open input for 15b, found by the wave: the music ownership pool
 is built from **albums**, so a ListenBrainz artist-level recommendation can never match as owned
-until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **Claimed: 16b-2-A — Sonora's token foundation in Compose** (`apps/android/.../ui/theme/`),
-dispatched 2026-08-17. This is **pairing debt**: web landed its token layer in 16b-2 and Android
-never had a counterpart, so Android is caught up first and everything from 16c on is dispatched as
-`-W`/`-A`/`-P` triples per `CLAUDE.md`'s "Frontend parity" section.
+until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **16b-2-A is landed** (`c450fbb`) — Android now has Sonora's colour scheme, **and a typography and
+shape scale for the first time**; `MaterialTheme` previously received only a colour scheme, from the
+platform's wallpaper-derived Material You. Every value was re-derived from `packages/ui`'s
+stylesheets and tabulated for the parity review. **Nothing here compiles Kotlin**, so its first real
+test is the Android CI run on `c450fbb`; the two compiler traps that _are_ checkable without a
+compiler (nested block comments, a dot in a backtick test name) were checked by the orchestrator and
+are clean. Budget the usual two-to-three red rounds anyway.
+
+**One deliberate divergence is open and 16c-1-P must rule on it.** Web's token wave was purely
+additive and left `--m3-*` untouched, so web still renders pre-Sonora colours until 16c migrates
+components off them. Compose has no equivalent middle state — `MaterialTheme` resolves against
+exactly one `ColorScheme` — so Android's chroma roles now hold what `--m3-*` is _scheduled_ to
+become. **The platforms are briefly out of step by construction**, and that is only the right trade
+if 16c closes it promptly.
 
 **Claimed: 16c-1-W — migrate five primitives onto Sonora's tokens** (`Button`, `IconButton`, `Chip`,
 `Card`, `Slider` in `packages/ui/src/components/`), dispatched 2026-08-17 ~00:15 UTC. **This is the
