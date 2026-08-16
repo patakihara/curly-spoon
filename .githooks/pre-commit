@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+#
+# Pre-commit gate: make `pnpm format:check` and `pnpm lint` failures impossible to push.
+#
+# Why this exists: CI's most frequent failure by far was the "Lint · format · typecheck" job,
+# almost always on formatting. Every one of those emails the user. It is also not merely noise —
+# `format:check` gates the `publish` job, `publish` writes ghcr.io/patakihara/auralis:latest, and
+# mediaserver pulls that tag every fifteen minutes, so a formatting failure on `main` quietly
+# stops the live deployment updating.
+#
+# Design constraints, each one deliberate:
+#
+#   * **No new dependencies.** No husky, no lint-staged. Several autonomous sessions share this
+#     checkout, and concurrent agents touching pnpm-lock.yaml is this project's documented main
+#     failure mode. This is a plain shell script plus one `git config`.
+#   * **Staged files only**, so it stays fast enough that nobody is tempted to bypass it.
+#   * **Never silently restage a partially-staged file.** If a file has both staged and unstaged
+#     changes, auto-fixing and re-adding would sweep the unstaged half into the commit. Those
+#     files are checked and reported instead of fixed.
+#   * **Fails open on a missing toolchain.** No node_modules (a fresh worktree) means allow with
+#     a warning, matching the fail-open contract every other hook in this repo follows.
+#
+# Armed by `git config core.hooksPath .githooks`, which package.json's `prepare` script runs on
+# every `pnpm install`. core.hooksPath lives in the shared config, so every worktree inherits it.
+#
+# Bypass with `git commit --no-verify` when you genuinely need to (a WIP commit mid-rebase).
+#
+# KNOWN LIMITATION — path-limited commits. `git commit -- <paths>` builds a temporary index, so
+# the `git add` this hook performs writes to the *real* index and does not reach the commit being
+# built. The check still runs and still blocks, but the auto-fix will not be included: you get a
+# failure telling you to run `pnpm format`, rather than a silent fix. That is the safe direction,
+# and path-limited commits are worth using anyway — with several sessions sharing this checkout,
+# `git commit` with no paths commits the whole index including another session's staged work,
+# which has already happened four times here.
+
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 0
+cd "$ROOT" || exit 0
+
+# Fail open: a fresh worktree has no node_modules, and blocking its first commit would be worse
+# than the formatting it cannot check.
+if [ ! -x node_modules/.bin/prettier ]; then
+  echo "pre-commit: node_modules/.bin/prettier not found — skipping (run pnpm install to arm)." >&2
+  exit 0
+fi
+
+# Staged, still-present files. -z/mapfile so paths with spaces survive.
+mapfile -d '' STAGED < <(git diff --cached --name-only --diff-filter=ACMR -z)
+[ "${#STAGED[@]}" -eq 0 ] && exit 0
+
+# Files with unstaged changes too — never auto-fix these, see header.
+mapfile -d '' DIRTY < <(git diff --name-only -z)
+is_partial() {
+  local f="$1" d
+  for d in ${DIRTY+"${DIRTY[@]}"}; do [ "$d" = "$f" ] && return 0; done
+  return 1
+}
+
+FIXABLE=() CHECKONLY=()
+for f in "${STAGED[@]}"; do
+  [ -f "$f" ] || continue
+  # Ask prettier itself what it supports rather than maintaining a guess at an extension list.
+  node_modules/.bin/prettier --ignore-unknown --check "$f" >/dev/null 2>&1
+  case $? in
+    2) continue ;;  # prettier errored on it (unparseable / ignored) — leave it to eslint or CI
+  esac
+  if is_partial "$f"; then CHECKONLY+=("$f"); else FIXABLE+=("$f"); fi
+done
+
+status=0
+
+if [ "${#FIXABLE[@]}" -gt 0 ]; then
+  if ! node_modules/.bin/prettier --ignore-unknown --write --log-level warn "${FIXABLE[@]}"; then
+    echo "pre-commit: prettier failed to format a staged file." >&2
+    status=1
+  else
+    git add -- "${FIXABLE[@]}"
+  fi
+fi
+
+if [ "${#CHECKONLY[@]}" -gt 0 ]; then
+  if ! node_modules/.bin/prettier --ignore-unknown --check "${CHECKONLY[@]}" >/dev/null 2>&1; then
+    echo "pre-commit: these files are unformatted AND partially staged, so they were not" >&2
+    echo "auto-fixed — fixing them would have swept your unstaged changes into the commit:" >&2
+    printf '  %s\n' "${CHECKONLY[@]}" >&2
+    echo "Run: pnpm format   (then stage what you meant to stage)" >&2
+    status=1
+  fi
+fi
+
+# ESLint, staged source files only. --fix on the fully-staged ones; anything left is a real error.
+LINTABLE=()
+for f in ${FIXABLE+"${FIXABLE[@]}"} ${CHECKONLY+"${CHECKONLY[@]}"}; do
+  case "$f" in *.ts | *.tsx | *.js | *.jsx | *.mjs | *.cjs) LINTABLE+=("$f") ;; esac
+done
+
+if [ "${#LINTABLE[@]}" -gt 0 ] && [ -x node_modules/.bin/eslint ]; then
+  if ! node_modules/.bin/eslint --no-warn-ignored "${LINTABLE[@]}"; then
+    echo "pre-commit: eslint reported errors in staged files (see above)." >&2
+    echo "Run: pnpm lint" >&2
+    status=1
+  fi
+fi
+
+[ "$status" -ne 0 ] && echo "pre-commit: blocked. Bypass with 'git commit --no-verify' if you must." >&2
+exit "$status"
