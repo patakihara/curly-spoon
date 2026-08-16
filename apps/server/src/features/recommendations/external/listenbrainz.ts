@@ -79,6 +79,13 @@ export interface ListenBrainzProviderDeps {
   logger?: ListenBrainzLogger;
 }
 
+/** How many similar artists to ask for per seed, and how many recordings per artist.
+ * Both are mandatory query parameters (see `fetchSimilarArtists`). Kept modest because
+ * ListenBrainz rate-limits this endpoint server-side and because `recommend()` fans out
+ * across several seeds; the caller's `limit` truncates the merged result anyway. */
+const MAX_SIMILAR_ARTISTS = 10;
+const MAX_RECORDINGS_PER_ARTIST = 5;
+
 /** One `fetch` + parse for one seed artist MBID. Never throws — every failure class (network,
  * non-2xx, unparseable JSON, schema mismatch) is caught here, logged, and folded into `[]`, so
  * `recommend()`'s per-seed loop never needs its own try/catch. */
@@ -86,7 +93,24 @@ async function fetchSimilarArtists(
   deps: Required<Pick<ListenBrainzProviderDeps, 'fetch' | 'baseUrl' | 'logger'>>,
   seedArtistMbid: string,
 ): Promise<Record<string, z.infer<typeof lbRadioArtistEntrySchema>[]>> {
-  const url = `${deps.baseUrl}/1/lb-radio/artist/${encodeURIComponent(seedArtistMbid)}?mode=easy`;
+  // Every one of these five is mandatory. ListenBrainz's route validates each with its own
+  // `raise APIBadRequest(...)` and does **not** default any of them, so omitting even one
+  // returns HTTP 400 — which this function correctly folds into `{}`, meaning the provider
+  // would degrade to "no recommendations, forever" while looking perfectly wired. The first
+  // draft of this file sent `mode=easy` alone and did exactly that; it was caught only by
+  // calling the live endpoint, because every test here builds its own `Response` by hand and
+  // so cannot see a wrong request. `assertsQueryString` in the tests now pins all five.
+  const query = new URLSearchParams({
+    mode: 'easy',
+    max_similar_artists: String(MAX_SIMILAR_ARTISTS),
+    max_recordings_per_artist: String(MAX_RECORDINGS_PER_ARTIST),
+    // The full popularity range. ListenBrainz expresses these as percentiles and requires both;
+    // narrowing them is a taste decision nobody here can evaluate without her real listening
+    // history, so this wave takes everything and leaves the filtering to our own scoring core.
+    pop_begin: '0',
+    pop_end: '100',
+  });
+  const url = `${deps.baseUrl}/1/lb-radio/artist/${encodeURIComponent(seedArtistMbid)}?${query.toString()}`;
   let response: Response;
   try {
     response = await deps.fetch(url);

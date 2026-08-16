@@ -67,7 +67,13 @@ describe('createListenBrainzProvider', () => {
     ]);
   });
 
-  it('requests the documented lb-radio endpoint with mode=easy, URL-encoding the MBID', async () => {
+  it('sends every query parameter ListenBrainz requires, URL-encoding the MBID', async () => {
+    // This test exists because the first draft of the provider sent `mode=easy` alone, and the
+    // live endpoint answers that with `400 Argument max_similar_artists must be specified.`
+    // The provider folds a non-OK response into no candidates — correctly — so the bug was
+    // invisible: fully wired, fully green, and permanently returning nothing against the real
+    // API. Nothing here can call ListenBrainz, so the request itself has to be the assertion.
+    // Verified against the live endpoint 2026-08-16: all five are mandatory and none defaults.
     const fetch = fakeFetch(async () => jsonResponse({}));
     const provider = createListenBrainzProvider({
       fetch,
@@ -76,9 +82,20 @@ describe('createListenBrainzProvider', () => {
 
     await provider.recommend([SEED]);
 
-    expect(fetch).toHaveBeenCalledWith(
-      `https://api.listenbrainz.test/1/lb-radio/artist/${encodeURIComponent(RADIOHEAD_MBID)}?mode=easy`,
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const requested = new URL((fetch.mock.calls[0] as [string])[0]);
+    expect(requested.origin + requested.pathname).toBe(
+      `https://api.listenbrainz.test/1/lb-radio/artist/${encodeURIComponent(RADIOHEAD_MBID)}`,
     );
+    // Asserted as an exact set, not a subset: a missing parameter is the failure this pins,
+    // and `toMatchObject`-style partial matching would pass with any of them dropped.
+    expect(Object.fromEntries(requested.searchParams)).toEqual({
+      mode: 'easy',
+      max_similar_artists: '10',
+      max_recordings_per_artist: '5',
+      pop_begin: '0',
+      pop_end: '100',
+    });
   });
 
   it('skips seeds with no musicBrainzArtistId and issues no request for them', async () => {
