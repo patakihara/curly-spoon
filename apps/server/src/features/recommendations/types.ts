@@ -52,6 +52,22 @@ export interface RecommendationCandidate {
     authors: { name: string }[];
     series: { name: string }[];
     narrator: string | null;
+    /**
+     * Wave 15c: the grouping key for the "at most one item per parent in a
+     * shelf" rule — a podcast episode's show id, a track's album id. Optional
+     * because no adapter in this feature currently produces episode- or
+     * track-granularity candidates (`adapt.ts` folds a whole `Podcast` show
+     * into one candidate; `adaptMusic.ts` folds a whole `Album` into one),
+     * so today it is `undefined` for every real candidate this feature sees.
+     * It exists now so a future wave adding episode/track candidates has
+     * somewhere to put the parent id without `shelves.ts` needing to change.
+     * `shelves.ts`'s `parentKeyOf` falls back to the book `series` facet when
+     * this is absent (the one parent relationship expressible with today's
+     * fields), and to the candidate's own id when neither is present —
+     * never to a shared empty-string key, which would wrongly collide two
+     * unrelated parentless items.
+     */
+    parentId?: string | null;
   };
 }
 
@@ -104,4 +120,15 @@ export interface RecommendationShelf {
   /** Human-readable "why", e.g. "Because you finished Ashes of Aeon". Never null. */
   reason: string;
   itemIds: string[];
+  /**
+   * Wave 15c: present only when this shelf's `itemIds` span more than one
+   * `media.kind` — maps each such id to a short noun label ("Audiobook",
+   * "Podcast", "Album") a client can render as a card subtitle, the pattern
+   * her Spotify reference uses for its one mixed shelf ("Playlist • …",
+   * "Single • …"). Absent for a single-kind shelf, so every existing
+   * single-kind consumer of this shape is unaffected. Wiring this into the
+   * route response and into either client's renderer is out of this wave's
+   * scope — this is the mechanism, not the plumbing.
+   */
+  itemLabels?: Record<string, string>;
 }
