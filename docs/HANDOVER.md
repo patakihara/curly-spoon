@@ -209,7 +209,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · ended · ## Findings — Android release / F-Droid pipeline audit ### BLOCKING **1. 'metadata/net.auralis.app.yml' — stale filename, doesn't match 'applicationI…
 - `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-af8c398b2886e60db' at '…
 - `2026-08-16T10:25:18Z` · `a52a5c1114882c847` · general-purpose · ended · Committed cleanly — exactly one file changed. Not pushed, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a52a5c1114882c847' at '…
 - `2026-08-16T10:27:36Z` · `a7f6e7da38fddff8f` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a7f6e7da38fddff8f' at '25f5956', based on '927081d'. Not pushed, no 'Agent' calls made, working tree cle…
@@ -224,6 +223,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
 - `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
 - `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
+- `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -683,8 +683,13 @@ wave happens, it is the next sample — read its log before reading its badge.
 
 **Claimed: 15a — the external-candidate seam** (`apps/server/src/features/recommendations/`),
 Sonnet agent dispatched 2026-08-16 ~22:55 UTC. Disjoint from phase 16, which is entirely
-`packages/ui` + `apps/web`. **16b-2 is next on the frontend side and is not yet claimed;**
-`ROADMAP.md` §16 has its architecture already decided, from measurement — read it before speccing.
+`packages/ui` + `apps/web`. **Claimed: 16b-2 — the token layer** (`packages/ui/src/theme/`, `styles/`, `gallery/`, `e2e/ui/`),
+dispatched 2026-08-16 ~23:15 UTC. Its architecture is already decided from measurement — see
+`ROADMAP.md` §16's `16b-2` entry, which is binding rather than advisory.
+
+**Baseline at dispatch:** full `--project=app --workers=1` run on the merged 16b-1 + 16b-3 tree is
+**189 passed, 0 failed, 1 skipped** (5.8 min). The skip is `contrast.spec.ts:110`, a conditional
+`test.skip` on a fixture that has no author line — pre-existing, not a regression.
 
 **16b-1 and 16b-3 are both landed and reviewed** — `d1dae5a` (Inter + Roboto
 Flex self-hosted, 276 KB, `--font-body` wired, plus `c1f51eb` shipping the OFL text the review
