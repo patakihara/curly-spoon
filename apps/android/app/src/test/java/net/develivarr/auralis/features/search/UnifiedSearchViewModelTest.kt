@@ -55,15 +55,19 @@ class UnifiedSearchViewModelTest {
 
     @Before
     fun setUp() {
-        // ioDispatcher is deliberately left at its default (real Dispatchers.IO), unlike most
-        // ViewModel test files in this package — this class's own delay-based staleness tests
-        // ("a stale search's slow library response...", "library results settle while the
-        // requestable fan-out is still waiting...") need the library and requestable fan-outs to
-        // run on genuinely concurrent background threads; forcing ioDispatcher onto the same
-        // Unconfined dispatcher as Main would make every call run synchronously to completion
-        // (see e.g. PlaylistDetailViewModelTest's identical doc comment on that effect) and
-        // collapse exactly the interleaving those two tests exist to pin. tearDown() below is
-        // what keeps that choice from leaking a request past this test into the next one.
+        // ioDispatcher is deliberately left at its default (real Dispatchers.IO) for [apiClient]
+        // — [viewModel] still builds on it — because a handful of tests genuinely need the
+        // library/requestable/request fan-outs to run on genuinely concurrent background
+        // threads and would have their own timing collapsed by an Unconfined dispatcher (see
+        // e.g. PlaylistDetailViewModelTest's identical doc comment on that effect). But this is
+        // no longer most of the file: as of the CI failure on "a library fetch failure still
+        // returns music results, degrading only the library side", every test that does *not*
+        // pin real interleaving now uses [deterministicViewModel] instead of [viewModel] — see
+        // that function's own doc comment for why sharing the real-IO client this widely was
+        // itself the bug, not just a risk for "two tests below". Only the four tests that key a
+        // MockWebServer response on `setBodyDelay` and assert on the resulting ordering still
+        // call [viewModel]. tearDown() below is what keeps *that* real-IO choice, for those four,
+        // from leaking a request past its own test into the next one.
         testDispatcher = UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         mockWebServer = MockWebServer()
@@ -117,18 +121,34 @@ class UnifiedSearchViewModelTest {
      * Same as [viewModel], but backs the [UnifiedSearchViewModel] with a fresh [ApiClient] whose
      * `ioDispatcher` is [testDispatcher] instead of the real [Dispatchers.IO] this class's
      * [apiClient] deliberately uses (see [setUp]'s doc comment on why the class-wide default is
-     * real). Two tests below don't need — and never existed to pin — real background-thread
-     * interleaving, only a deterministic final state; sharing the real-IO [apiClient] with them
-     * left a real request able to resolve on a genuine background thread *after* that test's own
-     * `runTest` body had already returned, which `runTest` reports as a leftover job
-     * (`UncompletedCoroutinesError`, occasionally alongside a second exception surfaced by
-     * whatever that leftover coroutine's continuation raced with — CI caught exactly this on both
-     * tests once this file gained two sibling test classes elsewhere in the module and total
-     * suite wall time grew enough to widen the window). `ApiClient`'s own doc comment on
-     * `ioDispatcher` names this exact failure class. Building a request-scoped client here —
-     * rather than changing the class-wide [apiClient] — leaves every other test in this file,
-     * including the two that genuinely do pin real interleaving ("a stale search's slow library
-     * response...", "a slow release request resolving after a new search settles..."), untouched.
+     * real, and for which tests). Most tests in this file don't need — and never existed to pin —
+     * real background-thread interleaving, only a deterministic final state; sharing the real-IO
+     * [apiClient] with them left a real request (in `viewModelScope`, which runs on `Dispatchers
+     * .Main` — i.e. on [testDispatcher] once [setUp] overrides Main with it, so its coroutines
+     * share `runTest`'s own scheduler) able to still be suspended on the real IO thread pool —
+     * outside that scheduler's view — at the moment a test's own `runTest` body returned. That is
+     * an active, not-yet-complete job on the scheduler `runTest` inspects when it finishes, which
+     * is exactly what `UncompletedCoroutinesError` reports (occasionally alongside a second
+     * exception surfaced by whatever that leftover coroutine's continuation raced with next).
+     *
+     * Originally only two call sites used this (13d, `d6d8e21`) because those were the two CI
+     * caught at the time; the assumption that every *other* test's implicit reliance on
+     * `tearDown()`'s drain was safe was never verified for the rest of the file. It was not
+     * safe: "a library fetch failure still returns music results, degrading only the library
+     * side" hit the identical failure shape via the exact same mechanism — it awaits only
+     * `resultsState`, never `requestableBooksState`/`requestableMusicState`, so its own
+     * `fetchRequestableBooks`/`fetchRequestableMusic` (fired via `providersDeferred` regardless
+     * of what the test asserts on) could still be mid-flight on real IO when its `runTest`
+     * returned. `tearDown()`'s drain runs *after* the test method's own `runTest` has already
+     * thrown, so it cannot rescue a test that fails this way — it only prevents the *next* test
+     * from inheriting the leak. Every test in this file that does not key a MockWebServer
+     * response on `setBodyDelay()` to pin real ordering now uses this function instead of
+     * [viewModel], on the same reasoning. Only the four that do — "a stale search's slow library
+     * response...", "library results settle while the requestable fan-out is still waiting...",
+     * "a slow release request resolving after a new search settles...", and "two concurrent book
+     * libraries of the same kind never swap results" — still call [viewModel], because collapsing
+     * them onto [testDispatcher] would make every call resolve synchronously and destroy the very
+     * interleaving each one exists to assert on.
      */
     private fun deterministicViewModel(): UnifiedSearchViewModel {
         val keyValueStore = FakeKeyValueStore()
@@ -228,7 +248,7 @@ class UnifiedSearchViewModelTest {
                         else -> MockResponse().setResponseCode(404)
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("d")
             viewModel.onQueryChange("du")
@@ -254,7 +274,7 @@ class UnifiedSearchViewModelTest {
     @Test
     fun `clearing the field settles back to Idle without waiting on a request`() =
         runTest {
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             // No dispatcher/response is set up at all — clearing the field below must win
@@ -304,7 +324,7 @@ class UnifiedSearchViewModelTest {
                         else -> MockResponse().setResponseCode(404)
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -339,7 +359,7 @@ class UnifiedSearchViewModelTest {
                         else -> MockResponse().setResponseCode(404)
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("zzz")
             advanceDebounce()
@@ -370,7 +390,7 @@ class UnifiedSearchViewModelTest {
                         else -> MockResponse().setResponseCode(404)
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -405,7 +425,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -564,7 +584,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -652,7 +672,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -685,7 +705,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
@@ -851,7 +871,7 @@ class UnifiedSearchViewModelTest {
                         }
                     }
                 }
-            val viewModel = viewModel()
+            val viewModel = deterministicViewModel()
 
             viewModel.onQueryChange("dune")
             advanceDebounce()
