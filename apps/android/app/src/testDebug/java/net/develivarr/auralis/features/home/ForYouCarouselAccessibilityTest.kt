@@ -4,7 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.ImageLoader
@@ -81,11 +80,14 @@ class ForYouCarouselAccessibilityTest {
             )
             .assertExists()
 
-        // The title text is not separately reachable as its own node once merged — searching the
-        // merged tree (the default) for the bare title must not find a second, loose node. If the
-        // semantics modifier were removed, this query would instead succeed on the raw Text node,
-        // which is the exact regression this test exists to catch.
-        composeRule.onNodeWithText("The Fifth Season").assertDoesNotExist()
+        // Deliberately NOT asserted here: that the bare title is unreachable via
+        // `onNodeWithText`. `mergeDescendants` collapses the child *nodes*, but the merge policy
+        // for `Text` concatenates rather than replaces, so the merged node still carries every
+        // child's `Text` property — only `clearAndSetSemantics {}` would drop them, and this card
+        // must not use that, because it would discard `clickable`'s onClick action too. So
+        // `onNodeWithText("The Fifth Season")` still resolves, to the merged node itself. The
+        // `assertExists` above is what pins the grouping: delete the `semantics` modifier and no
+        // node carries that contentDescription, so this test fails.
     }
 
     @Test
