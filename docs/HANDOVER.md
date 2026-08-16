@@ -21,6 +21,37 @@ primitives** under `docs/design/sonora/primitives/`. **Read that directory's REA
 any value out of a primitive** — Sonora's components reference `--m3-*` names that mean something
 different in this app, and it carries the substitution table.
 
+### Session hand-off, 2026-08-17 — everything below is pushed and CI-verified
+
+Nothing is claimed and nothing is in flight. `main` is at `d5fbbb1`. **The next wave is `16c-2-W`**
+— finish web's migration off `--m3-*`, including completing the five primitives 16c-1-W only partly
+moved. It is ahead of `16c-1-A` deliberately; see the "16c-2" bullet in `ROADMAP.md` §16 for why.
+
+**Verified this session, each against CI rather than a local run:** the self-hosted fonts (six CI
+jobs including the Lighthouse budget), the token layer and 15a (`8c9449e`), the Android Compose
+theme (`aba5250`, with bare `compileDebugKotlin`/`testDebugUnitTest` — genuine uncached executions),
+and web's five primitives (`e04a9a2`, full Playwright suite).
+
+**Open items this session created or corrected, in priority order:**
+
+1. **The scroll bug is unfixed and is 16d's headline** — user-reported, verified in the tree.
+2. **The two clients do not look like the same product right now.** Android is re-themed app-wide;
+   web is barely. Deliberate and ruled acceptable, but must be short-lived — see `16c-2`.
+3. **`--accent-ink` on `--surface-card` fails WCAG AA at the default accent.** Web's text surfaces
+   moved to `--surface-fg`. This is a design question, not a test to soften: `--accent-ink` exists
+   to be readable on a surface. **Worth putting to Sofia** alongside the artwork-colour question.
+4. **Six of Sonora's eleven imported primitives are still not vendored** — `Input`, `SectionHeader`,
+   `QuickTile`, `SidebarItem`, `BottomNav`, `TrackRow`, `MiniPlayer`. Vendor each with its wave; the
+   five that are there corrected real guesses, so this is not optional bookkeeping.
+5. **The gallery's Sonora token list is hand-maintained**, so a token added later without a gallery
+   entry is silently uncovered. Deriving it from the CSS is a small worthwhile wave.
+6. **`--surface-overlay-header` has no consumer on either platform** — a writer with no reader.
+7. **The Robolectric theme test does not cover the 26 chroma-role values** — verified once by review,
+   by nothing mechanical.
+
+**Phase 15 is untouched and disjoint:** 15a landed, its readers are 15c and 15e, and 15b-2 stays
+blocked for the reasons §15 gives.
+
 ### The three things a session picking this up now must know
 
 1. **Web and Android are built together from here.** A standing instruction from Sofia on
