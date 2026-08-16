@@ -27,6 +27,11 @@
  * the same download and a quarter of the CSS. See this wave's report for the measured
  * byte counts; SONORA.md's "~48 KB each, ~236 KB total" estimate for Inter does not
  * hold against what Google actually serves today.
+ *
+ * Licensing: Inter and Roboto Flex are both SIL Open Font License 1.1. The OFL text ships
+ * beside the binaries in `fonts/OFL-Inter.txt` and `fonts/OFL-RobotoFlex.txt`, because OFL
+ * terms travel with redistribution and this repository is public. `fonts/README.md` has the
+ * provenance, the byte counts, and why the weight range and optical-size axis matter.
  */
 
 @font-face {
