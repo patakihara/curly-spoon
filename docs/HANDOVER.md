@@ -10,13 +10,14 @@ frontend file, and before believing anything older in this document about design
 
 **If this session died on the plan-usage ceiling, she has asked you to resurrect it.** Her
 instruction, verbatim: _"Write a note in the handover asking the next auralis devs to resurect
-you if you've died due to usage."_ So: **if you are a fresh session picking this up and §16's
-wave 16a has not landed, that is the unfinished work — start there.** The session that wrote
-§16 was told explicitly not to implement anything (_"Don't do any work yourself, just make sure
-to document and plan for the next start-up"_), so the absence of code is by instruction, not by
-failure. What may be missing is 16a, which is itself a documentation wave.
+you if you've died due to usage."_
 
-### The operational trap that will cost you a wave if you miss it
+**Wave 16a has landed** (2026-08-16) and the trap below no longer applies to you: the design is
+vendored in `docs/design/sonora/` and distilled into **`docs/design/SONORA.md`**. Read that file;
+it is the design authority for every wave of this phase, and it names its own gaps rather than
+implying full coverage. **The next wave is 16b, the token layer.**
+
+### The operational trap that cost a wave once — now closed, kept as history
 
 **`DesignSync` — the MCP tool that reads the design project — is available to the orchestrating
 session and NOT to subagents.** Established on 2026-08-16 by dispatching two Sonnet readers at
@@ -203,9 +204,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T06:37:26Z` · `a1e9c7904b31b3620` · general-purpose · ended · Committed. Final report: ## Report — Wave 14d **Branch/commit:** 'worktree-agent-a1e9c7904b31b3620' at 'f56132a', based on '9e87fdc'. ### Audit table…
-- `2026-08-16T06:38:33Z` · `a7bfb028ca2b25a26` · general-purpose · ended · Working tree clean. Not pushed. ## Report **Branch/commit:** 'worktree-agent-a7bfb028ca2b25a26' at '6004577', based on '9e87fdc'. Working tree clean,…
-- `2026-08-16T06:40:47Z` · `ada9aa18e890f1985` · general-purpose · running · —
 - `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
 - `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · ended · Only the two intended files under 'apps/android/' changed. Not pushed, no 'Agent' calls made, no dependency/build files touched. ## Report **Branch/c…
 - `2026-08-16T07:02:23Z` · `ad37ea8c4b5608f21` · general-purpose · ended · ## Verdict **Product code ('ForYouCarousel.kt'): merge as-is.** No defect found. **Test code ('ForYouCarouselAccessibilityTest.kt'): do not merge as-…
@@ -218,6 +216,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T10:47:59Z` · `a23423e07dd297c8e` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a23423e07dd297c8e' at 'f1fc527', based on '80384f4'. Not pushed, no 'Agent' calls made, working tree cle…
 - `2026-08-16T10:56:17Z` · `ad4ebb73c09dd7137` · general-purpose · ended · This confirms 'asin' and 'isbn' sit on the same schema object at the same nullability level, and 'feedUrl' is on the shared metadata schema too — sam…
 - `2026-08-16T11:02:28Z` · `a61f282c8a1f29cbf` · general-purpose · ended · ## Report **Branch/commit:** 'worktree-agent-a61f282c8a1f29cbf' at 'c0a3763', based on '7bc16ea'. Working tree clean, not pushed, no 'Agent' calls ma…
+- `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
+- `2026-08-16T18:25:51Z` · `a62f69f223749e664` · Explore · ended · # Recon report — wave 15b-2 (mapping table at request time) Note up front: 'docs/ROADMAP.md' §15 names waves '15a', '15a-0', '15b', '15c', '15c-1', '…
+- `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -675,10 +676,16 @@ sample without new Android work.** So: the fix is well-argued and has one real g
 which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
 wave happens, it is the next sample — read its log before reading its badge.
 
-**Claimed: 16a-2 — writing `docs/design/SONORA.md`.** Sonnet agent, dispatched 2026-08-16 ~18:25 UTC.
-Touches `docs/design/SONORA.md` only. **16a-1 has landed** (`d8b7b41`, `213e10c`): the design project
-is vendored into `docs/design/sonora/`, so **no future session or subagent needs `DesignSync` again** —
-read the repo. That was the whole point of the wave. **15b-1 landed** (`c15e5e3`) — the pure ownership matcher, with
+**Nothing is currently claimed. Wave 16a is done** — `d8b7b41` and `213e10c` vendor the design
+project into `docs/design/sonora/`, `f0ad9c4` writes `docs/design/SONORA.md`. **No session and no
+subagent needs `DesignSync` again; read the repo.** That was the whole point of the wave.
+
+**The next wave is 16b (the token layer), not 15b-2.** Phase 15's sequencing was corrected the same
+day — see `ROADMAP.md` §15's `15b-2` entry for why, in short: nothing upstream can supply a provider
+identifier to request creation until 15a exists, and nothing in the codebase ever learns the library
+item id a completed request becomes, so the mapping table has neither a writer nor a reader today.
+**15a is phase 15's next wave.** 16b and 15a are disjoint (`packages/ui` + `apps/web` versus
+`apps/server`) and can run in parallel. **15b-1 landed** (`c15e5e3`) — the pure ownership matcher, with
 `owned` / `possible` / `new` kept genuinely distinct and identifier matches beating title matches.
 
 **A wave that changes a shared domain type must typecheck its _consumers_.** 15a-0 added six fields

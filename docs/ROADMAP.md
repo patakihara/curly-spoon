@@ -3234,6 +3234,51 @@ What they establish, which settles several questions without asking her:
     trigger it today; only the book/series fallback exercises dedupe against real data. A future
     wave adding episode/track candidates only needs to set `parentId`; `shelves.ts` will not change.
 
+- **15b-2 — the mapping table. Scouted 2026-08-16, and the scope it was written with does not
+  survive contact with the code. Do not dispatch it as specced.** `HANDOVER.md` called this "the
+  wave most likely to be skipped"; the real finding is that as framed it is **half a feature that
+  cannot be finished**, and building it now would be this project's most-repeated failure — a writer
+  whose reader never comes — for the fifth time.
+
+  Three facts, each read out of the tree rather than reasoned about:
+
+  1. **Request creation cannot see a provider identifier, because nothing upstream produces one.**
+     `createRequestBodySchema` carries `title`, optional `author`, and an optional indexer `Release`;
+     `createMusicRequestBodySchema` wraps a slskd `MusicCandidate` whose `guid`/`providerId` are the
+     _download peer's_ identity, not a catalogue id. Neither path ever touches a `Book`/`Podcast`/
+     `Album`/`Track` domain object, so **none of 15a-0's six identifiers is reachable from it.** The
+     thing that would supply one is 15a's external-candidate seam, and 15a is **not built** —
+     `RecommendationCandidate` is still library-items-only and `ExternalCandidate` exists nowhere but
+     a research doc.
+  2. **The other half of the correspondence does not exist at any time.** A mapping is provider id →
+     library item id, and **nothing in this codebase ever learns the library item id.** The book
+     pipeline's `completed` means only "a rescan was triggered"; it never asks Audiobookshelf what
+     the import produced. The music pipeline's own comment says it more bluntly — nothing claims
+     `completed`, because Jellyfin's refresh is fire-and-forget with no API to observe it finishing.
+     So request-time persistence alone yields a table whose `library_item_id` is **permanently null**,
+     and the dedupe it exists to enable never actually happens. Closing that needs a **post-import
+     resolution step that does not exist anywhere today** — a second write path, not a column.
+  3. **A column on `requests` is not the answer, and that part of the spec is right.** `requests` is
+     one shared table across both media types with no library-item column, and a title can carry
+     several identifiers at once (`asin` _and_ `isbn`; `musicBrainzAlbumId` _and_
+     `musicBrainzReleaseGroupId`) — `ownership.ts`'s `OwnershipIdentifiers` already models that as a
+     bag of eight namespaced fields. A single column forces picking one and losing the rest.
+
+  **So the sequencing is wrong, and the correction is: 15a comes next, not 15b-2.** 15b-2 is
+  downstream of 15a for its input and downstream of a new post-import step for its output; dispatched
+  today it can only produce schema with no writer and no reader. When it is dispatched, its spec must
+  state which of two shapes the table takes — one row per namespaced identifier (mirroring
+  `IDENTIFIER_FIELDS`) or one opaque `providerName`/`providerId` pair (mirroring the research doc's
+  `ExternalCandidate`) — because nothing on `main` picks between them and they have different lookup
+  shapes.
+
+  Two smaller things any wave here inherits: **book and music request paths are fully duplicated**
+  (separate routes, schemas and services, bottoming out in one `requests` table via `media_type`), so
+  there is no single choke point to add a field to; and **podcasts have no request pipeline at all**,
+  so a requestable podcast recommendation is a third path that does not exist. Migrations are a single
+  ordered array in `apps/server/src/db/migrations.ts`, so a new migration's `id` must be claimed in
+  `HANDOVER.md` before it is written — two concurrent waves would otherwise pick the same number.
+
 - **15d — requestability.** A recommended title not in the library is inherently requestable — that
   is the seam with the phase 6/9 request pipeline, and it is what makes discovery useful rather than
   taunting. Also settles **12c-2** the same way for Search and artist/author pages, which was the
@@ -3523,6 +3568,60 @@ what she sees.
 §15's decision list says _"Frontend restyling waits. A design system is coming from her that may
 overhaul the frontend."_ It came. That line stays in the record as history, but it no longer binds —
 this phase is that overhaul.
+
+### 16a is done, and the design is in the repo — read `docs/design/SONORA.md`
+
+**Landed 2026-08-16**: `d8b7b41` and `213e10c` vendor the design project into `docs/design/sonora/`,
+and `f0ad9c4` writes `docs/design/SONORA.md` from it. **No later wave and no subagent needs
+`DesignSync` again.** That was the whole point, and it is the first thing to say here because the
+paragraphs below still describe the tool as the only way in.
+
+What is in the repo: the six `tokens/*.css`, `styles.css`, `readme.md`, `_adherence.oxlintrc.json`,
+`github.md`, the nine Auralis component cards, and `Auralis-Redesign.dc.html` — 886 lines, the whole
+redesigned app, byte-for-byte. What is **not**: the ten `screenshots/*.png` (the MCP returns file
+content into a session's context, where a PNG is useless), `_ds_bundle.js`, and the Sonora project's
+own sixteen primitives as source. `SONORA.md` names each gap rather than implying full coverage.
+
+### Reading the deliverable refuted three more things this section asserts
+
+The same failure mode as the two below, and from the same cause: `github.md` and Sonora's `readme.md`
+are prose _about_ the design, and this section trusted them where the deliverable disagrees.
+
+1. **The adaptive rig has two thresholds, not four.** `Auralis-Redesign.dc.html` implements exactly
+   `railWide = w >= 1024` and `showPanel = w >= 1240`, and nothing else. `github.md`'s
+   "1440 / 1280 / 1024 / 768" are the design tool's own frame-width preset buttons, not breakpoints
+   in the deliverable. Since `apps/web/src/hooks/breakpoint.ts` **already** breaks at 1240, the only
+   genuinely new boundary is **1024**. The claim below that "only the 1240 boundary survives" out of
+   four had it backwards: 1240 is the one that was already right. 16d's breakpoint work is roughly a
+   quarter of what this section budgeted.
+
+2. **The redesign uses five tokens Sonora does not ship, and every one is load-bearing.**
+   `--accent-ink` (the readable-on-surface accent — every active rail destination, every clickable
+   subtitle) and `--tone-library` / `--tone-request` / `--tone-progress` / `--tone-error` (the status
+   pills on `ResultRow`). Each has a distinct light and dark value, all defined inside
+   `Auralis-Redesign.dc.html`. **Adopting Sonora's stylesheet alone leaves every one of them an
+   invalid `var()`** — the rail's active state and every status pill lose their colour. 16b owns
+   them; `SONORA.md` has the values.
+
+3. **Material Symbols is imported from `styles.css`, not `tokens/fonts.css`.** Sonora's own
+   `readme.md` says fonts.css and is wrong about itself; this section repeated it. It matters for
+   collision 3 because the import carries the variable axes `opsz,wght,FILL@20..48,100..700,0..1`,
+   and **the FILL axis is the entire mechanism behind "selected nav destinations use the Material
+   Symbols FILL axis"** — a self-hosted subset that drops it silently kills that behaviour. There are
+   **two** external Google Fonts requests in total: this one, and Inter + Roboto Flex from
+   `tokens/fonts.css`.
+
+Two smaller ones worth not rediscovering: `Canvas.dc.html` is **empty upstream** (a scratch card, not
+a component), and `ResultRow`'s own `// props:` comment says `tone` defaults to `'progress'` while
+its code does `p.tone || 'library'` — a comment and its code disagreeing inside one file, which is
+the shape of defect this repo has paid for twice already.
+
+**The `MediaCard` and `ResultRow` cards are phase 15 and decision 12c-2 already drawn.** `MediaCard`
+takes `absent: boolean`, rendering a dashed-border tile with a **"Not in library"** pill — that is
+what an external recommendation looks like. `ResultRow` takes `tone: 'library' | 'request' |
+'progress' | 'error'` with a status pill — that is decision 12c-2's "an owned title still shows in
+search but is not requestable", given a visual form. Neither was invented by this phase, and 15c/15d
+should build toward these rather than designing their own.
 
 ### Verified against the code — two claims in this spec were wrong
 
