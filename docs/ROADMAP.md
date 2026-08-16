@@ -2993,14 +2993,43 @@ contentDescription you meant, and it will not tell you what TalkBack announces, 
 or whether anything is reachable by touch. It closes the gap between "a reviewer read it" and "a
 machine checked it," which is the gap that mattered, and it does not close the gap to a device.
 
-- **14b-2** — **not started, and deliberately not started in the session that opened this phase.**
-  The fix: group each For You card's title and reason line into one
-  accessibility node on `ForYouCarouselRow`, matching the contract web's browser pass already
-  established (`aria-describedby` from the card list to the reason paragraph). Shared by the book,
-  podcast and music shelves, so it is a cross-cutting change — which is exactly why it wanted a
-  test harness first. It should wait until 14b-1's harness has more than one CI run of history
-  behind it: a cross-cutting change to a surface nobody here can look at, verified by a harness
-  itself one run old, is two unproven things stacked.
+- **14b-2** (`1672b98`, `a2d2378`, merged as `e87a551`) — **done.** Each For You card is now one
+  merged accessibility node. `ForYouCard` gained a `reason: String?` parameter and a pure
+  `feedItemAnnouncement(item, reason)` building `title` + optional `, subtitle` + optional
+  ` — reason`, applied with `Modifier.semantics(mergeDescendants = true) { contentDescription = … }`.
+  Cover art keeps `contentDescription = null`, so it contributes nothing to the merge. Picked up
+  automatically by `ForYouScreen` and `MusicLibraryScreen`, i.e. the book/podcast feed and the
+  music shelf.
+
+  **The mechanism deliberately diverges from web's, and the KDoc says why.** Web splits name from
+  description across two DOM nodes (`aria-describedby` from the card list to the reason
+  paragraph). Compose's `mergeDescendants` merges a subtree into its own ancestor, and the reason
+  `Text` is a sibling of the whole `LazyRow` rather than a child of any card — so mirroring web's
+  split would mean repeating the reason sentence once per card while scrolling. One merged node is
+  the right Compose shape. Without that note a future reader "fixes" the divergence.
+
+  **The review caught a false assertion, and the tell was already in the tree.** The first draft
+  asserted that after merging, the bare title is unreachable via `onNodeWithText`. It is not:
+  `mergeDescendants` collapses the child *nodes*, but the merge policy for the `Text` property
+  concatenates rather than replaces, so the merged node still carries every child's text. Setting
+  `contentDescription` **adds to** the config; only `clearAndSetSemantics {}` clears it, and this
+  card must not use that — it would discard `clickable`'s onClick action, so the card would stop
+  reporting as clickable. The giveaway: 14b-1's harness test uses the identical
+  Column-of-two-`Text`s shape, is green on CI, and asserts *only* that the grouped
+  `contentDescription` resolves. **14b-2 added the assertion its own proven template declined to
+  make** — a good smell to watch for. Dropped in `a2d2378`; the surviving `assertExists` still
+  fails if the `semantics` modifier is deleted, which is the regression the test exists to catch.
+
+  **Verified as an uncached execution, not a green badge.** `e87a551`'s Android run shows bare
+  `> Task :app:testDebugUnitTest` and `> Task :app:compileDebugUnitTestKotlin` — no `FROM-CACHE` —
+  and passed. That matters here specifically: see the cache trap in `HANDOVER.md`, and note this
+  was also the first genuine Android suite execution since the `UnifiedSearchViewModelTest` race
+  fix, so it doubles as a real sample of that race, which passed.
+
+  **What this does not buy.** Robolectric renders on the JVM against a shadowed framework. It
+  confirms one merged node carries the description meant. It does not say what TalkBack announces
+  — in particular the merged node carries **both** `ContentDescription` and the concatenated
+  `Text`, and whether TalkBack prefers the former is convention, unverified without a device.
 
 **Home's CLS has regressed since the phase-10 baseline, and 14a-2 is not the cause.** The A/B
 above measured `home` desktop CLS at **0.067 with the change and 0.067 without it**, and mobile at
