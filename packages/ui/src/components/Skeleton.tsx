@@ -12,8 +12,9 @@
  * regardless. So `animate` is driven explicitly here from the same
  * `prefersReducedMotion`/`watchReducedMotion` this package's `ThemeProvider` already
  * uses for its own colour cross-fade — one reduced-motion source of truth, not two.
- * (The pre-Mantine hand-rolled `Skeleton.css` used to handle this itself; it is now
- * dead code, superseded by Mantine's `Skeleton` and orphaned rather than deleted.)
+ * (The pre-Mantine hand-rolled `Skeleton.css` used to handle this itself. It was
+ * superseded by Mantine's `Skeleton`, sat unimported for months, and has now been
+ * deleted along with the three other orphaned stylesheets from that migration.)
  *
  * Mantine's `circle` prop derives width from height and ignores `width` entirely,
  * so for `shape="circular"` we fold an incoming `width` into `height` when no

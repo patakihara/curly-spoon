@@ -65,6 +65,12 @@ export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
   const showsCheckGlyph = isFilter && Boolean(selected);
 
   return (
+    // `m3-chip-wrapper` styles nothing: the rule that gave it
+    // `display: inline-flex; align-items: center; gap: 4px` lived in the pre-Mantine
+    // `Chip.css`, which nothing ever imported and which is now deleted. It is kept as a
+    // caller-facing hook (`className` merges into it) and is currently harmless because
+    // the wrapper only ever holds one child — no caller uses `variant="input"` with
+    // `onRemove`. The first one that does will need that layout restored here.
     <span className={clsx('m3-chip-wrapper', className)} data-testid={dataTestId} id={id}>
       <MantineChip
         ref={ref}
