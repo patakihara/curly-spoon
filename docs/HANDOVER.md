@@ -525,10 +525,17 @@ A lightweight lock, because two sessions can share this checkout. Claim a wave h
 **before** dispatching it; delete the line when it lands. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
-**Claimed by session `5466206d`: 14b-2** (Android For You carousel accessibility grouping) —
-in flight 2026-08-16. **Session `198bb53e` holds 14c** (Home CLS attribution, touching `apps/web`,
-`e2e`, `scripts`, `docs/perf`). That split was agreed by `SendMessage` after both sessions had
-independently dispatched waves on the same two things; see the section above.
+**Nothing is currently claimed.** 14b-2 landed as `e87a551` (see `ROADMAP.md` §14) and its Android
+run was verified as an **uncached** execution, not just a green badge. **Phase 14 is done**: 14a-1,
+14a-2 (measured, then reverted — see below), 14b-1 and 14b-2 are all on `main`, and 14c is written
+up in `docs/perf/`.
+
+**Phase 14 was the last thing this machine could start alone, and that is now the honest state.**
+Every remaining roadmap item is in the blocked-on table near the top of this file, and each needs a
+**decision, a device, a credential, or a live change on another host** — not more engineering. A
+session picking this up should read that table and expect to find nothing it can start; that is the
+finding, not a gap in the notes. The nearest thing to startable is the launcher icon, and it is
+blocked on deciding what the icon *is*.
 
 **Done, and no longer claimed: the `UnifiedSearchViewModelTest` race.** `main` was red on Android
 at `9e87fdc` with `UncompletedCoroutinesError` on "a library fetch failure still returns music
