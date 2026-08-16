@@ -36,16 +36,16 @@ the honest state, not a gap in the notes.
 
 Verified 2026-08-15 against `ROADMAP.md`, not inherited from a previous session's summary.
 
-| Item                                                                                      | Blocked on                                                                                                                                                                             |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **12c-2** — requestable content on artist/author pages                                    | Queue `440b217`: should a title already in the library still be offered as requestable? The same question arises in Search — deciding it twice, differently, is the failure mode.      |
-| **Phase 11**'s remaining steps                                                            | Two keys the user must generate, plus enabling Pages and pushing a tag. Everything automatable is built — see "Android distribution" below. `docs/FDROID_REPO.md` has the eight steps. |
-| **Launcher icon**                                                                         | There is none; the app ships Android's default. Adding a file is mechanical, deciding what the icon _is_ is not.                                                                       |
-| **12b** "sorted by relevance"                                                             | Music results are alphabetical (`jellyfin-client` pins `sortBy: 'SortName'`). Testing a fix wants a real Jellyfin server; no session has a credential.                                 |
-| **12d (Android)** visual conformance                                                      | A device or emulator. None exists here, and that wave's whole requirement is visual.                                                                                                   |
-| **12a**'s cold-cache nav rail                                                             | A design decision: what the rail shows before it knows which libraries exist. Deferred twice already.                                                                                  |
-| **Auto-updating deployment**                                                              | A live change on mediaserver, needing that host's own rules and the user's go-ahead. See "Deployment" below.                                                                           |
-| Direct play vs transcode; lyrics search; `GET /requests` scoping; `LinearProgress` `wavy` | Product decisions, written up under "Open product decisions" below.                                                                                                                    |
+| Item                                                                                          | Blocked on                                                                                                                                                                             |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **12c-2** — requestable content on artist/author pages                                        | Queue `440b217`: should a title already in the library still be offered as requestable? The same question arises in Search — deciding it twice, differently, is the failure mode.      |
+| **Phase 11**'s remaining steps                                                                | Two keys the user must generate, plus enabling Pages and pushing a tag. Everything automatable is built — see "Android distribution" below. `docs/FDROID_REPO.md` has the eight steps. |
+| **Launcher icon**                                                                             | There is none; the app ships Android's default. Adding a file is mechanical, deciding what the icon _is_ is not.                                                                       |
+| **12b** "sorted by relevance"                                                                 | Music results are alphabetical (`jellyfin-client` pins `sortBy: 'SortName'`). Testing a fix wants a real Jellyfin server; no session has a credential.                                 |
+| **12d (Android)** visual conformance                                                          | A device or emulator. None exists here, and that wave's whole requirement is visual.                                                                                                   |
+| **12a**'s cold-cache nav rail                                                                 | A design decision: what the rail shows before it knows which libraries exist. Deferred twice already.                                                                                  |
+| **Auto-updating deployment**                                                                  | A live change on mediaserver, needing that host's own rules and the user's go-ahead. See "Deployment" below.                                                                           |
+| ~~Direct play vs transcode; lyrics search; `GET /requests` scoping; `LinearProgress` `wavy`~~ | **All answered 2026-08-16** — see `docs/USER_DECISIONS.md`. Every other row in this table is also affected; the table predates her answers and has not been re-derived against them.   |
 
 **Both items that were implementable on 2026-08-15 are done** (`50e74e0`, `3cda65c`), and
 each turned out to be a coverage problem rather than the live bug the roadmap prose implied.
@@ -88,9 +88,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-15T19:19:30Z` · `ab1df5b15f14315d4` · general-purpose · ended · I'll stop checking and wait for the notification.
-- `2026-08-15T19:43:25Z` · `a3e749172e175a6e5` · general-purpose · ended · I'll wait for the notification from the background Playwright run rather than poll.
-- `2026-08-15T19:44:06Z` · `a37ea47ff04d29baa` · general-purpose · ended · Committed. Not pushed, not merged, no 'Agent' calls made. ## Report **Branch/commit:** 'worktree-agent-a37ea47ff04d29baa' at '60b368f', based on '966…
 - `2026-08-15T19:54:17Z` · `a24c2902cadc0c877` · general-purpose · ended · ## Review: Wave 13f-2 ('60b368f') **Verdict: merge as-is.** No compile-blocking defect found, no test-logic defect found, and the writer reaches a re…
 - `2026-08-15T19:55:31Z` · `a0838ed6164b30f53` · general-purpose · ended · ## Review: wave 13f-1 web music recommendations ('e4bd22e', 'bc0695b') ### Blocking **1. 'e2e/app/music-recommended.spec.ts' is missing 'test.describ…
 - `2026-08-15T21:14:42Z` · `a7e86b0ad34a5d1a5` · general-purpose · ended · Clean commit, exactly one file changed. Working tree is clean, no long-running command backgrounded. ## Report **Branch/commit:** 'worktree-agent-a7e…
@@ -103,6 +100,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T06:50:02Z` · `a544631588982ff26` · general-purpose · ended · ## Verdict: **merge as-is** I read all sixteen test bodies (not just the ten touched), the 'deterministicViewModel()'/'viewModel()' helpers, 'setUp()…
 - `2026-08-16T06:57:41Z` · `ade65a5ea2d8d3ece` · general-purpose · ended · Only the two intended files under 'apps/android/' changed. Not pushed, no 'Agent' calls made, no dependency/build files touched. ## Report **Branch/c…
 - `2026-08-16T07:02:23Z` · `ad37ea8c4b5608f21` · general-purpose · ended · ## Verdict **Product code ('ForYouCarousel.kt'): merge as-is.** No defect found. **Test code ('ForYouCarouselAccessibilityTest.kt'): do not merge as-…
+- `2026-08-16T09:54:47Z` · `a23f4c8990b7c630c` · general-purpose · running · —
+- `2026-08-16T09:55:29Z` · `a4534b7f4ce5c67b8` · general-purpose · running · —
+- `2026-08-16T09:55:58Z` · `af8c398b2886e60db` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -944,48 +944,45 @@ against a real `LyricDto`**, because no session has a Jellyfin credential.
 
 ---
 
-## Open product decisions — the user's to make
+## Open product decisions — **answered 2026-08-16, see `docs/USER_DECISIONS.md`**
 
-**These are now the whole remaining roadmap, not a sidebar to it.** The older line here said "none
-of these blocks the two implementable items above"; there are no implementable items above any
-more, so every one of these is load-bearing.
+**All of them.** Sofia answered the entire list in one message and said she will not be messaging
+again in that session. `docs/USER_DECISIONS.md` is the record and **is the authority over anything
+older that disagrees with it** — including anything left in this file or in `ROADMAP.md`. Read it
+before picking up any item below. It is deliberately not `@`-imported: this file is loaded into
+every session and must stay short, that one is reference material for the item in hand.
 
-- **What Home shows before it knows what it has — the newest one, and the most product-visible.**
-  Raised by 14c, which attributed Home's layout shift and then deliberately declined to fix it.
-  The cause is not cover art (`CoverImage` already renders every card at a fixed width and height,
-  so the box is reserved before the bytes arrive). It is architectural: `HomePage` stitches **four
-  independent async sources** — book shelves, podcast shelves, Jellyfin favourite albums,
-  recommendation shelves — client-side, and whether each lands before or after first paint is an
-  unreserved race, so a shelf or a quick-picks tile appears from a zero-size rect instead of
-  replacing an equally-sized skeleton. Reproduces on both sides of `418b0d1`, so it predates that
-  revert and is independent of it.
+The three answers that change what gets built, in one line each:
 
-  **Every effective fix changes what Home looks like while loading**, which is why no session
-  should pick it unilaterally: either reserve space for a shelf whose existence is not yet known
-  (so Home shows placeholder rows that may never fill), or hold the page in its loading state
-  until all four sources settle (so Home shows nothing for longer, but arrives whole). That is a
-  taste question about the user's primary screen, and "the UI must be beautiful" is their own
-  sentence. `e2e/app/home-cls.spec.ts` now pins the measurement under a deliberately loose 0.7
-  smoke ceiling, so whichever way it goes, a structural regression fails rather than drifts.
+- **Recommendations must pull from _external_ sources.** "It is not useful to me if recommendations
+  only show things already in my library." Phase 13 built a ranker over items already owned — the
+  mechanism works and the spec was a misread. Discovery of unowned titles mixes into **For You
+  only**; library pages stay restricted to owned content and submitted requests. Provider choice is
+  ours, and she has explicitly waived the Audible/YouTube ToS concern that blocked Audnexus. Needs
+  its own roadmap phase.
+- **Home holds a loading state until its sources settle** — "Ofc Home should be in a loading state
+  before it loads?" That closes 14c. Also: a carousel must not show two episodes of one podcast,
+  and there must be **mixed-content** carousels rather than one shelf per medium. **Spotify is the
+  reference and is to be looked at, not guessed at** — her own screenshots are in
+  `docs/research/spec-addendum/`.
+- **An owned title is not requestable but still appears in search**, which settles 12c-2 the same
+  way for Search and for artist/author pages — deciding it twice differently was the stated failure
+  mode. New requirement alongside it: **global search needs suggestions**.
 
-- **Direct play vs transcode.** Declaring the client's real supported `supportedMimeTypes` would
-  flip most sessions from server-side transcode to direct play: less server CPU per listen, and
-  byte-range seeking on the original file instead of chunked HLS. It is not a parse fix — it
-  changes playback behaviour on a path that currently works, and the seek semantics differ.
-- **`GET /requests` is unscoped by caller.** Any signed-in user sees and can delete everyone's
-  requests. Matches Overseerr and is right for one person's server — but the server is shared
-  with family, and approval defaults to automatic, so a shared install has no privacy and no gate.
-- **Lyrics search** needs its own index and a privacy decision. Jellyfin cannot search lyric text
-  at all, so Auralis would need to build an index and decide whether to backfill from an external
-  provider (an opt-in). The synced lyrics _view_ is unaffected and has shipped.
-- **`LinearProgress`'s `wavy` mode no longer renders a wave.** Mantine has no such primitive, so
-  `wavy` only thickens the bar. A visible regression against "the UI must be beautiful."
-- **`shelfarr` and `deemix` are already running on the user's machine.** `shelfarr` overlaps the
-  phase-6 pipeline; `deemix` cuts against the phase-9 decision to use slskd. Neither was designed
-  around.
-- **Ebooks?** Audiobookshelf handles them; the roadmap covers audio only.
-- **Chromecast / DLNA?** Symfonium has it and the user cited Symfonium, but never asked directly.
-- **Android's own open questions**: whether it should have a Settings screen at all (it has none).
+Closed outright: transcode stays as-is (do not touch `supportedMimeTypes`); `wavy` is dropped;
+lyrics search gets an external provider; Android gets a Settings screen. Parked: `GET /requests`
+scoping (she is the only user today). Accepted at low priority: ebooks, **with read-along sync
+between text and narration** — a much larger feature than rendering EPUB.
+
+**Priority order, from her follow-up, overriding the roadmap's own:** backend first — recommendations
+and requests — with phase 11 alongside; **frontend explicitly not now**, because a design system she
+is building may overhaul it.
+
+**The meta-correction is the part worth internalising.** She reversed the framing on two of the nine
+questions: the Home loading state, and 12a's cold-cache nav rail ("I have no idea what that means").
+Both had been deferred repeatedly as user-only calls when they were ordinary judgement calls dressed
+up as product decisions. The test is not "is this a product question" — nearly everything is. It is
+**"would she have an opinion, and does the answer change what she gets?"**
 
 ### Android distribution — everything automatable is now built
 
