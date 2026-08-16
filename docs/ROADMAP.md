@@ -20,7 +20,8 @@ self-contained, tested increment.
 | 12  | **Spec addendum** — five views, unified search, per-type queues              | done\* |
 | 13  | **Personalized recommendations** — built as specced; the spec was wrong      | done\* |
 | 14  | **Verification and weight** — a Compose test harness, and mobile first paint | done   |
-| 15  | **External recommendations** — discovery beyond the library, mixed shelves   | todo   |
+| 15  | **External recommendations** — discovery beyond the library, mixed shelves   | wip    |
+| 16  | **The Sonora redesign** — one design language across web and Android         | wip    |
 
 **`done\*` means: everything that does not need something only the user can supply.** Phase 11
 waits on two signing keys the user must generate, on GitHub Pages being enabled, and on a `v*`
