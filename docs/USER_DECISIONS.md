@@ -90,17 +90,17 @@ show up in global search. Also, global search needs search suggestions."_
 
 ## The rest, in her order
 
-| # | Item | Her answer | What it means here |
-| - | ---- | ---------- | ------------------ |
-| 3 | 12a's cold-cache nav rail | _"I have no idea what that means."_ | **Ours to decide, and the escalation was the mistake.** It was deferred three times as a user decision and she cannot parse the question. Pick a sensible default (the rail's known destinations, unfilled, rather than an empty rail) and stop asking. |
-| 4 | Launcher icon | _"Yeah let's leave it hanging for now."_ | Stays open deliberately. The app ships Android's default and that is accepted for now. Does **not** block phase 11 — a repo listing with a default icon is fine. |
-| 5 | Direct play vs transcode | _"Transcode is fine for now."_ | **Closed.** Do not touch `supportedMimeTypes`. The transcode path works; leave it. |
-| 6 | `GET /requests` unscoped by caller | _"For now I'm the only user, so this can be parked until later."_ | **Parked, not closed.** Revisit if family accounts are ever actually created — the privacy gap is real, it just has no victim today. |
-| 7 | Lyrics search | _"A privacy opt-in? Yes get an external provider"_ | **Approved.** Build the lyric index and backfill from an external provider. Her reply reads as mild surprise that this needed asking, so treat the opt-in as a courtesy setting rather than a gate. |
-| 8 | `LinearProgress`'s `wavy` mode | _"Let's forget the wavy mode."_ | **Closed.** Mantine has no wave primitive. Remove `wavy` from the API rather than leaving a prop that silently only thickens the bar — a prop that lies is the thing this project keeps paying for. |
-| 9a | Should Android have a Settings screen | _"Yeah, it should."_ | **Approved**, unscoped. Needs a wave; content undecided. |
-| 9b | Ebooks | _"Ebooks would be nice, also with syncing between text and sound, but this is a lower prio."_ | **In scope, low priority.** Note the second half: **read-along sync between ebook text and audiobook narration**, which is a substantially bigger feature than "render EPUB" and needs its own research (Audiobookshelf's own ebook support, and whether any sync signal exists). |
-| 9c | Music request provider | _"I know deemix exists; your original recommendation was to go with soulseek tho. But have you looked into how that other app did it? I forget what it was called but I believe it used NewPipe to stream music"_ | **An open question back to us — see below.** |
+| #   | Item                                  | Her answer                                                                                                                                                                                                        | What it means here                                                                                                                                                                                                                                                                |
+| --- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3   | 12a's cold-cache nav rail             | _"I have no idea what that means."_                                                                                                                                                                               | **Ours to decide, and the escalation was the mistake.** It was deferred three times as a user decision and she cannot parse the question. Pick a sensible default (the rail's known destinations, unfilled, rather than an empty rail) and stop asking.                           |
+| 4   | Launcher icon                         | _"Yeah let's leave it hanging for now."_                                                                                                                                                                          | Stays open deliberately. The app ships Android's default and that is accepted for now. Does **not** block phase 11 — a repo listing with a default icon is fine.                                                                                                                  |
+| 5   | Direct play vs transcode              | _"Transcode is fine for now."_                                                                                                                                                                                    | **Closed.** Do not touch `supportedMimeTypes`. The transcode path works; leave it.                                                                                                                                                                                                |
+| 6   | `GET /requests` unscoped by caller    | _"For now I'm the only user, so this can be parked until later."_                                                                                                                                                 | **Parked, not closed.** Revisit if family accounts are ever actually created — the privacy gap is real, it just has no victim today.                                                                                                                                              |
+| 7   | Lyrics search                         | _"A privacy opt-in? Yes get an external provider"_                                                                                                                                                                | **Approved.** Build the lyric index and backfill from an external provider. Her reply reads as mild surprise that this needed asking, so treat the opt-in as a courtesy setting rather than a gate.                                                                               |
+| 8   | `LinearProgress`'s `wavy` mode        | _"Let's forget the wavy mode."_                                                                                                                                                                                   | **Closed.** Mantine has no wave primitive. Remove `wavy` from the API rather than leaving a prop that silently only thickens the bar — a prop that lies is the thing this project keeps paying for.                                                                               |
+| 9a  | Should Android have a Settings screen | _"Yeah, it should."_                                                                                                                                                                                              | **Approved**, unscoped. Needs a wave; content undecided.                                                                                                                                                                                                                          |
+| 9b  | Ebooks                                | _"Ebooks would be nice, also with syncing between text and sound, but this is a lower prio."_                                                                                                                     | **In scope, low priority.** Note the second half: **read-along sync between ebook text and audiobook narration**, which is a substantially bigger feature than "render EPUB" and needs its own research (Audiobookshelf's own ebook support, and whether any sync signal exists). |
+| 9c  | Music request provider                | _"I know deemix exists; your original recommendation was to go with soulseek tho. But have you looked into how that other app did it? I forget what it was called but I believe it used NewPipe to stream music"_ | **An open question back to us — see below.**                                                                                                                                                                                                                                      |
 
 ---
 
@@ -145,7 +145,7 @@ names it as the first ask, and no session has followed through. That is on us.
 - **A trap found today that undercuts every green Android badge:** Gradle serves
   `:app:testDebugUnitTest` **`FROM-CACHE`** on any sha that does not touch `apps/android`.
   A green Android run on a docs or web commit executed **no Android tests at all**, and
-  rerunning a sha reuses the same cache. So an intermittent Android failure looks *fixed*
+  rerunning a sha reuses the same cache. So an intermittent Android failure looks _fixed_
   exactly when push activity is highest. Only a change under `apps/android` draws a fresh
   sample. Check the log for a bare `> Task :app:testDebugUnitTest`, never the badge.
 - **The honest summary for her:** cheap correctness and accessibility checks, yes, in CI.
@@ -157,8 +157,8 @@ names it as the first ask, and no session has followed through. That is on us.
 **Not yet — this is genuinely owed.** The app is almost certainly one of the NewPipe-extractor
 family. `NewPipeExtractor` is a Java library that scrapes YouTube/SoundCloud/Bandcamp and
 exposes stream URLs without an API key; several music apps build on it. This bears directly
-on decision 1 above — an extractor that can *stream* is a different and much cheaper answer
-than a request pipeline that *acquires a file*, and it may be the right provider for the
+on decision 1 above — an extractor that can _stream_ is a different and much cheaper answer
+than a request pipeline that _acquires a file_, and it may be the right provider for the
 external-recommendation work rather than only for requests.
 
 Her framing is a correction worth taking seriously: the phase 9 decision picked **slskd over
@@ -187,7 +187,7 @@ request pipeline**, before any more music-request work.
 - **Phase 11 (F-Droid distribution) is priority 1**, to be done autonomously. Her belief:
   an earlier session already did the work and asked her to back up a key it generated; it
   then said it needed an extra GitHub permission, which she granted. She thinks it wrongly
-  assumed it needed a *new* token — _"It doesn't, it's the same token, I just gave it extra
+  assumed it needed a _new_ token — _"It doesn't, it's the same token, I just gave it extra
   permissions."_ She suggests grepping her past transcripts for that exchange (there are few
   messages from her, so it is findable). **Do not ask her to re-do key generation before
   checking whether it already happened.**
@@ -215,7 +215,7 @@ request pipeline**, before any more music-request work.
 2. **Phase 11 / F-Droid**, which she named priority 1 in the previous message. Both are
    priority 1; phase 11 is small, mostly-built and unblocks distribution, so it goes first
    by size rather than by rank.
-3. **Frontend** — explicitly *not* now.
+3. **Frontend** — explicitly _not_ now.
 
 **A design system is coming and may land today.** She is building it in Claude's design tool
 and may transfer it here. She has already said it **might imply a major overhaul of the
