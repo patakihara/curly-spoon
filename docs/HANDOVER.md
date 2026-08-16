@@ -539,9 +539,15 @@ scoped-dispatcher treatment from two tests to twelve, and in `e4bf86d` (the othe
 by draining `resultsState` in `tearDown()` and fixing the same gap in `HomeViewModelTest` and
 `RequestsViewModelTest`. **Four tests remain on real `Dispatchers.IO` deliberately** — each keys a
 `setBodyDelay()` on a specific path to pin real interleaving, and collapsing them onto a test
-dispatcher would turn them into tautologies. **Not yet proven fixed**: the bar is several
-consecutive green `android.yml` runs on one sha, with each log showing the test-execution line
-rather than a cached `UP-TO-DATE` skip.
+dispatcher would turn them into tautologies. **Not yet proven fixed, and the bar is not what it looks like.**
+Consecutive green runs are **not** the unit of evidence — *uncached executions* are. Gradle serves
+`:app:testDebugUnitTest` `FROM-CACHE` on any sha that did not touch `apps/android`, so a green
+Android badge on a docs or web push executed nothing, and a run of such pushes manufactures
+exactly the pattern that looks like an intermittent fault settling down. Since rerunning a sha
+reuses the same inputs and therefore the same cache, **the only thing that draws a fresh sample is
+a change under `apps/android`.** So the bar is several *uncached* executions, each confirmed by
+grepping the job log for a bare `> Task :app:testDebugUnitTest` — and name the variant, because
+debug and release cache independently.
 
 14a-1, 14a-2 and 14b-1 all landed on `main`; see `ROADMAP.md` §14 and "Phase 14" below.
 
