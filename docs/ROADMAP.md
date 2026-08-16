@@ -3501,6 +3501,19 @@ boundaries, disjoint directories where waves run in parallel.
 - **16c — `packages/ui` primitives.** Button, IconButton, Chip, Card, Badge, Input, Switch, Slider,
   SectionHeader, QuickTile against the new tokens. `packages/ui` is a shared package, so this is a
   single-agent wave, not a parallel one.
+- **16d — web shell and chrome. It has two inputs already built and waiting, and naming them here
+  is the point of this note** — an unread capability is this repo's most-repeated failure, and
+  16b-3's toggle is the fifth entry in that ledger if nobody comes for it.
+  - **`Icon`'s `filled` prop** (`17a3d0e`). The five nav destinations — `explore`, `album`,
+    `book_2`, `podcasts`, `search` — each carry a filled and an outlined path, behind a two-arm
+    union type so asking for `filled` on an unsupported glyph is a compile error. **This is what
+    "selected destinations use the Material Symbols FILL axis" is implemented with**, and 16d is
+    its reader. Note `podcasts` and `search` are legitimately pixel-identical in both states (no
+    enclosed region for a fill to change); that is pinned by a test so it does not read as a
+    wiring bug.
+  - **`--accent-ink`** (from 16b-2). The active rail item's colour, and the only correct token for
+    it — `--accent` itself is the raw hue and is not guaranteed readable on the surface.
+
 - **16d — web shell and chrome.** The docked three-region shell, the adaptive rig, the rail, the
   player bar. `github.md` records the specific fixes the redesign made here: **chrome is docked and
   only content scrolls**, and the rig breaks at **1440 / 1280 / 1024 / 768 px — the panel drops
