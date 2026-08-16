@@ -18,8 +18,9 @@ self-contained, tested increment.
 | 10  | Release polish — performance budgets, a11y audit                             | done   |
 | 11  | **F-Droid / Droid-ify distribution** — alternative app stores                | done\* |
 | 12  | **Spec addendum** — five views, unified search, per-type queues              | done\* |
-| 13  | **Personalized recommendations** — the reason the user wants this            | done\* |
-| 14  | **Verification and weight** — a Compose test harness, and mobile first paint | wip    |
+| 13  | **Personalized recommendations** — built as specced; the spec was wrong      | done\* |
+| 14  | **Verification and weight** — a Compose test harness, and mobile first paint | done   |
+| 15  | **External recommendations** — discovery beyond the library, mixed shelves   | todo   |
 
 **`done\*` means: everything that does not need something only the user can supply.** Phase 11
 waits on two signing keys the user must generate, on GitHub Pages being enabled, and on a `v*`
@@ -3046,3 +3047,123 @@ blind by construction; the project's own history is three consecutive Android wa
 got every product question right and lost to a toolchain fact. Both known traps were checked
 before landing (balanced `/*`…`*/` counts, no `.` inside backtick test names), which is not the
 same as compiling.
+
+---
+
+## Phase 15 — external recommendations: discovery beyond the library (2026-08-16)
+
+**Phase 13 was built exactly as specified and the specification was wrong.** It ranks items
+**already in the library**, scored from Audiobookshelf progress and Jellyfin play history, so every
+shelf it produces is a re-sort of what the user already owns. Her correction, verbatim in
+`docs/USER_DECISIONS.md`: _"It is not useful to me if recommendations only show things already in
+my library. There should be an actual and good recommendation algorithm, like what spotify uses,
+and this is what should be mixed into the results of the 'For you' page."_
+
+That file is the authority. Nothing in phase 13 is deleted — the profile-building, the scoring core
+and the shelf machinery are all reusable, and the library-derived shelves stay. What changes is that
+they stop being the _only_ thing on For You.
+
+**Read before starting:** `docs/USER_DECISIONS.md` decisions 1–3 and the two meta-corrections.
+
+### The constraint that shapes every wave: this cannot be evaluated here
+
+Phase 13's own recorded lesson is that ten synthetic books prove mechanism, not taste. **Phase 15
+is a bigger version of the same exposure**, and the fix is not more tests — it is the two read-only
+credentials `USER_DECISIONS.md` names as owed and never properly asked for. **Every wave below
+states how it is verified, and where the honest answer is "mechanism only, quality unassessable
+here", it says so in the wave rather than at the end.** A wave that cannot say how it is judged is
+not ready to dispatch.
+
+### What Spotify actually does — looked at, not guessed at
+
+She said: _"Investigate what spotify looks like; that's the reference."_ Her four screenshots in
+`docs/research/spec-addendum/` were read directly (they are deliberately untracked, so they exist
+only in this checkout — **a subagent in an isolated worktree cannot see them**, and any wave needing
+them must be given the findings below rather than the paths).
+
+What they establish, which settles several questions without asking her:
+
+- **The mixed-content surface is the top grid, not a carousel.** An eight-tile, two-column grid of
+  compact cover+title tiles sits above every shelf, and it mixes freely: playlists, an album, an
+  audiobook (`Hamilton: The musical`), a radio station, and two podcast episodes — one carrying a
+  **progress bar** for partial playback. This is what "carousels with mixed content" looks like in
+  the reference.
+- **Horizontal shelves are mostly single-type, and the shelf title carries the reason.**
+  `Your shows`, `Recommended Stations`, `Audiobooks for you`, `Your top mixes`. Spotify puts the
+  justification in the **shelf heading**, not on each card. Auralis instead renders a per-card
+  `reason` line. **Keep the per-card reason** — it is already wired to web's accessibility contract
+  and to Android's merged semantics node (14b-2) — but shelf titles must carry their own meaning
+  too, and a shelf whose title already says "Audiobooks for you" does not need every card repeating it.
+- **`Recents` is the one genuinely mixed horizontal shelf, and it disambiguates by subtitle:**
+  `Playlist • Carl E…`, `Playlist • anna…`, `Single • KAUK…`. **That is the pattern to copy** — in a
+  mixed shelf the type is named in the subtitle. It answers the obvious objection to mixing (a user
+  cannot tell what a card is) with one line of text.
+- **Content-type filter chips sit above everything**: `All / Music / Podcasts / Audiobooks`, and
+  selecting one re-filters the grid _and_ the shelves beneath it (the `Music` filter also grows a
+  `Following` chip). Auralis already has primary chips in Search; this is the same idiom on For You.
+- **One card per show, never per episode.** `Your shows` lists shows. This corroborates her explicit
+  rule and suggests the general form: **dedupe by parent, not by item**.
+
+### Waves
+
+- **15a — the seam, provider-agnostic.** Define what an **external candidate** is: a catalogue entry
+  that is _not_ a library item. Phase 13's `RecommendationCandidate` is an adapted shape **over
+  library items** and models neither identity. Provider access goes behind an interface, following
+  phase 9's precedent that "the provider interface is pluggable, so a new provider is a new file,
+  not a refactor". One provider implemented behind it; **which** provider is delegated to us and is
+  not a blocker for this wave.
+
+  _Verified by:_ pure unit tests over the seam with a fake provider. Fully assessable here.
+
+- **15b — identity and dedupe. This is the hard part and the likeliest place to fail.** A recommended
+  title has **two identities**: a provider catalogue entry, and a library item if it is ever acquired.
+  The spec must settle, explicitly:
+  - **Already owned** → per decision 3, it renders as a normal result and is **not** requestable.
+    So the external source must answer "do I already own this?" — provider id → Audiobookshelf /
+    Jellyfin id. Name the behaviour on an exact match, a near-match (same title, different edition
+    or narrator), and no match.
+  - **Owned _after_ acquisition** — the failure this project would otherwise ship. A title
+    recommended from provider X, requested, downloaded and imported becomes an Audiobookshelf item
+    with an **unrelated id**. Unless the correspondence is persisted **at request time**, the next
+    recommendation run offers her the same book again and the dedupe reads as broken. That is a
+    **schema decision — a mapping table written when the request is submitted** — not a scoring one.
+  - Matching on title strings is where this repo has been burned before; see the minified-item
+    lessons in `HANDOVER.md` before inventing a matcher.
+
+  _Verified by:_ unit tests over the matcher with adversarial fixtures. Real-world match quality is
+  **not** assessable without a credential — say so in the wave's report rather than implying it is.
+
+- **15c — the For You mixing rule.** Where external candidates appear relative to the existing
+  library-derived shelves, and the cold-start behaviour. Constraint from decision 1, stated
+  parenthetically by her but real: **library pages show only owned content and submitted requests —
+  the mixing happens on For You only.** Includes the two rules from decision 2, both server-side in
+  `shelves.ts` so both clients inherit them: **no two episodes of one podcast in a shelf** (generalise
+  to dedupe-by-parent), and **mixed-content shelves**, which per the screenshots means a `Recents`-style
+  shelf whose cards name their type in the subtitle.
+
+  _Verified by:_ server unit tests plus a Playwright assertion on For You. Mechanism assessable here;
+  whether the mix feels right is not.
+
+- **15d — requestability.** A recommended title not in the library is inherently requestable — that
+  is the seam with the phase 6/9 request pipeline, and it is what makes discovery useful rather than
+  taunting. Also settles **12c-2** the same way for Search and artist/author pages, which was the
+  stated failure mode (deciding it twice, differently).
+
+- **15e — books and podcasts, not just music.** Decision 1 covers all three media types. The NewPipe
+  research (`docs/research/MUSIC_STREAMING_VS_ACQUISITION.md`, in flight) addresses **music at most**.
+  `docs/INTEGRATIONS.md` holds the researched-not-decided MusicBrainz / PodcastIndex / Audnexus
+  options; **the Audnexus blocker is lifted** — she stated _"I do not care about audible's or
+  youtube's TOS"_ **for her own install**, which is not licence to ship anything public-facing that
+  redistributes.
+
+### Decisions already made, so no wave re-opens them
+
+- **Provider choice is delegated to us.** Do not escalate it.
+- **Per-card `reason` stays**; shelf titles carry meaning too.
+- **Mixed shelves name the type in the subtitle** (`Playlist • …`), per the reference.
+- **Dedupe by parent**, not by item.
+- **Frontend restyling waits.** A design system is coming from her that may overhaul the frontend.
+  Shelf composition and loading behaviour are _not_ restyling and survive it; anything cosmetic does
+  not. See `USER_DECISIONS.md`.
+- **Escalate almost nothing.** Her test, recorded after she reversed the framing on two of nine
+  long-deferred questions: _would she have an opinion, and does the answer change what she gets?_
