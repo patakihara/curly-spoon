@@ -3065,6 +3065,34 @@ they stop being the _only_ thing on For You.
 
 **Read before starting:** `docs/USER_DECISIONS.md` decisions 1–3 and the two meta-corrections.
 
+### Vocabulary: there is one destination, and it is called **browse**
+
+Added after the spec below was first written, and it **retires a distinction this phase was
+originally drafted around**. Her words: _"when I say 'home / for you / browse / discover' those are
+all interchangeable terms (and different from 'search'!). my preferred term right now is 'browse'
+with the 'explore' icon."_
+
+- **Home, For You, Browse and Discover are four names for one screen.** Everywhere this section
+  says "For You", read "browse". There is no Home-versus-For-You design problem to solve, and any
+  wave that produces a second surface has invented one.
+- **The code already agrees; only the documentation ever split them.** `AuralisNavHost.kt` renders
+  `ForYouScreen` at `Routes.HOME`, and web keeps `HomePage.tsx` and the `forYouFeed`/`forYouFilters`
+  modules in one `features/home` directory. **So this is a naming cleanup, not a merge** — the
+  expensive version of this mistake (two implementations of one screen, each specced against a
+  different name, each with a reader unaware of the other, which is this codebase's single
+  most-repeated failure) has **not** happened and must not be introduced by this phase.
+- **Search is emphatically separate** — her own exclamation mark. Browse is where you go **not**
+  knowing what you want; search is where you go knowing. That is a real boundary for 15c's mixing
+  rule: external discovery belongs on browse. Decision 3's "an owned title still shows in search but
+  is not requestable" is a _search_ rule and does not make search a discovery surface.
+- **The name is a UI string and nothing else.** She flagged "my preferred term **right now**", so
+  `browse` must not reach route paths, component names, API endpoints, or database columns. Renaming
+  a label is free; renaming a schema is not. Existing `home`/`forYou` identifiers stay as they are —
+  **do not churn them**, since renaming code to match a preference she has already flagged as
+  provisional is cost with no benefit.
+- The five-destination nav from phase 12 presents this one as **Browse**, with Material's `explore`
+  icon.
+
 ### The constraint that shapes every wave: this cannot be evaluated here
 
 Phase 13's own recorded lesson is that ten synthetic books prove mechanism, not taste. **Phase 15
