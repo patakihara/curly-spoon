@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
-- `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
 - `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
 - `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
 - `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
 - `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · ended · Nothing left running. This wave is complete. ## Report — Wave 16c-2-W-2 **Branch/commit:** 'worktree-agent-ad369f8094766bc82', two commits on top of…
+- `2026-08-17T12:17:01Z` · `a281db4733d2f49d2` · general-purpose · running · —
+- `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,32 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### Two agents cannot both run Playwright here — one fixed port decides it
+
+Established 2026-08-17 while deciding whether to dispatch a third wave beside `16d-W-1`. The
+directories were disjoint (`packages/ui` + `e2e/ui` versus `apps/web` + `e2e/app`), which is the
+test this file has always applied, and **that test is not sufficient**.
+
+`playwright.config.ts` declares **two** `webServer` entries and Playwright boots **all** of them
+regardless of which `--project` you asked for. The gallery server is `reuseExistingServer: !CI`, so
+it is fine. The app server is deliberately **`reuseExistingServer: false`** on a hardcoded
+**`PORT: 4310`** — and the comment above it explains why, correctly: it is stateful, `DATA_DIR` is
+`:memory:`, `onboarding.spec.ts` asserts on the unconfigured state a fresh boot gives, and reuse
+would also skip the `vite build` and silently test a stale bundle.
+
+So two agents in two worktrees each running any Playwright project contend for 4310. Best case the
+second fails to bind; **worst case it binds to the first agent's server and both runs silently
+share one stateful single-tenant BFF** — which is the cross-file contamination this file already
+documents at the _spec_ level, now available at the _agent_ level and much harder to see.
+
+**The rule that falls out: at most one agent at a time may run Playwright, whatever the projects.**
+Disjoint directories are necessary and not sufficient — check for a shared port too. A wave that
+needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, which is what
+`16d-A` did beside `16d-W-1` without incident.
+
+Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
+per-agent ports would trade a loud collision for a quiet one.
 
 ### CLAIMED 2026-08-17 — `16d-W-1` and `16d-A`, the docked-chrome scroll bug
 
