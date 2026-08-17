@@ -10,6 +10,17 @@
  * All functions here are total: fed a negative or non-finite time they settle on the
  * rest position rather than producing `NaN`, matching the house style in
  * `packages/core/src/time.ts`.
+ *
+ * **The physics engine below is no longer what reaches CSS.** Wave 16c-2-W-1
+ * (`docs/ROADMAP.md` §16) redefined the four `--m3-spring-*-{duration,easing}` pairs
+ * `motionCssVars()` emits to Sonora's motion language instead: `docs/design/sonora/readme.md`
+ * — "Feishin uses a plain 0.2s ease-in-out fade for sidebar art and a 0.2s color transition
+ * on nav-item hover — no bounce, no spring, no parallax anywhere in the source code read."
+ * `SPRINGS`/`springToLinearEasing`/`springSettleDuration`/`springPosition` are kept
+ * (nothing here deletes a `--m3-*` name, and `ThemeProvider.tsx` still calls
+ * `springSettleDuration(SPRINGS.slow)`/`springToLinearEasing(SPRINGS.slow)` directly for its
+ * colour cross-fade transition, which is a separate, not-yet-migrated concern from this
+ * wave's scope) but `motionCssVars()` no longer derives its output from them — see below.
  */
 
 /** A physical spring: how stiff it is, and how quickly it bleeds energy. */
@@ -137,16 +148,27 @@ export const SPRINGS: Record<'fast' | 'default' | 'slow' | 'bouncy', Spring> = {
   bouncy: { stiffness: 500, dampingRatio: 0.6 },
 };
 
+/** Sonora's one flat motion value — see this module's doc comment for the source line. */
+const SONORA_DURATION_MS = 200;
+const SONORA_EASING = 'ease-in-out';
+
 /**
- * Precomputed `--m3-spring-<name>-duration` / `-easing` CSS custom properties for
- * every named spring, ready to spread onto a wrapper element's inline style or a
- * stylesheet. Computed once at module load since springs never change shape at runtime.
+ * Emits `--m3-spring-<name>-duration` / `-easing` CSS custom properties for every named
+ * spring — but, since wave 16c-2-W-1, every one of them now holds the same flat Sonora
+ * value (`200ms ease-in-out`) rather than a distinct spring curve. All four names
+ * (`fast`/`default`/`slow`/`bouncy`) are kept and get the identical value: `bouncy` has
+ * no CSS consumer today (checked by grep), but deleting a `--m3-*` name is exactly the
+ * "writer with no reader" shape this project has been burned by before, and giving it
+ * the same anti-spring value it would get anyway if a caller ever does show up costs
+ * nothing. The 22 call sites reading `fast`/`default`/`slow` (`NavigationBar`, `Snackbar`,
+ * `Card`, `Slider`, `Sheet`, `Dialog`, `ListItem`, `TopAppBar`) now animate on Sonora's
+ * motion language, not this module's spring physics.
  */
 export function motionCssVars(): Record<string, string> {
   const vars: Record<string, string> = {};
-  for (const [name, spring] of Object.entries(SPRINGS)) {
-    vars[`--m3-spring-${name}-duration`] = `${Math.round(springSettleDuration(spring))}ms`;
-    vars[`--m3-spring-${name}-easing`] = springToLinearEasing(spring);
+  for (const name of Object.keys(SPRINGS)) {
+    vars[`--m3-spring-${name}-duration`] = `${SONORA_DURATION_MS}ms`;
+    vars[`--m3-spring-${name}-easing`] = SONORA_EASING;
   }
   return vars;
 }

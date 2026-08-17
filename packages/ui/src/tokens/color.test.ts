@@ -61,29 +61,36 @@ describe('createScheme', () => {
     expect(a).toEqual(b);
   });
 
-  it('produces a distinguishable scheme per source colour', () => {
+  // Wave 16c-2-W-1 (docs/ROADMAP.md §16) replaced the HCT-derived generator with
+  // Sonora's fixed chroma roles (docs/design/SONORA.md §1.5/§1.6). `sourceColor` no
+  // longer has any effect on the `--m3-*` scheme — `--accent` is the one customisable
+  // colour now (packages/ui/src/styles/sonora-tokens.css). This test used to assert the
+  // opposite (a distinguishable scheme per source colour); it now pins the new contract.
+  it('is identical regardless of source colour — Sonora fixes the m3 chroma roles', () => {
     const a = createScheme({ sourceColor: '#1B6EF3', dark: false });
     const b = createScheme({ sourceColor: '#2E7D32', dark: false });
-    expect(a.primary).not.toBe(b.primary);
+    expect(a).toEqual(b);
   });
 
-  it('supports an explicit contrast level and the expressive/tonal-spot variants', () => {
+  // `contrastLevel`/`variant` were HCT-generator options with no Sonora equivalent —
+  // Sonora's chroma roles are a fixed table, not a parametric scheme. Both options are
+  // still accepted (API compatibility with ThemeProvider.tsx, which still passes
+  // `contrastLevel`) and now provably do nothing, rather than silently drifting.
+  it('accepts contrastLevel and variant for API compatibility, and ignores both', () => {
     const standard = createScheme({ sourceColor: AURALIS_SOURCE_COLOR, dark: false });
     const highContrast = createScheme({
       sourceColor: AURALIS_SOURCE_COLOR,
       dark: false,
       contrastLevel: 1,
     });
-    expect(contrastRatio(highContrast.onSurface, highContrast.surface)).toBeGreaterThanOrEqual(
-      contrastRatio(standard.onSurface, standard.surface) - 0.01,
-    );
+    expect(highContrast).toEqual(standard);
 
     const tonalSpot = createScheme({
       sourceColor: AURALIS_SOURCE_COLOR,
       dark: false,
       variant: 'tonalSpot',
     });
-    expect(tonalSpot.primary).toMatch(HEX_RE);
+    expect(tonalSpot).toEqual(standard);
   });
 
   it('includes the full M3 role set required by the design system', () => {
