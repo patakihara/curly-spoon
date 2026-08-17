@@ -44,55 +44,125 @@ textarea {
 /**
  * Fallback token values so components render sensibly even if, for some reason, they
  * are mounted outside a <ThemeProvider> (e.g. an isolated visual test of a single
- * component). ThemeProvider overwrites every one of these on its wrapper element.
+ * component). ThemeProvider overwrites every one of these on its wrapper element —
+ * for everything *except* three portalled components (`Dialog`, `Sheet`, `Menu`),
+ * which render outside `.auralis-theme-root` and can never see that overwrite. This
+ * block is genuinely their **only** token source, not just a fallback for them — see
+ * `docs/HANDOVER.md`'s "load-bearing constraint" note on wave 16c-2-W-1.
+ *
+ * Every value below MUST be a literal (colour, length, or a `color-mix()` whose
+ * operands are themselves literals) — never `var(--surface-…)` or any other Sonora
+ * token reference. `.auralis-theme-root`'s scoped tokens (`sonora-tokens.css`,
+ * `sonora-theme.css`) do not exist at `:root`, so a `var()` here resolves to nothing
+ * for the three portalled components and they render unstyled — invisibly, since
+ * Playwright asserts testids/text, never computed style. This is why the values here
+ * are hand-resolved from `docs/design/SONORA.md` §1.5/§1.6 rather than pointing at the
+ * tokens those sections are themselves written in terms of.
+ *
+ * Colour values match `packages/ui/src/tokens/color.ts`'s `LIGHT`/`DARK` tables
+ * exactly (wave 16c-2-W-1) — that module is the source of truth; keep both in sync by
+ * hand, there is no shared import (this file cannot import TS, and duplicating a
+ * handful of hex strings is simpler than a build step to keep them merged).
  */
 :root {
   color-scheme: light dark;
-  --m3-primary: #8b4f2f;
+  --m3-primary: #4d5c92;
   --m3-on-primary: #ffffff;
-  --m3-primary-container: #ffdbc7;
-  --m3-on-primary-container: #2e1500;
-  --m3-secondary: #77574a;
+  --m3-primary-container: #dce1ff;
+  --m3-on-primary-container: #354479;
+  --m3-secondary: #595d72;
   --m3-on-secondary: #ffffff;
-  --m3-secondary-container: #ffdbc7;
-  --m3-on-secondary-container: #2c150b;
-  --m3-surface: #fff8f6;
-  --m3-on-surface: #22190f;
-  --m3-surface-variant: #f2ded3;
-  --m3-on-surface-variant: #51443a;
-  --m3-surface-container-lowest: #ffffff;
-  --m3-surface-container-low: #fcf1ea;
-  --m3-surface-container: #f7ebe2;
-  --m3-surface-container-high: #f1e5dc;
-  --m3-surface-container-highest: #ebe0d6;
-  --m3-outline: #85746a;
-  --m3-outline-variant: #d7c3b6;
+  --m3-secondary-container: #dee1f9;
+  --m3-on-secondary-container: #565a70;
+  --m3-tertiary: #75546f;
+  --m3-on-tertiary: #ffffff;
+  --m3-tertiary-container: #ffd7f5;
+  --m3-on-tertiary-container: #603e67;
+  --m3-error: #ba1a1a;
+  --m3-on-error: #ffffff;
+  --m3-error-container: #ffdad6;
+  --m3-on-error-container: #93000a;
+  --m3-surface: #ebebeb;
+  --m3-on-surface: #191919;
+  --m3-surface-variant: #e1e1e1;
+  --m3-on-surface-variant: #505050;
+  --m3-surface-container-lowest: #f0f0f0;
+  --m3-surface-container-low: #ebebeb;
+  --m3-surface-container: #e1e1e1;
+  --m3-surface-container-high: #d3d3d3;
+  --m3-surface-container-highest: #c6c6c6;
+  --m3-outline: #505050;
+  --m3-outline-variant: #e1e1e1;
   --m3-scrim: #000000;
+  --m3-inverse-primary: #b6c4ff;
 
-  --m3-spring-fast-duration: 240ms;
-  --m3-spring-fast-easing: ease-out;
-  --m3-spring-default-duration: 360ms;
-  --m3-spring-default-easing: ease-out;
-  --m3-spring-slow-duration: 520ms;
-  --m3-spring-slow-easing: ease-out;
-  --m3-spring-bouncy-duration: 480ms;
-  --m3-spring-bouncy-easing: ease-out;
+  /* Sonora is anti-spring: "no bounce, no spring, no parallax anywhere" — a flat
+   * 0.2s ease-in-out for everything (docs/design/sonora/readme.md, Animation). All
+   * four names kept (bouncy has no consumer, see motion.ts) rather than deleted. */
+  --m3-spring-fast-duration: 200ms;
+  --m3-spring-fast-easing: ease-in-out;
+  --m3-spring-default-duration: 200ms;
+  --m3-spring-default-easing: ease-in-out;
+  --m3-spring-slow-duration: 200ms;
+  --m3-spring-slow-easing: ease-in-out;
+  --m3-spring-bouncy-duration: 200ms;
+  --m3-spring-bouncy-easing: ease-in-out;
 
+  /* Sonora's radius scale (docs/design/SONORA.md §1.10), desktop end — see shape.ts's
+   * doc comment for the xl/lg collapse (Sonora has no step between lg and pill). */
   --m3-shape-none: 0px;
-  --m3-shape-xs: 4px;
-  --m3-shape-sm: 8px;
-  --m3-shape-md: 12px;
-  --m3-shape-lg: 16px;
-  --m3-shape-xl: 28px;
-  --m3-shape-full: 9999px;
+  --m3-shape-xs: 8px;
+  --m3-shape-sm: 16px;
+  --m3-shape-md: 24px;
+  --m3-shape-lg: 32px;
+  --m3-shape-xl: 32px;
+  --m3-shape-full: 999px;
+
+  /* Sonora's shadow scale (docs/design/SONORA.md §1.11) — see elevation.ts's doc
+   * comment for why only the two levels this codebase reads are redefined. */
+  --m3-elevation-2: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --m3-elevation-3: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
 
   --m3-touch-target-min: 48px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --m3-surface: #17120c;
-    --m3-on-surface: #ede0d4;
+    /* Portalled components can only ever see OS-level `prefers-color-scheme` here —
+     * they render outside `.auralis-theme-root`, so the app's own light/dark pin
+     * (`data-theme`) never reaches them. Pre-existing limitation, not introduced by
+     * this wave; this block is widened from its old surface/on-surface-only pair to
+     * cover every name the base `:root` block above defines, matching color.ts's
+     * `DARK` table, so a portalled component under a dark OS preference gets a
+     * complete dark scheme rather than a light one with two swapped-out roles. */
+    --m3-primary: #b6c4ff;
+    --m3-on-primary: #1d2d61;
+    --m3-primary-container: #354479;
+    --m3-on-primary-container: #dce1ff;
+    --m3-secondary: #c2c5dd;
+    --m3-on-secondary: #3f434e;
+    --m3-secondary-container: #565a70;
+    --m3-on-secondary-container: #dee1f9;
+    --m3-tertiary: #ffb7db;
+    --m3-on-tertiary: #472b50;
+    --m3-tertiary-container: #603e67;
+    --m3-on-tertiary-container: #ffd7f5;
+    --m3-error: #ffb4ab;
+    --m3-on-error: #690005;
+    --m3-error-container: #93000a;
+    --m3-on-error-container: #ffdad6;
+    --m3-surface: #0c0c0c;
+    --m3-on-surface: #e1e1e1;
+    --m3-surface-variant: #141414;
+    --m3-on-surface-variant: #969696;
+    --m3-surface-container-lowest: #080808;
+    --m3-surface-container-low: #0c0c0c;
+    --m3-surface-container: #141414;
+    --m3-surface-container-high: #191919;
+    --m3-surface-container-highest: #2d2d2d;
+    --m3-outline: #5a5a5a;
+    --m3-outline-variant: #2d2d2d;
+    --m3-inverse-primary: #4d5c92;
   }
 }
 
