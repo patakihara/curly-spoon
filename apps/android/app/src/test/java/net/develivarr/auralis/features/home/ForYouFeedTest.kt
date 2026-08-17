@@ -5,6 +5,7 @@ import net.develivarr.auralis.data.model.JellyfinAlbum
 import net.develivarr.auralis.data.model.LibraryItem
 import net.develivarr.auralis.data.model.MediaProgress
 import net.develivarr.auralis.data.model.MediaSummary
+import net.develivarr.auralis.data.model.MusicRecommendedAlbum
 import net.develivarr.auralis.data.model.Shelf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -114,6 +115,31 @@ class ForYouFeedTest {
         assertEquals(ForYouContentType.MUSIC, carousel.contentType)
         assertTrue(carousel.items.all { it.progress == null })
         assertEquals(listOf("art/al1", "art/al2"), carousel.items.map { it.coverUrl })
+    }
+
+    /** Wave 15d — [FeedItem.isExternal] must reflect [MusicRecommendedAlbum.availability]
+     * exactly: `"owned"` is not external, everything else (including a value this test has never
+     * seen) is. Deliberately includes a made-up third value to pin the "unknown degrades to
+     * external, not owned" rule from that field's own doc comment — the safer default, since
+     * treating an unrecognised value as owned would silently reintroduce the dead-end
+     * album-detail navigation this wave exists to close off. */
+    @Test
+    fun `recommendedAlbumsToCarousel maps availability to isExternal, treating anything but 'owned' as external`() {
+        val albums =
+            listOf(
+                MusicRecommendedAlbum(id = "al1", name = "Owned Album", availability = "owned"),
+                MusicRecommendedAlbum(id = "al2", name = "External Album", availability = "external"),
+                MusicRecommendedAlbum(id = "al3", name = "Future Value", availability = "quarantined"),
+            )
+        val carousel = recommendedAlbumsToCarousel("rec", "Discover", albums) { null }
+        assertEquals(listOf(false, true, true), carousel.items.map { it.isExternal })
+    }
+
+    @Test
+    fun `recommendedAlbumsToCarousel carries artistName through as subtitle, same as albumsToCarousel`() {
+        val albums = listOf(MusicRecommendedAlbum(id = "al1", name = "Album", artistName = "The Artist", availability = "external"))
+        val carousel = recommendedAlbumsToCarousel("rec", "Discover", albums) { null }
+        assertEquals("The Artist", carousel.items.single().subtitle)
     }
 
     @Test

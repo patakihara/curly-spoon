@@ -76,9 +76,18 @@ data class MusicRequestsUiState(
  * per-id pending-state maps for the request list's retry/delete actions. The one structural
  * difference is deliberate: there is no "request anyway" path (see [CandidateRequestState]'s
  * doc comment), so this class has no `TitleRequestState` counterpart at all.
+ *
+ * Wave 15d — [initialSearchTerm], `null` for every pre-15d caller, seeds
+ * [MusicRequestsUiState.searchTerm] so [MusicRequestsScreen] can open with an artist name
+ * already typed (an external "not in your library" recommendation's tap target). It only sets
+ * the initial state; nothing here calls [submitSearch] automatically — see
+ * [MusicRequestsScreen]'s own doc comment for why that's a deliberate choice, not an oversight.
  */
-class MusicRequestsViewModel(private val apiClient: ApiClient) : ViewModel() {
-    private val _uiState = MutableStateFlow(MusicRequestsUiState())
+class MusicRequestsViewModel(
+    private val apiClient: ApiClient,
+    initialSearchTerm: String? = null,
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(MusicRequestsUiState(searchTerm = initialSearchTerm.orEmpty()))
     val uiState: StateFlow<MusicRequestsUiState> = _uiState.asStateFlow()
 
     // Cancelled and replaced on every submitSearch — without this, a slow earlier search's

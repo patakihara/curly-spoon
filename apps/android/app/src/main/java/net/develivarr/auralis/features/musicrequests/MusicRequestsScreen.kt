@@ -39,15 +39,21 @@ import java.util.Locale
  * list below), minus the "request anyway" section: `POST /music-requests` requires a
  * candidate, so there is nothing to queue without one. See
  * `MusicRequestsViewModel`/`CandidateRequestState`'s doc comments for why.
+ *
+ * Wave 15d — [prefillArtist], `null` for every pre-15d navigation, pre-fills the search field
+ * with an artist name when this screen is reached from a recommended-but-unowned card on
+ * [net.develivarr.auralis.features.music.MusicLibraryScreen]'s recommended shelf. The field is
+ * pre-filled only, not auto-submitted: the user still presses "Search" once, same as always,
+ * rather than this screen firing a network request the instant it opens.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MusicRequestsScreen(container: AppContainer) {
+fun MusicRequestsScreen(container: AppContainer, prefillArtist: String? = null) {
     val viewModel: MusicRequestsViewModel =
         viewModel(
             factory =
                 viewModelFactory {
-                    initializer { MusicRequestsViewModel(container.apiClient) }
+                    initializer { MusicRequestsViewModel(container.apiClient, initialSearchTerm = prefillArtist) }
                 },
         )
     val uiState by viewModel.uiState.collectAsState()

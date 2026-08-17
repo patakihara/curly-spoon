@@ -467,7 +467,7 @@ class MusicRepositoryTest {
                     """{"shelves":[
                         {"id":"rec-1","label":"More like Driftwave","type":"recommended",
                          "reason":"Because you played Driftwave",
-                         "items":[{"id":"alb1","name":"Recommended Album","artistName":"Some Artist"}]}
+                         "items":[{"id":"alb1","name":"Recommended Album","artistName":"Some Artist","availability":"owned"}]}
                     ]}""",
                 ),
             )
@@ -479,6 +479,33 @@ class MusicRepositoryTest {
             assertEquals("rec-1", loaded?.shelves?.get(0)?.id)
             assertEquals("Because you played Driftwave", loaded?.shelves?.get(0)?.reason)
             assertEquals("alb1", loaded?.shelves?.get(0)?.items?.get(0)?.id)
+        }
+
+    /** Wave 15d — the field this whole wave hangs off. Required and non-nullable on
+     * [net.develivarr.auralis.data.model.MusicRecommendedAlbum] because the server always sends
+     * it on this route; a fixture missing it would fail decoding with
+     * [kotlinx.serialization.MissingFieldException] rather than exercise the behaviour this test
+     * is for — see that field's own doc comment. */
+    @Test
+    fun `recommended decodes an external item's availability distinctly from an owned one`() =
+        runTest {
+            mockWebServer.enqueue(
+                MockResponse().setBody(
+                    """{"shelves":[
+                        {"id":"rec-1","label":"Discover","type":"recommended","reason":null,
+                         "items":[
+                           {"id":"alb-owned","name":"Owned Album","availability":"owned"},
+                           {"id":"external:listenbrainz:mbid-1","name":"External Album","availability":"external"}
+                         ]}
+                    ]}""",
+                ),
+            )
+
+            val result = repository.recommended()
+
+            val items = (result as? MusicRecommendedResult.Loaded)?.shelves?.get(0)?.items
+            assertEquals("owned", items?.get(0)?.availability)
+            assertEquals("external", items?.get(1)?.availability)
         }
 
     @Test

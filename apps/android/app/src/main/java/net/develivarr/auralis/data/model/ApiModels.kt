@@ -746,10 +746,48 @@ data class JellyfinAlbum(
     val favorite: Boolean = false,
 )
 
+/** One item within a [MusicRecommendedShelf] — the same fields [JellyfinAlbum] carries, plus
+ * [availability] (wave 15d — docs/HANDOVER.md's external-discovery item, `ROADMAP.md` §15).
+ * Kept as its own type rather than adding [availability] onto [JellyfinAlbum] itself, because
+ * [JellyfinAlbum] is also the shape `GET /jellyfin/albums`, `GET /jellyfin/search`'s album
+ * bucket and [JellyfinAlbumsPage] return, none of which carry this field — a non-nullable field
+ * there would throw [kotlinx.serialization.MissingFieldException] decoding every one of those.
+ * Here it is safe to require: the server always sends [availability] on this one route (see
+ * that field's own doc comment for why it is a plain `String`, not a Kotlin enum, and how a
+ * client should interpret an unrecognised value). */
+@Serializable
+data class MusicRecommendedAlbum(
+    val id: String,
+    val name: String,
+    val sortName: String? = null,
+    val artistId: String? = null,
+    val artistName: String? = null,
+    val productionYear: Int? = null,
+    val overview: String? = null,
+    val genres: List<String> = emptyList(),
+    val imageTag: String? = null,
+    val trackCount: Int? = null,
+    val favorite: Boolean = false,
+    /** `"owned"` for an album already in the signed-in user's Jellyfin library, `"external"`
+     * for a candidate suggested from an outside provider (ListenBrainz, today) that Jellyfin
+     * has never heard of — always present on the wire, never null, never absent. Left as a
+     * plain `String` rather than a Kotlin enum, same reasoning as [BookRequest.status]: an
+     * upstream value this build doesn't recognise must decode, not throw. Consumers should
+     * treat anything other than the literal `"owned"` as external (see
+     * [net.develivarr.auralis.features.home.recommendedAlbumsToCarousel]) — the safer default,
+     * since it only adds a badge and redirects a tap to the request flow, rather than risking
+     * [id] (which for an external candidate is opaque and namespaced, e.g.
+     * `external:listenbrainz:<mbid>`) being sent straight into the dead-end album-detail
+     * navigation this field exists to prevent. **Never** derive externality by string-matching
+     * an `external:` prefix out of [id] instead of reading this field — an opaque id's format
+     * can change silently; this field is the one thing the server contract guarantees. */
+    val availability: String,
+)
+
 /** One shelf from GET /music/recommended — the Jellyfin-music counterpart to [Shelf], kept as
  * its own type rather than reusing [Shelf] because the item shape differs: a book/podcast
  * shelf's [Shelf.items] are [LibraryItem] (Audiobookshelf's shape), while this route's items are
- * Jellyfin [JellyfinAlbum]s (the same shape GET /jellyfin/albums already returns) — see
+ * [MusicRecommendedAlbum]s (an album shape plus [MusicRecommendedAlbum.availability]) — see
  * `apps/server/src/routes/jellyfin.ts`'s `/music/recommended` handler, which maps its scored
  * candidates back through an `albumsById` lookup before serializing. [reason] is nullable
  * defensively, same as [Shelf.reason], even though this route always fills it in today. */
@@ -758,7 +796,7 @@ data class MusicRecommendedShelf(
     val id: String,
     val label: String,
     val type: String,
-    val items: List<JellyfinAlbum>,
+    val items: List<MusicRecommendedAlbum>,
     val reason: String? = null,
 )
 

@@ -2,6 +2,7 @@ package net.develivarr.auralis.features.home
 
 import net.develivarr.auralis.data.model.JellyfinAlbum
 import net.develivarr.auralis.data.model.LibraryItem
+import net.develivarr.auralis.data.model.MusicRecommendedAlbum
 import net.develivarr.auralis.data.model.Shelf
 
 /**
@@ -25,6 +26,19 @@ data class FeedItem(
     val coverUrl: String?,
     /** 0..1, or `null` for content with no progress concept (a Jellyfin album). */
     val progress: Double?,
+    /** Wave 15d — `true` only for a [recommendedAlbumsToCarousel] item whose
+     * [MusicRecommendedAlbum.availability] is not `"owned"`: a recommendation from an outside
+     * provider (ListenBrainz) that the signed-in user does not have in their Jellyfin library.
+     * Defaults `false` for every other caller ([shelfToCarousel]'s books/podcasts,
+     * [albumsToCarousel]'s Jellyfin favourites) — none of which has an externality concept, since
+     * every item they produce is, by definition, already owned. Drives two things: the "Not in
+     * your library" badge/announcement ([net.develivarr.auralis.features.home
+     * .feedItemAnnouncement], `ForYouCard`'s visible overlay) and, in
+     * [net.develivarr.auralis.features.music.MusicLibraryScreen]'s recommended section, routing
+     * a tap to the music request flow instead of the album-detail screen — an external
+     * candidate's [id] is opaque and namespaced (`external:<provider>:<id>`), so opening it as a
+     * Jellyfin album id would be a dead end. */
+    val isExternal: Boolean = false,
 )
 
 data class FeedCarousel(
@@ -115,6 +129,43 @@ fun albumsToCarousel(
                     subtitle = album.artistName,
                     coverUrl = artworkUrl(album.id),
                     progress = null,
+                )
+            },
+    )
+
+/** [albumsToCarousel]'s counterpart for `GET /music/recommended`'s shelves (wave 15d), the only
+ * caller whose items can carry [MusicRecommendedAlbum.availability] `"external"` rather than
+ * `"owned"`. Kept as its own function rather than widening [albumsToCarousel]'s parameter type,
+ * because that function's only other caller
+ * ([net.develivarr.auralis.features.home.ForYouViewModel]'s Jellyfin-favourites carousel) has no
+ * externality concept at all — every favourite album is, by definition, already owned — so
+ * giving it a parameter it could never use meaningfully would be worse than one small extra
+ * function. [FeedItem.isExternal] is derived by comparing [MusicRecommendedAlbum.availability]
+ * to the literal `"owned"` string, never by matching an id prefix — see that field's own doc
+ * comment for why, and for why any value other than `"owned"` degrades to "treat as external"
+ * rather than "treat as owned". */
+fun recommendedAlbumsToCarousel(
+    id: String,
+    label: String,
+    albums: List<MusicRecommendedAlbum>,
+    reason: String? = null,
+    artworkUrl: (albumId: String) -> String?,
+): FeedCarousel =
+    FeedCarousel(
+        id = id,
+        label = label,
+        contentType = ForYouContentType.MUSIC,
+        reason = reason,
+        items =
+            albums.map { album ->
+                FeedItem(
+                    id = album.id,
+                    contentType = ForYouContentType.MUSIC,
+                    title = album.name,
+                    subtitle = album.artistName,
+                    coverUrl = artworkUrl(album.id),
+                    progress = null,
+                    isExternal = album.availability != "owned",
                 )
             },
     )

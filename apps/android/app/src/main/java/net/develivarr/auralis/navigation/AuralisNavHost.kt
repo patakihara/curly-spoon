@@ -62,6 +62,35 @@ object Routes {
     const val MUSIC_PLAYLISTS = "music/playlists"
     const val MUSIC_REQUESTS = "music/requests"
 
+    /** Argument name within [MUSIC_REQUESTS_PATTERN] — wave 15d. Optional and nullable: every
+     * pre-existing caller (the "Requests" top-bar action on [net.develivarr.auralis.features.music
+     * .MusicLibraryScreen]) still navigates to the bare [MUSIC_REQUESTS] path with nothing to
+     * pre-fill, which this pattern's `defaultValue = null` on the `composable` registration keeps
+     * matching unchanged. Only the recommended shelf's external-item tap
+     * ([net.develivarr.auralis.features.music.MusicLibraryScreen]'s `onRequestArtist`) supplies
+     * one, via [musicRequests]. */
+    const val MUSIC_REQUESTS_ARG_ARTIST = "artist"
+    private const val MUSIC_REQUESTS_PATTERN = "music/requests?$MUSIC_REQUESTS_ARG_ARTIST={$MUSIC_REQUESTS_ARG_ARTIST}"
+
+    /** Route pattern registered with [NavHost] — matches both the bare [MUSIC_REQUESTS] path and
+     * one carrying `?artist=…`, since [MUSIC_REQUESTS_ARG_ARTIST] is nullable with no default
+     * required at the call site. */
+    fun musicRequestsRoute(): String = MUSIC_REQUESTS_PATTERN
+
+    /** The concrete route to `navController.navigate(...)` for the music requests screen.
+     * [artist] `null` (the default) yields the plain [MUSIC_REQUESTS] path, identical to every
+     * pre-15d call site; a non-null value pre-fills the request screen's search field with it
+     * (wave 15d — see [net.develivarr.auralis.features.musicrequests.MusicRequestsViewModel]'s
+     * `initialSearchTerm` constructor parameter). URL-encoded via [android.net.Uri.encode]
+     * because an artist name can contain spaces, `&`, `?`, or any other query-string-hostile
+     * character Jellyfin/ListenBrainz happen to send. */
+    fun musicRequests(artist: String? = null): String =
+        if (artist != null) {
+            "music/requests?$MUSIC_REQUESTS_ARG_ARTIST=${android.net.Uri.encode(artist)}"
+        } else {
+            MUSIC_REQUESTS
+        }
+
     /** Android wave J — the synced lyrics view, reached from [net.develivarr.auralis.features.player
      * .MiniPlayerBar]'s "Lyrics" action. No argument: unlike every other detail route above,
      * this reads the currently-playing track straight off `PlayerViewModel.uiState` rather than
@@ -189,7 +218,20 @@ fun AuralisNavHost(
                 composable(Routes.MUSIC_SEARCH) { UnifiedSearchScreen(container, navController) }
                 composable(Routes.MUSIC_FAVORITES) { FavoritesScreen(container, navController, playerViewModel) }
                 composable(Routes.MUSIC_PLAYLISTS) { PlaylistsScreen(container, navController) }
-                composable(Routes.MUSIC_REQUESTS) { MusicRequestsScreen(container) }
+                composable(
+                    Routes.musicRequestsRoute(),
+                    arguments =
+                        listOf(
+                            navArgument(Routes.MUSIC_REQUESTS_ARG_ARTIST) {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            },
+                        ),
+                ) { backStackEntry ->
+                    val artist = backStackEntry.arguments?.getString(Routes.MUSIC_REQUESTS_ARG_ARTIST)
+                    MusicRequestsScreen(container, prefillArtist = artist)
+                }
                 composable(Routes.LYRICS) { LyricsScreen(container, playerViewModel) }
                 composable(Routes.QUEUE) { QueueScreen(playerViewModel) }
                 composable(

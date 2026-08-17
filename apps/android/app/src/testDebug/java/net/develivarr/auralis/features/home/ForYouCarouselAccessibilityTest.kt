@@ -2,8 +2,11 @@ package net.develivarr.auralis.features.home
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.ImageLoader
@@ -56,6 +59,18 @@ class ForYouCarouselAccessibilityTest {
             subtitle = null,
             coverUrl = null,
             progress = null,
+        )
+
+    /** Wave 15d — an external recommendation, the item under test for the two cases below. */
+    private val externalItem =
+        FeedItem(
+            id = "external:listenbrainz:mbid-1",
+            contentType = ForYouContentType.MUSIC,
+            title = "Random Access Memories",
+            subtitle = "Daft Punk",
+            coverUrl = null,
+            progress = null,
+            isExternal = true,
         )
 
     @Test
@@ -129,5 +144,68 @@ class ForYouCarouselAccessibilityTest {
         composeRule
             .onNodeWithContentDescription("The Fifth Season, N.K. Jemisin")
             .assertExists()
+    }
+
+    /** Wave 15d — the accessible half of "not in your library" must be announced, not just
+     * drawn: an external card whose badge is visual-only would be a silent divergence from the
+     * merged-node contract [feedItemAnnouncement] already establishes for the reason line above.
+     * Ordered ahead of the reason in [feedItemAnnouncement], so it's asserted mid-string here
+     * too, not just appended. */
+    @Test
+    fun `an external item's merged description announces 'Not in your library' ahead of the reason`() {
+        composeRule.setContent {
+            MaterialTheme {
+                Surface {
+                    ForYouCard(
+                        item = externalItem,
+                        imageLoader = imageLoader,
+                        onClick = {},
+                        reason = "Because you like Daft Punk",
+                    )
+                }
+            }
+        }
+
+        composeRule
+            .onNodeWithContentDescription(
+                "Random Access Memories, Daft Punk — Not in your library — Because you like Daft Punk",
+            )
+            .assertExists()
+    }
+
+    /** Wave 15d — the visual half: this Robolectric harness confirms a node with the expected
+     * *text* exists in the rendered tree (real Compose layout, not a pure-function assertion on
+     * [feedItemAnnouncement] alone) — see this file's own header comment for why that distinction
+     * matters. It does **not** prove what the badge looks like, where it sits over the cover, or
+     * what TalkBack actually announces on a device; there is no device or emulator here. */
+    @Test
+    fun `an external item renders a visible 'Not in your library' text node`() {
+        composeRule.setContent {
+            MaterialTheme {
+                Surface {
+                    ForYouCard(item = externalItem, imageLoader = imageLoader, onClick = {}, reason = null)
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Not in your library").assertExists()
+    }
+
+    /** Wave 15d — the negative case: an owned item (the pre-existing default,
+     * `isExternal = false`) must render neither the badge text node nor the announcement suffix,
+     * so "owned items are completely unchanged" is checked, not merely assumed from the badge's
+     * `if` guard. */
+    @Test
+    fun `an owned item announces no 'Not in your library' suffix and renders no badge text`() {
+        composeRule.setContent {
+            MaterialTheme {
+                Surface {
+                    ForYouCard(item = itemWithSubtitle, imageLoader = imageLoader, onClick = {}, reason = null)
+                }
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("The Fifth Season, N.K. Jemisin").assertExists()
+        composeRule.onAllNodesWithText("Not in your library").assertCountEquals(0)
     }
 }

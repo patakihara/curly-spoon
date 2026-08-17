@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import net.develivarr.auralis.data.settings.ServerConfigRepository
 import net.develivarr.auralis.features.home.FeedCarousel
-import net.develivarr.auralis.features.home.albumsToCarousel
+import net.develivarr.auralis.features.home.recommendedAlbumsToCarousel
 
 /** Whether a Jellyfin server is reachable at all — checked once, on screen entry, via
  * [MusicRepository.availability]. See that method's own doc comment for why this is a
@@ -198,7 +198,7 @@ class MusicLibraryViewModel(
                     result.shelves
                         .filter { it.items.isNotEmpty() }
                         .map { shelf ->
-                            albumsToCarousel(shelf.id, shelf.label, shelf.items, shelf.reason) { albumId ->
+                            recommendedAlbumsToCarousel(shelf.id, shelf.label, shelf.items, shelf.reason) { albumId ->
                                 jellyfinItemArtworkUrl(cachedBaseUrl, albumId)
                             }
                         }

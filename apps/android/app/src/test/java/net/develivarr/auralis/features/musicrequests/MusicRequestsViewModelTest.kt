@@ -66,6 +66,25 @@ class MusicRequestsViewModelTest {
             format = "mp3",
         )
 
+    /** Wave 15d — [MusicRequestsViewModel]'s `initialSearchTerm` constructor parameter, which
+     * [net.develivarr.auralis.features.musicrequests.MusicRequestsScreen]'s `prefillArtist` feeds
+     * from the recommended shelf's external-item tap. No `MockWebServer` response is enqueued —
+     * a pre-filled field must not itself trigger a search, only seed the state a later
+     * `submitSearch()` reads. */
+    @Test
+    fun `a non-null initialSearchTerm seeds searchTerm without issuing a search`() {
+        val viewModel = MusicRequestsViewModel(apiClient, initialSearchTerm = "Daft Punk")
+        assertEquals("Daft Punk", viewModel.uiState.value.searchTerm)
+        assertEquals(MusicSearchUiState.Idle, viewModel.uiState.value.searchState)
+        assertEquals(0, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `a null initialSearchTerm leaves searchTerm blank, same as the no-arg constructor`() {
+        val viewModel = MusicRequestsViewModel(apiClient)
+        assertEquals("", viewModel.uiState.value.searchTerm)
+    }
+
     @Test
     fun `submitSearch with one candidate and no errors produces Results with that candidate`() =
         runTest {
