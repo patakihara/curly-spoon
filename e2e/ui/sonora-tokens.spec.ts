@@ -85,7 +85,14 @@ test.describe('Sonora token layer', () => {
     const accent = await root.evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--accent').trim(),
     );
-    expect(accent.replace(/\s+/g, '').toLowerCase()).toBe('#8b5cf6');
+    // `--accent` is registered with `CSS.registerProperty` as a `<color>` (so the accent
+    // picker can cross-fade), and a registered custom property is *computed* rather than
+    // returned as the author-written token — so `getComputedStyle` gives `rgb(139, 92, 246)`
+    // here and the literal `#8b5cf6` in a browser that has not applied the registration yet.
+    // Accept either form: the point of this assertion is to catch a typo in the value, not to
+    // pin the serialization. Comparing the parsed channels would be stricter still, but two
+    // literals keep the failure message readable.
+    expect(accent.replace(/\s+/g, '').toLowerCase()).toMatch(/^(#8b5cf6|rgb\(139,92,246\))$/);
 
     const radiusPill = await root.evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--radius-pill').trim(),
