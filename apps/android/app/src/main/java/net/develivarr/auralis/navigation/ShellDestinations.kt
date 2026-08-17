@@ -68,3 +68,45 @@ fun shellDestinationFor(route: String?): ShellDestination? {
  * signed-in cold start.
  */
 fun shouldShowShell(route: String?): Boolean = route != Routes.ONBOARDING && route != Routes.LOGIN
+
+/**
+ * Which upstreams the signed-in server has configured, mirroring
+ * `apps/web/src/components/destinations.ts`'s `DestinationContext`. Every field defaults to
+ * `false` so an instance built before any network call resolves reads exactly like "nothing is
+ * configured yet" — the same default web's own `?? false` on each query gives — rather than
+ * `null`/unknown needing a third state threaded through [visibleShellDestinations].
+ */
+data class DestinationAvailability(
+    val jellyfinConfigured: Boolean = false,
+    val audiobookshelfConfigured: Boolean = false,
+    /** Whether `GET /libraries` returned at least one library with `mediaType == "book"`. */
+    val hasBookLibrary: Boolean = false,
+    /** Whether `GET /libraries` returned at least one library with `mediaType == "podcast"`. */
+    val hasPodcastLibrary: Boolean = false,
+)
+
+/**
+ * Which [ShellDestination]s are safe to show, mirroring web's `visibleDestinations` in
+ * `apps/web/src/components/destinations.ts` — "never show a section that will only error".
+ * [ShellDestination.FOR_YOU] and [ShellDestination.SEARCH] depend on no upstream and are always
+ * present. [ShellDestination.MUSIC] needs Jellyfin configured. [ShellDestination.BOOKS] and
+ * [ShellDestination.PODCASTS] need Audiobookshelf configured *and* a library of the matching
+ * media type — a configured-but-library-less server would otherwise show a destination that
+ * immediately 404s, the same reasoning web's own doc comment gives.
+ *
+ * This is the fix for wave 16d-A-2's finding: web already gated its five destinations this way,
+ * and `AuralisShell` used to render [ShellDestination.entries] unfiltered.
+ */
+fun visibleShellDestinations(availability: DestinationAvailability): Set<ShellDestination> {
+    val visible = mutableSetOf(ShellDestination.FOR_YOU, ShellDestination.SEARCH)
+    if (availability.jellyfinConfigured) {
+        visible += ShellDestination.MUSIC
+    }
+    if (availability.audiobookshelfConfigured && availability.hasBookLibrary) {
+        visible += ShellDestination.BOOKS
+    }
+    if (availability.audiobookshelfConfigured && availability.hasPodcastLibrary) {
+        visible += ShellDestination.PODCASTS
+    }
+    return visible
+}

@@ -11,13 +11,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -86,12 +82,20 @@ private val RAIL_BREAKPOINT = 600.dp
  * `features/`: zero declare their own `bottomBar`, zero use `verticalScroll`, and zero use
  * `ScrollBehavior` — so there is not even a *collapsing* top bar to mistake for this bug; every
  * screen's own `TopAppBar` is a plain, always-visible one.
+ *
+ * **Wave 16d-A-2** added [visibleDestinations]: 16d-P's parity review found web already hides a
+ * destination whose upstream isn't configured (`apps/web/src/components/destinations.ts`) while
+ * this shell rendered all five, always — a Music tab that only leads to Jellyfin's "not
+ * configured" empty state on a household with no Jellyfin. Defaults to every destination so
+ * existing previews/tests that don't pass it keep their old behaviour; the real call site
+ * ([AuralisNavHost]) always supplies [ShellDestinationsViewModel]'s live value.
  */
 @Composable
 fun AuralisShell(
     navController: NavHostController,
     playerViewModel: PlayerViewModel,
     imageLoader: ImageLoader,
+    visibleDestinations: Set<ShellDestination> = ShellDestination.entries.toSet(),
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -153,22 +157,14 @@ fun AuralisShell(
             val isWide = maxWidth >= RAIL_BREAKPOINT
             if (isWide) {
                 Row(modifier = Modifier.fillMaxSize()) {
+                    // Rail ordering (Search first) and the visibility filter (16d-A-2) both live
+                    // in ShellNavigationRailItems now — see its own doc comment.
                     NavigationRail {
-                        // The spec's rail ordering: Search at the top, then the remaining four in
-                        // their usual order — the opposite of the bottom bar, which puts Search last.
-                        // This is purely a rendering-order choice for this composable; ShellDestination
-                        // itself stays declared in bottom-bar order.
-                        val railOrder =
-                            listOf(ShellDestination.SEARCH) +
-                                ShellDestination.entries.filter { it != ShellDestination.SEARCH }
-                        railOrder.forEach { destination ->
-                            NavigationRailItem(
-                                selected = destination == activeDestination,
-                                onClick = { navigateTo(destination) },
-                                icon = { Icon(destination.icon, contentDescription = destination.label) },
-                                label = { Text(destination.label) },
-                            )
-                        }
+                        ShellNavigationRailItems(
+                            visibleDestinations = visibleDestinations,
+                            activeDestination = activeDestination,
+                            onNavigate = ::navigateTo,
+                        )
                     }
                     Scaffold(
                         modifier = Modifier.weight(1f),
@@ -181,14 +177,11 @@ fun AuralisShell(
                         Column {
                             miniPlayer()
                             NavigationBar {
-                                ShellDestination.entries.forEach { destination ->
-                                    NavigationBarItem(
-                                        selected = destination == activeDestination,
-                                        onClick = { navigateTo(destination) },
-                                        icon = { Icon(destination.icon, contentDescription = destination.label) },
-                                        label = { Text(destination.label) },
-                                    )
-                                }
+                                ShellNavigationBarItems(
+                                    visibleDestinations = visibleDestinations,
+                                    activeDestination = activeDestination,
+                                    onNavigate = ::navigateTo,
+                                )
                             }
                         }
                     },
