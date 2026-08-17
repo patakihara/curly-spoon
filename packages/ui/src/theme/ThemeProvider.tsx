@@ -24,6 +24,7 @@ import {
 import { MantineProvider } from '@mantine/core';
 import {
   AURALIS_SOURCE_COLOR,
+  DEFAULT_ACCENT,
   createScheme,
   schemeToCssVars,
   type M3Scheme,
@@ -45,12 +46,24 @@ import { prefersReducedMotion, watchReducedMotion } from './reducedMotion.js';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface ThemeProviderProps {
-  /** Source colour to build the scheme from. Defaults to the Auralis warm-amber fallback. */
+  /**
+   * Source colour to build the scheme from. Defaults to the Auralis warm-amber fallback.
+   * Accepted for API compatibility only since wave 16c-2-W-1 — `--m3-*` chroma roles are
+   * Sonora's fixed values now (`../tokens/color.js`'s module doc comment); this no longer
+   * drives any visible surface. `accent` below is the one colour a caller can still change.
+   */
   sourceColor?: string;
   /** `system` (default) follows `prefers-color-scheme`; `light`/`dark` pin it. */
   mode?: ThemeMode;
   /** -1..1, standard is 0. */
   contrastLevel?: number;
+  /**
+   * Sonora's one customisable colour (`--accent`, SONORA.md §1.3) — Symphony's 17-hue preset
+   * picker, not artwork-derived. Defaults to `DEFAULT_ACCENT` (Sonora's own default, violet).
+   * `--accent-ink`/`--tone-library` (`sonora-theme.css`) reference `var(--accent)` already, so
+   * they re-derive for free from whatever this resolves to — no separate wiring needed here.
+   */
+  accent?: string;
   children?: ReactNode;
 }
 
@@ -65,6 +78,10 @@ interface ThemeContextValue {
   /** Re-themes the shell from a new source colour (e.g. freshly extracted artwork). */
   setSourceColor: (hex: string) => void;
   setMode: (mode: ThemeMode) => void;
+  /** The current `--accent` value (a `#rrggbb` hex, one of `ACCENT_PRESETS` or the default). */
+  accent: string;
+  /** Re-themes `--accent` (e.g. Settings' colour-swatch picker). */
+  setAccent: (hex: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -122,17 +139,20 @@ export function ThemeProvider({
   sourceColor = AURALIS_SOURCE_COLOR,
   mode = 'system',
   contrastLevel = 0,
+  accent = DEFAULT_ACCENT,
   children,
 }: ThemeProviderProps) {
   const systemPrefersDark = useSystemPrefersDark();
   const [ownSourceColor, setOwnSourceColor] = useState(sourceColor);
   const [ownMode, setOwnMode] = useState(mode);
+  const [ownAccent, setOwnAccent] = useState(accent);
   const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion);
 
   useEffect(() => watchReducedMotion(setReducedMotion), []);
-  // Controlled-prop usage: if the caller passes a new sourceColor/mode, follow it.
+  // Controlled-prop usage: if the caller passes a new sourceColor/mode/accent, follow it.
   useEffect(() => setOwnSourceColor(sourceColor), [sourceColor]);
   useEffect(() => setOwnMode(mode), [mode]);
+  useEffect(() => setOwnAccent(accent), [accent]);
 
   const resolvedMode: 'light' | 'dark' =
     ownMode === 'system' ? (systemPrefersDark ? 'dark' : 'light') : ownMode;
@@ -150,7 +170,12 @@ export function ThemeProvider({
     const el = rootRef.current;
     if (!el) return;
 
-    const vars = schemeToCssVars(scheme);
+    // `--accent` rides the same registered-property crossfade as the `--m3-*` scheme (see
+    // this module's doc comment) — it is Sonora's one customisable colour
+    // (`sonora-tokens.css`'s `:root { --accent: ... }`), and `--accent-ink`/`--tone-library`
+    // (`sonora-theme.css`) already reference `var(--accent)`, so overriding it here on
+    // `.auralis-theme-root` re-derives both for free with no extra wiring.
+    const vars = { ...schemeToCssVars(scheme), '--accent': ownAccent };
     for (const [name, value] of Object.entries(vars)) {
       registerColorProperty(name, value);
     }
@@ -166,10 +191,11 @@ export function ThemeProvider({
     for (const [name, value] of Object.entries(vars)) {
       el.style.setProperty(name, value);
     }
-  }, [scheme, reducedMotion]);
+  }, [scheme, ownAccent, reducedMotion]);
 
   const setSourceColor = useCallback((hex: string) => setOwnSourceColor(hex), []);
   const setMode = useCallback((next: ThemeMode) => setOwnMode(next), []);
+  const setAccent = useCallback((hex: string) => setOwnAccent(hex), []);
 
   const contextValue = useMemo<ThemeContextValue>(
     () => ({
@@ -179,8 +205,10 @@ export function ThemeProvider({
       sourceColor: ownSourceColor,
       setSourceColor,
       setMode,
+      accent: ownAccent,
+      setAccent,
     }),
-    [scheme, ownMode, resolvedMode, ownSourceColor, setSourceColor, setMode],
+    [scheme, ownMode, resolvedMode, ownSourceColor, setSourceColor, setMode, ownAccent, setAccent],
   );
 
   // Mantine spike (docs/HANDOVER.md): `scheme.primary` is already the resolved M3

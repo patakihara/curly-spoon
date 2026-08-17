@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AURALIS_SOURCE_COLOR, contrastRatio, createScheme, schemeToCssVars } from './color.js';
+import {
+  ACCENT_PRESETS,
+  AURALIS_SOURCE_COLOR,
+  DEFAULT_ACCENT,
+  contrastRatio,
+  createScheme,
+  schemeToCssVars,
+} from './color.js';
 
 const SOURCE_COLORS = [
   AURALIS_SOURCE_COLOR, // Auralis warm amber fallback
@@ -170,5 +177,25 @@ describe('contrastRatio', () => {
 describe('AURALIS_SOURCE_COLOR', () => {
   it('is the warm amber fallback specified in docs/DESIGN.md', () => {
     expect(AURALIS_SOURCE_COLOR).toBe('#B8683C');
+  });
+});
+
+describe('DEFAULT_ACCENT', () => {
+  it('is Sonora violet, matching the ACCENT_PRESETS entry named "violet"', () => {
+    expect(DEFAULT_ACCENT).toBe('#8b5cf6');
+    expect(ACCENT_PRESETS.find((p) => p.name === 'violet')?.hex).toBe(DEFAULT_ACCENT);
+  });
+});
+
+describe('ACCENT_PRESETS', () => {
+  it('has Symphony’s 17 hues, each a distinct #rrggbb hex', () => {
+    expect(ACCENT_PRESETS).toHaveLength(17);
+    for (const preset of ACCENT_PRESETS) {
+      expect(preset.hex).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+    const hexes = new Set(ACCENT_PRESETS.map((p) => p.hex.toLowerCase()));
+    const names = new Set(ACCENT_PRESETS.map((p) => p.name));
+    expect(hexes.size).toBe(17);
+    expect(names.size).toBe(17);
   });
 });
