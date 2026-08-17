@@ -39,9 +39,17 @@
  * `.m3-dialog-scrim` is kept in `classNames.overlay` (rather than dropped)
  * because `e2e/ui/dialog.spec.ts` selects the scrim by that class to test the
  * click-to-dismiss behaviour — dropping it would silently break that spec.
+ *
+ * Wave 16c-4-W: `portalProps={{ target: portalTarget }}` re-parents the portal from
+ * Mantine's default (`document.body`, outside `.auralis-theme-root`, where Sonora's
+ * `--surface-*`/`--accent-ink` resolve to nothing) into the node `ThemeProvider` renders
+ * for exactly this purpose — see `useTheme`'s `portalTarget` doc comment. `undefined`
+ * (never `null`) falls back to Mantine's own default portal target for the one render
+ * before `ThemeProvider`'s ref callback fires.
  */
 import type { ReactNode } from 'react';
 import { Modal } from '@mantine/core';
+import { useTheme } from '../theme/ThemeProvider.js';
 import './Dialog.css';
 
 export interface DialogProps {
@@ -62,6 +70,7 @@ export function Dialog({
   actions,
   dismissOnScrimClick = true,
 }: DialogProps) {
+  const { portalTarget } = useTheme();
   return (
     <Modal
       opened={open}
@@ -70,6 +79,7 @@ export function Dialog({
       centered
       withCloseButton={false}
       closeOnClickOutside={dismissOnScrimClick}
+      portalProps={{ target: portalTarget ?? undefined }}
       classNames={{
         overlay: 'm3-dialog-scrim',
         content: 'm3-dialog-panel',

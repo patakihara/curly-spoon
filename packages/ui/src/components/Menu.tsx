@@ -24,9 +24,16 @@
  * shimmer (see that component's own doc comment) — *does* cover `Menu`'s dropdown, since its
  * open/close animation runs through Mantine's own JS-driven `Transition` machinery; no
  * separate reduced-motion wiring is needed here.
+ *
+ * Wave 16c-4-W: `portalProps={{ target: portalTarget }}` re-parents the dropdown's portal
+ * from Mantine's default (`document.body`) into `ThemeProvider`'s dedicated portal node —
+ * see `Dialog.tsx`'s identical comment and `useTheme`'s `portalTarget` doc comment. `Menu`
+ * is built on `Popover` (`__PopoverProps`), which accepts the same `portalProps` shape as
+ * `Modal`/`Drawer.Root`.
  */
 import type { ReactNode } from 'react';
 import { Menu as MantineMenu } from '@mantine/core';
+import { useTheme } from '../theme/ThemeProvider.js';
 import './Menu.css';
 
 export interface MenuItemDescriptor {
@@ -58,8 +65,15 @@ export function Menu({
   children,
   longPressDelay = 500,
 }: MenuProps) {
+  const { portalTarget } = useTheme();
   return (
-    <MantineMenu opened={opened} onChange={onOpenChange} withinPortal shadow="md">
+    <MantineMenu
+      opened={opened}
+      onChange={onOpenChange}
+      withinPortal
+      portalProps={{ target: portalTarget ?? undefined }}
+      shadow="md"
+    >
       <MantineMenu.ContextMenu longPressDelay={longPressDelay}>{children}</MantineMenu.ContextMenu>
       <MantineMenu.Dropdown aria-label={ariaLabel} className="m3-menu-dropdown">
         {items.map((item) => (

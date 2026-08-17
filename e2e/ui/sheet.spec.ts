@@ -148,4 +148,40 @@ test.describe('Sheet', () => {
     );
     expect(leftovers).toEqual([]);
   });
+
+  // Wave 16c-4-W (docs/ROADMAP.md §16) — same reasoning as `dialog.spec.ts`'s identical
+  // block: `Drawer.Root`'s portal moved from `document.body` into `ThemeProvider`'s
+  // dedicated portal node, a child of `.auralis-theme-root`, where `sonora-theme.css`'s
+  // `--surface-*` rules can actually match. Nothing above this test can distinguish a
+  // correctly re-parented panel from one still rendering unstyled at `document.body` —
+  // both pass identically on testids and text. Both themes: the token is theme-scoped with
+  // no `:root` fallback.
+  for (const mode of ['dark', 'light'] as const) {
+    test(`a Sonora surface token resolves on the sheet panel in ${mode} mode`, async ({ page }) => {
+      if (mode === 'light') {
+        await page.getByTestId('mode-light').click();
+      }
+      await page.getByTestId('sheet-open').click();
+      // `.m3-sheet-panel` alone is ambiguous — `Sheet.css`'s own header comment explains why:
+      // Mantine's `Drawer.Content` applies the className to *two* DOM nodes, the fixed
+      // positioning wrapper (`.mantine-Drawer-inner`) and the visible panel
+      // (`.mantine-Drawer-content`, `role="dialog"`). The role locator picks the latter.
+      const panel = page.getByRole('dialog', { name: 'Queue' });
+      await expect(panel).toBeVisible();
+      const surfaceCard = await panel.evaluate((el) =>
+        getComputedStyle(el).getPropertyValue('--surface-card').trim(),
+      );
+      expect(surfaceCard).not.toBe('');
+
+      const scrim = page.locator('.m3-sheet-scrim');
+      const scrimBox = await scrim.boundingBox();
+      const viewport = page.viewportSize();
+      expect(scrimBox).not.toBeNull();
+      expect(viewport).not.toBeNull();
+      if (scrimBox && viewport) {
+        expect(scrimBox.width).toBeGreaterThanOrEqual(viewport.width - 1);
+        expect(scrimBox.height).toBeGreaterThanOrEqual(viewport.height - 1);
+      }
+    });
+  }
 });

@@ -33,6 +33,12 @@
  * `NowPlaying.tsx` shipped exactly this bug (a11y audit, 2026-08-05) and
  * `e2e/ui/sheet.spec.ts` couldn't catch it because this gallery's own harness never
  * unmounts `<Sheet>` either.
+ *
+ * Wave 16c-4-W: `portalProps={{ target: portalTarget }}` on `Drawer.Root` re-parents the
+ * portal from Mantine's default (`document.body`) into `ThemeProvider`'s dedicated portal
+ * node — see `Dialog.tsx`'s identical comment and `useTheme`'s `portalTarget` doc comment
+ * for the full reasoning; it applies unchanged here since `Drawer.Root` is `ModalBase`
+ * underneath, same as `Modal`.
  */
 import {
   useId,
@@ -44,6 +50,7 @@ import {
 } from 'react';
 import clsx from 'clsx';
 import { Drawer } from '@mantine/core';
+import { useTheme } from '../theme/ThemeProvider.js';
 import './Sheet.css';
 
 /**
@@ -76,6 +83,7 @@ export function Sheet({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{ startY: number; startHeight: number } | null>(null);
   const titleId = useId();
+  const { portalTarget } = useTheme();
 
   const [activeDetent, setActiveDetent] = useState(Math.min(initialDetent, detents.length - 1));
   const [dragHeightPx, setDragHeightPx] = useState<number | null>(null);
@@ -142,6 +150,7 @@ export function Sheet({
       position="bottom"
       size={currentHeightPx}
       transitionProps={{ duration: 0 }}
+      portalProps={{ target: portalTarget ?? undefined }}
       // `--drawer-justify: center`: Mantine's own value is unset (`flex-start`)
       // for a bottom drawer, since a full-width drawer never needs centering —
       // but this panel caps out at 720px (below), so it needs centering in the
