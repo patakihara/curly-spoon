@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · ended · ## Verdict: fix these 4 things first (one is substantive, three are minor/arithmetic) I read every vendored token CSS file in full, all nine 'compone…
 - `2026-08-16T18:46:47Z` · `a5e487ebb2af6f810` · general-purpose · ended · The full '--project=app --workers=1' Playwright suite is still running in the background (I have a Monitor watching for it to finish). While waiting,…
 - `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
 - `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
@@ -283,8 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
 - `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
-- `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · running · —
+- `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
 - `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · running · —
+- `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -759,9 +759,32 @@ implemented, and `packages/ui/src/tokens/artwork.ts` has zero callers, so nothin
 away and the question is forward-looking. Delete this paragraph when she answers, and record the
 answers in `SONORA.md`.
 
-**CLAIMED 2026-08-17 — `16c-2-W-1`, the substrate catch-up.** One Sonnet agent, redefining the
-`--m3-*` values to Sonora's in `packages/ui/src/tokens/*.ts` and `packages/ui/src/styles/index.css`.
-`ROADMAP.md` §16's `16c-2-W` entry has the full reasoning and why it does not reverse 16b-2.
+**`16c-2-W-1` is IMPLEMENTED and UNDER REVIEW — commit `5731785` on branch
+`worktree-agent-ae99898f5257ab092`, not yet merged and not yet pushed.** Seven files, all in
+`packages/ui`: `--m3-*` colour, radius, motion and elevation redefined to Sonora's fixed values,
+with typography and spacing deliberately untouched. Its own commit message is unusually good — read
+`git log -1 --format=%B 5731785` rather than re-deriving what it did.
+
+**It stopped before running Playwright or taking a single screenshot**, having run only unit tests
+(101/101 `packages/ui`, 1641/1641 root), typecheck, lint and format. That is the exact death this
+file already documents — it backgrounded a `--project=ui` run and waited for a notification that
+ends the agent. **Its work was committed, so nothing was lost**, which is the spec-side instruction
+working; the orchestrator-side check is what confirmed it. It also left a live Playwright runner and
+workers behind, respawning on kill until the parent runner was found — note the parent's own command
+line does **not** contain the worktree path, so `pgrep -f "worktrees/agent-<id>"` misses it. Match on
+the child's path, then kill its `ppid`.
+
+A second Sonnet agent is now reviewing that commit and running the verification it owes.
+
+**One product consequence to settle, and it is genuinely user-facing.** With the `--m3-*` chroma
+roles now _fixed_ at Sonora's values, the Settings colour-swatch picker no longer drives them — only
+the five primitives migrated onto `--accent` in 16c-1-W still respond to it. That is Sonora's
+intended end state (`--accent` is _the one_ customizable colour) and Android already works this way,
+so it is not wrong — but until more components move onto `--accent`, **Sofia's colour picker has much
+less visible reach than it did.** `16c-2-W-2` — migrating the remaining components onto
+`--accent`/`--surface-*` — is what restores it, and that makes it the next wave rather than an
+optional follow-up. The review has been asked to judge from the running app whether this currently
+reads as "reduced reach" or as "the picker looks broken".
 
 **Checked before dispatching, so nobody re-checks it: none of the six `worktree-*` branches holds
 lost work.** `abfc1e3c98500edeb` and `ada9aa18e890f1985` are fully merged (zero commits ahead of
