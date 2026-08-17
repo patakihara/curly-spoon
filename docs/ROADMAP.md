@@ -3689,11 +3689,36 @@ boundaries, disjoint directories where waves run in parallel.
   **Do this before the screens.** A screen rebuilt inside a document that scrolls wrongly has to be
   revisited once the scroll container moves, and anything measuring or scrolling depends on it.
 
+  - **16d-W is split in two, 2026-08-17, and the split is this repo's own ~150-turn rule.** The
+    bullet below bundles three separable things — docking, the rig re-cut, and the `Icon`-`filled`
+    nav wiring — into one wave. Docking is the half Sofia reported, and it is independently
+    verifiable, so it goes first and alone as **`16d-W-1`**. The rig re-cut and the `filled` wiring
+    become **`16d-W-2`**, which runs **after** rather than beside it: both touch
+    `apps/web/src/styles/app.css` and `Shell.tsx`, and this project has already paid for two
+    sessions editing one file at once.
+
+    **The rig's real thresholds, recorded here because the bullet below invites the wrong reading.**
+    The redesign has **two**: `railWide = w >= 1024` and `showPanel = w >= 1240`. The
+    `1440 / 1280 / 1024 / 768` figures in the `16d-P` bullet are the design kit's **frame widths** —
+    the canvases the screens were drawn at — **not breakpoints**. An agent handed that list will
+    implement 1280 and be wrong. Today's rig (`apps/web/src/hooks/breakpoint.ts`) is compact `< 600`
+    / medium `600–1240` / expanded `>= 1240`, so `showPanel` already matches and **the only thing
+    `16d-W-2` actually re-cuts is the rail going wide at 1024 instead of 1240** — one new
+    intermediate state, 1024–1240, where the rail carries labels but the panel is still absent.
+
   - **16d-W** — the docked three-region shell, the rail, the player bar, and the adaptive rig. The
     rig has **two** thresholds, not four: `railWide = w >= 1024`, `showPanel = w >= 1240`. Its two
     inputs are already built (see below). Expect `desktop-width.spec.ts` and
     `tablet-breakpoint.spec.ts` to break **by design** — they pin the breakpoints being re-cut — and
     budget them into the wave rather than treating them as regressions.
+  - **16d-A is dispatched as a question, not an instruction** (2026-08-17). It is told to
+    _establish_ whether Android has this class of bug — chrome pinned by `Scaffold(bottomBar = …)`
+    versus scrolling as an item inside a `LazyColumn` — and that **"no bug here, and here is the
+    file:line evidence" is a completely good outcome**, arguably the better one. Assuming the
+    report is web-only is precisely how this project's parity claims went wrong three times. Note
+    also that a _deliberately_ collapsing top bar (`TopAppBarScrollBehavior`) is Android idiom and
+    is **not** this bug; the rule is about persistent navigation chrome, not about a header.
+
   - **16d-A** — the Android equivalent: the persistent bottom tab bar, the mini player docked above
     it, and the full-screen Now Playing sheet. **Check Android for the same class of bug** — whether
     its chrome is genuinely pinned or scrolls with a `LazyColumn` — rather than assuming the report
