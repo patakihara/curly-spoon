@@ -100,8 +100,24 @@ test('the quick-picks grid renders above the carousels and keeps its two-column 
   await expect(grid).toBeVisible();
   const tiles = page.locator('[data-testid^="quick-pick-"]:not([data-testid*="skeleton"])');
   await expect(tiles.first()).toBeVisible();
-  const tileCount = await tiles.count();
-  expect(tileCount).toBeGreaterThanOrEqual(2);
+
+  // `buildQuickPicks` derives its tiles from `visibleCarousels`, which is
+  // only fully populated once *all* of Home's independent async shelf
+  // sources have resolved -- the same unreserved race docs/HANDOVER.md's
+  // phase 14c documents. Reading `tiles.count()` right after only the
+  // *first* tile becomes visible races that: on a slow enough load, one
+  // source can have contributed before the others, understating the real
+  // count for a moment. Polling for the count -- rather than waiting on any
+  // one specific ordinary shelf, which pulls in that shelf's own load time
+  // as an unrelated new way to time out -- retries the read itself until it
+  // holds, without loosening the >=2 the test actually cares about.
+  let tileCount = 0;
+  await expect
+    .poll(async () => {
+      tileCount = await tiles.count();
+      return tileCount;
+    })
+    .toBeGreaterThanOrEqual(2);
 
   // Two columns: the first two tiles sit on the same row (equal y), the third (if
   // present) sits on the next row down.
