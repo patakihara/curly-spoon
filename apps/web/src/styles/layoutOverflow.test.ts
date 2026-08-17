@@ -82,7 +82,14 @@ describe('mini player docking at medium widths (defect: overlapped the 80px coll
 
 describe('compact bottom padding reserves room for the mini player (defect: content scrolled behind it)', () => {
   it('adds extra bottom padding only while the mini player is actually rendered', () => {
-    const rule = ruleBodyContaining(".auralis-shell--compact[data-mini-player-active='true']");
+    // Wave 16d-W-1 moved this padding from `.auralis-shell--compact` itself onto
+    // `.auralis-shell__content` — the shell no longer scrolls (it is the fixed-height
+    // outer boundary now), so padding on it reserves nothing a scroll can reach. The
+    // clearance still exists, still gated on the same `data-mini-player-active`
+    // attribute, just on the element that actually scrolls.
+    const rule = ruleBodyContaining(
+      ".auralis-shell--compact[data-mini-player-active='true'] .auralis-shell__content",
+    );
     expect(rule).toMatch(/padding-bottom:/);
   });
 });
