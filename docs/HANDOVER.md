@@ -283,8 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T16:42:56Z` · `ad4802d687ce40989` · general-purpose · ended · ## Report — Wave 16d-P: parity review of web's docked shell vs Android's chrome **No code changes.** Working tree is clean ('git status --short' empt…
 - `2026-08-17T16:54:14Z` · `a3d35b711e9e2345e` · general-purpose · ended · ## Report — Wave 16d-A-2 **Branch/commit:** 'worktree-agent-a3d35b711e9e2345e' at '5e7d12a', on top of 'ccca737'. Working tree clean, nothing outstan…
 - `2026-08-17T17:29:15Z` · `a90dd8e5e13e65560` · general-purpose · ended · Working tree is clean, one commit on top of 'fb384e5'. Not pushing or merging, per instructions. ## Report — fixing the two ShellNavigationItemsTest…
-- `2026-08-17T17:56:20Z` · `a8977d5ddbe748b6e` · general-purpose · running · —
-- `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · running · —
+- `2026-08-17T17:56:20Z` · `a8977d5ddbe748b6e` · general-purpose · ended · ## Report — Wave 16c-2-W-3 **Branch/commit:** 'worktree-agent-a8977d5ddbe748b6e' at 'b138cc6', on top of '364040e'. Working tree clean, nothing uncom…
+- `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16b-2-A-2: Robolectric cover…
 
 <!-- AGENT_LOG_END -->
 
@@ -897,36 +897,51 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
 
-### CLAIMED 2026-08-17 — `16c-2-W-3` (web) and `16b-2-A-2` (Android), dispatched together
+### DONE — `16c-2-W-3` and `16b-2-A-2`, both CI-verified on `a98a6a6`
 
-**Why these before `16e`, since the section below says 16e is next.** The argument is the same one
-§16 already accepted for putting 16d before the screens: **a screen rebuilt against a half-migrated
-`Card` has to be revisited when `Card` migrates.** `Card` and the compact bottom nav are still on
-`--m3-*`, so building screens on top of them buys work twice. This is a deliberate reorder, not a
-drift — recorded here and in §16 so the next session does not read "16e is the main body" and find
-primitive work instead.
+**`main` is at `a98a6a6`; `CI` and `Android` are green on it.** Nothing claimed, nothing in flight.
 
-**`16c-2-W-3` is web-only, and the Android side is discharged rather than ignored.** Sofia's
-standing parity rule says a wave changing one platform's appearance must say something about the
-other. Here the something is **nothing to do, on existing evidence**: `16b-2-P` compared all 26
-`--m3-*` chroma values against Android's `ColorScheme` by hand and found zero mismatches, and
-Android is already re-themed app-wide through `AuralisTheme`, so it has no `--m3-*` substrate to
-migrate off. **`16d-P` separately established `Card` has zero Android call sites at all.**
+**The accent picker's boundary, corrected — this list has been wrong in this file twice, so read it
+rather than the older copies below.**
 
-**That last fact is a real open question and stays open:** `Chip` and `Card` are used on web and
-called nowhere on Android. Deliberate platform idiom or a missing surface? A token review cannot
-see it and neither of these waves settles it. It wants a `-P` ruling attached to whichever wave
-next adds Android surface.
+- **Responds:** `Chip`, `Slider`, `IconButton`, the desktop rail's active destination, Settings'
+  _selected_ mode button, and now **the compact bottom nav's active pill**.
+- **Does not, and correctly so:** `Card` — see below.
+- **Does not, and still owed:** Settings' _unselected_ mode buttons, and `Dialog`/`Sheet`/`Menu`,
+  which are blocked on re-parenting.
 
-**`16b-2-A-2` is the Robolectric coverage gap `16b-2-P` named** — the theme test asserts colours,
-weights and radii but **not the 26 chroma-role values**, which have been verified exactly once, by
-a human reading a table. Android-only and needs no browser, which is what lets it run beside the
-web wave at all.
+**`Card` needs nothing, and the wave spec's premise was wrong.** Traced through its history:
+`16c-1-W` already migrated it fully onto Sonora's neutral `--surface-*`/`--radius-*`/`--shadow-*`,
+and **at no point has it carried an accent-coloured element**. Sonora's own vendored `Card.jsx`
+reserves `--accent` for selected/filled states and a media-tile gradient; this app's `Card` is
+deliberately a generic container with no `selected` concept, and a grep found **zero** call sites
+combining it with accent styling. **Wiring one would have been a writer with no reader.** The wave
+declined and reported instead, which is the right answer — do not re-dispatch this.
 
-**Dispatched together because one needs Playwright and one does not** — the constraint below.
-**Their merges are deliberately staggered**, because `android.yml` has `cancel-in-progress: true`
-unconditionally, so pushing the web merge while the Android wave's run is in flight would kill the
-run whose execution is the entire point of a coverage wave.
+**The trap the bottom nav walked up to and around, worth knowing before the next migration.** The
+obvious move was to match the desktop rail's `--surface-card`/`--accent-ink` pairing. That would
+have rendered an **invisible pill**: `16c-2-W-1`'s substrate fix made `--m3-surface-container` — the
+bar's own background — **numerically identical** to `--surface-card` in both themes (`#e1e1e1` /
+`#141414`). It uses the solid `--accent`/`--accent-contrast` fill instead, as `Chip`'s checked state
+already does. **Playwright would not have caught the invisible version**, since it asserts testids
+and text and never computed styles.
+
+**`16b-2-A-2` closed the last mechanical gap in Android's theme.** The 26 chroma roles were verified
+exactly once, by a human reading a table; two Robolectric tests now assert all sixteen `ColorScheme`
+slots per theme — **32 assertions** — through `MaterialTheme.colorScheme` inside `AuralisTheme`,
+so what is checked is the value that survived assembly, not the constant re-read from its own
+definition.
+
+**It also found a distinction nobody had written down:** six of those light-side values —
+`onSecondary`, `onSecondaryContainer`, `onTertiary`, `onTertiaryContainer`, `onError`,
+`onErrorContainer` — **have no light value in `SONORA.md` at all** and are derived by contrast in
+`Color.kt`. The test labels them as derived rather than asserting them as design literals, so a
+change to the derivation is still caught without the file claiming the design says something it
+does not. No value disagreed with `SONORA.md`, independently agreeing with `16b-2-P`.
+
+**Honest limit on that wave:** its deliberate make-it-fail check could not be run — there is no JDK
+on this machine — so the expected value was flipped and restored without anyone watching it go red.
+CI is the first place that test ever executed.
 
 ### Session state, 2026-08-17 (evening) — **phase 16d is complete on both platforms**
 
