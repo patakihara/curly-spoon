@@ -181,10 +181,27 @@ fun AuralisNavHost(
     when (val state = startViewModel.state.collectAsState().value) {
         is StartState.Loading -> LoadingScreen()
         is StartState.Ready -> {
+            // Wave 16d-A-2. Constructed once `AppStartViewModel` has resolved (`state.destination`
+            // is a snapshot from the moment the app launched — login and onboarding both navigate
+            // onward via the live NavHost, not by this outer `when` re-running — so gating
+            // construction on `state.destination` would freeze it at the launch destination
+            // forever). It fires its fetches even when `state.destination` starts on
+            // onboarding/login; `AuralisShell`'s own `shouldShowShell` early-return already means
+            // nothing renders the result there, and the ApiClient calls degrade to `false` rather
+            // than throw, so the cost is an unused network round trip, not a correctness issue.
+            val shellDestinationsViewModel: ShellDestinationsViewModel =
+                viewModel(
+                    factory =
+                        viewModelFactory {
+                            initializer { ShellDestinationsViewModel(container.apiClient) }
+                        },
+                )
+            val visibleDestinations by shellDestinationsViewModel.visibleDestinations.collectAsState()
             AuralisShell(
                 navController = navController,
                 playerViewModel = playerViewModel,
                 imageLoader = container.imageLoader,
+                visibleDestinations = visibleDestinations,
             ) { shellPadding ->
             NavHost(
                 navController = navController,
