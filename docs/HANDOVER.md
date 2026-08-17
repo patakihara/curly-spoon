@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · ended · ## Report — Wave 15a: the external-candidate seam **Branch/commit:** 'worktree-agent-a0120e561b6bac637' at '91af5c1' (follow-up) on top of '1709c0d',…
 - `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · ended · Clean tree, three commits on top of the claimed baseline. The wave is complete and verified. Here's the final report. ## Report — Wave 16b-2, the Son…
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
@@ -283,8 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · running · —
 - `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
 - `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
-- `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · running · —
-- `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · running · —
+- `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · ended · Everything is clean and committed. Here's my report. ## Report — Wave 15d-1-S **Branch/commit:** 'worktree-agent-a7c69864b7e5a52b5' at 'ace32cb', on…
+- `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
+- `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -756,6 +756,46 @@ item by name in the response body rather than a helper's return value.
 
 **It also stopped mid-verification**, on an unfinished root `pnpm test` — the second agent today to
 die waiting on a backgrounded run. Its work was committed first, so again nothing was lost.
+
+**`15d-1-S` DONE — `ace32cb` on `worktree-agent-a7c69864b7e5a52b5`, on top of `069ecb6`.** Adds the
+required `availability` field at both mapping sites via a route-scoped
+`MusicRecommendedAlbum = Album & { availability }` — **no shared domain type touched**, so
+`packages/jellyfin-client`'s `Album` is unchanged and its consumers cannot go red. Proved on the wire
+through `app.inject()` on **both** an owned and an external item, and asserted `'owned'` on the
+library shelves _following_ the external one so the field cannot be a blanket constant. **It also
+closed the uncovered `catch` the right way**: deleted the `warn` line, watched the new test fail,
+restored it, watched it pass. No fixture widened. 726 `apps/server` tests, 1653 workspace.
+
+**`15d-1-A` DONE — `f054743` on `worktree-agent-a604c3dbe106d7ee0`, on top of `069ecb6`** (dispatched
+before the contract landed; `apps/android` only, so it merges independently).
+
+**Android had the same defect, and it was confirmed by reading the navigation path rather than
+assumed from web's report.** `MusicLibraryScreen`'s `recommendedSection` wired one `onOpen` to
+`Routes.musicAlbumDetail(albumId)` for **every** item in every recommended shelf regardless of
+provenance — the same screen owned albums use, so an `external:listenbrainz:<mbid>` id hit the
+identical dead end.
+
+Three decisions in it worth not re-deriving:
+
+- **`availability` is typed `String`, not an enum**, matching `BookRequest.status`'s existing
+  convention, so an unrecognised future value **decodes rather than throws**.
+- **`MusicRecommendedShelf.items` moved to a new `MusicRecommendedAlbum` type rather than widening
+  `JellyfinAlbum`** — `JellyfinAlbum` is also `/jellyfin/albums`' and search's shape, and giving it a
+  non-optional field those responses do not send would break decoding them. That is the
+  `MissingFieldException` trap avoided rather than walked into.
+- **The badge is an overlay on the cover art, deliberately**, so it adds zero card height and
+  preserves the one-fixed-card-geometry invariant.
+
+It pre-fills the request search field and **does not auto-submit** — its own call, stated. Accessibility
+is folded into the merged `contentDescription` **ahead of** the recommendation reason, so ownership
+reads as an identity qualifier, with three Robolectric cases pinning it. Both toolchain checks this
+machine can run without a compiler came back clean: **equal `/*` and `*/` counts across all 13 changed
+`.kt` files**, and **zero backtick test names containing a dot**. Nothing here compiles Kotlin, so
+**CI is its first real signal — budget the usual two to three red rounds.**
+
+It had to add `"availability":"owned"` to every `GET /music/recommended` fixture in
+`MusicRepositoryTest` and `MusicLibraryViewModelTest`, which is the required-field trap working as
+intended rather than a surprise.
 
 **CLAIMED 2026-08-17 — `15d-1-S` and `15d-1-A`, the fix for the dead-end card.** Both build **on
 top of `069ecb6`**, not on `main`. `15d-1-W` follows once the contract lands.
