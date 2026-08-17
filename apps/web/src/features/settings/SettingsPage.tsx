@@ -58,7 +58,7 @@ export function SettingsPage() {
               key={candidate}
               variant={mode === candidate ? 'filled' : 'outlined'}
               size="sm"
-              // Matches the colour swatches below (`aria-pressed={sourceColor === swatch.hex}`):
+              // Matches the colour swatches below (`aria-pressed={accent === preset.hex}`):
               // `variant` alone is a visual-only signal (filled vs outlined), invisible to
               // assistive tech (a11y audit, 2026-08-05).
               aria-pressed={mode === candidate}
