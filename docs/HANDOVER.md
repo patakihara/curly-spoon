@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
 - `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
 - `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
 - `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · ended · All work is complete and verified. Final summary: ## Summary **Root cause: not the docking CSS.** Two decisive experiments (requested by the orchestr…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T19:36:20Z` · `a0cfc7e80a2c0369c` · general-purpose · ended · Everything committed, working tree fully clean. Let me finalize the report. ## Report — Wave 16c-5-W: migrate Dialog/Sheet/Menu off '--m3-*' **Branch…
 - `2026-08-17T20:42:20Z` · `af88458cb481f0cc7` · general-purpose · ended · Everything is clean and committed. Here is my final report. ## Report — Wave 16c-2-W-4 **Branch/commit:** 'worktree-agent-af88458cb481f0cc7' at 'fe00…
 - `2026-08-17T20:42:57Z` · `ad963d77210a538fb` · general-purpose · ended · This looks correct. The wave is complete and committed. Here's my final report. ## Report — Wave 16f-A-1: an Android Settings screen carrying theme m…
+- `2026-08-17T21:48:56Z` · `a0080918ef22d6888` · general-purpose · ended · ## Report — Wave 16f-P: parity review of web's and Android's accent pickers No code changes. Working tree is clean ('git status --short' empty) — not…
 
 <!-- AGENT_LOG_END -->
 
@@ -924,9 +924,28 @@ header comment says so. Select the dialog by role and name instead.
 
 ### DONE — `16c-2-W-4` and `16f-A-1`. **`main` `ad38f75`, `CI` and `Android` green.**
 
-**Android can be themed at all, for the first time.** `16f-A-1` gave `AuralisTheme`'s `accent` and
-`darkTheme` parameters a reader and `SonoraAccentPresets` a consumer — two writers with no reader,
-both closed by one wave. Settings is reached from `ForYouScreen`'s top bar beside Downloads and
+**CORRECTION, 2026-08-18, by `16f-P` — I claimed this wave made Android themeable and it does not.**
+The original wording said _"Android can be themed at all, for the first time"_. **That is wrong, and
+the accurate statement is narrower: the plumbing is wired and unit-tested, and the accent still
+paints nothing.**
+
+Verified independently by the orchestrator rather than taken from the review: **`sonoraDarkColorScheme()`
+and `sonoraLightColorScheme()` (`ui/theme/Color.kt:134`, `:161`) take no parameters at all**, so the
+chosen accent cannot reach `MaterialTheme.colorScheme` — which is what `FilterChip`, `Button`,
+`Slider`, `IconButton` and `NavigationBar`/`NavigationRail` all actually read. And **`AuralisAppTokens`/
+`LocalSonoraAppTokens` have zero readers anywhere in `src/main`** (grep returns nothing outside their
+own definition); the only consumer is a test.
+
+**So picking a swatch persists it, recomposes correctly, and changes nothing on screen — including
+the picker's own selection ring**, which reads `MaterialTheme.colorScheme.onSurface`. `16f-A-1` moved
+the writer-with-no-reader **one level deeper** rather than closing it: `AuralisTheme`'s `accent`
+parameter now has a caller, and the tokens it produces have no consumer. That is this project's
+most-repeated failure, and it got past an implementation wave _and_ my own merge review; **the `-P`
+is what caught it.** Do not let the next session read "Android is themeable" anywhere and believe it.
+
+**What `16f-A-1` genuinely delivered**, which is real and worth keeping: a Settings screen, theme
+mode (light/dark/system) that **does** work end to end, `SonoraAccentPresets` consumed as a list,
+persistence through `KeyValueStore`, and a tested `ThemeViewModel`. Settings is reached from `ForYouScreen`'s top bar beside Downloads and
 Requests, deliberately **not** a sixth shell destination, since that would change primary navigation.
 Theme state lives in a new `ThemeViewModel` scoped **above** `AuralisTheme` in `MainActivity` —
 `AppStartViewModel` could not host it because it is scoped to the nav host and so cannot wrap the
