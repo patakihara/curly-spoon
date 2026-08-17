@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
-- `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
 - `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · ended · ## Report — Wave 15a: the external-candidate seam **Branch/commit:** 'worktree-agent-a0120e561b6bac637' at '91af5c1' (follow-up) on top of '1709c0d',…
 - `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · ended · Clean tree, three commits on top of the claimed baseline. The wave is complete and verified. Here's the final report. ## Report — Wave 16b-2, the Son…
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · running · —
 - `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
 - `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
+- `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · running · —
+- `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -756,6 +756,27 @@ item by name in the response body rather than a helper's return value.
 
 **It also stopped mid-verification**, on an unfinished root `pnpm test` — the second agent today to
 die waiting on a backgrounded run. Its work was committed first, so again nothing was lost.
+
+**CLAIMED 2026-08-17 — `15d-1-S` and `15d-1-A`, the fix for the dead-end card.** Both build **on
+top of `069ecb6`**, not on `main`. `15d-1-W` follows once the contract lands.
+
+**The contract, decided once so all three build to the same thing:** every item in
+`GET /music/recommended` carries a **required** `availability: "owned" | "external"`. Always present,
+never null. **Clients are explicitly forbidden from detecting externality by string-matching the
+`external:` prefix out of the id** — parsing meaning out of an opaque identifier is implicit coupling
+that breaks silently when the id scheme changes. Non-nullable is deliberate: Android's Kotlin models
+declare fields non-nullable with no default and throw `MissingFieldException` on a missing key, and
+`ignoreUnknownKeys = true` makes adding a field safe for existing clients.
+
+**The behaviour, shared by both platforms:** an external item is visually distinguishable ("not in
+your library"), and tapping it goes to the **music request flow — which already exists on both
+platforms** (`/music/requests` on web) — pre-filled with the artist name, rather than to an album
+detail page for an id no Jellyfin instance knows. Owned items are untouched. **The status must be
+announced, not merely drawn**, or the badge is a silent accessibility divergence from web.
+
+`15d-1-S` also closes the review's second finding: the outer `catch` in `buildExternalDiscoveryShelf`
+had no coverage, and the new test must be confirmed to go **red** with the `warn` line removed rather
+than merely passing beside it.
 
 **REVIEWED 2026-08-17 — verdict: do not merge as-is, fix the card first.** The placeholder concern
 below was confirmed by driving a real running instance, not by reading code. What the reviewer saw:
