@@ -90,7 +90,10 @@ test('the accent picker actually repaints --accent (and its derived --accent-ink
   const defaultAccentInk = await themeRoot.evaluate((el) =>
     getComputedStyle(el).getPropertyValue('--accent-ink').trim(),
   );
-  expect(defaultAccent.toLowerCase()).toBe('#8b5cf6');
+  // `--accent` is registered via `CSS.registerProperty({ syntax: '<color>' })`
+  // (ThemeProvider.tsx, for the cross-fade), which normalises a computed read to
+  // `rgb(...)` rather than preserving the literal hex — #8b5cf6 == rgb(139, 92, 246).
+  expect(defaultAccent).toBe('rgb(139, 92, 246)');
 
   await page.getByTestId('accent-swatch-red').click();
   // Cross-fade takes ~500ms (spring.slow, same registered-property transition --m3-*
@@ -106,7 +109,7 @@ test('the accent picker actually repaints --accent (and its derived --accent-ink
   const redAccentInk = await themeRoot.evaluate((el) =>
     getComputedStyle(el).getPropertyValue('--accent-ink').trim(),
   );
-  expect(redAccent.toLowerCase()).toBe('#ef4444');
+  expect(redAccent).toBe('rgb(239, 68, 68)'); // #ef4444, same registered-property normalisation
   // --accent-ink (sonora-theme.css) references var(--accent) — it must re-derive, not
   // stay pinned to the old accent's ink.
   expect(redAccentInk).not.toBe(defaultAccentInk);
