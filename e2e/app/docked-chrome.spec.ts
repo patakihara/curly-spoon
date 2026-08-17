@@ -135,3 +135,69 @@ test.describe('docked chrome stays put while content scrolls', () => {
     expect(Math.abs(navBarBoxAfter!.y - navBarBoxBefore!.y)).toBeLessThan(2);
   });
 });
+
+/**
+ * Wave 16d-W-1b. 16d-W-1 made `.auralis-shell__content` the sole scroll
+ * container, which silently switched off the browser's native "reset scroll
+ * on navigation" — that behaviour lived on the document, and the document no
+ * longer scrolls. A/B'd by reverting only `app.css`: pre-wave, scrolling Home
+ * and clicking through to Settings landed at scroll 0; post-wave (pre this
+ * fix), the same steps opened Settings already offset 400px down.
+ *
+ * The destination is deliberately Settings, not another shelf-driven page.
+ * A destination whose content mounts through an async loading state can
+ * *look* fixed by accident: React briefly commits a short/empty skeleton,
+ * which clamps `scrollTop` down as a side effect of `scrollHeight` shrinking,
+ * and it never climbs back up once the real content grows the box again —
+ * passing this test for a reason that has nothing to do with route-change
+ * handling. Confirmed by direct A/B here: navigating Home → Books (async,
+ * loads instantly in this fixture-backed suite) landed at 0 with **no fix
+ * applied at all**; Home → Settings (synchronous, no loading state) kept the
+ * full 400px offset, which is the real bug and the one this test pins.
+ */
+test.describe('route change resets the content column scroll position', () => {
+  test('scrolling Home then navigating to Settings via the rail lands the new page at the top', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    await expect(page.getByTestId('nav-rail-expanded')).toBeVisible();
+    await expect(page.getByTestId('quick-picks-grid')).toBeVisible();
+
+    // Precondition: the content region must actually be tall enough to scroll,
+    // or the "back to zero" assertion below would pass vacuously.
+    const { scrollHeight, clientHeight } = await page
+      .getByTestId('shell-content')
+      .evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
+    expect(scrollHeight - clientHeight).toBeGreaterThan(100);
+
+    await scrollContent(page, 400);
+
+    // Precondition, confirmed: the content region actually moved.
+    const scrollTopBeforeNav = await scrollTopOf(page, 'shell-content');
+    expect(scrollTopBeforeNav).toBeGreaterThan(0);
+
+    // Client-side navigation via a rail link, not `page.goto` — a full page
+    // load would reset scroll trivially and prove nothing about the fix.
+    await page.getByTestId('nav-rail-settings').click();
+    await expect(page).toHaveURL(/\/settings/);
+
+    const scrollTopAfterNav = await scrollTopOf(page, 'shell-content');
+    expect(scrollTopAfterNav).toBe(0);
+  });
+
+  // No test here for "a search-param-only change must not reset scroll", by design.
+  // This app has exactly one route with `validateSearch`, `/music/requests?prefill=`
+  // (grepped: it's the only `validateSearch` call in `routeTree.ts`), and nothing in
+  // the live UI re-navigates to it a second time while already mounted there — the
+  // one caller (`MusicHomePage.tsx`) always arrives via a full pathname change from
+  // `/music`. A `test.skip`-guarded attempt at this (scroll the page, simulate a
+  // search-only history change, assert scroll survives) was tried and always skips
+  // in this fixture-backed suite: `/music/requests` has nothing tall enough to
+  // scroll before a request is made. Keeping an assertion that can never leave its
+  // own skip guard is dead test weight, not coverage — see this spec's own header
+  // comment on why a passing-for-the-wrong-reason test is worse than no test. The
+  // fix itself still keys off `location.pathname` alone (see `Shell.tsx`), which is
+  // the correct default for this one surface even though nothing here exercises it.
+});
