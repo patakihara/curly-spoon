@@ -3689,6 +3689,27 @@ boundaries, disjoint directories where waves run in parallel.
   **Do this before the screens.** A screen rebuilt inside a document that scrolls wrongly has to be
   revisited once the scroll container moves, and anything measuring or scrolling depends on it.
 
+  - **16d-W-1 and 16d-A are DONE, 2026-08-17** — `main` `40945ba`, `CI` and `Android` green on it.
+    Sofia's reported bug is fixed: `.auralis-shell__content` is the single scroll container at every
+    breakpoint and the rail, the Now Playing panel and the mini player are docked. **`16d-A`
+    established Android never had this bug** — its chrome is pinned by `Scaffold`'s `bottomBar` slot
+    and an unscrolled sibling `Row`, and across ~19 screen files none declares its own `bottomBar`
+    or uses `verticalScroll`. Recorded as a KDoc rather than a test, because Robolectric cannot
+    honestly assert "this did not move when that scrolled".
+
+    **`16d-W-1b` was needed and is the interesting part.** Docking exposed a latent gap: **nothing in
+    this app has ever reset scroll** — no `scrollRestoration` option, no `scrollTo` call — because
+    the browser's document-scroll behaviour was doing it invisibly. Once the document stopped
+    scrolling, navigating from a scrolled page opened the next one mid-scroll. Fixed with a
+    pathname-keyed effect. **The generalisable warning: anything else that assumed a scrolling
+    document is now suspect** — focus-into-view, anchor links, any future scroll-to-top affordance.
+
+    **`16d-P` is owed and is narrower than a normal parity wave.** With no Android fix to compare
+    against, its job is to rule on whether the two clients' chrome now behaves the same, and to
+    label the divergence — rail plus docked side panel versus bottom tab bar plus full-screen Now
+    Playing sheet — as idiom rather than drift. It should also check whether Android's own rail
+    breakpoint agrees with web's re-cut one, which is a real question `16d-W-2` creates.
+
   - **16d-W is split in two, 2026-08-17, and the split is this repo's own ~150-turn rule.** The
     bullet below bundles three separable things — docking, the rig re-cut, and the `Icon`-`filled`
     nav wiring — into one wave. Docking is the half Sofia reported, and it is independently
