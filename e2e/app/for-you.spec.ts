@@ -228,28 +228,50 @@ test('a carousel is keyboard-scrollable, and scrolling it never scrolls the page
 
 test('a loading skeleton occupies the same box as a loaded card', async ({ page }) => {
   // Diagnosed with the route handler and the DOM directly instrumented (not
-  // guessed): HomePage stitches several independent async sources together
-  // (books, podcasts, music, recommendations -- the same unreserved race
-  // docs/HANDOVER.md's phase 14c already documents and Sofia has since
-  // approved fixing, just not yet implemented). Each source resolving flips
-  // its own `isLoading` flag at a slightly different real-world instant, and
-  // HomePage's top-level branch on the combined `anyLoading`/`carousels`/
-  // `visibleCarousels` state means those near-simultaneous flips can replace
-  // the whole shelf list more than once in quick succession -- independent
-  // of *this* request's own mocked delay, which measurement confirmed: the
-  // "books" skeleton was already gone from the DOM before the mocked 500ms
-  // delay had even elapsed for the very request it's supposed to depend on.
+  // guessed), across several rounds:
   //
-  // So a single `locator.boundingBox()` read, taken right after a
-  // `toBeVisible()` resolves, can land in the gap between one commit
-  // replacing the DOM and the next -- for the skeleton *and*, independently
-  // measured, for the already-loaded card too. That's a real, transient
-  // remount, not a permanently-missing element, so the fix is not to loosen
-  // what's asserted (the exact geometry match stays exact) but to make the
-  // read itself resilient to a race that's inherent to Home's current
-  // architecture: poll for a box instead of reading it once.
+  // 1. A blind `setTimeout(500)` delay before `route.continue()` does not
+  //    reliably bound the loading window at all -- confirmed by logging the
+  //    route handler's own timestamps against the DOM: on some runs the
+  //    "books" skeleton was already gone from the DOM before the mocked
+  //    500ms delay had even elapsed for the one request it's supposed to
+  //    depend on, and on others the whole page snapshot at failure time
+  //    shows every shelf already fully loaded, meaning real data arrived
+  //    essentially immediately despite the interception being registered
+  //    and (confirmed by logging `route.request().url()`) genuinely hit.
+  // 2. Ruled out as the cause: `scrollbar-gutter`-style reflow (measured
+  //    `.auralis-shell__content`'s `clientWidth` through the loading->loaded
+  //    transition -- constant), the quick-picks grid's column count (it's a
+  //    fixed `repeat(2, minmax(0,1fr))` track, not width-responsive), and
+  //    the service worker (checked `navigator.serviceWorker.controller` at
+  //    the point of failure -- not yet controlling the page, and the
+  //    `/api/*` runtime-caching rule in `vite.config.ts` is `NetworkOnly`
+  //    regardless).
+  // 3. What actually explains it: gating the route open with an explicit
+  //    promise the test releases only after it has captured the skeleton's
+  //    box turns out to make skeleton capture 100% reliable across many
+  //    repeated runs -- the remaining flake, isolated this way, is entirely
+  //    in the *second* read (the loaded card's box), taken right after its
+  //    own `toBeVisible()` resolves. HomePage stitches several independent
+  //    async sources (books, podcasts, music, recommendations -- the same
+  //    unreserved race docs/HANDOVER.md's phase 14c documents, with a real
+  //    fix approved in docs/USER_DECISIONS.md but not yet implemented), and
+  //    releasing two gated requests together can still let their two
+  //    resulting renders land close enough together that a single
+  //    synchronous `boundingBox()` call can be read between one commit and
+  //    the next.
+  //
+  // The fix combines both findings without loosening what's asserted (the
+  // exact geometry match is untouched): gate the network so the skeleton's
+  // presence is guaranteed rather than raced against a clock, and poll for
+  // both boxes so a transient remount doesn't fail a read that would
+  // otherwise have succeeded a moment later.
+  let releaseHome: () => void = () => {};
+  const homeGate = new Promise<void>((resolve) => {
+    releaseHome = resolve;
+  });
   await page.route('**/api/v1/libraries/*/home', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await homeGate;
     await route.continue();
   });
 
@@ -263,6 +285,8 @@ test('a loading skeleton occupies the same box as a loaded card', async ({ page 
       return skeletonBox;
     })
     .not.toBeNull();
+
+  releaseHome();
 
   const loadedCard = page.locator('[data-testid^="shelf-item-"]').first();
   let loadedBox: { x: number; y: number; width: number; height: number } | null = null;
