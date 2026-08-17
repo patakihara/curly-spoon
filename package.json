@@ -11,6 +11,7 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "build": "pnpm -r --if-present build",
     "dev": "pnpm -r --parallel --if-present dev",
+    "dev:fake": "AURALIS_FAKE_UPSTREAMS=1 SESSION_SECRET=dev-only-not-a-real-secret-32chars pnpm dev",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
