@@ -19,6 +19,8 @@ import {
   LinearProgress,
   ListItem,
   Marquee,
+  Menu,
+  MenuTarget,
   NavigationBar,
   SearchField,
   Sheet,
@@ -402,6 +404,39 @@ function DialogGallery() {
       >
         This removes the local copy. It stays in your library online.
       </Dialog>
+    </Section>
+  );
+}
+
+/**
+ * Wave 16c-4-W: `Menu` has no gallery coverage anywhere in this file before this — its only
+ * exercise is `e2e/app/context-menu.spec.ts`, driving the real app rather than the isolated
+ * `ui-desktop`/`ui-mobile` fixture. Needed here so this wave's re-parenting fix has a
+ * `getComputedStyle`-checkable instance in both the `app` and `ui-*` project families,
+ * matching `Dialog`/`Sheet` (both already have gallery sections).
+ */
+function MenuGallery() {
+  const [opened, setOpened] = useState(false);
+  return (
+    <Section title="Menu">
+      <Menu
+        opened={opened}
+        onOpenChange={setOpened}
+        aria-label="Actions for Sample track"
+        items={[
+          { key: 'play-next', label: 'Play next', onSelect: () => setOpened(false) },
+          { key: 'play-last', label: 'Play last', onSelect: () => setOpened(false) },
+        ]}
+      >
+        <div className="gallery-row" data-testid="menu-target-row">
+          <span>Sample track</span>
+          <MenuTarget>
+            <IconButton aria-label="More actions for Sample track" data-testid="menu-open">
+              <Icon name="more_vert" />
+            </IconButton>
+          </MenuTarget>
+        </div>
+      </Menu>
     </Section>
   );
 }
@@ -837,6 +872,7 @@ function GalleryContent() {
       <ChipGallery />
       <SheetGallery />
       <DialogGallery />
+      <MenuGallery />
       <SnackbarGallery />
       <ProgressGallery />
       <SkeletonGallery />
