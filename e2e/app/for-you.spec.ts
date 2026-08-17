@@ -100,8 +100,24 @@ test('the quick-picks grid renders above the carousels and keeps its two-column 
   await expect(grid).toBeVisible();
   const tiles = page.locator('[data-testid^="quick-pick-"]:not([data-testid*="skeleton"])');
   await expect(tiles.first()).toBeVisible();
-  const tileCount = await tiles.count();
-  expect(tileCount).toBeGreaterThanOrEqual(2);
+
+  // `buildQuickPicks` derives its tiles from `visibleCarousels`, which is
+  // only fully populated once *all* of Home's independent async shelf
+  // sources have resolved -- the same unreserved race docs/HANDOVER.md's
+  // phase 14c documents. Reading `tiles.count()` right after only the
+  // *first* tile becomes visible races that: on a slow enough load, one
+  // source can have contributed before the others, understating the real
+  // count for a moment. Polling for the count -- rather than waiting on any
+  // one specific ordinary shelf, which pulls in that shelf's own load time
+  // as an unrelated new way to time out -- retries the read itself until it
+  // holds, without loosening the >=2 the test actually cares about.
+  let tileCount = 0;
+  await expect
+    .poll(async () => {
+      tileCount = await tiles.count();
+      return tileCount;
+    })
+    .toBeGreaterThanOrEqual(2);
 
   // Two columns: the first two tiles sit on the same row (equal y), the third (if
   // present) sits on the next row down.
@@ -227,22 +243,78 @@ test('a carousel is keyboard-scrollable, and scrolling it never scrolls the page
 });
 
 test('a loading skeleton occupies the same box as a loaded card', async ({ page }) => {
+  // Diagnosed with the route handler and the DOM directly instrumented (not
+  // guessed), across several rounds:
+  //
+  // 1. A blind `setTimeout(500)` delay before `route.continue()` does not
+  //    reliably bound the loading window at all -- confirmed by logging the
+  //    route handler's own timestamps against the DOM: on some runs the
+  //    "books" skeleton was already gone from the DOM before the mocked
+  //    500ms delay had even elapsed for the one request it's supposed to
+  //    depend on, and on others the whole page snapshot at failure time
+  //    shows every shelf already fully loaded, meaning real data arrived
+  //    essentially immediately despite the interception being registered
+  //    and (confirmed by logging `route.request().url()`) genuinely hit.
+  // 2. Ruled out as the cause: `scrollbar-gutter`-style reflow (measured
+  //    `.auralis-shell__content`'s `clientWidth` through the loading->loaded
+  //    transition -- constant), the quick-picks grid's column count (it's a
+  //    fixed `repeat(2, minmax(0,1fr))` track, not width-responsive), and
+  //    the service worker (checked `navigator.serviceWorker.controller` at
+  //    the point of failure -- not yet controlling the page, and the
+  //    `/api/*` runtime-caching rule in `vite.config.ts` is `NetworkOnly`
+  //    regardless).
+  // 3. What actually explains it: gating the route open with an explicit
+  //    promise the test releases only after it has captured the skeleton's
+  //    box turns out to make skeleton capture 100% reliable across many
+  //    repeated runs -- the remaining flake, isolated this way, is entirely
+  //    in the *second* read (the loaded card's box), taken right after its
+  //    own `toBeVisible()` resolves. HomePage stitches several independent
+  //    async sources (books, podcasts, music, recommendations -- the same
+  //    unreserved race docs/HANDOVER.md's phase 14c documents, with a real
+  //    fix approved in docs/USER_DECISIONS.md but not yet implemented), and
+  //    releasing two gated requests together can still let their two
+  //    resulting renders land close enough together that a single
+  //    synchronous `boundingBox()` call can be read between one commit and
+  //    the next.
+  //
+  // The fix combines both findings without loosening what's asserted (the
+  // exact geometry match is untouched): gate the network so the skeleton's
+  // presence is guaranteed rather than raced against a clock, and poll for
+  // both boxes so a transient remount doesn't fail a read that would
+  // otherwise have succeeded a moment later.
+  let releaseHome: () => void = () => {};
+  const homeGate = new Promise<void>((resolve) => {
+    releaseHome = resolve;
+  });
   await page.route('**/api/v1/libraries/*/home', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await homeGate;
     await route.continue();
   });
 
   await page.goto('/');
 
   const skeleton = page.getByTestId('shelf-item-skeleton-books-loading-0');
-  await expect(skeleton).toBeVisible();
-  const skeletonBox = await skeleton.boundingBox();
-  expect(skeletonBox).not.toBeNull();
+  let skeletonBox: { x: number; y: number; width: number; height: number } | null = null;
+  await expect
+    .poll(async () => {
+      skeletonBox = await skeleton.boundingBox();
+      return skeletonBox;
+    })
+    .not.toBeNull();
+
+  releaseHome();
 
   const loadedCard = page.locator('[data-testid^="shelf-item-"]').first();
-  await expect(loadedCard).toBeVisible({ timeout: 10_000 });
-  const loadedBox = await loadedCard.boundingBox();
-  expect(loadedBox).not.toBeNull();
+  let loadedBox: { x: number; y: number; width: number; height: number } | null = null;
+  await expect
+    .poll(
+      async () => {
+        loadedBox = await loadedCard.boundingBox();
+        return loadedBox;
+      },
+      { timeout: 10_000 },
+    )
+    .not.toBeNull();
 
   expect(skeletonBox!.width).toBeCloseTo(loadedBox!.width, 0);
   expect(skeletonBox!.height).toBeCloseTo(loadedBox!.height, 0);
