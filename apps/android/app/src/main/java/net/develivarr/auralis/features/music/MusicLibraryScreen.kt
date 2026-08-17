@@ -134,10 +134,21 @@ fun MusicLibraryScreen(
                     // ForYouCarouselRow's own internal content padding, which is an acceptable
                     // (if not pixel-perfect) cost given nothing here can render on a device to
                     // check it.
+                    //
+                    // Wave 15d — a tapped item that isn't in the library (FeedItem.isExternal)
+                    // must not open AlbumDetailScreen: its id is an opaque, namespaced
+                    // (`external:<provider>:<id>`) value Jellyfin has never heard of, so that
+                    // screen would render a blank "Album" with favourite/playlist actions acting
+                    // on nothing and no tracks — a real dead end, confirmed on web and, by this
+                    // wave, on Android too by reading this exact navigation path (there is no
+                    // device here to click it). Instead it opens the music request flow,
+                    // pre-filled with the recommended album's artist name so the user can request
+                    // it straight away.
                     recommendedSection(
                         carousels = uiState.recommendedCarousels,
                         imageLoader = container.imageLoader,
-                        onOpen = { albumId -> navController.navigate(Routes.musicAlbumDetail(albumId)) },
+                        onOpenAlbum = { albumId -> navController.navigate(Routes.musicAlbumDetail(albumId)) },
+                        onRequestArtist = { artist -> navController.navigate(Routes.musicRequests(artist)) },
                     )
                     item {
                         Text(
@@ -181,17 +192,25 @@ fun MusicLibraryScreen(
  * UI state). No section heading of its own — each carousel's own [FeedCarousel.label] already
  * serves as its heading, same as on the "For you" screen, so a second "Recommended" heading
  * above them would be redundant.
+ *
+ * Wave 15d — [onOpenAlbum] and [onRequestArtist] replace the single `onOpen` this used to
+ * carry: an owned item ([net.develivarr.auralis.features.home.FeedItem.isExternal] `false`)
+ * still opens [net.develivarr.auralis.features.music.AlbumDetailScreen] as before, but an
+ * external one is routed to the music request flow instead, keyed off [FeedItem.subtitle] (the
+ * album's artist name) rather than its opaque, namespaced id — see this function's own call
+ * site in [MusicLibraryScreen] for why.
  */
 private fun LazyListScope.recommendedSection(
     carousels: List<FeedCarousel>,
     imageLoader: ImageLoader,
-    onOpen: (String) -> Unit,
+    onOpenAlbum: (String) -> Unit,
+    onRequestArtist: (String?) -> Unit,
 ) {
     items(carousels, key = { "recommended:${it.id}" }) { carousel ->
         ForYouCarouselRow(
             carousel = carousel,
             imageLoader = imageLoader,
-            onSelect = { item -> onOpen(item.id) },
+            onSelect = { item -> if (item.isExternal) onRequestArtist(item.subtitle) else onOpenAlbum(item.id) },
             modifier = Modifier.padding(bottom = 16.dp),
         )
     }

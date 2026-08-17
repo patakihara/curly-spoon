@@ -95,7 +95,8 @@ class MusicLibraryViewModelTest {
     private fun oneShelfRecommendedResponse() =
         recommendedResponse(
             """[{"id":"rec-1","label":"More like this","type":"recommended",
-                "reason":"Because you played something","items":[{"id":"alb-rec","name":"Recommended Album"}]}]""",
+                "reason":"Because you played something",
+                "items":[{"id":"alb-rec","name":"Recommended Album","availability":"owned"}]}]""",
         )
 
     @Test
@@ -115,6 +116,36 @@ class MusicLibraryViewModelTest {
             assertEquals(MusicAvailabilityUiState.Available, state.availability)
             assertEquals("Radiohead", (artists as ArtistsSectionUiState.Loaded).items[0].name)
             assertEquals("OK Computer", (albums as AlbumsSectionUiState.Loaded).items[0].name)
+        }
+
+    /** Wave 15d — `MusicRecommendedAlbum.availability` must reach the rendered carousel as
+     * `FeedItem.isExternal`, not get lost in the `JellyfinAlbum`→`FeedItem` mapping. Mixes one
+     * owned and one external item in the same shelf, mirroring the shared behaviour spec's
+     * "owned items are completely unchanged" requirement — only the second item should flip. */
+    @Test
+    fun `load surfaces an external recommendation's availability as isExternal on its FeedItem`() =
+        runTest {
+            mockWebServer.enqueue(configuredResponse())
+            mockWebServer.enqueue(artistsPageResponse())
+            mockWebServer.enqueue(albumsPageResponse())
+            mockWebServer.enqueue(
+                recommendedResponse(
+                    """[{"id":"rec-1","label":"Discover","type":"recommended","reason":null,
+                        "items":[
+                          {"id":"alb-owned","name":"Owned Album","artistName":"Owned Artist","availability":"owned"},
+                          {"id":"external:listenbrainz:mbid-1","name":"External Album",
+                           "artistName":"External Artist","availability":"external"}
+                        ]}]""",
+                ),
+            )
+            val viewModel = MusicLibraryViewModel(musicRepository, serverConfigRepository)
+
+            viewModel.load()
+            val state = viewModel.uiState.first { it.recommendedCarousels.isNotEmpty() }
+
+            val items = state.recommendedCarousels.single().items
+            assertEquals(listOf(false, true), items.map { it.isExternal })
+            assertEquals("External Artist", items[1].subtitle)
         }
 
     @Test

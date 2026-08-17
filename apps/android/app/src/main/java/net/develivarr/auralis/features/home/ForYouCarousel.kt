@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -92,6 +93,14 @@ internal fun feedItemContentDescription(item: FeedItem): String =
  * [FeedCarousel.reason]'s doc comment for why. */
 internal fun carouselReasonText(carousel: FeedCarousel): String? = carousel.reason?.takeIf { it.isNotBlank() }
 
+/** Wave 15d — the visible/announced label for a [FeedItem] whose [FeedItem.isExternal] is
+ * `true`: a recommendation from an outside provider (ListenBrainz, today) that the signed-in
+ * user does not have in their Jellyfin library. Shared by [ForYouCard]'s visible overlay badge
+ * and [feedItemAnnouncement]'s merged `contentDescription`, so the two text sources can never
+ * drift apart — a badge whose wording differs from what TalkBack announces would itself be a
+ * parity bug, just within one platform instead of across two. */
+internal const val EXTERNAL_RECOMMENDATION_LABEL = "Not in your library"
+
 /**
  * The single accessible announcement for one [ForYouCard] — [feedItemContentDescription] plus,
  * when the owning shelf carries one, its [reason] (already blank-filtered by
@@ -110,10 +119,18 @@ internal fun carouselReasonText(carousel: FeedCarousel): String? = carousel.reas
  * `contentDescription` is the closest single-node equivalent TalkBack has, so a listener still
  * hears why the shelf is showing this item — do not "fix" this back into a name/description split
  * without a mechanism that avoids that repetition.
- */
+ *
+ * Wave 15d: when [FeedItem.isExternal] is `true`, [EXTERNAL_RECOMMENDATION_LABEL] is folded in
+ * the same way — a listener must be told this item is not in their library, not just shown a
+ * badge sighted users can see and a screen-reader user cannot. Ordered before [reason] so the
+ * ownership status reads as a qualifier on the item's identity, ahead of *why* it's being
+ * suggested. */
 internal fun feedItemAnnouncement(item: FeedItem, reason: String?): String {
     val name = feedItemContentDescription(item)
-    return if (reason != null) "$name — $reason" else name
+    val parts = mutableListOf(name)
+    if (item.isExternal) parts.add(EXTERNAL_RECOMMENDATION_LABEL)
+    if (reason != null) parts.add(reason)
+    return parts.joinToString(" — ")
 }
 
 /**
@@ -132,6 +149,12 @@ internal fun feedItemAnnouncement(item: FeedItem, reason: String?): String {
  * loose sibling nodes and the reason (rendered once per shelf in [ForYouCarouselRow]) was
  * unreachable from any individual card at all — see [feedItemAnnouncement]'s doc comment for why
  * this folds the reason in rather than mirroring web's separate name/description DOM nodes.
+ *
+ * Wave 15d: [item.isExternal][FeedItem.isExternal] adds a small [EXTERNAL_RECOMMENDATION_LABEL]
+ * badge over the cover — an overlay via `Modifier.align` inside the cover [Box], not an extra
+ * row, so it costs no card height and every card keeps the exact same geometry this doc comment
+ * already insists on. The badge is purely visual; [feedItemAnnouncement] carries the same label
+ * into the merged `contentDescription` for the accessible half.
  */
 @Composable
 fun ForYouCard(
@@ -172,6 +195,28 @@ fun ForYouCard(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(ForYouCarouselDimens.COVER_SIZE),
             )
+            // Wave 15d — purely visual; the same label reaches TalkBack through
+            // [feedItemAnnouncement]'s merged contentDescription instead, not through this Text's
+            // own semantics, so nothing here needs its own contentDescription override.
+            if (item.isExternal) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(4.dp),
+                ) {
+                    Text(
+                        text = EXTERNAL_RECOMMENDATION_LABEL,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
         }
         Text(
             text = item.title,
