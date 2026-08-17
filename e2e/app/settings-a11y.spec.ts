@@ -32,6 +32,21 @@
  *    actually applies the live scheme to — so inheritance stops there instead of reaching
  *    past it to the static fallback; `html body`'s rule stays as the pre-mount/edge-case
  *    fallback it already was for other reasons (see `app.css`'s comment).
+ * 5. (wave 16c-2-W-3) The compact bottom `NavigationBar` — `packages/ui/src/components/
+ *    NavigationBar.css` — read `--m3-*` *directly* (no Mantine ramp in between, unlike the
+ *    desktop rail 16c-2-W-2 found), so its active-destination pill (`--m3-secondary-
+ *    container`) and text (`--m3-on-secondary-container`) were two more non-responders:
+ *    fixed Sonora values post-16c-2-W-1, tracking nothing the picker changes. Moved onto
+ *    the solid-fill pairing Chip's checked state and Settings' own selected mode button
+ *    already use — `--accent` background, `--accent-contrast` text — rather than
+ *    `--surface-card`/`--accent-ink` (the desktop rail's pairing, and `SONORA.md` §3.7's
+ *    `RailItem` spec): the bar's own background, `--m3-surface-container`, was made
+ *    numerically identical to `--surface-card` by 16c-2-W-1's substrate fix, so that
+ *    pairing would render an invisible pill. `--accent-contrast` is fixed white and fails
+ *    WCAG AA on `--accent` at all 17 presets (docs/HANDOVER.md) — the same already-shipped,
+ *    already-flagged risk as Chip's checked label, not a new one, so the test below checks
+ *    only that the *pill* repaints (a real colour, not a fixed one) and does not assert on
+ *    the label's colour.
  */
 import { expect, test } from '@playwright/test';
 
@@ -154,4 +169,41 @@ test('.auralis-theme-root paints the correct background/text colour even when th
   await expect(themeRoot).toHaveAttribute('data-theme', 'light');
   await expect(themeRoot).toHaveCSS('background-color', LIGHT_SURFACE);
   await expect(themeRoot).toHaveCSS('color', LIGHT_ON_SURFACE);
+});
+
+test("the compact bottom nav bar's active-destination pill repaints on an accent change", async ({
+  page,
+}) => {
+  // NavigationBar.css reads --m3-* directly (no Mantine colour ramp), unlike the desktop
+  // rail — 16c-2-W-2 found that rail rode Mantine's own ramp instead. Confirmed here by
+  // reading, not assumed: this asserts the pill's fill genuinely tracks the accent swatch,
+  // not merely that some `--accent`/`--accent-ink` custom property changed on the root.
+  await page.goto('/settings');
+  await page.getByTestId('accent-swatch-teal').click();
+  await page.waitForTimeout(700);
+
+  await page.goto('/');
+  await page.setViewportSize({ width: 480, height: 900 });
+  await expect(page.getByTestId('home-page')).toBeVisible();
+  const tealBar = page.getByTestId('nav-bar');
+  const tealIndicator = tealBar.locator('.m3-nav-bar__indicator');
+  await expect(tealIndicator).toBeVisible();
+  const tealFill = await tealIndicator.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+  await page.goto('/settings');
+  await page.getByTestId('accent-swatch-red').click();
+  await page.waitForTimeout(700);
+
+  await page.goto('/');
+  await page.setViewportSize({ width: 480, height: 900 });
+  await expect(page.getByTestId('home-page')).toBeVisible();
+  const redBar = page.getByTestId('nav-bar');
+  const redIndicator = redBar.locator('.m3-nav-bar__indicator');
+  await expect(redIndicator).toBeVisible();
+  const redFill = await redIndicator.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+  // Inequality, not a pinned literal — color-mix()/registered-property normalisation makes
+  // a literal fragile (docs/HANDOVER.md), and inequality is what actually discriminates a
+  // repaint from a fixed fill.
+  expect(redFill).not.toBe(tealFill);
 });
