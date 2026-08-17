@@ -879,6 +879,37 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
 
+### CLAIMED 2026-08-17 — `16c-2-W-3` (web) and `16b-2-A-2` (Android), dispatched together
+
+**Why these before `16e`, since the section below says 16e is next.** The argument is the same one
+§16 already accepted for putting 16d before the screens: **a screen rebuilt against a half-migrated
+`Card` has to be revisited when `Card` migrates.** `Card` and the compact bottom nav are still on
+`--m3-*`, so building screens on top of them buys work twice. This is a deliberate reorder, not a
+drift — recorded here and in §16 so the next session does not read "16e is the main body" and find
+primitive work instead.
+
+**`16c-2-W-3` is web-only, and the Android side is discharged rather than ignored.** Sofia's
+standing parity rule says a wave changing one platform's appearance must say something about the
+other. Here the something is **nothing to do, on existing evidence**: `16b-2-P` compared all 26
+`--m3-*` chroma values against Android's `ColorScheme` by hand and found zero mismatches, and
+Android is already re-themed app-wide through `AuralisTheme`, so it has no `--m3-*` substrate to
+migrate off. **`16d-P` separately established `Card` has zero Android call sites at all.**
+
+**That last fact is a real open question and stays open:** `Chip` and `Card` are used on web and
+called nowhere on Android. Deliberate platform idiom or a missing surface? A token review cannot
+see it and neither of these waves settles it. It wants a `-P` ruling attached to whichever wave
+next adds Android surface.
+
+**`16b-2-A-2` is the Robolectric coverage gap `16b-2-P` named** — the theme test asserts colours,
+weights and radii but **not the 26 chroma-role values**, which have been verified exactly once, by
+a human reading a table. Android-only and needs no browser, which is what lets it run beside the
+web wave at all.
+
+**Dispatched together because one needs Playwright and one does not** — the constraint below.
+**Their merges are deliberately staggered**, because `android.yml` has `cancel-in-progress: true`
+unconditionally, so pushing the web merge while the Android wave's run is in flight would kill the
+run whose execution is the entire point of a coverage wave.
+
 ### Session state, 2026-08-17 (evening) — **phase 16d is complete on both platforms**
 
 **`main` is at `cf9d445`, and `CI`, `Android` and `Publish` are all green on it** — verified, and the
