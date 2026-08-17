@@ -3,7 +3,7 @@ package net.develivarr.auralis.navigation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -19,9 +19,22 @@ import org.robolectric.annotation.GraphicsMode
  * wave 14b-1, rendering just the bar's items rather than the whole shell
  * (`NavHostController`/`PlayerViewModel`/`ImageLoader` are not needed to prove this).
  *
- * **What this proves, and what it does not.** Robolectric confirms a node exists with the
- * content description named — it says nothing about what TalkBack actually announces on a real
- * device, nor how the bar looks (`docs/HANDOVER.md`'s standing caveat on this harness).
+ * **What this proves, and what it does not.** Robolectric confirms a node with the given
+ * destination's [testTag][androidx.compose.ui.platform.testTag] exists or does not — it says
+ * nothing about what TalkBack actually announces on a real device, nor how the bar looks
+ * (`docs/HANDOVER.md`'s standing caveat on this harness).
+ *
+ * **Why by tag, not by content description.** The first draft queried
+ * `onNodeWithContentDescription(destination.label)`, matching `Icon`'s `contentDescription`.
+ * `NavigationBarItem` wraps its content in a `Modifier.selectable` that merges the icon's
+ * content description and the label `Text` into one semantics node, and that merged-tree lookup
+ * failed here (`AssertionError` on the very first assertion, in both tests, before any
+ * visibility-filtering assertion was reached) — this machine has no JDK/Gradle to print the
+ * actual semantics tree and confirm which of "0 nodes" or "ambiguous match" it was. A
+ * [androidx.compose.ui.platform.testTag] set directly on each item's own modifier
+ * ([ShellNavigationBarItems]) is not subject to merge semantics at all, so it sidesteps the
+ * question entirely rather than depending on an assumption about how Material3 merges icon and
+ * label semantics in this Robolectric configuration.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -45,11 +58,11 @@ class ShellNavigationItemsTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("For you").assertExists()
-        composeRule.onNodeWithContentDescription("Search").assertExists()
-        composeRule.onNodeWithContentDescription("Music").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("Books").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("Podcasts").assertDoesNotExist()
+        composeRule.onNodeWithTag(ShellDestination.FOR_YOU.name).assertExists()
+        composeRule.onNodeWithTag(ShellDestination.SEARCH.name).assertExists()
+        composeRule.onNodeWithTag(ShellDestination.MUSIC.name).assertDoesNotExist()
+        composeRule.onNodeWithTag(ShellDestination.BOOKS.name).assertDoesNotExist()
+        composeRule.onNodeWithTag(ShellDestination.PODCASTS.name).assertDoesNotExist()
     }
 
     @Test
@@ -74,10 +87,10 @@ class ShellNavigationItemsTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("For you").assertExists()
-        composeRule.onNodeWithContentDescription("Music").assertExists()
-        composeRule.onNodeWithContentDescription("Books").assertExists()
-        composeRule.onNodeWithContentDescription("Podcasts").assertExists()
-        composeRule.onNodeWithContentDescription("Search").assertExists()
+        composeRule.onNodeWithTag(ShellDestination.FOR_YOU.name).assertExists()
+        composeRule.onNodeWithTag(ShellDestination.MUSIC.name).assertExists()
+        composeRule.onNodeWithTag(ShellDestination.BOOKS.name).assertExists()
+        composeRule.onNodeWithTag(ShellDestination.PODCASTS.name).assertExists()
+        composeRule.onNodeWithTag(ShellDestination.SEARCH.name).assertExists()
     }
 }

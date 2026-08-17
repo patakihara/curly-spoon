@@ -7,6 +7,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 
 /**
  * Renders one [NavigationBarItem] per [ShellDestination] present in [visibleDestinations], in
@@ -16,6 +18,12 @@ import androidx.compose.runtime.Composable
  * testable without constructing the whole shell (`NavHostController`, `PlayerViewModel`,
  * `ImageLoader`). Call inside a [androidx.compose.material3.NavigationBar]'s content lambda,
  * whose receiver is [RowScope].
+ *
+ * Each item carries `Modifier.testTag(destination.name)` so `ShellNavigationItemsTest` can find
+ * it directly rather than through [Icon]'s `contentDescription` or the label [Text] — both sit
+ * under `NavigationBarItem`'s own merged-semantics node, and querying by content description
+ * there proved unreliable in Robolectric. A tag on the item's own modifier is unambiguous
+ * regardless of how the icon/label semantics end up merging.
  */
 @Composable
 internal fun RowScope.ShellNavigationBarItems(
@@ -29,6 +37,7 @@ internal fun RowScope.ShellNavigationBarItems(
             onClick = { onNavigate(destination) },
             icon = { Icon(destination.icon, contentDescription = destination.label) },
             label = { Text(destination.label) },
+            modifier = Modifier.testTag(destination.name),
         )
     }
 }
