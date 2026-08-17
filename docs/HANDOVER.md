@@ -922,7 +922,7 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
-### NEXT, and it is now genuinely unblocked — `16c-5-W`
+### CLAIMED 2026-08-17 — `16c-5-W`, dispatched immediately after `16c-4-W` landed
 
 **Migrate `Dialog`, `Sheet` and `Menu` off `--m3-*` onto `--surface-*`/`--accent-ink`.** They still
 reference `--m3-*` entirely; `16c-4-W` deliberately changed only where they mount, so this migration
