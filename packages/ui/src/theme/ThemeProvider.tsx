@@ -82,6 +82,19 @@ interface ThemeContextValue {
   accent: string;
   /** Re-themes `--accent` (e.g. Settings' colour-swatch picker). */
   setAccent: (hex: string) => void;
+  /**
+   * A DOM node (wave 16c-4-W, `docs/ROADMAP.md` §16) that is a *child* of
+   * `.auralis-theme-root` — so `sonora-theme.css`'s `--surface-*`/`--accent-ink` tokens
+   * (scoped `.auralis-theme-root[data-theme=…]`, no `:root` fallback) resolve for anything
+   * rendered into it — and a *sibling* of whatever `children` renders, i.e. structurally
+   * outside `.auralis-shell`'s `overflow: hidden` (16d-W-1), so it can never be clipped.
+   * `Dialog`/`Sheet`/`Menu` pass this as their `portalProps.target` instead of the default
+   * `document.body`, which sits outside `.auralis-theme-root` entirely and resolves none of
+   * those tokens. `null` until the ref callback below fires (one render after mount, well
+   * before any dialog can plausibly be open) — callers fall back to Mantine's own default
+   * portal target for that one frame rather than block on it.
+   */
+  portalTarget: HTMLElement | null;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -165,6 +178,10 @@ export function ThemeProvider({
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const staticVars = useStaticTokenVars();
+  // Wave 16c-4-W: state (not a plain ref) because a portal target has to be read during
+  // render — passed straight into `portalProps.target` — and a ref mutation alone
+  // wouldn't schedule the re-render that lets `Dialog`/`Sheet`/`Menu` pick it up.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -207,8 +224,19 @@ export function ThemeProvider({
       setMode,
       accent: ownAccent,
       setAccent,
+      portalTarget,
     }),
-    [scheme, ownMode, resolvedMode, ownSourceColor, setSourceColor, setMode, ownAccent, setAccent],
+    [
+      scheme,
+      ownMode,
+      resolvedMode,
+      ownSourceColor,
+      setSourceColor,
+      setMode,
+      ownAccent,
+      setAccent,
+      portalTarget,
+    ],
   );
 
   // Mantine spike (docs/HANDOVER.md): `scheme.primary` is already the resolved M3
@@ -257,6 +285,19 @@ export function ThemeProvider({
         <MantineProvider theme={mantineTheme} forceColorScheme={resolvedMode}>
           {children}
         </MantineProvider>
+        {/* Wave 16c-4-W: the portal target `Dialog`/`Sheet`/`Menu` render into instead of
+            `document.body`. `display: contents` so this contributes no box of its own —
+            no layout footprint, no new containing block for a `position: fixed` portalled
+            child — it exists purely as a DOM anchor point. A child of `.auralis-theme-root`
+            (tokens resolve, see `portalTarget`'s own doc comment above) and, critically, a
+            *sibling* of the `<MantineProvider>` above rather than something rendered inside
+            `children` — `.auralis-shell`'s `overflow: hidden` (16d-W-1) can only clip its
+            own descendants, and this element is not one. */}
+        <div
+          ref={setPortalTarget}
+          className="auralis-theme-portal-target"
+          style={{ display: 'contents' }}
+        />
       </div>
     </ThemeContext.Provider>
   );
