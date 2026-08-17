@@ -897,6 +897,32 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
 
+### CLAIMED 2026-08-17 — `16c-4-W`: re-parent `Dialog`/`Sheet`/`Menu` into the theme root
+
+**The prerequisite the last three primitives are blocked on**, and the one wave in this phase where
+a green Playwright run is worth nothing.
+
+`ThemeProvider` renders `.auralis-theme-root` as an ancestor of the whole app (`ThemeProvider.tsx:241`,
+wrapping `RouterProvider` in `main.tsx`), and Sonora's `--surface-*`/`--accent-ink` are scoped to
+`.auralis-theme-root[data-theme=…]` with **no `:root` fallback** — deliberately, so a missing value
+fails loudly in the gallery test instead of being masked. Portals default to `document.body`, which
+is **outside** that element, so those three resolve nothing there and cannot be migrated until they
+move.
+
+**The intended shape, which the structure now makes clean:** give the portals an explicit target
+that is a **child of `.auralis-theme-root` and a sibling of `.auralis-shell`**. Child of the theme
+root ⇒ the tokens resolve. Sibling of the shell ⇒ **`16d-W-1`'s new `overflow: hidden` on
+`.auralis-shell`/`.auralis-shell__row` cannot clip it**, which is a constraint that did not exist
+before this morning and is the reason `withinPortal={false}` is the wrong answer here.
+
+**This wave re-parents only. It deliberately does not migrate the three onto Sonora's tokens** —
+that is the wave after, and keeping them separate means the token migration lands against a
+substrate already proven to resolve.
+
+**Why it needs unusual proof:** Playwright here asserts testids and text and **never computed
+styles**, so all three render **completely unstyled while passing the suite** — the documented
+14a-2 failure mode. The verification has to be `getComputedStyle`, per component, in **both** themes.
+
 ### DONE — `16c-2-W-3` and `16b-2-A-2`, both CI-verified on `a98a6a6`
 
 **`main` is at `a98a6a6`; `CI` and `Android` are green on it.** Nothing claimed, nothing in flight.
