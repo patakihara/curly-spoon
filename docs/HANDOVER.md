@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · ended · Everything is clean and committed. Here's my report. ## Report — Wave 15d-1-S **Branch/commit:** 'worktree-agent-a7c69864b7e5a52b5' at 'ace32cb', on…
-- `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
 - `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
 - `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
 - `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T16:42:56Z` · `ad4802d687ce40989` · general-purpose · ended · ## Report — Wave 16d-P: parity review of web's docked shell vs Android's chrome **No code changes.** Working tree is clean ('git status --short' empt…
 - `2026-08-17T16:54:14Z` · `a3d35b711e9e2345e` · general-purpose · ended · ## Report — Wave 16d-A-2 **Branch/commit:** 'worktree-agent-a3d35b711e9e2345e' at '5e7d12a', on top of 'ccca737'. Working tree clean, nothing outstan…
 - `2026-08-17T17:29:15Z` · `a90dd8e5e13e65560` · general-purpose · ended · Working tree is clean, one commit on top of 'fb384e5'. Not pushing or merging, per instructions. ## Report — fixing the two ShellNavigationItemsTest…
+- `2026-08-17T17:56:20Z` · `a8977d5ddbe748b6e` · general-purpose · running · —
+- `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -852,6 +852,24 @@ variant the original failure was actually observed on.
 
 The general lesson survives the item closing, and is the reusable half: **a green Android badge on
 a sha that did not touch `apps/android` executed nothing.** Keep grepping the log.
+
+### Today's worktree branches are prunable — unlike the historical ones
+
+The section further down describes worktrees `worktree-gc.sh` can **never** prune, because their
+content reached `main` by cherry-pick or re-commit and so shares no ancestry. **None of
+2026-08-17's are like that.** Every wave this session was integrated with a real `--no-ff` merge
+commit, so `git merge-base --is-ancestor` succeeds for each and the gc script's safety rail is
+satisfied rather than tripped.
+
+**Practical consequence: do not re-audit them.** `worktree-gc.sh` will prune today's on its own.
+The four that will remain refused — `a0edf63595b976e4e`, `a1b2a40eb1e9e4e64`, `a623d0d03e48b3297`,
+`ab5d9dfca22e6dee6` — were re-verified this session and are exactly the ones already documented as
+cherry-picked, re-committed or superseded. **No worktree on this disk holds lost work.**
+
+The reason this session merged that way is the lesson the older ones paid for: two agents dispatched
+from one base cannot both fast-forward, and cherry-picking the second lands identical content while
+permanently stripping the gc script's ability to prove it merged. **A real merge commit costs
+nothing and keeps the ledger self-maintaining.**
 
 ### Two agents cannot both run Playwright here — one fixed port decides it
 
