@@ -49,6 +49,37 @@ const DESTINATION_ICONS: Record<DestinationKey, IconName> = {
   search: 'search',
 };
 
+/**
+ * Wave 16c-2-W-2: the desktop rail's active-destination highlight, one of the two
+ * conspicuous non-responders to Settings' accent picker (docs/HANDOVER.md). Mantine's
+ * `NavLink` (`NavLink.css`) reads its active fill/text from two CSS custom properties
+ * declared inline on its own root — `--nl-bg: var(--mantine-primary-color-light)` and
+ * `--nl-color: var(--mantine-primary-color-light-color)` — which resolve against
+ * `ThemeProvider.tsx`'s `mantineTheme.colors.auralis`, itself derived from `scheme.primary`
+ * (the *old* HCT-generated M3 primary). Since 16c-2-W-1 fixed `--m3-*` at Sonora's values,
+ * `scheme.primary` no longer tracks anything the picker changes — this is a second, deeper
+ * non-responder than the `--m3-*` reads named in the wave spec, resolved the same way: stop
+ * reading it. Setting `--nl-bg`/`--nl-color` inline on the NavLink beats the CSS file's own
+ * declaration (equal specificity, later in the cascade — inline always wins in practice
+ * here since these are custom properties, not shorthand that could be clobbered piecemeal).
+ * `--accent-ink` for the label/icon, not raw `--accent` (SONORA.md's readable-on-surface
+ * form, and what the wave spec names explicitly for this exact surface); `--surface-card`
+ * for the tint, since no `--m3-*` "container" role is being asked to survive. Both variables
+ * are inert unless `NavLink.css`'s `:where([data-active], [aria-current='page'])` selector
+ * matches, so applying them unconditionally (active or not) is safe.
+ *
+ * Known open issue, not fixed here (docs/HANDOVER.md, queue `abbaca2`): `--accent-ink` on
+ * `--surface-card` fails WCAG AA (4.5:1) in dark theme at two of the seventeen presets —
+ * indigo (4.12:1) and violet (4.35:1), the shipped default — while clearing the 3:1
+ * UI-component floor at both. This rail label is genuine *text*, not an icon or a bare
+ * fill, so it sits squarely in the pairing that's already flagged as a design question with
+ * the product owner, not a fresh one.
+ */
+const RAIL_ACTIVE_LINK_STYLE = {
+  '--nl-bg': 'var(--surface-card)',
+  '--nl-color': 'var(--accent-ink)',
+} as CSSProperties;
+
 export function Shell({ children }: { children: ReactNode }) {
   const breakpoint = useBreakpoint();
   const location = useLocation();
@@ -248,6 +279,7 @@ export function Shell({ children }: { children: ReactNode }) {
                       active={item.key === activeKey}
                       aria-current={item.key === activeKey ? 'page' : undefined}
                       onClick={() => handleActiveChange(item.key)}
+                      style={RAIL_ACTIVE_LINK_STYLE}
                     />
                   ))}
                 </div>
@@ -270,6 +302,7 @@ export function Shell({ children }: { children: ReactNode }) {
                     aria-current={isSettingsActive ? 'page' : undefined}
                     onClick={() => void navigate({ to: '/settings' })}
                     data-testid="nav-rail-settings"
+                    style={RAIL_ACTIVE_LINK_STYLE}
                   />
                 </div>
               </MantineAppShell.Navbar>
