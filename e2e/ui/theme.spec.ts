@@ -18,7 +18,16 @@ test.describe('ThemeProvider', () => {
     expect(primaryText).toMatch(/#[0-9a-f]{6}/);
   });
 
-  test('changing the source colour repaints --m3-primary on the theme root', async ({ page }) => {
+  // Wave 16c-2-W-1 (docs/ROADMAP.md §16) replaced createScheme's HCT-derived generator
+  // with Sonora's fixed chroma tables (docs/design/SONORA.md §1.5/§1.6); `sourceColor`
+  // is accepted for API compatibility only and no longer feeds `--m3-primary` (or any
+  // other `--m3-*` chroma role). This test used to assert the opposite (the gallery's
+  // source-colour swatch repainting --m3-primary); it now pins the new contract, which
+  // is also the real-world consequence for Sofia's Settings colour picker: it no longer
+  // visibly changes any --m3-*-driven surface, only --accent (untouched by this wave).
+  test('changing the source colour does NOT repaint --m3-primary — Sonora fixes the chroma role', async ({
+    page,
+  }) => {
     const root = page.locator('.auralis-theme-root');
     const before = await root.evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--m3-primary').trim(),
@@ -31,11 +40,7 @@ test.describe('ThemeProvider', () => {
     const after = await root.evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--m3-primary').trim(),
     );
-    expect(after).not.toBe(before);
-    // Registering --m3-* as a `<color>` custom property (so it can cross-fade) makes the
-    // browser normalise its computed value to rgb(...) rather than echoing back the hex
-    // we set it to — that normalisation is itself proof the property registered correctly.
-    expect(after).toMatch(/^rgba?\(/);
+    expect(after).toBe(before);
   });
 
   test('switching mode toggles data-theme and repaints --m3-surface', async ({ page }) => {
