@@ -199,3 +199,52 @@ test('the Books and Podcasts destinations go to the libraries the server actuall
   await expect(page.getByTestId('library-page')).toBeVisible();
   await expect(page.getByTestId('library-item-cards')).toBeVisible();
 });
+
+test("the desktop rail's active destination renders its fillable icon filled, inactive outlined", async ({
+  page,
+}) => {
+  // Wave 16d-W-2: `Icon`'s `filled` prop (shipped in 17a3d0e) finally gets a
+  // reader — the Material Symbols FILL axis, selected destination filled,
+  // unselected outlined (`docs/design/SONORA.md` §3.7). `book_2` (Books) is
+  // deliberately the glyph under test here, not `podcasts` or `search`:
+  // both of those are pixel-identical in their filled and outlined forms
+  // (`Icon.tsx`'s own comment — neither glyph has an enclosed region for the
+  // FILL axis to change), so an assertion built on either would pass whether
+  // or not the wiring actually worked. `book_2` is real, visible movement.
+  const nav = page.getByTestId('nav-rail-destinations');
+  const booksIconPath = nav.getByRole('button', { name: 'Books' }).locator('svg.m3-icon path');
+
+  // For you is active by default (`beforeEach` navigates to `/`) — Books is
+  // not, so its icon renders in its outlined form.
+  const outlinedD = await booksIconPath.getAttribute('d');
+  expect(outlinedD).toBeTruthy();
+
+  await nav.getByRole('button', { name: 'Books' }).click();
+  await expect(page).toHaveURL(/\/books$/);
+
+  const filledD = await booksIconPath.getAttribute('d');
+  expect(filledD).toBeTruthy();
+  expect(filledD).not.toBe(outlinedD);
+});
+
+test("the compact bottom bar's active destination also renders its fillable icon filled", async ({
+  page,
+}) => {
+  // Same wiring, the other of the two surfaces `navItems` (`Shell.tsx`)
+  // feeds — the compact `NavigationBar` reads the identical `item.icon`
+  // built for the rail, so this is the parity half of the test above rather
+  // than a second, independent implementation to drift from it.
+  await page.setViewportSize({ width: 480, height: 900 });
+  const nav = page.getByTestId('nav-bar');
+  const booksIconPath = nav.getByRole('button', { name: 'Books' }).locator('svg.m3-icon path');
+
+  const outlinedD = await booksIconPath.getAttribute('d');
+  expect(outlinedD).toBeTruthy();
+
+  await nav.getByRole('button', { name: 'Books' }).click();
+  await expect(page).toHaveURL(/\/books$/);
+
+  const filledD = await booksIconPath.getAttribute('d');
+  expect(filledD).toBeTruthy();
+  expect(filledD).not.toBe(outlinedD);
+});

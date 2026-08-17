@@ -2,19 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { contentMaxWidth, railWidth } from './shellLayout.js';
 
 describe('railWidth', () => {
-  it('matches the collapsed icon-only rail width at medium widths (docs/DESIGN.md § Layout)', () => {
-    expect(railWidth('medium')).toBe(80);
+  // Wave 16d-W-2: `railWidth` now takes the `railWide` boolean
+  // (`hooks/breakpoint.ts`'s `isRailWide`, `>= 1024px`) rather than the
+  // three-way `Breakpoint`, since the rail's own width threshold cuts inside
+  // the `medium` (600–1240) range and could never have been expressed by it.
+  it('matches the collapsed icon-only rail width when the rail is not wide', () => {
+    expect(railWidth(false)).toBe(80);
   });
 
-  it('matches the expanded icon+label rail width beyond 1240px', () => {
-    expect(railWidth('expanded')).toBe(220);
-  });
-
-  it('is unused at compact widths but returns the same value as medium rather than throwing', () => {
-    // Compact renders a bottom bar, not a rail, so nothing reads this for
-    // 'compact' today — asserted anyway so an accidental fallthrough branch
-    // never silently returns something else.
-    expect(railWidth('compact')).toBe(80);
+  it('matches the expanded icon+label rail width once the rail is wide (>= 1024px)', () => {
+    expect(railWidth(true)).toBe(220);
   });
 });
 

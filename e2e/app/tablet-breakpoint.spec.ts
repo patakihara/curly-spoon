@@ -60,10 +60,45 @@ for (const width of TABLET_WIDTHS) {
   });
 }
 
+/**
+ * Wave 16d-W-2's whole point: the redesign's two thresholds, `railWide = w
+ * >= 1024` and `showPanel = w >= 1240` (`apps/web/src/hooks/breakpoint.ts`),
+ * are no longer the same boundary. This pins the one new state that split
+ * creates — the rail is wide (labels, `nav-rail-expanded`) four breakpoints
+ * before the Now Playing panel appears — which nothing asserted before this
+ * wave re-cut the rail's own threshold down from 1240 to 1024.
+ */
+test('between 1024 and 1240px, the rail is wide but the Now Playing panel is still absent', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.goto('/');
+  await expect(page.getByTestId('home-page')).toBeVisible();
+
+  await expect(page.getByTestId('nav-rail-expanded')).toBeVisible();
+  await expect(page.getByTestId('nav-rail')).toHaveCount(0);
+  await expect(page.getByTestId('now-playing-panel')).toHaveCount(0);
+  await expect(page.getByTestId('nav-bar')).toHaveCount(0);
+
+  // Not just present but actually wide (220px, `shellLayout.ts`'s
+  // `railWidth(true)`) — the labels have somewhere to render, not merely a
+  // testid that changed without the width backing it.
+  const railBox = await page.getByTestId('nav-rail-expanded').boundingBox();
+  expect(railBox).toBeTruthy();
+  expect(railBox!.width).toBeGreaterThan(150);
+});
+
 // Widths `player.spec.ts` doesn't already cover at 900px — the docking fix's
 // own comment (app.css) says it holds across the whole medium range, and this
 // is what proves that rather than assuming it from the one width already
 // pinned elsewhere.
+//
+// Wave 16d-W-2 re-cut the rail-width threshold to `railWide = w >= 1024`
+// (`apps/web/src/hooks/breakpoint.ts`), one new intermediate state inside
+// this file's own `medium` (600–1240) range: the rail now carries labels —
+// and its testid switches to `nav-rail-expanded` (`Shell.tsx`) — at 1024 and
+// 1200, where it previously stayed the narrow, icon-only `nav-rail`. 768 is
+// still below the new threshold and keeps the old testid.
 for (const width of [768, 1024, 1200]) {
   test(`the docked mini player spans the rail's edge to the viewport, and stays clickable, at ${width}px`, async ({
     page,
@@ -75,7 +110,7 @@ for (const width of [768, 1024, 1200]) {
     await page.getByTestId('item-play').click();
     await expect(page.getByTestId('mini-player')).toBeVisible();
 
-    const rail = page.getByTestId('nav-rail');
+    const rail = page.getByTestId(width >= 1024 ? 'nav-rail-expanded' : 'nav-rail');
     const railBox = await rail.boundingBox();
     const mpBox = await page.getByTestId('mini-player').boundingBox();
     if (!railBox || !mpBox) throw new Error('rail or mini player not visible');
