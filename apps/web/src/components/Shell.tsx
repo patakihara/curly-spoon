@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
   IconButton,
+  isFillableIconName,
   MantineAppShell,
   MantineNavLink,
   NavigationBar,
@@ -48,6 +49,24 @@ const DESTINATION_ICONS: Record<DestinationKey, IconName> = {
   music: 'music_note',
   search: 'search',
 };
+
+/**
+ * Wave 16d-W-2: `Icon`'s `filled` prop (shipped in 17a3d0e) finally gets a
+ * reader — the Material Symbols FILL axis, selected destination filled,
+ * unselected outlined (`docs/design/SONORA.md` §3.7). `DESTINATION_ICONS`'
+ * values are widened to plain `IconName` (a `Record`, not per-key literals),
+ * so `isFillableIconName` is the runtime narrowing `IconProps`' discriminated
+ * union requires before `filled` can be passed at all — `home` and
+ * `music_note` aren't in `FILLABLE_ICON_NAMES`, so those two destinations
+ * keep rendering their one, filled-only form exactly as before, unaffected.
+ * `podcasts` and `search` *are* fillable but are pixel-identical in both
+ * forms (`Icon.tsx`'s own comment; both glyphs have no enclosed region for
+ * the FILL axis to change) — real, visible movement is only on `book_2`
+ * (Books) here, matching the one destination icon in `FILLABLE_ICON_NAMES`.
+ */
+function navIcon(name: IconName, active: boolean) {
+  return isFillableIconName(name) ? <Icon name={name} filled={active} /> : <Icon name={name} />;
+}
 
 /**
  * Wave 16c-2-W-2: the desktop rail's active-destination highlight, one of the two
@@ -152,12 +171,6 @@ export function Shell({ children }: { children: ReactNode }) {
     ...providerLookup,
     jellyfinConfigured: jellyfinConfigQuery.data?.configured ?? false,
   });
-  const navItems: NavigationItem[] = destinations.map((d) => ({
-    key: d.key,
-    label: d.label,
-    icon: <Icon name={DESTINATION_ICONS[d.key]} />,
-  }));
-
   // `/library/$libraryId` still works (docs/ROADMAP.md §12a keeps every old
   // deep link alive) but Books/Podcasts nav items now point at the stable
   // `/books`/`/podcasts` paths instead, so a plain `startsWith` match against
@@ -182,6 +195,15 @@ export function Shell({ children }: { children: ReactNode }) {
     destinations.filter((d) => d.to !== '/').find((d) => location.pathname.startsWith(d.to));
   const activeKey = activeDestination?.key ?? 'forYou';
   const isSettingsActive = location.pathname.startsWith('/settings');
+
+  // Built after `activeKey` (not alongside `destinations` above) so each
+  // item's icon can be handed its own active state — see `navIcon`'s doc
+  // comment above.
+  const navItems: NavigationItem[] = destinations.map((d) => ({
+    key: d.key,
+    label: d.label,
+    icon: navIcon(DESTINATION_ICONS[d.key], d.key === activeKey),
+  }));
 
   const handleActiveChange = (key: string) => {
     const destination = destinations.find((d) => d.key === key);
