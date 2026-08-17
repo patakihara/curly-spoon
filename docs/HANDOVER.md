@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T19:33:33Z` · `adecd97961cf63451` · general-purpose · ended · Clean tree, three commits on top of the claimed baseline. The wave is complete and verified. Here's the final report. ## Report — Wave 16b-2, the Son…
 - `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
@@ -279,12 +278,13 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
 - `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
 - `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · ended · The background 'pnpm test' run is still in progress. I'll wait for its completion notification before continuing.
-- `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · running · —
+- `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · ended · Everything is committed and clean. Here is my review report for wave 16c-2-W-1. ## Verdict: **merge as-is**, plus one already-applied fix The wave's…
 - `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
 - `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
 - `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · ended · Everything is clean and committed. Here's my report. ## Report — Wave 15d-1-S **Branch/commit:** 'worktree-agent-a7c69864b7e5a52b5' at 'ace32cb', on…
 - `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
 - `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · running · —
+- `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -817,6 +817,40 @@ announced, not merely drawn**, or the badge is a silent accessibility divergence
 `15d-1-S` also closes the review's second finding: the outer `catch` in `buildExternalDiscoveryShelf`
 had no coverage, and the new test must be confirmed to go **red** with the `warn` line removed rather
 than merely passing beside it.
+
+**MERGED 2026-08-17 — `15e-music` + `15d-1-S` (`def4f4b`), `15d-1-A` (`4a2db21`), `16c-2-W-1`
+(`030f067`).** The orchestrator ran the full `--project=app --workers=1` suite on the merged tree
+itself rather than delegating it: **188 passed, 0 failed, 2 skipped** in 8.5 min. Root `pnpm test`
+1653/1653, root typecheck green across all projects including `e2e`.
+
+**`16c-2-W-1`'s review came back "merge as-is" and it was thorough.** The portal risk is closed by
+evidence, not argument: the `:root` block carries **zero `var()` references** among its `--m3-*`
+values, and `Dialog`, `Sheet` and `Menu` were each screenshotted in both themes rendering fully
+styled. `--project=ui` 190 passed. Every literal was cross-checked against `SONORA.md`; the three
+inferred light-side "on" roles were **independently recomputed** and clear AA at 6.45–7.24:1; the
+xl/lg 32px collapse is genuinely Sonora's scale, not a transcription slip. CSS grew 1,205 bytes
+(+0.44%), so nothing was lost. One spec was correctly failing and was fixed: `e2e/ui/theme.spec.ts`
+pinned the old contract in which the source colour drove the M3 generator.
+
+**THE ONE THING THE FULL SUITE CAUGHT, and it is exactly why the rule exists.** The count went from
+the documented **189 passed / 1 skipped** to **188 / 2** — no failure, one test silently stopped
+running. There is exactly **one** `test.skip` in the whole `e2e/app` suite:
+`contrast.spec.ts:110`, _"a shelf card author (on-surface-variant, the muted secondary tone) clears
+WCAG AA"_, guarded by `test.skip(!hasAuthor, …)`. Its describe runs once per colour scheme, so it
+now skips in **both** rather than one.
+
+**That means a WCAG check stopped covering anything on the very wave that changed the value it
+checks** — `16c-2-W-1` redefined `--m3-on-surface-variant`, and the test pinning that token's
+contrast is now inert. The reviewer's own clean `--project=app` run on `16c-2-W-1` **alone** gave
+189/1, so the change came in with the `15e`/`15d-1-S` merge.
+
+**The likely mechanism, stated as a hypothesis to verify rather than a finding:** `HomePage` stitches
+four async sources including the recommendation shelves, so the external discovery shelf may now be
+**first on Home**, and its placeholder cards have no author `<p>`. If so there are two separate
+things to settle — restore the contrast check so it cannot silently self-disable (assert on a card
+known to have an author, or fail rather than skip when none is found), **and** decide whether an
+external discovery shelf should lead Home at all. A guard that skips when its subject is absent is
+indistinguishable from a guard that passes, which is the failure this one just demonstrated.
 
 **REVIEWED 2026-08-17 — verdict: do not merge as-is, fix the card first.** The placeholder concern
 below was confirmed by driving a real running instance, not by reading code. What the reviewer saw:
