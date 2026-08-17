@@ -284,7 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
 - `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
 - `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
-- `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · running · —
+- `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · ended · Nothing left running. This wave is complete. ## Report — Wave 16c-2-W-2 **Branch/commit:** 'worktree-agent-ad369f8094766bc82', two commits on top of…
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,65 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### Hand-off at the usage band, 2026-08-17 — nothing claimed, nothing in flight
+
+**`main` is green on everything and fully pushed.** Final local state, all three suites run here
+after the last merge: **`--project=app` 192 passed**, **`ui-desktop` + `ui-mobile` 192 passed**,
+**unit 1660/1660**, zero failures and zero skips anywhere. `docs/agent-specs/` is empty — every spec
+written this session was dispatched, so nothing is parked.
+
+**Seven waves landed:** `15e-music`, `15d-1-S`, `15d-1-A`, `15d-1-W`, `16c-2-W-1`, `16c-3-W`,
+`16c-2-W-2`.
+
+**READ THIS BEFORE THE NEXT TOKEN-LAYER WAVE — it cost a red `main`.** CI failed on `008393e` with
+every local check green, on one assertion: `--accent` expected `#8b5cf6`, received
+`rgb(139, 92, 246)`. **A custom property registered with `CSS.registerProperty` is _computed_, not
+echoed back as authored** — `16c-3-W` registered `--accent` as a `<color>` so the picker could
+cross-fade, hit this trap in its own new assertion, fixed it there, and nobody checked the older one.
+
+**Two compounding mistakes, both mine, both cheap to avoid:**
+
+1. **The broken assertion lives in `e2e/ui/`, and after merging I ran only `--project=app`.** A
+   token-layer change needs **both** project families, every time.
+2. **There is no `--project=ui`.** The real names are **`ui-desktop`** and **`ui-mobile`**, and
+   `playwright test --project=ui` fails with "Project(s) not found" rather than running anything.
+   Several specs in this repo's own docs say `--project=ui`; they are wrong. Use
+   `--project=ui-desktop --project=ui-mobile`.
+
+Fixed in `af98640` by accepting either serialization, since the assertion exists to catch a typo in
+the value rather than to pin a string form.
+
+**What `16c-2-W-2` established that its own spec had wrong:** the nav rail and Settings' mode buttons
+never read `--m3-*` directly at all — they read **Mantine's own colour ramp**, derived from
+`scheme.primary`, which stopped tracking anything once `16c-2-W-1` fixed the M3 chroma roles. So
+"migrate it off `--m3-*`" was the wrong instruction and the agent correctly found the real one.
+
+**The accent picker's exact boundary now** — do not overstate it in either direction. **Responds:**
+`Chip`, `Slider`, `IconButton`, the desktop rail's active destination, Settings' _selected_ mode
+button. **Does not:** the compact/mobile bottom `NavigationBar`, Settings' _unselected_ mode buttons,
+`Card`, and the unmigrated parts of the other primitives. **`Dialog`/`Sheet`/`Menu` are deliberately
+excluded and must stay that way** until something re-parents them — they portal outside
+`.auralis-theme-root`, where Sonora's tokens do not resolve at all, and moving them would render them
+unstyled **while passing Playwright**, which asserts testids and text and never computed styles.
+
+**The rail's active label is real text on the `--accent-ink` / `--surface-card` pairing that fails
+WCAG AA in dark at indigo (4.12:1) and violet (4.35:1, the shipped default).** Both clear the 3:1
+UI-component floor, and it is legible in screenshots — but it is now _text_, not just an icon, so the
+4.5:1 bar is the one that applies. **This is with Sofia (queue `abbaca2`) and is not to be worked
+around by adjusting a threshold.**
+
+**The obvious next waves, in order:**
+
+1. **An Android accent picker.** Web can now be themed and Android cannot — a live parity gap.
+   `AuralisTheme` (`ui/theme/Theme.kt:24`) already accepts `accent: Color = SonoraDefaultAccent` and
+   **`MainActivity.kt:14` is the only call site in the whole tree, passing no argument**;
+   `SonoraAccentPresets` (`Color.kt:191`) has **zero consumers outside its own file**. Two writers
+   with no reader, waiting for one wave. It needs Android's Settings screen, which is approved but
+   unscoped.
+2. **`16c-2-W-3`** — the compact bottom nav and `Card`, widening the picker further.
+3. **Re-parent `Dialog`/`Sheet`/`Menu`** inside the theme root, which is what unblocks migrating them.
+4. **`16d`** — the docked-chrome scroll bug, still unfixed and still the user's own report.
 
 **CLAIMED 2026-08-17 — `16c-2-W-2`.** One agent, two tightly-scoped web fixes: the nav rail's
 active destination and Settings' own theme-mode buttons onto `--accent-ink`/`--surface-*` so the
