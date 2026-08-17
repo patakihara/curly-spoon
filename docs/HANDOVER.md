@@ -284,7 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
 - `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
 - `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
-- `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · running · —
+- `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,65 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### Session state, 2026-08-17 — everything below is merged, pushed and green
+
+**`main` is at `98469ca`.** Full `--project=app --workers=1`: **191 passed, 1 skipped, 0 failed**
+(the skip is the documented pre-existing `contrast.spec.ts:110` conditional). Root `pnpm test`
+**1660/1660**, typecheck green across all eight projects including `e2e`. **Nothing is claimed and
+nothing is in flight.** Six waves landed:
+
+| Wave        | What                                                               |
+| ----------- | ------------------------------------------------------------------ |
+| `15e-music` | ListenBrainz recommendations reach `GET /music/recommended`        |
+| `15d-1-S`   | the `availability` field, plus coverage for an uncovered `catch`   |
+| `15d-1-A`   | Android's external cards: badge, request-flow tap, semantics       |
+| `15d-1-W`   | web's ditto                                                        |
+| `16c-2-W-1` | web's `--m3-*` substrate redefined to Sonora's values              |
+| `16c-3-W`   | the accent picker works again; `html body`'s theme-scope bug fixed |
+
+**The three things a session picking this up now should know:**
+
+1. **The accent picker works, and its reach is bounded — do not overstate it.** `Chip`, `Slider` and
+   `IconButton` respond to a swatch change; **anything still reading `--m3-*` does not**, including
+   the nav-rail highlight and Settings' own mode buttons. That is the documented partially-migrated
+   state, not a defect. **`16c-2-W-2` — migrating the remaining components onto
+   `--accent`/`--surface-*` — is what widens it, and it is the obvious next wave.**
+2. **Android has no accent picker at all, and the seam for one already exists.**
+   `AuralisTheme` (`apps/android/.../ui/theme/Theme.kt:24`) accepts `accent: Color = SonoraDefaultAccent`,
+   and grep finds **no call site anywhere passing a non-default value** — `MainActivity` calls
+   `AuralisTheme { }` with no arguments. Pre-existing from `16b-2-A`, not introduced here. **This is
+   now a live parity gap**: web has a working picker and Android cannot be themed at all. It needs an
+   `-A` wave and then a `-P`.
+3. **The contrast guard can silently disable itself again.** `contrast.spec.ts:110` is
+   `test.skip(!hasAuthor, …)`, and it did exactly that mid-session before closing again on its own.
+   **Make it fail, or point it at a card known to have an author.** Small, real, unclaimed.
+
+**Two accessibility numbers now exist where before there was a vague worry, and the second is the
+serious one.** Computed in Python against the WCAG relative-luminance formula across all 17 preset
+hues, cross-checked against a figure already in `Chip.tsx`'s comment:
+
+- `--accent-ink` on `--surface-card` — light passes at all 17 (5.4–9.3:1); **dark fails 4.5:1 at
+  indigo (4.12:1) and violet (4.35:1)**, and violet is the shipped default. Both clear the 3:1 floor.
+- **`--accent-contrast` is a fixed `#fff` and fails 4.5:1 on `--accent` at all 17 presets** (1.92:1
+  yellow → 4.9:1 red), **failing even the 3:1 floor at nine of them**. It is the "text on accent"
+  token, so a white label on a yellow or lime accent is simply not readable.
+
+**Nothing was changed on the strength of those** — a token that exists to be readable being
+unreadable is a design answer, not a threshold to adjust. **Both are with Sofia**: queue `dbfb46e`
+(the original question, plus whether album-art-derived colour should ever drive the accent) and
+queue `abbaca2` (these numbers). **Neither blocks anything.**
+
+**One operational lesson worth more than any of the waves.** Four agents were lost in this session,
+every one at the same point: it backgrounded a long Playwright run and stopped to wait for a
+notification, which ends the turn. **The spec-side instruction held perfectly — all four had
+committed first, so no work was lost** — and the orchestrator-side worktree check is what confirmed
+it each time. The fix is not another instruction. **Do not ask a subagent to run a full suite. The
+orchestrator runs it from the main checkout**, where `Bash` is ungated and a foreground run cannot
+be interrupted by a notification. Two further details: a stray Playwright **runner** does not carry
+the worktree path in its own command line, so `pgrep -f "worktrees/agent-<id>"` misses it — match the
+child and kill its `ppid`; and **`SendMessage` to a stopped agent recovers its findings**, which
+salvaged an entire review here for a fraction of the cost of re-running it.
 
 A lightweight lock, because two sessions can share this checkout. Claim a wave here
 **before** dispatching it; delete the line when it lands.
