@@ -4,7 +4,7 @@
  * Playing region above that — all driven by the one `useBreakpoint` hook, never
  * a component-local media query.
  */
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Icon,
@@ -85,6 +85,28 @@ export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
+  // Wave 16d-W-1b: `.auralis-shell__content` is now the app's one scroll
+  // container (16d-W-1), which quietly turned off the browser's native
+  // "reset scroll on navigation" — that behaviour lived on the document, and
+  // the document no longer scrolls here. TanStack Router does ship a
+  // `scrollRestoration` router option, deliberately not used: it's a
+  // session-storage-backed cache of scroll positions keyed by location
+  // (`@tanstack/router-core`'s `scroll-restoration.js`), which is exactly
+  // the "scroll-position cache" this wave is scoped to *not* build — a
+  // bigger, separate piece of work. A plain effect keyed on the pathname is
+  // the narrow fix the bug actually needs.
+  const contentRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    // Keyed on `pathname` alone, not the whole `location` object: this app
+    // has a real search-param route (`/music/requests?prefill=`, seeded by
+    // `MusicHomePage`'s recommended-shelf hand-off), and a query-string-only
+    // change must not throw the user back to the top of a page they're
+    // still on. Nothing in this app navigates by hash today (grepped: no
+    // `location.hash` reads, no `hash:` route options) — this app has no
+    // hash-navigation surface to defeat, but the guard costs nothing.
+    if (location.hash) return;
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [location.pathname]);
   const railSearchQuery = useUiStore((s) => s.query);
   const setSearchQuery = useUiStore((s) => s.setSearchQuery);
   // `MiniPlayer` decides its own visibility from this same field (returns
@@ -210,7 +232,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <Icon name="settings" />
             </IconButton>
           </div>
-          <main className="auralis-shell__content" data-testid="shell-content">
+          <main ref={contentRef} className="auralis-shell__content" data-testid="shell-content">
             {children}
           </main>
           <MiniPlayer onExpand={() => setNowPlayingOpen(true)} />
@@ -308,7 +330,7 @@ export function Shell({ children }: { children: ReactNode }) {
               </MantineAppShell.Navbar>
             </MantineAppShell>
           </div>
-          <main className="auralis-shell__content" data-testid="shell-content">
+          <main ref={contentRef} className="auralis-shell__content" data-testid="shell-content">
             {children}
           </main>
           {breakpoint === 'expanded' ? <NowPlayingPanel /> : null}
