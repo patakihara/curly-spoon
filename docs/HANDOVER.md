@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
 - `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
 - `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
 - `2026-08-16T19:30:31Z` · `a0120e561b6bac637` · general-purpose · ended · ## Report — Wave 15a: the external-candidate seam **Branch/commit:** 'worktree-agent-a0120e561b6bac637' at '91af5c1' (follow-up) on top of '1709c0d',…
@@ -284,7 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
 - `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · ended · The background 'pnpm test' run is still in progress. I'll wait for its completion notification before continuing.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · running · —
-- `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · running · —
+- `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
+- `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
 
 <!-- AGENT_LOG_END -->
 
@@ -757,7 +757,41 @@ item by name in the response body rather than a helper's return value.
 **It also stopped mid-verification**, on an unfinished root `pnpm test` — the second agent today to
 die waiting on a backgrounded run. Its work was committed first, so again nothing was lost.
 
-**The one thing to scrutinise, and it is the reviewer's headline.** External candidates are
+**REVIEWED 2026-08-17 — verdict: do not merge as-is, fix the card first.** The placeholder concern
+below was confirmed by driving a real running instance, not by reading code. What the reviewer saw:
+a shelf titled _"New artists to discover"_ rendering real artist names on **blank music-note tiles**,
+and **clicking one navigates to `/music/album/external%3Alistenbrainz%3A<mbid>`** — a page headed
+plain **"Album"** with no name and no artist, a **live favourite-heart and add-to-playlist button
+both wired to act on an id that does not exist**, and _"No tracks found for this album."_ That is a
+dead end, not a graceful empty state, and it sits on Sofia's main Music screen. **Everything else in
+the wave is solid** — mechanism, ownership matching, cold start, degradation, request-shape testing.
+
+Confirmed independently in the same review: the **live ListenBrainz curl** (200 with a real payload
+on the five-parameter request; **400 `Argument max_similar_artists must be specified` on the
+one-parameter version**, which proves the 15a fix is real and necessary), and that
+`listenbrainz.test.ts` asserts the outgoing query as an **exact** set via `toEqual`, not a subset.
+Root `pnpm test` **1652 passed / 0 failed**, root `pnpm typecheck` green across all seven projects
+**including `e2e`**, lint and format clean.
+
+**Two gaps left open, deliberately named rather than assumed away:**
+
+1. **The full `--project=app` Playwright suite never ran on this wave**, and 15e-music **widened a
+   shared fixture** (`fakeJellyfin.ts` — `artist-nebula` gained a MusicBrainz provider id). This
+   repo's own recorded lesson is that **only a full `--project=app` run sees fixture-widening
+   breakage**; the reviewer ran a two-project subset, which is precisely the check that cannot. The
+   author's "no fixture counts changed" therefore rests on unit tests alone. **This is a merge
+   blocker and the orchestrator runs it, not a subagent** — see the note on agent deaths below.
+2. **`routes/jellyfin.ts`'s outer `catch` in `buildExternalDiscoveryShelf` has no test coverage** —
+   every failure path the route tests exercise is already absorbed by `listenbrainz.ts`'s own
+   internal try/catch, which never rethrows, so nothing fails if that `warn` line is deleted. Minor,
+   deliberately defensive against a future provider breaking its total-function contract, but it does
+   not meet the wave's own stated bar.
+
+**The reviewer agreed with dropping rather than labelling owned artists**, on the reviewer's own
+reasoning: a shelf whose promise is "new artists to discover" contradicts itself by listing one she
+already owns, and reads as a bug rather than as a policy. Settled; do not re-open.
+
+**The original concern, kept because it is what the review was pointed at:** External candidates are
 serialized as **blank `Album` placeholders** with ids namespaced `external:<provider>:<id>` and
 cover/year/track-count `null`, chosen precisely so the existing renderer displays them with no client
 change. That is clever and it is also a trap: **clicking one routes to an album detail page for an id
