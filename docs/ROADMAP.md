@@ -3597,12 +3597,32 @@ boundaries, disjoint directories where waves run in parallel.
   - **16c-1-W (in flight)** — `Button`, `IconButton`, `Chip`, `Card`, `Slider` in `packages/ui`
     against the new tokens. `Dialog`/`Sheet`/`Menu` are excluded: they portal outside
     `.auralis-theme-root`, where the theme-scoped tokens do not resolve.
-  - **16c-1-A** — the same five in Compose. Android's `MaterialTheme` today receives **only a colour
-    scheme — no typography, no shapes** — so this wave gives Android a type scale and a shape scale
-    for the first time, carrying Sonora's exact values. Read
-    `docs/design/sonora/primitives/*.jsx` for the real numbers; the prop tables in `SONORA.md` give
-    the API and **not** the values.
-  - **16c-1-P** — parity review over the pair.
+  - **16c-1-A — measured 2026-08-17, and it is very nearly already done. Do not dispatch it as a
+    rebuild.** Checked by grep on the tree: `apps/android` has **no custom primitive wrappers at
+    all** — no `AuralisButton`, `AuralisChip`, `AuralisCard`, `AuralisSlider`, `AuralisIconButton`.
+    Every call site is Material 3's own composable (`Button` ×49, `IconButton` ×12, `Slider` ×1),
+    and those resolve against `MaterialTheme` — which **16b-2-A already populated app-wide** with
+    Sonora's `ColorScheme`, `Typography` and `Shapes`, wrapped around the whole app in
+    `MainActivity`. So Android's primitives already carry Sonora's values, and there is nothing to
+    rebuild.
+
+    **The wave that is left is a verification wave, not an implementation one**: confirm the five
+    primitives render Sonora's values through the theme, and extend the Robolectric test to cover
+    what `16b-2-P` found it does not (the 26 chroma-role values, verified so far only by one manual
+    review pass). Dispatching it as "rebuild the five primitives in Compose" would invite an agent
+    to invent five wrapper composables nothing calls — this project's most-repeated failure, and it
+    would be the sixth and seventh instances in one wave.
+
+    **One real gap the same grep turned up, for `-P` to rule on: `Chip` and `Card` have zero call
+    sites on Android**, while web uses both. That is either deliberate platform idiom or an actual
+    missing surface, and it is exactly the "separate idiom from accidental drift" question a parity
+    review exists to answer. It is not a token-value question, which is why `16b-2-P` did not see it.
+
+  - **16c-1-P — blocked, not owed, and the distinction matters.** This file and `HANDOVER.md` both
+    listed it as outstanding. A parity review compares two halves; with `16c-1-A` reducing to
+    verification (above), there is no second implementation to compare against, and dispatching a
+    `-P` with nothing on the other side burns an agent to report that fact. Fold it into `16c-2-P`
+    once web's substrate has caught up.
   - **16c-2-W — rescoped 2026-08-17, and the original line was wrong.** It said "the remaining
     primitives (`Badge`, `Input`, `Switch`, `SectionHeader`, `QuickTile`)". **None of those five
     components exists in `packages/ui`**, so building them would have added five components with no

@@ -68,7 +68,9 @@ blocked for the reasons §15 gives.
    moves.
 3. **Where the phase actually is.** 16a done; **16b done on web** (fonts, tokens, icons) and
    **16b-2-A done on Android** (its first typography and shape scale); **16c-1-W** in flight;
-   **16c-1-P** owed, and it must rule on one known divergence — web's token wave was additive and
+   **16c-1-P** is **blocked, not owed** — see `ROADMAP.md` §16; there is no second
+   implementation to compare against, because `16c-1-A` turned out to be near-complete already.
+   It folds into `16c-2-P`, which must rule on one known divergence — web's token wave was additive and
    still renders pre-Sonora colours, while Compose cannot express that middle state, so Android's
    chroma roles jumped ahead to where web is going.
 
@@ -730,6 +732,16 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 A lightweight lock, because two sessions can share this checkout. Claim a wave here
 **before** dispatching it; delete the line when it lands.
 
+**`16c-1-A` is very nearly already done, and finding that out cost one grep.** `apps/android` has
+**no custom primitive wrappers at all** — every call site is Material 3's own composable (`Button`
+×49, `IconButton` ×12, `Slider` ×1), and those resolve against the `MaterialTheme` that `16b-2-A`
+already populated app-wide. So there is nothing to rebuild, and dispatching the wave as specced
+("the same five in Compose") would have invited an agent to invent five wrapper composables nothing
+calls. What is actually left is **verification**: extend the Robolectric test to cover the 26
+chroma-role values, which `16b-2-P` confirmed it does not. **One real gap for `-P` to rule on:
+`Chip` and `Card` have zero Android call sites** while web uses both — deliberate idiom or a
+missing surface, and a token-value review cannot see it. `ROADMAP.md` §16 has the detail.
+
 **CLAIMED 2026-08-17 — `15e-music`, giving ListenBrainz a reader.** One Sonnet agent, in
 `apps/server/src/features/recommendations/` + `routes/jellyfin.ts`. Disjoint from the wave above
 (`packages/ui`), so the two run in parallel. Two halves: artist-granularity ownership (the recorded
@@ -782,7 +794,7 @@ test is the Android CI run on `c450fbb`; the two compiler traps that _are_ check
 compiler (nested block comments, a dot in a backtick test name) were checked by the orchestrator and
 are clean. Budget the usual two-to-three red rounds anyway.
 
-**One deliberate divergence is open and 16c-1-P must rule on it.** Web's token wave was purely
+**One deliberate divergence is open and `16c-2-P` must rule on it** (not `16c-1-P`, which is blocked — see above). Web's token wave was purely
 additive and left `--m3-*` untouched, so web still renders pre-Sonora colours until 16c migrates
 components off them. Compose has no equivalent middle state — `MaterialTheme` resolves against
 exactly one `ColorScheme` — so Android's chroma roles now hold what `--m3-*` is _scheduled_ to
