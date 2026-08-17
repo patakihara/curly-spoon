@@ -47,6 +47,20 @@
  *    already-flagged risk as Chip's checked label, not a new one, so the test below checks
  *    only that the *pill* repaints (a real colour, not a fixed one) and does not assert on
  *    the label's colour.
+ * 6. (wave 16c-2-W-4) Settings' *unselected* theme-mode buttons still rode Mantine's
+ *    `theme.colors.auralis` ramp — `scheme.primary`, driven by `sourceColor`, not
+ *    `--accent` — an orphaned tint tracking neither the accent picker nor Sonora's
+ *    palette. The wave's own spec asked "make them respond to the accent picker"; Sonora's
+ *    real vendored primitives (`docs/design/sonora/primitives/`) say otherwise, unanimously:
+ *    `Button.jsx`'s `secondary` variant, `Chip.jsx`'s unchecked state and
+ *    `IconButton.jsx`'s inactive state all use plain surface tone with *no* `--accent`
+ *    reference. So the fix moves the unselected buttons onto the same
+ *    `--surface-card`/`--surface-fg`/`--surface-border` trio `Chip.tsx`'s own unchecked
+ *    state already uses — deliberately *not* accent-repainting. The test below asserts
+ *    that directly: the unselected button's fill must stay put across an accent change
+ *    while the selected button's fill (still `--accent`) visibly moves, so a future
+ *    regression that makes them merge (or that silently reverts to the orphaned ramp) both
+ *    fail it.
  */
 import { expect, test } from '@playwright/test';
 
@@ -206,4 +220,61 @@ test("the compact bottom nav bar's active-destination pill repaints on an accent
   // a literal fragile (docs/HANDOVER.md), and inequality is what actually discriminates a
   // repaint from a fixed fill.
   expect(redFill).not.toBe(tealFill);
+});
+
+test("Settings' unselected mode button stays neutral across an accent change, and stays visually distinct from the selected one", async ({
+  page,
+}) => {
+  // Wave 16c-2-W-4. Before the fix, the unselected buttons had no style override at all
+  // and fell through to Mantine's own `outline`-variant CSS reading the `auralis` colour
+  // ramp — transparent background, a tinted border/text from `scheme.primary`. That value
+  // is neither `--surface-card` nor accent-derived, so this test's first assertion
+  // (unselected background resolves to the theme root's own `--surface-card`) is a real
+  // red-to-green check: it fails against the pre-fix code, which paints no
+  // `--surface-card` at all here, and passes once the inline override lands.
+  await page.goto('/settings');
+  const themeRoot = page.locator('.auralis-theme-root');
+
+  // Default mode is 'system' (selected); 'light' and 'dark' are unselected. Only accent
+  // swatches are clicked below — never a mode button — so 'system' stays selected and
+  // 'light' stays unselected throughout, isolating the accent-change variable.
+  await expect(page.getByTestId('theme-mode-system')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('theme-mode-light')).toHaveAttribute('aria-pressed', 'false');
+  const selected = page.getByTestId('theme-mode-system');
+  const unselected = page.getByTestId('theme-mode-light');
+
+  const surfaceCard = await themeRoot.evaluate((el) =>
+    getComputedStyle(el).getPropertyValue('--surface-card').trim(),
+  );
+  const surfaceFg = await themeRoot.evaluate((el) =>
+    getComputedStyle(el).getPropertyValue('--surface-fg').trim(),
+  );
+
+  const unselectedBgDefault = await unselected.evaluate(
+    (el) => getComputedStyle(el).backgroundColor,
+  );
+  const unselectedColorDefault = await unselected.evaluate((el) => getComputedStyle(el).color);
+  expect(unselectedBgDefault).toBe(surfaceCard);
+  expect(unselectedColorDefault).toBe(surfaceFg);
+
+  const selectedBgDefault = await selected.evaluate((el) => getComputedStyle(el).backgroundColor);
+  // Distinctness: a solid accent fill against Sonora's genuine neutral, not two shades of
+  // the same thing — the failure mode this whole wave exists to avoid narrowing.
+  expect(selectedBgDefault).not.toBe(unselectedBgDefault);
+
+  await page.getByTestId('accent-swatch-red').click();
+  await page.waitForTimeout(700);
+
+  const selectedBgRed = await selected.evaluate((el) => getComputedStyle(el).backgroundColor);
+  // The selected button still tracks the accent picker (16c-2-W-2) — confirms the
+  // mechanism is live, so the unselected button's non-response below is a deliberate
+  // opt-out, not a broken picker.
+  expect(selectedBgRed).not.toBe(selectedBgDefault);
+
+  const unselectedBgRed = await unselected.evaluate((el) => getComputedStyle(el).backgroundColor);
+  const unselectedColorRed = await unselected.evaluate((el) => getComputedStyle(el).color);
+  // The core assertion: the unselected button's fill does not move with the accent swatch.
+  expect(unselectedBgRed).toBe(unselectedBgDefault);
+  expect(unselectedColorRed).toBe(unselectedColorDefault);
+  expect(unselectedBgRed).not.toBe(selectedBgRed);
 });

@@ -64,27 +64,47 @@ export function SettingsPage() {
               aria-pressed={mode === candidate}
               onClick={() => setMode(candidate)}
               data-testid={`theme-mode-${candidate}`}
-              // Wave 16c-2-W-2: the second conspicuous non-responder to the accent picker
-              // named in docs/HANDOVER.md — these buttons sit directly next to the accent
-              // swatches and ignored every one of them. `Button.tsx`'s `filled` variant
-              // still rides Mantine's own `theme.colors.auralis` ramp (its own doc comment
-              // says so, "out of scope for" wave 16c-1), which is `scheme.primary` — the old
-              // HCT-generated M3 primary that stopped tracking anything the picker changes
-              // once 16c-2-W-1 fixed `--m3-*` at Sonora's values. Overriding only the
-              // *selected* (filled) button's fill follows the pairing Chip.tsx's checked
-              // state and IconButton.tsx's selected `standard` state already establish for a
-              // solid accent fill: `--accent` background, `--accent-contrast` text — not
-              // `--accent-ink`, which is for text/icons placed *on a surface*, not for a
-              // button's own solid fill. `--accent-contrast` is a fixed white and already
-              // documented (docs/HANDOVER.md) to fail 4.5:1 at nine of the seventeen
-              // presets — a pre-existing pairing this reuses rather than a new one. The
-              // unselected (`outlined`) buttons are left on Mantine's ramp: they're
-              // deliberately neutral in the same pattern (Chip's *unchecked* state doesn't
-              // read `--accent` either), so leaving them alone doesn't narrow the boundary.
+              // Wave 16c-2-W-2 migrated the *selected* (filled) button's fill onto
+              // `--accent`/`--accent-contrast`, matching the solid-fill pairing Chip's
+              // checked state and IconButton's selected `standard` state already establish.
+              // It left the unselected (`outlined`) buttons on Mantine's own
+              // `theme.colors.auralis` ramp — `scheme.primary`, the old HCT-generated M3
+              // primary `sourceColor` still drives (`ThemeProvider.tsx`) even though
+              // `16c-2-W-1` fixed `--m3-*` itself at Sonora's static values. That ramp
+              // doesn't track the accent picker *or* match Sonora's palette; it's a third,
+              // orphaned tint nobody chose.
+              //
+              // Wave 16c-2-W-4: checked Sonora's own vendored primitives
+              // (`docs/design/sonora/primitives/`) before assuming "respond to the accent
+              // picker" meant "tint with `--accent`" — it doesn't, and this is the case
+              // `CLAUDE.md`'s parity-review precedent calls out (16c-2-W-3 finding `Card`
+              // needed nothing). Three real Sonora sources agree, unanimously: the
+              // *unselected* half of every toggle-like control is plain surface tone, never
+              // `--accent`. `Button.jsx`'s own `secondary` variant is
+              // `background: var(--surface-card); color: var(--surface-fg);
+              // border: 1px solid var(--surface-border)` — no accent reference anywhere.
+              // `Chip.jsx`'s unchecked state and `IconButton.jsx`'s inactive state are the
+              // same shape. This app's own `Chip.tsx` already encodes exactly this trio
+              // (`chipLabelStyle`'s unchecked branch) for its unchecked state, so the values
+              // below are copied from there rather than invented, fallbacks included.
+              //
+              // So the fix is real but isn't "make it respond to the accent picker" — it's
+              // "stop the orphaned tint and adopt Sonora's actual neutral treatment," which
+              // incidentally is what makes the boundary against the selected button crisp:
+              // a solid accent fill against Sonora's genuine neutral, not against a random
+              // leftover hue. `--surface-fg` on `--surface-card` clears WCAG AA by a wide
+              // margin in both themes (~14:1 dark, ~13.5:1 light — computed against the
+              // WCAG relative-luminance formula), unlike the `--accent-ink`/`--surface-card`
+              // pairing already flagged with Sofia (queue `abbaca2`) — this treatment avoids
+              // that failure mode entirely rather than reusing a pairing known to fail it.
               style={
                 mode === candidate
                   ? { backgroundColor: 'var(--accent)', color: 'var(--accent-contrast, #fff)' }
-                  : undefined
+                  : {
+                      backgroundColor: 'var(--surface-card, rgb(20, 20, 20))',
+                      color: 'var(--surface-fg, currentColor)',
+                      borderColor: 'var(--surface-border, rgb(255 255 255 / 8%))',
+                    }
               }
             >
               {candidate}
