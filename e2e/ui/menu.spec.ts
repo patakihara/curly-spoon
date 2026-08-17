@@ -59,7 +59,19 @@ test.describe('Menu', () => {
   // at all or not — only a `getComputedStyle` read distinguishes a correctly re-parented
   // dropdown from one still rendering unstyled at `document.body`. Both themes: the token is
   // theme-scoped with no `:root` fallback.
+  //
+  // Wave 16c-5-W: extended with a rendered-background assertion. `Menu.css` deliberately
+  // keeps `--m3-surface-container-high` for this background rather than migrating to
+  // `--surface-card` (see that file's comment: no scrim guarantees separation the way
+  // Dialog's does, so a flat `--surface-card` risks the dropdown merging into a `Card` it
+  // opens over) — so the expected value here is `--m3-surface-container-high`'s own literal,
+  // not a `--surface-*` one. That value is unchanged by this wave; what this test newly
+  // proves is that the rendered pixel matches the *specific* elevated tone rather than some
+  // other, wrong colour that also happens to be non-empty.
   for (const mode of ['dark', 'light'] as const) {
+    const expectedDropdownColor = mode === 'dark' ? 'rgb(25, 25, 25)' : 'rgb(211, 211, 211)';
+    const expectedTextColor = mode === 'dark' ? 'rgb(225, 225, 225)' : 'rgb(25, 25, 25)';
+
     test(`a Sonora surface token resolves on the dropdown in ${mode} mode`, async ({ page }) => {
       if (mode === 'light') {
         await page.getByTestId('mode-light').click();
@@ -71,6 +83,14 @@ test.describe('Menu', () => {
         getComputedStyle(el).getPropertyValue('--surface-card').trim(),
       );
       expect(surfaceCard).not.toBe('');
+
+      const backgroundColor = await dropdown.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(backgroundColor).toBe(expectedDropdownColor);
+
+      const textColor = await page
+        .getByRole('menuitem', { name: 'Play next' })
+        .evaluate((el) => getComputedStyle(el).color);
+      expect(textColor).toBe(expectedTextColor);
     });
   }
 });

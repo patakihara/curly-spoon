@@ -156,7 +156,19 @@ test.describe('Sheet', () => {
   // correctly re-parented panel from one still rendering unstyled at `document.body` —
   // both pass identically on testids and text. Both themes: the token is theme-scoped with
   // no `:root` fallback.
+  //
+  // Wave 16c-5-W: extended with a rendered-background assertion, same as `dialog.spec.ts`.
+  // The expected value here is `--surface-bg`, not `--surface-card` — SONORA.md §1.6's exact
+  // alias for the pre-migration `--m3-surface-container-low` the panel used to read, per
+  // `Sheet.css`'s own comment on why that's not a downgrade. Note this specific value is
+  // numerically *unchanged* from the pre-migration `--m3-surface-container-low` (both alias
+  // the same literal), so on its own this assertion does not discriminate old from new code —
+  // it still correctly pins the value. The handle colour below does discriminate: it moved
+  // from `--m3-outline-variant` (a distinctly different literal) to `--surface-fg-muted`.
   for (const mode of ['dark', 'light'] as const) {
+    const expectedSurfaceBg = mode === 'dark' ? 'rgb(12, 12, 12)' : 'rgb(235, 235, 235)';
+    const expectedHandleColor = mode === 'dark' ? 'rgb(150, 150, 150)' : 'rgb(80, 80, 80)';
+
     test(`a Sonora surface token resolves on the sheet panel in ${mode} mode`, async ({ page }) => {
       if (mode === 'light') {
         await page.getByTestId('mode-light').click();
@@ -172,6 +184,14 @@ test.describe('Sheet', () => {
         getComputedStyle(el).getPropertyValue('--surface-card').trim(),
       );
       expect(surfaceCard).not.toBe('');
+
+      const backgroundColor = await panel.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(backgroundColor).toBe(expectedSurfaceBg);
+
+      const handleColor = await page
+        .locator('.m3-sheet-handle')
+        .evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(handleColor).toBe(expectedHandleColor);
 
       const scrim = page.locator('.m3-sheet-scrim');
       const scrimBox = await scrim.boundingBox();
