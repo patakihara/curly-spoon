@@ -10,9 +10,34 @@
  * at the bottom of the page instead of a viewport overlay. Every rule below that
  * shouldn't leak onto that wrapper is scoped with the compound selector
  * `.mantine-Drawer-content.m3-sheet-panel`, which only the panel itself matches.
+ *
+ * Wave 16c-5-W (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1). The panel's background is `--surface-bg`, not
+ * `--surface-card` — that's not a downgrade, it's the exact 1:1 alias SONORA.md §1.6 gives
+ * for `--m3-surface-container-low` (both light and dark resolve to plain `--surface-bg`,
+ * no colour-mix involved), and it happens to match the pre-Sonora M3 intent too: a bottom
+ * sheet sits at the *low* container tier, level with the page rather than elevated above
+ * it. The scrim (`Drawer.Overlay`'s own inline style, in Sheet.tsx) guarantees separation
+ * regardless. The handle uses `--surface-fg-muted` rather than the dropped
+ * `--m3-outline-variant` — SONORA.md §1.6 gives outline-variant no clean single-token
+ * substitute (its light value aliases `--surface-card-light`, which would nearly vanish
+ * against a `--surface-card`-toned panel; its dark value is a bare `--neutral-700` with no
+ * semantic name), where `--surface-fg-muted` is an existing, already-used-elsewhere
+ * "quiet foreground mark" token (Dialog's body text, Slider's buffered track) that reads
+ * correctly against `--surface-bg` in both themes.
+ *
+ * `--m3-shape-xl`/`--m3-shape-full` and `--m3-elevation-3` are dropped for the literal
+ * Sonora values they already equal (see Dialog.css's identical note); `--m3-spring-*`
+ * durations become literal `200ms ease-in-out` for the same reason (Sonora ships no motion
+ * tokens; `index.css` already flattened every spring pair to that value, so this is a
+ * rename, not a timing change) — including `--m3-spring-slow-*` on the height
+ * transition/enter animation, which this file's own header comment above once pointed at
+ * DESIGN.md's distinct "spring.slow" naming for sheets; that distinction was already lost
+ * when 16c-2-W-1 flattened the substrate, not something this wave introduces or restores.
+ * Typography (`--m3-type-*`) is untouched, matching every other 16c wave.
  */
 .m3-sheet-scrim {
-  animation: m3-sheet-scrim-in var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  animation: m3-sheet-scrim-in 200ms ease-in-out;
 }
 
 @keyframes m3-sheet-scrim-in {
@@ -27,10 +52,10 @@
   width: 100%;
   max-width: 720px;
   max-height: 96vh;
-  border-radius: var(--m3-shape-xl) var(--m3-shape-xl) 0 0;
-  background: var(--m3-surface-container-low);
-  color: var(--m3-on-surface);
-  box-shadow: var(--m3-elevation-3, 0 -4px 12px rgba(0, 0, 0, 0.3));
+  border-radius: var(--radius-lg, 32px) var(--radius-lg, 32px) 0 0;
+  background: var(--surface-bg, rgb(12, 12, 12));
+  color: var(--surface-fg, rgb(225, 225, 225));
+  box-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05));
   overflow: hidden;
   /* Mantine's own `--drawer-flex` for a bottom drawer is a *percentage* flex-basis
    * (`calc(100% - offset*2)`), computed against this element's flex parent (the
@@ -42,8 +67,8 @@
    * Mantine's own class) sidesteps the percentage and lets `height` win instead.
    */
   flex-basis: auto;
-  transition: height var(--m3-spring-slow-duration) var(--m3-spring-slow-easing);
-  animation: m3-sheet-enter var(--m3-spring-slow-duration) var(--m3-spring-slow-easing);
+  transition: height 200ms ease-in-out;
+  animation: m3-sheet-enter 200ms ease-in-out;
 }
 
 .mantine-Drawer-content.m3-sheet-panel.m3-sheet-panel--dragging {
@@ -72,8 +97,8 @@
 .m3-sheet-handle {
   width: 32px;
   height: 4px;
-  border-radius: var(--m3-shape-full);
-  background: var(--m3-outline-variant);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--surface-fg-muted, rgb(150, 150, 150));
 }
 
 .m3-sheet-title {

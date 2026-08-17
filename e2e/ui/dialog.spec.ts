@@ -81,7 +81,16 @@ test.describe('Dialog', () => {
   // nothing and `getPropertyValue` returns `''`, not an error). Checked in both themes since
   // `--surface-card` is theme-scoped with no `:root` fallback — a value missing in only one
   // theme would pass a single-theme check.
+  //
+  // Wave 16c-5-W: extended from "the token resolves" (which passes even if `Dialog.css`
+  // never consumes it — every descendant of `.auralis-theme-root` inherits the custom
+  // property regardless) to "the panel's *rendered* background is that token's value" —
+  // pinned against the literal Sonora value per theme (`packages/ui/src/tokens/color.ts`'s
+  // `surfaceCard`), not re-read from the property itself, so a mapping to the wrong
+  // `--surface-*` name would fail this even though the property is still non-empty.
   for (const mode of ['dark', 'light'] as const) {
+    const expectedSurfaceCard = mode === 'dark' ? 'rgb(20, 20, 20)' : 'rgb(225, 225, 225)';
+
     test(`a Sonora surface token resolves on the dialog panel in ${mode} mode`, async ({
       page,
     }) => {
@@ -95,6 +104,9 @@ test.describe('Dialog', () => {
         getComputedStyle(el).getPropertyValue('--surface-card').trim(),
       );
       expect(surfaceCard).not.toBe('');
+
+      const backgroundColor = await panel.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(backgroundColor).toBe(expectedSurfaceCard);
 
       // The scrim still covers the full viewport — re-parenting the portal must not have
       // changed its positioning context (a `transform`/`filter` ancestor would break a
