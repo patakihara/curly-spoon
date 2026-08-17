@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import type { Album, Artist } from '@auralis/jellyfin-client';
+import type { ExternalProviderFactory, TasteProfile } from '../features/recommendations/index.js';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
+import { buildExternalDiscoveryShelf } from './jellyfin.js';
 import {
   FAKE_JELLYFIN_BAD_CREDENTIALS,
   FAKE_JELLYFIN_BASE_URL,
@@ -1266,6 +1269,8 @@ describe('GET /api/v1/music/recommended', () => {
       expect(shelf.reason.length).toBeGreaterThan(0);
       for (const item of shelf.items) {
         expect(typeof item.name).toBe('string');
+        // Wave 15d-1-S: every item on a library-derived shelf is a real Jellyfin album.
+        expect(item.availability).toBe('owned');
       }
     }
 
@@ -1407,16 +1412,24 @@ describe('GET /api/v1/music/recommended — external (ListenBrainz) discovery, w
     expect(externalShelf.items).toHaveLength(2);
 
     // Every external item is namespaced and honestly blank about what it doesn't know —
-    // never a fabricated Jellyfin id, cover, or track count.
+    // never a fabricated Jellyfin id, cover, or track count. Wave 15d-1-S: and now says so
+    // explicitly, rather than leaving a client to infer it from the `external:` id prefix.
     for (const item of externalShelf.items) {
       expect(item.id).toMatch(/^external:listenbrainz:/);
       expect(item.imageTag).toBeNull();
       expect(item.trackCount).toBeNull();
+      expect(item.availability).toBe('external');
     }
 
     // The library-derived shelves (already covered by the test above) still follow —
-    // this shelf is additive, not a replacement.
+    // this shelf is additive, not a replacement — and their items are `owned`, not
+    // `external`, proving the field isn't a blanket constant.
     expect(shelves.slice(1).every((s: { type: string }) => s.type === 'recommended')).toBe(true);
+    for (const shelf of shelves.slice(1)) {
+      for (const item of shelf.items) {
+        expect(item.availability).toBe('owned');
+      }
+    }
   });
 
   it('degrades to library-only shelves, never fails the route, when ListenBrainz is unreachable', async () => {
@@ -1455,5 +1468,83 @@ describe('GET /api/v1/music/recommended — external (ListenBrainz) discovery, w
     expect(response.statusCode).toBe(200);
     const { shelves } = response.json();
     expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-listenbrainz')).toBe(false);
+  });
+
+  // Every failure path the three tests above exercise is already absorbed inside
+  // `listenbrainz.ts`'s own try/catch, which never rethrows — `ExternalRecommendationProvider`
+  // is contractually total (see that interface's doc comment). So `buildExternalDiscoveryShelf`'s
+  // own outer `catch` had no test that could actually reach it: nothing in the suite fails if
+  // its `app.log.warn(...)` line is deleted. This drives a provider that violates the "never
+  // throws" contract directly, exercising the exported function rather than the route, since no
+  // registered provider can be made to throw through `app.inject()` without breaking that
+  // contract for real. `providerFactories` exists on `buildExternalDiscoveryShelf` for exactly
+  // this — see that function's own doc comment.
+  it('the outer catch degrades to no external shelf and logs the fault when a provider breaks its "never throws" contract', async () => {
+    const { app } = buildTestApp();
+    const warn = vi.spyOn(app.log, 'warn');
+
+    // A minimal but real seed chain: an `author` affinity with a resolvable seed album whose
+    // artist carries a `musicBrainzArtistId` — the exact chain `buildExternalDiscoveryShelf`'s
+    // own seed-resolution loop requires before it will call a provider at all.
+    const profile: TasteProfile = {
+      affinities: { genre: {}, author: { 'Some Artist': 5 }, narrator: {}, series: {} },
+      seeds: [],
+      knownItemIds: [],
+      totalSignal: 5,
+      facetSeeds: {
+        genre: {},
+        author: { 'Some Artist': { itemId: 'album-1', title: 'Album One' } },
+        narrator: {},
+        series: {},
+      },
+    };
+    const album: Album = {
+      id: 'album-1',
+      name: 'Album One',
+      sortName: null,
+      artistId: 'artist-1',
+      artistName: 'Some Artist',
+      productionYear: null,
+      overview: null,
+      genres: [],
+      imageTag: null,
+      trackCount: null,
+      favorite: false,
+      playCount: 0,
+      lastPlayedAt: null,
+      musicBrainzAlbumId: null,
+      musicBrainzReleaseGroupId: null,
+    };
+    const artist: Artist = {
+      id: 'artist-1',
+      name: 'Some Artist',
+      overview: null,
+      imageTag: null,
+      albumCount: 1,
+      favorite: false,
+      playCount: 0,
+      lastPlayedAt: null,
+      musicBrainzArtistId: 'mbid-1',
+    };
+    const throwingFactories: Record<string, ExternalProviderFactory> = {
+      broken: () => ({
+        providerName: 'broken',
+        medium: 'music',
+        recommend: async () => {
+          throw new Error('this provider violates its own "never throws" contract');
+        },
+      }),
+    };
+
+    const shelf = await buildExternalDiscoveryShelf(
+      app,
+      profile,
+      new Map([['album-1', album]]),
+      new Map([['artist-1', artist]]),
+      throwingFactories,
+    );
+
+    expect(shelf).toBeNull();
+    expect(warn).toHaveBeenCalled();
   });
 });

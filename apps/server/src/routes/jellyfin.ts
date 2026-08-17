@@ -33,10 +33,12 @@ import {
   buildTasteProfile,
   externalCandidateToAlbumPlaceholder,
   externalCandidateToOwnershipItem,
+  externalProviderFactories,
   getExternalProvidersForMedium,
   matchOwnership,
   reasonForExternalShelf,
   scoreCandidates,
+  type ExternalProviderFactory,
   type RecommendationSeed,
   type TasteProfile,
 } from '../features/recommendations/index.js';
@@ -160,6 +162,18 @@ async function fetchJellyfinMedia(
 }
 
 /**
+ * Wave 15d-1-S: every item `GET /music/recommended` returns now carries this, required and
+ * never optional. Android's Kotlin models declare fields non-nullable with no default and
+ * throw `MissingFieldException` on a missing key, so an optional field that is sometimes
+ * absent is a crash waiting to happen (adding a field is safe for existing clients —
+ * `auralisJson` sets `ignoreUnknownKeys = true`). Distinguishes a real owned Jellyfin album
+ * from a ListenBrainz-derived placeholder so a client can render/link them differently,
+ * instead of parsing meaning out of the `external:` id prefix — the implicit coupling a
+ * review flagged after driving the placeholder into a real album-detail dead end.
+ */
+type MusicRecommendedAlbum = Album & { availability: 'owned' | 'external' };
+
+/**
  * The reader wave 15a/15b-1 were both missing (`docs/HANDOVER.md`: "a wave that adds a
  * writer must name its reader" — this is that name). Resolves seeds from the real taste
  * profile the route already computed, queries every registered music provider (today, just
@@ -167,13 +181,27 @@ async function fetchJellyfinMedia(
  * returns a shelf shaped exactly like the library-derived ones below — or `null`, meaning
  * "no external shelf this response", never an empty/malformed one. See
  * `MUSIC_EXTERNAL_SEED_LIMIT`'s doc comment for the seed-selection reasoning.
+ *
+ * `providerFactories` defaults to the real registry and exists as a parameter for exactly
+ * the reason `getExternalProvidersForMedium`'s own `factories` parameter does (see that
+ * function's doc comment): so a test can hand in a provider that deliberately violates the
+ * "never throws" contract `ExternalRecommendationProvider` documents, and exercise this
+ * function's outer `catch` without needing a real provider to misbehave — see
+ * `jellyfin.test.ts`'s "the outer catch is a real safety net" test.
  */
-async function buildExternalDiscoveryShelf(
+export async function buildExternalDiscoveryShelf(
   app: FastifyInstance,
   profile: TasteProfile,
   albumsById: Map<string, Album>,
   artistsById: Map<string, Artist>,
-): Promise<{ id: string; label: string; type: string; reason: string; items: Album[] } | null> {
+  providerFactories: Record<string, ExternalProviderFactory> = externalProviderFactories,
+): Promise<{
+  id: string;
+  label: string;
+  type: string;
+  reason: string;
+  items: MusicRecommendedAlbum[];
+} | null> {
   const authorWeights = Object.entries(profile.affinities.author ?? {}).sort((a, b) => b[1] - a[1]);
   const seeds: RecommendationSeed[] = [];
   for (const [artistName] of authorWeights) {
@@ -193,10 +221,14 @@ async function buildExternalDiscoveryShelf(
   if (seeds.length === 0) return null;
 
   try {
-    const providers = getExternalProvidersForMedium('music', {
-      fetch: app.upstreamFetch,
-      logger: app.log,
-    });
+    const providers = getExternalProvidersForMedium(
+      'music',
+      {
+        fetch: app.upstreamFetch,
+        logger: app.log,
+      },
+      providerFactories,
+    );
     const perProvider = await Promise.all(
       providers.map((provider) => provider.recommend(seeds, MUSIC_EXTERNAL_CANDIDATE_LIMIT)),
     );
@@ -228,7 +260,10 @@ async function buildExternalDiscoveryShelf(
       label: 'New artists to discover',
       type: MUSIC_EXTERNAL_SHELF_TYPE,
       reason: reasonForExternalShelf(seeds),
-      items: chosen.map(externalCandidateToAlbumPlaceholder),
+      items: chosen.map((candidate): MusicRecommendedAlbum => ({
+        ...externalCandidateToAlbumPlaceholder(candidate),
+        availability: 'external',
+      })),
     };
   } catch (err) {
     // `ExternalRecommendationProvider.recommend` is contractually total — see that
@@ -537,9 +572,12 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
         label: shelf.label,
         type: MUSIC_RECOMMENDATION_SHELF_TYPE,
         reason: shelf.reason,
+        // Wave 15d-1-S: every real Jellyfin album this route serves is `owned` — see
+        // `MusicRecommendedAlbum`'s doc comment above `buildExternalDiscoveryShelf`.
         items: shelf.itemIds
           .map((id) => albumsById.get(id))
-          .filter((album): album is Album => album !== undefined),
+          .filter((album): album is Album => album !== undefined)
+          .map((album): MusicRecommendedAlbum => ({ ...album, availability: 'owned' })),
       }));
 
       const responseShelves = externalShelf ? [externalShelf, ...libraryShelves] : libraryShelves;
