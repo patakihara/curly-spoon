@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T19:52:00Z` · `ab83777e50ba4255e` · general-purpose · ended · ## Verdict: fix one thing — the ListenBrainz request itself never succeeds against the real API **Type-system and totality review: clean.** Everythin…
 - `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
@@ -283,8 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
 - `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · ended · Everything is clean and committed. Here's my report. ## Report — Wave 15d-1-S **Branch/commit:** 'worktree-agent-a7c69864b7e5a52b5' at 'ace32cb', on…
 - `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
-- `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · running · —
-- `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · running · —
+- `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
+- `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
+- `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -817,6 +817,34 @@ announced, not merely drawn**, or the badge is a silent accessibility divergence
 `15d-1-S` also closes the review's second finding: the outer `catch` in `buildExternalDiscoveryShelf`
 had no coverage, and the new test must be confirmed to go **red** with the `warn` line removed rather
 than merely passing beside it.
+
+**`15d-1-W` MERGED (`7a5e06a`) — the paired fix is complete on both clients, and `main` is green.**
+Full `--project=app --workers=1` on the merged tree: **190 passed, 0 failed, 0 skipped**, 6.4 min.
+Root `pnpm test` 1656/1656, typecheck green everywhere.
+
+**CORRECTION to the skipped-test finding below — the check is running again, and I should not have
+left the alarm standing without this.** After `15d-1-W` merged, the count went **188/2 → 190/0**:
+`contrast.spec.ts:110` now runs and passes in **both** colour schemes. So the muted-tone WCAG check
+is not inert, and the coverage gap closed on its own once web's Carousel change landed. **The
+underlying fragility is unchanged and still worth fixing**: the guard is `test.skip(!hasAuthor, …)`,
+so it will silently disable itself again the next time the first shelf card has no author line. A
+guard that skips when its subject is absent is indistinguishable from one that passes. **Make it
+fail, or point it at a card known to have an author.** That is a small, real, unclaimed wave.
+
+**THE ANDROID SAMPLE THIS FILE HAS BEEN ASKING FOR IS FINALLY DRAWN — and it is green.** `9d27733`
+touched `apps/android`, so Gradle could not serve the task from cache. Its `Android` job log carries
+bare **`> Task :app:testDebugUnitTest`**, **`> Task :app:compileDebugKotlin`** and
+**`> Task :app:compileReleaseKotlin`** — no `FROM-CACHE`, no `UP-TO-DATE`, i.e. a **genuine uncached
+execution**, and it passed. That is the **second** real sample behind the `UnifiedSearchViewModelTest`
+race fix (the first was `e87a551`), and this file's own bar was "several uncached executions" with no
+way to draw one absent new Android work. One more Android wave and the fix can honestly be called
+demonstrated rather than well-argued.
+
+**`15d-1-A` also compiled first time, with zero red CI rounds** — against this file's standing advice
+to budget two to three. Worth noting _why_, since it is repeatable rather than luck: the two traps
+that are checkable without a compiler were checked mechanically before dispatch reached CI (equal
+`/*`/`*/` counts across all 13 changed `.kt` files, and no dots in backtick test names). The advice
+to budget red rounds still stands; the mechanical pre-checks measurably reduce them.
 
 **MERGED 2026-08-17 — `15e-music` + `15d-1-S` (`def4f4b`), `15d-1-A` (`4a2db21`), `16c-2-W-1`
 (`030f067`).** The orchestrator ran the full `--project=app --workers=1` suite on the merged tree
