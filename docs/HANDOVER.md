@@ -922,6 +922,32 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
+### CLAIMED 2026-08-17 — `16c-2-W-4` (web) and `16f-A-1` (Android)
+
+Paired because one needs Playwright and one does not — the only shape that parallelises here now.
+**Merges deliberately staggered**, since `android.yml` cancels in progress unconditionally.
+
+**`16c-2-W-4`** closes the accent picker's last named web gap: Settings' **unselected** mode
+buttons, which still read `--m3-*` while the selected one was migrated in `16c-2-W-2`.
+`SettingsPage.tsx:64` is the `aria-pressed` site. Small and well-defined.
+
+**`16f-A-1` — an Android Settings screen carrying theme mode and the accent picker.** This closes
+the live parity gap: **web can be themed and Android cannot at all.** Sofia approved an Android
+Settings screen but nobody scoped it; it is scoped here to _exactly_ what the parity gap needs —
+theme mode, accent, persistence — and explicitly not to server configuration or anything else.
+
+**It gives readers to two writers that have had none.** `AuralisTheme` (`ui/theme/Theme.kt:24-25`)
+already accepts both `accent: Color = SonoraDefaultAccent` and `darkTheme: Boolean = isSystemInDarkTheme()`,
+and **`MainActivity` is the only call site in the tree and passes neither**; `SonoraAccentPresets`
+(`Color.kt:191`) has **zero consumers outside its own file**. Two writers with no reader, waiting for
+one wave — and this project's most-repeated failure is exactly that pattern going unclosed.
+
+**Persistence already exists and must be reused, not rebuilt:** `data/network/KeyValueStore.kt` with
+`DataStoreKeyValueStore.kt`, wired through `AppContainer`.
+
+**A `-P` is owed afterwards** on whether the two pickers offer the same 17 presets in the same order,
+and on the two accessibility numbers already with Sofia.
+
 ### DONE — `16c-5-W`: `Dialog`/`Sheet`/`Menu` read Sonora's tokens. **`main` `418f0a5`, all green.**
 
 Full `pnpm test:e2e` (CI's invocation): **412 passed, 0 failed, 0 flaky.** Unit **1662/1662**.
