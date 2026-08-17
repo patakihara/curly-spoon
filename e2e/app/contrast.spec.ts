@@ -103,13 +103,41 @@ for (const scheme of ['light', 'dark'] as const) {
     test('a shelf card author (on-surface-variant, the muted secondary tone) clears WCAG AA', async ({
       page,
     }) => {
-      const card = firstShelfItem(page);
-      await expect(card).toBeVisible();
-      const author = card.locator('p');
-      const hasAuthor = (await author.count()) > 0;
-      test.skip(!hasAuthor, 'This fixture item has no author line to check.');
+      // Wave 16c-2-W-2: this used to scope to `firstShelfItem()` and
+      // `test.skip(!hasAuthor, …)` past it — which silently stopped this check from
+      // running whenever the *first* shelf card happened to have no subtitle line.
+      // That happened mid-session (docs/HANDOVER.md: 189/1 -> 188/2 skipped, no
+      // failure, on the exact wave that redefined the token this test exists to
+      // pin) and closed again on its own once card layout changed elsewhere.
+      // Carousel.tsx now renders `<p>{item.subtitle ?? ' '}</p>` unconditionally
+      // (a layout-stability fix, not a contrast-guard one) — element *presence*
+      // alone is therefore no longer proof of a real author line, since a blank
+      // placeholder `' '` would satisfy it just as well as genuine text. Scan every
+      // rendered shelf card for one whose subtitle has real (non-whitespace)
+      // content, and fail — never skip — if none of them do: a guard that can
+      // vanish without moving the pass/fail count is worse than one that goes red.
+      const candidates = page.locator(
+        '[data-testid^="shelf-item-"]:not([data-testid*="skeleton"]):not([data-testid$="-external-badge"])',
+      );
+      const candidateCount = await candidates.count();
+      let card: Locator | null = null;
+      for (let i = 0; i < candidateCount; i++) {
+        const item = candidates.nth(i);
+        const text = (await item.locator('p').first().textContent())?.trim();
+        if (text) {
+          card = item;
+          break;
+        }
+      }
+      expect(
+        card,
+        'No shelf card on Home renders a non-empty author/subtitle line — the fixture ' +
+          'or card markup changed; point this test at a card that still has one rather ' +
+          'than letting it skip.',
+      ).not.toBeNull();
+      const author = card!.locator('p').first();
       const fgValue = await author.evaluate((el) => getComputedStyle(el).color);
-      const bg = await effectiveBackground(card);
+      const bg = await effectiveBackground(card!);
       expect(contrastRatio(parseRgb(fgValue), bg)).toBeGreaterThanOrEqual(4.5);
     });
 

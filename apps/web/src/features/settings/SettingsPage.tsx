@@ -64,6 +64,28 @@ export function SettingsPage() {
               aria-pressed={mode === candidate}
               onClick={() => setMode(candidate)}
               data-testid={`theme-mode-${candidate}`}
+              // Wave 16c-2-W-2: the second conspicuous non-responder to the accent picker
+              // named in docs/HANDOVER.md — these buttons sit directly next to the accent
+              // swatches and ignored every one of them. `Button.tsx`'s `filled` variant
+              // still rides Mantine's own `theme.colors.auralis` ramp (its own doc comment
+              // says so, "out of scope for" wave 16c-1), which is `scheme.primary` — the old
+              // HCT-generated M3 primary that stopped tracking anything the picker changes
+              // once 16c-2-W-1 fixed `--m3-*` at Sonora's values. Overriding only the
+              // *selected* (filled) button's fill follows the pairing Chip.tsx's checked
+              // state and IconButton.tsx's selected `standard` state already establish for a
+              // solid accent fill: `--accent` background, `--accent-contrast` text — not
+              // `--accent-ink`, which is for text/icons placed *on a surface*, not for a
+              // button's own solid fill. `--accent-contrast` is a fixed white and already
+              // documented (docs/HANDOVER.md) to fail 4.5:1 at nine of the seventeen
+              // presets — a pre-existing pairing this reuses rather than a new one. The
+              // unselected (`outlined`) buttons are left on Mantine's ramp: they're
+              // deliberately neutral in the same pattern (Chip's *unchecked* state doesn't
+              // read `--accent` either), so leaving them alone doesn't narrow the boundary.
+              style={
+                mode === candidate
+                  ? { backgroundColor: 'var(--accent)', color: 'var(--accent-contrast, #fff)' }
+                  : undefined
+              }
             >
               {candidate}
             </Button>
