@@ -46,6 +46,30 @@ test.describe('Dialog', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
+  // Wave 16c-4-W: this component's own doc comment already documents the Mantine
+  // `unstyled`-on-`Modal` trap (an always-mounted root left as a permanent
+  // full-viewport click-blocker) and says it was checked and avoided — but that check
+  // predates re-parenting the portal, and `sheet.spec.ts`/`menu.spec.ts` both carry
+  // their own version of this test. Re-parenting only changes *where* Mantine's root
+  // wrapper mounts, not whether it stays in the DOM while closed, so this should be
+  // unaffected — proven rather than assumed.
+  test('closing the dialog leaves nothing behind that intercepts clicks', async ({ page }) => {
+    const trigger = page.getByTestId('dialog-open');
+    const dialog = page.getByRole('dialog', { name: 'Remove download?' });
+
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+
+    // A real coordinate click, not the locator API's own `.click()` — see
+    // `sheet.spec.ts`'s identical check for why that matters here.
+    const box = await trigger.boundingBox();
+    if (!box) throw new Error('trigger not visible');
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(dialog).toBeVisible();
+  });
+
   // Wave 16c-4-W (docs/ROADMAP.md §16): `Modal`'s portal moved from Mantine's default
   // (`document.body`, outside `.auralis-theme-root`) to `ThemeProvider`'s dedicated portal
   // node, a child of `.auralis-theme-root`. Playwright asserts testids and text — every test
