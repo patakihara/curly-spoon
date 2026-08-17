@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
 - `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · ended · The background 'pnpm test' run is still in progress. I'll wait for its completion notification before continuing.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · ended · Everything is committed and clean. Here is my review report for wave 16c-2-W-1. ## Verdict: **merge as-is**, plus one already-applied fix The wave's…
 - `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
 - `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
 - `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
+- `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,31 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### `--workers=1` is a **weaker** check than CI, and this file's own advice hid that
+
+Paid for on 2026-08-17 by a red `main`. The orchestrator ran the full `--project=app` suite locally,
+got **196 passed / 0 failed / 0 skipped**, ran `ui-desktop` + `ui-mobile` at **192 passed**, unit at
+**1660/1660**, typecheck green — and CI then failed on the same tree.
+
+**The local run used `--workers=1`. CI does not.** `playwright.config.ts` sets `workers: '100%'` and
+`fullyParallel: true`, and CI runs a plain `pnpm test:e2e`. So the two runs were not the same
+experiment, and the local one could not see anything caused by parallelism, contention or the
+slower per-test timing that comes with it.
+
+**This file told me to do that.** Its own guidance reads _"prefer `--workers=1` for a long
+full-suite run"_ — sound advice for _reading_ a run, since interleaved output from four workers is
+unreadable, but it quietly turns the authoritative-looking local green into a weaker check than the
+thing it is standing in for. Both halves are true and they were never stated together.
+
+**So: `--workers=1` for diagnosing, default parallelism for verifying.** A green `--workers=1` run
+is evidence about correctness and **not** evidence about what CI will do. If you are about to push
+and call something verified, run it the way CI runs it.
+
+The failure it hid is the one with history: `for-you.spec.ts`'s _"a loading skeleton occupies the
+same box as a loaded card"_, the same layout-stability invariant that failed CI-only twice on
+`14a-2` and got that wave reverted. **It is the canary for any change to how the app lays out or
+delivers CSS. When it goes red on CI and green locally, believe CI.**
 
 ### `app.css` has a **vitest** test that parses it as text — a CSS-only wave must run `pnpm test`
 
