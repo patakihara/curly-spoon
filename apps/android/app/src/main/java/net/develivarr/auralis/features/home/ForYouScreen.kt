@@ -88,6 +88,12 @@ fun ForYouScreen(
                     TextButton(onClick = { navController.navigate(Routes.REQUESTS) }) {
                         Text("Requests")
                     }
+                    // Wave 16f-A-1: reaches the new Settings screen (theme mode + accent) from
+                    // existing chrome rather than a sixth AuralisShell destination — see
+                    // Routes.SETTINGS's own doc comment for why.
+                    TextButton(onClick = { navController.navigate(Routes.SETTINGS) }) {
+                        Text("Settings")
+                    }
                 },
             )
         },

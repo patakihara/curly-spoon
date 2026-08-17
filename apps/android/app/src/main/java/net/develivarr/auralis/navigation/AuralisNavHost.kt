@@ -39,6 +39,8 @@ import net.develivarr.auralis.features.podcasts.PodcastDetailScreen
 import net.develivarr.auralis.features.podcasts.PodcastsScreen
 import net.develivarr.auralis.features.requests.RequestsScreen
 import net.develivarr.auralis.features.search.UnifiedSearchScreen
+import net.develivarr.auralis.features.settings.SettingsScreen
+import net.develivarr.auralis.features.settings.ThemeViewModel
 
 /** Route name constants for [AuralisNavHost]'s graph. */
 object Routes {
@@ -55,6 +57,11 @@ object Routes {
     const val BOOKS = "books"
     const val REQUESTS = "requests"
     const val DOWNLOADS = "downloads"
+
+    /** Android wave 16f-A-1 — the Settings screen (theme mode + accent). Reached from
+     * [net.develivarr.auralis.features.home.ForYouScreen]'s top bar, alongside [DOWNLOADS] and
+     * [REQUESTS], not a sixth [net.develivarr.auralis.navigation.ShellDestination]. */
+    const val SETTINGS = "settings"
     const val PODCASTS = "podcasts"
     const val MUSIC = "music"
     const val MUSIC_SEARCH = "music/search"
@@ -148,6 +155,7 @@ object Routes {
 @Composable
 fun AuralisNavHost(
     container: AppContainer,
+    themeViewModel: ThemeViewModel,
     navController: NavHostController = rememberNavController(),
 ) {
     val startViewModel: AppStartViewModel =
@@ -221,6 +229,7 @@ fun AuralisNavHost(
                 composable(Routes.BOOKS) { BooksScreen(container, playerViewModel, navController) }
                 composable(Routes.REQUESTS) { RequestsScreen(container) }
                 composable(Routes.DOWNLOADS) { DownloadsScreen(container) }
+                composable(Routes.SETTINGS) { SettingsScreen(themeViewModel) }
                 composable(Routes.PODCASTS) { PodcastsScreen(container, navController) }
                 composable(
                     Routes.podcastDetailRoute(),
