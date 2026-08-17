@@ -74,9 +74,20 @@ function summaryLine(
   }
 }
 
-export function MusicRequestSearchPanel() {
-  const [term, setTerm] = useState('');
-  const [submittedTerm, setSubmittedTerm] = useState('');
+export interface MusicRequestSearchPanelProps {
+  /** Wave 15d-1-W: seeds both `term` (so the field shows what will be searched, and she
+   * can edit it before re-submitting) and `submittedTerm` (so the search actually runs on
+   * mount — `useMusicRequestSearchQuery`'s `enabled: term.trim().length > 0` fires it with
+   * no extra click needed). A plain `useState` initializer, not a `useEffect`: this panel
+   * remounts fresh on every navigation to `/music/requests?prefill=…` (TanStack Router
+   * gives each route match a new component instance), so there is no stale-prop case to
+   * guard against the way there would be if the same instance could see a changing prop. */
+  initialTerm?: string;
+}
+
+export function MusicRequestSearchPanel({ initialTerm }: MusicRequestSearchPanelProps = {}) {
+  const [term, setTerm] = useState(initialTerm ?? '');
+  const [submittedTerm, setSubmittedTerm] = useState(initialTerm ?? '');
   const searchQuery = useMusicRequestSearchQuery(submittedTerm);
   const createMutation = useCreateMusicRequestMutation();
   const grabMutation = useGrabMusicRequestMutation();

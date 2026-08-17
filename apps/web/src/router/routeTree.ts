@@ -204,6 +204,18 @@ const musicPlaylistRoute = createRoute({
 const musicRequestsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/music/requests',
+  // Wave 15d-1-W: an optional `?prefill=` search param, read by `MusicRequestsPage.tsx` to
+  // seed and auto-run "Search for music to request" — how an external (not-owned) card on
+  // `/music`'s recommended shelf hands off an artist name into the request flow instead of
+  // the dead-end album page it used to navigate to. No `zod` here deliberately: `apps/web`
+  // has no runtime schema-validation layer at all (unlike `apps/server`'s upstream clients),
+  // so this is the same "cast what the URL gives us, degrade rather than throw" contract
+  // every other untyped input in this app already gets — an absent, non-string, or
+  // whitespace-only value all become `undefined`.
+  validateSearch: (search: Record<string, unknown>): { prefill?: string } => {
+    const raw = search.prefill;
+    return { prefill: typeof raw === 'string' && raw.trim() !== '' ? raw : undefined };
+  },
   component: lazyRouteComponent(
     () => import('../features/music/MusicRequestsPage.js'),
     'MusicRequestsPage',

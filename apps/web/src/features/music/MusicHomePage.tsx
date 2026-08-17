@@ -107,7 +107,18 @@ export function MusicHomePage() {
     recommendedQuery.isSuccess ? recommendedQuery.data.shelves : null,
     (albumId) => api.jellyfinArtworkUrl(albumId),
   );
+  // Wave 15d-1-W: an external (ListenBrainz-derived) card has no real Jellyfin album
+  // behind its id — navigating to `/music/album/$albumId` for one is the dead end a
+  // review found (a page headed "Album", a live favourite/add-to-playlist wired to
+  // nothing, "No tracks found"). Route to the request flow instead, pre-filled with the
+  // artist's name (`item.title` — ListenBrainz's music candidates are artist-level, see
+  // `musicExternalDiscovery.ts`'s doc comment, so the placeholder's `name` *is* the
+  // artist), so requesting what she doesn't own is one tap away rather than a dead end.
   const handleSelectRecommended = (item: FeedItem) => {
+    if (item.availability === 'external') {
+      void navigate({ to: '/music/requests', search: { prefill: item.title } });
+      return;
+    }
     void navigate({ to: '/music/album/$albumId', params: { albumId: item.id } });
   };
 

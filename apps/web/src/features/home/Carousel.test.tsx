@@ -31,4 +31,22 @@ describe('cardLabel', () => {
   it('joins title and subtitle with a comma when a subtitle is present', () => {
     expect(cardLabel(item({ subtitle: 'Frank Herbert' }))).toBe('Dune, Frank Herbert');
   });
+
+  // Wave 15d-1-W: the accessibility mechanism for an external (ListenBrainz-derived,
+  // not-owned) card — see `MusicHomePage.tsx`/`Carousel.tsx`'s doc comments. The visual
+  // "Not in library" pill is `aria-hidden`, so this suffix is the only way a screen
+  // reader user learns the item isn't hers.
+  it('appends "not in your library" for an external item, after the subtitle', () => {
+    expect(cardLabel(item({ subtitle: null, availability: 'external' }))).toBe(
+      'Dune, not in your library',
+    );
+    expect(cardLabel(item({ subtitle: 'New artists to discover', availability: 'external' }))).toBe(
+      'Dune, New artists to discover, not in your library',
+    );
+  });
+
+  it('does not append anything for an owned item, whether availability is "owned" or absent', () => {
+    expect(cardLabel(item({ availability: 'owned' }))).toBe('Dune');
+    expect(cardLabel(item({ availability: undefined }))).toBe('Dune');
+  });
 });
