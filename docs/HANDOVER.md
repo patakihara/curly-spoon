@@ -1219,6 +1219,12 @@ never read `--m3-*` directly at all — they read **Mantine's own colour ramp**,
 `scheme.primary`, which stopped tracking anything once `16c-2-W-1` fixed the M3 chroma roles. So
 "migrate it off `--m3-*`" was the wrong instruction and the agent correctly found the real one.
 
+**SUPERSEDED 2026-08-17 (evening) — read the `16c-2-W-3` and `16c-5-W` sections near the top instead.**
+The boundary below was correct when written and is now wrong in three places: the compact bottom nav
+**does** respond, `Card` correctly never will, and `Dialog`/`Sheet`/`Menu` have been re-parented and
+migrated. Kept for the portal reasoning, which is still the clearest statement of _why_ they were
+excluded.
+
 **The accent picker's exact boundary now** — do not overstate it in either direction. **Responds:**
 `Chip`, `Slider`, `IconButton`, the desktop rail's active destination, Settings' _selected_ mode
 button. **Does not:** the compact/mobile bottom `NavigationBar`, Settings' _unselected_ mode buttons,
@@ -1245,7 +1251,7 @@ around by adjusting a threshold.**
 3. **Re-parent `Dialog`/`Sheet`/`Menu`** inside the theme root, which is what unblocks migrating them.
 4. **`16d`** — the docked-chrome scroll bug, still unfixed and still the user's own report.
 
-**CLAIMED 2026-08-17 — `16c-2-W-2`.** One agent, two tightly-scoped web fixes: the nav rail's
+**LANDED (was CLAIMED) 2026-08-17 — `16c-2-W-2`.** One agent, two tightly-scoped web fixes: the nav rail's
 active destination and Settings' own theme-mode buttons onto `--accent-ink`/`--surface-*` so the
 picker reaches the app chrome, and the `contrast.spec.ts:110` guard made unable to self-disable.
 **Deliberately not a broad migration** — `Dialog`/`Sheet`/`Menu` stay on `--m3-*` because they portal
@@ -1378,7 +1384,7 @@ It had to add `"availability":"owned"` to every `GET /music/recommended` fixture
 `MusicRepositoryTest` and `MusicLibraryViewModelTest`, which is the required-field trap working as
 intended rather than a surprise.
 
-**CLAIMED 2026-08-17 — `15d-1-S` and `15d-1-A`, the fix for the dead-end card.** Both build **on
+**LANDED (was CLAIMED) 2026-08-17 — `15d-1-S` and `15d-1-A`, the fix for the dead-end card.** Both build **on
 top of `069ecb6`**, not on `main`. `15d-1-W` follows once the contract lands.
 
 **The contract, decided once so all three build to the same thing:** every item in

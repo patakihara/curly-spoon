@@ -3766,7 +3766,13 @@ boundaries, disjoint directories where waves run in parallel.
   detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding. **Split by screen,
   not by platform** — each screen is one `-W`/`-A`/`-P` triple from one shared spec describing the
   behaviour, so neither client is implemented against the other's output. Screens are disjoint
-  enough to run several triples in parallel.
+  enough to run several triples in parallel — **but the `-W` halves serialise at verification, and
+  that is new as of 2026-08-17.** `playwright.config.ts` boots **both** `webServer` entries whatever
+  `--project` you ask for, and the app server is deliberately `reuseExistingServer: false` on a
+  hardcoded port, so two agents running any Playwright project contend — worst case the second binds
+  to the first's server and both silently share one stateful single-tenant BFF. **So: one `-W` in
+  flight at a time; `-A` halves and spec authoring parallelise freely.** Disjoint directories are
+  necessary and no longer sufficient.
 - **16f — Android's remaining gap, and it is no longer "all of Android".** With 16c–16e paired,
   what is left here is what has no web counterpart: `MaterialTheme` receiving a full typography and
   shape scale (it gets neither today), and Android's colour coming from the platform's
