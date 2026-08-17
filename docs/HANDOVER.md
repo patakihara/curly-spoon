@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
 - `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · ended · Nothing left running. This wave is complete. ## Report — Wave 16c-2-W-2 **Branch/commit:** 'worktree-agent-ad369f8094766bc82', two commits on top of…
 - `2026-08-17T12:17:01Z` · `a281db4733d2f49d2` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16d-W-1: dock the web shell'…
 - `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16b-2-A-2: Robolectric cover…
 - `2026-08-17T18:38:55Z` · `aa875a0416f640711` · general-purpose · ended · I've completed all the implementation, testing, and verification work for this wave, and the final full-parallelism 'ui-desktop'/'ui-mobile' Playwrig…
 - `2026-08-17T19:09:05Z` · `aa875a0416f640711` · general-purpose · ended · Confirmed: the second, confirmatory '--project=ui-desktop --project=ui-mobile' run also passed cleanly — **212/212 passed** (3.9m, default parallelis…
+- `2026-08-17T19:36:20Z` · `a0cfc7e80a2c0369c` · general-purpose · ended · Everything committed, working tree fully clean. Let me finalize the report. ## Report — Wave 16c-5-W: migrate Dialog/Sheet/Menu off '--m3-*' **Branch…
 
 <!-- AGENT_LOG_END -->
 
@@ -922,7 +922,33 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
-### CLAIMED 2026-08-17 — `16c-5-W`, dispatched immediately after `16c-4-W` landed
+### DONE — `16c-5-W`: `Dialog`/`Sheet`/`Menu` read Sonora's tokens. **`main` `418f0a5`, all green.**
+
+Full `pnpm test:e2e` (CI's invocation): **412 passed, 0 failed, 0 flaky.** Unit **1662/1662**.
+`CI`, `Android` and `Publish` green on the sha. **Nothing claimed, nothing in flight.**
+
+**One `--m3-*` deliberately left behind, with a reason.** Menu's dropdown keeps
+`--m3-surface-container-high`. Flattening it to `--surface-card` — the way Dialog's panel goes —
+would risk the dropdown **merging into whatever `Card` it opens over**, since `Card` has been
+`--surface-card` since `16c-1` and `Menu` has no scrim, leaving only the shadow to mark the edge.
+That is the same shape as the invisible nav pill `16c-2-W-3` avoided. Dialog and Sheet are immune
+because both always render behind their own full-viewport scrim. **A naming deferral, not a value
+regression** — that token already resolves to Sonora's values since `16c-2-W-1`.
+
+**Menu's "translucent" dropdown is ruled not a bug** — `16c-4-W` left this open. The token is a
+static literal with no alpha anywhere in the chain (read in `tokens/color.ts`, not judged by eye),
+and it is a distinct but subtle tone. The earlier reading was a low-contrast illusion.
+
+**`--m3-*` is NOT close to deletion — this wave was asked and answered precisely.** `Fab`,
+`ListItem`, `Marquee`, `NavigationBar`, `SearchField`, `Snackbar` and `TopAppBar` all still use it
+functionally, plus the app-wide typography scale every 16c wave has deliberately left alone.
+
+**The methodological point worth more than the wave.** It reported which of its new assertions
+actually **discriminate** old from new and which merely pin an unchanged value: Dialog's background
+and Sheet's handle colour fail against pre-migration CSS; Sheet's background and both Menu
+assertions pass either way, because those values were already identical by design. **A test that
+cannot fail is a pin, not a proof.** Keep that distinction when extending these specs — they remain
+the only tests in the repo that can see a portalled component rendering unstyled.
 
 **Migrate `Dialog`, `Sheet` and `Menu` off `--m3-*` onto `--surface-*`/`--accent-ink`.** They still
 reference `--m3-*` entirely; `16c-4-W` deliberately changed only where they mount, so this migration
@@ -1159,60 +1185,6 @@ Worth keeping for the shape of it: `Publish` on `40945ba` 429'd twice including 
 and then simply succeeded on the next commit's run twenty minutes later. **Waiting is a legitimate
 response to this failure mode** — there is nothing to fix, and the next push carries the publish
 anyway, since `:latest` always converges on the most recent green build of `main`.
-
-### Two agents cannot both run Playwright here — one fixed port decides it
-
-Established 2026-08-17 while deciding whether to dispatch a third wave beside `16d-W-1`. The
-directories were disjoint (`packages/ui` + `e2e/ui` versus `apps/web` + `e2e/app`), which is the
-test this file has always applied, and **that test is not sufficient**.
-
-`playwright.config.ts` declares **two** `webServer` entries and Playwright boots **all** of them
-regardless of which `--project` you asked for. The gallery server is `reuseExistingServer: !CI`, so
-it is fine. The app server is deliberately **`reuseExistingServer: false`** on a hardcoded
-**`PORT: 4310`** — and the comment above it explains why, correctly: it is stateful, `DATA_DIR` is
-`:memory:`, `onboarding.spec.ts` asserts on the unconfigured state a fresh boot gives, and reuse
-would also skip the `vite build` and silently test a stale bundle.
-
-So two agents in two worktrees each running any Playwright project contend for 4310. Best case the
-second fails to bind; **worst case it binds to the first agent's server and both runs silently
-share one stateful single-tenant BFF** — which is the cross-file contamination this file already
-documents at the _spec_ level, now available at the _agent_ level and much harder to see.
-
-**The rule that falls out: at most one agent at a time may run Playwright, whatever the projects.**
-Disjoint directories are necessary and not sufficient — check for a shared port too. A wave that
-needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, which is what
-`16d-A` did beside `16d-W-1` without incident.
-
-Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
-per-agent ports would trade a loud collision for a quiet one.
-
-### CLAIMED 2026-08-17 — `16d-W-1` and `16d-A`, the docked-chrome scroll bug
-
-**This is Sofia's own bug report and it is the highest-value item in phase 16** — `ROADMAP.md` §16
-says so in as many words, and says to do it before the screens. Two Sonnet agents in parallel on
-disjoint trees: `16d-W-1` in `apps/web/src` + `e2e/app/`, `16d-A` in `apps/android`. Base for both
-is `c37b14a`.
-
-**Deliberately scoped down from the roadmap's `16d-W`.** That bullet bundles the docking fix with
-the adaptive-rig re-cut (`railWide >= 1024`) and the `Icon`-`filled` nav wiring. Splitting them is
-this repo's own ~150-turn rule, and the docking half is the part Sofia reported. The rig re-cut and
-the `filled` wiring become **`16d-W-2`**, dispatched after `16d-W-1` merges — both touch the same
-two files, so they cannot run beside each other.
-
-**`16d-A` is a question, not an instruction.** It is told to _establish_ whether Android has the
-same class of bug (chrome pinned by `Scaffold` vs scrolling inside a `LazyColumn`) and to report
-"no bug here" as a perfectly good outcome. Assuming the report is web-only is exactly how this
-project's parity claims have gone wrong three times.
-
-**`Icon`'s `filled` prop still has no reader** — confirmed by grep on `apps/web/src` at claim time,
-zero hits outside `Button variant="filled"`. It is the fifth writer-with-no-reader in the ledger and
-`16d-W-2` is its named reader.
-
-**The rig, so nobody implements 1280:** the redesign's two thresholds are `railWide = w >= 1024` and
-`showPanel = w >= 1240`. The `1440 / 1280 / 1024 / 768` figures in §16's `16d-P` bullet are the
-design kit's **frame widths**, not breakpoints. Today's rig (`hooks/breakpoint.ts`) is
-compact `< 600` / medium `600–1240` / expanded `>= 1240`, so the only thing `16d-W-2` re-cuts is the
-rail going wide at 1024 instead of 1240.
 
 ### Hand-off at the usage band, 2026-08-17 — nothing claimed, nothing in flight
 
@@ -2123,6 +2095,30 @@ orchestrator's merge step, where the base and the file-overlap against a concurr
 before merging.
 
 ### Diff every edit to this file before committing it
+
+**A second way to corrupt this file, found by doing it on 2026-08-17.** The 2026-08-08 incident
+below was a replacement that _deleted_ 406 lines. This one _duplicated_ ~54, which is harder to
+notice because nothing goes missing and the file still reads correctly.
+
+The pattern was a two-anchor splice: find `i` = index of the start heading, `j` = index of the
+following heading, write `s[:i] + new + s[j:]`. That is correct **only while `j > i`**. An earlier
+edit in the same session had inserted a new section _above_ the start anchor, so `j < i`, and the
+span between them was silently emitted twice — including a **stale claim block** that then
+contradicted the completion note added later. A stale claim is exactly what this file's own claim
+discipline exists to prevent.
+
+**Two cheap defences, both of which caught it:**
+
+```bash
+# after any two-anchor splice, assert the order you assumed
+python3 -c "s=open('docs/HANDOVER.md').read(); print(s.index(START) < s.index(END))"
+# and count every heading you did not intend to touch
+grep -c '^### <heading>' docs/HANDOVER.md
+```
+
+The `git show <sha> -- docs/HANDOVER.md | grep '^-### '` check below still works and is still the
+last line of defence — but it only shows what was **removed**. **Duplication is invisible to it**,
+so pair it with a heading count.
 
 On 2026-08-08 a single careless anchored replacement in `HANDOVER.md` silently deleted seven
 sections and 406 lines — including the `UncaughtExceptionsBeforeTest` diagnosis and the
