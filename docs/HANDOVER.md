@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · ended · Everything is committed and clean. Here is my review report for wave 16c-2-W-1. ## Verdict: **merge as-is**, plus one already-applied fix The wave's…
-- `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
 - `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
 - `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · ended · Everything is clean and committed. Here's my report. ## Report — Wave 15d-1-S **Branch/commit:** 'worktree-agent-a7c69864b7e5a52b5' at 'ace32cb', on…
 - `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
@@ -284,7 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
 - `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
 - `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · ended · All work is complete and verified. Final summary: ## Summary **Root cause: not the docking CSS.** Two decisive experiments (requested by the orchestr…
-- `2026-08-17T16:07:38Z` · `ad55e090a60a000c6` · general-purpose · running · —
+- `2026-08-17T16:07:38Z` · `ad55e090a60a000c6` · general-purpose · ended · Working tree is clean, no scratch files remain, both commits are in place on the worktree branch. Final report: **Branch/commits:** 'worktree-agent-a…
+- `2026-08-17T16:42:56Z` · `ad4802d687ce40989` · general-purpose · ended · ## Report — Wave 16d-P: parity review of web's docked shell vs Android's chrome **No code changes.** Working tree is clean ('git status --short' empt…
+- `2026-08-17T16:54:14Z` · `a3d35b711e9e2345e` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -878,6 +878,63 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
+
+### `16d-P` is done, and it found a real bug that no token-level review could have
+
+The parity review over 16d, by an agent that wrote neither side. `main` `ccca737`, `CI` and
+`Android` green. **Its verdict on the wave is clean** — and the valuable output is a pre-existing
+divergence it turned up while answering an unrelated question, which is exactly what `-P` waves are
+for.
+
+**Android shows navigation destinations that cannot work.** Web's `apps/web/src/components/destinations.ts`
+gates Music on `jellyfinConfigured` and Books/Podcasts on `audiobookshelfConfigured` **plus** a
+matching library existing, with the rationale stated in the file: _never show a section that will
+only error._ `AuralisShell.kt` iterates `ShellDestination.entries` with **no filter at all**, and a
+repo-wide grep for `Configured` under `apps/android/app/src/main/java` returns **zero hits**. So a
+household with no Jellyfin still gets a Music tab that can only fail.
+
+**Labelled accidental drift, not idiom** — nothing suggests anyone decided it, and it contradicts a
+rule this project already made and encoded on the other client. **Pre-existing; 16d did not cause
+it.** Being taken now as `16d-A-2`.
+
+**The three questions that came back clean, so nobody re-asks them:**
+
+- **Scroll on navigation.** Android has no version of the bug `16d-W-1b` fixed, and by architecture
+  rather than by a fix: `NavHost` mounts a **new composable per route**, so each screen's
+  `rememberLazyListState` is scoped to its own composition rather than to a shared container, and a
+  fresh route starts at the top by construction. Tab switches use `popUpTo(saveState = true)` +
+  `restoreState = true`, the standard recipe, so each tab keeps its own position. **Android gets
+  back-navigation scroll restoration for free, which is the thing `16d-W-1b` explicitly declined to
+  build on web** — so on this axis Android is ahead, not behind.
+- **The 1024–1240 "wide rail, no panel" state is coherent**, traced through every gate: rail wide,
+  no `NowPlayingPanel` (gated on `expanded`), `MiniPlayer` present (gated on not-`compact`), the
+  sheet-style `NowPlaying` present. A legitimate fourth visual state, not an accident of the re-cut.
+- **Destination identity and order match** on both clients, including both reordering Search to the
+  front in the rail while keeping bottom-bar order elsewhere.
+
+**Two divergences ruled acceptable, and the ruling is the useful part:**
+
+- **The rail sub-state.** Web now has icon-only below 1024 and icon+label above; Android's rail is
+  always labelled from `RAIL_BREAKPOINT = 600.dp`. The **600dp/600px** bottom-bar↔rail switch
+  agrees; the 1024 sub-state has no Android equivalent. `SONORA.md`'s `RailItem` spec describes no
+  narrow/wide sub-state, so nothing mandates one. **Defensible idiom, but genuinely unruled-on** —
+  worth a line to whoever next owns `SONORA.md`, not a wave.
+- **Android's nav icons never toggle fill on selection**, and structurally cannot: `ShellDestinations.kt`
+  imports fixed `Icons.Filled.*` vectors with no outline sibling in the tree, where web uses Material
+  Symbols' FILL axis. **Bounded, and the bound matters** — web's own `FILLABLE_ICON_NAMES` makes the
+  toggle visible on only **one** of the five destinations (`book_2`), so today's real divergence is one
+  icon. Named so it is not mistaken for closed; not worth its own wave yet.
+
+**On dp versus px, since the review was asked to be explicit:** both are density-independent units
+targeting the same physical size (dp at a 160dpi baseline, CSS px at a ~1/96in reference pixel), so
+`600dp ≈ 600px` **in intent** rather than rigorously — and `AuralisShell.kt`'s own KDoc already
+reasons that way, calling 600dp Material's documented compact/medium boundary. Comparing them is
+meaningful; treating them as identical is not.
+
+**The ceiling, stated rather than glossed:** there is no Android device or emulator here, so every
+Android claim above is a source read — including the scroll-restoration conclusion, which rests on
+how Compose Navigation's per-back-stack-entry state saving is _documented_ to behave, not on anyone
+watching it happen.
 
 ### DONE 2026-08-17 — `16d` is landed and CI-verified: **Sofia's scroll bug is fixed**
 
