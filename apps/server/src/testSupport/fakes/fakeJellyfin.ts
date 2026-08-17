@@ -38,6 +38,12 @@ interface RawArtist {
   ImageTags: Record<string, string>;
   ChildCount: number;
   UserData: RawUserData;
+  /** Optional, matching the real upstream — see `ARTISTS`'s own comment on why exactly one
+   * fake artist carries one (wave 15e-music's `GET /music/recommended` external-discovery
+   * coverage needs a real MBID to seed ListenBrainz with; the other two staying MBID-less
+   * is what lets `music/recommended`'s existing cold-start/library-only tests keep passing
+   * unmodified — no test here asserted anything about `ProviderIds` before this addition). */
+  ProviderIds?: Record<string, string>;
 }
 
 interface RawAlbum {
@@ -70,8 +76,25 @@ interface RawTrack {
   UserData: RawUserData;
 }
 
-const ARTISTS: Array<{ id: string; name: string; overview: string }> = [
-  { id: 'artist-nebula', name: 'The Nebula Collective', overview: 'A synth duo.' },
+const ARTISTS: Array<{
+  id: string;
+  name: string;
+  overview: string;
+  /** Wave 15e-music: exactly one fake artist carries a `MusicBrainzArtist` provider id, so
+   * `routes/jellyfin.test.ts`'s `GET /music/recommended` external-discovery tests have a
+   * real MBID to build a `RecommendationSeed` from and to prove an artist-granularity
+   * `owned` ownership verdict against (see `musicExternalDiscovery.ts`). The other two
+   * artists staying MBID-less is deliberate too — it's what exercises the title-only
+   * `possible` fallback without a second fixture addition, and keeps every pre-existing
+   * assertion in this file (album/artist counts) untouched. */
+  musicBrainzId?: string;
+}> = [
+  {
+    id: 'artist-nebula',
+    name: 'The Nebula Collective',
+    overview: 'A synth duo.',
+    musicBrainzId: 'mbid-fake-nebula-7a21',
+  },
   { id: 'artist-echo', name: 'Echo Fields', overview: 'Ambient guitar.' },
   // Added for `routes/jellyfin.test.ts`'s `GET /music/recommended` coverage (wave
   // 13e-2): a *third* artist sharing the 'Synthwave' genre with artist-nebula's two
@@ -227,6 +250,7 @@ function artistDto(
     ImageTags: { Primary: `${a.id}-tag` },
     ChildCount: ALBUMS.filter((al) => al.artistId === a.id).length,
     UserData: userData(a.id, favorites, playState),
+    ...(a.musicBrainzId ? { ProviderIds: { MusicBrainzArtist: a.musicBrainzId } } : {}),
   };
 }
 
