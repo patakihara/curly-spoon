@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T18:46:47Z` · `a5e487ebb2af6f810` · general-purpose · ended · The full '--project=app --workers=1' Playwright suite is still running in the background (I have a Monitor watching for it to finish). While waiting,…
 - `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
 - `2026-08-16T19:01:44Z` · `a5e487ebb2af6f810` · general-purpose · ended · Waiting for the monitor notification that port 5174 is free before continuing verification.
 - `2026-08-16T19:05:54Z` · `ad2cb8e2372bb897d` · general-purpose · ended · ## Verdict: fix 1 thing — everything else checked clean, no follow-up otherwise needed ### The one finding **Missing OFL license text for the vendore…
@@ -283,8 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
 - `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
 - `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
-- `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · running · —
+- `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · ended · The background 'pnpm test' run is still in progress. I'll wait for its completion notification before continuing.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · running · —
+- `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -742,7 +742,37 @@ chroma-role values, which `16b-2-P` confirmed it does not. **One real gap for `-
 `Chip` and `Card` have zero Android call sites** while web uses both — deliberate idiom or a
 missing surface, and a token-value review cannot see it. `ROADMAP.md` §16 has the detail.
 
-**CLAIMED 2026-08-17 — `15e-music`, giving ListenBrainz a reader.** One Sonnet agent, in
+**`15e-music` is IMPLEMENTED and UNDER REVIEW — commit `069ecb6` on branch
+`worktree-agent-af58afde02f314286`, not merged, not pushed.** Six files, all `apps/server`, ~648
+insertions. It wires 15a's ListenBrainz provider and 15b-1's ownership matcher into
+`GET /music/recommended`, **so phase 15's sixth writer-with-no-reader is closed** — both clients
+already consume that route, so external candidates reach a client with no client change. Read
+`git log -1 --format=%B 069ecb6` rather than re-deriving it; the account is unusually complete.
+
+It did the two things this repo keeps failing to do: a **live `curl` against the real ListenBrainz
+endpoint** (200, real payload, all five required query parameters — the fixture-validates-the-
+response trap that shipped in 15a), and **route-level tests through real HTTP** asserting an external
+item by name in the response body rather than a helper's return value.
+
+**It also stopped mid-verification**, on an unfinished root `pnpm test` — the second agent today to
+die waiting on a backgrounded run. Its work was committed first, so again nothing was lost.
+
+**The one thing to scrutinise, and it is the reviewer's headline.** External candidates are
+serialized as **blank `Album` placeholders** with ids namespaced `external:<provider>:<id>` and
+cover/year/track-count `null`, chosen precisely so the existing renderer displays them with no client
+change. That is clever and it is also a trap: **clicking one routes to an album detail page for an id
+no Jellyfin instance knows**, and a row of coverless grey cards on the main music screen is a product
+regression even with every test green — "the UI must be beautiful" is Sofia's own sentence. The
+review has been told to run the app, click one, screenshot the shelf, and rule on whether it ships or
+waits for `15d` (requestability) to give these items somewhere to go.
+
+**One design call it made that is worth knowing rather than rediscovering:** an artist matching
+something owned is **dropped** from the discovery shelf, not labelled. Its argument is that 12c-2's
+"owned still appears, just not requestable" governs _search and library pages_, where hiding makes an
+item unfindable, and not a shelf whose entire point is surfacing what she does not have. That reads
+correct, and the reviewer has been asked to agree or dissent explicitly.
+
+**Superseded — the original claim line:** One Sonnet agent, in
 `apps/server/src/features/recommendations/` + `routes/jellyfin.ts`. Disjoint from the wave above
 (`packages/ui`), so the two run in parallel. Two halves: artist-granularity ownership (the recorded
 gap — the music ownership pool is built from **albums**, so a ListenBrainz **artist** recommendation
