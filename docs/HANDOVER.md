@@ -729,6 +729,34 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
+### CLAIMED 2026-08-17 — `16d-W-1` and `16d-A`, the docked-chrome scroll bug
+
+**This is Sofia's own bug report and it is the highest-value item in phase 16** — `ROADMAP.md` §16
+says so in as many words, and says to do it before the screens. Two Sonnet agents in parallel on
+disjoint trees: `16d-W-1` in `apps/web/src` + `e2e/app/`, `16d-A` in `apps/android`. Base for both
+is `c37b14a`.
+
+**Deliberately scoped down from the roadmap's `16d-W`.** That bullet bundles the docking fix with
+the adaptive-rig re-cut (`railWide >= 1024`) and the `Icon`-`filled` nav wiring. Splitting them is
+this repo's own ~150-turn rule, and the docking half is the part Sofia reported. The rig re-cut and
+the `filled` wiring become **`16d-W-2`**, dispatched after `16d-W-1` merges — both touch the same
+two files, so they cannot run beside each other.
+
+**`16d-A` is a question, not an instruction.** It is told to _establish_ whether Android has the
+same class of bug (chrome pinned by `Scaffold` vs scrolling inside a `LazyColumn`) and to report
+"no bug here" as a perfectly good outcome. Assuming the report is web-only is exactly how this
+project's parity claims have gone wrong three times.
+
+**`Icon`'s `filled` prop still has no reader** — confirmed by grep on `apps/web/src` at claim time,
+zero hits outside `Button variant="filled"`. It is the fifth writer-with-no-reader in the ledger and
+`16d-W-2` is its named reader.
+
+**The rig, so nobody implements 1280:** the redesign's two thresholds are `railWide = w >= 1024` and
+`showPanel = w >= 1240`. The `1440 / 1280 / 1024 / 768` figures in §16's `16d-P` bullet are the
+design kit's **frame widths**, not breakpoints. Today's rig (`hooks/breakpoint.ts`) is
+compact `< 600` / medium `600–1240` / expanded `>= 1240`, so the only thing `16d-W-2` re-cuts is the
+rail going wide at 1024 instead of 1240.
+
 ### Hand-off at the usage band, 2026-08-17 — nothing claimed, nothing in flight
 
 **`main` is green on everything and fully pushed.** Final local state, all three suites run here
