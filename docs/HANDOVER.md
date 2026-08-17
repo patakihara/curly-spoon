@@ -268,8 +268,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T18:25:26Z` · `a4a69397420b865ba` · general-purpose · ended · ## Report — Wave 16a-2 **Branch/commit:** 'worktree-agent-a4a69397420b865ba' at 'f0ad9c4', based on '848b742' ("Claim 16a-2..."). Working tree clean,…
-- `2026-08-16T18:25:51Z` · `a62f69f223749e664` · Explore · ended · # Recon report — wave 15b-2 (mapping table at request time) Note up front: 'docs/ROADMAP.md' §15 names waves '15a', '15a-0', '15b', '15c', '15c-1', '…
 - `2026-08-16T18:33:24Z` · `aadc5583ae8079f01` · general-purpose · ended · ## Verdict: fix these 4 things first (one is substantive, three are minor/arithmetic) I read every vendored token CSS file in full, all nine 'compone…
 - `2026-08-16T18:46:47Z` · `a5e487ebb2af6f810` · general-purpose · ended · The full '--project=app --workers=1' Playwright suite is still running in the background (I have a Monitor watching for it to finish). While waiting,…
 - `2026-08-16T18:47:26Z` · `a2c115444ad5215c5` · general-purpose · ended · Clean working tree, committed as 'a8fda95' on branch 'worktree-agent-a2c115444ad5215c5'. Per instructions I do not push. The wave is complete. ## Rep…
@@ -283,6 +281,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
 - `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
+- `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · running · —
+- `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -729,6 +729,23 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 A lightweight lock, because two sessions can share this checkout. Claim a wave here
 **before** dispatching it; delete the line when it lands.
+
+**CLAIMED 2026-08-17 — `15e-music`, giving ListenBrainz a reader.** One Sonnet agent, in
+`apps/server/src/features/recommendations/` + `routes/jellyfin.ts`. Disjoint from the wave above
+(`packages/ui`), so the two run in parallel. Two halves: artist-granularity ownership (the recorded
+gap — the music ownership pool is built from **albums**, so a ListenBrainz **artist** recommendation
+can never match as owned), and wiring external candidates into `GET /music/recommended`, **which
+both clients already consume**. 15a's provider currently has no consumer but its own tests; that is
+this project's sixth writer-with-no-reader, and closing it is the wave's whole point.
+
+**ASKED 2026-08-17 — the two open design questions are finally with Sofia**, filed to the task
+queue as `dbfb46e`. (1) Should album-art-derived colour ever become the accent's source, or is the
+picker the final answer? (2) `--accent-ink` fails WCAG AA on `--surface-card` at the default accent
+— what should give? **Neither blocks anything and no wave should wait on them.** Note the framing
+correction that goes with question 1: the decision log claimed artwork-derived colour was
+implemented, and `packages/ui/src/tokens/artwork.ts` has zero callers, so nothing is being taken
+away and the question is forward-looking. Delete this paragraph when she answers, and record the
+answers in `SONORA.md`.
 
 **CLAIMED 2026-08-17 — `16c-2-W-1`, the substrate catch-up.** One Sonnet agent, redefining the
 `--m3-*` values to Sonora's in `packages/ui/src/tokens/*.ts` and `packages/ui/src/styles/index.css`.
