@@ -729,6 +729,28 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
+### The `UnifiedSearchViewModelTest` race is now demonstrated, not merely well-argued
+
+**This file has asked for this sample for weeks and it is finally in hand.** The bar it set was
+_several uncached executions_, and uncached ones only exist when a sha touches `apps/android` —
+which is why a fix landed in `e71837f` sat at one sample for so long.
+
+Three now, all green, each confirmed by grepping the job log rather than reading a badge:
+
+| sha       | what drew it   | tasks seen bare (not `FROM-CACHE`)                                    |
+| --------- | -------------- | --------------------------------------------------------------------- |
+| `e87a551` | 14b-2          | `testDebugUnitTest`                                                   |
+| `9d27733` | `15d-1-A`      | `testDebugUnitTest`, `compileDebugKotlin`, `compileReleaseKotlin`     |
+| `778c62a` | `16d-A`'s KDoc | `testDebugUnitTest`, **`testReleaseUnitTest`**, both `compile*Kotlin` |
+
+**Take the fix as demonstrated and stop treating it as open.** Note the third row is the first to
+draw a bare `testReleaseUnitTest` alongside the debug one — the two variants cache independently,
+and `9e87fdc`/`b2561b8`'s clean coin-toss demonstration was on the _release_ task, so that is the
+variant the original failure was actually observed on.
+
+The general lesson survives the item closing, and is the reusable half: **a green Android badge on
+a sha that did not touch `apps/android` executed nothing.** Keep grepping the log.
+
 ### Two agents cannot both run Playwright here — one fixed port decides it
 
 Established 2026-08-17 while deciding whether to dispatch a third wave beside `16d-W-1`. The
