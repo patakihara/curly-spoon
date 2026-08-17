@@ -17,7 +17,7 @@
 
 import { Readable } from 'node:stream';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { Album } from '@auralis/jellyfin-client';
+import type { Album, Artist } from '@auralis/jellyfin-client';
 import { JellyfinError } from '@auralis/jellyfin-client';
 import { createRequireSession } from '../auth/requireSession.js';
 import { handleUpstreamError, sendError } from '../httpErrors.js';
@@ -27,10 +27,20 @@ import { AURALIS_JELLYFIN_DEVICE, JELLYFIN_UPSTREAM_KEY } from '../jellyfinUpstr
 import { parseInput } from '../validation.js';
 import {
   albumToCandidate,
+  artistToOwnershipLibraryItem,
   buildMusicProgressSignals,
   buildRecommendationShelves,
   buildTasteProfile,
+  externalCandidateToAlbumPlaceholder,
+  externalCandidateToOwnershipItem,
+  externalProviderFactories,
+  getExternalProvidersForMedium,
+  matchOwnership,
+  reasonForExternalShelf,
   scoreCandidates,
+  type ExternalProviderFactory,
+  type RecommendationSeed,
+  type TasteProfile,
 } from '../features/recommendations/index.js';
 import {
   jellyfinAddToPlaylistBodySchema,
@@ -63,6 +73,10 @@ const PASSTHROUGH_HEADERS = ['content-type', 'content-length', 'content-range', 
  */
 const MUSIC_ALBUM_LIMIT = 500;
 const MUSIC_TRACK_LIMIT = 5000;
+/** Artists are a smaller population than albums in any real library (each artist has
+ * several albums) — the same 500 cap `MUSIC_ALBUM_LIMIT` uses is generous headroom, not a
+ * separately-derived number. */
+const MUSIC_ARTIST_LIMIT = 500;
 
 /** Same reasoning as `libraries.ts`'s `MAX_SHELVES`/`ITEMS_PER_SHELF`. */
 const MUSIC_MAX_SHELVES = 5;
@@ -71,6 +85,49 @@ const MUSIC_ITEMS_PER_SHELF = 10;
 /** Mirrors `libraries.ts`'s `RECOMMENDATION_SHELF_TYPE` — distinguishes this route's own
  * shelves from anything else a music "for you" surface might one day show. */
 const MUSIC_RECOMMENDATION_SHELF_TYPE = 'recommended';
+
+/**
+ * Wave 15e-music — external (ListenBrainz) discovery, mixed into this same response.
+ *
+ * **How many seeds get queried.** Capped independently of
+ * `listenbrainz.ts`'s own internal `MAX_SEEDS_QUERIED` (3) — kept equal rather than larger,
+ * since querying more seeds than the provider will actually use per call buys nothing but
+ * an unbounded seed-selection pass over the taste profile.
+ *
+ * **Which seeds.** The top-weighted `author` facets from the *same* `TasteProfile` the
+ * library-derived shelves below already compute — for music, `adaptMusic.ts`'s
+ * `albumToCandidate` folds an album's `artistName` into that facet, so "top author
+ * affinity" already means "artist she listens to most." Each candidate seed still needs a
+ * *real* `musicBrainzArtistId` (ListenBrainz is MBID-keyed) — resolved via the seed's own
+ * album (`profile.facetSeeds.author[name].itemId`) -> that album's `artistId` -> the real
+ * `Artist.musicBrainzArtistId`, an identifier chain, never a second name match. A facet
+ * with no resolvable MBID is skipped, not substituted with a fuzzy lookup — see this file's
+ * own wave report for how often that empties the seed list in practice (any library whose
+ * scanner never found a MusicBrainz match).
+ *
+ * **Cold start is unaffected by construction.** `profile.affinities.author` is empty
+ * whenever `profile.totalSignal <= 0` (see `profile.ts`), so a signal-less user resolves
+ * zero seeds, queries no provider, and this shelf never appears — the same
+ * `{ shelves: [] }` cold-start response the route already guaranteed before this wave.
+ */
+const MUSIC_EXTERNAL_SEED_LIMIT = 3;
+/** Requested from the provider before ownership filtering — deliberately larger than the
+ * shelf's own `MUSIC_EXTERNAL_ITEMS_PER_SHELF` cap, so filtering out owned/possible matches
+ * still usually leaves enough to fill a real shelf rather than starving it down to one. */
+const MUSIC_EXTERNAL_CANDIDATE_LIMIT = 30;
+const MUSIC_EXTERNAL_ITEMS_PER_SHELF = 10;
+const MUSIC_EXTERNAL_SHELF_ID = 'shelf-external-listenbrainz';
+/**
+ * Deliberately distinct from `MUSIC_RECOMMENDATION_SHELF_TYPE` — this shelf's items are not
+ * real Jellyfin library items (see `externalCandidateToAlbumPlaceholder`'s own doc comment
+ * on why they are only *shaped* like one), and a future client change may want to treat
+ * "recommended" (rank items already owned) and "discover" (surface items not owned)
+ * differently, e.g. a distinct visual treatment or a "not in your library" badge. Neither
+ * client reads `type` today (`musicRecommendedFeed.ts` renders every shelf with items
+ * regardless of its `type` string), so this is forward-looking, not a behaviour change —
+ * see this wave's report for the full reasoning.
+ */
+const MUSIC_EXTERNAL_SHELF_TYPE = 'discover';
 
 function copyHeaders(reply: FastifyReply, upstream: Response): void {
   for (const name of PASSTHROUGH_HEADERS) {
@@ -101,6 +158,126 @@ async function fetchJellyfinMedia(
     return await app.upstreamFetch(url, extraHeaders ? { headers: extraHeaders } : undefined);
   } catch (cause) {
     throw JellyfinError.network(cause);
+  }
+}
+
+/**
+ * Wave 15d-1-S: every item `GET /music/recommended` returns now carries this, required and
+ * never optional. Android's Kotlin models declare fields non-nullable with no default and
+ * throw `MissingFieldException` on a missing key, so an optional field that is sometimes
+ * absent is a crash waiting to happen (adding a field is safe for existing clients —
+ * `auralisJson` sets `ignoreUnknownKeys = true`). Distinguishes a real owned Jellyfin album
+ * from a ListenBrainz-derived placeholder so a client can render/link them differently,
+ * instead of parsing meaning out of the `external:` id prefix — the implicit coupling a
+ * review flagged after driving the placeholder into a real album-detail dead end.
+ */
+type MusicRecommendedAlbum = Album & { availability: 'owned' | 'external' };
+
+/**
+ * The reader wave 15a/15b-1 were both missing (`docs/HANDOVER.md`: "a wave that adds a
+ * writer must name its reader" — this is that name). Resolves seeds from the real taste
+ * profile the route already computed, queries every registered music provider (today, just
+ * ListenBrainz), filters out anything the artist-ownership pool says she already has, and
+ * returns a shelf shaped exactly like the library-derived ones below — or `null`, meaning
+ * "no external shelf this response", never an empty/malformed one. See
+ * `MUSIC_EXTERNAL_SEED_LIMIT`'s doc comment for the seed-selection reasoning.
+ *
+ * `providerFactories` defaults to the real registry and exists as a parameter for exactly
+ * the reason `getExternalProvidersForMedium`'s own `factories` parameter does (see that
+ * function's doc comment): so a test can hand in a provider that deliberately violates the
+ * "never throws" contract `ExternalRecommendationProvider` documents, and exercise this
+ * function's outer `catch` without needing a real provider to misbehave — see
+ * `jellyfin.test.ts`'s "the outer catch is a real safety net" test.
+ */
+export async function buildExternalDiscoveryShelf(
+  app: FastifyInstance,
+  profile: TasteProfile,
+  albumsById: Map<string, Album>,
+  artistsById: Map<string, Artist>,
+  providerFactories: Record<string, ExternalProviderFactory> = externalProviderFactories,
+): Promise<{
+  id: string;
+  label: string;
+  type: string;
+  reason: string;
+  items: MusicRecommendedAlbum[];
+} | null> {
+  const authorWeights = Object.entries(profile.affinities.author ?? {}).sort((a, b) => b[1] - a[1]);
+  const seeds: RecommendationSeed[] = [];
+  for (const [artistName] of authorWeights) {
+    if (seeds.length >= MUSIC_EXTERNAL_SEED_LIMIT) break;
+    const seedInfo = profile.facetSeeds.author[artistName];
+    if (!seedInfo) continue;
+    // Identifier chain, not a second name match: the seed's own album -> that album's
+    // real Jellyfin artistId -> that artist's real musicBrainzArtistId. A facet with no
+    // resolvable MBID is skipped outright rather than falling back to fuzzy name lookup —
+    // ListenBrainz's endpoint is MBID-keyed and gets nothing useful from a guess.
+    const seedAlbum = albumsById.get(seedInfo.itemId);
+    const artistId = seedAlbum?.artistId;
+    const mbid = artistId ? artistsById.get(artistId)?.musicBrainzArtistId : null;
+    if (!mbid) continue;
+    seeds.push({ label: artistName, identifiers: { musicBrainzArtistId: mbid } });
+  }
+  if (seeds.length === 0) return null;
+
+  try {
+    const providers = getExternalProvidersForMedium(
+      'music',
+      {
+        fetch: app.upstreamFetch,
+        logger: app.log,
+      },
+      providerFactories,
+    );
+    const perProvider = await Promise.all(
+      providers.map((provider) => provider.recommend(seeds, MUSIC_EXTERNAL_CANDIDATE_LIMIT)),
+    );
+    const rawCandidates = perProvider.flat();
+    if (rawCandidates.length === 0) return null;
+
+    // Artist-granularity ownership (wave 15e-music's Half 1) — the pool 15a's own report
+    // named as missing: ListenBrainz recommends artists, and the route's existing
+    // ownership machinery (implicit in `buildRecommendationShelves`'s known-item exclusion)
+    // only ever operated on albums. Discovery is the entire point of this shelf (her words,
+    // `docs/USER_DECISIONS.md`: "not useful... if recommendations only show things already
+    // in my library"), so an owned or probably-owned match is dropped here, not merely
+    // labelled — unlike 12c-2's "owned still appears, just not requestable" rule for
+    // *search*, where hiding an owned item would make it unfindable. This shelf isn't
+    // search; showing her an artist she already owns as a "discovery" defeats the shelf.
+    const artistOwnershipPool = Array.from(artistsById.values()).map(artistToOwnershipLibraryItem);
+    const newCandidates = rawCandidates.filter(
+      (candidate) =>
+        matchOwnership(externalCandidateToOwnershipItem(candidate), artistOwnershipPool).status ===
+        'new',
+    );
+    // A one-item carousel reads as a bug — the same rule `shelves.ts`'s
+    // `buildRecommendationShelves` already enforces for the library-derived shelves.
+    if (newCandidates.length < 2) return null;
+
+    const chosen = newCandidates.slice(0, MUSIC_EXTERNAL_ITEMS_PER_SHELF);
+    return {
+      id: MUSIC_EXTERNAL_SHELF_ID,
+      label: 'New artists to discover',
+      type: MUSIC_EXTERNAL_SHELF_TYPE,
+      reason: reasonForExternalShelf(seeds),
+      items: chosen.map((candidate): MusicRecommendedAlbum => ({
+        ...externalCandidateToAlbumPlaceholder(candidate),
+        availability: 'external',
+      })),
+    };
+  } catch (err) {
+    // `ExternalRecommendationProvider.recommend` is contractually total — see that
+    // interface's own doc comment: never throws, always degrades to `[]`. This catch
+    // exists only against a provider that breaks that contract, mirroring
+    // `tryBuildMusicGenreProfile`'s discriminated-logging precedent (`routes/libraries.ts`):
+    // log at `warn` (a real fault, not a "not configured" condition — there is no
+    // configured/unconfigured state for a credential-free public API), and always degrade
+    // to no external shelf rather than failing the whole route.
+    app.log.warn(
+      { err },
+      'music/recommended: external candidate discovery failed, degrading to library-only shelves',
+    );
+    return null;
   }
 }
 
@@ -359,9 +536,10 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
   app.get('/music/recommended', { preHandler: requireSession }, async (request, reply) => {
     try {
       const client = app.jellyfin.forUser(request.userId!);
-      const [albumsPage, tracksPage] = await Promise.all([
+      const [albumsPage, tracksPage, artistsPage] = await Promise.all([
         client.getAlbums({ limit: MUSIC_ALBUM_LIMIT }),
         client.getTracks({ limit: MUSIC_TRACK_LIMIT }),
+        client.getArtists({ limit: MUSIC_ARTIST_LIMIT }),
       ]);
 
       const candidates = albumsPage.items.map(albumToCandidate);
@@ -375,15 +553,34 @@ export function registerJellyfinRoutes(app: FastifyInstance): void {
       });
 
       const albumsById = new Map<string, Album>(albumsPage.items.map((a) => [a.id, a]));
-      const responseShelves = shelves.map((shelf) => ({
+      const artistsById = new Map<string, Artist>(artistsPage.items.map((a) => [a.id, a]));
+
+      // Wave 15e-music: external (ListenBrainz) discovery, ahead of the library-derived
+      // shelves — she asked for unowned discovery, not a re-sort of what she already has
+      // (`docs/USER_DECISIONS.md`), so when it exists it leads. `null` (no signal, no
+      // resolvable seed, or fewer than two unowned candidates) means "not this response",
+      // never an empty placeholder shelf.
+      const externalShelf = await buildExternalDiscoveryShelf(
+        app,
+        profile,
+        albumsById,
+        artistsById,
+      );
+
+      const libraryShelves = shelves.map((shelf) => ({
         id: shelf.id,
         label: shelf.label,
         type: MUSIC_RECOMMENDATION_SHELF_TYPE,
         reason: shelf.reason,
+        // Wave 15d-1-S: every real Jellyfin album this route serves is `owned` — see
+        // `MusicRecommendedAlbum`'s doc comment above `buildExternalDiscoveryShelf`.
         items: shelf.itemIds
           .map((id) => albumsById.get(id))
-          .filter((album): album is Album => album !== undefined),
+          .filter((album): album is Album => album !== undefined)
+          .map((album): MusicRecommendedAlbum => ({ ...album, availability: 'owned' })),
       }));
+
+      const responseShelves = externalShelf ? [externalShelf, ...libraryShelves] : libraryShelves;
 
       return reply.send({ shelves: responseShelves });
     } catch (err) {

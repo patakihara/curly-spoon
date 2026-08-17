@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
+import type { Album, Artist } from '@auralis/jellyfin-client';
+import type { ExternalProviderFactory, TasteProfile } from '../features/recommendations/index.js';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
+import { buildExternalDiscoveryShelf } from './jellyfin.js';
 import {
   FAKE_JELLYFIN_BAD_CREDENTIALS,
   FAKE_JELLYFIN_BASE_URL,
@@ -1266,6 +1269,8 @@ describe('GET /api/v1/music/recommended', () => {
       expect(shelf.reason.length).toBeGreaterThan(0);
       for (const item of shelf.items) {
         expect(typeof item.name).toBe('string');
+        // Wave 15d-1-S: every item on a library-derived shelf is a real Jellyfin album.
+        expect(item.availability).toBe('owned');
       }
     }
 
@@ -1282,5 +1287,264 @@ describe('GET /api/v1/music/recommended', () => {
     // Nightglass (same artist as the played album) and Lumenfall (a different artist,
     // proving this is genre-driven, not just "everything by this artist").
     expect(allAlbumIds).toEqual(expect.arrayContaining(['album-nightglass', 'album-lumenfall']));
+  });
+});
+
+describe('GET /api/v1/music/recommended — external (ListenBrainz) discovery, wave 15e-music', () => {
+  const LISTENBRAINZ_ORIGIN = 'https://api.listenbrainz.org';
+  /** `artist-nebula` is the one fake artist carrying a `MusicBrainzArtist` provider id
+   * (see `fakeJellyfin.ts`'s `ARTISTS` comment) — the only one that can seed a
+   * `RecommendationSeed`, since ListenBrainz's endpoint is MBID-keyed. */
+  const NEBULA_MBID = 'mbid-fake-nebula-7a21';
+
+  /** Same play-history seeding the library-shelf test above uses (five stops on one
+   * Driftwave track, one on the other) — it's what makes `The Nebula Collective` the
+   * strongest `author` facet, which is what `buildExternalDiscoveryShelf` resolves seeds
+   * from. Reused rather than duplicated in spirit only, since the exact call count here
+   * doesn't matter — this file has no assertion tying seeding to a magic number. */
+  async function seedNebulaPlayHistory(app: FastifyInstance, cookie: string): Promise<void> {
+    for (let i = 0; i < 3; i += 1) {
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playback/stopped',
+        cookies: { auralis_session: cookie },
+        payload: { itemId: 'track-driftwave-1', positionSeconds: 200 },
+      });
+    }
+  }
+
+  function listenBrainzFetch(
+    respond: (url: URL) => Response,
+  ): (input: string | URL, init?: RequestInit) => Promise<Response> {
+    return async (input) => {
+      const url = new URL(input);
+      if (url.origin !== LISTENBRAINZ_ORIGIN) {
+        throw new Error(`getaddrinfo ENOTFOUND ${url.hostname}`);
+      }
+      return respond(url);
+    };
+  }
+
+  function jsonResponse(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async function connectedAppWithProviderFetch(
+    providerFetch: (input: string | URL, init?: RequestInit) => Promise<Response>,
+  ): Promise<{ app: FastifyInstance; cookie: string }> {
+    const { app } = buildTestApp({ providerFetch });
+    const cookie = await loginTestUser(app);
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    if (loginResponse.statusCode !== 200) {
+      throw new Error(
+        `jellyfin login failed in test setup: ${loginResponse.statusCode} ${loginResponse.body}`,
+      );
+    }
+    return { app, cookie };
+  }
+
+  // This is the assertion the wave is judged on: a real HTTP round trip through the route,
+  // proving an externally-discovered candidate reaches the response body a client actually
+  // parses — not a helper function returning an array (`docs/HANDOVER.md`'s own "a test
+  // that only inspects a return value can pin the wrong value as correct").
+  it('mixes ListenBrainz candidates into the response ahead of the library shelves, and drops a candidate matching an already-owned artist', async () => {
+    const { app, cookie } = await connectedAppWithProviderFetch(
+      listenBrainzFetch((url) => {
+        expect(url.pathname).toBe(`/1/lb-radio/artist/${NEBULA_MBID}`);
+        return jsonResponse({
+          [NEBULA_MBID]: [
+            {
+              recording_mbid: 'rec-1',
+              similar_artist_mbid: 'mbid-outside-1',
+              similar_artist_name: 'Outside Orbit',
+              total_listen_count: 500,
+            },
+            {
+              recording_mbid: 'rec-2',
+              similar_artist_mbid: 'mbid-outside-2',
+              similar_artist_name: 'Second Horizon',
+              total_listen_count: 300,
+            },
+            // Same normalized name as the fixture's real `artist-echo` (no MBID on
+            // either side) — must be filtered out as `possible`-owned, not surfaced as
+            // a "discovery" of something she already has.
+            {
+              recording_mbid: 'rec-3',
+              similar_artist_mbid: 'mbid-imposter-echo',
+              similar_artist_name: 'Echo Fields',
+              total_listen_count: 100,
+            },
+          ],
+        });
+      }),
+    );
+
+    await seedNebulaPlayHistory(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.length).toBeGreaterThan(0);
+
+    const externalShelf = shelves[0];
+    expect(externalShelf.id).toBe('shelf-external-listenbrainz');
+    expect(externalShelf.type).toBe('discover');
+    expect(typeof externalShelf.reason).toBe('string');
+    expect(externalShelf.reason.length).toBeGreaterThan(0);
+
+    const externalNames = externalShelf.items.map((item: { name: string }) => item.name);
+    expect(externalNames).toEqual(expect.arrayContaining(['Outside Orbit', 'Second Horizon']));
+    // The owned-title-match candidate must never reach the response.
+    expect(externalNames).not.toContain('Echo Fields');
+    expect(externalShelf.items).toHaveLength(2);
+
+    // Every external item is namespaced and honestly blank about what it doesn't know —
+    // never a fabricated Jellyfin id, cover, or track count. Wave 15d-1-S: and now says so
+    // explicitly, rather than leaving a client to infer it from the `external:` id prefix.
+    for (const item of externalShelf.items) {
+      expect(item.id).toMatch(/^external:listenbrainz:/);
+      expect(item.imageTag).toBeNull();
+      expect(item.trackCount).toBeNull();
+      expect(item.availability).toBe('external');
+    }
+
+    // The library-derived shelves (already covered by the test above) still follow —
+    // this shelf is additive, not a replacement — and their items are `owned`, not
+    // `external`, proving the field isn't a blanket constant.
+    expect(shelves.slice(1).every((s: { type: string }) => s.type === 'recommended')).toBe(true);
+    for (const shelf of shelves.slice(1)) {
+      for (const item of shelf.items) {
+        expect(item.availability).toBe('owned');
+      }
+    }
+  });
+
+  it('degrades to library-only shelves, never fails the route, when ListenBrainz is unreachable', async () => {
+    // No `providerFetch` at all: `buildTestApp`'s default routes every non-Jellyfin
+    // origin (including `api.listenbrainz.org`) to the ABS fake, which simulates a real
+    // DNS failure for any origin that isn't its own — see `fakeAbs.ts`'s `fetchFn`.
+    const { app, cookie } = await jellyfinConnectedApp();
+    await seedNebulaPlayHistory(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-listenbrainz')).toBe(false);
+    // Library-derived shelves still render — a broken external provider must never take
+    // down the rest of the response.
+    expect(shelves.length).toBeGreaterThan(0);
+  });
+
+  it('degrades to library-only shelves on a non-OK ListenBrainz response', async () => {
+    const { app, cookie } = await connectedAppWithProviderFetch(
+      listenBrainzFetch(() => jsonResponse({ error: 'bad request' }, 400)),
+    );
+    await seedNebulaPlayHistory(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/music/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-listenbrainz')).toBe(false);
+  });
+
+  // Every failure path the three tests above exercise is already absorbed inside
+  // `listenbrainz.ts`'s own try/catch, which never rethrows — `ExternalRecommendationProvider`
+  // is contractually total (see that interface's doc comment). So `buildExternalDiscoveryShelf`'s
+  // own outer `catch` had no test that could actually reach it: nothing in the suite fails if
+  // its `app.log.warn(...)` line is deleted. This drives a provider that violates the "never
+  // throws" contract directly, exercising the exported function rather than the route, since no
+  // registered provider can be made to throw through `app.inject()` without breaking that
+  // contract for real. `providerFactories` exists on `buildExternalDiscoveryShelf` for exactly
+  // this — see that function's own doc comment.
+  it('the outer catch degrades to no external shelf and logs the fault when a provider breaks its "never throws" contract', async () => {
+    const { app } = buildTestApp();
+    const warn = vi.spyOn(app.log, 'warn');
+
+    // A minimal but real seed chain: an `author` affinity with a resolvable seed album whose
+    // artist carries a `musicBrainzArtistId` — the exact chain `buildExternalDiscoveryShelf`'s
+    // own seed-resolution loop requires before it will call a provider at all.
+    const profile: TasteProfile = {
+      affinities: { genre: {}, author: { 'Some Artist': 5 }, narrator: {}, series: {} },
+      seeds: [],
+      knownItemIds: [],
+      totalSignal: 5,
+      facetSeeds: {
+        genre: {},
+        author: { 'Some Artist': { itemId: 'album-1', title: 'Album One' } },
+        narrator: {},
+        series: {},
+      },
+    };
+    const album: Album = {
+      id: 'album-1',
+      name: 'Album One',
+      sortName: null,
+      artistId: 'artist-1',
+      artistName: 'Some Artist',
+      productionYear: null,
+      overview: null,
+      genres: [],
+      imageTag: null,
+      trackCount: null,
+      favorite: false,
+      playCount: 0,
+      lastPlayedAt: null,
+      musicBrainzAlbumId: null,
+      musicBrainzReleaseGroupId: null,
+    };
+    const artist: Artist = {
+      id: 'artist-1',
+      name: 'Some Artist',
+      overview: null,
+      imageTag: null,
+      albumCount: 1,
+      favorite: false,
+      playCount: 0,
+      lastPlayedAt: null,
+      musicBrainzArtistId: 'mbid-1',
+    };
+    const throwingFactories: Record<string, ExternalProviderFactory> = {
+      broken: () => ({
+        providerName: 'broken',
+        medium: 'music',
+        recommend: async () => {
+          throw new Error('this provider violates its own "never throws" contract');
+        },
+      }),
+    };
+
+    const shelf = await buildExternalDiscoveryShelf(
+      app,
+      profile,
+      new Map([['album-1', album]]),
+      new Map([['artist-1', artist]]),
+      throwingFactories,
+    );
+
+    expect(shelf).toBeNull();
+    expect(warn).toHaveBeenCalled();
   });
 });

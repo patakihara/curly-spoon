@@ -40,3 +40,12 @@ export {
   type ExternalProviderFactory,
 } from './external/registry.js';
 export { createListenBrainzProvider, LISTENBRAINZ_PROVIDER_NAME } from './external/listenbrainz.js';
+
+// Wave 15e-music — the reader `GET /music/recommended` uses to mix ListenBrainz candidates
+// into the response. See `musicExternalDiscovery.ts`'s own header comment.
+export {
+  artistToOwnershipLibraryItem,
+  externalCandidateToAlbumPlaceholder,
+  externalCandidateToOwnershipItem,
+  reasonForExternalShelf,
+} from './musicExternalDiscovery.js';
