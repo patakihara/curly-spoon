@@ -16,7 +16,7 @@ import {
   type IconName,
   type NavigationItem,
 } from '@auralis/ui';
-import { useBreakpoint } from '../hooks/useBreakpoint.js';
+import { useBreakpoint, useRailWide } from '../hooks/useBreakpoint.js';
 import { contentMaxWidth, railWidth } from './shellLayout.js';
 import {
   useJellyfinConfigQuery,
@@ -82,6 +82,12 @@ const RAIL_ACTIVE_LINK_STYLE = {
 
 export function Shell({ children }: { children: ReactNode }) {
   const breakpoint = useBreakpoint();
+  // Wave 16d-W-2: the rail's own width threshold, `>= 1024px` — a second,
+  // narrower `matchMedia` subscription than `breakpoint`'s three-way split.
+  // `showPanel` (the Now Playing panel's presence) needs no equivalent: it
+  // already equals `breakpoint === 'expanded'` (`>= 1240px`) and is read
+  // that way below, unchanged.
+  const railWide = useRailWide();
   const location = useLocation();
   const navigate = useNavigate();
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
@@ -208,7 +214,7 @@ export function Shell({ children }: { children: ReactNode }) {
       // pattern — one function decides the number, the CSS variable carries it.
       style={
         {
-          '--auralis-rail-width': `${railWidth(breakpoint)}px`,
+          '--auralis-rail-width': `${railWidth(railWide)}px`,
           '--auralis-content-max-width': `${contentMaxWidth()}px`,
         } as CSSProperties
       }
@@ -247,7 +253,13 @@ export function Shell({ children }: { children: ReactNode }) {
       ) : (
         <div className="auralis-shell__row">
           <div
-            data-testid={breakpoint === 'expanded' ? 'nav-rail-expanded' : 'nav-rail'}
+            // Wave 16d-W-2: keyed on `railWide` (>= 1024px), not
+            // `breakpoint === 'expanded'` (>= 1240px) — this testid names
+            // the rail's own visual state (icon-only vs icon+label), which
+            // is what `railWide` now governs; the Now Playing panel below
+            // still keys off `breakpoint === 'expanded'` unchanged, since
+            // that's `showPanel`, a different threshold.
+            data-testid={railWide ? 'nav-rail-expanded' : 'nav-rail'}
             className="auralis-nav-rail-slot"
           >
             {/*
@@ -267,7 +279,7 @@ export function Shell({ children }: { children: ReactNode }) {
              * assertions, which this file must keep passing unmodified.
              */}
             <MantineAppShell
-              navbar={{ width: railWidth(breakpoint), breakpoint: 0 }}
+              navbar={{ width: railWidth(railWide), breakpoint: 0 }}
               mode="static"
               padding={0}
               style={{ height: '100%' }}

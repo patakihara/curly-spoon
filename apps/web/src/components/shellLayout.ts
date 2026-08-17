@@ -1,16 +1,22 @@
 /**
- * Nav-rail width per breakpoint (docs/DESIGN.md § Layout): a collapsed
- * icon-only rail at medium widths, an expanded icon+label rail beyond
- * 1240px. `Shell.tsx`'s Mantine `AppShell` navbar and the mini player's
- * dock width (`app.css`'s `--auralis-rail-width` custom property) both read
- * this single function so the two can never drift apart — the mini player
- * used to hardcode its own 360px width and silently overlap ~140px into the
- * content column past the rail's real edge (web design audit, 2026-08-06).
+ * Nav-rail width (docs/DESIGN.md § Layout): a collapsed icon-only rail below
+ * 1024px, an expanded icon+label rail at 1024px and up. `Shell.tsx`'s
+ * Mantine `AppShell` navbar and the mini player's dock width (`app.css`'s
+ * `--auralis-rail-width` custom property) both read this single function so
+ * the two can never drift apart — the mini player used to hardcode its own
+ * 360px width and silently overlap ~140px into the content column past the
+ * rail's real edge (web design audit, 2026-08-06).
+ *
+ * Wave 16d-W-2: takes the `railWide` boolean (`hooks/breakpoint.ts`'s
+ * `isRailWide`, `>= 1024px`) rather than the three-way `Breakpoint` this
+ * used to switch on. `railWide` cuts inside the `medium` (600–1240) range —
+ * the rail goes wide four breakpoints below where `Breakpoint` itself
+ * changes — so keying this off `Breakpoint` could never have expressed it;
+ * the invariant this comment describes (one function, both readers) is what
+ * this signature change preserves, not what it's changing.
  */
-import type { Breakpoint } from '../hooks/breakpoint.js';
-
-export function railWidth(breakpoint: Breakpoint): number {
-  return breakpoint === 'expanded' ? 220 : 80;
+export function railWidth(railWide: boolean): number {
+  return railWide ? 220 : 80;
 }
 
 /**
