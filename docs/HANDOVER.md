@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T20:03:43Z` · `a43b885e620204b64` · general-purpose · ended · ## Verdict: fix these 2 things Reviewed 'git diff 7bdd241..4b529c7', 'docs/design/SONORA.md', 'docs/design/sonora/Auralis-Redesign.dc.html', 'docs/RO…
 - `2026-08-16T20:07:27Z` · `ad03a8b555be0eed7` · general-purpose · ended · ## Report — Wave 16g: README rewrite **Branch/commit:** 'worktree-agent-ad03a8b555be0eed7' at '73e44cd', based on 'e4cfaac' ("Claim 16g"). Working tr…
 - `2026-08-16T20:14:36Z` · `ad94d88ad18c9ca2c` · general-purpose · ended · The app suite is still running. I'll stop polling and wait for the Monitor notification (task 'bvfowgajw') to arrive before proceeding with the probe…
 - `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
 - `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
 - `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
+- `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,12 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+**CLAIMED 2026-08-17 — `16c-2-W-2`.** One agent, two tightly-scoped web fixes: the nav rail's
+active destination and Settings' own theme-mode buttons onto `--accent-ink`/`--surface-*` so the
+picker reaches the app chrome, and the `contrast.spec.ts:110` guard made unable to self-disable.
+**Deliberately not a broad migration** — `Dialog`/`Sheet`/`Menu` stay on `--m3-*` because they portal
+outside `.auralis-theme-root` where Sonora's tokens do not resolve at all.
 
 ### Session state, 2026-08-17 — everything below is merged, pushed and green
 
