@@ -160,7 +160,7 @@ export function Sheet({
     >
       <Drawer.Overlay
         className="m3-sheet-scrim"
-        style={{ background: 'var(--m3-scrim)', opacity: 0.32 }}
+        style={{ background: '#000', opacity: 0.32 }}
         transitionProps={{ duration: 0 }}
       />
       <Drawer.Content

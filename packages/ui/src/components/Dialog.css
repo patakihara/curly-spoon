@@ -1,3 +1,35 @@
+/*
+ * Wave 16c-5-W (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1). Landed against a substrate already proven to resolve here —
+ * 16c-4-W re-parented this component's portal inside `.auralis-theme-root`.
+ *
+ * Colour and radius/shadow follow the exact pattern Card.css already established: Sonora
+ * has no "surface-container-high" elevation tint step (SONORA.md §1.6's mix formula has no
+ * single-token equivalent), so the panel uses flat `--surface-card` and lets the scrim
+ * behind it — not a colour difference from its own container — carry the separation. That's
+ * safe here specifically because a dialog always renders over its own full-viewport scrim,
+ * unlike a floating popover that can land directly on arbitrary page content (see Menu.css's
+ * comment for why that component keeps `--m3-surface-container-high` instead).
+ *
+ * `--m3-shape-xl` and `--m3-elevation-3` are dropped in favour of the literal Sonora token
+ * they already equal exactly (`index.css`'s static fallback block pins them: shape-xl is the
+ * xl/lg 32px collapse SONORA.md §1.10 documents, elevation-3 is byte-for-byte
+ * `--shadow-lg`) — not a value change, just naming the value by its Sonora name instead of
+ * its M3 one.
+ *
+ * `--m3-spring-*` durations are dropped for a literal `200ms ease-in-out` — Sonora ships no
+ * spring/motion tokens at all (Button.css's/Card.css's comment makes the same call), and
+ * `index.css` already collapsed every `--m3-spring-*` pair to that exact flat value, so this
+ * is a rename, not a timing change. Typography (`--m3-type-*`) is left untouched, matching
+ * every other 16c wave — typography migration is a separate, unstarted piece of work; every
+ * other component in the tree (migrated or not) still reads `--m3-type-*`.
+ *
+ * The scrim's own `background: var(--m3-scrim)` was already dead code before this wave —
+ * Dialog.tsx's inline `styles.overlay.background` always wins the cascade (see that file's
+ * comment) — so this only replaces an inert reference with an inert literal; no rendered
+ * pixel changes. Scrims have no Sonora token either way (Material's scrim concept is opaque
+ * black at partial element-opacity, not a themed colour).
+ */
 .m3-dialog-layer {
   position: fixed;
   inset: 0;
@@ -11,9 +43,9 @@
 .m3-dialog-scrim {
   position: absolute;
   inset: 0;
-  background: var(--m3-scrim);
+  background: #000;
   opacity: 0.32;
-  animation: m3-dialog-scrim-in var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  animation: m3-dialog-scrim-in 200ms ease-in-out;
 }
 
 @keyframes m3-dialog-scrim-in {
@@ -30,11 +62,11 @@
   max-width: 420px;
   max-height: 90vh;
   padding: 24px;
-  border-radius: var(--m3-shape-xl);
-  background: var(--m3-surface-container-high);
-  color: var(--m3-on-surface);
-  box-shadow: var(--m3-elevation-3, 0 4px 12px rgba(0, 0, 0, 0.3));
-  animation: m3-dialog-enter var(--m3-spring-default-duration) var(--m3-spring-default-easing);
+  border-radius: var(--radius-lg, 32px);
+  background: var(--surface-card, rgb(20, 20, 20));
+  color: var(--surface-fg, rgb(225, 225, 225));
+  box-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05));
+  animation: m3-dialog-enter 200ms ease-in-out;
 }
 
 @keyframes m3-dialog-enter {
@@ -58,7 +90,7 @@
   flex: 1 1 auto;
   overflow-y: auto;
   font-size: var(--m3-type-body-medium-size);
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted, rgb(150, 150, 150));
 }
 
 .m3-dialog-actions {
