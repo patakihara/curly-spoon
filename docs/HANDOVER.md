@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
-- `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
 - `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
 - `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · ended · Nothing left running. This wave is complete. ## Report — Wave 16c-2-W-2 **Branch/commit:** 'worktree-agent-ad369f8094766bc82', two commits on top of…
 - `2026-08-17T12:17:01Z` · `a281db4733d2f49d2` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16d-W-1: dock the web shell'…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T17:29:15Z` · `a90dd8e5e13e65560` · general-purpose · ended · Working tree is clean, one commit on top of 'fb384e5'. Not pushing or merging, per instructions. ## Report — fixing the two ShellNavigationItemsTest…
 - `2026-08-17T17:56:20Z` · `a8977d5ddbe748b6e` · general-purpose · ended · ## Report — Wave 16c-2-W-3 **Branch/commit:** 'worktree-agent-a8977d5ddbe748b6e' at 'b138cc6', on top of '364040e'. Working tree clean, nothing uncom…
 - `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16b-2-A-2: Robolectric cover…
+- `2026-08-17T18:38:55Z` · `aa875a0416f640711` · general-purpose · ended · I've completed all the implementation, testing, and verification work for this wave, and the final full-parallelism 'ui-desktop'/'ui-mobile' Playwrig…
+- `2026-08-17T19:09:05Z` · `aa875a0416f640711` · general-purpose · ended · Confirmed: the second, confirmatory '--project=ui-desktop --project=ui-mobile' run also passed cleanly — **212/212 passed** (3.9m, default parallelis…
 
 <!-- AGENT_LOG_END -->
 
@@ -897,31 +897,50 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
 
-### CLAIMED 2026-08-17 — `16c-4-W`: re-parent `Dialog`/`Sheet`/`Menu` into the theme root
+### DONE — `16c-4-W`: the portalled trio is inside the theme root. **`16c-5-W` is the wave it unblocks.**
 
-**The prerequisite the last three primitives are blocked on**, and the one wave in this phase where
-a green Playwright run is worth nothing.
+**`main` is at `f8a6e4e`; `CI`, `Android` and `Publish` all green.** Full `pnpm test:e2e` (CI's own
+invocation, no `--project`, no `--workers`): **412 passed, 0 failed, 0 flaky.** Unit **1662/1662**.
 
-`ThemeProvider` renders `.auralis-theme-root` as an ancestor of the whole app (`ThemeProvider.tsx:241`,
-wrapping `RouterProvider` in `main.tsx`), and Sonora's `--surface-*`/`--accent-ink` are scoped to
-`.auralis-theme-root[data-theme=…]` with **no `:root` fallback** — deliberately, so a missing value
-fails loudly in the gallery test instead of being masked. Portals default to `document.body`, which
-is **outside** that element, so those three resolve nothing there and cannot be migrated until they
-move.
+**The mechanism, so `16c-5-W` does not re-derive it.** `ThemeProvider` renders a **`display: contents`**
+portal target as a child of `.auralis-theme-root` and a sibling of `MantineProvider`, exposed as
+`useTheme().portalTarget`; `Dialog`/`Sheet`/`Menu` pass it through `portalProps`. `display: contents`
+is load-bearing — the node contributes no box, so it cannot become a containing block and change how
+a `position: fixed` descendant behaves. Child of the theme root ⇒ tokens resolve; sibling of the
+shell ⇒ `16d-W-1`'s `overflow: hidden` cannot clip it. **`withinPortal={false}` would have been
+defensible before this morning and is wrong now**, which is worth knowing if anyone reads the older
+notes.
 
-**The intended shape, which the structure now makes clean:** give the portals an explicit target
-that is a **child of `.auralis-theme-root` and a sibling of `.auralis-shell`**. Child of the theme
-root ⇒ the tokens resolve. Sibling of the shell ⇒ **`16d-W-1`'s new `overflow: hidden` on
-`.auralis-shell`/`.auralis-shell__row` cannot clip it**, which is a constraint that did not exist
-before this morning and is the reason `withinPortal={false}` is the wrong answer here.
+**It was proved rather than asserted, which for this wave is the whole job.** The new tests read
+`getComputedStyle` and were run against the pre-fix code first: `--surface-card` resolved to the
+**empty string**, per component, per theme. Six gallery screenshots confirm all three render fully
+styled in light and dark. Without that, all three could have rendered completely unstyled and passed
+100% of the suite, which asserts testids and text and never computed styles.
 
-**This wave re-parents only. It deliberately does not migrate the three onto Sonora's tokens** —
-that is the wave after, and keeping them separate means the token migration lands against a
-substrate already proven to resolve.
+**A locator trap it hit, already documented in the code that bit it:** Mantine applies
+`Drawer.Content`'s className to **both** the fixed positioning wrapper and the visible panel, so
+`.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
+header comment says so. Select the dialog by role and name instead.
 
-**Why it needs unusual proof:** Playwright here asserts testids and text and **never computed
-styles**, so all three render **completely unstyled while passing the suite** — the documented
-14a-2 failure mode. The verification has to be `getComputedStyle`, per component, in **both** themes.
+### NEXT, and it is now genuinely unblocked — `16c-5-W`
+
+**Migrate `Dialog`, `Sheet` and `Menu` off `--m3-*` onto `--surface-*`/`--accent-ink`.** They still
+reference `--m3-*` entirely; `16c-4-W` deliberately changed only where they mount, so this migration
+lands against a substrate already proven to resolve rather than as a second simultaneous change
+nobody could attribute.
+
+**Two things for whoever takes it:**
+
+- **Keep using the computed-style assertions `16c-4-W` added** (`e2e/ui/dialog.spec.ts`,
+  `sheet.spec.ts`, `menu.spec.ts`). They are the only tests in the repo that can see this class of
+  break, and this is the wave they were built for.
+- **One cosmetic observation from the screenshots, currently unexplained and pre-existing:** Menu's
+  dropdown background reads as translucent. It comes from `--m3-surface-container-high`, untouched by
+  the re-parenting, and `--m3-*` already had a `:root` fallback beforehand — so it predates this wave.
+  Worth settling _during_ the migration rather than filing separately.
+
+**After that**, the accent picker's remaining gaps are Settings' _unselected_ mode buttons and
+whatever the trio's migration exposes; then `16e`, the screens.
 
 ### DONE — `16c-2-W-3` and `16b-2-A-2`, both CI-verified on `a98a6a6`
 
