@@ -45,6 +45,37 @@ const TILE_WRAPPER_STYLE: CSSProperties = {
   flex: '0 0 auto',
 };
 
+/** Positions `EXTERNAL_BADGE_STYLE` over the cover art — see that constant's doc comment.
+ * `CoverImage` itself takes no `position` prop, so this wraps it rather than reaching in. */
+const COVER_WRAPPER_STYLE: CSSProperties = {
+  position: 'relative',
+};
+
+/**
+ * Wave 15d-1-W: the "not in your library" pill an external (ListenBrainz-derived) card
+ * carries, so a user can tell at a glance this is something to *discover*, not something
+ * she already owns — `docs/design/sonora/components/MediaCard.dc.html`'s `absentPillStyle`
+ * is the design source (top-left pill over the art, `--radius-pill`/muted-on-surface), ported
+ * onto this app's current `--m3-*` substrate since Sonora's own `--surface-*`/`--radius-*`
+ * tokens haven't landed on this branch yet (16c-2-W, in flight elsewhere). `aria-hidden`
+ * because the accessible name for the whole card already carries this via `cardLabel` below —
+ * a screen reader user must not hear it twice.
+ */
+const EXTERNAL_BADGE_STYLE: CSSProperties = {
+  position: 'absolute',
+  left: 8,
+  top: 8,
+  padding: '3px 10px',
+  borderRadius: 'var(--m3-shape-full)',
+  fontSize: 11,
+  fontWeight: 700,
+  lineHeight: 1.4,
+  whiteSpace: 'nowrap',
+  background: 'var(--m3-surface)',
+  color: 'var(--m3-on-surface-variant)',
+  border: '1px solid var(--m3-outline-variant)',
+};
+
 const TILE_STYLE: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -148,7 +179,11 @@ export interface CarouselProps {
  * `@testing-library/react` installed (see `ChapterList.test.tsx`'s header), so a
  * component's testable behaviour is whatever pure logic it delegates to, not a render. */
 export function cardLabel(item: FeedItem): string {
-  return item.subtitle ? `${item.title}, ${item.subtitle}` : item.title;
+  const base = item.subtitle ? `${item.title}, ${item.subtitle}` : item.title;
+  // Wave 15d-1-W: announced, not just drawn — an external card's visual pill
+  // (`EXTERNAL_BADGE_STYLE`) is `aria-hidden`, so this is the only place a screen reader
+  // user learns the item isn't in her library.
+  return item.availability === 'external' ? `${base}, not in your library` : base;
 }
 
 export function Carousel({
@@ -208,40 +243,60 @@ export function Carousel({
                 </div>
               </div>
             ))
-          : items.map((item) => (
-              <div role="listitem" key={item.id} style={TILE_WRAPPER_STYLE}>
-                <button
-                  type="button"
-                  style={TILE_STYLE}
-                  data-testid={`shelf-item-${item.id}`}
-                  aria-label={cardLabel(item)}
-                  onClick={() => onSelect(item)}
-                >
-                  <CoverImage
-                    src={item.coverSrc}
-                    size={COVER_SIZE}
-                    fallbackIcon={item.fallbackIcon}
-                  />
-                  <h3 style={TITLE_STYLE} aria-hidden="true">
-                    {item.title}
-                  </h3>
-                  {/* Always rendered, even with nothing to show — see SUBTITLE_STYLE's
+          : items.map((item) => {
+              const external = item.availability === 'external';
+              return (
+                <div role="listitem" key={item.id} style={TILE_WRAPPER_STYLE}>
+                  <button
+                    type="button"
+                    style={TILE_STYLE}
+                    data-testid={`shelf-item-${item.id}`}
+                    aria-label={cardLabel(item)}
+                    onClick={() => onSelect(item)}
+                  >
+                    <div style={COVER_WRAPPER_STYLE}>
+                      <CoverImage
+                        src={item.coverSrc}
+                        size={COVER_SIZE}
+                        fallbackIcon={item.fallbackIcon}
+                      />
+                      {external ? (
+                        <span
+                          style={EXTERNAL_BADGE_STYLE}
+                          aria-hidden="true"
+                          data-testid={`shelf-item-${item.id}-external-badge`}
+                        >
+                          Not in library
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3
+                      style={{
+                        ...TITLE_STYLE,
+                        color: external ? 'var(--m3-on-surface-variant)' : undefined,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {item.title}
+                    </h3>
+                    {/* Always rendered, even with nothing to show — see SUBTITLE_STYLE's
                       sibling comment on PROGRESS_ROW_STYLE: an item with no subtitle
                       must not end up shorter than one that has one. */}
-                  <p style={SUBTITLE_STYLE} aria-hidden="true">
-                    {item.subtitle ?? ' '}
-                  </p>
-                  <div style={PROGRESS_ROW_STYLE}>
-                    {item.progress != null ? (
-                      <LinearProgress
-                        value={item.progress}
-                        aria-label={`${Math.round(item.progress * 100)}% complete`}
-                      />
-                    ) : null}
-                  </div>
-                </button>
-              </div>
-            ))}
+                    <p style={SUBTITLE_STYLE} aria-hidden="true">
+                      {item.subtitle ?? ' '}
+                    </p>
+                    <div style={PROGRESS_ROW_STYLE}>
+                      {item.progress != null ? (
+                        <LinearProgress
+                          value={item.progress}
+                          aria-label={`${Math.round(item.progress * 100)}% complete`}
+                        />
+                      ) : null}
+                    </div>
+                  </button>
+                </div>
+              );
+            })}
       </div>
     </section>
   );

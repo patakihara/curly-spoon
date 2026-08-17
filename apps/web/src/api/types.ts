@@ -597,6 +597,17 @@ export interface JellyfinAlbum {
   imageTag: string | null;
   trackCount: number | null;
   favorite: boolean;
+  /**
+   * Wave 15d-1-W: whether this is a real Jellyfin album ("owned") or a ListenBrainz-derived
+   * placeholder the user does not have ("external") — `GET /music/recommended`'s wave 15d-1-S
+   * contract (`docs/HANDOVER.md`). Optional because every other endpoint returning a
+   * `JellyfinAlbum` (search, artist/album browsing, favourites) never sets it — those albums
+   * are always real, so the field is simply absent rather than `'owned'` on every one of them.
+   * Today only `MusicRecommendedShelf.items` ever carries `'external'`. Read this field
+   * directly; never infer availability by parsing the `external:<provider>:<id>` id prefix —
+   * that implicit coupling is exactly what the server wave stopped clients from having to do.
+   */
+  availability?: 'owned' | 'external';
 }
 
 export interface JellyfinTrack {

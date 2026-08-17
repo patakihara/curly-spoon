@@ -23,6 +23,15 @@ export interface FeedItem {
   fallbackIcon: IconName;
   /** 0..1, or `null` for content with no progress concept (a Jellyfin album). */
   progress: number | null;
+  /**
+   * Wave 15d-1-W: whether this item is real library content ("owned") or a
+   * ListenBrainz-derived placeholder the user does not have ("external") —
+   * `JellyfinAlbum.availability`'s doc comment (`api/types.ts`) has the server contract.
+   * Optional and `undefined` on every carousel except music's recommended shelf, which is
+   * the only place `'external'` can appear today; `Carousel.tsx` and every `onSelect`
+   * handler treat an absent value the same as `'owned'`, so no existing carousel changes.
+   */
+  availability?: 'owned' | 'external';
 }
 
 export interface FeedCarousel {
@@ -141,6 +150,7 @@ export function albumsToCarousel(
       coverSrc: artworkUrl(album.id),
       fallbackIcon: 'music_note',
       progress: null,
+      availability: album.availability,
     })),
   };
 }

@@ -78,4 +78,30 @@ describe('musicRecommendedShelvesToCarousels', () => {
     ];
     expect(musicRecommendedShelvesToCarousels(shelves, (id) => id)).toEqual([]);
   });
+
+  // Wave 15d-1-W: `availability` is the server's wave-15d-1-S contract
+  // (`docs/HANDOVER.md`) for telling an external (ListenBrainz-derived, not-owned) album
+  // apart from a real one — read directly, never inferred from the `external:` id prefix.
+  it("carries each album's availability through onto its FeedItem, unmodified", () => {
+    const shelves: MusicRecommendedShelf[] = [
+      {
+        id: 'shelf-1',
+        label: 'New artists to discover',
+        type: 'discover',
+        reason: 'Similar to Nova Drift',
+        items: [
+          { ...album('album-owned', 'Driftwave'), availability: 'owned' },
+          {
+            ...album('external:listenbrainz:mbid-1', 'Lumen Cascade'),
+            artistName: null,
+            availability: 'external',
+          },
+        ],
+      },
+    ];
+
+    const carousels = musicRecommendedShelvesToCarousels(shelves, (id) => `art://${id}`);
+
+    expect(carousels[0]!.items.map((item) => item.availability)).toEqual(['owned', 'external']);
+  });
 });
