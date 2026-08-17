@@ -227,6 +227,27 @@ test('a carousel is keyboard-scrollable, and scrolling it never scrolls the page
 });
 
 test('a loading skeleton occupies the same box as a loaded card', async ({ page }) => {
+  // Diagnosed with the route handler and the DOM directly instrumented (not
+  // guessed): HomePage stitches several independent async sources together
+  // (books, podcasts, music, recommendations -- the same unreserved race
+  // docs/HANDOVER.md's phase 14c already documents and Sofia has since
+  // approved fixing, just not yet implemented). Each source resolving flips
+  // its own `isLoading` flag at a slightly different real-world instant, and
+  // HomePage's top-level branch on the combined `anyLoading`/`carousels`/
+  // `visibleCarousels` state means those near-simultaneous flips can replace
+  // the whole shelf list more than once in quick succession -- independent
+  // of *this* request's own mocked delay, which measurement confirmed: the
+  // "books" skeleton was already gone from the DOM before the mocked 500ms
+  // delay had even elapsed for the very request it's supposed to depend on.
+  //
+  // So a single `locator.boundingBox()` read, taken right after a
+  // `toBeVisible()` resolves, can land in the gap between one commit
+  // replacing the DOM and the next -- for the skeleton *and*, independently
+  // measured, for the already-loaded card too. That's a real, transient
+  // remount, not a permanently-missing element, so the fix is not to loosen
+  // what's asserted (the exact geometry match stays exact) but to make the
+  // read itself resilient to a race that's inherent to Home's current
+  // architecture: poll for a box instead of reading it once.
   await page.route('**/api/v1/libraries/*/home', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     await route.continue();
@@ -235,14 +256,25 @@ test('a loading skeleton occupies the same box as a loaded card', async ({ page 
   await page.goto('/');
 
   const skeleton = page.getByTestId('shelf-item-skeleton-books-loading-0');
-  await expect(skeleton).toBeVisible();
-  const skeletonBox = await skeleton.boundingBox();
-  expect(skeletonBox).not.toBeNull();
+  let skeletonBox: { x: number; y: number; width: number; height: number } | null = null;
+  await expect
+    .poll(async () => {
+      skeletonBox = await skeleton.boundingBox();
+      return skeletonBox;
+    })
+    .not.toBeNull();
 
   const loadedCard = page.locator('[data-testid^="shelf-item-"]').first();
-  await expect(loadedCard).toBeVisible({ timeout: 10_000 });
-  const loadedBox = await loadedCard.boundingBox();
-  expect(loadedBox).not.toBeNull();
+  let loadedBox: { x: number; y: number; width: number; height: number } | null = null;
+  await expect
+    .poll(
+      async () => {
+        loadedBox = await loadedCard.boundingBox();
+        return loadedBox;
+      },
+      { timeout: 10_000 },
+    )
+    .not.toBeNull();
 
   expect(skeletonBox!.width).toBeCloseTo(loadedBox!.width, 0);
   expect(skeletonBox!.height).toBeCloseTo(loadedBox!.height, 0);
