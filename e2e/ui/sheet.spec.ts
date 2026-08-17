@@ -162,7 +162,11 @@ test.describe('Sheet', () => {
         await page.getByTestId('mode-light').click();
       }
       await page.getByTestId('sheet-open').click();
-      const panel = page.locator('.m3-sheet-panel');
+      // `.m3-sheet-panel` alone is ambiguous — `Sheet.css`'s own header comment explains why:
+      // Mantine's `Drawer.Content` applies the className to *two* DOM nodes, the fixed
+      // positioning wrapper (`.mantine-Drawer-inner`) and the visible panel
+      // (`.mantine-Drawer-content`, `role="dialog"`). The role locator picks the latter.
+      const panel = page.getByRole('dialog', { name: 'Queue' });
       await expect(panel).toBeVisible();
       const surfaceCard = await panel.evaluate((el) =>
         getComputedStyle(el).getPropertyValue('--surface-card').trim(),
