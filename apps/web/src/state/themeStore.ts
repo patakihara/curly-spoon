@@ -10,7 +10,7 @@
  */
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import { AURALIS_SOURCE_COLOR, type ThemeMode } from '@auralis/ui';
+import { AURALIS_SOURCE_COLOR, DEFAULT_ACCENT, type ThemeMode } from '@auralis/ui';
 
 export const THEME_STORAGE_KEY = 'auralis:theme';
 
@@ -38,10 +38,19 @@ const storage: StateStorage = {
 
 export interface ThemeState {
   mode: ThemeMode;
+  /**
+   * Kept for API compatibility only — since wave 16c-2-W-1 this no longer drives any
+   * `--m3-*` surface (`@auralis/ui`'s `color.ts` module doc comment). `accent` below is
+   * the one colour Settings' picker still visibly changes.
+   */
   sourceColor: string;
+  /** Sonora's one customisable colour (`--accent`) — one of `@auralis/ui`'s `ACCENT_PRESETS`. */
+  accent: string;
   setMode: (mode: ThemeMode) => void;
   /** Re-themes the shell — Phase 5 calls this with colour extracted from artwork. */
   setSourceColor: (hex: string) => void;
+  /** Re-themes `--accent` — Settings' colour-swatch picker calls this. */
+  setAccent: (hex: string) => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -49,13 +58,19 @@ export const useThemeStore = create<ThemeState>()(
     (set) => ({
       mode: 'system',
       sourceColor: AURALIS_SOURCE_COLOR,
+      accent: DEFAULT_ACCENT,
       setMode: (mode) => set({ mode }),
       setSourceColor: (hex) => set({ sourceColor: hex }),
+      setAccent: (hex) => set({ accent: hex }),
     }),
     {
       name: THEME_STORAGE_KEY,
       storage: createJSONStorage(() => storage),
-      partialize: (state) => ({ mode: state.mode, sourceColor: state.sourceColor }),
+      partialize: (state) => ({
+        mode: state.mode,
+        sourceColor: state.sourceColor,
+        accent: state.accent,
+      }),
     },
   ),
 );

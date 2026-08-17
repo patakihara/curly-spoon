@@ -1,12 +1,21 @@
 /**
- * Settings: theme mode + demo source colour (Phase 5 will drive the real colour
- * from artwork instead), connection status, sign-out, and — as of Phase 6 —
+ * Settings: theme mode + accent colour, connection status, sign-out, and — as of Phase 6 —
  * provider and book-request configuration. Jellyfin (music) got its own
  * connect flow in Phase 9 wave A (`JellyfinConnectSection`), replacing the
  * "add this later" placeholder chip this section used to render inline.
+ *
+ * **Wave 16c-3-W.** The accent picker used to feed `sourceColor` into `ThemeProvider`'s
+ * HCT-derived `--m3-*` generator; wave 16c-2-W-1 replaced that generator with Sonora's
+ * fixed chroma tables, so `sourceColor` stopped doing anything visible — the picker
+ * looked broken (`docs/HANDOVER.md`, "the accent picker does nothing at all"). Sonora's
+ * own model is that `--accent` (not `--m3-*`) is the one user-customisable colour, offered
+ * as Symphony's 17-hue preset picker (`ACCENT_PRESETS`, `@auralis/ui`'s `color.ts`) — so
+ * this rewires the same swatch UI onto `accent`/`setAccent` instead of deleting it.
+ * `sourceColor`/`setSourceColor` stay in `themeStore.ts` for API compatibility (still
+ * accepted by `ThemeProvider`) but are no longer read here.
  */
 import { useNavigate } from '@tanstack/react-router';
-import { AURALIS_SOURCE_COLOR, Button, Chip } from '@auralis/ui';
+import { ACCENT_PRESETS, Button, Chip } from '@auralis/ui';
 import { useLogoutMutation, useSetupQuery } from '../../api/queries.js';
 import { useThemeStore } from '../../state/themeStore.js';
 import type { ThemeMode } from '@auralis/ui';
@@ -17,12 +26,11 @@ import { RequestSettingsSection } from '../requests/RequestSettingsSection.js';
 
 const MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
-const COLOR_SWATCHES = [
-  { label: 'Amber (default)', hex: AURALIS_SOURCE_COLOR },
-  { label: 'Blue', hex: '#1B6EF3' },
-  { label: 'Green', hex: '#2E7D32' },
-  { label: 'Red', hex: '#B00020' },
-];
+/** Capitalized labels for `ACCENT_PRESETS`' lowercase hue names — `aria-label`s only,
+ * the swatch itself conveys colour visually. */
+function accentLabel(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -30,8 +38,8 @@ export function SettingsPage() {
   const logoutMutation = useLogoutMutation();
   const mode = useThemeStore((s) => s.mode);
   const setMode = useThemeStore((s) => s.setMode);
-  const sourceColor = useThemeStore((s) => s.sourceColor);
-  const setSourceColor = useThemeStore((s) => s.setSourceColor);
+  const accent = useThemeStore((s) => s.accent);
+  const setAccent = useThemeStore((s) => s.setAccent);
 
   const handleSignOut = async () => {
     await logoutMutation.mutateAsync();
@@ -63,15 +71,16 @@ export function SettingsPage() {
         </div>
         <p className="auralis-field__hint">Accent colour:</p>
         <div className="auralis-settings-row" data-testid="theme-color-controls">
-          {COLOR_SWATCHES.map((swatch) => (
+          {ACCENT_PRESETS.map((preset) => (
             <button
-              key={swatch.hex}
+              key={preset.hex}
               type="button"
-              aria-label={swatch.label}
-              aria-pressed={sourceColor.toLowerCase() === swatch.hex.toLowerCase()}
+              aria-label={accentLabel(preset.name)}
+              aria-pressed={accent.toLowerCase() === preset.hex.toLowerCase()}
               className="auralis-color-swatch"
-              style={{ background: swatch.hex }}
-              onClick={() => setSourceColor(swatch.hex)}
+              style={{ background: preset.hex }}
+              onClick={() => setAccent(preset.hex)}
+              data-testid={`accent-swatch-${preset.name}`}
             />
           ))}
         </div>

@@ -52,6 +52,7 @@ function ShellLoading() {
 export function RootLayout() {
   const mode = useThemeStore((s) => s.mode);
   const sourceColor = useThemeStore((s) => s.sourceColor);
+  const accent = useThemeStore((s) => s.accent);
   const location = useLocation();
   useKeyboardShortcuts();
 
@@ -76,7 +77,7 @@ export function RootLayout() {
   }, []);
 
   return (
-    <ThemeProvider mode={mode} sourceColor={sourceColor}>
+    <ThemeProvider mode={mode} sourceColor={sourceColor} accent={accent}>
       <UpdateBanner />
       <AuthGate>
         {bare ? (

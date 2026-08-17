@@ -83,6 +83,46 @@ export interface M3Scheme {
 export const AURALIS_SOURCE_COLOR = '#B8683C';
 
 /**
+ * Sonora's `--accent` default (SONORA.md §1.3) — "violet, one pick from the preset family
+ * below". Matches `packages/ui/src/styles/sonora-tokens.css`'s `:root { --accent: ... }`
+ * literal; kept in sync by hand since the CSS is the value CSS consumers actually see and
+ * this constant exists only so `ThemeProvider`'s `accent` prop has the same default without
+ * a JS→CSS lookup at render time.
+ */
+export const DEFAULT_ACCENT = '#8b5cf6';
+
+/**
+ * Symphony's 17-hue preset picker (SONORA.md §1.3) — the swatches Settings' accent picker
+ * offers, not fixed brand colours. `name` matches the `--accent-<name>` custom property in
+ * `sonora-tokens.css` 1:1 (also `Chip`'s `color` prop vocabulary, SONORA.md's component
+ * table) — keep both lists in sync if either changes.
+ */
+export interface AccentPreset {
+  name: string;
+  hex: string;
+}
+
+export const ACCENT_PRESETS: AccentPreset[] = [
+  { name: 'red', hex: '#ef4444' },
+  { name: 'orange', hex: '#f97316' },
+  { name: 'amber', hex: '#f59e0b' },
+  { name: 'yellow', hex: '#eab308' },
+  { name: 'lime', hex: '#84cc16' },
+  { name: 'green', hex: '#22c55e' },
+  { name: 'emerald', hex: '#10b981' },
+  { name: 'teal', hex: '#14b8a6' },
+  { name: 'cyan', hex: '#06b6d4' },
+  { name: 'sky', hex: '#0ea5e9' },
+  { name: 'blue', hex: '#3b82f6' },
+  { name: 'indigo', hex: '#6366f1' },
+  { name: 'violet', hex: '#8b5cf6' },
+  { name: 'purple', hex: '#a855f7' },
+  { name: 'fuchsia', hex: '#d946ef' },
+  { name: 'pink', hex: '#ec4899' },
+  { name: 'rose', hex: '#f43f5e' },
+];
+
+/**
  * Sonora's `--m3-*` chroma roles, light (`docs/design/SONORA.md` §1.5) and surface
  * aliases (§1.6), resolved to literal hex — `--surface-*`/`--surface-*-light` and
  * `--neutral-*` references inlined, per this wave's constraint that a static-context
