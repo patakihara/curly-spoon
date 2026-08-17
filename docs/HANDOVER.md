@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · ended · Nothing left running. This wave is complete. ## Report — Wave 16c-2-W-2 **Branch/commit:** 'worktree-agent-ad369f8094766bc82', two commits on top of…
-- `2026-08-17T12:17:01Z` · `a281db4733d2f49d2` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16d-W-1: dock the web shell'…
 - `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
 - `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
 - `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T18:38:55Z` · `aa875a0416f640711` · general-purpose · ended · I've completed all the implementation, testing, and verification work for this wave, and the final full-parallelism 'ui-desktop'/'ui-mobile' Playwrig…
 - `2026-08-17T19:09:05Z` · `aa875a0416f640711` · general-purpose · ended · Confirmed: the second, confirmatory '--project=ui-desktop --project=ui-mobile' run also passed cleanly — **212/212 passed** (3.9m, default parallelis…
 - `2026-08-17T19:36:20Z` · `a0cfc7e80a2c0369c` · general-purpose · ended · Everything committed, working tree fully clean. Let me finalize the report. ## Report — Wave 16c-5-W: migrate Dialog/Sheet/Menu off '--m3-*' **Branch…
+- `2026-08-17T20:42:20Z` · `af88458cb481f0cc7` · general-purpose · ended · Everything is clean and committed. Here is my final report. ## Report — Wave 16c-2-W-4 **Branch/commit:** 'worktree-agent-af88458cb481f0cc7' at 'fe00…
+- `2026-08-17T20:42:57Z` · `ad963d77210a538fb` · general-purpose · ended · This looks correct. The wave is complete and committed. Here's my final report. ## Report — Wave 16f-A-1: an Android Settings screen carrying theme m…
 
 <!-- AGENT_LOG_END -->
 
@@ -922,7 +922,59 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
-### CLAIMED 2026-08-17 — `16c-2-W-4` (web) and `16f-A-1` (Android)
+### DONE — `16c-2-W-4` and `16f-A-1`. **`main` `ad38f75`, `CI` and `Android` green.**
+
+**Android can be themed at all, for the first time.** `16f-A-1` gave `AuralisTheme`'s `accent` and
+`darkTheme` parameters a reader and `SonoraAccentPresets` a consumer — two writers with no reader,
+both closed by one wave. Settings is reached from `ForYouScreen`'s top bar beside Downloads and
+Requests, deliberately **not** a sixth shell destination, since that would change primary navigation.
+Theme state lives in a new `ThemeViewModel` scoped **above** `AuralisTheme` in `MainActivity` —
+`AppStartViewModel` could not host it because it is scoped to the nav host and so cannot wrap the
+loading screen. Persistence reuses `KeyValueStore` through `AppContainer`, exactly as
+`ServerConfigRepository` does.
+
+**It compiled and passed first time, against a budgeted two-to-three red rounds.** That is now the
+second Android wave in a row to do so, and the repeatable reason is the two compiler-free pre-checks
+run before dispatch reached CI. The budget advice still stands; the pre-checks measurably reduce it.
+
+**One limit stated rather than glossed:** the launch flash is only _partly_ avoided. There is still
+one unthemed frame before the stored preferences resolve — it carries no accent or mode styling, so
+nothing flashes the _wrong_ Sonora colours, but it is not zero.
+
+**`16c-2-W-4`'s premise was wrong, and underneath it was a real bug.** Sonora's own vendored
+primitives are unanimous that the not-selected case is plain surface tone with **no `--accent`
+reference** — `Button`'s secondary variant, `Chip`'s unchecked state, `IconButton`'s inactive state.
+So tinting them would have contradicted the design authority. **But they were not neutral either:**
+they carried no style override at all and fell through to **Mantine's `outline` variant reading
+`theme.colors.auralis`, derived from `scheme.primary`, which `ThemeProvider` still derives from
+`sourceColor` rather than `--accent`** — an orphaned pre-Sonora tint tracking neither the picker nor
+Sonora's palette. Now reusing `Chip`'s own unchecked trio, so the two controls agree by construction.
+
+**A `-P` is owed** on whether both pickers offer the same 17 presets in the same order, and on the
+two accessibility numbers already with Sofia.
+
+### `browse.spec.ts` has a parallelism flake — seen once, not reproducible, not chased
+
+2026-08-18. A full `pnpm test:e2e` came back **411 passed / 2 failed** — `browse.spec.ts:136`
+("an empty search prompts instead of showing 'no matches'") and `:152` ("search status is announced
+to screen readers via a live region"). **Neither wave in flight touched browse, search, or anything
+they depend on.**
+
+Established, cheaply, before believing it:
+
+- `browse.spec.ts` **alone**: 14/14.
+- `browse.spec.ts` **with `settings-a11y.spec.ts`** (the only spec either wave changed): 20/20.
+- **Full suite re-run on the identical tree: 413 passed, 0 failed.**
+
+So it is a flake under full parallelism, like `for-you.spec.ts`'s skeleton assertion and
+`context-menu.spec.ts`'s focus-return test. **Named, not chased** — this project's own rule is that a
+test made unreliable costs more than the regression it guards, and the corollary is that a flake with
+one observation is not yet worth a wave. **If it recurs, it starts from "known flaky", not "new
+regression".**
+
+**The operational point is the one that keeps paying:** this was caught by the orchestrator running
+the full suite before pushing, not by CI afterwards. Local `pnpm test:e2e` at default parallelism is
+now finding things a `--workers=1` run structurally cannot.
 
 Paired because one needs Playwright and one does not — the only shape that parallelises here now.
 **Merges deliberately staggered**, since `android.yml` cancels in progress unconditionally.
