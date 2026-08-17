@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-16T20:47:21Z` · `a9914cf9b85bd8652` · general-purpose · ended · ## Report — Wave 16b-2-A: Android's Sonora token foundation **Branch/commit:** 'worktree-agent-a9914cf9b85bd8652' at '661223e', on top of '2e39866' (…
-- `2026-08-16T21:15:37Z` · `ad7e03c978b19ce73` · general-purpose · ended · ## Verdict: **parity holds** at the token-definition level — zero value mismatches found across ~74 individually compared tokens. One structural dive…
 - `2026-08-17T06:48:40Z` · `ae99898f5257ab092` · general-purpose · ended · I'll wait for the background task notification before proceeding.
 - `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · ended · The background 'pnpm test' run is still in progress. I'll wait for its completion notification before continuing.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · ended · Everything is committed and clean. Here is my review report for wave 16c-2-W-1. ## Verdict: **merge as-is**, plus one already-applied fix The wave's…
@@ -283,8 +281,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T08:08:37Z` · `a73e5caf5669c57fa` · general-purpose · ended · All code changes for wave 16c-3-W are committed at '2671711' (on top of 'bc18608') in this worktree. I'm now waiting for the background Monitor task…
 - `2026-08-17T08:33:44Z` · `a73e5caf5669c57fa` · general-purpose · ended · Working tree is clean, three commits on the worktree branch ('122d099', '2671711', 'bc18608') on top of '030f067'. Here is the final report. ## Repor…
 - `2026-08-17T08:54:15Z` · `ad369f8094766bc82` · general-purpose · ended · Nothing left running. This wave is complete. ## Report — Wave 16c-2-W-2 **Branch/commit:** 'worktree-agent-ad369f8094766bc82', two commits on top of…
-- `2026-08-17T12:17:01Z` · `a281db4733d2f49d2` · general-purpose · running · —
+- `2026-08-17T12:17:01Z` · `a281db4733d2f49d2` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16d-W-1: dock the web shell'…
 - `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
+- `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
+- `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,30 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### `app.css` has a **vitest** test that parses it as text — a CSS-only wave must run `pnpm test`
+
+Cost half an hour on `16d-W-1`, 2026-08-17, and it is not discoverable by reading either file.
+
+`apps/web/src/styles/layoutOverflow.test.ts` is a **unit** test that reads `apps/web/src/styles/app.css`
+as a string and looks selectors up **literally**, then asserts on their rule bodies. So moving a rule
+from one selector to another — which is exactly what a layout refactor does — fails it with
+`no rule found for selector …`, naming a selector that is _supposed_ to have gone away.
+
+The wave ran targeted Playwright specs, `format`, `typecheck` and `lint`, all green, and never ran
+vitest, because "I changed CSS" does not suggest a unit suite. The orchestrator's own run caught it
+at **1659/1660**.
+
+**The instruction, for any wave touching `app.css`: run `pnpm vitest run apps/web`.** It is seconds,
+and it is the only thing in the toolchain that sees this class of break.
+
+**And when it fails, the fix is not automatically the test.** Here the reviewer had to establish
+which of the two was wrong — whether the mini-player clearance padding had been _moved_ (fix the
+test) or _dropped_ (fix the CSS, because the test's name records a real past defect: content
+scrolling behind the compact mini player). It had moved, correctly: padding on `.auralis-shell--compact`
+reserves nothing once the shell no longer scrolls. Re-pointing the test was right, and the reviewer
+confirmed it still discriminates by stripping the `padding-bottom` and watching it go red — a
+re-pointed text-scan test that no longer fails on the real defect is worse than a deleted one.
 
 ### The `UnifiedSearchViewModelTest` race is now demonstrated, not merely well-argued
 
