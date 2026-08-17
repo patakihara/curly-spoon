@@ -74,13 +74,101 @@ html body {
  * Shell — adaptive nav (docs/DESIGN.md § Layout)
  * ------------------------------------------------------------------------- */
 
+/*
+ * Wave 16d-W-1 (docs/HANDOVER.md — "the side navbar and the 'now playing'
+ * sidebar both scrolled with the main content"). `.auralis-shell` now pins
+ * itself to exactly one viewport's height instead of merely a *minimum* of
+ * one — `min-height: 100vh` let the shell (and everything document-flow
+ * inside it) grow past the viewport and drag the rail/panel along with it
+ * when the page scrolled. `height: 100dvh` (with a plain `100vh` fallback —
+ * the second declaration wins where `dvh` is supported and is simply invalid,
+ * hence ignored, where it isn't) accounts for mobile browser chrome, which
+ * matters here: this is an installable PWA. `overflow: hidden` makes this
+ * element the hard outer boundary — nothing scrolls the shell itself; only
+ * `.auralis-shell__content` (and, where their own content can exceed their
+ * stretched height, the rail and the Now Playing panel) scroll internally.
+ * See `.auralis-shell__content` below for why it is the single scroll
+ * container now, at every breakpoint including compact.
+ */
 .auralis-shell {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-.auralis-shell--compact {
+.auralis-shell__row {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 0; /* was `100vh` — a fixed-height flex-column ancestor now
+  bounds this row; `min-height: 0` is what lets it actually respect that
+  bound instead of growing to its content's height regardless. */
+  overflow: hidden; /* the row itself never scrolls — each child below owns
+  its own overflow, and this is a safety net against one of them overflowing
+  its stretched height and reopening the outer-shell scroll this wave
+  removes. */
+}
+
+/* Mantine spike: the `AppShell`-based rail (Shell.tsx) sizes itself from its
+ * content unless told to fill the flex row's stretched height explicitly. */
+.auralis-nav-rail-slot {
+  align-self: stretch;
+  /* The rail's own content (search field + five destinations + the Settings
+   * footer link) can exceed the row's height at small window heights — it is
+   * docked, not scroll-with-the-page, but its *own* content still needs
+   * somewhere to go rather than being silently clipped. */
+  overflow-y: auto;
+}
+
+/* The rail's always-visible search input (Shell.tsx), above the destination
+ * list — Feishin's pattern, not a nav destination among Home/Books/etc. */
+.auralis-nav-rail-search {
+  margin-bottom: var(--m3-space-sm);
+}
+
+/*
+ * The one scroll container, at every breakpoint. `min-height: 0` makes the
+ * flex-shrink intent explicit (a flex item's automatic minimum size is its
+ * content size unless overflow is not visible, per spec — `overflow-y: auto`
+ * already implies it, but naming it directly is clearer than relying on that
+ * interaction). This used to matter only for its `flex: 1` role sizing width
+ * in the non-compact row; it now also governs height at every breakpoint,
+ * compact included — see the compact-specific padding rule below for why.
+ */
+.auralis-shell__content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--m3-space-lg);
+}
+
+/*
+ * Compact: `.auralis-shell__content` is `main`'s only in-flow sibling inside
+ * `.auralis-shell` — the settings button, mini player and bottom nav are all
+ * `position: fixed`, out of flow — so with the shell now a fixed-height,
+ * non-scrolling flex column, `flex: 1` above already gives content the
+ * shell's full remaining height and `overflow-y: auto` above makes it the
+ * scroll container here too, exactly as at the other breakpoints. Chosen
+ * deliberately over leaving compact on document scroll: one scroll-container
+ * mechanism for every breakpoint is simpler to reason about than two, and
+ * `.auralis-shell`'s new `overflow: hidden` would otherwise clip a
+ * document-scrolling compact page instead of letting it scroll — the
+ * "document must not gain a second scrollbar" requirement is easiest to hold
+ * with a single model.
+ *
+ * The bottom-bar clearance padding that used to sit on `.auralis-shell--
+ * compact` itself (reserving space at the foot of the *document*) moves
+ * here, onto the scroll container, for the same reason the non-compact
+ * padding-bottom rule further down already lives on `.auralis-shell__content`
+ * rather than on `.auralis-shell`: the shell no longer scrolls, so padding on
+ * it no longer reserves anything a scroll can reach — it would just shrink
+ * the fixed-height box for no purpose.
+ */
+.auralis-shell--compact .auralis-shell__content {
+  padding: var(--m3-space-md);
   padding-bottom: 80px; /* room for the docked bottom bar */
 }
 
@@ -95,37 +183,8 @@ html body {
  * whether to render at all, so this can't reserve space for a bar that
  * isn't there (a real bug on its own, distinct from reserving too little).
  */
-.auralis-shell--compact[data-mini-player-active='true'] {
+.auralis-shell--compact[data-mini-player-active='true'] .auralis-shell__content {
   padding-bottom: 144px; /* 80px bottom bar + ~64px mini player */
-}
-
-.auralis-shell__row {
-  flex: 1;
-  display: flex;
-  align-items: stretch;
-  min-height: 100vh;
-}
-
-/* Mantine spike: the `AppShell`-based rail (Shell.tsx) sizes itself from its
- * content unless told to fill the flex row's stretched height explicitly. */
-.auralis-nav-rail-slot {
-  align-self: stretch;
-}
-
-/* The rail's always-visible search input (Shell.tsx), above the destination
- * list — Feishin's pattern, not a nav destination among Home/Books/etc. */
-.auralis-nav-rail-search {
-  margin-bottom: var(--m3-space-sm);
-}
-
-.auralis-shell__content {
-  flex: 1;
-  min-width: 0;
-  padding: var(--m3-space-lg);
-}
-
-.auralis-shell--compact .auralis-shell__content {
-  padding: var(--m3-space-md);
 }
 
 .auralis-shell [data-testid='nav-bar'] {
@@ -146,9 +205,17 @@ html body {
   z-index: 10;
 }
 
+/*
+ * Wave 16d-W-1: `align-items: stretch` on `.auralis-shell__row` gives this
+ * panel a fixed height (the row's), and its own content (the queue,
+ * bookmarks, chapter list) can exceed that — it is docked, not
+ * scroll-with-the-page, so it needs its own scroll region rather than
+ * letting content spill or get clipped.
+ */
 .auralis-now-playing-panel {
   width: 320px;
   flex-shrink: 0;
+  overflow-y: auto;
   border-left: 1px solid var(--m3-outline-variant);
   padding: var(--m3-space-lg);
   background: var(--m3-surface-container-low);
