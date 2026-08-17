@@ -728,7 +728,20 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 ## Claimed work — check here before starting a wave
 
 A lightweight lock, because two sessions can share this checkout. Claim a wave here
-**before** dispatching it; delete the line when it lands. A claim older than a couple of
+**before** dispatching it; delete the line when it lands.
+
+**CLAIMED 2026-08-17 — `16c-2-W-1`, the substrate catch-up.** One Sonnet agent, redefining the
+`--m3-*` values to Sonora's in `packages/ui/src/tokens/*.ts` and `packages/ui/src/styles/index.css`.
+`ROADMAP.md` §16's `16c-2-W` entry has the full reasoning and why it does not reverse 16b-2.
+
+**Checked before dispatching, so nobody re-checks it: none of the six `worktree-*` branches holds
+lost work.** `abfc1e3c98500edeb` and `ada9aa18e890f1985` are fully merged (zero commits ahead of
+`main`) and are safe for `worktree-gc.sh`. `ab5d9dfca22e6dee6` carries `b26e4a3`, the 14c wave —
+superseded, since 14c landed as `f2a90d1` and its regression test was deliberately reverted in
+`19ae5bb`. The other three (`a0edf63595b976e4e`, `a1b2a40eb1e9e4e64`, `a623d0d03e48b3297`) are the
+ones this file already documents as cherry-picked or re-committed rather than fast-forwarded. **Only
+four were accounted for here before; six exist.** The lesson is small and cheap: the worktree list
+is a ledger that has to be re-read, not inherited. A claim older than a couple of
 hours with nothing on `main` is stale — take it.
 
 **The `UnifiedSearchViewModelTest` race is not fixed to this file's own bar, and the bar is

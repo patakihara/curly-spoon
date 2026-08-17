@@ -3603,8 +3603,39 @@ boundaries, disjoint directories where waves run in parallel.
     `docs/design/sonora/primitives/*.jsx` for the real numbers; the prop tables in `SONORA.md` give
     the API and **not** the values.
   - **16c-1-P** — parity review over the pair.
-  - **16c-2-W / -A / -P** — the remaining primitives (`Badge`, `Input`, `Switch`, `SectionHeader`,
-    `QuickTile`), same shape.
+  - **16c-2-W — rescoped 2026-08-17, and the original line was wrong.** It said "the remaining
+    primitives (`Badge`, `Input`, `Switch`, `SectionHeader`, `QuickTile`)". **None of those five
+    components exists in `packages/ui`**, so building them would have added five components with no
+    reader — this repo's most-repeated failure, five times over. What web actually needs is what
+    `16b-2-P` found: **web still renders pre-Sonora colours**, because 16b-2 landed Sonora's tokens
+    additively and left `--m3-*` — the app's only real substrate — untouched.
+
+    So 16c-2-W is **the substrate catch-up**: redefine the `--m3-*` values themselves to Sonora's,
+    from `SONORA.md`'s own tables, rather than migrating ~375 call sites by hand.
+
+    **This is not a reversal of 16b-2's decision — it is that decision's stated exit condition.**
+    16b-2 refused to redefine `--m3-*` because _no component had been rebuilt and nothing could
+    attribute what broke_. Both premises have since expired: 16c-1-W rebuilt five primitives, and
+    **Android already carries Sonora's values for exactly these roles** (`16b-2-P` compared all 26
+    chroma values by hand and found zero mismatches). Web is the half that is behind, and one
+    reviewable diff in two files is a far better instrument than 375 scattered edits, each free to
+    invent its own mapping — which is the drift `-P` reviews exist to catch.
+
+    **It also fixes the portalled trio for free, and the alternative would have broken it
+    silently.** `Dialog`/`Sheet`/`Menu` render outside `.auralis-theme-root`, so `ThemeProvider`'s
+    inline emission never reaches them and `index.css`'s static `:root` block is their only token
+    source. Sonora's `--surface-*`/`--accent-ink` are scoped to `.auralis-theme-root[data-theme=…]`
+    with **no `:root` fallback**, deliberately. So a migration that moved call sites onto
+    `--surface-*` would leave all three resolving nothing — rendering completely unstyled, and
+    **passing Playwright**, which asserts testids and text and never computed styles. That is the
+    14a-2 failure mode exactly. Redefining `--m3-*` in place, with literal values at `:root`,
+    reaches them instead.
+
+  - **16c-2-W-2** — per-component residuals a substrate swap cannot express: hardcoded values, and
+    any place a component should read `--accent`/`--surface-*` directly rather than through an
+    `--m3-*` alias. Runs **after** the substrate lands, not beside it — both touch the same files.
+  - **16c-2-A / -P** — Android's counterpart is largely already done (see `16b-2-A`); `-P` rules on
+    what remains once web has caught up.
 - **16d — web shell and chrome. It has two inputs already built and waiting, and naming them here
   is the point of this note** — an unread capability is this repo's most-repeated failure, and
   16b-3's toggle is the fifth entry in that ledger if nobody comes for it.
