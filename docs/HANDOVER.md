@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
 - `2026-08-17T07:47:41Z` · `a7c69864b7e5a52b5` · general-purpose · ended · Everything is clean and committed. Here's my report. ## Report — Wave 15d-1-S **Branch/commit:** 'worktree-agent-a7c69864b7e5a52b5' at 'ace32cb', on…
 - `2026-08-17T07:48:39Z` · `a604c3dbe106d7ee0` · general-purpose · ended · ## Report — Wave 15d-1-A (Android's honest external recommendations) **Branch/commit:** 'worktree-agent-a604c3dbe106d7ee0' at 'f054743', on top of '0…
 - `2026-08-17T08:03:44Z` · `a9d83154003651d94` · general-purpose · ended · Both clean. This wave is complete. Here's my final report. ## Report — Wave 15d-1-W **Branch/commit:** 'worktree-agent-a9d83154003651d94' at '9d5017f…
@@ -284,7 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · ended · All work is complete and verified. Final summary: ## Summary **Root cause: not the docking CSS.** Two decisive experiments (requested by the orchestr…
 - `2026-08-17T16:07:38Z` · `ad55e090a60a000c6` · general-purpose · ended · Working tree is clean, no scratch files remain, both commits are in place on the worktree branch. Final report: **Branch/commits:** 'worktree-agent-a…
 - `2026-08-17T16:42:56Z` · `ad4802d687ce40989` · general-purpose · ended · ## Report — Wave 16d-P: parity review of web's docked shell vs Android's chrome **No code changes.** Working tree is clean ('git status --short' empt…
-- `2026-08-17T16:54:14Z` · `a3d35b711e9e2345e` · general-purpose · running · —
+- `2026-08-17T16:54:14Z` · `a3d35b711e9e2345e` · general-purpose · ended · ## Report — Wave 16d-A-2 **Branch/commit:** 'worktree-agent-a3d35b711e9e2345e' at '5e7d12a', on top of 'ccca737'. Working tree clean, nothing outstan…
+- `2026-08-17T17:29:15Z` · `a90dd8e5e13e65560` · general-purpose · ended · Working tree is clean, one commit on top of 'fb384e5'. Not pushing or merging, per instructions. ## Report — fixing the two ShellNavigationItemsTest…
 
 <!-- AGENT_LOG_END -->
 
@@ -878,6 +878,48 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
+
+### Session state, 2026-08-17 (evening) — **phase 16d is complete on both platforms**
+
+**`main` is at `cf9d445`, and `CI`, `Android` and `Publish` are all green on it** — verified, and the
+Android job is a **genuine uncached execution** (bare `compileDebugKotlin`, `compileDebugUnitTestKotlin`
+and `testDebugUnitTest`, no `FROM-CACHE`). `:latest` carries it, so the live deployment is current.
+**Nothing is claimed and nothing is in flight.** `docs/agent-specs/` is empty.
+
+Local, at CI's own invocation (`pnpm test:e2e`, no `--project`, no `--workers`): **391 passed, 0
+failed, 0 flaky.** Root `pnpm test`: **1662/1662**. Typecheck green across all seven projects.
+
+**Six waves landed:**
+
+| Wave       | What                                                                |
+| ---------- | ------------------------------------------------------------------- |
+| `16d-W-1`  | web's docked three-region shell — **Sofia's reported bug is fixed** |
+| `16d-A`    | established Android never had it, with file:line evidence           |
+| `16d-W-1b` | the latent gap docking exposed — routes open at the top again       |
+| `16d-W-2`  | rail wide at 1024; `Icon`'s `filled` prop gets its first reader     |
+| `16d-P`    | the parity review — clean on the wave, and it found the drift below |
+| `16d-A-2`  | Android stops offering destinations whose upstream is unconfigured  |
+
+**What is next, in the order I would take it:**
+
+1. **`16e` — the screens.** §16's own sequencing says 16d comes first precisely so screens are not
+   rebuilt inside a wrongly-scrolling document. That constraint is now discharged, so 16e is
+   unblocked and is the main body of the phase. It is explicitly **split by screen, not by
+   platform** — each screen is a `-W`/`-A`/`-P` triple from one behaviour spec, and screens are
+   disjoint enough to run several triples in parallel. **Subject to the Playwright constraint
+   below.**
+2. **`16c-2-W-3`** — the compact bottom nav and `Card`, widening the accent picker further.
+3. **Re-parent `Dialog`/`Sheet`/`Menu`** inside `.auralis-theme-root`, which is what unblocks
+   migrating them off `--m3-*` at all.
+4. **An Android accent picker.** Still a live parity gap — web can be themed and Android cannot.
+   `AuralisTheme` already accepts `accent`, `MainActivity` is still the only call site and passes
+   nothing, and `SonoraAccentPresets` still has no consumer. It needs Android's Settings screen,
+   which is approved but unscoped.
+
+**The one operational constraint that changed today, and it bites 16e directly:** _disjoint
+directories are no longer a sufficient test for parallel dispatch._ At most **one** agent may run
+Playwright at a time — see the section below for why. 16e's "run several triples in parallel" is
+still fine for the `-A` halves and for authoring, but the `-W` halves serialise at verification.
 
 ### `16d-P` is done, and it found a real bug that no token-level review could have
 
