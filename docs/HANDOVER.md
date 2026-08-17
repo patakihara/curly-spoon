@@ -284,7 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T12:17:38Z` · `aff70f7875be2aa44` · general-purpose · ended · ## Report — Wave 16d-A: Android's chrome-scroll question **Branch/commit:** 'worktree-agent-aff70f7875be2aa44' at 'b140da1', on top of 'dc8ab90'. One…
 - `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
 - `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
-- `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · running · —
+- `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · ended · All work is complete and verified. Final summary: ## Summary **Root cause: not the docking CSS.** Two decisive experiments (requested by the orchestr…
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,59 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### `for-you.spec.ts`'s skeleton assertion is **inherently racy**, and that may mean 14a-2 was reverted for nothing
+
+Measured 2026-08-17, and it is the most consequential thing this session found.
+
+`for-you.spec.ts`'s _"a loading skeleton occupies the same box as a loaded card"_ went red on CI
+after `16d-W-1`/`16d-W-1b`, which looked exactly like the docking change breaking layout stability.
+Two experiments say it did not:
+
+1. **The scrollbar hypothesis is dead by measurement.** Adding `overflow-y: auto` to the content
+   column could have reserved classic-scrollbar width the document-scroll layout never took —
+   deterministically collapsing a two-column grid, and only on a platform with space-taking
+   scrollbars, which is a perfect local-green/CI-red shape. Measured at the same viewport:
+   `clientWidth` is **740 before and 740 after**. Only `clientHeight` changes, which is what
+   docking is _for_.
+2. **The control arm settles it.** The **unmodified** spec against **fully pre-docking** `app.css`,
+   at default parallelism, fails the identical assertion in the identical way (`toBeVisible()`
+   passes, then `boundingBox()` returns `null`) on **4 of 5 repeats**. The race predates both waves.
+
+**Its real cause is already in this file:** phase 14c documented that `HomePage` stitches four
+independent async sources with nothing reserving their space, and that the fix is a product
+decision nobody has taken. **That unfixed decision is what makes this test noisy.**
+
+**The hypothesis worth carrying forward — flagged as a hypothesis, not a finding.** `14a-2` was
+reverted on _"six clean CI runs before, two failed of three after"_ on **this same assertion**.
+Against a demonstrated ~80% local baseline failure rate at default parallelism, a 2-of-3 sample is
+not distinguishable from that noise. So the revert **may** have been unfounded, in the same shape as
+the documented-unfounded 13e revert.
+
+**Do not act on that yet, and be precise about what was not done:** nobody reproduced 14a-2's actual
+change, its CSS-delivery-timing mechanism, or the bundle state of that moment — 16b and 16c have
+landed a great deal since. The mechanism 14a-2's own write-up describes (a component painting before
+its lazy-loaded CSS chunk applies) is real and **distinct** from this race. **Both can be true at
+once:** a genuine CSS-timing risk existed, _and_ the samples used to judge it came from a test too
+noisy to tell a regression from its own baseline. If anyone revisits `sideEffects`, that is the
+first thing to settle, and it now needs a repeat-each baseline rather than three CI runs.
+
+The test itself is now hardened rather than loosened: the mocked response is gated behind a
+test-controlled promise so the skeleton is reliably capturable, and both box reads are polled. The
+geometry comparisons and the `>= 2` count are untouched, so a real regression still settles on a
+wrong number and still fails.
+
+### `context-menu.spec.ts`'s focus-return test is independently racy — named, not fixed
+
+It fails **8 of 8** when isolated with `-g` + `--repeat-each`, and passes **4 of 4** in every normal
+full-suite run including a CI-equivalent `pnpm test:e2e`. Nobody has an explanation for the
+asymmetry; the file is already `mode: 'serial'` and the test is self-contained. Nothing in either
+docking wave touches focus, Escape handling or menu code.
+
+**Left alone deliberately.** Hardening it inside a wave that is not about it would have hidden a
+real unknown. Two practical consequences: **`--repeat-each` on a single `-g`-selected test is not a
+neutral instrument** — it can manufacture a failure the real invocation never shows — and if this
+one ever goes red on CI for real, it starts from "known flaky", not from "new regression".
 
 ### `--workers=1` is a **weaker** check than CI, and this file's own advice hid that
 
