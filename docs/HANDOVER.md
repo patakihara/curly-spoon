@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T06:51:04Z` · `af58afde02f314286` · general-purpose · ended · The background 'pnpm test' run is still in progress. I'll wait for its completion notification before continuing.
 - `2026-08-17T07:08:27Z` · `aef29197591adb6bc` · general-purpose · ended · Everything is committed and clean. Here is my review report for wave 16c-2-W-1. ## Verdict: **merge as-is**, plus one already-applied fix The wave's…
 - `2026-08-17T07:21:20Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Standing by for the Playwright suite to finish.
 - `2026-08-17T07:43:51Z` · `ae238ca32cc1c7a03` · general-purpose · ended · Working tree is clean — no scratch files, no uncommitted edits. Here is the report. ## Verdict: fix these things — do not merge as-is The wave's mech…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
 - `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
 - `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · ended · All work is complete and verified. Final summary: ## Summary **Root cause: not the docking CSS.** Two decisive experiments (requested by the orchestr…
+- `2026-08-17T16:07:38Z` · `ad55e090a60a000c6` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -943,10 +943,14 @@ gh run view --log-failed <run-id> | grep -c '429'
 GitHub-side and nothing in this repo can prevent it. Pinning actions to a tag rather than a sha
 would not help — the download is the thing being throttled.
 
-**One consequence to carry:** `Publish` was still 429ing after `CI` went green, so
-`ghcr.io/patakihara/auralis:latest` did **not** get this build, and mediaserver pulls that tag every
-fifteen minutes. **The live deployment is behind `main` until a `Publish` run succeeds** — it needs
-one rerun once GitHub recovers, and nothing else.
+**Resolved the same session — `daaaedd` is green on `CI`, `Android` and `Publish`**, so
+`ghcr.io/patakihara/auralis:latest` carries the docked shell and mediaserver picks it up on its
+next fifteen-minute pull. **The deployment is not behind.**
+
+Worth keeping for the shape of it: `Publish` on `40945ba` 429'd twice including an explicit rerun,
+and then simply succeeded on the next commit's run twenty minutes later. **Waiting is a legitimate
+response to this failure mode** — there is nothing to fix, and the next push carries the publish
+anyway, since `:latest` always converges on the most recent green build of `main`.
 
 ### Two agents cannot both run Playwright here — one fixed port decides it
 
