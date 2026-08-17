@@ -119,6 +119,12 @@ for (const scheme of ['light', 'dark'] as const) {
       const candidates = page.locator(
         '[data-testid^="shelf-item-"]:not([data-testid*="skeleton"]):not([data-testid$="-external-badge"])',
       );
+      // Shelves render a skeleton first and swap in real cards once their query
+      // resolves (excluded above by testid) — wait for at least one real card
+      // before counting, the same wait `firstShelfItem()` + `toBeVisible()` already
+      // gave the sibling title/heading tests, or this reads an in-flight loading
+      // state as "no card has an author" and fails for the wrong reason.
+      await expect(candidates.first()).toBeVisible();
       const candidateCount = await candidates.count();
       let card: Locator | null = null;
       for (let i = 0; i < candidateCount; i++) {
