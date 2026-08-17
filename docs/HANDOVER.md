@@ -879,6 +879,101 @@ needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, wh
 Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
 per-agent ports would trade a loud collision for a quiet one.
 
+### DONE 2026-08-17 — `16d` is landed and CI-verified: **Sofia's scroll bug is fixed**
+
+**`main` is at `40945ba`, and `CI` and `Android` are both green on it** (verified on the rerun, not
+assumed). Nothing is claimed and nothing is in flight.
+
+Her report was: _"the side navbar and the 'now playing' sidebar both scrolled with the main
+content."_ They no longer do. `.auralis-shell__content` is the single scroll container at every
+breakpoint; the rail, the Now Playing panel and the mini player are docked.
+
+| Wave       | What                                                                           |
+| ---------- | ------------------------------------------------------------------------------ |
+| `16d-W-1`  | web's docked three-region shell                                                |
+| `16d-A`    | established Android **does not have this bug** — chrome pinned by construction |
+| `16d-W-1b` | the latent gap docking exposed: routes now open at the top again               |
+| flake fix  | `for-you.spec.ts` hardened; the docking waves were **not** the cause           |
+
+**Four things a session picking this up should know:**
+
+1. **`16d-W-2` is the next wave and is unclaimed** — the adaptive-rig re-cut and the `Icon`-`filled`
+   nav wiring, the two halves deliberately split out of `16d-W-1`. `ROADMAP.md` §16 has both, plus
+   the correction that the rig's thresholds are `railWide >= 1024` / `showPanel >= 1240` and that
+   `1440/1280/1024/768` are the design kit's **frame widths**, not breakpoints. Since `showPanel`
+   already matches today's `expanded`, the only real re-cut is the rail going wide at 1024.
+   **`Icon`'s `filled` prop still has no reader** — re-confirmed by grep on `apps/web/src`.
+2. **`16d-P` is owed and is now narrow.** Android had no bug, so the parity review's job is not to
+   compare two fixes: it is to rule on whether web's docked shell and Android's already-pinned
+   chrome are the same _behaviour_, and to label the divergence (rail + docked side panel versus
+   bottom tab bar + full-screen Now Playing sheet) as idiom rather than drift. Cheap, and genuinely
+   unanswered.
+3. **Docking exposed a class of latent bug and there may be more of it.** Nothing in this app ever
+   reset scroll — the browser's document-scroll behaviour was doing it invisibly. `16d-W-1b` fixed
+   the navigation case. **Anything else that assumed a scrolling document is now suspect**: grep
+   turned up only `LyricsView`'s self-scoped `scrollIntoView`, but focus-into-view, anchor links and
+   any future "scroll to top" affordance are the shapes to watch.
+4. **Scroll restoration on back/forward is deliberately not implemented.** `16d-W-1b` resets to top
+   on every pathname change including history navigation. That is a deterministic default rather
+   than the arbitrary leftover offset that preceded it, and real restoration wants a position cache
+   — a separate wave, not a bug.
+
+### GitHub's `codeload` returned 429 for an hour, and it looks exactly like a build failure
+
+2026-08-17. Six workflow runs failed — `CI`, `Android` and `Publish`, across three shas — **without
+executing a single test or compiling a line**. Every one died in `Set up job` on
+`Response status code does not indicate success: 429 (Too Many Requests)` while downloading an
+action (`pnpm/action-setup`, `android-actions/setup-android`, `docker/setup-qemu-action`,
+`docker/setup-buildx-action`), after three internal retries.
+
+**Why it matters here specifically:** this project treats CI as the authoritative signal, and a red
+`Android` badge is normally read as a Kotlin problem while a red `CI` is read as a test problem.
+Neither is true in this mode, and it cost a genuine wrong-turn on `40945ba` — an Android failure on
+a sha containing no Kotlin at all, which is the tell.
+
+**How to tell in one command** — a real failure has a failing _test/compile_ step; this has a
+failing **`Set up job`**:
+
+```bash
+gh run view <run-id> --json jobs -q '.jobs[] | "\(.conclusion)\t\(.name)"'
+gh run view --log-failed <run-id> | grep -c '429'
+```
+
+**`gh run rerun <id> --failed` is the whole fix**, and it worked for `CI` and `Android` here. It is
+GitHub-side and nothing in this repo can prevent it. Pinning actions to a tag rather than a sha
+would not help — the download is the thing being throttled.
+
+**One consequence to carry:** `Publish` was still 429ing after `CI` went green, so
+`ghcr.io/patakihara/auralis:latest` did **not** get this build, and mediaserver pulls that tag every
+fifteen minutes. **The live deployment is behind `main` until a `Publish` run succeeds** — it needs
+one rerun once GitHub recovers, and nothing else.
+
+### Two agents cannot both run Playwright here — one fixed port decides it
+
+Established 2026-08-17 while deciding whether to dispatch a third wave beside `16d-W-1`. The
+directories were disjoint (`packages/ui` + `e2e/ui` versus `apps/web` + `e2e/app`), which is the
+test this file has always applied, and **that test is not sufficient**.
+
+`playwright.config.ts` declares **two** `webServer` entries and Playwright boots **all** of them
+regardless of which `--project` you asked for. The gallery server is `reuseExistingServer: !CI`, so
+it is fine. The app server is deliberately **`reuseExistingServer: false`** on a hardcoded
+**`PORT: 4310`** — and the comment above it explains why, correctly: it is stateful, `DATA_DIR` is
+`:memory:`, `onboarding.spec.ts` asserts on the unconfigured state a fresh boot gives, and reuse
+would also skip the `vite build` and silently test a stale bundle.
+
+So two agents in two worktrees each running any Playwright project contend for 4310. Best case the
+second fails to bind; **worst case it binds to the first agent's server and both runs silently
+share one stateful single-tenant BFF** — which is the cross-file contamination this file already
+documents at the _spec_ level, now available at the _agent_ level and much harder to see.
+
+**The rule that falls out: at most one agent at a time may run Playwright, whatever the projects.**
+Disjoint directories are necessary and not sufficient — check for a shared port too. A wave that
+needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, which is what
+`16d-A` did beside `16d-W-1` without incident.
+
+Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
+per-agent ports would trade a loud collision for a quiet one.
+
 ### CLAIMED 2026-08-17 — `16d-W-1` and `16d-A`, the docked-chrome scroll bug
 
 **This is Sofia's own bug report and it is the highest-value item in phase 16** — `ROADMAP.md` §16
