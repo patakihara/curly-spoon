@@ -73,6 +73,19 @@ private val RAIL_BREAKPOINT = 600.dp
  * there as "Sheets, Now Playing expansion" — this project has no shared spring-token constants
  * for Compose (the web client's own token layer is CSS-only), so the numbers are inlined here
  * rather than invented fresh.
+ *
+ * **Wave 16d-A (2026-08-17) checked this shell against web's reported scroll bug** — the nav
+ * rail and Now Playing sidebar scrolling away with the main content, `docs/HANDOVER.md`'s
+ * "READ FIRST" section — and found no Android equivalent. The chrome here is pinned by
+ * construction, not merely by styling that happens to hold today: the nav bar/rail and
+ * [miniPlayer] are either a direct, unscrolled sibling in the wide-window [Row] (the rail) or
+ * live in [Scaffold]'s own `bottomBar` slot (both branches below), never an item inside a
+ * scrolling container. [content] only ever receives the *content* slot — it has no reference to
+ * the chrome at all, so a screen cannot reintroduce this even by accident, unlike web where the
+ * chrome and the content shared one scrolling document. Confirmed by grepping every screen under
+ * `features/`: zero declare their own `bottomBar`, zero use `verticalScroll`, and zero use
+ * `ScrollBehavior` — so there is not even a *collapsing* top bar to mistake for this bug; every
+ * screen's own `TopAppBar` is a plain, always-visible one.
  */
 @Composable
 fun AuralisShell(
