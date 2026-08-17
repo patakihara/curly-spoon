@@ -21,6 +21,7 @@ import net.develivarr.auralis.data.network.DataStoreKeyValueStore
 import net.develivarr.auralis.data.network.KeyValueStore
 import net.develivarr.auralis.data.network.SessionCookieJar
 import net.develivarr.auralis.data.settings.ServerConfigRepository
+import net.develivarr.auralis.data.settings.ThemePreferencesRepository
 import net.develivarr.auralis.features.music.MusicRepository
 import net.develivarr.auralis.features.player.JellyfinApiPlaybackReportSender
 import net.develivarr.auralis.playback.PlaybackItemResolver
@@ -43,6 +44,12 @@ import java.util.concurrent.Executors
 class AppContainer(context: Context) {
     private val keyValueStore: KeyValueStore = DataStoreKeyValueStore(context)
     val serverConfigRepository = ServerConfigRepository(keyValueStore)
+
+    /** Wave 16f-A-1's persisted theme mode + accent — see
+     * [net.develivarr.auralis.features.settings.ThemeViewModel] for the composable-facing side of
+     * this seam. Shares [keyValueStore] with [serverConfigRepository] rather than a second
+     * storage mechanism. */
+    val themePreferencesRepository = ThemePreferencesRepository(keyValueStore)
     val sessionCookieJar = SessionCookieJar(keyValueStore, CoroutineScope(SupervisorJob() + Dispatchers.IO))
     val httpClient = OkHttpClient.Builder().cookieJar(sessionCookieJar).build()
     val apiClient =
