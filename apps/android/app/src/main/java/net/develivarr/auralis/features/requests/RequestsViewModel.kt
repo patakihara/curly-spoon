@@ -100,9 +100,26 @@ data class RequestsUiState(
  * result (or, when nothing matched, the typed title alone) into a `BookRequest`. Search only
  * runs on explicit [submitSearch], not per keystroke — see `ApiClient.searchReleases`, which
  * fans out to real indexers per call.
- */
-class RequestsViewModel(private val apiClient: ApiClient) : ViewModel() {
-    private val _uiState = MutableStateFlow(RequestsUiState())
+ *
+ * Wave 15d-1-books — [initialSearchTerm]/[initialSearchAuthor], both `null` for every pre-wave
+ * caller, seed [RequestsUiState.searchTerm]/[RequestsUiState.searchAuthor] so [RequestsScreen]
+ * can open pre-filled from an external (unowned) recommended-book card's title/author, exactly
+ * mirroring [net.develivarr.auralis.features.musicrequests.MusicRequestsViewModel]'s
+ * `initialSearchTerm` for the music side of this same wave family (15d). Deliberately does
+ * **not** call [submitSearch] itself — pre-filling is not auto-searching, same call
+ * `MusicRequestsViewModel` already made; the user still presses the search action explicitly. */
+class RequestsViewModel(
+    private val apiClient: ApiClient,
+    initialSearchTerm: String? = null,
+    initialSearchAuthor: String? = null,
+) : ViewModel() {
+    private val _uiState =
+        MutableStateFlow(
+            RequestsUiState(
+                searchTerm = initialSearchTerm.orEmpty(),
+                searchAuthor = initialSearchAuthor.orEmpty(),
+            ),
+        )
     val uiState: StateFlow<RequestsUiState> = _uiState.asStateFlow()
 
     // Cancelled and replaced on every submitSearch — without this, a slow earlier search's

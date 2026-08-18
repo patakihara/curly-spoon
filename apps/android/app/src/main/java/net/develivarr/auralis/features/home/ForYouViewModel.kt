@@ -162,6 +162,10 @@ class ForYouViewModel(
      * caller never treats it as the source's own failure. A cold-start `{"shelves":[]}` maps to
      * an empty list here, which [ForYouCarouselRow] already renders as nothing (see its own doc
      * comment) — the required "visual no-op", with no special-casing needed in this file.
+     *
+     * Wave 15d-1-books: uses [recommendedShelfToCarousel], **not** [shelfToCarousel] — this
+     * route's items are [net.develivarr.auralis.data.model.RecommendedLibraryItem] (carrying
+     * `availability`), a different type from [ApiClient.libraryHome]'s [Shelf]/[LibraryItem].
      */
     private suspend fun fetchRecommendedCarousels(
         libraryId: String,
@@ -172,7 +176,7 @@ class ForYouViewModel(
             apiClient
                 .libraryRecommended(libraryId)
                 .filter { it.items.isNotEmpty() }
-                .map { shelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } }
+                .map { recommendedShelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } }
         } catch (e: ApiException) {
             emptyList()
         }

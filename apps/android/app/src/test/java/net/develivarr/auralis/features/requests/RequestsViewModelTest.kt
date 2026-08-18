@@ -54,6 +54,30 @@ class RequestsViewModelTest {
         mockWebServer.shutdown()
     }
 
+    /** Wave 15d-1-books — [RequestsViewModel]'s `initialSearchTerm`/`initialSearchAuthor`
+     * constructor parameters, which [RequestsScreen]'s `prefillTitle`/`prefillAuthor` feed from
+     * a recommended-shelf external book card's tap ([net.develivarr.auralis.features.home
+     * .ForYouScreen]'s `onSelect`). Mirrors
+     * [net.develivarr.auralis.features.musicrequests.MusicRequestsViewModelTest]'s identical
+     * seed test for the music side of this same wave family (15d). No `MockWebServer` response
+     * is enqueued — a pre-filled field must not itself trigger a search, only seed the state a
+     * later `submitSearch()` reads. */
+    @Test
+    fun `non-null initialSearchTerm and initialSearchAuthor seed both fields without issuing a search`() {
+        val viewModel = RequestsViewModel(apiClient, initialSearchTerm = "Dune", initialSearchAuthor = "Frank Herbert")
+        assertEquals("Dune", viewModel.uiState.value.searchTerm)
+        assertEquals("Frank Herbert", viewModel.uiState.value.searchAuthor)
+        assertEquals(SearchUiState.Idle, viewModel.uiState.value.searchState)
+        assertEquals(0, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `null initialSearchTerm and initialSearchAuthor leave both fields blank, same as the no-arg constructor`() {
+        val viewModel = RequestsViewModel(apiClient)
+        assertEquals("", viewModel.uiState.value.searchTerm)
+        assertEquals("", viewModel.uiState.value.searchAuthor)
+    }
+
     @Test
     fun `submitSearch with one release and no errors produces Results with that release`() =
         runTest {

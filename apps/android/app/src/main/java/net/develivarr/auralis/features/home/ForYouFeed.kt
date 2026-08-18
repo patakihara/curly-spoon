@@ -2,7 +2,9 @@ package net.develivarr.auralis.features.home
 
 import net.develivarr.auralis.data.model.JellyfinAlbum
 import net.develivarr.auralis.data.model.LibraryItem
+import net.develivarr.auralis.data.model.MediaSummary
 import net.develivarr.auralis.data.model.MusicRecommendedAlbum
+import net.develivarr.auralis.data.model.RecommendedShelf
 import net.develivarr.auralis.data.model.Shelf
 
 /**
@@ -56,10 +58,13 @@ data class FeedCarousel(
 
 /** `authors[]` is the richer, structured field and wins when present; `author` is the free-text
  * fallback some upstream shapes send instead — mirrors web's identical `bookAuthorLabel`, which
- * itself mirrors the audiobook-only `HomeScreen`'s original rule. */
-private fun bookAuthorLabel(item: LibraryItem): String? {
-    val joined = item.media.authors?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name }
-    return joined ?: item.media.author
+ * itself mirrors the audiobook-only `HomeScreen`'s original rule. Takes [MediaSummary] directly
+ * (wave 15d-1-books) rather than [LibraryItem], since [net.develivarr.auralis.data.model
+ * .RecommendedLibraryItem] carries the same [MediaSummary] shape but is not a [LibraryItem] —
+ * see [shelfToCarousel]/[recommendedShelfToCarousel], the two callers. */
+private fun bookAuthorLabel(media: MediaSummary): String? {
+    val joined = media.authors?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name }
+    return joined ?: media.author
 }
 
 /**
@@ -88,12 +93,58 @@ fun shelfToCarousel(
                     title = item.media.title,
                     subtitle =
                         if (contentType == ForYouContentType.BOOKS) {
-                            bookAuthorLabel(item)
+                            bookAuthorLabel(item.media)
                         } else {
                             item.media.author
                         },
                     coverUrl = coverUrl(item.id),
                     progress = item.progress?.progress,
+                )
+            },
+    )
+
+/** [shelfToCarousel]'s counterpart for `GET /libraries/{id}/recommended` (wave 15d-1-books), the
+ * only caller whose items can carry [net.develivarr.auralis.data.model.RecommendedLibraryItem
+ * .availability] `"external"` rather than `"owned"`. Kept as its own function rather than
+ * widening [shelfToCarousel]'s parameter type, because that function's other caller (ordinary
+ * Audiobookshelf home shelves, via [Shelf]/[LibraryItem]) has no externality concept at all —
+ * every home-shelf item is, by definition, already owned — so giving it a parameter it could
+ * never use meaningfully would be worse than one small extra function. Exactly mirrors
+ * [recommendedAlbumsToCarousel]'s relationship to [albumsToCarousel] for the music side of this
+ * same wave family (15d). [FeedItem.isExternal] is derived by comparing
+ * [net.develivarr.auralis.data.model.RecommendedLibraryItem.availability] to the literal
+ * `"owned"` string, never by matching an id prefix — see that field's own doc comment for why,
+ * and for why any value other than `"owned"` degrades to "treat as external" rather than "treat
+ * as owned". Used for both [ForYouContentType.BOOKS] and [ForYouContentType.PODCASTS] callers,
+ * same as [shelfToCarousel] — `GET /libraries/{id}/recommended` is not gated by library media
+ * type server-side, so either caller may see an external item in principle, even though today's
+ * external-discovery shelf (`apps/server/src/features/recommendations/bookExternalDiscovery.ts`)
+ * only ever produces book-shaped candidates. */
+fun recommendedShelfToCarousel(
+    shelf: RecommendedShelf,
+    contentType: ForYouContentType,
+    coverUrl: (itemId: String) -> String?,
+): FeedCarousel =
+    FeedCarousel(
+        id = shelf.id,
+        label = shelf.label,
+        contentType = contentType,
+        reason = shelf.reason,
+        items =
+            shelf.items.map { item ->
+                FeedItem(
+                    id = item.id,
+                    contentType = contentType,
+                    title = item.media.title,
+                    subtitle =
+                        if (contentType == ForYouContentType.BOOKS) {
+                            bookAuthorLabel(item.media)
+                        } else {
+                            item.media.author
+                        },
+                    coverUrl = coverUrl(item.id),
+                    progress = item.progress?.progress,
+                    isExternal = item.availability != "owned",
                 )
             },
     )
