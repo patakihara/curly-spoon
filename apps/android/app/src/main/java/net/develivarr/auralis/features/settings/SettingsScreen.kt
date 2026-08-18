@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import net.develivarr.auralis.data.settings.ThemeMode
+import net.develivarr.auralis.ui.theme.AuralisAppTokens
 
 /**
  * Android's Settings screen (wave 16f-A-1 — `docs/ROADMAP.md` §16), closing the parity gap
@@ -102,11 +104,23 @@ fun SettingsContent(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Theme", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val tokens = AuralisAppTokens.current
                 ThemeModeOptions.forEach { option ->
                     FilterChip(
                         selected = mode == option.mode,
                         onClick = { onModeChange(option.mode) },
                         label = { Text(option.label) },
+                        // Wave 16f-A-2: the selected chip reads the accent, matching web's
+                        // Chip.tsx checked state (`--accent` fill, `--accent-contrast` label) —
+                        // this codebase's own "selected mode button" boundary. Unselected chips
+                        // are left on FilterChipDefaults' own neutral colours untouched, matching
+                        // Sonora's own primitives, which give the not-selected case no accent
+                        // reference at all.
+                        colors =
+                            FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = tokens.accent,
+                                selectedLabelColor = tokens.accentContrast,
+                            ),
                         modifier = Modifier.testTag("theme-mode-${option.mode.name}"),
                     )
                 }
@@ -155,6 +169,13 @@ private val ThemeModeOptions =
  * `ShellNavigationItemsTest`'s own doc comment already found that querying by merged
  * content description is unreliable in this Robolectric configuration; asserting by tag
  * sidesteps that question entirely rather than depending on it.
+ *
+ * Wave 16f-A-2: the selection ring reads [AuralisAppTokens.current]'s `accentInk` rather than
+ * `MaterialTheme.colorScheme.onSurface` — the whole point of a picker is that choosing a swatch
+ * repaints something, and the picker failing to repaint its own selection ring was the most
+ * visibly wrong part of `16f-A-1`. `accentInk` (not raw `accent`) so the ring stays a readable
+ * dark/light mark against every one of the 17 preset fills rather than tracking the *chosen*
+ * accent, which would make the ring invisible against a same-colour swatch.
  */
 @Composable
 private fun AccentSwatch(
@@ -162,6 +183,7 @@ private fun AccentSwatch(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val tokens = AuralisAppTokens.current
     Box(
         modifier =
             Modifier
@@ -170,7 +192,7 @@ private fun AccentSwatch(
                 .background(preset.color)
                 .then(
                     if (selected) {
-                        Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                        Modifier.border(3.dp, tokens.accentInk, CircleShape)
                     } else {
                         Modifier
                     },

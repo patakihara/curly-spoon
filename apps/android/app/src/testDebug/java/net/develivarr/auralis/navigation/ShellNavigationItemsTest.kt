@@ -1,10 +1,10 @@
 package net.develivarr.auralis.navigation
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import net.develivarr.auralis.ui.theme.AuralisTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +47,10 @@ class ShellNavigationItemsTest {
     @Test
     fun `hides Music, Books and Podcasts while nothing is configured`() {
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — ShellNavigationBarItems now
+            // reads AuralisAppTokens.current for its active-destination indicator, which only
+            // AuralisTheme provides (LocalSonoraAppTokens has no default and throws otherwise).
+            AuralisTheme {
                 NavigationBar {
                     ShellNavigationBarItems(
                         visibleDestinations = visibleShellDestinations(DestinationAvailability()),
@@ -68,7 +71,10 @@ class ShellNavigationItemsTest {
     @Test
     fun `shows every destination once every upstream is configured`() {
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — ShellNavigationBarItems now
+            // reads AuralisAppTokens.current for its active-destination indicator, which only
+            // AuralisTheme provides (LocalSonoraAppTokens has no default and throws otherwise).
+            AuralisTheme {
                 NavigationBar {
                     ShellNavigationBarItems(
                         visibleDestinations =
