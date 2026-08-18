@@ -437,11 +437,9 @@ html body {
   color: var(--surface-fg);
 }
 
-.auralis-item-chapters__list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+/* `.auralis-item-chapters__list`'s own rule — `list-style: none`, `flex column`,
+ * `gap` — lives with `.auralis-chapter-list` et al. below, the shared reset every
+ * other bare `<ul>` list of `ListItem` rows in this app already uses. */
 
 /* ---------------------------------------------------------------------------
  * Music page header/search rows — `flex-wrap: wrap` for the same reason as
@@ -927,7 +925,8 @@ html body {
 
 .auralis-chapter-list,
 .auralis-bookmarks__list,
-.auralis-queue-view__list {
+.auralis-queue-view__list,
+.auralis-item-chapters__list {
   list-style: none;
   margin: 0;
   padding: 0;
