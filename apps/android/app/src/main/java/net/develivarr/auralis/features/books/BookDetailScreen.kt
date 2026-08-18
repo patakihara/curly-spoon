@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -194,8 +195,12 @@ fun BookDetailScreen(
     }
 }
 
+/** `internal`, not `private` — [BookDetailContentTest] (`src/testDebug`) exercises this stateless
+ * half directly, the same "test the content composable, not the ViewModel-backed screen" pattern
+ * `SettingsContentTest` already establishes, so a Robolectric test isn't also exercising
+ * `collectAsState`/the ViewModel factory for logic that doesn't live there. */
 @Composable
-private fun BookDetailContent(
+internal fun BookDetailContent(
     modifier: Modifier,
     imageLoader: ImageLoader,
     data: BookDetailUiData,
@@ -235,11 +240,11 @@ private fun BookDetailContent(
                 // The button's own Text child gives it its accessible name (§6: "Play/Resume
                 // state must be announced as what it does, not just its icon") — no separate
                 // contentDescription needed, matching every other text-labelled Button in this app.
-                Button(onClick = onPlay) { Text(data.playLabel) }
+                Button(onClick = onPlay, modifier = Modifier.testTag("book-play-button")) { Text(data.playLabel) }
                 OutlinedButton(
                     onClick = onDownload,
                     enabled = downloadActionClickable(downloadState),
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier.padding(start = 8.dp).testTag("book-download-button"),
                 ) {
                     Text(downloadActionLabel(downloadState))
                 }
@@ -256,7 +261,11 @@ private fun BookDetailContent(
                 Text(
                     "Chapters",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp, bottom = 8.dp)
+                            .testTag("book-chapters-heading"),
                 )
             }
             items(data.chapters, key = { it.index }) { chapter ->
@@ -280,6 +289,7 @@ private fun BookChapterRow(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .testTag("book-chapter-${chapter.index}")
                 .clickable(onClick = onClick)
                 .padding(vertical = 8.dp)
                 // Merges title/time/active-state into one announcement rather than three separate
