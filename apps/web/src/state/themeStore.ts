@@ -53,6 +53,52 @@ export interface ThemeState {
   setAccent: (hex: string) => void;
 }
 
+/**
+ * The three values `ThemeMode` admits, as data — `ThemeMode` is a type, so it cannot be
+ * enumerated at runtime and the list has to exist somewhere. Kept next to the validator
+ * that is its only consumer.
+ */
+const THEME_MODES: readonly string[] = ['light', 'dark', 'system'];
+
+/** Six-digit hex, the form every `ACCENT_PRESETS` entry and both defaults are written in. */
+const HEX_COLOUR = /^#[0-9a-f]{6}$/i;
+
+/**
+ * Rehydration is the one place untrusted data enters this store: `localStorage` survives
+ * upgrades, is editable by hand, and is shared with whatever else ran on this origin. An
+ * unvalidated `mode` reaches `ThemeProvider`'s `data-theme` attribute and an unvalidated
+ * `accent` is written straight into the `--accent` custom property, so a garbage value is
+ * not merely wrong — it renders. Android already falls back explicitly (`16f-P` named the
+ * divergence); this is web's half.
+ *
+ * Total by construction: anything it cannot vouch for is simply omitted, so `merge` leaves
+ * the store's own default in place rather than throwing or clearing the whole key. One bad
+ * field therefore costs only that field.
+ *
+ * `accent` is checked for hex **shape**, deliberately not for membership of `ACCENT_PRESETS`
+ * — the presets are today's picker, not a permanent constraint, and rejecting an off-preset
+ * colour would silently discard a custom accent the moment one is allowed. Shape is what
+ * closes the hazard; the preset list is a product decision that does not belong here.
+ */
+export function sanitizePersistedTheme(
+  persisted: unknown,
+): Partial<Pick<ThemeState, 'mode' | 'sourceColor' | 'accent'>> {
+  if (typeof persisted !== 'object' || persisted === null) return {};
+  const raw = persisted as Record<string, unknown>;
+  const clean: Partial<Pick<ThemeState, 'mode' | 'sourceColor' | 'accent'>> = {};
+
+  if (typeof raw.mode === 'string' && THEME_MODES.includes(raw.mode)) {
+    clean.mode = raw.mode as ThemeMode;
+  }
+  if (typeof raw.sourceColor === 'string' && HEX_COLOUR.test(raw.sourceColor)) {
+    clean.sourceColor = raw.sourceColor;
+  }
+  if (typeof raw.accent === 'string' && HEX_COLOUR.test(raw.accent)) {
+    clean.accent = raw.accent;
+  }
+  return clean;
+}
+
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
@@ -71,6 +117,7 @@ export const useThemeStore = create<ThemeState>()(
         sourceColor: state.sourceColor,
         accent: state.accent,
       }),
+      merge: (persisted, current) => ({ ...current, ...sanitizePersistedTheme(persisted) }),
     },
   ),
 );
