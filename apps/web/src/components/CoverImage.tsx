@@ -49,11 +49,32 @@ function fallbackStyle(size: number): CSSProperties {
   };
 }
 
-/** The tonal placeholder alone, with no load-state logic — same colours and
- * centring as Home's `ShelfCard` fallback. */
-export function CoverImageFallback({ size, icon }: { size: number; icon: IconName }) {
+/**
+ * The tonal placeholder alone, with no load-state logic — same colours and centring as
+ * Home's `ShelfCard` fallback.
+ *
+ * **`style` is threaded through and merged on top of the defaults** (16e-podcast-W). Before
+ * this, `CoverImage`'s happy-path `<MantineImage>` applied a caller's `style` prop (radius,
+ * background) but this fallback hardcoded its own pre-Sonora 8px radius and `--m3-*`
+ * background with no way for a caller to override either — so a caller passing
+ * `style={{ borderRadius: 'var(--radius-lg)', background: 'var(--surface-card)' }}` (both
+ * `ItemPage.tsx` and `MediaHeader.tsx` do) got the Sonora radius on the happy path and the
+ * old 8px radius on the fallback path, invisible wherever covers happen to decode
+ * (`16e-book-P`'s finding, confirmed live on `PodcastDetailPage` in `PODCAST_DETAIL.md` §9).
+ * Callers that pass no `style` (every other `CoverImage` call site in the app) are
+ * unaffected — merging `undefined` on top of the defaults is a no-op.
+ */
+export function CoverImageFallback({
+  size,
+  icon,
+  style,
+}: {
+  size: number;
+  icon: IconName;
+  style?: CSSProperties;
+}) {
   return (
-    <div style={fallbackStyle(size)} aria-hidden="true">
+    <div style={{ ...fallbackStyle(size), ...style }} aria-hidden="true">
       <Icon name={icon} size={Math.round(size / 3)} />
     </div>
   );
@@ -62,7 +83,7 @@ export function CoverImageFallback({ size, icon }: { size: number; icon: IconNam
 export function CoverImage({ src, alt = '', size, fallbackIcon, style }: CoverImageProps) {
   const [failed, setFailed] = useState(false);
 
-  if (failed) return <CoverImageFallback size={size} icon={fallbackIcon} />;
+  if (failed) return <CoverImageFallback size={size} icon={fallbackIcon} style={style} />;
 
   return (
     <MantineImage
