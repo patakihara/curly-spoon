@@ -9,7 +9,12 @@ import {
 } from './forYouFeed.js';
 import type { JellyfinAlbum, LibraryItem, RecommendedShelf, Shelf } from '../../api/types.js';
 
-function bookItem(id: string, title: string, progress: number | null = null): LibraryItem {
+function bookItem(
+  id: string,
+  title: string,
+  progress: number | null = null,
+  availability?: 'owned' | 'external',
+): LibraryItem {
   return {
     id,
     libraryId: 'lib-books',
@@ -27,6 +32,7 @@ function bookItem(id: string, title: string, progress: number | null = null): Li
             progress,
             isFinished: false,
           },
+    availability,
   };
 }
 
@@ -105,6 +111,27 @@ describe('shelfToCarousel', () => {
       fallbackIcon: 'podcasts',
       progress: null,
     });
+  });
+
+  // Wave 15d-1-books-W: this is the exact assertion that would have failed against the
+  // pre-fix code — `shelfToCarousel`'s item literal never read `item.availability` at all,
+  // so an external book carried it silently into the void and rendered pixel-identical to
+  // an owned one. Confirmed to fail (`undefined` instead of `'external'`) against the code
+  // before this wave's edit, so this is a proof, not a pin.
+  it('forwards LibraryItem.availability onto the FeedItem, for both values and when absent', () => {
+    const shelf: Shelf = {
+      id: 'shelf-3',
+      label: 'Discover',
+      type: 'book',
+      items: [
+        bookItem('owned-1', 'Owned Book', null, 'owned'),
+        bookItem('ext-1', 'External Book', null, 'external'),
+        bookItem('plain-1', 'Ordinary Book'),
+      ],
+    };
+    const carousel = shelfToCarousel(shelf, 'books', coverUrl);
+
+    expect(carousel.items.map((i) => i.availability)).toEqual(['owned', 'external', undefined]);
   });
 });
 
@@ -243,6 +270,28 @@ describe('recommendedShelvesToCarousels', () => {
       items: [],
     };
     expect(recommendedShelvesToCarousels([empty], coverUrl)).toEqual([]);
+  });
+
+  // Wave 15d-1-books-W: end to end from `GET /libraries/:id/recommended`'s wire shape
+  // (wave 15e-books's `RecommendedLibraryItem`) through to what `Carousel.tsx` reads.
+  // Mixes owned and external items on one shelf, the shape the server actually sends.
+  it('carries a mix of owned and external recommended items through to FeedItem.availability', () => {
+    const mixed: RecommendedShelf = {
+      id: 'rec-mix',
+      label: 'New to you',
+      type: 'recommended',
+      reason: 'Because you enjoy this genre',
+      items: [
+        bookItem('rec-mix-owned', 'Owned Rec', null, 'owned'),
+        bookItem('rec-mix-ext', 'External Rec', null, 'external'),
+      ],
+    };
+    const [carousel] = recommendedShelvesToCarousels([mixed], coverUrl);
+
+    expect(carousel?.items.map((i) => ({ id: i.id, availability: i.availability }))).toEqual([
+      { id: 'rec-mix-owned', availability: 'owned' },
+      { id: 'rec-mix-ext', availability: 'external' },
+    ]);
   });
 });
 

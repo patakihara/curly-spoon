@@ -78,9 +78,22 @@ class ForYouViewModelTest {
      * override this via [routingDispatcher]'s `bookRecommendedBody`/`podcastRecommendedBody`. */
     private val emptyRecommended = """{"shelves":[]}"""
 
+    /** Wave 15d-1-books: every item now carries a required `availability` — its absence would
+     * throw `MissingFieldException` decoding into [net.develivarr.auralis.data.model
+     * .RecommendedLibraryItem], the required-field trap `docs/HANDOVER.md` documents as expected
+     * rather than surprising when a wire contract gains a non-nullable field. */
     private val bookRecommended =
         """{"shelves":[{"id":"rec-book","label":"Because you finished","type":"recommended","reason":"Because you finished a book","items":[
-            {"id":"b2","libraryId":"lib-book","media":{"kind":"book","title":"Recommended Book","author":"Author Two"}}
+            {"id":"b2","libraryId":"lib-book","media":{"kind":"book","title":"Recommended Book","author":"Author Two"},"availability":"owned"}
+        ]}]}"""
+
+    /** Wave 15d-1-books: one owned item and one external (Open Library) placeholder in the same
+     * shelf, so `isExternal` is proven to discriminate per-item rather than being a blanket
+     * constant — the same shape 13e-2's review demanded for the music equivalent. */
+    private val bookRecommendedMixed =
+        """{"shelves":[{"id":"rec-book","label":"Because you finished","type":"recommended","reason":"Because you finished a book","items":[
+            {"id":"b2","libraryId":"lib-book","media":{"kind":"book","title":"Recommended Book","author":"Author Two"},"availability":"owned"},
+            {"id":"external:openlibrary:/works/OL1111111W","libraryId":"lib-book","media":{"kind":"book","title":"Discover Book","author":"Author Three"},"availability":"external"}
         ]}]}"""
 
     private val favoriteAlbums =
@@ -191,6 +204,34 @@ class ForYouViewModelTest {
             assertEquals("Because you finished a book", bookCarousels.last().reason)
             assertNull(bookCarousels.first().reason)
             assertEquals(4, state.allCarousels.size)
+        }
+
+    /** Wave 15d-1-books: proves `availability` actually reaches [FeedItem.isExternal] through
+     * the real deserialization path ([net.develivarr.auralis.data.model.RecommendedLibraryItem]
+     * via [ApiClient.libraryRecommended]), not just through a unit test of
+     * `recommendedShelfToCarousel` in isolation — the same "assert through to observable
+     * behaviour" standard `docs/HANDOVER.md` names as the fix for the four writer-with-no-reader
+     * failures. This test fails if [ForYouViewModel] is ever pointed back at [shelfToCarousel]
+     * (which cannot see `availability` at all) instead of [recommendedShelfToCarousel]. */
+    @Test
+    fun `a recommended shelf's external item is marked isExternal, the owned item is not`() =
+        runTest {
+            serverConfigRepository.setBaseUrl(baseUrl)
+            mockWebServer.dispatcher =
+                routingDispatcher(
+                    libraries = MockResponse().setBody(twoLibraries),
+                    jellyfin = MockResponse().setBody(favoriteAlbums),
+                    bookRecommendedResponse = MockResponse().setBody(bookRecommendedMixed),
+                )
+
+            val viewModel = ForYouViewModel(apiClient, serverConfigRepository)
+            val state = viewModel.uiState.first { it !is ForYouUiState.Loading } as ForYouUiState.Loaded
+
+            val recCarousel = state.allCarousels.single { it.id == "rec-book" }
+            val owned = recCarousel.items.single { it.id == "b2" }
+            val external = recCarousel.items.single { it.id == "external:openlibrary:/works/OL1111111W" }
+            assertTrue(!owned.isExternal)
+            assertTrue(external.isExternal)
         }
 
     @Test

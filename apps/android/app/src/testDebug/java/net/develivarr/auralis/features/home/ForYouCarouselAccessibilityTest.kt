@@ -73,6 +73,21 @@ class ForYouCarouselAccessibilityTest {
             isExternal = true,
         )
 
+    /** Wave 15d-1-books — the book counterpart of [externalItem], proving the badge/announcement
+     * behaviour [ForYouCard]/[feedItemAnnouncement] already give every [FeedItem] (they never
+     * branch on [FeedItem.contentType] — confirmed by reading both, not assumed) actually reaches
+     * a book-flavoured item, not just the music one those functions were originally proved with. */
+    private val externalBookItem =
+        FeedItem(
+            id = "external:openlibrary:/works/OL1111111W",
+            contentType = ForYouContentType.BOOKS,
+            title = "Dune Messiah",
+            subtitle = "Frank Herbert",
+            coverUrl = null,
+            progress = null,
+            isExternal = true,
+        )
+
     @Test
     fun `a card with a reason resolves as one merged node whose description includes the title and the reason`() {
         composeRule.setContent {
@@ -207,5 +222,25 @@ class ForYouCarouselAccessibilityTest {
 
         composeRule.onNodeWithContentDescription("The Fifth Season, N.K. Jemisin").assertExists()
         composeRule.onAllNodesWithText("Not in your library").assertCountEquals(0)
+    }
+
+    /** Wave 15d-1-books: the badge/announcement behaviour proved above for a MUSIC external item
+     * holds for a BOOKS one too — the same node, the same merged `contentDescription`, the same
+     * visible text — closing the "status must be announced, not merely drawn" requirement for
+     * the medium this wave is actually about. */
+    @Test
+    fun `an external book item's merged description announces 'Not in your library' and renders a visible badge`() {
+        composeRule.setContent {
+            MaterialTheme {
+                Surface {
+                    ForYouCard(item = externalBookItem, imageLoader = imageLoader, onClick = {}, reason = null)
+                }
+            }
+        }
+
+        composeRule
+            .onNodeWithContentDescription("Dune Messiah, Frank Herbert — Not in your library")
+            .assertExists()
+        composeRule.onNodeWithText("Not in your library").assertExists()
     }
 }

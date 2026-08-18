@@ -37,15 +37,26 @@ import java.util.Locale
  * search comes back with zero releases, offer "request anyway" to queue the typed title with no
  * release attached instead. Mirrors the flow in
  * `apps/web/src/features/requests/AskForBookPanel.tsx`.
+ *
+ * Wave 15d-1-books — [prefillTitle]/[prefillAuthor], both `null` for every pre-wave caller
+ * (`Routes.REQUESTS`'s bare-path `composable` registration, matching [Routes.requests]'s own
+ * `title = null` default), seed the search fields from an external recommended-book card's tap.
+ * Mirrors [net.develivarr.auralis.features.musicrequests.MusicRequestsScreen]'s `prefillArtist`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RequestsScreen(container: AppContainer) {
+fun RequestsScreen(container: AppContainer, prefillTitle: String? = null, prefillAuthor: String? = null) {
     val viewModel: RequestsViewModel =
         viewModel(
             factory =
                 viewModelFactory {
-                    initializer { RequestsViewModel(container.apiClient) }
+                    initializer {
+                        RequestsViewModel(
+                            container.apiClient,
+                            initialSearchTerm = prefillTitle,
+                            initialSearchAuthor = prefillAuthor,
+                        )
+                    }
                 },
         )
     val uiState by viewModel.uiState.collectAsState()

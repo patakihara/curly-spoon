@@ -2,13 +2,14 @@
  * The external recommendation providers Auralis knows how to build — the per-medium
  * pluggable seam wave 15a exists to create. Same shape as
  * `apps/server/src/requests/indexers/registry.ts`: one map from provider name to factory, so
- * "support another provider" (§15e names ListenBrainz tier 2, Audnexus/AudiMeta for books,
- * PodcastIndex for podcasts as the expected next files) is a new file plus a line here, never
- * an edit to `types.ts` or to whichever wave eventually calls this.
+ * "support another provider" (ListenBrainz tier 2, PodcastIndex for podcasts named as the
+ * next files by `docs/research/RECOMMENDATION_PROVIDERS.md`) is a new file plus a line here,
+ * never an edit to `types.ts` or to whichever wave eventually calls this.
  */
 
 import type { FetchLike } from '@auralis/abs-client';
 import { createListenBrainzProvider, type ListenBrainzLogger } from './listenbrainz.js';
+import { createOpenLibraryProvider } from './openlibrary.js';
 import type { ExternalMedium, ExternalRecommendationProvider } from './types.js';
 
 export interface ExternalProviderDeps {
@@ -25,13 +26,14 @@ export type ExternalProviderFactory = (
  * traced back to the entry that produced it. */
 export const externalProviderFactories: Record<string, ExternalProviderFactory> = {
   listenbrainz: createListenBrainzProvider,
+  openlibrary: createOpenLibraryProvider,
 };
 
 /**
- * Builds every registered provider for one medium. Books and podcasts currently have no
- * registered provider (15e names Audnexus/AudiMeta and PodcastIndex as the next files), so
- * this returns `[]` for them today — total, not an error, exactly like `matchOwnership`
- * degrading to `'new'` on an empty library.
+ * Builds every registered provider for one medium. Podcasts currently have no registered
+ * provider (PodcastIndex is the next file `docs/research/RECOMMENDATION_PROVIDERS.md` §4
+ * names), so this returns `[]` for that medium today — total, not an error, exactly like
+ * `matchOwnership` degrading to `'new'` on an empty library.
  *
  * `factories` defaults to the real registry above and exists as a parameter so a test can
  * hand in a fake provider and exercise this function's dispatch logic — construct-then-filter

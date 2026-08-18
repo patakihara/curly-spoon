@@ -57,6 +57,45 @@ object Routes {
      * later wave. */
     const val BOOKS = "books"
     const val REQUESTS = "requests"
+
+    /** Argument names within [REQUESTS_PATTERN] — wave 15d-1-books. Both optional and nullable,
+     * same shape as [MUSIC_REQUESTS_ARG_ARTIST]: every pre-existing caller (the "Requests"
+     * top-bar action on [net.develivarr.auralis.features.home.ForYouScreen]) still navigates to
+     * the bare [REQUESTS] path with nothing to pre-fill, which this pattern's `defaultValue = null`
+     * on the `composable` registration keeps matching unchanged. Only a tap on an *external* card
+     * in a recommended book shelf ([net.develivarr.auralis.features.home.ForYouScreen]'s
+     * `onSelect`) supplies either, via [requests]. Two separate args (title, author) rather than
+     * one combined string — [RequestsViewModel]'s own search form already has two fields
+     * ([net.develivarr.auralis.features.requests.RequestsUiState.searchTerm]/`.searchAuthor`), so
+     * this mirrors that shape instead of inventing a third. */
+    const val REQUESTS_ARG_TITLE = "title"
+    const val REQUESTS_ARG_AUTHOR = "author"
+    private const val REQUESTS_PATTERN =
+        "requests?$REQUESTS_ARG_TITLE={$REQUESTS_ARG_TITLE}&$REQUESTS_ARG_AUTHOR={$REQUESTS_ARG_AUTHOR}"
+
+    /** Route pattern registered with [NavHost] — matches both the bare [REQUESTS] path and one
+     * carrying `?title=…` and/or `&author=…`, since both [REQUESTS_ARG_TITLE]/[REQUESTS_ARG_AUTHOR]
+     * are nullable with no default required at the call site. */
+    fun requestsRoute(): String = REQUESTS_PATTERN
+
+    /** The concrete route to `navController.navigate(...)` for the book requests screen. [title]
+     * `null` (the default) yields the plain [REQUESTS] path, identical to every pre-15d-1-books
+     * call site; a non-null value pre-fills the request screen's title search field with it (and
+     * [author], when also non-null, the author field) — wave 15d-1-books, see
+     * [net.develivarr.auralis.features.requests.RequestsViewModel]'s `initialSearchTerm`/
+     * `initialSearchAuthor` constructor parameters. [author] is ignored when [title] is `null` —
+     * there is no meaningful "author only" pre-fill state, matching [musicRequests]'s equally
+     * single-argument shape. URL-encoded via [android.net.Uri.encode] because a book title or
+     * author name can contain spaces, `&`, `?`, or any other query-string-hostile character
+     * Audiobookshelf/Open Library happen to send. */
+    fun requests(title: String? = null, author: String? = null): String =
+        if (title != null) {
+            val base = "requests?$REQUESTS_ARG_TITLE=${android.net.Uri.encode(title)}"
+            if (author != null) "$base&$REQUESTS_ARG_AUTHOR=${android.net.Uri.encode(author)}" else base
+        } else {
+            REQUESTS
+        }
+
     const val DOWNLOADS = "downloads"
 
     /** Android wave 16f-A-1 — the Settings screen (theme mode + accent). Reached from
@@ -254,7 +293,26 @@ fun AuralisNavHost(
                             ?: return@composable
                     BookDetailScreen(container, playerViewModel, itemId)
                 }
-                composable(Routes.REQUESTS) { RequestsScreen(container) }
+                composable(
+                    Routes.requestsRoute(),
+                    arguments =
+                        listOf(
+                            navArgument(Routes.REQUESTS_ARG_TITLE) {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            },
+                            navArgument(Routes.REQUESTS_ARG_AUTHOR) {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            },
+                        ),
+                ) { backStackEntry ->
+                    val title = backStackEntry.arguments?.getString(Routes.REQUESTS_ARG_TITLE)
+                    val author = backStackEntry.arguments?.getString(Routes.REQUESTS_ARG_AUTHOR)
+                    RequestsScreen(container, prefillTitle = title, prefillAuthor = author)
+                }
                 composable(Routes.DOWNLOADS) { DownloadsScreen(container) }
                 composable(Routes.SETTINGS) { SettingsScreen(themeViewModel) }
                 composable(Routes.PODCASTS) { PodcastsScreen(container, navController) }

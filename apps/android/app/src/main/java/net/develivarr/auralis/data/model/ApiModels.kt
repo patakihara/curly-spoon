@@ -248,12 +248,16 @@ data class LibraryItem(
     val progress: MediaProgress? = null,
 )
 
-/** Shared by GET /libraries/{id}/home (no `reason` on the wire — [reason] defaults to `null`
- * rather than being a separate model, since dropping a key `auralisJson` never declared is a
- * no-op for deserialization, not the `MissingFieldException` trap that applies to a
- * non-nullable, no-default field) and GET /libraries/{id}/recommended (always sends `reason`,
- * but still nullable here defensively — a route that always fills it in today does not have to
- * forever, and a nullable field degrades to "no reason line" rather than a parse failure). */
+/** GET /libraries/{id}/home's shelf shape (no `reason` on the wire — [reason] defaults to
+ * `null` rather than being a separate model, since dropping a key `auralisJson` never declared
+ * is a no-op for deserialization, not the `MissingFieldException` trap that applies to a
+ * non-nullable, no-default field).
+ *
+ * **No longer shared with GET /libraries/{id}/recommended** — wave 15d-1-books split that route
+ * onto [RecommendedShelf]/[RecommendedLibraryItem] instead, because it now sends a field
+ * ([RecommendedLibraryItem.availability]) this route never does. See [RecommendedShelf]'s doc
+ * comment for the full reasoning; this comment used to describe both routes and that became
+ * false the moment one of them changed shape. */
 @Serializable
 data class Shelf(
     val id: String,
@@ -269,12 +273,58 @@ data class HomeResponse(
     val shelves: List<Shelf>,
 )
 
-/** GET /libraries/{id}/recommended response envelope — same shape as [HomeResponse], kept as a
- * distinct type (rather than reusing [HomeResponse]) so the two routes' response models don't
- * silently become the same type by coincidence and drift unnoticed if one changes. */
+/** One item within a [RecommendedShelf] — the same fields [LibraryItem] carries, plus
+ * [availability] (wave 15d-1-books — docs/HANDOVER.md's external-discovery item, `ROADMAP.md`
+ * §15, mirroring `MusicRecommendedAlbum`'s identical reasoning for `GET /music/recommended`).
+ * Kept as its own type rather than adding [availability] onto [LibraryItem] itself, because
+ * [LibraryItem] is also [LibraryItemsPage]'s, [Series.books]'s, [SearchResults]'s,
+ * [LibraryItemResponse]'s and — importantly — [Shelf]'s (`GET /libraries/{id}/home`) shape, and
+ * none of those responses send this field: a non-nullable field there would throw
+ * [kotlinx.serialization.MissingFieldException] decoding every one of them. Here it is safe to
+ * require: the server always sends [availability] on this one route (see that field's own doc
+ * comment on [MusicRecommendedAlbum] for why it is a plain `String`, not a Kotlin enum, and how
+ * a client should interpret an unrecognised value). */
+@Serializable
+data class RecommendedLibraryItem(
+    val id: String,
+    val libraryId: String,
+    val coverPath: String? = null,
+    val media: MediaSummary,
+    val progress: MediaProgress? = null,
+    /** `"owned"` for a real Audiobookshelf item already in this library, `"external"` for a
+     * candidate suggested from an outside provider (Open Library, today) that Audiobookshelf has
+     * never heard of — always present on the wire, never null, never absent. Left as a plain
+     * `String` rather than a Kotlin enum, same reasoning as [BookRequest.status] and
+     * [MusicRecommendedAlbum.availability]: an upstream value this build doesn't recognise must
+     * decode, not throw. Consumers should treat anything other than the literal `"owned"` as
+     * external — the safer default, since it only adds a badge and redirects a tap to the
+     * request flow, rather than risking [id] (which for an external candidate is opaque and
+     * namespaced, e.g. `external:openlibrary:/works/OL1111111W`) being sent straight into the
+     * dead-end book-detail navigation this field exists to prevent. **Never** derive externality
+     * by string-matching an `external:` prefix out of [id] instead of reading this field — an
+     * opaque id's format can change silently; this field is the one thing the server contract
+     * guarantees. */
+    val availability: String,
+)
+
+/** One shelf from GET /libraries/{id}/recommended — kept as its own type rather than reusing
+ * [Shelf] because the item shape differs: [Shelf.items] are [LibraryItem] (no
+ * [RecommendedLibraryItem.availability]), while this route's items always carry it — the same
+ * split [MusicRecommendedShelf] makes relative to [Shelf] for `GET /music/recommended`. */
+@Serializable
+data class RecommendedShelf(
+    val id: String,
+    val label: String,
+    val type: String,
+    val items: List<RecommendedLibraryItem>,
+    val reason: String? = null,
+)
+
+/** GET /libraries/{id}/recommended response envelope. See [RecommendedShelf]'s doc comment for
+ * why this isn't [HomeResponse]. */
 @Serializable
 data class RecommendedResponse(
-    val shelves: List<Shelf>,
+    val shelves: List<RecommendedShelf>,
 )
 
 /** The nested `session` object returned by POST /items/{id}/play and read by the player. */

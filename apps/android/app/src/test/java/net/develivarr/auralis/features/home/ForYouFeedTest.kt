@@ -6,6 +6,8 @@ import net.develivarr.auralis.data.model.LibraryItem
 import net.develivarr.auralis.data.model.MediaProgress
 import net.develivarr.auralis.data.model.MediaSummary
 import net.develivarr.auralis.data.model.MusicRecommendedAlbum
+import net.develivarr.auralis.data.model.RecommendedLibraryItem
+import net.develivarr.auralis.data.model.RecommendedShelf
 import net.develivarr.auralis.data.model.Shelf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -38,6 +40,27 @@ class ForYouFeedTest {
         items: List<LibraryItem>,
         reason: String? = null,
     ) = Shelf(id = id, label = label, type = type, items = items, reason = reason)
+
+    private fun recommendedLibraryItem(
+        id: String,
+        title: String = "Title-$id",
+        authors: List<AuthorRef>? = null,
+        author: String? = null,
+        availability: String = "owned",
+    ) = RecommendedLibraryItem(
+        id = id,
+        libraryId = "lib1",
+        media = MediaSummary(kind = "book", title = title, authors = authors, author = author),
+        availability = availability,
+    )
+
+    private fun recommendedShelf(
+        id: String,
+        label: String = "Shelf $id",
+        type: String = "recommended",
+        items: List<RecommendedLibraryItem>,
+        reason: String? = null,
+    ) = RecommendedShelf(id = id, label = label, type = type, items = items, reason = reason)
 
     @Test
     fun `shelfToCarousel uses the passed contentType, not shelf type`() {
@@ -140,6 +163,57 @@ class ForYouFeedTest {
         val albums = listOf(MusicRecommendedAlbum(id = "al1", name = "Album", artistName = "The Artist", availability = "external"))
         val carousel = recommendedAlbumsToCarousel("rec", "Discover", albums) { null }
         assertEquals("The Artist", carousel.items.single().subtitle)
+    }
+
+    /** Wave 15d-1-books — [FeedItem.isExternal] must reflect
+     * [RecommendedLibraryItem.availability] exactly: `"owned"` is not external, everything else
+     * (including a value this test has never seen) is. Deliberately includes a made-up third
+     * value to pin the "unknown degrades to external, not owned" rule from that field's own doc
+     * comment — the safer default, since treating an unrecognised value as owned would silently
+     * reintroduce the dead-end book-detail navigation this wave exists to close off. Mirrors
+     * `recommendedAlbumsToCarousel maps availability to isExternal, ...` above for the music
+     * side of this same wave family (15d). */
+    @Test
+    fun `recommendedShelfToCarousel maps availability to isExternal, treating anything but 'owned' as external`() {
+        val items =
+            listOf(
+                recommendedLibraryItem("b1", availability = "owned"),
+                recommendedLibraryItem("b2", availability = "external"),
+                recommendedLibraryItem("b3", availability = "quarantined"),
+            )
+        val carousel = recommendedShelfToCarousel(recommendedShelf(id = "s1", items = items), ForYouContentType.BOOKS) { null }
+        assertEquals(listOf(false, true, true), carousel.items.map { it.isExternal })
+    }
+
+    @Test
+    fun `recommendedShelfToCarousel uses the passed contentType, not shelf type`() {
+        val items = listOf(recommendedLibraryItem("e1", author = "Host"))
+        val carousel = recommendedShelfToCarousel(recommendedShelf(id = "s1", items = items), ForYouContentType.PODCASTS) { null }
+        assertEquals(ForYouContentType.PODCASTS, carousel.contentType)
+        assertEquals(ForYouContentType.PODCASTS, carousel.items.single().contentType)
+    }
+
+    @Test
+    fun `recommendedShelfToCarousel prefers structured authors over free-text author for a book, same as shelfToCarousel`() {
+        val withBoth =
+            recommendedLibraryItem(
+                "b1",
+                authors = listOf(AuthorRef("a1", "Structured Author")),
+                author = "Free Text Author",
+            )
+        val carousel =
+            recommendedShelfToCarousel(recommendedShelf(id = "s1", items = listOf(withBoth)), ForYouContentType.BOOKS) { null }
+        assertEquals("Structured Author", carousel.items.single().subtitle)
+    }
+
+    @Test
+    fun `recommendedShelfToCarousel carries reason through, same as shelfToCarousel`() {
+        val carousel =
+            recommendedShelfToCarousel(
+                recommendedShelf(id = "s1", items = listOf(recommendedLibraryItem("b1")), reason = "Because you finished a book"),
+                ForYouContentType.BOOKS,
+            ) { null }
+        assertEquals("Because you finished a book", carousel.reason)
     }
 
     @Test

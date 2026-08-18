@@ -24,12 +24,13 @@ export interface FeedItem {
   /** 0..1, or `null` for content with no progress concept (a Jellyfin album). */
   progress: number | null;
   /**
-   * Wave 15d-1-W: whether this item is real library content ("owned") or a
-   * ListenBrainz-derived placeholder the user does not have ("external") —
-   * `JellyfinAlbum.availability`'s doc comment (`api/types.ts`) has the server contract.
-   * Optional and `undefined` on every carousel except music's recommended shelf, which is
-   * the only place `'external'` can appear today; `Carousel.tsx` and every `onSelect`
-   * handler treat an absent value the same as `'owned'`, so no existing carousel changes.
+   * Wave 15d-1-W (music), widened by 15d-1-books-W: whether this item is real library
+   * content ("owned") or an external, not-yet-owned placeholder the user does not have
+   * ("external") — `JellyfinAlbum.availability` and `LibraryItem.availability`'s doc
+   * comments (`api/types.ts`) have the server contracts. Optional and `undefined` on every
+   * ordinary shelf; today only music's and books' *recommended* shelves ever set it.
+   * `Carousel.tsx` and every `onSelect` handler treat an absent value the same as `'owned'`,
+   * so no existing carousel changes.
    */
   availability?: 'owned' | 'external';
 }
@@ -77,6 +78,12 @@ export function shelfToCarousel(
       coverSrc: coverUrl(item.id),
       fallbackIcon,
       progress: item.progress?.progress ?? null,
+      // Wave 15d-1-books-W: forwards `LibraryItem.availability` (see `api/types.ts`'s doc
+      // comment) into the FeedItem the same way `albumsToCarousel` already forwards
+      // `JellyfinAlbum.availability`. `undefined` on every ordinary book/podcast shelf item —
+      // only `RecommendedShelf.items` (via `recommendedShelvesToCarousels`, which reuses this
+      // function) ever sets `'owned'`/`'external'`.
+      availability: item.availability,
     })),
   };
 }

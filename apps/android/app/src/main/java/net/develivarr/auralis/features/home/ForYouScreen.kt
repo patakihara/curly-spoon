@@ -75,7 +75,22 @@ fun ForYouScreen(
             // Android wave 16e-book-A: a book card now opens the book detail screen rather than
             // playing immediately — see docs/design/screens/BOOK_DETAIL.md §5. Podcasts are
             // unchanged and out of this wave's scope; they still play directly from here.
-            ForYouContentType.BOOKS -> navController.navigate(Routes.bookDetail(item.id))
+            //
+            // Wave 15d-1-books: an EXTERNAL book (item.isExternal — a recommendation from an
+            // outside provider the signed-in user does not own) goes to the book request flow
+            // instead, pre-filled with its title/author, never to Routes.bookDetail — that id is
+            // opaque and namespaced (external:openlibrary:…) and Audiobookshelf has never heard
+            // of it, so BookDetailViewModel's fetch would fail and render a bare error screen
+            // (the dead end this wave exists to close). Mirrors
+            // net.develivarr.auralis.features.music.MusicLibraryScreen's identical `isExternal`
+            // branch for the music equivalent (wave 15d-1-A). An owned book's behaviour is
+            // completely unchanged.
+            ForYouContentType.BOOKS ->
+                if (item.isExternal) {
+                    navController.navigate(Routes.requests(title = item.title, author = item.subtitle))
+                } else {
+                    navController.navigate(Routes.bookDetail(item.id))
+                }
             ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)
             ForYouContentType.MUSIC -> navController.navigate(Routes.musicAlbumDetail(item.id))
         }
