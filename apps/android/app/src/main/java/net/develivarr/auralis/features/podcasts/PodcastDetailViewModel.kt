@@ -24,13 +24,26 @@ data class PodcastEpisodeUi(
 )
 
 /** The podcast container's own display fields, plus its episode list — already sorted and
- * progress-annotated for the current [PodcastDetailViewModel]'s order. */
+ * progress-annotated for the current [PodcastDetailViewModel]'s order.
+ *
+ * [meta] (wave 16e-podcast-A, `docs/design/screens/PODCAST_DETAIL.md` §5/§6) is the composed
+ * `"{n} {episode|episodes} · {u} unplayed"` line, or `null` when there are no episodes yet —
+ * [composePodcastMeta] does the composing, order-independent since [order] never changes which
+ * episodes exist, only how they're listed.
+ *
+ * [playLatestEpisodeId] is the newest episode's id, sorted [EpisodeOrder.NEWEST] regardless of
+ * the screen's current display [order] — "Play latest" always means the newest episode, whether
+ * the list itself is currently showing oldest-first or not. `null` when there are no episodes,
+ * which is also the signal the header's "Play latest" button uses to omit itself (§5).
+ */
 data class PodcastDetailUiData(
     val title: String,
     val author: String?,
     val description: String?,
     val coverUrl: String?,
     val episodes: List<PodcastEpisodeUi>,
+    val meta: String?,
+    val playLatestEpisodeId: String?,
 )
 
 sealed interface PodcastDetailUiState {
@@ -115,22 +128,29 @@ class PodcastDetailViewModel(
     ): PodcastDetailUiData {
         val media = item.media
         val episodes = sortEpisodes(media.episodes ?: emptyList(), order)
+        val episodeUis =
+            episodes.map { episode ->
+                PodcastEpisodeUi(
+                    id = episode.id,
+                    title = episode.title,
+                    publishedAt = episode.publishedAt,
+                    durationSeconds = episode.duration.roundToLong(),
+                    progressState =
+                        episodeProgressState(findEpisodeProgress(allProgress, item.id, episode.id)),
+                )
+            }
+        val unplayedCount = episodeUis.count { it.progressState != EpisodeProgressState.PLAYED }
         return PodcastDetailUiData(
             title = media.title,
             author = media.author,
             description = media.description,
             coverUrl = baseUrl?.let { "${it.trimEnd('/')}/api/v1/media/${item.id}/cover?width=400" },
-            episodes =
-                episodes.map { episode ->
-                    PodcastEpisodeUi(
-                        id = episode.id,
-                        title = episode.title,
-                        publishedAt = episode.publishedAt,
-                        durationSeconds = episode.duration.roundToLong(),
-                        progressState =
-                            episodeProgressState(findEpisodeProgress(allProgress, item.id, episode.id)),
-                    )
-                },
+            episodes = episodeUis,
+            meta = composePodcastMeta(episodeUis.size, unplayedCount),
+            // Newest-first regardless of [order] — "Play latest" always means the newest
+            // episode, not "the first row in whatever order is currently showing".
+            playLatestEpisodeId =
+                sortEpisodes(media.episodes ?: emptyList(), EpisodeOrder.NEWEST).firstOrNull()?.id,
         )
     }
 }

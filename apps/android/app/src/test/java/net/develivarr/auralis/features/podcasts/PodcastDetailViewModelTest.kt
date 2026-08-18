@@ -198,4 +198,46 @@ class PodcastDetailViewModelTest {
 
             assertEquals("${baseUrl.trimEnd('/')}/api/v1/media/pod1/cover?width=400", state.data.coverUrl)
         }
+
+    @Test
+    fun `meta composes the episode and unplayed counts, and playLatestEpisodeId is the newest episode regardless of order`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePodcastItem()
+            enqueueProgress(
+                """[{"id":"prog1","libraryItemId":"pod1","episodeId":"ep1","duration":120.0,
+                     "currentTime":120.0,"progress":1.0,"isFinished":true}]""",
+            )
+            val viewModel = PodcastDetailViewModel(apiClient, serverConfigRepository, "pod1")
+            viewModel.load()
+            viewModel.uiState.first { it !is PodcastDetailUiState.Loading }
+
+            // ep1 is played (progress above), ep2 is unplayed — two episodes, one unplayed.
+            var state = viewModel.uiState.value as PodcastDetailUiState.Loaded
+            assertEquals("2 episodes · 1 unplayed", state.data.meta)
+            // ep2's publishedAt (2000) is newer than ep1's (1000) — "Play latest" is ep2.
+            assertEquals("ep2", state.data.playLatestEpisodeId)
+
+            // Flipping the display order must not change which episode "Play latest" targets —
+            // it's always the newest, not "whichever row the current sort put first".
+            viewModel.setOrder(EpisodeOrder.OLDEST)
+            state = viewModel.uiState.value as PodcastDetailUiState.Loaded
+            assertEquals(listOf("ep1", "ep2"), state.data.episodes.map { it.id })
+            assertEquals("ep2", state.data.playLatestEpisodeId)
+        }
+
+    @Test
+    fun `meta and playLatestEpisodeId are both null when the podcast has no episodes`() =
+        runTest {
+            withBaseUrlConfigured()
+            enqueuePodcastItem(episodesJson = "null")
+            enqueueProgress()
+            val viewModel = PodcastDetailViewModel(apiClient, serverConfigRepository, "pod1")
+
+            viewModel.load()
+            val state = viewModel.uiState.first { it !is PodcastDetailUiState.Loading } as PodcastDetailUiState.Loaded
+
+            assertEquals(null, state.data.meta)
+            assertEquals(null, state.data.playLatestEpisodeId)
+        }
 }
