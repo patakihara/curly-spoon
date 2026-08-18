@@ -19,6 +19,14 @@
  * release to attach. It matters most exactly when an indexer is down, which is
  * why it is offered in both empty cases rather than only the "nothing matched"
  * one — see `requestAnyway.ts` for the enabling rule, unit-tested on its own.
+ *
+ * `initialTitle`/`initialAuthor` (wave 15d-1-books-W): seed the two fields from
+ * `RequestsPage.tsx`'s `?prefillTitle=`/`?prefillAuthor=`, so an external recommended-shelf
+ * card lands here with the title (and author, when known) already typed in. Deliberately
+ * *not* threaded into `submittedTerm`/`submittedAuthor` — unlike `/music/requests`'
+ * `?prefill=`, this does not auto-run a search; the user still presses Search (or Enter),
+ * the same explicit-submit contract every other search here already has (see this file's own
+ * header comment on why search never fires per keystroke).
  */
 import { useState } from 'react';
 import { Button, Chip, SearchField } from '@auralis/ui';
@@ -28,9 +36,14 @@ import { useCreateRequestMutation, useRequestSearchQuery } from '../../api/queri
 import { formatBytes } from './format.js';
 import { shouldOfferRequestAnyway } from './requestAnyway.js';
 
-export function AskForBookPanel() {
-  const [term, setTerm] = useState('');
-  const [author, setAuthor] = useState('');
+export interface AskForBookPanelProps {
+  initialTitle?: string;
+  initialAuthor?: string;
+}
+
+export function AskForBookPanel({ initialTitle, initialAuthor }: AskForBookPanelProps = {}) {
+  const [term, setTerm] = useState(initialTitle ?? '');
+  const [author, setAuthor] = useState(initialAuthor ?? '');
   const [submittedTerm, setSubmittedTerm] = useState('');
   // Separate from the live `author` state for the same reason `submittedTerm` is
   // separate from `term`: the query key must only change on explicit submit, or

@@ -303,6 +303,18 @@ export function HomePage() {
 
   const handleSelect = (item: FeedItem) => {
     if (item.contentType === 'books') {
+      // Wave 15d-1-books-W: an external (Open Library-derived) recommended card has no real
+      // Audiobookshelf item behind it — `item.id` is an opaque `external:openlibrary:…` id no
+      // `GET /items/:id` call can resolve. Hand off into the request flow instead, pre-filled,
+      // mirroring `MusicHomePage.tsx`'s identical `availability === 'external'` branch for
+      // albums. Owned books are completely unchanged.
+      if (item.availability === 'external') {
+        void navigate({
+          to: '/requests',
+          search: { prefillTitle: item.title, prefillAuthor: item.subtitle ?? undefined },
+        });
+        return;
+      }
       void navigate({ to: '/item/$itemId', params: { itemId: item.id } });
     } else if (item.contentType === 'podcasts') {
       void navigate({ to: '/podcast/$itemId', params: { itemId: item.id } });
