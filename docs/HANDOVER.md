@@ -922,6 +922,18 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
+### CLAIMED — `16e-book-A-2`: one Compose `MediaHeader`, before a fourth screen drifts
+
+`16e-book-P`'s top follow-up, taken immediately and deliberately **ahead of the next screen triple**.
+**Three Android detail screens now share the same pre-Sonora header** — `BookDetailScreen`,
+`PodcastDetailScreen`, `AlbumDetailScreen` all render a 96dp thumbnail row with no cover-fallback
+painter and no small-caps muted label, where Sonora specifies a 232/208px tile. Building one
+composable now is the difference between fixing three call sites and fixing four.
+
+**This is the first Android wave whose brief is a visual value rather than a behaviour**, which is
+exactly the class `16e-book-A` missed, so the spec carries the numbers as an explicit table rather
+than as prose — the correction §16 now records.
+
 ### DONE — `16e-book`, the first screen triple. **The spec-first approach half worked, and why matters.**
 
 `main` `f9de4e8`, `CI` and `Android` green; Android's run on `3e89fb2` is a genuine **uncached**
