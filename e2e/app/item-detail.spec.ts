@@ -123,15 +123,26 @@ test('the restyled header actually resolves Sonora tokens, not just renders unst
   expect(expectedColor).not.toBe('');
   expect(titleColor).toBe(expectedColor);
 
-  // NOT the cover's `var(--radius-lg)` — that style prop only reaches the
-  // *loaded* `<MantineImage>`; `CoverImage`'s fallback tile (rendered here,
-  // since this environment's fixture cover bytes never decode) hardcodes its
-  // own 8px radius regardless of the caller's `style` prop. Pre-existing
-  // (`PodcastDetailPage.tsx` carries the identical mismatch) and out of this
-  // screen-scoped wave — recorded rather than silently asserted around.
+  // The cover's fallback tile now resolves `var(--radius-lg)` too, not just
+  // the loaded `<MantineImage>` path — `CoverImage`'s fallback previously
+  // hardcoded its own 8px radius regardless of the caller's `style` prop
+  // (16e-book-P's finding; fixed in 16e-podcast-W by threading `style` through
+  // `CoverImageFallback`, `CoverImage.tsx`). This environment's fixture cover
+  // bytes never decode, so this is the fallback path, proven by the same
+  // probe technique as the title/author-link checks above.
   const cover = page.locator('.auralis-item-header [aria-hidden="true"]').first();
   await expect(cover).toBeVisible();
-  await expect(cover).toHaveCSS('border-radius', '8px');
+  const [coverRadius, expectedRadius] = await cover.evaluate((el) => {
+    const actual = getComputedStyle(el).borderRadius;
+    const probe = document.createElement('span');
+    probe.style.borderRadius = 'var(--radius-lg)';
+    el.parentElement?.appendChild(probe);
+    const expected = getComputedStyle(probe).borderRadius;
+    probe.remove();
+    return [actual, expected];
+  });
+  expect(expectedRadius).not.toBe('');
+  expect(coverRadius).toBe(expectedRadius);
 
   // The author link's `--accent-ink` colour, same probe technique.
   const authorLink = page.getByTestId('item-author-link');
