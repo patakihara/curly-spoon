@@ -27,7 +27,7 @@ anything else — it is not the usual "Android's header is already done" shape.*
   step at all. But `meta` and the header's `actions` slot are both still unwired (`meta` isn't
   passed at the call site; `actions` isn't either) — the same "adopted but not filled in" gap
   `16e-podcast-A` closed on `PodcastDetailScreen`. **New here**: this screen's subtitle (the
-  artist name) needs to become a *tappable link* to the artist page, and `MediaHeader.kt` has
+  artist name) needs to become a _tappable link_ to the artist page, and `MediaHeader.kt` has
   **no mechanism for that at all today** — no `onSubtitleClick` parameter, nothing. §3 and §10
   spell out exactly what to add and why it's safe to add.
 - **Web has never used `MediaHeader.tsx` on this screen and needs a straightforward adoption.**
@@ -66,31 +66,31 @@ Android: `apps/android/app/src/main/java/net/develivarr/auralis/features/music/A
 (327 lines, read in full) and `AlbumDetailViewModel.kt` (438 lines, read in relevant part) plus
 `ui/components/MediaHeader.kt` (183 lines, read in full).
 
-| Content / control                | Web today                                                                                                     | Android today                                                                                                                    |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Route                             | `/music/album/$albumId` (own component)                                                                       | `music/album/{albumId}`, reached from `MusicLibraryScreen`'s albums list or `ArtistDetailScreen`'s album list                    |
-| Cover art                         | `CoverImage`, 96px, `music_note` fallback icon, plain flex row (`:144`) — **pre-Sonora**                      | `MediaHeader` — **already Sonora-styled** (232dp/208dp, `shapes.large`, fallback icon underlay) via `AlbumDetailScreen.kt:218`   |
-| Title                             | `<h1 data-testid="music-album-name">` (`:146`), plain, no Sonora type scale                                   | `MediaHeader`'s `title` slot — **already Sonora type scale** (weight 900, `--h2`/`--h4`)                                         |
-| Artist / subtitle                 | `<p>{artistNames}</p>` if present (`:147`), plain text, **not a link**                                        | `MediaHeader`'s `subtitle` slot, muted — **already styled, not a link** (`MediaHeader.kt` has no click mechanism at all)          |
-| Kind label                        | **not shown**                                                                                                   | `MediaHeader`'s `kindLabel = "Album"` (`:222`) — **already shown, uppercase, muted**                                             |
-| Meta line (year/genre/tracks/dur) | **not shown**                                                                                                   | **not shown** — `MediaHeader(meta = …)` param exists but the call site passes nothing (`:218-232`)                               |
-| Play / Shuffle                    | **not present anywhere on this page**                                                                          | **not present** — `MediaHeader`'s `actions` slot exists but is passed nothing (`:218-232`)                                       |
-| Album favourite                   | `FavoriteToggle` beside the cover (`:149-156`)                                                                 | `FavoriteToggleButton` in `MediaHeader`'s `trailingContent` slot (`:225-231`)                                                     |
-| Add album to playlist             | `AddToPlaylistButton` beside the cover (`:157-164`)                                                            | `TextButton("Add album to playlist")` below the header, disabled when empty (`:234-236`)                                        |
-| Track row: position               | `trackPosition(discNumber, trackNumber)` — "D.N" multi-disc / "N" single-disc / blank (`:53-58`, `:196`)      | `MusicTrackUi.position`, identical rule, computed in the ViewModel (`AlbumDetailViewModel.kt`'s own doc comment cites the web fn) |
-| Track row: title                  | `ListItem` `headline` (`:197`)                                                                                 | Plain `Text`, `titleSmall` (`:315`)                                                                                               |
-| Track row: duration               | `ListItem` `supportingText`, `formatDuration` clock format e.g. `"3:34"` (`:198-202`)                          | Same clock format via shared `formatDuration` util (`:317`)                                                                       |
-| Track row: currently-playing      | **not shown at all** — no highlighting, no `aria-current`                                                     | **not shown at all** — no highlighting, no "Now playing" label (contrast with `QueueScreen.kt`, which has one — see §6)          |
-| Track row: a11y                   | Explicit `aria-label={`Play ${track.name}`}` (`:194`) — **drops duration entirely from the announced name**   | **No merged semantics** — three bare `Text`/button composables inside a `Row` (`:294-326`), no `semantics(mergeDescendants=true)` |
-| Track row: actions                | Add-to-playlist, favourite, context-menu "more" button, all trailing (`:203-221`)                              | Add-to-playlist `TextButton`, favourite, `TrackContextMenu` wrapping the clickable area (`:298-325`)                              |
-| Empty album                       | `<p>No tracks found for this album.</p>` (`:176`)                                                              | `Text("No tracks found for this album.")` (`:238`) — same copy                                                                    |
-| Loading state                     | Three `Skeleton` rectangles (`:167-172`)                                                                       | `CircularProgressIndicator` (`:104-107`)                                                                                          |
-| Fetch error state                 | Inline `role="alert"` message (`:173-174`)                                                                     | Inline error `Text` + Retry `Button` (`:114-122`)                                                                                 |
-| Unconfigured (no Jellyfin) state  | Not this screen's concern — gated upstream by navigation (music nav item hidden)                              | `AlbumDetailUiState.Unconfigured` — calm "No Jellyfin server connected yet.", no retry (`:110-113`)                               |
-| Pagination                        | Previous/Next buttons, `page.rangeLabel` (`:228-253`), **replaces** the visible page (40/page)                 | "Load more" button, **accumulates** onto the existing list (`:256-266`), same 40/page (`MUSIC_PAGE_SIZE`)                        |
+| Content / control                 | Web today                                                                                                   | Android today                                                                                                                     |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Route                             | `/music/album/$albumId` (own component)                                                                     | `music/album/{albumId}`, reached from `MusicLibraryScreen`'s albums list or `ArtistDetailScreen`'s album list                     |
+| Cover art                         | `CoverImage`, 96px, `music_note` fallback icon, plain flex row (`:144`) — **pre-Sonora**                    | `MediaHeader` — **already Sonora-styled** (232dp/208dp, `shapes.large`, fallback icon underlay) via `AlbumDetailScreen.kt:218`    |
+| Title                             | `<h1 data-testid="music-album-name">` (`:146`), plain, no Sonora type scale                                 | `MediaHeader`'s `title` slot — **already Sonora type scale** (weight 900, `--h2`/`--h4`)                                          |
+| Artist / subtitle                 | `<p>{artistNames}</p>` if present (`:147`), plain text, **not a link**                                      | `MediaHeader`'s `subtitle` slot, muted — **already styled, not a link** (`MediaHeader.kt` has no click mechanism at all)          |
+| Kind label                        | **not shown**                                                                                               | `MediaHeader`'s `kindLabel = "Album"` (`:222`) — **already shown, uppercase, muted**                                              |
+| Meta line (year/genre/tracks/dur) | **not shown**                                                                                               | **not shown** — `MediaHeader(meta = …)` param exists but the call site passes nothing (`:218-232`)                                |
+| Play / Shuffle                    | **not present anywhere on this page**                                                                       | **not present** — `MediaHeader`'s `actions` slot exists but is passed nothing (`:218-232`)                                        |
+| Album favourite                   | `FavoriteToggle` beside the cover (`:149-156`)                                                              | `FavoriteToggleButton` in `MediaHeader`'s `trailingContent` slot (`:225-231`)                                                     |
+| Add album to playlist             | `AddToPlaylistButton` beside the cover (`:157-164`)                                                         | `TextButton("Add album to playlist")` below the header, disabled when empty (`:234-236`)                                          |
+| Track row: position               | `trackPosition(discNumber, trackNumber)` — "D.N" multi-disc / "N" single-disc / blank (`:53-58`, `:196`)    | `MusicTrackUi.position`, identical rule, computed in the ViewModel (`AlbumDetailViewModel.kt`'s own doc comment cites the web fn) |
+| Track row: title                  | `ListItem` `headline` (`:197`)                                                                              | Plain `Text`, `titleSmall` (`:315`)                                                                                               |
+| Track row: duration               | `ListItem` `supportingText`, `formatDuration` clock format e.g. `"3:34"` (`:198-202`)                       | Same clock format via shared `formatDuration` util (`:317`)                                                                       |
+| Track row: currently-playing      | **not shown at all** — no highlighting, no `aria-current`                                                   | **not shown at all** — no highlighting, no "Now playing" label (contrast with `QueueScreen.kt`, which has one — see §6)           |
+| Track row: a11y                   | Explicit `aria-label={`Play ${track.name}`}` (`:194`) — **drops duration entirely from the announced name** | **No merged semantics** — three bare `Text`/button composables inside a `Row` (`:294-326`), no `semantics(mergeDescendants=true)` |
+| Track row: actions                | Add-to-playlist, favourite, context-menu "more" button, all trailing (`:203-221`)                           | Add-to-playlist `TextButton`, favourite, `TrackContextMenu` wrapping the clickable area (`:298-325`)                              |
+| Empty album                       | `<p>No tracks found for this album.</p>` (`:176`)                                                           | `Text("No tracks found for this album.")` (`:238`) — same copy                                                                    |
+| Loading state                     | Three `Skeleton` rectangles (`:167-172`)                                                                    | `CircularProgressIndicator` (`:104-107`)                                                                                          |
+| Fetch error state                 | Inline `role="alert"` message (`:173-174`)                                                                  | Inline error `Text` + Retry `Button` (`:114-122`)                                                                                 |
+| Unconfigured (no Jellyfin) state  | Not this screen's concern — gated upstream by navigation (music nav item hidden)                            | `AlbumDetailUiState.Unconfigured` — calm "No Jellyfin server connected yet.", no retry (`:110-113`)                               |
+| Pagination                        | Previous/Next buttons, `page.rangeLabel` (`:228-253`), **replaces** the visible page (40/page)              | "Load more" button, **accumulates** onto the existing list (`:256-266`), same 40/page (`MUSIC_PAGE_SIZE`)                         |
 
-**One asymmetry already present and out of scope here:** web's pagination *replaces* the
-visible track list per page; Android's *accumulates* via "Load more". Pre-existing, not
+**One asymmetry already present and out of scope here:** web's pagination _replaces_ the
+visible track list per page; Android's _accumulates_ via "Load more". Pre-existing, not
 introduced by either header work or this spec, and not something this triple should unify —
 §7 names it explicitly so nobody "fixes" it as a side effect of the header work.
 
@@ -133,7 +133,7 @@ this spec's literal examples below are checkable against the real fixture, not i
 
 `album`'s third block — a row of the artist's other albums, linking to the artist page — is new
 surface area with no equivalent on either platform's `AlbumDetailScreen` today (the artist's
-*own* page already has an "Albums" grid; this would be a second, redundant way to reach the same
+_own_ page already has an "Albums" grid; this would be a second, redundant way to reach the same
 content from one level down). §7 names it explicitly.
 
 ### Geometry / type table — MediaHeader values, both platforms
@@ -141,16 +141,16 @@ content from one level down). §7 names it explicitly.
 Identical component, identical values to `BOOK_DETAIL.md` §3 / `PODCAST_DETAIL.md` §3 (same
 design source). Restated here as the contract line each implementation must satisfy:
 
-| Token                        | Value                                                                              | Web (`-W`)                                                                                                     | Android (`-A`)                                                                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Art tile size                 | 232px desktop / 208px compact, square                                              | **Missing entirely** — `MusicAlbumPage.tsx:144` uses a hardcoded `size={96}` `CoverImage`                        | **Already satisfied** — `MediaHeader.kt:97` (`232.dp`/`208.dp`), do not rebuild                                                       |
-| Corner radius                 | `var(--radius-lg)` (`MaterialTheme.shapes.large` on Android)                       | **Missing entirely** — current `CoverImage` call passes no `style`, so it falls to `CoverImage`'s own default    | **Already satisfied** — `MediaHeader.kt:108`, do not rebuild                                                                          |
-| Kind label                    | Small caps, muted, `"Album"`                                                       | **Missing entirely** — must add                                                                                   | **Already satisfied** — `kindLabel = "Album"` at call site (`:222`), do not rebuild                                                  |
-| Title face/weight/size        | `var(--font-display)`, weight 900, `--h2-size` desktop / `--h4-size` compact       | **Missing entirely** — currently a bare `<h1>` (`:146`)                                                          | **Already satisfied** — `titleLarge`/`headlineMedium`, weight 900 per `SonoraTypography`, do not rebuild                             |
-| Subtitle (artist)             | `var(--accent-ink)` **when linkable** (`albumArtistId` present), else plain muted  | **Missing entirely** — bare `<p>` (`:147`), never a link today                                                    | **Missing** — `MediaHeader.kt`'s `subtitle` is *always* plain, non-clickable text (`:155-163`); needs a new capability, see below     |
-| Meta line                     | One muted line, composed (§5 defines the fields — **new on both platforms**)      | **Missing entirely** — must add                                                                                   | **Missing** — `MediaHeader.kt:91`'s `meta` param exists, call site passes nothing (`:218-232`); must wire                             |
-| Muted colour role             | `--surface-fg-muted` (web) / `onSurfaceVariant` (Android)                          | Not yet applied (new)                                                                                              | **Already satisfied** — `MediaHeader.kt:100` uses `colorScheme.onSurfaceVariant`, do not rebuild                                      |
-| Play / Shuffle actions        | Sonora's `MediaHeader` `actions` slot: filled "Play" + outlined "Shuffle"          | **Missing entirely** — must add (§6, new behaviour)                                                               | **Missing** — `MediaHeader.kt:93`'s `actions` slot exists, call site passes `null`; must wire                                        |
+| Token                  | Value                                                                             | Web (`-W`)                                                                                                    | Android (`-A`)                                                                                                                    |
+| ---------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Art tile size          | 232px desktop / 208px compact, square                                             | **Missing entirely** — `MusicAlbumPage.tsx:144` uses a hardcoded `size={96}` `CoverImage`                     | **Already satisfied** — `MediaHeader.kt:97` (`232.dp`/`208.dp`), do not rebuild                                                   |
+| Corner radius          | `var(--radius-lg)` (`MaterialTheme.shapes.large` on Android)                      | **Missing entirely** — current `CoverImage` call passes no `style`, so it falls to `CoverImage`'s own default | **Already satisfied** — `MediaHeader.kt:108`, do not rebuild                                                                      |
+| Kind label             | Small caps, muted, `"Album"`                                                      | **Missing entirely** — must add                                                                               | **Already satisfied** — `kindLabel = "Album"` at call site (`:222`), do not rebuild                                               |
+| Title face/weight/size | `var(--font-display)`, weight 900, `--h2-size` desktop / `--h4-size` compact      | **Missing entirely** — currently a bare `<h1>` (`:146`)                                                       | **Already satisfied** — `titleLarge`/`headlineMedium`, weight 900 per `SonoraTypography`, do not rebuild                          |
+| Subtitle (artist)      | `var(--accent-ink)` **when linkable** (`albumArtistId` present), else plain muted | **Missing entirely** — bare `<p>` (`:147`), never a link today                                                | **Missing** — `MediaHeader.kt`'s `subtitle` is _always_ plain, non-clickable text (`:155-163`); needs a new capability, see below |
+| Meta line              | One muted line, composed (§5 defines the fields — **new on both platforms**)      | **Missing entirely** — must add                                                                               | **Missing** — `MediaHeader.kt:91`'s `meta` param exists, call site passes nothing (`:218-232`); must wire                         |
+| Muted colour role      | `--surface-fg-muted` (web) / `onSurfaceVariant` (Android)                         | Not yet applied (new)                                                                                         | **Already satisfied** — `MediaHeader.kt:100` uses `colorScheme.onSurfaceVariant`, do not rebuild                                  |
+| Play / Shuffle actions | Sonora's `MediaHeader` `actions` slot: filled "Play" + outlined "Shuffle"         | **Missing entirely** — must add (§6, new behaviour)                                                           | **Missing** — `MediaHeader.kt:93`'s `actions` slot exists, call site passes `null`; must wire                                     |
 
 **Compose has no CSS-cascade fallback — name the placeholder and error painter for every image,
 not just the happy path.** Already satisfied here and requiring no new work: `MediaHeader.kt`'s
@@ -202,7 +202,7 @@ spec** — the `Album` shape both clients already fetch (and already type) carri
 meta line and the artist link need:
 
 - `packages/jellyfin-client/src/domain.ts:39-65`'s `Album` interface: `productionYear: number |
-  null`, `genres: string[]`, `trackCount: number | null`, `artistId: string | null`, alongside
+null`, `genres: string[]`, `trackCount: number | null`, `artistId: string | null`, alongside
   the `favorite`/`artistId` fields both clients already read.
 - `apps/web/src/api/types.ts:636-647`'s hand-mirrored `JellyfinAlbum` carries the identical
   fields.
@@ -226,18 +226,18 @@ eventually shows — no risk of two different numbers on the same screen.
 
 ## 5. Fallback contract — what to omit when a field is absent
 
-| Field                        | Rule                                                                                                                                                                                                                                                        |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cover                         | tonal placeholder — already correct on Android (`MediaHeader`'s fallback icon); web gets it for free from `CoverImage`'s already-fixed fallback (§3)                                                                                                     |
-| Artist / subtitle             | omit the subtitle line entirely if `artistName` is null (matches today on both platforms already)                                                                                                                                                          |
-| Artist link                   | render as a plain, non-clickable subtitle when `artistId`/`albumArtistId` is null even though `artistName` is present — matches `BOOK_DETAIL.md`'s identical author-link fallback                                                                        |
-| Year in meta                  | omit its segment if `productionYear` is null                                                                                                                                                                                                               |
-| Genre in meta                 | use **only the first** `genres[0]`; omit the segment entirely if `genres` is empty. (Sonora's own example uses one genre; joining an unbounded list would make the meta line grow without limit for a heavily-tagged album — a deliberate simplification, not an oversight) |
-| Track count in meta           | **always shown once the first page has loaded** — never omitted, including `"0 tracks"` for a genuinely empty album (same reasoning `PODCAST_DETAIL.md` §5 gives for its own always-shown unplayed count)                                                |
-| Duration in meta              | **shown only when the whole album is a single page** — `total <= 40` (the shared page size, `MUSIC_PAGE_SIZE` on Android / `limit: 40` on web) **and** that one page is fully loaded. Otherwise omit the segment. Computing a total duration would otherwise mean fetching every page of a multi-page album purely to build one header string — a real, deliberate limitation, not silently glossed over. The overwhelming majority of real albums fit in one page, so this covers the common case. |
-| Meta line, whole               | omit entirely if the album has zero tracks and no year/genre (nothing to show)                                                                                                                                                                             |
-| Play / Shuffle                | **omit both entirely** when `tracks.length === 0` — nothing to play                                                                                                                                                                                        |
-| Track list, empty              | `"No tracks found for this album."` — matches today's copy exactly on both platforms, keep it                                                                                                                                                              |
+| Field               | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cover               | tonal placeholder — already correct on Android (`MediaHeader`'s fallback icon); web gets it for free from `CoverImage`'s already-fixed fallback (§3)                                                                                                                                                                                                                                                                                                                                                |
+| Artist / subtitle   | omit the subtitle line entirely if `artistName` is null (matches today on both platforms already)                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Artist link         | render as a plain, non-clickable subtitle when `artistId`/`albumArtistId` is null even though `artistName` is present — matches `BOOK_DETAIL.md`'s identical author-link fallback                                                                                                                                                                                                                                                                                                                   |
+| Year in meta        | omit its segment if `productionYear` is null                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Genre in meta       | use **only the first** `genres[0]`; omit the segment entirely if `genres` is empty. (Sonora's own example uses one genre; joining an unbounded list would make the meta line grow without limit for a heavily-tagged album — a deliberate simplification, not an oversight)                                                                                                                                                                                                                         |
+| Track count in meta | **always shown once the first page has loaded** — never omitted, including `"0 tracks"` for a genuinely empty album (same reasoning `PODCAST_DETAIL.md` §5 gives for its own always-shown unplayed count)                                                                                                                                                                                                                                                                                           |
+| Duration in meta    | **shown only when the whole album is a single page** — `total <= 40` (the shared page size, `MUSIC_PAGE_SIZE` on Android / `limit: 40` on web) **and** that one page is fully loaded. Otherwise omit the segment. Computing a total duration would otherwise mean fetching every page of a multi-page album purely to build one header string — a real, deliberate limitation, not silently glossed over. The overwhelming majority of real albums fit in one page, so this covers the common case. |
+| Meta line, whole    | omit entirely if the album has zero tracks and no year/genre (nothing to show)                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Play / Shuffle      | **omit both entirely** when `tracks.length === 0` — nothing to play                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Track list, empty   | `"No tracks found for this album."` — matches today's copy exactly on both platforms, keep it                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 **Meta-line composition, stated once so both platforms build it the same way:**
 `"{year} · {genre} · {n} {track|tracks} · {duration}"`, each segment present only per the table
@@ -291,7 +291,7 @@ freshly-started queue — web: `useMusicQueueStore.getState().toggleShuffle()`
 `playerViewModel.toggleShuffle()` (`PlayerViewModel.kt:1071-1077`) called once right after
 `playQueue`. Both are safe to call unconditionally immediately after starting a **fresh** queue —
 a newly-started queue always begins unshuffled (`musicQueue.ts:113`; Media3's own default), so
-one `toggleShuffle()` call reliably turns shuffle *on*, never back off. **Do not build a separate
+one `toggleShuffle()` call reliably turns shuffle _on_, never back off. **Do not build a separate
 shuffled-queue-construction path** — reuse the app's one existing shuffle mechanism, the same one
 `NowPlaying.tsx`'s/the Android now-playing surface's own shuffle control already drives.
 
@@ -326,7 +326,7 @@ existing mechanisms — **name them, don't invent a new one**:
   has no equivalent path shape, so `jellyfinSource` puts the track's own Jellyfin item id here
   directly"). A track row is active when
   `trackAt(usePlayerStore.getState().tracks, usePlayerStore.getState().currentTime)?.track
-  .contentUrl === track.id`.
+.contentUrl === track.id`.
 
 **Visual + accessible treatment of "active" reuses each platform's existing "current" idiom —
 deliberately unequal, and both already meet the underlying requirement:**
@@ -340,7 +340,7 @@ deliberately unequal, and both already meet the underlying requirement:**
   job; `selected` inherits whatever `ListItem` resolves to today.)
 - **Android**: no `ListItem`-equivalent "selected" primitive exists. Reuse `QueueScreen.kt`'s own
   established convention instead (`QueueScreen.kt:108-117`): a trailing `Text("Now playing",
-  style = MaterialTheme.typography.labelMedium)`, shown only when active. Same literal string,
+style = MaterialTheme.typography.labelMedium)`, shown only when active. Same literal string,
   same style, applied to `TrackRow` (`AlbumDetailScreen.kt:281-327`).
 
 Both are already-shipped, already-reviewed idioms on their own platform for exactly this concept
@@ -371,7 +371,7 @@ not as drift.
 - **No visual-regression / screenshot testing** — `ROADMAP.md` §16 already names this gap
   project-wide.
 - **No change to how "Add album to playlist" or the album favourite toggle are wired** — both
-  keep their existing behaviour; only *where* they render may move (§9, §10) as a consequence of
+  keep their existing behaviour; only _where_ they render may move (§9, §10) as a consequence of
   adopting `MediaHeader`.
 
 ---
@@ -418,8 +418,8 @@ from what a screen reader announces, and is inconsistent with the pattern this a
 shipped on the podcast screen. Replace it with the same shape
 `PodcastDetailPage.tsx:222` already uses (`` `${episode.title}, ${formatPublishedAt(...)},
 ${formatDuration(...)}${stateLabel}` ``, no "Play" verb prefix): `` `${track.name}, ${duration}` ``
-plus `, Playing` appended when `selected` is true (§6, §11). Literal example, against the real
-fixture: `"Tidal Lines, 3:34"`, and `"Tidal Lines, 3:34, Playing"` when active.
+plus `, Playing`appended when`selected`is true (§6, §11). Literal example, against the real
+fixture:`"Tidal Lines, 3:34"`, and `"Tidal Lines, 3:34, Playing"` when active.
 
 ---
 
@@ -437,7 +437,7 @@ exists for any future screen that needs a linkable subtitle.
    (`:218-232`) must pass the composed string, computed from the `Loaded` state's already-fetched
    `JellyfinAlbum` fields (§4) plus `total`.
 2. **Wire the artist subtitle as a link** — pass `onSubtitleClick = { onGoToArtist(albumArtistId)
-   }` when `state.albumArtistId` is non-null (§5's fallback: plain text when null). `onGoToArtist`
+}` when `state.albumArtistId` is non-null (§5's fallback: plain text when null). `onGoToArtist`
    already exists as a parameter on `AlbumDetailContent` (`:208`, already wired to
    `Routes.musicArtistDetail(id)` at `:177`) — reuse it, don't add a second navigation path.
 3. **Wire Play/Shuffle** (§6) into `MediaHeader.kt:93`'s `actions` slot — a `Button` ("Play") and
@@ -445,7 +445,7 @@ exists for any future screen that needs a linkable subtitle.
    §6 specifies.
 4. **Add the "Now playing" indicator** (§6) to `TrackRow` (`:281-327`) — the same literal string
    and style `QueueScreen.kt:108-117` already uses, shown when `track.id ==
-   playerUiState.musicItemId`. `AlbumDetailScreen` (the `@Composable fun`, not `AlbumDetailContent`)
+playerUiState.musicItemId`. `AlbumDetailScreen` (the `@Composable fun`, not `AlbumDetailContent`)
    already collects `playerUiState` (`:77`); thread the current music item id down to
    `AlbumDetailContent`/`TrackRow` the same way `onTrackClick` etc. already flow down.
 5. **Merge each track row's semantics into one node** — `TrackRow`'s inner `Row` (`:308-318`,
@@ -489,7 +489,7 @@ construction; don't collapse them to make a test terser.
 ## 11. Accessibility requirements
 
 - **The cover image is decorative** — matches `MediaHeader.kt`'s existing `contentDescription =
-  null` on both the fallback icon and the `AsyncImage` (already correct on Android); web's
+null` on both the fallback icon and the `AsyncImage` (already correct on Android); web's
   `MediaHeader.tsx` already passes `alt=""` to `CoverImage` (`:102`) — no change needed there.
 - **Play and Shuffle must announce what they do**, via their own text labels — no separate
   `contentDescription`/`aria-label` needed, matching every other text-labelled button in this app.
