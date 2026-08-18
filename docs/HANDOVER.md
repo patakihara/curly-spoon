@@ -922,6 +922,43 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
+### CLAIMED — `16e-book-W` and `16e-book-A`. **Android has no book detail screen at all.**
+
+**The largest parity hole found so far, and it is on the user's stated priority 1.** Established by
+the `16e-book` recon wave with file:line evidence, not inferred: `Routes` in `AuralisNavHost.kt` has
+**no book entry**, while `PODCAST_DETAIL_PATTERN` and `MUSIC_ALBUM_DETAIL_PATTERN` both sit right
+beside it. Every Android tap path — `BooksScreen.kt:103` and `ForYouScreen.kt:72` — calls
+`playerViewModel.playItem(itemId)` directly, so **tapping a book starts playing it with no
+intermediate page**. The only `ApiClient.getItem` call site in the tree is Android Auto's browse
+tree, not a screen.
+
+**Labelled accidental gap, not idiom** — nothing in any doc claims it was decided against, and the
+container-needs-its-own-page pattern exists twice over in the same file.
+
+**`docs/design/screens/BOOK_DETAIL.md` is the shared behaviour spec** both waves build from — the
+first of its kind, and §16 requires one per screen so neither client is implemented against the
+other's output. Read it rather than either implementation.
+
+**Four calls it records, so the two waves cannot drift by guessing differently:**
+
+- **Series, genres, published year, ISBN are out of scope** — absent from both platforms _and_ from
+  Sonora's own book block. Named rather than silently dropped.
+- **Chapters are genuinely new on both.** `ChapterList.tsx` only ever operates on an already-loaded
+  player session, never on a not-yet-playing book, so tap-a-chapter-to-start-and-seek is new work.
+- **Offline download stays Android-only**, matching `DESIGN.md`'s own native-Android decision.
+  **Web's button is omitted rather than faked** — web has no download feature anywhere.
+- **The author link is deliberately unequal:** web links to `/author/:id`, Android renders plain
+  text, because building an Android author screen is out of this triple's scope.
+
+**One trap it surfaced that would otherwise be rediscovered.** `GET /items/:id?expanded=true` **does**
+carry real, matchable author and series ids — `expanded=true` returns Audiobookshelf's structured
+array, not the minified fallback. But web's shared `AuthorBadge` type **deliberately strips `id`
+app-wide** because of the twice-shipped minified-item bug. **The spec calls for a screen-scoped type
+here rather than widening the shared one**, which keeps that guard intact. Android's `AuthorRef`
+already has a non-nullable `id` and does not use it.
+
+**No BFF change is needed** — the existing route already serves everything.
+
 ### Session end, 2026-08-18 — **`main` is `ecf276b`, green on `CI`, `Android` and `Publish`**
 
 Nothing claimed, nothing in flight, `docs/agent-specs/` empty. Local at CI's own invocation
