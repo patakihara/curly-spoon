@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,10 +32,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.ImageLoader
-import coil.compose.AsyncImage
 import net.develivarr.auralis.AppContainer
 import net.develivarr.auralis.features.player.PlayerUiState
 import net.develivarr.auralis.features.player.PlayerViewModel
+import net.develivarr.auralis.ui.components.MediaHeader
 import net.develivarr.auralis.util.formatDuration
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -134,18 +135,19 @@ private fun PodcastDetailContent(
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = data.coverUrl,
-                    contentDescription = null,
-                    imageLoader = imageLoader,
-                    modifier = Modifier.size(96.dp),
-                )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                    Text(data.title, style = MaterialTheme.typography.titleLarge)
-                    data.author?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                }
-            }
+            // Wave 16e-book-A-2: the shared MediaHeader, same composable BookDetailScreen and
+            // AlbumDetailScreen adopt. No BOOK_DETAIL.md-equivalent spec exists for podcasts —
+            // "Podcast" as the kind label and the muted-role author subtitle are this screen's
+            // own reasonable extrapolation of the book screen's contract, not drawn from a
+            // written podcast spec (none exists yet).
+            MediaHeader(
+                coverUrl = data.coverUrl,
+                imageLoader = imageLoader,
+                fallbackIcon = Icons.Filled.Podcasts,
+                kindLabel = "Podcast",
+                title = data.title,
+                subtitle = data.author,
+            )
             data.description?.let {
                 Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 16.dp))
             }

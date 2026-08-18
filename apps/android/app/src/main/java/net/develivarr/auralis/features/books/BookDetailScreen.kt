@@ -7,14 +7,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,7 +42,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.ImageLoader
-import coil.compose.AsyncImage
 import net.develivarr.auralis.AppContainer
 import net.develivarr.auralis.features.home.DownloadActionState
 import net.develivarr.auralis.features.home.downloadActionClickable
@@ -50,6 +49,7 @@ import net.develivarr.auralis.features.home.downloadActionLabel
 import net.develivarr.auralis.features.player.PlaybackProgress
 import net.develivarr.auralis.features.player.PlayerUiState
 import net.develivarr.auralis.features.player.PlayerViewModel
+import net.develivarr.auralis.ui.components.MediaHeader
 
 /**
  * One audiobook's cover, metadata, description and chapter list — Android had no book detail
@@ -212,29 +212,28 @@ internal fun BookDetailContent(
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
-            Row {
-                // Decorative — duplicates the title text right next to it (§6 of the spec).
-                AsyncImage(
-                    model = data.coverUrl,
-                    contentDescription = null,
-                    imageLoader = imageLoader,
-                    modifier = Modifier.size(96.dp),
-                )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                    Text("Audiobook", style = MaterialTheme.typography.labelSmall)
-                    Text(data.title, style = MaterialTheme.typography.titleLarge)
-                    data.subtitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                    // Plain, non-interactive text on Android — no author screen this wave builds
-                    // (§4/§5/§7 of the spec; see BookDetailUiData.authorNames's own doc comment).
-                    data.authorNames?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                    data.metaLine?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                }
+            // Wave 16e-book-A-2: the cover/kind/title/author/meta block is now the shared
+            // MediaHeader (docs/design/screens/BOOK_DETAIL.md §3) — the same composable
+            // PodcastDetailScreen and AlbumDetailScreen adopt. Sonora's own "subtitle" slot is
+            // this screen's author name (§3: "subtitle — the author name"), rendered as plain,
+            // non-interactive text on Android (§4/§5/§7; see BookDetailUiData.authorNames's own
+            // doc comment) — never passed a click handler.
+            MediaHeader(
+                coverUrl = data.coverUrl,
+                imageLoader = imageLoader,
+                fallbackIcon = Icons.AutoMirrored.Filled.MenuBook,
+                kindLabel = "Audiobook",
+                title = data.title,
+                subtitle = data.authorNames,
+                meta = data.metaLine,
+            )
+            // The book's own metadata subtitle (Audiobookshelf's `media.subtitle`) is distinct
+            // from Sonora's MediaHeader "subtitle" slot above (which this screen uses for the
+            // author name) and isn't part of the design's MediaHeader contract at all — §3 names
+            // no such field. It stays a plain sibling line rather than a MediaHeader parameter,
+            // preserving this pre-existing content rather than dropping it.
+            data.subtitle?.let {
+                Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
             }
             Row(modifier = Modifier.padding(top = 16.dp)) {
                 // The button's own Text child gives it its accessible name (§6: "Play/Resume
