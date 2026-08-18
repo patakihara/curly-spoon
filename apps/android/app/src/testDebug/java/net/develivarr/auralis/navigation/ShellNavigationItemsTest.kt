@@ -1,10 +1,20 @@
 package net.develivarr.auralis.navigation
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.math.abs
+import net.develivarr.auralis.ui.theme.AuralisTheme
+import net.develivarr.auralis.ui.theme.SonoraAccentPresets
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +57,10 @@ class ShellNavigationItemsTest {
     @Test
     fun `hides Music, Books and Podcasts while nothing is configured`() {
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — ShellNavigationBarItems now
+            // reads AuralisAppTokens.current for its active-destination indicator, which only
+            // AuralisTheme provides (LocalSonoraAppTokens has no default and throws otherwise).
+            AuralisTheme {
                 NavigationBar {
                     ShellNavigationBarItems(
                         visibleDestinations = visibleShellDestinations(DestinationAvailability()),
@@ -68,7 +81,10 @@ class ShellNavigationItemsTest {
     @Test
     fun `shows every destination once every upstream is configured`() {
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — ShellNavigationBarItems now
+            // reads AuralisAppTokens.current for its active-destination indicator, which only
+            // AuralisTheme provides (LocalSonoraAppTokens has no default and throws otherwise).
+            AuralisTheme {
                 NavigationBar {
                     ShellNavigationBarItems(
                         visibleDestinations =
@@ -93,4 +109,74 @@ class ShellNavigationItemsTest {
         composeRule.onNodeWithTag(ShellDestination.PODCASTS.name).assertExists()
         composeRule.onNodeWithTag(ShellDestination.SEARCH.name).assertExists()
     }
+
+    /**
+     * Wave 16f-A-2: the nav-bar half of the same proof `SettingsContentTest`'s ring test gives
+     * the accent swatch — an existence check cannot tell whether the *active* item's indicator
+     * pill is actually painted from [net.develivarr.auralis.ui.theme.AuralisAppTokens.current]
+     * rather than [androidx.compose.material3.NavigationBarItemDefaults]' own neutral default,
+     * so this reads pixels. See that test's own honesty note: **not executed here** — no
+     * JDK/Android SDK on this machine, so this is reasoned through rather than run; CI is the
+     * first place it actually executes.
+     */
+    @Test
+    fun `the active destination's indicator pill repaints when the theme's accent changes`() {
+        val firstThemeAccent = SonoraAccentPresets[0]
+        val secondThemeAccent = SonoraAccentPresets[2]
+        assertNotEquals(
+            "the two theme accents must actually differ, or this test proves nothing",
+            firstThemeAccent,
+            secondThemeAccent,
+        )
+
+        val themeAccent = mutableStateOf(firstThemeAccent)
+        composeRule.setContent {
+            AuralisTheme(darkTheme = false, accent = themeAccent.value) {
+                NavigationBar {
+                    ShellNavigationBarItems(
+                        visibleDestinations = visibleShellDestinations(DestinationAvailability()),
+                        activeDestination = ShellDestination.FOR_YOU,
+                        onNavigate = {},
+                    )
+                }
+            }
+        }
+
+        val activeItem = composeRule.onNodeWithTag(ShellDestination.FOR_YOU.name)
+        assertTrue(
+            "expected the active item's indicator to carry the first theme accent",
+            activeItem.captureToImage().containsColorCloseTo(firstThemeAccent, tolerancePer255 = 6f),
+        )
+
+        composeRule.runOnIdle { themeAccent.value = secondThemeAccent }
+        composeRule.waitForIdle()
+
+        val imageAfter = activeItem.captureToImage()
+        assertTrue(
+            "expected the active item's indicator to carry the second theme accent after it changed",
+            imageAfter.containsColorCloseTo(secondThemeAccent, tolerancePer255 = 6f),
+        )
+        assertFalse(
+            "expected the indicator to no longer carry the first theme accent once it changed",
+            imageAfter.containsColorCloseTo(firstThemeAccent, tolerancePer255 = 6f),
+        )
+    }
+}
+
+/** True if any pixel in this image is within [tolerancePer255] (per RGB channel) of [target]. */
+private fun ImageBitmap.containsColorCloseTo(target: Color, tolerancePer255: Float): Boolean {
+    val tolerance = tolerancePer255 / 255f
+    val pixelMap = toPixelMap()
+    for (x in 0 until pixelMap.width) {
+        for (y in 0 until pixelMap.height) {
+            val pixel = pixelMap[x, y]
+            if (abs(pixel.red - target.red) <= tolerance &&
+                abs(pixel.green - target.green) <= tolerance &&
+                abs(pixel.blue - target.blue) <= tolerance
+            ) {
+                return true
+            }
+        }
+    }
+    return false
 }

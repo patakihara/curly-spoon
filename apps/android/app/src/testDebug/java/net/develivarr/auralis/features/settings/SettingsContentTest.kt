@@ -1,16 +1,25 @@
 package net.develivarr.auralis.features.settings
 
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.math.abs
 import net.develivarr.auralis.data.settings.ThemeMode
+import net.develivarr.auralis.ui.theme.AuralisTheme
 import net.develivarr.auralis.ui.theme.SonoraAccentPresets
+import net.develivarr.auralis.ui.theme.sonoraAppTokens
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +57,10 @@ class SettingsContentTest {
     @Test
     fun `renders all three theme mode options and every accent preset`() {
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — SettingsContent now reads
+            // AuralisAppTokens.current (the selection ring, the selected mode chip's fill), which
+            // only AuralisTheme provides.
+            AuralisTheme {
                 SettingsContent(
                     mode = ThemeMode.SYSTEM,
                     accent = SonoraAccentPresets.first(),
@@ -70,7 +82,10 @@ class SettingsContentTest {
     fun `clicking a mode chip reports the tapped mode`() {
         var reported: ThemeMode? = null
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — SettingsContent now reads
+            // AuralisAppTokens.current (the selection ring, the selected mode chip's fill), which
+            // only AuralisTheme provides.
+            AuralisTheme {
                 SettingsContent(
                     mode = ThemeMode.SYSTEM,
                     accent = SonoraAccentPresets.first(),
@@ -90,7 +105,10 @@ class SettingsContentTest {
         var reported: Color? = null
         val target = sonoraAccentPresetOptions[3]
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — SettingsContent now reads
+            // AuralisAppTokens.current (the selection ring, the selected mode chip's fill), which
+            // only AuralisTheme provides.
+            AuralisTheme {
                 SettingsContent(
                     mode = ThemeMode.SYSTEM,
                     accent = SonoraAccentPresets.first(),
@@ -110,7 +128,10 @@ class SettingsContentTest {
         val target = sonoraAccentPresetOptions[5]
         val other = sonoraAccentPresetOptions[0]
         composeRule.setContent {
-            MaterialTheme {
+            // Wave 16f-A-2: AuralisTheme, not a bare MaterialTheme — SettingsContent now reads
+            // AuralisAppTokens.current (the selection ring, the selected mode chip's fill), which
+            // only AuralisTheme provides.
+            AuralisTheme {
                 SettingsContent(
                     mode = ThemeMode.SYSTEM,
                     accent = target.color,
@@ -123,4 +144,85 @@ class SettingsContentTest {
         composeRule.onNodeWithTag("accent-preset-${target.label}").assertIsSelected()
         composeRule.onNodeWithTag("accent-preset-${other.label}").assertIsNotSelected()
     }
+
+    /**
+     * Wave 16f-A-2: the test this whole wave exists to have. `16f-P` found that choosing a
+     * swatch persisted, recomposed and repainted *nothing* — including the picker's own
+     * selection ring, which read `MaterialTheme.colorScheme.onSurface` rather than
+     * [AuralisAppTokens.current]. An existence/selection check (the tests above) cannot catch
+     * that regression: the ring exists and is marked selected either way. Only a pixel read can
+     * tell whether the ring's actual drawn colour tracks the accent.
+     *
+     * Deliberately keeps [SettingsContent]'s own `accent` parameter fixed at [target]'s colour
+     * across both frames — only [AuralisTheme]'s `accent`, i.e. [AuralisAppTokens.current], is
+     * mutated — so this proves the ring reads the *production* composition-local reader, not
+     * just a value that happens to be threaded through `SettingsContent`'s own prop.
+     *
+     * **Honesty note, per this wave's spec: this could not be executed here.** There is no
+     * JDK/Android SDK on this machine (`docs/HANDOVER.md`'s standing constraint), so this test
+     * has never actually been run, and the "make it fail on purpose" check the spec asks for
+     * (temporarily reverting the ring's border colour back to the old `onSurface` read and
+     * confirming this goes red) was reasoned through, not executed. CI is the first place this
+     * test — and the `captureToImage()`/`toPixelMap()` technique itself, which has no other user
+     * anywhere in this repo — will actually run.
+     */
+    @Test
+    fun `the selected accent swatch's ring repaints when the theme's accent changes`() {
+        val target = sonoraAccentPresetOptions[5]
+        val firstThemeAccent = sonoraAccentPresetOptions[0].color
+        val secondThemeAccent = sonoraAccentPresetOptions[2].color
+        val inkForFirst = sonoraAppTokens(darkTheme = false, accent = firstThemeAccent).accentInk
+        val inkForSecond = sonoraAppTokens(darkTheme = false, accent = secondThemeAccent).accentInk
+        assertNotEquals("the two theme accents must produce different ink colours, or this test proves nothing", inkForFirst, inkForSecond)
+
+        val themeAccent = mutableStateOf(firstThemeAccent)
+        composeRule.setContent {
+            AuralisTheme(darkTheme = false, accent = themeAccent.value) {
+                SettingsContent(
+                    mode = ThemeMode.SYSTEM,
+                    accent = target.color,
+                    onModeChange = {},
+                    onAccentChange = {},
+                )
+            }
+        }
+
+        val ringNode = composeRule.onNodeWithTag("accent-preset-${target.label}")
+        val imageBefore = ringNode.captureToImage()
+        assertTrue(
+            "expected the selected ring to carry accentInk for the first theme accent ($inkForFirst)",
+            imageBefore.containsColorCloseTo(inkForFirst, tolerancePer255 = 6f),
+        )
+
+        composeRule.runOnIdle { themeAccent.value = secondThemeAccent }
+        composeRule.waitForIdle()
+
+        val imageAfter = ringNode.captureToImage()
+        assertTrue(
+            "expected the selected ring to carry accentInk for the second theme accent ($inkForSecond) after it changed",
+            imageAfter.containsColorCloseTo(inkForSecond, tolerancePer255 = 6f),
+        )
+        assertFalse(
+            "expected the ring to no longer carry the first theme accent's ink once the theme accent changed",
+            imageAfter.containsColorCloseTo(inkForFirst, tolerancePer255 = 6f),
+        )
+    }
+}
+
+/** True if any pixel in this image is within [tolerancePer255] (per RGB channel) of [target]. */
+private fun ImageBitmap.containsColorCloseTo(target: Color, tolerancePer255: Float): Boolean {
+    val tolerance = tolerancePer255 / 255f
+    val pixelMap = toPixelMap()
+    for (x in 0 until pixelMap.width) {
+        for (y in 0 until pixelMap.height) {
+            val pixel = pixelMap[x, y]
+            if (abs(pixel.red - target.red) <= tolerance &&
+                abs(pixel.green - target.green) <= tolerance &&
+                abs(pixel.blue - target.blue) <= tolerance
+            ) {
+                return true
+            }
+        }
+    }
+    return false
 }
