@@ -31,13 +31,16 @@ import { useState } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import { Button, ListItem } from '@auralis/ui';
 import { RichDescription } from '../../components/RichDescription.js';
-import { CoverImage } from '../../components/CoverImage.js';
+import {
+  MediaHeader,
+  MEDIA_HEADER_SUBTITLE_CLASS,
+  MEDIA_HEADER_SUBTITLE_LINK_CLASS,
+} from '../../components/MediaHeader.js';
 import { useApi } from '../../api/ApiContext.js';
 import { useItemDetailQuery, usePlayItemMutation } from '../../api/queries.js';
 import { ApiError } from '../../api/errors.js';
 import { audiobookshelfSource } from '../player/playbackSource.js';
 import { usePlayerStore } from '../../state/playerStore.js';
-import { useBreakpoint } from '../../hooks/useBreakpoint.js';
 import { chapterAt, formatDuration } from '../player/playback.js';
 import { composeItemMeta } from './itemMeta.js';
 import type { Chapter } from '../../api/types.js';
@@ -48,7 +51,6 @@ export function ItemPage() {
   const itemQuery = useItemDetailQuery(itemId);
   const playMutation = usePlayItemMutation();
   const [playError, setPlayError] = useState<string | null>(null);
-  const isCompact = useBreakpoint() === 'compact';
 
   // Reactive: whether *this* book is the player's currently-loaded item, and
   // where playback currently is — both drive chapter-tap behaviour and
@@ -121,57 +123,42 @@ export function ItemPage() {
 
   return (
     <div className="auralis-page" data-testid="item-page">
-      <div
-        className={
-          isCompact ? 'auralis-item-header auralis-item-header--compact' : 'auralis-item-header'
-        }
-      >
-        <CoverImage
-          src={api.coverUrl(item.id, { width: 400 })}
-          alt=""
-          size={isCompact ? 208 : 232}
-          fallbackIcon="book_2"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            // Tonal letterbox behind a cover that is loading, or narrower than
-            // its frame — `CoverImage` supplies the radius and object-fit but
-            // has no opinion about what sits behind the image.
-            background: 'var(--surface-card)',
-          }}
-        />
-        <div className="auralis-item-header__meta">
-          <span className="auralis-item-header__kind">Audiobook</span>
-          <h1 className="auralis-item-header__title">{item.media.title}</h1>
-          {item.media.subtitle ? (
-            <p className="auralis-item-header__byline">{item.media.subtitle}</p>
-          ) : null}
-          {authorNames ? (
+      <MediaHeader
+        coverSrc={api.coverUrl(item.id, { width: 400 })}
+        fallbackIcon="book_2"
+        kindLabel="Audiobook"
+        title={item.media.title}
+        byline={item.media.subtitle}
+        subtitle={
+          authorNames ? (
             primaryAuthorId ? (
               <Link
                 to="/author/$authorId"
                 params={{ authorId: primaryAuthorId }}
-                className="auralis-item-header__subtitle auralis-item-header__subtitle--link"
+                className={`${MEDIA_HEADER_SUBTITLE_CLASS} ${MEDIA_HEADER_SUBTITLE_LINK_CLASS}`}
                 data-testid="item-author-link"
               >
                 {authorNames}
               </Link>
             ) : (
-              <p className="auralis-item-header__subtitle">{authorNames}</p>
+              <p className={MEDIA_HEADER_SUBTITLE_CLASS}>{authorNames}</p>
             )
-          ) : null}
-          {meta ? <p className="auralis-item-header__meta-line">{meta}</p> : null}
-          <div className="auralis-item-header__actions">
-            <Button data-testid="item-play" loading={playMutation.isPending} onClick={handlePlay}>
-              {item.progress ? 'Resume' : 'Play'}
-            </Button>
-          </div>
-          {playError ? (
+          ) : null
+        }
+        meta={meta}
+        actions={
+          <Button data-testid="item-play" loading={playMutation.isPending} onClick={handlePlay}>
+            {item.progress ? 'Resume' : 'Play'}
+          </Button>
+        }
+        footer={
+          playError ? (
             <p role="alert" data-testid="item-play-error">
               {playError}
             </p>
-          ) : null}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       <RichDescription
         html={item.media.description}

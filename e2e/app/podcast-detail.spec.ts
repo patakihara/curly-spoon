@@ -82,6 +82,127 @@ test('the podcast library links to a detail page with the podcast’s own metada
   );
 });
 
+test('the header meta line composes episode count and unplayed count', async ({
+  page,
+  request,
+}) => {
+  // Seeds both episodes to a known state explicitly, rather than depending on
+  // whatever progress another test in this file may already have written to
+  // the shared, single-tenant fake BFF — `playwright.config.ts`'s own rule
+  // that each spec makes its own preconditions true rather than inheriting
+  // them, same pattern the pre-existing "marked finished" test below uses.
+  const finished = await request.patch('/api/v1/progress/item-dailytech?episodeId=ep-dailytech-1', {
+    data: { currentTime: 300, duration: 300, progress: 1, isFinished: true },
+  });
+  expect(finished.ok()).toBe(true);
+  const inProgress = await request.patch(
+    '/api/v1/progress/item-dailytech?episodeId=ep-dailytech-2',
+    { data: { currentTime: 30, duration: 360, progress: 0.08, isFinished: false } },
+  );
+  expect(inProgress.ok()).toBe(true);
+
+  await openDailyTech(page);
+
+  // ep-1 played, ep-2 in progress: 2 episodes total, 1 still unplayed — not
+  // omitted even though it's non-zero (it isn't zero here, but §5's "0 is a
+  // real state, never omitted" rule is exercised by the no-episodes test
+  // below, where the whole line is correctly absent instead).
+  await expect(page.locator('.auralis-item-header__meta-line')).toHaveText(
+    '2 episodes · 1 unplayed',
+  );
+});
+
+test('"Play latest" starts the newest episode, independent of the chosen order', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const proto = HTMLMediaElement.prototype;
+    proto.play = () => Promise.resolve();
+    proto.pause = function () {};
+    Object.defineProperty(proto, 'src', {
+      configurable: true,
+      get(this: HTMLMediaElement & { _auralisSrc?: string }) {
+        return this._auralisSrc ?? '';
+      },
+      set(this: HTMLMediaElement & { _auralisSrc?: string }, value: string) {
+        this._auralisSrc = value;
+      },
+    });
+  });
+
+  await openDailyTech(page);
+  // Switch to oldest-first, so the button's target (newest) and the list's
+  // first row (oldest) disagree — proving "Play latest" reads its own
+  // newest-first sort rather than the visible list order (§6).
+  await page.getByTestId('episode-order-oldest').click();
+
+  await page.getByTestId('podcast-play-latest').click();
+
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+  await expect(page.getByTestId('mini-player-title')).toContainText('The One About Rust');
+});
+
+test('"Play latest" is absent when the podcast has no episodes', async ({ page }) => {
+  await page.route('**/api/v1/items/item-dailytech*', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        item: {
+          id: 'item-dailytech',
+          libraryId: 'lib-podcasts',
+          coverPath: null,
+          media: {
+            kind: 'podcast',
+            title: 'Daily Tech Briefing',
+            author: 'Signal Media',
+            description: null,
+            episodes: [],
+          },
+          progress: null,
+        },
+      }),
+    });
+  });
+
+  await page.goto('/podcast/item-dailytech');
+  await expect(page.getByTestId('podcast-detail-page')).toBeVisible();
+
+  await expect(page.getByTestId('podcast-play-latest')).toHaveCount(0);
+  // No episodes at all — the meta line is omitted entirely (§5), not rendered
+  // as "0 episodes · 0 unplayed".
+  await expect(page.locator('.auralis-item-header__meta-line')).toHaveCount(0);
+  await expect(page.getByText('This podcast has no episodes yet.')).toBeVisible();
+});
+
+test('the cover fallback tile resolves the Sonora radius, not the pre-Sonora 8px default', async ({
+  page,
+}) => {
+  // The fixture cover bytes never decode in this environment (same as
+  // `item-detail.spec.ts`'s equivalent check) — this screen is the live
+  // instance `PODCAST_DETAIL.md` §9 named for the `CoverImage` fallback
+  // defect fixed in `CoverImage.tsx` by 16e-podcast-W.
+  await openDailyTech(page);
+
+  const cover = page.locator('.auralis-item-header [aria-hidden="true"]').first();
+  await expect(cover).toBeVisible();
+  const [coverRadius, expectedRadius] = await cover.evaluate((el) => {
+    const actual = getComputedStyle(el).borderRadius;
+    const probe = document.createElement('span');
+    probe.style.borderRadius = 'var(--radius-lg)';
+    el.parentElement?.appendChild(probe);
+    const expected = getComputedStyle(probe).borderRadius;
+    probe.remove();
+    return [actual, expected];
+  });
+  expect(expectedRadius).not.toBe('');
+  expect(coverRadius).toBe(expectedRadius);
+});
+
 test('episodes are listed newest first by default', async ({ page }) => {
   await openDailyTech(page);
 
@@ -196,7 +317,10 @@ test('keyboard tab order on the podcast detail page matches visual order, with a
   await page.locator('h1').first().click();
 
   const stops: string[] = [];
-  for (let i = 0; i < 8; i++) {
+  // Bumped from 8 to 10 (16e-podcast-W): the new header "Play latest" button
+  // (§6) is one more real, testid-carrying focus stop ahead of the episode
+  // rows, so the old budget could run out before reaching the second row.
+  for (let i = 0; i < 10; i++) {
     await page.keyboard.press('Tab');
     const info = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
@@ -214,15 +338,20 @@ test('keyboard tab order on the podcast detail page matches visual order, with a
 
   // Visual order, top to bottom: the shell's top search field and nav (none of
   // which carry a `data-testid` on the exact element that receives focus — the
-  // combobox `<input>` and the nav `NavLink`s don't), then this page's own
-  // order-toggle chips (a chip's `data-testid` sits on the wrapper `<span>` in
-  // `Chip.tsx`, not on the `<input>` that actually receives focus, so those don't
-  // contribute a stop here either), then the episode list — newest ("Rust") first
-  // under the page's default sort, matching `episodes are listed newest first by
-  // default` above. This list only asserts on the stops that do carry a
-  // `data-testid`, in the order they were reached, which is exactly the two
-  // episode rows.
-  expect(stops).toEqual(['podcast-episode-ep-dailytech-2', 'podcast-episode-ep-dailytech-1']);
+  // combobox `<input>` and the nav `NavLink`s don't), then the header's new
+  // "Play latest" button (16e-podcast-W, §6 — a real `data-testid`-carrying
+  // stop, since both episodes exist so the button renders), then this page's
+  // own order-toggle chips (a chip's `data-testid` sits on the wrapper `<span>`
+  // in `Chip.tsx`, not on the `<input>` that actually receives focus, so those
+  // don't contribute a stop here either), then the episode list — newest
+  // ("Rust") first under the page's default sort, matching `episodes are
+  // listed newest first by default` above. This list only asserts on the stops
+  // that do carry a `data-testid`, in the order they were reached.
+  expect(stops).toEqual([
+    'podcast-play-latest',
+    'podcast-episode-ep-dailytech-2',
+    'podcast-episode-ep-dailytech-1',
+  ]);
 });
 
 for (const scheme of ['light', 'dark'] as const) {

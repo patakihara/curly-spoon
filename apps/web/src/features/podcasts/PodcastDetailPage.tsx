@@ -12,12 +12,21 @@
  * `ItemPage` already uses) — an expanded fetch is what populates `media.episodes`
  * (`packages/abs-client`'s minified/expanded split), and it's already the shape
  * this app fetches for every item detail view, book or podcast.
+ *
+ * **Restyled against the shared `MediaHeader`** (16e-podcast-W,
+ * `docs/design/screens/PODCAST_DETAIL.md` §9) — the header block this page used to own
+ * inline is now the same component `ItemPage.tsx` uses. Two behaviours the spec adds
+ * beyond the restyle: a composed episode-count/unplayed-count meta line (`podcastMeta.ts`,
+ * §5) and a "Play latest" header action (§6) that is pure sugar over the existing
+ * per-episode `handlePlayEpisode` path — sort newest-first, take the first, call the same
+ * function every episode row already calls. Its loading/error state therefore reuses the
+ * existing `pendingEpisodeId`/`playError` state machine unchanged; no new state was added.
  */
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
-import { Chip, Icon, ListItem, Skeleton } from '@auralis/ui';
+import { Button, Chip, Icon, ListItem, Skeleton } from '@auralis/ui';
 import { RichDescription } from '../../components/RichDescription.js';
-import { CoverImage } from '../../components/CoverImage.js';
+import { MediaHeader, MEDIA_HEADER_SUBTITLE_CLASS } from '../../components/MediaHeader.js';
 import { useApi } from '../../api/ApiContext.js';
 import { useItemQuery, useMyProgressQuery, usePlayEpisodeMutation } from '../../api/queries.js';
 import { ApiError } from '../../api/errors.js';
@@ -26,6 +35,7 @@ import { formatDuration } from '../player/playback.js';
 import { audiobookshelfSource } from '../player/playbackSource.js';
 import { sortEpisodes, type EpisodeOrder } from './episodeOrder.js';
 import { episodeProgressState, findEpisodeProgress } from './episodeProgress.js';
+import { composePodcastMeta } from './podcastMeta.js';
 
 const ORDER_OPTIONS: Array<{ key: EpisodeOrder; label: string }> = [
   { key: 'newest', label: 'Newest first' },
@@ -79,6 +89,17 @@ export function PodcastDetailPage() {
   const episodes = sortEpisodes(item.media.episodes ?? [], order);
   const allProgress = progressQuery.data?.progress ?? [];
 
+  // The header's meta line and "Play latest" both need the newest episode and
+  // the unplayed count independent of the user's chosen `order` (§5, §6) — computed
+  // from the raw, unsorted list rather than `episodes` (which follows `order`).
+  const rawEpisodes = item.media.episodes ?? [];
+  const unplayedCount = rawEpisodes.filter(
+    (episode) =>
+      episodeProgressState(findEpisodeProgress(allProgress, item.id, episode.id)) !== 'played',
+  ).length;
+  const meta = composePodcastMeta(rawEpisodes.length, unplayedCount);
+  const newestEpisode = sortEpisodes(rawEpisodes, 'newest')[0];
+
   const handlePlayEpisode = async (episodeId: string) => {
     setPlayError(null);
     setPendingEpisodeId(episodeId);
@@ -100,28 +121,38 @@ export function PodcastDetailPage() {
     }
   };
 
+  // "Play latest" (§6, new): sort newest-first, take the first, call the exact
+  // same per-episode play path every episode row already calls with that
+  // episode's id — sugar over an existing action, no new play concept.
+  const handlePlayLatest = () => {
+    if (newestEpisode) void handlePlayEpisode(newestEpisode.id);
+  };
+
   return (
     <div className="auralis-page" data-testid="podcast-detail-page">
-      <div className="auralis-item-header">
-        <CoverImage
-          src={api.coverUrl(item.id, { width: 400 })}
-          alt=""
-          size={200}
-          fallbackIcon="podcasts"
-          style={{
-            borderRadius: 'var(--m3-shape-lg)',
-            // Carried over from the `.auralis-item-cover` class this used to
-            // carry: the tonal letterbox behind a cover that is loading, or
-            // narrower than its frame. `CoverImage` supplies the radius and
-            // object-fit but has no opinion about what sits behind the image.
-            background: 'var(--m3-surface-container)',
-          }}
-        />
-        <div>
-          <h1>{item.media.title}</h1>
-          {item.media.author ? <p>{item.media.author}</p> : null}
-        </div>
-      </div>
+      <MediaHeader
+        coverSrc={api.coverUrl(item.id, { width: 400 })}
+        fallbackIcon="podcasts"
+        kindLabel="Podcast"
+        title={item.media.title}
+        subtitle={
+          item.media.author ? (
+            <p className={MEDIA_HEADER_SUBTITLE_CLASS}>{item.media.author}</p>
+          ) : null
+        }
+        meta={meta}
+        actions={
+          newestEpisode ? (
+            <Button
+              data-testid="podcast-play-latest"
+              loading={pendingEpisodeId === newestEpisode.id}
+              onClick={handlePlayLatest}
+            >
+              Play latest
+            </Button>
+          ) : null
+        }
+      />
 
       <RichDescription
         html={item.media.description}
