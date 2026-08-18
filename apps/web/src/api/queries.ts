@@ -164,6 +164,20 @@ export function useItemQuery(itemId: string) {
 }
 
 /**
+ * `ItemPage.tsx`'s book detail screen only — see `ApiClient.getItemDetail`'s doc
+ * comment. Same URL and cache key as `useItemQuery` (this *is* the same request),
+ * just typed to see the real author id the shared `LibraryItem` shape hides.
+ */
+export function useItemDetailQuery(itemId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.item(itemId),
+    queryFn: ({ signal }) => api.getItemDetail(itemId, signal),
+    staleTime: 30_000,
+  });
+}
+
+/**
  * `sync`/`close` aren't wrapped as query hooks: they're fire-and-forget calls made
  * from a background interval and on unmount (see `features/player/useProgressSync.ts`),
  * never feed React Query's cache, and nothing renders their result — a `useMutation`

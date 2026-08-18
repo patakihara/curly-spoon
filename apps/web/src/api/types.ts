@@ -69,6 +69,43 @@ export interface AuthorBadge {
   name: string;
 }
 
+/**
+ * A book's real author reference — for `ItemPage.tsx`'s book detail screen only
+ * (`docs/design/screens/BOOK_DETAIL.md` §4, §5's "Author tap"). Unlike `AuthorBadge`
+ * above, `GET /items/:id?expanded=true` genuinely carries a real, matchable author
+ * id: it receives Audiobookshelf's *structured* `metadata.authors[]`, never the
+ * minified-item `authorName` fallback that fabricates an id equal to the display
+ * name (the trap `AuthorBadge`'s own comment documents). `normalizeMedia` passes
+ * `metadata.authors[].id` through verbatim when the array is present.
+ *
+ * Deliberately **not** folded into `MediaSummary`/`AuthorBadge` — every other
+ * consumer of a book's `authors[]` reads shelf/list data, where the id is fake.
+ * Widening the shared type to admit `id` would silently re-open the trap that
+ * shipped twice (`findAuthorBooks`, the old `SeriesPage`). This type exists only
+ * to let the one screen that legitimately has a real id use it — see
+ * `ItemDetailResponse` below, returned only by `ApiClient.getItemDetail`.
+ */
+export interface ItemDetailAuthorRef {
+  id: string;
+  name: string;
+}
+
+/**
+ * `GET /items/:id?expanded=true&include=progress`'s response, widened only in
+ * the one field this screen needs widened. Same wire JSON as `{ item: LibraryItem }`
+ * (`ApiClient.getItem`) — this is not a different endpoint or a different fetch,
+ * just a different, screen-scoped *view* of the same response, so `ItemPage.tsx`
+ * can read the real author id `LibraryItem`'s `MediaSummary.authors: AuthorBadge[]`
+ * deliberately hides. `ApiClient.getItemDetail`/`useItemDetailQuery` are the only
+ * things that should return or consume this type; every other item-detail consumer
+ * (`PodcastDetailPage.tsx`) keeps using `getItem`/`useItemQuery`/`LibraryItem`.
+ */
+export interface ItemDetailResponse {
+  item: LibraryItem & {
+    media: Omit<MediaSummary, 'authors'> & { authors?: ItemDetailAuthorRef[] };
+  };
+}
+
 /** Chapter markers, in seconds from the start of the whole book/episode. */
 export interface Chapter {
   id: number;

@@ -79,6 +79,27 @@ test("an author book card navigates to that book's item page", async ({ page }) 
   await expect(page.getByTestId('item-page')).toBeVisible();
 });
 
+// 16e-book-W: the book detail screen's author link (docs/design/screens/BOOK_DETAIL.md
+// §5, "Author tap"). Real, matchable ids only exist on GET /items/:id?expanded=true —
+// this fixture's own author-herbert/author-tolkien ids are what confirm the link lands
+// on the *correct* author page, not merely *an* author page.
+test("the book detail page's author name links to that author's own page", async ({ page }) => {
+  await page.goto('/item/item-dune');
+  await expect(page.getByTestId('item-page')).toBeVisible();
+
+  const authorLink = page.getByTestId('item-author-link');
+  await expect(authorLink).toBeVisible();
+  await expect(authorLink).toHaveText('Frank Herbert');
+
+  await authorLink.click();
+
+  await expect(page).toHaveURL(/\/author\/author-herbert$/);
+  await expect(page.getByTestId('author-name')).toHaveText('Frank Herbert');
+  // Confirms this is genuinely a working page, not a dead link that happens to
+  // change the URL — the same author's other book is reachable from it.
+  await expect(page.getByTestId('author-book-item-dune')).toBeVisible();
+});
+
 test('a multi-book series renders in sequence order, not alphabetical order', async ({ page }) => {
   await page.goto('/series/series-lotr');
 

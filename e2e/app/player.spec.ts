@@ -67,6 +67,87 @@ test('starting a book from its item page shows the mini player with that book’
   await expect(page.getByTestId('mini-player-title')).toContainText('Dune');
 });
 
+// 16e-book-W: the book detail screen's chapter list, and the two tap cases
+// docs/design/screens/BOOK_DETAIL.md §5 requires — new behaviour on both, since
+// `ChapterList.tsx` (Now Playing) only ever operates on an already-loaded session.
+// `item-dune` is the fixture built for this: two chapters, "Part One" 0-630s and
+// "Part Two" 630-1260s, so seeking to chapter 2 lands at exactly 50% (630/1260).
+
+test('tapping a chapter of a book that is not the player’s currently-loaded item starts playback of that book and seeks to the chapter', async ({
+  page,
+}) => {
+  let dunePlayCalls = 0;
+  await page.route('**/api/v1/items/item-dune/play', async (route) => {
+    dunePlayCalls += 1;
+    await route.continue();
+  });
+
+  // Load a *different* book first, so item-dune is genuinely not the loaded item —
+  // the case this test exists to pin, not merely "nothing has ever played".
+  await page.goto('/item/item-fellowship');
+  await expect(page.getByTestId('item-page')).toBeVisible();
+  await page.getByTestId('item-play').click();
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Fellowship');
+
+  await page.goto('/item/item-dune');
+  await expect(page.getByTestId('item-page')).toBeVisible();
+  const chapterTwo = page.getByTestId('item-chapter-2');
+  await expect(chapterTwo).toBeVisible();
+
+  // Not the loaded item yet — no chapter reads as active (spec §5: active-chapter
+  // highlighting only applies once this book is genuinely the loaded session).
+  await expect(page.locator('[data-testid^="item-chapter-"][aria-current="true"]')).toHaveCount(0);
+
+  await chapterTwo.click();
+
+  // Observable effect on the player, not a return value: the mini player now
+  // shows *this* book, exactly one play session was opened for it, and playback
+  // is genuinely at chapter 2's start rather than the session's own resume point
+  // (item-dune carries no stored progress, so a plain "Play" would have landed
+  // at 0%, not ~50%).
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Dune');
+  expect(dunePlayCalls).toBe(1);
+
+  const progressBar = page.getByRole('progressbar', { name: 'Playback progress' });
+  await expect
+    .poll(async () => Number(await progressBar.getAttribute('aria-valuenow')))
+    .toBeGreaterThan(45);
+
+  // Now that this book is the loaded item, the tapped chapter reads as active.
+  await expect(chapterTwo).toHaveAttribute('aria-current', 'true');
+});
+
+test('tapping a chapter of the player’s currently-loaded book seeks within the existing session, without starting a new one', async ({
+  page,
+}) => {
+  let dunePlayCalls = 0;
+  await page.route('**/api/v1/items/item-dune/play', async (route) => {
+    dunePlayCalls += 1;
+    await route.continue();
+  });
+
+  await startDune(page);
+  expect(dunePlayCalls).toBe(1);
+
+  const chapterTwo = page.getByTestId('item-chapter-2');
+  await expect(chapterTwo).toBeVisible();
+  await chapterTwo.click();
+
+  // The load-bearing assertion: seeking within an already-loaded session must
+  // not open a second one — a test that only checked the progress bar moved
+  // could pass even if every chapter tap silently restarted playback.
+  expect(dunePlayCalls).toBe(1);
+
+  await expect(chapterTwo).toHaveAttribute('aria-current', 'true');
+
+  const progressBar = page.getByRole('progressbar', { name: 'Playback progress' });
+  await expect
+    .poll(async () => Number(await progressBar.getAttribute('aria-valuenow')))
+    .toBeGreaterThan(45);
+});
+
 test('the mini player’s toggle switches its own aria-label between Play and Pause', async ({
   page,
 }) => {

@@ -23,6 +23,7 @@ import type {
   JellyfinPlaylistItem,
   JellyfinSearchResults,
   JellyfinTrack,
+  ItemDetailResponse,
   LibraryItem,
   LibraryItemsPage,
   Library,
@@ -265,6 +266,21 @@ export class ApiClient {
   // ---------------------------------------------------------------------
 
   getItem(itemId: string, signal?: AbortSignal): Promise<{ item: LibraryItem }> {
+    return this.request(`/items/${encodeURIComponent(itemId)}`, {
+      query: { expanded: true, include: 'progress' },
+      signal,
+    });
+  }
+
+  /**
+   * Same request as `getItem` — identical URL, identical query, identical wire
+   * response — typed as `ItemDetailResponse` instead of `{ item: LibraryItem }` so
+   * `ItemPage.tsx`'s book detail screen can read the real author id `LibraryItem`
+   * deliberately hides (see `ItemDetailResponse`'s doc comment in `types.ts`).
+   * Screen-scoped on purpose: every other item-detail consumer keeps using
+   * `getItem`/`useItemQuery`.
+   */
+  getItemDetail(itemId: string, signal?: AbortSignal): Promise<ItemDetailResponse> {
     return this.request(`/items/${encodeURIComponent(itemId)}`, {
       query: { expanded: true, include: 'progress' },
       signal,
