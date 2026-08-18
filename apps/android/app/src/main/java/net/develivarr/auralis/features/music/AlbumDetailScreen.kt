@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -30,6 +31,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -75,6 +79,12 @@ fun AlbumDetailScreen(
         )
     val uiState by viewModel.uiState.collectAsState()
     val playerUiState by playerViewModel.uiState.collectAsState()
+    // §6 of the spec: "the Jellyfin item id of the currently-playing music track, null unless
+    // music is loaded" — PlayerUiState.Playing.musicItemId already carries exactly this, built
+    // for the lyrics screen's identical "is this screen's own item the one playing" check
+    // (PlayerViewModel.kt's audiobookItemId doc comment states the pattern explicitly). A track
+    // row is active when its id matches this.
+    val activeTrackId = (playerUiState as? PlayerUiState.Playing)?.musicItemId
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     // The item ids the currently-open AddToPlaylistSheet should add — null means the sheet is
@@ -126,12 +136,34 @@ fun AlbumDetailScreen(
                     imageLoader = container.imageLoader,
                     state = state,
                     albumId = albumId,
+                    activeTrackId = activeTrackId,
                     onLoadMore = viewModel::loadMoreTracks,
                     onTrackClick = { track ->
                         playerViewModel.playQueue(
                             buildQueue = { viewModel.buildQueueFrom(track) },
                             fetchRemaining = { onPage -> viewModel.appendRemainingToQueue(onPage) },
                         )
+                    },
+                    // §6: Play starts the queue through the exact same mechanism the first track
+                    // row's own click already uses — sugar over the existing per-track action,
+                    // not a second playback path.
+                    onPlayAlbum = {
+                        playerViewModel.playQueue(
+                            buildQueue = { viewModel.buildQueueFrom(state.tracks.first()) },
+                            fetchRemaining = { onPage -> viewModel.appendRemainingToQueue(onPage) },
+                        )
+                    },
+                    // §6: the same queue-start as Play, then one toggleShuffle() call right
+                    // after — a freshly-started queue always begins unshuffled, so this reliably
+                    // turns shuffle on, never back off. Reuses the app's one existing shuffle
+                    // mechanism (PlayerViewModel.toggleShuffle()); no separate shuffled-queue
+                    // construction path.
+                    onShuffleAlbum = {
+                        playerViewModel.playQueue(
+                            buildQueue = { viewModel.buildQueueFrom(state.tracks.first()) },
+                            fetchRemaining = { onPage -> viewModel.appendRemainingToQueue(onPage) },
+                        )
+                        playerViewModel.toggleShuffle()
                     },
                     onToggleAlbumFavorite = viewModel::toggleAlbumFavorite,
                     onToggleTrackFavorite = viewModel::toggleTrackFavorite,
@@ -190,14 +222,26 @@ fun AlbumDetailScreen(
     }
 }
 
+/**
+ * `internal`, not `private` — the same step `16e-podcast-A` took for `PodcastDetailContent` —
+ * so [AlbumDetailContentTest] can compose this stateless half directly rather than pumping a
+ * real [AlbumDetailViewModel]'s coroutines through `collectAsState`.
+ */
 @Composable
-private fun AlbumDetailContent(
+internal fun AlbumDetailContent(
     modifier: Modifier,
     imageLoader: ImageLoader,
     state: AlbumDetailUiState.Loaded,
     onLoadMore: () -> Unit,
     albumId: String,
+    /** [PlayerUiState.Playing.musicItemId] of whichever track is currently playing, `null` when
+     * none is (or when something other than music is loaded). See §6/§11 of the spec: the row
+     * matching this id shows a "Now playing" label and folds that state into its merged
+     * accessibility announcement. */
+    activeTrackId: String?,
     onTrackClick: (MusicTrackUi) -> Unit,
+    onPlayAlbum: () -> Unit,
+    onShuffleAlbum: () -> Unit,
     onToggleAlbumFavorite: () -> Unit,
     onToggleTrackFavorite: (String) -> Unit,
     onAddTrackToPlaylist: (MusicTrackUi) -> Unit,
@@ -215,6 +259,9 @@ private fun AlbumDetailContent(
             // The favourite toggle is genuinely album-specific content, so it stays vertically
             // aligned with the art/title column via MediaHeader's trailingContent slot rather
             // than living inside the shared composable itself.
+            //
+            // Wave 16e-album wires meta/onSubtitleClick/actions, all previously unwired per
+            // docs/design/screens/ALBUM_DETAIL.md §2/§3/§10.
             MediaHeader(
                 coverUrl = state.coverUrl,
                 imageLoader = imageLoader,
@@ -222,6 +269,11 @@ private fun AlbumDetailContent(
                 kindLabel = "Album",
                 title = state.albumName,
                 subtitle = state.artistName,
+                meta = state.meta,
+                // §5's fallback: plain, non-clickable subtitle when albumArtistId is null even
+                // though artistName is present. onGoToArtist already exists and is already
+                // wired to Routes.musicArtistDetail(id) below — reused, not a second nav path.
+                onSubtitleClick = state.albumArtistId?.let { id -> { onGoToArtist(id) } },
                 trailingContent = {
                     FavoriteToggleButton(
                         favorite = state.albumFavorite,
@@ -229,6 +281,23 @@ private fun AlbumDetailContent(
                         onToggle = onToggleAlbumFavorite,
                     )
                 },
+                // §5: omit both Play and Shuffle entirely when there is nothing to play.
+                actions =
+                    if (state.tracks.isNotEmpty()) {
+                        {
+                            Button(onClick = onPlayAlbum, modifier = Modifier.testTag("album-play-button")) {
+                                Text("Play")
+                            }
+                            OutlinedButton(
+                                onClick = onShuffleAlbum,
+                                modifier = Modifier.padding(start = 8.dp).testTag("album-shuffle-button"),
+                            ) {
+                                Text("Shuffle")
+                            }
+                        }
+                    } else {
+                        null
+                    },
             )
             // Disabled for a genuinely empty album — there is nothing to seed a playlist with.
             TextButton(onClick = onAddAlbumToPlaylist, enabled = state.tracks.isNotEmpty()) {
@@ -242,6 +311,7 @@ private fun AlbumDetailContent(
         items(state.tracks, key = { it.id }) { track ->
             TrackRow(
                 track,
+                active = track.id == activeTrackId,
                 menuContext = TrackMenuContext(albumId = albumId, artistId = state.albumArtistId),
                 onClick = { onTrackClick(track) },
                 onToggleFavorite = { onToggleTrackFavorite(track.id) },
@@ -281,6 +351,7 @@ private fun AlbumDetailContent(
 @Composable
 private fun TrackRow(
     track: MusicTrackUi,
+    active: Boolean,
     menuContext: TrackMenuContext,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -292,7 +363,11 @@ private fun TrackRow(
 ) {
     val menuState = rememberTrackContextMenuState()
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .testTag("album-track-${track.id}"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TrackContextMenu(
@@ -305,7 +380,16 @@ private fun TrackRow(
             onGoToArtist = onGoToArtist,
             rowModifier = Modifier.weight(1f),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                // Merges title/duration/active-state into one announcement rather than three
+                // separate nodes a screen reader would step through — §11 of the spec: "must
+                // announce, at minimum: its title, its duration, and whether it's the one
+                // currently playing". Wraps this inner Row, not the whole TrackRow (§10): the
+                // trailing "Add"/favourite buttons stay separate interactive elements, matching
+                // this file's own existing doc comment on why they're siblings, not nested.
+                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = trackAnnouncement(track, active) },
+            ) {
                 Text(
                     track.position,
                     style = MaterialTheme.typography.bodySmall,
@@ -317,6 +401,18 @@ private fun TrackRow(
                 Text(formatDuration(track.durationSeconds), style = MaterialTheme.typography.bodySmall)
             }
         }
+        // §6: the visual half of the currently-playing indicator, reusing QueueScreen.kt's own
+        // established "Now playing" trailing-label convention rather than inventing a third,
+        // album-specific treatment (§8: deliberately unequal to web's ListItem `selected`/
+        // `aria-current`, both already meeting §11's requirement). The accessible half lives in
+        // the merged contentDescription above, not here — §11: "must not be visual-only".
+        if (active) {
+            Text(
+                "Now playing",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 8.dp).testTag("album-track-${track.id}-now-playing"),
+            )
+        }
         TextButton(onClick = onAddToPlaylist) { Text("Add") }
         FavoriteToggleButton(
             favorite = track.favorite,
@@ -324,4 +420,23 @@ private fun TrackRow(
             onToggle = onToggleFavorite,
         )
     }
+}
+
+/**
+ * Merges a track row's title, duration and currently-playing state into one screen-reader
+ * announcement (§11 of the spec) — the album counterpart to
+ * [net.develivarr.auralis.features.podcasts.episodeAnnouncement]/
+ * [net.develivarr.auralis.features.books.chapterAnnouncement]. `internal`, not `private`, so
+ * [AlbumDetailContentTest] can assert on it directly rather than hardcoding a second copy of the
+ * format. Track position (the "N"/"D.N" number) is deliberately not included — §11: "already
+ * implicit in list order", matching neither the book screen's chapter index nor the podcast's
+ * episode order being separately announced. Literal examples: `"Tidal Lines, 3:34"`, and
+ * `"Tidal Lines, 3:34, Playing"` when active.
+ */
+internal fun trackAnnouncement(
+    track: MusicTrackUi,
+    active: Boolean,
+): String {
+    val base = "${track.title}, ${formatDuration(track.durationSeconds)}"
+    return if (active) "$base, Playing" else base
 }
