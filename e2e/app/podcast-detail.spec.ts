@@ -224,6 +224,32 @@ test('switching to oldest-first reorders the episode list', async ({ page }) => 
   await expect(headlines).toHaveText(['Pilot', 'The One About Rust']);
 });
 
+test('an episode row announces its title first, matching Android’s announced order', async ({
+  page,
+}) => {
+  await openDailyTech(page);
+
+  const row = page.getByTestId('podcast-episode-ep-dailytech-2');
+  await expect(row).toBeVisible();
+
+  // `16e-podcast-P` found web and Android announcing the same four facts in
+  // different orders. Android's `episodeAnnouncement` leads with the title;
+  // web's row had no `aria-label`, so its accessible name came from DOM text
+  // order — and `ListItem` renders `overline` (the date) before `headline`.
+  //
+  // This asserts the accessible name, not the DOM text, which is the whole
+  // point: the visual order is deliberately unchanged, so a test reading text
+  // content would pass either way and prove nothing.
+  const label = await row.getAttribute('aria-label');
+  expect(label).not.toBeNull();
+
+  const title = await row.locator('.m3-list-item__headline').innerText();
+  const date = await row.locator('.m3-list-item__overline').innerText();
+
+  expect(label!.startsWith(title)).toBe(true);
+  expect(label!.indexOf(title)).toBeLessThan(label!.indexOf(date));
+});
+
 test('an episode marked finished shows as played in the list', async ({ page, request }) => {
   // Seed progress directly against the BFF (bypassing the UI, which has no
   // progress-editing surface of its own) — mirrors how a real listener would
