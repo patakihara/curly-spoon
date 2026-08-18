@@ -859,6 +859,26 @@ three screens; verified by diff rather than by report that `BookDetailScreen` an
 `Text` lives inside the component's own `Column`, which is why a caller-supplied slot could not carry
 the click.
 
+**`16e-album-A` is CI-green on `79c0134`, after two red rounds that bought a lesson worth more than
+the wave.** Both rounds were the **same** cause wearing two faces, and it is now the fourth time the
+`LazyColumn` viewport trap has bitten a wave here:
+
+> **A Compose click that neither throws nor fires its callback is off-viewport.** `performClick`
+> injects a touch, and a touch must land inside the _displayed_ viewport to reach its target. When it
+> does not, nothing throws — the failure surfaces as a bare `AssertionError` on the **next** line,
+> pointing away from the cause. **The tell is that `assertExists` on the same tag passes**: existence
+> only needs the node composed, a click needs it displayed.
+
+Round one fixed Play/Shuffle by scrolling to the tag first. Round two needed a different instrument:
+**`performSemanticsAction(SemanticsActions.OnClick)`**, which invokes the node's own click action and
+so does not depend on gesture dispatch or geometry at all. **That is not a weaker assertion** — it
+still fails if the handler is unwired and still pins that the album's _own_ artist id is reported.
+Reach for it whenever a click must be verified on a tall screen.
+
+**Why this screen and not the earlier ones:** `16e-album-A` gave the header both a meta line **and**
+an actions row, making it the tallest in the app. The wave scrolled before asserting on track rows —
+correctly — and assumed header content was safe, which was true until this header grew.
+
 **Two things `-A` flagged honestly and a reader should not have to rediscover:**
 
 1. **Its track-tap test locator is genuinely uncertain.** The merged-semantics node and the clickable
