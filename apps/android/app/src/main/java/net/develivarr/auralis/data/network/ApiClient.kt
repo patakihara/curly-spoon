@@ -56,6 +56,7 @@ import net.develivarr.auralis.data.model.PreviewPodcastFeedBody
 import net.develivarr.auralis.data.model.ProviderEntry
 import net.develivarr.auralis.data.model.ProvidersResponse
 import net.develivarr.auralis.data.model.RecommendedResponse
+import net.develivarr.auralis.data.model.RecommendedShelf
 import net.develivarr.auralis.data.model.Release
 import net.develivarr.auralis.data.model.RequestResponse
 import net.develivarr.auralis.data.model.RequestSearchResult
@@ -119,12 +120,16 @@ class ApiClient(
 
     suspend fun libraryHome(libraryId: String): List<Shelf> = get<HomeResponse>("/libraries/$libraryId/home").shelves
 
-    /** GET /libraries/{id}/recommended — same `{ shelves }` envelope as [libraryHome] plus each
-     * shelf's `reason`; a cold-start user (no listening progress at all) gets `{"shelves":[]}`
-     * and there is deliberately no fallback inside the BFF route (`docs/ROADMAP.md` §13). Reader:
-     * [net.develivarr.auralis.features.home.ForYouViewModel], which appends these after the
-     * existing home shelves rather than replacing them. */
-    suspend fun libraryRecommended(libraryId: String): List<Shelf> =
+    /** GET /libraries/{id}/recommended — same `{ shelves }` shape as [libraryHome] plus each
+     * shelf's `reason`, but a **distinct item type** ([RecommendedLibraryItem], not [LibraryItem]
+     * — wave 15d-1-books added a required `availability` field this route sends and [libraryHome]
+     * does not, see [RecommendedShelf]'s doc comment); a cold-start user (no listening progress at
+     * all) gets `{"shelves":[]}` and there is deliberately no fallback inside the BFF route
+     * (`docs/ROADMAP.md` §13). Reader: [net.develivarr.auralis.features.home.ForYouViewModel],
+     * which appends these after the existing home shelves rather than replacing them, via
+     * [net.develivarr.auralis.features.home.recommendedShelfToCarousel] rather than
+     * [net.develivarr.auralis.features.home.shelfToCarousel] — the latter only accepts [Shelf]. */
+    suspend fun libraryRecommended(libraryId: String): List<RecommendedShelf> =
         get<RecommendedResponse>("/libraries/$libraryId/recommended").shelves
 
     /** GET /music/recommended — the Jellyfin-music counterpart to [libraryRecommended]. Unlike
