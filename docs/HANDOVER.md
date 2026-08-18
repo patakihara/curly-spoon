@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T17:29:15Z` · `a90dd8e5e13e65560` · general-purpose · ended · Working tree is clean, one commit on top of 'fb384e5'. Not pushing or merging, per instructions. ## Report — fixing the two ShellNavigationItemsTest…
-- `2026-08-17T17:56:20Z` · `a8977d5ddbe748b6e` · general-purpose · ended · ## Report — Wave 16c-2-W-3 **Branch/commit:** 'worktree-agent-a8977d5ddbe748b6e' at 'b138cc6', on top of '364040e'. Working tree clean, nothing uncom…
 - `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16b-2-A-2: Robolectric cover…
 - `2026-08-17T18:38:55Z` · `aa875a0416f640711` · general-purpose · ended · I've completed all the implementation, testing, and verification work for this wave, and the final full-parallelism 'ui-desktop'/'ui-mobile' Playwrig…
 - `2026-08-17T19:09:05Z` · `aa875a0416f640711` · general-purpose · ended · Confirmed: the second, confirmatory '--project=ui-desktop --project=ui-mobile' run also passed cleanly — **212/212 passed** (3.9m, default parallelis…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T04:33:39Z` · `a72c8bd104b7483ee` · general-purpose · ended · Everything is committed and the working tree is clean. Here's my final report. ## Report — Wave 16e-book-A: Android's book detail screen **Branch/com…
 - `2026-08-18T04:34:14Z` · `ade26b2bd42f3f1d9` · general-purpose · ended · ## Report — Wave 16e-book-W **Branch/commit:** 'worktree-agent-ade26b2bd42f3f1d9' at '6ba0ce4', three commits on top of '773b08b' ('2a48b4c' restyle+…
 - `2026-08-18T05:35:09Z` · `ac56785c0073c04af` · general-purpose · ended · ## Report — 16e-book-P: parity review of the book detail screen **No code changes.** Working tree clean throughout — this was a read-and-reason wave.…
+- `2026-08-18T05:50:14Z` · `a3fef180f50536b9b` · general-purpose · ended · Working tree is clean, five commits on top of '756debb'. All committed on branch 'worktree-agent-a3fef180f50536b9b'. Not pushing or merging, per inst…
+- `2026-08-18T06:17:40Z` · `a008be551e33ce274` · general-purpose · ended · Working tree is clean, one commit on top of '733478f'. This is my final report. ## Report — fixing the three failing 'BookDetailContentTest' tests **…
 
 <!-- AGENT_LOG_END -->
 
@@ -922,7 +922,35 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
-### CLAIMED — `16e-book-A-2`: one Compose `MediaHeader`, before a fourth screen drifts
+### DONE — `16e-book-A-2`. **`main` is `0afef1b`, green on `CI`, `Android` and `Publish`.**
+
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty.
+
+**One `MediaHeader` composable now serves `BookDetailScreen`, `PodcastDetailScreen` and
+`AlbumDetailScreen`** — 232dp/208dp art tile, `shapes.large` corners, uppercase muted kind label,
+weight-900 title, all from the scale `16b-2-A` already landed. Each screen keeps its own content and
+ViewModel; only the header's layout and styling is shared.
+
+**The regression it actually fixed was invisible and affected all three screens: none passed a
+placeholder or error painter.** Coil paints **nothing** while loading, on failure, or when the model
+is null — and `coverUrl` is null until the server base URL resolves — so every one of them rendered
+an **empty box**, not a styled one. **Compose has no cascade to fall through the way CSS does.** That
+is now the standing instruction in §16 for every remaining screen spec.
+
+**Two judgement calls, stated rather than buried:** `dp` is read 1:1 against Sonora's CSS pixels as an
+intentional reading, not a conversion, on the same basis `16d-P` accepted for the 600dp breakpoint;
+and compact-versus-wide measures the header's **own** available width via `BoxWithConstraints`,
+because a screen on the nav host cannot see the shell's window state.
+
+**It broke three `BookDetailContentTest` cases and the wave predicted it would not.** The cause is
+worth knowing: **the header got ~112dp taller, `BookDetailContent` is a `LazyColumn`, and the chapter
+rows fell outside the composed viewport** — so the queried nodes did not exist. **Not a product
+regression**; `MediaHeaderTest` composes the header standalone and passed throughout. Fixed by
+scrolling to each target first, with every assertion unchanged — the tap test still pins the exact
+chapter's title _and_ index, so a wrong-chapter bug still fails it.
+
+**`PodcastDetailScreen` and `AlbumDetailScreen` have no Robolectric coverage at all.** They did not
+break, and **that is not the same as being verified** — worth a wave if either is next.
 
 `16e-book-P`'s top follow-up, taken immediately and deliberately **ahead of the next screen triple**.
 **Three Android detail screens now share the same pre-Sonora header** — `BookDetailScreen`,
