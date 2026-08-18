@@ -217,6 +217,17 @@ export interface LibraryItem {
   coverPath: string | null;
   media: MediaSummary;
   progress: MediaProgress | null;
+  /**
+   * Wave 15d-1-books-W: whether this is a real Audiobookshelf item ("owned") or an Open
+   * Library-derived placeholder the user does not have ("external") —
+   * `GET /libraries/:id/recommended`'s wave 15e-books contract (`docs/HANDOVER.md`), the
+   * book equivalent of `JellyfinAlbum.availability` above. Optional for the identical reason:
+   * every other endpoint returning a `LibraryItem` (library browse, shelves, search, item
+   * detail) never sets it, so the field is simply absent rather than `'owned'` everywhere.
+   * Today only `RecommendedShelf.items` ever carries `'external'`. Read this field directly;
+   * never infer availability by parsing the `external:<provider>:<id>` id prefix.
+   */
+  availability?: 'owned' | 'external';
 }
 
 export interface Shelf {

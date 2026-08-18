@@ -107,6 +107,23 @@ const searchRoute = createRoute({
 const requestsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/requests',
+  // Wave 15d-1-books-W: optional `?prefillTitle=`/`?prefillAuthor=` search params, read by
+  // `RequestsPage.tsx` to seed (but deliberately *not* auto-run, unlike `/music/requests`'s
+  // `?prefill=`) "Ask for a book" — how an external (not-owned) recommended-shelf card on
+  // For You hands off into the request flow instead of the dead-end item-detail page it used
+  // to navigate to. Same "cast what the URL gives us, degrade rather than throw" contract as
+  // `musicRequestsRoute`'s `validateSearch` below: an absent, non-string, or whitespace-only
+  // value all become `undefined`.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { prefillTitle?: string; prefillAuthor?: string } => {
+    const title = search.prefillTitle;
+    const author = search.prefillAuthor;
+    return {
+      prefillTitle: typeof title === 'string' && title.trim() !== '' ? title : undefined,
+      prefillAuthor: typeof author === 'string' && author.trim() !== '' ? author : undefined,
+    };
+  },
   component: lazyRouteComponent(
     () => import('../features/requests/RequestsPage.js'),
     'RequestsPage',
