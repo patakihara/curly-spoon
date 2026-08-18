@@ -36,28 +36,28 @@ scope here.
 (112 lines, read in full). Android has **no book detail screen at all** — confirmed by grep and by
 reading the navigation graph; see §2's own note below and §6.
 
-| Content / control | Web today | Android today |
-| --- | --- | --- |
-| Route | `/item/$itemId` (`router/routeTree.ts:60-65`) | **none** |
-| Cover art | `CoverImage`, 200px, `book_2` fallback icon (`ItemPage.tsx:63-76`) | shown only on the shelf card (120dp), never on a detail surface |
-| Title | `<h1>{item.media.title}</h1>` (`:78`) | shelf card title only, 1 line, truncated (`HomeShelvesContent.kt:83-91`) |
-| Subtitle | shown if present (`:79`) | not shown anywhere |
-| Author(s) | comma-joined names, plain text, **not a link** (`:80-82`) | not shown anywhere |
-| Narrator | "Narrated by X" if present (`:83`) | not shown anywhere |
-| Series | **not shown** | not shown |
-| Genres | **not shown** | not shown |
-| Published year | **not shown** | not shown |
-| ISBN / ASIN | **not shown** | not shown |
-| Duration | **not shown as text** (only implied by the progress bar) | not shown |
-| Chapter count | **not shown** | not shown |
-| Description | `RichDescription`, full text, no clamp (`:105-109`) | not shown anywhere |
-| Progress | `LinearProgress` bar if `item.progress` exists (`:99-103`) | not shown (only a per-shelf-card download-state label, `HomeShelvesContent.kt:91-99`) |
-| Chapter list | **not present on this page** — exists only inside Now Playing, `ChapterList.tsx`, gated on an active playback session | not present anywhere |
-| Play / Resume | `Button`, label toggles on `item.progress` (`:84-90`) | tapping the shelf card **plays immediately** — `BooksScreen.kt:103`, `ForYouScreen.kt:72` — there is no intermediate stop |
-| Play error | inline `role="alert"` message (`:91-95`) | none — errors surface as a `PlayerUiState.Error` snackbar at the shell level |
-| Download / offline | **not present** — see §7, web has no offline-download feature at all | exists, but only as a per-shelf-card action (`BooksScreen.kt:104`, `startDownloadWithPermissionPrompt`), never on a detail surface because there is no detail surface |
-| Loading state | `<p>Loading…</p>` (`:26-30`) | N/A |
-| Error state | throws to `RouteErrorBoundary` (`:38`) | N/A |
+| Content / control  | Web today                                                                                                             | Android today                                                                                                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route              | `/item/$itemId` (`router/routeTree.ts:60-65`)                                                                         | **none**                                                                                                                                                              |
+| Cover art          | `CoverImage`, 200px, `book_2` fallback icon (`ItemPage.tsx:63-76`)                                                    | shown only on the shelf card (120dp), never on a detail surface                                                                                                       |
+| Title              | `<h1>{item.media.title}</h1>` (`:78`)                                                                                 | shelf card title only, 1 line, truncated (`HomeShelvesContent.kt:83-91`)                                                                                              |
+| Subtitle           | shown if present (`:79`)                                                                                              | not shown anywhere                                                                                                                                                    |
+| Author(s)          | comma-joined names, plain text, **not a link** (`:80-82`)                                                             | not shown anywhere                                                                                                                                                    |
+| Narrator           | "Narrated by X" if present (`:83`)                                                                                    | not shown anywhere                                                                                                                                                    |
+| Series             | **not shown**                                                                                                         | not shown                                                                                                                                                             |
+| Genres             | **not shown**                                                                                                         | not shown                                                                                                                                                             |
+| Published year     | **not shown**                                                                                                         | not shown                                                                                                                                                             |
+| ISBN / ASIN        | **not shown**                                                                                                         | not shown                                                                                                                                                             |
+| Duration           | **not shown as text** (only implied by the progress bar)                                                              | not shown                                                                                                                                                             |
+| Chapter count      | **not shown**                                                                                                         | not shown                                                                                                                                                             |
+| Description        | `RichDescription`, full text, no clamp (`:105-109`)                                                                   | not shown anywhere                                                                                                                                                    |
+| Progress           | `LinearProgress` bar if `item.progress` exists (`:99-103`)                                                            | not shown (only a per-shelf-card download-state label, `HomeShelvesContent.kt:91-99`)                                                                                 |
+| Chapter list       | **not present on this page** — exists only inside Now Playing, `ChapterList.tsx`, gated on an active playback session | not present anywhere                                                                                                                                                  |
+| Play / Resume      | `Button`, label toggles on `item.progress` (`:84-90`)                                                                 | tapping the shelf card **plays immediately** — `BooksScreen.kt:103`, `ForYouScreen.kt:72` — there is no intermediate stop                                             |
+| Play error         | inline `role="alert"` message (`:91-95`)                                                                              | none — errors surface as a `PlayerUiState.Error` snackbar at the shell level                                                                                          |
+| Download / offline | **not present** — see §7, web has no offline-download feature at all                                                  | exists, but only as a per-shelf-card action (`BooksScreen.kt:104`, `startDownloadWithPermissionPrompt`), never on a detail surface because there is no detail surface |
+| Loading state      | `<p>Loading…</p>` (`:26-30`)                                                                                          | N/A                                                                                                                                                                   |
+| Error state        | throws to `RouteErrorBoundary` (`:38`)                                                                                | N/A                                                                                                                                                                   |
 
 **Note on the "Android today" column.** Every row reading "not shown anywhere" or "N/A" reflects
 one underlying fact: **Android has no book detail screen.** `Routes` in `AuralisNavHost.kt` has no
@@ -82,7 +82,7 @@ down.
 ## 3. The Sonora treatment
 
 **Authority: `docs/design/sonora/Auralis-Redesign.dc.html`** (the real deliverable — `SONORA.md`
-and `github.md` are prose *about* it and have been wrong before; this section was written by reading
+and `github.md` are prose _about_ it and have been wrong before; this section was written by reading
 the `.dc.html` source directly, not the prose). The book screen's content is built at line 701-705:
 
 ```js
@@ -111,7 +111,7 @@ fixed the shell so only this area scrolls, not the whole document):
    - `subtitle` — **the author name**, clickable (`onSubtitle` → author page), rendered in
      `var(--accent-ink)` when clickable, `var(--text-lg)` desktop / `var(--text-md)` mobile.
    - `meta` — one muted line composed as `Narrated by {narrator} · {duration} · {n} chapters ·
-     {progress}% listened`. See §5 for exactly what to omit when a field is absent.
+{progress}% listened`. See §5 for exactly what to omit when a field is absent.
    - Two buttons: primary **`{playLabel}`** ("Resume" if in progress, "Play" otherwise — matches
      web's existing logic, `ItemPage.tsx:89`) and secondary **"Download"**.
    - **Colour trap, already in `docs/design/sonora/primitives/README.md`'s substitution table**:
@@ -126,8 +126,8 @@ fixed the shell so only this area scrolls, not the whole document):
 3. **"Chapters"** — a `SectionHeader` (title only, no "See all" action — the whole list is already
    on-screen) followed by a track-row list. Each row: 1-based index, chapter title, no `sub`/`album`
    (both blank strings in the mock — this is a flat chapter list, not grouped), the chapter's
-   formatted time, and an `active` flag on whichever chapter the user is *currently listening to in
-   this book* (not "currently playing" globally — see §5). Row primitive is **`TrackRow`**, one of
+   formatted time, and an `active` flag on whichever chapter the user is _currently listening to in
+   this book_ (not "currently playing" globally — see §5). Row primitive is **`TrackRow`**, one of
    the six Sonora primitives **not yet vendored** (`docs/design/sonora/primitives/README.md`'s "six
    still to vendor" list). Its exact geometry/values are not in this repo; the `-W`/`-A` waves must
    either vendor it from the design tool first or build from the composed shape above (index, title,
@@ -169,10 +169,10 @@ fixed the shell so only this area scrolls, not the whole document):
 read in full). This is the **only** route this screen needs — no new endpoint, no new field.
 
 The response is `{ item: Book-shaped-thing }`, and because `expanded=true` is passed, the upstream
-Audiobookshelf response carries the *structured* `metadata.authors[]`/`metadata.series[]` arrays,
+Audiobookshelf response carries the _structured_ `metadata.authors[]`/`metadata.series[]` arrays,
 not just the flattened `authorName`/`seriesName` strings — see
 `packages/abs-client/src/normalize.ts:92-105`. **This matters for the minified-item bug this project
-has hit three times** (`HANDOVER.md`, "The minified-item bug"): that bug is about *list/shelf*
+has hit three times** (`HANDOVER.md`, "The minified-item bug"): that bug is about _list/shelf_
 endpoints, which only ever get the minified summary. `GET /items/:id?expanded=true` is not one of
 those — it genuinely receives the structured arrays, so **`authors[].id` and `series[].id` are real,
 matchable ids on this endpoint**, not the name-echoed-as-id fallback that bit `findAuthorBooks` and
@@ -180,11 +180,11 @@ the old `SeriesPage`. State this explicitly because it is exactly the kind of tr
 paid for twice already, and getting it backwards here (treating a real id as fake, or vice versa)
 would either silently disable a working feature or reopen a fixed bug.
 
-**What each client's *own* type currently allows through:**
+**What each client's _own_ type currently allows through:**
 
 - **Web's hand-mirrored `MediaSummary`/`AuthorBadge`** (`apps/web/src/api/types.ts:68-70, 134-156`)
   **deliberately strips `id` off `authors[]`** — the type comment explains why (the two historical
-  bugs) and is correct for every *other* consumer of `AuthorBadge` in this codebase, all of which
+  bugs) and is correct for every _other_ consumer of `AuthorBadge` in this codebase, all of which
   read shelf/list data. **It is wrong for this one screen**, which is the one place in the app that
   legitimately has a real author id and needs it (to link to `/author/:id`, an existing route —
   `router/routeTree.ts:93-98`, reached today from search and from `AuthorPage.tsx`/`SeriesPage.tsx`
@@ -197,11 +197,11 @@ would either silently disable a working feature or reopen a fixed bug.
   (`packages/abs-client`'s own `AuthorRef` vs. `AuthorBadge` split) — this is the same pattern
   applied at the `apps/web` layer.
 - **Android's `MediaSummary`** (`data/model/ApiModels.kt:158-179`) already types `authors:
-  List<AuthorRef>?` and `series: List<SeriesSequence>?` **with non-nullable `id` fields on both** —
+List<AuthorRef>?` and `series: List<SeriesSequence>?` **with non-nullable `id` fields on both** —
   it was built expecting a real id and never got a screen to use it on. No type change needed on
   Android; the seam already exists (`AuthorRef`, `SeriesSequence` at `:104-108, 130-138`). The
-  caveat above (fabricated id on *other*, minified-sourced responses) still applies to those same
-  Kotlin types when *other* screens populate them from shelf data — the id is only trustworthy when
+  caveat above (fabricated id on _other_, minified-sourced responses) still applies to those same
+  Kotlin types when _other_ screens populate them from shelf data — the id is only trustworthy when
   the response came from `GET /items/:id?expanded=true`.
 - **`chapters`** is typed and already flows through both clients' shared types (`Chapter` on both
   sides), just never rendered on a detail screen on either platform. No BFF or type change needed —
@@ -210,7 +210,7 @@ would either silently disable a working feature or reopen a fixed bug.
   and `/series/:id` exist on web (`AuthorPage.tsx`, `SeriesPage.tsx`). **Android has neither route**
   (confirmed: no `AUTHOR`/`SERIES` entries anywhere in `Routes` in `AuralisNavHost.kt`), and
   building them is not in `ROADMAP.md` §16's `16e` screen list (`For You/browse, Music/Album, Book
-  detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding` — no Author/Series
+detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding` — no Author/Series
   entry). **Call:** on Android, render the author name as **plain, non-interactive text** for this
   wave. Do not build an Android author screen to make it tappable — that is bigger than this
   screen and belongs to its own wave if it's wanted at all.
@@ -245,20 +245,20 @@ still valid and should stay visible; only the play action failed.
 **Empty / missing fields — the fallback contract (this document's own call, not drawn from the
 design):**
 
-| Field | If absent |
-| --- | --- |
-| Cover | tonal placeholder, same pattern as `CoverImage`'s existing `fallbackIcon="book_2"` |
-| Subtitle | omit the line entirely (web already does this — `:79`) |
-| Author(s) | omit the subtitle-link row entirely; do not render an empty clickable region |
-| Narrator | omit `Narrated by …` from the composed meta string |
-| Description | render nothing (matches `RichDescription`'s existing null-degrade) |
-| Chapters | omit the whole "Chapters" section — no heading, no empty list, no "no chapters" message. A single-file audiobook (no chapter markers) is a normal, common case, not an error state. |
-| Progress | button reads "Play", not "Resume"; no progress figure in the meta line |
-| Duration | omit that segment of the meta line (do not show `· ·` — join only the parts that exist) |
+| Field       | If absent                                                                                                                                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cover       | tonal placeholder, same pattern as `CoverImage`'s existing `fallbackIcon="book_2"`                                                                                                  |
+| Subtitle    | omit the line entirely (web already does this — `:79`)                                                                                                                              |
+| Author(s)   | omit the subtitle-link row entirely; do not render an empty clickable region                                                                                                        |
+| Narrator    | omit `Narrated by …` from the composed meta string                                                                                                                                  |
+| Description | render nothing (matches `RichDescription`'s existing null-degrade)                                                                                                                  |
+| Chapters    | omit the whole "Chapters" section — no heading, no empty list, no "no chapters" message. A single-file audiobook (no chapter markers) is a normal, common case, not an error state. |
+| Progress    | button reads "Play", not "Resume"; no progress figure in the meta line                                                                                                              |
+| Duration    | omit that segment of the meta line (do not show `· ·` — join only the parts that exist)                                                                                             |
 
 **Meta-line joining rule, stated once so both platforms build it the same way:** compose the meta
 string from whichever of `narrator`/`duration`/`chapterCount`/`progressPercent` are present, joined
-with ` · `, in that order, with no separator artifacts when a field is missing. This is a small
+with `·`, in that order, with no separator artifacts when a field is missing. This is a small
 pure function worth writing once per platform and testing directly (empty item, item with only a
 title, item with everything) rather than four ad hoc conditionals.
 
@@ -274,7 +274,7 @@ invent new state for it.
 1. **This book is not the currently-loaded player item.** Tapping a chapter starts playback of this
    book (same as the Play button) and then seeks to that chapter's `start` time. There is no
    existing precedent for this exact sequence on either platform — `ChapterList.tsx` (Now Playing)
-   only ever operates on an *already-loaded* session. This is new behaviour for both `-W` and `-A`.
+   only ever operates on an _already-loaded_ session. This is new behaviour for both `-W` and `-A`.
 2. **This book is already the currently-loaded player item** (the user navigated back to a book
    they're mid-listen to, from wherever). Tapping a chapter seeks within the existing session —
    this is the same as `ChapterList.tsx`'s existing `onClick={() => seek(chapter.start)}`
@@ -340,7 +340,7 @@ Stated so the `-W` and `-A` waves don't drift by each guessing differently:
   Do not build a PWA offline-caching mechanism to fill it in.
 - **No series/genre/published-year/ISBN display**, on either platform — the design doesn't show
   them and neither does today's app (§3).
-- **No changes to the Books *library* screen** (`BooksPage.tsx` on web, `BooksScreen.kt` on
+- **No changes to the Books _library_ screen** (`BooksPage.tsx` on web, `BooksScreen.kt` on
   Android) — that is a separate screen in `ROADMAP.md` §16's list ("For You/browse"), not this one.
   Note in passing, since it's directly relevant to how a user reaches this screen on Android:
   Android's `BooksScreen` today is not actually a browsable library grid at all — its own doc
