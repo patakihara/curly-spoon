@@ -27,6 +27,7 @@ import net.develivarr.auralis.features.home.HomeShelvesContent
 import net.develivarr.auralis.features.home.HomeViewModel
 import net.develivarr.auralis.features.player.PlayerUiState
 import net.develivarr.auralis.features.player.PlayerViewModel
+import net.develivarr.auralis.navigation.Routes
 
 /**
  * The "Books" shell destination (`docs/ROADMAP.md` §12a). Wave 12a-A1 needed a real, separate
@@ -100,7 +101,10 @@ fun BooksScreen(
             downloadStates = downloadStates,
             container = container,
             contentPadding = innerPadding,
-            onItemClick = { itemId -> playerViewModel.playItem(itemId) },
+            // Android wave 16e-book-A: a tap now opens the book detail screen rather than
+            // playing immediately — see docs/design/screens/BOOK_DETAIL.md §5. Playback is still
+            // one tap away, from that screen's own Play/Resume button.
+            onItemClick = { itemId -> navController.navigate(Routes.bookDetail(itemId)) },
             onDownloadClick = { itemId -> startDownloadWithPermissionPrompt(itemId) },
         )
     }

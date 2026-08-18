@@ -45,9 +45,12 @@ import net.develivarr.auralis.navigation.Routes
  * [net.develivarr.auralis.features.home.HomeViewModel] are unaffected — both stay in use by
  * [net.develivarr.auralis.features.books.BooksScreen], which this wave does not touch.
  *
- * **Card taps**: a book or podcast card starts it playing via [playerViewModel], exactly as
+ * **Card taps**: a podcast card starts it playing via [playerViewModel], exactly as
  * [net.develivarr.auralis.features.home.HomeShelvesContent] does today. A music album card navigates
- * to [Routes.musicAlbumDetail].
+ * to [Routes.musicAlbumDetail]. **A book card navigates to [Routes.bookDetail]** (Android wave
+ * 16e-book-A) — playing directly used to be every book tap's only behaviour anywhere in the app;
+ * see `docs/design/screens/BOOK_DETAIL.md` for why that changed and `BookDetailScreen`'s own
+ * Play/Resume button for where immediate playback still lives.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +72,11 @@ fun ForYouScreen(
 
     fun onSelect(item: FeedItem) {
         when (item.contentType) {
-            ForYouContentType.BOOKS, ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)
+            // Android wave 16e-book-A: a book card now opens the book detail screen rather than
+            // playing immediately — see docs/design/screens/BOOK_DETAIL.md §5. Podcasts are
+            // unchanged and out of this wave's scope; they still play directly from here.
+            ForYouContentType.BOOKS -> navController.navigate(Routes.bookDetail(item.id))
+            ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)
             ForYouContentType.MUSIC -> navController.navigate(Routes.musicAlbumDetail(item.id))
         }
     }
