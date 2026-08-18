@@ -7,12 +7,21 @@ import { parseInput } from '../validation.js';
 import { toCandidate } from '../features/recommendations/adapt.js';
 import {
   albumToCandidate,
+  bookLibraryItemToOwnershipLibraryItem,
   buildMusicProgressSignals,
   buildRecommendationShelves,
   buildTasteProfile,
+  externalCandidateToLibraryItemPlaceholder,
+  externalCandidateToOwnershipItem,
+  externalProviderFactories,
+  getExternalProvidersForMedium,
+  matchOwnership,
   mergeGenreAffinity,
+  reasonForBookExternalShelf,
   scoreCandidates,
+  type ExternalProviderFactory,
   type ProgressSignal,
+  type RecommendationSeed,
   type TasteProfile,
 } from '../features/recommendations/index.js';
 import {
@@ -49,6 +58,133 @@ const ITEMS_PER_SHELF = 10;
  * downstream branches on it today, but a distinct constant means one can
  * later without re-deriving what "ours" looks like. */
 const RECOMMENDATION_SHELF_TYPE = 'recommended';
+
+/**
+ * Wave 15e-books: external (Open Library) discovery — same shape and same reasoning as
+ * `routes/jellyfin.ts`'s `MUSIC_EXTERNAL_*` constants for `GET /music/recommended`. See
+ * `openlibrary.ts`'s header comment for why the candidate catalogue is Open Library rather
+ * than Audnexus, and `bookExternalDiscovery.ts` for the book-specific adaptation.
+ */
+const BOOK_EXTERNAL_SEED_LIMIT = 3;
+/** Requested from the provider before ownership filtering — deliberately larger than the
+ * shelf's own `BOOK_EXTERNAL_ITEMS_PER_SHELF` cap, so filtering out already-owned titles by
+ * a loved author still usually leaves enough to fill a real shelf. Matches
+ * `routes/jellyfin.ts`'s `MUSIC_EXTERNAL_CANDIDATE_LIMIT` reasoning exactly. */
+const BOOK_EXTERNAL_CANDIDATE_LIMIT = 30;
+const BOOK_EXTERNAL_ITEMS_PER_SHELF = 10;
+const BOOK_EXTERNAL_SHELF_ID = 'shelf-external-openlibrary';
+/** Deliberately distinct from `RECOMMENDATION_SHELF_TYPE` — same reasoning
+ * `routes/jellyfin.ts`'s `MUSIC_EXTERNAL_SHELF_TYPE` doc comment gives: this shelf's items
+ * are not real Audiobookshelf library items, and a future client change may want to treat
+ * "recommended" (rank items already owned) and "discover" (surface items not owned)
+ * differently. Neither client reads `type` today, so this is forward-looking. */
+const BOOK_EXTERNAL_SHELF_TYPE = 'discover';
+
+/**
+ * Wave 15e-books: every item `GET /libraries/:id/recommended` returns now carries this,
+ * required and never optional — the identical contract `routes/jellyfin.ts`'s
+ * `MusicRecommendedAlbum` documents for `GET /music/recommended` (Android's Kotlin models
+ * declare fields non-nullable with no default and throw `MissingFieldException` on a
+ * missing key; `ignoreUnknownKeys = true` makes adding a field safe for existing clients).
+ * A route-scoped type, not a widening of `@auralis/abs-client`'s `LibraryItem` — that
+ * package's consumers (Android's own mirrored models, this route's own real-item fetches)
+ * must not gain a field neither sends, the same reasoning `15d-1-S` used for
+ * `MusicRecommendedAlbum`.
+ */
+type RecommendedLibraryItem = LibraryItem & { availability: 'owned' | 'external' };
+
+/**
+ * The reader wave 15a/15b-1 were both missing for books, closing the sixth-then-seventh
+ * writer-with-no-reader this project has shipped (`docs/HANDOVER.md`). Resolves seeds from
+ * the real taste profile the route already computed, queries every registered book provider
+ * (today, just Open Library), filters out anything the book-ownership pool says she already
+ * has, and returns a shelf shaped exactly like the library-derived ones below — or `null`,
+ * meaning "no external shelf this response", never an empty/malformed one.
+ *
+ * Unlike `routes/jellyfin.ts`'s music equivalent, no identifier-chain resolution is needed:
+ * a book's author name (the profile's own facet key) is exactly what `openlibrary.ts` wants
+ * to query — see that file's header comment for why. `pool` is the same `LibraryItem[]` the
+ * route already fetched for its library-derived shelves, filtered to books.
+ *
+ * `providerFactories` defaults to the real registry and exists as a parameter for the same
+ * reason `routes/jellyfin.ts`'s `buildExternalDiscoveryShelf` takes one: so a test can hand
+ * in a provider that deliberately violates the "never throws" contract
+ * `ExternalRecommendationProvider` documents, and exercise this function's outer `catch`
+ * without needing a real provider to misbehave.
+ */
+export async function buildBookExternalDiscoveryShelf(
+  app: FastifyInstance,
+  profile: TasteProfile,
+  pool: { items: LibraryItem[] },
+  libraryId: string,
+  providerFactories: Record<string, ExternalProviderFactory> = externalProviderFactories,
+): Promise<{
+  id: string;
+  label: string;
+  type: string;
+  reason: string;
+  items: RecommendedLibraryItem[];
+} | null> {
+  const authorWeights = Object.entries(profile.affinities.author ?? {}).sort((a, b) => b[1] - a[1]);
+  const seeds: RecommendationSeed[] = [];
+  for (const [authorName] of authorWeights) {
+    if (seeds.length >= BOOK_EXTERNAL_SEED_LIMIT) break;
+    if (authorName.trim().length === 0) continue;
+    seeds.push({ label: authorName, identifiers: {} });
+  }
+  if (seeds.length === 0) return null;
+
+  try {
+    const providers = getExternalProvidersForMedium(
+      'book',
+      { fetch: app.upstreamFetch, logger: app.log },
+      providerFactories,
+    );
+    const perProvider = await Promise.all(
+      providers.map((provider) => provider.recommend(seeds, BOOK_EXTERNAL_CANDIDATE_LIMIT)),
+    );
+    const rawCandidates = perProvider.flat();
+    if (rawCandidates.length === 0) return null;
+
+    const bookOwnershipPool = pool.items
+      .map(bookLibraryItemToOwnershipLibraryItem)
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+    const newCandidates = rawCandidates.filter(
+      (candidate) =>
+        matchOwnership(externalCandidateToOwnershipItem(candidate), bookOwnershipPool).status ===
+        'new',
+    );
+    // A one-item carousel reads as a bug — the same rule `shelves.ts`'s
+    // `buildRecommendationShelves` already enforces for the library-derived shelves, and
+    // `routes/jellyfin.ts`'s music shelf mirrors.
+    if (newCandidates.length < 2) return null;
+
+    const chosen = newCandidates.slice(0, BOOK_EXTERNAL_ITEMS_PER_SHELF);
+    return {
+      id: BOOK_EXTERNAL_SHELF_ID,
+      label: 'More books to discover',
+      type: BOOK_EXTERNAL_SHELF_TYPE,
+      reason: reasonForBookExternalShelf(seeds),
+      items: chosen.map((candidate): RecommendedLibraryItem => ({
+        ...externalCandidateToLibraryItemPlaceholder(candidate, libraryId),
+        availability: 'external',
+      })),
+    };
+  } catch (err) {
+    // `ExternalRecommendationProvider.recommend` is contractually total — see that
+    // interface's own doc comment: never throws, always degrades to `[]`. This catch exists
+    // only against a provider that breaks that contract, mirroring
+    // `tryBuildMusicGenreProfile`'s discriminated-logging precedent above and
+    // `routes/jellyfin.ts`'s identical outer catch: log at `warn` (a real fault — there is
+    // no configured/unconfigured state for a credential-free public API), and always
+    // degrade to no external shelf rather than failing the whole route.
+    app.log.warn(
+      { err },
+      'libraries/recommended: external candidate discovery failed, degrading to library-only shelves',
+    );
+    return null;
+  }
+}
 
 /** Same caps `routes/jellyfin.ts`'s `/music/recommended` route uses for the same fetch —
  * duplicated as constants (not imported) because that route doesn't export them and this
@@ -184,15 +320,29 @@ export function registerLibraryRoutes(app: FastifyInstance): void {
       });
 
       const itemsById = new Map<string, LibraryItem>(pool.items.map((item) => [item.id, item]));
-      const responseShelves = shelves.map((shelf) => ({
+
+      // Wave 15e-books: external (Open Library) discovery, ahead of the library-derived
+      // shelves — she asked for unowned discovery, not a re-sort of what she already has
+      // (`docs/USER_DECISIONS.md`), so when it exists it leads. `null` (no signal, no
+      // author facet, or fewer than two unowned candidates) means "not this response",
+      // never an empty placeholder shelf. Mirrors `routes/jellyfin.ts`'s identical
+      // ordering for `GET /music/recommended`.
+      const externalShelf = await buildBookExternalDiscoveryShelf(app, profile, pool, params.id);
+
+      const libraryShelves = shelves.map((shelf) => ({
         id: shelf.id,
         label: shelf.label,
         type: RECOMMENDATION_SHELF_TYPE,
         reason: shelf.reason,
+        // Wave 15e-books: every real Audiobookshelf item this route serves is `owned` — see
+        // `RecommendedLibraryItem`'s doc comment above `buildBookExternalDiscoveryShelf`.
         items: shelf.itemIds
           .map((id) => itemsById.get(id))
-          .filter((item): item is LibraryItem => item !== undefined),
+          .filter((item): item is LibraryItem => item !== undefined)
+          .map((item): RecommendedLibraryItem => ({ ...item, availability: 'owned' })),
       }));
+
+      const responseShelves = externalShelf ? [externalShelf, ...libraryShelves] : libraryShelves;
 
       return reply.send({ shelves: responseShelves });
     } catch (err) {
