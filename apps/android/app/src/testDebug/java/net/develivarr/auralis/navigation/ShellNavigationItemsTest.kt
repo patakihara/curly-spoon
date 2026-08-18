@@ -4,6 +4,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -163,10 +164,23 @@ class ShellNavigationItemsTest {
     }
 }
 
-/** True if any pixel in this image is within [tolerancePer255] (per RGB channel) of [target]. */
+/**
+ * True if any pixel in this image is within [tolerancePer255] (per RGB channel) of [target].
+ *
+ * Recycles the underlying [android.graphics.Bitmap] once its pixels are copied into [pixelMap]
+ * — [toPixelMap] eagerly reads every pixel into its own `IntArray` before returning, so the
+ * bitmap's native backing store is no longer needed after this call and recycling it here is
+ * safe. This is not just hygiene: this file's own pixel test calls `captureToImage()` twice per
+ * run and never otherwise disposes of the result, and CI failed it (alongside
+ * `SettingsContentTest`'s equivalent) on `java.lang.Throwable: Explicit termination method
+ * 'close' not called` — the standard CloseGuard/StrictMode `LeakedClosableViolation` message for
+ * an un-recycled `Bitmap`, thrown from an unrelated test whenever the GC happens to finalize the
+ * leaked one.
+ */
 private fun ImageBitmap.containsColorCloseTo(target: Color, tolerancePer255: Float): Boolean {
     val tolerance = tolerancePer255 / 255f
     val pixelMap = toPixelMap()
+    asAndroidBitmap().recycle()
     for (x in 0 until pixelMap.width) {
         for (y in 0 until pixelMap.height) {
             val pixel = pixelMap[x, y]
