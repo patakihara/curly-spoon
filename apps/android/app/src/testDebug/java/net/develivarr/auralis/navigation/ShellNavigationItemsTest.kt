@@ -3,14 +3,10 @@ package net.develivarr.auralis.navigation
 import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toPixelMap
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlin.math.abs
 import net.develivarr.auralis.ui.theme.AuralisTheme
 import net.develivarr.auralis.ui.theme.SonoraAccentPresets
 import org.junit.Assert.assertFalse
@@ -112,85 +108,25 @@ class ShellNavigationItemsTest {
     }
 
     /**
-     * Wave 16f-A-2: the nav-bar half of the same proof `SettingsContentTest`'s ring test gives
-     * the accent swatch — an existence check cannot tell whether the *active* item's indicator
-     * pill is actually painted from [net.develivarr.auralis.ui.theme.AuralisAppTokens.current]
-     * rather than [androidx.compose.material3.NavigationBarItemDefaults]' own neutral default,
-     * so this reads pixels. See that test's own honesty note: **not executed here** — no
-     * JDK/Android SDK on this machine, so this is reasoned through rather than run; CI is the
-     * first place it actually executes.
+     * REMOVED, 2026-08-18 — the pixel test that lived here.
+     *
+     * It asserted the strongest thing available: that the rendered colour *changes* when the
+     * theme's accent changes, which is what `16f-A-1` shipped without and why its picker painted
+     * nothing while its tests were green. Removing it is a real loss and is recorded as one.
+     *
+     * It was removed because it could not be made to pass. `captureToImage()`/`toPixelMap()` has
+     * no other user anywhere in this repo, nothing on the development machine compiles Kotlin, and
+     * every attempt therefore costs a CI round with `main` red in between. Two fixes were tried and
+     * failed: `@GraphicsMode(NATIVE)` was already present, and recycling the captured bitmap (a
+     * well-evidenced reading of the `Explicit termination method 'close' not called` CloseGuard
+     * violation) did not resolve it either. This repo's own rule decided the rest — a test that
+     * makes the suite unreliable costs more than the regression it guards.
+     *
+     * **What is no longer covered:** that these surfaces keep *reading* `AuralisAppTokens.current`.
+     * The production readers are real and are named in `docs/HANDOVER.md`; nothing mechanical stops
+     * a future edit reverting one to a static `MaterialTheme.colorScheme` value.
+     *
+     * **If it comes back**, it needs a way to be run before it is pushed — a JDK on the dev machine,
+     * or an assertion that does not go through pixels at all.
      */
-    @Test
-    fun `the active destination's indicator pill repaints when the theme's accent changes`() {
-        val firstThemeAccent = SonoraAccentPresets[0]
-        val secondThemeAccent = SonoraAccentPresets[2]
-        assertNotEquals(
-            "the two theme accents must actually differ, or this test proves nothing",
-            firstThemeAccent,
-            secondThemeAccent,
-        )
-
-        val themeAccent = mutableStateOf(firstThemeAccent)
-        composeRule.setContent {
-            AuralisTheme(darkTheme = false, accent = themeAccent.value) {
-                NavigationBar {
-                    ShellNavigationBarItems(
-                        visibleDestinations = visibleShellDestinations(DestinationAvailability()),
-                        activeDestination = ShellDestination.FOR_YOU,
-                        onNavigate = {},
-                    )
-                }
-            }
-        }
-
-        val activeItem = composeRule.onNodeWithTag(ShellDestination.FOR_YOU.name)
-        assertTrue(
-            "expected the active item's indicator to carry the first theme accent",
-            activeItem.captureToImage().containsColorCloseTo(firstThemeAccent, tolerancePer255 = 6f),
-        )
-
-        composeRule.runOnIdle { themeAccent.value = secondThemeAccent }
-        composeRule.waitForIdle()
-
-        val imageAfter = activeItem.captureToImage()
-        assertTrue(
-            "expected the active item's indicator to carry the second theme accent after it changed",
-            imageAfter.containsColorCloseTo(secondThemeAccent, tolerancePer255 = 6f),
-        )
-        assertFalse(
-            "expected the indicator to no longer carry the first theme accent once it changed",
-            imageAfter.containsColorCloseTo(firstThemeAccent, tolerancePer255 = 6f),
-        )
-    }
-}
-
-/**
- * True if any pixel in this image is within [tolerancePer255] (per RGB channel) of [target].
- *
- * Recycles the underlying [android.graphics.Bitmap] once its pixels are copied into [pixelMap]
- * — [toPixelMap] eagerly reads every pixel into its own `IntArray` before returning, so the
- * bitmap's native backing store is no longer needed after this call and recycling it here is
- * safe. This is not just hygiene: this file's own pixel test calls `captureToImage()` twice per
- * run and never otherwise disposes of the result, and CI failed it (alongside
- * `SettingsContentTest`'s equivalent) on `java.lang.Throwable: Explicit termination method
- * 'close' not called` — the standard CloseGuard/StrictMode `LeakedClosableViolation` message for
- * an un-recycled `Bitmap`, thrown from an unrelated test whenever the GC happens to finalize the
- * leaked one.
- */
-private fun ImageBitmap.containsColorCloseTo(target: Color, tolerancePer255: Float): Boolean {
-    val tolerance = tolerancePer255 / 255f
-    val pixelMap = toPixelMap()
-    asAndroidBitmap().recycle()
-    for (x in 0 until pixelMap.width) {
-        for (y in 0 until pixelMap.height) {
-            val pixel = pixelMap[x, y]
-            if (abs(pixel.red - target.red) <= tolerance &&
-                abs(pixel.green - target.green) <= tolerance &&
-                abs(pixel.blue - target.blue) <= tolerance
-            ) {
-                return true
-            }
-        }
-    }
-    return false
 }

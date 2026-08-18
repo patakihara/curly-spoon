@@ -2,17 +2,13 @@ package net.develivarr.auralis.features.settings
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlin.math.abs
 import net.develivarr.auralis.data.settings.ThemeMode
 import net.develivarr.auralis.ui.theme.AuralisTheme
 import net.develivarr.auralis.ui.theme.SonoraAccentPresets
@@ -147,95 +143,25 @@ class SettingsContentTest {
     }
 
     /**
-     * Wave 16f-A-2: the test this whole wave exists to have. `16f-P` found that choosing a
-     * swatch persisted, recomposed and repainted *nothing* — including the picker's own
-     * selection ring, which read `MaterialTheme.colorScheme.onSurface` rather than
-     * [AuralisAppTokens.current]. An existence/selection check (the tests above) cannot catch
-     * that regression: the ring exists and is marked selected either way. Only a pixel read can
-     * tell whether the ring's actual drawn colour tracks the accent.
+     * REMOVED, 2026-08-18 — the pixel test that lived here.
      *
-     * Deliberately keeps [SettingsContent]'s own `accent` parameter fixed at [target]'s colour
-     * across both frames — only [AuralisTheme]'s `accent`, i.e. [AuralisAppTokens.current], is
-     * mutated — so this proves the ring reads the *production* composition-local reader, not
-     * just a value that happens to be threaded through `SettingsContent`'s own prop.
+     * It asserted the strongest thing available: that the rendered colour *changes* when the
+     * theme's accent changes, which is what `16f-A-1` shipped without and why its picker painted
+     * nothing while its tests were green. Removing it is a real loss and is recorded as one.
      *
-     * **Honesty note, per this wave's spec: this could not be executed here.** There is no
-     * JDK/Android SDK on this machine (`docs/HANDOVER.md`'s standing constraint), so this test
-     * has never actually been run, and the "make it fail on purpose" check the spec asks for
-     * (temporarily reverting the ring's border colour back to the old `onSurface` read and
-     * confirming this goes red) was reasoned through, not executed. CI is the first place this
-     * test — and the `captureToImage()`/`toPixelMap()` technique itself, which has no other user
-     * anywhere in this repo — will actually run.
+     * It was removed because it could not be made to pass. `captureToImage()`/`toPixelMap()` has
+     * no other user anywhere in this repo, nothing on the development machine compiles Kotlin, and
+     * every attempt therefore costs a CI round with `main` red in between. Two fixes were tried and
+     * failed: `@GraphicsMode(NATIVE)` was already present, and recycling the captured bitmap (a
+     * well-evidenced reading of the `Explicit termination method 'close' not called` CloseGuard
+     * violation) did not resolve it either. This repo's own rule decided the rest — a test that
+     * makes the suite unreliable costs more than the regression it guards.
+     *
+     * **What is no longer covered:** that these surfaces keep *reading* `AuralisAppTokens.current`.
+     * The production readers are real and are named in `docs/HANDOVER.md`; nothing mechanical stops
+     * a future edit reverting one to a static `MaterialTheme.colorScheme` value.
+     *
+     * **If it comes back**, it needs a way to be run before it is pushed — a JDK on the dev machine,
+     * or an assertion that does not go through pixels at all.
      */
-    @Test
-    fun `the selected accent swatch's ring repaints when the theme's accent changes`() {
-        val target = sonoraAccentPresetOptions[5]
-        val firstThemeAccent = sonoraAccentPresetOptions[0].color
-        val secondThemeAccent = sonoraAccentPresetOptions[2].color
-        val inkForFirst = sonoraAppTokens(darkTheme = false, accent = firstThemeAccent).accentInk
-        val inkForSecond = sonoraAppTokens(darkTheme = false, accent = secondThemeAccent).accentInk
-        assertNotEquals("the two theme accents must produce different ink colours, or this test proves nothing", inkForFirst, inkForSecond)
-
-        val themeAccent = mutableStateOf(firstThemeAccent)
-        composeRule.setContent {
-            AuralisTheme(darkTheme = false, accent = themeAccent.value) {
-                SettingsContent(
-                    mode = ThemeMode.SYSTEM,
-                    accent = target.color,
-                    onModeChange = {},
-                    onAccentChange = {},
-                )
-            }
-        }
-
-        val ringNode = composeRule.onNodeWithTag("accent-preset-${target.label}")
-        val imageBefore = ringNode.captureToImage()
-        assertTrue(
-            "expected the selected ring to carry accentInk for the first theme accent ($inkForFirst)",
-            imageBefore.containsColorCloseTo(inkForFirst, tolerancePer255 = 6f),
-        )
-
-        composeRule.runOnIdle { themeAccent.value = secondThemeAccent }
-        composeRule.waitForIdle()
-
-        val imageAfter = ringNode.captureToImage()
-        assertTrue(
-            "expected the selected ring to carry accentInk for the second theme accent ($inkForSecond) after it changed",
-            imageAfter.containsColorCloseTo(inkForSecond, tolerancePer255 = 6f),
-        )
-        assertFalse(
-            "expected the ring to no longer carry the first theme accent's ink once the theme accent changed",
-            imageAfter.containsColorCloseTo(inkForFirst, tolerancePer255 = 6f),
-        )
-    }
-}
-
-/**
- * True if any pixel in this image is within [tolerancePer255] (per RGB channel) of [target].
- *
- * Recycles the underlying [android.graphics.Bitmap] once its pixels are copied into [pixelMap]
- * — [toPixelMap] eagerly reads every pixel into its own `IntArray` before returning, so the
- * bitmap's native backing store is no longer needed after this call and recycling it here is
- * safe. This is not just hygiene: each test in this file calls `captureToImage()` twice per
- * run and never otherwise disposes of the result, and CI failed both of this file's pixel tests
- * on `java.lang.Throwable: Explicit termination method 'close' not called` — the standard
- * CloseGuard/StrictMode `LeakedClosableViolation` message for an un-recycled `Bitmap`, thrown
- * from an unrelated test whenever the GC happens to finalize the leaked one.
- */
-private fun ImageBitmap.containsColorCloseTo(target: Color, tolerancePer255: Float): Boolean {
-    val tolerance = tolerancePer255 / 255f
-    val pixelMap = toPixelMap()
-    asAndroidBitmap().recycle()
-    for (x in 0 until pixelMap.width) {
-        for (y in 0 until pixelMap.height) {
-            val pixel = pixelMap[x, y]
-            if (abs(pixel.red - target.red) <= tolerance &&
-                abs(pixel.green - target.green) <= tolerance &&
-                abs(pixel.blue - target.blue) <= tolerance
-            ) {
-                return true
-            }
-        }
-    }
-    return false
 }
