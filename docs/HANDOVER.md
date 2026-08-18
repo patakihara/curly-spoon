@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T12:34:05Z` · `a098b4c3bd87d1618` · general-purpose · ended · Working tree clean, one commit on top of the merge. Here's my final report. ## Verdict: **ship with the fix I applied** ('a362ee2'), plus one real de…
-- `2026-08-17T13:04:49Z` · `a4d9cc8a3ea758072` · general-purpose · ended · Working tree is clean, everything committed. Here is my final report. ## Report — Wave 16d-W-1b: reset the content column's scroll on route change **…
 - `2026-08-17T14:08:26Z` · `ad38ba960084a472a` · general-purpose · ended · All work is complete and verified. Final summary: ## Summary **Root cause: not the docking CSS.** Two decisive experiments (requested by the orchestr…
 - `2026-08-17T16:07:38Z` · `ad55e090a60a000c6` · general-purpose · ended · Working tree is clean, no scratch files remain, both commits are in place on the worktree branch. Final report: **Branch/commits:** 'worktree-agent-a…
 - `2026-08-17T16:42:56Z` · `ad4802d687ce40989` · general-purpose · ended · ## Report — Wave 16d-P: parity review of web's docked shell vs Android's chrome **No code changes.** Working tree is clean ('git status --short' empt…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T20:42:20Z` · `af88458cb481f0cc7` · general-purpose · ended · Everything is clean and committed. Here is my final report. ## Report — Wave 16c-2-W-4 **Branch/commit:** 'worktree-agent-af88458cb481f0cc7' at 'fe00…
 - `2026-08-17T20:42:57Z` · `ad963d77210a538fb` · general-purpose · ended · This looks correct. The wave is complete and committed. Here's my final report. ## Report — Wave 16f-A-1: an Android Settings screen carrying theme m…
 - `2026-08-17T21:48:56Z` · `a0080918ef22d6888` · general-purpose · ended · ## Report — Wave 16f-P: parity review of web's and Android's accent pickers No code changes. Working tree is clean ('git status --short' empty) — not…
+- `2026-08-17T22:02:35Z` · `aa60e54a0ca1fdae4` · general-purpose · ended · Working tree is clean, both commits in place. Here's my final report. ## Report — Wave 16f-A-2: giving AuralisAppTokens a production reader **Branch/…
+- `2026-08-18T03:26:55Z` · `af788c0802bde4705` · general-purpose · ended · Working tree is clean, one commit on top of '92ea06f'. Not pushing or merging, per instructions. ## Report — fixing the two 'SettingsContentTest'/'Sh…
 
 <!-- AGENT_LOG_END -->
 
@@ -921,6 +921,57 @@ styled in light and dark. Without that, all three could have rendered completely
 `Drawer.Content`'s className to **both** the fixed positioning wrapper and the visible panel, so
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
+
+### Session end, 2026-08-18 — **`main` is `ecf276b`, green on `CI`, `Android` and `Publish`**
+
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty. Local at CI's own invocation
+(`pnpm test:e2e`): **413 passed, 0 failed**. Unit **1662/1662**.
+
+**Fourteen waves landed.** Phase **16d is complete on both platforms** — Sofia's reported scroll bug
+is fixed — and phase 16c's web migration is materially further along.
+
+| Wave                                       | What                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| `16d-W-1`, `16d-W-1b`, `16d-A`, `16d-P`    | the docked shell; scroll-reset; Android had no bug; parity          |
+| `16d-W-2`                                  | rail wide at 1024; `Icon`'s `filled` prop gets its first reader     |
+| `16d-A-2`                                  | Android stops offering destinations whose upstream is unconfigured  |
+| `16c-2-W-3`, `16c-2-W-4`                   | compact nav pill on `--accent`; Settings' unselected buttons fixed  |
+| `16c-4-W`, `16c-5-W`                       | the portalled trio re-parented into the theme root, then migrated   |
+| `16b-2-A-2`, `16f-A-1`, `16f-A-2`, `16f-P` | Android's chroma coverage; Settings screen; a working accent picker |
+
+**`16f-A-2` closed the gap `16f-A-1` only appeared to close** — see the correction above.
+`AuralisAppTokens.current` now has **four production readers**: the accent-swatch ring and selected
+mode chip (`SettingsScreen.kt`), and the indicator on both nav bar and rail
+(`ShellNavigationItems.kt`). Per-call-site rather than threading `accent` into the scheme builders,
+so `SonoraThemeTest`'s 32 chroma assertions stand untouched and nothing else in the app shifted.
+
+**Its two pixel tests were removed and that is a real, recorded loss.** They asserted the rendered
+colour _changes_ with the accent — the exact assertion whose absence let `16f-A-1` ship green and
+inert. `captureToImage` has no other user in this repo, nothing here compiles Kotlin, and two
+evidenced fixes failed (`@GraphicsMode(NATIVE)` was already present; recycling the bitmap did not
+help). **Nothing mechanical now stops a future edit reverting one of those four readers to a static
+`MaterialTheme` value.** A KDoc stands where each test was. **Bringing them back needs a JDK on this
+machine, or an assertion that does not go through pixels.**
+
+### What to pick up next
+
+1. **`16e` — the screens.** Genuinely unblocked now: §16 put 16d first so screens are not rebuilt
+   inside a wrongly-scrolling document, and that is discharged. **Note the corrected parallelism** —
+   §16 says "several triples in parallel", and that now holds only for `-A` halves and authoring;
+   **one `-W` at a time**, because of the Playwright port.
+2. **The remaining `--m3-*` consumers**, measured rather than guessed by `16c-5-W`: `Fab`,
+   `ListItem`, `Marquee`, `NavigationBar`, `SearchField`, `Snackbar`, `TopAppBar`. **Deletion is not
+   close**, so treat `--m3-*` as a live substrate.
+3. **Two small drifts `16f-P` named**, neither urgent: Android's theme-mode buttons are ordered
+   light/dark/system against web's system/light/dark (nothing in `SONORA.md` rules on it), and web's
+   `themeStore` does **no validation** on a stored `mode`/`accent` where Android falls back
+   explicitly.
+4. **Phase 15** is untouched and disjoint from all of this.
+
+**Still with Sofia, still blocking nothing:** queue `dbfb46e` (should album-art-derived colour ever
+drive the accent?) and `abbaca2` (the two WCAG numbers). `16f-P` confirmed Android reaches the
+**same** design decision through a different pipeline — `accentContrast` is the identical fixed
+white — so it is **one design question, not a second bug**.
 
 ### DONE — `16c-2-W-4` and `16f-A-1`. **`main` `ad38f75`, `CI` and `Android` green.**
 
