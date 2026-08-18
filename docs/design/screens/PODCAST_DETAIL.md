@@ -49,37 +49,35 @@ neither implementing wave invents an episode page.
 full). Android: `apps/android/app/src/main/java/net/develivarr/auralis/features/podcasts/PodcastDetailScreen.kt`
 (219 lines, read in full) plus `ui/components/MediaHeader.kt` (183 lines, read in full).
 
-| Content / control                   | Web today                                                                                         | Android today                                                                                                                     |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Route                               | `/podcast/$itemId` (own component, not `ItemPage`)                                                | `PodcastDetailScreen`, reached from `PodcastsScreen`'s "My podcasts" list                                                         |
-| Cover art                           | `CoverImage`, 200px, `podcasts` fallback icon, **pre-Sonora inline style** (`:106-119`)           | `MediaHeader` — **already Sonora-styled** (232dp/208dp, `shapes.large`, fallback icon underlay)                                   |
-| Title                               | `<h1>{item.media.title}</h1>` (`:121`), plain, no Sonora type scale applied                       | `MediaHeader`'s `title` slot — **already Sonora type scale** (weight 900, `--h2`/`--h4`)                                          |
-| Author / publisher                  | `<p>{item.media.author}</p>` if present (`:122`), plain text, no muted styling                    | `MediaHeader`'s `subtitle` slot, muted — **already styled**                                                                       |
-| Kind label                          | **not shown**                                                                                     | `MediaHeader`'s `kindLabel = "Podcast"` — **already shown, uppercase, muted**                                                     |
-| Meta line (episode/unplayed counts) | **not shown**                                                                                     | **not shown** — `MediaHeader(meta = …)` param exists but `PodcastDetailScreen` passes nothing                                     |
-| Primary action ("Play latest")      | **not present anywhere on this page**                                                             | **not present** — `MediaHeader`'s `actions` slot exists but is passed `null`                                                      |
-| Description                         | `RichDescription`, full text, no clamp (`:126-130`)                                               | Plain `Text` below the header, `bodyMedium`, no Sonora restyle (`:151-153`)                                                       |
-| Episode order toggle                | Two `Chip` (`variant="filter"`), "Newest first"/"Oldest first", both selectable (`:143-153`)      | One `Button` that flips label to name the _destination_ state (`:167-171`) — different control shape                              |
-| Episode row: title                  | `ListItem` `headline` (`:173`)                                                                    | Plain `Text`, `titleSmall` (`:196`)                                                                                               |
-| Episode row: date                   | `ListItem` `overline`, `formatPublishedAt` (`:174`)                                               | Joined into one `Text` line with duration/progress (`:197-200`)                                                                   |
-| Episode row: duration               | `ListItem` `supportingText`, `formatDuration` — clock format e.g. `"54:00"` (`:175-181`)          | Same clock format, joined line (`:198`)                                                                                           |
-| Episode row: progress               | Appended to `supportingText`: `" · Played"` / `" · In progress"` / nothing (`:176-180`)           | Same three-state suffix, same wording (`episodeProgressSuffix`, `:214-218`)                                                       |
-| Episode row: status icon            | `Icon("check")` if played, `Icon("play")` otherwise, `Skeleton` while pending (`:182-190`)        | **none at all** — no icon, no pending indicator                                                                                   |
-| Episode row: a11y                   | `ListItem` merges headline/overline/supportingText into one accessible unit (established pattern) | **No merged semantics** — two bare `Text` composables inside a `.clickable` (`:189-201`), no `semantics(mergeDescendants = true)` |
-| Play error                          | Inline `role="alert"` per-episode, under the failing row (`:195-199`)                             | None inline — surfaces as a `PlayerUiState.Error` snackbar at screen level (`:81-86`)                                             |
-| Empty episode list                  | `<p>This podcast has no episodes yet.</p>` (`:158`)                                               | `Text("This podcast has no episodes yet.")` (`:174`) — same copy                                                                  |
-| Loading state                       | `<p>Loading…</p>` (`:57-61`)                                                                      | `CircularProgressIndicator` (`:93-99`)                                                                                            |
-| Not-a-podcast state                 | Inline `role="alert"` message (`:71-77`)                                                          | Inline error `Text` (`:107-113`)                                                                                                  |
-| Fetch error state                   | `itemQuery.isError` throws to `RouteErrorBoundary` — **wait, not quite**, see note below          | Inline error `Text`, `PodcastDetailUiState.Failed` (`:100-106`)                                                                   |
+| Content / control                   | Web today                                                                                                | Android today                                                                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Route                               | `/podcast/$itemId` (own component, not `ItemPage`)                                                       | `PodcastDetailScreen`, reached from `PodcastsScreen`'s "My podcasts" list                                                         |
+| Cover art                           | `CoverImage`, 200px, `podcasts` fallback icon, **pre-Sonora inline style** (`:106-119`)                  | `MediaHeader` — **already Sonora-styled** (232dp/208dp, `shapes.large`, fallback icon underlay)                                   |
+| Title                               | `<h1>{item.media.title}</h1>` (`:121`), plain, no Sonora type scale applied                              | `MediaHeader`'s `title` slot — **already Sonora type scale** (weight 900, `--h2`/`--h4`)                                          |
+| Author / publisher                  | `<p>{item.media.author}</p>` if present (`:122`), plain text, no muted styling                           | `MediaHeader`'s `subtitle` slot, muted — **already styled**                                                                       |
+| Kind label                          | **not shown**                                                                                            | `MediaHeader`'s `kindLabel = "Podcast"` — **already shown, uppercase, muted**                                                     |
+| Meta line (episode/unplayed counts) | **not shown**                                                                                            | **not shown** — `MediaHeader(meta = …)` param exists but `PodcastDetailScreen` passes nothing                                     |
+| Primary action ("Play latest")      | **not present anywhere on this page**                                                                    | **not present** — `MediaHeader`'s `actions` slot exists but is passed `null`                                                      |
+| Description                         | `RichDescription`, full text, no clamp (`:126-130`)                                                      | Plain `Text` below the header, `bodyMedium`, no Sonora restyle (`:151-153`)                                                       |
+| Episode order toggle                | Two `Chip` (`variant="filter"`), "Newest first"/"Oldest first", both selectable (`:143-153`)             | One `Button` that flips label to name the _destination_ state (`:167-171`) — different control shape                              |
+| Episode row: title                  | `ListItem` `headline` (`:173`)                                                                           | Plain `Text`, `titleSmall` (`:196`)                                                                                               |
+| Episode row: date                   | `ListItem` `overline`, `formatPublishedAt` (`:174`)                                                      | Joined into one `Text` line with duration/progress (`:197-200`)                                                                   |
+| Episode row: duration               | `ListItem` `supportingText`, `formatDuration` — clock format e.g. `"54:00"` (`:175-181`)                 | Same clock format, joined line (`:198`)                                                                                           |
+| Episode row: progress               | Appended to `supportingText`: `" · Played"` / `" · In progress"` / nothing (`:176-180`)                  | Same three-state suffix, same wording (`episodeProgressSuffix`, `:214-218`)                                                       |
+| Episode row: status icon            | `Icon("check")` if played, `Icon("play")` otherwise, `Skeleton` while pending (`:182-190`)               | **none at all** — no icon, no pending indicator                                                                                   |
+| Episode row: a11y                   | `ListItem` merges headline/overline/supportingText into one accessible unit (established pattern)        | **No merged semantics** — two bare `Text` composables inside a `.clickable` (`:189-201`), no `semantics(mergeDescendants = true)` |
+| Play error                          | Inline `role="alert"` per-episode, under the failing row (`:195-199`)                                    | None inline — surfaces as a `PlayerUiState.Error` snackbar at screen level (`:81-86`)                                             |
+| Empty episode list                  | `<p>This podcast has no episodes yet.</p>` (`:158`)                                                      | `Text("This podcast has no episodes yet.")` (`:174`) — same copy                                                                  |
+| Loading state                       | `<p>Loading…</p>` (`:57-61`)                                                                             | `CircularProgressIndicator` (`:93-99`)                                                                                            |
+| Not-a-podcast state                 | Inline `role="alert"` message (`:71-77`)                                                                 | Inline error `Text` (`:107-113`)                                                                                                  |
+| Fetch error state                   | `itemQuery.isError` throws to `RouteErrorBoundary` (`:64-66`), matching `ItemPage.tsx`'s pattern exactly | Inline error `Text`, `PodcastDetailUiState.Failed` (`:100-106`)                                                                   |
 
-**Note on web's fetch error handling.** Unlike `ItemPage`, `PodcastDetailPage` does **not** throw
-`itemQuery.isError` to the route boundary — there is no `if (itemQuery.isError) throw …` line in
-this file at all (confirmed by grep: the string `isError` appears nowhere in
-`PodcastDetailPage.tsx`). An item query error here currently falls through `itemQuery.data?.item`
-being `undefined`, hits the `if (!item) return null` guard, and renders a **blank page** with the
-`data-testid="podcast-detail-page"` wrapper only. **This is a pre-existing defect, not something
-this wave introduces** — flagged in §5 as a fix this wave should make while it's touching this file,
-since it's a one-line change adjacent to work already happening here.
+**Correction to an earlier draft of this recon, left visible rather than silently fixed.** This
+document first claimed web's fetch-error throw was missing here, unlike `ItemPage`. That was wrong
+— re-checked directly against the file: `PodcastDetailPage.tsx:64-66` already has
+`if (itemQuery.isError) throw itemQuery.error;`, with a comment stating it matches `ItemPage`'s own
+reasoning. **There is no fetch-error defect on this screen — do not "fix" it.** §6 does not carry
+this as a line item because there is nothing to change.
 
 ---
 
@@ -229,16 +227,10 @@ alongside `PodcastDetailViewModel.kt`'s existing pure helpers (`episodeProgressS
 **Precondition:** this screen renders for `item.media.kind === 'podcast'` only — matches both
 platforms' existing guard.
 
-**Loading / not-a-podcast / episode-list-empty states.** Keep exactly as today (§2's inventory) —
-none of these need to change; this wave is additive plus the header restyle, not a rewrite of
-control flow already working correctly.
-
-**Fetch error (web only — a real fix, not new scope).** Add the same
-`if (itemQuery.isError) throw itemQuery.error;` line `ItemPage.tsx` already has, so a failed fetch
-hands off to `RouteErrorBoundary` instead of rendering a blank page. This is a one-line change
-directly adjacent to work this wave is already doing in this file, not a separately-scoped fix —
-include it, but do not expand the fetch-error handling any further than matching `ItemPage`'s
-existing pattern.
+**Loading / not-a-podcast / episode-list-empty / fetch-error states.** Keep exactly as today (§2's
+inventory) — none of these need to change; this wave is additive plus the header restyle, not a
+rewrite of control flow already working correctly. (An earlier draft of this document claimed web's
+fetch-error handling needed a fix; it did not — see §2's correction note. Do not add anything here.)
 
 **"Play latest" (new, both platforms).** A primary button in the header, visible whenever
 `episodes.length > 0` (§5). Tapping it: sort episodes newest-first, take the first, and call the
