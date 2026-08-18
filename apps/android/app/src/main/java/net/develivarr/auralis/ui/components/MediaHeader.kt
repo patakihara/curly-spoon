@@ -1,5 +1,6 @@
 package net.develivarr.auralis.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import net.develivarr.auralis.navigation.RAIL_BREAKPOINT
+import net.develivarr.auralis.ui.theme.AuralisAppTokens
 
 /**
  * Wave 16e-book-A-2 — one Compose equivalent of Sonora's `MediaHeader`
@@ -72,8 +74,27 @@ import net.develivarr.auralis.navigation.RAIL_BREAKPOINT
  * [trailingContent] is a header-row slot for content that must stay vertically aligned with the
  * art tile and title column — [net.develivarr.auralis.features.music.AlbumDetailScreen]'s favorite
  * toggle is the one caller that needs it; the book and podcast screens pass `null`. [actions] is a
- * slot rendered *below* the header row — the book screen's Play/Download button row; podcast and
- * album pass `null` since their equivalent actions live per-episode/per-track, not in the header.
+ * slot rendered *below* the header row — [net.develivarr.auralis.features.podcasts.PodcastDetailScreen]'s
+ * own "Play latest" button, and now [net.develivarr.auralis.features.music.AlbumDetailScreen]'s
+ * Play/Shuffle row (wave 16e-album). **Correction to an inaccuracy this doc comment carried before
+ * this wave:** the book screen's own Play button is *not* rendered through this slot —
+ * `BookDetailScreen.kt` renders it as a sibling `Row` immediately after the `MediaHeader` call, so
+ * `BookDetailScreen` passes `actions = null` (the default) and had all along; only podcast and
+ * (now) album genuinely use it.
+ *
+ * **[onSubtitleClick] (wave 16e-album) — the first caller that needs a linkable subtitle.**
+ * Neither the book nor the podcast screen ever needed this (an Android author/publisher page was
+ * out of scope for both — `docs/design/screens/BOOK_DETAIL.md` §8,
+ * `docs/design/screens/PODCAST_DETAIL.md` §8), so this parameter is new. When non-null, the
+ * subtitle renders in [AuralisAppTokens.current.accentInk] with a `Modifier.clickable` calling it,
+ * instead of the usual muted [mutedColor] text — mirrors Sonora's own stated rule for `MediaHeader`
+ * (`docs/design/screens/ALBUM_DETAIL.md` §3: "`--accent-ink` + `cursor: pointer` when clickable...
+ * plain otherwise", "the general pattern for 'this label is a link to another entity' throughout
+ * the redesign"). `null` (the default) keeps every existing caller's plain, non-clickable subtitle
+ * unchanged — `BookDetailScreen`/`PodcastDetailScreen` pass no argument here, so nothing about
+ * them changes. Gives [AuralisAppTokens.current] its fifth production reader
+ * (`docs/HANDOVER.md`'s 2026-08-18 entry lists four: the Settings swatch ring/mode chip, and both
+ * nav indicators).
  *
  * Each caller keeps its own data model, its own ViewModel and its own fallback contract (§5 of the
  * book spec — omit a missing field's line entirely, never render an empty one). Only the layout
@@ -91,6 +112,7 @@ fun MediaHeader(
     meta: String? = null,
     trailingContent: (@Composable () -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
+    onSubtitleClick: (() -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier = modifier) {
         val wide = maxWidth >= RAIL_BREAKPOINT
@@ -153,12 +175,16 @@ fun MediaHeader(
                         modifier = Modifier.testTag("media-header-title"),
                     )
                     subtitle?.let {
+                        val subtitleModifier =
+                            Modifier.testTag("media-header-subtitle").let { tagged ->
+                                if (onSubtitleClick != null) tagged.clickable(onClick = onSubtitleClick) else tagged
+                            }
                         Text(
                             it,
                             style = subtitleStyle,
-                            color = mutedColor,
+                            color = if (onSubtitleClick != null) AuralisAppTokens.current.accentInk else mutedColor,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.testTag("media-header-subtitle"),
+                            modifier = subtitleModifier,
                         )
                     }
                     meta?.let {

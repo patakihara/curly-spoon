@@ -86,9 +86,80 @@ sealed interface AlbumDetailUiState {
          *  either way "Go to artist" is omitted rather than guessing, matching
          *  `apps/web/src/features/music/MusicAlbumPage.tsx`'s identical `albumArtistId` fetch. */
         val albumArtistId: String? = null,
+        /** This album's release year, from the same [MusicRepository.albums] single-item lookup
+         * as [albumArtistId] — feeds [meta]'s year segment
+         * (`docs/design/screens/ALBUM_DETAIL.md` §4/§5). `null` when Jellyfin never populated it,
+         * or the fetch failed (same degrade as [albumArtistId]). */
+        val productionYear: Int? = null,
+        /** This album's *first* genre only — §5: "use only the first `genres[0]`; omit the
+         * segment entirely if `genres` is empty" — from the same fetch. `null` when Jellyfin
+         * listed no genres, or the fetch failed. */
+        val genre: String? = null,
     ) : AlbumDetailUiState {
         val hasMore: Boolean get() = hasMoreMusicPages(tracks.size, total)
+
+        /** The header's single muted meta line — see [composeAlbumMeta]'s own doc comment for
+         * the composition rule. A computed property, not a stored field, so it stays in sync
+         * automatically once [loadMoreTracks] lands a page (the duration segment can only
+         * appear once the album's one page is fully loaded) rather than needing every writer of
+         * [Loaded] to recompute and pass it explicitly. */
+        val meta: String? get() = composeAlbumMeta(productionYear, genre, total, tracks)
     }
+}
+
+/**
+ * Composes [AlbumDetailUiState.Loaded.meta] — `"{year} · {genre} · {n} {track|tracks} ·
+ * {duration}"`, each segment present only per `docs/design/screens/ALBUM_DETAIL.md` §5's
+ * fallback table, joined with `" · "`, no separator artifacts when a segment is missing (the same
+ * joining rule `BOOK_DETAIL.md` §5 and `PODCAST_DETAIL.md` §5 both specify). Screen-scoped, not
+ * shared globally — same "write it once, test it directly, keep it screen-scoped" pattern
+ * `BookDetailViewModel.kt`'s own meta-line composer already uses.
+ *
+ * Track count is **always** shown once the first page has loaded — never omitted, including
+ * `"0 tracks"` for a genuinely empty album — using [total] rather than `tracks.size` so it agrees
+ * by construction with whatever "Load more" eventually shows. Duration is shown only when [total]
+ * fits in a single [MUSIC_PAGE_SIZE] page **and** [tracks] already carries every one of them
+ * (`tracks.size >= total`) — otherwise summing would mean fetching every page of a multi-page
+ * album purely to build one header string, §5's own stated limitation. A genuinely empty album
+ * (`total == 0`) never gets a duration segment either way (there is nothing to sum), which §5
+ * doesn't spell out explicitly but follows from the same "nothing to show" reasoning as the
+ * whole-line omission below.
+ *
+ * The whole line is `null` (omitted entirely) only when the album has zero tracks *and* no year
+ * *and* no genre — §5: "omit entirely if the album has zero tracks and no year/genre (nothing to
+ * show)". If there *is* a year or genre but zero tracks, the line still renders with `"0 tracks"`.
+ */
+private fun composeAlbumMeta(
+    productionYear: Int?,
+    genre: String?,
+    total: Int,
+    tracks: List<MusicTrackUi>,
+): String? {
+    if (total == 0 && productionYear == null && genre == null) return null
+    val parts = mutableListOf<String>()
+    productionYear?.let { parts += it.toString() }
+    genre?.let { parts += it }
+    parts += "$total ${if (total == 1) "track" else "tracks"}"
+    if (total in 1..MUSIC_PAGE_SIZE && tracks.size >= total) {
+        parts += formatAlbumDurationLabel(tracks.sumOf { it.durationSeconds })
+    }
+    return parts.joinToString(" · ")
+}
+
+/**
+ * An album's *total* duration reads as `"{h} h {mm} m"` / `"{m} m"` sub-hour — the app's existing
+ * "long" duration convention
+ * ([net.develivarr.auralis.features.books.formatBookDurationLabel]'s own shape,
+ * `apps/web/src/features/item/itemMeta.ts`'s `formatDurationLong` on web), not Sonora's literal
+ * `"6 min"` unit spelling. Matches `formatBookDurationLabel`'s shape rather than reusing it
+ * directly — it's `private` to a different file. Literal example, checkable against the real
+ * fixture (`fakeJellyfin.ts:117-123`): 3:34 + 3:18 = 412s → `round(412/60) = 7` → `"7 m"`.
+ */
+private fun formatAlbumDurationLabel(totalSeconds: Long): String {
+    val totalMinutes = (totalSeconds / 60.0).roundToLong()
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    return if (hours > 0) "%d h %02d m".format(hours, minutes) else "%d m".format(minutes)
 }
 
 /**
@@ -145,6 +216,8 @@ class AlbumDetailViewModel(
                             total = result.total,
                             albumFavorite = album?.favorite ?: false,
                             albumArtistId = album?.artistId,
+                            productionYear = album?.productionYear,
+                            genre = album?.genres?.firstOrNull(),
                         )
                 }
                 is TracksPageResult.Failed ->
