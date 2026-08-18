@@ -729,6 +729,24 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
+### CLAIMED 2026-08-18 — `16e-podcast-spec` and `15e-books`, dispatched together
+
+`main` is `6b6a173`, green on `CI`, `Android` and `Publish`. Two waves, deliberately paired
+because **one needs no browser**: `15e-books` is `apps/server` only, so it cannot contend for
+Playwright's hardcoded port 4310 with anything in the 16e track.
+
+- **`16e-podcast-spec`** — recon plus the shared behaviour spec `docs/design/screens/PODCAST_DETAIL.md`,
+  no product code. It is the next screen triple after `16e-book`, chosen over Music/Album for two
+  reasons: podcasts are the user's stated priority 2 against music's 3, and the `CoverImage`
+  fallback defect `16e-book-P` named has its live instance on `PodcastDetailPage`.
+  **The triple is asymmetric and the spec must say so** — Android's header half already landed in
+  `16e-book-A-2`, so the `-A` agent's header rows read "already satisfied by `MediaHeader`, do not
+  rebuild", while `-W` extracts a shared header from `ItemPage` and adopts it.
+- **`15e-books`** — external book recommendations, mirroring what `15e-music` did for music.
+  Books are priority 1 and are the medium with **no** external source at all today.
+
+Delete these lines when they land.
+
 ### `for-you.spec.ts`'s skeleton assertion is **inherently racy**, and that may mean 14a-2 was reverted for nothing
 
 Measured 2026-08-17, and it is the most consequential thing this session found.
