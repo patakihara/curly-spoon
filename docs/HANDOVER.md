@@ -270,11 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16b-2-A-2: Robolectric cover…
-- `2026-08-17T18:38:55Z` · `aa875a0416f640711` · general-purpose · ended · I've completed all the implementation, testing, and verification work for this wave, and the final full-parallelism 'ui-desktop'/'ui-mobile' Playwrig…
-- `2026-08-17T19:09:05Z` · `aa875a0416f640711` · general-purpose · ended · Confirmed: the second, confirmatory '--project=ui-desktop --project=ui-mobile' run also passed cleanly — **212/212 passed** (3.9m, default parallelis…
-- `2026-08-17T19:36:20Z` · `a0cfc7e80a2c0369c` · general-purpose · ended · Everything committed, working tree fully clean. Let me finalize the report. ## Report — Wave 16c-5-W: migrate Dialog/Sheet/Menu off '--m3-*' **Branch…
-- `2026-08-17T20:42:20Z` · `af88458cb481f0cc7` · general-purpose · ended · Everything is clean and committed. Here is my final report. ## Report — Wave 16c-2-W-4 **Branch/commit:** 'worktree-agent-af88458cb481f0cc7' at 'fe00…
 - `2026-08-17T20:42:57Z` · `ad963d77210a538fb` · general-purpose · ended · This looks correct. The wave is complete and committed. Here's my final report. ## Report — Wave 16f-A-1: an Android Settings screen carrying theme m…
 - `2026-08-17T21:48:56Z` · `a0080918ef22d6888` · general-purpose · ended · ## Report — Wave 16f-P: parity review of web's and Android's accent pickers No code changes. Working tree is clean ('git status --short' empty) — not…
 - `2026-08-17T22:02:35Z` · `aa60e54a0ca1fdae4` · general-purpose · ended · Working tree is clean, both commits in place. Here's my final report. ## Report — Wave 16f-A-2: giving AuralisAppTokens a production reader **Branch/…
@@ -285,6 +280,11 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T05:35:09Z` · `ac56785c0073c04af` · general-purpose · ended · ## Report — 16e-book-P: parity review of the book detail screen **No code changes.** Working tree clean throughout — this was a read-and-reason wave.…
 - `2026-08-18T05:50:14Z` · `a3fef180f50536b9b` · general-purpose · ended · Working tree is clean, five commits on top of '756debb'. All committed on branch 'worktree-agent-a3fef180f50536b9b'. Not pushing or merging, per inst…
 - `2026-08-18T06:17:40Z` · `a008be551e33ce274` · general-purpose · ended · Working tree is clean, one commit on top of '733478f'. This is my final report. ## Report — fixing the three failing 'BookDetailContentTest' tests **…
+- `2026-08-18T20:08:25Z` · `a5f4cf54fababc701` · general-purpose · ended · ## Report — 16e-podcast-spec **Branch/commit:** 'worktree-agent-a5f4cf54fababc701' at '91a51cc', two commits on top of 'e5eb249'. Working tree clean.…
+- `2026-08-18T20:09:26Z` · `a675ba5171943ba81` · general-purpose · ended · ## Report — Wave 15e-books: external book discovery for 'GET /libraries/:id/recommended' **Branch:** 'worktree-agent-a675ba5171943ba81', final commit…
+- `2026-08-18T20:23:07Z` · `a2adabaeb3b722475` · general-purpose · ended · All balanced, working tree clean, nothing left uncommitted. ## Report — Wave 16e-podcast-A **Branch/commit:** 'worktree-agent-a2adabaeb3b722475' at '…
+- `2026-08-18T20:27:21Z` · `a8bf0c9fd4eba7c4c` · general-purpose · running · —
+- `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -729,23 +729,46 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### CLAIMED 2026-08-18 — `16e-podcast-spec` and `15e-books`, dispatched together
+### IN FLIGHT 2026-08-18 — the `16e-podcast` triple and `15e-books`
 
-`main` is `6b6a173`, green on `CI`, `Android` and `Publish`. Two waves, deliberately paired
-because **one needs no browser**: `15e-books` is `apps/server` only, so it cannot contend for
-Playwright's hardcoded port 4310 with anything in the 16e track.
+`main` is `25b66ab`. The spec wave landed (`8ef13f2`); `16e-podcast-W`, `16e-podcast-A` and a
+review of `15e-books` are running.
 
-- **`16e-podcast-spec`** — recon plus the shared behaviour spec `docs/design/screens/PODCAST_DETAIL.md`,
-  no product code. It is the next screen triple after `16e-book`, chosen over Music/Album for two
-  reasons: podcasts are the user's stated priority 2 against music's 3, and the `CoverImage`
-  fallback defect `16e-book-P` named has its live instance on `PodcastDetailPage`.
-  **The triple is asymmetric and the spec must say so** — Android's header half already landed in
-  `16e-book-A-2`, so the `-A` agent's header rows read "already satisfied by `MediaHeader`, do not
-  rebuild", while `-W` extracts a shared header from `ItemPage` and adopts it.
-- **`15e-books`** — external book recommendations, mirroring what `15e-music` did for music.
-  Books are priority 1 and are the medium with **no** external source at all today.
+- **`docs/design/screens/PODCAST_DETAIL.md` is merged** and is the contract both halves build to.
+  It is the second spec of its kind and carries the `16e-book-P` correction: geometry and type in a
+  **per-platform table**, not prose. Two findings in it worth knowing before reading either
+  implementation: **Sonora specifies a separate `episode` detail page whose screenshot was never
+  vendored**, so the spec is scoped to the show page and says so; and **`CoverImage`'s fallback tile
+  hardcodes an 8px pre-Sonora radius and takes no `style`**, which is a component defect whose live
+  instance is this screen.
+- **`15e-books` is IMPLEMENTED and UNDER REVIEW — `8b3a9b4` on `worktree-agent-a675ba5171943ba81`,
+  not merged.** Nine files, all `apps/server`. **It is being held rather than merged**, on the
+  `15e-music` precedent: an external card is a dead end, and `16e-book` has just given books a real
+  detail screen navigable by id that an `external:openlibrary:…` id cannot resolve on. `main`
+  auto-deploys, so this would reach her For You feed. A `15d-1-books` client wave is what unblocks it.
 
-Delete these lines when they land.
+**The wave did the thing this project keeps failing to do, and it paid off immediately.** It
+`curl`ed the real endpoints instead of building against the research doc, and **refuted the doc's
+own premise**: `api.audnex.us` has **no author→books listing at all** (`/books?author=…` and
+`/authors/:asin/books` both 404), so Audnexus is catalogue-only and cannot answer "what unowned book
+should we recommend". It moved to **Open Library**, which the doc had filed as a redundant fallback,
+because one uncredentialled call answers the whole question.
+
+### Two suites at once starve each other on this laptop — do not read a failure from a concurrent run
+
+Measured 2026-08-18, and it qualifies this file's own advice. The orchestrator ran `pnpm test` and
+`pnpm test:e2e` **concurrently**, and got a red result from each: `themeStore.test.ts` timed out at
+its 5s limit, and **four `e2e/ui/button.spec.ts` tests failed on `ui-desktop`**, all four with
+`Test timeout of 30000ms exceeded` and **no assertion mismatch**. Re-run alone with nothing else
+loaded: the unit file passes, and the button spec passes **9/9 in 50s**, each test taking ~6s
+against a 30s limit.
+
+So the baseline on this tree is **green** — 416 passed plus four starvation timeouts — and the
+lesson is narrow and worth keeping: **"the orchestrator runs the full suite" does not mean it runs
+two of them at once.** A timeout with no assertion mismatch, on tests that pass in a fifth of their
+budget when run alone, is contention rather than a defect. The same applies while subagents are
+working: a heavy orchestrator run starves _their_ tests, and they will misdiagnose it as their own
+breakage.
 
 ### `for-you.spec.ts`'s skeleton assertion is **inherently racy**, and that may mean 14a-2 was reverted for nothing
 
