@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import net.develivarr.auralis.AppContainer
+import net.develivarr.auralis.features.books.BookDetailScreen
 import net.develivarr.auralis.features.books.BooksScreen
 import net.develivarr.auralis.features.downloads.DownloadsScreen
 import net.develivarr.auralis.features.login.LoginScreen
@@ -121,6 +122,23 @@ object Routes {
 
     /** The concrete route to `navController.navigate(...)` for one podcast's detail screen. */
     fun podcastDetail(itemId: String): String = "podcast/$itemId"
+
+    /** Android wave 16e-book-A. Argument name within [BOOK_DETAIL_PATTERN] — the audiobook
+     * library item's id. Book detail had no route at all before this wave (confirmed by grep —
+     * see `docs/design/screens/BOOK_DETAIL.md` §2's own note): every book tap on
+     * [net.develivarr.auralis.features.books.BooksScreen]/[net.develivarr.auralis.features.home
+     * .ForYouScreen] called `playerViewModel.playItem` directly, with no intermediate page. This
+     * is the book counterpart to [PODCAST_DETAIL_PATTERN]/[MUSIC_ALBUM_DETAIL_PATTERN] above,
+     * named `book/…` rather than reusing [BOOKS] ("books") — a distinct path segment, so the two
+     * can never collide. */
+    const val BOOK_DETAIL_ARG_ITEM_ID = "itemId"
+    private const val BOOK_DETAIL_PATTERN = "book/{$BOOK_DETAIL_ARG_ITEM_ID}"
+
+    /** Route pattern registered with [NavHost]. */
+    fun bookDetailRoute(): String = BOOK_DETAIL_PATTERN
+
+    /** The concrete route to `navController.navigate(...)` for one book's detail screen. */
+    fun bookDetail(itemId: String): String = "book/$itemId"
 
     /** Argument name within [MUSIC_ARTIST_DETAIL_PATTERN] — the Jellyfin artist item's id. */
     const val MUSIC_ARTIST_DETAIL_ARG_ARTIST_ID = "artistId"
@@ -227,6 +245,15 @@ fun AuralisNavHost(
                 composable(Routes.LOGIN) { LoginScreen(container, navController) }
                 composable(Routes.HOME) { ForYouScreen(container, playerViewModel, navController) }
                 composable(Routes.BOOKS) { BooksScreen(container, playerViewModel, navController) }
+                composable(
+                    Routes.bookDetailRoute(),
+                    arguments = listOf(navArgument(Routes.BOOK_DETAIL_ARG_ITEM_ID) { type = NavType.StringType }),
+                ) { backStackEntry ->
+                    val itemId =
+                        backStackEntry.arguments?.getString(Routes.BOOK_DETAIL_ARG_ITEM_ID)
+                            ?: return@composable
+                    BookDetailScreen(container, playerViewModel, itemId)
+                }
                 composable(Routes.REQUESTS) { RequestsScreen(container) }
                 composable(Routes.DOWNLOADS) { DownloadsScreen(container) }
                 composable(Routes.SETTINGS) { SettingsScreen(themeViewModel) }

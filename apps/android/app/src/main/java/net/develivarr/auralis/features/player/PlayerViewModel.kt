@@ -99,6 +99,14 @@ sealed interface PlayerUiState {
         val isPlaying: Boolean,
         val isMusic: Boolean = false,
         val musicItemId: String? = null,
+        /** Android wave 16e-book-A. The audiobook item id currently loaded, mirroring
+         * [PlayerViewModel.currentAudiobookItemId] — `null` unless an audiobook is the loaded
+         * item (never set for music or a podcast episode). Lets a book detail screen tell "this
+         * screen's own book is the one currently playing" (seek within it) from "a different or
+         * no book is loaded" (load this book, then seek) without reaching past this seam into
+         * [PlaybackHandle]/the raw Media3 media id — the same shape [musicItemId] already gives
+         * the lyrics screen for its own equality check. */
+        val audiobookItemId: String? = null,
         val shuffleEnabled: Boolean = false,
         val repeatMode: Int = Player.REPEAT_MODE_OFF,
         val artist: String? = null,
@@ -681,6 +689,7 @@ class PlayerViewModel(
                     isPlaying = true,
                     isMusic = isMusicMediaId(mediaItem.mediaId),
                     musicItemId = jellyfinItemIdFromMediaId(mediaItem.mediaId),
+                    audiobookItemId = if (currentContentType == QueueContentType.AUDIOBOOK) currentAudiobookItemId else null,
                     shuffleEnabled = ctrl.shuffleModeEnabled,
                     repeatMode = ctrl.repeatMode,
                     artist = mediaItem.mediaMetadata.artist?.toString(),
