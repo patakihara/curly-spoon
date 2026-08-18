@@ -38,8 +38,14 @@ import net.develivarr.auralis.features.player.PlayerViewModel
  * dependency belongs with a decision to use its whole API, not a single breakpoint constant. 600dp
  * is Material's own documented compact/medium window-size-class boundary, so [BoxWithConstraints]
  * against this constant reproduces that boundary without the extra artifact.
+ *
+ * `internal`, not `private`, since wave 16e-book-A-2's
+ * [net.develivarr.auralis.ui.components.MediaHeader] reuses this exact constant (not a
+ * re-derived duplicate literal) to decide its own art-tile size, per that wave's instruction to
+ * "reuse the existing mechanism for choosing 232 vs 208 rather than inventing a second breakpoint
+ * source."
  */
-private val RAIL_BREAKPOINT = 600.dp
+internal val RAIL_BREAKPOINT = 600.dp
 
 /**
  * The persistent navigation shell (`docs/ROADMAP.md` §12a, wave 12a-A1): five destinations
