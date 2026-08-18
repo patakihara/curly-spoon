@@ -3791,6 +3791,42 @@ boundaries, disjoint directories where waves run in parallel.
   to the first's server and both silently share one stateful single-tenant BFF. **So: one `-W` in
   flight at a time; `-A` halves and spec authoring parallelise freely.** Disjoint directories are
   necessary and no longer sufficient.
+- **`16e-podcast` — DONE, the second screen triple.** `main` `6bbb5ba`; Android green on `49134c3`,
+  a genuine uncached execution. Spec `docs/design/screens/PODCAST_DETAIL.md`; waves `16e-podcast-W`
+  (`8d77670`), `16e-podcast-A` (`2d050ee`), a test fix (`49134c3`), `16e-podcast-P` clean.
+
+  **The per-platform table works — this is now the second triple's worth of evidence.** Two agents
+  that never saw each other's work produced meta lines that match **byte for byte**, separator glyph
+  included (the `-P` compared code points rather than eyeballing them). Where `16e-book` drifted was
+  numeric visual values in prose; putting them in a table closed it, and every row was verified
+  shipped on both platforms rather than accepted from the waves' own reports.
+
+  **The asymmetry instruction is worth reusing verbatim.** Android's header already existed, so its
+  spec column read "already satisfied by `MediaHeader`, do not rebuild". `MediaHeader.kt` is
+  byte-identical after the triple, confirmed by an empty `git diff`. Told plainly that a thing is
+  already built, an agent fills the slots instead of rebuilding — which is precisely how the
+  previous triple drifted.
+
+  **Two follow-ups the `-P` named, neither urgent, both recorded so they are not rediscovered:**
+
+  1. **A real accessibility-order divergence, and no token-level review could have seen it.** Android
+     announces an episode row `title, date, duration, state`. Web's row is a plain `<button>` with
+     **no `aria-label`**, so its accessible name is computed from DOM text order, and `ListItem`
+     renders `overline → headline → supportingText` — with `overline` mapped to the date. So web
+     announces **date first**. The spec asserted web "already does this by construction", which is
+     true of _grouping_ and was never checked for _order_. It is invisible by precedent, too: the
+     book/chapter row never passes `overline`, so it happens to agree. **Fix by giving web's row an
+     explicit `aria-label` in the announced order rather than swapping the props** — swapping also
+     moves the date above the title visually, which is a design change nobody asked for.
+  2. **A subtitle colour-role divergence inherited from `16e-book`, not introduced here** — web's
+     non-link subtitle renders `--surface-fg` (full emphasis), Android's always `onSurfaceVariant`
+     (muted). Now visible on every podcast, since a publisher name is always the never-linked case.
+     One for a `SONORA.md` pass to rule on: muted on both, or full emphasis on both.
+
+  **`PodcastDetailScreen` had no Robolectric coverage at all and now has nine cases.** Its one red CI
+  round was a test-fixture bug — two fields sharing a literal made an `onNodeWithText` finder
+  ambiguous — not a product defect. Do not re-audit it.
+
 - **16f — Android's remaining gap, and it is no longer "all of Android".** With 16c–16e paired,
   what is left here is what has no web counterpart: `MaterialTheme` receiving a full typography and
   shape scale (it gets neither today), and Android's colour coming from the platform's

@@ -197,19 +197,29 @@ export function PodcastDetailPage() {
                 findEpisodeProgress(allProgress, item.id, episode.id),
               );
               const isPending = pendingEpisodeId === episode.id;
+              const stateLabel =
+                state === 'played' ? ' · Played' : state === 'in-progress' ? ' · In progress' : '';
               return (
                 <li key={episode.id}>
                   <ListItem
                     data-testid={`podcast-episode-${episode.id}`}
                     headline={episode.title}
                     overline={formatPublishedAt(episode.publishedAt)}
-                    supportingText={`${formatDuration(episode.duration)}${
-                      state === 'played'
-                        ? ' · Played'
-                        : state === 'in-progress'
-                          ? ' · In progress'
-                          : ''
-                    }`}
+                    supportingText={`${formatDuration(episode.duration)}${stateLabel}`}
+                    /*
+                     * Announced order is set explicitly rather than left to DOM order, which is
+                     * what `16e-podcast-P` caught. `ListItem` renders overline → headline →
+                     * supportingText, and this is the first call site to use `overline`, so the
+                     * row's computed accessible name led with the *date* while Android's
+                     * `episodeAnnouncement` leads with the title. Same four facts, different
+                     * order, on a screen the spec had assumed needed no work here.
+                     *
+                     * Labelling rather than swapping the props is deliberate: `overline` renders
+                     * above `headline`, so swapping them would move the date above the episode
+                     * title visually — a design change nobody asked for, to fix a screen-reader
+                     * bug. This decouples the two orders instead.
+                     */
+                    aria-label={`${episode.title}, ${formatPublishedAt(episode.publishedAt)}, ${formatDuration(episode.duration)}${stateLabel}`}
                     trailing={
                       isPending ? (
                         <Skeleton shape="circular" width={24} height={24} />
