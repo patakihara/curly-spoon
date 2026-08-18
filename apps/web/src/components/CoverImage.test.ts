@@ -52,6 +52,34 @@ describe('CoverImageFallback', () => {
     );
     expect(markup).toContain('aria-hidden="true"');
   });
+
+  /**
+   * The 16e-podcast-W fix: a caller-supplied `style` (radius/background) must reach the
+   * fallback tile, not just the happy-path `<img>`. Before the fix `CoverImageFallback`
+   * took no `style` prop at all, so this exact assertion would have failed — the markup
+   * would contain the hardcoded `border-radius:8px` instead of the caller's override.
+   */
+  it('merges a caller-supplied style on top of the defaults, overriding the hardcoded radius', () => {
+    const markup = renderToStaticMarkup(
+      createElement(CoverImageFallback, {
+        size: 120,
+        icon: 'podcasts',
+        style: { borderRadius: 'var(--radius-lg)', background: 'var(--surface-card)' },
+      }),
+    );
+
+    expect(markup).toContain('border-radius:var(--radius-lg)');
+    expect(markup).toContain('background:var(--surface-card)');
+    expect(markup).not.toContain('border-radius:8px');
+  });
+
+  it('keeps the pre-Sonora 8px default when no caller style is supplied', () => {
+    const markup = renderToStaticMarkup(
+      createElement(CoverImageFallback, { size: 120, icon: 'music_note' }),
+    );
+
+    expect(markup).toContain('border-radius:8px');
+  });
 });
 
 describe('CoverImage', () => {

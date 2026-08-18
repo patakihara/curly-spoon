@@ -79,7 +79,7 @@ class PodcastDetailContentTest {
         meta: String? = "2 episodes · 1 unplayed",
         playLatestEpisodeId: String? = "ep1",
     ) = PodcastDetailUiData(
-        title = "Tech Media Collective",
+        title = "The Self-Hosting Show",
         author = "Tech Media Collective",
         description = "Weekly conversations about self-hosting.",
         coverUrl = null,
@@ -125,6 +125,7 @@ class PodcastDetailContentTest {
             }
         }
 
+        composeRule.onNodeWithText("The Self-Hosting Show").assertExists()
         composeRule.onNodeWithText("Tech Media Collective").assertExists()
         composeRule.onNodeWithText("2 episodes · 1 unplayed").assertExists()
         composeRule.onNodeWithText("Weekly conversations about self-hosting.").assertExists()
