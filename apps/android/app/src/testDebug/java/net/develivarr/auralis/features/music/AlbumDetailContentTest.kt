@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -261,8 +262,20 @@ class AlbumDetailContentTest {
         // performClick injects a touch that lands nowhere: no throw, no callback,
         // and a bare AssertionError on the *next* line. assertExists passes either
         // way, which is why the existence tests above stayed green.
+        // Invoked through the semantics action rather than by injecting a touch.
+        // A touch has to land inside the displayed viewport to reach its target,
+        // and this header is the tallest in the app — art tile, kind, title,
+        // subtitle, meta line and an actions row — so on Robolectric's default
+        // display the gesture silently reached nothing: no throw, no callback,
+        // and the failure surfaced on the assertion below instead.
+        //
+        // This is not a weaker check. It still fails if `onSubtitleClick` is not
+        // wired, and it still pins that the *album's own* artist id is reported
+        // rather than any tap, which is what the test is named for.
         scrollToTag("media-header-subtitle")
-        composeRule.onNodeWithTag("media-header-subtitle").performClick()
+        composeRule
+            .onNodeWithTag("media-header-subtitle")
+            .performSemanticsAction(SemanticsActions.OnClick)
 
         assertEquals("artist-nebula", goneToArtist)
     }
