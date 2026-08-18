@@ -1,11 +1,16 @@
 package net.develivarr.auralis.features.books
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.ImageLoader
@@ -66,6 +71,30 @@ class BookDetailContentTest {
         playLabel = playLabel,
     )
 
+    /**
+     * Wave 16e-book-A-2's [net.develivarr.auralis.ui.components.MediaHeader] adoption made the
+     * header block roughly 112dp taller than the 96dp thumbnail row it replaced (a 208/232dp art
+     * tile versus a 96dp `AsyncImage`), which pushes the Chapters section below the `LazyColumn`'s
+     * initially-composed viewport under this harness's default window size. A lazy list only
+     * composes items inside (plus a small prefetch margin around) its current viewport — an item
+     * that has never scrolled into view is genuinely absent from the semantics tree, not merely
+     * clipped, so `onNodeWith*` fails to find it at all. `SemanticsActions.ScrollToIndex` is the
+     * action every `LazyColumn`/`LazyRow` root exposes (distinct from the classic `ScrollBy` a
+     * `Modifier.verticalScroll` container carries), so matching on it selects `BookDetailContent`'s
+     * one scrollable container without needing a testTag added to production code for it.
+     */
+    private fun scrollToTag(tag: String) {
+        composeRule
+            .onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex))
+            .performScrollToNode(hasTestTag(tag))
+    }
+
+    private fun scrollToDescription(description: String) {
+        composeRule
+            .onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.ScrollToIndex))
+            .performScrollToNode(hasContentDescription(description))
+    }
+
     @Test
     fun `renders the title, author, meta line, description and every chapter`() {
         composeRule.setContent {
@@ -87,8 +116,15 @@ class BookDetailContentTest {
         composeRule.onNodeWithText("J. R. R. Tolkien").assertExists()
         composeRule.onNodeWithText("Narrated by Rob Inglis · 19 h 07 m · 2 chapters").assertExists()
         composeRule.onNodeWithText("One Ring to rule them all.").assertExists()
+
+        // See scrollToTag's doc comment: the taller MediaHeader pushes the Chapters section out
+        // of the LazyColumn's initially-composed viewport, so each node must be scrolled to
+        // before it exists in the semantics tree.
+        scrollToTag("book-chapters-heading")
         composeRule.onNodeWithTag("book-chapters-heading").assertExists()
+        scrollToTag("book-chapter-1")
         composeRule.onNodeWithTag("book-chapter-1").assertExists()
+        scrollToTag("book-chapter-2")
         composeRule.onNodeWithTag("book-chapter-2").assertExists()
     }
 
@@ -176,6 +212,7 @@ class BookDetailContentTest {
             }
         }
 
+        scrollToTag("book-chapter-2")
         composeRule.onNodeWithTag("book-chapter-2").performClick()
 
         assertEquals("Chapter Two", tapped?.title)
@@ -206,7 +243,9 @@ class BookDetailContentTest {
             }
         }
 
+        scrollToDescription("Chapter Two, 10:00, current chapter")
         composeRule.onNodeWithContentDescription("Chapter Two, 10:00, current chapter").assertExists()
+        scrollToDescription("Chapter One, 0:00")
         composeRule.onNodeWithContentDescription("Chapter One, 0:00").assertExists()
     }
 }
