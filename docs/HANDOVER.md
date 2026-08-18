@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T22:02:35Z` · `aa60e54a0ca1fdae4` · general-purpose · ended · Working tree is clean, both commits in place. Here's my final report. ## Report — Wave 16f-A-2: giving AuralisAppTokens a production reader **Branch/…
-- `2026-08-18T03:26:55Z` · `af788c0802bde4705` · general-purpose · ended · Working tree is clean, one commit on top of '92ea06f'. Not pushing or merging, per instructions. ## Report — fixing the two 'SettingsContentTest'/'Sh…
 - `2026-08-18T04:15:37Z` · `a110225eab461f078` · general-purpose · ended · Clean working tree, one commit on top of '033bfa5'. Work is done and durable. ## Report — 16e-book recon and shared spec **Branch/commit:** 'worktree…
 - `2026-08-18T04:33:39Z` · `a72c8bd104b7483ee` · general-purpose · ended · Everything is committed and the working tree is clean. Here's my final report. ## Report — Wave 16e-book-A: Android's book detail screen **Branch/com…
 - `2026-08-18T04:34:14Z` · `ade26b2bd42f3f1d9` · general-purpose · ended · ## Report — Wave 16e-book-W **Branch/commit:** 'worktree-agent-ade26b2bd42f3f1d9' at '6ba0ce4', three commits on top of '773b08b' ('2a48b4c' restyle+…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · ended · ## Verdict: **hold for a client wave** — I agree with your inclination The server-side wave itself is clean, well-tested, and one of the more careful…
 - `2026-08-18T20:47:35Z` · `a6e64e451336a72ea` · general-purpose · ended · Working tree is clean, one commit on top of '30a772d' on branch 'worktree-agent-a6e64e451336a72ea'. Not pushed or merged, per instructions. ## Report…
 - `2026-08-18T20:52:57Z` · `ad1e24b030f35c99c` · general-purpose · ended · Clean working tree, one commit ('9a7d09c') on top of '8d77670', on branch 'worktree-agent-ad1e24b030f35c99c'. Not pushed, not merged, per instruction…
+- `2026-08-18T21:09:06Z` · `ae6a5a06a1aba2e0f` · general-purpose · ended · ## Report — Wave 15d-1-books-W **Branch/commit:** 'worktree-agent-ae6a5a06a1aba2e0f' at '1912d6c', one commit on top of the integration branch tip '4…
+- `2026-08-18T21:09:48Z` · `aa97926cfab82547e` · general-purpose · ended · ## Report — Wave '16e-podcast-P': parity review of the podcast show screen triple **Verdict: clean, with two named follow-ups (one real, previously-i…
 
 <!-- AGENT_LOG_END -->
 
@@ -729,43 +729,123 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### IN FLIGHT 2026-08-18 — the `16e-podcast` triple and `15e-books`
+### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
 
-`main` is `25b66ab`. The spec wave landed (`8ef13f2`); `16e-podcast-W`, `16e-podcast-A` and a
-review of `15e-books` are running.
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty. **`integration-15e-books` is merged
+and is now safe to delete** — it existed only to hold a wave off `main`, and `main..integration-15e-books`
+is empty.
 
-- **`docs/design/screens/PODCAST_DETAIL.md` is merged** and is the contract both halves build to.
-  It is the second spec of its kind and carries the `16e-book-P` correction: geometry and type in a
-  **per-platform table**, not prose. Two findings in it worth knowing before reading either
-  implementation: **Sonora specifies a separate `episode` detail page whose screenshot was never
-  vendored**, so the spec is scoped to the show page and says so; and **`CoverImage`'s fallback tile
-  hardcodes an 8px pre-Sonora radius and takes no `style`**, which is a component defect whose live
-  instance is this screen.
-- **`15e-books` is IMPLEMENTED, REVIEWED CLEAN, and DELIBERATELY NOT ON `main`.**
+Verified on the integration branch **before** merging rather than after: **215 `app` + 212
+`ui-desktop`/`ui-mobile` Playwright at CI's own parallelism, 1713 unit, typecheck across every
+project.** `6bbb5ba` (the podcast triple) is green on `CI`, `Android` **and** `Publish`, so it is
+already on `:latest`. `012132b` was pushed after that and its CI is the next thing to read.
 
-  **IT LIVES ON A LOCAL BRANCH — `integration-15e-books`, tip `30a772d`, in this checkout, NOT on
-  `origin`.** `CLAUDE.md` reserves `origin` for `main`, so it was not pushed. **A session picking
-  this up must not lose it**: `git log --oneline main..integration-15e-books`. It is `main`'s tip
-  merged with the wave, so client waves can be based on it.
+**1. `16e-podcast` — the second screen triple, complete on both platforms with a clean `-P`.**
+See `ROADMAP.md` §16 for the full record. The headline is methodological: **the per-platform
+geometry table works, and there are now two triples' worth of evidence.** Two agents that never saw
+each other's work produced meta lines matching **byte for byte**, separator glyph included — the
+`-P` compared code points rather than eyeballing them.
 
-  **The verdict was `hold for a client wave`, from a reviewer that wrote none of it, and I agree.**
-  The server work itself is clean — the review confirmed all seven failure modes it was pointed at.
-  What blocks it is the client: **neither platform reads `availability`**, so an external book card
-  renders **pixel-identical to one she owns** and, when tapped, reaches a generic error page. That is
-  on the For You feed, her primary screen, on her priority-1 medium, and `main` auto-deploys.
+**Reuse the asymmetry instruction verbatim.** Android's header already existed, so the spec's Android
+column read _"already satisfied by `MediaHeader`, do not rebuild"_ — and `MediaHeader.kt` is
+byte-identical after the triple, confirmed by an empty `git diff`. Told plainly that something is
+already built, an agent fills the slots rather than rebuilding, which is exactly how `16e-book`
+drifted.
 
-  It is **not** as bad as the `15e-music` precedent — both clients fail into a real error surface
-  rather than a page with live controls acting on a nonexistent id — but the review's point stands
-  and is worth keeping: **music's blank tile at least signalled "this card is different" before you
-  tapped it; an unbadged book card signals nothing.** `15d-1-books-A` is in flight; `15d-1-books-W`
-  follows once `apps/web` is free.
+**`PodcastDetailScreen` had no Robolectric coverage at all and now has nine cases.** `AlbumDetailScreen`
+still has none — that gap is real and unclosed.
 
-**The wave did the thing this project keeps failing to do, and it paid off immediately.** It
-`curl`ed the real endpoints instead of building against the research doc, and **refuted the doc's
-own premise**: `api.audnex.us` has **no author→books listing at all** (`/books?author=…` and
-`/authors/:asin/books` both 404), so Audnexus is catalogue-only and cannot answer "what unowned book
-should we recommend". It moved to **Open Library**, which the doc had filed as a redundant fallback,
-because one uncredentialled call answers the whole question.
+**2. External book recommendations reach both clients.** `15e-books` + `15d-1-books-A` + `15d-1-books-W`.
+Books are her priority-1 medium and had no external source at all. **The three shipped together
+deliberately**: the server wave alone would have put a card on her For You feed indistinguishable
+from a book she owns, leading to a generic error page — and `main` auto-deploys.
+
+**Two findings worth more than the feature:**
+
+- **The research doc was wrong and one `curl` proved it.** `api.audnex.us` has **no author→books
+  listing** (`/books?author=…` and `/authors/:asin/books` both 404), so it cannot answer "what
+  unowned book should we recommend". The wave moved to **Open Library**, which the doc had filed as
+  a redundant fallback. An independent reviewer re-ran the requests and confirmed both halves. This
+  is `15a`'s fixture-validates-the-response lesson being **applied** rather than re-learned.
+- **ISBN is deliberately NOT threaded into `ExternalCandidate.identifiers`, and the reasoning was
+  verified rather than asserted.** `ownership.ts`'s `comparePair` treats a same-field-different-value
+  identifier as a **veto** that bypasses the title/author match entirely, and an audiobook's ISBN is
+  commonly absent from a print work's ISBN array — so threading it would make genuinely-owned titles
+  leak back as undiscovered. The reviewer read `comparePair` and confirmed the veto is real. **Do not
+  "improve" this by adding ISBN.**
+
+### Open follow-ups, none blocking, in the order I would take them
+
+1. **A `-P` is owed on `15d-1-books`.** Its two halves type `availability` differently **on purpose**
+   — Android route-scopes it (kotlinx throws `MissingFieldException` on a required field its other
+   endpoints do not send), web makes it optional on a hand-mirrored interface with no runtime decode,
+   matching web's own music sibling. Both are defensible; nobody has ruled on the pair.
+2. **Web's two request panels now behave differently.** `/music/requests?prefill=` **auto-submits**;
+   the new `/requests?prefillTitle=` deliberately does **not**, matching Android. The cross-platform
+   contract is met at the cost of two web siblings disagreeing — flagged by the wave itself, not
+   found later.
+3. **`GET /libraries/:id/recommended` is not gated by library media type server-side**, so a podcast
+   library could in principle receive a book-shaped external item. Android's tap redirect is
+   book-only (no podcast request flow exists to redirect to), so such an item would still dead-end —
+   **same failure mode as before, not worse.** Verify whether the route is genuinely book-scoped.
+4. **A subtitle colour-role divergence, inherited from `16e-book` rather than introduced.** Web's
+   non-link subtitle renders `--surface-fg` (full emphasis); Android's is always `onSurfaceVariant`
+   (muted). Now visible on every podcast, since a publisher name is always the never-linked case.
+   One for a `SONORA.md` pass: muted on both, or full emphasis on both.
+5. **Open Library's recommendation _quality_ is unassessable here** — same standing caveat as every
+   external-discovery wave. It needs her real library, which needs the Audiobookshelf credential this
+   file has owed her for weeks.
+
+**Closed this session, so nobody re-opens them:** the accessibility-order divergence the `-P` found
+(web announced an episode row **date-first** because `ListItem` renders `overline` before `headline`
+and this is the first call site to use `overline`; fixed with an explicit `aria-label` rather than by
+swapping the props, since swapping would move the date above the title _visually_ — a design change
+to fix a screen-reader bug), and web's `themeStore` rehydrating `localStorage` with **no validation**
+where Android falls back explicitly, which was one of the two drifts `16f-P` named.
+
+**Android's pending-state divergence was ruled acceptable idiom, not a defect** — its
+`pendingEpisodeId` clears on any `PlayerUiState` change rather than on that episode's request
+settling, because `playEpisode` is fire-and-forget with no completion signal to await. Bounded and
+self-correcting. Do not re-litigate it.
+
+### Two operational findings that qualify this file's own advice
+
+**1. Two suites at once starve each other on this laptop.** Running `pnpm test` and `pnpm test:e2e`
+**concurrently** produced a red result from each: `themeStore.test.ts` timed out at its 5s limit, and
+**four `e2e/ui/button.spec.ts` tests failed on `ui-desktop`**, all four with `Test timeout of 30000ms
+exceeded` and **no assertion mismatch**. Alone, the unit file passes and the button spec passes
+**9/9 in 50s**, each test taking ~6s against a 30s budget.
+
+So **"the orchestrator runs the full suite" does not mean it runs two of them at once.** A timeout
+with no assertion mismatch, on tests that pass in a fifth of their budget alone, is contention. The
+same applies while subagents work: a heavy orchestrator run starves _their_ tests, and they will
+misdiagnose it as their own breakage.
+
+**2. The `pre-push` whole-repo lint blocks spuriously while agents are active** — twice this session,
+both times passing on an immediate retry with no change. This file already noted it as a one-off; it
+is not. It is a whole-repo eslint racing a file a subagent is mid-write on. **Retry once before
+believing it**, and read whether it names a file you actually touched.
+
+**A third, smaller one:** a foreground `Bash` call caps at ten minutes, and the full `pnpm test:e2e`
+takes ~12. Run it **split by project** (`--project=app`, then `--project=ui-desktop --project=ui-mobile`)
+rather than backgrounding it — a backgrounded run was killed mid-suite here at test 67 of 427, which
+looks exactly like a failure and is not one.
+
+### What to pick up next
+
+1. **`16e` — the remaining screens.** Done: book detail, podcast detail. Left: **Music/Album**,
+   **Search**, **Now Playing/Queue/Mini player**, **Settings/Onboarding**, and For You/browse.
+   `docs/design/screens/PODCAST_DETAIL.md` is the template to copy, and `BOOK_DETAIL.md` beside it.
+   **`AlbumDetailScreen` has no Robolectric coverage**, which makes Music/Album the natural next one.
+   **One `-W` in flight at a time** — the Playwright port serialises them; `-A` halves and spec
+   authoring parallelise freely.
+2. **The remaining `--m3-*` consumers**, measured rather than guessed: `Fab`, `ListItem`, `Marquee`,
+   `NavigationBar`, `SearchField`, `Snackbar`, `TopAppBar`. Deletion is **not** close.
+3. **Phase 15's remaining waves** are disjoint from all of this and need no browser, so one can run
+   beside any `16e` triple — that is the only parallelism this repo has left.
+
+**Still with Sofia, still blocking nothing:** queue `dbfb46e` (should album-art-derived colour ever
+drive the accent?) and `abbaca2` (the two WCAG numbers).
 
 ### Two suites at once starve each other on this laptop — do not read a failure from a concurrent run
 
