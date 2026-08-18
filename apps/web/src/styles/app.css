@@ -306,13 +306,24 @@ html body {
 .auralis-item-header {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--m3-space-lg);
-  align-items: flex-start;
+  gap: 28px;
+  align-items: flex-end;
+}
+
+/* Sonora's `MediaHeader` mobile branch: a centered column instead of the
+ * desktop row (docs/design/screens/BOOK_DETAIL.md §3). Applied via a JS
+ * breakpoint modifier class (`useBreakpoint`), not a CSS media query — every
+ * other adaptive surface in this app reads that one hook so the breakpoint
+ * can never drift out of sync with itself (see `useBreakpoint.ts`'s header). */
+.auralis-item-header--compact {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .auralis-item-header__meta {
   min-width: 0;
-  flex: 1 1 200px;
+  flex: 1 1 280px;
   overflow-wrap: break-word;
 }
 
@@ -322,9 +333,114 @@ html body {
   background: var(--m3-surface-container);
 }
 
+/* `MediaHeader`'s `kindLabel` — small caps, muted (SONORA.md §3.5). */
+.auralis-item-header__kind {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--surface-fg-muted);
+}
+
+/* Title: `var(--font-display)`, weight 900, `--h2-size` desktop / `--h4-size`
+ * mobile (SONORA.md §3.5). */
+.auralis-item-header__title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--h2-size);
+  line-height: var(--h2-leading);
+  color: var(--surface-fg);
+}
+
+.auralis-item-header--compact .auralis-item-header__title {
+  font-size: var(--h4-size);
+  line-height: var(--h4-leading);
+}
+
+.auralis-item-header__byline {
+  margin: 4px 0 0;
+  color: var(--surface-fg-muted);
+}
+
+/* `MediaHeader`'s `subtitle` — the author name. Plain `fg` colour when there is
+ * no real author id to link (`--subtitle--link` below overrides); `var(--text-lg)`
+ * desktop / `var(--text-md)` mobile (SONORA.md §3.5). */
+.auralis-item-header__subtitle {
+  display: inline-block;
+  margin: 6px 0 0;
+  font-size: var(--text-lg);
+  color: var(--surface-fg);
+  text-decoration: none;
+}
+
+.auralis-item-header--compact .auralis-item-header__subtitle {
+  font-size: var(--text-md);
+}
+
+/* Clickable subtitle → `var(--accent-ink)` + pointer, matching the general
+ * "this label links to another entity" pattern SONORA.md §3.5 names. */
+.auralis-item-header__subtitle--link {
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.auralis-item-header__subtitle--link:hover,
+.auralis-item-header__subtitle--link:focus-visible {
+  text-decoration: underline;
+}
+
+/* The composed "Narrated by X · Ymin · N chapters · P% listened" line
+ * (`itemMeta.ts`, BOOK_DETAIL.md §5). */
+.auralis-item-header__meta-line {
+  margin: 8px 0 0;
+  font-size: var(--text-sm);
+  color: var(--surface-fg-muted);
+}
+
+.auralis-item-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.auralis-item-header--compact .auralis-item-header__actions {
+  justify-content: center;
+}
+
+/* The book's description — a direct restyle of what `RichDescription` already
+ * renders, no content change (BOOK_DETAIL.md §3: `max-width: 70ch`,
+ * `var(--surface-fg-muted)`, `var(--text-md)`, `line-height: 1.6`, no clamp). */
 .auralis-item-description {
-  max-width: 65ch;
+  max-width: 70ch;
+  margin-top: var(--space-2xl);
+  font-size: var(--text-md);
   line-height: 1.6;
+  color: var(--surface-fg-muted);
+}
+
+.auralis-item-chapters {
+  margin-top: var(--space-2xl);
+}
+
+/* No vendored `SectionHeader` primitive yet (docs/design/sonora/primitives/
+ * README.md's "six still to vendor" list) — a plain heading at a size between
+ * the page title and body text, `var(--font-display)`/weight 900 to match the
+ * rest of the type scale's headings. */
+.auralis-item-chapters__heading {
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--h4-size);
+  color: var(--surface-fg);
+}
+
+.auralis-item-chapters__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 /* ---------------------------------------------------------------------------
