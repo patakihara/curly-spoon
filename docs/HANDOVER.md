@@ -284,7 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T21:09:06Z` · `ae6a5a06a1aba2e0f` · general-purpose · ended · ## Report — Wave 15d-1-books-W **Branch/commit:** 'worktree-agent-ae6a5a06a1aba2e0f' at '1912d6c', one commit on top of the integration branch tip '4…
 - `2026-08-18T21:09:48Z` · `aa97926cfab82547e` · general-purpose · ended · ## Report — Wave '16e-podcast-P': parity review of the podcast show screen triple **Verdict: clean, with two named follow-ups (one real, previously-i…
 - `2026-08-18T22:00:37Z` · `aa964a5222178d8bf` · general-purpose · ended · ## Report — 16e-album-spec **Branch/commit:** 'worktree-agent-aa964a5222178d8bf' at '0131190', one commit on top of 'be768d9'. Working tree clean. On…
-- `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · running · —
+- `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · ended · ## Report — Wave 16e-album-A: Android's album detail screen **Branch/commit:** 'worktree-agent-a1181034546ce56e7' at '15dcc50', one commit on '3bf25b…
 
 <!-- AGENT_LOG_END -->
 
@@ -831,38 +831,56 @@ takes ~12. Run it **split by project** (`--project=app`, then `--project=ui-desk
 rather than backgrounding it — a backgrounded run was killed mid-suite here at test 67 of 427, which
 looks exactly like a failure and is not one.
 
-### `16e-album` is part-done — the spec is merged, `-A` was in flight at hand-off
+### `16e-album` is HALF DONE — spec and `-A` merged; **`16e-album-W` and `16e-album-P` are owed**
 
-**`docs/design/screens/ALBUM_DETAIL.md` is merged** (520 lines, all 44 file:line citations verified
-to resolve). It is the third spec of its kind and `PODCAST_DETAIL.md` remains the template.
+**`main` carries `docs/design/screens/ALBUM_DETAIL.md` (520 lines, all 44 citations verified to
+resolve) and `16e-album-A` (`4979fc3`).** Nothing is claimed and nothing is in flight.
 
-**Check for `worktree-agent-a1181034546ce56e7` before starting anything here** — the `-A` wave was
-dispatched from `3bf25bc` and may have landed after this was written. `git log --oneline main..worktree-agent-a1181034546ce56e7`
-tells you; if it has commits, read them before re-dispatching, and check the worktree is clean.
-**`16e-album-W` and `16e-album-P` are both still owed either way.**
+**This is a deliberately incomplete triple, and the web half is the next thing to do.** Per
+`CLAUDE.md`'s frontend-parity rule a wave that changes one platform and says nothing about the other
+is incomplete rather than merely first — so `16e-album-W` is owed, then `16e-album-P`. The spec is
+the contract for both; do not build web against Android's output.
 
-**The asymmetry runs the opposite way from the last two triples, which is why the spec matters here.**
-Android already adopted `MediaHeader` on `AlbumDetailScreen` back in `16e-book-A-2`, so `-A` fills
-its unwired `meta`/`actions` slots. **Web has never used the shared `MediaHeader.tsx` on the album
-page at all**, so `-W` is a plain third adoption — no extraction, unlike the book and podcast waves.
+**Web's half is unusually cheap**, and that is the opposite of the last two triples. Android already
+adopted `MediaHeader` here in `16e-book-A-2`, so `-A` filled its unwired `meta`/`actions` slots.
+**Web has never used the shared `MediaHeader.tsx` on the album page**, so `-W` is a plain third
+adoption — no extraction needed, since `16e-podcast-W` already built the component.
 
-**Three findings from the spec's recon that change what gets built:**
+**What `-A` landed, so `-W` builds to the same thing:** the meta line
+(`"2021 · Synthwave · 2 tracks · 7 m"` shape), Play and Shuffle in the header's `actions` slot
+(omitted when there are no tracks), a linkable artist subtitle, a currently-playing track indicator,
+merged row semantics announcing `"Tidal Lines, 3:34"` and `"Static Coast, 3:18, Playing"`, and
+`AlbumDetailScreen`'s **first ever** Robolectric coverage — it was the last of the three detail
+screens with none.
 
-1. **Android's `MediaHeader` has no click mechanism on its subtitle at all**, so the artist link is
-   genuinely new capability rather than wiring. It is a **shared** component across three screens —
-   any change must be additive with a default so the other two call sites are untouched.
-2. **Web's album track rows carry an `aria-label` that drops duration entirely.** A real web-side
-   accessibility gap, found by looking rather than by review — exactly the class `16e-podcast-P`
-   turned up on the podcast rows.
-3. **The album screen is the first triple where the artist link is genuinely symmetric** — both
-   platforms already have an artist screen and a working route. So the spec states outright that any
-   asymmetry there is **drift, not idiom**, which is the call a `-P` would otherwise have to guess.
+**`MediaHeader.kt` gained one optional `onSubtitleClick` parameter with a default.** It is shared by
+three screens; verified by diff rather than by report that `BookDetailScreen` and
+`PodcastDetailScreen` are untouched, so their subtitles are unchanged by construction. The subtitle
+`Text` lives inside the component's own `Column`, which is why a caller-supplied slot could not carry
+the click.
 
-**No BFF change is needed** — there is no single-item album route, and `Album`'s `productionYear`,
-`genres` and `trackCount` are already fetched by both clients and simply discarded today.
+**Two things `-A` flagged honestly and a reader should not have to rediscover:**
 
-**`AlbumDetailScreen` is the last of the three detail screens with no Robolectric coverage**, and
-closing that is an explicit `-A` deliverable.
+1. **Its track-tap test locator is genuinely uncertain.** The merged-semantics node and the clickable
+   node are **different nodes** — the click lives on `TrackContextMenu`'s own `combinedClickable`
+   `Box`, an ancestor shared with `PlaylistDetailScreen` and `FavoritesScreen`. Nothing here compiles
+   Kotlin, so **CI is the first place this resolves.** If it is red, the fix is almost certainly a
+   locator adjustment in the test, **not** the product code — `onTrackClick` is wired identically to
+   the already-working `onGoToArtist`/Play/Shuffle callbacks.
+2. **Its cover-fallback assertion is a pin, not a proof** — that path was already correct from
+   `16e-book-A-2`, so it cannot fail on a regression this wave could introduce. Kept only because the
+   spec lists it as a required minimum. The wave said so itself rather than counting it as coverage.
+
+**Three findings from the spec's recon that `-W` must act on:**
+
+1. **Web's album track rows carry an `aria-label` that drops duration entirely** — a real web-side
+   accessibility gap, found by looking rather than by a review afterwards. §11 pins the announced
+   shape for both platforms; `-W` closes it.
+2. **The artist link is the first genuinely symmetric case across the three triples** — both
+   platforms already have an artist screen and a working route — so the spec states outright that any
+   asymmetry there is **drift, not idiom**. That is a ruling `-P` would otherwise have to guess at.
+3. **No BFF change is needed.** There is no single-item album route, and `Album`'s `productionYear`,
+   `genres` and `trackCount` are already fetched by both clients and simply discarded today.
 
 ### What to pick up next
 
