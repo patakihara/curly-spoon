@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T04:33:39Z` · `a72c8bd104b7483ee` · general-purpose · ended · Everything is committed and the working tree is clean. Here's my final report. ## Report — Wave 16e-book-A: Android's book detail screen **Branch/com…
 - `2026-08-18T04:34:14Z` · `ade26b2bd42f3f1d9` · general-purpose · ended · ## Report — Wave 16e-book-W **Branch/commit:** 'worktree-agent-ade26b2bd42f3f1d9' at '6ba0ce4', three commits on top of '773b08b' ('2a48b4c' restyle+…
 - `2026-08-18T05:35:09Z` · `ac56785c0073c04af` · general-purpose · ended · ## Report — 16e-book-P: parity review of the book detail screen **No code changes.** Working tree clean throughout — this was a read-and-reason wave.…
 - `2026-08-18T05:50:14Z` · `a3fef180f50536b9b` · general-purpose · ended · Working tree is clean, five commits on top of '756debb'. All committed on branch 'worktree-agent-a3fef180f50536b9b'. Not pushing or merging, per inst…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T21:09:06Z` · `ae6a5a06a1aba2e0f` · general-purpose · ended · ## Report — Wave 15d-1-books-W **Branch/commit:** 'worktree-agent-ae6a5a06a1aba2e0f' at '1912d6c', one commit on top of the integration branch tip '4…
 - `2026-08-18T21:09:48Z` · `aa97926cfab82547e` · general-purpose · ended · ## Report — Wave '16e-podcast-P': parity review of the podcast show screen triple **Verdict: clean, with two named follow-ups (one real, previously-i…
 - `2026-08-18T22:00:37Z` · `aa964a5222178d8bf` · general-purpose · ended · ## Report — 16e-album-spec **Branch/commit:** 'worktree-agent-aa964a5222178d8bf' at '0131190', one commit on top of 'be768d9'. Working tree clean. On…
+- `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -830,6 +830,39 @@ believing it**, and read whether it names a file you actually touched.
 takes ~12. Run it **split by project** (`--project=app`, then `--project=ui-desktop --project=ui-mobile`)
 rather than backgrounding it — a backgrounded run was killed mid-suite here at test 67 of 427, which
 looks exactly like a failure and is not one.
+
+### `16e-album` is part-done — the spec is merged, `-A` was in flight at hand-off
+
+**`docs/design/screens/ALBUM_DETAIL.md` is merged** (520 lines, all 44 file:line citations verified
+to resolve). It is the third spec of its kind and `PODCAST_DETAIL.md` remains the template.
+
+**Check for `worktree-agent-a1181034546ce56e7` before starting anything here** — the `-A` wave was
+dispatched from `3bf25bc` and may have landed after this was written. `git log --oneline main..worktree-agent-a1181034546ce56e7`
+tells you; if it has commits, read them before re-dispatching, and check the worktree is clean.
+**`16e-album-W` and `16e-album-P` are both still owed either way.**
+
+**The asymmetry runs the opposite way from the last two triples, which is why the spec matters here.**
+Android already adopted `MediaHeader` on `AlbumDetailScreen` back in `16e-book-A-2`, so `-A` fills
+its unwired `meta`/`actions` slots. **Web has never used the shared `MediaHeader.tsx` on the album
+page at all**, so `-W` is a plain third adoption — no extraction, unlike the book and podcast waves.
+
+**Three findings from the spec's recon that change what gets built:**
+
+1. **Android's `MediaHeader` has no click mechanism on its subtitle at all**, so the artist link is
+   genuinely new capability rather than wiring. It is a **shared** component across three screens —
+   any change must be additive with a default so the other two call sites are untouched.
+2. **Web's album track rows carry an `aria-label` that drops duration entirely.** A real web-side
+   accessibility gap, found by looking rather than by review — exactly the class `16e-podcast-P`
+   turned up on the podcast rows.
+3. **The album screen is the first triple where the artist link is genuinely symmetric** — both
+   platforms already have an artist screen and a working route. So the spec states outright that any
+   asymmetry there is **drift, not idiom**, which is the call a `-P` would otherwise have to guess.
+
+**No BFF change is needed** — there is no single-item album route, and `Album`'s `productionYear`,
+`genres` and `trackCount` are already fetched by both clients and simply discarded today.
+
+**`AlbumDetailScreen` is the last of the three detail screens with no Robolectric coverage**, and
+closing that is an explicit `-A` deliverable.
 
 ### What to pick up next
 
