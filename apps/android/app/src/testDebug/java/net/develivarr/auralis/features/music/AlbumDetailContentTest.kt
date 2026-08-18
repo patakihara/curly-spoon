@@ -256,6 +256,12 @@ class AlbumDetailContentTest {
             }
         }
 
+        // The header now carries a meta line *and* an actions row, so its lower
+        // reaches sit outside Robolectric's default display. An off-viewport
+        // performClick injects a touch that lands nowhere: no throw, no callback,
+        // and a bare AssertionError on the *next* line. assertExists passes either
+        // way, which is why the existence tests above stayed green.
+        scrollToTag("media-header-subtitle")
         composeRule.onNodeWithTag("media-header-subtitle").performClick()
 
         assertEquals("artist-nebula", goneToArtist)
@@ -318,10 +324,12 @@ class AlbumDetailContentTest {
             }
         }
 
+        scrollToTag("album-play-button")
         composeRule.onNodeWithTag("album-play-button").performClick()
         assertTrue(played)
         assertFalse(shuffled)
 
+        scrollToTag("album-shuffle-button")
         composeRule.onNodeWithTag("album-shuffle-button").performClick()
         assertTrue(shuffled)
     }
