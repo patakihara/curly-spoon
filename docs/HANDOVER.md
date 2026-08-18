@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T20:42:57Z` · `ad963d77210a538fb` · general-purpose · ended · This looks correct. The wave is complete and committed. Here's my final report. ## Report — Wave 16f-A-1: an Android Settings screen carrying theme m…
 - `2026-08-17T21:48:56Z` · `a0080918ef22d6888` · general-purpose · ended · ## Report — Wave 16f-P: parity review of web's and Android's accent pickers No code changes. Working tree is clean ('git status --short' empty) — not…
 - `2026-08-17T22:02:35Z` · `aa60e54a0ca1fdae4` · general-purpose · ended · Working tree is clean, both commits in place. Here's my final report. ## Report — Wave 16f-A-2: giving AuralisAppTokens a production reader **Branch/…
 - `2026-08-18T03:26:55Z` · `af788c0802bde4705` · general-purpose · ended · Working tree is clean, one commit on top of '92ea06f'. Not pushing or merging, per instructions. ## Report — fixing the two 'SettingsContentTest'/'Sh…
@@ -283,8 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T20:08:25Z` · `a5f4cf54fababc701` · general-purpose · ended · ## Report — 16e-podcast-spec **Branch/commit:** 'worktree-agent-a5f4cf54fababc701' at '91a51cc', two commits on top of 'e5eb249'. Working tree clean.…
 - `2026-08-18T20:09:26Z` · `a675ba5171943ba81` · general-purpose · ended · ## Report — Wave 15e-books: external book discovery for 'GET /libraries/:id/recommended' **Branch:** 'worktree-agent-a675ba5171943ba81', final commit…
 - `2026-08-18T20:23:07Z` · `a2adabaeb3b722475` · general-purpose · ended · All balanced, working tree clean, nothing left uncommitted. ## Report — Wave 16e-podcast-A **Branch/commit:** 'worktree-agent-a2adabaeb3b722475' at '…
-- `2026-08-18T20:27:21Z` · `a8bf0c9fd4eba7c4c` · general-purpose · running · —
-- `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · running · —
+- `2026-08-18T20:27:21Z` · `a8bf0c9fd4eba7c4c` · general-purpose · ended · Working tree is clean, everything is committed on branch 'worktree-agent-a8bf0c9fd4eba7c4c' at '0d0bffd'. Not pushing or merging, per instructions. H…
+- `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · ended · ## Verdict: **hold for a client wave** — I agree with your inclination The server-side wave itself is clean, well-tested, and one of the more careful…
+- `2026-08-18T20:47:35Z` · `a6e64e451336a72ea` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -741,11 +741,24 @@ review of `15e-books` are running.
   vendored**, so the spec is scoped to the show page and says so; and **`CoverImage`'s fallback tile
   hardcodes an 8px pre-Sonora radius and takes no `style`**, which is a component defect whose live
   instance is this screen.
-- **`15e-books` is IMPLEMENTED and UNDER REVIEW — `8b3a9b4` on `worktree-agent-a675ba5171943ba81`,
-  not merged.** Nine files, all `apps/server`. **It is being held rather than merged**, on the
-  `15e-music` precedent: an external card is a dead end, and `16e-book` has just given books a real
-  detail screen navigable by id that an `external:openlibrary:…` id cannot resolve on. `main`
-  auto-deploys, so this would reach her For You feed. A `15d-1-books` client wave is what unblocks it.
+- **`15e-books` is IMPLEMENTED, REVIEWED CLEAN, and DELIBERATELY NOT ON `main`.**
+
+  **IT LIVES ON A LOCAL BRANCH — `integration-15e-books`, tip `30a772d`, in this checkout, NOT on
+  `origin`.** `CLAUDE.md` reserves `origin` for `main`, so it was not pushed. **A session picking
+  this up must not lose it**: `git log --oneline main..integration-15e-books`. It is `main`'s tip
+  merged with the wave, so client waves can be based on it.
+
+  **The verdict was `hold for a client wave`, from a reviewer that wrote none of it, and I agree.**
+  The server work itself is clean — the review confirmed all seven failure modes it was pointed at.
+  What blocks it is the client: **neither platform reads `availability`**, so an external book card
+  renders **pixel-identical to one she owns** and, when tapped, reaches a generic error page. That is
+  on the For You feed, her primary screen, on her priority-1 medium, and `main` auto-deploys.
+
+  It is **not** as bad as the `15e-music` precedent — both clients fail into a real error surface
+  rather than a page with live controls acting on a nonexistent id — but the review's point stands
+  and is worth keeping: **music's blank tile at least signalled "this card is different" before you
+  tapped it; an unbadged book card signals nothing.** `15d-1-books-A` is in flight; `15d-1-books-W`
+  follows once `apps/web` is free.
 
 **The wave did the thing this project keeps failing to do, and it paid off immediately.** It
 `curl`ed the real endpoints instead of building against the research doc, and **refuted the doc's
