@@ -6,9 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,12 +36,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import coil.ImageLoader
-import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import net.develivarr.auralis.AppContainer
 import net.develivarr.auralis.features.player.PlayerUiState
 import net.develivarr.auralis.features.player.PlayerViewModel
 import net.develivarr.auralis.navigation.Routes
+import net.develivarr.auralis.ui.components.MediaHeader
 import net.develivarr.auralis.util.formatDuration
 
 /**
@@ -208,23 +209,27 @@ private fun AlbumDetailContent(
 ) {
     LazyColumn(modifier = modifier.padding(16.dp)) {
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = state.coverUrl,
-                    contentDescription = null,
-                    imageLoader = imageLoader,
-                    modifier = Modifier.size(96.dp),
-                )
-                Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                    Text(state.albumName, style = MaterialTheme.typography.titleLarge)
-                    state.artistName?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                }
-                FavoriteToggleButton(
-                    favorite = state.albumFavorite,
-                    itemName = state.albumName,
-                    onToggle = onToggleAlbumFavorite,
-                )
-            }
+            // Wave 16e-book-A-2: the shared MediaHeader, same composable BookDetailScreen and
+            // PodcastDetailScreen adopt. No BOOK_DETAIL.md-equivalent spec exists for albums;
+            // "Album" as the kind label follows the same judgment call PodcastDetailScreen makes.
+            // The favourite toggle is genuinely album-specific content, so it stays vertically
+            // aligned with the art/title column via MediaHeader's trailingContent slot rather
+            // than living inside the shared composable itself.
+            MediaHeader(
+                coverUrl = state.coverUrl,
+                imageLoader = imageLoader,
+                fallbackIcon = Icons.Filled.MusicNote,
+                kindLabel = "Album",
+                title = state.albumName,
+                subtitle = state.artistName,
+                trailingContent = {
+                    FavoriteToggleButton(
+                        favorite = state.albumFavorite,
+                        itemName = state.albumName,
+                        onToggle = onToggleAlbumFavorite,
+                    )
+                },
+            )
             // Disabled for a genuinely empty album — there is nothing to seed a playlist with.
             TextButton(onClick = onAddAlbumToPlaylist, enabled = state.tracks.isNotEmpty()) {
                 Text("Add album to playlist")
