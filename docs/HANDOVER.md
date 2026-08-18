@@ -1214,25 +1214,13 @@ help). **Nothing mechanical now stops a future edit reverting one of those four 
 `MaterialTheme` value.** A KDoc stands where each test was. **Bringing them back needs a JDK on this
 machine, or an assertion that does not go through pixels.**
 
-### What to pick up next
+### Superseded — the 2026-08-18 "what to pick up next" list
 
-1. **`16e` — the screens.** Genuinely unblocked now: §16 put 16d first so screens are not rebuilt
-   inside a wrongly-scrolling document, and that is discharged. **Note the corrected parallelism** —
-   §16 says "several triples in parallel", and that now holds only for `-A` halves and authoring;
-   **one `-W` at a time**, because of the Playwright port.
-2. **The remaining `--m3-*` consumers**, measured rather than guessed by `16c-5-W`: `Fab`,
-   `ListItem`, `Marquee`, `NavigationBar`, `SearchField`, `Snackbar`, `TopAppBar`. **Deletion is not
-   close**, so treat `--m3-*` as a live substrate.
-3. **Two small drifts `16f-P` named**, neither urgent: Android's theme-mode buttons are ordered
-   light/dark/system against web's system/light/dark (nothing in `SONORA.md` rules on it), and web's
-   `themeStore` does **no validation** on a stored `mode`/`accent` where Android falls back
-   explicitly.
-4. **Phase 15** is untouched and disjoint from all of this.
-
-**Still with Sofia, still blocking nothing:** queue `dbfb46e` (should album-art-derived colour ever
-drive the accent?) and `abbaca2` (the two WCAG numbers). `16f-P` confirmed Android reaches the
-**same** design decision through a different pipeline — `accentContrast` is the identical fixed
-white — so it is **one design question, not a second bug**.
+**Its four items are all now stale or done**, so the list itself is removed rather than left to be
+followed: `16e` has since delivered two screen triples, `themeStore`'s missing validation is fixed,
+and the current list lives in the 2026-08-19 hand-off at the top of this file. **Read that one.**
+The only item that survives unchanged is Android's theme-mode button order (light/dark/system against
+web's system/light/dark), which nothing in `SONORA.md` rules on.
 
 ### DONE — `16c-2-W-4` and `16f-A-1`. **`main` `ad38f75`, `CI` and `Android` green.**
 
