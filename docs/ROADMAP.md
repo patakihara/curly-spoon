@@ -3762,6 +3762,24 @@ boundaries, disjoint directories where waves run in parallel.
   Android surface. Sequencing parity work is not the same as abandoning it: the pair still lands,
   the lagging half just goes first.
 
+- **16e — HOW TO WRITE EACH SCREEN'S SPEC, learned from `16e-book`, the first triple.** The shared
+  spec works — but only for what it states as a **contract**. Measured: where `BOOK_DETAIL.md` gave
+  prose behaviour rules or a **literal example string**, both agents converged exactly, including two
+  independent formatting calls landing identically. Where it gave **numeric visual values inside
+  prose**, web implemented them and Android silently followed its own pre-Sonora screens instead,
+  producing a 96dp thumbnail row where Sonora specifies a 232/208px tile.
+
+  **So every remaining screen spec must:**
+  - put geometry and type in a **per-platform table inside the behaviour contract** — one row per
+    token (art size, radius, title face/weight/size, label casing, muted-colour role), one column per
+    platform — so a number is a line to satisfy or explicitly decline, not prose to skim;
+  - state that **Compose has no CSS-cascade fallback: name the placeholder/error painter for every
+    image**, not just the happy path;
+  - name which existing same-platform screens are **pre-Sonora**, because "follow the neighbouring
+    screen" is the default an agent falls back to and it is currently the wrong instinct on Android.
+
+  **`docs/design/screens/BOOK_DETAIL.md` is the template**, with that correction applied.
+
 - **16e — screens, paired per screen rather than per platform.** For You/browse, Music/Album, Book
   detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding. **Split by screen,
   not by platform** — each screen is one `-W`/`-A`/`-P` triple from one shared spec describing the

@@ -270,9 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-17T16:07:38Z` · `ad55e090a60a000c6` · general-purpose · ended · Working tree is clean, no scratch files remain, both commits are in place on the worktree branch. Final report: **Branch/commits:** 'worktree-agent-a…
-- `2026-08-17T16:42:56Z` · `ad4802d687ce40989` · general-purpose · ended · ## Report — Wave 16d-P: parity review of web's docked shell vs Android's chrome **No code changes.** Working tree is clean ('git status --short' empt…
-- `2026-08-17T16:54:14Z` · `a3d35b711e9e2345e` · general-purpose · ended · ## Report — Wave 16d-A-2 **Branch/commit:** 'worktree-agent-a3d35b711e9e2345e' at '5e7d12a', on top of 'ccca737'. Working tree clean, nothing outstan…
 - `2026-08-17T17:29:15Z` · `a90dd8e5e13e65560` · general-purpose · ended · Working tree is clean, one commit on top of 'fb384e5'. Not pushing or merging, per instructions. ## Report — fixing the two ShellNavigationItemsTest…
 - `2026-08-17T17:56:20Z` · `a8977d5ddbe748b6e` · general-purpose · ended · ## Report — Wave 16c-2-W-3 **Branch/commit:** 'worktree-agent-a8977d5ddbe748b6e' at 'b138cc6', on top of '364040e'. Working tree clean, nothing uncom…
 - `2026-08-17T17:56:51Z` · `a595e545eb73860b7` · general-purpose · ended · Working tree is clean, one commit on top of the claim commit. Not pushing or merging, per instructions. ## Report — Wave 16b-2-A-2: Robolectric cover…
@@ -285,6 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-17T22:02:35Z` · `aa60e54a0ca1fdae4` · general-purpose · ended · Working tree is clean, both commits in place. Here's my final report. ## Report — Wave 16f-A-2: giving AuralisAppTokens a production reader **Branch/…
 - `2026-08-18T03:26:55Z` · `af788c0802bde4705` · general-purpose · ended · Working tree is clean, one commit on top of '92ea06f'. Not pushing or merging, per instructions. ## Report — fixing the two 'SettingsContentTest'/'Sh…
 - `2026-08-18T04:15:37Z` · `a110225eab461f078` · general-purpose · ended · Clean working tree, one commit on top of '033bfa5'. Work is done and durable. ## Report — 16e-book recon and shared spec **Branch/commit:** 'worktree…
+- `2026-08-18T04:33:39Z` · `a72c8bd104b7483ee` · general-purpose · ended · Everything is committed and the working tree is clean. Here's my final report. ## Report — Wave 16e-book-A: Android's book detail screen **Branch/com…
+- `2026-08-18T04:34:14Z` · `ade26b2bd42f3f1d9` · general-purpose · ended · ## Report — Wave 16e-book-W **Branch/commit:** 'worktree-agent-ade26b2bd42f3f1d9' at '6ba0ce4', three commits on top of '773b08b' ('2a48b4c' restyle+…
+- `2026-08-18T05:35:09Z` · `ac56785c0073c04af` · general-purpose · ended · ## Report — 16e-book-P: parity review of the book detail screen **No code changes.** Working tree clean throughout — this was a read-and-reason wave.…
 
 <!-- AGENT_LOG_END -->
 
@@ -922,7 +922,57 @@ styled in light and dark. Without that, all three could have rendered completely
 `.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
 header comment says so. Select the dialog by role and name instead.
 
-### CLAIMED — `16e-book-W` and `16e-book-A`. **Android has no book detail screen at all.**
+### DONE — `16e-book`, the first screen triple. **The spec-first approach half worked, and why matters.**
+
+`main` `f9de4e8`, `CI` and `Android` green; Android's run on `3e89fb2` is a genuine **uncached**
+execution, so the new Robolectric coverage really ran. Full `pnpm test:e2e`: **420 passed, 0 failed.**
+Unit **1671/1671**. Android now **has** a book detail screen, which it never did — books played on
+tap with no page, on the user's stated priority-1 medium.
+
+**The `-P` verdict on the approach, which governs the six remaining screens.** Where
+`BOOK_DETAIL.md` gave **prose behaviour contracts** — the fallback table, the chapter-tap cases, the
+meta-line joining rule — or **a literal example string** (`"19 h 07 m"`), the two agents converged
+_exactly_, including two independently-made formatting calls landing identically. **Where §3 gave
+numeric visual values buried in prose** — 232/208px art tile, small-caps label, `--radius-lg` — web
+read them and **Android did not**.
+
+**So the drift is real: Android did not build Sonora's `MediaHeader` at all.** It built a 96dp
+thumbnail row with no cover-fallback painter and no small-caps muted label — because that is exactly
+what `PodcastDetailScreen` and `AlbumDetailScreen` do, and **those are pre-Sonora**. The `-A` agent
+faithfully followed internal precedent without registering that the precedent is the thing being
+replaced. **Labelled accidental drift**, not idiom: nothing in its diff states a decision to defer.
+
+One accidental mitigation, checked rather than assumed: Android's `titleLarge` already resolves to
+weight-900 at `--h4-size` from `16b-2-A`, so the title's _type_ is Sonora-correct even though the
+tile and placeholder are not.
+
+**THE CORRECTION FOR EVERY REMAINING SCREEN SPEC — apply it before writing the next one.** Put
+geometry and type values in an explicit **per-platform table inside the behaviour contract**, one
+row per token (art size, radius, title face/weight/size, label casing, muted-colour role), one
+column per platform — so a number is a contract line an agent must satisfy or explicitly decline,
+not a sentence to skim while hunting for behavioural instructions. And state outright: **"Compose has
+no CSS-cascade fallback — name the placeholder/error painter for every image, not just the happy
+path."** Recorded in `ROADMAP.md` §16 too, beside the `16e` bullet where a dispatching session will
+actually meet it.
+
+**Everything else came back clean, each verified rather than asserted:** all three sanctioned
+inequalities are still the sanctioned ones (download Android-only, author link web-only,
+series/genres/year/ISBN on neither); both Android entry points changed together, with a grep
+confirming no remaining book-tap-to-play anywhere; and **the screen-scoped author type held** —
+`AuthorBadge` is byte-identical, still declaring no `id`, so the guard against the thrice-shipped
+minified-item bug is intact.
+
+**Four small follow-ups it named, none blocking:**
+
+1. **`16e-book-A-2`** — build a reusable Compose `MediaHeader` equivalent. **Do this before the next
+   `-A` screen wave**: three Android screens now share the same pre-Sonora header, so this is the
+   moment to build one composable rather than let a fourth drift the same way.
+2. `UnifiedSearchScreen.kt`'s book rows are **non-interactive**, with a now-stale comment saying no
+   book-detail route exists. One exists.
+3. `CoverImage`'s fallback tile ignores the caller's `style`, so the new radius never renders in an
+   environment where covers do not decode — affects `ItemPage` **and** `PodcastDetailPage`, so it is
+   a component defect, not a screen one.
+4. Web links only the first author of several, uncommented and untested — no fixture has two.
 
 **The largest parity hole found so far, and it is on the user's stated priority 1.** Established by
 the `16e-book` recon wave with file:line evidence, not inferred: `Routes` in `AuralisNavHost.kt` has
