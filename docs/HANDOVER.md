@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T05:35:09Z` · `ac56785c0073c04af` · general-purpose · ended · ## Report — 16e-book-P: parity review of the book detail screen **No code changes.** Working tree clean throughout — this was a read-and-reason wave.…
-- `2026-08-18T05:50:14Z` · `a3fef180f50536b9b` · general-purpose · ended · Working tree is clean, five commits on top of '756debb'. All committed on branch 'worktree-agent-a3fef180f50536b9b'. Not pushing or merging, per inst…
 - `2026-08-18T06:17:40Z` · `a008be551e33ce274` · general-purpose · ended · Working tree is clean, one commit on top of '733478f'. This is my final report. ## Report — fixing the three failing 'BookDetailContentTest' tests **…
 - `2026-08-18T20:08:25Z` · `a5f4cf54fababc701` · general-purpose · ended · ## Report — 16e-podcast-spec **Branch/commit:** 'worktree-agent-a5f4cf54fababc701' at '91a51cc', two commits on top of 'e5eb249'. Working tree clean.…
 - `2026-08-18T20:09:26Z` · `a675ba5171943ba81` · general-purpose · ended · ## Report — Wave 15e-books: external book discovery for 'GET /libraries/:id/recommended' **Branch:** 'worktree-agent-a675ba5171943ba81', final commit…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T22:00:37Z` · `aa964a5222178d8bf` · general-purpose · ended · ## Report — 16e-album-spec **Branch/commit:** 'worktree-agent-aa964a5222178d8bf' at '0131190', one commit on top of 'be768d9'. Working tree clean. On…
 - `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · ended · ## Report — Wave 16e-album-A: Android's album detail screen **Branch/commit:** 'worktree-agent-a1181034546ce56e7' at '15dcc50', one commit on '3bf25b…
 - `2026-08-19T00:53:06Z` · `abecf67b280fa2ff7` · general-purpose · running · —
+- `2026-08-19T00:55:29Z` · `ab2cba47f42acee0a` · general-purpose · running · —
+- `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -746,9 +746,9 @@ Base for both: **`60fd7d5`**, verified green on `CI`, `Android` **and** `Publish
 
 ### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
 
-Nothing claimed, nothing in flight, `docs/agent-specs/` empty. **`integration-15e-books` is merged
-and is now safe to delete** — it existed only to hold a wave off `main`, and `main..integration-15e-books`
-is empty.
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty. **`integration-15e-books` is deleted**
+(2026-08-19, `git branch -d`, which refuses anything unmerged) — it existed only to hold a wave off
+`main`, and `main..integration-15e-books` was empty.
 
 Verified on the integration branch **before** merging rather than after: **215 `app` + 212
 `ui-desktop`/`ui-mobile` Playwright at CI's own parallelism, 1713 unit, typecheck across every
