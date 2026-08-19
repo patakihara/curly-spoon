@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T04:34:14Z` · `ade26b2bd42f3f1d9` · general-purpose · ended · ## Report — Wave 16e-book-W **Branch/commit:** 'worktree-agent-ade26b2bd42f3f1d9' at '6ba0ce4', three commits on top of '773b08b' ('2a48b4c' restyle+…
 - `2026-08-18T05:35:09Z` · `ac56785c0073c04af` · general-purpose · ended · ## Report — 16e-book-P: parity review of the book detail screen **No code changes.** Working tree clean throughout — this was a read-and-reason wave.…
 - `2026-08-18T05:50:14Z` · `a3fef180f50536b9b` · general-purpose · ended · Working tree is clean, five commits on top of '756debb'. All committed on branch 'worktree-agent-a3fef180f50536b9b'. Not pushing or merging, per inst…
 - `2026-08-18T06:17:40Z` · `a008be551e33ce274` · general-purpose · ended · Working tree is clean, one commit on top of '733478f'. This is my final report. ## Report — fixing the three failing 'BookDetailContentTest' tests **…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T21:09:48Z` · `aa97926cfab82547e` · general-purpose · ended · ## Report — Wave '16e-podcast-P': parity review of the podcast show screen triple **Verdict: clean, with two named follow-ups (one real, previously-i…
 - `2026-08-18T22:00:37Z` · `aa964a5222178d8bf` · general-purpose · ended · ## Report — 16e-album-spec **Branch/commit:** 'worktree-agent-aa964a5222178d8bf' at '0131190', one commit on top of 'be768d9'. Working tree clean. On…
 - `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · ended · ## Report — Wave 16e-album-A: Android's album detail screen **Branch/commit:** 'worktree-agent-a1181034546ce56e7' at '15dcc50', one commit on '3bf25b…
+- `2026-08-19T00:53:06Z` · `abecf67b280fa2ff7` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,21 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### CLAIMED 2026-08-19 — `16e-album-W` and `15e-podcasts`, both in flight
+
+Base for both: **`60fd7d5`**, verified green on `CI`, `Android` **and** `Publish` before dispatch.
+
+- **`16e-album-W`** — web's half of the album triple, the third adoption of `MediaHeader.tsx`.
+  Built from `docs/design/screens/ALBUM_DETAIL.md` §5/§6/§9/§11, explicitly **not** from
+  `16e-album-A`'s output. It owns `apps/web` + `e2e/app` and so **holds the Playwright port** —
+  no second browser wave may run beside it.
+- **`15e-podcasts`** — external podcast discovery, server-only, no browser, so it parallelises.
+  Provider is **iTunes Search (no credential at all)** rather than PodcastIndex, which needs a
+  free-but-real key + secret Sofia would have to create. Folds in the open follow-up asking
+  whether `GET /libraries/:id/recommended` is genuinely book-scoped server-side.
+
+`16e-album-P` and `15d-1-books-P` are both still owed and are deliberately held until these land.
 
 ### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
 
