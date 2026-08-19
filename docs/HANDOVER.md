@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T06:17:40Z` · `a008be551e33ce274` · general-purpose · ended · Working tree is clean, one commit on top of '733478f'. This is my final report. ## Report — fixing the three failing 'BookDetailContentTest' tests **…
 - `2026-08-18T20:08:25Z` · `a5f4cf54fababc701` · general-purpose · ended · ## Report — 16e-podcast-spec **Branch/commit:** 'worktree-agent-a5f4cf54fababc701' at '91a51cc', two commits on top of 'e5eb249'. Working tree clean.…
 - `2026-08-18T20:09:26Z` · `a675ba5171943ba81` · general-purpose · ended · ## Report — Wave 15e-books: external book discovery for 'GET /libraries/:id/recommended' **Branch:** 'worktree-agent-a675ba5171943ba81', final commit…
 - `2026-08-18T20:23:07Z` · `a2adabaeb3b722475` · general-purpose · ended · All balanced, working tree clean, nothing left uncommitted. ## Report — Wave 16e-podcast-A **Branch/commit:** 'worktree-agent-a2adabaeb3b722475' at '…
@@ -284,7 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · ended · ## Report — Wave 16e-album-A: Android's album detail screen **Branch/commit:** 'worktree-agent-a1181034546ce56e7' at '15dcc50', one commit on '3bf25b…
 - `2026-08-19T00:53:06Z` · `abecf67b280fa2ff7` · general-purpose · running · —
 - `2026-08-19T00:55:29Z` · `ab2cba47f42acee0a` · general-purpose · running · —
-- `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · running · —
+- `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · ended · ## Parity review — '15d-1-books' (server + '-A' + '-W') **Verdict: ship as-is, but with one real cross-platform behavioral bug to fix — a silent asym…
+- `2026-08-19T01:00:09Z` · `ad7800b70963a0170` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,48 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### `15d-1-books-P` is DONE, and it found a real fail-unsafe divergence on web
+
+**Verdict on the pair: ship as-is, with one cross-platform behavioural bug to fix.** The typing
+split the follow-up asked about is **fine** — Android route-scopes `availability` to
+`RecommendedLibraryItem` because kotlinx's `MissingFieldException` would otherwise break every
+non-recommended route sharing `LibraryItem`/`Shelf`; web widens its hand-mirrored interface with an
+optional field because it has no runtime decode at all. Each is individually correct.
+
+**The risk is a semantic difference layered on top of it, and nobody argued for it:**
+
+- **Android** infers external as `availability != "owned"` — anything unrecognised is **external**.
+- **Web** infers it as `availability === 'external'` at all four call sites — anything unrecognised
+  is **owned**.
+
+**So on web, a missing or unrecognised value silently reintroduces exactly the dead-end this wave
+existed to close**: the card renders as an ordinary owned book with no badge, and tapping it routes
+to `/item/:id` for an id Audiobookshelf has never heard of. Android degrades the whole shelf to
+empty instead — contained, and safe. **Labelled drift, not idiom:** the `=== 'external'` convention
+was inherited unexamined from the music sibling, and nothing in `types.ts` or any commit message
+states a decision that web should read an unknown value as owned.
+
+**The fix is four call sites** — `Carousel.tsx:186`, `Carousel.tsx:247`, `HomePage.tsx:311`,
+`MusicHomePage.tsx:118` — from `=== 'external'` to `!== 'owned'`. It adds no runtime validation and
+closes the asymmetry at its root. Being taken as `15d-1-books-W-2`, held until `16e-album-W` is out
+of `apps/web`.
+
+**Two further rulings, both recorded so nobody re-derives them:**
+
+1. **Web's two request panels: this wave made the right call.** Android never auto-submits for
+   either medium, and `AskForBookPanel`'s own comment calls explicit-submit the contract every other
+   search here already has — so **web's music auto-submit is the outlier**, not the new book
+   behaviour. The follow-up is to drop the eager `submittedTerm` seed in
+   `MusicRequestSearchPanel.tsx`, not to spread auto-submit to books.
+2. **The subtitle colour role is drift, and web is the correct one.** `SONORA.md` §3.5 is explicit —
+   `accent-ink` when clickable, **plain `fg` otherwise** — and web matches it. `MediaHeader.kt:184`
+   renders the non-link subtitle `onSurfaceVariant` unconditionally. Fix Android to a full-emphasis
+   role. This settles a question three triples have now inherited.
+
+**Two things the review could not verify, stated rather than glossed:** everything Android-side is a
+source read (no device, no JDK), and web's `for-you-external-book.spec.ts` was read rather than
+executed, since another agent held the Playwright port.
 
 ### CLAIMED 2026-08-19 — `16e-album-W` and `15e-podcasts`, both in flight
 
