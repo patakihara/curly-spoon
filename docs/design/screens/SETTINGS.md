@@ -226,7 +226,7 @@ neither; §6.1 is the fix.
 | Theme-mode control          | `packages/ui` `Button`, `variant` filled/outlined, hand-copied inline `style` (`SettingsPage.tsx:100-108`) | `packages/ui` `Chip`, `variant="filter"`, `selected` — see §6.6 | M3 `FilterChip`, `selectedContainerColor`/`selectedLabelColor` = `tokens.accent`/`.accentContrast` | unchanged — already correct                                 |
 | Theme-mode order            | `system, light, dark`                                                                                      | unchanged                                                       | `Light, Dark, System`                                                                              | **`System, Light, Dark`** — see §6.2                        |
 | Accent swatch size          | `40px` circle (`app.css:626-628`)                                                                          | unchanged                                                       | `40dp` circle (`SettingsScreen.kt:190`)                                                            | unchanged — already matches                                 |
-| Accent swatch selected ring | `outline: 3px solid var(--m3-primary)` (`app.css:635-638`)                                                 | **`var(--accent-ink)`** — see §6.4                              | `Modifier.border(3.dp, tokens.accentInk, CircleShape)`                                             | unchanged — already correct                                 |
+| Accent swatch selected ring | `outline: 3px solid var(--accent)` (`app.css:644-647`) — **already fixed, see §6.4**                       | unchanged — landed as `4299bb9`                                 | `Modifier.border(3.dp, tokens.accentInk, CircleShape)`                                             | unchanged — already correct                                 |
 | Accent grid layout          | flex row, `flex-wrap: wrap`, `gap: var(--m3-space-sm)`                                                     | flex row, wrap, `gap: var(--spacing-sm)` (8px, §1.9)            | `chunked(6)` rows                                                                                  | unchanged                                                   |
 | Persistent nav entry        | rail-footer link (`nav-rail-settings`) + compact top-right icon button — **already Sonora-shaped**         | unchanged                                                       | none (per-screen `TextButton`, Browse only)                                                        | **rail-footer `RailItem`, `AuralisShell`-level** — see §6.1 |
 
@@ -347,16 +347,35 @@ rather than being caught by eye. This is the byte-for-byte target for this scree
 as prior triples' composed-string targets — the difference is it's already satisfied and needs
 pinning, not deriving.
 
-### 6.4 Web: migrate the accent swatch's selection ring off the orphaned `--m3-primary`
+### 6.4 Web: the accent swatch's selection ring — ALREADY LANDED, do not rebuild
 
-`app.css:635-638`'s `.auralis-color-swatch[aria-pressed='true']` moves from `outline: 3px solid
-var(--m3-primary)` to `outline: 3px solid var(--accent-ink)`. This is the exact bug `16f-A-2`
-fixed on Android ("the picker failing to repaint its own selection ring was the most visibly wrong
-part of `16f-A-1`") — web ships the same bug today, confirmed live by `--m3-primary` never
-changing when the accent picker is used (`settings-a11y.spec.ts:144-158` already pins that
-`--m3-primary` does _not_ respond to the picker, as documented current behaviour). Update that
-test's framing once this lands: the swatch ring itself must now respond, even though `--m3-primary`
-correctly still does not.
+**This section described work that has since shipped. It landed as `4299bb9` (2026-08-20), before
+this triple was dispatched, and neither implementing wave should touch it.**
+
+The spec originally called for `.auralis-color-swatch[aria-pressed='true']`'s outline to move from
+`var(--m3-primary)` to `var(--accent-ink)`. It shipped as **`var(--accent)`**, and that is the
+correct value rather than a deviation to be corrected back: the ring's job is to mark _which colour
+you picked_, so it should paint the picked colour itself. `--accent-ink` is the derived
+readable-text role — a different thing, and the one already recorded as failing WCAG AA on
+`--surface-card` at the default accent (queue `abbaca2`, still with Sofia). Pointing a selection
+indicator at a text role would have been a second, subtler version of the same disconnect the fix
+existed to close.
+
+The rule now reads `outline: 3px solid var(--accent)` at `app.css:644-647`.
+
+**The distinction this section originally got wrong is worth keeping**, because it is what made the
+fix safe. This spec's recon reported `settings-a11y.spec.ts` as pinning the old behaviour as
+correct. It does not: that test asserts the `--m3-primary` **token** does not follow the picker,
+which is deliberate, still true, and says nothing about what the ring should read. Checking that
+distinction before editing is what kept the existing assertion passing. The assertion added by
+`4299bb9` reads the ring's own resolved `outline-color` across two presets — reading `--accent` off
+the root instead would pass with the ring still pointing at a fixed token, which is precisely the
+hole that let the bug ship. It was confirmed to discriminate by restoring the old token and
+watching it go red.
+
+**For `16e-settings-W`:** nothing to do here, and the `4299bb9` assertion must keep passing through
+§6.6's `Chip` migration. **For `16e-settings-P`:** this is not drift; verify by `git show 4299bb9`
+rather than grading web against the superseded `--accent-ink` wording.
 
 ### 6.5 Web: migrate `.auralis-onboarding*`/`.auralis-field*`/`.auralis-settings-row`/
 
@@ -483,7 +502,8 @@ require removing the step or wiring the fields to anything live.
 - `SettingsPage.tsx`: theme-mode row moves from `Button` to `Chip` (`variant="filter"`) — §6.6.
   Preserve testids/behaviour; update `settings-a11y.spec.ts` in the same commit if the selected-
   state attribute Playwright asserts on changes.
-- `app.css`: `.auralis-color-swatch[aria-pressed='true']`'s outline moves to `--accent-ink` — §6.4.
+- `app.css`: the accent swatch's selection ring — **already landed as `4299bb9`, nothing to do**; see
+  the rewritten §6.4. Do not revert it to `--accent-ink`.
 - `app.css`: the full `.auralis-onboarding*`/`.auralis-field*`/`.auralis-service-*`/
   `.auralis-settings-row` family moves off `--m3-*` onto Sonora tokens — §6.5. Run
   `pnpm vitest run apps/web` afterward (this repo has a unit test — `layoutOverflow.test.ts`'s
