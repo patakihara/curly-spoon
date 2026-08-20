@@ -685,7 +685,10 @@ class UnifiedSearchViewModel(
                 MusicFanOutResult(
                     artists = result.artists.map { it.toUi(baseUrl) },
                     albums = result.albums.map { it.toUi(baseUrl) },
-                    tracks = result.tracks.map { it.toSearchUi() },
+                    // 16e-search-A-2: pass baseUrl so track rows get cover art, matching the
+                    // artist/album rows just above — MusicSearchScreen's own toSearchUi() call
+                    // site is untouched and stays baseUrl-less by construction.
+                    tracks = result.tracks.map { it.toSearchUi(baseUrl) },
                 )
             is MusicSearchResult.Failed ->
                 if (result.code == JELLYFIN_NOT_CONFIGURED_CODE) {

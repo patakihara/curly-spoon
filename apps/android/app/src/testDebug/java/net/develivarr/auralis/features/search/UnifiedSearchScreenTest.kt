@@ -322,4 +322,72 @@ class UnifiedSearchScreenTest {
         composeRule.onNodeWithText("The Dune Saga").assertExists().assertHasNoClickAction()
         composeRule.onNodeWithText("Frank Herbert").assertExists().assertHasNoClickAction()
     }
+
+    // --- 16e-search-A-2: two parity-review fixes ---
+
+    @Test
+    fun `the search field carries a leading search icon, matching web's SearchField`() {
+        composeRule.setContent {
+            AuralisTheme {
+                UnifiedSearchQueryArea(
+                    query = "",
+                    onQueryChange = {},
+                    statusText = "Search your library and connected Jellyfin server.",
+                    suggestions = emptyList(),
+                    onSelectSuggestion = {},
+                )
+            }
+        }
+
+        // Discriminates: before this wave, OutlinedTextField had no `leadingIcon` parameter at
+        // all, so this tag did not exist anywhere in the composed tree.
+        composeRule.onNodeWithTag("search-field-icon").assertExists()
+    }
+
+    @Test
+    fun `a track row renders the same fallback art tile every other result kind gets`() {
+        composeRule.setContent {
+            AuralisTheme {
+                LazyColumn {
+                    searchResultsSection(
+                        state =
+                            UnifiedSearchResultsUiState.Results(
+                                tracks =
+                                    listOf(
+                                        MusicSearchTrackUi(
+                                            id = "t1",
+                                            title = "Drift",
+                                            artistNames = "Nebula Prime",
+                                            albumId = "al1",
+                                        ),
+                                    ),
+                            ),
+                        visible = VisibleKinds(tracks = true),
+                        imageLoader = imageLoader,
+                        onOpenBook = {},
+                        onOpenPodcast = {},
+                        onOpenArtist = {},
+                        onOpenAlbum = {},
+                        requestableBooksState = RequestableBooksUiState.Idle,
+                        requestableMusicState = RequestableMusicUiState.Idle,
+                        query = "drift",
+                        onRequestRelease = {},
+                        onRequestAnyway = {},
+                        onRequestCandidate = {},
+                    )
+                }
+            }
+        }
+
+        // Discriminates: before this wave, SearchResultTrackRow rendered two bare Texts and no
+        // Box/Icon/AsyncImage at all, so no node with this tag (or any MusicNote icon) existed
+        // on a track row — every other kind (books/podcasts/artists/albums) already had one via
+        // MusicRow, which is exactly the asymmetry the parity review found. Coil never resolves
+        // a real image under Robolectric (no network, no decoder), so the fallback icon is the
+        // only art signal this test can observe — it says nothing about what a real cover looks
+        // like once loaded, only that the same fallback machinery every other kind gets is now
+        // wired up for tracks too.
+        composeRule.onNodeWithTag("search-track-art-fallback-t1").assertExists()
+        composeRule.onNodeWithText("Drift").assertExists()
+    }
 }

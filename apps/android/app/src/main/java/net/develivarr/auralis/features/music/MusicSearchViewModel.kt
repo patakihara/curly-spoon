@@ -24,21 +24,30 @@ internal const val MUSIC_SEARCH_DEBOUNCE_MS = 400L
  * playback queue from, so tapping one navigates to [albumId]'s album detail page instead of
  * playing directly — see [MusicSearchScreen]'s own doc comment for why. [albumId] is nullable
  * because a Jellyfin track item is not guaranteed to carry a parent album id; such a row is
- * rendered non-interactive rather than as a dead click target that silently does nothing. */
+ * rendered non-interactive rather than as a dead click target that silently does nothing.
+ * [coverUrl] defaults to `null` (unset by [MusicSearchScreen]'s own call site) — its own
+ * `SearchTrackRow` renders no cover art and this wave does not change that; only wave
+ * 16e-search-A-2's `UnifiedSearchScreen.kt` call site passes a real one, for its own
+ * `MusicRow`-styled track row. */
 data class MusicSearchTrackUi(
     val id: String,
     val title: String,
     val artistNames: String?,
     val albumId: String?,
+    val coverUrl: String? = null,
 )
 
 /** `internal`, not `private`: [net.develivarr.auralis.features.search.UnifiedSearchViewModel] (wave
  * 12b-A1) reuses this exact mapping for its own music-track search results, since a track
- * search hit is the identical shape regardless of which screen's query produced it. */
-internal fun JellyfinTrack.toSearchUi(): MusicSearchTrackUi =
+ * search hit is the identical shape regardless of which screen's query produced it.
+ * [baseUrl] defaults to `null` (and therefore [MusicSearchTrackUi.coverUrl] to `null` too, via
+ * [net.develivarr.auralis.features.music.jellyfinItemArtworkUrl]) so [MusicSearchScreen]'s own
+ * call site, which never had cover art, is unaffected by construction. */
+internal fun JellyfinTrack.toSearchUi(baseUrl: String? = null): MusicSearchTrackUi =
     MusicSearchTrackUi(
         id = id,
         title = name,
+        coverUrl = jellyfinItemArtworkUrl(baseUrl, id),
         artistNames = artistNames.joinToString(", ").takeIf { it.isNotBlank() },
         albumId = albumId,
     )
