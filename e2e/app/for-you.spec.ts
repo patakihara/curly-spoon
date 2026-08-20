@@ -352,6 +352,26 @@ test('the page-level loading state is announced via a live region, and clears on
   releaseHome();
 
   await expect(status).toHaveText('Browse feed loaded.');
+
+  // The live region is for assistive tech only — it must announce without ever occupying
+  // visible layout. 16e-foryou-W shipped it as ordinary visible text, which left "Browse
+  // feed loaded." sitting under the filter chips indefinitely; 16e-foryou-P caught it by
+  // screenshot, because `toHaveText` reads text content and cannot tell hidden from
+  // visible. Asserting the box rather than the CSS keeps this about the behaviour (takes
+  // no visible space) instead of the mechanism (whichever hiding idiom is in use).
+  const statusBox = await status.boundingBox();
+  expect(
+    statusBox,
+    'the status live region should still be laid out, not display:none',
+  ).not.toBeNull();
+  expect(
+    statusBox!.width,
+    'the status live region must not occupy visible width',
+  ).toBeLessThanOrEqual(1);
+  expect(
+    statusBox!.height,
+    'the status live region must not occupy visible height',
+  ).toBeLessThanOrEqual(1);
 });
 
 test('recommended carousels appear below the ordinary shelves, each with a visible reason line', async ({

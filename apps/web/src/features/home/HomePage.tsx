@@ -420,10 +420,23 @@ export function HomePage() {
               node that only starts existing once loading begins. `role="status"` per
               FOR_YOU.md §6.6 and SEARCH.md §6.4's established pattern (an implicit
               `aria-live="polite"`, kept as an explicit prop too for the same reason
-              `SearchPage.tsx` states it there — clarity, not necessity). Rendered as
-              ordinary visible text, exactly like `search-status` — this repo has no
-              visually-hidden-text convention, and neither status line needs one. */}
-          <p role="status" aria-live="polite" data-testid="for-you-status">
+              `SearchPage.tsx` states it there — clarity, not necessity).
+
+              Visually hidden, unlike `search-status`, and the difference is the point:
+              search's status is useful *visible* copy ("12 results for X"), whereas
+              "Browse feed loaded." says nothing a sighted user cannot already see, and
+              the node is deliberately always mounted so a screen reader observes the
+              text change — which would otherwise leave that sentence sitting under the
+              filter chips forever. `16e-foryou-W` rendered it visibly on the stated
+              grounds that this repo has no visually-hidden convention; it does
+              (`.m3-visually-hidden`, `packages/ui/src/components/Button.css`). That one
+              ships only with `Button`'s chunk, so `app.css` carries its own copy. */}
+          <p
+            role="status"
+            aria-live="polite"
+            data-testid="for-you-status"
+            className="auralis-visually-hidden"
+          >
             {loadingStatusMessage}
           </p>
 

@@ -1173,3 +1173,23 @@ html body {
   background: var(--m3-secondary-container);
   color: var(--m3-on-secondary-container);
 }
+
+/* The standard visually-hidden idiom: present to assistive tech, absent from layout.
+ *
+ * `packages/ui` already had this as `.m3-visually-hidden` in `Button.css`, but that
+ * stylesheet only ships when `Button`'s chunk does — and this app has already been bitten
+ * once by a component painting before its own lazily-loaded CSS arrived (see 14a-2's
+ * write-up). A live region that silently loses its hiding rule renders status copy in the
+ * middle of the page, so this one is defined in the app's own always-present stylesheet
+ * rather than borrowed from a component's. */
+.auralis-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
