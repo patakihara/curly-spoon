@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
 - `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · ended · Everything is confirmed. Here is my final report. ## Report — Wave 16e-nowplaying-A **1. Branch/commit:** 'worktree-agent-a290836730d4ca5c5' at '5351…
 - `2026-08-20T13:34:53Z` · `ac8d6ec012bcfbac3` · general-purpose · ended · # Parity Review — '16e-nowplaying-P' ## 1. Verdict **Not clean — one real defect, currently blocking 'main''s Android CI, plus two follow-ups.** The…
 - `2026-08-20T13:48:33Z` · `a868ad45336e0f504` · general-purpose · ended · Only the one new file exists, nothing else was touched. Task complete. ## Report — '16e-foryou-spec' **1. Document written:** '/home/sofiapata/src/au…
@@ -284,7 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
 - `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
 - `2026-08-20T22:00:53Z` · `a12a64f119980693a` · general-purpose · ended · ## Report — '16g-design-reconcile' **Branch/commit:** 'worktree-agent-a12a64f119980693a' at 'b98ca76', one commit on top of '04a7f22'. 'git status --…
-- `2026-08-20T22:11:05Z` · `aa14b1c2b80bebfb8` · general-purpose · running · —
+- `2026-08-20T22:11:05Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · The 'ui-desktop'/'ui-mobile' Playwright run auto-backgrounded (task 'bd1b0vfm1') after the 2-minute default timeout. My work is already committed, so…
+- `2026-08-20T22:23:16Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · ## 1. The seven-call-site classification All seven line numbers you gave me were accurate — I re-grepped them before touching anything and they match…
 
 <!-- AGENT_LOG_END -->
 
@@ -743,20 +743,52 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### CLAIMED 2026-08-21 — `16h-chip-singleselect`, in flight. Base `ad1b491`.
+### DONE 2026-08-21 — `16h-chip-singleselect`. Verified by the orchestrator, not the wave.
 
-The one follow-up `16e-settings-P` named. `packages/ui`'s `Chip variant="filter"` is Mantine's
-**checkbox** underneath, so Settings' three mutually-exclusive theme-mode options announce as three
-independent checkboxes.
+`Chip` gains **one opt-in prop, `radioGroup?: string`**, which passes `type="radio"` and a shared
+`name` through to Mantine. **Default behaviour is unchanged**, and that was proved rather than
+asserted: Mantine's `filterProps` strips any `undefined` prop before merging `defaultProps`, so an
+ungrouped chip still resolves to `type="checkbox"` — with a **discriminating** gallery assertion
+pinning it, which is the regression guard for every call site not converted.
 
-**The wave is subtler than the one-line fix suggests, and the recon that showed why is worth
-keeping.** `variant="filter"` has **7 call sites across 5 files** — Settings, Home, Search (×2),
-Podcast detail, Library (×2) — and they are **not all mutually exclusive**. Changing the variant's
-semantics globally would break every genuinely multi-select row, since a radio group cannot express
-two active filters. So the wave is specced as **opt-in grouping, default behaviour unchanged**, and
-its first deliverable is a classification of all seven call sites before any edit. Same shape as the
-shared-component lesson this file already carries: a primitive changed in place reads as correct in
-review and is wrong on the other screens.
+**Full suite run here after merging: unit 1732/1732, typecheck all seven projects, lint clean,
+`ui-desktop`+`ui-mobile` 220 passed, `app` 240 passed** — up from 216/239, so the new tests are real
+rather than absent. Every new assertion was reported as discriminating, with its reasoning.
+
+#### The classification is the wave's real output, and it stopped a blanket change from shipping
+
+The parity review described this as one sentence: give the filter variant a radio shape. Checking
+first found **7 call sites across 5 files**, and only **3** were safe to convert:
+
+| Call site                                                | Verdict                                                              |
+| -------------------------------------------------------- | -------------------------------------------------------------------- |
+| Settings theme mode, Podcast episode order, Library sort | **converted** — always exactly one selected, no path to none         |
+| Home for-you filter, Search primary, Search secondary    | **left alone deliberately**                                          |
+| Library `filter-finished`                                | **not a group at all** — a lone independent boolean, already correct |
+
+**The three left alone are the finding.** All are single-select by state shape, so a blanket change
+would have looked right — but each supports **clicking the active chip to clear back to `all`**, and
+**a browser fires no change event when you re-click a checked radio**, so converting them would have
+silently deleted that behaviour. Not a guess: `for-you.spec.ts:183-200` already tests the second
+click, and `searchFilters.ts`'s own header comment states the rule for both Search rows.
+
+**So "single-select" was not the right question — "can a native radio express this control's full
+behaviour" was.** A shared primitive changed in place reads as correct in review and is wrong
+elsewhere; this is the first time on this project that trap was caught _before_ it shipped rather
+than after, and what caught it was requiring the classification as a deliverable ahead of any edit.
+
+#### The backgrounded-run death happened again, and the stray-process lesson was re-confirmed
+
+The wave **committed first and then stopped waiting on a backgrounded Playwright run** — the failure
+this file has documented repeatedly. The spec-side instruction held (nothing was lost); the
+orchestrator-side check is what recovered it. **`SendMessage` retrieved the entire classification
+from the stopped agent** for a fraction of re-running it.
+
+**Re-confirmed, and worth not relearning:** the orphaned run's _parent_ Playwright runner does **not
+carry the worktree path in its own command line** — `pgrep -f "worktrees/agent-<id>"` matched five
+children and missed it, while it went on holding port 4310. Match a child, read its `ppid`, kill
+that. **The standing rule stands: do not ask a subagent to run a full suite.** The orchestrator runs
+it from the main checkout, where `Bash` is ungated and no notification can end the turn.
 
 ### DONE 2026-08-21 — `16e-settings`, the LAST screen. **Every screen in 16e is now complete; only `16f` remains.**
 
