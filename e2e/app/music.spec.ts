@@ -148,6 +148,36 @@ test('an album with no tracks shows an empty state rather than an empty-looking 
   await expect(page.getByText('No tracks found for this album.')).toBeVisible();
 });
 
+test('the album header keeps its four controls on one row at a phone width', async ({ page }) => {
+  // The album header is the first `MediaHeader` call site to put FOUR controls in its actions row
+  // — Play, Shuffle, Favourite, Add to playlist — and that row is a `display: flex` with `gap` and
+  // deliberately no `flex-wrap`. Every earlier call site passed exactly one control, so nothing had
+  // ever exercised it. Measured rather than assumed: 310px of content at a 360px viewport, which is
+  // the Android baseline width.
+  //
+  // This is here because the risk is invisible to the rest of the suite. Playwright asserts testids
+  // and text; a row that has overflowed its container still contains every button and still passes
+  // every other assertion on this page. A fifth control, or a longer label from a copy change, is
+  // what would break it, and this is the only thing that would notice.
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto('/music/album/album-driftwave');
+  await expect(page.getByTestId('music-album-play')).toBeVisible();
+
+  const actions = page.locator('.auralis-item-header__actions');
+  const measured = await actions.evaluate((el) => ({
+    controls: el.children.length,
+    overflowing: el.scrollWidth > el.clientWidth + 1,
+    rightEdge: Math.max(...Array.from(el.children, (c) => c.getBoundingClientRect().right)),
+    documentScrolls:
+      document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+  }));
+
+  expect(measured.controls).toBe(4);
+  expect(measured.overflowing).toBe(false);
+  expect(measured.rightEdge).toBeLessThanOrEqual(360);
+  expect(measured.documentScrolls).toBe(false);
+});
+
 test('the album header composes a meta line and links the artist', async ({ page }) => {
   await page.goto('/music/album/album-driftwave');
   await expect(page.getByTestId('music-album-page')).toBeVisible();

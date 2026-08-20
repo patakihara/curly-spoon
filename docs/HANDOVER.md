@@ -875,9 +875,14 @@ were put to her: build subscribe, ship it inert, or drop it.
 - **`MusicSearchScreen.kt`'s `SearchTrackRow` has the same missing-art defect** just fixed on the
   unified search screen, and is now the **only** track row in the app without a cover tile. Named by
   the wave rather than fixed, because it is a different screen.
-- **`.auralis-item-header__actions` has no `flex-wrap`** (`app.css:402-407`) and web's album header
-  is the first call site to put **four** controls in it. Playwright asserts testids and text and
-  structurally cannot see a compact-width overflow. **Wants an eyeball, not a test.**
+- ~~**`.auralis-item-header__actions` has no `flex-wrap`**~~ — **CLOSED, measured rather than
+  argued.** The four controls occupy **310px at a 360px viewport** (the Android baseline width), the
+  row does not overflow, and the document does not scroll horizontally. Screenshotted and eyeballed
+  as well as measured. A regression guard now lives in `e2e/app/music.spec.ts`, because the risk is
+  otherwise invisible: a row that has overflowed still contains every button and still passes every
+  other assertion on the page. **The margin is real but not large** — a fifth control, or a longer
+  label from a copy change, is what would break it, and that test is the only thing that would
+  notice.
 - **`SearchField`'s `aria-expanded` can go stale** — Mantine's `Popover` closes the dropdown
   visually on an outside click, but this component keeps a parallel `useState` and is never told, so
   a screen reader can briefly announce an expanded combobox with nothing open. Recorded in a comment
