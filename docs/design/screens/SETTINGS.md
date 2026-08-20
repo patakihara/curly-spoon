@@ -530,12 +530,35 @@ require removing the step or wiring the fields to anything live.
 
 - **Theme-mode selection state must be announced on both platforms**, not merely drawn — web's
   migration to `Chip` (§6.6) must preserve or improve on the existing `aria-pressed`-equivalent
-  semantics `settings-a11y.spec.ts` already asserts; Android's `FilterChip`/`selectable` already
+  semantics `settings-a11y.spec.ts` already asserts.
+
+  **CORRECTED after `16e-settings-P` — this bullet's Android claim was wrong, and it is the fifth
+  recon error found across this spec series.** It read: "Android's `FilterChip`/`selectable` already
   exposes `Role.RadioButton`-style selection semantics (`AccentSwatch`'s own precedent,
-  `SettingsScreen.kt:200`) and this wave's rail-mode Settings item must carry the same
+  `SettingsScreen.kt:200`)". That citation does not support that claim. `SettingsScreen.kt:200` sits
+  inside **`AccentSwatch`** (declared at `:185`), a hand-built `Modifier.selectable(role =
+Role.RadioButton)` — a _different composable_ from the theme-mode row, which uses the stock
+  `androidx.compose.material3.FilterChip` (~`:109-123`) with **no explicit `role` or `semantics`
+  override anywhere**. The citation shows the pattern exists somewhere on the screen, not that the
+  theme-mode control carries it.
+
+  **The honest state is "unknown", and it should stay labelled that way rather than resolved by
+  assertion.** Nothing on this machine can read Material3's internal default role for a standalone
+  `FilterChip` — no JDK, no Gradle cache. Independent corroboration that this was already uncertain:
+  `SettingsContentTest.kt:39-44`, written before this wave and untouched by it, **deliberately
+  declines to assert selection state on the theme-mode chips** while happily asserting
+  `assertIsSelected()` on the accent swatches, with a comment preferring `testTag` over "relying on
+  a Material3 composite composable's internal semantics shape."
+
+  **Consequence for parity:** web's `Chip` migration lands on native checkbox semantics (§6.6) and
+  Android's theme-mode announcement is unconfirmed. That pair is **neither idiom nor drift — it is
+  unverified**, and saying so is the correct verdict.
+
+  This wave's rail-mode Settings item must still carry the same
   `contentDescription`/testTag discipline `ShellNavigationItemsTest`'s doc comment already
   documents (merged-content-description queries are unreliable in this Robolectric configuration —
   assert by tag, not by merged description, matching the existing `AccentSwatch` pattern).
+
 - **The new rail-footer Settings entry on Android must be reachable by the same input modality as
   the four primary destinations** — keyboard/switch-access focus order should place it after them,
   not interleaved or before.

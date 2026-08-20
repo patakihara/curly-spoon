@@ -284,7 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
 - `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
-- `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · running · —
+- `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
 
 <!-- AGENT_LOG_END -->
 
@@ -743,12 +743,110 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### CLAIMED 2026-08-21 — `16e-settings`, the LAST screen triple. **Both halves MERGED; `-P` in flight.**
+### DONE 2026-08-21 — `16e-settings`, the LAST screen. **Every screen in 16e is now complete; only `16f` remains.**
 
-**Status: `main` is `3ec1344`.** `-W` merged as `89927e9`, `-A` as `fce72bb`, plus one orchestrator
-fix. Unit **1732/1732** and typecheck green on the merged tree; both waves ran their own Playwright
-at `--workers=2` (`-W`: 239 `app`, 216 `ui`, onboarding project in isolation first). CI on `3ec1344`
-is the authoritative signal and is the thing to read next.
+**`main` is `3ec1344` plus this doc commit. `CI` and `Android` both green on it, and the Android run
+is a genuine uncached execution** — verified by grepping the job log for bare `compileDebugKotlin`,
+`compileReleaseKotlin`, `testDebugUnitTest` and `testReleaseUnitTest` with no `FROM-CACHE`, not by
+reading a badge. Unit **1732/1732**, typecheck green across every project. `-P`'s verdict: **ship
+as-is, no blocking defects on either platform.**
+
+Five waves' worth of the usual, plus one thing that is new.
+
+#### THE HEADLINE — web's theme-mode control now announces as a checkbox, and Android's is UNKNOWN
+
+§6.6 moved web's theme-mode row onto `packages/ui`'s `Chip variant="filter"`. **`Chip` is Mantine's
+checkbox underneath.** `-P` verified this against Mantine's own compiled source rather than by
+inspection: outside a `Chip.Group` the context is null, `type` stays its `defaultProps` value
+`"checkbox"`, and the rendered element is `<input type="checkbox">` with no `aria-pressed`,
+`aria-selected` or `role="radio"` anywhere. So three **mutually exclusive** options announce as three
+independent checkboxes.
+
+**Ruled LATERAL, not a regression** — and the reasoning is the useful part. The control it replaced
+was `aria-pressed` toggle buttons. **Neither pattern conveys mutual exclusivity**; both expose only
+per-item boolean state. Native `checked` is arguably more _robust_ than a hand-maintained ARIA
+attribute, since it cannot drift from the visual state — but it adds no expressive power. §11 asked
+the migration to "preserve or improve"; it preserved, and no signal that existed before was dropped.
+
+**The parity half is genuinely unresolved, and that is the correct verdict rather than a hedge.**
+Web is checkbox. **Android's theme-mode announcement is unknown** — see the corrected §11 below.
+**Label it unverified: it is neither idiom nor drift.** Do not let a later session record it as
+either.
+
+**The follow-up, named precisely so it is not re-derived:** give `Chip`'s `filter` variant a proper
+single-selection shape when no `Chip.Group` supplies one. Worth knowing before scoping it —
+**Mantine's own `Chip.Group` with `multiple={false}` renders `<input type="radio">`**, so the
+idiomatic fix is likely to expose grouping through this repo's `Chip` wrapper rather than to
+hand-roll radiogroup ARIA. It is `packages/ui` work, one wave, and **declining it here was correct**:
+§7 puts primitive work out of this triple's scope, and the gap is inherited rather than introduced.
+
+#### A FIFTH recon error, and this one was in an accessibility claim
+
+§11 asserted Android's `FilterChip` "already exposes `Role.RadioButton`-style selection semantics",
+citing `SettingsScreen.kt:200`. **That line is inside `AccentSwatch`** (declared at `:185`), a
+hand-built `Modifier.selectable(role = Role.RadioButton)` — a _different composable_ from the
+theme-mode row, which uses stock `androidx.compose.material3.FilterChip` with **no role override at
+all**. Verified here as well as by `-P`. The citation proves the pattern exists somewhere on the
+screen, not that the control in question carries it. **§11 is corrected in this commit.**
+
+**Independent corroboration that this was already uncertain, and it is the sharpest part:**
+`SettingsContentTest.kt:39-44` — written before this wave, untouched by it — **deliberately declines
+to assert selection state on the theme-mode chips** while asserting `assertIsSelected()` on the
+accent swatches one screen over. The codebase already knew, in a comment, that it did not trust
+`FilterChip`'s internal semantics shape. **A spec asserting something the code's own tests decline to
+assert is a tell worth grepping for.**
+
+#### The red Android round was the documented import trap, firing again
+
+`fce72bb` failed both variants on one line: `ShellNavigationItems.kt` explicitly imported
+`androidx.compose.foundation.layout.weight`, which binds to the **internal**
+`RowColumnParentData.weight` and fails as an **access** error, not an unresolved reference — so it
+reads nothing like a stray import. The composable already declares a `ColumnScope` receiver, exactly
+like the function above it that has never imported it. One deleted line (`3ec1344`), fixed inline
+rather than spent as a wave.
+
+**Both compiler-free pre-checks passed and structurally could not have caught it.** They are textual
+invariants — comment balance, dots in backtick names. An import binding to the wrong symbol is a
+fact only a compiler knows, and there is no JDK here. **That is precisely what "budget two to three
+red Android rounds" buys; the round is the mechanism working.**
+
+#### The sanctioned screenshot allowance worked, first time it was granted
+
+The previous triple's reviewer had to **break** its "create no file" instruction to take a
+screenshot — and that screenshot found a real shipped defect. This `-P` was given an explicit bounded
+allowance instead. It took two, confirmed the migrated CSS renders fully styled in both themes and
+that the chip row still reads visually as a clear selected-one-of-three, created one temporary spec
+and deleted it in the same command, and left the tree clean. **Keep granting it.**
+
+#### Verified rather than accepted, so nobody re-checks
+
+- **The byte-for-byte target — the 17 accent presets — was already satisfied, so both waves pinned
+  rather than derived.** I extracted both lists independently before dispatch; `-P` then confirmed
+  **both pins discriminate**, checking each against live source rather than against the reports. Web
+  uses `toEqual` on the full ordered array, Android `assertEquals` on literal `0xFF` constructors
+  (deliberately avoiding float round-tripping). Either fails on a reorder or a one-hex drift.
+- **Android's rail entry is additive by construction:** `ShellNavigationItems.kt` is 53 insertions,
+  **0 deletions**, so the two `AuralisAppTokens.current` indicator readers whose pixel tests
+  `16f-A-2` had to delete cannot have moved. Checked by me and again by `-P`. The new item reads
+  those tokens too, making it a **fifth** production reader.
+- **The rewritten `settings-a11y.spec.ts` still discriminates** — the `.toBeChecked()` and
+  `label`-colour assertions fail if selection state is dropped or the fill stops painting. It was
+  rewritten rather than left pointing at the wrapper `<span>`, where it would have been green and
+  inert.
+- **`4299bb9`'s ring assertion still passes**, untouched, and still targets the `Button`-based
+  swatches the `Chip` migration did not affect.
+- **A second `outline` rule moved to `--accent`** and looked like it might render a focused swatch
+  identical to the selected one — the invisible-nav-pill defect `16c-2-W-3` avoided. It does not:
+  the rules are on different elements (a form input and a colour swatch), and the value matches
+  `Slider.css`'s established idiom.
+- **Count check:** the web wave reported 38 `--m3-*` usages in its scope; the real number is **37**.
+  Off by one, immaterial, but the instruction to re-measure is what surfaces these. Exactly one
+  `--m3-*` remains in that family — `--m3-touch-target-min`, an app-wide accessibility floor shared
+  by five other call sites and absent from `SONORA.md`. **Correctly held back, not missed.**
+
+`-W` merged as `89927e9`, `-A` as `fce72bb`. Both waves ran their own Playwright at `--workers=2`
+(`-W`: 239 `app`, 216 `ui`, the onboarding project in isolation first, since everything else
+`dependencies` on its `storageState`).
 
 **One red Android round, and it was the documented trap firing again rather than a bad wave.**
 `fce72bb` failed both variants on a single line: `ShellNavigationItems.kt:6` explicitly imported

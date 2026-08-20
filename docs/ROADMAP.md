@@ -3780,7 +3780,24 @@ boundaries, disjoint directories where waves run in parallel.
 
   **`docs/design/screens/BOOK_DETAIL.md` is the template**, with that correction applied.
 
-- **16e — screens, paired per screen rather than per platform.** For You/browse, Music/Album, Book
+- **16e — COMPLETE as of 2026-08-21. All seven screens shipped as `-W`/`-A`/`-P` triples.** Book
+  detail, Podcast detail, Music/Album, Search, Now Playing/Queue/Mini player, For You/browse, and
+  Settings/Onboarding. **Only `16f` remains in phase 16.**
+- **`16e-settings` — DONE, the seventh and last screen triple.** `main` `3ec1344`, `CI` and
+  `Android` green, the Android run confirmed a genuine uncached execution. Spec
+  `docs/design/screens/SETTINGS.md`; waves `16e-settings-W` (`89927e9`), `16e-settings-A`
+  (`fce72bb`), a one-line compile fix (`3ec1344`), `16e-settings-P` **clean — ship as-is**.
+  Delivered: Android's first persistent rail-footer Settings entry, Sonora-carded onboarding and
+  login on Android's own two real steps, theme-mode order aligned across platforms, a `LoginScreen`
+  empty-field guard, web's theme-mode row migrated onto `Chip`, the onboarding/field/settings/service
+  CSS family migrated off `--m3-*`, and a byte-for-byte pin of the 17 accent presets on both sides.
+  **One named, non-blocking follow-up:** `Chip`'s `filter` variant is Mantine's checkbox underneath,
+  so web's three mutually-exclusive theme options announce as independent checkboxes. Ruled
+  **lateral, not a regression** (the `aria-pressed` buttons it replaced conveyed exclusivity no
+  better), and Android's equivalent is **unverified rather than known** — see `HANDOVER.md` for why
+  §11's citation for it was wrong. The fix is `packages/ui` work: expose grouping so Mantine's own
+  `Chip.Group` with `multiple={false}` renders radios.
+- **16e — the original scoping note, kept for its still-live constraint.** For You/browse, Music/Album, Book
   detail, Podcasts, Search, Now Playing/Queue/Mini player, Settings/Onboarding. **Split by screen,
   not by platform** — each screen is one `-W`/`-A`/`-P` triple from one shared spec describing the
   behaviour, so neither client is implemented against the other's output. Screens are disjoint
