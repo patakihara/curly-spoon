@@ -106,11 +106,12 @@ test('an external recommended book carries a "not in library" badge, announces i
   );
 
   // Accessibility: the pill is `aria-hidden`, so the card's own accessible name is the
-  // only place a screen reader user learns this — `cardLabel()`'s existing, book-agnostic
-  // "not in your library" suffix.
-  await expect(card).toHaveAccessibleName(
-    'The Unwritten Verse, Rowan Ashcombe, not in your library',
-  );
+  // only place a screen reader user learns this — `cardLabel()`'s book-agnostic suffix.
+  // Wave 16e-foryou-W made that suffix "not in library", per FOR_YOU.md §6.3: the same
+  // concept had four different spellings across the two clients, and Sonora's own literal
+  // is canonical. Only the wording moved; the owned-vs-external rule this file guards is
+  // untouched.
+  await expect(card).toHaveAccessibleName('The Unwritten Verse, Rowan Ashcombe, not in library');
 
   // Tap: goes to the book request flow, pre-filled, never to /item/:id (the dead end).
   await card.click();
@@ -160,7 +161,7 @@ test('a present but unrecognised availability value is treated as external, not 
     'Not in library',
   );
   await expect(card).toHaveAccessibleName(
-    'The Cartographer of Silence, Idris Farrow, not in your library',
+    'The Cartographer of Silence, Idris Farrow, not in library',
   );
 
   // Routes to the request flow, never to `/item/:id`.
