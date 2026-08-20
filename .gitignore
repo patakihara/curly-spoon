@@ -1,1 +1,8 @@
+# Local tooling scratch, not part of the design system.
 .extract.py
+
+# Local render-check artifacts. _ds_bundle.js is a stand-in for the bundle the
+# Claude Design app generates itself -- regenerate with `node docs/build_bundle.js`.
+# It must never be pushed, or it would clobber the real one.
+_ds_bundle.js
+.render/
