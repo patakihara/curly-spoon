@@ -341,7 +341,11 @@ class UnifiedSearchScreenTest {
 
         // Discriminates: before this wave, OutlinedTextField had no `leadingIcon` parameter at
         // all, so this tag did not exist anywhere in the composed tree.
-        composeRule.onNodeWithTag("search-field-icon").assertExists()
+        // `useUnmergedTree = true` is load-bearing, not defensive. `OutlinedTextField` merges its
+        // descendants into one semantics node, so a `testTag` on the icon inside its `leadingIcon`
+        // slot is invisible to the default merged-tree lookup — `assertExists` then fails with a
+        // bare AssertionError naming neither the tag nor the merge, which is what it did on CI.
+        composeRule.onNodeWithTag("search-field-icon", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -387,7 +391,12 @@ class UnifiedSearchScreenTest {
         // only art signal this test can observe — it says nothing about what a real cover looks
         // like once loaded, only that the same fallback machinery every other kind gets is now
         // wired up for tracks too.
-        composeRule.onNodeWithTag("search-track-art-fallback-t1").assertExists()
+        // Unmerged for the same reason as the leading icon above: the row groups its children
+        // into a single announced node, which is exactly what the accessibility tests here
+        // assert, and that grouping hides descendant tags from the merged tree.
+        composeRule
+            .onNodeWithTag("search-track-art-fallback-t1", useUnmergedTree = true)
+            .assertExists()
         composeRule.onNodeWithText("Drift").assertExists()
     }
 }
