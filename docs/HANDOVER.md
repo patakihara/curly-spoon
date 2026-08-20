@@ -283,8 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
 - `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
 - `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
-- `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · running · —
-- `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · running · —
+- `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
+- `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · ended · Everything is confirmed. Here is my final report. ## Report — Wave 16e-nowplaying-A **1. Branch/commit:** 'worktree-agent-a290836730d4ca5c5' at '5351…
 
 <!-- AGENT_LOG_END -->
 
@@ -729,20 +729,79 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### CLAIMED 2026-08-20 — `16e-nowplaying-W` and `16e-nowplaying-A`, dispatched together
+### DONE 2026-08-20 — `16e-nowplaying`, the fifth screen triple. **`16e-nowplaying-P` is OWED.**
 
-Both halves of the Now Playing / mini player / queue triple are **in flight** from
-`docs/design/screens/NOW_PLAYING.md`, base `5a76683`. Web owns `apps/web` + `packages/ui`
-(including `IconButton`'s new additive `size` prop); Android owns `apps/android`. Disjoint, and
-only the `-W` half needs Playwright, so the port-4310 constraint is satisfied.
+Both halves merged (`6dbc5f0` web, `35f2c18` Android), built concurrently from
+`NOW_PLAYING.md` with neither agent seeing the other's code. Verified locally before pushing:
+**237 `app` + 216 `ui-desktop`/`ui-mobile` Playwright, 1731 unit, typecheck green on every
+project.** The largest remaining screen is done; **Settings/Onboarding and For You/browse are
+the last two**, then `16f`.
 
-**`16e-nowplaying-P` is owed** once both merge. Its byte-for-byte target is named in advance, which
-is the pre-ruling discipline `ALBUM_DETAIL.md` established: the scrubber's announced value must read
-`"{elapsed} of {total}"` on both platforms, from web's existing `formatDuration` output. This is the
-**first** triple where one side has a literal already shipped for the other to match rather than two
-independent derivations — so a mismatch here is a real defect, not idiom. Hex-dump it; do not eyeball.
+**The pre-ruled parity target fired, and this is the cleanest instance of the technique yet.**
+The claim block named the scrubber announcement as the byte-for-byte target _before either agent
+reported_. Web's `formatDuration` gives `"1:30"` for 90s and `"1:02:10"` for 3730s; Android's new
+`scrubberValueDescription` produces `"1:30 of 1:02:10"` for the same input, degradation on an
+unknown duration included. **Verified by the orchestrator against web's actual source, not taken
+from the agent's report.** Unlike the previous four triples this was not two independent
+derivations agreeing — web already shipped the literal, so Android was matching rather than
+deriving, which made a mismatch a real defect. Naming it in advance turned an adjudication into a
+one-step check. **Do this in every remaining screen spec.**
 
-Delete this block when both are merged.
+**Two genuine accessibility gaps closed on Android**, not restyling: `NowPlayingScreen`'s title had
+no `heading()` semantics at all where web has a real `<h1>`, and the seek `Slider` announced no
+value where web has announced one all along.
+
+#### THE OPERATIONAL FINDING — this file's own verification advice is wrong on this machine
+
+**This laptop has 4 cores** (`nproc`), and `playwright.config.ts` sets `workers: '100%'`. So a
+local full-suite run at the config default puts 4 workers, a vite build and the stateful BFF on 4
+cores. Measured today, on a tree that is provably clean:
+
+| Run | Workers    | Result                                                                   |
+| --- | ---------- | ------------------------------------------------------------------------ |
+| 1   | 4 (`100%`) | 2 failed — `browse.spec.ts:36`, `player.spec.ts:166`                     |
+| 2   | 4 (`100%`) | 2 failed — **different two**: `for-you.spec.ts:384`, `music.spec.ts:104` |
+| 3   | 2          | **237 passed, 0 failed** — and _faster_ (4.8m vs 5.4m)                   |
+
+Both failing pairs were content-visibility timeouts with no assertion mismatch, both passed in
+isolation, and **the failures moved between runs**. Load average hit 11.5 on 4 cores.
+
+**So "run it the way CI runs it" is not achievable locally and the attempt manufactures failures.**
+This file has correctly warned that `--workers=1` is a _weaker_ check than CI — that stands. What
+it did not say is that `--workers=100%` on a 4-core laptop is a **noisier** one, and noise on a
+timing-sensitive suite is indistinguishable from a regression until you spend three runs on it.
+**Use `--workers=2` locally: it is green, it is not slower, and it still exercises parallelism.**
+CI, with real runner headroom, remains the authoritative signal. Do not read a moving 2-failure
+result on this machine as a regression — establish it in isolation first, which costs one minute.
+
+#### What `-P` must rule on
+
+1. **§3.3's transport-size table has only a mobile-sheet row.** `-W` read it as governing every
+   breakpoint (matching §3.1's single-stack ruling) and applied 56/56/72 uniformly. Confirm.
+2. **The context line's "desktop panel only" note** — `-W` read it as recon about where the line
+   sits in Sonora's mock, not a restriction on where to render it, and §6.3's contract carries no
+   breakpoint qualifier. This is the spec's one real ambiguity.
+3. **`.auralis-mini-player__author` moved to `--surface-fg-muted`**, consistent with every other
+   restyled muted role but not mandated by §3.2. A judgement call, flagged by the wave itself.
+
+#### Named gaps and inherited findings, none blocking
+
+- **The chapter-fetch `LaunchedEffect`/`ApiClient` wiring on Android is a source read only.** `-A`
+  deliberately did not introduce the first-ever Robolectric test combining a real `PlayerViewModel`
+  with `createComposeRule()` — no such test exists in this repo — rather than stack two unproven
+  things with no local compiler. It proved the shared code through a stateless `MiniPlayerBarTest`
+  and unit-tested every new pure function instead. **That is the right call and the gap is real.**
+- **A third spec-recon error, same family as `SEARCH.md`'s two.** §3.3 records Android's title as
+  not weight-900; `Type.kt` has defined `headlineMedium` at `W900` since `16b-2-A`. Only the
+  semantics were missing, and `-A` correctly left the typography alone. **A spec's recon is a
+  starting point, not a census — three specs running.**
+- **`--m3-surface-container` and `--surface-card` are numerically identical in both themes**, so
+  the queue/pill backgrounds are indistinguishable from each other today though both differ from
+  the pre-Sonora baseline. Inherited from the substrate collision `16c-2-W-3` already documents;
+  not this wave's defect.
+- **`IconButton`'s `size` prop is additive-only and proved so.** 18 call sites across 14 files,
+  re-measured by the wave rather than trusted from the spec, with one e2e test asserting the four
+  existing variants stay at 48px _in the same test_ as the new 64px one.
 
 ### `15d-1-books-P` is DONE, and it found a real fail-unsafe divergence on web
 
@@ -788,20 +847,20 @@ executed, since another agent held the Playwright port.
 
 ### SESSION HAND-OFF, 2026-08-20 — read this first
 
-**`main` is `207f1f2`, green on `Android` (a genuine uncached `testDebugUnitTest`).** Nothing is claimed
+**`main` was `207f1f2` when this block was written; it has moved on several times since — read the newest section rather than this line.** Nothing is claimed
 and nothing is in flight. `docs/agent-specs/` is empty.
 Every wave dispatched this session was either merged or is on a named branch described below.
 
 **Two screen triples completed** (`16e-album`, `16e-search`), **five waves of correction and
 follow-up**, **one spec written** (`NOW_PLAYING.md`), and **one wave deliberately held**.
 
-**The next thing to do is the `16e-nowplaying` triple.** `docs/design/screens/NOW_PLAYING.md` is
-merged and is the contract. Dispatch `-W` and `-A` together from it, then `-P`. It is the largest
-remaining screen and its spec has already drawn the hard boundary — see the `16e-nowplaying-spec`
-merge commit for the rulings, especially that Sonora's tabbed desktop panel is **deliberately not
-built**.
+**SUPERSEDED — the `16e-nowplaying` triple is DONE**, both halves merged on 2026-08-20; see its
+own section below for what landed, what `-P` must rule on, and the worker-count finding that
+corrects this file's verification advice. Sonora's tabbed desktop panel remains **deliberately not
+built** — that ruling from the `16e-nowplaying-spec` merge commit still stands.
 
-**After that:** Settings/Onboarding and For You/browse are the last two screens, then `16f`. The
+**The next thing to do is `16e-nowplaying-P`**, then the last two screens: Settings/Onboarding and
+For You/browse, then `16f`. The
 remaining `--m3-*` consumers are `Fab`, `ListItem`, `Marquee`, `NavigationBar`, `SearchField`,
 `Snackbar`, `TopAppBar` — deletion is still not close.
 
