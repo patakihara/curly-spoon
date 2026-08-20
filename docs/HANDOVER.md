@@ -771,6 +771,96 @@ of `apps/web`.
 source read (no device, no JDK), and web's `for-you-external-book.spec.ts` was read rather than
 executed, since another agent held the Playwright port.
 
+### SESSION HAND-OFF, 2026-08-20 — read this first
+
+**`main` is `d58b48c`.** Nothing is claimed and nothing is in flight. `docs/agent-specs/` is empty.
+Every wave dispatched this session was either merged or is on a named branch described below.
+
+**Two screen triples completed** (`16e-album`, `16e-search`), **five waves of correction and
+follow-up**, **one spec written** (`NOW_PLAYING.md`), and **one wave deliberately held**.
+
+**The next thing to do is the `16e-nowplaying` triple.** `docs/design/screens/NOW_PLAYING.md` is
+merged and is the contract. Dispatch `-W` and `-A` together from it, then `-P`. It is the largest
+remaining screen and its spec has already drawn the hard boundary — see the `16e-nowplaying-spec`
+merge commit for the rulings, especially that Sonora's tabbed desktop panel is **deliberately not
+built**.
+
+**After that:** Settings/Onboarding and For You/browse are the last two screens, then `16f`. The
+remaining `--m3-*` consumers are `Fab`, `ListItem`, `Marquee`, `NavigationBar`, `SearchField`,
+`Snackbar`, `TopAppBar` — deletion is still not close.
+
+#### The three things this session learned that are worth more than the features
+
+1. **`isolation: "worktree"` is what creates the worktree — the reset instruction alone is a
+   loaded gun.** `CLAUDE.md` documents that an isolated agent must `git reset --hard <tip>` as its
+   first action. Dispatch that same spec **without** the parameter and the agent has no worktree, so
+   it runs in `~/src/auralis-src` and its first action **resets the shared checkout under every
+   other agent's feet.** That happened here: two merge commits were discarded and a reviewer
+   reported the tree vanishing mid-read. Recovered from the reflog, nothing lost.
+
+   **The check, now mandatory before believing any dispatch is isolated:**
+
+   ```bash
+   ls .claude/worktrees/agent-<id>   # no directory => it is in YOUR checkout
+   ```
+
+   **Pair the parameter with the instruction or write neither.** A read-only reviewer needs no
+   worktree and **must not be given the reset line at all** — it only ever needed to read.
+
+2. **A prescribed fix from a review can be wrong, and "the tests disagree" is a signal to re-check
+   the prescription.** `15d-1-books-P` ruled web's `availability === 'external'` fail-unsafe and
+   prescribed Android's `!== 'owned'`. Taken literally it **marked the entire library external** —
+   every owned book badged "not in your library", every tap sent to the request flow. The two
+   typings are not interchangeable and **the same review had established why one paragraph earlier.**
+
+   Two sharp corollaries. **The agent had to override a correct existing test to land it** — the
+   test encoded the real contract, the spec said otherwise, so it changed the test and said so
+   honestly. **And nothing naming `availability` caught it**: it surfaced in a test about _layout at
+   768px_. Breadth caught what aim did not.
+
+3. **A spec's recon is a starting point, not a census.** `SEARCH.md` was wrong twice about the same
+   file: `MusicRow` has **nine** call sites, not two, and track rows do **not** use `MusicRow` at
+   all — which is why Android's track results shipped with no cover art through a whole triple.
+   **Tell implementing waves to verify the call sites they are handed** rather than trusting the
+   count, and have them report the real number.
+
+#### What is on a branch rather than on `main`
+
+**`hold-15e-podcasts`** (pushed, `9fbb1cc`) — external podcast discovery via iTunes Search.
+**Green: 777/777 server tests**, current with `main`, formatted. Its server side was reviewed and is
+sound, its media-type gating **answers open follow-up 3**, and its provider was checked with a live
+`curl` rather than trusted.
+
+**It is held for a product reason, not a code one.** `ForYouScreen.kt:94` routes a podcast tap to
+`playerViewModel.playItem(item.id)` with **no external check** — three lines below a books branch
+that has one — so an external podcast hands a fabricated id to Media3. And **no podcast request flow
+exists on either client** to redirect to. `main` auto-deploys, so this is the same call `15e-books`
+was held for.
+
+**The underlying question is with Sofia (queue `969711e`)** and blocks nothing: she asked for request
+integration for **books and music, never podcasts**, so external podcast discovery has nowhere to
+land by design. The natural destination is not a request at all but a **one-tap subscribe by RSS
+feed** — Audiobookshelf supports it natively and iTunes already returns a `feedUrl`. Three options
+were put to her: build subscribe, ship it inert, or drop it.
+
+#### Named, unfixed, and deliberately so
+
+- **`MusicSearchScreen.kt`'s `SearchTrackRow` has the same missing-art defect** just fixed on the
+  unified search screen, and is now the **only** track row in the app without a cover tile. Named by
+  the wave rather than fixed, because it is a different screen.
+- **`.auralis-item-header__actions` has no `flex-wrap`** (`app.css:402-407`) and web's album header
+  is the first call site to put **four** controls in it. Playwright asserts testids and text and
+  structurally cannot see a compact-width overflow. **Wants an eyeball, not a test.**
+- **`SearchField`'s `aria-expanded` can go stale** — Mantine's `Popover` closes the dropdown
+  visually on an outside click, but this component keeps a parallel `useState` and is never told, so
+  a screen reader can briefly announce an expanded combobox with nothing open. Recorded in a comment
+  rather than fixed blind; the real fix needs its own keyboard pass.
+- **The non-clickable subtitle colour role still differs** (Android muted, web full emphasis). The
+  _clickable_ case was closed by `16e-album-A`. This belongs to a `SONORA.md` pass, not a screen wave.
+- **No test pins what happens to a click on a chip covered by an open suggestion dropdown.** Ruled
+  acceptable behaviour twice, by two independent reviewers — **do not re-open it** — but it is
+  asserted nowhere.
+
 ### 2026-08-20 — both claimed waves were salvaged from dead agents. **The album triple's web half is landing; `15e-podcasts` is HELD.**
 
 The session that claimed `16e-album-W` and `15e-podcasts` died. Neither wave was lost, but neither

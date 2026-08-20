@@ -3791,6 +3791,31 @@ boundaries, disjoint directories where waves run in parallel.
   to the first's server and both silently share one stateful single-tenant BFF. **So: one `-W` in
   flight at a time; `-A` halves and spec authoring parallelise freely.** Disjoint directories are
   necessary and no longer sufficient.
+- **`16e-search` — DONE, the fourth screen triple, and it delivers a standing user requirement.**
+  `main` `d58b48c`. Spec `docs/design/screens/SEARCH.md`; waves `16e-search-A` (`bc1e946`, compile
+  fix `a8adcd1`), `16e-search-W` (`222afa4`), a shared-primitive follow-up (`74609ac`, `866c6bb`),
+  `16e-search-P` clean, and `16e-search-A-2` (`d58b48c`) for the two divergences it found.
+
+  **Sofia's "global search needs suggestions" is delivered on both platforms.** No BFF change was
+  needed — suggestions derive client-side from responses already in flight, exactly as the spec
+  ruled. **Fourth triple running in which the composed strings matched byte for byte**, verified by
+  hex-dumping the Kotlin against web's source rather than by eye.
+
+  **The wave's most useful output is a correction to how specs are written.** `SEARCH.md`'s recon
+  was wrong twice about one file: `MusicRow` has **nine** call sites, not two, and track rows do not
+  use `MusicRow` at all — which is why Android's track results shipped through an entire triple with
+  **no cover art**, invisible to a client-to-client diff because no commit mentioned tracks.
+  **A spec's recon is a starting point, not a census. State in every future screen spec that the
+  implementing wave must verify the call sites it is handed and report the real count.**
+
+  **It also closed a writer-with-no-reader at a new level.** `SearchField`'s ARIA-combobox
+  suggestion mechanism had been complete and tested since it was written and had **never been passed
+  real data** — the fifth instance on this project, and the first at the **component-prop** level
+  rather than the route level. Wiring it revealed two things no amount of reading would have: no
+  close-on-blur, and no height bound at all (it uses Mantine's raw `Combobox`, so `maxDropdownHeight`
+  does not apply). **The mechanism was not wrong, it was unexercised** — which is the argument for
+  wiring these up rather than deleting them.
+
 - **`16e-album` — DONE, the third screen triple, and the first whose spec pre-ruled a divergence
   before it could happen.** `main` `18799b1`, green on `CI` and `Android`. Spec
   `docs/design/screens/ALBUM_DETAIL.md`; waves `16e-album-A` (`4979fc3`, plus `a114a38`/`79c0134`),
