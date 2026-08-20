@@ -3918,6 +3918,71 @@ boundaries, disjoint directories where waves run in parallel.
   artwork-derived colour and spring physics; Sonora is flat, accent-driven, and explicitly
   anti-spring. One of them has to stop being the spec. Also update `README.md` — see below.
 
+- **16c-6 / 16c-7 / 16c-8 — what is actually left of the `--m3-*` migration.** Measured 2026-08-21,
+  because the top-of-file table says `wip` while every wave bullet above says DONE. **Both are
+  correct**: each wave finished its own scope, and the phase's exit condition — `--m3-*` deleted
+  when the last consumer leaves — is not met. 501 occurrences remain across `apps/web/src` and
+  `packages/ui/src`, and the raw count badly overstates the work:
+
+  | bucket                                                                               | count    |
+  | ------------------------------------------------------------------------------------ | -------- |
+  | definition / emission layer (`styles/index.css`, `tokens/*.ts`, `ThemeProvider.tsx`) | ~254     |
+  | doc comments _explaining_ the migration, in files already fully migrated             | ~39      |
+  | documented-deliberate survivors (see below)                                          | ~20-25   |
+  | **live consumers — the actual residual work**                                        | ~120-130 |
+
+  A grep count conflates all four. `Card.css`, `Slider.css`, `Button.css`, `Chip.tsx`,
+  `IconButton.tsx` and `Dialog.tsx` are **fully migrated in code** — every remaining `--m3-` in them
+  is prose. An older `16b-2-P` finding at §16's tail still lists `Card` and `Slider` as partially
+  migrated; that is superseded and nothing marks it so.
+
+  The remaining waves:
+
+  - **`16c-6-W` — the last seven `packages/ui` primitives**, ~30 call sites: `Fab` (entirely
+    unmigrated), `NavigationBar`, `ListItem`, `TopAppBar`, `SearchField`, `Snackbar`, `Marquee`.
+    Same size as `16c-5-W`. `NavigationBar` is the risky one — its own header comment carries the
+    outstanding instruction to migrate the active indicator, and it is the file where a focused
+    element could be made to render identically to a selected one (the invisible-nav-pill defect
+    `16c-2-W-3` shipped once).
+  - **`16c-7-W` — `apps/web/src/styles/app.css`, ~85 live occurrences, never yet named as a wave.**
+    This is the big one, and **the docs understate it**: the existing note calls it
+    "onboarding/settings page-level CSS", but the real selector list spans Now Playing, the mini
+    player, the nav-rail search, the queue view, sleep timer, lyrics, chapter list, bookmarks, the
+    card grid and error surfaces — app-wide chrome. **Scope this against a fresh measurement, not
+    against that description.** It is one file, so it cannot be split by file boundary; split it by
+    selector group instead. Note `apps/web/src/styles/layoutOverflow.test.ts` parses this file as
+    text and pins specific rule bodies, so a CSS-only wave here **must** run `pnpm vitest run apps/web`
+    — Playwright cannot see that class of breakage.
+  - **`16c-8` — the `.m3-type-*` typography-role scale.** Cross-cutting: it touches every migrated
+    _and_ unmigrated component, every 16c wave has deliberately deferred it, and **no wave has ever
+    been named to close it**. Sonora defines its own `--text-*` / `--h1..h4-*` / `--heading-weight`
+    family (`SONORA.md` §1.8) that nothing consumes yet. This needs either a wave or an explicit
+    decision that the deferral is permanent — right now it is neither, which is how a deferral turns
+    into an accident.
+  - **A tag-along**: `apps/web/src/components/CoverImage.tsx`'s image-load-failure tile, 2 lines,
+    its own comment calls it "pre-Sonora", and no record marks it deliberate.
+
+  **Two survivors that are permanent and must not be "fixed":** `--m3-touch-target-min` (an app-wide
+  accessibility floor with no Sonora equivalent, 8 call sites) and `Menu.css`'s
+  `--m3-surface-container-high` (kept so the dropdown does not visually merge into the `Card` it
+  opens over — `Menu` has no scrim).
+
+  **This residue is web-only, and that is a real asymmetry rather than an oversight.** Android
+  finished the equivalent work in `16b-2-A` / `16f-A-1` / `16f-A-2`: `apps/android` has zero
+  `dynamicColor`/`dynamicLightColorScheme` usage — the only mention is a comment recording that
+  Sonora _replaced_ wallpaper-derived Material You — and every `MaterialTheme.colorScheme.*` read
+  resolves through the Sonora-populated scheme. So these waves take **no `-A` pair**, which is the
+  frontend-parity rule applied rather than skipped. **A `-P` is still owed once web catches up**:
+  `16c-1-P` and `16c-2-P` were both folded forward and no later `-P` ever closed that loop.
+
+- **The gallery's hand-maintained token list — small, real, and nearly clean.** `packages/ui/gallery/App.tsx`
+  declares its Sonora token names as literal `as const` arrays rather than deriving them from the CSS,
+  so a token added later without a gallery entry is silently uncovered. Measured 2026-08-21: 126
+  hand-written names against 98 real custom properties, and only **two** defined tokens are missing —
+  `--m3-background` (an alias, not a Sonora token) and `--surface-overlay-header` (already recorded
+  elsewhere as a writer with no reader). So the drift is negligible today and the _mechanism_ is
+  what wants fixing, not the current contents.
+
 ### Two structural changes the redesign makes that are not styling
 
 These are product changes riding inside a design deliverable, and they will be missed if the phase
