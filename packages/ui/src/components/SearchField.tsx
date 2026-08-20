@@ -63,6 +63,21 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listboxId = useId();
   const combobox = useCombobox();
+  /*
+   * Deliberately a parallel state rather than Mantine's own `combobox.dropdownOpened`.
+   *
+   * Known consequence, established by reading Mantine's `Combobox`/`Popover` source rather than
+   * guessed at: `Popover` defaults to `closeOnClickOutside`, so an outside click DOES visually
+   * dismiss the dropdown through the store — but this component is never told, so `open` (and
+   * therefore `aria-expanded`) stays `true` until the next focus or keystroke re-syncs them. A
+   * screen reader can briefly announce an expanded combobox with nothing visibly open.
+   *
+   * Narrow in practice — the search screen additionally gates its `suggestions` array on
+   * focus-within, so blur empties the list there — and left as-is rather than fixed blind. Reading
+   * `combobox.dropdownOpened` instead is the fix, and it would need its own keyboard-navigation
+   * pass, since this component owns its own key handling precisely because the raw `Combobox`
+   * primitive does not.
+   */
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
