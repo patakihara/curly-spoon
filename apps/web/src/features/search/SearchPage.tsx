@@ -40,7 +40,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Chip, ListItem, SearchField } from '@auralis/ui';
+import { Chip, ListItem, SearchField, type SearchSuggestion } from '@auralis/ui';
 import {
   useJellyfinConfigQuery,
   useJellyfinSearchQuery,
@@ -49,6 +49,8 @@ import {
   useProvidersQuery,
   useSetupQuery,
 } from '../../api/queries.js';
+import { useApi } from '../../api/ApiContext.js';
+import { CoverImage } from '../../components/CoverImage.js';
 import { useUiStore } from '../../state/uiStore.js';
 import { searchStatus } from './searchStatus.js';
 import {
@@ -64,6 +66,22 @@ import { requestabilitySections } from './searchRequestability.js';
 import { RequestableBooksSection } from './RequestableBooksSection.js';
 import { RequestableMusicSection } from './RequestableMusicSection.js';
 import { useDebouncedValue } from './useDebouncedValue.js';
+import { deriveSearchSuggestions, type SearchSuggestionEntry } from './searchSuggestions.js';
+
+/** Result-row art tile — `docs/design/screens/SEARCH.md` §3's `ResultRow` reference: 52px
+ * square, 6px radius (a literal, not a `--radius-*` token — web is always the "desktop" half
+ * of that table's split). `RESULT_ART_SIZE * 2` for `coverUrl`'s `width` follows this app's
+ * existing 2x-for-retina convention (`api.coverUrl` call sites elsewhere all request roughly
+ * double the rendered pixel size).
+ *
+ * §5's fallback text names `menu_book` for the book icon, which is not in this app's vendored
+ * `IconName` set at all (`packages/ui/src/components/Icon.tsx`'s glyph list has `book` and
+ * `book_2`, not `menu_book`) — a spec/implementation naming gap, not an app defect. Judgement
+ * call: `book_2` here, matching `ItemPage.tsx`'s own book-cover fallback (the page every book
+ * suggestion/result row navigates to), rather than the `book` glyph `forYouFeed.ts` uses for
+ * Home's shelf cards. */
+const RESULT_ART_SIZE = 52;
+const RESULT_ART_STYLE = { borderRadius: 6 };
 
 /** How long the unified search field must sit still before a debounced term feeds the
  * request-search fan-outs — see `useDebouncedValue.ts`'s header comment for why this
@@ -80,8 +98,24 @@ export function SearchPage() {
   const setQuery = useUiStore((s) => s.setSearchQuery);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const api = useApi();
   const searchFocusToken = useUiStore((s) => s.searchFocusToken);
   const trimmedQuery = query.trim();
+
+  // `SearchField.tsx` opens its suggestion dropdown on focus/typing but has no built-in
+  // close-on-blur — nothing needed one before this wave, since nothing ever passed it real
+  // suggestions. With real ones wired, Mantine's `Combobox.Dropdown` is `withinPortal={false}`
+  // and floats in place with no z-index awareness of what follows it in the page, so an open
+  // dropdown physically overlaps and intercepts clicks on the filter chips row directly below
+  // — a real, discoverable bug (type a query, then try to tap "Books" without dismissing the
+  // dropdown first), not just a test artifact; `search-view.spec.ts`'s existing chip tests
+  // caught it. §6.2's own visibility rule ("shows only while the field has focus") is the fix:
+  // enforced here, at the call site, by gating the `suggestions` array on whether focus is
+  // still somewhere inside the field wrapper — collapses `hasSuggestions` to false and the
+  // dropdown closes, without touching `SearchField.tsx` itself (out of this wave's scope).
+  // Clicking a suggestion is unaffected: its own `onMouseDown` already calls
+  // `preventDefault()` specifically so the input never blurs before the click registers.
+  const [fieldFocused, setFieldFocused] = useState(false);
 
   const [filters, setFilters] = useState<SearchFilterState>(DEFAULT_SEARCH_FILTER_STATE);
   const visible = visibleKinds(filters.primary, filters.secondary);
@@ -150,6 +184,66 @@ export function SearchPage() {
     authors.length > 0 ||
     hasMusicResults;
 
+  // Typed suggestions (docs/design/screens/SEARCH.md §6.2) — derived from the exact same
+  // arrays the results list below already renders, so the dropdown updates on the same
+  // cadence with zero new network traffic. `SearchField`'s own combobox/ARIA/keyboard
+  // machinery is untouched (`packages/ui/src/components/SearchField.tsx`); this page is only
+  // a consumer of its `suggestions`/`onSuggestionSelect` props. Only wired on this page's own
+  // field, not the desktop rail's — see `searchSuggestions.ts`'s caller-side note and §6.2's
+  // own reasoning (the rail navigates to `/search` on the first keystroke, leaving a dropdown
+  // no time to be useful).
+  const suggestionEntries = deriveSearchSuggestions({
+    books: books.map((b) => ({ id: b.id, title: b.media.title })),
+    series: series.map((s) => ({ id: s.id, title: s.name })),
+    authors: authors.map((a) => ({ id: a.id, title: a.name })),
+    podcasts: podcasts.map((p) => ({ id: p.id, title: p.media.title })),
+    artists: artists.map((a) => ({ id: a.id, title: a.name })),
+    albums: albums.map((a) => ({ id: a.id, title: a.name })),
+    // A track with no `albumId` has nowhere to navigate to (§5/§6.2) — filtered out here,
+    // matching the same exclusion the results list below already applies to that row.
+    tracks: tracks
+      .filter((t): t is typeof t & { albumId: string } => t.albumId != null)
+      .map((t) => ({ id: t.id, title: t.name, albumId: t.albumId })),
+  });
+  // `SearchField`'s `suggestions` prop is structurally typed `{ id, label }[]`; passing the
+  // richer `SearchSuggestionEntry[]` through it and reading the extra fields back off the
+  // object `onSuggestionSelect` hands back is safe without widening the primitive's own type
+  // — see `searchSuggestions.ts`'s `SearchSuggestionEntry` doc comment. Gated on
+  // `fieldFocused` — see that state's own doc comment for why.
+  const suggestions: SearchSuggestion[] = fieldFocused ? suggestionEntries : [];
+
+  function navigateToSuggestion(suggestion: SearchSuggestion) {
+    const entry = suggestion as SearchSuggestionEntry;
+    // Selection rule (§6.2): the field's text becomes the suggestion's plain title (not the
+    // "· Kind"-decorated label), so the field and the still-visible results list below stay
+    // coherent if the user navigates back.
+    setQuery(entry.title);
+    switch (entry.kind) {
+      case 'Book':
+      case 'Podcast':
+        void navigate({ to: '/item/$itemId', params: { itemId: entry.originalId } });
+        return;
+      case 'Series':
+        void navigate({ to: '/series/$seriesId', params: { seriesId: entry.originalId } });
+        return;
+      case 'Author':
+        void navigate({ to: '/author/$authorId', params: { authorId: entry.originalId } });
+        return;
+      case 'Artist':
+        void navigate({ to: '/music/artist/$artistId', params: { artistId: entry.originalId } });
+        return;
+      case 'Album':
+        void navigate({ to: '/music/album/$albumId', params: { albumId: entry.originalId } });
+        return;
+      case 'Track':
+        // A track's own navigation target is its album, not itself — same rule the results
+        // list's track rows already follow. `entry.albumId` is always set for a `Track`
+        // suggestion (`searchSuggestions.ts` only ever includes tracks with one).
+        void navigate({ to: '/music/album/$albumId', params: { albumId: entry.albumId! } });
+        return;
+    }
+  }
+
   // One status line covers every state — unconfigured, empty query, loading, no
   // matches, or a result count — so screen reader users get the same feedback a
   // sighted user reads visually. Kept as a single always-rendered node (never
@@ -177,12 +271,25 @@ export function SearchPage() {
   return (
     <div className="auralis-page" data-testid="search-page">
       <h1>Search</h1>
-      <div data-testid="search-field">
+      <div
+        data-testid="search-field"
+        onFocus={() => setFieldFocused(true)}
+        onBlur={(event) => {
+          // Only clear when focus has left the whole wrapper (not moved from the input to a
+          // child inside it) — `relatedTarget` is the element about to receive focus, `null`
+          // when nothing focusable claims it (e.g. a plain click on the page background).
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setFieldFocused(false);
+          }
+        }}
+      >
         <SearchField
           ref={inputRef}
           value={query}
           onChange={setQuery}
           placeholder="Search your library"
+          suggestions={suggestions}
+          onSuggestionSelect={navigateToSuggestion}
         />
       </div>
 
@@ -246,6 +353,14 @@ export function SearchPage() {
                       key={item.id}
                       data-testid={`search-result-${item.id}`}
                       headline={item.media.title}
+                      leading={
+                        <CoverImage
+                          src={api.coverUrl(item.id, { width: RESULT_ART_SIZE * 2 })}
+                          size={RESULT_ART_SIZE}
+                          fallbackIcon="book_2"
+                          style={RESULT_ART_STYLE}
+                        />
+                      }
                       onClick={() =>
                         void navigate({ to: '/item/$itemId', params: { itemId: item.id } })
                       }
@@ -315,6 +430,14 @@ export function SearchPage() {
                       key={item.id}
                       data-testid={`search-result-${item.id}`}
                       headline={item.media.title}
+                      leading={
+                        <CoverImage
+                          src={api.coverUrl(item.id, { width: RESULT_ART_SIZE * 2 })}
+                          size={RESULT_ART_SIZE}
+                          fallbackIcon="podcasts"
+                          style={RESULT_ART_STYLE}
+                        />
+                      }
                       onClick={() =>
                         void navigate({ to: '/item/$itemId', params: { itemId: item.id } })
                       }
@@ -342,6 +465,14 @@ export function SearchPage() {
                             key={artist.id}
                             data-testid={`search-result-${artist.id}`}
                             headline={artist.name}
+                            leading={
+                              <CoverImage
+                                src={api.jellyfinArtworkUrl(artist.id)}
+                                size={RESULT_ART_SIZE}
+                                fallbackIcon="music_note"
+                                style={RESULT_ART_STYLE}
+                              />
+                            }
                             onClick={() =>
                               void navigate({
                                 to: '/music/artist/$artistId',
@@ -363,6 +494,14 @@ export function SearchPage() {
                             key={album.id}
                             data-testid={`search-result-${album.id}`}
                             headline={album.name}
+                            leading={
+                              <CoverImage
+                                src={api.jellyfinArtworkUrl(album.id)}
+                                size={RESULT_ART_SIZE}
+                                fallbackIcon="music_note"
+                                style={RESULT_ART_STYLE}
+                              />
+                            }
                             onClick={() =>
                               void navigate({
                                 to: '/music/album/$albumId',
@@ -391,6 +530,14 @@ export function SearchPage() {
                               key={track.id}
                               data-testid={`search-result-${track.id}`}
                               headline={track.name}
+                              leading={
+                                <CoverImage
+                                  src={api.jellyfinArtworkUrl(track.id)}
+                                  size={RESULT_ART_SIZE}
+                                  fallbackIcon="music_note"
+                                  style={RESULT_ART_STYLE}
+                                />
+                              }
                               onClick={() =>
                                 void navigate({
                                   to: '/music/album/$albumId',
@@ -404,6 +551,14 @@ export function SearchPage() {
                               interactive={false}
                               data-testid={`search-result-${track.id}`}
                               headline={track.name}
+                              leading={
+                                <CoverImage
+                                  src={api.jellyfinArtworkUrl(track.id)}
+                                  size={RESULT_ART_SIZE}
+                                  fallbackIcon="music_note"
+                                  style={RESULT_ART_STYLE}
+                                />
+                              }
                             />
                           ),
                         )}

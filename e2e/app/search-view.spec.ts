@@ -27,9 +27,17 @@ test.describe.configure({ mode: 'serial' });
 /** Mantine's `Chip` is a styled checkbox (`<input type="checkbox">` + `<label>`),
  * not a `<button>` — its input is visually zero-size/opacity:0, so Playwright's
  * actionability check refuses to click it directly. Click the label, same as a
- * real pointer would (`e2e/ui/chip.spec.ts`, `browse.spec.ts`'s sort chips). */
-function clickChip(page: Page, testId: string) {
-  return page.getByTestId(testId).locator('label').first().click();
+ * real pointer would (`e2e/ui/chip.spec.ts`, `browse.spec.ts`'s sort chips).
+ *
+ * `Escape` first (wave 16e-search-W): a query that matches a real suggestion opens
+ * `SearchField`'s floating dropdown directly over this row, so a chip whose label sits
+ * under an open option is genuinely unclickable — not a test artifact, the same is true
+ * of a real pointer. That is standard combobox behaviour (Google's own search box has the
+ * same property) and the documented way to dismiss it is `Escape`, already wired in
+ * `SearchField.tsx`. A no-op when nothing is open. */
+async function clickChip(page: Page, testId: string) {
+  await page.keyboard.press('Escape');
+  await page.getByTestId(testId).locator('label').first().click();
 }
 
 const FAKE_JELLYFIN_BASE_URL = 'http://fake.jellyfin.local';
