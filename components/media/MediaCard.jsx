@@ -13,7 +13,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-mediacar
 }
 
 /** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
-export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore }) {
+export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, eyebrow, unplayed = false, savedBadge = false, markers }) {
   const mobile = platform === 'mobile';
   const small = size === 'sm';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
@@ -54,6 +54,16 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
             <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>more_vert</span>
           </button>
         )}
+        {/* New/unlistened is a property of the item, not of the card chrome, so it sits on the art
+            itself rather than in the caption — same corner PreviewButton/QuickPick use for it.
+            Dropped below the more-options button when both are present, so it doesn't paint
+            under that button's hit area. */}
+        {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:' + (showMore ? '40px' : '6px') + ';right:6px;width:10px;height:10px;border-radius:50%;background:var(--accent)')} />}
+        {savedBadge && (
+          <div aria-hidden="true" title="Saved" style={sx('position:absolute;left:8px;bottom:8px;width:22px;height:26px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-radius:0 0 var(--radius-xs) var(--radius-xs);background:var(--accent);color:var(--accent-contrast)')}>
+            <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>bookmark</span>
+          </div>
+        )}
         {/* Not in library: the real artwork, darkened — the item exists, you just don't have it yet.
             Sits at the bottom, clear of the corner menu and any progress the item might otherwise show. */}
         {absent && <div style={sx('position:absolute;inset:0;background:var(--scrim-strong)')} />}
@@ -73,8 +83,21 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           </React.Fragment>
         )}
       </div>
-      <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:700;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
-      <div style={sx('margin-top:2px;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
+      {/* Type-before-name: in a mixed shelf the kind of thing is scanned for first, so it leads
+          rather than trailing in `sub` — kept as its own line rather than folded into the title
+          so the title's own two-line clamp is untouched. */}
+      {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
+      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:700;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
+      {markers && markers.length > 0 ? (
+        <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0')}>
+          <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>
+            {markers.map((m, i) => <span key={i} style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;color:" + muted + ";font-variation-settings:'FILL' 1,'wght' 500")}>{m}</span>)}
+          </span>
+          <div style={sx('min-width:0;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
+        </div>
+      ) : (
+        <div style={sx('margin-top:2px;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
+      )}
     </div>
   );
 }

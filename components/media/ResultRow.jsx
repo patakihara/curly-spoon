@@ -10,7 +10,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-resultro
 }
 
 /** One row of a track / search / request list. Replaces the old TrackRow. */
-export function ResultRow({ title, meta, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false }) {
+export function ResultRow({ title, meta, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const pctMatch = /(\d+)\s*%/.exec(status || '');
@@ -57,10 +57,12 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-md)')}>
           <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
           {mobile && statusPill}
+          {mobile && trailing}
         </div>
         <div style={sx('font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{meta}</div>
       </div>
       {!mobile && statusPill}
+      {!mobile && trailing}
       {/* Inset to the text column, so the artwork column reads as one continuous edge. */}
       {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + (mobile ? '68px' : '80px') + ';height:1px;background:var(--surface-border)')} />}
     </div>

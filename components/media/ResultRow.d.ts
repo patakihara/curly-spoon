@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 /**
  * One row of a track, search-result or request list: art with a hover play/cancel action,
  * title + meta, and a status pill. A percentage in `status` (or an explicit `progress`)
@@ -20,5 +22,7 @@ export interface ResultRowProps {
   onAction?: () => void;
   /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */
   divider?: boolean;
+  /** Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. */
+  trailing?: ReactNode;
 }
 export declare function ResultRow(props: ResultRowProps): JSX.Element;

@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 /**
  * M3 connected button group — a row of segments that read as one control:
  * outer ends fully rounded, 8px inner corners, and the selected segment morphs
@@ -15,5 +17,9 @@ export interface ButtonGroupProps {
   value?: string;
   onChange?: (next: string) => void;
   platform?: 'desktop' | 'mobile';
+  /** Adds momentum scrolling and a soft edge fade so an overflowing row reads as scrollable, not clipped. */
+  scroll?: boolean;
+  /** A pinned, non-scrolling slot before the first segment — an account avatar, in every Spotify filter row. */
+  leading?: ReactNode;
 }
 export declare function ButtonGroup(props: ButtonGroupProps): JSX.Element;

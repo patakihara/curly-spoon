@@ -16,5 +16,9 @@ export interface QuickPickProps {
   image?: string;
   platform?: 'desktop' | 'mobile';
   onClick?: () => void;
+  /** 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. */
+  progress?: number | null;
+  /** Marks unlistened/new content with a small accent dot on the artwork's top-right. Ignored on the `icon` variant. */
+  unplayed?: boolean;
 }
 export declare function QuickPick(props: QuickPickProps): JSX.Element;

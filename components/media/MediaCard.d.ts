@@ -28,5 +28,13 @@ export interface MediaCardProps {
   onClick?: () => void;
   /** Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. */
   onMore?: (e?: any) => void;
+  /** Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. */
+  eyebrow?: string;
+  /** Marks unlistened/new content with a small accent dot on the artwork's top-right. */
+  unplayed?: boolean;
+  /** Bookmark tab on the artwork's bottom-left, for an item the user has explicitly saved. */
+  savedBadge?: boolean;
+  /** Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. */
+  markers?: string[];
 }
 export declare function MediaCard(props: MediaCardProps): JSX.Element;
