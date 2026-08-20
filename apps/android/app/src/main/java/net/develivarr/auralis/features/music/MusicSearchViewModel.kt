@@ -25,10 +25,10 @@ internal const val MUSIC_SEARCH_DEBOUNCE_MS = 400L
  * playing directly — see [MusicSearchScreen]'s own doc comment for why. [albumId] is nullable
  * because a Jellyfin track item is not guaranteed to carry a parent album id; such a row is
  * rendered non-interactive rather than as a dead click target that silently does nothing.
- * [coverUrl] defaults to `null` (unset by [MusicSearchScreen]'s own call site) — its own
- * `SearchTrackRow` renders no cover art and this wave does not change that; only wave
- * 16e-search-A-2's `UnifiedSearchScreen.kt` call site passes a real one, for its own
- * `MusicRow`-styled track row. */
+ * [coverUrl] defaults to `null` only for a caller with no server base URL to resolve against
+ * (e.g. a test building this type directly) — both real call sites, [MusicSearchScreen]'s own
+ * `SearchTrackRow` (16e-search-A-3) and `UnifiedSearchScreen.kt`'s own track row
+ * (16e-search-A-2), now pass a real one and render a cover-art tile. */
 data class MusicSearchTrackUi(
     val id: String,
     val title: String,
@@ -40,9 +40,13 @@ data class MusicSearchTrackUi(
 /** `internal`, not `private`: [net.develivarr.auralis.features.search.UnifiedSearchViewModel] (wave
  * 12b-A1) reuses this exact mapping for its own music-track search results, since a track
  * search hit is the identical shape regardless of which screen's query produced it.
- * [baseUrl] defaults to `null` (and therefore [MusicSearchTrackUi.coverUrl] to `null` too, via
- * [net.develivarr.auralis.features.music.jellyfinItemArtworkUrl]) so [MusicSearchScreen]'s own
- * call site, which never had cover art, is unaffected by construction. */
+ * [baseUrl] defaults to `null` only so a caller with no server base URL to resolve against (a
+ * test constructing a [MusicSearchTrackUi] directly) can omit it — [MusicSearchViewModel]'s own
+ * `performSearch` (16e-search-A-3) passes the real one it already resolves for the artist/album
+ * results on the same search, the same fix that closed 16e-search-A-2's `UnifiedSearchViewModel`
+ * call site. Before 16e-search-A-3 this screen's own call site passed no `baseUrl` at all, which
+ * is *why* [MusicSearchScreen]'s track rows never had cover art — not merely a missing tile, but
+ * a `coverUrl` that was always `null` on the wire into it. */
 internal fun JellyfinTrack.toSearchUi(baseUrl: String? = null): MusicSearchTrackUi =
     MusicSearchTrackUi(
         id = id,
@@ -203,7 +207,7 @@ class MusicSearchViewModel(
                             MusicSearchResultsUiState.Results(
                                 artists = result.artists.map { it.toUi(baseUrl) },
                                 albums = result.albums.map { it.toUi(baseUrl) },
-                                tracks = result.tracks.map { it.toSearchUi() },
+                                tracks = result.tracks.map { it.toSearchUi(baseUrl) },
                             ),
                     )
             is MusicSearchResult.Failed ->
