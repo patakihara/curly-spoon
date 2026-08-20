@@ -1,10 +1,19 @@
 /**
- * Onboarding step 3 — optional services. Jellyfin (music, Phase 8) and a
- * download client (book requests, Phase 6) have no configuration surface on the
- * BFF yet, so their fields are shown but disabled rather than wired to a fake
- * "test connection" that could never actually succeed — honesty over polish.
- * The step is entirely skippable; "Continue" and "Skip for now" both just move
- * on to the app, since there is nothing here to persist until those phases ship.
+ * Onboarding step 3 — optional services. Jellyfin (music) and a download client
+ * (book requests) both have real, working configuration surfaces today —
+ * `JellyfinConnectSection.tsx` and `ProviderSettingsSection.tsx`, both reachable
+ * from Settings — but wiring this step to them is out of scope for a restyle
+ * (SETTINGS.md §6.9): duplicating that flow here, one skip before the user has
+ * even signed in, is new feature scope. So the fields stay shown-but-disabled
+ * rather than wired to a fake "test connection" that could never actually
+ * succeed — honesty over polish — and each fieldset instead points at Settings,
+ * where the real thing already lives. The step is entirely skippable;
+ * "Continue" and "Skip for now" both just move on to the app.
+ *
+ * **Wave 16e-settings-W (SETTINGS.md §6.9):** the previous copy — "Support
+ * ships in a later phase" — was false for both services and had been for a
+ * while: Jellyfin shipped its connect flow in Phase 9, the download client's
+ * in Phase 6. This is a copy fix only; no flow change, no new wiring.
  */
 import { useNavigate } from '@tanstack/react-router';
 import { Button, Chip } from '@auralis/ui';
@@ -22,7 +31,7 @@ function ComingSoonService({
   return (
     <fieldset className="auralis-service-fieldset" disabled>
       <legend>
-        {name} <Chip variant="assist">Coming soon</Chip>
+        {name} <Chip variant="assist">Configure in Settings</Chip>
       </legend>
       <p className="auralis-field__hint">{description}</p>
       <label className="auralis-field">
@@ -50,12 +59,12 @@ export function ServicesPage() {
       <div className="auralis-services-list" data-testid="services-list">
         <ComingSoonService
           name="Jellyfin"
-          description="Powers the Music section. Support ships in a later phase."
+          description="Powers the Music section. Connect Jellyfin any time from Settings, once you're signed in."
           placeholder="https://jellyfin.example.com"
         />
         <ComingSoonService
           name="Download client"
-          description="Powers book requests (qBittorrent/Transmission). Support ships in a later phase."
+          description="Powers book requests (qBittorrent/Transmission). Configure download clients any time from Settings, once you're signed in."
           placeholder="https://qbittorrent.example.com"
         />
       </div>

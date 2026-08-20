@@ -61,6 +61,21 @@
  *    while the selected button's fill (still `--accent`) visibly moves, so a future
  *    regression that makes them merge (or that silently reverts to the orphaned ramp) both
  *    fail it.
+ * 7. (wave 16e-settings-W, SETTINGS.md §6.6) The theme-mode row moved from a hand-styled
+ *    `Button` (bullet 1's `aria-pressed` fix) onto `packages/ui`'s `Chip`, `variant=
+ *    "filter"` — the component that already encodes the selected/unselected treatment
+ *    bullet 6 duplicated by hand. `Chip`'s underlying control is Mantine's checkbox-shaped
+ *    `<input type="checkbox">` (`Chip.tsx`'s own header comment, `e2e/ui/chip.spec.ts`),
+ *    which carries no `aria-pressed` at all — selection is the input's native `checked`
+ *    state instead. So the assertions below moved from `toHaveAttribute('aria-pressed', …)`
+ *    on the `data-testid`'d element itself to `.toBeChecked()`/`.not.toBeChecked()` on its
+ *    `input` descendant, matching `chip.spec.ts`'s own established pattern — and any
+ *    assertion reading the chip's *painted* colour (bullet 6's unselected-fill check) now
+ *    targets the `label` descendant, since `Chip.tsx`'s styling lands there, not on the
+ *    `data-testid`'d wrapper `<span>`. This is `role="checkbox"`/checked-state semantics,
+ *    not a radio group, for three mutually-exclusive options — a real, named gap inherited
+ *    from `Chip.tsx` itself (out of scope for a screen-restyle wave), not something fixed
+ *    or worked around here.
  */
 import { expect, test } from '@playwright/test';
 
@@ -72,21 +87,27 @@ const DARK_ON_SURFACE = 'rgb(225, 225, 225)';
 const LIGHT_SURFACE = 'rgb(235, 235, 235)';
 const LIGHT_ON_SURFACE = 'rgb(25, 25, 25)';
 
-test('theme mode buttons expose aria-pressed for the active mode, matching the colour swatches below them', async ({
+test('theme mode chips expose native checked state for the active mode (wave 16e-settings-W, see file header bullet 7)', async ({
   page,
 }) => {
   await page.goto('/settings');
 
+  // `Chip`'s underlying control is an `<input type="checkbox">`, hidden and zero-size
+  // (Mantine paints the sibling `<label>` instead); `chip.spec.ts` establishes the same
+  // pattern — assert `.toBeChecked()` on the input, click the label.
+  const modeInput = (mode: string) => page.getByTestId(`theme-mode-${mode}`).locator('input');
+  const modeLabel = (mode: string) => page.getByTestId(`theme-mode-${mode}`).locator('label');
+
   // Fresh context, so the persisted store (`themeStore.ts`, `zustand/persist`) starts at
   // its own default, 'system'.
-  await expect(page.getByTestId('theme-mode-system')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('theme-mode-light')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.getByTestId('theme-mode-dark')).toHaveAttribute('aria-pressed', 'false');
+  await expect(modeInput('system')).toBeChecked();
+  await expect(modeInput('light')).not.toBeChecked();
+  await expect(modeInput('dark')).not.toBeChecked();
 
-  await page.getByTestId('theme-mode-dark').click();
-  await expect(page.getByTestId('theme-mode-dark')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('theme-mode-system')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.getByTestId('theme-mode-light')).toHaveAttribute('aria-pressed', 'false');
+  await modeLabel('dark').click();
+  await expect(modeInput('dark')).toBeChecked();
+  await expect(modeInput('system')).not.toBeChecked();
+  await expect(modeInput('light')).not.toBeChecked();
 });
 
 test('pinning a theme mode that disagrees with the OS syncs native color-scheme, not just data-theme', async ({
@@ -97,7 +118,9 @@ test('pinning a theme mode that disagrees with the OS syncs native color-scheme,
   // anyway — `data-theme` flipped, the actual rendering didn't.
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/settings');
-  await page.getByTestId('theme-mode-dark').click();
+  // Wave 16e-settings-W: `Chip`'s hidden zero-size `<input>` refuses a direct click
+  // (`chip.spec.ts`'s own established pattern) — click the visible `<label>` instead.
+  await page.getByTestId('theme-mode-dark').locator('label').click();
 
   const themeRoot = page.locator('.auralis-theme-root');
   await expect(themeRoot).toHaveAttribute('data-theme', 'dark');
@@ -172,14 +195,14 @@ test('.auralis-theme-root paints the correct background/text colour even when th
   // App pinned dark, OS light — the exact mismatch the bug report reproduced.
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/settings');
-  await page.getByTestId('theme-mode-dark').click();
+  await page.getByTestId('theme-mode-dark').locator('label').click();
   await expect(themeRoot).toHaveAttribute('data-theme', 'dark');
   await expect(themeRoot).toHaveCSS('background-color', DARK_SURFACE);
   await expect(themeRoot).toHaveCSS('color', DARK_ON_SURFACE);
 
   // App pinned light, OS dark — the reverse mismatch.
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.getByTestId('theme-mode-light').click();
+  await page.getByTestId('theme-mode-light').locator('label').click();
   await expect(themeRoot).toHaveAttribute('data-theme', 'light');
   await expect(themeRoot).toHaveCSS('background-color', LIGHT_SURFACE);
   await expect(themeRoot).toHaveCSS('color', LIGHT_ON_SURFACE);
@@ -238,10 +261,15 @@ test("Settings' unselected mode button stays neutral across an accent change, an
   // Default mode is 'system' (selected); 'light' and 'dark' are unselected. Only accent
   // swatches are clicked below — never a mode button — so 'system' stays selected and
   // 'light' stays unselected throughout, isolating the accent-change variable.
-  await expect(page.getByTestId('theme-mode-system')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('theme-mode-light')).toHaveAttribute('aria-pressed', 'false');
-  const selected = page.getByTestId('theme-mode-system');
-  const unselected = page.getByTestId('theme-mode-light');
+  //
+  // Wave 16e-settings-W: the mode row is now `Chip`, whose control is a checkbox-shaped
+  // `<input>` (no `aria-pressed`, see file header bullet 7) and whose fill is painted on
+  // its `<label>` descendant, not on the `data-testid`'d wrapper `<span>` — so selection
+  // is asserted via `.toBeChecked()` on `input`, and colour via `.evaluate()` on `label`.
+  await expect(page.getByTestId('theme-mode-system').locator('input')).toBeChecked();
+  await expect(page.getByTestId('theme-mode-light').locator('input')).not.toBeChecked();
+  const selected = page.getByTestId('theme-mode-system').locator('label');
+  const unselected = page.getByTestId('theme-mode-light').locator('label');
 
   const surfaceCard = await themeRoot.evaluate((el) =>
     getComputedStyle(el).getPropertyValue('--surface-card').trim(),

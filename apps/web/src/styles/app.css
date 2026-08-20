@@ -517,99 +517,122 @@ html body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--m3-space-lg);
+  padding: var(--spacing-lg);
 }
 
 .auralis-onboarding__card {
   width: 100%;
   max-width: 480px;
-  padding: var(--m3-space-xl);
+  padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-md);
+  gap: var(--spacing-md);
 }
 
 .auralis-onboarding__step {
-  color: var(--m3-on-surface-variant);
-  font-size: var(--m3-type-label-large-size);
+  color: var(--surface-fg-muted);
+  font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
 }
 
+/* Wave 16e-settings-W (SETTINGS.md §3.2): the card's title moves into Sonora's
+ * `--h3-size` region and picks up `MediaHeader`'s already-established
+ * weight-900 display face (`.auralis-item-header__title`, this file), rather
+ * than staying a plain default-weight headline. */
 .auralis-onboarding__title {
   margin: 0;
-  font-size: var(--m3-type-headline-medium-size);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--h3-size);
 }
 
 .auralis-onboarding__subtitle {
   margin: 0;
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted);
 }
 
 .auralis-onboarding-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--m3-space-sm);
-  margin-top: var(--m3-space-sm);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
 }
 
 .auralis-field {
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-xs);
+  gap: var(--spacing-xs);
 }
 
+/* `--m3-type-label-large-size` → `--text-sm` weight 700, muted — the `FieldRow`
+ * spec's own field-label treatment (SETTINGS.md §3.2). */
 .auralis-field__label {
-  font-size: var(--m3-type-label-large-size);
-  color: var(--m3-on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--surface-fg-muted);
 }
 
+/* `--m3-touch-target-min` (48px, an accessibility floor, not a Sonora design
+ * token) is deliberately left as-is — it is shared by every touch-target-sized
+ * control in the app (5 other call sites in this file alone), not scoped to
+ * this screen's family, and Sonora names no equivalent constant to replace it
+ * with. Migrating it is a separate, app-wide concern. */
 .auralis-field input {
   height: var(--m3-touch-target-min);
-  padding: 0 var(--m3-space-md);
-  border-radius: var(--m3-shape-sm);
-  border: 1px solid var(--m3-outline);
-  background: var(--m3-surface-container-lowest);
-  color: var(--m3-on-surface);
+  padding: 0 var(--spacing-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
+  color: var(--surface-fg);
 }
 
+/* `--m3-secondary` → `--accent`, matching `Slider.css`'s already-migrated
+ * focus-visible ring (`.m3-slider__track:focus-visible`) — the established
+ * post-migration idiom for a focus ring is the picked accent, not a fixed M3
+ * chroma role. */
 .auralis-field input:focus-visible {
-  outline: 3px solid var(--m3-secondary);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
 .auralis-field__hint {
-  color: var(--m3-on-surface-variant);
-  font-size: var(--m3-type-body-small-size);
+  color: var(--surface-fg-muted);
+  font-size: var(--text-xs);
 }
 
+/* `--m3-error`/`--m3-error-container`/`--m3-on-error-container` → `--state-error`
+ * plus a translucent `color-mix` tint, matching Sonora's own `ResultRow` status-
+ * pill pattern (SONORA.md §3.8: `color: var(--tone-{tone})` on the text,
+ * `background: color-mix(in oklch, transparent 78%, var(--tone-{tone}))` for the
+ * fill) rather than a separate "on-container" text role. */
 .auralis-field-error {
-  border: 1px solid var(--m3-error);
-  background: var(--m3-error-container);
-  color: var(--m3-on-error-container);
-  border-radius: var(--m3-shape-sm);
-  padding: var(--m3-space-md);
+  border: 1px solid var(--state-error);
+  background: color-mix(in oklch, transparent 78%, var(--state-error));
+  color: var(--state-error);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
 }
 
 .auralis-field-error strong {
   display: block;
-  margin-bottom: var(--m3-space-xs);
+  margin-bottom: var(--spacing-xs);
 }
 
 .auralis-services-list {
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-md);
+  gap: var(--spacing-md);
 }
 
 .auralis-service-fieldset {
-  border: 1px solid var(--m3-outline-variant);
-  border-radius: var(--m3-shape-md);
-  padding: var(--m3-space-md);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
 }
 
 /* ---------------------------------------------------------------------------
@@ -618,16 +641,16 @@ html body {
 
 .auralis-settings-row {
   display: flex;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
-  margin-bottom: var(--m3-space-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .auralis-color-swatch {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid var(--m3-outline-variant);
+  border: 2px solid var(--surface-border);
   cursor: pointer;
   padding: 0;
 }
@@ -650,9 +673,9 @@ html body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--m3-space-md);
-  padding: var(--m3-space-sm) 0;
-  border-bottom: 1px solid var(--m3-outline-variant);
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--surface-border);
 }
 
 /* ---------------------------------------------------------------------------
