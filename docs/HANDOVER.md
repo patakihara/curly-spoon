@@ -229,7 +229,6 @@ built and held on branch `hold-15e-podcasts` — she asked for request integrati
 never podcasts, so it needs a decision on what tapping an external podcast should do, most likely a
 one-tap RSS subscribe rather than a request flow). Ask when there is a channel to her.
 
-
 **Answered and closed, so nobody re-opens them:** 12c-2 (an owned title shows in search but is not
 requestable — same rule for artist/author pages), direct play vs transcode (transcode is fine),
 `LinearProgress`'s `wavy` (drop the prop rather than leave one that lies), `GET /requests` scoping
@@ -753,6 +752,48 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
+### RELEASED 2026-08-21 — **`v0.2.0`, the first Android release since `v0.1.0`**
+
+**Sofia asked for this directly: the Android app had not been re-released.** She was right —
+`v0.1.0` (2026-08-16) was **310 commits back, 40 of them touching `apps/android`**, so the entire
+Sonora redesign had shipped to `main` and was installable by nobody. **Cutting a tag is the only
+route: neither `release.yml` nor `fdroid-repo.yml` has a `workflow_dispatch`, so both fire on `v*`
+only.**
+
+Tagged on `e9c2c10`, verified green on `CI` **and** `Android` first, with the Android job confirmed
+as a genuine uncached execution. `versionCode` is the tag's 1-based position in semver order, so
+`v0.2.0` → **code 2**, strictly increasing over `v0.1.0`.
+
+**THE VERIFICATION THAT MATTERS, because `v0.1.0` proved green workflows are not evidence.** That
+release published a correctly-signed APK and a valid index and was still broken for a human: the
+docs named a URL that 404'd, and the index declared a `repo.address` that disagreed with where Pages
+served it — so a client could add the repo, list the app, and fail only at **install**. The fix
+(staging `site/repo/` so the served layout matches the declared address) landed afterwards and,
+because these workflows run on tags only, **`v0.2.0` was the first time it ever executed.**
+
+So it was checked end to end, against the URL the documentation gives a human:
+
+| Check                                          | Result                                                                           |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- |
+| `GET /curly-spoon/repo/index-v2.json`          | **200**                                                                          |
+| `GET /curly-spoon/repo/entry.jar`              | **200**                                                                          |
+| `repo.address` the index declares about itself | `https://patakihara.github.io/curly-spoon/repo` — **matches where it is served** |
+| Package / version / code                       | `net.develivarr.auralis` · `0.2.0` · **2**                                       |
+| The APK path the index points at               | **200, 15,329,011 bytes**                                                        |
+
+**The install path is therefore proved, not assumed** — the v0.1.0 failure mode is closed.
+
+**One caveat that cannot be checked from this machine, stated rather than glossed.** If an existing
+install refuses to update with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the two releases were signed
+with different certificates and the fix is to uninstall and reinstall. Both were built through the
+same `ANDROID_*`-secret release signing config, whose `check-secrets` guard fails loudly rather than
+falling back to a debug key, so this is unlikely — but confirming it needs `apksigner`, and there is
+no JDK here.
+
+**Also worth knowing: the index lists only `0.2.0`.** `fdroid update` sees just the APK built in
+that run, so the repo serves the latest release rather than a history. Fine for one household;
+surprising if anyone expects to roll back from Droid-ify.
+
 ### DONE 2026-08-21 — `16h-chip-singleselect`. Verified by the orchestrator, not the wave.
 
 `Chip` gains **one opt-in prop, `radioGroup?: string`**, which passes `type="radio"` and a shared
@@ -983,7 +1024,6 @@ That edit also earned the splice guard its place: the first attempt anchored fro
 spanning §6.5–§6.9, and would have silently deleted five sections — the exact failure this file
 documents under "Diff every edit". The heading-count assertion fired before anything was written.
 
-
 ### Wave records, 2026-08-17 → 2026-08-21, moved to `ROADMAP.md`
 
 `docs/ROADMAP.md`'s **"Wave records and session hand-offs, 2026-08-17 → 2026-08-21"** section
@@ -995,10 +1035,17 @@ and each record was superseded before this move happened. Standing lessons they 
 not already recorded elsewhere were folded into "Lessons that must not be relearned" below in the
 same commit.
 
-
 ---
 
 ## Lessons that must not be relearned
+
+### Do not thread ISBN into `ExternalCandidate.identifiers`
+
+Established by `15e-books` and verified by a reviewer reading the code rather than accepting the
+claim. `ownership.ts`'s `comparePair` treats a **same-field-different-value** identifier match as a
+**veto** that bypasses title/author matching entirely — and an audiobook's ISBN is commonly absent
+from the print work's ISBN array. So threading ISBN through would make genuinely-owned titles leak
+back into the "you don't have this" shelf. It reads like an obvious improvement and is not one.
 
 Each of these was paid for. They are compressed on purpose — the wave-by-wave telling is in
 `docs/ROADMAP.md`.
