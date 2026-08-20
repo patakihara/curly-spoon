@@ -1042,10 +1042,44 @@ wrote it**, and each wave's targeted tests were green.
 #### Open, named, none blocking
 
 - **A SEVENTH writer-with-no-reader:** `RecommendationShelf.itemLabels` is written, typed and tested,
-  and **no client on either platform reads it**. Related: **`parentId` has no writer anywhere in
-  `apps/server/src`** outside types and tests — which makes Sofia's "no two episodes of one podcast"
-  a **data-plumbing** problem, not a logic one. `dedupeByParent` and `typeLabelsFor` already exist and
-  are tested. **This significantly narrows `16e-foryou-shelves-*`.**
+  and **no client on either platform reads it**. That half stands.
+
+  **CORRECTED 2026-08-21 — the `parentId` half of this bullet was wrong, and acting on it would have
+  cost a wave.** It read: "`parentId` has no writer anywhere in `apps/server/src`, which makes
+  Sofia's 'no two episodes of one podcast' a **data-plumbing** problem, not a logic one... this
+  significantly narrows `16e-foryou-shelves-*`." A wave was about to be dispatched on exactly that
+  premise. The premise inverts the actual situation.
+
+  **`parentId` has no writer because nothing can currently feed it, and the code says so in its own
+  doc comment** (`features/recommendations/types.ts:55-70`). Verified by reading the three adapters
+  rather than inferring: `adapt.ts` emits `kind: 'book'` at item granularity and `kind: 'podcast'`
+  at **whole-show** granularity (`item.id`), and `adaptMusic.ts` emits `kind: 'album'`. There is no
+  episode candidate and no track candidate anywhere in this feature. So `dedupeByParent` is not
+  broken plumbing waiting for a value — it is **correctly dormant machinery**, built ahead of a
+  granularity that does not exist yet, and `parentKeyOf`'s fallback chain is doing the right thing
+  today.
+
+  **The consequence: the recommendations feature cannot violate Sofia's requirement, because it
+  never emits an episode.** Two episodes of one show can only appear on a code path that actually
+  carries episodes — and For You stitches **four** sources, of which this is one. Audiobookshelf's
+  own personalized shelves are a separate source (`routes/libraries.ts:56` describes consuming
+  them), and `PodcastEpisode` is a real domain type with its own identity
+  (`packages/abs-client/src/domain.ts:134-144`). **That is where the requirement bites, and nobody
+  has established it does.**
+
+  **So `16e-foryou-shelves-*` is not narrowed to plumbing — it is unscoped, and its first job is a
+  recon question, not an implementation:** which of For You's four sources can actually surface two
+  episodes of one show? Answer that before building anything. Adding a `parentId` writer to the
+  recommendations feature first would be this project's eighth writer-with-no-reader, inverted — a
+  reader wired to an input nothing produces.
+
+  **The generalisable half:** the original bullet was written from a grep (`parentId` appears only
+  in types and tests) without reading the doc comment sitting on the field, which states the reason
+  in full. **A grep establishes absence; it does not establish that the absence is a defect.** This
+  file's own standing pair of lessons — a doc claiming parity is not evidence of parity, and a doc
+  claiming a gap is not evidence of a gap — now has a third member: **an absence found by grep is
+  not evidence of a gap either.** Check whether the code explains itself before filing it as owed.
+
 - **`FOR_YOU.md` §9/§10 scoped the same geometry tables in different words**, so the two waves
   correctly built different amounts. **The defect is the document's.** `SETTINGS.md` already applies
   the fix; it is the last spec, so the lesson has nowhere else to go.
