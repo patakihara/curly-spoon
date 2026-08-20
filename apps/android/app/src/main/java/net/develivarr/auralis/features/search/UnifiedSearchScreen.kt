@@ -10,8 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -22,9 +28,19 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -54,13 +70,21 @@ import java.util.Locale
  * Artists, Albums, Tracks — omitting any section with nothing in it, the same "no empty
  * headers" choice `MusicSearchScreen.kt`'s own search results section already makes.
  *
- * Navigation per kind: podcasts open [net.develivarr.auralis.navigation.Routes.podcastDetail]; music
- * artists/albums open their existing detail routes; a music track opens its album, same
- * non-interactive-when-no-album-id treatment as `MusicSearchScreen.kt`'s own `SearchTrackRow`.
- * **Books, series and authors have no detail route anywhere in this app yet** (confirmed by
- * reading `AuralisNavHost.kt`'s `Routes` object), so those three kinds render as plain,
- * non-interactive rows rather than as dead tap targets — see [SearchBookUi]/[SearchSeriesUi]/
- * [SearchAuthorUi]'s own doc comments.
+ * Navigation per kind: books open [net.develivarr.auralis.navigation.Routes.bookDetail] (wave
+ * 16e-search-A — `Routes.bookDetail` landed with `16e-book-A` and this row was a dead tap target
+ * behind a since-stale comment until now); podcasts open
+ * [net.develivarr.auralis.navigation.Routes.podcastDetail]; music artists/albums open their
+ * existing detail routes; a music track opens its album, same non-interactive-when-no-album-id
+ * treatment as `MusicSearchScreen.kt`'s own `SearchTrackRow`. **Series and authors still have no
+ * detail route anywhere in this app** (confirmed by reading `AuralisNavHost.kt`'s `Routes`
+ * object), so those two kinds render as plain, non-interactive rows rather than as dead tap
+ * targets, and are excluded from suggestions entirely too — see [SearchSeriesUi]/
+ * [SearchAuthorUi]'s own doc comments and [deriveSearchSuggestions]'s.
+ *
+ * **16e-search-A adds a typeahead suggestion dropdown** ([UnifiedSearchQueryArea],
+ * [deriveSearchSuggestions]) and a live-region status line ([unifiedSearchStatus]) — see
+ * `docs/design/screens/SEARCH.md` §6.2/§6.4 for the shared behaviour contract both platforms
+ * build to.
  *
  * **12b-A2 adds two "Available to request" groups** — non-library books and music, clearly
  * separated from the library sections above by their own heading, mirroring
@@ -95,6 +119,34 @@ fun UnifiedSearchScreen(
     val uiState by viewModel.uiState.collectAsState()
     val visible = visibleKinds(uiState.filters.primary, uiState.filters.secondary)
     val secondaryOptions = secondaryFilterOptions(uiState.filters.primary)
+    // Both derived here, every recomposition, from uiState alone — cheap pure functions, no
+    // memoisation needed. See SearchStatus.kt/SearchSuggestions.kt's own doc comments.
+    val resultsState = uiState.resultsState
+    val statusText =
+        unifiedSearchStatus(
+            libraryUnconfigured = uiState.libraryUnconfigured,
+            query = uiState.query,
+            trimmedQuery = uiState.query.trim(),
+            isLoading = resultsState is UnifiedSearchResultsUiState.Searching,
+            counts =
+                if (resultsState is UnifiedSearchResultsUiState.Results) {
+                    UnifiedSearchStatusCounts(
+                        books = resultsState.books.size,
+                        podcasts = resultsState.podcasts.size,
+                        artists = resultsState.artists.size,
+                        albums = resultsState.albums.size,
+                        tracks = resultsState.tracks.size,
+                    )
+                } else {
+                    UnifiedSearchStatusCounts()
+                },
+        )
+    val suggestions =
+        if (resultsState is UnifiedSearchResultsUiState.Results) {
+            deriveSearchSuggestions(resultsState)
+        } else {
+            emptyList()
+        }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Search") }) },
@@ -106,11 +158,30 @@ fun UnifiedSearchScreen(
                     .padding(horizontal = 16.dp),
         ) {
             item {
-                OutlinedTextField(
-                    value = uiState.query,
-                    onValueChange = viewModel::onQueryChange,
-                    label = { Text("Books, podcasts, artists, albums, or tracks") },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                UnifiedSearchQueryArea(
+                    query = uiState.query,
+                    onQueryChange = viewModel::onQueryChange,
+                    statusText = statusText,
+                    suggestions = suggestions,
+                    onSelectSuggestion = { suggestion ->
+                        // (1) of §6.2's "Selection" rule — the plain title, not the decorated
+                        // "· Kind" label, so the field and the still-visible results list below
+                        // stay coherent if the user navigates back.
+                        viewModel.onQueryChange(suggestion.title)
+                        // (2) — the same route that kind's row in the full results list below
+                        // already navigates to. No new routes.
+                        when (val target = suggestion.target) {
+                            is SearchSuggestionTarget.Book -> navController.navigate(Routes.bookDetail(target.id))
+                            is SearchSuggestionTarget.Podcast ->
+                                navController.navigate(Routes.podcastDetail(target.id))
+                            is SearchSuggestionTarget.Artist ->
+                                navController.navigate(Routes.musicArtistDetail(target.id))
+                            is SearchSuggestionTarget.Album ->
+                                navController.navigate(Routes.musicAlbumDetail(target.id))
+                            is SearchSuggestionTarget.TrackAlbum ->
+                                navController.navigate(Routes.musicAlbumDetail(target.albumId))
+                        }
+                    },
                 )
             }
             item {
@@ -143,6 +214,7 @@ fun UnifiedSearchScreen(
                 state = uiState.resultsState,
                 visible = visible,
                 imageLoader = container.imageLoader,
+                onOpenBook = { itemId -> navController.navigate(Routes.bookDetail(itemId)) },
                 onOpenPodcast = { itemId -> navController.navigate(Routes.podcastDetail(itemId)) },
                 onOpenArtist = { artistId -> navController.navigate(Routes.musicArtistDetail(artistId)) },
                 onOpenAlbum = { albumId -> navController.navigate(Routes.musicAlbumDetail(albumId)) },
@@ -157,10 +229,15 @@ fun UnifiedSearchScreen(
     }
 }
 
-private fun LazyListScope.searchResultsSection(
+/** `internal`, not `private`, so [UnifiedSearchScreenTest] can compose it directly against
+ * plain state inside its own `LazyColumn`, without an [AppContainer]/ViewModel/
+ * `NavHostController` — the same "Content" split `BookDetailContent`/`PodcastDetailContent`/
+ * `AlbumDetailContent` already establish for their own screens. */
+internal fun LazyListScope.searchResultsSection(
     state: UnifiedSearchResultsUiState,
     visible: VisibleKinds,
     imageLoader: ImageLoader,
+    onOpenBook: (String) -> Unit,
     onOpenPodcast: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onOpenAlbum: (String) -> Unit,
@@ -208,9 +285,12 @@ private fun LazyListScope.searchResultsSection(
                         subtitle = book.subtitle,
                         coverUrl = book.coverUrl,
                         imageLoader = imageLoader,
-                        // No book-detail route exists yet — non-interactive rather than a dead
-                        // tap target, per this file's own doc comment.
-                        onClick = null,
+                        // Routes.bookDetail(itemId) exists (16e-book-A) — this row used to be a
+                        // dead tap target behind a since-stale "no route exists" comment.
+                        onClick = { onOpenBook(book.id) },
+                        artSize = SEARCH_ROW_ART_SIZE,
+                        artCornerRadius = SEARCH_ROW_ART_RADIUS,
+                        fallbackIcon = Icons.AutoMirrored.Filled.MenuBook,
                     )
                 }
             }
@@ -238,6 +318,9 @@ private fun LazyListScope.searchResultsSection(
                         coverUrl = podcast.coverUrl,
                         imageLoader = imageLoader,
                         onClick = { onOpenPodcast(podcast.id) },
+                        artSize = SEARCH_ROW_ART_SIZE,
+                        artCornerRadius = SEARCH_ROW_ART_RADIUS,
+                        fallbackIcon = Icons.Filled.Podcasts,
                     )
                 }
             }
@@ -259,6 +342,9 @@ private fun LazyListScope.searchResultsSection(
                         coverUrl = artist.coverUrl,
                         imageLoader = imageLoader,
                         onClick = { onOpenArtist(artist.id) },
+                        artSize = SEARCH_ROW_ART_SIZE,
+                        artCornerRadius = SEARCH_ROW_ART_RADIUS,
+                        fallbackIcon = Icons.Filled.MusicNote,
                     )
                 }
             }
@@ -271,6 +357,9 @@ private fun LazyListScope.searchResultsSection(
                         coverUrl = album.coverUrl,
                         imageLoader = imageLoader,
                         onClick = { onOpenAlbum(album.id) },
+                        artSize = SEARCH_ROW_ART_SIZE,
+                        artCornerRadius = SEARCH_ROW_ART_RADIUS,
+                        fallbackIcon = Icons.Filled.MusicNote,
                     )
                 }
             }
@@ -530,6 +619,86 @@ private fun LazyListScope.sectionHeader(label: String) {
             modifier = Modifier.padding(top = 16.dp),
         )
     }
+}
+
+/** `docs/design/screens/SEARCH.md` §3's "Result row art size" — 52dp, down from [MusicRow]'s own
+ * 56dp default, on this screen's book/podcast/artist/album rows only (see [MusicRow]'s own doc
+ * comment on why the default itself is unchanged). */
+private val SEARCH_ROW_ART_SIZE = 52.dp
+
+/** §3's "Result row art radius" — 8dp, "Android is always the 'mobile' case" per that row's own
+ * Source column. */
+private val SEARCH_ROW_ART_RADIUS = 8.dp
+
+/**
+ * The search field, its status line (§6.4) and its typeahead suggestion dropdown (§6.2) —
+ * `internal`, split out of [UnifiedSearchScreen] so [UnifiedSearchScreenTest] can compose it
+ * directly against plain state, the same "Content" split `BookDetailContent` already
+ * establishes, rather than needing a full [AppContainer]/ViewModel/`NavHostController`.
+ *
+ * §10 names `ExposedDropdownMenuBox`/`DropdownMenu` as the natural fit; this uses a plain
+ * [DropdownMenu] anchored to a [Box] around the field instead, since `ExposedDropdownMenuBox`'s
+ * `Modifier.menuAnchor()` API changed shape across recent Material3 versions and nothing here
+ * can compile against the pinned one to confirm which overload applies — the *behaviour* is
+ * §10's actual contract, not the specific composable. `PopupProperties(focusable = false)` keeps
+ * the popup from stealing focus off the field the instant it opens, which would otherwise
+ * immediately close it again via [showSuggestions]'s own focus condition.
+ */
+@Composable
+internal fun UnifiedSearchQueryArea(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    statusText: String,
+    suggestions: List<SearchSuggestionUi>,
+    onSelectSuggestion: (SearchSuggestionUi) -> Unit,
+) {
+    // §6.2's "Visibility" rule: field focused, query non-empty, at least one candidate — mirrors
+    // SearchField.tsx's hasSuggestions/showList gating exactly, per that section's own wording.
+    var fieldFocused by remember { mutableStateOf(false) }
+    val showSuggestions = fieldFocused && query.trim().isNotEmpty() && suggestions.isNotEmpty()
+
+    Box(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            label = { Text("Books, podcasts, artists, albums, or tracks") },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag("search-field")
+                    .onFocusChanged { fieldFocused = it.isFocused },
+        )
+        DropdownMenu(
+            expanded = showSuggestions,
+            onDismissRequest = { fieldFocused = false },
+            properties = PopupProperties(focusable = false),
+        ) {
+            suggestions.forEach { suggestion ->
+                DropdownMenuItem(
+                    text = { Text(suggestion.label) },
+                    onClick = { onSelectSuggestion(suggestion) },
+                    modifier =
+                        Modifier
+                            .testTag("search-suggestion-${suggestion.id}")
+                            // §11's "Suggestion listbox, Android" — no Compose-native combobox
+                            // semantics to inherit, so this is the explicit contentDescription
+                            // TalkBack needs, matching the same visible label sighted users see.
+                            .semantics { contentDescription = suggestion.label },
+                )
+            }
+        }
+    }
+    // §11's "Status announcement" — Modifier.semantics { liveRegion = Polite } is Compose's
+    // direct equivalent of web's aria-live="polite" on its own status <p>.
+    Text(
+        text = statusText,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .testTag("search-status")
+                .semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 /** One music track search result — the same shape and the same "no `clickable` modifier at all

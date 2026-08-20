@@ -40,10 +40,15 @@ import net.develivarr.auralis.features.requests.TitleRequestState
  * the more relevant one to follow. */
 internal const val UNIFIED_SEARCH_DEBOUNCE_MS = 400L
 
+/** The wire code `apps/server/src/httpErrors.ts` sends for `NotConfiguredError` (Audiobookshelf
+ * unconfigured) — the exact ABS-side counterpart to [net.develivarr.auralis.features.music
+ * .JELLYFIN_NOT_CONFIGURED_CODE]. [fetchLibraryResults] catches it the same calm way
+ * [fetchMusicResults] already catches Jellyfin's. */
+internal const val LIBRARY_NOT_CONFIGURED_CODE = "not_configured"
+
 /** One book (or, more precisely, one Audiobookshelf library item scoped to a `book` library) on
- * [UnifiedSearchScreen]. There is no book-detail route anywhere in this app yet (checked
- * `AuralisNavHost.kt`'s `Routes` object — only [net.develivarr.auralis.navigation.Routes.podcastDetail]
- * exists among library-item detail routes), so a row of this shape renders inert: see
+ * [UnifiedSearchScreen]. [net.develivarr.auralis.navigation.Routes.bookDetail] exists as of
+ * `16e-book-A`, so this row navigates like [SearchPodcastUi] does — see
  * [UnifiedSearchScreen]'s own doc comment. */
 data class SearchBookUi(val id: String, val title: String, val subtitle: String?, val coverUrl: String?)
 
@@ -176,6 +181,19 @@ data class UnifiedSearchUiState(
      * comment for why the two must never be coupled into one settle point. */
     val requestableBooksState: RequestableBooksUiState = RequestableBooksUiState.Idle,
     val requestableMusicState: RequestableMusicUiState = RequestableMusicUiState.Idle,
+    /**
+     * Whether Audiobookshelf is connected — the status line's message 1 (`docs/design/screens/
+     * SEARCH.md` §6.4). Unlike web, which knows `absConfigured` before any query is typed (an
+     * upfront react-query fetch), this is only *learned* the first time [performSearch] actually
+     * settles a search — the same "derive it from the search flow, don't invent a second
+     * pattern" shape [UnifiedSearchResultsUiState.Results.musicUnconfigured] already has. It
+     * lives on this top-level state, not inside [resultsState], specifically so it *survives*
+     * [onQueryChange] resetting [resultsState] back to [UnifiedSearchResultsUiState.Idle] when
+     * the field is cleared — without that, "Connect Audiobookshelf…" would silently flip back to
+     * "Start typing…" the moment a user backspaced their query, which §6.4's ordering (message 1
+     * outranks message 2) rules out.
+     */
+    val libraryUnconfigured: Boolean = false,
 )
 
 /**
@@ -328,6 +346,11 @@ class UnifiedSearchViewModel(
                             musicError = music.error,
                             musicUnconfigured = music.unconfigured,
                         ),
+                    // Written unconditionally on every settle, not only when true — see this
+                    // field's own doc comment on UnifiedSearchUiState for why it must survive a
+                    // subsequent cleared-query reset, and a corrected value (ABS reconnected
+                    // mid-session) should still overwrite a stale one.
+                    libraryUnconfigured = library.unconfigured,
                 )
         }
     }
@@ -577,8 +600,15 @@ class UnifiedSearchViewModel(
         /** Non-null only when the whole library side failed outright — `GET /libraries` itself
          * erroring. A single library's own `searchLibrary` call failing is *not* this: it just
          * drops that library's contribution (see [fetchLibraryResults]'s own comment), leaving
-         * this null so the other libraries' real results still render normally. */
+         * this null so the other libraries' real results still render normally. Never set
+         * together with [unconfigured] — see that field's own doc comment. */
         val error: String? = null,
+        /** True when `GET /libraries` itself failed with [LIBRARY_NOT_CONFIGURED_CODE] —
+         * Audiobookshelf has no stored credential at all, the calm precondition case, not a
+         * failure. Mirrors [MusicFanOutResult.unconfigured]'s identical distinction on the music
+         * side; when this is true, [error] is left null so the status line (§6.4) shows message
+         * 1 rather than a generic failure. */
+        val unconfigured: Boolean = false,
     )
 
     /** Books and podcasts share one Audiobookshelf-backed fan-out: `GET /libraries` gives the
@@ -593,7 +623,14 @@ class UnifiedSearchViewModel(
             try {
                 apiClient.libraries().filter { it.mediaType == "book" || it.mediaType == "podcast" }
             } catch (e: ApiException) {
-                return LibraryFanOutResult(error = e.message)
+                return if (e.code == LIBRARY_NOT_CONFIGURED_CODE) {
+                    // Calm, not an error — no Audiobookshelf connected is a precondition, not a
+                    // search failure. See LibraryFanOutResult.unconfigured's own doc comment,
+                    // and MusicFanOutResult's identical distinction on the music side just below.
+                    LibraryFanOutResult(unconfigured = true)
+                } else {
+                    LibraryFanOutResult(error = e.message)
+                }
             }
         if (libraries.isEmpty()) return LibraryFanOutResult()
 
