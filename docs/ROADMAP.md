@@ -4141,3 +4141,2495 @@ the very breakpoints Sonora re-cuts. Budget them into 16d rather than treating t
 **There is no visual-regression testing at all** — no `toHaveScreenshot`, no snapshot dirs. For a
 phase that is entirely about appearance, that is the gap worth closing early, and the `packages/ui`
 gallery is where it is cheapest to add.
+
+---
+
+## Wave records and session hand-offs, 2026-08-17 → 2026-08-21 (relocated from HANDOVER.md)
+
+**Moved here verbatim on 2026-08-21, wave `16i-handover-prune`, and not summarised.**
+`docs/HANDOVER.md` is `@`-imported into every session in this repo, so its length is paid for on
+every turn of every session; `CLAUDE.md` says to keep it short and put wave narrative here instead.
+These ~20 dated session hand-off / `DONE` / `CLAIMED` / `LANDED` records had each been "read this
+first" when written and were all superseded by a later one by the time this move happened. They are
+kept in full, in the order they originally appeared, because several contain reasoning — a root
+cause, a ruling, a trap and its fix — that is not recorded anywhere else in the repo. Standing
+lessons this block reinforced but did not itself originate were additionally folded into
+`HANDOVER.md`'s "Lessons that must not be relearned" section in the same commit that moved this
+block; see that section for the compressed, current-facing version.
+
+### DONE 2026-08-20 — `16e-nowplaying`, the fifth screen triple, COMPLETE with a clean `-P`
+
+Both halves merged (`6dbc5f0` web, `35f2c18` Android), built concurrently from
+`NOW_PLAYING.md` with neither agent seeing the other's code. Verified locally before pushing:
+**237 `app` + 216 `ui-desktop`/`ui-mobile` Playwright, 1731 unit, typecheck green on every
+project.** The largest remaining screen is done; **Settings/Onboarding and For You/browse are
+the last two**, then `16f`.
+
+**The pre-ruled parity target fired, and this is the cleanest instance of the technique yet.**
+The claim block named the scrubber announcement as the byte-for-byte target _before either agent
+reported_. Web's `formatDuration` gives `"1:30"` for 90s and `"1:02:10"` for 3730s; Android's new
+`scrubberValueDescription` produces `"1:30 of 1:02:10"` for the same input, degradation on an
+unknown duration included. **Verified by the orchestrator against web's actual source, not taken
+from the agent's report.** Unlike the previous four triples this was not two independent
+derivations agreeing — web already shipped the literal, so Android was matching rather than
+deriving, which made a mismatch a real defect. Naming it in advance turned an adjudication into a
+one-step check. **Do this in every remaining screen spec.**
+
+**Two genuine accessibility gaps closed on Android**, not restyling: `NowPlayingScreen`'s title had
+no `heading()` semantics at all where web has a real `<h1>`, and the seek `Slider` announced no
+value where web has announced one all along.
+
+#### THE OPERATIONAL FINDING — this file's own verification advice is wrong on this machine
+
+**This laptop has 4 cores** (`nproc`), and `playwright.config.ts` sets `workers: '100%'`. So a
+local full-suite run at the config default puts 4 workers, a vite build and the stateful BFF on 4
+cores. Measured today, on a tree that is provably clean:
+
+| Run | Workers    | Result                                                                   |
+| --- | ---------- | ------------------------------------------------------------------------ |
+| 1   | 4 (`100%`) | 2 failed — `browse.spec.ts:36`, `player.spec.ts:166`                     |
+| 2   | 4 (`100%`) | 2 failed — **different two**: `for-you.spec.ts:384`, `music.spec.ts:104` |
+| 3   | 2          | **237 passed, 0 failed** — and _faster_ (4.8m vs 5.4m)                   |
+
+Both failing pairs were content-visibility timeouts with no assertion mismatch, both passed in
+isolation, and **the failures moved between runs**. Load average hit 11.5 on 4 cores.
+
+**So "run it the way CI runs it" is not achievable locally and the attempt manufactures failures.**
+This file has correctly warned that `--workers=1` is a _weaker_ check than CI — that stands. What
+it did not say is that `--workers=100%` on a 4-core laptop is a **noisier** one, and noise on a
+timing-sensitive suite is indistinguishable from a regression until you spend three runs on it.
+**Use `--workers=2` locally: it is green, it is not slower, and it still exercises parallelism.**
+CI, with real runner headroom, remains the authoritative signal. Do not read a moving 2-failure
+result on this machine as a regression — establish it in isolation first, which costs one minute.
+
+#### `-P` IS DONE — clean on design and behaviour, and it caught a RED `main`
+
+The review by an agent that wrote neither half. **Verdict: the design and behaviour work is sound
+on both platforms; the wave shipped one broken test that turned `main`'s Android run red.** Fixed
+inline (`96a5ed0`) rather than spent as a wave — see below.
+
+**All three flagged ambiguities ruled, and all three went web's way:**
+
+1. **The transport-size table governs every breakpoint.** §3.1 already rules the surface is one
+   stacked structure across breakpoints, and both platforms independently applied their sizes
+   uniformly. **Settled, not open.**
+2. **The context line is new at every breakpoint.** §3.3's "desktop panel only" is a _recon
+   citation_ describing Sonora's mock; §6.3's behaviour contract says "new on both" with no
+   qualifier. **A recon citation in §3 does not override a behaviour requirement in §6** — that is
+   the generalisable ruling, and it is worth carrying into the two remaining screen specs.
+3. **`--surface-fg-muted` on the mini player author is idiom.** 12 uses in `app.css`, several
+   pre-existing and untouched by this wave; migrating one more consumer is what every 16c/16e wave
+   has been doing.
+
+**The byte-for-byte target was re-derived independently by hand from both sources** — not read off
+either agent's report — and matches: `"1:30 of 1:02:10"`, degradation to `"0:00"` on both sides.
+The context line matches too (`"Playing from {album}"`, blank-guarded identically, each pinned by
+its own platform's test against a different literal). **Fifth triple running.**
+
+**Ruled clean with evidence, so nobody re-checks:** shuffle/repeat reuse `MiniPlayerBar`'s exact
+semantics rather than a second pattern; the lyrics three-state rule is the _same rule_ on both
+sides and pairs weight with colour on both, so it is never colour-only; §7 and §8 are respected in
+both directions; the queue-row highlight difference matches §3.4's own single-row Android table.
+
+**One pre-existing limitation correctly labelled rather than logged as new drift:** Android's title
+cannot match `var(--font-display)` because **no display font is bundled on Android at all** — 16b-1
+self-hosted fonts for web only. The weight axis does match (W900). Not this triple's doing.
+
+#### THE FOURTH COMPOSE-TEST TRAP — and the spec-side warning did NOT hold
+
+`main` went red on `461eeb0`: two `MiniPlayerBarTest` cases, bare `java.lang.AssertionError` naming
+neither tag nor cause, on a genuine uncached execution (735 tests ran). **The tag existed.** It sits
+inside the root `Box`'s `.clickable(onClick = onExpand)`, and `clickable` merges its descendants'
+semantics — a `testTag` does not survive that merge the way `Text` and `ContentDescription` do,
+which is precisely why the lookups on the lines _either side of it_ passed.
+
+**This is the third instance of the `useUnmergedTree` variant** after `16e-search-A-2` and
+`16e-album-A`, and the fourth of the family.
+
+**The new and more important fact: this trap was written verbatim into the implementing agent's
+spec — the tell, the mechanism and the remedy all named — and it shipped anyway.** That is the same
+shape as the commit-before-backgrounding instruction: **a spec-side warning lowers the frequency and
+does not hold.** The load-bearing checks are the orchestrator-side ones — CI, and a parity reviewer
+who did not write the code. Budget the red Android round rather than expecting the warning to
+prevent it.
+
+**A cheap mechanical tripwire exists and is worth running before any Android push**, in the same
+spirit as the `/*`/`*/` balance check — list every tagged lookup in changed test files and confirm
+each one deliberately:
+
+```bash
+grep -rn 'onNodeWithTag(' apps/android/app/src/testDebug/ | grep -v useUnmergedTree
+```
+
+It has false positives by design — `mini-player-progress` at `MiniPlayerBarTest.kt:110` passes
+without the flag and was deliberately left alone, because changing a passing assertion to match a
+pattern discards the information that the merge boundary is not where you assumed. Treat the output
+as a list to confirm, not a list to fix.
+
+#### What `-P` ruled on (the questions as originally posed)
+
+1. **§3.3's transport-size table has only a mobile-sheet row.** `-W` read it as governing every
+   breakpoint (matching §3.1's single-stack ruling) and applied 56/56/72 uniformly. Confirm.
+2. **The context line's "desktop panel only" note** — `-W` read it as recon about where the line
+   sits in Sonora's mock, not a restriction on where to render it, and §6.3's contract carries no
+   breakpoint qualifier. This is the spec's one real ambiguity.
+3. **`.auralis-mini-player__author` moved to `--surface-fg-muted`**, consistent with every other
+   restyled muted role but not mandated by §3.2. A judgement call, flagged by the wave itself.
+
+#### Named gaps and inherited findings, none blocking
+
+- **The chapter-fetch `LaunchedEffect`/`ApiClient` wiring on Android is a source read only.** `-A`
+  deliberately did not introduce the first-ever Robolectric test combining a real `PlayerViewModel`
+  with `createComposeRule()` — no such test exists in this repo — rather than stack two unproven
+  things with no local compiler. It proved the shared code through a stateless `MiniPlayerBarTest`
+  and unit-tested every new pure function instead. **That is the right call and the gap is real.**
+- **A third spec-recon error, same family as `SEARCH.md`'s two.** §3.3 records Android's title as
+  not weight-900; `Type.kt` has defined `headlineMedium` at `W900` since `16b-2-A`. Only the
+  semantics were missing, and `-A` correctly left the typography alone. **A spec's recon is a
+  starting point, not a census — three specs running.**
+- **`--m3-surface-container` and `--surface-card` are numerically identical in both themes**, so
+  the queue/pill backgrounds are indistinguishable from each other today though both differ from
+  the pre-Sonora baseline. Inherited from the substrate collision `16c-2-W-3` already documents;
+  not this wave's defect.
+- **`IconButton`'s `size` prop is additive-only and proved so.** 18 call sites across 14 files,
+  re-measured by the wave rather than trusted from the spec, with one e2e test asserting the four
+  existing variants stay at 48px _in the same test_ as the new 64px one.
+
+### SESSION HAND-OFF, 2026-08-20 (evening) — **`main` is `4299bb9`. Nothing claimed, nothing in flight.**
+
+`docs/agent-specs/` is empty. Every wave dispatched this session was merged. **Two screen triples
+completed** (`16e-nowplaying`, `16e-foryou`), **three follow-up waves**, **two specs written**, and
+**four defects fixed that the suite could not see on its own**.
+
+**The next thing to do is the `16e-settings` triple** — the **LAST screen**.
+`docs/design/screens/SETTINGS.md` (571 lines) is merged and is the contract. Dispatch `-W` and `-A`
+together from it, then `-P`. **After that only `16f` remains.**
+
+**Verified before each push, not after:** 239 `app` + 216 UI Playwright, 1731 unit, typecheck every
+project. `CI` and `Android` green, the Android runs confirmed as **genuine uncached executions** by
+grepping for bare `testDebugUnitTest`/`compile*Kotlin` rather than reading a badge.
+
+#### The one finding that changes how to verify on this machine
+
+**This laptop has 4 cores; `playwright.config.ts` sets `workers: '100%'`.** At that default a _clean
+tree_ produced 2 failures per full `app` run, **a different two each time**, all content-visibility
+timeouts with no assertion mismatch, all passing in isolation, at load average 11.5. **`--workers=2`
+gives 237–239 passed, 0 failed, and is no slower.**
+
+This file has correctly warned that `--workers=1` is a **weaker** check than CI. That stands. It
+never said `--workers=100%` here is a **noisier** one — and on a timing-sensitive suite, noise is
+indistinguishable from a regression until three runs have been spent proving otherwise. **Use
+`--workers=2` locally; CI remains the authority.**
+
+#### Four defects fixed that a green suite could not see
+
+1. **A `testTag` inside a merged semantics node** turned `main`'s Android red — the **fourth** of that
+   trap family, third of the `useUnmergedTree` variant. **It was written verbatim into the wave's own
+   spec, tell and remedy included, and shipped anyway.** Same shape as commit-before-backgrounding: a
+   spec-side warning lowers the frequency and does not hold. **The load-bearing checks are CI and a
+   reviewer who did not write the code.** (One later wave, given the warning _plus_ the fact that it
+   had shipped again that day, complied — one sample, not a refutation, but the emphasis may matter.)
+2. **`MusicSearchViewModel` never passed `baseUrl` to its track mapper**, on the same line where
+   artists and albums both did — so track cover URLs were null on the wire. **Adding the missing tile
+   alone would have shipped a styled fallback icon forever and looked entirely correct.**
+3. **Web's browse live region rendered as permanently visible text** — "Browse feed loaded." sitting
+   under the filter chips forever, on a branch that auto-deploys. Shipped on a **false premise**
+   (that this repo has no visually-hidden convention; `.m3-visually-hidden` exists in `Button.css`).
+   **`toHaveText` reads text content and cannot tell hidden from visible**, so the suite was green
+   and a **screenshot** found it. `app.css` now carries its own hiding rule rather than borrowing one
+   that ships only with `Button`'s chunk.
+4. **The accent picker's own selection ring read `--m3-primary`** (`4299bb9`), fixed at Sonora's value
+   since `16c-2-W-1` — so the indicator marking "this is your accent" never changed when the accent
+   did. Android fixed the identical bug in `16f-A-2`. **The spec reported a test pinning this as
+   correct; it does not** — that test pins the _token_ staying fixed, which is deliberate and
+   untouched. Checking that distinction before editing is what made the fix safe.
+
+**Every one of these four was found outside the implementing wave** — by CI, by a parity reviewer, by
+a screenshot, or by the orchestrator's own full-suite run. **Not one was caught by the wave that
+wrote it**, and each wave's targeted tests were green.
+
+#### Techniques that are now proven and belong in every remaining wave
+
+- **Pre-rule the byte-for-byte target in the claim, before either agent reports.** Fifth and sixth
+  triples both matched. On `16e-nowplaying` it made a shipped literal checkable in one step; on
+  `16e-foryou` it **prevented a false alarm** — two announcements that differ by design had already
+  been ruled out of the target. It catches mismatches _and_ stops good work being flagged.
+- **Tell every wave to re-measure the recon it is handed.** Caught a **fourth** wrong count (`--m3-*`
+  in `Carousel.tsx`: 7 across 4 names, not 12) — **the first caught before it cost anything.**
+- **Say plainly when a platform already satisfies something.** Android's For You loading logic was
+  correctly left untouched because the spec said so; the same instruction produced a byte-identical
+  header on the podcast triple.
+- **Contract-vs-recon labelling passed its first real test** — both For You waves invoked it, both
+  correctly.
+
+#### Two corrections about MY OWN process, recorded because they nearly cost verdicts
+
+1. **The `16e-foryou-P` brief stated a divergence backwards**, because it was written from an
+   implementing agent's paraphrase rather than from the spec. The reviewer checked the spec _and_ the
+   vendored source, found the brief wrong, and **escalated instead of grading the wrong platform**.
+   **A review brief inherits the ambiguity of whatever it was derived from — cite the spec directly.**
+2. **A read-only reviewer has no sanctioned way to look at a rendered page.** The `-P` agent broke its
+   "create no file" instruction to take one screenshot and reported itself — **and that screenshot is
+   what found defect 3 above.** Give future `-P` briefs an explicit bounded screenshot allowance
+   rather than an instruction they must break to do the job.
+
+#### Corrections this file owed, now made
+
+- **`14b-2` was recorded as "not started, deliberately"** while three other lines said it landed and
+  was CI-verified. It landed. `ForYouCarousel.kt:173` carries the merged semantics.
+- **The claim that Android's For You carousels had no accessibility semantics at all** was stale for
+  weeks. **It cost real turns** — the `16e-foryou` spec wave was dispatched believing a gap existed
+  and had to prove it did not. **So the standing lesson gets its mirror: "a doc claiming parity is not
+  evidence of parity" is why that gap was found — and a doc claiming a GAP is not evidence of a gap
+  either.** Verify against code in both directions.
+
+#### Open, named, none blocking
+
+- **`16g` CLOSED — and reconciling `DESIGN.md` turned up FOUR claims that were never true, not merely
+  superseded.** The wave was told to verify against the code rather than rewrite from `SONORA.md`,
+  and that instruction is what separated the two categories. Superseded-by-Sonora: the spring table
+  (`motionCssVars()` has emitted flat `200ms ease-in-out` since `16c-2-W-1`, though `ThemeProvider`
+  still uses the real solver for the accent cross-fade), the M3 type scale, the M3 breakpoint table.
+  **Code-verified-false — documented, never built:**
+  - **Player transport keyboard shortcuts.** `DESIGN.md` specified Space, arrow seek, J/L ±30s and
+    `[`/`]` speed. **Verified here as well as by the wave:** there is no `keydown` handler anywhere
+    under `apps/web/src/features/player/`, and `hooks/shortcuts.ts` registers only `/`, `?`, `g h`
+    and `g l`. **This is a real product gap on a media player, not a doc error** — it is the first
+    time anyone has noticed, because the doc asserting them read as a description of shipped
+    behaviour. Worth a small wave; needs no credential and no device.
+  - **The "colour is never the only signal" animated equaliser glyph** — grep finds no
+    `equaliser`/`equalizer` anywhere on either platform. What actually ships is a text label folded
+    into the accessible name (`"…, Playing"`), which satisfies the same accessibility intent by a
+    different mechanism. The intent held; the described implementation never existed.
+  - **Shape morphing** (pressed-state corner spring `full`→`large`) — removed in `16c-1`, and
+    `e2e/ui/button.spec.ts` now asserts the radius does **not** change.
+  - **Artwork-derived colour driving the palette at runtime** — `artwork.ts`'s
+    `sourceColorFromImageData` still has zero callers outside its own test.
+
+  **The generalisable half, and it is the third instance of one shape this session.** A spec
+  document is not evidence about the code, in either direction — this file already carries "a doc
+  claiming parity is not evidence of parity" and its mirror about claimed gaps. Here a doc claimed
+  four _features_, and two of them had never been built at all. **`DESIGN.md` was listed in
+  `CLAUDE.md` as part of "the spec" the whole time**, so anyone reading it to learn what the app
+  does would have learned four wrong things.
+
+  **Sofia's open artwork-colour question (queue `dbfb46e`) is preserved as unresolved**, not closed
+  out with the rest — an earlier `SONORA.md` recorded it as asked-and-answered when it had not been
+  asked, and recording a live question as closed is worse than leaving it open.
+
+- **A SEVENTH writer-with-no-reader:** `RecommendationShelf.itemLabels` is written, typed and tested,
+  and **no client on either platform reads it**. That half stands.
+
+  **CORRECTED 2026-08-21 — the `parentId` half of this bullet was wrong, and acting on it would have
+  cost a wave.** It read: "`parentId` has no writer anywhere in `apps/server/src`, which makes
+  Sofia's 'no two episodes of one podcast' a **data-plumbing** problem, not a logic one... this
+  significantly narrows `16e-foryou-shelves-*`." A wave was about to be dispatched on exactly that
+  premise. The premise inverts the actual situation.
+
+  **`parentId` has no writer because nothing can currently feed it, and the code says so in its own
+  doc comment** (`features/recommendations/types.ts:55-70`). Verified by reading the three adapters
+  rather than inferring: `adapt.ts` emits `kind: 'book'` at item granularity and `kind: 'podcast'`
+  at **whole-show** granularity (`item.id`), and `adaptMusic.ts` emits `kind: 'album'`. There is no
+  episode candidate and no track candidate anywhere in this feature. So `dedupeByParent` is not
+  broken plumbing waiting for a value — it is **correctly dormant machinery**, built ahead of a
+  granularity that does not exist yet, and `parentKeyOf`'s fallback chain is doing the right thing
+  today.
+
+  **The consequence: the recommendations feature cannot violate Sofia's requirement, because it
+  never emits an episode.** Two episodes of one show can only appear on a code path that actually
+  carries episodes — and For You stitches **four** sources, of which this is one. Audiobookshelf's
+  own personalized shelves are a separate source (`routes/libraries.ts:56` describes consuming
+  them), and `PodcastEpisode` is a real domain type with its own identity
+  (`packages/abs-client/src/domain.ts:134-144`). **That is where the requirement bites, and nobody
+  has established it does.**
+
+  **So `16e-foryou-shelves-*` is not narrowed to plumbing — it is unscoped, and its first job is a
+  recon question, not an implementation:** which of For You's four sources can actually surface two
+  episodes of one show? Answer that before building anything. Adding a `parentId` writer to the
+  recommendations feature first would be this project's eighth writer-with-no-reader, inverted — a
+  reader wired to an input nothing produces.
+
+  **The generalisable half:** the original bullet was written from a grep (`parentId` appears only
+  in types and tests) without reading the doc comment sitting on the field, which states the reason
+  in full. **A grep establishes absence; it does not establish that the absence is a defect.** This
+  file's own standing pair of lessons — a doc claiming parity is not evidence of parity, and a doc
+  claiming a gap is not evidence of a gap — now has a third member: **an absence found by grep is
+  not evidence of a gap either.** Check whether the code explains itself before filing it as owed.
+
+- **`FOR_YOU.md` §9/§10 scoped the same geometry tables in different words**, so the two waves
+  correctly built different amounts. **The defect is the document's.** `SETTINGS.md` already applies
+  the fix; it is the last spec, so the lesson has nowhere else to go.
+- **`features/home/` has NO Robolectric coverage on Android.** Nothing exercises `ForYouCard` or
+  `QuickPickTile`. Every Android claim on that screen is a source read plus a compile.
+- **Web's onboarding/settings page-level CSS is still wholly on `--m3-*`** — a class of consumer this
+  file's "remaining consumers" list has **never tracked**, because that list counts `packages/ui`
+  components only. **`--m3-*` deletion is further off than the tracked list implies.**
+- **Android's skeleton is more faithful than web's** on card corner radius (web's Mantine `Skeleton`
+  fixes `radius="md"`). Does not affect the layout-shift invariant.
+- **Still with Sofia, still blocking nothing:** queue `dbfb46e` (artwork-derived accent), `abbaca2`
+  (the two WCAG numbers), `969711e` (external podcasts — `hold-15e-podcasts` stays held). **Checked
+  this session: none answered, and the accent one has not even been surfaced yet.**
+
+### DONE 2026-08-20 — `16e-foryou`, the SIXTH screen triple. **Settings/Onboarding is the LAST screen.**
+
+`main` is `a3156bd`. Five waves: spec, `-W`, `-A`, `-P`, and `-A-2` closing what `-P` found, plus
+one orchestrator fix. Verified locally before each push — **238 `app` + 216 UI Playwright, 1731
+unit, typecheck every project.**
+
+**`-P` verdict: clean with follow-ups, both of which were taken immediately rather than filed.**
+
+#### THE SPEC-AUTHORING DEFECT — apply this to the Settings/Onboarding spec before writing it
+
+**`FOR_YOU.md` §9 and §10 scoped the SAME geometry tables in different words**, and the two waves
+correctly implemented different amounts as a result:
+
+- §9 (web): _"→ §3.2's table (52/48px cover, **background/radius split by breakpoint**)"_ — explicit.
+- §10 (Android): _"Apply the corresponding **radius/typography** changes"_ — narrower, silently
+  omitting background, padding, row gap and pill position.
+
+Neither wave misread its section. The Android wave **named the asymmetry in its own commit message**
+and flagged it for `-P`, which is exactly right behaviour. **The defect is in the document.**
+
+**The fix, and it is the last chance to apply it:** when a shared geometry table is scoped
+per-platform, **enumerate the same rows for both platforms**, or state explicitly why a row does not
+apply — the way the "deliberately unequal" section already does elsewhere in the same document. A
+narrower phrasing on one side of a symmetric table is invisible until a `-P` catches it.
+
+**The contract-vs-recon convention passed its first real test.** Both waves invoked it, and both
+invoked it _correctly_ — neither repeated `16e-nowplaying-P`'s mistake of reading a recon citation
+as a restriction. Keep it in the last spec.
+
+#### The five deferred items, as ruled
+
+| Item                                      | Ruling                                          | Action                                                |
+| ----------------------------------------- | ----------------------------------------------- | ----------------------------------------------------- |
+| Android absent-pill position + background | drift, pre-existing, most visible of the five   | **fixed in `-A-2`**                                   |
+| Android quick-pick row chrome             | drift, pre-existing                             | **fixed in `-A-2`**                                   |
+| Quick-pick subtitle line                  | **symmetric** — neither platform renders it     | correctly out of scope, do not close on one side only |
+| Progress-bar overlay-on-art               | **symmetric** non-compliance with a recon table | correctly out of scope                                |
+| Web live-region visible text              | real defect on the primary screen               | **fixed (`e5737ad`)**                                 |
+
+#### The live-region defect, and why the suite could not see it
+
+`-W` shipped `"Browse feed loaded."` as **ordinary visible text, permanently mounted** — a sentence
+sitting under the filter chips forever after load, on Sofia's primary screen, on a branch that
+auto-deploys. It did so on a **stated premise that was false**: that this repo has no
+visually-hidden convention. It does — `.m3-visually-hidden` in `Button.css`.
+
+`app.css` now carries its own copy rather than borrowing that one, because `Button.css` ships only
+with `Button`'s chunk and this app has already been bitten by a component painting before its own
+lazily-loaded CSS arrived (14a-2). **A live region whose hiding rule can arrive late is the wrong
+thing to depend on.**
+
+**`toHaveText` reads text content and cannot tell hidden from visible**, which is why the suite was
+green and a **screenshot** found it. The new assertion pins the **bounding box** — behaviour, not
+mechanism — so it survives a change of hiding idiom and still fails on `display: none`. **Confirmed
+to discriminate** by removing the class and watching it go red.
+
+**Deliberately not applied to `search-status`**, which looks like the same case and is not: _"12
+results for X"_ is useful visible copy; _"Browse feed loaded."_ says nothing a sighted user cannot
+already see.
+
+#### An orchestrator error worth recording
+
+**The `-P` dispatch brief stated the pill divergence backwards** — it said the spec wanted
+bottom-start and Android had top-left; the truth is the reverse. The reviewer caught it, checked
+`FOR_YOU.md` **and** the vendored `MediaCard.dc.html` (`left:8px;top:8px`), and **escalated the
+correction rather than grading the wrong platform**. A reviewer that trusted its brief would have
+produced a confidently wrong verdict.
+
+The cause was mis-parsing the implementing agent's own phrasing (_"bottom-start, not top-left per
+§3.1's table"_) when writing the brief. **A `-P` brief is derived from agent reports and inherits
+their ambiguity — cite the spec directly in the brief, not the agent's paraphrase of it.**
+
+#### Other findings, each verified rather than accepted
+
+- **Recon verification worked, first time it has been asked for explicitly.** The spec claimed 12
+  `--m3-*` usages in `Carousel.tsx`; the real count is **7 across 4 names**, and 2 remain
+  deliberately. **Fourth recon error found in a screen spec, and the first caught before it cost
+  anything** — because the dispatch told the wave to re-measure rather than the lesson being
+  relearned after the fact. **Put that instruction in every remaining spec.**
+- **The byte-for-byte target prevented a FALSE alarm**, a use it has not had before. Web produces
+  `"…, not in library"` and Android `"… — Not in library"`, which reads as a mismatch; the spec had
+  already ruled join punctuation and casing **out** of the target, so both are correct. Pre-ruling
+  catches mismatches _and_ stops good work being flagged.
+- **The full suite caught a spec the wave did not know it had broken.** `-W` renamed the label and
+  updated three specs; `for-you-external-book.spec.ts` still pinned the old wording. **A targeted run
+  cannot see a spec the wave never touched.** Agents run targeted tests, the orchestrator runs the
+  suite — unchanged, and it has now paid twice.
+- **Android's skeleton is more faithful than web's**: it passes the exact `CARD_ART_SHAPE`, while
+  web's Mantine `Skeleton` fixes `radius="md"`, so corner rounding differs though box size does not.
+  Does not affect the layout-shift invariant. Minor, unclosed, named.
+- **`features/home/` has NO Robolectric coverage on Android at all.** Nothing exercises `ForYouCard`
+  or `QuickPickTile`. Pre-existing, unchanged by these waves, and it means every Android claim on
+  this screen is a source read plus a compile.
+
+#### Process note from the reviewer, self-reported
+
+The `-P` agent **created a temporary Playwright spec to take one screenshot and deleted it in the
+same command**, against its explicit "create no file" instruction — net diff zero, and it reported
+itself unprompted. Worth knowing for two reasons: **the screenshot is what found the live-region
+defect**, so the capability was genuinely needed; and a read-only reviewer currently has no
+sanctioned way to look at a rendered page. **Give future `-P` briefs an explicit, bounded screenshot
+allowance** rather than an instruction agents must break to do the job.
+
+### DONE — `16e-foryou-spec` and `16e-search-A-3`. **The For You triple is dispatchable.**
+
+**`docs/design/screens/FOR_YOU.md`** (645 lines, 12 sections) is the sixth and last big screen
+spec. `-W` and `-A` are dispatchable from it together, then `-P`. **Settings/Onboarding is then the
+only screen left**, and after that `16f`.
+
+**Its scoping decision is the important part, and it is the right one.** Sofia's decision 2 in
+`USER_DECISIONS.md` has three parts. Only **the loading-state hold** is in this triple; **podcast
+dedupe and mixed-content carousels are split out** as a sequenced follow-on
+(`16e-foryou-shelves-S` then `-W`/`-A`), because they need cross-cutting backend work — unifying
+candidate pools across media types — that would make an oversized wave bundled with a full
+restyle. **Neither is dropped**; both are named with their own wave ids, which is the difference
+between a split and a silent narrowing.
+
+**And the follow-on is far smaller than it looks, because the mechanism already exists.**
+`shelves.ts` already has `dedupeByParent` (`:53`) and `typeLabelsFor` (`:71`), both tested, and
+both already called at `:175`/`:187`. What is missing is upstream and downstream, not the logic.
+
+**A SEVENTH writer-with-no-reader, verified by the orchestrator rather than taken on report.**
+`RecommendationShelf.itemLabels` is populated at `shelves.ts:187`, typed at `types.ts:133`, and
+asserted in `shelves.test.ts` — and a repo-wide grep across `apps` and `packages` finds **no
+client reading it on either platform.** It is the payload that would let a mixed shelf label its
+own items, computed and thrown away. Same family as the six before it.
+
+Also established: **`parentId` is never populated anywhere in `apps/server/src`** outside types,
+tests and `shelves.ts` itself — so the podcast-dedupe mechanism's key input has no writer. That is
+the actual blocker on Sofia's "no two episodes of one podcast", and it is a data-plumbing problem
+rather than a logic one.
+
+**Byte-for-byte target named in advance, and it fixes a live three-way mismatch.** The external
+item's label is ruled canonical as Sonora's literal **`"Not in library"`**. Web's badge text, web's
+`aria-label` and Android's constant were **all three different** from each other and from Sonora's
+source. The spec carries the full expected `aria-label`/`contentDescription` strings for both
+platforms so the implementing waves converge rather than each picking one.
+
+**Pre-ruled divergences** (the `ALBUM_DETAIL.md` technique, now standard): the merged-vs-split
+accessibility mechanism is **idiom**; the FILL-axis nav-icon toggle is **pre-existing and out of
+scope**; the quick-pick tile's mobile-column background is **intentional in Sonora's own source**,
+not a migration gap.
+
+**Android already satisfies the loading-state requirement in full** — `ForYouViewModel` fans out
+three async sources via `coroutineScope` and awaits all before `Loaded`. **Only web needs the
+behavioural change**; Android needs only its loading UI restyled from a bare spinner to a
+layout-shaped skeleton. Told this plainly, an agent fills the slot rather than rebuilding — the
+instruction that made the podcast triple's header come out byte-identical.
+
+**`16e-search-A-3` closed the last art-less track row, and the tile was only half the defect.**
+`MusicSearchViewModel.performSearch` resolved `baseUrl` and passed it to the artist and album
+mappers **on the same line**, while calling `toSearchUi()` for tracks with no argument — so
+`coverUrl` was null on the wire no matter what the UI did. **Adding the tile alone would have
+shipped a styled fallback icon forever and looked entirely correct.** Two KDoc blocks asserting
+this screen "never had cover art" were rewritten to name the cause rather than restate the symptom.
+It also gave the screen its first Robolectric coverage, and pinned the non-navigable no-`albumId`
+case with `onOpenAlbum` wired to `error()` so a stray navigation fails rather than passes quietly.
+
+### `15d-1-books-P` is DONE, and it found a real fail-unsafe divergence on web
+
+**Verdict on the pair: ship as-is, with one cross-platform behavioural bug to fix.** The typing
+split the follow-up asked about is **fine** — Android route-scopes `availability` to
+`RecommendedLibraryItem` because kotlinx's `MissingFieldException` would otherwise break every
+non-recommended route sharing `LibraryItem`/`Shelf`; web widens its hand-mirrored interface with an
+optional field because it has no runtime decode at all. Each is individually correct.
+
+**The risk is a semantic difference layered on top of it, and nobody argued for it:**
+
+- **Android** infers external as `availability != "owned"` — anything unrecognised is **external**.
+- **Web** infers it as `availability === 'external'` at all four call sites — anything unrecognised
+  is **owned**.
+
+**So on web, a missing or unrecognised value silently reintroduces exactly the dead-end this wave
+existed to close**: the card renders as an ordinary owned book with no badge, and tapping it routes
+to `/item/:id` for an id Audiobookshelf has never heard of. Android degrades the whole shelf to
+empty instead — contained, and safe. **Labelled drift, not idiom:** the `=== 'external'` convention
+was inherited unexamined from the music sibling, and nothing in `types.ts` or any commit message
+states a decision that web should read an unknown value as owned.
+
+**The fix is four call sites** — `Carousel.tsx:186`, `Carousel.tsx:247`, `HomePage.tsx:311`,
+`MusicHomePage.tsx:118` — from `=== 'external'` to `!== 'owned'`. It adds no runtime validation and
+closes the asymmetry at its root. Being taken as `15d-1-books-W-2`, held until `16e-album-W` is out
+of `apps/web`.
+
+**Two further rulings, both recorded so nobody re-derives them:**
+
+1. **Web's two request panels: this wave made the right call.** Android never auto-submits for
+   either medium, and `AskForBookPanel`'s own comment calls explicit-submit the contract every other
+   search here already has — so **web's music auto-submit is the outlier**, not the new book
+   behaviour. The follow-up is to drop the eager `submittedTerm` seed in
+   `MusicRequestSearchPanel.tsx`, not to spread auto-submit to books.
+2. **The subtitle colour role is drift, and web is the correct one.** `SONORA.md` §3.5 is explicit —
+   `accent-ink` when clickable, **plain `fg` otherwise** — and web matches it. `MediaHeader.kt:184`
+   renders the non-link subtitle `onSurfaceVariant` unconditionally. Fix Android to a full-emphasis
+   role. This settles a question three triples have now inherited.
+
+**Two things the review could not verify, stated rather than glossed:** everything Android-side is a
+source read (no device, no JDK), and web's `for-you-external-book.spec.ts` was read rather than
+executed, since another agent held the Playwright port.
+
+### SESSION HAND-OFF, 2026-08-20 — read this first
+
+**`main` was `207f1f2` when this block was written; it has moved on several times since — read the newest section rather than this line.** Nothing is claimed
+and nothing is in flight. `docs/agent-specs/` is empty.
+Every wave dispatched this session was either merged or is on a named branch described below.
+
+**Two screen triples completed** (`16e-album`, `16e-search`), **five waves of correction and
+follow-up**, **one spec written** (`NOW_PLAYING.md`), and **one wave deliberately held**.
+
+**SUPERSEDED — the `16e-nowplaying` triple is DONE**, both halves merged on 2026-08-20; see its
+own section below for what landed, what `-P` must rule on, and the worker-count finding that
+corrects this file's verification advice. Sonora's tabbed desktop panel remains **deliberately not
+built** — that ruling from the `16e-nowplaying-spec` merge commit still stands.
+
+**`16e-nowplaying` and `16e-foryou` are both complete, `-P` included, and `SETTINGS.md` — the last
+screen's spec — is written and merged.** The next thing to do is the **`16e-settings` triple**:
+dispatch `-W` and `-A` together from that document, then `-P`. After it, only `16f` remains. The
+remaining `--m3-*` consumers are `Fab`, `ListItem`, `Marquee`, `NavigationBar`, `SearchField`,
+`Snackbar`, `TopAppBar` — deletion is still not close.
+
+#### The three things this session learned that are worth more than the features
+
+1. **`isolation: "worktree"` is what creates the worktree — the reset instruction alone is a
+   loaded gun.** `CLAUDE.md` documents that an isolated agent must `git reset --hard <tip>` as its
+   first action. Dispatch that same spec **without** the parameter and the agent has no worktree, so
+   it runs in `~/src/auralis-src` and its first action **resets the shared checkout under every
+   other agent's feet.** That happened here: two merge commits were discarded and a reviewer
+   reported the tree vanishing mid-read. Recovered from the reflog, nothing lost.
+
+   **The check, now mandatory before believing any dispatch is isolated:**
+
+   ```bash
+   ls .claude/worktrees/agent-<id>   # no directory => it is in YOUR checkout
+   ```
+
+   **Pair the parameter with the instruction or write neither.** A read-only reviewer needs no
+   worktree and **must not be given the reset line at all** — it only ever needed to read.
+
+2. **A prescribed fix from a review can be wrong, and "the tests disagree" is a signal to re-check
+   the prescription.** `15d-1-books-P` ruled web's `availability === 'external'` fail-unsafe and
+   prescribed Android's `!== 'owned'`. Taken literally it **marked the entire library external** —
+   every owned book badged "not in your library", every tap sent to the request flow. The two
+   typings are not interchangeable and **the same review had established why one paragraph earlier.**
+
+   Two sharp corollaries. **The agent had to override a correct existing test to land it** — the
+   test encoded the real contract, the spec said otherwise, so it changed the test and said so
+   honestly. **And nothing naming `availability` caught it**: it surfaced in a test about _layout at
+   768px_. Breadth caught what aim did not.
+
+3. **A spec's recon is a starting point, not a census.** `SEARCH.md` was wrong twice about the same
+   file: `MusicRow` has **nine** call sites, not two, and track rows do **not** use `MusicRow` at
+   all — which is why Android's track results shipped with no cover art through a whole triple.
+   **Tell implementing waves to verify the call sites they are handed** rather than trusting the
+   count, and have them report the real number.
+
+#### A THIRD member of the Compose-test trap family, and the three are now one rule
+
+`16e-search-A-2` compiled clean and failed on two Robolectric tests, each a bare `AssertionError`
+naming neither the tag nor the cause. **The tags existed. They sat inside MERGED semantics nodes** —
+`OutlinedTextField` merges its descendants, and the track row deliberately groups its children into
+one announced node, which is exactly what this screen's accessibility tests assert. The default
+lookup searches the **merged** tree, where a descendant's tag is invisible. `useUnmergedTree = true`
+is the fix.
+
+**All three now on record, and the tell is identical every time — a bare `AssertionError` pointing
+away from the cause:**
+
+1. **A click that neither throws nor fires its callback is off-viewport.** `assertExists` on the same
+   tag passes, because existence only needs the node composed and a click needs it displayed.
+2. **`assertExists` is a MEMBER and must not be imported; `assert`, chained directly onto it, is a
+   top-level extension and must be.** The package mixes both.
+3. **A `testTag` inside a merged node needs `useUnmergedTree = true`.**
+
+**None is inferable from the call site and all three read as correct Kotlin.** The unifying rule:
+**semantics merging on these screens is deliberate product behaviour, so any test reaching for
+something inside a merged node must say so** — and any test clicking on a `LazyColumn` must scroll
+first or use `performSemanticsAction`.
+
+**Budget two red Android rounds per wave, not because the code is bad but because this class of fact
+is only checkable by compiling**, and nothing on this laptop can.
+
+#### What is on a branch rather than on `main`
+
+**`hold-15e-podcasts`** (pushed, `9fbb1cc`) — external podcast discovery via iTunes Search.
+**Green: 777/777 server tests**, current with `main`, formatted. Its server side was reviewed and is
+sound, its media-type gating **answers open follow-up 3**, and its provider was checked with a live
+`curl` rather than trusted.
+
+**It is held for a product reason, not a code one.** `ForYouScreen.kt:94` routes a podcast tap to
+`playerViewModel.playItem(item.id)` with **no external check** — three lines below a books branch
+that has one — so an external podcast hands a fabricated id to Media3. And **no podcast request flow
+exists on either client** to redirect to. `main` auto-deploys, so this is the same call `15e-books`
+was held for.
+
+**The underlying question is with Sofia (queue `969711e`)** and blocks nothing: she asked for request
+integration for **books and music, never podcasts**, so external podcast discovery has nowhere to
+land by design. The natural destination is not a request at all but a **one-tap subscribe by RSS
+feed** — Audiobookshelf supports it natively and iTunes already returns a `feedUrl`. Three options
+were put to her: build subscribe, ship it inert, or drop it.
+
+#### Named, unfixed, and deliberately so
+
+- **`MusicSearchScreen.kt`'s `SearchTrackRow` has the same missing-art defect** just fixed on the
+  unified search screen, and is now the **only** track row in the app without a cover tile. Named by
+  the wave rather than fixed, because it is a different screen.
+- ~~**`.auralis-item-header__actions` has no `flex-wrap`**~~ — **CLOSED, measured rather than
+  argued.** The four controls occupy **310px at a 360px viewport** (the Android baseline width), the
+  row does not overflow, and the document does not scroll horizontally. Screenshotted and eyeballed
+  as well as measured. A regression guard now lives in `e2e/app/music.spec.ts`, because the risk is
+  otherwise invisible: a row that has overflowed still contains every button and still passes every
+  other assertion on the page. **The margin is real but not large** — a fifth control, or a longer
+  label from a copy change, is what would break it, and that test is the only thing that would
+  notice.
+- **`SearchField`'s `aria-expanded` can go stale** — Mantine's `Popover` closes the dropdown
+  visually on an outside click, but this component keeps a parallel `useState` and is never told, so
+  a screen reader can briefly announce an expanded combobox with nothing open. Recorded in a comment
+  rather than fixed blind; the real fix needs its own keyboard pass.
+- **The non-clickable subtitle colour role still differs** (Android muted, web full emphasis). The
+  _clickable_ case was closed by `16e-album-A`. This belongs to a `SONORA.md` pass, not a screen wave.
+- **No test pins what happens to a click on a chip covered by an open suggestion dropdown.** Ruled
+  acceptable behaviour twice, by two independent reviewers — **do not re-open it** — but it is
+  asserted nowhere.
+
+### 2026-08-20 — both claimed waves were salvaged from dead agents. **The album triple's web half is landing; `15e-podcasts` is HELD.**
+
+The session that claimed `16e-album-W` and `15e-podcasts` died. Neither wave was lost, but neither
+had ever been executed, and one held **929 lines entirely uncommitted** in a worktree that is
+deleted with its session.
+
+- **`15e-podcasts`** — the agent committed **nothing at all**. Seven files, 929 insertions, sitting
+  as working-tree changes. Salvaged as `ee26e7e`.
+- **`16e-album-W`** — the agent committed its product change (`11c9e68`) and then died holding its
+  **own e2e spec** uncommitted. Salvaged as `046be75`.
+
+So the spec-side "commit before you background a long run" instruction held for one half of one
+wave and **not the other half of the same wave**. It lowers the frequency; it does not hold. The
+orchestrator-side worktree check is the load-bearing one, and this is the second session running in
+which it has paid for itself.
+
+#### `15e-podcasts` is HELD FOR A CLIENT WAVE — and Android's exposure is live, not latent
+
+Reviewed by an agent that did not write it. **The server side is correct**: both discovery builders
+gate on the pool's own medium (`routes/libraries.ts:135`, `:212-296`) and return `null` before any
+provider I/O, so a book library can never trigger the iTunes provider or vice versa — which
+**answers open follow-up 3**, the route _is_ properly medium-scoped now. Every item carries
+`availability: 'external'` on the wire.
+
+**The tap-through is where it breaks.** `ForYouViewModel.kt:88-95` fetches recommended carousels for
+`mediaType = "podcast"` as well as `"book"`, so Android genuinely reaches this shelf — and
+`ForYouScreen.kt:94` is `ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)`,
+**unconditional, with no `isExternal` check**, three lines below a `BOOKS` branch that has one. A tap
+hands `external:itunes:<id>` straight to Media3. That is worse than the book precedent's dead-end
+page: a fabricated id given to the _player_, not a failed detail fetch. **And there is no podcast
+request flow on either client to redirect to**, so wiring the guard in has nowhere to send the tap.
+
+**Web is safe only incidentally** — `HomePage.tsx:226` is the sole web caller and is hardcoded to the
+book library's id. Underneath that sits a second real defect: `forYouFeed.ts:100-109` labels every
+shelf from this route `contentType: 'books'` unconditionally, with a doc comment claiming the route
+is "always about audiobooks". **That comment is now false**, and the moment web points this at a
+podcast library a podcast shelf renders as a book carousel.
+
+**So the wave is on branch `hold-15e-podcasts`, not on `main`.** `main` auto-deploys to `:latest`
+and mediaserver pulls every fifteen minutes. This is the same call, for the same reason, that
+`15e-books` was held for.
+
+**It is also red, and that must be fixed before it can land whenever it lands.** Two pre-existing
+tests the wave broke and never noticed: `external/registry.test.ts` asserts in its own title that
+there is "still no podcast provider", now false; and `routes/libraries.test.ts:514` — the **book**
+shelf's outer-catch test — fails because the wave's new media-type gate short-circuits on that
+test's empty-pool fixture **before** the deliberately-throwing provider is reached. Additionally
+`buildPodcastExternalDiscoveryShelf` is imported by **no test at all** — only its three pure helpers
+are covered, where the book sibling has a full `app.inject()` block.
+
+**The live `curl` was done, and this is the 15a lesson being applied rather than relearned.** iTunes
+Search returns 200 with the fields the schema assumes, `genreId` alone genuinely returns zero
+results (justifying the term-only strategy), and `itunes.test.ts` asserts the outgoing query as an
+**exact** set via `toEqual`. That half of the wave is sound.
+
+**The open product question, which is why "add the guard" is not a sufficient plan:** the user asked
+for request integration for **books** and **music**, never for podcasts — so external podcast
+discovery has nowhere to land by design. The natural destination is not a torrent request at all but
+a **one-tap subscribe by RSS feed**, which Audiobookshelf supports natively and which iTunes Search
+already returns a `feedUrl` for. That is a coherent, much smaller feature than a request flow. **It
+is with Sofia; it blocks nothing else.**
+
+#### `16e-album` is DONE — the third screen triple, complete on both platforms with a clean `-P`
+
+**`main` is `18799b1`, green on `CI` and `Android`.** Verified before pushing rather than after:
+**220 `app` + 212 `ui-desktop`/`ui-mobile` Playwright at CI's own parallelism, 1718 unit**, typecheck
+across every project, lint clean. The six salvaged e2e specs **passed on their first ever execution**.
+
+**The `-P` verdict is clean, and the headline is methodological again: the meta line matched byte for
+byte for the THIRD triple running.** Web's `composeAlbumMeta` and Android's same-named private
+function independently produce `"2021 · Synthwave · 2 tracks · 7 m"` — separator confirmed U+00B7 on
+both by a codepoint scan rather than by eye, same track-count rule, same `<= 40 && fully loaded`
+duration gate, same rounding. **The per-platform value table in the spec is now demonstrated, not
+hypothesised.**
+
+**The `ALBUM_DETAIL.md` pre-ruling fired exactly as intended.** The spec stated in advance that the
+artist link is the first genuinely symmetric case and that any asymmetry there would be drift; both
+platforms wired it to their existing artist route, and the `-P` had nothing to adjudicate. **Pre-deciding
+a divergence in the spec is cheaper than ruling on it afterwards** — carry that into every remaining
+screen.
+
+**Two follow-ups, neither blocking:**
+
+1. **The subtitle colour divergence that three triples inherited is now MOSTLY CLOSED, and this file
+   should stop describing it as open.** `MediaHeader.kt:185` now reads
+   `if (onSubtitleClick != null) accentInk else mutedColor`, so the **clickable** case — the common
+   one — matches web and matches `SONORA.md` §3.5 on both platforms. What survives is only the
+   **non-clickable fallback**: Android muted (`onSurfaceVariant`), web full emphasis (`--surface-fg`).
+   Pre-existing, out of this triple's scope, and a `SONORA.md` pass owns it.
+2. **`.auralis-item-header__actions` has no `flex-wrap`** (`app.css:402-407`) and web's album header is
+   the first call site to put **four** controls in it. Confirmed live by reading the CSS, not
+   inferred. Playwright asserts testids and text and can never see a compact-width overflow, so this
+   wants an eyeball, not a test.
+
+**The coverage asymmetry is real and, unusually, favours web here.** Android's nine new
+`AlbumDetailContentTest` cases are Robolectric — confirmed a **genuine uncached execution** by
+grepping the job log for a bare `testDebugUnitTest`, not by reading a badge — but Robolectric proves
+a node exists with the semantics that were written, not what TalkBack announces. Web's six specs
+drive real Chromium. Every Android claim in that review is a source read plus a Robolectric pass.
+
+#### `16e-search` — DONE, the fourth triple, `-P` clean. **`16e-search-A-2` is the one real defect it found.**
+
+Web: 227 `app` + 214 `ui` Playwright, 1727 unit. Android green on `a8adcd1`, uncached. All six CI
+jobs green on `624ffab`. Sofia's unscoped **"global search needs suggestions" is delivered on both
+platforms.**
+
+**Fourth triple running in which the composed strings matched byte for byte** — the `-P` hex-dumped
+the Kotlin source (`c2 b7`) against web's `SEPARATOR = '·'` rather than eyeballing them, and all five
+of §6.4's literal status strings match exactly, ellipsis and quoting included.
+
+**THE REAL DEFECT, and why it survived a whole triple: Android's track result rows have no cover art
+at all.** Every other kind got it. Tracks do not use `MusicRow` — they use a separate, art-less
+`SearchResultTrackRow` — **and §2 of `SEARCH.md` asserts they do use `MusicRow`.** That is a **spec
+recon error**, so the `-A` wave's `MusicRow` fix never reached them and no commit mentioned tracks.
+Being taken as `16e-search-A-2`.
+
+**That is the second recon error in this one spec** — it also claimed `MusicRow` had two other call
+sites where it has nine. **A spec's recon is a starting point, not a census.** State in future specs
+that the implementing wave must verify the call sites it is given, rather than trusting the count.
+
+**Also drift, Android side: no leading search icon.** Web's has had one since long before this
+triple; §3's table gives both platforms a value for that row. Folded into `16e-search-A-2`.
+
+**Two follow-ups closed inline** (`866c6bb`): the `40vh` dropdown cap now has a test, **confirmed to
+discriminate** by deleting the CSS rule and watching it go red — that class of defect, a component
+rendering with a style that silently did not apply, is invisible to a suite asserting testids and
+text. And the `aria-expanded` staleness is recorded in a comment rather than fixed blind.
+
+**One earlier claim corrected by the `-P`, worth not inheriting:** the framing that Mantine's
+built-in outside-click dismissal is "inert" was **overstated**. Read against Mantine's own source,
+the dropdown **does** visually close; what goes stale is `SearchField`'s own bookkeeping, so
+`aria-expanded` can read `true` with nothing open until the next focus or keystroke.
+
+**The tie-break went to the orchestrator, on the reviewer's own reasoning.** A follow-up review had
+argued the dropdown covering the filter chips was a UX regression that could misdirect a chip tap.
+The `-P` confirmed the dropdown is an **opaque** panel, concluded a user cannot see a chip to
+misclick it, and agreed this is ordinary combobox behaviour. **Do not re-open it.** The genuine
+defect was unbounded height, and that is fixed.
+
+**Ruled clean, with evidence, so nobody re-checks:** suggestion ordering, cap and exclusions match;
+Android's series/author exclusion is **forced idiom** (no route exists); §7's out-of-scope list is
+respected in both directions; no `overline` call site on this screen, so the podcast triple's
+announce-order bug class does not apply; and the nine `MusicRow` call sites were confirmed unchanged
+**by diff rather than by report**.
+
+#### `16e-search-A` is landed and CI-GREEN on `a8adcd1` — `16e-search-W` is in flight, `-P` is owed
+
+**Verified as a genuine uncached execution, not a badge:** the Android job log carries bare
+`> Task :app:compileDebugUnitTestKotlin`, `> Task :app:testDebugUnitTest` and
+`> Task :app:testReleaseUnitTest` with no `FROM-CACHE`, so the new Robolectric coverage really ran.
+
+**It closes two pre-existing drifts** the spec had pinned with file:line evidence: book result rows
+were **non-interactive** behind a comment claiming no book-detail route existed (one has since
+`16e-book-A`), and the search screen had **no accessibility semantics at all** where web announces
+status through a live region.
+
+**It corrected the spec's own recon, and that is the transferable part.** `SEARCH.md` said to check
+`MusicRow`'s "other two call sites"; there are **nine, across seven files**. Rather than resize the
+shared row in place, the wave gave it optional `artSize`/`artCornerRadius`/`fallbackIcon` parameters
+defaulting to today's shape, so the other eight call sites cannot change. **A shared component
+resized in place reads as correct in review and is wrong on eight screens** — the same shape as this
+file's widened-fixture lesson. **Recon in a spec is a starting point, not a census.**
+
+**One thing `-P` must check:** the wave **did not add a leading icon** to the search field, reading
+§3's row as pinning the icon's token value rather than mandating a new icon. It flagged this itself.
+Web may well have added one.
+
+**ONE red round, one line — and it is the mirror of a trap already in this file.** The whole failure
+was `Unresolved reference 'assert'`. This file already records that **`assertExists` is a MEMBER** of
+`SemanticsNodeInteraction` and must **not** be imported, while `onNodeWithText` on the lines either
+side of it is top-level and must be. **`assert` is the same trap wearing the opposite face**: a
+top-level extension in `androidx.compose.ui.test`, chained immediately onto `assertExists`, reading
+exactly like the member it is attached to.
+
+**So the rule is neither "assertions are members" nor "assertions are imports".** That package mixes
+both and the call site does not tell you which. **When a Compose test assertion will not resolve,
+check the package rather than the spelling.**
+
+**Also confirmed, and worth knowing when Android goes red:** `bc1e946`'s **`CI` went green and
+`Publish` succeeded** while `Android` was failing. They are separate workflows and the container
+image carries no APK, so **a red Android never threatens the live deployment** — do not hold a
+web push waiting on it.
+
+**And the `pre-push` lint race is real, again.** The push failed once on the whole-repo eslint and
+succeeded on an immediate retry with no change, while a subagent was mid-write in `apps/web`.
+**Retry once before believing it**, exactly as this file already says.
+
+#### `15d-1-books-W-2` landed, then SHIPPED A TOTAL REGRESSION, and the correction is the lesson
+
+**Read this before acting on any parity review's prescribed fix.**
+
+The `15d-1-books-P` review ruled web's `availability === 'external'` fail-unsafe and prescribed
+Android's direction — `!== 'owned'` — at four call sites. That prescription is **wrong on web**, and
+taken literally it marked **the user's entire library as external**: every owned book on Home
+rendered a "not in your library" badge and every tap went to the request flow.
+
+**The two typings are not interchangeable, and the same review had already established why one
+paragraph before it made the recommendation.** Android **route-scopes** `availability` to its
+recommended-item model where kotlinx declares it **required**, so it is always present at the point
+of the check. Web mirrors its types **by hand with no runtime decode** and the field is **optional on
+an interface shared by every item** — an ordinary Audiobookshelf book carries no `availability` at
+all. So on web, **absent is the common case and means owned.**
+
+**The rule now lives in one place with its reasoning**, `apps/web/src/api/availability.ts`:
+absent means owned; **present-but-unrecognised means external**, because rendering an unknown state
+as an ordinary owned item is what dead-ends a tap at an id Audiobookshelf has never heard of. That
+was the review's real concern and it **is** still closed.
+
+**Three things worth more than the fix:**
+
+1. **The wave had to override a correct existing test to land the wrong behaviour.**
+   `Carousel.test.tsx`'s _"does not append anything for an owned item, whether availability is
+   'owned' or absent"_ was encoding the real contract. The spec said otherwise, so the agent changed
+   the test — and reported doing so honestly. **An existing test that contradicts your spec may know
+   something the spec's author does not.** Treat that collision as a signal to re-check the spec, not
+   as an obstacle.
+2. **Nothing that names `availability` caught it.** It surfaced in `tablet-breakpoint.spec.ts`
+   asserting that clicking Dune opens `/item/item-dune` — a test about **layout at 768px**. The
+   suite's value here came from breadth, not from aim. `for-you-external-book.spec.ts` now pins both
+   directions directly, so the next regression fails on a test that names the rule.
+3. **A green targeted run would have missed it.** The agent ran `pnpm vitest run apps/web` (606/606)
+   and typechecks, all green, and was correctly told not to run Playwright. **The orchestrator
+   running the browser suite before pushing is what caught it** — the same shape as the flake found
+   two sessions ago. Keep that division: agents run targeted tests, the orchestrator runs the suite.
+
+**Also merged: `16e-search-spec`** (`docs/design/screens/SEARCH.md`), the fourth screen spec. **No
+`-S` wave is needed** — both existing search routes already return everything results and
+suggestions require, so suggestions derive client-side from responses already in flight. **Lyrics
+search is named explicitly out of scope** (it needs an external full-catalogue provider, unlike the
+per-track lookup that exists).
+
+**Its headline finding is this project's fifth writer-with-no-reader, and the first at the
+component-prop level rather than the route level:** `packages/ui/src/components/SearchField.tsx`
+already has a complete, tested ARIA-combobox suggestion mechanism — `suggestions`,
+`onSuggestionSelect`, full keyboard navigation, covered by `e2e/ui/search-field.spec.ts` — that
+**nothing in the app has ever called with real data.** So web's half of Sofia's "global search needs
+suggestions" is mostly **wiring**, not building. It also specifies two pre-existing Android drifts:
+book result rows are still non-interactive behind a comment claiming no book-detail route exists
+(one has since `16e-book-A`), and the search screen has **no accessibility semantics at all** where
+web announces status through a live region.
+
+#### THE INCIDENT WORTH MORE THAN EITHER WAVE — `isolation: "worktree"` is what creates the worktree
+
+**A subagent ran `git reset --hard` inside the shared checkout and discarded two merge commits.**
+Nothing was lost — the objects survived in the reflog and were restored — but the cause is a trap
+this file had not named, and it is one keystroke wide.
+
+`CLAUDE.md` correctly documents that an isolated agent must `git reset --hard <branch tip>` as its
+first action, because `isolation: "worktree"` bases the worktree on `origin/main`'s empty initial
+commit. **That instruction is only safe when the `Agent` call actually passed
+`isolation: "worktree"`.** Dispatch the same spec _without_ that parameter and the agent has no
+worktree of its own — it runs in `~/src/auralis-src` — and the very first thing you told it to do
+resets the shared checkout onto an older commit, under any concurrently-running agent's feet. A
+reviewer mid-review reported the tree vanishing from under it.
+
+**The check is one line, and it is now mandatory before believing any dispatched agent is isolated:**
+
+```bash
+ls .claude/worktrees/agent-<id>   # no directory => it is in YOUR checkout
+```
+
+**Two rules fall out.** Never put a bare `git reset --hard` in a spec without `isolation: "worktree"`
+on the same `Agent` call — pair them or write neither. And a docs-only or review-only agent needs no
+worktree **and therefore must not be given the reset instruction at all**; it only ever needed to
+read.
+
+### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
+
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty. **`integration-15e-books` is deleted**
+(2026-08-19, `git branch -d`, which refuses anything unmerged) — it existed only to hold a wave off
+`main`, and `main..integration-15e-books` was empty.
+
+Verified on the integration branch **before** merging rather than after: **215 `app` + 212
+`ui-desktop`/`ui-mobile` Playwright at CI's own parallelism, 1713 unit, typecheck across every
+project.** `6bbb5ba` (the podcast triple) is green on `CI`, `Android` **and** `Publish`, so it is
+already on `:latest`. `012132b` was pushed after that and its CI is the next thing to read.
+
+**1. `16e-podcast` — the second screen triple, complete on both platforms with a clean `-P`.**
+See `ROADMAP.md` §16 for the full record. The headline is methodological: **the per-platform
+geometry table works, and there are now two triples' worth of evidence.** Two agents that never saw
+each other's work produced meta lines matching **byte for byte**, separator glyph included — the
+`-P` compared code points rather than eyeballing them.
+
+**Reuse the asymmetry instruction verbatim.** Android's header already existed, so the spec's Android
+column read _"already satisfied by `MediaHeader`, do not rebuild"_ — and `MediaHeader.kt` is
+byte-identical after the triple, confirmed by an empty `git diff`. Told plainly that something is
+already built, an agent fills the slots rather than rebuilding, which is exactly how `16e-book`
+drifted.
+
+**`PodcastDetailScreen` had no Robolectric coverage at all and now has nine cases.** `AlbumDetailScreen`
+still has none — that gap is real and unclosed.
+
+**2. External book recommendations reach both clients.** `15e-books` + `15d-1-books-A` + `15d-1-books-W`.
+Books are her priority-1 medium and had no external source at all. **The three shipped together
+deliberately**: the server wave alone would have put a card on her For You feed indistinguishable
+from a book she owns, leading to a generic error page — and `main` auto-deploys.
+
+**Two findings worth more than the feature:**
+
+- **The research doc was wrong and one `curl` proved it.** `api.audnex.us` has **no author→books
+  listing** (`/books?author=…` and `/authors/:asin/books` both 404), so it cannot answer "what
+  unowned book should we recommend". The wave moved to **Open Library**, which the doc had filed as
+  a redundant fallback. An independent reviewer re-ran the requests and confirmed both halves. This
+  is `15a`'s fixture-validates-the-response lesson being **applied** rather than re-learned.
+- **ISBN is deliberately NOT threaded into `ExternalCandidate.identifiers`, and the reasoning was
+  verified rather than asserted.** `ownership.ts`'s `comparePair` treats a same-field-different-value
+  identifier as a **veto** that bypasses the title/author match entirely, and an audiobook's ISBN is
+  commonly absent from a print work's ISBN array — so threading it would make genuinely-owned titles
+  leak back as undiscovered. The reviewer read `comparePair` and confirmed the veto is real. **Do not
+  "improve" this by adding ISBN.**
+
+### Open follow-ups, none blocking, in the order I would take them
+
+1. **A `-P` is owed on `15d-1-books`.** Its two halves type `availability` differently **on purpose**
+   — Android route-scopes it (kotlinx throws `MissingFieldException` on a required field its other
+   endpoints do not send), web makes it optional on a hand-mirrored interface with no runtime decode,
+   matching web's own music sibling. Both are defensible; nobody has ruled on the pair.
+2. **Web's two request panels now behave differently.** `/music/requests?prefill=` **auto-submits**;
+   the new `/requests?prefillTitle=` deliberately does **not**, matching Android. The cross-platform
+   contract is met at the cost of two web siblings disagreeing — flagged by the wave itself, not
+   found later.
+3. **`GET /libraries/:id/recommended` is not gated by library media type server-side**, so a podcast
+   library could in principle receive a book-shaped external item. Android's tap redirect is
+   book-only (no podcast request flow exists to redirect to), so such an item would still dead-end —
+   **same failure mode as before, not worse.** Verify whether the route is genuinely book-scoped.
+4. **A subtitle colour-role divergence, inherited from `16e-book` rather than introduced.** Web's
+   non-link subtitle renders `--surface-fg` (full emphasis); Android's is always `onSurfaceVariant`
+   (muted). Now visible on every podcast, since a publisher name is always the never-linked case.
+   One for a `SONORA.md` pass: muted on both, or full emphasis on both.
+5. **Open Library's recommendation _quality_ is unassessable here** — same standing caveat as every
+   external-discovery wave. It needs her real library, which needs the Audiobookshelf credential this
+   file has owed her for weeks.
+
+**Closed this session, so nobody re-opens them:** the accessibility-order divergence the `-P` found
+(web announced an episode row **date-first** because `ListItem` renders `overline` before `headline`
+and this is the first call site to use `overline`; fixed with an explicit `aria-label` rather than by
+swapping the props, since swapping would move the date above the title _visually_ — a design change
+to fix a screen-reader bug), and web's `themeStore` rehydrating `localStorage` with **no validation**
+where Android falls back explicitly, which was one of the two drifts `16f-P` named.
+
+**Android's pending-state divergence was ruled acceptable idiom, not a defect** — its
+`pendingEpisodeId` clears on any `PlayerUiState` change rather than on that episode's request
+settling, because `playEpisode` is fire-and-forget with no completion signal to await. Bounded and
+self-correcting. Do not re-litigate it.
+
+### Two operational findings that qualify this file's own advice
+
+**1. Two suites at once starve each other on this laptop.** Running `pnpm test` and `pnpm test:e2e`
+**concurrently** produced a red result from each: `themeStore.test.ts` timed out at its 5s limit, and
+**four `e2e/ui/button.spec.ts` tests failed on `ui-desktop`**, all four with `Test timeout of 30000ms
+exceeded` and **no assertion mismatch**. Alone, the unit file passes and the button spec passes
+**9/9 in 50s**, each test taking ~6s against a 30s budget.
+
+So **"the orchestrator runs the full suite" does not mean it runs two of them at once.** A timeout
+with no assertion mismatch, on tests that pass in a fifth of their budget alone, is contention. The
+same applies while subagents work: a heavy orchestrator run starves _their_ tests, and they will
+misdiagnose it as their own breakage.
+
+**2. The `pre-push` whole-repo lint blocks spuriously while agents are active** — twice this session,
+both times passing on an immediate retry with no change. This file already noted it as a one-off; it
+is not. It is a whole-repo eslint racing a file a subagent is mid-write on. **Retry once before
+believing it**, and read whether it names a file you actually touched.
+
+**A third, smaller one:** a foreground `Bash` call caps at ten minutes, and the full `pnpm test:e2e`
+takes ~12. Run it **split by project** (`--project=app`, then `--project=ui-desktop --project=ui-mobile`)
+rather than backgrounding it — a backgrounded run was killed mid-suite here at test 67 of 427, which
+looks exactly like a failure and is not one.
+
+### `16e-album` is HALF DONE — spec and `-A` merged; **`16e-album-W` and `16e-album-P` are owed**
+
+**`main` carries `docs/design/screens/ALBUM_DETAIL.md` (520 lines, all 44 citations verified to
+resolve) and `16e-album-A` (`4979fc3`).** Nothing is claimed and nothing is in flight.
+
+**This is a deliberately incomplete triple, and the web half is the next thing to do.** Per
+`CLAUDE.md`'s frontend-parity rule a wave that changes one platform and says nothing about the other
+is incomplete rather than merely first — so `16e-album-W` is owed, then `16e-album-P`. The spec is
+the contract for both; do not build web against Android's output.
+
+**Web's half is unusually cheap**, and that is the opposite of the last two triples. Android already
+adopted `MediaHeader` here in `16e-book-A-2`, so `-A` filled its unwired `meta`/`actions` slots.
+**Web has never used the shared `MediaHeader.tsx` on the album page**, so `-W` is a plain third
+adoption — no extraction needed, since `16e-podcast-W` already built the component.
+
+**What `-A` landed, so `-W` builds to the same thing:** the meta line
+(`"2021 · Synthwave · 2 tracks · 7 m"` shape), Play and Shuffle in the header's `actions` slot
+(omitted when there are no tracks), a linkable artist subtitle, a currently-playing track indicator,
+merged row semantics announcing `"Tidal Lines, 3:34"` and `"Static Coast, 3:18, Playing"`, and
+`AlbumDetailScreen`'s **first ever** Robolectric coverage — it was the last of the three detail
+screens with none.
+
+**`MediaHeader.kt` gained one optional `onSubtitleClick` parameter with a default.** It is shared by
+three screens; verified by diff rather than by report that `BookDetailScreen` and
+`PodcastDetailScreen` are untouched, so their subtitles are unchanged by construction. The subtitle
+`Text` lives inside the component's own `Column`, which is why a caller-supplied slot could not carry
+the click.
+
+**`16e-album-A` is CI-green on `79c0134`, after two red rounds that bought a lesson worth more than
+the wave.** Both rounds were the **same** cause wearing two faces, and it is now the fourth time the
+`LazyColumn` viewport trap has bitten a wave here:
+
+> **A Compose click that neither throws nor fires its callback is off-viewport.** `performClick`
+> injects a touch, and a touch must land inside the _displayed_ viewport to reach its target. When it
+> does not, nothing throws — the failure surfaces as a bare `AssertionError` on the **next** line,
+> pointing away from the cause. **The tell is that `assertExists` on the same tag passes**: existence
+> only needs the node composed, a click needs it displayed.
+
+Round one fixed Play/Shuffle by scrolling to the tag first. Round two needed a different instrument:
+**`performSemanticsAction(SemanticsActions.OnClick)`**, which invokes the node's own click action and
+so does not depend on gesture dispatch or geometry at all. **That is not a weaker assertion** — it
+still fails if the handler is unwired and still pins that the album's _own_ artist id is reported.
+Reach for it whenever a click must be verified on a tall screen.
+
+**Why this screen and not the earlier ones:** `16e-album-A` gave the header both a meta line **and**
+an actions row, making it the tallest in the app. The wave scrolled before asserting on track rows —
+correctly — and assumed header content was safe, which was true until this header grew.
+
+**Two things `-A` flagged honestly and a reader should not have to rediscover:**
+
+1. **Its track-tap test locator is genuinely uncertain.** The merged-semantics node and the clickable
+   node are **different nodes** — the click lives on `TrackContextMenu`'s own `combinedClickable`
+   `Box`, an ancestor shared with `PlaylistDetailScreen` and `FavoritesScreen`. Nothing here compiles
+   Kotlin, so **CI is the first place this resolves.** If it is red, the fix is almost certainly a
+   locator adjustment in the test, **not** the product code — `onTrackClick` is wired identically to
+   the already-working `onGoToArtist`/Play/Shuffle callbacks.
+2. **Its cover-fallback assertion is a pin, not a proof** — that path was already correct from
+   `16e-book-A-2`, so it cannot fail on a regression this wave could introduce. Kept only because the
+   spec lists it as a required minimum. The wave said so itself rather than counting it as coverage.
+
+**Three findings from the spec's recon that `-W` must act on:**
+
+1. **Web's album track rows carry an `aria-label` that drops duration entirely** — a real web-side
+   accessibility gap, found by looking rather than by a review afterwards. §11 pins the announced
+   shape for both platforms; `-W` closes it.
+2. **The artist link is the first genuinely symmetric case across the three triples** — both
+   platforms already have an artist screen and a working route — so the spec states outright that any
+   asymmetry there is **drift, not idiom**. That is a ruling `-P` would otherwise have to guess at.
+3. **No BFF change is needed.** There is no single-item album route, and `Album`'s `productionYear`,
+   `genres` and `trackCount` are already fetched by both clients and simply discarded today.
+
+### What to pick up next
+
+1. **`16e` — the remaining screens.** Done: book detail, podcast detail. Left: **Music/Album**,
+   **Search**, **Now Playing/Queue/Mini player**, **Settings/Onboarding**, and For You/browse.
+   `docs/design/screens/PODCAST_DETAIL.md` is the template to copy, and `BOOK_DETAIL.md` beside it.
+   **`AlbumDetailScreen` has no Robolectric coverage**, which makes Music/Album the natural next one.
+   **One `-W` in flight at a time** — the Playwright port serialises them; `-A` halves and spec
+   authoring parallelise freely.
+2. **The remaining `--m3-*` consumers**, measured rather than guessed: `Fab`, `ListItem`, `Marquee`,
+   `NavigationBar`, `SearchField`, `Snackbar`, `TopAppBar`. Deletion is **not** close.
+3. **Phase 15's remaining waves** are disjoint from all of this and need no browser, so one can run
+   beside any `16e` triple — that is the only parallelism this repo has left.
+
+**Still with Sofia, still blocking nothing:** queue `dbfb46e` (should album-art-derived colour ever
+drive the accent?) and `abbaca2` (the two WCAG numbers).
+
+### Two suites at once starve each other on this laptop — do not read a failure from a concurrent run
+
+Measured 2026-08-18, and it qualifies this file's own advice. The orchestrator ran `pnpm test` and
+`pnpm test:e2e` **concurrently**, and got a red result from each: `themeStore.test.ts` timed out at
+its 5s limit, and **four `e2e/ui/button.spec.ts` tests failed on `ui-desktop`**, all four with
+`Test timeout of 30000ms exceeded` and **no assertion mismatch**. Re-run alone with nothing else
+loaded: the unit file passes, and the button spec passes **9/9 in 50s**, each test taking ~6s
+against a 30s limit.
+
+So the baseline on this tree is **green** — 416 passed plus four starvation timeouts — and the
+lesson is narrow and worth keeping: **"the orchestrator runs the full suite" does not mean it runs
+two of them at once.** A timeout with no assertion mismatch, on tests that pass in a fifth of their
+budget when run alone, is contention rather than a defect. The same applies while subagents are
+working: a heavy orchestrator run starves _their_ tests, and they will misdiagnose it as their own
+breakage.
+
+### `for-you.spec.ts`'s skeleton assertion is **inherently racy**, and that may mean 14a-2 was reverted for nothing
+
+Measured 2026-08-17, and it is the most consequential thing this session found.
+
+`for-you.spec.ts`'s _"a loading skeleton occupies the same box as a loaded card"_ went red on CI
+after `16d-W-1`/`16d-W-1b`, which looked exactly like the docking change breaking layout stability.
+Two experiments say it did not:
+
+1. **The scrollbar hypothesis is dead by measurement.** Adding `overflow-y: auto` to the content
+   column could have reserved classic-scrollbar width the document-scroll layout never took —
+   deterministically collapsing a two-column grid, and only on a platform with space-taking
+   scrollbars, which is a perfect local-green/CI-red shape. Measured at the same viewport:
+   `clientWidth` is **740 before and 740 after**. Only `clientHeight` changes, which is what
+   docking is _for_.
+2. **The control arm settles it.** The **unmodified** spec against **fully pre-docking** `app.css`,
+   at default parallelism, fails the identical assertion in the identical way (`toBeVisible()`
+   passes, then `boundingBox()` returns `null`) on **4 of 5 repeats**. The race predates both waves.
+
+**Its real cause is already in this file:** phase 14c documented that `HomePage` stitches four
+independent async sources with nothing reserving their space, and that the fix is a product
+decision nobody has taken. **That unfixed decision is what makes this test noisy.**
+
+**The hypothesis worth carrying forward — flagged as a hypothesis, not a finding.** `14a-2` was
+reverted on _"six clean CI runs before, two failed of three after"_ on **this same assertion**.
+Against a demonstrated ~80% local baseline failure rate at default parallelism, a 2-of-3 sample is
+not distinguishable from that noise. So the revert **may** have been unfounded, in the same shape as
+the documented-unfounded 13e revert.
+
+**Do not act on that yet, and be precise about what was not done:** nobody reproduced 14a-2's actual
+change, its CSS-delivery-timing mechanism, or the bundle state of that moment — 16b and 16c have
+landed a great deal since. The mechanism 14a-2's own write-up describes (a component painting before
+its lazy-loaded CSS chunk applies) is real and **distinct** from this race. **Both can be true at
+once:** a genuine CSS-timing risk existed, _and_ the samples used to judge it came from a test too
+noisy to tell a regression from its own baseline. If anyone revisits `sideEffects`, that is the
+first thing to settle, and it now needs a repeat-each baseline rather than three CI runs.
+
+The test itself is now hardened rather than loosened: the mocked response is gated behind a
+test-controlled promise so the skeleton is reliably capturable, and both box reads are polled. The
+geometry comparisons and the `>= 2` count are untouched, so a real regression still settles on a
+wrong number and still fails.
+
+### `context-menu.spec.ts`'s focus-return test is independently racy — named, not fixed
+
+It fails **8 of 8** when isolated with `-g` + `--repeat-each`, and passes **4 of 4** in every normal
+full-suite run including a CI-equivalent `pnpm test:e2e`. Nobody has an explanation for the
+asymmetry; the file is already `mode: 'serial'` and the test is self-contained. Nothing in either
+docking wave touches focus, Escape handling or menu code.
+
+**Left alone deliberately.** Hardening it inside a wave that is not about it would have hidden a
+real unknown. Two practical consequences: **`--repeat-each` on a single `-g`-selected test is not a
+neutral instrument** — it can manufacture a failure the real invocation never shows — and if this
+one ever goes red on CI for real, it starts from "known flaky", not from "new regression".
+
+### `--workers=1` is a **weaker** check than CI, and this file's own advice hid that
+
+Paid for on 2026-08-17 by a red `main`. The orchestrator ran the full `--project=app` suite locally,
+got **196 passed / 0 failed / 0 skipped**, ran `ui-desktop` + `ui-mobile` at **192 passed**, unit at
+**1660/1660**, typecheck green — and CI then failed on the same tree.
+
+**The local run used `--workers=1`. CI does not.** `playwright.config.ts` sets `workers: '100%'` and
+`fullyParallel: true`, and CI runs a plain `pnpm test:e2e`. So the two runs were not the same
+experiment, and the local one could not see anything caused by parallelism, contention or the
+slower per-test timing that comes with it.
+
+**This file told me to do that.** Its own guidance reads _"prefer `--workers=1` for a long
+full-suite run"_ — sound advice for _reading_ a run, since interleaved output from four workers is
+unreadable, but it quietly turns the authoritative-looking local green into a weaker check than the
+thing it is standing in for. Both halves are true and they were never stated together.
+
+**So: `--workers=1` for diagnosing, default parallelism for verifying.** A green `--workers=1` run
+is evidence about correctness and **not** evidence about what CI will do. If you are about to push
+and call something verified, run it the way CI runs it.
+
+The failure it hid is the one with history: `for-you.spec.ts`'s _"a loading skeleton occupies the
+same box as a loaded card"_, the same layout-stability invariant that failed CI-only twice on
+`14a-2` and got that wave reverted. **It is the canary for any change to how the app lays out or
+delivers CSS. When it goes red on CI and green locally, believe CI.**
+
+### `app.css` has a **vitest** test that parses it as text — a CSS-only wave must run `pnpm test`
+
+Cost half an hour on `16d-W-1`, 2026-08-17, and it is not discoverable by reading either file.
+
+`apps/web/src/styles/layoutOverflow.test.ts` is a **unit** test that reads `apps/web/src/styles/app.css`
+as a string and looks selectors up **literally**, then asserts on their rule bodies. So moving a rule
+from one selector to another — which is exactly what a layout refactor does — fails it with
+`no rule found for selector …`, naming a selector that is _supposed_ to have gone away.
+
+The wave ran targeted Playwright specs, `format`, `typecheck` and `lint`, all green, and never ran
+vitest, because "I changed CSS" does not suggest a unit suite. The orchestrator's own run caught it
+at **1659/1660**.
+
+**The instruction, for any wave touching `app.css`: run `pnpm vitest run apps/web`.** It is seconds,
+and it is the only thing in the toolchain that sees this class of break.
+
+**And when it fails, the fix is not automatically the test.** Here the reviewer had to establish
+which of the two was wrong — whether the mini-player clearance padding had been _moved_ (fix the
+test) or _dropped_ (fix the CSS, because the test's name records a real past defect: content
+scrolling behind the compact mini player). It had moved, correctly: padding on `.auralis-shell--compact`
+reserves nothing once the shell no longer scrolls. Re-pointing the test was right, and the reviewer
+confirmed it still discriminates by stripping the `padding-bottom` and watching it go red — a
+re-pointed text-scan test that no longer fails on the real defect is worse than a deleted one.
+
+### The `UnifiedSearchViewModelTest` race is now demonstrated, not merely well-argued
+
+**This file has asked for this sample for weeks and it is finally in hand.** The bar it set was
+_several uncached executions_, and uncached ones only exist when a sha touches `apps/android` —
+which is why a fix landed in `e71837f` sat at one sample for so long.
+
+Three now, all green, each confirmed by grepping the job log rather than reading a badge:
+
+| sha       | what drew it   | tasks seen bare (not `FROM-CACHE`)                                    |
+| --------- | -------------- | --------------------------------------------------------------------- |
+| `e87a551` | 14b-2          | `testDebugUnitTest`                                                   |
+| `9d27733` | `15d-1-A`      | `testDebugUnitTest`, `compileDebugKotlin`, `compileReleaseKotlin`     |
+| `778c62a` | `16d-A`'s KDoc | `testDebugUnitTest`, **`testReleaseUnitTest`**, both `compile*Kotlin` |
+
+**Take the fix as demonstrated and stop treating it as open.** Note the third row is the first to
+draw a bare `testReleaseUnitTest` alongside the debug one — the two variants cache independently,
+and `9e87fdc`/`b2561b8`'s clean coin-toss demonstration was on the _release_ task, so that is the
+variant the original failure was actually observed on.
+
+The general lesson survives the item closing, and is the reusable half: **a green Android badge on
+a sha that did not touch `apps/android` executed nothing.** Keep grepping the log.
+
+### Today's worktree branches are prunable — unlike the historical ones
+
+The section further down describes worktrees `worktree-gc.sh` can **never** prune, because their
+content reached `main` by cherry-pick or re-commit and so shares no ancestry. **None of
+2026-08-17's are like that.** Every wave this session was integrated with a real `--no-ff` merge
+commit, so `git merge-base --is-ancestor` succeeds for each and the gc script's safety rail is
+satisfied rather than tripped.
+
+**Practical consequence: do not re-audit them.** `worktree-gc.sh` will prune today's on its own.
+The four that will remain refused — `a0edf63595b976e4e`, `a1b2a40eb1e9e4e64`, `a623d0d03e48b3297`,
+`ab5d9dfca22e6dee6` — were re-verified this session and are exactly the ones already documented as
+cherry-picked, re-committed or superseded. **No worktree on this disk holds lost work.**
+
+The reason this session merged that way is the lesson the older ones paid for: two agents dispatched
+from one base cannot both fast-forward, and cherry-picking the second lands identical content while
+permanently stripping the gc script's ability to prove it merged. **A real merge commit costs
+nothing and keeps the ledger self-maintaining.**
+
+### Two agents cannot both run Playwright here — one fixed port decides it
+
+Established 2026-08-17 while deciding whether to dispatch a third wave beside `16d-W-1`. The
+directories were disjoint (`packages/ui` + `e2e/ui` versus `apps/web` + `e2e/app`), which is the
+test this file has always applied, and **that test is not sufficient**.
+
+`playwright.config.ts` declares **two** `webServer` entries and Playwright boots **all** of them
+regardless of which `--project` you asked for. The gallery server is `reuseExistingServer: !CI`, so
+it is fine. The app server is deliberately **`reuseExistingServer: false`** on a hardcoded
+**`PORT: 4310`** — and the comment above it explains why, correctly: it is stateful, `DATA_DIR` is
+`:memory:`, `onboarding.spec.ts` asserts on the unconfigured state a fresh boot gives, and reuse
+would also skip the `vite build` and silently test a stale bundle.
+
+So two agents in two worktrees each running any Playwright project contend for 4310. Best case the
+second fails to bind; **worst case it binds to the first agent's server and both runs silently
+share one stateful single-tenant BFF** — which is the cross-file contamination this file already
+documents at the _spec_ level, now available at the _agent_ level and much harder to see.
+
+**The rule that falls out: at most one agent at a time may run Playwright, whatever the projects.**
+Disjoint directories are necessary and not sufficient — check for a shared port too. A wave that
+needs no browser (Kotlin, server unit tests, docs) still parallelizes freely, which is what
+`16d-A` did beside `16d-W-1` without incident.
+
+Not worth "fixing" by parameterizing the port: the orchestrator runs the full suite anyway, and
+per-agent ports would trade a loud collision for a quiet one.
+
+### DONE — `16c-4-W`: the portalled trio is inside the theme root. **`16c-5-W` is the wave it unblocks.**
+
+**`main` is at `f8a6e4e`; `CI`, `Android` and `Publish` all green.** Full `pnpm test:e2e` (CI's own
+invocation, no `--project`, no `--workers`): **412 passed, 0 failed, 0 flaky.** Unit **1662/1662**.
+
+**The mechanism, so `16c-5-W` does not re-derive it.** `ThemeProvider` renders a **`display: contents`**
+portal target as a child of `.auralis-theme-root` and a sibling of `MantineProvider`, exposed as
+`useTheme().portalTarget`; `Dialog`/`Sheet`/`Menu` pass it through `portalProps`. `display: contents`
+is load-bearing — the node contributes no box, so it cannot become a containing block and change how
+a `position: fixed` descendant behaves. Child of the theme root ⇒ tokens resolve; sibling of the
+shell ⇒ `16d-W-1`'s `overflow: hidden` cannot clip it. **`withinPortal={false}` would have been
+defensible before this morning and is wrong now**, which is worth knowing if anyone reads the older
+notes.
+
+**It was proved rather than asserted, which for this wave is the whole job.** The new tests read
+`getComputedStyle` and were run against the pre-fix code first: `--surface-card` resolved to the
+**empty string**, per component, per theme. Six gallery screenshots confirm all three render fully
+styled in light and dark. Without that, all three could have rendered completely unstyled and passed
+100% of the suite, which asserts testids and text and never computed styles.
+
+**A locator trap it hit, already documented in the code that bit it:** Mantine applies
+`Drawer.Content`'s className to **both** the fixed positioning wrapper and the visible panel, so
+`.m3-sheet-panel` matches two nodes and Playwright's strict mode rejects it — `Sheet.css`'s own
+header comment says so. Select the dialog by role and name instead.
+
+### DONE — `16e-book-A-2`. **`main` is `0afef1b`, green on `CI`, `Android` and `Publish`.**
+
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty.
+
+**One `MediaHeader` composable now serves `BookDetailScreen`, `PodcastDetailScreen` and
+`AlbumDetailScreen`** — 232dp/208dp art tile, `shapes.large` corners, uppercase muted kind label,
+weight-900 title, all from the scale `16b-2-A` already landed. Each screen keeps its own content and
+ViewModel; only the header's layout and styling is shared.
+
+**The regression it actually fixed was invisible and affected all three screens: none passed a
+placeholder or error painter.** Coil paints **nothing** while loading, on failure, or when the model
+is null — and `coverUrl` is null until the server base URL resolves — so every one of them rendered
+an **empty box**, not a styled one. **Compose has no cascade to fall through the way CSS does.** That
+is now the standing instruction in §16 for every remaining screen spec.
+
+**Two judgement calls, stated rather than buried:** `dp` is read 1:1 against Sonora's CSS pixels as an
+intentional reading, not a conversion, on the same basis `16d-P` accepted for the 600dp breakpoint;
+and compact-versus-wide measures the header's **own** available width via `BoxWithConstraints`,
+because a screen on the nav host cannot see the shell's window state.
+
+**It broke three `BookDetailContentTest` cases and the wave predicted it would not.** The cause is
+worth knowing: **the header got ~112dp taller, `BookDetailContent` is a `LazyColumn`, and the chapter
+rows fell outside the composed viewport** — so the queried nodes did not exist. **Not a product
+regression**; `MediaHeaderTest` composes the header standalone and passed throughout. Fixed by
+scrolling to each target first, with every assertion unchanged — the tap test still pins the exact
+chapter's title _and_ index, so a wrong-chapter bug still fails it.
+
+**`PodcastDetailScreen` and `AlbumDetailScreen` have no Robolectric coverage at all.** They did not
+break, and **that is not the same as being verified** — worth a wave if either is next.
+
+`16e-book-P`'s top follow-up, taken immediately and deliberately **ahead of the next screen triple**.
+**Three Android detail screens now share the same pre-Sonora header** — `BookDetailScreen`,
+`PodcastDetailScreen`, `AlbumDetailScreen` all render a 96dp thumbnail row with no cover-fallback
+painter and no small-caps muted label, where Sonora specifies a 232/208px tile. Building one
+composable now is the difference between fixing three call sites and fixing four.
+
+**This is the first Android wave whose brief is a visual value rather than a behaviour**, which is
+exactly the class `16e-book-A` missed, so the spec carries the numbers as an explicit table rather
+than as prose — the correction §16 now records.
+
+### DONE — `16e-book`, the first screen triple. **The spec-first approach half worked, and why matters.**
+
+`main` `f9de4e8`, `CI` and `Android` green; Android's run on `3e89fb2` is a genuine **uncached**
+execution, so the new Robolectric coverage really ran. Full `pnpm test:e2e`: **420 passed, 0 failed.**
+Unit **1671/1671**. Android now **has** a book detail screen, which it never did — books played on
+tap with no page, on the user's stated priority-1 medium.
+
+**The `-P` verdict on the approach, which governs the six remaining screens.** Where
+`BOOK_DETAIL.md` gave **prose behaviour contracts** — the fallback table, the chapter-tap cases, the
+meta-line joining rule — or **a literal example string** (`"19 h 07 m"`), the two agents converged
+_exactly_, including two independently-made formatting calls landing identically. **Where §3 gave
+numeric visual values buried in prose** — 232/208px art tile, small-caps label, `--radius-lg` — web
+read them and **Android did not**.
+
+**So the drift is real: Android did not build Sonora's `MediaHeader` at all.** It built a 96dp
+thumbnail row with no cover-fallback painter and no small-caps muted label — because that is exactly
+what `PodcastDetailScreen` and `AlbumDetailScreen` do, and **those are pre-Sonora**. The `-A` agent
+faithfully followed internal precedent without registering that the precedent is the thing being
+replaced. **Labelled accidental drift**, not idiom: nothing in its diff states a decision to defer.
+
+One accidental mitigation, checked rather than assumed: Android's `titleLarge` already resolves to
+weight-900 at `--h4-size` from `16b-2-A`, so the title's _type_ is Sonora-correct even though the
+tile and placeholder are not.
+
+**THE CORRECTION FOR EVERY REMAINING SCREEN SPEC — apply it before writing the next one.** Put
+geometry and type values in an explicit **per-platform table inside the behaviour contract**, one
+row per token (art size, radius, title face/weight/size, label casing, muted-colour role), one
+column per platform — so a number is a contract line an agent must satisfy or explicitly decline,
+not a sentence to skim while hunting for behavioural instructions. And state outright: **"Compose has
+no CSS-cascade fallback — name the placeholder/error painter for every image, not just the happy
+path."** Recorded in `ROADMAP.md` §16 too, beside the `16e` bullet where a dispatching session will
+actually meet it.
+
+**Everything else came back clean, each verified rather than asserted:** all three sanctioned
+inequalities are still the sanctioned ones (download Android-only, author link web-only,
+series/genres/year/ISBN on neither); both Android entry points changed together, with a grep
+confirming no remaining book-tap-to-play anywhere; and **the screen-scoped author type held** —
+`AuthorBadge` is byte-identical, still declaring no `id`, so the guard against the thrice-shipped
+minified-item bug is intact.
+
+**Four small follow-ups it named, none blocking:**
+
+1. **`16e-book-A-2`** — build a reusable Compose `MediaHeader` equivalent. **Do this before the next
+   `-A` screen wave**: three Android screens now share the same pre-Sonora header, so this is the
+   moment to build one composable rather than let a fourth drift the same way.
+2. `UnifiedSearchScreen.kt`'s book rows are **non-interactive**, with a now-stale comment saying no
+   book-detail route exists. One exists.
+3. `CoverImage`'s fallback tile ignores the caller's `style`, so the new radius never renders in an
+   environment where covers do not decode — affects `ItemPage` **and** `PodcastDetailPage`, so it is
+   a component defect, not a screen one.
+4. Web links only the first author of several, uncommented and untested — no fixture has two.
+
+**The largest parity hole found so far, and it is on the user's stated priority 1.** Established by
+the `16e-book` recon wave with file:line evidence, not inferred: `Routes` in `AuralisNavHost.kt` has
+**no book entry**, while `PODCAST_DETAIL_PATTERN` and `MUSIC_ALBUM_DETAIL_PATTERN` both sit right
+beside it. Every Android tap path — `BooksScreen.kt:103` and `ForYouScreen.kt:72` — calls
+`playerViewModel.playItem(itemId)` directly, so **tapping a book starts playing it with no
+intermediate page**. The only `ApiClient.getItem` call site in the tree is Android Auto's browse
+tree, not a screen.
+
+**Labelled accidental gap, not idiom** — nothing in any doc claims it was decided against, and the
+container-needs-its-own-page pattern exists twice over in the same file.
+
+**`docs/design/screens/BOOK_DETAIL.md` is the shared behaviour spec** both waves build from — the
+first of its kind, and §16 requires one per screen so neither client is implemented against the
+other's output. Read it rather than either implementation.
+
+**Four calls it records, so the two waves cannot drift by guessing differently:**
+
+- **Series, genres, published year, ISBN are out of scope** — absent from both platforms _and_ from
+  Sonora's own book block. Named rather than silently dropped.
+- **Chapters are genuinely new on both.** `ChapterList.tsx` only ever operates on an already-loaded
+  player session, never on a not-yet-playing book, so tap-a-chapter-to-start-and-seek is new work.
+- **Offline download stays Android-only**, matching `DESIGN.md`'s own native-Android decision.
+  **Web's button is omitted rather than faked** — web has no download feature anywhere.
+- **The author link is deliberately unequal:** web links to `/author/:id`, Android renders plain
+  text, because building an Android author screen is out of this triple's scope.
+
+**One trap it surfaced that would otherwise be rediscovered.** `GET /items/:id?expanded=true` **does**
+carry real, matchable author and series ids — `expanded=true` returns Audiobookshelf's structured
+array, not the minified fallback. But web's shared `AuthorBadge` type **deliberately strips `id`
+app-wide** because of the twice-shipped minified-item bug. **The spec calls for a screen-scoped type
+here rather than widening the shared one**, which keeps that guard intact. Android's `AuthorRef`
+already has a non-nullable `id` and does not use it.
+
+**No BFF change is needed** — the existing route already serves everything.
+
+### Session end, 2026-08-18 — **`main` is `ecf276b`, green on `CI`, `Android` and `Publish`**
+
+Nothing claimed, nothing in flight, `docs/agent-specs/` empty. Local at CI's own invocation
+(`pnpm test:e2e`): **413 passed, 0 failed**. Unit **1662/1662**.
+
+**Fourteen waves landed.** Phase **16d is complete on both platforms** — Sofia's reported scroll bug
+is fixed — and phase 16c's web migration is materially further along.
+
+| Wave                                       | What                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| `16d-W-1`, `16d-W-1b`, `16d-A`, `16d-P`    | the docked shell; scroll-reset; Android had no bug; parity          |
+| `16d-W-2`                                  | rail wide at 1024; `Icon`'s `filled` prop gets its first reader     |
+| `16d-A-2`                                  | Android stops offering destinations whose upstream is unconfigured  |
+| `16c-2-W-3`, `16c-2-W-4`                   | compact nav pill on `--accent`; Settings' unselected buttons fixed  |
+| `16c-4-W`, `16c-5-W`                       | the portalled trio re-parented into the theme root, then migrated   |
+| `16b-2-A-2`, `16f-A-1`, `16f-A-2`, `16f-P` | Android's chroma coverage; Settings screen; a working accent picker |
+
+**`16f-A-2` closed the gap `16f-A-1` only appeared to close** — see the correction above.
+`AuralisAppTokens.current` now has **four production readers**: the accent-swatch ring and selected
+mode chip (`SettingsScreen.kt`), and the indicator on both nav bar and rail
+(`ShellNavigationItems.kt`). Per-call-site rather than threading `accent` into the scheme builders,
+so `SonoraThemeTest`'s 32 chroma assertions stand untouched and nothing else in the app shifted.
+
+**Its two pixel tests were removed and that is a real, recorded loss.** They asserted the rendered
+colour _changes_ with the accent — the exact assertion whose absence let `16f-A-1` ship green and
+inert. `captureToImage` has no other user in this repo, nothing here compiles Kotlin, and two
+evidenced fixes failed (`@GraphicsMode(NATIVE)` was already present; recycling the bitmap did not
+help). **Nothing mechanical now stops a future edit reverting one of those four readers to a static
+`MaterialTheme` value.** A KDoc stands where each test was. **Bringing them back needs a JDK on this
+machine, or an assertion that does not go through pixels.**
+
+### Superseded — the 2026-08-18 "what to pick up next" list
+
+**Its four items are all now stale or done**, so the list itself is removed rather than left to be
+followed: `16e` has since delivered two screen triples, `themeStore`'s missing validation is fixed,
+and the current list lives in the 2026-08-19 hand-off at the top of this file. **Read that one.**
+The only item that survives unchanged is Android's theme-mode button order (light/dark/system against
+web's system/light/dark), which nothing in `SONORA.md` rules on.
+
+### DONE — `16c-2-W-4` and `16f-A-1`. **`main` `ad38f75`, `CI` and `Android` green.**
+
+**CORRECTION, 2026-08-18, by `16f-P` — I claimed this wave made Android themeable and it does not.**
+The original wording said _"Android can be themed at all, for the first time"_. **That is wrong, and
+the accurate statement is narrower: the plumbing is wired and unit-tested, and the accent still
+paints nothing.**
+
+Verified independently by the orchestrator rather than taken from the review: **`sonoraDarkColorScheme()`
+and `sonoraLightColorScheme()` (`ui/theme/Color.kt:134`, `:161`) take no parameters at all**, so the
+chosen accent cannot reach `MaterialTheme.colorScheme` — which is what `FilterChip`, `Button`,
+`Slider`, `IconButton` and `NavigationBar`/`NavigationRail` all actually read. And **`AuralisAppTokens`/
+`LocalSonoraAppTokens` have zero readers anywhere in `src/main`** (grep returns nothing outside their
+own definition); the only consumer is a test.
+
+**So picking a swatch persists it, recomposes correctly, and changes nothing on screen — including
+the picker's own selection ring**, which reads `MaterialTheme.colorScheme.onSurface`. `16f-A-1` moved
+the writer-with-no-reader **one level deeper** rather than closing it: `AuralisTheme`'s `accent`
+parameter now has a caller, and the tokens it produces have no consumer. That is this project's
+most-repeated failure, and it got past an implementation wave _and_ my own merge review; **the `-P`
+is what caught it.** Do not let the next session read "Android is themeable" anywhere and believe it.
+
+**What `16f-A-1` genuinely delivered**, which is real and worth keeping: a Settings screen, theme
+mode (light/dark/system) that **does** work end to end, `SonoraAccentPresets` consumed as a list,
+persistence through `KeyValueStore`, and a tested `ThemeViewModel`. Settings is reached from `ForYouScreen`'s top bar beside Downloads and
+Requests, deliberately **not** a sixth shell destination, since that would change primary navigation.
+Theme state lives in a new `ThemeViewModel` scoped **above** `AuralisTheme` in `MainActivity` —
+`AppStartViewModel` could not host it because it is scoped to the nav host and so cannot wrap the
+loading screen. Persistence reuses `KeyValueStore` through `AppContainer`, exactly as
+`ServerConfigRepository` does.
+
+**It compiled and passed first time, against a budgeted two-to-three red rounds.** That is now the
+second Android wave in a row to do so, and the repeatable reason is the two compiler-free pre-checks
+run before dispatch reached CI. The budget advice still stands; the pre-checks measurably reduce it.
+
+**One limit stated rather than glossed:** the launch flash is only _partly_ avoided. There is still
+one unthemed frame before the stored preferences resolve — it carries no accent or mode styling, so
+nothing flashes the _wrong_ Sonora colours, but it is not zero.
+
+**`16c-2-W-4`'s premise was wrong, and underneath it was a real bug.** Sonora's own vendored
+primitives are unanimous that the not-selected case is plain surface tone with **no `--accent`
+reference** — `Button`'s secondary variant, `Chip`'s unchecked state, `IconButton`'s inactive state.
+So tinting them would have contradicted the design authority. **But they were not neutral either:**
+they carried no style override at all and fell through to **Mantine's `outline` variant reading
+`theme.colors.auralis`, derived from `scheme.primary`, which `ThemeProvider` still derives from
+`sourceColor` rather than `--accent`** — an orphaned pre-Sonora tint tracking neither the picker nor
+Sonora's palette. Now reusing `Chip`'s own unchecked trio, so the two controls agree by construction.
+
+**A `-P` is owed** on whether both pickers offer the same 17 presets in the same order, and on the
+two accessibility numbers already with Sofia.
+
+### `browse.spec.ts` has a parallelism flake — seen once, not reproducible, not chased
+
+2026-08-18. A full `pnpm test:e2e` came back **411 passed / 2 failed** — `browse.spec.ts:136`
+("an empty search prompts instead of showing 'no matches'") and `:152` ("search status is announced
+to screen readers via a live region"). **Neither wave in flight touched browse, search, or anything
+they depend on.**
+
+Established, cheaply, before believing it:
+
+- `browse.spec.ts` **alone**: 14/14.
+- `browse.spec.ts` **with `settings-a11y.spec.ts`** (the only spec either wave changed): 20/20.
+- **Full suite re-run on the identical tree: 413 passed, 0 failed.**
+
+So it is a flake under full parallelism, like `for-you.spec.ts`'s skeleton assertion and
+`context-menu.spec.ts`'s focus-return test. **Named, not chased** — this project's own rule is that a
+test made unreliable costs more than the regression it guards, and the corollary is that a flake with
+one observation is not yet worth a wave. **If it recurs, it starts from "known flaky", not "new
+regression".**
+
+**The operational point is the one that keeps paying:** this was caught by the orchestrator running
+the full suite before pushing, not by CI afterwards. Local `pnpm test:e2e` at default parallelism is
+now finding things a `--workers=1` run structurally cannot.
+
+Paired because one needs Playwright and one does not — the only shape that parallelises here now.
+**Merges deliberately staggered**, since `android.yml` cancels in progress unconditionally.
+
+**`16c-2-W-4`** closes the accent picker's last named web gap: Settings' **unselected** mode
+buttons, which still read `--m3-*` while the selected one was migrated in `16c-2-W-2`.
+`SettingsPage.tsx:64` is the `aria-pressed` site. Small and well-defined.
+
+**`16f-A-1` — an Android Settings screen carrying theme mode and the accent picker.** This closes
+the live parity gap: **web can be themed and Android cannot at all.** Sofia approved an Android
+Settings screen but nobody scoped it; it is scoped here to _exactly_ what the parity gap needs —
+theme mode, accent, persistence — and explicitly not to server configuration or anything else.
+
+**It gives readers to two writers that have had none.** `AuralisTheme` (`ui/theme/Theme.kt:24-25`)
+already accepts both `accent: Color = SonoraDefaultAccent` and `darkTheme: Boolean = isSystemInDarkTheme()`,
+and **`MainActivity` is the only call site in the tree and passes neither**; `SonoraAccentPresets`
+(`Color.kt:191`) has **zero consumers outside its own file**. Two writers with no reader, waiting for
+one wave — and this project's most-repeated failure is exactly that pattern going unclosed.
+
+**Persistence already exists and must be reused, not rebuilt:** `data/network/KeyValueStore.kt` with
+`DataStoreKeyValueStore.kt`, wired through `AppContainer`.
+
+**A `-P` is owed afterwards** on whether the two pickers offer the same 17 presets in the same order,
+and on the two accessibility numbers already with Sofia.
+
+### DONE — `16c-5-W`: `Dialog`/`Sheet`/`Menu` read Sonora's tokens. **`main` `418f0a5`, all green.**
+
+Full `pnpm test:e2e` (CI's invocation): **412 passed, 0 failed, 0 flaky.** Unit **1662/1662**.
+`CI`, `Android` and `Publish` green on the sha. **Nothing claimed, nothing in flight.**
+
+**One `--m3-*` deliberately left behind, with a reason.** Menu's dropdown keeps
+`--m3-surface-container-high`. Flattening it to `--surface-card` — the way Dialog's panel goes —
+would risk the dropdown **merging into whatever `Card` it opens over**, since `Card` has been
+`--surface-card` since `16c-1` and `Menu` has no scrim, leaving only the shadow to mark the edge.
+That is the same shape as the invisible nav pill `16c-2-W-3` avoided. Dialog and Sheet are immune
+because both always render behind their own full-viewport scrim. **A naming deferral, not a value
+regression** — that token already resolves to Sonora's values since `16c-2-W-1`.
+
+**Menu's "translucent" dropdown is ruled not a bug** — `16c-4-W` left this open. The token is a
+static literal with no alpha anywhere in the chain (read in `tokens/color.ts`, not judged by eye),
+and it is a distinct but subtle tone. The earlier reading was a low-contrast illusion.
+
+**`--m3-*` is NOT close to deletion — this wave was asked and answered precisely.** `Fab`,
+`ListItem`, `Marquee`, `NavigationBar`, `SearchField`, `Snackbar` and `TopAppBar` all still use it
+functionally, plus the app-wide typography scale every 16c wave has deliberately left alone.
+
+**The methodological point worth more than the wave.** It reported which of its new assertions
+actually **discriminate** old from new and which merely pin an unchanged value: Dialog's background
+and Sheet's handle colour fail against pre-migration CSS; Sheet's background and both Menu
+assertions pass either way, because those values were already identical by design. **A test that
+cannot fail is a pin, not a proof.** Keep that distinction when extending these specs — they remain
+the only tests in the repo that can see a portalled component rendering unstyled.
+
+**Migrate `Dialog`, `Sheet` and `Menu` off `--m3-*` onto `--surface-*`/`--accent-ink`.** They still
+reference `--m3-*` entirely; `16c-4-W` deliberately changed only where they mount, so this migration
+lands against a substrate already proven to resolve rather than as a second simultaneous change
+nobody could attribute.
+
+**Two things for whoever takes it:**
+
+- **Keep using the computed-style assertions `16c-4-W` added** (`e2e/ui/dialog.spec.ts`,
+  `sheet.spec.ts`, `menu.spec.ts`). They are the only tests in the repo that can see this class of
+  break, and this is the wave they were built for.
+- **One cosmetic observation from the screenshots, currently unexplained and pre-existing:** Menu's
+  dropdown background reads as translucent. It comes from `--m3-surface-container-high`, untouched by
+  the re-parenting, and `--m3-*` already had a `:root` fallback beforehand — so it predates this wave.
+  Worth settling _during_ the migration rather than filing separately.
+
+**After that**, the accent picker's remaining gaps are Settings' _unselected_ mode buttons and
+whatever the trio's migration exposes; then `16e`, the screens.
+
+### DONE — `16c-2-W-3` and `16b-2-A-2`, both CI-verified on `a98a6a6`
+
+**`main` is at `a98a6a6`; `CI` and `Android` are green on it.** Nothing claimed, nothing in flight.
+
+**The accent picker's boundary, corrected — this list has been wrong in this file twice, so read it
+rather than the older copies below.**
+
+- **Responds:** `Chip`, `Slider`, `IconButton`, the desktop rail's active destination, Settings'
+  _selected_ mode button, and now **the compact bottom nav's active pill**.
+- **Does not, and correctly so:** `Card` — see below.
+- **Does not, and still owed:** Settings' _unselected_ mode buttons, and `Dialog`/`Sheet`/`Menu`,
+  which are blocked on re-parenting.
+
+**`Card` needs nothing, and the wave spec's premise was wrong.** Traced through its history:
+`16c-1-W` already migrated it fully onto Sonora's neutral `--surface-*`/`--radius-*`/`--shadow-*`,
+and **at no point has it carried an accent-coloured element**. Sonora's own vendored `Card.jsx`
+reserves `--accent` for selected/filled states and a media-tile gradient; this app's `Card` is
+deliberately a generic container with no `selected` concept, and a grep found **zero** call sites
+combining it with accent styling. **Wiring one would have been a writer with no reader.** The wave
+declined and reported instead, which is the right answer — do not re-dispatch this.
+
+**The trap the bottom nav walked up to and around, worth knowing before the next migration.** The
+obvious move was to match the desktop rail's `--surface-card`/`--accent-ink` pairing. That would
+have rendered an **invisible pill**: `16c-2-W-1`'s substrate fix made `--m3-surface-container` — the
+bar's own background — **numerically identical** to `--surface-card` in both themes (`#e1e1e1` /
+`#141414`). It uses the solid `--accent`/`--accent-contrast` fill instead, as `Chip`'s checked state
+already does. **Playwright would not have caught the invisible version**, since it asserts testids
+and text and never computed styles.
+
+**`16b-2-A-2` closed the last mechanical gap in Android's theme.** The 26 chroma roles were verified
+exactly once, by a human reading a table; two Robolectric tests now assert all sixteen `ColorScheme`
+slots per theme — **32 assertions** — through `MaterialTheme.colorScheme` inside `AuralisTheme`,
+so what is checked is the value that survived assembly, not the constant re-read from its own
+definition.
+
+**It also found a distinction nobody had written down:** six of those light-side values —
+`onSecondary`, `onSecondaryContainer`, `onTertiary`, `onTertiaryContainer`, `onError`,
+`onErrorContainer` — **have no light value in `SONORA.md` at all** and are derived by contrast in
+`Color.kt`. The test labels them as derived rather than asserting them as design literals, so a
+change to the derivation is still caught without the file claiming the design says something it
+does not. No value disagreed with `SONORA.md`, independently agreeing with `16b-2-P`.
+
+**Honest limit on that wave:** its deliberate make-it-fail check could not be run — there is no JDK
+on this machine — so the expected value was flipped and restored without anyone watching it go red.
+CI is the first place that test ever executed.
+
+### Session state, 2026-08-17 (evening) — **phase 16d is complete on both platforms**
+
+**`main` is at `cf9d445`, and `CI`, `Android` and `Publish` are all green on it** — verified, and the
+Android job is a **genuine uncached execution** (bare `compileDebugKotlin`, `compileDebugUnitTestKotlin`
+and `testDebugUnitTest`, no `FROM-CACHE`). `:latest` carries it, so the live deployment is current.
+**Nothing is claimed and nothing is in flight.** `docs/agent-specs/` is empty.
+
+Local, at CI's own invocation (`pnpm test:e2e`, no `--project`, no `--workers`): **391 passed, 0
+failed, 0 flaky.** Root `pnpm test`: **1662/1662**. Typecheck green across all seven projects.
+
+**Six waves landed:**
+
+| Wave       | What                                                                |
+| ---------- | ------------------------------------------------------------------- |
+| `16d-W-1`  | web's docked three-region shell — **Sofia's reported bug is fixed** |
+| `16d-A`    | established Android never had it, with file:line evidence           |
+| `16d-W-1b` | the latent gap docking exposed — routes open at the top again       |
+| `16d-W-2`  | rail wide at 1024; `Icon`'s `filled` prop gets its first reader     |
+| `16d-P`    | the parity review — clean on the wave, and it found the drift below |
+| `16d-A-2`  | Android stops offering destinations whose upstream is unconfigured  |
+
+**What is next, in the order I would take it:**
+
+1. **`16e` — the screens.** §16's own sequencing says 16d comes first precisely so screens are not
+   rebuilt inside a wrongly-scrolling document. That constraint is now discharged, so 16e is
+   unblocked and is the main body of the phase. It is explicitly **split by screen, not by
+   platform** — each screen is a `-W`/`-A`/`-P` triple from one behaviour spec, and screens are
+   disjoint enough to run several triples in parallel. **Subject to the Playwright constraint
+   below.**
+2. **`16c-2-W-3`** — the compact bottom nav and `Card`, widening the accent picker further.
+3. **Re-parent `Dialog`/`Sheet`/`Menu`** inside `.auralis-theme-root`, which is what unblocks
+   migrating them off `--m3-*` at all.
+4. **An Android accent picker.** Still a live parity gap — web can be themed and Android cannot.
+   `AuralisTheme` already accepts `accent`, `MainActivity` is still the only call site and passes
+   nothing, and `SonoraAccentPresets` still has no consumer. It needs Android's Settings screen,
+   which is approved but unscoped.
+
+**The one operational constraint that changed today, and it bites 16e directly:** _disjoint
+directories are no longer a sufficient test for parallel dispatch._ At most **one** agent may run
+Playwright at a time — see the section below for why. 16e's "run several triples in parallel" is
+still fine for the `-A` halves and for authoring, but the `-W` halves serialise at verification.
+
+### `16d-P` is done, and it found a real bug that no token-level review could have
+
+The parity review over 16d, by an agent that wrote neither side. `main` `ccca737`, `CI` and
+`Android` green. **Its verdict on the wave is clean** — and the valuable output is a pre-existing
+divergence it turned up while answering an unrelated question, which is exactly what `-P` waves are
+for.
+
+**Android shows navigation destinations that cannot work.** Web's `apps/web/src/components/destinations.ts`
+gates Music on `jellyfinConfigured` and Books/Podcasts on `audiobookshelfConfigured` **plus** a
+matching library existing, with the rationale stated in the file: _never show a section that will
+only error._ `AuralisShell.kt` iterates `ShellDestination.entries` with **no filter at all**, and a
+repo-wide grep for `Configured` under `apps/android/app/src/main/java` returns **zero hits**. So a
+household with no Jellyfin still gets a Music tab that can only fail.
+
+**Labelled accidental drift, not idiom** — nothing suggests anyone decided it, and it contradicts a
+rule this project already made and encoded on the other client. **Pre-existing; 16d did not cause
+it.** Being taken now as `16d-A-2`.
+
+**The three questions that came back clean, so nobody re-asks them:**
+
+- **Scroll on navigation.** Android has no version of the bug `16d-W-1b` fixed, and by architecture
+  rather than by a fix: `NavHost` mounts a **new composable per route**, so each screen's
+  `rememberLazyListState` is scoped to its own composition rather than to a shared container, and a
+  fresh route starts at the top by construction. Tab switches use `popUpTo(saveState = true)` +
+  `restoreState = true`, the standard recipe, so each tab keeps its own position. **Android gets
+  back-navigation scroll restoration for free, which is the thing `16d-W-1b` explicitly declined to
+  build on web** — so on this axis Android is ahead, not behind.
+- **The 1024–1240 "wide rail, no panel" state is coherent**, traced through every gate: rail wide,
+  no `NowPlayingPanel` (gated on `expanded`), `MiniPlayer` present (gated on not-`compact`), the
+  sheet-style `NowPlaying` present. A legitimate fourth visual state, not an accident of the re-cut.
+- **Destination identity and order match** on both clients, including both reordering Search to the
+  front in the rail while keeping bottom-bar order elsewhere.
+
+**Two divergences ruled acceptable, and the ruling is the useful part:**
+
+- **The rail sub-state.** Web now has icon-only below 1024 and icon+label above; Android's rail is
+  always labelled from `RAIL_BREAKPOINT = 600.dp`. The **600dp/600px** bottom-bar↔rail switch
+  agrees; the 1024 sub-state has no Android equivalent. `SONORA.md`'s `RailItem` spec describes no
+  narrow/wide sub-state, so nothing mandates one. **Defensible idiom, but genuinely unruled-on** —
+  worth a line to whoever next owns `SONORA.md`, not a wave.
+- **Android's nav icons never toggle fill on selection**, and structurally cannot: `ShellDestinations.kt`
+  imports fixed `Icons.Filled.*` vectors with no outline sibling in the tree, where web uses Material
+  Symbols' FILL axis. **Bounded, and the bound matters** — web's own `FILLABLE_ICON_NAMES` makes the
+  toggle visible on only **one** of the five destinations (`book_2`), so today's real divergence is one
+  icon. Named so it is not mistaken for closed; not worth its own wave yet.
+
+**On dp versus px, since the review was asked to be explicit:** both are density-independent units
+targeting the same physical size (dp at a 160dpi baseline, CSS px at a ~1/96in reference pixel), so
+`600dp ≈ 600px` **in intent** rather than rigorously — and `AuralisShell.kt`'s own KDoc already
+reasons that way, calling 600dp Material's documented compact/medium boundary. Comparing them is
+meaningful; treating them as identical is not.
+
+**The ceiling, stated rather than glossed:** there is no Android device or emulator here, so every
+Android claim above is a source read — including the scroll-restoration conclusion, which rests on
+how Compose Navigation's per-back-stack-entry state saving is _documented_ to behave, not on anyone
+watching it happen.
+
+### DONE 2026-08-17 — `16d` is landed and CI-verified: **Sofia's scroll bug is fixed**
+
+**`main` is at `40945ba`, and `CI` and `Android` are both green on it** (verified on the rerun, not
+assumed). Nothing is claimed and nothing is in flight.
+
+Her report was: _"the side navbar and the 'now playing' sidebar both scrolled with the main
+content."_ They no longer do. `.auralis-shell__content` is the single scroll container at every
+breakpoint; the rail, the Now Playing panel and the mini player are docked.
+
+| Wave       | What                                                                           |
+| ---------- | ------------------------------------------------------------------------------ |
+| `16d-W-1`  | web's docked three-region shell                                                |
+| `16d-A`    | established Android **does not have this bug** — chrome pinned by construction |
+| `16d-W-1b` | the latent gap docking exposed: routes now open at the top again               |
+| flake fix  | `for-you.spec.ts` hardened; the docking waves were **not** the cause           |
+
+**Four things a session picking this up should know:**
+
+1. **`16d-W-2` is the next wave and is unclaimed** — the adaptive-rig re-cut and the `Icon`-`filled`
+   nav wiring, the two halves deliberately split out of `16d-W-1`. `ROADMAP.md` §16 has both, plus
+   the correction that the rig's thresholds are `railWide >= 1024` / `showPanel >= 1240` and that
+   `1440/1280/1024/768` are the design kit's **frame widths**, not breakpoints. Since `showPanel`
+   already matches today's `expanded`, the only real re-cut is the rail going wide at 1024.
+   **`Icon`'s `filled` prop still has no reader** — re-confirmed by grep on `apps/web/src`.
+2. **`16d-P` is owed and is now narrow.** Android had no bug, so the parity review's job is not to
+   compare two fixes: it is to rule on whether web's docked shell and Android's already-pinned
+   chrome are the same _behaviour_, and to label the divergence (rail + docked side panel versus
+   bottom tab bar + full-screen Now Playing sheet) as idiom rather than drift. Cheap, and genuinely
+   unanswered.
+3. **Docking exposed a class of latent bug and there may be more of it.** Nothing in this app ever
+   reset scroll — the browser's document-scroll behaviour was doing it invisibly. `16d-W-1b` fixed
+   the navigation case. **Anything else that assumed a scrolling document is now suspect**: grep
+   turned up only `LyricsView`'s self-scoped `scrollIntoView`, but focus-into-view, anchor links and
+   any future "scroll to top" affordance are the shapes to watch.
+4. **Scroll restoration on back/forward is deliberately not implemented.** `16d-W-1b` resets to top
+   on every pathname change including history navigation. That is a deterministic default rather
+   than the arbitrary leftover offset that preceded it, and real restoration wants a position cache
+   — a separate wave, not a bug.
+
+### GitHub's `codeload` returned 429 for an hour, and it looks exactly like a build failure
+
+2026-08-17. Six workflow runs failed — `CI`, `Android` and `Publish`, across three shas — **without
+executing a single test or compiling a line**. Every one died in `Set up job` on
+`Response status code does not indicate success: 429 (Too Many Requests)` while downloading an
+action (`pnpm/action-setup`, `android-actions/setup-android`, `docker/setup-qemu-action`,
+`docker/setup-buildx-action`), after three internal retries.
+
+**Why it matters here specifically:** this project treats CI as the authoritative signal, and a red
+`Android` badge is normally read as a Kotlin problem while a red `CI` is read as a test problem.
+Neither is true in this mode, and it cost a genuine wrong-turn on `40945ba` — an Android failure on
+a sha containing no Kotlin at all, which is the tell.
+
+**How to tell in one command** — a real failure has a failing _test/compile_ step; this has a
+failing **`Set up job`**:
+
+```bash
+gh run view <run-id> --json jobs -q '.jobs[] | "\(.conclusion)\t\(.name)"'
+gh run view --log-failed <run-id> | grep -c '429'
+```
+
+**`gh run rerun <id> --failed` is the whole fix**, and it worked for `CI` and `Android` here. It is
+GitHub-side and nothing in this repo can prevent it. Pinning actions to a tag rather than a sha
+would not help — the download is the thing being throttled.
+
+**Resolved the same session — `daaaedd` is green on `CI`, `Android` and `Publish`**, so
+`ghcr.io/patakihara/auralis:latest` carries the docked shell and mediaserver picks it up on its
+next fifteen-minute pull. **The deployment is not behind.**
+
+Worth keeping for the shape of it: `Publish` on `40945ba` 429'd twice including an explicit rerun,
+and then simply succeeded on the next commit's run twenty minutes later. **Waiting is a legitimate
+response to this failure mode** — there is nothing to fix, and the next push carries the publish
+anyway, since `:latest` always converges on the most recent green build of `main`.
+
+### Hand-off at the usage band, 2026-08-17 — nothing claimed, nothing in flight
+
+**`main` is green on everything and fully pushed.** Final local state, all three suites run here
+after the last merge: **`--project=app` 192 passed**, **`ui-desktop` + `ui-mobile` 192 passed**,
+**unit 1660/1660**, zero failures and zero skips anywhere. `docs/agent-specs/` is empty — every spec
+written this session was dispatched, so nothing is parked.
+
+**Seven waves landed:** `15e-music`, `15d-1-S`, `15d-1-A`, `15d-1-W`, `16c-2-W-1`, `16c-3-W`,
+`16c-2-W-2`.
+
+**READ THIS BEFORE THE NEXT TOKEN-LAYER WAVE — it cost a red `main`.** CI failed on `008393e` with
+every local check green, on one assertion: `--accent` expected `#8b5cf6`, received
+`rgb(139, 92, 246)`. **A custom property registered with `CSS.registerProperty` is _computed_, not
+echoed back as authored** — `16c-3-W` registered `--accent` as a `<color>` so the picker could
+cross-fade, hit this trap in its own new assertion, fixed it there, and nobody checked the older one.
+
+**Two compounding mistakes, both mine, both cheap to avoid:**
+
+1. **The broken assertion lives in `e2e/ui/`, and after merging I ran only `--project=app`.** A
+   token-layer change needs **both** project families, every time.
+2. **There is no `--project=ui`.** The real names are **`ui-desktop`** and **`ui-mobile`**, and
+   `playwright test --project=ui` fails with "Project(s) not found" rather than running anything.
+   Several specs in this repo's own docs say `--project=ui`; they are wrong. Use
+   `--project=ui-desktop --project=ui-mobile`.
+
+Fixed in `af98640` by accepting either serialization, since the assertion exists to catch a typo in
+the value rather than to pin a string form.
+
+**What `16c-2-W-2` established that its own spec had wrong:** the nav rail and Settings' mode buttons
+never read `--m3-*` directly at all — they read **Mantine's own colour ramp**, derived from
+`scheme.primary`, which stopped tracking anything once `16c-2-W-1` fixed the M3 chroma roles. So
+"migrate it off `--m3-*`" was the wrong instruction and the agent correctly found the real one.
+
+**SUPERSEDED 2026-08-17 (evening) — read the `16c-2-W-3` and `16c-5-W` sections near the top instead.**
+The boundary below was correct when written and is now wrong in three places: the compact bottom nav
+**does** respond, `Card` correctly never will, and `Dialog`/`Sheet`/`Menu` have been re-parented and
+migrated. Kept for the portal reasoning, which is still the clearest statement of _why_ they were
+excluded.
+
+**The accent picker's exact boundary now** — do not overstate it in either direction. **Responds:**
+`Chip`, `Slider`, `IconButton`, the desktop rail's active destination, Settings' _selected_ mode
+button. **Does not:** the compact/mobile bottom `NavigationBar`, Settings' _unselected_ mode buttons,
+`Card`, and the unmigrated parts of the other primitives. **`Dialog`/`Sheet`/`Menu` are deliberately
+excluded and must stay that way** until something re-parents them — they portal outside
+`.auralis-theme-root`, where Sonora's tokens do not resolve at all, and moving them would render them
+unstyled **while passing Playwright**, which asserts testids and text and never computed styles.
+
+**The rail's active label is real text on the `--accent-ink` / `--surface-card` pairing that fails
+WCAG AA in dark at indigo (4.12:1) and violet (4.35:1, the shipped default).** Both clear the 3:1
+UI-component floor, and it is legible in screenshots — but it is now _text_, not just an icon, so the
+4.5:1 bar is the one that applies. **This is with Sofia (queue `abbaca2`) and is not to be worked
+around by adjusting a threshold.**
+
+**The obvious next waves, in order:**
+
+1. **An Android accent picker.** Web can now be themed and Android cannot — a live parity gap.
+   `AuralisTheme` (`ui/theme/Theme.kt:24`) already accepts `accent: Color = SonoraDefaultAccent` and
+   **`MainActivity.kt:14` is the only call site in the whole tree, passing no argument**;
+   `SonoraAccentPresets` (`Color.kt:191`) has **zero consumers outside its own file**. Two writers
+   with no reader, waiting for one wave. It needs Android's Settings screen, which is approved but
+   unscoped.
+2. **`16c-2-W-3`** — the compact bottom nav and `Card`, widening the picker further.
+3. **Re-parent `Dialog`/`Sheet`/`Menu`** inside the theme root, which is what unblocks migrating them.
+4. **`16d`** — the docked-chrome scroll bug, still unfixed and still the user's own report.
+
+**LANDED (was CLAIMED) 2026-08-17 — `16c-2-W-2`.** One agent, two tightly-scoped web fixes: the nav rail's
+active destination and Settings' own theme-mode buttons onto `--accent-ink`/`--surface-*` so the
+picker reaches the app chrome, and the `contrast.spec.ts:110` guard made unable to self-disable.
+**Deliberately not a broad migration** — `Dialog`/`Sheet`/`Menu` stay on `--m3-*` because they portal
+outside `.auralis-theme-root` where Sonora's tokens do not resolve at all.
+
+### Session state, 2026-08-17 — everything below is merged, pushed and green
+
+**`main` is at `98469ca`.** Full `--project=app --workers=1`: **191 passed, 1 skipped, 0 failed**
+(the skip is the documented pre-existing `contrast.spec.ts:110` conditional). Root `pnpm test`
+**1660/1660**, typecheck green across all eight projects including `e2e`. **Nothing is claimed and
+nothing is in flight.** Six waves landed:
+
+| Wave        | What                                                               |
+| ----------- | ------------------------------------------------------------------ |
+| `15e-music` | ListenBrainz recommendations reach `GET /music/recommended`        |
+| `15d-1-S`   | the `availability` field, plus coverage for an uncovered `catch`   |
+| `15d-1-A`   | Android's external cards: badge, request-flow tap, semantics       |
+| `15d-1-W`   | web's ditto                                                        |
+| `16c-2-W-1` | web's `--m3-*` substrate redefined to Sonora's values              |
+| `16c-3-W`   | the accent picker works again; `html body`'s theme-scope bug fixed |
+
+**The three things a session picking this up now should know:**
+
+1. **The accent picker works, and its reach is bounded — do not overstate it.** `Chip`, `Slider` and
+   `IconButton` respond to a swatch change; **anything still reading `--m3-*` does not**, including
+   the nav-rail highlight and Settings' own mode buttons. That is the documented partially-migrated
+   state, not a defect. **`16c-2-W-2` — migrating the remaining components onto
+   `--accent`/`--surface-*` — is what widens it, and it is the obvious next wave.**
+2. **Android has no accent picker at all, and the seam for one already exists.**
+   `AuralisTheme` (`apps/android/.../ui/theme/Theme.kt:24`) accepts `accent: Color = SonoraDefaultAccent`,
+   and grep finds **no call site anywhere passing a non-default value** — `MainActivity` calls
+   `AuralisTheme { }` with no arguments. Pre-existing from `16b-2-A`, not introduced here. **This is
+   now a live parity gap**: web has a working picker and Android cannot be themed at all. It needs an
+   `-A` wave and then a `-P`.
+3. **The contrast guard can silently disable itself again.** `contrast.spec.ts:110` is
+   `test.skip(!hasAuthor, …)`, and it did exactly that mid-session before closing again on its own.
+   **Make it fail, or point it at a card known to have an author.** Small, real, unclaimed.
+
+**Two accessibility numbers now exist where before there was a vague worry, and the second is the
+serious one.** Computed in Python against the WCAG relative-luminance formula across all 17 preset
+hues, cross-checked against a figure already in `Chip.tsx`'s comment:
+
+- `--accent-ink` on `--surface-card` — light passes at all 17 (5.4–9.3:1); **dark fails 4.5:1 at
+  indigo (4.12:1) and violet (4.35:1)**, and violet is the shipped default. Both clear the 3:1 floor.
+- **`--accent-contrast` is a fixed `#fff` and fails 4.5:1 on `--accent` at all 17 presets** (1.92:1
+  yellow → 4.9:1 red), **failing even the 3:1 floor at nine of them**. It is the "text on accent"
+  token, so a white label on a yellow or lime accent is simply not readable.
+
+**Nothing was changed on the strength of those** — a token that exists to be readable being
+unreadable is a design answer, not a threshold to adjust. **Both are with Sofia**: queue `dbfb46e`
+(the original question, plus whether album-art-derived colour should ever drive the accent) and
+queue `abbaca2` (these numbers). **Neither blocks anything.**
+
+**One operational lesson worth more than any of the waves.** Four agents were lost in this session,
+every one at the same point: it backgrounded a long Playwright run and stopped to wait for a
+notification, which ends the turn. **The spec-side instruction held perfectly — all four had
+committed first, so no work was lost** — and the orchestrator-side worktree check is what confirmed
+it each time. The fix is not another instruction. **Do not ask a subagent to run a full suite. The
+orchestrator runs it from the main checkout**, where `Bash` is ungated and a foreground run cannot
+be interrupted by a notification. Two further details: a stray Playwright **runner** does not carry
+the worktree path in its own command line, so `pgrep -f "worktrees/agent-<id>"` misses it — match the
+child and kill its `ppid`; and **`SendMessage` to a stopped agent recovers its findings**, which
+salvaged an entire review here for a fraction of the cost of re-running it.
+
+A lightweight lock, because two sessions can share this checkout. Claim a wave here
+**before** dispatching it; delete the line when it lands.
+
+**`16c-1-A` is very nearly already done, and finding that out cost one grep.** `apps/android` has
+**no custom primitive wrappers at all** — every call site is Material 3's own composable (`Button`
+×49, `IconButton` ×12, `Slider` ×1), and those resolve against the `MaterialTheme` that `16b-2-A`
+already populated app-wide. So there is nothing to rebuild, and dispatching the wave as specced
+("the same five in Compose") would have invited an agent to invent five wrapper composables nothing
+calls. What is actually left is **verification**: extend the Robolectric test to cover the 26
+chroma-role values, which `16b-2-P` confirmed it does not. **One real gap for `-P` to rule on:
+`Chip` and `Card` have zero Android call sites** while web uses both — deliberate idiom or a
+missing surface, and a token-value review cannot see it. `ROADMAP.md` §16 has the detail.
+
+**`15e-music` is IMPLEMENTED and UNDER REVIEW — commit `069ecb6` on branch
+`worktree-agent-af58afde02f314286`, not merged, not pushed.** Six files, all `apps/server`, ~648
+insertions. It wires 15a's ListenBrainz provider and 15b-1's ownership matcher into
+`GET /music/recommended`, **so phase 15's sixth writer-with-no-reader is closed** — both clients
+already consume that route, so external candidates reach a client with no client change. Read
+`git log -1 --format=%B 069ecb6` rather than re-deriving it; the account is unusually complete.
+
+It did the two things this repo keeps failing to do: a **live `curl` against the real ListenBrainz
+endpoint** (200, real payload, all five required query parameters — the fixture-validates-the-
+response trap that shipped in 15a), and **route-level tests through real HTTP** asserting an external
+item by name in the response body rather than a helper's return value.
+
+**It also stopped mid-verification**, on an unfinished root `pnpm test` — the second agent today to
+die waiting on a backgrounded run. Its work was committed first, so again nothing was lost.
+
+**`15d-1-S` DONE — `ace32cb` on `worktree-agent-a7c69864b7e5a52b5`, on top of `069ecb6`.** Adds the
+required `availability` field at both mapping sites via a route-scoped
+`MusicRecommendedAlbum = Album & { availability }` — **no shared domain type touched**, so
+`packages/jellyfin-client`'s `Album` is unchanged and its consumers cannot go red. Proved on the wire
+through `app.inject()` on **both** an owned and an external item, and asserted `'owned'` on the
+library shelves _following_ the external one so the field cannot be a blanket constant. **It also
+closed the uncovered `catch` the right way**: deleted the `warn` line, watched the new test fail,
+restored it, watched it pass. No fixture widened. 726 `apps/server` tests, 1653 workspace.
+
+**`15d-1-A` DONE — `f054743` on `worktree-agent-a604c3dbe106d7ee0`, on top of `069ecb6`** (dispatched
+before the contract landed; `apps/android` only, so it merges independently).
+
+**Android had the same defect, and it was confirmed by reading the navigation path rather than
+assumed from web's report.** `MusicLibraryScreen`'s `recommendedSection` wired one `onOpen` to
+`Routes.musicAlbumDetail(albumId)` for **every** item in every recommended shelf regardless of
+provenance — the same screen owned albums use, so an `external:listenbrainz:<mbid>` id hit the
+identical dead end.
+
+Three decisions in it worth not re-deriving:
+
+- **`availability` is typed `String`, not an enum**, matching `BookRequest.status`'s existing
+  convention, so an unrecognised future value **decodes rather than throws**.
+- **`MusicRecommendedShelf.items` moved to a new `MusicRecommendedAlbum` type rather than widening
+  `JellyfinAlbum`** — `JellyfinAlbum` is also `/jellyfin/albums`' and search's shape, and giving it a
+  non-optional field those responses do not send would break decoding them. That is the
+  `MissingFieldException` trap avoided rather than walked into.
+- **The badge is an overlay on the cover art, deliberately**, so it adds zero card height and
+  preserves the one-fixed-card-geometry invariant.
+
+It pre-fills the request search field and **does not auto-submit** — its own call, stated. Accessibility
+is folded into the merged `contentDescription` **ahead of** the recommendation reason, so ownership
+reads as an identity qualifier, with three Robolectric cases pinning it. Both toolchain checks this
+machine can run without a compiler came back clean: **equal `/*` and `*/` counts across all 13 changed
+`.kt` files**, and **zero backtick test names containing a dot**. Nothing here compiles Kotlin, so
+**CI is its first real signal — budget the usual two to three red rounds.**
+
+It had to add `"availability":"owned"` to every `GET /music/recommended` fixture in
+`MusicRepositoryTest` and `MusicLibraryViewModelTest`, which is the required-field trap working as
+intended rather than a surprise.
+
+**LANDED (was CLAIMED) 2026-08-17 — `15d-1-S` and `15d-1-A`, the fix for the dead-end card.** Both build **on
+top of `069ecb6`**, not on `main`. `15d-1-W` follows once the contract lands.
+
+**The contract, decided once so all three build to the same thing:** every item in
+`GET /music/recommended` carries a **required** `availability: "owned" | "external"`. Always present,
+never null. **Clients are explicitly forbidden from detecting externality by string-matching the
+`external:` prefix out of the id** — parsing meaning out of an opaque identifier is implicit coupling
+that breaks silently when the id scheme changes. Non-nullable is deliberate: Android's Kotlin models
+declare fields non-nullable with no default and throw `MissingFieldException` on a missing key, and
+`ignoreUnknownKeys = true` makes adding a field safe for existing clients.
+
+**The behaviour, shared by both platforms:** an external item is visually distinguishable ("not in
+your library"), and tapping it goes to the **music request flow — which already exists on both
+platforms** (`/music/requests` on web) — pre-filled with the artist name, rather than to an album
+detail page for an id no Jellyfin instance knows. Owned items are untouched. **The status must be
+announced, not merely drawn**, or the badge is a silent accessibility divergence from web.
+
+`15d-1-S` also closes the review's second finding: the outer `catch` in `buildExternalDiscoveryShelf`
+had no coverage, and the new test must be confirmed to go **red** with the `warn` line removed rather
+than merely passing beside it.
+
+**`15d-1-W` MERGED (`7a5e06a`) — the paired fix is complete on both clients, and `main` is green.**
+Full `--project=app --workers=1` on the merged tree: **190 passed, 0 failed, 0 skipped**, 6.4 min.
+Root `pnpm test` 1656/1656, typecheck green everywhere.
+
+**CORRECTION to the skipped-test finding below — the check is running again, and I should not have
+left the alarm standing without this.** After `15d-1-W` merged, the count went **188/2 → 190/0**:
+`contrast.spec.ts:110` now runs and passes in **both** colour schemes. So the muted-tone WCAG check
+is not inert, and the coverage gap closed on its own once web's Carousel change landed. **The
+underlying fragility is unchanged and still worth fixing**: the guard is `test.skip(!hasAuthor, …)`,
+so it will silently disable itself again the next time the first shelf card has no author line. A
+guard that skips when its subject is absent is indistinguishable from one that passes. **Make it
+fail, or point it at a card known to have an author.** That is a small, real, unclaimed wave.
+
+**THE ANDROID SAMPLE THIS FILE HAS BEEN ASKING FOR IS FINALLY DRAWN — and it is green.** `9d27733`
+touched `apps/android`, so Gradle could not serve the task from cache. Its `Android` job log carries
+bare **`> Task :app:testDebugUnitTest`**, **`> Task :app:compileDebugKotlin`** and
+**`> Task :app:compileReleaseKotlin`** — no `FROM-CACHE`, no `UP-TO-DATE`, i.e. a **genuine uncached
+execution**, and it passed. That is the **second** real sample behind the `UnifiedSearchViewModelTest`
+race fix (the first was `e87a551`), and this file's own bar was "several uncached executions" with no
+way to draw one absent new Android work. One more Android wave and the fix can honestly be called
+demonstrated rather than well-argued.
+
+**`15d-1-A` also compiled first time, with zero red CI rounds** — against this file's standing advice
+to budget two to three. Worth noting _why_, since it is repeatable rather than luck: the two traps
+that are checkable without a compiler were checked mechanically before dispatch reached CI (equal
+`/*`/`*/` counts across all 13 changed `.kt` files, and no dots in backtick test names). The advice
+to budget red rounds still stands; the mechanical pre-checks measurably reduce them.
+
+**MERGED 2026-08-17 — `15e-music` + `15d-1-S` (`def4f4b`), `15d-1-A` (`4a2db21`), `16c-2-W-1`
+(`030f067`).** The orchestrator ran the full `--project=app --workers=1` suite on the merged tree
+itself rather than delegating it: **188 passed, 0 failed, 2 skipped** in 8.5 min. Root `pnpm test`
+1653/1653, root typecheck green across all projects including `e2e`.
+
+**`16c-2-W-1`'s review came back "merge as-is" and it was thorough.** The portal risk is closed by
+evidence, not argument: the `:root` block carries **zero `var()` references** among its `--m3-*`
+values, and `Dialog`, `Sheet` and `Menu` were each screenshotted in both themes rendering fully
+styled. `--project=ui` 190 passed. Every literal was cross-checked against `SONORA.md`; the three
+inferred light-side "on" roles were **independently recomputed** and clear AA at 6.45–7.24:1; the
+xl/lg 32px collapse is genuinely Sonora's scale, not a transcription slip. CSS grew 1,205 bytes
+(+0.44%), so nothing was lost. One spec was correctly failing and was fixed: `e2e/ui/theme.spec.ts`
+pinned the old contract in which the source colour drove the M3 generator.
+
+**THE ONE THING THE FULL SUITE CAUGHT, and it is exactly why the rule exists.** The count went from
+the documented **189 passed / 1 skipped** to **188 / 2** — no failure, one test silently stopped
+running. There is exactly **one** `test.skip` in the whole `e2e/app` suite:
+`contrast.spec.ts:110`, _"a shelf card author (on-surface-variant, the muted secondary tone) clears
+WCAG AA"_, guarded by `test.skip(!hasAuthor, …)`. Its describe runs once per colour scheme, so it
+now skips in **both** rather than one.
+
+**That means a WCAG check stopped covering anything on the very wave that changed the value it
+checks** — `16c-2-W-1` redefined `--m3-on-surface-variant`, and the test pinning that token's
+contrast is now inert. The reviewer's own clean `--project=app` run on `16c-2-W-1` **alone** gave
+189/1, so the change came in with the `15e`/`15d-1-S` merge.
+
+**The likely mechanism, stated as a hypothesis to verify rather than a finding:** `HomePage` stitches
+four async sources including the recommendation shelves, so the external discovery shelf may now be
+**first on Home**, and its placeholder cards have no author `<p>`. If so there are two separate
+things to settle — restore the contrast check so it cannot silently self-disable (assert on a card
+known to have an author, or fail rather than skip when none is found), **and** decide whether an
+external discovery shelf should lead Home at all. A guard that skips when its subject is absent is
+indistinguishable from a guard that passes, which is the failure this one just demonstrated.
+
+**REVIEWED 2026-08-17 — verdict: do not merge as-is, fix the card first.** The placeholder concern
+below was confirmed by driving a real running instance, not by reading code. What the reviewer saw:
+a shelf titled _"New artists to discover"_ rendering real artist names on **blank music-note tiles**,
+and **clicking one navigates to `/music/album/external%3Alistenbrainz%3A<mbid>`** — a page headed
+plain **"Album"** with no name and no artist, a **live favourite-heart and add-to-playlist button
+both wired to act on an id that does not exist**, and _"No tracks found for this album."_ That is a
+dead end, not a graceful empty state, and it sits on Sofia's main Music screen. **Everything else in
+the wave is solid** — mechanism, ownership matching, cold start, degradation, request-shape testing.
+
+Confirmed independently in the same review: the **live ListenBrainz curl** (200 with a real payload
+on the five-parameter request; **400 `Argument max_similar_artists must be specified` on the
+one-parameter version**, which proves the 15a fix is real and necessary), and that
+`listenbrainz.test.ts` asserts the outgoing query as an **exact** set via `toEqual`, not a subset.
+Root `pnpm test` **1652 passed / 0 failed**, root `pnpm typecheck` green across all seven projects
+**including `e2e`**, lint and format clean.
+
+**Two gaps left open, deliberately named rather than assumed away:**
+
+1. **The full `--project=app` Playwright suite never ran on this wave**, and 15e-music **widened a
+   shared fixture** (`fakeJellyfin.ts` — `artist-nebula` gained a MusicBrainz provider id). This
+   repo's own recorded lesson is that **only a full `--project=app` run sees fixture-widening
+   breakage**; the reviewer ran a two-project subset, which is precisely the check that cannot. The
+   author's "no fixture counts changed" therefore rests on unit tests alone. **This is a merge
+   blocker and the orchestrator runs it, not a subagent** — see the note on agent deaths below.
+2. **`routes/jellyfin.ts`'s outer `catch` in `buildExternalDiscoveryShelf` has no test coverage** —
+   every failure path the route tests exercise is already absorbed by `listenbrainz.ts`'s own
+   internal try/catch, which never rethrows, so nothing fails if that `warn` line is deleted. Minor,
+   deliberately defensive against a future provider breaking its total-function contract, but it does
+   not meet the wave's own stated bar.
+
+**The reviewer agreed with dropping rather than labelling owned artists**, on the reviewer's own
+reasoning: a shelf whose promise is "new artists to discover" contradicts itself by listing one she
+already owns, and reads as a bug rather than as a policy. Settled; do not re-open.
+
+**The original concern, kept because it is what the review was pointed at:** External candidates are
+serialized as **blank `Album` placeholders** with ids namespaced `external:<provider>:<id>` and
+cover/year/track-count `null`, chosen precisely so the existing renderer displays them with no client
+change. That is clever and it is also a trap: **clicking one routes to an album detail page for an id
+no Jellyfin instance knows**, and a row of coverless grey cards on the main music screen is a product
+regression even with every test green — "the UI must be beautiful" is Sofia's own sentence. The
+review has been told to run the app, click one, screenshot the shelf, and rule on whether it ships or
+waits for `15d` (requestability) to give these items somewhere to go.
+
+**One design call it made that is worth knowing rather than rediscovering:** an artist matching
+something owned is **dropped** from the discovery shelf, not labelled. Its argument is that 12c-2's
+"owned still appears, just not requestable" governs _search and library pages_, where hiding makes an
+item unfindable, and not a shelf whose entire point is surfacing what she does not have. That reads
+correct, and the reviewer has been asked to agree or dissent explicitly.
+
+**Superseded — the original claim line:** One Sonnet agent, in
+`apps/server/src/features/recommendations/` + `routes/jellyfin.ts`. Disjoint from the wave above
+(`packages/ui`), so the two run in parallel. Two halves: artist-granularity ownership (the recorded
+gap — the music ownership pool is built from **albums**, so a ListenBrainz **artist** recommendation
+can never match as owned), and wiring external candidates into `GET /music/recommended`, **which
+both clients already consume**. 15a's provider currently has no consumer but its own tests; that is
+this project's sixth writer-with-no-reader, and closing it is the wave's whole point.
+
+**ASKED 2026-08-17 — the two open design questions are finally with Sofia**, filed to the task
+queue as `dbfb46e`. (1) Should album-art-derived colour ever become the accent's source, or is the
+picker the final answer? (2) `--accent-ink` fails WCAG AA on `--surface-card` at the default accent
+— what should give? **Neither blocks anything and no wave should wait on them.** Note the framing
+correction that goes with question 1: the decision log claimed artwork-derived colour was
+implemented, and `packages/ui/src/tokens/artwork.ts` has zero callers, so nothing is being taken
+away and the question is forward-looking. Delete this paragraph when she answers, and record the
+answers in `SONORA.md`.
+
+**`16c-2-W-1` is IMPLEMENTED and UNDER REVIEW — commit `5731785` on branch
+`worktree-agent-ae99898f5257ab092`, not yet merged and not yet pushed.** Seven files, all in
+`packages/ui`: `--m3-*` colour, radius, motion and elevation redefined to Sonora's fixed values,
+with typography and spacing deliberately untouched. Its own commit message is unusually good — read
+`git log -1 --format=%B 5731785` rather than re-deriving what it did.
+
+**It stopped before running Playwright or taking a single screenshot**, having run only unit tests
+(101/101 `packages/ui`, 1641/1641 root), typecheck, lint and format. That is the exact death this
+file already documents — it backgrounded a `--project=ui` run and waited for a notification that
+ends the agent. **Its work was committed, so nothing was lost**, which is the spec-side instruction
+working; the orchestrator-side check is what confirmed it. It also left a live Playwright runner and
+workers behind, respawning on kill until the parent runner was found — note the parent's own command
+line does **not** contain the worktree path, so `pgrep -f "worktrees/agent-<id>"` misses it. Match on
+the child's path, then kill its `ppid`.
+
+A second Sonnet agent is now reviewing that commit and running the verification it owes.
+
+**One product consequence to settle, and it is genuinely user-facing.** With the `--m3-*` chroma
+roles now _fixed_ at Sonora's values, the Settings colour-swatch picker no longer drives them — only
+the five primitives migrated onto `--accent` in 16c-1-W still respond to it. That is Sonora's
+intended end state (`--accent` is _the one_ customizable colour) and Android already works this way,
+so it is not wrong — but until more components move onto `--accent`, **Sofia's colour picker has much
+less visible reach than it did.** `16c-2-W-2` — migrating the remaining components onto
+`--accent`/`--surface-*` — is what restores it, and that makes it the next wave rather than an
+optional follow-up. The review has been asked to judge from the running app whether this currently
+reads as "reduced reach" or as "the picker looks broken".
+
+**Checked before dispatching, so nobody re-checks it: none of the six `worktree-*` branches holds
+lost work.** `abfc1e3c98500edeb` and `ada9aa18e890f1985` are fully merged (zero commits ahead of
+`main`) and are safe for `worktree-gc.sh`. `ab5d9dfca22e6dee6` carries `b26e4a3`, the 14c wave —
+superseded, since 14c landed as `f2a90d1` and its regression test was deliberately reverted in
+`19ae5bb`. The other three (`a0edf63595b976e4e`, `a1b2a40eb1e9e4e64`, `a623d0d03e48b3297`) are the
+ones this file already documents as cherry-picked or re-committed rather than fast-forwarded. **Only
+four were accounted for here before; six exist.** The lesson is small and cheap: the worktree list
+is a ledger that has to be re-read, not inherited. A claim older than a couple of
+hours with nothing on `main` is stale — take it.
+
+**The `UnifiedSearchViewModelTest` race is not fixed to this file's own bar, and the bar is
+currently unreachable.** There has been exactly **one** uncached Android execution since the fix
+landed in `e71837f` — `e87a551`, green. The bar below says _several_ uncached executions, and only
+a change under `apps/android` produces one, because Gradle serves the task `FROM-CACHE` for
+everything else. Since 14b-2 was the last planned Android work, **there is no way to draw a second
+sample without new Android work.** So: the fix is well-argued and has one real green behind it,
+which is better than it has ever had, and it is **not** demonstrated. Whenever the next Android
+wave happens, it is the next sample — read its log before reading its badge.
+
+**15a is landed and reviewed** — the external-candidate seam plus ListenBrainz tier 1, merged with
+a real merge commit. Its only consumer is its own tests; **15c and 15e are the readers**, and that
+is stated rather than glossed. One open input for 15b, found by the wave: the music ownership pool
+is built from **albums**, so a ListenBrainz artist-level recommendation can never match as owned
+until 15b builds artist-granularity `OwnershipLibraryItem[]` from Jellyfin artists. **16b-2-A is landed** (`c450fbb`) — Android now has Sonora's colour scheme, **and a typography and
+shape scale for the first time**; `MaterialTheme` previously received only a colour scheme, from the
+platform's wallpaper-derived Material You. Every value was re-derived from `packages/ui`'s
+stylesheets and tabulated for the parity review. **Nothing here compiles Kotlin**, so its first real
+test is the Android CI run on `c450fbb`; the two compiler traps that _are_ checkable without a
+compiler (nested block comments, a dot in a backtick test name) were checked by the orchestrator and
+are clean. Budget the usual two-to-three red rounds anyway.
+
+**One deliberate divergence is open and `16c-2-P` must rule on it** (not `16c-1-P`, which is blocked — see above). Web's token wave was purely
+additive and left `--m3-*` untouched, so web still renders pre-Sonora colours until 16c migrates
+components off them. Compose has no equivalent middle state — `MaterialTheme` resolves against
+exactly one `ColorScheme` — so Android's chroma roles now hold what `--m3-*` is _scheduled_ to
+become. **The platforms are briefly out of step by construction**, and that is only the right trade
+if 16c closes it promptly.
+
+**16c-1-W is landed** (`e04a9a2`) — `Button`, `IconButton`, `Chip`, `Card`, `Slider` now read
+Sonora's tokens instead of `--m3-*`. **This is the first visible change in the phase.** Its full
+`--project=app` run never finished in the agent's session, so **CI on `e04a9a2` is its verification**
+— check it before building on it. Two findings it returned:
+
+- **Vendoring Sonora's real primitive sources mid-wave corrected concrete guesses.** It had inferred
+  `--radius-sm` (16px) for Card; the real source is `--radius-md` (24px). Prop tables give the API
+  and not the values, which is why `docs/design/sonora/primitives/` now exists.
+- **`--accent-ink` on `--surface-card` fails WCAG AA at the default accent**, so text surfaces use
+  `--surface-fg`. Recorded rather than worked around: `--accent-ink` exists to be readable on a
+  surface, and where it is not, that is the design's problem to answer, not a test to soften.
+
+**16b-2-A is verified properly, not on a badge.** Android CI on `aba5250` shows bare
+`> Task :app:compileDebugKotlin`, `:compileReleaseKotlin`, `:testDebugUnitTest` and
+`:testReleaseUnitTest` — **uncached executions**, so the Compose theme genuinely compiles and its
+Robolectric test genuinely ran. That is the bar this file sets for any Android claim, and it beat
+the two-to-three red rounds budgeted.
+
+**16b-2-P is done — the first parity review, and it earned its cost.** Verdict: **parity holds at
+the token level, zero mismatches across ~74 values compared by hand** (surfaces, all 17 accent
+presets, the five app-level tones in both themes, all 26 `--m3-*` chroma values, the five-step
+radius scale, and the type scale at weight 900). `accentInk`'s OKLCH mix was independently
+recomputed in Python and lands on `#3f2876`, matching Android's pinned golden value.
+
+**But it corrected the divergence's framing, and the correction matters more than the verdict.**
+Two things, both re-verified by the orchestrator rather than taken from the report:
+
+1. **Android is fully re-themed today; web is barely.** `MainActivity.kt` wraps the whole app in
+   `AuralisTheme`, so Compose's single `ColorScheme`/`Typography`/`Shapes` are live across **every**
+   existing Android screen — new palette, weight-900 headings, new radii, app-wide. **If you open
+   both clients right now they will not look like the same product**, and the roadmap's "some chroma
+   roles differ" wording badly understated that.
+2. **16c-1-W's five primitives are only _partially_ migrated.** Every one of them still references
+   `--m3-*`: `Button` (`--m3-shape-full`, `--m3-shape-md`, `--m3-primary`, `--m3-elevation-*`),
+   `Card` (`--m3-on-background`, `--m3-on-surface-variant`, `--m3-state-layer-color`, springs),
+   `Slider` (`--m3-surface`, `--m3-slider-height`, springs), `Chip` and `IconButton` fewer. So
+   "migrated onto Sonora's tokens" is **overstated** — they are _partly_ migrated, and the phase's
+   premise (delete `--m3-*` when its last consumer leaves) is much further off on web than the
+   commit messages imply.
+
+**The ruling, and it is the right one: do not hold Android back.** Compose cannot express web's
+additive middle state — there is no cascade to fall back through — so reverting would buy no
+convergence and lose all forward progress. **But this state must be short-lived by design.** The
+practical consequence is that **16c-2-W matters more than 16c-1-A**: web is the platform that is
+behind, and closing it is what makes the two clients resemble each other again.
+
+**Two smaller findings.** The Robolectric test asserts used values in both themes and would fail on
+a wrong colour, weight or radius — but it does **not** cover the 26 chroma-role values, which are
+verified only by this review's manual pass. And `--surface-overlay-header` has **no consumer on
+either platform** — a pre-existing writer with no reader, not a parity gap.
+
+**16g is done\****16g is done** — the README is rewritten, every link verified live, and
+three unshipped claims taken back out of it on review (external discovery, search suggestions, and
+"some screens reflect the new design"; none of the three is true yet). **16c is next.**
+
+**Phase 16's wave 16b is complete** — 16b-1 (fonts), 16b-2 (tokens) and 16b-3
+(icons) are all merged. **16c is next**: rebuilding `packages/ui`'s primitives against the new
+tokens, migrating them off `--m3-*` one component at a time.
+
+**Three things 16b-2 handed forward that 16c must not rediscover:**
+
+- **Portalled components cannot see the theme-scoped tokens.** **Three** of them — `Dialog`,
+  `Sheet`, `Menu` — render outside `.auralis-theme-root`, and the `--surface-*` and app-level tokens
+  are scoped to `.auralis-theme-root[data-theme=…]` with **no `:root` fallback**, deliberately: a
+  fallback would mask exactly the missing-value bug the gallery test exists to catch. Rebuilding any
+  of those three means re-parenting the portal inside the theme root or re-emitting the tokens where
+  it lands. **`SearchField` is not one of them** — it passes `withinPortal={false}` on purpose, so
+  its tokens resolve for free. Both this note and the source comment first listed all four; the
+  review caught it.
+- **The gallery's token list is hand-maintained, and the reader depends on it.** The e2e spec
+  enumerates `[data-token]` from the live DOM, so it genuinely fails on a token missing a value in
+  either theme — but only for tokens the gallery renders. The gallery's 14 arrays match the CSS 1:1
+  today (97 names, verified); a token added to the CSS later with no gallery entry is simply
+  uncovered, silently. **Deriving that list from the CSS instead is a small, worthwhile wave** and
+  is the difference between a reader and a complete one.
+- **`--m3-*` is still the app's only substrate and is unchanged.** 391 usages across 185 names. 16c
+  migrates components onto `--surface-*`/`--accent` one at a time; `--m3-*` is deleted when the last
+  one leaves, not before.
+- **`color-mix(in oklch, …)` computes to `oklch()`, not `rgb()`** — relevant to any test asserting
+  on a resolved colour string.
+
+**Baseline at dispatch:** full `--project=app --workers=1` run on the merged 16b-1 + 16b-3 tree is
+**189 passed, 0 failed, 1 skipped** (5.8 min). The skip is `contrast.spec.ts:110`, a conditional
+`test.skip` on a fixture that has no author line — pre-existing, not a regression.
+
+**16b-1 and 16b-3 are both landed and reviewed** — `d1dae5a` (Inter + Roboto
+Flex self-hosted, 276 KB, `--font-body` wired, plus `c1f51eb` shipping the OFL text the review
+caught missing) and `17a3d0e` (fourteen glyphs, and a type-safe filled/outlined toggle for the five
+nav destinations). Root typecheck, lint and 1626 unit tests green on the merged tree.
+
+**16b-2 is next and is the riskiest wave of the phase.** It replaces `ThemeProvider.tsx`'s token
+emission with Sonora's values. Two things decide whether it works, both already established and
+neither discoverable by an agent that does not read this:
+
+- **Adding Sonora's stylesheet does nothing.** `ThemeProvider` sets every `--m3-*` as **inline
+  style** on `.auralis-theme-root`, which beats any `:root` or `[data-theme]` rule. The failure
+  mode is silence — it renders, in the old colours. The provider's emission has to be replaced.
+  And `--m3-*` is defined in **two** places: that inline JS, and a static `:root` fallback block at
+  `packages/ui/src/styles/index.css:55-76`. Both need changing.
+- **A green local Playwright run is not evidence here.** 14a-2 passed 188/188 locally and failed
+  twice on CI on a layout-stability assertion, because what changed was _when_ CSS arrived, not
+  whether it existed. Budget CI rounds; do not let the wave call itself done on a local pass.
+
+`docs/design/SONORA.md` has the exact values, including the five app-level tokens Sonora does not
+ship (`--accent-ink`, four `--tone-*`) that 16b-2 must add or the rail and every status pill
+resolve an invalid `var()`.
+
+**Do not adopt Sonora's icon font.** Measured before dispatch: `Icon.tsx` is already an inline SVG
+set vendored from `@material-symbols/svg-400`, chosen precisely because this is an offline-capable
+PWA. Sonora's font mechanism is 3.08 MB, needs the network, and degrades to the literal words
+`play_arrow`/`skip_next` on screen offline. Same glyphs, worse delivery. `ROADMAP.md` §16 has the
+table and the fourteen missing glyph names.
+
+**Wave 16a is done** — `d8b7b41` and `213e10c` vendor the design
+project into `docs/design/sonora/`, `f0ad9c4` writes `docs/design/SONORA.md`. **No session and no
+subagent needs `DesignSync` again; read the repo.** That was the whole point of the wave.
+
+**The next wave is 16b (the token layer), not 15b-2.** Phase 15's sequencing was corrected the same
+day — see `ROADMAP.md` §15's `15b-2` entry for why, in short: nothing upstream can supply a provider
+identifier to request creation until 15a exists, and nothing in the codebase ever learns the library
+item id a completed request becomes, so the mapping table has neither a writer nor a reader today.
+**15a is phase 15's next wave.** 16b and 15a are disjoint (`packages/ui` + `apps/web` versus
+`apps/server`) and can run in parallel. **15b-1 landed** (`c15e5e3`) — the pure ownership matcher, with
+`owned` / `possible` / `new` kept genuinely distinct and identifier matches beating title matches.
+
+**A wave that changes a shared domain type must typecheck its _consumers_.** 15a-0 added six fields
+to `packages/*-client`'s domain types and its spec told the agent to typecheck the packages it
+touched. `apps/server` consumes both, constructs `Book`/`Podcast`/`Album`/`Track` literals in test
+fixtures, and was never typechecked — so `main` went red on `89fdee4` with the wave's own checks all
+green. Fixed in `2bc0017`. **`pnpm --filter @auralis/server exec tsc --noEmit -p .` is not implied
+by typechecking the packages**, and this repo's own gotcha note already records that the
+per-package typecheck silently drops projects, which is how `main` went red the same way on
+2026-08-08.
+
+**Phase 15 progress so far:** the spec is `ROADMAP.md` §15, corrected twice by the user (browse is
+one destination, and per-medium providers are the design). **15a-0 done** (`6fe1be6`) — six upstream
+identifiers now survive normalization and already reach the wire. **15c-1 done** (`8a38a99`) —
+dedupe-by-parent and mixed-shelf marking, **mechanism only, reachable by nothing yet** (see §15).
+**Provider survey done** — `docs/research/RECOMMENDATION_PROVIDERS.md`; ListenBrainz is the only
+genuine recommender found, and its useful tier needs no credential from her.
+
+**The next wave after 15b-1 is 15b-2, and it is the one most likely to be skipped.** A title she
+requests becomes a library item with an id unrelated to the provider's, so unless the
+correspondence is persisted **at request time**, the next recommendation run offers her the same
+book again and the matcher looks broken. That is a schema change, not a scoring one.
+
+14b-2 landed as `e87a551` (see `ROADMAP.md` §14) and its Android
+run was verified as an **uncached** execution, not just a green badge. **Phase 14 is done**: 14a-1,
+14a-2 (measured, then reverted — see below), 14b-1 and 14b-2 are all on `main`, and 14c is written
+up in `docs/perf/`.
+
+**Phase 14 was the last thing this machine could start alone, and that is now the honest state.**
+Every remaining roadmap item is in the blocked-on table near the top of this file, and each needs a
+**decision, a device, a credential, or a live change on another host** — not more engineering. A
+session picking this up should read that table and expect to find nothing it can start; that is the
+finding, not a gap in the notes. The nearest thing to startable is the launcher icon, and it is
+blocked on deciding what the icon _is_.
+
+**Done, and no longer claimed: the `UnifiedSearchViewModelTest` race.** `main` was red on Android
+at `9e87fdc` with `UncompletedCoroutinesError` on "a library fetch failure still returns music
+results, degrading only the library side". `9e87fdc` and `b2561b8` carry **identical Kotlin** and
+went red and green respectively, which is a clean demonstration that the race is a coin toss
+rather than a deterministic break. Fixed in `6004577` (merged as `e71837f`) by widening 13d's
+scoped-dispatcher treatment from two tests to twelve, and in `e4bf86d` (the other session's 14d)
+by draining `resultsState` in `tearDown()` and fixing the same gap in `HomeViewModelTest` and
+`RequestsViewModelTest`. **Four tests remain on real `Dispatchers.IO` deliberately** — each keys a
+`setBodyDelay()` on a specific path to pin real interleaving, and collapsing them onto a test
+dispatcher would turn them into tautologies. **Not yet proven fixed, and the bar is not what it looks like.**
+Consecutive green runs are **not** the unit of evidence — _uncached executions_ are. Gradle serves
+`:app:testDebugUnitTest` `FROM-CACHE` on any sha that did not touch `apps/android`, so a green
+Android badge on a docs or web push executed nothing, and a run of such pushes manufactures
+exactly the pattern that looks like an intermittent fault settling down. Since rerunning a sha
+reuses the same inputs and therefore the same cache, **the only thing that draws a fresh sample is
+a change under `apps/android`.** So the bar is several _uncached_ executions, each confirmed by
+grepping the job log for a bare `> Task :app:testDebugUnitTest` — and name the variant, because
+debug and release cache independently.
+
+14a-1, 14a-2 and 14b-1 all landed on `main`; see `ROADMAP.md` §14 and "Phase 14" below.
+
+**Phase 13 is done** — 13a–13f, all CI-verified. The `app` Playwright project sits at
+**190 passed, 0 failed** at full parallelism, up from the 186/1/1 that greeted this session.
+There is no unfinished wave in phases 1–13. What remains across the whole roadmap is the
+blocked-on table near the top of this file, plus three follow-ups this session opened and
+deliberately did not fold into a wave that was not about them:
+
+1. **Android has no accessibility grouping on the For You carousels** — a pre-existing 13d gap
+   that the docs wrongly claimed was closed. Touches `ForYouCarouselRow`, shared by the book,
+   podcast and now music shelves. **It is not startable here, and now for a stated reason rather
+   than a vague one.** Checked 2026-08-16: `apps/android` has **no Compose UI test harness at
+   all** — no `createComposeRule`, no `createAndroidComposeRule`, no Robolectric dependency (the
+   single `Robolectric` string in the tree is a comment in `ExampleUnitTest.kt`), and
+   `android.yml` runs `./gradlew test assembleDebug`, i.e. JVM unit tests only, never an
+   instrumented run. So semantics code written here could be verified by nothing but "it
+   compiles" plus a reviewer's reading — which is precisely the standard that passed on all four
+   of this project's writer-with-no-reader failures. **The prerequisite wave is a Compose test
+   harness** (Robolectric + `androidx.compose.ui:ui-test-junit4` running under `gradlew test`),
+   not the semantics change itself. That is a real, startable piece of work for a session with
+   more window than this one had — but it adds dependencies to `libs.versions.toml`, so it needs
+   a lockfile-safe single-agent wave, and it cannot be smoke-tested locally (no JDK, no SDK),
+   meaning several red CI rounds should be budgeted.
+2. **Recommendation quality is still unassessable here.** Ten synthetic books and three fake
+   albums prove the mechanism, not the taste. Judging whether the ranking is any _good_ wants
+   the real 231-item library, which wants a credential.
+3. ~~**`tryBuildMusicGenreProfile`'s bare `catch` swallows every error class.**~~ **Done.** It
+   now discriminates: `JellyfinNotConfiguredError`/`JellyfinNoCredentialsError` stay silent,
+   because a household that never connected Jellyfin hits them on every books-route request and
+   logging that is noise, not signal. **Anything else** — a network failure, an upstream shape
+   change, a genuine bug in `albumToCandidate` or the scoring core — is logged at `warn` while
+   still degrading to `null`. Two tests pin both halves, and the fault-logging one was confirmed
+   to fail with the log line removed rather than merely passing alongside it.
+
+**Phase 13 is four waves done of five.** 13a (`8d071b8`), 13b (`0be4fc6`), 13d (`8335184`),
+13c (`8bbad08`). **13e is the only one left** — widen `packages/jellyfin-client` to normalize
+`PlayCount`/`LastPlayedDate`/`PlaybackPositionTicks` and feed the music side into the profile.
+It is the wave that actually delivers the user's sentence about taste in one medium informing
+another; everything before it recommends audiobooks from audiobook behaviour.
+
+**A latent Android test race was revealed, not introduced, by 13d** (`d6d8e21`).
+`UnifiedSearchViewModelTest` deliberately runs its class-wide `ApiClient` on the **real**
+`Dispatchers.IO`, so a request can outlive its own test and throw during a later one —
+`ApiClient`'s own doc comment names this failure class. 13d merely added suite wall-time,
+widening the window until two tests failed with `UncompletedCoroutinesError` (the
+`ClassCastException` in the log is a secondary symptom, not the cause). The fix scopes a test
+dispatcher to those two tests only, leaving the two that genuinely pin real interleaving alone.
+**The loose end: the await-then-re-read pattern is not unique to those two call sites.** If that
+file goes red again, the question is whether the race is more pervasive, not whether the patch
+was wrong.
+
+Before dispatching a wave **and again before merging it**, check what is already on `main`
+(`git log --oneline origin/main -15`) and check `git branch --list 'worktree-*'` — a `+`
+marks a branch checked out in another session's worktree, which is a live signal that
+someone else is mid-flight. A session that dispatched at T and merged at T+25min never saw
+what landed in between; that is how Android playlists got built twice on 2026-08-05.
+
+`pgrep -af claude`, read for `node .../worktrees/<name>/...` children, is the stronger check:
+a live Playwright or vite process rooted in a worktree path is positive proof that wave is
+taken, where `git log main..<branch>` is empty for an agent that has not committed yet.
