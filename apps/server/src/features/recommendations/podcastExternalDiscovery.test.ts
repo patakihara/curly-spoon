@@ -156,8 +156,8 @@ describe('reasonForPodcastExternalShelf', () => {
     expect(reasonForPodcastExternalShelf([seed('Science'), seed('Comedy')])).toBe(
       'Because you listen to Science and Comedy podcasts',
     );
-    expect(
-      reasonForPodcastExternalShelf([seed('Science'), seed('Comedy'), seed('News')]),
-    ).toBe('Because you listen to Science, Comedy and News podcasts');
+    expect(reasonForPodcastExternalShelf([seed('Science'), seed('Comedy'), seed('News')])).toBe(
+      'Because you listen to Science, Comedy and News podcasts',
+    );
   });
 });

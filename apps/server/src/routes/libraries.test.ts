@@ -8,7 +8,10 @@ import {
   FAKE_JELLYFIN_BASE_URL,
   FAKE_JELLYFIN_CREDENTIALS,
 } from '../testSupport/fakes/fakeJellyfin.js';
-import { buildBookExternalDiscoveryShelf } from './libraries.js';
+import {
+  buildBookExternalDiscoveryShelf,
+  buildPodcastExternalDiscoveryShelf,
+} from './libraries.js';
 
 async function authedApp() {
   const { app } = buildTestApp();
@@ -574,6 +577,341 @@ describe('GET /api/v1/libraries/:id/recommended — external (Open Library) disc
       profile,
       pool,
       'lib-books',
+      throwingFactories,
+    );
+
+    expect(shelf).toBeNull();
+    expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/v1/libraries/:id/recommended — external (iTunes) podcast discovery, wave 15e-podcasts', () => {
+  const ITUNES_ORIGIN = 'https://itunes.apple.com';
+  const OPENLIBRARY_ORIGIN = 'https://openlibrary.org';
+
+  function itunesFetch(
+    respond: (url: URL) => Response,
+  ): (input: string, init?: RequestInit) => Promise<Response> {
+    return async (input) => {
+      const url = new URL(input);
+      if (url.origin !== ITUNES_ORIGIN) {
+        throw new Error(`getaddrinfo ENOTFOUND ${url.hostname}`);
+      }
+      return respond(url);
+    };
+  }
+
+  function jsonResponse(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async function connectedAppWithProviderFetch(
+    providerFetch: (input: string, init?: RequestInit) => Promise<Response>,
+  ): Promise<{ app: FastifyInstance; cookie: string }> {
+    const { app } = buildTestApp({ providerFetch });
+    const cookie = await loginTestUser(app);
+    return { app, cookie };
+  }
+
+  // The media-type gate `buildPodcastExternalDiscoveryShelf` and `buildBookExternalDiscoveryShelf`
+  // both carry (see their doc comments in routes/libraries.ts) exists specifically so a
+  // podcast library's own affinities can never seed a book-provider query and vice versa. A
+  // pool-emptiness check alone would not prove that: with zero listening history neither
+  // provider would be seeded regardless of any gate, since `seeds.length === 0` already
+  // returns null. So this seeds a *real* facet on each request — a genre from a finished
+  // book, an author from a finished podcast — that would produce a non-empty seed list for
+  // the *wrong* provider if the gate did not exist, and proves that provider is still never
+  // constructed.
+  it('the media-type gate keeps each provider scoped to its own library, even when the mismatched provider would otherwise have a seed', async () => {
+    const itunesSpy = vi.fn(async (_url: URL) => jsonResponse({ results: [] }));
+    const openLibrarySpy = vi.fn(async (_url: URL) => jsonResponse({ docs: [] }));
+    const providerFetch = async (input: string) => {
+      const url = new URL(input);
+      if (url.origin === ITUNES_ORIGIN) return itunesSpy(url);
+      if (url.origin === OPENLIBRARY_ORIGIN) return openLibrarySpy(url);
+      throw new Error(`getaddrinfo ENOTFOUND ${url.hostname}`);
+    };
+    const { app, cookie } = await connectedAppWithProviderFetch(providerFetch);
+
+    // A book library request whose profile carries a genre facet (Mystery, from
+    // item-crimson) — exactly the seed shape `buildPodcastExternalDiscoveryShelf` reads.
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-crimson',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 500, duration: 500, progress: 1, isFinished: true },
+    });
+    const booksResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-books/recommended',
+      cookies: { auralis_session: cookie },
+    });
+    expect(booksResponse.statusCode).toBe(200);
+    expect(itunesSpy).not.toHaveBeenCalled();
+    // Cleared deliberately: the book request above legitimately calls the *book* provider
+    // (Mara Voss is a real author facet for the book library), so the count would otherwise
+    // carry over and make the next assertion meaningless.
+    openLibrarySpy.mockClear();
+
+    // Mirror in the other direction: a podcast library request whose profile carries an
+    // author facet (Signal Media, from item-dailytech) — the seed shape
+    // `buildBookExternalDiscoveryShelf` reads.
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-dailytech',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 300, duration: 300, progress: 1, isFinished: true },
+    });
+    const podcastsResponse = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-podcasts/recommended',
+      cookies: { auralis_session: cookie },
+    });
+    expect(podcastsResponse.statusCode).toBe(200);
+    expect(openLibrarySpy).not.toHaveBeenCalled();
+  });
+
+  // This is the assertion the wave is judged on: a real HTTP round trip through the route,
+  // proving an externally-discovered candidate reaches the response body a client actually
+  // parses — not a helper function returning an array (`docs/HANDOVER.md`'s own "a test that
+  // only inspects a return value can pin the wrong value as correct").
+  it('mixes iTunes candidates into the response ahead of the library shelves, and drops a show she already owns', async () => {
+    const { app, cookie } = await connectedAppWithProviderFetch(
+      itunesFetch((url) => {
+        expect(url.pathname).toBe('/search');
+        expect(url.searchParams.get('media')).toBe('podcast');
+        return jsonResponse({
+          results: [
+            // Same normalized title+author as the fixture's real item-dailytech — must be
+            // filtered out as owned, not surfaced as "discovery" of something she already has.
+            {
+              collectionId: 1001,
+              collectionName: 'Daily Tech Briefing',
+              artistName: 'Signal Media',
+              genres: ['Technology'],
+            },
+            {
+              collectionId: 1002,
+              collectionName: 'Late Night Circuits',
+              artistName: 'Wire Frame Media',
+              genres: ['Technology'],
+            },
+            {
+              collectionId: 1003,
+              collectionName: 'The Byte Sized Show',
+              artistName: 'Northwind Audio',
+              genres: ['Technology'],
+            },
+          ],
+        });
+      }),
+    );
+
+    // Same seeding pattern the book describe block above uses: finishing item-dailytech is
+    // what makes "Technology" the strongest genre facet for the podcast library's profile.
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-dailytech',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 300, duration: 300, progress: 1, isFinished: true },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-podcasts/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.length).toBeGreaterThan(0);
+
+    const externalShelf = shelves[0];
+    expect(externalShelf.id).toBe('shelf-external-itunes');
+    expect(externalShelf.type).toBe('discover');
+    expect(typeof externalShelf.reason).toBe('string');
+    expect(externalShelf.reason.length).toBeGreaterThan(0);
+
+    const externalTitles = externalShelf.items.map(
+      (item: { media: { title: string } }) => item.media.title,
+    );
+    expect(externalTitles).toEqual(
+      expect.arrayContaining(['Late Night Circuits', 'The Byte Sized Show']),
+    );
+    // The owned-title-match candidate must never reach the response.
+    expect(externalTitles).not.toContain('Daily Tech Briefing');
+    expect(externalShelf.items).toHaveLength(2);
+
+    // Every external item is namespaced, scoped to the requested library, and honestly
+    // blank about what it doesn't know — never a fabricated Audiobookshelf id or cover.
+    for (const item of externalShelf.items) {
+      expect(item.id).toMatch(/^external:itunes:/);
+      expect(item.libraryId).toBe('lib-podcasts');
+      expect(item.coverPath).toBeNull();
+      // availability: every external item carries 'external' on the wire.
+      expect(item.availability).toBe('external');
+    }
+
+    // The library-derived shelves (item-dailytech is the only fixture podcast, and it's
+    // excluded as the progressed item, so there may be none — but if any render, they must
+    // carry 'owned', proving the field isn't a blanket constant shared with the external
+    // shelf above).
+    expect(shelves.slice(1).every((s: { type: string }) => s.type === 'recommended')).toBe(true);
+    for (const shelf of shelves.slice(1)) {
+      for (const item of shelf.items) {
+        expect(item.availability).toBe('owned');
+      }
+    }
+  });
+
+  // The cold-start rule: fewer than two unowned candidates reads as a bug, the same rule
+  // `buildBookExternalDiscoveryShelf` and `routes/jellyfin.ts`'s music shelf both enforce —
+  // so a signal-less (or barely-signalled) user sees exactly today's behaviour, never a
+  // one-item carousel.
+  it('yields no external shelf when fewer than two unowned candidates come back', async () => {
+    const { app, cookie } = await connectedAppWithProviderFetch(
+      itunesFetch(() =>
+        jsonResponse({
+          results: [
+            {
+              collectionId: 2001,
+              collectionName: 'Only One Show',
+              artistName: 'Solo Productions',
+              genres: ['Technology'],
+            },
+          ],
+        }),
+      ),
+    );
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-dailytech',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 300, duration: 300, progress: 1, isFinished: true },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-podcasts/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-itunes')).toBe(false);
+  });
+
+  it('degrades to library-only shelves, never fails the route, when iTunes is unreachable', async () => {
+    // No `providerFetch` at all: `buildTestApp`'s default routes every non-Jellyfin origin
+    // (including `itunes.apple.com`) to the ABS fake, which simulates a real DNS failure for
+    // any origin that isn't its own — see `fakeAbs.ts`'s `fetchFn`.
+    const { app } = buildTestApp();
+    const cookie = await loginTestUser(app);
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-dailytech',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 300, duration: 300, progress: 1, isFinished: true },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-podcasts/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-itunes')).toBe(false);
+  });
+
+  it('degrades to library-only shelves on a non-OK iTunes response', async () => {
+    const { app, cookie } = await connectedAppWithProviderFetch(
+      itunesFetch(() => jsonResponse({ error: 'bad request' }, 400)),
+    );
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-dailytech',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 300, duration: 300, progress: 1, isFinished: true },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/libraries/lib-podcasts/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-itunes')).toBe(false);
+  });
+
+  // Same contract `buildBookExternalDiscoveryShelf`'s outer catch has, and the same reason
+  // it needs its own direct test rather than an HTTP one: no registered provider can be
+  // made to throw through `app.inject()` without breaking `ExternalRecommendationProvider`'s
+  // "never throws" contract for real, so this drives `buildPodcastExternalDiscoveryShelf`
+  // directly with a provider that violates it.
+  it('the outer catch degrades to no external shelf and logs the fault when a podcast provider breaks its "never throws" contract', async () => {
+    const { app } = buildTestApp();
+    const warn = vi.spyOn(app.log, 'warn');
+
+    const profile: TasteProfile = {
+      affinities: { genre: { Technology: 5 }, author: {}, narrator: {}, series: {} },
+      seeds: [],
+      knownItemIds: [],
+      totalSignal: 5,
+      facetSeeds: {
+        genre: { Technology: { itemId: 'item-1', title: 'Show One' } },
+        author: {},
+        narrator: {},
+        series: {},
+      },
+    };
+    // The pool must carry at least one podcast item, or the media-type gate returns null
+    // before the throwing provider is ever constructed — same reasoning as the book test's
+    // pool above.
+    const pool: { items: LibraryItem[] } = {
+      items: [
+        {
+          id: 'item-1',
+          libraryId: 'lib-podcasts',
+          addedAt: null,
+          updatedAt: null,
+          coverPath: null,
+          size: 0,
+          media: {
+            kind: 'podcast',
+            title: 'Show One',
+            author: 'Some Publisher',
+            description: null,
+            genres: ['Technology'],
+            numEpisodes: 0,
+            episodes: undefined,
+            feedUrl: null,
+          },
+          progress: null,
+        },
+      ],
+    };
+    const throwingFactories: Record<string, ExternalProviderFactory> = {
+      broken: () => ({
+        providerName: 'broken',
+        medium: 'podcast',
+        recommend: async () => {
+          throw new Error('this provider violates its own "never throws" contract');
+        },
+      }),
+    };
+
+    const shelf = await buildPodcastExternalDiscoveryShelf(
+      app,
+      profile,
+      pool,
+      'lib-podcasts',
       throwingFactories,
     );
 

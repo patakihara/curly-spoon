@@ -267,8 +267,8 @@ export async function buildPodcastExternalDiscoveryShelf(
       .filter((item): item is NonNullable<typeof item> => item !== null);
     const newCandidates = rawCandidates.filter(
       (candidate) =>
-        matchOwnership(externalCandidateToOwnershipItem(candidate), podcastOwnershipPool)
-          .status === 'new',
+        matchOwnership(externalCandidateToOwnershipItem(candidate), podcastOwnershipPool).status ===
+        'new',
     );
     // A one-item carousel reads as a bug — same rule the book shelf above and
     // `routes/jellyfin.ts`'s music shelf both enforce.
