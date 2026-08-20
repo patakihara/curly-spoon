@@ -183,7 +183,7 @@ export function cardLabel(item: FeedItem): string {
   // Wave 15d-1-W: announced, not just drawn — an external card's visual pill
   // (`EXTERNAL_BADGE_STYLE`) is `aria-hidden`, so this is the only place a screen reader
   // user learns the item isn't in her library.
-  return item.availability === 'external' ? `${base}, not in your library` : base;
+  return item.availability !== 'owned' ? `${base}, not in your library` : base;
 }
 
 export function Carousel({
@@ -244,7 +244,7 @@ export function Carousel({
               </div>
             ))
           : items.map((item) => {
-              const external = item.availability === 'external';
+              const external = item.availability !== 'owned';
               return (
                 <div role="listitem" key={item.id} style={TILE_WRAPPER_STYLE}>
                   <button
