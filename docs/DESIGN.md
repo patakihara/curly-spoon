@@ -1,141 +1,228 @@
 # Auralis — Design language
 
+**Sonora is the design authority.** Adopted 2026-08-16 (`docs/HANDOVER.md`, `docs/ROADMAP.md`
+§16) — Sofia's own design system, vendored into `docs/design/sonora/` and distilled into
+`docs/design/SONORA.md`, which has the exact token values, component prop APIs and screen
+inventory. **This page does not restate those values.** Its job is the decisions specific to
+this app — what we took from which reference, why the component layer is built the way it is,
+and where the two systems disagree with each other or with what actually shipped.
+
+**This page used to describe a Material 3 Expressive system** — colour extracted from album
+artwork at runtime, spring physics, shape morphing. Sonora is flat, accent-driven (one
+user-picked colour from a 17-hue preset set) and explicitly anti-spring ("no bounce, no
+spring, no parallax anywhere" — `docs/design/sonora/readme.md`, quoted in `SONORA.md`). The
+two could not both be the spec, and this rewrite (wave `16g-design-reconcile`,
+`docs/ROADMAP.md` §16) is what settles which one is. **Every section below was checked against
+the code, not rewritten from `SONORA.md` alone** — some Expressive-era decisions turned out to
+still be true, in whole or in part, and are kept and marked as such.
+
 ## The reference set, and what we take from each
 
-| Reference         | What we take                                                                                                                                                                                                                                                                                                                                                                                 |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **YouTube Music** | Split-view Now Playing; thick progress bar that thickens further on touch, no playhead dot; icon-only toggles instead of text tabs; queue as an upward swipe; bottom-sheet-first secondary UI.                                                                                                                                                                                               |
-| **Symfonium**     | Theme colour derived from the current artwork, applied to the whole shell, not just the player.                                                                                                                                                                                                                                                                                              |
-| **Spotify**       | Search that goes deep — one field, typed results, and **lyrics search** as a first-class mode.                                                                                                                                                                                                                                                                                               |
-| **Claude**        | Warm neutral surfaces, generous line-height, restrained accent use, quiet chrome.                                                                                                                                                                                                                                                                                                            |
-| **M3 Expressive** | Spring motion, shape morphing, larger type at the top of the hierarchy, high-emphasis containers.                                                                                                                                                                                                                                                                                            |
-| **Feishin**       | Not a design-language reference — YouTube Music stays primary for colour, motion and warmth. For **UI structure** specifically (screen layouts, navigation, information density: how a screen is put together, not how it's styled), this open-source Jellyfin client (`github.com/jeffvli/feishin`) is the gold standard we build against.                                                  |
-| **Auxio**         | Not a UI reference at all — it's built on Android Fragments/Views, not Jetpack Compose, so its screens don't translate. For Android's **playback-service architecture** (queue handling, gapless playback, ReplayGain, Android Auto integration), this open-source Kotlin/Media3 music player (`github.com/OxygenCobalt/Auxio`) is worth reading for how a mature app structures that layer. |
+| Reference         | What we take                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sonora**         | The design authority as of 2026-08-16 — see above. Flat neutral surfaces, one user-picked accent, weight-900 headings, Material Symbols Rounded icons, docked (non-scrolling) chrome, near-absent motion. `docs/design/SONORA.md` has the values; `docs/ROADMAP.md` §16 has the narrative.                                                                                                                                                                       |
+| **YouTube Music**  | Split-view Now Playing; thick progress bar; icon-only toggles instead of text tabs; queue as an upward swipe; bottom-sheet-first secondary UI.                                                                                                                                                                                                                                                                                                                      |
+| **Symfonium**      | Theme colour derived from the current artwork, applied to the whole shell. **Never shipped** — see "Colour" below — and now an open question with Sofia rather than a live feature.                                                                                                                                                                                                                                                                                |
+| **Spotify**        | Search that goes deep — one field, typed results, and **lyrics search** as a first-class mode.                                                                                                                                                                                                                                                                                                                                                                      |
+| **Claude**         | Warm neutral surfaces, generous line-height, restrained accent use, quiet chrome.                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Feishin**        | Not a design-language reference — for **UI structure** specifically (screen layouts, navigation, information density), this open-source Jellyfin client (`github.com/jeffvli/feishin`) is the gold standard we build against. Sonora itself is a redesign of Booming Music/Symphony, a Feishin-family player, so several structural choices (docked chrome, one bottom player bar) now arrive by way of Sonora rather than by direct reference to Feishin. |
+| **Auxio**          | Not a UI reference at all — it's built on Android Fragments/Views, not Jetpack Compose. For Android's **playback-service architecture** (queue handling, gapless playback, ReplayGain, Android Auto integration), this open-source Kotlin/Media3 music player (`github.com/OxygenCobalt/Auxio`) is worth reading for how a mature app structures that layer.                                                                                                     |
 
-**Verify against these references visually, not just from memory of this table** — but only
-once a surface has real content to compare, not a placeholder screen. A blank onboarding form
-or a single-item stub screen (e.g. Android's current placeholder `HomeScreen`) isn't a
-meaningful comparison point; a populated home shelf, a library grid, or the Now Playing surface
-is. Concretely: do this for **web** now that phases 4–6 have real shelves/library/player screens
-live, and for **Android** once wave B2 (real home/library data) and wave C (player) land — see
-`docs/ROADMAP.md` §7. Put the app and the reference (YouTube Music / Symfonium, run on a phone
-or their web equivalents) side by side and look for drift from the table above: is the Now
-Playing surface actually split-view with a thickening progress bar, does the theme colour
-actually derive from current artwork across the whole shell, does search actually go as deep as
-Spotify's. Note what's off in `docs/HANDOVER.md` rather than letting it sit unreviewed — this
-is exactly the kind of feedback a screenshot surfaces faster than another phase of unreviewed
-code (see `docs/HANDOVER.md` §7's "get it in front of the user early").
+**M3 Expressive is retired as a reference row.** It contributed spring motion, shape morphing
+and high-emphasis containers to the original plan; Sonora replaced all three (see "Motion" and
+"Shape" below), so keeping the row would describe a direction the app no longer takes.
+
+**Verify against these references visually, not just from memory of this table.** Put the app
+and the reference side by side and look for drift — this is exactly the kind of feedback a
+screenshot surfaces faster than another phase of unreviewed code. Note what's off in
+`docs/HANDOVER.md`.
 
 ## Implementation layer
-
-Everything below this point — colour, type, shape, motion, layout, accessibility — is the
-**design language**: the target this project is aiming for, unchanged by what follows.
 
 The **component implementation** is migrating from a hand-built React component set
 (`packages/ui/src/components/*.tsx` — `Button`, `Card`, `Sheet`, `Icon`, and the rest) to
 [Mantine](https://mantine.dev) (`@mantine/core`), confirmed by the user as a full migration
-on 2026-08-04 (see `docs/HANDOVER.md`'s "Mantine" section). Mantine components replace the
-hand-rolled ones; they do not replace or loosen any token on this page — a migrated `Card`
-still has to be the same M3 shape, colour and motion as the one it replaces, just built on
-Mantine's primitive instead of a bespoke one.
+on 2026-08-04. Mantine components replace the hand-rolled ones; they do not replace or loosen
+any token — a migrated `Card` still has to carry the same colour, shape and motion as the one
+it replaces, just built on Mantine's primitive instead of a bespoke one. That standard now
+means Sonora's tokens rather than M3's.
 
-Theming is what bridges the two systems, and today only **colour** is fully wired:
-`packages/ui/src/theme/mantineColors.ts` takes the already-resolved M3 dynamic-scheme
-primary (`scheme.primary` — an artwork-derived hex, see "Colour" below) and resamples its
-HCT hue/chroma at the ten tone stops Mantine's own palettes expect
-(`[98, 95, 90, 80, 70, 60, 50, 40, 30, 20]`, lightest to darkest), producing a derived
-`MantineColorsTuple` rather than a hand-picked one — the same "never hand-pick, always
-derive" rule this page applies to every other M3 token.
-`packages/ui/src/theme/ThemeProvider.tsx` feeds that tuple into `MantineProvider` as `theme.colors.auralis` /
-`primaryColor: 'auralis'`, and pins `forceColorScheme` to the same resolved light/dark mode
-the rest of the shell uses, so Mantine never disagrees with the M3 CSS custom properties
-(`--m3-*`) painted onto `.auralis-theme-root`.
+Theming bridges the two systems, and colour is the one family fully wired end to end:
+`packages/ui/src/theme/mantineColors.ts` resamples the currently-resolved `--m3-primary`
+value's HCT hue/chroma (`@material/material-color-utilities`) at the ten tone stops Mantine's
+own palettes expect, producing a derived `MantineColorsTuple`
+(`theme.colors.auralis` / `primaryColor: 'auralis'`) rather than a hand-picked one. **What that
+value now is has changed** — see "Colour" below; the mechanism that derives a Mantine ramp
+from it is unchanged.
 
-Type, shape, motion and spacing tokens are, as of this writing, still applied only as those
-CSS custom properties on the theme root, independent of Mantine's own theme object — as the
-component migration proceeds they are expected to feed Mantine's theme (`fontFamily`,
-`radius`, `spacing`, etc.) the same way colour already does, not be replaced by Mantine's
-own defaults. `packages/ui/src/mantine.ts` re-exports the Mantine primitives already in use
-(`AppShell`, `NavLink`, `Card`, `Image`, prefixed `Mantine*`) so that `apps/web` keeps
-consuming UI only through `@auralis/ui`, the same way it consumes every hand-built
-component, rather than importing `@mantine/core` directly.
+Type, shape, motion and spacing tokens are still applied only as CSS custom properties on the
+theme root (`--m3-*`, plus Sonora's own additive `--h1`…`--h4`/`--text-*`/`--radius-*`/etc.
+layer since wave 16b-2), independent of Mantine's own theme object. `packages/ui/src/mantine.ts`
+re-exports the Mantine primitives already in use (`AppShell`, `NavLink`, `Card`, `Image`,
+prefixed `Mantine*`) so `apps/web` keeps consuming UI only through `@auralis/ui`.
+
+**This migration is not close to finished, on either axis.** As of `16f` (2026-08-21), seven
+`packages/ui` primitives still reference `--m3-*` directly (`Fab`, `ListItem`, `Marquee`,
+`NavigationBar`, `SearchField`, `Snackbar`, `TopAppBar`), and web's onboarding/settings
+page-level CSS is wholly on `--m3-*` still — a class of consumer the tracked migration list
+does not even count. Android is further along at the token level (Sonora's colour, typography
+*and* shape scale are wired app-wide since `16f`) but has no display font bundled at all — see
+"Type" below.
 
 ## Colour
 
-Auralis derives its entire palette at runtime with
-[`@material/material-color-utilities`](https://github.com/material-foundation/material-color-utilities):
+**Colour is not, and has never been, derived from artwork at runtime.**
+`packages/ui/src/tokens/artwork.ts` exports `sourceColorFromImageData`, built for exactly that
+purpose, and a repo-wide grep finds **zero callers outside its own test.** The Symfonium
+behaviour named as a reference above was designed for and never wired up.
 
-1. Quantize the current artwork → dominant HCT source colour.
-2. Build a **dynamic scheme** (`SchemeExpressive` / `SchemeTonalSpot`) for light and dark.
-3. Emit ~50 M3 role tokens as CSS custom properties on `:root`.
-4. Cross-fade between palettes on track change — colour is animated, not swapped.
+**`--m3-*` chroma roles are Sonora's fixed literal values, per light/dark theme — not generated
+from any source colour.** Wave `16c-2-W-1` (`packages/ui/src/tokens/color.ts`) replaced the
+runtime HCT dynamic-scheme generator (`@material/material-color-utilities`,
+`SchemeExpressive`/`SchemeTonalSpot`) with a lookup against `docs/design/SONORA.md` §1.5/§1.6.
+`createScheme`'s `sourceColor`/`contrastLevel`/`variant` options are kept on the function
+signature for API compatibility and are now accepted and ignored; only `dark` selects
+anything. `@material/material-color-utilities` is still a dependency — `mantineColors.ts` uses
+its HCT/`TonalPalette` machinery to build the Mantine ramp described above, from whatever hex
+`--m3-primary` now resolves to.
 
-Fallback source colour (no artwork, onboarding, error states) is a warm amber that reads as
-"lamp-lit reading", not "corporate blue": `#B8683C`.
+**`--accent` is the one customisable colour**, and it is what actually ships: Symphony's
+17-hue preset picker (`docs/design/SONORA.md` §1.3), stored per-user, defaulting to violet
+(`#8b5cf6`, `DEFAULT_ACCENT` in `color.ts`). `--accent-ink` and the four `--tone-*` app-level
+tokens (`SONORA.md` §2) derive from it. Wired into web's Settings; Android's accent picker
+landed in `16f-A-2`.
 
-Every generated pair is checked for contrast; the token generator has tests asserting
-that `on-*` roles clear WCAG AA against their container.
+**Colour changes still cross-fade rather than snap**, and the mechanism this page originally
+described for artwork colour is what now carries a light/dark mode switch and an accent
+change: every `--m3-*` colour property is registered via `CSS.registerProperty` with
+`syntax: '<color>'` so browsers treat it as animatable, and the wrapper element carries a
+`transition` on those properties using the spring-derived `slow` easing curve (see "Motion").
+This is the one place Expressive's spring math still drives something a user sees.
+
+**The fallback source colour** (`AURALIS_SOURCE_COLOR`, `#B8683C`, the "lamp-lit reading" warm
+amber) still exists as `ThemeProvider`'s `sourceColor` default, kept for API compatibility —
+since chroma roles no longer read it, it is currently inert.
+
+**Every generated pair is checked for contrast**, and one gap is open with Sofia, not yet
+fixed: `--accent-ink` on `--surface-card` fails WCAG AA at the default (violet) accent in dark
+mode, and `--accent-contrast` (a fixed white) fails 4.5:1 against `--accent` at most of the 17
+presets. Neither is being worked around by loosening a threshold — see `docs/HANDOVER.md`'s
+queued items `dbfb46e`/`abbaca2`.
+
+**The open question, unresolved — do not treat it as answered.** Should album-art-derived
+colour ever be wired up as the accent's source, or is the preset picker the final answer? She
+named artwork-derived colour as something she loved about Symfonium, and nothing was deleted
+to adopt Sonora's picker model — the artwork pipeline was simply never built. This is filed as
+`docs/HANDOVER.md` queue item `dbfb46e` and blocks nothing. An earlier draft of `SONORA.md`
+recorded this as already asked and answered; it was not, and that was corrected on review.
+**Recording a live question as closed is worse than leaving it open** — do not repeat that
+here.
 
 ## Type
 
-A single variable font family for the shell (`Inter Variable`, fallback system stack) and
-the M3 type scale extended with Expressive's larger display sizes:
+Sonora's own type system, landed additively (wave `16b-2`) alongside the app's pre-existing M3
+scale rather than replacing it in one step:
 
-| Role            | Size / line-height | Weight | Tracking |
-| --------------- | ------------------ | ------ | -------- |
-| display-large   | 57 / 64            | 400    | -0.25    |
-| headline-medium | 28 / 36            | 400    | 0        |
-| title-large     | 22 / 28            | 500    | 0        |
-| body-large      | 16 / 24            | 400    | 0.15     |
-| label-large     | 14 / 20            | 500    | 0.1      |
+- **Body/UI**: Inter (real, no substitution) — Symphony's actual built-in font choice.
+- **Display/heading**: Roboto Flex, substituting Booming Music's real Google Sans Flex, which
+  is not published on Google Fonts. Functionally close (same variable-axis concept, same type
+  lineage), not pixel-identical.
+- **Headings are weight 900 at every size** (`--heading-weight`, `--h1`…`--h4`,
+  `docs/design/SONORA.md` §1.8), with **no italics anywhere**. This replaces the old M3 scale's
+  extended-Expressive treatment (emphasised variants bumping weight to 600–700), which is still
+  present in `packages/ui/src/tokens/typography.ts` and still generates `--m3-*` type tokens —
+  it has not yet been deleted or migrated, matching the "not close to finished" note above.
 
-Emphasised variants (Expressive) bump weight to 600–700 for the same size, used on the
-Now Playing screen and section headers.
+**Both fonts are self-hosted for web** (`16b-1`, 276 KB, `--font-body`/`--font-display`) rather
+than loaded from Google's CDN — this product is self-hosted, one container, designed to run
+LAN-only, and Sonora's own stylesheet points at `fonts.googleapis.com` by default.
+
+**Android has no display font bundled at all.** `16b-2-A` gave Android Sonora's colour,
+typography *and* shape scale, but nothing self-hosts Roboto Flex there — headings use the
+platform's default face at weight 900 rather than `--font-display`. This is a real, named
+asymmetry between the two clients (`docs/HANDOVER.md`, the `16e-nowplaying` triple), not an
+oversight to silently fix here.
 
 ## Shape
 
-M3 shape scale, plus Expressive's **shape morphing**: pressed states morph a container
-between two corner families (e.g. `full` → `large`) along the spring, rather than scaling.
+**Shape morphing is gone, deliberately, not merely superseded.** The pre-Sonora M3 Expressive
+treatment sprang a pressed container's corner radius from one shape family to another (e.g.
+`full` → `md` on `:active`) along the spring curve. Sonora's own guidance describes a *fill*
+change on press instead — a pill-shaped accent-tinted fill on mobile, a ~10% shift on desktop —
+not a radius change, and `packages/ui/src/components/Button.css` now keeps `--radius-pill`
+constant at rest and pressed. The e2e suite (`e2e/ui/button.spec.ts`) was rewritten to assert
+the radius stays a pill rather than that it changes.
 
-```
-none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999
-```
-
-Artwork uses `lg`; the Now Playing artwork uses `xl` and morphs to a squircle while
-playing — the same "breathing" cue Symfonium uses to indicate playback state.
+The corner-radius scale itself is Sonora's (`packages/ui/src/tokens/shape.ts`, since
+`16c-2-W-1`): `docs/design/SONORA.md` §1.10's five-step scale, desktop-first, mapped onto the
+app's existing seven `--m3-shape-*` names (`xl` collapses onto `lg`, `none` stays a literal
+`0`, `full` takes Sonora's exact `999px` rather than the old scale's arbitrary `9999px`).
+`Card`, `Slider` and `Button` read `--radius-*` directly now and no longer go through this
+scale at all; `Dialog`/`Sheet`/`Menu`/`NavigationBar`/`ListItem`/`SearchField` still do.
 
 ## Motion
 
-Expressive replaces duration+easing with **physics**. Auralis ships one spring table and
-uses nothing else:
+**Expressive's spring-physics design language is gone from what a user sees. The spring math
+that used to generate it is not gone from the codebase — it now generates Sonora's flat value
+instead, plus the one exception noted under "Colour."**
 
-| Token            | Stiffness | Damping | Used for                          |
-| ---------------- | --------- | ------- | --------------------------------- |
-| `spring.fast`    | 1400      | 0.9     | Icon toggles, ripples, checkboxes |
-| `spring.default` | 700       | 0.9     | Cards, list items, FAB            |
-| `spring.slow`    | 300       | 0.9     | Sheets, Now Playing expansion     |
-| `spring.bouncy`  | 500       | 0.6     | Play/pause, like, add-to-queue    |
+`packages/ui/src/tokens/motion.ts`'s damped-harmonic-oscillator solver
+(`springPosition`/`springSettleDuration`/`springToLinearEasing`, compiling a spring's closed-form
+step response to a CSS `linear()` easing string with zero per-frame JS) is unchanged. What
+changed, in wave `16c-2-W-1`, is what `motionCssVars()` emits: every `--m3-spring-<name>-*`
+pair — `fast`/`default`/`slow`/`bouncy` — now holds the identical flat value,
+**`200ms ease-in-out`**, matching Sonora's own stated rule: *"a plain 0.2s ease-in-out fade for
+sidebar art and a 0.2s colour transition on nav-item hover — no bounce, no spring, no parallax
+anywhere in the source code read"* (`docs/design/sonora/readme.md`). All four names are kept
+(nothing here deletes a `--m3-*` name a caller might still reach for) but no longer correspond
+to physically distinct curves.
 
-`prefers-reduced-motion` collapses every spring to a 1-frame settle.
+**One exception**: `ThemeProvider.tsx` calls `springSettleDuration(SPRINGS.slow)` and
+`springToLinearEasing(SPRINGS.slow)` directly, not through `motionCssVars()`, to drive the
+`--m3-*` colour cross-fade described under "Colour." That is the one place the original spring
+curve — not the flat Sonora value — still reaches the screen, and it is a narrow, deliberate
+carve-out rather than an oversight.
+
+`prefers-reduced-motion` still collapses every spring to a near-instant single-frame settle
+(`REDUCED_MOTION_DURATION_MS = 16`) rather than removing motion feedback outright.
 
 ## Layout
 
-Adaptive by width, following M3's canonical breakpoints:
+Adaptive by width. The two real boundaries are `apps/web/src/hooks/breakpoint.ts`'s existing
+rig, not the four frame-width preset buttons (`1440`/`1280`/`1024`/`768`) that some design
+recon docs mistake for implemented breakpoints — see `docs/design/SONORA.md` §6 for that
+correction in full:
 
-| Width      | Navigation      | Now Playing           |
-| ---------- | --------------- | --------------------- |
-| < 600px    | Bottom bar      | Full-screen sheet     |
-| 600–1240px | Navigation rail | Split view, 2 columns |
-| > 1240px   | Expanded rail   | Persistent side panel |
+| Width          | Navigation                | Now Playing            |
+| -------------- | -------------------------- | ------------------------ |
+| < 600px        | Bottom bar                 | Full-screen sheet        |
+| 600–1023.98px  | Navigation rail, icon-only | Full-screen sheet        |
+| 1024–1239.98px | Navigation rail, labelled  | Full-screen sheet        |
+| ≥ 1240px       | Expanded (labelled) rail   | Persistent side panel    |
 
-The mini player is always present when something is loaded, docked above the bottom bar or
-at the foot of the rail.
+`1024` (`railWide`) is the one boundary Sonora introduces beyond what the app already had;
+`1240` (`showPanel`/`expanded`) already existed pre-Sonora. Sonora's own tabbed desktop Now
+Playing panel is deliberately not built (`16e-nowplaying-spec`'s ruling stands) — the
+persistent side panel above is the existing split-view surface, not a new tabbed one.
+
+**The chrome is docked, not document-scrolled**, as of `16d` (2026-08-17) — this closed a
+user-reported bug where the nav rail and the Now Playing sidebar scrolled away with the main
+content. `.auralis-shell__content` is the single scroll container at every breakpoint; the
+rail, the Now Playing panel and the mini player are pinned. The mini player is always present
+when something is loaded, docked above the bottom bar or at the foot of the rail.
 
 ## Accessibility
 
-- Every interactive target ≥ 48×48 CSS px.
-- Focus rings are M3 `secondary` at 3px offset, never removed.
-- Colour is never the only signal — playing state also carries an animated equaliser glyph.
-- All player controls are reachable by keyboard with documented shortcuts
-  (<kbd>Space</kbd>, <kbd>←</kbd>/<kbd>→</kbd> seek, <kbd>J</kbd>/<kbd>L</kbd> ±30s,
-  <kbd>[</kbd>/<kbd>]</kbd> speed).
+- Every interactive target ≥ 48×48 CSS px (`--m3-touch-target-min`), still true.
+- Focus rings are M3 `secondary` (now a Sonora chroma-role value, not an M3-generated one) at
+  3px offset, never removed — `:focus-visible { outline: 3px solid var(--m3-secondary); }`.
+- **Colour is never the only signal for playing state — but not via an animated equaliser
+  glyph.** That was the original plan; what actually ships is a text label folded into the
+  accessible name (e.g. `"Static Coast, 3:18, Playing"`), not a drawn glyph. Corrected here
+  because a grep for `equaliser`/`equalizer` across the app finds nothing.
+- **The keyboard shortcuts below describe global navigation, not player transport, and the
+  transport list this page previously named was never implemented.** `apps/web/src/hooks/
+  shortcuts.ts` is the real shortcut set: `/` focuses search, `g h` goes home, `g l` goes to the
+  library, `?` opens the shortcut sheet. There is no `Space`/arrow-seek/`J`/`L`/`[`/`]` player
+  shortcut handler anywhere in `apps/web/src/features/player` — grepped, not assumed. If player
+  transport shortcuts are wanted, that is unbuilt work, not a stale doc.
