@@ -871,6 +871,60 @@ grepping the job log for a bare `testDebugUnitTest`, not by reading a badge — 
 a node exists with the semantics that were written, not what TalkBack announces. Web's six specs
 drive real Chromium. Every Android claim in that review is a source read plus a Robolectric pass.
 
+#### `15d-1-books-W-2` landed, then SHIPPED A TOTAL REGRESSION, and the correction is the lesson
+
+**Read this before acting on any parity review's prescribed fix.**
+
+The `15d-1-books-P` review ruled web's `availability === 'external'` fail-unsafe and prescribed
+Android's direction — `!== 'owned'` — at four call sites. That prescription is **wrong on web**, and
+taken literally it marked **the user's entire library as external**: every owned book on Home
+rendered a "not in your library" badge and every tap went to the request flow.
+
+**The two typings are not interchangeable, and the same review had already established why one
+paragraph before it made the recommendation.** Android **route-scopes** `availability` to its
+recommended-item model where kotlinx declares it **required**, so it is always present at the point
+of the check. Web mirrors its types **by hand with no runtime decode** and the field is **optional on
+an interface shared by every item** — an ordinary Audiobookshelf book carries no `availability` at
+all. So on web, **absent is the common case and means owned.**
+
+**The rule now lives in one place with its reasoning**, `apps/web/src/api/availability.ts`:
+absent means owned; **present-but-unrecognised means external**, because rendering an unknown state
+as an ordinary owned item is what dead-ends a tap at an id Audiobookshelf has never heard of. That
+was the review's real concern and it **is** still closed.
+
+**Three things worth more than the fix:**
+
+1. **The wave had to override a correct existing test to land the wrong behaviour.**
+   `Carousel.test.tsx`'s _"does not append anything for an owned item, whether availability is
+   'owned' or absent"_ was encoding the real contract. The spec said otherwise, so the agent changed
+   the test — and reported doing so honestly. **An existing test that contradicts your spec may know
+   something the spec's author does not.** Treat that collision as a signal to re-check the spec, not
+   as an obstacle.
+2. **Nothing that names `availability` caught it.** It surfaced in `tablet-breakpoint.spec.ts`
+   asserting that clicking Dune opens `/item/item-dune` — a test about **layout at 768px**. The
+   suite's value here came from breadth, not from aim. `for-you-external-book.spec.ts` now pins both
+   directions directly, so the next regression fails on a test that names the rule.
+3. **A green targeted run would have missed it.** The agent ran `pnpm vitest run apps/web` (606/606)
+   and typechecks, all green, and was correctly told not to run Playwright. **The orchestrator
+   running the browser suite before pushing is what caught it** — the same shape as the flake found
+   two sessions ago. Keep that division: agents run targeted tests, the orchestrator runs the suite.
+
+**Also merged: `16e-search-spec`** (`docs/design/screens/SEARCH.md`), the fourth screen spec. **No
+`-S` wave is needed** — both existing search routes already return everything results and
+suggestions require, so suggestions derive client-side from responses already in flight. **Lyrics
+search is named explicitly out of scope** (it needs an external full-catalogue provider, unlike the
+per-track lookup that exists).
+
+**Its headline finding is this project's fifth writer-with-no-reader, and the first at the
+component-prop level rather than the route level:** `packages/ui/src/components/SearchField.tsx`
+already has a complete, tested ARIA-combobox suggestion mechanism — `suggestions`,
+`onSuggestionSelect`, full keyboard navigation, covered by `e2e/ui/search-field.spec.ts` — that
+**nothing in the app has ever called with real data.** So web's half of Sofia's "global search needs
+suggestions" is mostly **wiring**, not building. It also specifies two pre-existing Android drifts:
+book result rows are still non-interactive behind a comment claiming no book-detail route exists
+(one has since `16e-book-A`), and the search screen has **no accessibility semantics at all** where
+web announces status through a live region.
+
 #### THE INCIDENT WORTH MORE THAN EITHER WAVE — `isolation: "worktree"` is what creates the worktree
 
 **A subagent ran `git reset --hard` inside the shared checkout and discarded two merge commits.**
