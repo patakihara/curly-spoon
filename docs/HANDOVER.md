@@ -279,10 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T13:34:53Z` · `ac8d6ec012bcfbac3` · general-purpose · ended · # Parity Review — '16e-nowplaying-P' ## 1. Verdict **Not clean — one real defect, currently blocking 'main''s Android CI, plus two follow-ups.** The…
-- `2026-08-20T13:48:33Z` · `a868ad45336e0f504` · general-purpose · ended · Only the one new file exists, nothing else was touched. Task complete. ## Report — '16e-foryou-spec' **1. Document written:** '/home/sofiapata/src/au…
-- `2026-08-20T13:49:45Z` · `a41cb72e6b1c7ae41` · general-purpose · ended · Working tree clean, one commit 'c93fd8a' on branch 'worktree-agent-a41cb72e6b1c7ae41', on top of '34e41c3'. ## Report — Wave '16e-search-A-3' **1. Br…
-- `2026-08-20T14:05:53Z` · `a532458b8f6d00a86` · general-purpose · ended · This all reads coherently. The implementation is complete, committed, and verified. Here's my final report. ## Report — Wave '16e-foryou-W' **1. Bran…
 - `2026-08-20T14:06:24Z` · `ad6d77230b8723fa8` · general-purpose · ended · ## Report — Wave '16e-foryou-A' **1. Branch/commit:** 'worktree-agent-ad6d77230b8723fa8' at '55ca4af', one commit on top of 'ff9440d'. 'git status --…
 - `2026-08-20T14:47:44Z` · `ab1c8e59fadc27f0d` · general-purpose · ended · ## Report — '16e-foryou-P' **Verdict: clean, with follow-ups — no defect that should block shipping.** Both waves are honest about what they built an…
 - `2026-08-20T14:59:38Z` · `aa135354468fa745f` · general-purpose · ended · ## Report — Wave 16e-foryou-A-2 **1. Branch/commit:** 'worktree-agent-aa135354468fa745f' at '95e27a4'. 'git status --short' is clean. Reset to base '…
@@ -294,6 +290,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T22:11:05Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · The 'ui-desktop'/'ui-mobile' Playwright run auto-backgrounded (task 'bd1b0vfm1') after the 2-minute default timeout. My work is already committed, so…
 - `2026-08-20T22:23:16Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · ## 1. The seven-call-site classification All seven line numbers you gave me were accurate — I re-grepped them before touching anything and they match…
 - `2026-08-20T22:36:57Z` · `af5faf40ebd7f0c47` · general-purpose · ended · Working tree is clean, nothing uncommitted, nothing pushed. ## Report — wave '16i-handover-prune' **Branch/commit:** 'worktree-agent-af5faf40ebd7f0c4…
+- `2026-08-20T23:43:27Z` · `ac975afe5c449b45b` · general-purpose · ended · ## 1. Claim A verdict — **HOLDS**, unchanged since the record was written 'itemLabels' is computed in 'apps/server/src/features/recommendations/shelv…
+- `2026-08-20T23:44:00Z` · `a98b2440f08b1fb2e` · general-purpose · ended · # Phase 16 '--m3-*' Migration Audit — Findings ## Step 1 — the 501 split into three buckets Raw per-file counts (grep -c, i.e. lines containing '--m3…
+- `2026-08-20T23:50:13Z` · `a8aa0d365d7e1810e` · general-purpose · running · —
+- `2026-08-20T23:51:21Z` · `aa2569dc96b0baa5d` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -751,6 +751,119 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### CLAIMED 2026-08-21 — two waves in flight, disjoint, both based on `e856c70`
+
+Dispatched together because their directories do not overlap. **`main` is `e856c70`, green on `CI`,
+`Android` and `Publish`** (verified, not assumed).
+
+| Wave      | Owns                           | What it does                                                                                         |
+| --------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `15c-2-S` | `apps/server/src/**`           | `GET /recommended` — the cross-medium aggregator that finally makes mixed shelves reachable          |
+| `16c-6-W` | seven `packages/ui` primitives | migrate `Fab`/`NavigationBar`/`ListItem`/`TopAppBar`/`SearchField`/`Snackbar`/`Marquee` off `--m3-*` |
+
+**Both are based on the same commit, so only the first can `git merge --ff-only`.** Rebase the
+second onto the new tip before merging it — do **not** cherry-pick. Cherry-picking lands identical
+content but permanently strips `worktree-gc.sh`'s ability to prune the worktree, which is why four
+stale worktrees are on disk today that can never be pruned.
+
+### Phase 15's `15c-2` — all three blockers re-verified 2026-08-21, and all three still hold
+
+Re-checked against the code, not the prose, because four waves (`15a`, `15e-music`, `15e-books`,
+`15d-1-*`) landed after the blockers were recorded and any of them could have closed one. None did.
+
+1. **`itemLabels` still cannot reach the wire.** `routes/libraries.ts:332-341` and
+   `routes/jellyfin.ts:568-577` each rebuild the shelf as an explicit `{ id, label, type, reason,
+items }` literal. Neither route declares a `schema:`, so this is purely the hand-built literal —
+   not a serializer stripping unknown keys.
+2. **No route can produce a mixed shelf.** `buildRecommendationShelves` has exactly two callers,
+   each passing a single-kind pool. External discovery (`15e-*`) does **not** change this: it builds
+   its own separate shelf literal and never feeds the shelf builder, and each placeholder is the
+   same kind the route already handles.
+3. **No adapter sets `parentId`.** `shelves.ts:39` reads it; nothing writes it. So the
+   dedupe-by-parent rule falls through to the series-name branch always.
+
+**The trap that nearly cost a wave, recorded so nobody repeats it.** Wiring `itemLabels` into those
+two existing route literals looks like a cheap independent win and **is inert**: `typeLabelsFor`
+returns `undefined` when a shelf spans fewer than two kinds (`shelves.ts:80`), and both routes'
+pools are single-kind by construction. It would serialize `undefined` forever while reading as
+progress in the diff. `itemLabels` therefore belongs on the **aggregator's** response literal, and
+the two existing routes are deliberately left alone.
+
+**What is explicitly NOT in `15c-2`:** episode- and track-granular candidates carrying a real
+`parentId`. That needs a podcast-episode adapter and a track adapter, neither of which exists, each
+with its own progress-signal handling — and nothing currently asked for requires it. Bundling it in
+would turn `15c-2` into a second "mechanism nobody can reach". Parked deliberately, not forgotten.
+
+**`shelves.ts` itself is not half-built and must not be rewritten.** Its dedupe and mixed-label
+rules are fully implemented and thoroughly unit-tested (`shelves.test.ts:132` and `:277`, including
+shelf-collapse-below-minimum and parentless-item non-collision). "Mechanism only" in the older
+prose means _unreachable_, not _unfinished_ — a distinction worth keeping, since a session skimming
+it could easily redo solid work.
+
+### Phase 16 is genuinely `wip` — the status table is right and the wave bullets are also right
+
+Audited 2026-08-21 because every §16 wave bullet says DONE while the top-of-file table says `wip`.
+**Both are true and they are not the same claim**: each wave finished its own scope; the phase's
+exit condition — `--m3-*` deleted when the last consumer leaves — is not met. 501 occurrences
+remain, and the split is the whole point:
+
+- **~254 are the definition/emission layer** (`packages/ui/src/styles/index.css`, `tokens/*.ts`,
+  `ThemeProvider.tsx`). These are the supply side and must survive until the last consumer goes.
+- **~39 are pure prose** — doc comments _explaining_ the migration in files that are fully migrated
+  in code (`Card.css`, `Slider.css`, `Button.css`, `Chip.tsx`, `IconButton.tsx`, `Dialog.tsx`).
+  A raw grep count reads these as unmigrated. They are not.
+- **~120-130 are live consumers — the actual residual work.**
+- The rest are **documented-deliberate survivors**: `--m3-touch-target-min` (a permanent app-wide
+  accessibility floor with no Sonora equivalent), the app-wide `.m3-type-*` typography scale, and
+  `Menu.css`'s `--m3-surface-container-high` (kept so the dropdown does not visually merge into the
+  `Card` it opens over).
+
+**The residual work, in the order I would take it:**
+
+1. **`16c-6-W` — seven `packages/ui` primitives** (~30 call sites): `Fab` (entirely unmigrated),
+   `NavigationBar`, `ListItem`, `TopAppBar`, `SearchField`, `Snackbar`, `Marquee`. **In flight now.**
+2. **`apps/web/src/styles/app.css` — ~85 live occurrences, and it has never been named as its own
+   wave.** This is the big one and the docs **understate** it: an existing note calls it
+   "onboarding/settings page-level CSS", but the real selector list spans Now Playing, the mini
+   player, the nav-rail search, the queue view, sleep timer, lyrics, chapter list, bookmarks, the
+   card grid and error surfaces — app-wide chrome, not two screens. **Scope a wave against the
+   measurement, not against that description.**
+3. **`CoverImage.tsx`'s image-load-failure tile** — 2 lines, undocumented as deliberate, a tag-along.
+4. **The `.m3-type-*` typography scale** — cross-cutting, deferred by every 16c wave, and **no wave
+   is named to close it**. Sonora defines its own `--text-*`/`--h1..h4-*` family (`SONORA.md` §1.8)
+   that nothing consumes yet. This needs a wave or an explicit decision that it is permanent.
+
+**This residue is web-only and does NOT need an Android pair.** Android finished the equivalent
+work in `16b-2-A`/`16f-A-1`/`16f-A-2`: `apps/android` has zero `dynamicColor`/`dynamicLightColorScheme`
+usage (the only mention is a comment saying Sonora replaced it), and every `MaterialTheme.colorScheme.*`
+read resolves through the Sonora-populated scheme. **A `-P` is still owed once web catches up**, since
+`16c-1-P` and `16c-2-P` were both folded forward and no later `-P` ever closed that loop.
+
+### The accent-contrast failure is worse than queue entry `abbaca2` records — do not start the fix
+
+Computed here 2026-08-21 with the WCAG relative-luminance formula over all 17 Sonora accent presets,
+against `--accent-contrast`'s single definition (`packages/ui/src/styles/sonora-tokens.css:42`,
+a static `#fff`, four consumers on web). **Android has the identical defect**:
+`SonoraPalette.AccentContrast = Color(0xFFFFFFFF)` (`ui/theme/Color.kt:42`), wired into both the
+light and dark token sets (`:254`, `:264`) and consumed by the nav indicator
+(`ShellNavigationItems.kt`) and the Settings chips (`SettingsScreen.kt:122`).
+
+**The finding the queue entry does not have: white clears AA (4.5:1) on _none_ of the 17 presets.**
+The best case is indigo at **4.47:1**; the worst is yellow at **1.92:1**. So "derive the ink per
+hue" — which sounds like an ordinary engineering fix — actually resolves to **near-black on
+essentially every preset**, including violet, which is the shipped default. That is a visible change
+to every selected nav item and every filled chip on both platforms.
+
+| ink choice                  | outcome                                                                |
+| --------------------------- | ---------------------------------------------------------------------- |
+| keep `#fff`                 | fails AA at all 17; fails even the 3:1 UI floor at 9 of them           |
+| pick max-contrast per hue   | resolves to dark ink on all 17 — white never wins                      |
+| white above 3:1, dark below | keeps the shipped violet look, leaves 8 hues AA-failing for small text |
+
+**This is therefore genuinely Sofia's call, not an ordinary judgement call** — it changes what she
+sees, and she would have an opinion. It meets her own test. **Ask; do not block, and do not start
+the fix.** Nothing depends on it.
 
 ### RELEASED 2026-08-21 — **`v0.2.0`, the first Android release since `v0.1.0`**
 
