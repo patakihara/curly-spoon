@@ -28,8 +28,13 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 
-function clickBooksChip(page: Page) {
-  return page.getByTestId('search-filter-primary-books').locator('label').first().click();
+/** `Escape` first (wave 16e-search-W) — the typed queries below ("dune", "tolkien") both
+ * match a real search suggestion, which opens `SearchField`'s floating dropdown directly
+ * over this chip. See `search-view.spec.ts`'s `clickChip` for the full explanation; same
+ * fix, same reasoning. */
+async function clickBooksChip(page: Page) {
+  await page.keyboard.press('Escape');
+  await page.getByTestId('search-filter-primary-books').locator('label').first().click();
 }
 
 test('a Search "Series" result navigates to the series page, listing its book', async ({
