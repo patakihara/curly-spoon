@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T20:52:57Z` · `ad1e24b030f35c99c` · general-purpose · ended · Clean working tree, one commit ('9a7d09c') on top of '8d77670', on branch 'worktree-agent-ad1e24b030f35c99c'. Not pushed, not merged, per instruction…
-- `2026-08-18T21:09:06Z` · `ae6a5a06a1aba2e0f` · general-purpose · ended · ## Report — Wave 15d-1-books-W **Branch/commit:** 'worktree-agent-ae6a5a06a1aba2e0f' at '1912d6c', one commit on top of the integration branch tip '4…
 - `2026-08-18T21:09:48Z` · `aa97926cfab82547e` · general-purpose · ended · ## Report — Wave '16e-podcast-P': parity review of the podcast show screen triple **Verdict: clean, with two named follow-ups (one real, previously-i…
 - `2026-08-18T22:00:37Z` · `aa964a5222178d8bf` · general-purpose · ended · ## Report — 16e-album-spec **Branch/commit:** 'worktree-agent-aa964a5222178d8bf' at '0131190', one commit on top of 'be768d9'. Working tree clean. On…
 - `2026-08-18T22:20:20Z` · `a1181034546ce56e7` · general-purpose · ended · ## Report — Wave 16e-album-A: Android's album detail screen **Branch/commit:** 'worktree-agent-a1181034546ce56e7' at '15dcc50', one commit on '3bf25b…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
 - `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · ended · Everything is confirmed. Here is my final report. ## Report — Wave 16e-nowplaying-A **1. Branch/commit:** 'worktree-agent-a290836730d4ca5c5' at '5351…
 - `2026-08-20T13:34:53Z` · `ac8d6ec012bcfbac3` · general-purpose · ended · # Parity Review — '16e-nowplaying-P' ## 1. Verdict **Not clean — one real defect, currently blocking 'main''s Android CI, plus two follow-ups.** The…
+- `2026-08-20T13:48:33Z` · `a868ad45336e0f504` · general-purpose · ended · Only the one new file exists, nothing else was touched. Task complete. ## Report — '16e-foryou-spec' **1. Document written:** '/home/sofiapata/src/au…
+- `2026-08-20T13:49:45Z` · `a41cb72e6b1c7ae41` · general-purpose · ended · Working tree clean, one commit 'c93fd8a' on branch 'worktree-agent-a41cb72e6b1c7ae41', on top of '34e41c3'. ## Report — Wave '16e-search-A-3' **1. Br…
 
 <!-- AGENT_LOG_END -->
 
@@ -487,11 +487,19 @@ fourth one is the latent race 13d already documented, and it is now **firing int
 CI** where it was not before — Robolectric added suite wall-time, which is precisely the mechanism
 13d's write-up names. Real loose end; not the harness's fault; nobody's wave yet.
 
-- **14b-2 — not started, deliberately.** Grouping each For You card's title and reason line into
-  one accessibility node on `ForYouCarouselRow` (shared by the book, podcast and music shelves).
-  It should wait until the harness has more than one green CI run behind it: a cross-cutting
-  change to a surface nobody here can look at, verified by a harness one run old, is two unproven
-  things stacked.
+- **14b-2 — DONE, and this bullet said otherwise for weeks.** It landed as `e87a551`, CI-verified
+  on a genuine uncached execution, and three other places in this file have said so all along
+  while this one still read "not started". Re-verified 2026-08-20 by reading the code:
+  `ForYouCarousel.kt:173` carries `Modifier.semantics(mergeDescendants = true) { contentDescription
+= announcement }`, with doc comments spelling out how the reason line folds into the merged
+  announcement and why Compose has no `aria-describedby` equivalent.
+
+  **The lesson is the contradiction, not the wave.** This file already records that a stale open
+  finding is more expensive than a missing one, and that when a wave closes a finding recorded
+  elsewhere here you delete it in the same commit. That discipline was not followed, and the cost
+  was real: the `16e-foryou` spec wave was dispatched believing Android had no carousel semantics
+  at all and had to establish otherwise before it could write its accessibility section. **A doc
+  claiming a gap is no better evidence than a doc claiming parity.**
 
 ---
 
@@ -640,17 +648,23 @@ Off by default so CI logs stay readable. Redirect the run to a file — the serv
   what this file and `ROADMAP.md` both claimed until 2026-08-15.** On web the reason is _not_
   tied to the `h2`; the card list carries `aria-describedby` → the reason paragraph, so title
   and reason announce as name + description. That half is real and shipped.
-  **Android has no equivalent.** Verified twice by grep, independently, while reviewing 13f-2:
-  `ForYouCarousel.kt`/`ForYouScreen.kt`/`ForYouFeed.kt` contain **no** `semantics` or
-  `clearAndSetSemantics` at all, the only `contentDescription`s are `= null` on decorative cover
-  art, and `feedItemContentDescription()` builds its name from `title`/`subtitle` only — never
-  from `carouselReasonText()`, which renders as a plain sibling `Text` with no grouping to the
-  card. So on Android the reason is announced, if at all, as an unrelated loose string.
-  This is a **pre-existing gap from 13d**, not something 13f introduced. It was deliberately not
-  fixed inside 13f-2: `ForYouCarouselRow` is shared by the book and podcast shelves too, so
-  retrofitting semantics onto it is a cross-cutting change that wants its own wave and its own
-  verification — on a surface nobody here can actually look at. **It is a real open item, and
-  the lesson is that a doc claiming parity is not evidence of parity.**
+  **CLOSED — and this paragraph was stale for weeks.** It described a real gap as of 13f-2, and
+  **14b-2 (`e87a551`) fixed it**; nobody deleted the finding. Re-verified 2026-08-20 by reading
+  the source: `ForYouCarousel.kt:173` carries `Modifier.semantics(mergeDescendants = true) {
+contentDescription = announcement }`, and `feedItemAnnouncement` folds the reason in, with doc
+  comments at `:99-176` explaining that Compose has no `aria-describedby` equivalent so a merged
+  `contentDescription` is the closest single-node form TalkBack has.
+
+  **The two platforms therefore differ in mechanism and agree in outcome**, and the `16e-foryou`
+  spec pre-rules that as **idiom, not drift** — web splits name and description across
+  `aria-describedby`, Android merges them into one announced node, because that is what each
+  platform's accessibility model actually offers.
+
+  **Keep the original lesson and add its mirror.** "A doc claiming parity is not evidence of
+  parity" cost this project a real gap. This paragraph cost it the opposite: a spec wave was
+  dispatched believing a gap existed and had to spend turns proving it did not. **A doc claiming
+  a gap is not evidence of a gap either.** Verify against the code, in both directions.
+
 - **Reason lines wrap to two lines at 375px** when they carry the "— because you finished _X_"
   suffix. Nothing clips (there is deliberately no clamping), but headers get uneven. If that
   should change, the fix is `reasonFor` — once, serving both clients — not a clamp in either.
@@ -866,6 +880,61 @@ as a list to confirm, not a list to fix.
 - **`IconButton`'s `size` prop is additive-only and proved so.** 18 call sites across 14 files,
   re-measured by the wave rather than trusted from the spec, with one e2e test asserting the four
   existing variants stay at 48px _in the same test_ as the new 64px one.
+
+### DONE — `16e-foryou-spec` and `16e-search-A-3`. **The For You triple is dispatchable.**
+
+**`docs/design/screens/FOR_YOU.md`** (645 lines, 12 sections) is the sixth and last big screen
+spec. `-W` and `-A` are dispatchable from it together, then `-P`. **Settings/Onboarding is then the
+only screen left**, and after that `16f`.
+
+**Its scoping decision is the important part, and it is the right one.** Sofia's decision 2 in
+`USER_DECISIONS.md` has three parts. Only **the loading-state hold** is in this triple; **podcast
+dedupe and mixed-content carousels are split out** as a sequenced follow-on
+(`16e-foryou-shelves-S` then `-W`/`-A`), because they need cross-cutting backend work — unifying
+candidate pools across media types — that would make an oversized wave bundled with a full
+restyle. **Neither is dropped**; both are named with their own wave ids, which is the difference
+between a split and a silent narrowing.
+
+**And the follow-on is far smaller than it looks, because the mechanism already exists.**
+`shelves.ts` already has `dedupeByParent` (`:53`) and `typeLabelsFor` (`:71`), both tested, and
+both already called at `:175`/`:187`. What is missing is upstream and downstream, not the logic.
+
+**A SEVENTH writer-with-no-reader, verified by the orchestrator rather than taken on report.**
+`RecommendationShelf.itemLabels` is populated at `shelves.ts:187`, typed at `types.ts:133`, and
+asserted in `shelves.test.ts` — and a repo-wide grep across `apps` and `packages` finds **no
+client reading it on either platform.** It is the payload that would let a mixed shelf label its
+own items, computed and thrown away. Same family as the six before it.
+
+Also established: **`parentId` is never populated anywhere in `apps/server/src`** outside types,
+tests and `shelves.ts` itself — so the podcast-dedupe mechanism's key input has no writer. That is
+the actual blocker on Sofia's "no two episodes of one podcast", and it is a data-plumbing problem
+rather than a logic one.
+
+**Byte-for-byte target named in advance, and it fixes a live three-way mismatch.** The external
+item's label is ruled canonical as Sonora's literal **`"Not in library"`**. Web's badge text, web's
+`aria-label` and Android's constant were **all three different** from each other and from Sonora's
+source. The spec carries the full expected `aria-label`/`contentDescription` strings for both
+platforms so the implementing waves converge rather than each picking one.
+
+**Pre-ruled divergences** (the `ALBUM_DETAIL.md` technique, now standard): the merged-vs-split
+accessibility mechanism is **idiom**; the FILL-axis nav-icon toggle is **pre-existing and out of
+scope**; the quick-pick tile's mobile-column background is **intentional in Sonora's own source**,
+not a migration gap.
+
+**Android already satisfies the loading-state requirement in full** — `ForYouViewModel` fans out
+three async sources via `coroutineScope` and awaits all before `Loaded`. **Only web needs the
+behavioural change**; Android needs only its loading UI restyled from a bare spinner to a
+layout-shaped skeleton. Told this plainly, an agent fills the slot rather than rebuilding — the
+instruction that made the podcast triple's header come out byte-identical.
+
+**`16e-search-A-3` closed the last art-less track row, and the tile was only half the defect.**
+`MusicSearchViewModel.performSearch` resolved `baseUrl` and passed it to the artist and album
+mappers **on the same line**, while calling `toSearchUi()` for tracks with no argument — so
+`coverUrl` was null on the wire no matter what the UI did. **Adding the tile alone would have
+shipped a styled fallback icon forever and looked entirely correct.** Two KDoc blocks asserting
+this screen "never had cover art" were rewritten to name the cause rather than restate the symptom.
+It also gave the screen its first Robolectric coverage, and pinned the non-navigable no-`albumId`
+case with `onOpenAlbum` wired to `error()` so a stray navigation fails rather than passes quietly.
 
 ### `15d-1-books-P` is DONE, and it found a real fail-unsafe divergence on web
 
