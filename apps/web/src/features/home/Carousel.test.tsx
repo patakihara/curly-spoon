@@ -36,12 +36,18 @@ describe('cardLabel', () => {
   // not-owned) card — see `MusicHomePage.tsx`/`Carousel.tsx`'s doc comments. The visual
   // "Not in library" pill is `aria-hidden`, so this suffix is the only way a screen
   // reader user learns the item isn't hers.
-  it('appends "not in your library" for an external item, after the subtitle', () => {
+  //
+  // Wave 16e-foryou-W, FOR_YOU.md §6.3: the suffix text is now "not in library", not
+  // "not in your library" — Sonora's own literal string, ruled canonical over a real
+  // three-way mismatch this session found (web's visible badge already said this; web's
+  // own `aria-label` and Android's constant both said "not in your library"). Byte-for-
+  // byte parity target with Android's `EXTERNAL_RECOMMENDATION_LABEL`.
+  it('appends "not in library" for an external item, after the subtitle', () => {
     expect(cardLabel(item({ subtitle: null, availability: 'external' }))).toBe(
-      'Dune, not in your library',
+      'Dune, not in library',
     );
     expect(cardLabel(item({ subtitle: 'New artists to discover', availability: 'external' }))).toBe(
-      'Dune, New artists to discover, not in your library',
+      'Dune, New artists to discover, not in library',
     );
   });
 
@@ -63,6 +69,6 @@ describe('cardLabel', () => {
   it('treats a present but unrecognised availability as external', () => {
     expect(
       cardLabel(item({ availability: 'not-a-real-value' as unknown as FeedItem['availability'] })),
-    ).toBe('Dune, not in your library');
+    ).toBe('Dune, not in library');
   });
 });

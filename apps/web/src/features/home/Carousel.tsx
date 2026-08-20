@@ -7,13 +7,21 @@
  * full-width episode cards) is exactly what having a second component here
  * would risk drifting into.
  *
- * Every card is a fixed `CARD_WIDTH`x`COVER_SIZE` box regardless of the
- * source artwork's aspect ratio — `CoverImage`'s `object-fit: cover` crops
- * rather than pads, but the box itself never varies, which is what the
- * "all cards the same size" requirement is actually about; true letterboxing
- * (padding to preserve the whole image) would need a second visual treatment
- * this app has nowhere else, and isn't what any of the four reference
- * screenshots show either — every card in them is a cropped square.
+ * Every card is a fixed `cardWidth`x`coverSize` box regardless of the source
+ * artwork's aspect ratio — `CoverImage`'s `object-fit: cover` crops rather
+ * than pads, but the box itself never varies, which is what the "all cards
+ * the same size" requirement is actually about; true letterboxing (padding
+ * to preserve the whole image) would need a second visual treatment this app
+ * has nowhere else, and isn't what any of the four reference screenshots
+ * show either — every card in them is a cropped square.
+ *
+ * Wave 16e-foryou-W (`docs/design/screens/FOR_YOU.md` §3.1): card geometry is now a
+ * genuine desktop/compact split (176px/152px card width, `--radius-md`/`--radius-sm`
+ * art radius, `--surface-*` desktop colors vs. `--m3-*` compact colors — Sonora's own
+ * `MediaCard` source keeps the compact/mobile column on `--m3-*` deliberately, so this
+ * is not an incomplete migration) rather than the single fixed size this component
+ * rendered at every width before. `useBreakpoint() === 'compact'` is the same test
+ * `MediaHeader.tsx` already uses for its own desktop/compact split.
  *
  * Deliberately no CSS `scroll-behavior: smooth` (or any other scroll
  * animation) on the track: the only motion a user could see here is the
@@ -30,10 +38,36 @@ import type { CSSProperties } from 'react';
 import { LinearProgress, Skeleton } from '@auralis/ui';
 import { isExternalItem } from '../../api/availability.js';
 import { CoverImage } from '../../components/CoverImage.js';
+import { useBreakpoint } from '../../hooks/useBreakpoint.js';
 import type { FeedItem } from './forYouFeed.js';
 
-const CARD_WIDTH = 160;
-const COVER_SIZE = 160;
+const CARD_WIDTH_DESKTOP = 176;
+const CARD_WIDTH_COMPACT = 152;
+/** Art is square (1:1) and fills the card's full width — no separate "cover size"
+ * distinct from card width, matching the pre-Sonora convention this file already used. */
+const ART_RADIUS_DESKTOP = 'var(--radius-md)'; // 24px
+const ART_RADIUS_COMPACT = 'var(--radius-sm)'; // 16px
+
+function cardWidthFor(isCompact: boolean): number {
+  return isCompact ? CARD_WIDTH_COMPACT : CARD_WIDTH_DESKTOP;
+}
+
+function artRadiusFor(isCompact: boolean): string {
+  return isCompact ? ART_RADIUS_COMPACT : ART_RADIUS_DESKTOP;
+}
+
+/** FOR_YOU.md §3.1's Title/Subtitle rows: desktop reads `--surface-*`, compact/mobile
+ * deliberately stays on `--m3-*` — this is Sonora's own `MediaCard` source doing this,
+ * not an unmigrated leftover (see the doc comment on `ART_RADIUS_COMPACT` for the same
+ * pattern elsewhere on this card). Shared by the subtitle, the external-item title
+ * override and the external pill's text, all of which the table calls "muted". */
+function mutedTextColorFor(isCompact: boolean): string {
+  return isCompact ? 'var(--m3-on-surface-variant)' : 'var(--surface-fg-muted)';
+}
+
+function fullTextColorFor(isCompact: boolean): string {
+  return isCompact ? 'var(--m3-on-background)' : 'var(--surface-fg)';
+}
 
 const TRACK_STYLE: CSSProperties = {
   display: 'flex',
@@ -46,8 +80,9 @@ const TILE_WRAPPER_STYLE: CSSProperties = {
   flex: '0 0 auto',
 };
 
-/** Positions `EXTERNAL_BADGE_STYLE` over the cover art — see that constant's doc comment.
- * `CoverImage` itself takes no `position` prop, so this wraps it rather than reaching in. */
+/** Positions the external badge over the cover art — see `externalBadgeStyleFor`'s doc
+ * comment. `CoverImage` itself takes no `position` prop, so this wraps it rather than
+ * reaching in. */
 const COVER_WRAPPER_STYLE: CSSProperties = {
   position: 'relative',
 };
@@ -56,40 +91,44 @@ const COVER_WRAPPER_STYLE: CSSProperties = {
  * Wave 15d-1-W: the "not in your library" pill an external (ListenBrainz-derived) card
  * carries, so a user can tell at a glance this is something to *discover*, not something
  * she already owns — `docs/design/sonora/components/MediaCard.dc.html`'s `absentPillStyle`
- * is the design source (top-left pill over the art, `--radius-pill`/muted-on-surface), ported
- * onto this app's current `--m3-*` substrate since Sonora's own `--surface-*`/`--radius-*`
- * tokens haven't landed on this branch yet (16c-2-W, in flight elsewhere). `aria-hidden`
- * because the accessible name for the whole card already carries this via `cardLabel` below —
- * a screen reader user must not hear it twice.
+ * is the design source. Wave 16e-foryou-W: onto Sonora's own tokens now that
+ * `docs/design/screens/FOR_YOU.md` §3.1 gives the exact values — `--radius-pill`,
+ * `--text-xs`, background `--surface-bg` (unconditional, both breakpoints — the table's
+ * compact column says "same"), text color the same muted role the title/subtitle use at
+ * this breakpoint. `aria-hidden` because the accessible name for the whole card already
+ * carries this via `cardLabel` below — a screen reader user must not hear it twice.
  */
-const EXTERNAL_BADGE_STYLE: CSSProperties = {
-  position: 'absolute',
-  left: 8,
-  top: 8,
-  padding: '3px 10px',
-  borderRadius: 'var(--m3-shape-full)',
-  fontSize: 11,
-  fontWeight: 700,
-  lineHeight: 1.4,
-  whiteSpace: 'nowrap',
-  background: 'var(--m3-surface)',
-  color: 'var(--m3-on-surface-variant)',
-  border: '1px solid var(--m3-outline-variant)',
-};
+function externalBadgeStyleFor(isCompact: boolean): CSSProperties {
+  return {
+    position: 'absolute',
+    left: 8,
+    top: 8,
+    padding: '3px 10px',
+    borderRadius: 'var(--radius-pill)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 700,
+    lineHeight: 1.4,
+    whiteSpace: 'nowrap',
+    background: 'var(--surface-bg)',
+    color: mutedTextColorFor(isCompact),
+  };
+}
 
-const TILE_STYLE: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  width: CARD_WIDTH,
-  textAlign: 'left',
-  background: 'none',
-  border: 'none',
-  padding: 0,
-  cursor: 'pointer',
-  font: 'inherit',
-  color: 'inherit',
-};
+function tileStyleFor(isCompact: boolean): CSSProperties {
+  return {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+    width: cardWidthFor(isCompact),
+    textAlign: 'left',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    font: 'inherit',
+    color: 'inherit',
+  };
+}
 
 /**
  * `height` is fixed rather than left to the text's own line box deliberately: a
@@ -97,40 +136,52 @@ const TILE_STYLE: CSSProperties = {
  * line height (the skeleton defaults to `1em` — see `Skeleton.tsx` — a real line box
  * is usually taller), and this row has to be the same height either way for the
  * "no layout jump" and "every card the same size" requirements to hold exactly,
- * not approximately.
+ * not approximately. Wave 16e-foryou-W: `margin-top: 10px` and `--text-md`/`--surface-*`
+ * or `--m3-*` color per FOR_YOU.md §3.1's Title row — font-size (14px) is unchanged from
+ * before, only now expressed as the token rather than a literal.
  */
-const TITLE_STYLE: CSSProperties = {
-  margin: '8px 0 0',
-  height: 18,
-  fontSize: 14,
-  fontWeight: 700,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-};
+function titleStyleFor(isCompact: boolean): CSSProperties {
+  return {
+    margin: '10px 0 0',
+    height: 18,
+    fontSize: 'var(--text-md)',
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    color: fullTextColorFor(isCompact),
+  };
+}
 
 /** The recommendation reason ("Because you finished Dune") sits directly under the
  * section heading, smaller and muted — visually subordinate to the title, the same
- * treatment `SUBTITLE_STYLE` gives a card's byline under its title. Unlike the fixed-
- * height rows below (`TITLE_STYLE`/`SUBTITLE_STYLE`/`PROGRESS_ROW_STYLE`), this has no
- * "every card is the same size" constraint to satisfy — it renders once per section,
- * not once per card — so it wraps naturally instead of being clipped to one line. */
-const REASON_STYLE: CSSProperties = {
-  margin: '0 0 8px',
-  fontSize: 13,
-  color: 'var(--m3-on-surface-variant)',
-};
+ * treatment `subtitleStyleFor` gives a card's byline under its title. Unlike the fixed-
+ * height rows below (title/subtitle/progress), this has no "every card is the same
+ * size" constraint to satisfy — it renders once per section, not once per card — so it
+ * wraps naturally instead of being clipped to one line. FOR_YOU.md §3.1 has no row for
+ * this element (it's outside `MediaCard` itself), so it keeps reading the same muted
+ * role the subtitle uses at this breakpoint rather than a value the spec never gives. */
+function reasonStyleFor(isCompact: boolean): CSSProperties {
+  return {
+    margin: '0 0 8px',
+    fontSize: 'var(--text-sm)',
+    color: mutedTextColorFor(isCompact),
+  };
+}
 
-/** See `TITLE_STYLE`'s doc comment — same fixed-height reasoning. */
-const SUBTITLE_STYLE: CSSProperties = {
-  margin: 0,
-  height: 16,
-  fontSize: 13,
-  color: 'var(--m3-on-surface-variant)',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-};
+/** See `titleStyleFor`'s doc comment — same fixed-height reasoning. Wave 16e-foryou-W:
+ * `margin-top: 2px` per FOR_YOU.md §3.1's Subtitle row (previously no margin at all). */
+function subtitleStyleFor(isCompact: boolean): CSSProperties {
+  return {
+    margin: '2px 0 0',
+    height: 16,
+    fontSize: 'var(--text-sm)',
+    color: mutedTextColorFor(isCompact),
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  };
+}
 
 /**
  * A fixed-height row for the progress bar, always rendered — whether or not this
@@ -140,6 +191,16 @@ const SUBTITLE_STYLE: CSSProperties = {
  * whole component exists to satisfy. `LinearProgress`'s own rendered bar is 4px
  * (`size={4}`, `LinearProgress.tsx`) — this row is sized to match with no visible
  * empty gap.
+ *
+ * FOR_YOU.md §3.1 describes a different treatment for this element (a 5px bar
+ * overlaid on the bottom of the cover art, not a row below the title/subtitle) — that
+ * row is recon, not contract (the document's own header: "§3.1 ... [is] recon —
+ * evidence gathered to justify the contract, not requirements in their own right"),
+ * and §9's binding work list for this file names card width, art radius, title/
+ * subtitle colors and the label text fix as the four things to change here — it does
+ * not name a progress-bar repositioning. Left as today's below-content row rather than
+ * guessed at; flagged in this wave's report as a spec ambiguity, not silently resolved
+ * either way.
  */
 const PROGRESS_ROW_STYLE: CSSProperties = {
   height: 4,
@@ -181,10 +242,16 @@ export interface CarouselProps {
  * component's testable behaviour is whatever pure logic it delegates to, not a render. */
 export function cardLabel(item: FeedItem): string {
   const base = item.subtitle ? `${item.title}, ${item.subtitle}` : item.title;
-  // Wave 15d-1-W: announced, not just drawn — an external card's visual pill
-  // (`EXTERNAL_BADGE_STYLE`) is `aria-hidden`, so this is the only place a screen reader
-  // user learns the item isn't in her library.
-  return isExternalItem(item) ? `${base}, not in your library` : base;
+  // Wave 15d-1-W: announced, not just drawn — an external card's visual pill is
+  // `aria-hidden`, so this is the only place a screen reader user learns the item
+  // isn't in her library.
+  //
+  // Wave 16e-foryou-W, FOR_YOU.md §6.3: the suffix text changes from "not in your
+  // library" to "not in library" — Sonora's own literal string, and the canonical
+  // one across a real three-way mismatch this session found (web's badge already said
+  // "Not in library"; web's aria-label and Android's constant both said "Not in your
+  // library"). Byte-for-byte parity target with Android's `EXTERNAL_RECOMMENDATION_LABEL`.
+  return isExternalItem(item) ? `${base}, not in library` : base;
 }
 
 export function Carousel({
@@ -196,12 +263,20 @@ export function Carousel({
   skeletonCount = 4,
   onSelect,
 }: CarouselProps) {
+  const isCompact = useBreakpoint() === 'compact';
+
   // Nothing to show and nothing loading: rendering an empty, headed section would be a
   // carousel with no cards in it, which is worse than not rendering the section at all.
   if (!loading && items.length === 0) return null;
 
   const headingId = `shelf-heading-${id}`;
   const reasonId = `shelf-reason-${id}`;
+  const tileStyle = tileStyleFor(isCompact);
+  const titleStyle = titleStyleFor(isCompact);
+  const subtitleStyle = subtitleStyleFor(isCompact);
+  const externalBadgeStyle = externalBadgeStyleFor(isCompact);
+  const coverSize = cardWidthFor(isCompact);
+  const artRadius = artRadiusFor(isCompact);
 
   return (
     <section data-testid={`shelf-${id}`}>
@@ -214,7 +289,7 @@ export function Carousel({
           sighted user reads top-to-bottom. `aria-describedby` on the list below
           makes that relationship explicit rather than merely positional. */}
       {reason ? (
-        <p id={reasonId} style={REASON_STYLE} data-testid={`shelf-reason-${id}`}>
+        <p id={reasonId} style={reasonStyleFor(isCompact)} data-testid={`shelf-reason-${id}`}>
           {reason}
         </p>
       ) : null}
@@ -229,15 +304,20 @@ export function Carousel({
         {loading
           ? Array.from({ length: skeletonCount }, (_, i) => (
               <div role="listitem" key={i} style={TILE_WRAPPER_STYLE}>
-                <div style={TILE_STYLE} data-testid={`shelf-item-skeleton-${id}-${i}`}>
-                  <Skeleton shape="rectangular" width={COVER_SIZE} height={COVER_SIZE} />
+                <div style={tileStyle} data-testid={`shelf-item-skeleton-${id}-${i}`}>
+                  {/* `Skeleton`'s `SkeletonProps` deliberately omits `style` (Mantine's own
+                      fixed `radius="md"` token is used for every skeleton in the app), so
+                      the art radius token only reaches the real, loaded cover below — the
+                      skeleton's box *size* still matches exactly, which is what the "same
+                      box as a loaded card" invariant actually requires. */}
+                  <Skeleton shape="rectangular" width={coverSize} height={coverSize} />
                   {/* Same three rows a loaded card always renders (title, subtitle,
                       progress), so the skeleton's total box height matches exactly —
                       the "no layout jump" requirement this pins down. */}
-                  <div style={TITLE_STYLE}>
+                  <div style={titleStyle}>
                     <Skeleton shape="text" width="80%" />
                   </div>
-                  <div style={SUBTITLE_STYLE}>
+                  <div style={subtitleStyle}>
                     <Skeleton shape="text" width="55%" />
                   </div>
                   <div style={PROGRESS_ROW_STYLE} />
@@ -250,7 +330,7 @@ export function Carousel({
                 <div role="listitem" key={item.id} style={TILE_WRAPPER_STYLE}>
                   <button
                     type="button"
-                    style={TILE_STYLE}
+                    style={tileStyle}
                     data-testid={`shelf-item-${item.id}`}
                     aria-label={cardLabel(item)}
                     onClick={() => onSelect(item)}
@@ -258,12 +338,13 @@ export function Carousel({
                     <div style={COVER_WRAPPER_STYLE}>
                       <CoverImage
                         src={item.coverSrc}
-                        size={COVER_SIZE}
+                        size={coverSize}
                         fallbackIcon={item.fallbackIcon}
+                        style={{ borderRadius: artRadius }}
                       />
                       {external ? (
                         <span
-                          style={EXTERNAL_BADGE_STYLE}
+                          style={externalBadgeStyle}
                           aria-hidden="true"
                           data-testid={`shelf-item-${item.id}-external-badge`}
                         >
@@ -273,18 +354,18 @@ export function Carousel({
                     </div>
                     <h3
                       style={{
-                        ...TITLE_STYLE,
-                        color: external ? 'var(--m3-on-surface-variant)' : undefined,
+                        ...titleStyle,
+                        color: external ? mutedTextColorFor(isCompact) : titleStyle.color,
                       }}
                       aria-hidden="true"
                     >
                       {item.title}
                     </h3>
-                    {/* Always rendered, even with nothing to show — see SUBTITLE_STYLE's
+                    {/* Always rendered, even with nothing to show — see subtitleStyleFor's
                       sibling comment on PROGRESS_ROW_STYLE: an item with no subtitle
                       must not end up shorter than one that has one. */}
-                    <p style={SUBTITLE_STYLE} aria-hidden="true">
-                      {item.subtitle ?? ' '}
+                    <p style={subtitleStyle} aria-hidden="true">
+                      {item.subtitle ?? ' '}
                     </p>
                     <div style={PROGRESS_ROW_STYLE}>
                       {item.progress != null ? (

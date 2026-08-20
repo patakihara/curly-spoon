@@ -205,7 +205,7 @@ test('selecting a content-type chip filters the carousels and quick picks; "All"
 test('a carousel is keyboard-scrollable, and scrolling it never scrolls the page', async ({
   page,
 }) => {
-  // Narrow enough that "Recently Added"'s three 160px cards overflow the viewport —
+  // Narrow enough that "Recently Added"'s three 152px (compact, `<600px`) cards overflow the viewport —
   // at a default desktop width they fit with room to spare and there is nothing to
   // scroll, which would make this test pass vacuously.
   await page.setViewportSize({ width: 360, height: 800 });
@@ -244,7 +244,7 @@ test('a carousel is keyboard-scrollable, and scrolling it never scrolls the page
 
 test('a loading skeleton occupies the same box as a loaded card', async ({ page }) => {
   // Diagnosed with the route handler and the DOM directly instrumented (not
-  // guessed), across several rounds:
+  // guessed), across several rounds, before wave 16e-foryou-W:
   //
   // 1. A blind `setTimeout(500)` delay before `route.continue()` does not
   //    reliably bound the loading window at all -- confirmed by logging the
@@ -266,22 +266,30 @@ test('a loading skeleton occupies the same box as a loaded card', async ({ page 
   // 3. What actually explains it: gating the route open with an explicit
   //    promise the test releases only after it has captured the skeleton's
   //    box turns out to make skeleton capture 100% reliable across many
-  //    repeated runs -- the remaining flake, isolated this way, is entirely
+  //    repeated runs -- the remaining flake, isolated this way, was entirely
   //    in the *second* read (the loaded card's box), taken right after its
-  //    own `toBeVisible()` resolves. HomePage stitches several independent
-  //    async sources (books, podcasts, music, recommendations -- the same
-  //    unreserved race docs/HANDOVER.md's phase 14c documents, with a real
-  //    fix approved in docs/USER_DECISIONS.md but not yet implemented), and
-  //    releasing two gated requests together can still let their two
-  //    resulting renders land close enough together that a single
-  //    synchronous `boundingBox()` call can be read between one commit and
-  //    the next.
+  //    own `toBeVisible()` resolves. HomePage used to stitch four independent
+  //    async sources (books, podcasts, music, recommendations) with each one
+  //    gating its own skeleton carousel independently -- the unreserved race
+  //    docs/HANDOVER.md's phase 14c documented -- and releasing two gated
+  //    requests together could still let their two resulting renders land
+  //    close enough together that a single synchronous `boundingBox()` call
+  //    could be read between one commit and the next.
   //
-  // The fix combines both findings without loosening what's asserted (the
-  // exact geometry match is untouched): gate the network so the skeleton's
-  // presence is guaranteed rather than raced against a clock, and poll for
-  // both boxes so a transient remount doesn't fail a read that would
-  // otherwise have succeeded a moment later.
+  // Wave 16e-foryou-W (FOR_YOU.md §6.2) replaced that per-source loading with
+  // a single page-level `pageLoading` boolean: the whole skeleton block and
+  // the whole real-content block are now two branches of one ternary, so
+  // there is no longer a window where some sources have settled and others
+  // haven't -- the render is atomic by construction, which should remove the
+  // class of race finding 3 describes rather than merely hide it. The poll-
+  // based reads are kept anyway, defensively, since nothing about *this* test
+  // proves the atomicity claim on its own.
+  //
+  // Skeleton items are no longer per-source-labelled ("books-loading" etc --
+  // §6.2 explicitly doesn't filter the placeholder rows by content type,
+  // since real shelf membership isn't known before any source resolves), so
+  // the locator is now the generic skeleton-item prefix rather than a
+  // specific carousel id.
   let releaseHome: () => void = () => {};
   const homeGate = new Promise<void>((resolve) => {
     releaseHome = resolve;
@@ -293,7 +301,7 @@ test('a loading skeleton occupies the same box as a loaded card', async ({ page 
 
   await page.goto('/');
 
-  const skeleton = page.getByTestId('shelf-item-skeleton-books-loading-0');
+  const skeleton = page.locator('[data-testid^="shelf-item-skeleton-"]').first();
   let skeletonBox: { x: number; y: number; width: number; height: number } | null = null;
   await expect
     .poll(async () => {
@@ -318,6 +326,32 @@ test('a loading skeleton occupies the same box as a loaded card', async ({ page 
 
   expect(skeletonBox!.width).toBeCloseTo(loadedBox!.width, 0);
   expect(skeletonBox!.height).toBeCloseTo(loadedBox!.height, 0);
+});
+
+test('the page-level loading state is announced via a live region, and clears once loaded', async ({
+  page,
+}) => {
+  // Wave 16e-foryou-W, FOR_YOU.md §6.6: neither platform announced the
+  // loading->loaded transition to a screen reader before this wave. Gate the
+  // same route the previous test gates, so the "loading" wording is
+  // guaranteed observable rather than raced against a clock.
+  let releaseHome: () => void = () => {};
+  const homeGate = new Promise<void>((resolve) => {
+    releaseHome = resolve;
+  });
+  await page.route('**/api/v1/libraries/*/home', async (route) => {
+    await homeGate;
+    await route.continue();
+  });
+
+  await page.goto('/');
+
+  const status = page.getByTestId('for-you-status');
+  await expect(status).toHaveText('Loading your browse feed…');
+
+  releaseHome();
+
+  await expect(status).toHaveText('Browse feed loaded.');
 });
 
 test('recommended carousels appear below the ordinary shelves, each with a visible reason line', async ({

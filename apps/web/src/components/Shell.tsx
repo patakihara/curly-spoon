@@ -43,7 +43,10 @@ import { NowPlayingPanel } from './NowPlayingPanel.js';
 import { ShortcutSheet } from './ShortcutSheet.js';
 
 const DESTINATION_ICONS: Record<DestinationKey, IconName> = {
-  forYou: 'home',
+  // Wave 16e-foryou-W, FOR_YOU.md §6.1: 'explore' rather than 'home' — 'explore' is
+  // already in `FILLABLE_ICON_NAMES` (Icon.tsx), where 'home' was not, so this rename
+  // also restores the FILL-axis "selected" treatment to this destination for free.
+  forYou: 'explore',
   books: 'book_2',
   podcasts: 'podcasts',
   music: 'music_note',
