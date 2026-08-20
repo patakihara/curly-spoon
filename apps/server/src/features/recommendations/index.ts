@@ -41,6 +41,7 @@ export {
 } from './external/registry.js';
 export { createListenBrainzProvider, LISTENBRAINZ_PROVIDER_NAME } from './external/listenbrainz.js';
 export { createOpenLibraryProvider, OPENLIBRARY_PROVIDER_NAME } from './external/openlibrary.js';
+export { createItunesProvider, ITUNES_PROVIDER_NAME } from './external/itunes.js';
 
 // Wave 15e-music — the reader `GET /music/recommended` uses to mix ListenBrainz candidates
 // into the response. See `musicExternalDiscovery.ts`'s own header comment.
@@ -58,3 +59,11 @@ export {
   externalCandidateToLibraryItemPlaceholder,
   reasonForBookExternalShelf,
 } from './bookExternalDiscovery.js';
+
+// Wave 15e-podcasts — the same route's podcast half, mixing iTunes candidates in for a
+// podcast library. See `podcastExternalDiscovery.ts`'s own header comment.
+export {
+  externalCandidateToPodcastLibraryItemPlaceholder,
+  podcastLibraryItemToOwnershipLibraryItem,
+  reasonForPodcastExternalShelf,
+} from './podcastExternalDiscovery.js';

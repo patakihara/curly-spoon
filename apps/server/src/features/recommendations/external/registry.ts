@@ -8,6 +8,7 @@
  */
 
 import type { FetchLike } from '@auralis/abs-client';
+import { createItunesProvider } from './itunes.js';
 import { createListenBrainzProvider, type ListenBrainzLogger } from './listenbrainz.js';
 import { createOpenLibraryProvider } from './openlibrary.js';
 import type { ExternalMedium, ExternalRecommendationProvider } from './types.js';
@@ -27,13 +28,14 @@ export type ExternalProviderFactory = (
 export const externalProviderFactories: Record<string, ExternalProviderFactory> = {
   listenbrainz: createListenBrainzProvider,
   openlibrary: createOpenLibraryProvider,
+  itunes: createItunesProvider,
 };
 
 /**
- * Builds every registered provider for one medium. Podcasts currently have no registered
- * provider (PodcastIndex is the next file `docs/research/RECOMMENDATION_PROVIDERS.md` §4
- * names), so this returns `[]` for that medium today — total, not an error, exactly like
- * `matchOwnership` degrading to `'new'` on an empty library.
+ * Builds every registered provider for one medium — every medium now has at least one
+ * (music: ListenBrainz; books: Open Library; podcasts: iTunes, wave 15e-podcasts). Still
+ * total for an unregistered/unknown medium: returns `[]`, exactly like `matchOwnership`
+ * degrading to `'new'` on an empty library.
  *
  * `factories` defaults to the real registry above and exists as a parameter so a test can
  * hand in a fake provider and exercise this function's dispatch logic — construct-then-filter
