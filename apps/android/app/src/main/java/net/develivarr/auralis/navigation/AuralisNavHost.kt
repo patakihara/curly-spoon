@@ -266,6 +266,7 @@ fun AuralisNavHost(
                 navController = navController,
                 playerViewModel = playerViewModel,
                 imageLoader = container.imageLoader,
+                apiClient = container.apiClient,
                 visibleDestinations = visibleDestinations,
             ) { shellPadding ->
             NavHost(

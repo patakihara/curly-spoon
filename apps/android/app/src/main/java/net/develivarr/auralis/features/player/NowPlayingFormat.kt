@@ -1,6 +1,8 @@
 package net.develivarr.auralis.features.player
 
 import androidx.media3.common.C
+import net.develivarr.auralis.features.books.BookChapterUi
+import net.develivarr.auralis.features.books.activeChapterIndex
 import net.develivarr.auralis.util.formatDuration
 
 /**
@@ -100,4 +102,58 @@ fun clampSeekTarget(
     val target = positionMs + deltaMs
     val upperBound = if (durationMs > 0L) durationMs else Long.MAX_VALUE
     return target.coerceIn(0L, upperBound)
+}
+
+/**
+ * The seek bar's accessible value description (`docs/design/screens/NOW_PLAYING.md` §11) — the
+ * Android side of a real cross-platform literal, not an independent derivation: web announces
+ * `` `${formatDuration(currentTime)} of ${formatDuration(duration)}` `` in seconds
+ * (`apps/web/src/features/player/NowPlaying.tsx:142`), and [elapsedTimeLabel] already applies the
+ * identical "clamp at zero, format via [formatDuration]" rule to a millisecond position — so
+ * composing both halves through it, rather than a second formatting path, is what keeps the two
+ * platforms' output byte-for-byte identical. [durationMs] can be [C.TIME_UNSET] (unknown); passed
+ * straight through [elapsedTimeLabel] the same way [positionMs] is, so an unknown duration reads
+ * as `"0:00"` — matching web's own `formatDuration(NaN)` → `"0:00"` degradation, not
+ * [remainingTimeLabel]'s distinct `"--:--"` placeholder, which exists for a different label.
+ */
+fun scrubberValueDescription(
+    positionMs: Long,
+    durationMs: Long,
+): String = "${elapsedTimeLabel(positionMs)} of ${elapsedTimeLabel(durationMs)}"
+
+/**
+ * The Now Playing surface's new "Playing from X" context line for music
+ * (`docs/design/screens/NOW_PLAYING.md` §3.3/§6.3), composed exactly as Sonora's own mock does:
+ * `'Playing from ' + track.album`. [album] is expected to be [PlayerUiState.Playing.subtitle] —
+ * every music [androidx.media3.common.MediaItem] this app builds sets that field to the queue's
+ * album/playlist name (`albumPlaybackQueue`/`resolvePlaybackFor` in the music feature package),
+ * never anything else, so no separate "album" field is threaded onto [PlayerUiState.Playing] for
+ * this. `null` when [isMusic] is `false` or [album] is blank — the fallback contract (§5): a
+ * standalone track with no album/playlist context has nothing to compose, so the line is omitted
+ * entirely rather than rendering "Playing from " with nothing after it.
+ */
+fun nowPlayingContextLine(
+    isMusic: Boolean,
+    album: String?,
+): String? {
+    if (!isMusic) return null
+    val name = album?.takeIf { it.isNotBlank() } ?: return null
+    return "Playing from $name"
+}
+
+/**
+ * The Now Playing surface's new chapter indicator for an audiobook (§3.3/§6.3) — parity with
+ * web's always-rendered `now-playing-chapter`. Reuses [activeChapterIndex] rather than
+ * re-deriving "which chapter contains this position", then maps the returned 1-based
+ * [BookChapterUi.index] back to that chapter's own [BookChapterUi.title]. `null` when there is no
+ * active chapter (an empty [chapters] list, or a position before the first chapter's own start) —
+ * the fallback contract (§5): the screen omits the line entirely, matching web's own
+ * `chapter?.title ?? ''` degrading to nothing rendered.
+ */
+fun activeChapterTitle(
+    chapters: List<BookChapterUi>,
+    positionMs: Long,
+): String? {
+    val activeIndex = activeChapterIndex(chapters, positionMs) ?: return null
+    return chapters.firstOrNull { it.index == activeIndex }?.title
 }

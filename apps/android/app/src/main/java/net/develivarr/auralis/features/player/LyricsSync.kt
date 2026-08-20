@@ -55,3 +55,31 @@ fun activeLineIndex(
     }
     return active
 }
+
+/**
+ * Sonora's three-way lyric line treatment (`docs/design/screens/NOW_PLAYING.md` §3.5), keyed to
+ * a line's position relative to [activeIndex] rather than the plain active/inactive boolean this
+ * screen had before this wave. [ACTIVE] is the currently-sung line; [PASSED] is a line already
+ * sung ([activeIndex] is non-null and the line's own index is smaller); [UPCOMING] is everything
+ * not yet reached — including, deliberately, every line while [activeIndex] is `null` (unsynced
+ * lyrics, or a synced position before the first timestamped line's start), matching §3.5's "keep
+ * rendering every line in the 'not yet reached' role" instruction for the unsynced case.
+ */
+enum class LyricLineRole { ACTIVE, PASSED, UPCOMING }
+
+/**
+ * Maps one line's [index] to its [LyricLineRole] given the track's current [activeIndex] (from
+ * [activeLineIndex], or `null` for an unsynced track). Pure so the mapping is directly
+ * unit-testable without [LyricsScreen]'s Compose rendering — the render side only has to look up
+ * the style/weight/colour triple for whichever role this returns.
+ */
+fun lyricLineRole(
+    index: Int,
+    activeIndex: Int?,
+): LyricLineRole =
+    when {
+        activeIndex == null -> LyricLineRole.UPCOMING
+        index == activeIndex -> LyricLineRole.ACTIVE
+        index < activeIndex -> LyricLineRole.PASSED
+        else -> LyricLineRole.UPCOMING
+    }

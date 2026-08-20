@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import net.develivarr.auralis.data.downloads.DownloadRepository
 import net.develivarr.auralis.data.downloads.FakeDownloadEngine
+import net.develivarr.auralis.data.model.Chapter
 import net.develivarr.auralis.data.network.ApiClient
 import net.develivarr.auralis.data.network.FakeKeyValueStore
 import net.develivarr.auralis.data.network.SessionCookieJar
@@ -259,5 +260,28 @@ class BookDetailViewModelTest {
         val chapter = BookChapterUi(index = 1, title = "Chapter One", startMs = 0L, timeLabel = "0:00")
         assertEquals("Chapter One, 0:00", chapterAnnouncement(chapter, active = false))
         assertEquals("Chapter One, 0:00, current chapter", chapterAnnouncement(chapter, active = true))
+    }
+
+    // Wave 16e-nowplaying-A pulled this mapping out of toBookDetailData so NowPlayingScreen's
+    // chapter indicator can build the same BookChapterUi shape directly; this pins the mapping
+    // itself rather than only exercising it indirectly through `load` above.
+    @Test
+    fun `chaptersFrom sorts ascending by start and assigns a 1-based display index`() {
+        val chapters =
+            listOf(
+                Chapter(id = 2, start = 600.0, end = 1200.0, title = "Chapter Two"),
+                Chapter(id = 1, start = 0.0, end = 600.0, title = "Chapter One"),
+            )
+        val result = chaptersFrom(chapters)
+        assertEquals(listOf("Chapter One", "Chapter Two"), result.map { it.title })
+        assertEquals(listOf(1, 2), result.map { it.index })
+        assertEquals(listOf(0L, 600_000L), result.map { it.startMs })
+        assertEquals(listOf("0:00", "10:00"), result.map { it.timeLabel })
+    }
+
+    @Test
+    fun `chaptersFrom is empty for a null or empty chapter list`() {
+        assertTrue(chaptersFrom(null).isEmpty())
+        assertTrue(chaptersFrom(emptyList()).isEmpty())
     }
 }

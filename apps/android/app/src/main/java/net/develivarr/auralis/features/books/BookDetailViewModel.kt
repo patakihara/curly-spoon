@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import net.develivarr.auralis.data.downloads.DownloadEnqueueResult
 import net.develivarr.auralis.data.downloads.DownloadRepository
+import net.develivarr.auralis.data.model.Chapter
 import net.develivarr.auralis.data.model.LibraryItem
 import net.develivarr.auralis.data.network.ApiClient
 import net.develivarr.auralis.data.network.ApiException
@@ -170,18 +171,7 @@ private fun LibraryItem.toBookDetailData(baseUrl: String?): BookDetailUiData {
         media.authors?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name }
             ?: media.author
     val progressPercent = progress?.let { (it.progress * 100).roundToInt().coerceIn(0, 100) }
-    val chapters =
-        (media.chapters ?: emptyList())
-            .sortedBy { it.start }
-            .mapIndexed { i, chapter ->
-                val startMs = (chapter.start * 1000).roundToLong()
-                BookChapterUi(
-                    index = i + 1,
-                    title = chapter.title,
-                    startMs = startMs,
-                    timeLabel = formatDuration(startMs / 1000),
-                )
-            }
+    val chapters = chaptersFrom(media.chapters)
     return BookDetailUiData(
         itemId = id,
         title = media.title,
@@ -236,6 +226,29 @@ private fun formatBookDurationLabel(seconds: Double): String {
     val minutes = totalMinutes % 60
     return if (hours > 0) "%d h %02d m".format(hours, minutes) else "%d m".format(minutes)
 }
+
+/**
+ * Maps a book's raw upstream [Chapter] list (only ever populated on an `expanded=true` item
+ * fetch — see [BookDetailViewModel]'s own doc comment) into the display-ready [BookChapterUi]
+ * rows both [BookDetailScreen] and, since wave 16e-nowplaying-A,
+ * [net.develivarr.auralis.features.player.NowPlayingScreen]'s chapter indicator need — pulled out
+ * of [toBookDetailData] so the latter can build the identical shape from the same
+ * `GET /items/:id?expanded=true` response without duplicating the sort/index/time-label mapping.
+ * `null` or an absent chapter list both degrade to an empty result, matching
+ * [BookDetailUiData.chapters]'s own "empty is a normal case, not an error" contract.
+ */
+fun chaptersFrom(chapters: List<Chapter>?): List<BookChapterUi> =
+    (chapters ?: emptyList())
+        .sortedBy { it.start }
+        .mapIndexed { i, chapter ->
+            val startMs = (chapter.start * 1000).roundToLong()
+            BookChapterUi(
+                index = i + 1,
+                title = chapter.title,
+                startMs = startMs,
+                timeLabel = formatDuration(startMs / 1000),
+            )
+        }
 
 /**
  * The chapter containing [positionMs], or `null` if none does (an empty chapter list, or a
