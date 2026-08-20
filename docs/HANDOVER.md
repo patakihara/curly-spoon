@@ -871,6 +871,48 @@ grepping the job log for a bare `testDebugUnitTest`, not by reading a badge — 
 a node exists with the semantics that were written, not what TalkBack announces. Web's six specs
 drive real Chromium. Every Android claim in that review is a source read plus a Robolectric pass.
 
+#### `16e-search-A` is landed and CI-GREEN on `a8adcd1` — `16e-search-W` is in flight, `-P` is owed
+
+**Verified as a genuine uncached execution, not a badge:** the Android job log carries bare
+`> Task :app:compileDebugUnitTestKotlin`, `> Task :app:testDebugUnitTest` and
+`> Task :app:testReleaseUnitTest` with no `FROM-CACHE`, so the new Robolectric coverage really ran.
+
+**It closes two pre-existing drifts** the spec had pinned with file:line evidence: book result rows
+were **non-interactive** behind a comment claiming no book-detail route existed (one has since
+`16e-book-A`), and the search screen had **no accessibility semantics at all** where web announces
+status through a live region.
+
+**It corrected the spec's own recon, and that is the transferable part.** `SEARCH.md` said to check
+`MusicRow`'s "other two call sites"; there are **nine, across seven files**. Rather than resize the
+shared row in place, the wave gave it optional `artSize`/`artCornerRadius`/`fallbackIcon` parameters
+defaulting to today's shape, so the other eight call sites cannot change. **A shared component
+resized in place reads as correct in review and is wrong on eight screens** — the same shape as this
+file's widened-fixture lesson. **Recon in a spec is a starting point, not a census.**
+
+**One thing `-P` must check:** the wave **did not add a leading icon** to the search field, reading
+§3's row as pinning the icon's token value rather than mandating a new icon. It flagged this itself.
+Web may well have added one.
+
+**ONE red round, one line — and it is the mirror of a trap already in this file.** The whole failure
+was `Unresolved reference 'assert'`. This file already records that **`assertExists` is a MEMBER** of
+`SemanticsNodeInteraction` and must **not** be imported, while `onNodeWithText` on the lines either
+side of it is top-level and must be. **`assert` is the same trap wearing the opposite face**: a
+top-level extension in `androidx.compose.ui.test`, chained immediately onto `assertExists`, reading
+exactly like the member it is attached to.
+
+**So the rule is neither "assertions are members" nor "assertions are imports".** That package mixes
+both and the call site does not tell you which. **When a Compose test assertion will not resolve,
+check the package rather than the spelling.**
+
+**Also confirmed, and worth knowing when Android goes red:** `bc1e946`'s **`CI` went green and
+`Publish` succeeded** while `Android` was failing. They are separate workflows and the container
+image carries no APK, so **a red Android never threatens the live deployment** — do not hold a
+web push waiting on it.
+
+**And the `pre-push` lint race is real, again.** The push failed once on the whole-repo eslint and
+succeeded on an immediate retry with no change, while a subagent was mid-write in `apps/web`.
+**Retry once before believing it**, exactly as this file already says.
+
 #### `15d-1-books-W-2` landed, then SHIPPED A TOTAL REGRESSION, and the correction is the lesson
 
 **Read this before acting on any parity review's prescribed fix.**
