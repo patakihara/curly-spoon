@@ -771,20 +771,46 @@ of `apps/web`.
 source read (no device, no JDK), and web's `for-you-external-book.spec.ts` was read rather than
 executed, since another agent held the Playwright port.
 
-### CLAIMED 2026-08-19 — `16e-album-W` and `15e-podcasts`, both in flight
+### 2026-08-20 — both claimed waves were SALVAGED from dead agents, and are on `integration-2026-08-20`
 
-Base for both: **`60fd7d5`**, verified green on `CI`, `Android` **and** `Publish` before dispatch.
+**Read this before touching anything.** The session that claimed `16e-album-W` and `15e-podcasts`
+died. Neither wave was lost, but neither had been verified, and one of them held **929 lines
+entirely uncommitted** in a worktree that is deleted with its session.
 
-- **`16e-album-W`** — web's half of the album triple, the third adoption of `MediaHeader.tsx`.
-  Built from `docs/design/screens/ALBUM_DETAIL.md` §5/§6/§9/§11, explicitly **not** from
-  `16e-album-A`'s output. It owns `apps/web` + `e2e/app` and so **holds the Playwright port** —
-  no second browser wave may run beside it.
-- **`15e-podcasts`** — external podcast discovery, server-only, no browser, so it parallelises.
-  Provider is **iTunes Search (no credential at all)** rather than PodcastIndex, which needs a
-  free-but-real key + secret Sofia would have to create. Folds in the open follow-up asking
-  whether `GET /libraries/:id/recommended` is genuinely book-scoped server-side.
+**What the orchestrator-side worktree check found**, which is exactly the loss `CLAUDE.md`'s rule 8
+exists to prevent:
 
-`16e-album-P` and `15d-1-books-P` are both still owed and are deliberately held until these land.
+- **`15e-podcasts`** — the agent committed **nothing at all**. Seven files, 929 insertions, sitting
+  as working-tree changes. Salvaged as `ee26e7e`.
+- **`16e-album-W`** — the agent committed its product change (`11c9e68`) and then died holding its
+  **own e2e spec** uncommitted. Salvaged as `046be75`. So the spec-side "commit before you
+  background a long run" instruction held for one half of one wave and not the other half of the
+  same wave. **The orchestrator-side check is the load-bearing one. It has now paid for itself
+  again.**
+
+Both are merged `--no-ff` onto **`integration-2026-08-20`** off `7136909` — not onto `main`, and
+deliberately so. Neither has ever been executed: the album wave's six new Playwright specs have
+never run, and the podcast wave's provider has never been checked against the live iTunes endpoint.
+
+**The one thing that must be settled before `15e-podcasts` reaches `main`:** `main` auto-deploys to
+`:latest` and mediaserver pulls every fifteen minutes. `15e-books` shipped as a **triple** precisely
+because a server wave alone puts a card on For You that is indistinguishable from an owned item and
+taps through to a generic error. Open follow-up 3 in this file says `GET /libraries/:id/recommended`
+is **not** gated by media type server-side, and **no podcast request flow exists on either client**
+— so an external podcast has nowhere to go. If that is still true, this wave is **held for a client
+wave**, not merged. There is precedent: a previous server-only recommendation wave was held for the
+same reason.
+
+**Two cheap checks already done, so nobody repeats them:** neither branch touches `package.json` or
+`pnpm-lock.yaml` (the documented concurrent-install failure mode), and all six testids the salvaged
+e2e spec relies on exist in `apps/web/src`/`packages/ui/src`. **Two files need `pnpm format`** —
+`podcastExternalDiscovery.test.ts` and `routes/libraries.ts` — because the salvage commits were made
+with `core.hooksPath` bypassed.
+
+**`15d-1-books-W-2` is unblocked the moment the album wave merges.** The four call sites are
+confirmed present at `features/home/Carousel.tsx:186`, `:247`, `features/home/HomePage.tsx:311` and
+`features/music/MusicHomePage.tsx:118` — note the path is `features/home/Carousel.tsx`, not
+`components/Carousel.tsx` as `7136909` recorded. Change `=== 'external'` to `!== 'owned'`.
 
 ### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
 
