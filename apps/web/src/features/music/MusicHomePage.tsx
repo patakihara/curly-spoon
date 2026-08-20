@@ -115,7 +115,7 @@ export function MusicHomePage() {
   // `musicExternalDiscovery.ts`'s doc comment, so the placeholder's `name` *is* the
   // artist), so requesting what she doesn't own is one tap away rather than a dead end.
   const handleSelectRecommended = (item: FeedItem) => {
-    if (item.availability === 'external') {
+    if (item.availability !== 'owned') {
       void navigate({ to: '/music/requests', search: { prefill: item.title } });
       return;
     }
