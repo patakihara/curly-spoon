@@ -40,6 +40,17 @@ edit the mapping there, never these files.
 | [S30](S30.md) | Home — Audiobooks, placeholder feature cards |
 | [S31](S31.md) | Your Library |
 | [S32](S32.md) | Search results |
+| [S33](S33.md) | Now Playing — podcast |
+| [S34](S34.md) | Now Playing — scrolled to About and Comments |
+| [S35](S35.md) | Episode detail page |
+| [S36](S36.md) | Queue — sheet over the player |
+| [S37](S37.md) | Queue — sheet at full height |
+| [S38](S38.md) | Now Playing — About the podcast |
+| [S39](S39.md) | Now Playing — music |
+| [S40](S40.md) | Now Playing — lyrics card into About the artist |
+| [S41](S41.md) | Now Playing — About the artist and credits |
+| [S42](S42.md) | Now Playing — credits and live events |
+| [S43](S43.md) | Lyrics — full page |
 
 ## Components created, and the screens that motivated them
 
@@ -47,12 +58,16 @@ edit the mapping there, never these files.
 | --- | --- | --- |
 | `FeatureCard` | 15 | S05, S15, S17, S18, S20, S21, S22, S23, S24, S25, S26, S27, S28, S29, S30 |
 | `PreviewButton` | 10 | S15, S17, S18, S20, S21, S22, S23, S25, S27, S30 |
+| `AboutCard` | 4 | S34, S38, S40, S41 |
 | `SortFilterBar` | 3 | S01, S02, S31 |
 | `EpisodeRow` | 2 | S01, S02 |
 | `ItemActionBar` | 2 | S01, S02 |
 | `DownloadButton` | 2 | S01, S02 |
 | `BrowseCard` | 2 | S03, S04 |
 | `StatusBanner` | 2 | S05, S25 |
+| `SpeedControl` | 2 | S33, S36 |
+| `OutputDeviceButton` | 2 | S33, S39 |
+| `ExpandableText` | 2 | S34, S35 |
 | `BackToTop` | 1 | S01 |
 | `FollowButton` | 1 | S02 |
 | `Rating` | 1 | S02 |
@@ -70,3 +85,5 @@ edit the mapping there, never these files.
 | `Button` | 1 | S02 |
 | `QuickPick` | 1 | S05 |
 | `ResultRow` | 1 | S32 |
+| `TransportBar` | 1 | S33 |
+| `MediaHeader` | 1 | S35 |

@@ -560,6 +560,207 @@ SCREENS = [
  ],
  "notbuilt": [],
 },
+{
+ "id": "S33", "title": "Now Playing — podcast",
+ "source": "Player, expanded, spoken-word content.",
+ "observed": [
+   "**The transport is not a music transport.** Speed, skip back 15s, play, skip forward 15s, sleep timer — no shuffle, no repeat, no previous track.",
+   "Skip-by-interval is the control you actually use across a two-hour episode; \"previous track\" is close to useless there.",
+   "Playback rate is displayed as its current value and coloured when it is not 1×.",
+   "Output routing sits on its own row beneath the transport, apart from playback itself.",
+   "A collapse chevron returns the player to the bar it grew out of; the context line names both the kind and the source.",
+ ],
+ "created": [
+   ("SpeedControl", "Rate has to be visible and one tap away while playing, and must show its current value. `ValueRow` is a filled settings row on a settings page; this is the inline form that lives in a transport row."),
+   ("OutputDeviceButton", "Where the audio is going — stated nowhere in Sonora. For Auralis this is the natural home for direct-play vs transcode, which the handover records as invisible today."),
+ ],
+ "extended": [
+   ("TransportBar", "`variant`, `onSkipBack`, `onSkipForward`, `skipSeconds`, `leading`, `trailing`", "Spoken-word transport is a different verb set, not a relabelled one. Wrapping it in the music cluster would be wrong, and Auralis serves both media from one player."),
+ ],
+ "existing": [
+   ("NowPlayingPage", "Cover, title, artist, context line, seek and the readouts — and it already declares `speed`, `sleep`, `onSpeed`, `onSleep`."),
+   ("SeekBar", "Elapsed / total readouts either side of the scrubber."),
+   ("PlayerSheet", "Grows out of the mini player's own rect, which is exactly this collapse gesture in reverse."),
+   ("ItemActionBar", "The add-to-library control (wave 1)."),
+ ],
+ "notbuilt": [],
+},
+{
+ "id": "S34", "title": "Now Playing — scrolled to About and Comments",
+ "source": "Player, scrolled below the transport.",
+ "observed": [
+   "The player page scrolls, and beneath the transport sits the item's own description.",
+   "Long prose truncates with an inline \"see more\" rather than opening a separate screen.",
+   "A played check marks the episode finished from inside the card.",
+   "Below that, a comment thread with reactions and replies.",
+ ],
+ "created": [
+   ("AboutCard", "Sonora's player scrolls to lyrics and queue previews and nothing else, so an item's own description had nowhere to live."),
+   ("ExpandableText", "Distinct from wave 1's `ExpanderRow`, which folds a homogeneous list group. This folds a paragraph, with the control at the end of the truncated text rather than on its own row."),
+ ],
+ "extended": [],
+ "existing": [
+   ("Badge", "The played check, using wave 1's `icon` + `plain` form."),
+   ("NowPlayingPage", "`scroll` already lets the page own its scrolling."),
+ ],
+ "notbuilt": [
+   "**Comments, replies and reactions** — commenter identity, threading, emoji reactions and a compose field. This is the largest single thing in the screenshots and the clearest omission: Auralis is a self-hosted library with one user, so there is nobody to comment to.",
+ ],
+},
+{
+ "id": "S35", "title": "Episode detail page",
+ "source": "Episode page reached from the show, mini player docked.",
+ "observed": [
+   "The meta chain ends with a resume figure and an inline progress bar on the same line — \"1h 21m left • Finished ✓\" and the bar that says so.",
+   "The action row is saved / downloaded / share / overflow beside a play button. It is not a queue cluster.",
+   "The description carries inline links and its own \"see more\".",
+ ],
+ "created": [("ExpandableText", "The description's truncation.")],
+ "extended": [
+   ("MediaHeader", "`actions`, `progress`", "**Owed from S02 and deferred there**, because `MediaHeader.jsx` was not mirrored at the time; it is now. `MediaHeader`'s verbs are Play / Next / Last, and neither a show header nor an episode header wants a queue cluster. `progress` puts the resume figure and its bar on one line."),
+ ],
+ "existing": [
+   ("ItemActionBar", "Saved / downloaded / share / overflow (wave 1)."),
+   ("DownloadButton", "The `done` state (wave 1)."),
+   ("BackLink", "Return to the show."),
+   ("MiniPlayer", "Docked while the page is open."),
+ ],
+ "notbuilt": ["Comments — see S34."],
+},
+{
+ "id": "S36", "title": "Queue — sheet over the player",
+ "source": "Queue opened from the player.",
+ "observed": [
+   "The queue arrives as a sheet over the player rather than as a separate destination, so the artwork stays visible behind it.",
+   "The playing row is accent-coloured and offers play; every other row offers a drag handle.",
+   "The sheet's footer carries the sleep timer and the speed control — the two settings you change mid-listen.",
+ ],
+ "created": [("SpeedControl", "Shown here in the queue sheet's footer, which is the second place the same control appears.")],
+ "extended": [],
+ "existing": [
+   ("QueuePage", "`heading`, `context`, `editing`/`onEditingChange` and a `footer` slot — the footer is exactly where the timer and speed row belongs."),
+   ("QueueRow", "`current` highlights the playing row; `handle` shows the drag affordance."),
+   ("PlayerSheet", "The sheet surface over the player."),
+ ],
+ "notbuilt": [],
+},
+{
+ "id": "S37", "title": "Queue — sheet at full height",
+ "source": "Queue sheet expanded.",
+ "observed": [
+   "\"Edit\" turns the list into a selection and reorder mode.",
+   "The footer controls persist across the mode change.",
+ ],
+ "created": [],
+ "extended": [],
+ "existing": [
+   ("QueuePage", "`editing`, `onEditingChange`, `onReorder`, `onRemoveSelected` — the whole edit mode already exists."),
+   ("QueueRow", "`editing`, `selected`, `onSelectToggle`, `draggable` and the drag handlers."),
+ ],
+ "notbuilt": [],
+},
+{
+ "id": "S38", "title": "Now Playing — About the podcast",
+ "source": "Player, scrolled past the comments.",
+ "observed": [
+   "The show's own card sits at the bottom of the player and carries a subscribe control inside it.",
+   "So the card is not purely informational — it is a place to act on the thing you are hearing.",
+ ],
+ "created": [("AboutCard", "Its `action` slot is what makes the card actionable rather than merely descriptive.")],
+ "extended": [],
+ "existing": [("FollowButton", "The subscribe toggle, built in wave 1 for S02.")],
+ "notbuilt": ["Comments — see S34."],
+},
+{
+ "id": "S39", "title": "Now Playing — music",
+ "source": "Player, expanded, a track.",
+ "observed": [
+   "Music transport is the familiar five-control cluster — the same page, a different verb set from S33.",
+   "A single current lyric line surfaces above the title, before any lyric sheet is opened.",
+   "Audio quality is stated beside the output route: \"Lossless\".",
+   "A lyrics card sits directly below the transport, tinted from the artwork.",
+ ],
+ "created": [("OutputDeviceButton", "`quality` is the half Sonora had no way to state. For Auralis this is where direct play vs transcode becomes visible.")],
+ "extended": [],
+ "existing": [
+   ("TransportBar", "Shuffle / previous / play / next / repeat — unchanged, and the reason `variant` defaults to `'music'`."),
+   ("Lyrics", "The card variant, with its three sync modes."),
+   ("NowPlayingPage", "`lyrics`, `lyricsActiveIndex` and `onOpenLyrics` already carry the preview and its expansion; `background` already takes an artwork-derived tint."),
+   ("SeekBar", "Scrubber and readouts."),
+ ],
+ "notbuilt": [],
+},
+{
+ "id": "S40", "title": "Now Playing — lyrics card into About the artist",
+ "source": "Player, scrolled.",
+ "observed": [
+   "The lyrics card offers share and expand-to-full-page without leaving the player.",
+   "Beneath it, the artist's own card continues the same stack.",
+ ],
+ "created": [("AboutCard", "The artist card, `round`.")],
+ "extended": [],
+ "existing": [
+   ("Lyrics", "The card surface."),
+   ("LyricsPage", "The full page the expand control opens."),
+   ("NowPlayingPage", "`onOpenLyrics` receives the preview's rect so the page can grow out of it."),
+ ],
+ "notbuilt": [],
+},
+{
+ "id": "S41", "title": "Now Playing — About the artist and credits",
+ "source": "Player, scrolled.",
+ "observed": [
+   "The artist card carries image, a verified mark, a follow control and a truncated bio.",
+   "Below it, contributors appear as circular cards labelled by role — \"Main Artist\", \"Composer +1 more\".",
+   "Service-scale metrics sit alongside: world ranking and monthly listeners.",
+ ],
+ "created": [("AboutCard", "Image, badge, action and an expandable bio in one card.")],
+ "extended": [],
+ "existing": [
+   ("ArtistCard", "Circular person card — the role goes in `sub`, which is what a credits shelf needs."),
+   ("Section", "Titles the credits block and carries the feed rhythm."),
+   ("Badge", "The verified mark (wave 1's `icon` + `plain`)."),
+   ("FollowButton", "The follow control."),
+ ],
+ "notbuilt": [
+   "**World ranking and monthly-listener counts.** Service-scale popularity is meaningless for a private library. `Rating` already covers the ratings a real Audiobookshelf or Jellyfin item carries.",
+   "**A dedicated credits card.** The affordance — who made this, in what role — is already served by `ArtistCard` (`sub` = role) laid out by `Shelf` under a `Section`. Worth building only if a role-grouped layout is wanted.",
+ ],
+},
+{
+ "id": "S42", "title": "Now Playing — credits and live events",
+ "source": "Player, scrolled to the bottom.",
+ "observed": [
+   "The credits block ends with a count and an \"Explore\" action rather than listing everyone.",
+   "Below it, an events block with a date range and a ticketing link.",
+ ],
+ "created": [],
+ "extended": [],
+ "existing": [
+   ("ArtistCard", "Contributor cards."),
+   ("Section", "`actionText` (wave 1) carries the \"Explore\" affordance already."),
+ ],
+ "notbuilt": [
+   "**Live events and ticketing.** External commerce against a catalogue Auralis does not have.",
+ ],
+},
+{
+ "id": "S43", "title": "Lyrics — full page",
+ "source": "Lyrics expanded from the player.",
+ "observed": [
+   "Lyrics take the whole surface, tinted from the artwork, with the transport docked below them.",
+   "The page is dismissed by the surface that opened it, not by a back affordance of its own.",
+ ],
+ "created": [],
+ "extended": [],
+ "existing": [
+   ("LyricsPage", "`heading`, `title`, `artist`, `lines`, `syncMode`, `footer` and `onClose` — this page already exists in full, and its doc comment already states that it carries no back affordance of its own."),
+   ("Lyrics", "The sheet, with the sync mode that scrolls to follow the song."),
+   ("LyricsSyncButton", "Cycles sync → dot → off."),
+   ("SeekBar", "The docked scrubber."),
+ ],
+ "notbuilt": [],
+},
 ]
 
 
