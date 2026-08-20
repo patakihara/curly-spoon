@@ -527,7 +527,38 @@ describe('GET /api/v1/libraries/:id/recommended — external (Open Library) disc
         series: {},
       },
     };
-    const pool: { items: LibraryItem[] } = { items: [] };
+    // The pool must carry at least one book item, or `buildBookExternalDiscoveryShelf`'s
+    // media-type gate (`routes/libraries.ts`) returns `null` before the throwing provider is
+    // ever constructed — which would exercise the gate, not the outer `catch` this test names.
+    const pool: { items: LibraryItem[] } = {
+      items: [
+        {
+          id: 'item-1',
+          libraryId: 'lib-books',
+          addedAt: null,
+          updatedAt: null,
+          coverPath: null,
+          size: 0,
+          media: {
+            kind: 'book',
+            title: 'Book One',
+            subtitle: null,
+            authors: [{ name: 'Some Author' }],
+            narrator: null,
+            series: [],
+            genres: [],
+            publishedYear: null,
+            description: null,
+            isbn: null,
+            asin: null,
+            duration: 3600,
+            tracks: undefined,
+            chapters: undefined,
+          },
+          progress: null,
+        },
+      ],
+    };
     const throwingFactories: Record<string, ExternalProviderFactory> = {
       broken: () => ({
         providerName: 'broken',

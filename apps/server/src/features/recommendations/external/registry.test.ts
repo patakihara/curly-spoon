@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ITUNES_PROVIDER_NAME } from './itunes.js';
 import { LISTENBRAINZ_PROVIDER_NAME } from './listenbrainz.js';
 import { OPENLIBRARY_PROVIDER_NAME } from './openlibrary.js';
 import { externalProviderFactories, getExternalProvidersForMedium } from './registry.js';
@@ -89,12 +90,14 @@ describe('getExternalProvidersForMedium', () => {
     expect(candidates[0]!.identifiers.feedUrl).toBe('https://example.test/feeds/0.xml');
   });
 
-  it('the real registry has a music and a book provider, and still no podcast provider', () => {
+  it('the real registry has a music, a book and a podcast provider, each scoped to its own medium', () => {
     const deps = { fetch: async () => new Response('{}') };
     expect(getExternalProvidersForMedium('book', deps).map((p) => p.providerName)).toEqual([
       OPENLIBRARY_PROVIDER_NAME,
     ]);
-    expect(getExternalProvidersForMedium('podcast', deps)).toEqual([]);
+    expect(getExternalProvidersForMedium('podcast', deps).map((p) => p.providerName)).toEqual([
+      ITUNES_PROVIDER_NAME,
+    ]);
     expect(getExternalProvidersForMedium('music', deps).map((p) => p.providerName)).toEqual([
       LISTENBRAINZ_PROVIDER_NAME,
     ]);
