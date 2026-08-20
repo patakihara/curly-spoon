@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T20:47:35Z` · `a6e64e451336a72ea` · general-purpose · ended · Working tree is clean, one commit on top of '30a772d' on branch 'worktree-agent-a6e64e451336a72ea'. Not pushed or merged, per instructions. ## Report…
 - `2026-08-18T20:52:57Z` · `ad1e24b030f35c99c` · general-purpose · ended · Clean working tree, one commit ('9a7d09c') on top of '8d77670', on branch 'worktree-agent-ad1e24b030f35c99c'. Not pushed, not merged, per instruction…
 - `2026-08-18T21:09:06Z` · `ae6a5a06a1aba2e0f` · general-purpose · ended · ## Report — Wave 15d-1-books-W **Branch/commit:** 'worktree-agent-ae6a5a06a1aba2e0f' at '1912d6c', one commit on top of the integration branch tip '4…
 - `2026-08-18T21:09:48Z` · `aa97926cfab82547e` · general-purpose · ended · ## Report — Wave '16e-podcast-P': parity review of the podcast show screen triple **Verdict: clean, with two named follow-ups (one real, previously-i…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
 - `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
 - `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · ended · Everything is confirmed. Here is my final report. ## Report — Wave 16e-nowplaying-A **1. Branch/commit:** 'worktree-agent-a290836730d4ca5c5' at '5351…
+- `2026-08-20T13:34:53Z` · `ac8d6ec012bcfbac3` · general-purpose · ended · # Parity Review — '16e-nowplaying-P' ## 1. Verdict **Not clean — one real defect, currently blocking 'main''s Android CI, plus two follow-ups.** The…
 
 <!-- AGENT_LOG_END -->
 
@@ -729,7 +729,7 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### DONE 2026-08-20 — `16e-nowplaying`, the fifth screen triple. **`16e-nowplaying-P` is OWED.**
+### DONE 2026-08-20 — `16e-nowplaying`, the fifth screen triple, COMPLETE with a clean `-P`
 
 Both halves merged (`6dbc5f0` web, `35f2c18` Android), built concurrently from
 `NOW_PLAYING.md` with neither agent seeing the other's code. Verified locally before pushing:
@@ -774,7 +774,71 @@ timing-sensitive suite is indistinguishable from a regression until you spend th
 CI, with real runner headroom, remains the authoritative signal. Do not read a moving 2-failure
 result on this machine as a regression — establish it in isolation first, which costs one minute.
 
-#### What `-P` must rule on
+#### `-P` IS DONE — clean on design and behaviour, and it caught a RED `main`
+
+The review by an agent that wrote neither half. **Verdict: the design and behaviour work is sound
+on both platforms; the wave shipped one broken test that turned `main`'s Android run red.** Fixed
+inline (`96a5ed0`) rather than spent as a wave — see below.
+
+**All three flagged ambiguities ruled, and all three went web's way:**
+
+1. **The transport-size table governs every breakpoint.** §3.1 already rules the surface is one
+   stacked structure across breakpoints, and both platforms independently applied their sizes
+   uniformly. **Settled, not open.**
+2. **The context line is new at every breakpoint.** §3.3's "desktop panel only" is a _recon
+   citation_ describing Sonora's mock; §6.3's behaviour contract says "new on both" with no
+   qualifier. **A recon citation in §3 does not override a behaviour requirement in §6** — that is
+   the generalisable ruling, and it is worth carrying into the two remaining screen specs.
+3. **`--surface-fg-muted` on the mini player author is idiom.** 12 uses in `app.css`, several
+   pre-existing and untouched by this wave; migrating one more consumer is what every 16c/16e wave
+   has been doing.
+
+**The byte-for-byte target was re-derived independently by hand from both sources** — not read off
+either agent's report — and matches: `"1:30 of 1:02:10"`, degradation to `"0:00"` on both sides.
+The context line matches too (`"Playing from {album}"`, blank-guarded identically, each pinned by
+its own platform's test against a different literal). **Fifth triple running.**
+
+**Ruled clean with evidence, so nobody re-checks:** shuffle/repeat reuse `MiniPlayerBar`'s exact
+semantics rather than a second pattern; the lyrics three-state rule is the _same rule_ on both
+sides and pairs weight with colour on both, so it is never colour-only; §7 and §8 are respected in
+both directions; the queue-row highlight difference matches §3.4's own single-row Android table.
+
+**One pre-existing limitation correctly labelled rather than logged as new drift:** Android's title
+cannot match `var(--font-display)` because **no display font is bundled on Android at all** — 16b-1
+self-hosted fonts for web only. The weight axis does match (W900). Not this triple's doing.
+
+#### THE FOURTH COMPOSE-TEST TRAP — and the spec-side warning did NOT hold
+
+`main` went red on `461eeb0`: two `MiniPlayerBarTest` cases, bare `java.lang.AssertionError` naming
+neither tag nor cause, on a genuine uncached execution (735 tests ran). **The tag existed.** It sits
+inside the root `Box`'s `.clickable(onClick = onExpand)`, and `clickable` merges its descendants'
+semantics — a `testTag` does not survive that merge the way `Text` and `ContentDescription` do,
+which is precisely why the lookups on the lines _either side of it_ passed.
+
+**This is the third instance of the `useUnmergedTree` variant** after `16e-search-A-2` and
+`16e-album-A`, and the fourth of the family.
+
+**The new and more important fact: this trap was written verbatim into the implementing agent's
+spec — the tell, the mechanism and the remedy all named — and it shipped anyway.** That is the same
+shape as the commit-before-backgrounding instruction: **a spec-side warning lowers the frequency and
+does not hold.** The load-bearing checks are the orchestrator-side ones — CI, and a parity reviewer
+who did not write the code. Budget the red Android round rather than expecting the warning to
+prevent it.
+
+**A cheap mechanical tripwire exists and is worth running before any Android push**, in the same
+spirit as the `/*`/`*/` balance check — list every tagged lookup in changed test files and confirm
+each one deliberately:
+
+```bash
+grep -rn 'onNodeWithTag(' apps/android/app/src/testDebug/ | grep -v useUnmergedTree
+```
+
+It has false positives by design — `mini-player-progress` at `MiniPlayerBarTest.kt:110` passes
+without the flag and was deliberately left alone, because changing a passing assertion to match a
+pattern discards the information that the merge boundary is not where you assumed. Treat the output
+as a list to confirm, not a list to fix.
+
+#### What `-P` ruled on (the questions as originally posed)
 
 1. **§3.3's transport-size table has only a mobile-sheet row.** `-W` read it as governing every
    breakpoint (matching §3.1's single-stack ruling) and applied 56/56/72 uniformly. Confirm.
@@ -859,8 +923,8 @@ own section below for what landed, what `-P` must rule on, and the worker-count 
 corrects this file's verification advice. Sonora's tabbed desktop panel remains **deliberately not
 built** — that ruling from the `16e-nowplaying-spec` merge commit still stands.
 
-**The next thing to do is `16e-nowplaying-P`**, then the last two screens: Settings/Onboarding and
-For You/browse, then `16f`. The
+**The `16e-nowplaying` triple is complete, `-P` included.** The next thing to do is the **last two
+screens** — Settings/Onboarding and For You/browse — then `16f`. The
 remaining `--m3-*` consumers are `Fab`, `ListItem`, `Marquee`, `NavigationBar`, `SearchField`,
 `Snackbar`, `TopAppBar` — deletion is still not close.
 
