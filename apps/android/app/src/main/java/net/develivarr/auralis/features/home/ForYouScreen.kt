@@ -6,11 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -20,6 +21,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -99,7 +103,12 @@ fun ForYouScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("For you") },
+                // docs/design/screens/FOR_YOU.md §6.1: the on-screen heading matches the nav
+                // label (ShellDestinations.kt's FOR_YOU entry), which Sofia renamed "Browse" —
+                // "For you"/"Home"/"Discover" are the same destination under four names, and
+                // this file's own type/route/component names deliberately keep the old term
+                // (§6.1's "Naming" note); only this UI-visible string changes.
+                title = { Text("Browse") },
                 actions = {
                     // See this file's own doc comment: these two are HomeScreen's former
                     // top-bar actions, carried forward so Routes.DOWNLOADS/Routes.REQUESTS stay
@@ -121,13 +130,38 @@ fun ForYouScreen(
         },
     ) { innerPadding ->
         when (uiState) {
-            is ForYouUiState.Loading ->
-                Box(
+            is ForYouUiState.Loading -> {
+                // §6.6, new requirement: nothing on this screen announced the loading→loaded
+                // transition before this wave (grepped for aria-live/liveRegion and found
+                // nothing, per the spec's own recon). Not required to match web's wording
+                // byte-for-byte — only that something is announced.
+                ForYouStatusAnnouncer(loading = true)
+                // §3.3/§10 item 5: a layout-shaped skeleton, replacing the bare
+                // CircularProgressIndicator this branch used to render — ForYouViewModel.load()
+                // itself is unchanged (§6.2: it already holds Loading until every source
+                // settles), so this is a Compose-UI-only swap.
+                LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center,
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    CircularProgressIndicator()
+                    item {
+                        // The filter row "can render immediately, it needs no data" (§3.3) —
+                        // FOR_YOU_FILTER_OPTIONS is a static list, so the real chips render here
+                        // too, pre-selecting "All" (DEFAULT_FOR_YOU_FILTER); onSelect is a no-op
+                        // since ForYouViewModel.selectFilter is itself a no-op against
+                        // ForYouUiState.Loading (its own doc comment).
+                        ForYouFilterChipsRow(selectedFilter = DEFAULT_FOR_YOU_FILTER, onSelect = {})
+                    }
+                    item {
+                        QuickPickGridSkeleton(modifier = Modifier.padding(horizontal = 16.dp))
+                    }
+                    repeat(SKELETON_CAROUSEL_ROW_COUNT) { index ->
+                        item(key = "skeleton-carousel-$index") {
+                            ForYouCarouselRowSkeleton()
+                        }
+                    }
                 }
+            }
             is ForYouUiState.Error ->
                 Box(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -142,21 +176,14 @@ fun ForYouScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     item {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            FOR_YOU_FILTER_OPTIONS.forEach { option ->
-                                FilterChip(
-                                    selected = loaded.filter == option.value,
-                                    onClick = { viewModel.selectFilter(option.value) },
-                                    label = { Text(option.label) },
-                                )
-                            }
-                        }
+                        // §6.6: the loaded half of the loading/loaded announcement pair.
+                        ForYouStatusAnnouncer(loading = false)
+                    }
+                    item {
+                        ForYouFilterChipsRow(
+                            selectedFilter = loaded.filter,
+                            onSelect = { viewModel.selectFilter(it) },
+                        )
                     }
 
                     if (loaded.quickPicks.isNotEmpty()) {
@@ -195,4 +222,57 @@ fun ForYouScreen(
             }
         }
     }
+}
+
+/** The content-type filter chip row, shared by [ForYouScreen]'s loading and loaded branches —
+ * §3.3 calls this out specifically as able to "render immediately, it needs no data", since
+ * [FOR_YOU_FILTER_OPTIONS] is a static list rather than anything a fetch produces. §6.4: the
+ * options themselves are unchanged by this wave, restated for completeness only. */
+@Composable
+private fun ForYouFilterChipsRow(
+    selectedFilter: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FOR_YOU_FILTER_OPTIONS.forEach { option ->
+            FilterChip(
+                selected = selectedFilter == option.value,
+                onClick = { onSelect(option.value) },
+                label = { Text(option.label) },
+            )
+        }
+    }
+}
+
+/**
+ * §6.6, new requirement on both platforms: announces the loading→loaded transition, which
+ * nothing on this screen did before this wave. §6.2's page-level hold (already Android's
+ * existing behaviour — see [ForYouViewModel]'s doc comment) makes the silence more noticeable,
+ * not less, per the spec's own reasoning: a screen-reader user now waits through one longer
+ * silence instead of several shorter ones with no signal either way.
+ *
+ * Kept at a 1dp visual footprint rather than a full status line — neither §3's geometry tables
+ * nor Sonora's own mock reserve space for one, and the requirement is that *something* is
+ * announced (§6.6's own wording: "not… a byte-for-byte requirement, just a requirement that
+ * *something* is announced"), not that a new line of visible body copy appears. Mirrors the
+ * `liveRegion = LiveRegionMode.Polite` pattern `UnifiedSearchScreen.kt`'s own status line already
+ * uses for the equivalent web `role="status"` announcement (§11's "Status announcement" there).
+ */
+@Composable
+private fun ForYouStatusAnnouncer(loading: Boolean, modifier: Modifier = Modifier) {
+    Text(
+        text = if (loading) "Loading your browse feed…" else "Browse feed loaded.",
+        style = MaterialTheme.typography.labelSmall,
+        modifier =
+            modifier
+                .size(1.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }

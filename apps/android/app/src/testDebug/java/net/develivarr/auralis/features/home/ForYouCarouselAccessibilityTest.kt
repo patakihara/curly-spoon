@@ -167,7 +167,7 @@ class ForYouCarouselAccessibilityTest {
      * Ordered ahead of the reason in [feedItemAnnouncement], so it's asserted mid-string here
      * too, not just appended. */
     @Test
-    fun `an external item's merged description announces 'Not in your library' ahead of the reason`() {
+    fun `an external item's merged description announces 'Not in library' ahead of the reason`() {
         composeRule.setContent {
             MaterialTheme {
                 Surface {
@@ -183,7 +183,7 @@ class ForYouCarouselAccessibilityTest {
 
         composeRule
             .onNodeWithContentDescription(
-                "Random Access Memories, Daft Punk — Not in your library — Because you like Daft Punk",
+                "Random Access Memories, Daft Punk — Not in library — Because you like Daft Punk",
             )
             .assertExists()
     }
@@ -194,7 +194,7 @@ class ForYouCarouselAccessibilityTest {
      * matters. It does **not** prove what the badge looks like, where it sits over the cover, or
      * what TalkBack actually announces on a device; there is no device or emulator here. */
     @Test
-    fun `an external item renders a visible 'Not in your library' text node`() {
+    fun `an external item renders a visible 'Not in library' text node`() {
         composeRule.setContent {
             MaterialTheme {
                 Surface {
@@ -203,7 +203,7 @@ class ForYouCarouselAccessibilityTest {
             }
         }
 
-        composeRule.onNodeWithText("Not in your library").assertExists()
+        composeRule.onNodeWithText("Not in library").assertExists()
     }
 
     /** Wave 15d — the negative case: an owned item (the pre-existing default,
@@ -211,7 +211,7 @@ class ForYouCarouselAccessibilityTest {
      * so "owned items are completely unchanged" is checked, not merely assumed from the badge's
      * `if` guard. */
     @Test
-    fun `an owned item announces no 'Not in your library' suffix and renders no badge text`() {
+    fun `an owned item announces no 'Not in library' suffix and renders no badge text`() {
         composeRule.setContent {
             MaterialTheme {
                 Surface {
@@ -221,7 +221,7 @@ class ForYouCarouselAccessibilityTest {
         }
 
         composeRule.onNodeWithContentDescription("The Fifth Season, N.K. Jemisin").assertExists()
-        composeRule.onAllNodesWithText("Not in your library").assertCountEquals(0)
+        composeRule.onAllNodesWithText("Not in library").assertCountEquals(0)
     }
 
     /** Wave 15d-1-books: the badge/announcement behaviour proved above for a MUSIC external item
@@ -229,7 +229,7 @@ class ForYouCarouselAccessibilityTest {
      * visible text — closing the "status must be announced, not merely drawn" requirement for
      * the medium this wave is actually about. */
     @Test
-    fun `an external book item's merged description announces 'Not in your library' and renders a visible badge`() {
+    fun `an external book item's merged description announces 'Not in library' and renders a visible badge`() {
         composeRule.setContent {
             MaterialTheme {
                 Surface {
@@ -239,8 +239,8 @@ class ForYouCarouselAccessibilityTest {
         }
 
         composeRule
-            .onNodeWithContentDescription("Dune Messiah, Frank Herbert — Not in your library")
+            .onNodeWithContentDescription("Dune Messiah, Frank Herbert — Not in library")
             .assertExists()
-        composeRule.onNodeWithText("Not in your library").assertExists()
+        composeRule.onNodeWithText("Not in library").assertExists()
     }
 }

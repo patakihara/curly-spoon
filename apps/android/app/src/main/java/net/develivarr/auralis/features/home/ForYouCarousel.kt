@@ -1,5 +1,6 @@
 package net.develivarr.auralis.features.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,12 +8,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.MusicNote
@@ -25,10 +28,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -42,10 +48,15 @@ import coil.compose.AsyncImage
  * machine cannot run (see the wave's spec, "What you cannot verify"). Mirrors
  * `apps/web/src/features/home/Carousel.tsx`'s own constants (`CARD_WIDTH`/`COVER_SIZE` = 160,
  * the fixed title/subtitle/progress row heights) at Android's own density-independent unit.
+ *
+ * `docs/design/screens/FOR_YOU.md` §3.1/§3.2, wave 16e-foryou-A: `CARD_WIDTH`/`COVER_SIZE`/
+ * `QUICK_TILE_COVER_SIZE` are now Sonora's **compact** column values (152dp/152dp/48dp) —
+ * Android always renders the compact/mobile column, there being no Android equivalent of web's
+ * wide desktop layout on this screen (§3.1's own column-convention note).
  */
 object ForYouCarouselDimens {
-    val CARD_WIDTH: Dp = 160.dp
-    val COVER_SIZE: Dp = 160.dp
+    val CARD_WIDTH: Dp = 152.dp
+    val COVER_SIZE: Dp = 152.dp
     val CARD_SPACING: Dp = 16.dp
     val CARD_ROW_CONTENT_PADDING: Dp = 16.dp
 
@@ -66,9 +77,20 @@ object ForYouCarouselDimens {
     val TEXT_TOP_SPACING: Dp = 8.dp
     val TEXT_LINE_SPACING: Dp = 2.dp
 
-    val QUICK_TILE_COVER_SIZE: Dp = 56.dp
+    val QUICK_TILE_COVER_SIZE: Dp = 48.dp
     val QUICK_GRID_SPACING: Dp = 8.dp
     val QUICK_GRID_PADDING: Dp = 16.dp
+
+    /** §3.1's compact-column art radius (`--radius-sm` = 16px) — [MaterialTheme.shapes.small]
+     * already resolves to exactly this value (`ui/theme/Shape.kt`'s `SonoraShapes`), so this is
+     * read off the shape scale rather than re-declared as a second literal. */
+    val CARD_ART_SHAPE: Shape = RoundedCornerShape(16.dp)
+
+    /** §3.2's art radius for [QuickPickTile] — "8px (hardcoded literal, not a token — confirmed
+     * in source)" in Sonora's own file. [MaterialTheme.shapes.extraSmall] is numerically the same
+     * 8dp value; kept as its own literal here rather than reached through the shape scale, since
+     * the design source itself deliberately does not treat this one as a token. */
+    val QUICK_TILE_ART_SHAPE: Shape = RoundedCornerShape(8.dp)
 }
 
 /** The one icon [ForYouCard]/[QuickPickTile] fall back to behind a cover that hasn't loaded
@@ -98,8 +120,14 @@ internal fun carouselReasonText(carousel: FeedCarousel): String? = carousel.reas
  * user does not have in their Jellyfin library. Shared by [ForYouCard]'s visible overlay badge
  * and [feedItemAnnouncement]'s merged `contentDescription`, so the two text sources can never
  * drift apart — a badge whose wording differs from what TalkBack announces would itself be a
- * parity bug, just within one platform instead of across two. */
-internal const val EXTERNAL_RECOMMENDATION_LABEL = "Not in your library"
+ * parity bug, just within one platform instead of across two.
+ *
+ * `docs/design/screens/FOR_YOU.md` §6.3, wave 16e-foryou-A: this was `"Not in your library"`,
+ * disagreeing with Sonora's own vendored source, web's visible badge, *and* web's `aria-label`
+ * suffix — a genuine three-way mismatch, all four strings different. `"Not in library"`, Sonora's
+ * literal string, is now canonical on both platforms and is the byte-for-byte parity target for
+ * this triple's `-P` review. */
+internal const val EXTERNAL_RECOMMENDATION_LABEL = "Not in library"
 
 /**
  * The single accessible announcement for one [ForYouCard] — [feedItemContentDescription] plus,
@@ -177,7 +205,12 @@ fun ForYouCard(
         Box(
             modifier =
                 Modifier
-                    .size(ForYouCarouselDimens.COVER_SIZE),
+                    .size(ForYouCarouselDimens.COVER_SIZE)
+                    // §3.1's compact-column art radius (--radius-sm). The gradient placeholder
+                    // fill Sonora's own source specifies is deliberately NOT implemented here —
+                    // see §3.1's note: the existing fallback-icon-under-AsyncImage mechanism
+                    // (below) is strictly better and must not be replaced by a static gradient.
+                    .clip(ForYouCarouselDimens.CARD_ART_SHAPE),
             contentAlignment = Alignment.Center,
         ) {
             // Rendered underneath the AsyncImage: Coil draws nothing while loading/on failure/
@@ -198,10 +231,18 @@ fun ForYouCard(
             // Wave 15d — purely visual; the same label reaches TalkBack through
             // [feedItemAnnouncement]'s merged contentDescription instead, not through this Text's
             // own semantics, so nothing here needs its own contentDescription override.
+            //
+            // §3.1's "Absent pill (external)" row, wave 16e-foryou-A: pill radius
+            // (MaterialTheme.shapes.extraLarge == --radius-pill, ui/theme/Shape.kt) and muted
+            // text colour (onSurfaceVariant, same role as the subtitle below) now match the
+            // table. Position (bottom-start) and background (a translucent surface tone, for
+            // legibility over arbitrary cover art) are pre-existing and unchanged — §10's
+            // Android list scopes this wave to "radius/typography changes" only, and a top-left
+            // reposition is a layout change the spec does not ask for; see this wave's report.
             if (item.isExternal) {
                 Surface(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                    shape = MaterialTheme.shapes.extraSmall,
+                    shape = MaterialTheme.shapes.extraLarge,
                     modifier =
                         Modifier
                             .align(Alignment.BottomStart)
@@ -210,7 +251,7 @@ fun ForYouCard(
                     Text(
                         text = EXTERNAL_RECOMMENDATION_LABEL,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -218,9 +259,13 @@ fun ForYouCard(
                 }
             }
         }
+        // §3.1's compact-column title row: --text-md (14px, already labelLarge's size per
+        // SonoraTypography's own doc comment) at weight 700, colour --m3-on-background.
         Text(
             text = item.title,
             style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier =
@@ -337,7 +382,12 @@ fun QuickPickTile(
                 .clickable(onClickLabel = feedItemContentDescription(item), onClick = onClick),
     ) {
         Box(
-            modifier = Modifier.size(ForYouCarouselDimens.QUICK_TILE_COVER_SIZE),
+            modifier =
+                Modifier
+                    .size(ForYouCarouselDimens.QUICK_TILE_COVER_SIZE)
+                    // §3.2's art radius (8px, a literal in Sonora's own source — see
+                    // ForYouCarouselDimens.QUICK_TILE_ART_SHAPE's doc comment).
+                    .clip(ForYouCarouselDimens.QUICK_TILE_ART_SHAPE),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -353,9 +403,13 @@ fun QuickPickTile(
                 modifier = Modifier.size(ForYouCarouselDimens.QUICK_TILE_COVER_SIZE),
             )
         }
+        // §3.2's compact-column title: --text-sm (13px, labelMedium's size), weight 700,
+        // colour --m3-on-background.
         Text(
             text = item.title,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = ForYouCarouselDimens.QUICK_GRID_SPACING),
@@ -363,11 +417,23 @@ fun QuickPickTile(
     }
 }
 
-/** The two-column quick-selection grid itself: [items] chunked in pairs, one [Row] per pair. A
+/**
+ * The two-column quick-selection grid itself: [items] chunked in pairs, one [Row] per pair. A
  * plain [Column]/[Row] combination rather than `LazyVerticalGrid` — [items] is capped at 8 by
  * [buildQuickPicks], so there's no scrolling performance case a lazy grid would earn its keep
  * on, and nesting a second lazy scroller inside [ForYouScreen]'s own scrolling column is exactly
- * the kind of thing worth avoiding on a surface this machine cannot run to check. */
+ * the kind of thing worth avoiding on a surface this machine cannot run to check.
+ *
+ * `docs/design/screens/FOR_YOU.md` §11, wave 16e-foryou-A: web's grid carries
+ * `role="list" aria-label="Quick picks"` (`HomePage.tsx:161-163`); this file had **no** grouping
+ * semantic at all before this wave (confirmed by reading it, per §11's own instruction to check
+ * rather than assume). A `contentDescription` with no `mergeDescendants` gives the container an
+ * accessible name — the region reads as "Quick picks" — without swallowing each
+ * [QuickPickTile]'s own name into it, so a screen-reader user can still traverse the eight tiles
+ * individually. Compose has no `role="list"` equivalent for a plain `Column`/`Row` grid (unlike
+ * `LazyColumn`, which gets `CollectionInfo` for free); a named container is the closest match
+ * without inventing new semantics machinery for a two-column grid this small.
+ */
 @Composable
 fun QuickPickGrid(
     items: List<FeedItem>,
@@ -377,7 +443,7 @@ fun QuickPickGrid(
 ) {
     if (items.isEmpty()) return
     Column(
-        modifier = modifier,
+        modifier = modifier.semantics { contentDescription = "Quick picks" },
         verticalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.QUICK_GRID_SPACING),
     ) {
         items.chunked(2).forEach { pair ->
@@ -397,6 +463,173 @@ fun QuickPickGrid(
                 if (pair.size == 1) {
                     Box(modifier = Modifier.weight(1f))
                 }
+            }
+        }
+    }
+}
+
+/**
+ * `docs/design/screens/FOR_YOU.md` §3.3, wave 16e-foryou-A: the loading-state silhouette,
+ * replacing [ForYouScreen]'s pre-this-wave bare `CircularProgressIndicator`
+ * (`ForYouScreen.kt:124-130`, wave dispatch's own citation of `:117-124` was off by a handful of
+ * lines but resolved to the same block). §3.3 names two acceptable brushes — "a
+ * `Modifier.placeholder`-style pattern or a plain `Box` with a muted background and no shimmer" —
+ * and this file takes the second, simpler option: a flat [MaterialTheme.colorScheme.surfaceVariant]
+ * tone, no animation. **The box dimensions must exactly match the loaded card** (§3.3's own
+ * wording, echoing `Carousel.tsx`'s `TITLE_STYLE` reasoning) — every skeleton composable below
+ * reads its sizes from [ForYouCarouselDimens], the same object [ForYouCard]/[QuickPickTile] read
+ * from, rather than declaring its own numbers.
+ */
+@Composable
+private fun SkeletonBlock(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(4.dp),
+) {
+    // Spacer, not Box — Box's `content` lambda is a required parameter with no default, and this
+    // placeholder never has any content to give it.
+    Spacer(
+        modifier =
+            modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = shape,
+                ),
+    )
+}
+
+/** [ForYouCard]'s loading placeholder: a cover-sized block, a title-row-height block, a
+ * subtitle-row-height block (narrower, since a real subtitle is rarely as wide as the title —
+ * purely cosmetic, not a geometry requirement), and the same reserved-but-empty progress row a
+ * real card with `progress == null` already renders (§5's "reserve the row, render no bar inside
+ * it" rule applies here unchanged — a skeleton card is not a card with progress, so it gets no
+ * progress-bar placeholder either). No `Modifier.semantics` — see [ForYouCarouselRowSkeleton]'s
+ * doc comment for why the whole skeleton region is left out of the accessibility tree. */
+@Composable
+private fun ForYouCardSkeleton(modifier: Modifier = Modifier) {
+    Column(modifier = modifier.width(ForYouCarouselDimens.CARD_WIDTH)) {
+        SkeletonBlock(
+            modifier = Modifier.size(ForYouCarouselDimens.COVER_SIZE),
+            shape = ForYouCarouselDimens.CARD_ART_SHAPE,
+        )
+        SkeletonBlock(
+            modifier =
+                Modifier
+                    .padding(top = ForYouCarouselDimens.TEXT_TOP_SPACING)
+                    .fillMaxWidth()
+                    .height(ForYouCarouselDimens.TITLE_ROW_HEIGHT),
+        )
+        SkeletonBlock(
+            modifier =
+                Modifier
+                    .padding(top = ForYouCarouselDimens.TEXT_LINE_SPACING)
+                    .fillMaxWidth(0.6f)
+                    .height(ForYouCarouselDimens.SUBTITLE_ROW_HEIGHT),
+        )
+        // §5's "reserve the row, render no bar inside it" rule, applied to a skeleton: an empty
+        // Spacer at the real progress row's height, not even a muted block — a card with
+        // progress == null renders no bar inside a real card either, so the placeholder for
+        // "progress unknown yet" and "no progress" collapse to the same empty reserved space.
+        Spacer(
+            modifier =
+                Modifier
+                    .padding(top = ForYouCarouselDimens.TEXT_LINE_SPACING)
+                    .fillMaxWidth()
+                    .height(ForYouCarouselDimens.PROGRESS_ROW_HEIGHT),
+        )
+    }
+}
+
+/** How many placeholder cards sit in one [ForYouCarouselRowSkeleton] — enough to fill a
+ * screen-width row without scrolling on a typical phone, and otherwise arbitrary: nothing in
+ * §3.3 pins a card count, only a box size, since a skeleton card never scrolls into view the way
+ * a real [LazyRow] of them does. */
+private const val SKELETON_ROW_CARD_COUNT = 3
+
+/** How many [ForYouCarouselRowSkeleton]s [ForYouScreen] shows while every source is still
+ * loading. §6.2's own wording: real shelf count is unknown before any source resolves, so this is
+ * "a fixed, small placeholder count… pick something in the 2-4 range and state the choice in the
+ * wave's own commit message so the other platform's wave (or the `-P` review) can check they
+ * agree, though an exact match is not required — unlike the byte-for-byte strings in §6.3, this
+ * number is not a parity requirement." This wave picks **3**. */
+internal const val SKELETON_CAROUSEL_ROW_COUNT = 3
+
+/**
+ * One skeleton carousel "row": a heading-sized block (standing in for [FeedCarousel.label], which
+ * is unknown before a source resolves) followed by [SKELETON_ROW_CARD_COUNT] [ForYouCardSkeleton]s
+ * in a plain, non-scrolling [Row] — a real [ForYouCarouselRow] uses a [LazyRow] because its item
+ * count can exceed the screen width and needs to scroll; a skeleton row's item count is this
+ * file's own fixed constant, so a plain `Row` is both simpler and sufficient.
+ *
+ * **Deliberately carries no [Modifier.semantics] of its own.** A skeleton communicates "content is
+ * not here yet" visually; giving each placeholder block its own accessible name would just have
+ * TalkBack read out meaningless boxes mid-load. [ForYouScreen]'s live-region status announcer
+ * (§6.6) is what actually tells a screen-reader user the page is loading — that is the
+ * accessible signal for this state, not anything on these composables.
+ */
+@Composable
+fun ForYouCarouselRowSkeleton(modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        SkeletonBlock(
+            modifier =
+                Modifier
+                    .padding(horizontal = ForYouCarouselDimens.CARD_ROW_CONTENT_PADDING)
+                    .width(120.dp)
+                    .height(20.dp),
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.CARD_SPACING),
+            modifier =
+                Modifier
+                    .padding(top = ForYouCarouselDimens.TEXT_TOP_SPACING)
+                    .padding(horizontal = ForYouCarouselDimens.CARD_ROW_CONTENT_PADDING),
+        ) {
+            repeat(SKELETON_ROW_CARD_COUNT) {
+                ForYouCardSkeleton()
+            }
+        }
+    }
+}
+
+/** [QuickPickTile]'s loading placeholder: an art-sized block plus a title-row-height block,
+ * mirroring the real tile's `Row` shape exactly (icon-sized box, then text) so the grid's overall
+ * silhouette matches §3.3's "box dimensions must exactly match the loaded card" requirement. */
+@Composable
+private fun QuickPickTileSkeleton(modifier: Modifier = Modifier) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.fillMaxWidth()) {
+        SkeletonBlock(
+            modifier = Modifier.size(ForYouCarouselDimens.QUICK_TILE_COVER_SIZE),
+            shape = ForYouCarouselDimens.QUICK_TILE_ART_SHAPE,
+        )
+        SkeletonBlock(
+            modifier =
+                Modifier
+                    .padding(start = ForYouCarouselDimens.QUICK_GRID_SPACING)
+                    .weight(1f)
+                    .height(ForYouCarouselDimens.TITLE_ROW_HEIGHT),
+        )
+    }
+}
+
+/** §3.3's "a skeleton quick-picks grid (8 tiles at `QuickPickTile`'s box size)" — the exact count
+ * [QUICK_PICK_COUNT] in `ForYouViewModel.kt` caps a real grid at, so the loading silhouette and
+ * the eventual real grid occupy the same number of rows in the common case. */
+private const val SKELETON_QUICK_PICK_COUNT = 8
+
+/** [QuickPickGrid]'s loading placeholder, same two-column/chunked-pairs shape as the real grid,
+ * built from a fixed [SKELETON_QUICK_PICK_COUNT] rather than any real data — nothing is loaded
+ * yet, so there is no item list to chunk. */
+@Composable
+fun QuickPickGridSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.QUICK_GRID_SPACING),
+    ) {
+        repeat(SKELETON_QUICK_PICK_COUNT / 2) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.QUICK_GRID_SPACING),
+            ) {
+                QuickPickTileSkeleton(modifier = Modifier.weight(1f))
+                QuickPickTileSkeleton(modifier = Modifier.weight(1f))
             }
         }
     }

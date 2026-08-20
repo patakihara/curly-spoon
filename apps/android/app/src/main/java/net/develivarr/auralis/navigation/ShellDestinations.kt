@@ -1,7 +1,7 @@
 package net.develivarr.auralis.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Podcasts
@@ -16,7 +16,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * a rendering-order choice, not a property of this enum, so it isn't encoded here.
  */
 enum class ShellDestination(val route: String, val label: String, val icon: ImageVector) {
-    FOR_YOU(Routes.HOME, "For you", Icons.Filled.Home),
+    // docs/design/screens/FOR_YOU.md §6.1 — "Home"/"For You"/"Browse"/"Discover" are one
+    // destination under four names; Sofia picked "Browse" as the current UI-visible one. The
+    // `explore` icon matches web's Icon.tsx FILLABLE_ICON_NAMES (`Shell.tsx:46`), so both
+    // platforms independently arrived at the same glyph name for this destination.
+    FOR_YOU(Routes.HOME, "Browse", Icons.Filled.Explore),
     MUSIC(Routes.MUSIC, "Music", Icons.Filled.LibraryMusic),
     BOOKS(Routes.BOOKS, "Books", Icons.AutoMirrored.Filled.MenuBook),
     PODCASTS(Routes.PODCASTS, "Podcasts", Icons.Filled.Podcasts),
