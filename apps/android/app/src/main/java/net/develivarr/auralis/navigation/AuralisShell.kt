@@ -179,12 +179,20 @@ fun AuralisShell(
             if (isWide) {
                 Row(modifier = Modifier.fillMaxSize()) {
                     // Rail ordering (Search first) and the visibility filter (16d-A-2) both live
-                    // in ShellNavigationRailItems now — see its own doc comment.
+                    // in ShellNavigationRailItems now — see its own doc comment. Wave
+                    // 16e-settings-A (docs/design/screens/SETTINGS.md §6.1) adds one more
+                    // rail-footer item below it, ShellNavigationRailSettingsItem — a purely
+                    // additive call, wide-window (NavigationRail) only; see that composable's
+                    // own doc comment for why there is no bottom-NavigationBar equivalent.
                     NavigationRail {
                         ShellNavigationRailItems(
                             visibleDestinations = visibleDestinations,
                             activeDestination = activeDestination,
                             onNavigate = ::navigateTo,
+                        )
+                        ShellNavigationRailSettingsItem(
+                            selected = currentRoute == Routes.SETTINGS,
+                            onClick = { navController.navigate(Routes.SETTINGS) },
                         )
                     }
                     Scaffold(

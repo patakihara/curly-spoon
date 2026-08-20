@@ -154,11 +154,15 @@ private const val ACCENT_ROW_SIZE = 6
 
 private data class ThemeModeOption(val mode: ThemeMode, val label: String)
 
+// Order: System, Light, Dark — wave 16e-settings-A (docs/design/screens/SETTINGS.md §6.2).
+// Neither SONORA.md nor the vendored mock rules on order; matched to web's order per this
+// project's established tie-break (match web when nothing else decides it). Low risk:
+// SettingsContentTest.kt queries by testTag("theme-mode-${mode.name}"), not position.
 private val ThemeModeOptions =
     listOf(
+        ThemeModeOption(ThemeMode.SYSTEM, "System"),
         ThemeModeOption(ThemeMode.LIGHT, "Light"),
         ThemeModeOption(ThemeMode.DARK, "Dark"),
-        ThemeModeOption(ThemeMode.SYSTEM, "System"),
     )
 
 /**
