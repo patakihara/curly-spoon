@@ -148,6 +148,78 @@ test('an album with no tracks shows an empty state rather than an empty-looking 
   await expect(page.getByText('No tracks found for this album.')).toBeVisible();
 });
 
+test('the album header composes a meta line and links the artist', async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+  await expect(page.getByTestId('music-album-page')).toBeVisible();
+
+  // Literal example from ALBUM_DETAIL.md §5, checkable against the real fixture: year 2021,
+  // genre Synthwave, 2 tracks totalling 214s + 198s = 412s -> round(412/60) = 7 minutes.
+  await expect(page.getByTestId('music-album-page')).toContainText(
+    '2021 · Synthwave · 2 tracks · 7 m',
+  );
+
+  const artistLink = page.getByTestId('music-album-artist-link');
+  await expect(artistLink).toHaveText('The Nebula Collective');
+  await artistLink.click();
+
+  await expect(page.getByTestId('music-artist-page')).toBeVisible();
+  await expect(page.getByTestId('music-artist-name')).toHaveText('The Nebula Collective');
+});
+
+test('Play and Shuffle appear only when the album has tracks (§5)', async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+  await expect(page.getByTestId('music-album-play')).toBeVisible();
+  await expect(page.getByTestId('music-album-shuffle')).toBeVisible();
+
+  await page.goto('/music/album/album-nightglass');
+  await expect(page.getByTestId('music-album-page')).toBeVisible();
+  await expect(page.getByTestId('music-album-play')).toHaveCount(0);
+  await expect(page.getByTestId('music-album-shuffle')).toHaveCount(0);
+});
+
+test('Play starts the queue from the first track', async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-album-play').click();
+
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Tidal Lines');
+});
+
+test('Shuffle starts the queue and turns shuffle on', async ({ page }) => {
+  await page.goto('/music/album/album-driftwave');
+  await page.getByTestId('music-album-shuffle').click();
+
+  await expect(page.getByTestId('mini-player')).toBeVisible();
+  await page.getByTestId('mini-player-expand').click();
+  await expect(page.getByTestId('now-playing')).toBeVisible();
+  // `NowPlaying.tsx`'s shuffle control reflects `useMusicQueueStore`'s own state — this is
+  // the assertion that discriminates "Shuffle called toggleShuffle()" from "Shuffle behaves
+  // exactly like Play", which a mere mini-player-visible check could not tell apart.
+  await expect(page.getByTestId('player-shuffle-toggle')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the currently-playing track row is marked active, in its accessible name and its selected state', async ({
+  page,
+}) => {
+  await page.goto('/music/album/album-driftwave');
+
+  const row1 = page.getByTestId('music-track-track-driftwave-1');
+  const row2 = page.getByTestId('music-track-track-driftwave-2');
+  // Before anything plays: duration is announced (the §9 fix), but no row is "active".
+  await expect(row1).toHaveAttribute('aria-label', 'Tidal Lines, 3:34');
+  await expect(row2).toHaveAttribute('aria-label', 'Static Coast, 3:18');
+  await expect(row1).not.toHaveAttribute('aria-current', 'true');
+
+  await row1.click();
+  await expect(page.getByTestId('mini-player-title')).toContainText('Tidal Lines');
+
+  await expect(row1).toHaveAttribute('aria-label', 'Tidal Lines, 3:34, Playing');
+  await expect(row1).toHaveAttribute('aria-current', 'true');
+  // The other row's label and selection state are unaffected.
+  await expect(row2).toHaveAttribute('aria-label', 'Static Coast, 3:18');
+  await expect(row2).not.toHaveAttribute('aria-current', 'true');
+});
+
 test('searching finds a matching artist, album and track, each navigable', async ({ page }) => {
   await page.goto('/music');
 
