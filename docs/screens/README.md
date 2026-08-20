@@ -67,5 +67,6 @@ edit the mapping there, never these files.
 | `ButtonGroup` | 6 | S05, S19, S20, S25, S31, S32 |
 | `Badge` | 3 | S01, S02, S24 |
 | `Section` | 2 | S06, S09 |
+| `Button` | 1 | S02 |
 | `QuickPick` | 1 | S05 |
 | `ResultRow` | 1 | S32 |

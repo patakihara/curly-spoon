@@ -64,6 +64,7 @@ SCREENS = [
  ],
  "extended": [
    ("Badge", "`icon`, `plain`", "The verified marker is an attribute of the publisher, not a count."),
+   ("Button", "`pressed`", "`FollowButton` wraps `Button`, and `Button` destructures its seven props and renders its own element — so an `aria-pressed` passed through was silently dropped and the toggle had no pressed semantics at all. Only the real element can carry it. Undefined emits no attribute, so every ordinary button is untouched."),
  ],
  "existing": [
    ("SearchField", "Scoped search needs no new component — this is `SearchField` with a scoped placeholder. Sofia ruled out new search inputs by name."),

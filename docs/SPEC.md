@@ -384,6 +384,18 @@ of thing is what you scan for first, so it belongs above the title; Sonora's `su
 
 Keep the existing `sub` untouched. `eyebrow` renders above the title at `--text-xs` muted.
 
+## `core/Button.jsx` + `.d.ts`
+
+Add `pressed?: boolean` — sets `aria-pressed`; undefined emits no attribute at all.
+
+**Affordance: a button that is a toggle rather than a trigger.** Added mid-wave, after
+`FollowButton` was found to be passing `aria-pressed` into `Button` and having it silently
+discarded: `Button` destructures its seven declared props and renders its own `<button>`, so
+anything undeclared is dropped rather than forwarded. Only the real element can carry the
+attribute, so the prop has to exist. The alternative — `FollowButton` hand-rolling its own
+styled `<button>` — would have duplicated `Button`'s entire variant and size system to gain
+one attribute.
+
 ## `media/ResultRow.jsx` + `.d.ts`
 
 Add `trailing?: ReactNode` — rendered after the status pill, at the row's trailing edge.
