@@ -91,6 +91,28 @@ object ForYouCarouselDimens {
      * 8dp value; kept as its own literal here rather than reached through the shape scale, since
      * the design source itself deliberately does not treat this one as a token. */
     val QUICK_TILE_ART_SHAPE: Shape = RoundedCornerShape(8.dp)
+
+    /** §3.2's compact-column "Row gap" — the flex `gap` between [QuickPickTile]'s art tile and
+     * its text column, read off `docs/design/sonora/components/QuickPick.dc.html`'s own
+     * `rootStyle` for `platform: 'mobile'` (`gap: (mobile ? '10px' : '12px')`). Deliberately a
+     * distinct constant from [QUICK_GRID_SPACING] — that one is the *grid's* spacing between
+     * tiles/rows, page composition §3.2 does not touch, and reusing it here would have coupled
+     * two unrelated numbers that only happened to share a value (8dp) before this wave. */
+    val QUICK_ROW_GAP: Dp = 10.dp
+
+    /** §3.2's compact-column row padding — `QuickPick.dc.html`'s `padding: 8px`, identical at
+     * both breakpoints in Sonora's own source. */
+    val QUICK_ROW_PADDING: Dp = 8.dp
+
+    /** §3.2's compact-column row background/radius chrome, wave 16e-foryou-A-2: previously
+     * absent entirely — [QuickPickTile]'s `Row` carried no background, padding or radius of its
+     * own, confirmed pre-existing (not introduced by 16e-foryou-A) by reading the tree before
+     * this wave's first edit. Radius is `var(--radius-sm)` (16px), numerically the same value as
+     * [CARD_ART_SHAPE] (both read `--radius-sm`) but kept as its own named constant — the two
+     * shapes cover unrelated surfaces, a card's art tile versus a quick-pick row's own
+     * background, and conflating them would make a future change to one silently move the other.
+     */
+    val QUICK_ROW_SHAPE: Shape = RoundedCornerShape(16.dp)
 }
 
 /** The one icon [ForYouCard]/[QuickPickTile] fall back to behind a cover that hasn't loaded
@@ -234,19 +256,29 @@ fun ForYouCard(
             //
             // §3.1's "Absent pill (external)" row, wave 16e-foryou-A: pill radius
             // (MaterialTheme.shapes.extraLarge == --radius-pill, ui/theme/Shape.kt) and muted
-            // text colour (onSurfaceVariant, same role as the subtitle below) now match the
-            // table. Position (bottom-start) and background (a translucent surface tone, for
-            // legibility over arbitrary cover art) are pre-existing and unchanged — §10's
-            // Android list scopes this wave to "radius/typography changes" only, and a top-left
-            // reposition is a layout change the spec does not ask for; see this wave's report.
+            // text colour (onSurfaceVariant, same role as the subtitle below) match the table.
+            //
+            // Wave 16e-foryou-A-2: position and background corrected per the `16e-foryou-P`
+            // parity review. §3.1's table and `docs/design/sonora/components/MediaCard.dc.html`
+            // (`position:absolute;left:8px;top:8px`) both specify a TOP-LEFT overlay with a
+            // SOLID `var(--surface-bg)` background — this previously rendered bottom-start with
+            // a translucent `--surface-card` tone (wave 16e-foryou-A's own report justified that
+            // as "pre-existing, out of the wave's radius/typography scope", which the `-P` review
+            // overturned). `--surface-bg` maps to this theme's `background` chroma role, not
+            // `surface` (`--surface-bg` -> `--m3-background`/`--m3-surface` per `SONORA.md`;
+            // `colorScheme.background` is set from `SonoraPalette.Neutral900`/`SurfaceBgLight`,
+            // i.e. `--surface-bg`, in `ui/theme/Color.kt`) — `colorScheme.surface` is
+            // `--surface-card` instead, which is why the old code read the wrong role. The 8dp
+            // inset from each edge matches the citation above 1:1, same basis 16e-book-A-2 used
+            // for reading Sonora's px values as dp.
             if (item.isExternal) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.background,
                     shape = MaterialTheme.shapes.extraLarge,
                     modifier =
                         Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(4.dp),
+                            .align(Alignment.TopStart)
+                            .padding(8.dp),
                 ) {
                     Text(
                         text = EXTERNAL_RECOMMENDATION_LABEL,
@@ -376,10 +408,28 @@ fun QuickPickTile(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        // Wave 16e-foryou-A-2: §3.2's compact-column "Row gap" (10dp), replacing the previous
+        // `.padding(start = …)` on the title Text below — an `Arrangement` gap is the direct
+        // Compose analogue of the CSS `gap` property QuickPick.dc.html actually specifies,
+        // rather than a one-sided offset baked into one child.
+        horizontalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.QUICK_ROW_GAP),
         modifier =
             modifier
                 .fillMaxWidth()
-                .clickable(onClickLabel = feedItemContentDescription(item), onClick = onClick),
+                // §3.2's row chrome, previously absent entirely (see
+                // ForYouCarouselDimens.QUICK_ROW_SHAPE's doc comment): clip then paint the
+                // background so it respects the rounded corners, then clickable so its ripple is
+                // bounded by the same clip, then padding so the 8dp inset applies to the content
+                // rather than shrinking the clickable/background area.
+                .clip(ForYouCarouselDimens.QUICK_ROW_SHAPE)
+                // §3.2's compact-column background is `var(--m3-surface-container)`, which
+                // `SONORA.md`'s substitution table maps to `var(--surface-card)` in both themes —
+                // the same role `ui/theme/Color.kt` assigns to `colorScheme.surface` (see its own
+                // mapping comment). `colorScheme.background` would be the wrong role here; that
+                // one is `--surface-bg`, used for the external-item pill above instead.
+                .background(MaterialTheme.colorScheme.surface)
+                .clickable(onClickLabel = feedItemContentDescription(item), onClick = onClick)
+                .padding(ForYouCarouselDimens.QUICK_ROW_PADDING),
     ) {
         Box(
             modifier =
@@ -404,7 +454,8 @@ fun QuickPickTile(
             )
         }
         // §3.2's compact-column title: --text-sm (13px, labelMedium's size), weight 700,
-        // colour --m3-on-background.
+        // colour --m3-on-background. The art-to-text gap now comes from the Row's own
+        // `Arrangement.spacedBy(QUICK_ROW_GAP)` above, not a one-sided start-padding here.
         Text(
             text = item.title,
             style = MaterialTheme.typography.labelMedium,
@@ -412,7 +463,6 @@ fun QuickPickTile(
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = ForYouCarouselDimens.QUICK_GRID_SPACING),
         )
     }
 }
@@ -592,10 +642,26 @@ fun ForYouCarouselRowSkeleton(modifier: Modifier = Modifier) {
 
 /** [QuickPickTile]'s loading placeholder: an art-sized block plus a title-row-height block,
  * mirroring the real tile's `Row` shape exactly (icon-sized box, then text) so the grid's overall
- * silhouette matches §3.3's "box dimensions must exactly match the loaded card" requirement. */
+ * silhouette matches §3.3's "box dimensions must exactly match the loaded card" requirement.
+ *
+ * Wave 16e-foryou-A-2: the real tile's `Row` gained background/padding/radius/gap it previously
+ * had none of (see [QuickPickTile]), which grows its box by [ForYouCarouselDimens.QUICK_ROW_PADDING]
+ * on every edge. Mirroring the same chrome here — rather than leaving this skeleton at its old,
+ * now-smaller size — is required by this doc comment's own "box dimensions must exactly match"
+ * rule; leaving it unchanged would have reintroduced the loading-vs-loaded layout shift §3.3
+ * exists to prevent, just at the quick-pick grid instead of the carousel. */
 @Composable
 private fun QuickPickTileSkeleton(modifier: Modifier = Modifier) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.fillMaxWidth()) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(ForYouCarouselDimens.QUICK_ROW_GAP),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(ForYouCarouselDimens.QUICK_ROW_SHAPE)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(ForYouCarouselDimens.QUICK_ROW_PADDING),
+    ) {
         SkeletonBlock(
             modifier = Modifier.size(ForYouCarouselDimens.QUICK_TILE_COVER_SIZE),
             shape = ForYouCarouselDimens.QUICK_TILE_ART_SHAPE,
@@ -603,7 +669,6 @@ private fun QuickPickTileSkeleton(modifier: Modifier = Modifier) {
         SkeletonBlock(
             modifier =
                 Modifier
-                    .padding(start = ForYouCarouselDimens.QUICK_GRID_SPACING)
                     .weight(1f)
                     .height(ForYouCarouselDimens.TITLE_ROW_HEIGHT),
         )
