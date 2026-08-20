@@ -154,7 +154,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
       </Combobox.Target>
 
       <Combobox.Dropdown hidden={!showList}>
-        <Combobox.Options id={listboxId}>
+        <Combobox.Options id={listboxId} className="m3-search-field__suggestions">
           {suggestions.map((suggestion, index) => (
             <Combobox.Option
               key={suggestion.id}

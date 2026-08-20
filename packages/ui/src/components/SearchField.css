@@ -64,3 +64,23 @@
 .m3-search-field__suggestion:hover {
   background: var(--m3-surface-container-highest);
 }
+
+/*
+ * Bound the suggestion list's height.
+ *
+ * `SearchField` deliberately uses Mantine's raw `Combobox` rather than `Select`/`Autocomplete`,
+ * so that suggestion labels can be arbitrary `ReactNode`s and this component can own its own
+ * keyboard handling. The cost is that `maxDropdownHeight` — which lives on the higher-level
+ * `ComboboxLikeProps` API — does not apply here, and `Combobox.Options` grows without limit.
+ *
+ * Unbounded, eight suggestions run to roughly 350px, which on the search screen covers the
+ * filter-chip row immediately beneath the field. A floating dropdown overlapping the content
+ * below it is ordinary combobox behaviour and is not the problem; a dropdown that can grow
+ * without bound is, because how much of the page it swallows then depends on how many results
+ * the query happened to match.
+ */
+.m3-search-field__suggestions {
+  max-height: 40vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
