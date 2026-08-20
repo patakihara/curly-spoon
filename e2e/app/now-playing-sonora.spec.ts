@@ -231,8 +231,16 @@ test('the current queue row is visually highlighted, distinct from the pre-wave 
   const root = await themeRoot(page);
   const theme = await root.getAttribute('data-theme');
 
-  const currentRow = page.getByTestId('queue-entry-music-0'); // track-driftwave-1, the cursor
-  const nextRow = page.getByTestId('queue-entry-music-1'); // track-driftwave-2, not current
+  // `data-testid` sits on the `<li>` wrapper (`QueueView.tsx`'s own comment explains
+  // why); the `.m3-list-item`/`.m3-list-item--selected` classes this wave's CSS
+  // targets live on `ListItem`'s own rendered child instead, so the background has to
+  // be read from `.m3-list-item`, not the `<li>` itself (which never has one).
+  const currentRow = page
+    .getByTestId('queue-entry-music-0') // track-driftwave-1, the cursor
+    .locator('.m3-list-item');
+  const nextRow = page
+    .getByTestId('queue-entry-music-1') // track-driftwave-2, not current
+    .locator('.m3-list-item');
 
   const currentBg = await currentRow.evaluate((el) => getComputedStyle(el).backgroundColor);
   const nextBg = await nextRow.evaluate((el) => getComputedStyle(el).backgroundColor);
