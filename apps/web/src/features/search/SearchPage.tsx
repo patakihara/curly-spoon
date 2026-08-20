@@ -293,6 +293,16 @@ export function SearchPage() {
         />
       </div>
 
+      {/* Wave 16h-chip-singleselect recon: both rows below ARE genuinely single-select
+          (`filters.primary`/`filters.secondary` are each one scalar value), but neither
+          is wired to `Chip`'s `radioGroup` prop, matching `HomePage.tsx`'s For You
+          filter row for the same reason. `searchFilters.ts`'s own doc comment states it
+          outright: "Both chip rows behave as single-select toggles: clicking the
+          already-active chip clears it back to 'all'". A native `<input type="radio">`
+          never fires a change event on a second click of the already-checked option, so
+          converting either row would silently drop that click-to-clear convenience.
+          Left as checkbox semantics on purpose; see `Chip.tsx`'s `radioGroup` doc
+          comment. */}
       <div
         data-testid="search-filter-primary"
         role="group"

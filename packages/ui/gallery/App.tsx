@@ -340,8 +340,17 @@ function SearchFieldGallery() {
   );
 }
 
+const RADIO_OPTIONS = ['newest', 'oldest', 'title'] as const;
+
 function ChipGallery() {
   const [selected, setSelected] = useState(true);
+  // Wave 16h-chip-singleselect: proves `radioGroup` end to end — three mutually
+  // exclusive options sharing one `name`, driven by one scalar `radioValue`, the same
+  // shape `SettingsPage.tsx`'s theme-mode row uses. `e2e/ui/chip.spec.ts` asserts both
+  // that the underlying inputs are `type="radio"` and that selecting one deselects the
+  // others in the accessibility tree — the regression guard for every ungrouped/
+  // multi-select `filter` chip elsewhere in the app, which must render unaffected.
+  const [radioValue, setRadioValue] = useState<(typeof RADIO_OPTIONS)[number]>('newest');
   return (
     <Section title="Chip">
       <Chip variant="assist" icon={<Icon name="download" />} data-testid="chip-assist">
@@ -358,6 +367,21 @@ function ChipGallery() {
       <Chip variant="input" onRemove={() => {}} data-testid="chip-input">
         Fiction
       </Chip>
+      <div role="radiogroup" aria-label="Order" data-testid="chip-radio-group">
+        {RADIO_OPTIONS.map((option) => (
+          <Chip
+            key={option}
+            variant="filter"
+            selected={radioValue === option}
+            onSelectedChange={() => setRadioValue(option)}
+            radioGroup="gallery-order"
+            value={option}
+            data-testid={`chip-radio-${option}`}
+          >
+            {option}
+          </Chip>
+        ))}
+      </div>
     </Section>
   );
 }

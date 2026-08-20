@@ -167,16 +167,23 @@ export function PodcastDetailPage() {
           <h2>Episodes</h2>
           <div
             data-testid="episode-order-controls"
-            role="group"
+            role="radiogroup"
             aria-label="Episode order"
             style={{ display: 'flex', gap: 8 }}
           >
             {ORDER_OPTIONS.map((option) => (
+              // Wave 16h-chip-singleselect: `order` is always exactly one of
+              // `ORDER_OPTIONS` (newest/oldest), never "none" — a lossless fit for
+              // `Chip`'s opt-in `radioGroup` prop (see that prop's doc comment on
+              // `ChipProps`). `value={option.key}` lets the browser tell the two inputs
+              // apart.
               <Chip
                 key={option.key}
                 variant="filter"
                 selected={order === option.key}
                 onSelectedChange={() => setOrder(option.key)}
+                radioGroup="episode-order"
+                value={option.key}
                 data-testid={`episode-order-${option.key}`}
               >
                 {option.label}

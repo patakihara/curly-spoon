@@ -67,6 +67,60 @@ test.describe('Chip', () => {
     await page.getByTestId('mode-dark').click();
   });
 
+  test('a filter chip stays checkbox-shaped by default — the radioGroup prop is opt-in', async ({
+    page,
+  }) => {
+    // Wave 16h-chip-singleselect: the ungrouped `chip-filter` (no `radioGroup` prop)
+    // must be byte-for-byte unaffected by adding the prop — every existing multi-select
+    // filter row in the app (For You's content-type filter, Search's two rows) depends
+    // on this staying `type="checkbox"`. DISCRIMINATES: fails if `radioGroup`'s default
+    // ever leaked a `type="radio"` onto a chip that never opted in.
+    const chip = page.getByTestId('chip-filter').locator('input').first();
+    await expect(chip).toHaveAttribute('type', 'checkbox');
+    await expect(chip).not.toHaveAttribute('name', /.+/);
+  });
+
+  test('radioGroup renders native radio inputs, exclusive in the accessibility tree', async ({
+    page,
+  }) => {
+    // Wave 16h-chip-singleselect. DISCRIMINATES on both fronts:
+    // - the `type="radio"` assertion fails against the pre-wave `Chip` (which had no
+    //   `radioGroup` prop at all, so every filter chip was always `type="checkbox"`);
+    // - the exclusivity assertions fail if `radioGroup` merely painted the type without
+    //   the shared `name` actually grouping the inputs (e.g. a typo'd or per-chip-unique
+    //   `name`), since the browser only tracks radios sharing one `name`+form as one
+    //   group. Clicking a native `<input type="radio">` unchecks its group siblings
+    //   without their own change event firing — this is verified as an observed
+    //   accessibility-tree state, not inferred from the click handler running.
+    const group = page.getByTestId('chip-radio-group');
+    const newest = group.getByTestId('chip-radio-newest').locator('input');
+    const oldest = group.getByTestId('chip-radio-oldest').locator('input');
+    const title = group.getByTestId('chip-radio-title').locator('input');
+
+    await expect(newest).toHaveAttribute('type', 'radio');
+    await expect(oldest).toHaveAttribute('type', 'radio');
+    await expect(title).toHaveAttribute('type', 'radio');
+    const groupName = await newest.getAttribute('name');
+    expect(groupName).toBeTruthy();
+    await expect(oldest).toHaveAttribute('name', groupName!);
+    await expect(title).toHaveAttribute('name', groupName!);
+
+    // Default selection.
+    await expect(newest).toBeChecked();
+    await expect(oldest).not.toBeChecked();
+    await expect(title).not.toBeChecked();
+
+    // Selecting a different option deselects the previous one — exclusivity, not just
+    // a repainted label.
+    await group.getByTestId('chip-radio-title').locator('label').click();
+    await expect(title).toBeChecked();
+    await expect(newest).not.toBeChecked();
+    await expect(oldest).not.toBeChecked();
+
+    // restore for other tests sharing this worker's page context
+    await group.getByTestId('chip-radio-newest').locator('label').click();
+  });
+
   test('an unchecked chip has a real surface-card fill, not a near-invisible outline', async ({
     page,
   }) => {

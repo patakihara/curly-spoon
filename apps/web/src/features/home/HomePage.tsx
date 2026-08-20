@@ -401,6 +401,16 @@ export function HomePage() {
             style={FILTER_ROW_STYLE}
             data-testid="for-you-filter"
           >
+            {/* Wave 16h-chip-singleselect recon: this row IS genuinely single-select
+                (`filter` is one scalar value), but it is deliberately NOT wired to
+                `Chip`'s `radioGroup` prop, unlike the theme-mode/episode-order/sort
+                rows. `selectForYouFilter` lets clicking the already-selected chip
+                toggle back to "all" — `for-you.spec.ts`'s "Toggling the same chip off …
+                returns to All" pins exactly this by clicking `for-you-filter-books`
+                twice. A native `<input type="radio">` never fires a change event on a
+                second click of the already-checked option, so converting this row would
+                silently break that click-to-clear convenience. Left as checkbox
+                semantics on purpose; see `Chip.tsx`'s `radioGroup` doc comment. */}
             {FOR_YOU_FILTER_OPTIONS.map((option) => (
               <Chip
                 key={option.value}

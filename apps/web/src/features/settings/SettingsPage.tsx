@@ -52,7 +52,12 @@ export function SettingsPage() {
 
       <section>
         <h2>Appearance</h2>
-        <div className="auralis-settings-row" data-testid="theme-mode-controls">
+        <div
+          className="auralis-settings-row"
+          data-testid="theme-mode-controls"
+          role="radiogroup"
+          aria-label="Theme mode"
+        >
           {MODES.map((candidate) => (
             // Wave 16e-settings-W (SETTINGS.md §6.6): this used to be a `Button` whose
             // inline `style` block hand-copied `Chip.tsx`'s own selected/unselected
@@ -63,21 +68,25 @@ export function SettingsPage() {
             // `--surface-fg`/`--surface-border` unfilled), so this row needs no style
             // override at all.
             //
-            // Accessibility note (SETTINGS.md §11): `Chip`'s underlying control is
-            // Mantine's checkbox-shaped `<input type="checkbox">` (see `Chip.tsx`'s own
-            // header comment and `e2e/ui/chip.spec.ts`), so there is no `aria-pressed`
-            // here the way the old `Button` had — selection is conveyed by the input's
-            // native `checked` state instead, asserted via `.toBeChecked()` in
-            // `settings-a11y.spec.ts`. That is `role="checkbox"`/checked-state
-            // semantics, not a radio group, even though these three chips are mutually
-            // exclusive — a real, named gap inherited from `Chip.tsx` (out of scope
-            // here; `Chip.tsx` is `packages/ui` primitive work, not this screen's
-            // restyle) rather than something this wave fixed or worked around.
+            // Wave 16h-chip-singleselect (found by `16e-settings-P`): these three modes
+            // are mutually exclusive, so `Chip`'s new opt-in `radioGroup` prop is wired
+            // in here — see `Chip.tsx`'s doc comment on that prop. The underlying
+            // control is now `<input type="radio" name="theme-mode">`, so a screen
+            // reader announces "radio button, N of 3" and excludes the other two,
+            // matching the actual one-of-three semantics rather than three independent
+            // checkboxes. `value={candidate}` is required so the browser can tell the
+            // three inputs apart (Chip forwards it straight through to Mantine's own
+            // `value` prop — see `ChipProps` extending `ButtonHTMLAttributes`, which
+            // already declares `value`). Selection is still conveyed by the input's
+            // native `checked` state, asserted via `.toBeChecked()` in
+            // `settings-a11y.spec.ts`.
             <Chip
               key={candidate}
               variant="filter"
               selected={mode === candidate}
               onSelectedChange={() => setMode(candidate)}
+              radioGroup="theme-mode"
+              value={candidate}
               data-testid={`theme-mode-${candidate}`}
             >
               {candidate}
