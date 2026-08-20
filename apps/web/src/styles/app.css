@@ -814,15 +814,23 @@ html body {
   flex-direction: column;
 }
 
+/* Wave 16e-nowplaying (docs/design/screens/NOW_PLAYING.md §3.2): "not pinned precisely —
+   use --text-md weight 600 title / --text-sm muted artist, consistent with every other
+   row-shaped primitive". `MiniPlayer`/`TrackRow` were never vendored as Sonora primitives
+   (§3.2's own note), so these sizes are read from context rather than a literal source
+   value; `--surface-fg-muted` on the author line matches the muted role every other
+   restyled text-row in this app already uses (`app.css`'s other `--surface-fg-muted`
+   call sites), migrating it off `--m3-on-surface-variant`. */
 .auralis-mini-player__title {
   display: block;
   min-width: 0;
+  font-size: var(--text-md);
   font-weight: 600;
 }
 
 .auralis-mini-player__author {
-  color: var(--m3-on-surface-variant);
-  font-size: var(--m3-type-body-small-size);
+  color: var(--surface-fg-muted);
+  font-size: var(--text-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -862,20 +870,68 @@ html body {
   width: 100%;
   max-width: 320px;
   aspect-ratio: 1;
-  border-radius: var(--m3-shape-lg);
   object-fit: cover;
   background: var(--m3-surface-container);
   margin: 0 auto;
 }
 
+/* Wave 16e-nowplaying (§3.3): art radius, title face/weight/size and subtitle size/colour
+   each get a *different* value at `expanded` (Sonora's desktop panel, `:210,:213,:214`)
+   than at `compact`/`medium` (Sonora's mobile sheet, `:388,:389,:394`) — both cited
+   directly in the geometry table rather than picked. `--font-display`/weight 900 is
+   shared across both; only the size differs (`--text-2xl` desktop / `--text-4xl`
+   mobile), so it sits on the unscoped base rule rather than being repeated twice. */
+.auralis-now-playing--expanded .auralis-now-playing__art {
+  border-radius: var(--radius-md);
+}
+
+.auralis-now-playing--compact .auralis-now-playing__art,
+.auralis-now-playing--medium .auralis-now-playing__art {
+  border-radius: var(--radius-lg);
+}
+
 .auralis-now-playing__title {
-  font-size: var(--m3-type-headline-small-size);
+  font-family: var(--font-display);
+  font-weight: 900;
   margin: 0;
 }
 
+.auralis-now-playing--expanded .auralis-now-playing__title {
+  font-size: var(--text-2xl);
+}
+
+.auralis-now-playing--compact .auralis-now-playing__title,
+.auralis-now-playing--medium .auralis-now-playing__title {
+  font-size: var(--text-4xl);
+}
+
 .auralis-now-playing__author {
-  color: var(--m3-on-surface-variant);
   margin: var(--m3-space-xs) 0 0;
+}
+
+/* Sonora's own mock uses different colour roles for this line at each width — a Sonora
+   token (`--surface-fg-muted`) on the desktop panel, the pre-existing `--m3-*` role on
+   the mobile sheet (`:214` vs `:389`) — so this is transcribed as-is rather than
+   unified onto one role neither citation actually specifies for both. */
+.auralis-now-playing--expanded .auralis-now-playing__author {
+  font-size: var(--text-md);
+  color: var(--surface-fg-muted);
+}
+
+.auralis-now-playing--compact .auralis-now-playing__author,
+.auralis-now-playing--medium .auralis-now-playing__author {
+  font-size: var(--text-lg);
+  color: var(--m3-on-surface-variant);
+}
+
+/* New content (§6.3) — music only, "Playing from {album}". One size/colour at every
+   breakpoint: §3.3's table gives this row a single value with no desktop/mobile split
+   (unlike title/art/subtitle above), and §3.1's ruling keeps one shared JSX structure
+   across all three breakpoints rather than Sonora's separate desktop-panel-only markup. */
+.auralis-now-playing__context {
+  font-size: var(--text-sm);
+  color: var(--surface-fg-muted);
+  margin: 0;
 }
 
 .auralis-now-playing__times {
@@ -901,7 +957,33 @@ html body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--m3-space-sm);
+  gap: var(--m3-space-md);
+}
+
+/* Wave 16e-nowplaying (§3.3): "two side-by-side pills" — the rate control (this new
+   wrapper) and the sleep timer (`.auralis-sleep-timer`, below), each `padding: 14px
+   16px`, `border-radius`/`background` swapping between the mobile-sheet values
+   (`--radius-sm`/`--m3-surface-container`) and the desktop-panel values
+   (`--radius-xs`/`--surface-card`) exactly as §3.3's table gives them. */
+.auralis-now-playing__rate-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--m3-space-xs);
+  padding: 14px 16px;
+}
+
+.auralis-now-playing--compact .auralis-now-playing__rate-pill,
+.auralis-now-playing--compact .auralis-sleep-timer,
+.auralis-now-playing--medium .auralis-now-playing__rate-pill,
+.auralis-now-playing--medium .auralis-sleep-timer {
+  border-radius: var(--radius-sm);
+  background: var(--m3-surface-container);
+}
+
+.auralis-now-playing--expanded .auralis-now-playing__rate-pill,
+.auralis-now-playing--expanded .auralis-sleep-timer {
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
 }
 
 /* Shuffle/repeat (music-only — see NowPlaying.tsx's `showQueueControls`). */
@@ -965,6 +1047,24 @@ html body {
   padding: var(--m3-space-sm) 0;
 }
 
+/* Wave 16e-nowplaying (§3.4/§6.4): the current-row background, additive alongside
+   `ListItem`'s existing `selected`/`aria-current` mechanism (§6.4 — "no new state, no
+   new prop"). `ListItem` itself is not migrated off `--m3-*` in this wave (§7), so this
+   overrides `.m3-list-item--selected`'s background at the call site only, scoped to
+   queue rows — two classes' worth of specificity beats `.m3-list-item--selected` alone
+   with no `!important` needed. Non-current rows stay `transparent`, `ListItem`'s own
+   unselected default, unchanged. */
+.auralis-now-playing--compact .auralis-queue-view__list .m3-list-item--selected,
+.auralis-now-playing--medium .auralis-queue-view__list .m3-list-item--selected {
+  border-radius: var(--radius-sm);
+  background: var(--m3-surface-container);
+}
+
+.auralis-now-playing--expanded .auralis-queue-view__list .m3-list-item--selected {
+  border-radius: var(--radius-xs);
+  background: var(--surface-card);
+}
+
 .auralis-lyrics {
   list-style: none;
   margin: 0;
@@ -981,15 +1081,29 @@ html body {
   padding: var(--m3-space-sm) 0;
 }
 
+/* Wave 16e-nowplaying (§3.5/§6.5): Sonora's three-way line treatment, replacing the old
+   two-state active/inactive pair. Base = "not yet reached" (the common case: before
+   playback starts, and every line for an unsynced track — see `LyricsView.tsx`'s
+   `isActive`/`isPassed` gating). Neither `--passed` nor the base role pins a font-size
+   in §3.5's table — only the active line does — so both keep the pre-existing body-large
+   size; only weight/colour differ between them, which §11 explicitly allows ("a
+   colour-only distinction between 'passed' and 'not yet reached' is fine"). */
 .auralis-lyrics__line {
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg);
   font-size: var(--m3-type-body-large-size);
+  font-weight: 500;
   transition: color 150ms ease;
 }
 
+.auralis-lyrics__line--passed {
+  color: var(--surface-fg-muted);
+  font-weight: 500;
+}
+
 .auralis-lyrics__line--active {
-  color: var(--m3-on-surface);
-  font-weight: 600;
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: var(--text-lg);
 }
 
 .auralis-bookmarks__row {
@@ -1002,11 +1116,16 @@ html body {
   flex: 1;
 }
 
+/* Wave 16e-nowplaying (§3.3): the second of the "two side-by-side pills" — see
+   `.auralis-now-playing__rate-pill`'s comment above for the radius/background rules.
+   `padding` lands here on the existing root rather than needing a new wrapper, since
+   this class is already this component's own top-level element. */
 .auralis-sleep-timer {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--m3-space-xs);
+  padding: 14px 16px;
 }
 
 .auralis-sleep-timer__menu {

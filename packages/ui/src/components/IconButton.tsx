@@ -36,6 +36,18 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   /** When set, the button behaves as a two-state toggle (`aria-pressed`). */
   selected?: boolean;
   onSelectedChange?: (selected: boolean) => void;
+  /**
+   * Overrides the default `TOUCH_TARGET_MIN` (48px), in CSS px. Additive only — every
+   * existing call site that doesn't pass this keeps today's fixed 48px size unchanged.
+   * Added for wave 16e-nowplaying (`docs/design/screens/NOW_PLAYING.md` §3.3): Sonora's
+   * mobile Now Playing sheet wants three distinct transport-button sizes in one row
+   * (48/56/72), which nothing in this component could express before. Never goes below
+   * `TOUCH_TARGET_MIN` in practice — a caller passing something smaller would shrink the
+   * touch target below the accessibility floor `TOUCH_TARGET_MIN` documents, so this is
+   * deliberately not clamped here; the burden is on the caller, the same as any other
+   * prop that could be misused.
+   */
+  size?: number;
   children: ReactNode;
 }
 
@@ -74,6 +86,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
     disabled,
     className,
     style,
+    size,
     children,
     ...rest
   },
@@ -90,7 +103,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
     <ActionIcon
       ref={ref}
       type="button"
-      size={TOUCH_TARGET_MIN}
+      size={size ?? TOUCH_TARGET_MIN}
       variant={mantineVariant}
       color={color}
       disabled={disabled}

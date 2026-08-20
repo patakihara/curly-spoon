@@ -70,7 +70,17 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
             width: 96,
           })}
           alt=""
-          size={48}
+          // Wave 16e-nowplaying (docs/design/screens/NOW_PLAYING.md §3.2): Sonora's
+          // `--miniplayer-album-size` token is 44px; this was hardcoded to 48px, one of
+          // this app's four uses of `TOUCH_TARGET_MIN` bleeding into a value that was
+          // never actually a touch target (the whole `.auralis-mini-player__body` button
+          // is the click target, not the cover art specifically). `CoverImage`'s `size`
+          // prop is a plain number (CSS px), not a CSS-var-capable string, so this is a
+          // literal 44 rather than `var(--miniplayer-album-size)` — widening `CoverImage`
+          // to accept a token string would touch a component with nineteen other call
+          // sites (`grep -rln "<CoverImage" apps/web/src`, ten other files) for a value
+          // only this one needs.
+          size={44}
           fallbackIcon={COVER_FALLBACK_ICON[currentItem.media.kind]}
           style={{ flexShrink: 0 }}
         />

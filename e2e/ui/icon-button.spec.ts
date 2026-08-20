@@ -74,4 +74,31 @@ test.describe('IconButton', () => {
     await toggle.click(); // restore selected=false
     await page.getByTestId('mode-dark').click(); // restore for other tests
   });
+
+  // Wave 16e-nowplaying (docs/design/screens/NOW_PLAYING.md §3.3): the new optional `size`
+  // prop, added for the Now Playing surface's differentiated transport-button sizing
+  // (48/56/72px). Both halves matter — the new prop must actually resize the button
+  // (discriminates: this fails against the pre-wave IconButton, which had no `size` prop
+  // at all and always rendered 48px regardless), and every pre-existing call site that
+  // omits `size` must be completely unaffected (discriminates against a regression that
+  // changed the *default*, not just one that failed to add the override).
+  test('the optional size prop overrides the 48px default, and every call site that omits it is unaffected', async ({
+    page,
+  }) => {
+    const sized = page.getByTestId('icon-button-size-64');
+    const sizedBox = await sized.boundingBox();
+    expect(sizedBox?.width).toBeCloseTo(64, 0);
+    expect(sizedBox?.height).toBeCloseTo(64, 0);
+
+    // Every default-sized variant from the first test in this file, re-checked here
+    // alongside the new sized button so "additive only" is proven in the same test as
+    // the new capability, rather than in a separate test that could pass on its own
+    // while a shared default silently shifted.
+    for (const variant of ['standard', 'filled', 'tonal', 'outlined']) {
+      const button = page.getByTestId(`icon-button-${variant}`);
+      const box = await button.boundingBox();
+      expect(box?.width).toBeCloseTo(48, 0);
+      expect(box?.height).toBeCloseTo(48, 0);
+    }
+  });
 });

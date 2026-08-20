@@ -21,7 +21,12 @@ import { BookmarkControls } from './BookmarkControls.js';
 import { ChapterList } from './ChapterList.js';
 import { LyricsView } from './LyricsView.js';
 import { chapterAt, formatDuration, nextRate, trackAt } from './playback.js';
-import { formatRemaining, playerArtworkUrl, playerDisplayMeta } from './playerUi.js';
+import {
+  formatRemaining,
+  nowPlayingContextLine,
+  playerArtworkUrl,
+  playerDisplayMeta,
+} from './playerUi.js';
 import { QueueView } from './QueueView.js';
 import { SleepTimerControl } from './SleepTimerControl.js';
 
@@ -100,6 +105,12 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
     currentTrackArtist: trackAt(tracks, currentTime)?.track.artist ?? null,
   });
   const chapter = chapterAt(chapters, currentTime);
+  // Music only (§6.3) — `currentItem.media.title` is the album/playlist container's own
+  // name for a track-kind item (see `nowPlayingContextLine`'s own doc comment for why),
+  // never composed for a book or podcast, which already show their own equivalent
+  // context (author, or the podcast's title as `secondary`/the chapter line above).
+  const contextLine =
+    currentItem.media.kind === 'track' ? nowPlayingContextLine(currentItem.media.title) : null;
 
   const content = (
     <div
@@ -129,6 +140,11 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
             {secondary}
           </p>
         ) : null}
+        {contextLine ? (
+          <p className="auralis-now-playing__context" data-testid="now-playing-context">
+            {contextLine}
+          </p>
+        ) : null}
         <p data-testid="now-playing-chapter">{chapter?.title ?? ''}</p>
       </div>
 
@@ -148,8 +164,17 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
         </div>
       </div>
 
+      {/* Wave 16e-nowplaying (§3.3): three distinct transport sizes, Sonora's mobile-sheet
+          values (48/56/72) applied uniformly rather than only below `expanded` — this row
+          is one shared JSX tree at every breakpoint (§3.1's "single scrolling stack"
+          ruling), and §3.3's table gives no separate desktop-panel row for these sizes.
+          Web has no Prev/Next tier (§6.6, §7 — Android-only); skip back/forward take the
+          56px tier Sonora reserves for the buttons flanking Play/Pause, which is the role
+          they play here. Play/Pause was already `variant="filled"` (accent fill, already
+          correct per §3.3) and only needed the new size, not new colour logic. */}
       <div className="auralis-now-playing__transport">
         <IconButton
+          size={56}
           aria-label={`Skip back ${skipBackSeconds} seconds`}
           data-testid="player-skip-back"
           onClick={() => skip(-skipBackSeconds)}
@@ -158,6 +183,7 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
         </IconButton>
         <IconButton
           variant="filled"
+          size={72}
           aria-label={isPlaying ? 'Pause' : 'Play'}
           data-testid="player-play-toggle"
           onClick={() => (isPlaying ? pause() : play())}
@@ -165,6 +191,7 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
           <Icon name={isPlaying ? 'pause' : 'play'} />
         </IconButton>
         <IconButton
+          size={56}
           aria-label={`Skip forward ${skipForwardSeconds} seconds`}
           data-testid="player-skip-forward"
           onClick={() => skip(skipForwardSeconds)}
@@ -201,22 +228,29 @@ export function NowPlaying({ open, onClose }: NowPlayingProps) {
 
       <QueueView />
 
+      {/* Wave 16e-nowplaying (§3.3): "two side-by-side pills" — the rate control and the
+          sleep timer, each its own pill (padding, radius, background). The rate group
+          needs a new wrapper to become one pill; `SleepTimerControl` already renders its
+          own `.auralis-sleep-timer` root, so that one's pill styling lands directly on an
+          existing class rather than a new wrapper. */}
       <div className="auralis-now-playing__rate">
-        <IconButton
-          aria-label="Slower"
-          data-testid="player-rate-decrease"
-          onClick={() => setRate(nextRate(playbackRate, -1))}
-        >
-          <Icon name="speed" />
-        </IconButton>
-        <span data-testid="player-rate">{playbackRate}x</span>
-        <IconButton
-          aria-label="Faster"
-          data-testid="player-rate-increase"
-          onClick={() => setRate(nextRate(playbackRate, 1))}
-        >
-          <Icon name="speed" />
-        </IconButton>
+        <div className="auralis-now-playing__rate-pill">
+          <IconButton
+            aria-label="Slower"
+            data-testid="player-rate-decrease"
+            onClick={() => setRate(nextRate(playbackRate, -1))}
+          >
+            <Icon name="speed" />
+          </IconButton>
+          <span data-testid="player-rate">{playbackRate}x</span>
+          <IconButton
+            aria-label="Faster"
+            data-testid="player-rate-increase"
+            onClick={() => setRate(nextRate(playbackRate, 1))}
+          >
+            <Icon name="speed" />
+          </IconButton>
+        </div>
         <SleepTimerControl />
       </div>
 
