@@ -63,6 +63,12 @@ export interface MediaHeaderProps {
   /** Small-caps, muted kind label (SONORA.md §3.5) — e.g. `"Audiobook"`, `"Podcast"`. */
   kindLabel: string;
   title: string;
+  /** Applied to the title `<h1>`'s `data-testid` — optional, since the book and podcast call
+   * sites locate it by `getByRole('heading', ...)` and pass nothing. Added for
+   * `MusicAlbumPage.tsx` (16e-album-W), whose e2e suite already had a stable
+   * `music-album-name` locator predating this adoption; `undefined` renders no attribute, so
+   * this changes nothing for the other two call sites. */
+  titleTestId?: string;
   /** The item's own subtitle field (books only, e.g. "A Dune Novel") — rendered above
    * `subtitle`, plain text, no link. Omitted entirely (no empty row) when absent. */
   byline?: string | null;
@@ -83,6 +89,7 @@ export function MediaHeader({
   fallbackIcon,
   kindLabel,
   title,
+  titleTestId,
   byline,
   subtitle,
   meta,
@@ -112,7 +119,9 @@ export function MediaHeader({
       />
       <div className="auralis-item-header__meta">
         <span className="auralis-item-header__kind">{kindLabel}</span>
-        <h1 className="auralis-item-header__title">{title}</h1>
+        <h1 className="auralis-item-header__title" data-testid={titleTestId}>
+          {title}
+        </h1>
         {byline ? <p className="auralis-item-header__byline">{byline}</p> : null}
         {subtitle}
         {meta ? <p className="auralis-item-header__meta-line">{meta}</p> : null}
