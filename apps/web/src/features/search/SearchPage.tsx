@@ -102,6 +102,21 @@ export function SearchPage() {
   const searchFocusToken = useUiStore((s) => s.searchFocusToken);
   const trimmedQuery = query.trim();
 
+  // `SearchField.tsx` opens its suggestion dropdown on focus/typing but has no built-in
+  // close-on-blur — nothing needed one before this wave, since nothing ever passed it real
+  // suggestions. With real ones wired, Mantine's `Combobox.Dropdown` is `withinPortal={false}`
+  // and floats in place with no z-index awareness of what follows it in the page, so an open
+  // dropdown physically overlaps and intercepts clicks on the filter chips row directly below
+  // — a real, discoverable bug (type a query, then try to tap "Books" without dismissing the
+  // dropdown first), not just a test artifact; `search-view.spec.ts`'s existing chip tests
+  // caught it. §6.2's own visibility rule ("shows only while the field has focus") is the fix:
+  // enforced here, at the call site, by gating the `suggestions` array on whether focus is
+  // still somewhere inside the field wrapper — collapses `hasSuggestions` to false and the
+  // dropdown closes, without touching `SearchField.tsx` itself (out of this wave's scope).
+  // Clicking a suggestion is unaffected: its own `onMouseDown` already calls
+  // `preventDefault()` specifically so the input never blurs before the click registers.
+  const [fieldFocused, setFieldFocused] = useState(false);
+
   const [filters, setFilters] = useState<SearchFilterState>(DEFAULT_SEARCH_FILTER_STATE);
   const visible = visibleKinds(filters.primary, filters.secondary);
   const secondaryOptions = secondaryFilterOptions(filters.primary);
@@ -193,8 +208,9 @@ export function SearchPage() {
   // `SearchField`'s `suggestions` prop is structurally typed `{ id, label }[]`; passing the
   // richer `SearchSuggestionEntry[]` through it and reading the extra fields back off the
   // object `onSuggestionSelect` hands back is safe without widening the primitive's own type
-  // — see `searchSuggestions.ts`'s `SearchSuggestionEntry` doc comment.
-  const suggestions: SearchSuggestion[] = suggestionEntries;
+  // — see `searchSuggestions.ts`'s `SearchSuggestionEntry` doc comment. Gated on
+  // `fieldFocused` — see that state's own doc comment for why.
+  const suggestions: SearchSuggestion[] = fieldFocused ? suggestionEntries : [];
 
   function navigateToSuggestion(suggestion: SearchSuggestion) {
     const entry = suggestion as SearchSuggestionEntry;
@@ -255,7 +271,18 @@ export function SearchPage() {
   return (
     <div className="auralis-page" data-testid="search-page">
       <h1>Search</h1>
-      <div data-testid="search-field">
+      <div
+        data-testid="search-field"
+        onFocus={() => setFieldFocused(true)}
+        onBlur={(event) => {
+          // Only clear when focus has left the whole wrapper (not moved from the input to a
+          // child inside it) — `relatedTarget` is the element about to receive focus, `null`
+          // when nothing focusable claims it (e.g. a plain click on the page background).
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setFieldFocused(false);
+          }
+        }}
+      >
         <SearchField
           ref={inputRef}
           value={query}

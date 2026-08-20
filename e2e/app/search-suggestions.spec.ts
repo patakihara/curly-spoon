@@ -45,26 +45,39 @@ test('selecting a suggestion by click navigates to the right route and updates t
   const field = page.getByTestId('search-field');
   const input = field.getByRole('combobox');
   await input.fill('dune');
+  await expect(field.getByRole('option', { name: 'Dune · Book' })).toBeVisible();
 
   await field.getByRole('option', { name: 'Dune · Book' }).click();
 
   await expect(page).toHaveURL(/\/item\/item-dune$/);
-  // The field's text becomes the suggestion's plain title ("Dune"), not the typed query
-  // ("dune") and not the decorated "Dune · Book" label.
-  await expect(input).toHaveValue('Dune');
+
+  // Selection navigates away from `/search` entirely, so the field's updated text can only be
+  // observed by coming back to it — exactly the "coherent if the user navigates back" case
+  // `searchSuggestions.ts`'s doc comment names. The field's text is the suggestion's plain
+  // title ("Dune"), not the typed query ("dune") and not the decorated "Dune · Book" label.
+  await page.goBack();
+  await expect(page.getByTestId('search-page')).toBeVisible();
+  await expect(field.getByRole('combobox')).toHaveValue('Dune');
 });
 
 test('selecting a suggestion by keyboard (ArrowDown, Enter) does the same', async ({ page }) => {
   const field = page.getByTestId('search-field');
   const input = field.getByRole('combobox');
   await input.fill('dune');
+  // Wait for the real suggestion to actually be there before driving it by keyboard — typing
+  // fires the underlying search query asynchronously, and ArrowDown on an as-yet-empty
+  // suggestion list is a documented no-op in `SearchField.tsx`.
+  await expect(field.getByRole('option', { name: 'Dune · Book' })).toBeVisible();
 
   // ArrowDown highlights the first suggestion — "Dune · Book" per the fixed kind order.
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
 
   await expect(page).toHaveURL(/\/item\/item-dune$/);
-  await expect(input).toHaveValue('Dune');
+
+  await page.goBack();
+  await expect(page.getByTestId('search-page')).toBeVisible();
+  await expect(field.getByRole('combobox')).toHaveValue('Dune');
 });
 
 test('a track with no albumId never appears as a suggestion', async ({ page }) => {
@@ -78,7 +91,10 @@ test('a track with no albumId never appears as a suggestion', async ({ page }) =
   await page.getByTestId('jellyfin-connect-submit').click();
   await expect(page.getByTestId('jellyfin-status-connected')).toBeVisible();
 
-  await page.route('**/api/v1/jellyfin/search*', async (route) => {
+  // `page.context().route` (not `page.route`) — a route registered on the page right before a
+  // navigation has been observed to race the navigation's own protocol setup and silently miss
+  // the very first matching request; the context-level route does not.
+  await page.context().route('**/api/v1/jellyfin/search*', async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -132,7 +148,8 @@ test('a track with no albumId never appears as a suggestion', async ({ page }) =
 test('the suggestion cap holds at 8 against a query matching more than 8 candidates', async ({
   page,
 }) => {
-  await page.route('**/api/v1/libraries/lib-books/search*', async (route) => {
+  // See the track-exclusion test's comment on why this is `page.context().route`.
+  await page.context().route('**/api/v1/libraries/lib-books/search*', async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
