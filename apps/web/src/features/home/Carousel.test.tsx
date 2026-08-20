@@ -49,4 +49,20 @@ describe('cardLabel', () => {
     expect(cardLabel(item({ availability: 'owned' }))).toBe('Dune');
     expect(cardLabel(item({ availability: undefined }))).toBe('Dune');
   });
+
+  // Wave 15d-1-books-W-2, and the correction that followed it. The parity review ruled the
+  // original `=== 'external'` comparison fail-unsafe and prescribed Android's `!== 'owned'`.
+  // Transliterated literally that was WRONG on web and shipped a total regression: Android
+  // route-scopes `availability` to a model where it is required, while web's is optional on an
+  // interface shared by every item, so an ordinary owned book carries no `availability` at all
+  // and the whole library rendered as "not in your library".
+  //
+  // The rule that is actually fail-safe: absent means owned, because that is what it means here;
+  // present-but-unrecognised means external, because rendering an unknown state as an ordinary
+  // owned item is what dead-ends a tap at an id no Audiobookshelf instance has heard of.
+  it('treats a present but unrecognised availability as external', () => {
+    expect(
+      cardLabel(item({ availability: 'not-a-real-value' as unknown as FeedItem['availability'] })),
+    ).toBe('Dune, not in your library');
+  });
 });

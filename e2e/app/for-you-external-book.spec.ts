@@ -15,6 +15,19 @@
 import { expect, test } from '@playwright/test';
 
 const EXTERNAL_ID = 'external:openlibrary:/works/OL9999999W';
+// Wave 15d-1-books-W-2 and the correction that followed it. Two cases pull in opposite
+// directions and both matter:
+//
+//   - A value the client does not RECOGNISE must be treated as external. The old
+//     `=== 'external'` comparison read it as owned and dead-ended at `/item/:id` for an id
+//     Audiobookshelf has never heard of — the failure this whole feature exists to close.
+//   - A MISSING field must be treated as OWNED. `availability` is optional on the shared
+//     item interface and an ordinary Audiobookshelf book carries none at all, so reading
+//     absent as external marks the user's entire library "not in your library". That
+//     regression shipped briefly, from transliterating Android's `!= "owned"` — Android
+//     route-scopes the field to a model where it is required, and web does not.
+const UNRECOGNISED_ID = 'external:openlibrary:/works/OL8888888W';
+const MISSING_FIELD_ID = 'external:openlibrary:/works/OL7777777W';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/libraries/lib-books/recommended*', async (route) => {
@@ -45,6 +58,30 @@ test.beforeEach(async ({ page }) => {
                 progress: null,
                 availability: 'external',
               },
+              {
+                id: UNRECOGNISED_ID,
+                libraryId: 'lib-books',
+                coverPath: null,
+                media: {
+                  kind: 'book',
+                  title: 'The Cartographer of Silence',
+                  authors: [{ name: 'Idris Farrow' }],
+                },
+                progress: null,
+                availability: 'not-a-real-value',
+              },
+              {
+                id: MISSING_FIELD_ID,
+                libraryId: 'lib-books',
+                coverPath: null,
+                media: {
+                  kind: 'book',
+                  title: 'The Hollow Meridian',
+                  authors: [{ name: 'Elowen Cray' }],
+                },
+                progress: null,
+                // `availability` deliberately absent.
+              },
             ],
           },
         ],
@@ -63,7 +100,7 @@ test('an external recommended book carries a "not in library" badge, announces i
   await expect(card).toBeVisible();
 
   // Visual: the pill this wave's Carousel.tsx already renders generically for any
-  // `availability === 'external'` item, regardless of content type.
+  // non-owned (`availability !== 'owned'`) item, regardless of content type.
   await expect(page.getByTestId(`shelf-item-${EXTERNAL_ID}-external-badge`)).toHaveText(
     'Not in library',
   );
@@ -98,7 +135,7 @@ test('an owned recommended book (availability absent from other shelves) is unaf
   await expect(page.getByTestId('home-page')).toBeVisible();
 
   // item-dune is a real fixture book with an ordinary (non-recommended) shelf entry —
-  // proves the badge/redirect logic is conditional on `availability === 'external'`, not
+  // proves the badge/redirect logic is conditional on `availability !== 'owned'`, not
   // something that now fires for every book card.
   const ownedCard = page.getByTestId('shelf-item-item-dune');
   await expect(ownedCard).toBeVisible();
@@ -107,4 +144,48 @@ test('an owned recommended book (availability absent from other shelves) is unaf
   await ownedCard.click();
   await expect(page).toHaveURL(/\/item\/item-dune/);
   await expect(page.getByTestId('item-page')).toBeVisible();
+});
+
+test('a present but unrecognised availability value is treated as external, not owned', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('home-page')).toBeVisible();
+
+  const card = page.getByTestId(`shelf-item-${UNRECOGNISED_ID}`);
+  await expect(card).toBeVisible();
+
+  // Badged exactly like the recognised-`'external'` case, not silently rendered as owned.
+  await expect(page.getByTestId(`shelf-item-${UNRECOGNISED_ID}-external-badge`)).toHaveText(
+    'Not in library',
+  );
+  await expect(card).toHaveAccessibleName(
+    'The Cartographer of Silence, Idris Farrow, not in your library',
+  );
+
+  // Routes to the request flow, never to `/item/:id`.
+  await card.click();
+  await expect(page).toHaveURL(/\/requests/);
+  await expect(page.getByTestId('requests-page')).toBeVisible();
+  await expect(page.getByTestId('request-search-field').locator('input')).toHaveValue(
+    'The Cartographer of Silence',
+  );
+  await expect(page.getByTestId('request-search-author-input')).toHaveValue('Idris Farrow');
+});
+
+test('an item with NO availability field is treated as owned — the ordinary library case', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('home-page')).toBeVisible();
+
+  const card = page.getByTestId(`shelf-item-${MISSING_FIELD_ID}`);
+  await expect(card).toBeVisible();
+
+  // The regression this pins: reading absent as external badges every owned book in the
+  // library and sends every tap to the request flow. Nothing else in the suite states this
+  // rule directly — it was caught by `tablet-breakpoint.spec.ts` asserting that clicking Dune
+  // opens `/item/item-dune`, which names neither `availability` nor the inference.
+  await expect(page.getByTestId(`shelf-item-${MISSING_FIELD_ID}-external-badge`)).toHaveCount(0);
+  await expect(card).toHaveAccessibleName('The Hollow Meridian, Elowen Cray');
 });

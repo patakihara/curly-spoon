@@ -32,6 +32,7 @@ import {
   useLibrariesQuery,
   useSetupQuery,
 } from '../../api/queries.js';
+import { isExternalItem } from '../../api/availability.js';
 import { useApi } from '../../api/ApiContext.js';
 import { CoverImage } from '../../components/CoverImage.js';
 import { Carousel } from './Carousel.js';
@@ -305,10 +306,13 @@ export function HomePage() {
     if (item.contentType === 'books') {
       // Wave 15d-1-books-W: an external (Open Library-derived) recommended card has no real
       // Audiobookshelf item behind it — `item.id` is an opaque `external:openlibrary:…` id no
-      // `GET /items/:id` call can resolve. Hand off into the request flow instead, pre-filled,
-      // mirroring `MusicHomePage.tsx`'s identical `availability === 'external'` branch for
-      // albums. Owned books are completely unchanged.
-      if (item.availability === 'external') {
+      // `GET /items/:id` call can resolve. Hand off into the request flow instead, pre-filled.
+      // Wave 15d-1-books-W-2: inverted from `=== 'external'` to `!== 'owned'` — a parity review
+      // ruled the equality form fail-unsafe (a missing/unrecognised value silently reads as
+      // owned and dead-ends at `/item/:id`); Android already treats anything but `'owned'` as
+      // external. `MusicHomePage.tsx`'s `handleSelectRecommended` mirrors this same fix. Owned
+      // books are completely unchanged.
+      if (isExternalItem(item)) {
         void navigate({
           to: '/requests',
           search: { prefillTitle: item.title, prefillAuthor: item.subtitle ?? undefined },

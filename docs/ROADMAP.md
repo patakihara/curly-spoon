@@ -3791,6 +3791,35 @@ boundaries, disjoint directories where waves run in parallel.
   to the first's server and both silently share one stateful single-tenant BFF. **So: one `-W` in
   flight at a time; `-A` halves and spec authoring parallelise freely.** Disjoint directories are
   necessary and no longer sufficient.
+- **`16e-album` — DONE, the third screen triple, and the first whose spec pre-ruled a divergence
+  before it could happen.** `main` `18799b1`, green on `CI` and `Android`. Spec
+  `docs/design/screens/ALBUM_DETAIL.md`; waves `16e-album-A` (`4979fc3`, plus `a114a38`/`79c0134`),
+  `16e-album-W` (`0b9d221`), `16e-album-P` clean with two non-blocking follow-ups.
+
+  **Third triple running in which the meta line matched byte for byte.** Web's `composeAlbumMeta` and
+  Android's independently produce `"2021 · Synthwave · 2 tracks · 7 m"`, separator confirmed U+00B7 by
+  a codepoint scan rather than by eye. The per-platform value table is demonstrated, not hypothesised
+  — **keep writing it for every remaining screen.**
+
+  **The new lesson is the pre-ruling.** `ALBUM_DETAIL.md` stated in advance that the artist link is
+  the first genuinely symmetric case across the triples, so any asymmetry there would be **drift, not
+  idiom**. Both platforms wired it to their existing artist route and the `-P` had nothing to
+  adjudicate. **Deciding a likely divergence inside the spec is cheaper than ruling on it afterwards**
+  — do this wherever a screen has an obviously symmetric affordance.
+
+  **It also part-closed a divergence three triples had inherited.** `MediaHeader.kt:185` now reads
+  `if (onSubtitleClick != null) accentInk else mutedColor`, so the **clickable** subtitle matches web
+  and `SONORA.md` §3.5 on both platforms. Only the **non-clickable fallback** still differs (Android
+  muted, web full emphasis); that belongs to a `SONORA.md` pass, not to a screen wave.
+
+  **Two follow-ups, neither blocking:** `.auralis-item-header__actions` (`app.css:402-407`) has no
+  `flex-wrap` and web's album header is the first call site to put **four** controls in it — Playwright
+  asserts testids and text and structurally cannot see a compact-width overflow, so this wants an
+  eyeball rather than a test. And the coverage asymmetry here favours **web**: Android's nine new
+  `AlbumDetailContentTest` cases are Robolectric (confirmed a genuine uncached execution by grepping
+  the job log for a bare `testDebugUnitTest`), which proves a node exists with the semantics written,
+  not what TalkBack announces; web's six specs drive real Chromium.
+
 - **`16e-podcast` — DONE, the second screen triple.** `main` `6bbb5ba`; Android green on `49134c3`,
   a genuine uncached execution. Spec `docs/design/screens/PODCAST_DETAIL.md`; waves `16e-podcast-W`
   (`8d77670`), `16e-podcast-A` (`2d050ee`), a test fix (`49134c3`), `16e-podcast-P` clean.

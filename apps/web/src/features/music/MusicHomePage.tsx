@@ -20,6 +20,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button, Card, SearchField, Skeleton } from '@auralis/ui';
+import { isExternalItem } from '../../api/availability.js';
 import { useApi } from '../../api/ApiContext.js';
 import { CoverImage } from '../../components/CoverImage.js';
 import { ApiError } from '../../api/errors.js';
@@ -115,7 +116,7 @@ export function MusicHomePage() {
   // `musicExternalDiscovery.ts`'s doc comment, so the placeholder's `name` *is* the
   // artist), so requesting what she doesn't own is one tap away rather than a dead end.
   const handleSelectRecommended = (item: FeedItem) => {
-    if (item.availability === 'external') {
+    if (isExternalItem(item)) {
       void navigate({ to: '/music/requests', search: { prefill: item.title } });
       return;
     }

@@ -270,9 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T20:08:25Z` · `a5f4cf54fababc701` · general-purpose · ended · ## Report — 16e-podcast-spec **Branch/commit:** 'worktree-agent-a5f4cf54fababc701' at '91a51cc', two commits on top of 'e5eb249'. Working tree clean.…
-- `2026-08-18T20:09:26Z` · `a675ba5171943ba81` · general-purpose · ended · ## Report — Wave 15e-books: external book discovery for 'GET /libraries/:id/recommended' **Branch:** 'worktree-agent-a675ba5171943ba81', final commit…
-- `2026-08-18T20:23:07Z` · `a2adabaeb3b722475` · general-purpose · ended · All balanced, working tree clean, nothing left uncommitted. ## Report — Wave 16e-podcast-A **Branch/commit:** 'worktree-agent-a2adabaeb3b722475' at '…
 - `2026-08-18T20:27:21Z` · `a8bf0c9fd4eba7c4c` · general-purpose · ended · Working tree is clean, everything is committed on branch 'worktree-agent-a8bf0c9fd4eba7c4c' at '0d0bffd'. Not pushing or merging, per instructions. H…
 - `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · ended · ## Verdict: **hold for a client wave** — I agree with your inclination The server-side wave itself is clean, well-tested, and one of the more careful…
 - `2026-08-18T20:47:35Z` · `a6e64e451336a72ea` · general-purpose · ended · Working tree is clean, one commit on top of '30a772d' on branch 'worktree-agent-a6e64e451336a72ea'. Not pushed or merged, per instructions. ## Report…
@@ -285,6 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-19T00:55:29Z` · `ab2cba47f42acee0a` · general-purpose · running · —
 - `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · ended · ## Parity review — '15d-1-books' (server + '-A' + '-W') **Verdict: ship as-is, but with one real cross-platform behavioral bug to fix — a silent asym…
 - `2026-08-19T01:00:09Z` · `ad7800b70963a0170` · general-purpose · running · —
+- `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
+- `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
+- `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -771,46 +771,226 @@ of `apps/web`.
 source read (no device, no JDK), and web's `for-you-external-book.spec.ts` was read rather than
 executed, since another agent held the Playwright port.
 
-### 2026-08-20 — both claimed waves were SALVAGED from dead agents, and are on `integration-2026-08-20`
+### 2026-08-20 — both claimed waves were salvaged from dead agents. **The album triple's web half is landing; `15e-podcasts` is HELD.**
 
-**Read this before touching anything.** The session that claimed `16e-album-W` and `15e-podcasts`
-died. Neither wave was lost, but neither had been verified, and one of them held **929 lines
-entirely uncommitted** in a worktree that is deleted with its session.
-
-**What the orchestrator-side worktree check found**, which is exactly the loss `CLAUDE.md`'s rule 8
-exists to prevent:
+The session that claimed `16e-album-W` and `15e-podcasts` died. Neither wave was lost, but neither
+had ever been executed, and one held **929 lines entirely uncommitted** in a worktree that is
+deleted with its session.
 
 - **`15e-podcasts`** — the agent committed **nothing at all**. Seven files, 929 insertions, sitting
   as working-tree changes. Salvaged as `ee26e7e`.
 - **`16e-album-W`** — the agent committed its product change (`11c9e68`) and then died holding its
-  **own e2e spec** uncommitted. Salvaged as `046be75`. So the spec-side "commit before you
-  background a long run" instruction held for one half of one wave and not the other half of the
-  same wave. **The orchestrator-side check is the load-bearing one. It has now paid for itself
-  again.**
+  **own e2e spec** uncommitted. Salvaged as `046be75`.
 
-Both are merged `--no-ff` onto **`integration-2026-08-20`** off `7136909` — not onto `main`, and
-deliberately so. Neither has ever been executed: the album wave's six new Playwright specs have
-never run, and the podcast wave's provider has never been checked against the live iTunes endpoint.
+So the spec-side "commit before you background a long run" instruction held for one half of one
+wave and **not the other half of the same wave**. It lowers the frequency; it does not hold. The
+orchestrator-side worktree check is the load-bearing one, and this is the second session running in
+which it has paid for itself.
 
-**The one thing that must be settled before `15e-podcasts` reaches `main`:** `main` auto-deploys to
-`:latest` and mediaserver pulls every fifteen minutes. `15e-books` shipped as a **triple** precisely
-because a server wave alone puts a card on For You that is indistinguishable from an owned item and
-taps through to a generic error. Open follow-up 3 in this file says `GET /libraries/:id/recommended`
-is **not** gated by media type server-side, and **no podcast request flow exists on either client**
-— so an external podcast has nowhere to go. If that is still true, this wave is **held for a client
-wave**, not merged. There is precedent: a previous server-only recommendation wave was held for the
-same reason.
+#### `15e-podcasts` is HELD FOR A CLIENT WAVE — and Android's exposure is live, not latent
 
-**Two cheap checks already done, so nobody repeats them:** neither branch touches `package.json` or
-`pnpm-lock.yaml` (the documented concurrent-install failure mode), and all six testids the salvaged
-e2e spec relies on exist in `apps/web/src`/`packages/ui/src`. **Two files need `pnpm format`** —
-`podcastExternalDiscovery.test.ts` and `routes/libraries.ts` — because the salvage commits were made
-with `core.hooksPath` bypassed.
+Reviewed by an agent that did not write it. **The server side is correct**: both discovery builders
+gate on the pool's own medium (`routes/libraries.ts:135`, `:212-296`) and return `null` before any
+provider I/O, so a book library can never trigger the iTunes provider or vice versa — which
+**answers open follow-up 3**, the route _is_ properly medium-scoped now. Every item carries
+`availability: 'external'` on the wire.
 
-**`15d-1-books-W-2` is unblocked the moment the album wave merges.** The four call sites are
-confirmed present at `features/home/Carousel.tsx:186`, `:247`, `features/home/HomePage.tsx:311` and
-`features/music/MusicHomePage.tsx:118` — note the path is `features/home/Carousel.tsx`, not
-`components/Carousel.tsx` as `7136909` recorded. Change `=== 'external'` to `!== 'owned'`.
+**The tap-through is where it breaks.** `ForYouViewModel.kt:88-95` fetches recommended carousels for
+`mediaType = "podcast"` as well as `"book"`, so Android genuinely reaches this shelf — and
+`ForYouScreen.kt:94` is `ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)`,
+**unconditional, with no `isExternal` check**, three lines below a `BOOKS` branch that has one. A tap
+hands `external:itunes:<id>` straight to Media3. That is worse than the book precedent's dead-end
+page: a fabricated id given to the _player_, not a failed detail fetch. **And there is no podcast
+request flow on either client to redirect to**, so wiring the guard in has nowhere to send the tap.
+
+**Web is safe only incidentally** — `HomePage.tsx:226` is the sole web caller and is hardcoded to the
+book library's id. Underneath that sits a second real defect: `forYouFeed.ts:100-109` labels every
+shelf from this route `contentType: 'books'` unconditionally, with a doc comment claiming the route
+is "always about audiobooks". **That comment is now false**, and the moment web points this at a
+podcast library a podcast shelf renders as a book carousel.
+
+**So the wave is on branch `hold-15e-podcasts`, not on `main`.** `main` auto-deploys to `:latest`
+and mediaserver pulls every fifteen minutes. This is the same call, for the same reason, that
+`15e-books` was held for.
+
+**It is also red, and that must be fixed before it can land whenever it lands.** Two pre-existing
+tests the wave broke and never noticed: `external/registry.test.ts` asserts in its own title that
+there is "still no podcast provider", now false; and `routes/libraries.test.ts:514` — the **book**
+shelf's outer-catch test — fails because the wave's new media-type gate short-circuits on that
+test's empty-pool fixture **before** the deliberately-throwing provider is reached. Additionally
+`buildPodcastExternalDiscoveryShelf` is imported by **no test at all** — only its three pure helpers
+are covered, where the book sibling has a full `app.inject()` block.
+
+**The live `curl` was done, and this is the 15a lesson being applied rather than relearned.** iTunes
+Search returns 200 with the fields the schema assumes, `genreId` alone genuinely returns zero
+results (justifying the term-only strategy), and `itunes.test.ts` asserts the outgoing query as an
+**exact** set via `toEqual`. That half of the wave is sound.
+
+**The open product question, which is why "add the guard" is not a sufficient plan:** the user asked
+for request integration for **books** and **music**, never for podcasts — so external podcast
+discovery has nowhere to land by design. The natural destination is not a torrent request at all but
+a **one-tap subscribe by RSS feed**, which Audiobookshelf supports natively and which iTunes Search
+already returns a `feedUrl` for. That is a coherent, much smaller feature than a request flow. **It
+is with Sofia; it blocks nothing else.**
+
+#### `16e-album` is DONE — the third screen triple, complete on both platforms with a clean `-P`
+
+**`main` is `18799b1`, green on `CI` and `Android`.** Verified before pushing rather than after:
+**220 `app` + 212 `ui-desktop`/`ui-mobile` Playwright at CI's own parallelism, 1718 unit**, typecheck
+across every project, lint clean. The six salvaged e2e specs **passed on their first ever execution**.
+
+**The `-P` verdict is clean, and the headline is methodological again: the meta line matched byte for
+byte for the THIRD triple running.** Web's `composeAlbumMeta` and Android's same-named private
+function independently produce `"2021 · Synthwave · 2 tracks · 7 m"` — separator confirmed U+00B7 on
+both by a codepoint scan rather than by eye, same track-count rule, same `<= 40 && fully loaded`
+duration gate, same rounding. **The per-platform value table in the spec is now demonstrated, not
+hypothesised.**
+
+**The `ALBUM_DETAIL.md` pre-ruling fired exactly as intended.** The spec stated in advance that the
+artist link is the first genuinely symmetric case and that any asymmetry there would be drift; both
+platforms wired it to their existing artist route, and the `-P` had nothing to adjudicate. **Pre-deciding
+a divergence in the spec is cheaper than ruling on it afterwards** — carry that into every remaining
+screen.
+
+**Two follow-ups, neither blocking:**
+
+1. **The subtitle colour divergence that three triples inherited is now MOSTLY CLOSED, and this file
+   should stop describing it as open.** `MediaHeader.kt:185` now reads
+   `if (onSubtitleClick != null) accentInk else mutedColor`, so the **clickable** case — the common
+   one — matches web and matches `SONORA.md` §3.5 on both platforms. What survives is only the
+   **non-clickable fallback**: Android muted (`onSurfaceVariant`), web full emphasis (`--surface-fg`).
+   Pre-existing, out of this triple's scope, and a `SONORA.md` pass owns it.
+2. **`.auralis-item-header__actions` has no `flex-wrap`** (`app.css:402-407`) and web's album header is
+   the first call site to put **four** controls in it. Confirmed live by reading the CSS, not
+   inferred. Playwright asserts testids and text and can never see a compact-width overflow, so this
+   wants an eyeball, not a test.
+
+**The coverage asymmetry is real and, unusually, favours web here.** Android's nine new
+`AlbumDetailContentTest` cases are Robolectric — confirmed a **genuine uncached execution** by
+grepping the job log for a bare `testDebugUnitTest`, not by reading a badge — but Robolectric proves
+a node exists with the semantics that were written, not what TalkBack announces. Web's six specs
+drive real Chromium. Every Android claim in that review is a source read plus a Robolectric pass.
+
+#### `16e-search-A` is landed and CI-GREEN on `a8adcd1` — `16e-search-W` is in flight, `-P` is owed
+
+**Verified as a genuine uncached execution, not a badge:** the Android job log carries bare
+`> Task :app:compileDebugUnitTestKotlin`, `> Task :app:testDebugUnitTest` and
+`> Task :app:testReleaseUnitTest` with no `FROM-CACHE`, so the new Robolectric coverage really ran.
+
+**It closes two pre-existing drifts** the spec had pinned with file:line evidence: book result rows
+were **non-interactive** behind a comment claiming no book-detail route existed (one has since
+`16e-book-A`), and the search screen had **no accessibility semantics at all** where web announces
+status through a live region.
+
+**It corrected the spec's own recon, and that is the transferable part.** `SEARCH.md` said to check
+`MusicRow`'s "other two call sites"; there are **nine, across seven files**. Rather than resize the
+shared row in place, the wave gave it optional `artSize`/`artCornerRadius`/`fallbackIcon` parameters
+defaulting to today's shape, so the other eight call sites cannot change. **A shared component
+resized in place reads as correct in review and is wrong on eight screens** — the same shape as this
+file's widened-fixture lesson. **Recon in a spec is a starting point, not a census.**
+
+**One thing `-P` must check:** the wave **did not add a leading icon** to the search field, reading
+§3's row as pinning the icon's token value rather than mandating a new icon. It flagged this itself.
+Web may well have added one.
+
+**ONE red round, one line — and it is the mirror of a trap already in this file.** The whole failure
+was `Unresolved reference 'assert'`. This file already records that **`assertExists` is a MEMBER** of
+`SemanticsNodeInteraction` and must **not** be imported, while `onNodeWithText` on the lines either
+side of it is top-level and must be. **`assert` is the same trap wearing the opposite face**: a
+top-level extension in `androidx.compose.ui.test`, chained immediately onto `assertExists`, reading
+exactly like the member it is attached to.
+
+**So the rule is neither "assertions are members" nor "assertions are imports".** That package mixes
+both and the call site does not tell you which. **When a Compose test assertion will not resolve,
+check the package rather than the spelling.**
+
+**Also confirmed, and worth knowing when Android goes red:** `bc1e946`'s **`CI` went green and
+`Publish` succeeded** while `Android` was failing. They are separate workflows and the container
+image carries no APK, so **a red Android never threatens the live deployment** — do not hold a
+web push waiting on it.
+
+**And the `pre-push` lint race is real, again.** The push failed once on the whole-repo eslint and
+succeeded on an immediate retry with no change, while a subagent was mid-write in `apps/web`.
+**Retry once before believing it**, exactly as this file already says.
+
+#### `15d-1-books-W-2` landed, then SHIPPED A TOTAL REGRESSION, and the correction is the lesson
+
+**Read this before acting on any parity review's prescribed fix.**
+
+The `15d-1-books-P` review ruled web's `availability === 'external'` fail-unsafe and prescribed
+Android's direction — `!== 'owned'` — at four call sites. That prescription is **wrong on web**, and
+taken literally it marked **the user's entire library as external**: every owned book on Home
+rendered a "not in your library" badge and every tap went to the request flow.
+
+**The two typings are not interchangeable, and the same review had already established why one
+paragraph before it made the recommendation.** Android **route-scopes** `availability` to its
+recommended-item model where kotlinx declares it **required**, so it is always present at the point
+of the check. Web mirrors its types **by hand with no runtime decode** and the field is **optional on
+an interface shared by every item** — an ordinary Audiobookshelf book carries no `availability` at
+all. So on web, **absent is the common case and means owned.**
+
+**The rule now lives in one place with its reasoning**, `apps/web/src/api/availability.ts`:
+absent means owned; **present-but-unrecognised means external**, because rendering an unknown state
+as an ordinary owned item is what dead-ends a tap at an id Audiobookshelf has never heard of. That
+was the review's real concern and it **is** still closed.
+
+**Three things worth more than the fix:**
+
+1. **The wave had to override a correct existing test to land the wrong behaviour.**
+   `Carousel.test.tsx`'s _"does not append anything for an owned item, whether availability is
+   'owned' or absent"_ was encoding the real contract. The spec said otherwise, so the agent changed
+   the test — and reported doing so honestly. **An existing test that contradicts your spec may know
+   something the spec's author does not.** Treat that collision as a signal to re-check the spec, not
+   as an obstacle.
+2. **Nothing that names `availability` caught it.** It surfaced in `tablet-breakpoint.spec.ts`
+   asserting that clicking Dune opens `/item/item-dune` — a test about **layout at 768px**. The
+   suite's value here came from breadth, not from aim. `for-you-external-book.spec.ts` now pins both
+   directions directly, so the next regression fails on a test that names the rule.
+3. **A green targeted run would have missed it.** The agent ran `pnpm vitest run apps/web` (606/606)
+   and typechecks, all green, and was correctly told not to run Playwright. **The orchestrator
+   running the browser suite before pushing is what caught it** — the same shape as the flake found
+   two sessions ago. Keep that division: agents run targeted tests, the orchestrator runs the suite.
+
+**Also merged: `16e-search-spec`** (`docs/design/screens/SEARCH.md`), the fourth screen spec. **No
+`-S` wave is needed** — both existing search routes already return everything results and
+suggestions require, so suggestions derive client-side from responses already in flight. **Lyrics
+search is named explicitly out of scope** (it needs an external full-catalogue provider, unlike the
+per-track lookup that exists).
+
+**Its headline finding is this project's fifth writer-with-no-reader, and the first at the
+component-prop level rather than the route level:** `packages/ui/src/components/SearchField.tsx`
+already has a complete, tested ARIA-combobox suggestion mechanism — `suggestions`,
+`onSuggestionSelect`, full keyboard navigation, covered by `e2e/ui/search-field.spec.ts` — that
+**nothing in the app has ever called with real data.** So web's half of Sofia's "global search needs
+suggestions" is mostly **wiring**, not building. It also specifies two pre-existing Android drifts:
+book result rows are still non-interactive behind a comment claiming no book-detail route exists
+(one has since `16e-book-A`), and the search screen has **no accessibility semantics at all** where
+web announces status through a live region.
+
+#### THE INCIDENT WORTH MORE THAN EITHER WAVE — `isolation: "worktree"` is what creates the worktree
+
+**A subagent ran `git reset --hard` inside the shared checkout and discarded two merge commits.**
+Nothing was lost — the objects survived in the reflog and were restored — but the cause is a trap
+this file had not named, and it is one keystroke wide.
+
+`CLAUDE.md` correctly documents that an isolated agent must `git reset --hard <branch tip>` as its
+first action, because `isolation: "worktree"` bases the worktree on `origin/main`'s empty initial
+commit. **That instruction is only safe when the `Agent` call actually passed
+`isolation: "worktree"`.** Dispatch the same spec _without_ that parameter and the agent has no
+worktree of its own — it runs in `~/src/auralis-src` — and the very first thing you told it to do
+resets the shared checkout onto an older commit, under any concurrently-running agent's feet. A
+reviewer mid-review reported the tree vanishing from under it.
+
+**The check is one line, and it is now mandatory before believing any dispatched agent is isolated:**
+
+```bash
+ls .claude/worktrees/agent-<id>   # no directory => it is in YOUR checkout
+```
+
+**Two rules fall out.** Never put a bare `git reset --hard` in a spec without `isolation: "worktree"`
+on the same `Agent` call — pair them or write neither. And a docs-only or review-only agent needs no
+worktree **and therefore must not be given the reset instruction at all**; it only ever needed to
+read.
 
 ### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
 
