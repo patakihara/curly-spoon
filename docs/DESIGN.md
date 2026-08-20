@@ -18,15 +18,15 @@ still be true, in whole or in part, and are kept and marked as such.
 
 ## The reference set, and what we take from each
 
-| Reference         | What we take                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Sonora**         | The design authority as of 2026-08-16 — see above. Flat neutral surfaces, one user-picked accent, weight-900 headings, Material Symbols Rounded icons, docked (non-scrolling) chrome, near-absent motion. `docs/design/SONORA.md` has the values; `docs/ROADMAP.md` §16 has the narrative.                                                                                                                                                                       |
-| **YouTube Music**  | Split-view Now Playing; thick progress bar; icon-only toggles instead of text tabs; queue as an upward swipe; bottom-sheet-first secondary UI.                                                                                                                                                                                                                                                                                                                      |
-| **Symfonium**      | Theme colour derived from the current artwork, applied to the whole shell. **Never shipped** — see "Colour" below — and now an open question with Sofia rather than a live feature.                                                                                                                                                                                                                                                                                |
-| **Spotify**        | Search that goes deep — one field, typed results, and **lyrics search** as a first-class mode.                                                                                                                                                                                                                                                                                                                                                                      |
-| **Claude**         | Warm neutral surfaces, generous line-height, restrained accent use, quiet chrome.                                                                                                                                                                                                                                                                                                                                                                                   |
-| **Feishin**        | Not a design-language reference — for **UI structure** specifically (screen layouts, navigation, information density), this open-source Jellyfin client (`github.com/jeffvli/feishin`) is the gold standard we build against. Sonora itself is a redesign of Booming Music/Symphony, a Feishin-family player, so several structural choices (docked chrome, one bottom player bar) now arrive by way of Sonora rather than by direct reference to Feishin. |
-| **Auxio**          | Not a UI reference at all — it's built on Android Fragments/Views, not Jetpack Compose. For Android's **playback-service architecture** (queue handling, gapless playback, ReplayGain, Android Auto integration), this open-source Kotlin/Media3 music player (`github.com/OxygenCobalt/Auxio`) is worth reading for how a mature app structures that layer.                                                                                                     |
+| Reference         | What we take                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sonora**        | The design authority as of 2026-08-16 — see above. Flat neutral surfaces, one user-picked accent, weight-900 headings, Material Symbols Rounded icons, docked (non-scrolling) chrome, near-absent motion. `docs/design/SONORA.md` has the values; `docs/ROADMAP.md` §16 has the narrative.                                                                                                                                                                 |
+| **YouTube Music** | Split-view Now Playing; thick progress bar; icon-only toggles instead of text tabs; queue as an upward swipe; bottom-sheet-first secondary UI.                                                                                                                                                                                                                                                                                                             |
+| **Symfonium**     | Theme colour derived from the current artwork, applied to the whole shell. **Never shipped** — see "Colour" below — and now an open question with Sofia rather than a live feature.                                                                                                                                                                                                                                                                        |
+| **Spotify**       | Search that goes deep — one field, typed results, and **lyrics search** as a first-class mode.                                                                                                                                                                                                                                                                                                                                                             |
+| **Claude**        | Warm neutral surfaces, generous line-height, restrained accent use, quiet chrome.                                                                                                                                                                                                                                                                                                                                                                          |
+| **Feishin**       | Not a design-language reference — for **UI structure** specifically (screen layouts, navigation, information density), this open-source Jellyfin client (`github.com/jeffvli/feishin`) is the gold standard we build against. Sonora itself is a redesign of Booming Music/Symphony, a Feishin-family player, so several structural choices (docked chrome, one bottom player bar) now arrive by way of Sonora rather than by direct reference to Feishin. |
+| **Auxio**         | Not a UI reference at all — it's built on Android Fragments/Views, not Jetpack Compose. For Android's **playback-service architecture** (queue handling, gapless playback, ReplayGain, Android Auto integration), this open-source Kotlin/Media3 music player (`github.com/OxygenCobalt/Auxio`) is worth reading for how a mature app structures that layer.                                                                                               |
 
 **M3 Expressive is retired as a reference row.** It contributed spring motion, shape morphing
 and high-emphasis containers to the original plan; Sonora replaced all three (see "Motion" and
@@ -66,7 +66,7 @@ prefixed `Mantine*`) so `apps/web` keeps consuming UI only through `@auralis/ui`
 `NavigationBar`, `SearchField`, `Snackbar`, `TopAppBar`), and web's onboarding/settings
 page-level CSS is wholly on `--m3-*` still — a class of consumer the tracked migration list
 does not even count. Android is further along at the token level (Sonora's colour, typography
-*and* shape scale are wired app-wide since `16f`) but has no display font bundled at all — see
+_and_ shape scale are wired app-wide since `16f`) but has no display font bundled at all — see
 "Type" below.
 
 ## Colour
@@ -138,7 +138,7 @@ than loaded from Google's CDN — this product is self-hosted, one container, de
 LAN-only, and Sonora's own stylesheet points at `fonts.googleapis.com` by default.
 
 **Android has no display font bundled at all.** `16b-2-A` gave Android Sonora's colour,
-typography *and* shape scale, but nothing self-hosts Roboto Flex there — headings use the
+typography _and_ shape scale, but nothing self-hosts Roboto Flex there — headings use the
 platform's default face at weight 900 rather than `--font-display`. This is a real, named
 asymmetry between the two clients (`docs/HANDOVER.md`, the `16e-nowplaying` triple), not an
 oversight to silently fix here.
@@ -147,7 +147,7 @@ oversight to silently fix here.
 
 **Shape morphing is gone, deliberately, not merely superseded.** The pre-Sonora M3 Expressive
 treatment sprang a pressed container's corner radius from one shape family to another (e.g.
-`full` → `md` on `:active`) along the spring curve. Sonora's own guidance describes a *fill*
+`full` → `md` on `:active`) along the spring curve. Sonora's own guidance describes a _fill_
 change on press instead — a pill-shaped accent-tinted fill on mobile, a ~10% shift on desktop —
 not a radius change, and `packages/ui/src/components/Button.css` now keeps `--radius-pill`
 constant at rest and pressed. The e2e suite (`e2e/ui/button.spec.ts`) was rewritten to assert
@@ -171,9 +171,9 @@ instead, plus the one exception noted under "Colour."**
 step response to a CSS `linear()` easing string with zero per-frame JS) is unchanged. What
 changed, in wave `16c-2-W-1`, is what `motionCssVars()` emits: every `--m3-spring-<name>-*`
 pair — `fast`/`default`/`slow`/`bouncy` — now holds the identical flat value,
-**`200ms ease-in-out`**, matching Sonora's own stated rule: *"a plain 0.2s ease-in-out fade for
+**`200ms ease-in-out`**, matching Sonora's own stated rule: _"a plain 0.2s ease-in-out fade for
 sidebar art and a 0.2s colour transition on nav-item hover — no bounce, no spring, no parallax
-anywhere in the source code read"* (`docs/design/sonora/readme.md`). All four names are kept
+anywhere in the source code read"_ (`docs/design/sonora/readme.md`). All four names are kept
 (nothing here deletes a `--m3-*` name a caller might still reach for) but no longer correspond
 to physically distinct curves.
 
@@ -193,12 +193,12 @@ rig, not the four frame-width preset buttons (`1440`/`1280`/`1024`/`768`) that s
 recon docs mistake for implemented breakpoints — see `docs/design/SONORA.md` §6 for that
 correction in full:
 
-| Width          | Navigation                | Now Playing            |
-| -------------- | -------------------------- | ------------------------ |
-| < 600px        | Bottom bar                 | Full-screen sheet        |
-| 600–1023.98px  | Navigation rail, icon-only | Full-screen sheet        |
-| 1024–1239.98px | Navigation rail, labelled  | Full-screen sheet        |
-| ≥ 1240px       | Expanded (labelled) rail   | Persistent side panel    |
+| Width          | Navigation                 | Now Playing           |
+| -------------- | -------------------------- | --------------------- |
+| < 600px        | Bottom bar                 | Full-screen sheet     |
+| 600–1023.98px  | Navigation rail, icon-only | Full-screen sheet     |
+| 1024–1239.98px | Navigation rail, labelled  | Full-screen sheet     |
+| ≥ 1240px       | Expanded (labelled) rail   | Persistent side panel |
 
 `1024` (`railWide`) is the one boundary Sonora introduces beyond what the app already had;
 `1240` (`showPanel`/`expanded`) already existed pre-Sonora. Sonora's own tabbed desktop Now
@@ -222,7 +222,7 @@ when something is loaded, docked above the bottom bar or at the foot of the rail
   because a grep for `equaliser`/`equalizer` across the app finds nothing.
 - **The keyboard shortcuts below describe global navigation, not player transport, and the
   transport list this page previously named was never implemented.** `apps/web/src/hooks/
-  shortcuts.ts` is the real shortcut set: `/` focuses search, `g h` goes home, `g l` goes to the
+shortcuts.ts` is the real shortcut set: `/` focuses search, `g h` goes home, `g l` goes to the
   library, `?` opens the shortcut sheet. There is no `Space`/arrow-seek/`J`/`L`/`[`/`]` player
   shortcut handler anywhere in `apps/web/src/features/player` — grepped, not assumed. If player
   transport shortcuts are wanted, that is unbuilt work, not a stale doc.

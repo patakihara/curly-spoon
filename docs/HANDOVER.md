@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
 - `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
 - `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
 - `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · ended · Everything is confirmed. Here is my final report. ## Report — Wave 16e-nowplaying-A **1. Branch/commit:** 'worktree-agent-a290836730d4ca5c5' at '5351…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
 - `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
+- `2026-08-20T22:00:53Z` · `a12a64f119980693a` · general-purpose · ended · ## Report — '16g-design-reconcile' **Branch/commit:** 'worktree-agent-a12a64f119980693a' at 'b98ca76', one commit on top of '04a7f22'. 'git status --…
 
 <!-- AGENT_LOG_END -->
 
@@ -1153,6 +1153,38 @@ wrote it**, and each wave's targeted tests were green.
   either.** Verify against code in both directions.
 
 #### Open, named, none blocking
+
+- **`16g` CLOSED — and reconciling `DESIGN.md` turned up FOUR claims that were never true, not merely
+  superseded.** The wave was told to verify against the code rather than rewrite from `SONORA.md`,
+  and that instruction is what separated the two categories. Superseded-by-Sonora: the spring table
+  (`motionCssVars()` has emitted flat `200ms ease-in-out` since `16c-2-W-1`, though `ThemeProvider`
+  still uses the real solver for the accent cross-fade), the M3 type scale, the M3 breakpoint table.
+  **Code-verified-false — documented, never built:**
+  - **Player transport keyboard shortcuts.** `DESIGN.md` specified Space, arrow seek, J/L ±30s and
+    `[`/`]` speed. **Verified here as well as by the wave:** there is no `keydown` handler anywhere
+    under `apps/web/src/features/player/`, and `hooks/shortcuts.ts` registers only `/`, `?`, `g h`
+    and `g l`. **This is a real product gap on a media player, not a doc error** — it is the first
+    time anyone has noticed, because the doc asserting them read as a description of shipped
+    behaviour. Worth a small wave; needs no credential and no device.
+  - **The "colour is never the only signal" animated equaliser glyph** — grep finds no
+    `equaliser`/`equalizer` anywhere on either platform. What actually ships is a text label folded
+    into the accessible name (`"…, Playing"`), which satisfies the same accessibility intent by a
+    different mechanism. The intent held; the described implementation never existed.
+  - **Shape morphing** (pressed-state corner spring `full`→`large`) — removed in `16c-1`, and
+    `e2e/ui/button.spec.ts` now asserts the radius does **not** change.
+  - **Artwork-derived colour driving the palette at runtime** — `artwork.ts`'s
+    `sourceColorFromImageData` still has zero callers outside its own test.
+
+  **The generalisable half, and it is the third instance of one shape this session.** A spec
+  document is not evidence about the code, in either direction — this file already carries "a doc
+  claiming parity is not evidence of parity" and its mirror about claimed gaps. Here a doc claimed
+  four _features_, and two of them had never been built at all. **`DESIGN.md` was listed in
+  `CLAUDE.md` as part of "the spec" the whole time**, so anyone reading it to learn what the app
+  does would have learned four wrong things.
+
+  **Sofia's open artwork-colour question (queue `dbfb46e`) is preserved as unresolved**, not closed
+  out with the rest — an earlier `SONORA.md` recorded it as asked-and-answered when it had not been
+  asked, and recording a live question as closed is worse than leaving it open.
 
 - **A SEVENTH writer-with-no-reader:** `RecommendationShelf.itemLabels` is written, typed and tested,
   and **no client on either platform reads it**. That half stands.
