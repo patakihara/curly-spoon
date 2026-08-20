@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · ended · ## Parity review — '15d-1-books' (server + '-A' + '-W') **Verdict: ship as-is, but with one real cross-platform behavioral bug to fix — a silent asym…
-- `2026-08-19T01:00:09Z` · `ad7800b70963a0170` · general-purpose · running · —
 - `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
 - `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
 - `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T14:47:44Z` · `ab1c8e59fadc27f0d` · general-purpose · ended · ## Report — '16e-foryou-P' **Verdict: clean, with follow-ups — no defect that should block shipping.** Both waves are honest about what they built an…
 - `2026-08-20T14:59:38Z` · `aa135354468fa745f` · general-purpose · ended · ## Report — Wave 16e-foryou-A-2 **1. Branch/commit:** 'worktree-agent-aa135354468fa745f' at '95e27a4'. 'git status --short' is clean. Reset to base '…
 - `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
+- `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · running · —
+- `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -742,6 +742,76 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### CLAIMED 2026-08-21 — `16e-settings`, the LAST screen triple. `-W` and `-A` both in flight.
+
+Base `6e5b59d`. Both agents are worktree-isolated (**checked** with `ls .claude/worktrees/agent-<id>`
+before believing either — the one-line check that exists because a dispatch missing
+`isolation: "worktree"` once ran its `git reset --hard` inside the shared checkout). `-W` owns
+`apps/web` + `e2e/app`; `-A` owns `apps/android`. Disjoint, and only `-W` runs Playwright, so the
+port-4310 constraint is satisfied. **`-P` is owed after both land. After this triple, only `16f`
+remains in phase 16.**
+
+**THE BYTE-FOR-BYTE TARGET, pre-ruled before either agent reports** — the technique that has now
+paid on three consecutive triples, catching a real mismatch once and preventing a false alarm once.
+It is the 17 accent presets, and unusually this one is **already satisfied and needs pinning, not
+deriving**. Verified by the orchestrator directly from both sources rather than taken from the
+spec's recon: web's `ACCENT_PRESETS` (`packages/ui/src/tokens/color.ts`) and Android's
+`SonoraAccentPresets` (`ui/theme/Color.kt`, resolved through `SonoraPalette.Accent*`) both give, in
+this order:
+
+```
+#ef4444 #f97316 #f59e0b #eab308 #84cc16 #22c55e #10b981 #14b8a6 #06b6d4
+#0ea5e9 #3b82f6 #6366f1 #8b5cf6 #a855f7 #d946ef #ec4899 #f43f5e
+```
+
+Both waves add a pin for their own side. `-P`'s job here is to confirm both pins exist and
+**discriminate** — a test that cannot fail is a pin, not a proof, and this project has shipped that
+distinction wrong before.
+
+**Pre-ruled so `-P` does not grade forced idiom as drift:**
+
+- **Onboarding step count, 3 on web and 2 on Android.** Forced idiom, driven by the
+  same-origin-vs-separate-origin architecture difference the code's own comments state (§8). Android
+  has no services step and building one to hit a matching count would be new feature work. **Not
+  drift.**
+- **Compact-mode Settings reachability.** Web has a persistent icon button on every screen; Android
+  will have it in rail mode only. This is a **real gap, explicitly deferred, and deliberately not
+  idiom** — §6.1/§7/§8 all say so in those words. `-P` should confirm it is still named rather than
+  quietly accepted, not grade it as a defect.
+- **The error-banner-vs-inline-text convention** for form errors (§3.2's last row) — Android's
+  existing idiom across every form screen in the app.
+
+**One thing `-P` must check by diff, not by report.** `-A`'s §6.1 rail item lands in
+`ShellNavigationItems.kt`, which holds **two of the four production readers of
+`AuralisAppTokens.current`** — the readers whose pixel tests `16f-A-2` had to delete, leaving this
+file's own note that "nothing mechanical now stops a future edit reverting one of those four
+readers to a static `MaterialTheme` value." The new item was specced as **purely additive**. Confirm
+those expressions are byte-identical, the way `16e-podcast-P` confirmed `MediaHeader.kt` with an
+empty `git diff`.
+
+**Two questions for `-P` that are checks, not verdicts:**
+
+1. **Does web's §6.6 `Chip` migration still expose single-selection semantics?** Theme mode is a
+   mutually-exclusive triple. A `role="checkbox"`/`aria-checked` shape would satisfy §11's
+   "announced, not merely drawn" wording while being semantically wrong for three exclusive options.
+   And does `settings-a11y.spec.ts` still **discriminate** afterwards — would it fail if selection
+   state were dropped entirely?
+2. **Does `4299bb9`'s ring assertion still pass through that migration?** It lives in the same spec
+   file `-W` is editing.
+
+**The spec was reconciled before dispatch (`6e5b59d`), and the reason generalises.** §6.4 called for
+the accent ring to move to `--accent-ink`; `4299bb9` had already shipped it as `--accent` the day
+before. Left alone, a `-P` following this project's own rule — cite the spec directly, never an
+implementing agent's paraphrase, the rule adopted after `16e-foryou-P` was handed a brief stating a
+divergence backwards — would have found `--accent`, checked the contract, and either flagged a false
+defect or burned turns disproving one. **A spec that has drifted from shipped code is a trap for the
+reviewer specifically, because the reviewer is the one instructed to trust it.** Fix the document
+before dispatch, not the reviewer's brief afterwards.
+
+That edit also earned the splice guard its place: the first attempt anchored from §6.4 to `## 7`,
+spanning §6.5–§6.9, and would have silently deleted five sections — the exact failure this file
+documents under "Diff every edit". The heading-count assertion fired before anything was written.
 
 ### DONE 2026-08-20 — `16e-nowplaying`, the fifth screen triple, COMPLETE with a clean `-P`
 
