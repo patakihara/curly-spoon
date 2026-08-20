@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-19T00:55:29Z` · `ab2cba47f42acee0a` · general-purpose · running · —
 - `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · ended · ## Parity review — '15d-1-books' (server + '-A' + '-W') **Verdict: ship as-is, but with one real cross-platform behavioral bug to fix — a silent asym…
 - `2026-08-19T01:00:09Z` · `ad7800b70963a0170` · general-purpose · running · —
 - `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T14:06:24Z` · `ad6d77230b8723fa8` · general-purpose · ended · ## Report — Wave '16e-foryou-A' **1. Branch/commit:** 'worktree-agent-ad6d77230b8723fa8' at '55ca4af', one commit on top of 'ff9440d'. 'git status --…
 - `2026-08-20T14:47:44Z` · `ab1c8e59fadc27f0d` · general-purpose · ended · ## Report — '16e-foryou-P' **Verdict: clean, with follow-ups — no defect that should block shipping.** Both waves are honest about what they built an…
 - `2026-08-20T14:59:38Z` · `aa135354468fa745f` · general-purpose · ended · ## Report — Wave 16e-foryou-A-2 **1. Branch/commit:** 'worktree-agent-aa135354468fa745f' at '95e27a4'. 'git status --short' is clean. Reset to base '…
+- `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
 
 <!-- AGENT_LOG_END -->
 
@@ -881,6 +881,115 @@ as a list to confirm, not a list to fix.
   re-measured by the wave rather than trusted from the spec, with one e2e test asserting the four
   existing variants stay at 48px _in the same test_ as the new 64px one.
 
+### SESSION HAND-OFF, 2026-08-20 (evening) — **`main` is `4299bb9`. Nothing claimed, nothing in flight.**
+
+`docs/agent-specs/` is empty. Every wave dispatched this session was merged. **Two screen triples
+completed** (`16e-nowplaying`, `16e-foryou`), **three follow-up waves**, **two specs written**, and
+**four defects fixed that the suite could not see on its own**.
+
+**The next thing to do is the `16e-settings` triple** — the **LAST screen**.
+`docs/design/screens/SETTINGS.md` (571 lines) is merged and is the contract. Dispatch `-W` and `-A`
+together from it, then `-P`. **After that only `16f` remains.**
+
+**Verified before each push, not after:** 239 `app` + 216 UI Playwright, 1731 unit, typecheck every
+project. `CI` and `Android` green, the Android runs confirmed as **genuine uncached executions** by
+grepping for bare `testDebugUnitTest`/`compile*Kotlin` rather than reading a badge.
+
+#### The one finding that changes how to verify on this machine
+
+**This laptop has 4 cores; `playwright.config.ts` sets `workers: '100%'`.** At that default a _clean
+tree_ produced 2 failures per full `app` run, **a different two each time**, all content-visibility
+timeouts with no assertion mismatch, all passing in isolation, at load average 11.5. **`--workers=2`
+gives 237–239 passed, 0 failed, and is no slower.**
+
+This file has correctly warned that `--workers=1` is a **weaker** check than CI. That stands. It
+never said `--workers=100%` here is a **noisier** one — and on a timing-sensitive suite, noise is
+indistinguishable from a regression until three runs have been spent proving otherwise. **Use
+`--workers=2` locally; CI remains the authority.**
+
+#### Four defects fixed that a green suite could not see
+
+1. **A `testTag` inside a merged semantics node** turned `main`'s Android red — the **fourth** of that
+   trap family, third of the `useUnmergedTree` variant. **It was written verbatim into the wave's own
+   spec, tell and remedy included, and shipped anyway.** Same shape as commit-before-backgrounding: a
+   spec-side warning lowers the frequency and does not hold. **The load-bearing checks are CI and a
+   reviewer who did not write the code.** (One later wave, given the warning _plus_ the fact that it
+   had shipped again that day, complied — one sample, not a refutation, but the emphasis may matter.)
+2. **`MusicSearchViewModel` never passed `baseUrl` to its track mapper**, on the same line where
+   artists and albums both did — so track cover URLs were null on the wire. **Adding the missing tile
+   alone would have shipped a styled fallback icon forever and looked entirely correct.**
+3. **Web's browse live region rendered as permanently visible text** — "Browse feed loaded." sitting
+   under the filter chips forever, on a branch that auto-deploys. Shipped on a **false premise**
+   (that this repo has no visually-hidden convention; `.m3-visually-hidden` exists in `Button.css`).
+   **`toHaveText` reads text content and cannot tell hidden from visible**, so the suite was green
+   and a **screenshot** found it. `app.css` now carries its own hiding rule rather than borrowing one
+   that ships only with `Button`'s chunk.
+4. **The accent picker's own selection ring read `--m3-primary`** (`4299bb9`), fixed at Sonora's value
+   since `16c-2-W-1` — so the indicator marking "this is your accent" never changed when the accent
+   did. Android fixed the identical bug in `16f-A-2`. **The spec reported a test pinning this as
+   correct; it does not** — that test pins the _token_ staying fixed, which is deliberate and
+   untouched. Checking that distinction before editing is what made the fix safe.
+
+**Every one of these four was found outside the implementing wave** — by CI, by a parity reviewer, by
+a screenshot, or by the orchestrator's own full-suite run. **Not one was caught by the wave that
+wrote it**, and each wave's targeted tests were green.
+
+#### Techniques that are now proven and belong in every remaining wave
+
+- **Pre-rule the byte-for-byte target in the claim, before either agent reports.** Fifth and sixth
+  triples both matched. On `16e-nowplaying` it made a shipped literal checkable in one step; on
+  `16e-foryou` it **prevented a false alarm** — two announcements that differ by design had already
+  been ruled out of the target. It catches mismatches _and_ stops good work being flagged.
+- **Tell every wave to re-measure the recon it is handed.** Caught a **fourth** wrong count (`--m3-*`
+  in `Carousel.tsx`: 7 across 4 names, not 12) — **the first caught before it cost anything.**
+- **Say plainly when a platform already satisfies something.** Android's For You loading logic was
+  correctly left untouched because the spec said so; the same instruction produced a byte-identical
+  header on the podcast triple.
+- **Contract-vs-recon labelling passed its first real test** — both For You waves invoked it, both
+  correctly.
+
+#### Two corrections about MY OWN process, recorded because they nearly cost verdicts
+
+1. **The `16e-foryou-P` brief stated a divergence backwards**, because it was written from an
+   implementing agent's paraphrase rather than from the spec. The reviewer checked the spec _and_ the
+   vendored source, found the brief wrong, and **escalated instead of grading the wrong platform**.
+   **A review brief inherits the ambiguity of whatever it was derived from — cite the spec directly.**
+2. **A read-only reviewer has no sanctioned way to look at a rendered page.** The `-P` agent broke its
+   "create no file" instruction to take one screenshot and reported itself — **and that screenshot is
+   what found defect 3 above.** Give future `-P` briefs an explicit bounded screenshot allowance
+   rather than an instruction they must break to do the job.
+
+#### Corrections this file owed, now made
+
+- **`14b-2` was recorded as "not started, deliberately"** while three other lines said it landed and
+  was CI-verified. It landed. `ForYouCarousel.kt:173` carries the merged semantics.
+- **The claim that Android's For You carousels had no accessibility semantics at all** was stale for
+  weeks. **It cost real turns** — the `16e-foryou` spec wave was dispatched believing a gap existed
+  and had to prove it did not. **So the standing lesson gets its mirror: "a doc claiming parity is not
+  evidence of parity" is why that gap was found — and a doc claiming a GAP is not evidence of a gap
+  either.** Verify against code in both directions.
+
+#### Open, named, none blocking
+
+- **A SEVENTH writer-with-no-reader:** `RecommendationShelf.itemLabels` is written, typed and tested,
+  and **no client on either platform reads it**. Related: **`parentId` has no writer anywhere in
+  `apps/server/src`** outside types and tests — which makes Sofia's "no two episodes of one podcast"
+  a **data-plumbing** problem, not a logic one. `dedupeByParent` and `typeLabelsFor` already exist and
+  are tested. **This significantly narrows `16e-foryou-shelves-*`.**
+- **`FOR_YOU.md` §9/§10 scoped the same geometry tables in different words**, so the two waves
+  correctly built different amounts. **The defect is the document's.** `SETTINGS.md` already applies
+  the fix; it is the last spec, so the lesson has nowhere else to go.
+- **`features/home/` has NO Robolectric coverage on Android.** Nothing exercises `ForYouCard` or
+  `QuickPickTile`. Every Android claim on that screen is a source read plus a compile.
+- **Web's onboarding/settings page-level CSS is still wholly on `--m3-*`** — a class of consumer this
+  file's "remaining consumers" list has **never tracked**, because that list counts `packages/ui`
+  components only. **`--m3-*` deletion is further off than the tracked list implies.**
+- **Android's skeleton is more faithful than web's** on card corner radius (web's Mantine `Skeleton`
+  fixes `radius="md"`). Does not affect the layout-shift invariant.
+- **Still with Sofia, still blocking nothing:** queue `dbfb46e` (artwork-derived accent), `abbaca2`
+  (the two WCAG numbers), `969711e` (external podcasts — `hold-15e-podcasts` stays held). **Checked
+  this session: none answered, and the accent one has not even been surfaced yet.**
+
 ### DONE 2026-08-20 — `16e-foryou`, the SIXTH screen triple. **Settings/Onboarding is the LAST screen.**
 
 `main` is `a3156bd`. Five waves: spec, `-W`, `-A`, `-P`, and `-A-2` closing what `-P` found, plus
@@ -1095,11 +1204,9 @@ own section below for what landed, what `-P` must rule on, and the worker-count 
 corrects this file's verification advice. Sonora's tabbed desktop panel remains **deliberately not
 built** — that ruling from the `16e-nowplaying-spec` merge commit still stands.
 
-**`16e-nowplaying` and `16e-foryou` are both complete, `-P` included.** The next thing to do is the
-**last screen — Settings/Onboarding** — then `16f`. Write its spec first, and apply the two
-corrections `16e-foryou-P` produced: **enumerate the same geometry-table rows for both platforms**
-(or say why one does not apply), and **tell both implementing waves to re-measure the recon they are
-handed** rather than trusting it. The
+**`16e-nowplaying` and `16e-foryou` are both complete, `-P` included, and `SETTINGS.md` — the last
+screen's spec — is written and merged.** The next thing to do is the **`16e-settings` triple**:
+dispatch `-W` and `-A` together from that document, then `-P`. After it, only `16f` remains. The
 remaining `--m3-*` consumers are `Fab`, `ListItem`, `Marquee`, `NavigationBar`, `SearchField`,
 `Snackbar`, `TopAppBar` — deletion is still not close.
 
