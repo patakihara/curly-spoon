@@ -19,9 +19,14 @@ export function DownloadButton({ state = 'idle', progress = null, onClick, size 
     <button onClick={onClick} aria-label={label} title={label}
       style={sx('position:relative;display:flex;align-items:center;justify-content:center;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;border-radius:50%;border:' + (downloading ? 'none' : '1px solid var(--surface-border)') + ';background:transparent;padding:0;cursor:pointer;color:' + ink + ';transition:color var(--duration-fast) var(--ease-standard)')}>
       {downloading && ProgressRing && (
-        // The ring itself owns the spin/sweep; we only ever pass it a size and, when known, a value.
+        // The ring owns the spin/sweep; we pass a size and, when known, a value. Colour and track
+        // must be passed too: ProgressRing defaults to white-on-white-28% because its usual home
+        // is a scrim over artwork, and those defaults are invisible on a page surface in the
+        // light theme. Ink comes from the tokens so it inverts with the theme.
         <div style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center')}>
-          {pct !== null ? <ProgressRing size={size} value={pct} /> : <ProgressRing size={size} />}
+          {pct !== null
+            ? <ProgressRing size={size} value={pct} color="var(--accent-ink)" track="var(--surface-border)" />
+            : <ProgressRing size={size} color="var(--accent-ink)" track="var(--surface-border)" />}
         </div>
       )}
       <span aria-hidden="true" style={sx("position:relative;font-family:'Material Symbols Rounded';font-variation-settings:'FILL' " + (done ? 1 : 0) + ",'wght' 500;font-size:var(--icon-" + (downloading ? 'xs' : 'sm') + ');line-height:1')}>

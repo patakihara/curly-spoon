@@ -19,7 +19,8 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
     <div onClick={onSubject} role={onSubject ? 'button' : undefined} tabIndex={onSubject ? 0 : undefined}
       style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, cursor: onSubject ? 'pointer' : undefined }}>
       {image && (
-        <div style={{ width: 40, height: 40, flexShrink: 0, overflow: 'hidden', borderRadius: round ? '50%' : 'var(--radius-xs)' }}>
+        /* position:relative so CoverArt's inset:0 fill resolves against this thumbnail. */
+        <div style={{ position: 'relative', width: 40, height: 40, flexShrink: 0, overflow: 'hidden', borderRadius: round ? '50%' : 'var(--radius-xs)' }}>
           {CoverArt && <CoverArt src={image} />}
         </div>
       )}

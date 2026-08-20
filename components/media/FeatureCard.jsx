@@ -24,7 +24,10 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
         </button>
       )}
       <div style={sx('display:flex;gap:var(--spacing-md);padding-right:' + (onMore ? '30px' : '0'))}>
-        <div style={sx('flex-shrink:0;width:' + (mobile ? '76px' : '92px') + ';height:' + (mobile ? '76px' : '92px') + ';border-radius:var(--radius-xs);overflow:hidden')}>
+        {/* position:relative is load-bearing, not tidiness: CoverArt fills its parent with
+            position:absolute;inset:0, so without a positioned ancestor here the gradient escapes
+            and covers the whole card, hiding every line of text under it. */}
+        <div style={sx('position:relative;flex-shrink:0;width:' + (mobile ? '76px' : '92px') + ';height:' + (mobile ? '76px' : '92px') + ';border-radius:var(--radius-xs);overflow:hidden')}>
           {CoverArt && <CoverArt src={image} />}
         </div>
         <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;justify-content:center')}>

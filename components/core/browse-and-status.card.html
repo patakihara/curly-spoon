@@ -1,0 +1,58 @@
+<!-- @dsCard group="Components" viewport="1200x760" name="Browse, Status & Disclosure" subtitle="BrowseCard hues, StatusBanner's four tones, ExpanderRow collapsed/expanded, and BackToTop" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BrowseCard, StatusBanner, ExpanderRow, BackToTop } = window.SonoraDesignSystem_6c1435;
+
+function Caption({ children }) {
+  return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:640}}>{children}</div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div>
+      <Caption>BrowseCard navigates into a category whose content you can't name yet — several hues across a grid, some given an explicit colour, some left to the deterministic fallback.</Caption>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'var(--spacing-md)',maxWidth:640}}>
+        <BrowseCard title="Audiobooks" color="violet" onClick={() => {}} />
+        <BrowseCard title="True crime" color="rose" onClick={() => {}} />
+        <BrowseCard title="Cooking & baking" onClick={() => {}} />
+        <BrowseCard title="Sleep & calm" color="teal" onClick={() => {}} />
+        <BrowseCard title="Kids' shows" onClick={() => {}} />
+        <BrowseCard title="Live recordings" color="amber" onClick={() => {}} />
+      </div>
+    </div>
+    <div>
+      <Caption>StatusBanner's four tones — a persistent, non-dismissing statement of system state, unlike a toast. One carries a text action, one is dismissible.</Caption>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',maxWidth:640}}>
+        <StatusBanner tone="info" icon="schedule">Library last synced 2 hours ago.</StatusBanner>
+        <StatusBanner tone="warning" icon="storage" actionLabel="Manage storage" onAction={() => {}}>Downloads paused — device storage is nearly full.</StatusBanner>
+        <StatusBanner tone="error" icon="cloud_off" onDismiss={() => {}}>mediaserver is unreachable. Showing cached results.</StatusBanner>
+        <StatusBanner tone="success" icon="check_circle">Playlist synced to all devices.</StatusBanner>
+      </div>
+    </div>
+    <div>
+      <Caption>ExpanderRow folds a homogeneous group behind a single disclosure — collapsed, and expanded to reveal what it was hiding.</Caption>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',maxWidth:640}}>
+        <ExpanderRow label="More releases of Aftershocks" expanded={false} onToggle={() => {}} />
+        <ExpanderRow label="More releases of Aftershocks" expanded={true} onToggle={() => {}} />
+      </div>
+    </div>
+    <div>
+      <Caption>BackToTop, shown visible — a floating escape from a feed that has no bottom.</Caption>
+      <BackToTop visible={true} onClick={() => {}} />
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

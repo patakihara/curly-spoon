@@ -1,0 +1,64 @@
+<!-- @dsCard group="Components" viewport="1200x760" name="Contextual Headers & Controls" subtitle="Extended SectionHeader (eyebrow/image/round/actionText), SortFilterBar, Rating, FollowButton and PreviewButton" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const art = (hue) => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">' +
+  '<rect width="80" height="80" fill="hsl(' + hue + ' 55% 42%)"/>' +
+  '<circle cx="40" cy="40" r="18" fill="hsl(' + hue + ' 70% 72%)"/></svg>');
+const { SectionHeader, SortFilterBar, Rating, FollowButton, PreviewButton, ViewToggle } = window.SonoraDesignSystem_6c1435;
+
+function Caption({ children }) {
+  return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:640}}>{children}</div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div>
+      <Caption>SectionHeader plain, with an eyebrow+image explaining why the shelf is here, with a round thumbnail for a person, and with a text action instead of the glyph action.</Caption>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-md)'}}>
+        <SectionHeader title="Recently added" action="arrow_forward" onAction={() => {}} />
+        <SectionHeader eyebrow="More like" title="Static & Signal" image={art(265)} onSubject={() => {}} action="arrow_forward" onAction={() => {}} />
+        <SectionHeader eyebrow="Popular with listeners of" title="Mara Voss" image={art(180)} round onSubject={() => {}} action="arrow_forward" onAction={() => {}} />
+        <SectionHeader title="New audiobooks this week" actionText="Show all" onAction={() => {}} />
+      </div>
+    </div>
+    <div>
+      <Caption>SortFilterBar reporting the active sort — with a trailing ViewToggle, and without one.</Caption>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-md)'}}>
+        <SortFilterBar label="All episodes • Newest" onClick={() => {}} trailing={ViewToggle && <ViewToggle value="grid" onChange={() => {}} />} />
+        <SortFilterBar icon="swap_vert" label="Alphabetical" onClick={() => {}} />
+      </div>
+    </div>
+    <div>
+      <Caption>Rating states the value and the population, not five glyphs. FollowButton's label states the current state, not the action.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-2xl)',alignItems:'center',flexWrap:'wrap'}}>
+        <Rating value={4.6} count={1280} />
+        <Rating value={3.9} count={17700} />
+        <FollowButton following={false} onChange={() => {}} />
+        <FollowButton following={true} onChange={() => {}} />
+      </div>
+    </div>
+    <div>
+      <Caption>PreviewButton idle (muted, the default resting state), playing, and disabled (no sample available).</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-md)',flexWrap:'wrap',padding:'var(--spacing-md)',background:'var(--surface-card)',borderRadius:'var(--radius-md)'}}>
+        <PreviewButton kind="episode" muted onClick={() => {}} />
+        <PreviewButton kind="playlist" playing onClick={() => {}} />
+        <PreviewButton kind="audiobook" disabled onClick={() => {}} />
+      </div>
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

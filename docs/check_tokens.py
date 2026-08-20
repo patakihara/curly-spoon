@@ -81,6 +81,17 @@ def main():
                 if not any(t.startswith(prefix) and t.endswith(tail) for t in TOKENS):
                     problems.append((rel, "no token matches %s*%s" % (prefix, tail)))
 
+            # CoverArt fills its parent with position:absolute;inset:0, so the parent MUST be a
+            # containing block. Without one the gradient resolves against some distant ancestor
+            # and paints over the whole component — which looks like a broken component, not a
+            # missing style. Three components shipped this before a browser caught it.
+            for m in re.finditer(r"<CoverArt", src):
+                back = src[max(0, m.start() - 420):m.start()]
+                # last style block before the tag is the container's
+                if not re.search(r"position\s*:\s*'?(relative|absolute|fixed|sticky)", back):
+                    problems.append((rel, "<CoverArt> parent is not a containing block "
+                                          "(needs position:relative) — it will cover its ancestor"))
+
     print("scanned %d files" % scanned)
     for rel, msg in sorted(problems):
         print("  FAIL  %-42s %s" % (rel, msg))

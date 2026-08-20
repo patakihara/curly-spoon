@@ -1,0 +1,53 @@
+<!-- @dsCard group="Components" viewport="1400x820" name="Card & Tile States" subtitle="Extended MediaCard (eyebrow/unplayed/savedBadge/markers/progress/absent), extended QuickPick, and extended Badge" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { MediaCard, QuickPick, Badge } = window.SonoraDesignSystem_6c1435;
+
+function Caption({ children }) {
+  return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:960}}>{children}</div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div>
+      <Caption>MediaCard's status extensions, one property at a time: an eyebrow naming the type before the title, an unplayed dot, a saved bookmark tab, caption markers (pinned, offline), a resume progress bar, and the not-in-library state.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-lg)',flexWrap:'wrap'}}>
+        <MediaCard width="160px" eyebrow="Album" title="Driftwave" sub="Halcyon Bloom" onClick={() => {}} />
+        <MediaCard width="160px" unplayed title="Episode 44 — After the tape ran out" sub="Podcast · Static & Signal" onClick={() => {}} />
+        <MediaCard width="160px" savedBadge title="Late shift, low light" sub="Playlist · 42 tracks" onClick={() => {}} />
+        <MediaCard width="160px" markers={["push_pin", "download_done"]} title="The Glass Archivist" sub="Audiobook · 11h 40min" onClick={() => {}} />
+        <MediaCard width="160px" progress={0.6} title="Aftershocks: the second call" sub="Podcast · Static & Signal" onClick={() => {}} />
+        <MediaCard width="160px" absent title="Field Recordings Vol. 3" sub="Album · Halcyon Bloom" onClick={() => {}} />
+      </div>
+    </div>
+    <div>
+      <Caption>QuickPick's resume and new-episode markers — a thin progress rule across the base of the art, and an accent dot for something unplayed.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-lg)',flexWrap:'wrap'}}>
+        <div style={{width:260}}><QuickPick title="Aftershocks: the second call" sub="Podcast · 22min left" progress={0.72} onClick={() => {}} /></div>
+        <div style={{width:260}}><QuickPick title="Episode 44 — After the tape ran out" sub="Static & Signal" unplayed onClick={() => {}} /></div>
+      </div>
+    </div>
+    <div>
+      <Caption>Badge's attribute extensions — a leading glyph, the square explicit-content shape, and the plain (no-fill) treatment.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-md)',alignItems:'center',flexWrap:'wrap'}}>
+        <Badge tone="success" icon="check_circle">Verified</Badge>
+        <Badge tone="neutral" square>E</Badge>
+        <Badge tone="accent" plain>New</Badge>
+      </div>
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

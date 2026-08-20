@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&display=swap');
+/* Display face: Archivo Black — a heavier single-weight cut of Archivo (the variable family caps at 900 but reads lighter). Archivo 400–900 stays available for UI chrome. */
+:root{
+--font-body:'Inter',-apple-system,'Segoe UI',sans-serif;
+--font-display:'Archivo Black','Archivo','Inter',sans-serif;
+--font-heading:'Archivo','Inter',sans-serif;
+}
+/* Body copy is medium by default — 400 read too light in the player UI. */
+body{font-family:var(--font-body);font-weight:var(--weight-body)}

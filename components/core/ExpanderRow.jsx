@@ -18,7 +18,8 @@ export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false,
     <div onClick={() => onToggle && onToggle(!expanded)} role="button" tabIndex={0} aria-expanded={expanded}
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);padding:var(--spacing-md);border-radius:var(--radius-xs);background:var(--surface-card);cursor:pointer')}>
       {image && CoverArt && (
-        <div style={sx('width:36px;height:36px;flex-shrink:0;border-radius:var(--radius-xs);overflow:hidden')}>
+        /* position:relative so CoverArt's inset:0 fill resolves against this box, not the row. */
+        <div style={sx('position:relative;width:36px;height:36px;flex-shrink:0;border-radius:var(--radius-xs);overflow:hidden')}>
           <CoverArt src={image} />
         </div>
       )}
