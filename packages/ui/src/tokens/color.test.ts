@@ -198,4 +198,34 @@ describe('ACCENT_PRESETS', () => {
     expect(hexes.size).toBe(17);
     expect(names.size).toBe(17);
   });
+
+  /**
+   * Wave 16e-settings-W (SETTINGS.md §6.3) — the byte-for-byte target for this
+   * screen. Android's `SonoraAccentPresets` (`Color.kt`) matches this list in
+   * name, order and hex exactly today; nothing needs to change to make that
+   * true. This pins the ordered hex list so a future edit to either side that
+   * silently drifts the pair fails immediately here, rather than being caught
+   * by eye (or not at all) in a later parity review.
+   */
+  it('matches Android’s SonoraAccentPresets byte-for-byte, in order', () => {
+    expect(ACCENT_PRESETS.map((p) => p.hex)).toEqual([
+      '#ef4444',
+      '#f97316',
+      '#f59e0b',
+      '#eab308',
+      '#84cc16',
+      '#22c55e',
+      '#10b981',
+      '#14b8a6',
+      '#06b6d4',
+      '#0ea5e9',
+      '#3b82f6',
+      '#6366f1',
+      '#8b5cf6',
+      '#a855f7',
+      '#d946ef',
+      '#ec4899',
+      '#f43f5e',
+    ]);
+  });
 });

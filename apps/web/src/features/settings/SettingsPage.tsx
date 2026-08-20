@@ -54,61 +54,34 @@ export function SettingsPage() {
         <h2>Appearance</h2>
         <div className="auralis-settings-row" data-testid="theme-mode-controls">
           {MODES.map((candidate) => (
-            <Button
+            // Wave 16e-settings-W (SETTINGS.md §6.6): this used to be a `Button` whose
+            // inline `style` block hand-copied `Chip.tsx`'s own selected/unselected
+            // values (see that file's `chipLabelStyle`/`chipStyleVars`) because nothing
+            // here actually reused `Chip`. It now does — `Chip`'s `filter` variant
+            // already encodes exactly the treatment that block used to duplicate by
+            // hand (`--accent`/`--accent-contrast` filled, `--surface-card`/
+            // `--surface-fg`/`--surface-border` unfilled), so this row needs no style
+            // override at all.
+            //
+            // Accessibility note (SETTINGS.md §11): `Chip`'s underlying control is
+            // Mantine's checkbox-shaped `<input type="checkbox">` (see `Chip.tsx`'s own
+            // header comment and `e2e/ui/chip.spec.ts`), so there is no `aria-pressed`
+            // here the way the old `Button` had — selection is conveyed by the input's
+            // native `checked` state instead, asserted via `.toBeChecked()` in
+            // `settings-a11y.spec.ts`. That is `role="checkbox"`/checked-state
+            // semantics, not a radio group, even though these three chips are mutually
+            // exclusive — a real, named gap inherited from `Chip.tsx` (out of scope
+            // here; `Chip.tsx` is `packages/ui` primitive work, not this screen's
+            // restyle) rather than something this wave fixed or worked around.
+            <Chip
               key={candidate}
-              variant={mode === candidate ? 'filled' : 'outlined'}
-              size="sm"
-              // Matches the colour swatches below (`aria-pressed={accent === preset.hex}`):
-              // `variant` alone is a visual-only signal (filled vs outlined), invisible to
-              // assistive tech (a11y audit, 2026-08-05).
-              aria-pressed={mode === candidate}
-              onClick={() => setMode(candidate)}
+              variant="filter"
+              selected={mode === candidate}
+              onSelectedChange={() => setMode(candidate)}
               data-testid={`theme-mode-${candidate}`}
-              // Wave 16c-2-W-2 migrated the *selected* (filled) button's fill onto
-              // `--accent`/`--accent-contrast`, matching the solid-fill pairing Chip's
-              // checked state and IconButton's selected `standard` state already establish.
-              // It left the unselected (`outlined`) buttons on Mantine's own
-              // `theme.colors.auralis` ramp — `scheme.primary`, the old HCT-generated M3
-              // primary `sourceColor` still drives (`ThemeProvider.tsx`) even though
-              // `16c-2-W-1` fixed `--m3-*` itself at Sonora's static values. That ramp
-              // doesn't track the accent picker *or* match Sonora's palette; it's a third,
-              // orphaned tint nobody chose.
-              //
-              // Wave 16c-2-W-4: checked Sonora's own vendored primitives
-              // (`docs/design/sonora/primitives/`) before assuming "respond to the accent
-              // picker" meant "tint with `--accent`" — it doesn't, and this is the case
-              // `CLAUDE.md`'s parity-review precedent calls out (16c-2-W-3 finding `Card`
-              // needed nothing). Three real Sonora sources agree, unanimously: the
-              // *unselected* half of every toggle-like control is plain surface tone, never
-              // `--accent`. `Button.jsx`'s own `secondary` variant is
-              // `background: var(--surface-card); color: var(--surface-fg);
-              // border: 1px solid var(--surface-border)` — no accent reference anywhere.
-              // `Chip.jsx`'s unchecked state and `IconButton.jsx`'s inactive state are the
-              // same shape. This app's own `Chip.tsx` already encodes exactly this trio
-              // (`chipLabelStyle`'s unchecked branch) for its unchecked state, so the values
-              // below are copied from there rather than invented, fallbacks included.
-              //
-              // So the fix is real but isn't "make it respond to the accent picker" — it's
-              // "stop the orphaned tint and adopt Sonora's actual neutral treatment," which
-              // incidentally is what makes the boundary against the selected button crisp:
-              // a solid accent fill against Sonora's genuine neutral, not against a random
-              // leftover hue. `--surface-fg` on `--surface-card` clears WCAG AA by a wide
-              // margin in both themes (~14:1 dark, ~13.5:1 light — computed against the
-              // WCAG relative-luminance formula), unlike the `--accent-ink`/`--surface-card`
-              // pairing already flagged with Sofia (queue `abbaca2`) — this treatment avoids
-              // that failure mode entirely rather than reusing a pairing known to fail it.
-              style={
-                mode === candidate
-                  ? { backgroundColor: 'var(--accent)', color: 'var(--accent-contrast, #fff)' }
-                  : {
-                      backgroundColor: 'var(--surface-card, rgb(20, 20, 20))',
-                      color: 'var(--surface-fg, currentColor)',
-                      borderColor: 'var(--surface-border, rgb(255 255 255 / 8%))',
-                    }
-              }
             >
               {candidate}
-            </Button>
+            </Chip>
           ))}
         </div>
         <p className="auralis-field__hint">Accent colour:</p>
