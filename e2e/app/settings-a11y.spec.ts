@@ -72,10 +72,18 @@
  *    `input` descendant, matching `chip.spec.ts`'s own established pattern — and any
  *    assertion reading the chip's *painted* colour (bullet 6's unselected-fill check) now
  *    targets the `label` descendant, since `Chip.tsx`'s styling lands there, not on the
- *    `data-testid`'d wrapper `<span>`. This is `role="checkbox"`/checked-state semantics,
- *    not a radio group, for three mutually-exclusive options — a real, named gap inherited
- *    from `Chip.tsx` itself (out of scope for a screen-restyle wave), not something fixed
- *    or worked around here.
+ *    `data-testid`'d wrapper `<span>`.
+ *
+ *    ~~This is `role="checkbox"`/checked-state semantics, not a radio group, for three
+ *    mutually-exclusive options — a real, named gap inherited from `Chip.tsx` itself.~~
+ *    **CLOSED by wave 16h-chip-singleselect**, found by `16e-settings-P`. `Chip` gained an
+ *    opt-in `radioGroup` prop (see `Chip.tsx`'s doc comment on it), and this row now passes
+ *    `radioGroup="theme-mode"` plus a per-chip `value`, so the underlying control is
+ *    `<input type="radio" name="theme-mode">`. `.toBeChecked()`/`.not.toBeChecked()` below
+ *    still read correctly — a radio's `checked` state is native, same as a checkbox's — so
+ *    those assertions did not need to change; only the DOM `type`/`name` did. The new
+ *    "announces as a single-selection group" test further down asserts the `type`/`name`
+ *    directly, since neither is visible in a `.toBeChecked()` read.
  */
 import { expect, test } from '@playwright/test';
 
@@ -108,6 +116,37 @@ test('theme mode chips expose native checked state for the active mode (wave 16e
   await expect(modeInput('dark')).toBeChecked();
   await expect(modeInput('system')).not.toBeChecked();
   await expect(modeInput('light')).not.toBeChecked();
+});
+
+test('the theme-mode row announces as a single-selection group, not three independent checkboxes (wave 16h-chip-singleselect, see file header bullet 7)', async ({
+  page,
+}) => {
+  // DISCRIMINATES: fails against the pre-16h code, where every `theme-mode-*` input was
+  // `type="checkbox"` with no shared `name` — `Chip` had no `radioGroup` prop at all, so
+  // this exact assertion pair would have read `checkbox`/no-name instead of
+  // `radio`/a shared group name.
+  await page.goto('/settings');
+
+  const modeInput = (mode: string) => page.getByTestId(`theme-mode-${mode}`).locator('input');
+  const modeLabel = (mode: string) => page.getByTestId(`theme-mode-${mode}`).locator('label');
+
+  await expect(modeInput('system')).toHaveAttribute('type', 'radio');
+  await expect(modeInput('light')).toHaveAttribute('type', 'radio');
+  await expect(modeInput('dark')).toHaveAttribute('type', 'radio');
+  const groupName = await modeInput('system').getAttribute('name');
+  expect(groupName).toBeTruthy();
+  await expect(modeInput('light')).toHaveAttribute('name', groupName!);
+  await expect(modeInput('dark')).toHaveAttribute('name', groupName!);
+
+  // Exclusivity in the accessibility tree, not just a repainted label: selecting one
+  // native radio deselects its group siblings without their own change handler firing.
+  await modeLabel('light').click();
+  await expect(modeInput('light')).toBeChecked();
+  await expect(modeInput('system')).not.toBeChecked();
+  await expect(modeInput('dark')).not.toBeChecked();
+
+  // restore for other tests sharing this worker's page context
+  await modeLabel('system').click();
 });
 
 test('pinning a theme mode that disagrees with the OS syncs native color-scheme, not just data-theme', async ({

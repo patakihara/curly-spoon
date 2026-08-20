@@ -126,6 +126,33 @@ export interface ChipProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonEle
   /** Applied to the wrapper (the chip's public root), not the inner control. */
   'data-testid'?: string;
   children: ReactNode;
+  /**
+   * Opt-in single-selection grouping for `variant="filter"` chips that are mutually
+   * exclusive — e.g. a theme-mode row (system/light/dark) or a sort-order row, where
+   * exactly one of the row's chips is ever `selected`. **Not** for independent
+   * multi-select filter rows (e.g. a content-type filter that can toggle back to "all"
+   * on a second click of the same chip) — a native `<input type="radio">` does not fire
+   * a change event when the already-checked one is clicked again, so that toggle-off
+   * convenience would silently stop working.
+   *
+   * When set, every chip sharing the same `radioGroup` string renders
+   * `<input type="radio" name={radioGroup}>` instead of Mantine's default
+   * `<input type="checkbox">` — so assistive tech announces "radio button, N of M" and
+   * excludes the group's other options by construction, and arrow-key navigation moves
+   * between them. Each chip in the group still needs its own distinct `value` (passed
+   * straight through via `...rest`, since `ButtonHTMLAttributes` already declares it) so
+   * the browser can tell the options apart.
+   *
+   * Exclusivity itself is unaffected either way — every filter chip is already fully
+   * controlled via its own `selected` prop, so the caller's own state (one `mode ===
+   * candidate` comparison per chip) is what actually drives which one is checked. This
+   * prop only changes the underlying control's `type`/`name`, which is what assistive
+   * tech and the keyboard actually read. Omitting it (the default) leaves every existing
+   * checkbox-shaped filter chip byte-for-byte unchanged — `filterProps` in Mantine's own
+   * `useProps` strips any prop set to `undefined`, so `type`/`name` fall through to
+   * Mantine's `defaultProps` (`type: "checkbox"`) exactly as before.
+   */
+  radioGroup?: string;
 }
 
 export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
@@ -143,6 +170,7 @@ export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
     type: _type,
     onChange: _onChange,
     style,
+    radioGroup,
     ...rest
   },
   ref,
@@ -162,6 +190,14 @@ export const Chip = forwardRef<HTMLInputElement, ChipProps>(function Chip(
         ref={ref}
         variant={showsCheckGlyph ? 'filled' : 'outline'}
         checked={isFilter ? Boolean(selected) : false}
+        // `radioGroup` deliberately bypasses Mantine's own `Chip.Group`/context
+        // machinery — see the `radioGroup` doc comment on `ChipProps` above. Passing
+        // `undefined` when it's unset is load-bearing, not just tidy: Mantine's
+        // `filterProps` (`useProps`) drops any prop whose value is `undefined` before
+        // merging over `defaultProps`, so `type` falls through to `defaultProps.type =
+        // "checkbox"` exactly as it did before this prop existed.
+        type={radioGroup ? 'radio' : undefined}
+        name={radioGroup}
         style={{ ...chipStyleVars(showsCheckGlyph), ...style }}
         styles={{ label: chipLabelStyle(showsCheckGlyph) }}
         classNames={{ label: CHIP_LABEL_CLASS }}

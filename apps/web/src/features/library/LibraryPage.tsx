@@ -67,16 +67,23 @@ export function LibraryView({ libraryId }: { libraryId: string }) {
 
       <div
         data-testid="sort-controls"
-        role="group"
+        role="radiogroup"
         aria-label="Sort by"
         style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
       >
         {SORT_OPTIONS.map((option) => (
+          // Wave 16h-chip-singleselect: `sortKey` is always exactly one of
+          // `SORT_OPTIONS`, never "none" — a lossless fit for `Chip`'s opt-in
+          // `radioGroup` prop (see that prop's doc comment on `ChipProps`).
+          // `filter-finished` below is a genuine standalone boolean toggle, not a
+          // one-of-many group, so it deliberately keeps its checkbox semantics.
           <Chip
             key={option.key}
             variant="filter"
             selected={sortKey === option.key}
             onSelectedChange={() => setSortKey(option.key)}
+            radioGroup="library-sort"
+            value={option.key}
             data-testid={`sort-${option.key}`}
           >
             {option.label}
