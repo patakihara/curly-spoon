@@ -270,8 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T20:27:21Z` · `a8bf0c9fd4eba7c4c` · general-purpose · ended · Working tree is clean, everything is committed on branch 'worktree-agent-a8bf0c9fd4eba7c4c' at '0d0bffd'. Not pushing or merging, per instructions. H…
-- `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · ended · ## Verdict: **hold for a client wave** — I agree with your inclination The server-side wave itself is clean, well-tested, and one of the more careful…
 - `2026-08-18T20:47:35Z` · `a6e64e451336a72ea` · general-purpose · ended · Working tree is clean, one commit on top of '30a772d' on branch 'worktree-agent-a6e64e451336a72ea'. Not pushed or merged, per instructions. ## Report…
 - `2026-08-18T20:52:57Z` · `ad1e24b030f35c99c` · general-purpose · ended · Clean working tree, one commit ('9a7d09c') on top of '8d77670', on branch 'worktree-agent-ad1e24b030f35c99c'. Not pushed, not merged, per instruction…
 - `2026-08-18T21:09:06Z` · `ae6a5a06a1aba2e0f` · general-purpose · ended · ## Report — Wave 15d-1-books-W **Branch/commit:** 'worktree-agent-ae6a5a06a1aba2e0f' at '1912d6c', one commit on top of the integration branch tip '4…
@@ -285,6 +283,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
 - `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
 - `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
+- `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · running · —
+- `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -728,6 +728,21 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### CLAIMED 2026-08-20 — `16e-nowplaying-W` and `16e-nowplaying-A`, dispatched together
+
+Both halves of the Now Playing / mini player / queue triple are **in flight** from
+`docs/design/screens/NOW_PLAYING.md`, base `5a76683`. Web owns `apps/web` + `packages/ui`
+(including `IconButton`'s new additive `size` prop); Android owns `apps/android`. Disjoint, and
+only the `-W` half needs Playwright, so the port-4310 constraint is satisfied.
+
+**`16e-nowplaying-P` is owed** once both merge. Its byte-for-byte target is named in advance, which
+is the pre-ruling discipline `ALBUM_DETAIL.md` established: the scrubber's announced value must read
+`"{elapsed} of {total}"` on both platforms, from web's existing `formatDuration` output. This is the
+**first** triple where one side has a literal already shipped for the other to match rather than two
+independent derivations — so a mismatch here is a real defect, not idiom. Hex-dump it; do not eyeball.
+
+Delete this block when both are merged.
 
 ### `15d-1-books-P` is DONE, and it found a real fail-unsafe divergence on web
 
