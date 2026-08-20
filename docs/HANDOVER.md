@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
 - `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
 - `2026-08-20T12:43:03Z` · `a290836730d4ca5c5` · general-purpose · ended · Everything is confirmed. Here is my final report. ## Report — Wave 16e-nowplaying-A **1. Branch/commit:** 'worktree-agent-a290836730d4ca5c5' at '5351…
 - `2026-08-20T13:34:53Z` · `ac8d6ec012bcfbac3` · general-purpose · ended · # Parity Review — '16e-nowplaying-P' ## 1. Verdict **Not clean — one real defect, currently blocking 'main''s Android CI, plus two follow-ups.** The…
@@ -285,6 +284,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
 - `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
 - `2026-08-20T22:00:53Z` · `a12a64f119980693a` · general-purpose · ended · ## Report — '16g-design-reconcile' **Branch/commit:** 'worktree-agent-a12a64f119980693a' at 'b98ca76', one commit on top of '04a7f22'. 'git status --…
+- `2026-08-20T22:11:05Z` · `aa14b1c2b80bebfb8` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -742,6 +742,21 @@ which is what distinguishes a concurrent session from a subagent working in its 
 which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; leave the unit alone.
 
 ## Claimed work — check here before starting a wave
+
+### CLAIMED 2026-08-21 — `16h-chip-singleselect`, in flight. Base `ad1b491`.
+
+The one follow-up `16e-settings-P` named. `packages/ui`'s `Chip variant="filter"` is Mantine's
+**checkbox** underneath, so Settings' three mutually-exclusive theme-mode options announce as three
+independent checkboxes.
+
+**The wave is subtler than the one-line fix suggests, and the recon that showed why is worth
+keeping.** `variant="filter"` has **7 call sites across 5 files** — Settings, Home, Search (×2),
+Podcast detail, Library (×2) — and they are **not all mutually exclusive**. Changing the variant's
+semantics globally would break every genuinely multi-select row, since a radio group cannot express
+two active filters. So the wave is specced as **opt-in grouping, default behaviour unchanged**, and
+its first deliverable is a classification of all seven call sites before any edit. Same shape as the
+shared-component lesson this file already carries: a primitive changed in place reads as correct in
+review and is wrong on the other screens.
 
 ### DONE 2026-08-21 — `16e-settings`, the LAST screen. **Every screen in 16e is now complete; only `16f` remains.**
 
