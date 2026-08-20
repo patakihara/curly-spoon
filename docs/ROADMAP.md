@@ -3898,10 +3898,18 @@ boundaries, disjoint directories where waves run in parallel.
   round was a test-fixture bug — two fields sharing a literal made an `onNodeWithText` finder
   ambiguous — not a product defect. Do not re-audit it.
 
-- **16f — Android's remaining gap, and it is no longer "all of Android".** With 16c–16e paired,
-  what is left here is what has no web counterpart: `MaterialTheme` receiving a full typography and
-  shape scale (it gets neither today), and Android's colour coming from the platform's
-  wallpaper-derived Material You rather than Sonora's accent. **The Compose harness from 14b is what
+- **16f — DONE, and this bullet described it as open for weeks after it closed.** Verified against
+  the code 2026-08-21, in both directions, because this project has now been burned by a doc
+  claiming parity _and_ by a doc claiming a gap: `ui/theme/Theme.kt:33-37` passes `SonoraTypography`
+  **and** `SonoraShapes` into `MaterialTheme` alongside the colour scheme, and the only mention of
+  `dynamicLightColorScheme`/`dynamicDarkColorScheme` left in the tree is a comment explaining that
+  Sonora **replaced** wallpaper-derived Material You rather than layering on it. The waves that did
+  it were `16b-2-A`, `16b-2-A-2`, `16f-A-1`, `16f-A-2` and `16f-P`.
+
+  **The original text is kept below because its caveat about the harness is still true and still
+  worth reading.** What it claimed was left — `MaterialTheme` receiving a full typography and
+  shape scale, and Android's colour coming from the platform's wallpaper-derived Material You —
+  is no longer accurate. **The Compose harness from 14b is what
   makes any of this verifiable** — before it, an Android restyle was checkable only by "it compiles"
   plus a reviewer reading it. Be precise about what that harness buys: it confirms a node exists
   with the semantics you meant; it does not tell you what TalkBack announces or how the row looks.
