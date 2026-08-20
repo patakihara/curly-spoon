@@ -7,19 +7,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Podcasts
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -33,7 +37,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -46,6 +52,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import coil.ImageLoader
+import coil.compose.AsyncImage
 import net.develivarr.auralis.AppContainer
 import net.develivarr.auralis.data.model.MusicCandidate
 import net.develivarr.auralis.data.model.Release
@@ -366,7 +373,7 @@ internal fun LazyListScope.searchResultsSection(
             if (visible.tracks && state.tracks.isNotEmpty()) {
                 sectionHeader("Tracks")
                 items(state.tracks, key = { "track:${it.id}" }) { track ->
-                    SearchResultTrackRow(track = track, onOpenAlbum = onOpenAlbum)
+                    SearchResultTrackRow(track = track, imageLoader = imageLoader, onOpenAlbum = onOpenAlbum)
                 }
             }
             if (visible.artists || visible.albums || visible.tracks) {
@@ -662,6 +669,19 @@ internal fun UnifiedSearchQueryArea(
             value = query,
             onValueChange = onQueryChange,
             label = { Text("Books, podcasts, artists, albums, or tracks") },
+            // §3's geometry table pins a leading icon on this field, matching web's
+            // `SearchField` — decorative, so `contentDescription = null` is deliberate: the
+            // field already carries its own label, and announcing "search" a second time is
+            // worse than not announcing it at all. The `testTag` exists purely so
+            // UnifiedSearchScreenTest can assert this icon is present without a
+            // contentDescription to key off.
+            leadingIcon = {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = null,
+                    modifier = Modifier.testTag("search-field-icon"),
+                )
+            },
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -701,13 +721,26 @@ internal fun UnifiedSearchQueryArea(
     )
 }
 
-/** One music track search result — the same shape and the same "no `clickable` modifier at all
- * when there's nowhere to navigate" treatment as `MusicSearchScreen.kt`'s own `SearchTrackRow`:
- * a search hit carries no sibling track list to build a playback queue from, so tapping it
- * opens its album instead, and a track with no [MusicSearchTrackUi.albumId] has nowhere to go. */
+/** One music track search result — the same "no `clickable` modifier at all when there's
+ * nowhere to navigate" treatment as `MusicSearchScreen.kt`'s own `SearchTrackRow`: a search hit
+ * carries no sibling track list to build a playback queue from, so tapping it opens its album
+ * instead, and a track with no [MusicSearchTrackUi.albumId] has nowhere to go.
+ *
+ * **16e-search-A-2's fix**: this row used to render two bare [Text]s with no cover art at all,
+ * the one search-result kind on this screen without one — every other kind (books, podcasts,
+ * artists, albums) gets a [SEARCH_ROW_ART_SIZE]/[SEARCH_ROW_ART_RADIUS] tile via
+ * [net.develivarr.auralis.features.music.MusicRow]. This mirrors that component's own
+ * `Box`(fallback [Icon] underneath, [AsyncImage] on top) layering **exactly** — same order, same
+ * sizes, same [MaterialTheme.colorScheme.onSurfaceVariant] tint — so the two agree, rather than
+ * calling `MusicRow` directly: doing so would mean threading a nullable `onClick` through it for
+ * a click that already has its own bespoke handling here. Coil paints nothing while loading, on
+ * failure, or when [MusicSearchTrackUi.coverUrl] is null (it is null until the server base URL
+ * resolves) — the fallback [Icon] is what shows through in every one of those cases, not an
+ * error/placeholder painter on [AsyncImage] itself, matching `MusicRow`'s own comment on why. */
 @Composable
 private fun SearchResultTrackRow(
     track: MusicSearchTrackUi,
+    imageLoader: ImageLoader,
     onOpenAlbum: (String) -> Unit,
 ) {
     val albumId = track.albumId
@@ -716,7 +749,27 @@ private fun SearchResultTrackRow(
             if (albumId != null) base.clickable(onClick = { onOpenAlbum(albumId) }) else base
         }.padding(vertical = 8.dp)
     Row(modifier = rowModifier, verticalAlignment = Alignment.CenterVertically) {
-        Column {
+        Box(
+            modifier = Modifier.size(SEARCH_ROW_ART_SIZE).clip(RoundedCornerShape(SEARCH_ROW_ART_RADIUS)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MusicNote,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                // Tagged per-track (not a fixed tag) so a list of several tracks does not
+                // collide under Robolectric's strict-mode node lookup.
+                modifier = Modifier.size(SEARCH_ROW_ART_SIZE / 2).testTag("search-track-art-fallback-${track.id}"),
+            )
+            AsyncImage(
+                model = track.coverUrl,
+                contentDescription = null,
+                imageLoader = imageLoader,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(SEARCH_ROW_ART_SIZE),
+            )
+        }
+        Column(modifier = Modifier.padding(start = 16.dp)) {
             Text(track.title, style = MaterialTheme.typography.titleSmall)
             track.artistNames?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
