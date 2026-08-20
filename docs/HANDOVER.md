@@ -270,9 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-18T20:08:25Z` · `a5f4cf54fababc701` · general-purpose · ended · ## Report — 16e-podcast-spec **Branch/commit:** 'worktree-agent-a5f4cf54fababc701' at '91a51cc', two commits on top of 'e5eb249'. Working tree clean.…
-- `2026-08-18T20:09:26Z` · `a675ba5171943ba81` · general-purpose · ended · ## Report — Wave 15e-books: external book discovery for 'GET /libraries/:id/recommended' **Branch:** 'worktree-agent-a675ba5171943ba81', final commit…
-- `2026-08-18T20:23:07Z` · `a2adabaeb3b722475` · general-purpose · ended · All balanced, working tree clean, nothing left uncommitted. ## Report — Wave 16e-podcast-A **Branch/commit:** 'worktree-agent-a2adabaeb3b722475' at '…
 - `2026-08-18T20:27:21Z` · `a8bf0c9fd4eba7c4c` · general-purpose · ended · Working tree is clean, everything is committed on branch 'worktree-agent-a8bf0c9fd4eba7c4c' at '0d0bffd'. Not pushing or merging, per instructions. H…
 - `2026-08-18T20:34:44Z` · `aacc68fe6794d91d0` · general-purpose · ended · ## Verdict: **hold for a client wave** — I agree with your inclination The server-side wave itself is clean, well-tested, and one of the more careful…
 - `2026-08-18T20:47:35Z` · `a6e64e451336a72ea` · general-purpose · ended · Working tree is clean, one commit on top of '30a772d' on branch 'worktree-agent-a6e64e451336a72ea'. Not pushed or merged, per instructions. ## Report…
@@ -285,6 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-19T00:55:29Z` · `ab2cba47f42acee0a` · general-purpose · running · —
 - `2026-08-19T00:58:08Z` · `a2d7fcca93b480e7e` · general-purpose · ended · ## Parity review — '15d-1-books' (server + '-A' + '-W') **Verdict: ship as-is, but with one real cross-platform behavioral bug to fix — a silent asym…
 - `2026-08-19T01:00:09Z` · `ad7800b70963a0170` · general-purpose · running · —
+- `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
+- `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
+- `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -833,21 +833,43 @@ a **one-tap subscribe by RSS feed**, which Audiobookshelf supports natively and 
 already returns a `feedUrl` for. That is a coherent, much smaller feature than a request flow. **It
 is with Sofia; it blocks nothing else.**
 
-#### `16e-album-W` reviewed clean — merging
+#### `16e-album` is DONE — the third screen triple, complete on both platforms with a clean `-P`
 
-Against `ALBUM_DETAIL.md` §5/§6/§9/§11 rather than against Android's output. Verdict: merge. The
-§9 accessible-name gap the spec was written to close **is** closed — track rows announce
-`"{name}, {duration}"` / `"{name}, {duration}, Playing"`, matching the podcast pattern. All five new
-e2e specs **discriminate** rather than pin; the shuffle spec in particular tells "shuffle toggled"
-apart from "shuffle behaves like Play" via `player-shuffle-toggle`'s `aria-pressed`. The artist link
-is symmetric with Android, so the spec's pre-ruling that any asymmetry there would be drift did not
-need to fire.
+**`main` is `18799b1`, green on `CI` and `Android`.** Verified before pushing rather than after:
+**220 `app` + 212 `ui-desktop`/`ui-mobile` Playwright at CI's own parallelism, 1718 unit**, typecheck
+across every project, lint clean. The six salvaged e2e specs **passed on their first ever execution**.
 
-The hardcoded fixture arithmetic was checked rather than trusted: `album-driftwave` really is 2021 /
-Synthwave / 214s + 198s → `2021 · Synthwave · 2 tracks · 7 m`, and `album-nightglass` really has zero
-tracks. **One thing to eyeball rather than a blocker:** this is the first `MediaHeader` call site to
-put **four** controls in the `actions` row, which has no `flex-wrap`. Nothing in the suite can see a
-compact-width overflow.
+**The `-P` verdict is clean, and the headline is methodological again: the meta line matched byte for
+byte for the THIRD triple running.** Web's `composeAlbumMeta` and Android's same-named private
+function independently produce `"2021 · Synthwave · 2 tracks · 7 m"` — separator confirmed U+00B7 on
+both by a codepoint scan rather than by eye, same track-count rule, same `<= 40 && fully loaded`
+duration gate, same rounding. **The per-platform value table in the spec is now demonstrated, not
+hypothesised.**
+
+**The `ALBUM_DETAIL.md` pre-ruling fired exactly as intended.** The spec stated in advance that the
+artist link is the first genuinely symmetric case and that any asymmetry there would be drift; both
+platforms wired it to their existing artist route, and the `-P` had nothing to adjudicate. **Pre-deciding
+a divergence in the spec is cheaper than ruling on it afterwards** — carry that into every remaining
+screen.
+
+**Two follow-ups, neither blocking:**
+
+1. **The subtitle colour divergence that three triples inherited is now MOSTLY CLOSED, and this file
+   should stop describing it as open.** `MediaHeader.kt:185` now reads
+   `if (onSubtitleClick != null) accentInk else mutedColor`, so the **clickable** case — the common
+   one — matches web and matches `SONORA.md` §3.5 on both platforms. What survives is only the
+   **non-clickable fallback**: Android muted (`onSurfaceVariant`), web full emphasis (`--surface-fg`).
+   Pre-existing, out of this triple's scope, and a `SONORA.md` pass owns it.
+2. **`.auralis-item-header__actions` has no `flex-wrap`** (`app.css:402-407`) and web's album header is
+   the first call site to put **four** controls in it. Confirmed live by reading the CSS, not
+   inferred. Playwright asserts testids and text and can never see a compact-width overflow, so this
+   wants an eyeball, not a test.
+
+**The coverage asymmetry is real and, unusually, favours web here.** Android's nine new
+`AlbumDetailContentTest` cases are Robolectric — confirmed a **genuine uncached execution** by
+grepping the job log for a bare `testDebugUnitTest`, not by reading a badge — but Robolectric proves
+a node exists with the semantics that were written, not what TalkBack announces. Web's six specs
+drive real Chromium. Every Android claim in that review is a source read plus a Robolectric pass.
 
 #### THE INCIDENT WORTH MORE THAN EITHER WAVE — `isolation: "worktree"` is what creates the worktree
 
