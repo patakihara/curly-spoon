@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +27,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -321,9 +327,10 @@ private fun LazyListScope.loadMoreRow(
 }
 
 /**
- * Shared with [ArtistDetailScreen], [MusicSearchScreen] and [FavoritesScreen] — an artist row
- * and an album row are visually identical (cover, title, optional subtitle), so this is
- * `internal`, not `private`, rather than duplicated.
+ * Shared with [ArtistDetailScreen], [MusicSearchScreen], [FavoritesScreen] and
+ * [net.develivarr.auralis.features.search.UnifiedSearchScreen] — an artist row and an album row
+ * are visually identical (cover, title, optional subtitle), so this is `internal`, not
+ * `private`, rather than duplicated.
  *
  * [trailing] defaults to nothing, which every pre-existing caller relies on to keep this row's
  * layout unchanged. When it's supplied ([FavoritesScreen]'s own favourite-toggle rows), it is a
@@ -331,6 +338,16 @@ private fun LazyListScope.loadMoreRow(
  * modifier's subtree — see [AlbumDetailScreen]'s `TrackRow` doc comment for why that avoids
  * depending on Compose's nested-`clickable` pointer-event-consumption behaviour, which nothing
  * in this app tests directly.
+ *
+ * [artSize]/[artCornerRadius]/[fallbackIcon] default to this row's original 56dp/unrounded/no-
+ * fallback shape, which every pre-16e-search caller (this screen's own two sections,
+ * [ArtistDetailScreen], [MusicSearchScreen], [FavoritesScreen], [PlaylistsScreen],
+ * [AddToPlaylistSheet]) still gets unchanged — `docs/design/screens/SEARCH.md` §3 only asks for
+ * the smaller 52dp/8dp-radius/muted-icon-tile treatment on the search screen's own book/podcast/
+ * artist/album rows, and this app has far more `MusicRow` call sites than that spec's own recon
+ * named (nine across seven files, not the "two other call sites in MusicLibraryScreen" its §10
+ * says to check), so widening the *default* would have silently reshaped six unrelated screens
+ * as a side effect of a search-screen wave — exactly what §10 says not to do.
  */
 @Composable
 internal fun MusicRow(
@@ -346,6 +363,16 @@ internal fun MusicRow(
      */
     onClick: (() -> Unit)? = null,
     trailing: @Composable () -> Unit = {},
+    artSize: Dp = 56.dp,
+    artCornerRadius: Dp = 0.dp,
+    /**
+     * Rendered underneath the [AsyncImage] exactly as [net.develivarr.auralis.ui.components
+     * .MediaHeader] already establishes for the same reason: Coil paints nothing while
+     * loading/on failure/when [coverUrl] is null, so this icon shows through in every one of
+     * those cases without needing a Coil `error`/`placeholder` painter. `null` (the default)
+     * renders no fallback at all, preserving every pre-existing caller's blank-square behaviour.
+     */
+    fallbackIcon: ImageVector? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -358,12 +385,26 @@ internal fun MusicRow(
                     .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            AsyncImage(
-                model = coverUrl,
-                contentDescription = null,
-                imageLoader = imageLoader,
-                modifier = Modifier.size(56.dp),
-            )
+            Box(
+                modifier = Modifier.size(artSize).clip(RoundedCornerShape(artCornerRadius)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (fallbackIcon != null) {
+                    Icon(
+                        imageVector = fallbackIcon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(artSize / 2),
+                    )
+                }
+                AsyncImage(
+                    model = coverUrl,
+                    contentDescription = null,
+                    imageLoader = imageLoader,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(artSize),
+                )
+            }
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall)
                 subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
