@@ -278,3 +278,28 @@ test("Settings' unselected mode button stays neutral across an accent change, an
   expect(unselectedColorRed).toBe(unselectedColorDefault);
   expect(unselectedBgRed).not.toBe(selectedBgRed);
 });
+
+test("the accent picker's own selection ring tracks the accent being picked", async ({ page }) => {
+  // The picker's indicator read --m3-primary, which 16c-2-W-1 fixed at Sonora's value —
+  // so the ring marking "this is your accent" sat in a colour that never changed when the
+  // accent did. Android hit the identical bug and fixed it in 16f-A-2.
+  //
+  // This asserts the ring's own resolved outline-color changes between two presets, which
+  // is the user-visible property. Reading --accent off the root instead would pass even
+  // with the ring still pointing at a fixed token — the exact hole that let this ship.
+  await page.goto('/settings');
+
+  const ringColorFor = async (swatch: string) => {
+    await page.getByTestId(`accent-swatch-${swatch}`).click();
+    await page.waitForTimeout(700);
+    return page
+      .getByTestId(`accent-swatch-${swatch}`)
+      .evaluate((el) => getComputedStyle(el).outlineColor);
+  };
+
+  const teal = await ringColorFor('teal');
+  const red = await ringColorFor('red');
+
+  expect(teal, 'the selection ring must resolve to a real colour').toMatch(/rgb|oklch|#/);
+  expect(red, 'the selection ring must repaint when a different accent is picked').not.toBe(teal);
+});
