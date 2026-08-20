@@ -771,20 +771,108 @@ of `apps/web`.
 source read (no device, no JDK), and web's `for-you-external-book.spec.ts` was read rather than
 executed, since another agent held the Playwright port.
 
-### CLAIMED 2026-08-19 — `16e-album-W` and `15e-podcasts`, both in flight
+### 2026-08-20 — both claimed waves were salvaged from dead agents. **The album triple's web half is landing; `15e-podcasts` is HELD.**
 
-Base for both: **`60fd7d5`**, verified green on `CI`, `Android` **and** `Publish` before dispatch.
+The session that claimed `16e-album-W` and `15e-podcasts` died. Neither wave was lost, but neither
+had ever been executed, and one held **929 lines entirely uncommitted** in a worktree that is
+deleted with its session.
 
-- **`16e-album-W`** — web's half of the album triple, the third adoption of `MediaHeader.tsx`.
-  Built from `docs/design/screens/ALBUM_DETAIL.md` §5/§6/§9/§11, explicitly **not** from
-  `16e-album-A`'s output. It owns `apps/web` + `e2e/app` and so **holds the Playwright port** —
-  no second browser wave may run beside it.
-- **`15e-podcasts`** — external podcast discovery, server-only, no browser, so it parallelises.
-  Provider is **iTunes Search (no credential at all)** rather than PodcastIndex, which needs a
-  free-but-real key + secret Sofia would have to create. Folds in the open follow-up asking
-  whether `GET /libraries/:id/recommended` is genuinely book-scoped server-side.
+- **`15e-podcasts`** — the agent committed **nothing at all**. Seven files, 929 insertions, sitting
+  as working-tree changes. Salvaged as `ee26e7e`.
+- **`16e-album-W`** — the agent committed its product change (`11c9e68`) and then died holding its
+  **own e2e spec** uncommitted. Salvaged as `046be75`.
 
-`16e-album-P` and `15d-1-books-P` are both still owed and are deliberately held until these land.
+So the spec-side "commit before you background a long run" instruction held for one half of one
+wave and **not the other half of the same wave**. It lowers the frequency; it does not hold. The
+orchestrator-side worktree check is the load-bearing one, and this is the second session running in
+which it has paid for itself.
+
+#### `15e-podcasts` is HELD FOR A CLIENT WAVE — and Android's exposure is live, not latent
+
+Reviewed by an agent that did not write it. **The server side is correct**: both discovery builders
+gate on the pool's own medium (`routes/libraries.ts:135`, `:212-296`) and return `null` before any
+provider I/O, so a book library can never trigger the iTunes provider or vice versa — which
+**answers open follow-up 3**, the route _is_ properly medium-scoped now. Every item carries
+`availability: 'external'` on the wire.
+
+**The tap-through is where it breaks.** `ForYouViewModel.kt:88-95` fetches recommended carousels for
+`mediaType = "podcast"` as well as `"book"`, so Android genuinely reaches this shelf — and
+`ForYouScreen.kt:94` is `ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)`,
+**unconditional, with no `isExternal` check**, three lines below a `BOOKS` branch that has one. A tap
+hands `external:itunes:<id>` straight to Media3. That is worse than the book precedent's dead-end
+page: a fabricated id given to the _player_, not a failed detail fetch. **And there is no podcast
+request flow on either client to redirect to**, so wiring the guard in has nowhere to send the tap.
+
+**Web is safe only incidentally** — `HomePage.tsx:226` is the sole web caller and is hardcoded to the
+book library's id. Underneath that sits a second real defect: `forYouFeed.ts:100-109` labels every
+shelf from this route `contentType: 'books'` unconditionally, with a doc comment claiming the route
+is "always about audiobooks". **That comment is now false**, and the moment web points this at a
+podcast library a podcast shelf renders as a book carousel.
+
+**So the wave is on branch `hold-15e-podcasts`, not on `main`.** `main` auto-deploys to `:latest`
+and mediaserver pulls every fifteen minutes. This is the same call, for the same reason, that
+`15e-books` was held for.
+
+**It is also red, and that must be fixed before it can land whenever it lands.** Two pre-existing
+tests the wave broke and never noticed: `external/registry.test.ts` asserts in its own title that
+there is "still no podcast provider", now false; and `routes/libraries.test.ts:514` — the **book**
+shelf's outer-catch test — fails because the wave's new media-type gate short-circuits on that
+test's empty-pool fixture **before** the deliberately-throwing provider is reached. Additionally
+`buildPodcastExternalDiscoveryShelf` is imported by **no test at all** — only its three pure helpers
+are covered, where the book sibling has a full `app.inject()` block.
+
+**The live `curl` was done, and this is the 15a lesson being applied rather than relearned.** iTunes
+Search returns 200 with the fields the schema assumes, `genreId` alone genuinely returns zero
+results (justifying the term-only strategy), and `itunes.test.ts` asserts the outgoing query as an
+**exact** set via `toEqual`. That half of the wave is sound.
+
+**The open product question, which is why "add the guard" is not a sufficient plan:** the user asked
+for request integration for **books** and **music**, never for podcasts — so external podcast
+discovery has nowhere to land by design. The natural destination is not a torrent request at all but
+a **one-tap subscribe by RSS feed**, which Audiobookshelf supports natively and which iTunes Search
+already returns a `feedUrl` for. That is a coherent, much smaller feature than a request flow. **It
+is with Sofia; it blocks nothing else.**
+
+#### `16e-album-W` reviewed clean — merging
+
+Against `ALBUM_DETAIL.md` §5/§6/§9/§11 rather than against Android's output. Verdict: merge. The
+§9 accessible-name gap the spec was written to close **is** closed — track rows announce
+`"{name}, {duration}"` / `"{name}, {duration}, Playing"`, matching the podcast pattern. All five new
+e2e specs **discriminate** rather than pin; the shuffle spec in particular tells "shuffle toggled"
+apart from "shuffle behaves like Play" via `player-shuffle-toggle`'s `aria-pressed`. The artist link
+is symmetric with Android, so the spec's pre-ruling that any asymmetry there would be drift did not
+need to fire.
+
+The hardcoded fixture arithmetic was checked rather than trusted: `album-driftwave` really is 2021 /
+Synthwave / 214s + 198s → `2021 · Synthwave · 2 tracks · 7 m`, and `album-nightglass` really has zero
+tracks. **One thing to eyeball rather than a blocker:** this is the first `MediaHeader` call site to
+put **four** controls in the `actions` row, which has no `flex-wrap`. Nothing in the suite can see a
+compact-width overflow.
+
+#### THE INCIDENT WORTH MORE THAN EITHER WAVE — `isolation: "worktree"` is what creates the worktree
+
+**A subagent ran `git reset --hard` inside the shared checkout and discarded two merge commits.**
+Nothing was lost — the objects survived in the reflog and were restored — but the cause is a trap
+this file had not named, and it is one keystroke wide.
+
+`CLAUDE.md` correctly documents that an isolated agent must `git reset --hard <branch tip>` as its
+first action, because `isolation: "worktree"` bases the worktree on `origin/main`'s empty initial
+commit. **That instruction is only safe when the `Agent` call actually passed
+`isolation: "worktree"`.** Dispatch the same spec _without_ that parameter and the agent has no
+worktree of its own — it runs in `~/src/auralis-src` — and the very first thing you told it to do
+resets the shared checkout onto an older commit, under any concurrently-running agent's feet. A
+reviewer mid-review reported the tree vanishing from under it.
+
+**The check is one line, and it is now mandatory before believing any dispatched agent is isolated:**
+
+```bash
+ls .claude/worktrees/agent-<id>   # no directory => it is in YOUR checkout
+```
+
+**Two rules fall out.** Never put a bare `git reset --hard` in a spec without `isolation: "worktree"`
+on the same `Agent` call — pair them or write neither. And a docs-only or review-only agent needs no
+worktree **and therefore must not be given the reset instruction at all**; it only ever needed to
+read.
 
 ### Session end, 2026-08-19 — **`main` is `012132b`**. Two things landed: the podcast triple, and books that recommend beyond the library
 
