@@ -270,7 +270,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T08:09:09Z` · `a0cbb11b7225a16b0` · general-purpose · ended · Working tree is clean. Final summary report: ## Report — Wave 15d-1-books-W-2 **1. Branch/commit:** 'wave-15d-1-books-w-2' at 'd6a13fa', two commits…
 - `2026-08-20T08:09:42Z` · `a992f63445b23a6a1` · general-purpose · ended · ## Verdict on the triple: **clean, with two named follow-ups, neither blocking** Both halves are on 'main' ('0b9d221' web, '4979fc3'+'79c0134'+'a114a…
 - `2026-08-20T08:10:39Z` · `a781843d6fe691a1c` · general-purpose · running · —
 - `2026-08-20T12:42:19Z` · `a17bfa250d33eb6c4` · general-purpose · ended · Everything is clean and green. Final report below. ## Report — Wave '16e-nowplaying-W' **Branch/commits:** 'worktree-agent-a17bfa250d33eb6c4' at 'a64…
@@ -283,8 +282,9 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T14:47:44Z` · `ab1c8e59fadc27f0d` · general-purpose · ended · ## Report — '16e-foryou-P' **Verdict: clean, with follow-ups — no defect that should block shipping.** Both waves are honest about what they built an…
 - `2026-08-20T14:59:38Z` · `aa135354468fa745f` · general-purpose · ended · ## Report — Wave 16e-foryou-A-2 **1. Branch/commit:** 'worktree-agent-aa135354468fa745f' at '95e27a4'. 'git status --short' is clean. Reset to base '…
 - `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
-- `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · running · —
-- `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · running · —
+- `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
+- `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
+- `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -743,7 +743,22 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### CLAIMED 2026-08-21 — `16e-settings`, the LAST screen triple. `-W` and `-A` both in flight.
+### CLAIMED 2026-08-21 — `16e-settings`, the LAST screen triple. **Both halves MERGED; `-P` in flight.**
+
+**Status: `main` is `3ec1344`.** `-W` merged as `89927e9`, `-A` as `fce72bb`, plus one orchestrator
+fix. Unit **1732/1732** and typecheck green on the merged tree; both waves ran their own Playwright
+at `--workers=2` (`-W`: 239 `app`, 216 `ui`, onboarding project in isolation first). CI on `3ec1344`
+is the authoritative signal and is the thing to read next.
+
+**One red Android round, and it was the documented trap firing again rather than a bad wave.**
+`fce72bb` failed both variants on a single line: `ShellNavigationItems.kt:6` explicitly imported
+`androidx.compose.foundation.layout.weight`, which resolves to the **internal**
+`RowColumnParentData.weight` and so fails as an _access_ error, not an unresolved reference. The
+import was never needed — the composable declares a `ColumnScope` receiver exactly like the
+function above it, which has never imported it. Fixed inline as `3ec1344` rather than spent as a
+wave. **Both compiler-free pre-checks passed and could not have caught this**: they are textual
+invariants, and an import resolving to the wrong symbol is a fact only a compiler knows. That is
+what "budget two to three red Android rounds" is for.
 
 Base `6e5b59d`. Both agents are worktree-isolated (**checked** with `ls .claude/worktrees/agent-<id>`
 before believing either — the one-line check that exists because a dispatch missing
