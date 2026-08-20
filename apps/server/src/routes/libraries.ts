@@ -13,11 +13,14 @@ import {
   buildTasteProfile,
   externalCandidateToLibraryItemPlaceholder,
   externalCandidateToOwnershipItem,
+  externalCandidateToPodcastLibraryItemPlaceholder,
   externalProviderFactories,
   getExternalProvidersForMedium,
   matchOwnership,
   mergeGenreAffinity,
+  podcastLibraryItemToOwnershipLibraryItem,
   reasonForBookExternalShelf,
+  reasonForPodcastExternalShelf,
   scoreCandidates,
   type ExternalProviderFactory,
   type ProgressSignal,
@@ -81,6 +84,17 @@ const BOOK_EXTERNAL_SHELF_ID = 'shelf-external-openlibrary';
 const BOOK_EXTERNAL_SHELF_TYPE = 'discover';
 
 /**
+ * Wave 15e-podcasts: external (iTunes) discovery — same shape as the book constants above,
+ * for the same route's podcast-library half. See `itunes.ts`'s header comment for why the
+ * provider is iTunes rather than PodcastIndex, and `podcastExternalDiscovery.ts` for the
+ * podcast-specific adaptation.
+ */
+const PODCAST_EXTERNAL_SEED_LIMIT = 3;
+const PODCAST_EXTERNAL_CANDIDATE_LIMIT = 30;
+const PODCAST_EXTERNAL_ITEMS_PER_SHELF = 10;
+const PODCAST_EXTERNAL_SHELF_ID = 'shelf-external-itunes';
+
+/**
  * Wave 15e-books: every item `GET /libraries/:id/recommended` returns now carries this,
  * required and never optional — the identical contract `routes/jellyfin.ts`'s
  * `MusicRecommendedAlbum` documents for `GET /music/recommended` (Android's Kotlin models
@@ -111,6 +125,16 @@ type RecommendedLibraryItem = LibraryItem & { availability: 'owned' | 'external'
  * in a provider that deliberately violates the "never throws" contract
  * `ExternalRecommendationProvider` documents, and exercise this function's outer `catch`
  * without needing a real provider to misbehave.
+ *
+ * **Media-type-scoped, and this is wave 15e-podcasts' fix, not a pre-existing property.**
+ * `params.id` names *a* library, not necessarily a book one — `GET /libraries/:id/recommended`
+ * is called identically for a podcast library, and `toCandidate` (`adapt.ts`) already folds a
+ * podcast's flat `author` into the same `affinities.author` facet a book's `authors[]` feeds.
+ * Before this guard, a podcast library's own host/publisher affinities would seed a query to
+ * Open Library and could return book-shaped external cards on a podcast screen. Returns `null`
+ * immediately, before any provider is even constructed, when `pool` carries no book items —
+ * which also covers an empty pool for free (`.some()` on `[]` is `false`), so the pre-existing
+ * "no seeds -> null" behaviour for a real, signal-less book library is unchanged.
  */
 export async function buildBookExternalDiscoveryShelf(
   app: FastifyInstance,
@@ -125,6 +149,8 @@ export async function buildBookExternalDiscoveryShelf(
   reason: string;
   items: RecommendedLibraryItem[];
 } | null> {
+  if (!pool.items.some((item) => item.media.kind === 'book')) return null;
+
   const authorWeights = Object.entries(profile.affinities.author ?? {}).sort((a, b) => b[1] - a[1]);
   const seeds: RecommendationSeed[] = [];
   for (const [authorName] of authorWeights) {
@@ -181,6 +207,91 @@ export async function buildBookExternalDiscoveryShelf(
     app.log.warn(
       { err },
       'libraries/recommended: external candidate discovery failed, degrading to library-only shelves',
+    );
+    return null;
+  }
+}
+
+/**
+ * Wave 15e-podcasts: the podcast-library half of the same route, mirroring
+ * `buildBookExternalDiscoveryShelf` exactly — seeds from `profile.affinities.genre` (see
+ * `itunes.ts`'s header comment for why genre rather than author/publisher), queries every
+ * registered podcast provider (today, just iTunes), filters out anything the podcast-
+ * ownership pool says she already has, and returns a shelf shaped identically to the book
+ * one — or `null`, same "no shelf this response" convention.
+ *
+ * **Media-type-scoped from the start**, unlike the book function above (which needed this
+ * fix retrofitted this same wave) — returns `null` immediately when `pool` carries no
+ * podcast items, before any provider is constructed. The two guards are deliberately
+ * symmetric: a caller in `routes/libraries.ts` can await both unconditionally and only the
+ * one matching the requested library's actual media type ever does real I/O.
+ */
+export async function buildPodcastExternalDiscoveryShelf(
+  app: FastifyInstance,
+  profile: TasteProfile,
+  pool: { items: LibraryItem[] },
+  libraryId: string,
+  providerFactories: Record<string, ExternalProviderFactory> = externalProviderFactories,
+): Promise<{
+  id: string;
+  label: string;
+  type: string;
+  reason: string;
+  items: RecommendedLibraryItem[];
+} | null> {
+  if (!pool.items.some((item) => item.media.kind === 'podcast')) return null;
+
+  const genreWeights = Object.entries(profile.affinities.genre ?? {}).sort((a, b) => b[1] - a[1]);
+  const seeds: RecommendationSeed[] = [];
+  for (const [genreName] of genreWeights) {
+    if (seeds.length >= PODCAST_EXTERNAL_SEED_LIMIT) break;
+    if (genreName.trim().length === 0) continue;
+    seeds.push({ label: genreName, identifiers: {} });
+  }
+  if (seeds.length === 0) return null;
+
+  try {
+    const providers = getExternalProvidersForMedium(
+      'podcast',
+      { fetch: app.upstreamFetch, logger: app.log },
+      providerFactories,
+    );
+    const perProvider = await Promise.all(
+      providers.map((provider) => provider.recommend(seeds, PODCAST_EXTERNAL_CANDIDATE_LIMIT)),
+    );
+    const rawCandidates = perProvider.flat();
+    if (rawCandidates.length === 0) return null;
+
+    const podcastOwnershipPool = pool.items
+      .map(podcastLibraryItemToOwnershipLibraryItem)
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+    const newCandidates = rawCandidates.filter(
+      (candidate) =>
+        matchOwnership(externalCandidateToOwnershipItem(candidate), podcastOwnershipPool)
+          .status === 'new',
+    );
+    // A one-item carousel reads as a bug — same rule the book shelf above and
+    // `routes/jellyfin.ts`'s music shelf both enforce.
+    if (newCandidates.length < 2) return null;
+
+    const chosen = newCandidates.slice(0, PODCAST_EXTERNAL_ITEMS_PER_SHELF);
+    return {
+      id: PODCAST_EXTERNAL_SHELF_ID,
+      label: 'More podcasts to discover',
+      type: BOOK_EXTERNAL_SHELF_TYPE,
+      reason: reasonForPodcastExternalShelf(seeds),
+      items: chosen.map((candidate): RecommendedLibraryItem => ({
+        ...externalCandidateToPodcastLibraryItemPlaceholder(candidate, libraryId),
+        availability: 'external',
+      })),
+    };
+  } catch (err) {
+    // Same reasoning as the book shelf's identical outer catch above: the provider
+    // interface is contractually total, so this only fires against one that breaks that
+    // contract. Log at `warn` and degrade to no external shelf rather than failing the route.
+    app.log.warn(
+      { err },
+      'libraries/recommended: external podcast candidate discovery failed, degrading to library-only shelves',
     );
     return null;
   }
@@ -321,13 +432,25 @@ export function registerLibraryRoutes(app: FastifyInstance): void {
 
       const itemsById = new Map<string, LibraryItem>(pool.items.map((item) => [item.id, item]));
 
-      // Wave 15e-books: external (Open Library) discovery, ahead of the library-derived
+      // Wave 15e-books/15e-podcasts: external discovery, ahead of the library-derived
       // shelves — she asked for unowned discovery, not a re-sort of what she already has
       // (`docs/USER_DECISIONS.md`), so when it exists it leads. `null` (no signal, no
-      // author facet, or fewer than two unowned candidates) means "not this response",
+      // matching facet, or fewer than two unowned candidates) means "not this response",
       // never an empty placeholder shelf. Mirrors `routes/jellyfin.ts`'s identical
       // ordering for `GET /music/recommended`.
-      const externalShelf = await buildBookExternalDiscoveryShelf(app, profile, pool, params.id);
+      //
+      // Both are awaited unconditionally, in parallel — each function's own media-type
+      // guard (see their doc comments) makes the one that doesn't match `params.id`'s
+      // actual library kind return `null` before doing any real I/O, so this never issues
+      // an Open Library request for a podcast library or an iTunes request for a book one.
+      // Real Audiobookshelf libraries are homogeneous, so in practice only one of these
+      // ever produces a non-null shelf; `??` picks whichever did, with book preferred as a
+      // deterministic (never-exercised-in-practice) tiebreak.
+      const [bookExternalShelf, podcastExternalShelf] = await Promise.all([
+        buildBookExternalDiscoveryShelf(app, profile, pool, params.id),
+        buildPodcastExternalDiscoveryShelf(app, profile, pool, params.id),
+      ]);
+      const externalShelf = bookExternalShelf ?? podcastExternalShelf;
 
       const libraryShelves = shelves.map((shelf) => ({
         id: shelf.id,
