@@ -81,7 +81,13 @@ class MiniPlayerBarTest {
 
         composeRule.onNodeWithText("Time").assertExists()
         composeRule.onNodeWithText("Pink Floyd").assertExists()
-        composeRule.onNodeWithTag("mini-player-art-fallback").assertExists()
+        // `useUnmergedTree = true` is load-bearing. The fallback icon sits inside the root
+        // `Box`, which carries `.clickable(onClick = onExpand)`, and `clickable` merges its
+        // descendants' semantics. A `testTag` does not survive that merge the way `Text` and
+        // `ContentDescription` do — which is why the two lookups either side of this one pass
+        // and this one does not. The failure is a bare `AssertionError` naming neither the tag
+        // nor the cause, so it reads as a missing node rather than an invisible one.
+        composeRule.onNodeWithTag("mini-player-art-fallback", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -142,6 +148,12 @@ class MiniPlayerBarTest {
 
         composeRule.onNodeWithContentDescription("Shuffle").assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Lyrics").assertDoesNotExist()
-        composeRule.onNodeWithTag("mini-player-art-fallback").assertExists()
+        // `useUnmergedTree = true` is load-bearing. The fallback icon sits inside the root
+        // `Box`, which carries `.clickable(onClick = onExpand)`, and `clickable` merges its
+        // descendants' semantics. A `testTag` does not survive that merge the way `Text` and
+        // `ContentDescription` do — which is why the two lookups either side of this one pass
+        // and this one does not. The failure is a bare `AssertionError` naming neither the tag
+        // nor the cause, so it reads as a missing node rather than an invisible one.
+        composeRule.onNodeWithTag("mini-player-art-fallback", useUnmergedTree = true).assertExists()
     }
 }
