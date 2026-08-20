@@ -32,6 +32,7 @@ import {
   useLibrariesQuery,
   useSetupQuery,
 } from '../../api/queries.js';
+import { isExternalItem } from '../../api/availability.js';
 import { useApi } from '../../api/ApiContext.js';
 import { CoverImage } from '../../components/CoverImage.js';
 import { Carousel } from './Carousel.js';
@@ -311,7 +312,7 @@ export function HomePage() {
       // owned and dead-ends at `/item/:id`); Android already treats anything but `'owned'` as
       // external. `MusicHomePage.tsx`'s `handleSelectRecommended` mirrors this same fix. Owned
       // books are completely unchanged.
-      if (item.availability !== 'owned') {
+      if (isExternalItem(item)) {
         void navigate({
           to: '/requests',
           search: { prefillTitle: item.title, prefillAuthor: item.subtitle ?? undefined },
