@@ -871,6 +871,49 @@ grepping the job log for a bare `testDebugUnitTest`, not by reading a badge — 
 a node exists with the semantics that were written, not what TalkBack announces. Web's six specs
 drive real Chromium. Every Android claim in that review is a source read plus a Robolectric pass.
 
+#### `16e-search` — both halves landed. **`16e-search-P` is OWED**, and it has three named questions
+
+Web: 227 `app` + 212 `ui` Playwright, 1727 unit, typecheck and lint clean. Android: green on
+`a8adcd1`, uncached. Both built from `SEARCH.md`, neither from the other.
+
+**Sofia's "global search needs suggestions" is delivered on both platforms.**
+
+**The finding that keeps paying: closing a writer-with-no-reader exposes what was never exercised.**
+`SearchField.tsx`'s ARIA-combobox suggestion mechanism had been complete and tested since it was
+written and **had never been passed real data** — this project's fifth writer-with-no-reader and its
+first at the **component-prop** level. The moment it got a reader it turned out to have **no
+close-on-blur**, because nothing had ever needed one. **The mechanism was not wrong, it was
+unexercised** — which is the argument for wiring these up rather than deleting them.
+
+**A follow-up review found a second thing the wave could not see, and it is now fixed** (`74609ac`):
+`SearchField` deliberately uses Mantine's **raw `Combobox`** rather than `Select`/`Autocomplete`, so
+suggestion labels can be arbitrary `ReactNode`s — and the consequence is that **`maxDropdownHeight`
+does not apply**, because it lives on the higher-level `ComboboxLikeProps` API. `Combobox.Options`
+therefore grew **without limit**. The list is now capped at `40vh` with its own scroll.
+
+**Where I disagreed with that review, stated so `-P` does not re-litigate it.** It argued the
+dropdown covering the filter chips is a UX regression, possibly misdirecting a chip tap into a
+suggestion navigation. **I do not think that is a defect.** A floating dropdown overlapping content
+beneath it is ordinary combobox behaviour, and **a user cannot mis-click a chip they cannot see** —
+what they see there is a suggestion, so clicking it is the behaviour they asked for. What genuinely
+_was_ wrong is **unbounded growth**: how much of the page the dropdown swallows should not depend on
+how many results the query matched. That is what got fixed.
+
+**The review's one point I did NOT resolve, and `-P` should rule on it.** Two **pre-existing** specs
+(`search-view.spec.ts`, `series-author.spec.ts`) were edited to press `Escape` before clicking a
+chip. That is what a real user does, so it is defensible — but **no test now pins what happens to an
+undismissed click**, so this behaviour is asserted nowhere and lives only in code comments.
+
+**Two more for `-P`:**
+
+1. **Android did NOT add a leading icon to the search field**, reading §3's row as pinning the icon's
+   token value rather than mandating a new icon. It flagged this itself. **Web may have added one** —
+   compare.
+2. **Mantine's `Popover` already ships `closeOnClickOutside` backed by `useClickOutside`**, and
+   `SearchField` **never reads `combobox.dropdownOpened`** — it keeps a parallel `useState`, so the
+   built-in dismissal is live in the store and inert for what the user sees. Not a bug today; worth
+   knowing before anyone hardens this component.
+
 #### `16e-search-A` is landed and CI-GREEN on `a8adcd1` — `16e-search-W` is in flight, `-P` is owed
 
 **Verified as a genuine uncached execution, not a badge:** the Android job log carries bare
