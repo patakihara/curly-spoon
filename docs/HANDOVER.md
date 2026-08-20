@@ -773,7 +773,8 @@ executed, since another agent held the Playwright port.
 
 ### SESSION HAND-OFF, 2026-08-20 — read this first
 
-**`main` is `d58b48c`.** Nothing is claimed and nothing is in flight. `docs/agent-specs/` is empty.
+**`main` is `207f1f2`, green on `Android` (a genuine uncached `testDebugUnitTest`).** Nothing is claimed
+and nothing is in flight. `docs/agent-specs/` is empty.
 Every wave dispatched this session was either merged or is on a named branch described below.
 
 **Two screen triples completed** (`16e-album`, `16e-search`), **five waves of correction and
@@ -823,6 +824,32 @@ remaining `--m3-*` consumers are `Fab`, `ListItem`, `Marquee`, `NavigationBar`, 
    all — which is why Android's track results shipped with no cover art through a whole triple.
    **Tell implementing waves to verify the call sites they are handed** rather than trusting the
    count, and have them report the real number.
+
+#### A THIRD member of the Compose-test trap family, and the three are now one rule
+
+`16e-search-A-2` compiled clean and failed on two Robolectric tests, each a bare `AssertionError`
+naming neither the tag nor the cause. **The tags existed. They sat inside MERGED semantics nodes** —
+`OutlinedTextField` merges its descendants, and the track row deliberately groups its children into
+one announced node, which is exactly what this screen's accessibility tests assert. The default
+lookup searches the **merged** tree, where a descendant's tag is invisible. `useUnmergedTree = true`
+is the fix.
+
+**All three now on record, and the tell is identical every time — a bare `AssertionError` pointing
+away from the cause:**
+
+1. **A click that neither throws nor fires its callback is off-viewport.** `assertExists` on the same
+   tag passes, because existence only needs the node composed and a click needs it displayed.
+2. **`assertExists` is a MEMBER and must not be imported; `assert`, chained directly onto it, is a
+   top-level extension and must be.** The package mixes both.
+3. **A `testTag` inside a merged node needs `useUnmergedTree = true`.**
+
+**None is inferable from the call site and all three read as correct Kotlin.** The unifying rule:
+**semantics merging on these screens is deliberate product behaviour, so any test reaching for
+something inside a merged node must say so** — and any test clicking on a `LazyColumn` must scroll
+first or use `performSemanticsAction`.
+
+**Budget two red Android rounds per wave, not because the code is bad but because this class of fact
+is only checkable by compiling**, and nothing on this laptop can.
 
 #### What is on a branch rather than on `main`
 
