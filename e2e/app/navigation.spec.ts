@@ -85,7 +85,7 @@ test('For you, Books and Podcasts are offered once a real library backs each one
   // rail also renders the always-visible search input and the Settings
   // footer link, neither of which is one of the five primary destinations.
   const nav = page.getByTestId('nav-rail-destinations');
-  await expect(nav.getByRole('button', { name: 'For you' })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Browse' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Books' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Podcasts' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
@@ -115,7 +115,7 @@ test('the destinations render in order — For you first, in the expanded rail',
   await page.setViewportSize({ width: 1400, height: 900 });
   const nav = page.getByTestId('nav-rail-destinations');
   const labels = (await nav.getByRole('button').allTextContents()).filter((l) => l !== 'Music');
-  expect(labels).toEqual(['For you', 'Books', 'Podcasts']);
+  expect(labels).toEqual(['Browse', 'Books', 'Podcasts']);
 });
 
 test('the compact bottom bar puts Search last, on the far right', async ({ page }) => {
@@ -125,7 +125,7 @@ test('the compact bottom bar puts Search last, on the far right', async ({ page 
   const nav = page.getByTestId('nav-bar');
   const labels = (await nav.getByRole('button').allTextContents()).filter((l) => l !== 'Music');
   expect(labels[labels.length - 1]).toBe('Search');
-  expect(labels).toEqual(['For you', 'Books', 'Podcasts', 'Search']);
+  expect(labels).toEqual(['Browse', 'Books', 'Podcasts', 'Search']);
 });
 
 test('the desktop rail has an always-visible search input at the top, not a Search nav link', async ({
@@ -140,9 +140,9 @@ test('the desktop rail has an always-visible search input at the top, not a Sear
 
   // "At the top" — above every real nav destination below it.
   const searchBox = await page.getByTestId('nav-rail-search').boundingBox();
-  const forYouBox = await nav.getByRole('button', { name: 'For you' }).boundingBox();
-  if (!searchBox || !forYouBox) throw new Error('search field or For you link not visible');
-  expect(searchBox.y).toBeLessThan(forYouBox.y);
+  const browseBox = await nav.getByRole('button', { name: 'Browse' }).boundingBox();
+  if (!searchBox || !browseBox) throw new Error('search field or Browse link not visible');
+  expect(searchBox.y).toBeLessThan(browseBox.y);
 
   await searchInput.fill('dune');
   await expect(page).toHaveURL(/\/search$/);

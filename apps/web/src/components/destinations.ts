@@ -68,7 +68,11 @@ export interface DestinationContext extends LibraryLookup {
  * last, so it lands at the far right of the compact bottom bar (§12a).
  */
 export function visibleDestinations(ctx: DestinationContext): Destination[] {
-  const destinations: Destination[] = [{ key: 'forYou', label: 'For you', to: '/' }];
+  // Wave 16e-foryou-W, docs/design/screens/FOR_YOU.md §6.1: the UI-visible label is
+  // "Browse" (Sofia's picked name, docs/USER_DECISIONS.md's "Naming" section) even
+  // though the underlying key/route/file stay `forYou` — renaming those is expensive
+  // and out of scope; the rename lands only where a user actually sees it.
+  const destinations: Destination[] = [{ key: 'forYou', label: 'Browse', to: '/' }];
 
   if (ctx.jellyfinConfigured) {
     destinations.push({ key: 'music', label: 'Music', to: '/music' });
