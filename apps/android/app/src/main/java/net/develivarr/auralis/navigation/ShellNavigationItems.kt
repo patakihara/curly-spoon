@@ -2,6 +2,10 @@ package net.develivarr.auralis.navigation
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.weight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -96,4 +100,53 @@ internal fun ColumnScope.ShellNavigationRailItems(
             colors = colors,
         )
     }
+}
+
+/**
+ * The rail-footer Settings entry wave 16e-settings-A adds
+ * (`docs/design/screens/SETTINGS.md` §6.1) — closing the gap `16d-P` named: web's rail has always
+ * had a `nav-rail-settings` footer link (`Shell.tsx`), and Android's Settings screen was
+ * reachable only from the For You screen's own `TopAppBar` ([ShellDestination] has no SETTINGS
+ * member, and does not gain one — Settings is not one of the five primary destinations, so it is
+ * a separate rail item rather than a sixth [ShellDestination] entry).
+ *
+ * **Wide-window (`NavigationRail`) only, per the spec** — the compact bottom-`NavigationBar`
+ * case is a real, named, deliberately deferred gap (§6.1/§7 of the spec): giving every
+ * compact-mode screen a persistent Settings affordance would mean touching five screens'
+ * `TopAppBar`s, out of this triple's scope. There is no [ShellNavigationBarItems] counterpart.
+ *
+ * Call as the LAST thing inside a [androidx.compose.material3.NavigationRail]'s content lambda,
+ * after [ShellNavigationRailItems] — the `Modifier.weight(1f)` [Spacer] above the item pushes it
+ * to the rail's bottom edge, below the five primary destinations, and composing it last also
+ * places it last in keyboard/switch-access focus order (§11's requirement), for free, with no
+ * separate focus-order wiring.
+ *
+ * **Purely additive.** Does not read or touch [ShellNavigationRailItems]'s own `tokens.accent`/
+ * `.accentContrast` indicator expressions — this is a new call site with its own [AuralisAppTokens]
+ * read for its own [NavigationRailItemDefaults.colors], not an edit to the existing ones.
+ * `testTag("shell-nav-rail-settings")` for the same reason [ShellNavigationRailItems] tags by
+ * `destination.name` rather than depending on a merged `contentDescription` query
+ * (`ShellNavigationItemsTest`'s own doc comment: merged-content-description queries are
+ * unreliable in this Robolectric configuration).
+ */
+@Composable
+internal fun ColumnScope.ShellNavigationRailSettingsItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val tokens = AuralisAppTokens.current
+    Spacer(modifier = Modifier.weight(1f))
+    NavigationRailItem(
+        selected = selected,
+        onClick = onClick,
+        icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+        label = { Text("Settings") },
+        colors =
+            NavigationRailItemDefaults.colors(
+                selectedIconColor = tokens.accentContrast,
+                selectedTextColor = tokens.accentContrast,
+                indicatorColor = tokens.accent,
+            ),
+        modifier = Modifier.testTag("shell-nav-rail-settings"),
+    )
 }
