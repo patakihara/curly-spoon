@@ -1,6 +1,7 @@
 package net.develivarr.auralis.features.player
 
 import androidx.media3.common.C
+import net.develivarr.auralis.features.books.BookChapterUi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -118,5 +119,47 @@ class NowPlayingFormatTest {
     @Test
     fun `clamp seek target does not clamp the high end when duration is unknown`() {
         assertEquals(35_000L, clampSeekTarget(positionMs = 5_000, deltaMs = 30_000, durationMs = C.TIME_UNSET))
+    }
+
+    // The worked example this wave's report cites: 90s elapsed of a 3730s (1h 02m 10s) track.
+    @Test
+    fun `scrubber value description composes elapsed and total through elapsedTimeLabel`() {
+        assertEquals("1:30 of 1:02:10", scrubberValueDescription(positionMs = 90_000, durationMs = 3_730_000))
+        assertEquals("0:45 of 2:00", scrubberValueDescription(positionMs = 45_000, durationMs = 120_000))
+    }
+
+    @Test
+    fun `scrubber value description reads the total as zero when duration is unknown`() {
+        assertEquals("0:45 of 0:00", scrubberValueDescription(positionMs = 45_000, durationMs = C.TIME_UNSET))
+    }
+
+    @Test
+    fun `now playing context line composes Playing from the album for music`() {
+        assertEquals("Playing from Wish You Were Here", nowPlayingContextLine(isMusic = true, album = "Wish You Were Here"))
+    }
+
+    @Test
+    fun `now playing context line is null when not music or the album is absent`() {
+        assertNull(nowPlayingContextLine(isMusic = false, album = "Wish You Were Here"))
+        assertNull(nowPlayingContextLine(isMusic = true, album = null))
+        assertNull(nowPlayingContextLine(isMusic = true, album = "   "))
+    }
+
+    private val chapters =
+        listOf(
+            BookChapterUi(index = 1, title = "Chapter One", startMs = 0L, timeLabel = "0:00"),
+            BookChapterUi(index = 2, title = "Chapter Two", startMs = 600_000L, timeLabel = "10:00"),
+        )
+
+    @Test
+    fun `active chapter title names the chapter containing the current position`() {
+        assertEquals("Chapter One", activeChapterTitle(chapters, positionMs = 0L))
+        assertEquals("Chapter One", activeChapterTitle(chapters, positionMs = 599_999L))
+        assertEquals("Chapter Two", activeChapterTitle(chapters, positionMs = 600_000L))
+    }
+
+    @Test
+    fun `active chapter title is null with no active chapter`() {
+        assertNull(activeChapterTitle(emptyList(), positionMs = 1_000L))
     }
 }

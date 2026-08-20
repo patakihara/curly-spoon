@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.ImageLoader
+import net.develivarr.auralis.data.network.ApiClient
 import net.develivarr.auralis.features.player.MiniPlayerBar
 import net.develivarr.auralis.features.player.NowPlayingScreen
 import net.develivarr.auralis.features.player.PlayerUiState
@@ -101,6 +103,11 @@ fun AuralisShell(
     navController: NavHostController,
     playerViewModel: PlayerViewModel,
     imageLoader: ImageLoader,
+    // Wave 16e-nowplaying-A: NowPlayingScreen's new chapter indicator fetches its own book's
+    // chapters directly (docs/design/screens/NOW_PLAYING.md §6.3) — the same ApiClient every
+    // other screen already gets from AppContainer, threaded here rather than reached for via a
+    // second construction path.
+    apiClient: ApiClient,
     visibleDestinations: Set<ShellDestination> = ShellDestination.entries.toSet(),
     content: @Composable (PaddingValues) -> Unit,
 ) {
@@ -145,10 +152,18 @@ fun AuralisShell(
         }
     }
 
+    // remember(playerViewModel) so MiniPlayerBar's collectAsState doesn't restart this flow's
+    // coroutine on every recomposition — the same reasoning NowPlayingScreen's own progressFlow
+    // already documents, now shared by the bar too (§6.1: "reuse playbackProgressFlow(), don't
+    // build a bar-local computation").
+    val miniPlayerProgressFlow = remember(playerViewModel) { playerViewModel.playbackProgressFlow() }
+
     val miniPlayer: @Composable () -> Unit = {
         playingState?.let { state ->
             MiniPlayerBar(
                 state = state,
+                imageLoader = imageLoader,
+                progressFlow = miniPlayerProgressFlow,
                 onTogglePlayPause = playerViewModel::togglePlayPause,
                 onToggleShuffle = playerViewModel::toggleShuffle,
                 onCycleRepeat = playerViewModel::cycleRepeatMode,
@@ -205,8 +220,12 @@ fun AuralisShell(
                     state = state,
                     playerViewModel = playerViewModel,
                     imageLoader = imageLoader,
+                    apiClient = apiClient,
                     onDismiss = { isNowPlayingExpanded = false },
                     onOpenQueue = { navController.navigate(Routes.QUEUE) },
+                    onToggleShuffle = playerViewModel::toggleShuffle,
+                    onCycleRepeat = playerViewModel::cycleRepeatMode,
+                    onOpenLyrics = { navController.navigate(Routes.LYRICS) },
                 )
             }
         }

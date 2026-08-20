@@ -144,14 +144,21 @@ private fun CenteredMessage(text: String) {
  * read ahead of the highlighted line without every tick yanking the view back mid-read, while
  * still resuming automatic follow once they stop interacting.
  *
- * Accessibility: the active line is marked by weight *and* size, not colour alone — a colour-only
- * cue is invisible to a colour-blind or otherwise low-vision listener. No live region is
- * attached anywhere in this list: the active line changes every few seconds while a track plays,
- * and a live region would re-announce a new line to a screen reader on every change — exactly
- * the announcement spam this list must not produce. Every line is plain, ordinarily-readable
- * `Text`, so a screen-reader user can read through the lyrics at their own pace the same way a
- * sighted listener reads ahead on screen, rather than being interrupted or having focus stolen by
- * auto-scroll.
+ * Each line's style is [lyricLineRole]'s three-way split (`docs/design/screens/NOW_PLAYING.md`
+ * §3.5, wave 16e-nowplaying-A) — [LyricLineRole.ACTIVE] (bold, primary), [LyricLineRole.PASSED]
+ * (muted, `onSurfaceVariant`) and [LyricLineRole.UPCOMING] (full emphasis, plain `onSurface`) —
+ * where this screen previously had only one "inactive" bucket for both passed and upcoming lines.
+ *
+ * Accessibility: the active line is marked by weight *and* size, not colour alone, and the
+ * passed/upcoming split keeps that same weight pairing (§11) — 700 (bold) for active, 500
+ * (medium) for the other two — rather than distinguishing "passed" from "upcoming" by colour
+ * alone, since neither is the state a screen-reader or low-vision user needs to find quickly. No
+ * live region is attached anywhere in this list: the active line changes every few seconds while
+ * a track plays, and a live region would re-announce a new line to a screen reader on every
+ * change — exactly the announcement spam this list must not produce. Every line is plain,
+ * ordinarily-readable `Text`, so a screen-reader user can read through the lyrics at their own
+ * pace the same way a sighted listener reads ahead on screen, rather than being interrupted or
+ * having focus stolen by auto-scroll.
  */
 @Composable
 private fun LyricsList(
@@ -184,17 +191,26 @@ private fun LyricsList(
 
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
         items(lines.size) { index ->
-            val isActive = synced && index == activeIndex
+            // Unsynced lyrics never compute an activeIndex at all (it's null above), so every
+            // line already reaches lyricLineRole with activeIndex = null and reads back UPCOMING
+            // — matching §3.5's "keep rendering every line in the not-yet-reached role" rule
+            // without a separate branch here.
+            val role = lyricLineRole(index, activeIndex)
             Text(
                 text = lines[index].text,
                 modifier = Modifier.padding(vertical = 8.dp),
-                style = if (isActive) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                color =
-                    if (isActive) {
-                        MaterialTheme.colorScheme.primary
+                style =
+                    if (role == LyricLineRole.ACTIVE) {
+                        MaterialTheme.typography.titleLarge
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        MaterialTheme.typography.bodyLarge
+                    },
+                fontWeight = if (role == LyricLineRole.ACTIVE) FontWeight.Bold else FontWeight.Medium,
+                color =
+                    when (role) {
+                        LyricLineRole.ACTIVE -> MaterialTheme.colorScheme.primary
+                        LyricLineRole.PASSED -> MaterialTheme.colorScheme.onSurfaceVariant
+                        LyricLineRole.UPCOMING -> MaterialTheme.colorScheme.onSurface
                     },
             )
         }

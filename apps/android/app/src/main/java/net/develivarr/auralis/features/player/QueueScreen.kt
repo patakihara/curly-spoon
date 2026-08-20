@@ -1,5 +1,6 @@
 package net.develivarr.auralis.features.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -25,6 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import kotlinx.coroutines.launch
 
 /**
@@ -105,6 +107,12 @@ fun QueueScreen(playerViewModel: PlayerViewModel) {
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(rows, key = { it.id }) { row ->
+                        // The current-row background (`docs/design/screens/NOW_PLAYING.md`
+                        // §3.4/§6.4) is additive visual reinforcement of the "Now playing" trailing
+                        // label this screen already renders below — not a replacement for it. Android
+                        // has one breakpoint's worth of value here (--m3-surface-container, unlike
+                        // web's desktop/mobile split), and MaterialTheme.shapes.small is the app's
+                        // existing --radius-sm (16dp) token, per SonoraShapes's own mapping.
                         ListItem(
                             headlineContent = { Text(row.title) },
                             supportingContent = row.subtitle?.let { subtitle -> { Text(subtitle) } },
@@ -113,6 +121,14 @@ fun QueueScreen(playerViewModel: PlayerViewModel) {
                                     { Text("Now playing", style = MaterialTheme.typography.labelMedium) }
                                 } else {
                                     null
+                                },
+                            modifier =
+                                if (row.isCurrent) {
+                                    Modifier
+                                        .clip(MaterialTheme.shapes.small)
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                                } else {
+                                    Modifier
                                 },
                         )
                     }

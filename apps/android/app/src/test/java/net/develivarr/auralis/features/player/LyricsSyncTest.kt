@@ -77,4 +77,26 @@ class LyricsSyncTest {
     fun `an empty line list reports no active line`() {
         assertNull(activeLineIndex(emptyList(), positionSeconds = 0.0))
     }
+
+    @Test
+    fun `lyric line role is active exactly at the active index`() {
+        assertEquals(LyricLineRole.ACTIVE, lyricLineRole(index = 1, activeIndex = 1))
+    }
+
+    @Test
+    fun `lyric line role is passed before the active index`() {
+        assertEquals(LyricLineRole.PASSED, lyricLineRole(index = 0, activeIndex = 2))
+        assertEquals(LyricLineRole.PASSED, lyricLineRole(index = 1, activeIndex = 2))
+    }
+
+    @Test
+    fun `lyric line role is upcoming after the active index`() {
+        assertEquals(LyricLineRole.UPCOMING, lyricLineRole(index = 3, activeIndex = 2))
+    }
+
+    @Test
+    fun `lyric line role is upcoming for every line when there is no active index`() {
+        assertEquals(LyricLineRole.UPCOMING, lyricLineRole(index = 0, activeIndex = null))
+        assertEquals(LyricLineRole.UPCOMING, lyricLineRole(index = 5, activeIndex = null))
+    }
 }
