@@ -96,16 +96,25 @@ export function LyricsView() {
     // being interrupted by an announcement every few seconds.
     <ul className="auralis-lyrics" data-testid="lyrics-view">
       {lyrics.lines.map((line, index) => {
+        // Wave 16e-nowplaying (docs/design/screens/NOW_PLAYING.md §3.5/§6.5): Sonora's
+        // three-way split — active / already passed / not yet reached — keyed to `index`
+        // against `activeIndex`. The active-line logic itself is unchanged (`lyrics.ts`'s
+        // `activeLyric`); only this render-side mapping to a style role is new. Unsynced
+        // lyrics (`lyrics.synced === false`) keep every line in the base "not yet
+        // reached" role — both `isActive` and `isPassed` are gated on `lyrics.synced`, so
+        // neither ever fires, matching the existing `synced` gate unchanged.
         const isActive = lyrics.synced && index === activeIndex;
+        const isPassed = lyrics.synced && activeIndex != null && index < activeIndex;
+        const lineClassName = isActive
+          ? 'auralis-lyrics__line auralis-lyrics__line--active'
+          : isPassed
+            ? 'auralis-lyrics__line auralis-lyrics__line--passed'
+            : 'auralis-lyrics__line';
         return (
           <li
             key={index}
             ref={isActive ? activeLineRef : undefined}
-            className={
-              isActive
-                ? 'auralis-lyrics__line auralis-lyrics__line--active'
-                : 'auralis-lyrics__line'
-            }
+            className={lineClassName}
             data-testid={`lyrics-line-${index}`}
           >
             {line.text}

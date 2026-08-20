@@ -152,6 +152,13 @@ function IconButtonGallery() {
       >
         <Icon name="shuffle" />
       </IconButton>
+      {/* Wave 16e-nowplaying (docs/design/screens/NOW_PLAYING.md §3.3): the new optional
+          `size` prop, exercised here at a value distinct from the 48px default so
+          e2e/ui/icon-button.spec.ts can prove it actually resizes the button rather than
+          merely accepting the prop and ignoring it. */}
+      <IconButton aria-label="Large" size={64} data-testid="icon-button-size-64">
+        <Icon name="play" />
+      </IconButton>
     </Section>
   );
 }

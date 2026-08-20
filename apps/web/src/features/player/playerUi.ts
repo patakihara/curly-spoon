@@ -122,6 +122,29 @@ export function playerDisplayMeta(params: {
 }
 
 /**
+ * The Now Playing surface's "Playing from {album}" context line for a currently-loaded
+ * music track — new content, `docs/design/screens/NOW_PLAYING.md` §3.3/§6.3. Composed as
+ * a literal string, matching Sonora's own `'Playing from ' + track.album` (`:848`).
+ *
+ * `albumTitle` is `currentItem.media.title` when `currentItem.media.kind === 'track'` —
+ * both `MusicAlbumPage.tsx` and `MusicPlaylistPage.tsx` (the only two places that ever
+ * `load()` a track-kind item) set that field to the album's or playlist's own name, so
+ * this always names whatever container the track is actually playing from, never the
+ * track's own title (that's `primary`/`playerDisplayMeta`'s job).
+ *
+ * `null` when there's nothing to name — a blank/whitespace-only title, the fallback §5
+ * documents ("omit entirely when there's no album context"). Neither current `load()`
+ * call site can actually produce a blank title today; the branch is kept anyway, at zero
+ * cost, to guard a future queue source that might not have a container name (§6.3's own
+ * reasoning for keeping the branch even though it isn't reachable yet).
+ */
+export function nowPlayingContextLine(albumTitle: string): string | null {
+  const trimmed = albumTitle.trim();
+  if (!trimmed) return null;
+  return `Playing from ${trimmed}`;
+}
+
+/**
  * The cover-art URL for whatever's currently loaded, from `kind` and the right id — not
  * part of `PlaybackSource` (`features/player/playbackSource.ts`) even though it looks like
  * a sibling of `resolveTrackUrl`: the three transport surfaces (mini player, Now Playing,

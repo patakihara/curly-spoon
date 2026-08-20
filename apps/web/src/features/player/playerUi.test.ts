@@ -3,6 +3,7 @@ import {
   defaultBookmarkTitle,
   endOfChapterMs,
   formatRemaining,
+  nowPlayingContextLine,
   playerArtworkUrl,
   playerDisplayMeta,
   remainingSeconds,
@@ -221,5 +222,25 @@ describe('playerArtworkUrl', () => {
     );
     expect(api.jellyfinArtworkUrl).toHaveBeenCalledWith('album-1');
     expect(api.coverUrl).not.toHaveBeenCalled();
+  });
+});
+
+// Wave 16e-nowplaying (docs/design/screens/NOW_PLAYING.md §6.3): the Now Playing surface's
+// new "Playing from X" context line for music.
+describe('nowPlayingContextLine', () => {
+  it('composes the literal "Playing from {album}" string', () => {
+    expect(nowPlayingContextLine('Driftwave')).toBe('Playing from Driftwave');
+  });
+
+  it('is null for a blank title, so a container-less queue source omits the line rather than rendering "Playing from "', () => {
+    expect(nowPlayingContextLine('')).toBeNull();
+  });
+
+  it('is null for a whitespace-only title', () => {
+    expect(nowPlayingContextLine('   ')).toBeNull();
+  });
+
+  it('trims surrounding whitespace from an otherwise real title', () => {
+    expect(nowPlayingContextLine('  Driftwave  ')).toBe('Playing from Driftwave');
   });
 });
