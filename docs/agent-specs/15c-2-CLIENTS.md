@@ -1,6 +1,7 @@
 # `15c-2-W` / `15c-2-A` / `15c-2-P` — render mixed-content shelves on both clients
 
-**Written 2026-08-21, not yet dispatched.** Base it on `main` at or after `f4c2d93`.
+**Written 2026-08-21. Reconciled against shipped code before dispatch.** Base is `main` at
+**`b788e35`** — that literal sha is what each agent's `git reset --hard` must name.
 
 This is one **shared behaviour spec** for a web wave and an Android wave dispatched **together**,
 followed by a parity review by an agent that wrote neither half. That shape is a standing
@@ -54,9 +55,15 @@ Three properties that are contract, not incidental:
   only hold one label per bare key. Every item carries its own `kind` regardless, so **render chrome
   from `item.kind` and use `itemLabels` only for the display string.** Never branch on the presence
   of a label to decide what an item _is_.
-- **`availability` is always `'owned'` from this route today.** Treat anything other than the
-  literal `"owned"` as external anyway — that is the contract both existing clients already
-  document, and never derive externality by string-matching an `external:` prefix out of `id`.
+- **`availability` is always `'owned'` from this route today — verified, not inherited.** The
+  orchestrator re-checked it: `routes/recommended.ts` writes the literal `'owned'` at three
+  construction sites (`:325`, `:335`, `:349`) and no external-discovery provider feeds this
+  route's pool (`:162-168` states why, and the field stays typed as the full union so a future
+  external wave is additive rather than breaking). **So the guard you must still write is
+  genuinely defensive, not load-bearing** — say so in your report rather than claiming you
+  proved an external item is blocked, because no external item can reach the route to test with.
+  Treat anything other than the literal `"owned"` as external, and never derive externality by
+  string-matching an `external:` prefix out of `id`.
 
 **BYTE-FOR-BYTE TARGET, pre-ruled — do not re-derive it.** Extracted from
 `shelves.ts`'s `MEDIA_KIND_LABEL` by the orchestrator:
@@ -109,8 +116,19 @@ description via `aria-describedby`; Android merges them into one node with
 `Modifier.semantics(mergeDescendants = true) { contentDescription = … }`, because Compose has no
 `aria-describedby` equivalent (`ForYouCarousel.kt:173` is the pattern).
 
-**The type label must be announced, not merely drawn.** A sighted user learns the kind from the
-subtitle; a screen-reader user must too.
+**The type label must be announced, not merely drawn — and your report must make that
+falsifiable.** A sighted user learns the kind from the subtitle; a screen-reader user must too.
+This is where this project keeps shipping gaps, so state two things explicitly, per platform:
+
+1. **The mechanism.** Name the exact route by which the type label reaches the node's accessible
+   name or description — which attribute or modifier, on which element, at which `file:line`.
+   **Web is the risk case:** if the label lands in a visually-rendered subtitle `<span>` inside
+   the card while the card's `aria-describedby` still points only at the shelf's reason
+   paragraph, it renders perfectly and announces nothing. "It is in the subtitle" is not an
+   answer to this question.
+2. **The assertion that pins it, and proof that the assertion discriminates.** Delete or blank
+   the label in your working tree, watch the test fail, restore it. Report that you did this and
+   what the failure said. A test that passes with the feature removed is a pin, not a proof.
 
 Be precise about what Android's harness proves: Robolectric confirms a node exists with the
 semantics you meant. It does not tell you what TalkBack announces or what is reachable by touch.
@@ -121,8 +139,15 @@ There is no device here. State that asymmetry rather than papering over it.
 - `model: "sonnet"`, `isolation: "worktree"`, and the agent's **literal first action** is
   `git reset --hard <current main tip sha>` inside its worktree, verified with `git log -1` — with no
   `worktree.baseRef` configured, an isolated agent otherwise lands on an empty scaffold.
-- `-W` owns `apps/web/**` and `e2e/**`; `-A` owns `apps/android/**`. Disjoint. **Only `-W` may run
-  Playwright** — one hardcoded port, one stateful single-tenant BFF, so two runs collide.
+- `-W` owns `apps/web/**` and `e2e/**`; `-A` owns `apps/android/**`. Disjoint.
+- **Do NOT run a full Playwright suite. Neither of you.** This supersedes any older instruction
+  that `-W` may run one. `-W` runs **one targeted spec** for a fast signal
+  (`pnpm exec playwright test --project=app e2e/app/<your-one-file>.spec.ts --workers=2`) plus
+  `pnpm vitest run apps/web`, and stops there. **The orchestrator runs the full suite from the
+  main checkout after merging**, where `Bash` is ungated and no task notification can end the
+  turn. The reason is measured, not stylistic: agents on this project have repeatedly died
+  waiting on a backgrounded full run, twice losing an entire wave, and the orphaned runner does
+  not carry the worktree path in its own command line so it is painful to even kill.
 - **Never make an `Agent` call of any kind**, including a one-word "continue".
 - **Commit before running any long test command.** Agents here have died waiting on a backgrounded
   Playwright run and lost entire waves; the orchestrator-side worktree check is what recovers them.
@@ -164,8 +189,14 @@ defect), but must leave the tree clean.
 
 ## Known follow-ups this triple inherits and should NOT fix
 
-- The **id-collision** risk in `recommended.ts`, and the trap in its obvious fix: `itemLabels` is
-  keyed by item id, so prefixing pool ids without stripping the prefix from every `itemLabels` key
-  ships a map matching no card. Server-side, separate wave.
+- ~~The **id-collision** risk in `recommended.ts`~~ — **CLOSED on `main` as `a1c0075`**, after
+  this spec was first drafted. Candidate ids are now namespaced `abs:`/`jf:` for the duration of
+  scoring and stripped before serialization, so **`items[].id` on the wire is unchanged** and
+  every `itemLabels` key still equals an item id (pinned by a test asserting
+  `Object.keys(itemLabels)` equals `items.map(i => i.id)` exactly, verified discriminating).
+  **What survives, and is why `item.kind` is authoritative:** on a _true literal_ id collision,
+  `itemLabels` is a `Record<itemId, string>` and structurally cannot hold two labels under one
+  key — last write wins. Harmless, because every item carries its own `kind`. Do not re-open
+  this; do not add a client-side workaround for it.
 - The **ABS pool over-fetch** (300 per library, capped only in total).
 - `--accent-contrast` failing WCAG AA on all 17 accent presets (queue `c9887cb`, with Sofia).
