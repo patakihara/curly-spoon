@@ -279,8 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T22:23:16Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · ## 1. The seven-call-site classification All seven line numbers you gave me were accurate — I re-grepped them before touching anything and they match…
-- `2026-08-20T22:36:57Z` · `af5faf40ebd7f0c47` · general-purpose · ended · Working tree is clean, nothing uncommitted, nothing pushed. ## Report — wave '16i-handover-prune' **Branch/commit:** 'worktree-agent-af5faf40ebd7f0c4…
 - `2026-08-20T23:43:27Z` · `ac975afe5c449b45b` · general-purpose · ended · ## 1. Claim A verdict — **HOLDS**, unchanged since the record was written 'itemLabels' is computed in 'apps/server/src/features/recommendations/shelv…
 - `2026-08-20T23:44:00Z` · `a98b2440f08b1fb2e` · general-purpose · ended · # Phase 16 '--m3-*' Migration Audit — Findings ## Step 1 — the 501 split into three buckets Raw per-file counts (grep -c, i.e. lines containing '--m3…
 - `2026-08-20T23:50:13Z` · `a8aa0d365d7e1810e` · general-purpose · ended · Working tree is clean, one commit on top of 'e856c70'. Here is my final report. ## Report — Wave '15c-2-S' **1. Branch/commit:** 'worktree-agent-a8aa…
@@ -294,6 +292,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T04:17:56Z` · `a349cd26638b65911` · general-purpose · running · —
 - `2026-08-21T04:23:53Z` · `aeb7302ff0eae9b44` · general-purpose · ended · Everything is committed and clean. Here is my final report. ## Report — Wave '15c-2-W' **1. Branch/commit:** 'worktree-agent-aeb7302ff0eae9b44' at '2…
 - `2026-08-21T04:24:47Z` · `a006567403b5d06c8` · general-purpose · ended · ## Report — wave '15c-2-A' **Branch/commit:** worktree branch at '00ea28f', one commit on top of '6b191a6' (base per spec). 'git status --short' is c…
+- `2026-08-21T09:03:39Z` · `a434a0fb934cea666` · general-purpose · running · —
+- `2026-08-21T09:04:19Z` · `a16bacb3ae99def08` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -830,6 +830,40 @@ leaf changing shape.
 **Do not "fix" this by having the client call both routes.** That is the addition shape replacement
 was chosen over, it reintroduces the duplication neither client can dedupe, and it leaves the
 aggregator permanently unable to serve For You alone.
+
+### THE RE-LAND IS THREE COMMITS, NOT TWO — the discriminating spec is pinned to the old route
+
+**Found 2026-08-21 before dispatching `15c-2-S-4`, by grepping the spec the revert record calls
+"the discriminating check".** It is, and it is also route-pinned:
+
+`e2e/app/for-you-external-book.spec.ts:33` mocks the network with
+
+```
+page.route('**/api/v1/libraries/lib-books/recommended*', ...)
+```
+
+That glob names the **route the re-land removes**. Once web fetches `/api/v1/recommended` instead,
+the intercept matches nothing, no external card renders, and all three tests fail — **whether or not
+`15c-2-S-4` succeeded.** They fail looking exactly like "the aggregator's external shelf is broken",
+which is the most expensive possible false signal, because it is indistinguishable from the real
+regression the revert was about.
+
+So `git revert` of the two reverts is **necessary and not sufficient**. The re-land must also
+re-point that glob at `/api/v1/recommended` **and reshape the mocked payload**, since the aggregator
+serializes flat `MixedRecommendedItem` cards rather than the per-medium `RecommendedLibraryItem`
+shape the mock currently returns.
+
+**The generalisable lesson, and it is a sharper version of the one already recorded above.** That
+lesson says: before replacing one endpoint with another, diff the two RESPONSES, not the two item
+types. This adds the half it misses — **a mocked test does not observe a route, it impersonates
+one.** So when the client's route changes, every `page.route` glob aimed at the old path becomes a
+silent no-op, and the test degrades from a check into a tautology-shaped failure. **Before
+re-pointing a client at a new endpoint, grep `e2e/` for the old path**, not only the client source.
+One grep, and it is the difference between a two-commit re-land and a three-commit one.
+
+**`itemLabels` was checked at the same time and is fine**: `recommended.test.ts:145` filters to
+shelves where `itemLabels !== undefined` before asserting keys-equal-item-ids, so an external shelf
+that omits the map is excluded from that invariant by construction and pins nothing.
 
 ### An operational trap that nearly made me report a passing suite
 
