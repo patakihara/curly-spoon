@@ -125,7 +125,7 @@ html body {
 /* The rail's always-visible search input (Shell.tsx), above the destination
  * list — Feishin's pattern, not a nav destination among Home/Books/etc. */
 .auralis-nav-rail-search {
-  margin-bottom: var(--m3-space-sm);
+  margin-bottom: var(--spacing-sm);
 }
 
 /*
@@ -142,7 +142,7 @@ html body {
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--m3-space-lg);
+  padding: var(--spacing-2xl);
 }
 
 /*
@@ -168,7 +168,7 @@ html body {
  * the fixed-height box for no purpose.
  */
 .auralis-shell--compact .auralis-shell__content {
-  padding: var(--m3-space-md);
+  padding: var(--spacing-lg);
   padding-bottom: 80px; /* room for the docked bottom bar */
 }
 
@@ -200,8 +200,8 @@ html body {
  * in the top-right corner instead, above the page content. */
 .auralis-shell__settings-button {
   position: fixed;
-  top: var(--m3-space-md);
-  right: var(--m3-space-md);
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
   z-index: 10;
 }
 
@@ -216,18 +216,18 @@ html body {
   width: 320px;
   flex-shrink: 0;
   overflow-y: auto;
-  border-left: 1px solid var(--m3-outline-variant);
-  padding: var(--m3-space-lg);
-  background: var(--m3-surface-container-low);
+  border-left: 1px solid var(--surface-border);
+  padding: var(--spacing-2xl);
+  background: var(--surface-bg);
 }
 
 .auralis-now-playing-panel__title {
   font-weight: 600;
-  margin: 0 0 var(--m3-space-xs);
+  margin: 0 0 var(--spacing-xs);
 }
 
 .auralis-now-playing-panel__hint {
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted);
   font-size: var(--m3-type-body-small-size);
 }
 
@@ -247,7 +247,7 @@ html body {
 .auralis-page {
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-lg);
+  gap: var(--spacing-2xl);
   max-width: var(--auralis-content-max-width, 1200px);
   margin-inline: auto;
   width: 100%;
@@ -256,11 +256,11 @@ html body {
 .auralis-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--m3-space-md);
+  gap: var(--spacing-lg);
 }
 
 .auralis-card-grid > * {
-  padding: var(--m3-space-md);
+  padding: var(--spacing-lg);
   text-align: left;
   width: 100%;
 }
@@ -280,16 +280,16 @@ html body {
  * plus a bordered, tinted container, rather than sitting as an unmarked
  * continuation of the library list above it. */
 .auralis-requestable-section {
-  margin-top: var(--m3-space-sm);
-  padding: var(--m3-space-md);
-  border: 1px solid var(--m3-outline-variant);
-  border-radius: var(--m3-shape-md);
-  background: var(--m3-surface-container-low);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-bg);
 }
 
 .auralis-requestable-section__hint {
   margin-top: 0;
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted);
   font-size: var(--m3-type-body-small-size);
 }
 
@@ -328,9 +328,9 @@ html body {
 }
 
 .auralis-item-cover {
-  border-radius: var(--m3-shape-lg);
+  border-radius: var(--radius-lg);
   object-fit: cover;
-  background: var(--m3-surface-container);
+  background: var(--surface-card);
 }
 
 /* `MediaHeader`'s `kindLabel` — small caps, muted (SONORA.md §3.5). */
@@ -454,7 +454,7 @@ html body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
 }
 
 .auralis-music-header__links {
@@ -492,16 +492,16 @@ html body {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: var(--m3-space-sm);
-  padding: var(--m3-space-xl);
+  gap: var(--spacing-sm);
+  padding: var(--space-2xl);
   max-width: 560px;
   margin: 0 auto;
 }
 
 .auralis-error-surface__actions {
   display: flex;
-  gap: var(--m3-space-sm);
-  margin-top: var(--m3-space-sm);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
 }
 
 /* ---------------------------------------------------------------------------
@@ -686,25 +686,25 @@ html body {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
 }
 
 .auralis-shortcut-list__row {
   display: flex;
   align-items: center;
-  gap: var(--m3-space-md);
+  gap: var(--spacing-lg);
 }
 
 .auralis-shortcut-list__row dt kbd {
   background: var(--m3-surface-container-high);
-  border-radius: var(--m3-shape-xs);
+  border-radius: var(--radius-xs);
   padding: 2px 8px;
   font-family: ui-monospace, monospace;
 }
 
 .auralis-shortcut-list__row dd {
   margin: 0;
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted);
 }
 
 /* ---------------------------------------------------------------------------
@@ -716,8 +716,8 @@ html body {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--m3-space-sm);
-  padding: var(--m3-space-sm) var(--m3-space-md);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
   background: var(--m3-surface-container-high);
   overflow: hidden;
 }
@@ -830,7 +830,7 @@ html body {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
   min-height: var(--m3-touch-target-min);
   border: none;
   background: none;
@@ -883,8 +883,8 @@ html body {
 .auralis-now-playing {
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-md);
-  padding: var(--m3-space-md);
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
 }
 
 .auralis-now-playing--medium {
@@ -903,7 +903,7 @@ html body {
   max-width: 320px;
   aspect-ratio: 1;
   object-fit: cover;
-  background: var(--m3-surface-container);
+  background: var(--surface-card);
   margin: 0 auto;
 }
 
@@ -938,7 +938,7 @@ html body {
 }
 
 .auralis-now-playing__author {
-  margin: var(--m3-space-xs) 0 0;
+  margin: var(--spacing-xs) 0 0;
 }
 
 /* Sonora's own mock uses different colour roles for this line at each width — a Sonora
@@ -953,7 +953,7 @@ html body {
 .auralis-now-playing--compact .auralis-now-playing__author,
 .auralis-now-playing--medium .auralis-now-playing__author {
   font-size: var(--text-lg);
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted);
 }
 
 /* New content (§6.3) — music only, "Playing from {album}". One size/colour at every
@@ -969,7 +969,7 @@ html body {
 .auralis-now-playing__times {
   display: flex;
   justify-content: space-between;
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted);
   font-size: var(--m3-type-body-small-size);
 }
 
@@ -977,7 +977,7 @@ html body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--m3-space-lg);
+  gap: var(--spacing-2xl);
 }
 
 .auralis-now-playing__transport button {
@@ -989,7 +989,7 @@ html body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--m3-space-md);
+  gap: var(--spacing-lg);
 }
 
 /* Wave 16e-nowplaying (§3.3): "two side-by-side pills" — the rate control (this new
@@ -1000,7 +1000,7 @@ html body {
 .auralis-now-playing__rate-pill {
   display: flex;
   align-items: center;
-  gap: var(--m3-space-xs);
+  gap: var(--spacing-xs);
   padding: 14px 16px;
 }
 
@@ -1009,7 +1009,7 @@ html body {
 .auralis-now-playing--medium .auralis-now-playing__rate-pill,
 .auralis-now-playing--medium .auralis-sleep-timer {
   border-radius: var(--radius-sm);
-  background: var(--m3-surface-container);
+  background: var(--surface-card);
 }
 
 .auralis-now-playing--expanded .auralis-now-playing__rate-pill,
@@ -1023,7 +1023,7 @@ html body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--m3-space-lg);
+  gap: var(--spacing-2xl);
 }
 
 /* Repeat has no dedicated "repeat one" glyph in the icon set (`packages/ui/src/components/
@@ -1046,7 +1046,7 @@ html body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-xs);
+  gap: var(--spacing-xs);
 }
 
 /* Sibling `IconButton`s next to a chapter's `ListItem` — same reasoning and shape as
@@ -1055,7 +1055,7 @@ html body {
 .auralis-chapter-list__row {
   display: flex;
   align-items: center;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
 }
 
 .auralis-chapter-list__row > *:first-child {
@@ -1066,7 +1066,7 @@ html body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
 }
 
 .auralis-queue-view__title {
@@ -1075,8 +1075,8 @@ html body {
 }
 
 .auralis-queue-view__empty {
-  color: var(--m3-on-surface-variant);
-  padding: var(--m3-space-sm) 0;
+  color: var(--surface-fg-muted);
+  padding: var(--spacing-sm) 0;
 }
 
 /* Wave 16e-nowplaying (§3.4/§6.4): the current-row background, additive alongside
@@ -1089,7 +1089,7 @@ html body {
 .auralis-now-playing--compact .auralis-queue-view__list .m3-list-item--selected,
 .auralis-now-playing--medium .auralis-queue-view__list .m3-list-item--selected {
   border-radius: var(--radius-sm);
-  background: var(--m3-surface-container);
+  background: var(--surface-card);
 }
 
 .auralis-now-playing--expanded .auralis-queue-view__list .m3-list-item--selected {
@@ -1100,17 +1100,17 @@ html body {
 .auralis-lyrics {
   list-style: none;
   margin: 0;
-  padding: var(--m3-space-sm) 0;
+  padding: var(--spacing-sm) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
   max-height: 320px;
   overflow-y: auto;
 }
 
 .auralis-lyrics--message {
-  color: var(--m3-on-surface-variant);
-  padding: var(--m3-space-sm) 0;
+  color: var(--surface-fg-muted);
+  padding: var(--spacing-sm) 0;
 }
 
 /* Wave 16e-nowplaying (§3.5/§6.5): Sonora's three-way line treatment, replacing the old
@@ -1141,7 +1141,7 @@ html body {
 .auralis-bookmarks__row {
   display: flex;
   align-items: center;
-  gap: var(--m3-space-sm);
+  gap: var(--spacing-sm);
 }
 
 .auralis-bookmarks__row > *:first-child {
@@ -1156,7 +1156,7 @@ html body {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--m3-space-xs);
+  gap: var(--spacing-xs);
   padding: 14px 16px;
 }
 
@@ -1168,9 +1168,9 @@ html body {
   display: flex;
   flex-direction: column;
   background: var(--m3-surface-container-high);
-  border-radius: var(--m3-shape-md);
-  box-shadow: var(--m3-elevation-2);
-  padding: var(--m3-space-xs);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xs);
   min-width: 160px;
 }
 
@@ -1180,8 +1180,8 @@ html body {
   border: none;
   background: none;
   color: inherit;
-  border-radius: var(--m3-shape-sm);
-  padding: 0 var(--m3-space-sm);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--spacing-sm);
   cursor: pointer;
 }
 
@@ -1200,8 +1200,8 @@ html body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--m3-space-md);
-  padding: var(--m3-space-sm) var(--m3-space-lg);
+  gap: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-2xl);
   background: var(--m3-secondary-container);
   color: var(--m3-on-secondary-container);
 }
