@@ -37,6 +37,8 @@ import net.develivarr.auralis.data.model.LoginRequestBody
 import net.develivarr.auralis.data.model.LoginResponse
 import net.develivarr.auralis.data.model.MeResponse
 import net.develivarr.auralis.data.model.MediaProgress
+import net.develivarr.auralis.data.model.MixedRecommendedResponse
+import net.develivarr.auralis.data.model.MixedRecommendedShelf
 import net.develivarr.auralis.data.model.MusicCandidate
 import net.develivarr.auralis.data.model.MusicRecommendedResponse
 import net.develivarr.auralis.data.model.MusicRecommendedShelf
@@ -125,10 +127,15 @@ class ApiClient(
      * — wave 15d-1-books added a required `availability` field this route sends and [libraryHome]
      * does not, see [RecommendedShelf]'s doc comment); a cold-start user (no listening progress at
      * all) gets `{"shelves":[]}` and there is deliberately no fallback inside the BFF route
-     * (`docs/ROADMAP.md` §13). Reader: [net.develivarr.auralis.features.home.ForYouViewModel],
-     * which appends these after the existing home shelves rather than replacing them, via
-     * [net.develivarr.auralis.features.home.recommendedShelfToCarousel] rather than
-     * [net.develivarr.auralis.features.home.shelfToCarousel] — the latter only accepts [Shelf]. */
+     * (`docs/ROADMAP.md` §13).
+     *
+     * **No reader in this Android client as of wave 15c-2-A.**
+     * [net.develivarr.auralis.features.home.ForYouViewModel] used to call this once per
+     * Audiobookshelf library and append the results after its home shelves; it now calls
+     * [recommended] instead (`docs/agent-specs/15c-2-CLIENTS.md`), which replaces both per-medium
+     * calls with one cross-medium fetch. Kept rather than deleted because the server route itself
+     * is deliberately left in place (`docs/HANDOVER.md`'s "Phase 15's `15c-2`" section) — this is
+     * a dormant client binding for a live route, not dead code pointing at nothing. */
     suspend fun libraryRecommended(libraryId: String): List<RecommendedShelf> =
         get<RecommendedResponse>("/libraries/$libraryId/recommended").shelves
 
@@ -142,6 +149,18 @@ class ApiClient(
      * [net.develivarr.auralis.features.music.MusicLibraryViewModel]. */
     suspend fun musicRecommended(): List<MusicRecommendedShelf> =
         get<MusicRecommendedResponse>("/music/recommended").shelves
+
+    /** GET /api/v1/recommended — the cross-medium aggregator (wave 15c-2-S/15c-2-A,
+     * `docs/agent-specs/15c-2-CLIENTS.md`), replacing the two per-medium calls
+     * [net.develivarr.auralis.features.home.ForYouViewModel] used to make into
+     * [libraryRecommended] (once per Audiobookshelf library). Unlike that call there is no
+     * library id to scope by: the server unions Audiobookshelf and Jellyfin candidates into one
+     * pool and can return a shelf spanning book/podcast/album items. Degrades the same way every
+     * recommendation route here does — never 500s; a cold-start or fully-unconfigured user gets
+     * `{"shelves":[]}`. Reader: [net.develivarr.auralis.features.home.ForYouViewModel] via
+     * [net.develivarr.auralis.features.home.mixedShelfToCarousel]. */
+    suspend fun recommended(): List<MixedRecommendedShelf> =
+        get<MixedRecommendedResponse>("/recommended").shelves
 
     /** GET /libraries/{id}/items — used by Android Auto's browse tree (a later wave) to
      * list a library's items page by page. */
