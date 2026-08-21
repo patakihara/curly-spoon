@@ -1,9 +1,10 @@
 /**
  * Wave 15d-1-books-W: an external (unowned, Open Library-derived) book recommendation on
- * For You — `GET /libraries/:id/recommended`'s wave 15e-books `availability` contract
- * (`docs/HANDOVER.md`). Before this wave the card rendered pixel-identical to an owned book
- * and, tapped, reached `ItemPage`'s generic error boundary for an id no Audiobookshelf
- * instance knows (`external:openlibrary:/works/…`).
+ * For You — `GET /api/v1/recommended`'s `availability` contract, carried over from wave
+ * 15e-books's original `GET /libraries/:id/recommended` version (`docs/HANDOVER.md`). Before
+ * this wave the card rendered pixel-identical to an owned book and, tapped, reached
+ * `ItemPage`'s generic error boundary for an id no Audiobookshelf instance knows
+ * (`external:openlibrary:/works/…`).
  *
  * Mocked via `page.route` (`item-detail.spec.ts`'s pattern) rather than driven through the
  * real external-discovery pipeline: that pipeline calls the live Open Library API
@@ -11,6 +12,16 @@
  * forbidden from touching and which no fake-upstream fixture exists for — mocking the one
  * response `HomePage.tsx` actually reads keeps this test fast and network-independent while
  * still exercising the real client-side mapping, rendering and navigation code.
+ *
+ * Wave 15c-2-W2: re-pointed at `GET /api/v1/recommended`, the cross-medium aggregator For You
+ * reads today, replacing the old per-library `GET /libraries/lib-books/recommended` glob. The
+ * mocked payload was reshaped to match: the aggregator serializes a flat `MixedRecommendedItem`
+ * card projection (`apps/server/src/routes/recommended.ts`) rather than the old per-medium
+ * `RecommendedLibraryItem` shape — `kind`/`title` promoted to the top level, `subtitle` a
+ * pre-joined author string rather than an `authors[]` array, an added `imageTag` (always `null`
+ * for a book), and no `libraryId` or `progress` field at all (the latter is structurally
+ * unreachable on any recommended item regardless of shape — see that route's own comments).
+ * `availability`'s values and semantics are unchanged, and so is every assertion below.
  */
 import { expect, test } from '@playwright/test';
 
@@ -30,7 +41,7 @@ const UNRECOGNISED_ID = 'external:openlibrary:/works/OL8888888W';
 const MISSING_FIELD_ID = 'external:openlibrary:/works/OL7777777W';
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/v1/libraries/lib-books/recommended*', async (route) => {
+  await page.route('**/api/v1/recommended*', async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -45,41 +56,34 @@ test.beforeEach(async ({ page }) => {
             label: 'More books to discover',
             type: 'discover',
             reason: 'Because you enjoy Fantasy',
+            // No `itemLabels`: this shelf is all-`book`, and a map whose keys match no
+            // rendered card is a trap this project has already paid for once (`a1c0075`).
             items: [
               {
+                kind: 'book',
                 id: EXTERNAL_ID,
-                libraryId: 'lib-books',
+                title: 'The Unwritten Verse',
+                subtitle: 'Rowan Ashcombe',
                 coverPath: null,
-                media: {
-                  kind: 'book',
-                  title: 'The Unwritten Verse',
-                  authors: [{ name: 'Rowan Ashcombe' }],
-                },
-                progress: null,
+                imageTag: null,
                 availability: 'external',
               },
               {
+                kind: 'book',
                 id: UNRECOGNISED_ID,
-                libraryId: 'lib-books',
+                title: 'The Cartographer of Silence',
+                subtitle: 'Idris Farrow',
                 coverPath: null,
-                media: {
-                  kind: 'book',
-                  title: 'The Cartographer of Silence',
-                  authors: [{ name: 'Idris Farrow' }],
-                },
-                progress: null,
+                imageTag: null,
                 availability: 'not-a-real-value',
               },
               {
+                kind: 'book',
                 id: MISSING_FIELD_ID,
-                libraryId: 'lib-books',
+                title: 'The Hollow Meridian',
+                subtitle: 'Elowen Cray',
                 coverPath: null,
-                media: {
-                  kind: 'book',
-                  title: 'The Hollow Meridian',
-                  authors: [{ name: 'Elowen Cray' }],
-                },
-                progress: null,
+                imageTag: null,
                 // `availability` deliberately absent.
               },
             ],
