@@ -279,7 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
 - `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
 - `2026-08-20T22:00:53Z` · `a12a64f119980693a` · general-purpose · ended · ## Report — '16g-design-reconcile' **Branch/commit:** 'worktree-agent-a12a64f119980693a' at 'b98ca76', one commit on top of '04a7f22'. 'git status --…
@@ -294,6 +293,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T00:07:48Z` · `a0945a250b7dbe6cc` · general-purpose · ended · Good, that confirms the "no container tier" claim cited by both Fab.tsx and ListItem.css comments is genuinely stated in Card.css. Report follows. ##…
 - `2026-08-21T00:38:33Z` · `a08d557597dcd2471` · general-purpose · ended · Working tree is clean, everything committed on the worktree branch. Task complete. ## Report — Wave '15c-2-S-2' **1. Branch/commit:** 'worktree-agent…
 - `2026-08-21T00:57:59Z` · `a21d6f864533eff15` · general-purpose · ended · Full 'apps/server' suite green (759/759). Report follows. ## Report — review of 'a1c0075' (recommended.ts / recommended.test.ts namespacing fix) **1.…
+- `2026-08-21T01:04:16Z` · `a3096cd65d8c877e3` · general-purpose · ended · ## Report — wave '16c-7-W' **1. Branch/commit:** 'worktree-agent-a3096cd65d8c877e3' at 'f2465f7', two commits on top of 'a63aac3' (base per spec). 'g…
 
 <!-- AGENT_LOG_END -->
 
@@ -849,6 +849,49 @@ wins. That is a wire-format property inherited from 15c-1, not something this wa
 is harmless **because every item carries its own `kind`**. **The client triple must therefore treat
 `item.kind` as authoritative and `itemLabels` as a convenience** — `docs/agent-specs/15c-2-CLIENTS.md`
 now says so.
+
+### DONE — `16c-7-W`: `app.css` migrated, **84 live `--m3-*` reads down to 14**
+
+`apps/web/src/styles/app.css` was the last big `--m3-*` consumer and had never been named as a wave.
+70 of 84 occurrences migrated; the 14 survivors are all deliberate: **5** `--m3-touch-target-min`
+(the permanent accessibility floor), **5** `.m3-type-*` (the typography scale, still `16c-8`'s job),
+and **4 new documented deferrals** — `--m3-surface-container-high` on the shortcut-sheet `kbd` badge,
+the mini player and the sleep-timer dropdown, plus `--m3-surface-container-highest` on that
+dropdown's hover. Each extends the established `Menu.css`/`SearchField.css` precedent (a floating or
+docked surface over arbitrary content, for which Sonora has no "one step brighter" token) and each
+now carries that reasoning inline.
+
+**Verified here: `apps/web` 618/618 including `layoutOverflow.test.ts`, `packages/ui` 128/128,
+typecheck clean, and every introduced token confirmed defined in `sonora-tokens.css`/`sonora-theme.css`.**
+
+**The `ListItem` lesson paid off immediately.** This file holds the queue view's override of
+`.m3-list-item--selected`, and the wave checked it against what `ListItem.css` now paints rather
+than migrating it in isolation — they agree, because `2f9b04f` had already moved the component to
+the same tonal `--surface-card`/`--surface-fg` pair. That check was a deliverable, not a hope, which
+is the whole point of adding it to the spec.
+
+**One judgement call it made rather than escalating, correctly:** `.auralis-update-banner`'s
+`--m3-secondary-container`/`--m3-on-secondary-container` pair had no entry in the substitution table
+and no in-file precedent. It resolved to a tonal `--surface-card`/`--surface-fg` pair per the spec's
+standing rule that **no new text-on-accent-fill pairings** may be introduced while the WCAG question
+is open with Sofia (queue `c9887cb`).
+
+**AN OPERATIONAL NEAR-MISS WORTH KNOWING, because the guard does not cover it.** The agent ran a
+mechanical substitution script against the **shared checkout** rather than its worktree: it had
+`cd`-ed to `/home/sofiapata/src/auralis-src` for a **non-git** Bash command, and **the isolation
+guard only intercepts `Edit`/`Write` and git operations — a `sed`/`python` script writing files
+through Bash is not caught.** It noticed before committing, restored `app.css` from
+`git show a63aac3:…`, and redid the work in the worktree. **I verified the restore independently
+rather than accepting it**: `diff` against `a63aac3` reports the file byte-identical, and the shared
+checkout's only modification was the agent-log hook's own entries. Nothing was lost.
+
+**The rule this implies:** an isolated agent's worktree discipline is enforced for `Edit`/`Write` and
+git, and is **advisory for anything it does through a shell**. A spec that says "you own file X"
+should say _in your worktree_ explicitly, and an orchestrator taking such a report should `diff` the
+shared checkout rather than trust the restore.
+
+**`16c-8` — the `.m3-type-*` typography scale — is now the only substantive `--m3-*` work left**,
+plus `CoverImage.tsx`'s two-line fallback tile. Every other survivor is permanent or documented.
 
 ### Follow-ups the two reviews named — none blocking, all precise
 
