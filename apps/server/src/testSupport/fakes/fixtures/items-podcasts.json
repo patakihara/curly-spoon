@@ -58,5 +58,46 @@
         }
       ]
     }
+  },
+  {
+    "id": "item-wyrmwood",
+    "libraryId": "lib-podcasts",
+    "mediaType": "podcast",
+    "addedAt": 1700300000000,
+    "updatedAt": 1700300000000,
+    "size": 0,
+    "media": {
+      "metadata": {
+        "title": "Wyrmwood Tales",
+        "author": "Vantage Audio",
+        "description": "A fantasy fiction anthology, one told story per episode.",
+        "feedUrl": "https://feeds.example.com/wyrmwood.xml",
+        "genres": ["Fantasy"]
+      },
+      "coverPath": "/covers/item-wyrmwood.jpg",
+      "numEpisodes": 1,
+      "episodes": [
+        {
+          "id": "ep-wyrmwood-1",
+          "index": 1,
+          "season": null,
+          "episode": "1",
+          "title": "The Last Ember",
+          "subtitle": null,
+          "description": "A dragon, a debt, and one very reluctant hero.",
+          "pubDate": "2026-07-10",
+          "publishedAt": 1752134400000,
+          "duration": 1800,
+          "audioTrack": {
+            "index": 0,
+            "startOffset": 0,
+            "duration": 1800,
+            "contentUrl": "/api/items/item-wyrmwood/file/file-wyrmwood-ep1",
+            "mimeType": "audio/mpeg",
+            "metadata": null
+          }
+        }
+      ]
+    }
   }
 ]

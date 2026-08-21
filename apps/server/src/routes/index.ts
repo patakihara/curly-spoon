@@ -12,6 +12,7 @@ import { registerRequestRoutes } from './requests.js';
 import { registerMusicRequestRoutes } from './musicRequests.js';
 import { registerPodcastRoutes } from './podcasts.js';
 import { registerJellyfinRoutes } from './jellyfin.js';
+import { registerRecommendedRoutes } from './recommended.js';
 
 /** All `/api/v1` routes, in one place so app.ts stays a thin composition root. */
 export function registerRoutes(app: FastifyInstance): void {
@@ -28,4 +29,5 @@ export function registerRoutes(app: FastifyInstance): void {
   registerMusicRequestRoutes(app);
   registerPodcastRoutes(app);
   registerJellyfinRoutes(app);
+  registerRecommendedRoutes(app);
 }
