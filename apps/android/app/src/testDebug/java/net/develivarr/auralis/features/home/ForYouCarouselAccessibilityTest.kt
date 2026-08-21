@@ -88,6 +88,19 @@ class ForYouCarouselAccessibilityTest {
             isExternal = true,
         )
 
+    /** Wave 15c-2-A — one item from a mixed `GET /api/v1/recommended` shelf, the only kind of
+     * item that ever carries a non-null [FeedItem.typeLabel]. */
+    private val mixedShelfItem =
+        FeedItem(
+            id = "album-mixed-1",
+            contentType = ForYouContentType.MUSIC,
+            title = "Discovery",
+            subtitle = "Daft Punk",
+            coverUrl = null,
+            progress = null,
+            typeLabel = "Album",
+        )
+
     @Test
     fun `a card with a reason resolves as one merged node whose description includes the title and the reason`() {
         composeRule.setContent {
@@ -242,5 +255,28 @@ class ForYouCarouselAccessibilityTest {
             .onNodeWithContentDescription("Dune Messiah, Frank Herbert — Not in library")
             .assertExists()
         composeRule.onNodeWithText("Not in library").assertExists()
+    }
+
+    /** Wave 15c-2-A — the property this wave is graded on: a mixed shelf's type label must be
+     * *announced*, not merely drawn. Proves both halves through real rendered nodes rather than a
+     * pure-function assertion on [feedItemDisplaySubtitle] alone, same reasoning as this file's
+     * header comment. The mechanism: [ForYouCard]'s subtitle `Text` renders
+     * [feedItemDisplaySubtitle], and [feedItemAnnouncement] folds
+     * [feedItemContentDescription] — which also reads [feedItemDisplaySubtitle] — into the same
+     * merged `contentDescription` at `ForYouCarousel.kt:223-225`. One text source, two surfaces. */
+    @Test
+    fun `a mixed-shelf item's type label leads the subtitle in both the visible text and the merged announcement`() {
+        composeRule.setContent {
+            MaterialTheme {
+                Surface {
+                    ForYouCard(item = mixedShelfItem, imageLoader = imageLoader, onClick = {}, reason = null)
+                }
+            }
+        }
+
+        // Visible: the subtitle row itself reads "Album • Daft Punk".
+        composeRule.onNodeWithText("Album • Daft Punk").assertExists()
+        // Announced: the merged contentDescription carries the same label-prefixed string.
+        composeRule.onNodeWithContentDescription("Discovery, Album • Daft Punk").assertExists()
     }
 }

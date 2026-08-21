@@ -38,8 +38,9 @@ import net.develivarr.auralis.navigation.Routes
  * The Android port of `apps/web/src/features/home/HomePage.tsx`: a content-type filter chip
  * row, a two-column quick-picks grid, and — below that — nothing but uniform
  * [ForYouCarouselRow]s, all at exactly one card geometry. See [ForYouCard] for why there is
- * only one card composable, and [ForYouViewModel] for the three-source fan-out (Audiobookshelf
- * books, Audiobookshelf podcasts, Jellyfin favourite albums) that feeds it.
+ * only one card composable, and [ForYouViewModel] for the four-source fan-out (Audiobookshelf
+ * books, Audiobookshelf podcasts, Jellyfin favourite albums, and — wave 15c-2-A — the
+ * cross-medium `GET /api/v1/recommended` shelves) that feeds it.
  *
  * **Replaces [net.develivarr.auralis.features.home.HomeScreen] at this route.** It also inherits that
  * screen's "Downloads"/"Requests" top-bar text actions — carried forward deliberately rather
@@ -95,8 +96,25 @@ fun ForYouScreen(
                 } else {
                     navController.navigate(Routes.bookDetail(item.id))
                 }
-            ForYouContentType.PODCASTS -> playerViewModel.playItem(item.id)
-            ForYouContentType.MUSIC -> navController.navigate(Routes.musicAlbumDetail(item.id))
+            // Wave 15c-2-A: GET /api/v1/recommended's item.kind union includes "podcast", so an
+            // external podcast is possible in principle from a mixed shelf — but nothing that
+            // reaches this route today produces one (recommended.ts's pool has no
+            // podcast-external-discovery provider), and there is no podcast request flow to
+            // redirect to (queue 969711e is exactly this open question, still unanswered). This
+            // guard is therefore defensive, not load-bearing: an external podcast is a no-op tap
+            // rather than a dead-end playItem() call against an opaque id Audiobookshelf has
+            // never heard of.
+            ForYouContentType.PODCASTS -> if (!item.isExternal) playerViewModel.playItem(item.id)
+            // Wave 15c-2-A: a mixed shelf can carry an external album (the same isExternal
+            // concept net.develivarr.auralis.features.music.MusicLibraryScreen's recommended
+            // section already guards) — mirrors that screen's onRequestArtist branch rather than
+            // introducing a second convention for the same guard.
+            ForYouContentType.MUSIC ->
+                if (item.isExternal) {
+                    navController.navigate(Routes.musicRequests(artist = item.subtitle))
+                } else {
+                    navController.navigate(Routes.musicAlbumDetail(item.id))
+                }
         }
     }
 

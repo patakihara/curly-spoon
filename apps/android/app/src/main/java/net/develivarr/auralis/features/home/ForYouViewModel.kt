@@ -46,15 +46,23 @@ private val EMPTY_OK = SourceResult(emptyList(), failed = false)
 
 /**
  * Loads the "For you" screen's feed (docs/ROADMAP.md §12d): the first book library's and first
- * podcast library's home shelves (Audiobookshelf), plus Jellyfin's favourite albums, stitched
- * into one uniform [FeedCarousel] list by the pure functions in `ForYouFeed.kt`.
+ * podcast library's home shelves (Audiobookshelf), Jellyfin's favourite albums, and — wave
+ * 15c-2-A — the cross-medium `GET /api/v1/recommended` shelves, stitched into one uniform
+ * [FeedCarousel] list by the pure functions in `ForYouFeed.kt`.
  *
- * The three sources are fetched as **independent** `async` children, each with its own
+ * The four sources are fetched as **independent** `async` children, each with its own
  * `try`/`catch` *inside* the child rather than around the enclosing [coroutineScope] — a failing
  * `async` child cancels its parent and its siblings, so a catch on the outside would silently
  * lose the other sources' results too. This is the same fan-out shape
  * [net.develivarr.auralis.features.search.UnifiedSearchViewModel] uses for its own library/music
  * split. [ApiClient.execute] only ever throws [ApiException], so each catch is total.
+ *
+ * **Wave 15c-2-A replaced the two per-medium `GET /libraries/{id}/recommended` fetches this
+ * ViewModel used to append inside [fetchAbsCarousel] with this one independent fourth source.**
+ * [fetchAbsCarousel] now fetches only home shelves; [fetchMixedRecommendedCarousel] is its own
+ * `async` child, needing no library id (the route unions both upstreams server-side). The overall
+ * failure gate in [load] widened from a 3-way to a 4-way AND accordingly — see [load]'s own doc
+ * comment for the exact expression.
  *
  * Cover URLs are resolved from [ServerConfigRepository.getBaseUrl] once per [load] call, not
  * per-composition — mirrors [HomeViewModel]'s own doc comment on why (it suspends, and the
@@ -73,6 +81,15 @@ class ForYouViewModel(
         viewModelScope.launch { load() }
     }
 
+    /** Fan-out unchanged in shape from before wave 15c-2-A — still exactly one terminal
+     * [_uiState] write, after every child [Deferred.await]s, so the screen holds one skeleton
+     * until all sources settle (14c's closed decision; `docs/agent-specs/15c-2-CLIENTS.md`'s
+     * "loading state — do not regress it"). What changed: a fourth independent child,
+     * [fetchMixedRecommendedCarousel] (no library id needed, so it does not await
+     * [librariesDeferred] the way [fetchAbsCarousel]'s two children do), and the failure gate
+     * widened from `books.failed && podcasts.failed && music.failed` (3-way) to also require
+     * `mixed.failed` (4-way) — [ForYouUiState.Error] now means literally every source failed,
+     * not "every source except the one this wave added". */
     private suspend fun load() {
         val baseUrl = serverConfigRepository.getBaseUrl()
         if (baseUrl == null) {
@@ -95,16 +112,20 @@ class ForYouViewModel(
                     fetchAbsCarousel(librariesDeferred.await(), "podcast", baseUrl, ForYouContentType.PODCASTS)
                 }
             val musicDeferred = async { fetchMusicCarousel(baseUrl) }
+            val mixedDeferred = async { fetchMixedRecommendedCarousel(baseUrl) }
 
             val books = booksDeferred.await()
             val podcasts = podcastsDeferred.await()
             val music = musicDeferred.await()
+            val mixed = mixedDeferred.await()
 
             _uiState.value =
-                if (books.failed && podcasts.failed && music.failed) {
+                if (books.failed && podcasts.failed && music.failed && mixed.failed) {
                     ForYouUiState.Error("Couldn't load your library.")
                 } else {
-                    ForYouUiState.Loaded(allCarousels = books.carousels + podcasts.carousels + music.carousels)
+                    ForYouUiState.Loaded(
+                        allCarousels = books.carousels + podcasts.carousels + music.carousels + mixed.carousels,
+                    )
                 }
         }
     }
@@ -127,7 +148,12 @@ class ForYouViewModel(
 
     /** The book/podcast half of the fan-out. `null` [libraries] means the libraries call itself
      * failed (propagated as [SourceResult.failed]); an empty match (no library of [mediaType])
-     * is not a failure, it's a server that genuinely has none. */
+     * is not a failure, it's a server that genuinely has none.
+     *
+     * Wave 15c-2-A: no longer appends `GET /libraries/{id}/recommended` shelves after the home
+     * shelves — that per-medium recommended fetch is gone, replaced by the independent
+     * [fetchMixedRecommendedCarousel] fourth source in [load]. This function now does exactly
+     * what its name says: home shelves, nothing else. */
     private suspend fun fetchAbsCarousel(
         libraries: List<Library>?,
         mediaType: String,
@@ -136,49 +162,48 @@ class ForYouViewModel(
     ): SourceResult {
         if (libraries == null) return SourceResult(emptyList(), failed = true)
         val library = libraries.firstOrNull { it.mediaType == mediaType } ?: return EMPTY_OK
-        val homeCarousels =
-            try {
+        return try {
+            val homeCarousels =
                 apiClient
                     .libraryHome(library.id)
                     .filter { it.items.isNotEmpty() }
                     .map { shelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } }
-            } catch (e: ApiException) {
-                // The home shelves call itself failed — nothing to append recommended shelves
-                // to, and this source as a whole is failed. Distinct from the recommended-only
-                // failure below, which must NOT flip this source to failed (see
-                // fetchRecommendedCarousels's doc comment).
-                return SourceResult(emptyList(), failed = true)
-            }
-        val recommendedCarousels = fetchRecommendedCarousels(library.id, baseUrl, contentType)
-        return SourceResult(homeCarousels + recommendedCarousels, failed = false)
+            SourceResult(homeCarousels, failed = false)
+        } catch (e: ApiException) {
+            SourceResult(emptyList(), failed = true)
+        }
     }
 
     /**
-     * Wave 13d's addition: `GET /libraries/{id}/recommended`, appended **after** [library]'s
-     * home carousels rather than replacing them (`docs/ROADMAP.md` §13 — reversible, degrades to
-     * today's behaviour on a cold-start user). A failure here degrades to "no recommended
-     * carousel" rather than propagating as [SourceResult.failed] — the existing home shelves
-     * must render even if this call fails or times out, so this function never throws and its
-     * caller never treats it as the source's own failure. A cold-start `{"shelves":[]}` maps to
-     * an empty list here, which [ForYouCarouselRow] already renders as nothing (see its own doc
-     * comment) — the required "visual no-op", with no special-casing needed in this file.
+     * Wave 15c-2-A's fourth fan-out source: `GET /api/v1/recommended`, the cross-medium
+     * aggregator that replaced the two per-medium `GET /libraries/{id}/recommended` fetches
+     * [fetchAbsCarousel] used to append internally. Needs no library id — the route unions
+     * Audiobookshelf and Jellyfin candidates server-side — so unlike [fetchAbsCarousel] this
+     * does not await [librariesDeferred].
      *
-     * Wave 15d-1-books: uses [recommendedShelfToCarousel], **not** [shelfToCarousel] — this
-     * route's items are [net.develivarr.auralis.data.model.RecommendedLibraryItem] (carrying
-     * `availability`), a different type from [ApiClient.libraryHome]'s [Shelf]/[LibraryItem].
+     * Modelled as its own [SourceResult] (real failure vs. genuinely-empty), same shape as
+     * [fetchMusicCarousel] — there is no home-shelf sibling to protect here the way the old
+     * appended-recommended calls protected [fetchAbsCarousel]'s home shelves, so a fetch failure
+     * here is this source's own failure, folded into [load]'s 4-way AND. A cold-start
+     * `{"shelves":[]}` maps to an empty list, which [ForYouCarouselRow] already renders as
+     * nothing — the required "visual no-op", no special-casing needed here.
      */
-    private suspend fun fetchRecommendedCarousels(
-        libraryId: String,
-        baseUrl: String,
-        contentType: ForYouContentType,
-    ): List<FeedCarousel> =
+    private suspend fun fetchMixedRecommendedCarousel(baseUrl: String): SourceResult =
         try {
-            apiClient
-                .libraryRecommended(libraryId)
-                .filter { it.items.isNotEmpty() }
-                .map { recommendedShelfToCarousel(it, contentType) { itemId -> mediaCoverUrl(baseUrl, itemId) } }
+            val carousels =
+                apiClient
+                    .recommended()
+                    .filter { it.items.isNotEmpty() }
+                    .map {
+                        mixedShelfToCarousel(
+                            it,
+                            coverUrl = { itemId -> mediaCoverUrl(baseUrl, itemId) },
+                            artworkUrl = { albumId -> jellyfinItemArtworkUrl(baseUrl, albumId) },
+                        )
+                    }
+            SourceResult(carousels, failed = false)
         } catch (e: ApiException) {
-            emptyList()
+            SourceResult(emptyList(), failed = true)
         }
 
     /** The Jellyfin half of the fan-out — one carousel ("Your albums") of favourite albums, or
