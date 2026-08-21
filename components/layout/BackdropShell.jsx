@@ -3,7 +3,7 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** A Material backdrop frame: a 0dp back layer filling the whole background — rail and heading together — with the 1dp front layer and its subheader sitting on top of it, an optional side panel in front of or behind that layer, and the player docked across the bottom. */
-export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', player, contentMinWidth, scroll = true, scrollKey, onProgress, theme, platform = 'desktop' }) {
+export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', player, contentMinWidth, scroll = true, scrollKey, onProgress, lift, theme, platform = 'desktop' }) {
   const { FrontLayer } = NS();
   const behind = sheetLayer === 'behind';
   const ease = 'var(--duration-medium) var(--ease-standard)';
@@ -43,7 +43,7 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
         <div style={sx('position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-width:0;min-height:0' + (contentMinWidth ? ';min-width:' + contentMinWidth : ''))}>
           {back && <div style={sx('flex-shrink:0')}>{back}</div>}
           {FrontLayer && (
-            <FrontLayer subheader={subheader} scroll={scroll} scrollKey={scrollKey} onProgress={onProgress} platform={platform}
+            <FrontLayer subheader={subheader} scroll={scroll} scrollKey={scrollKey} onProgress={onProgress} lift={lift} platform={platform}
               squareRight={!behind && sheetOpen && !!sheet}>{children}</FrontLayer>
           )}
         </div>

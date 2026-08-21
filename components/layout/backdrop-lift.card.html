@@ -1,0 +1,137 @@
+<!-- @dsCard group="Components" viewport="1400x900" name="Backdrop — Front Layer Lift" subtitle="Four ways the front layer can express its 1dp elevation in dark theme, where a soft black shadow does almost nothing" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BackLayer, FrontLayer, FrontLayerHeader } = window.SonoraDesignSystem_6c1435;
+
+/* Five treatments, the first of which is what ships today. They are shown ungated in both
+   themes on purpose: every one reads a token that already inverts with the theme, so the light
+   column is the real cost of each choice rather than a copy of the control. */
+const CANDIDATES = [
+  {lift:'shadow',    n:'1', name:'Shadow — today',   how:'0 1px 3px, cast downward, away from the edge that matters', tokens:'--shadow-sm',
+   dark:'#080808→#070707 · 1 value',   light:'#FFFFFF→#FCFCFC · 3 values'},
+  {lift:'edge',      n:'2', name:'Top hairline',     how:'1px on the top edge, following the corner radius',          tokens:'--shadow-sm + --surface-border',
+   dark:'#262626 on #141414',          light:'#E5E2E2 on #F9F6F6'},
+  {lift:'highlight', n:'3', name:'Inner highlight',  how:'the same line at ~2×: a surface catching light from above', tokens:'--shadow-sm + color-mix(--surface-fg 16%)',
+   dark:'#343434 on #141414',          light:'#D5D2D2 on #F9F6F6'},
+  {lift:'ambient',   n:'4', name:'Ambient shadow',   how:'the largest, softest, highest-opacity step the scale has',  tokens:'--shadow-xxl',
+   dark:'#070707 · ~25px · 1 value',   light:'#F6F6F6 wash · ~25px'},
+  {lift:'glow',      n:'5', name:'Edge wash',        how:'the same idea unruled — a gradient, no hard line',          tokens:'--shadow-sm + color-mix(--surface-fg 9%)',
+   dark:'#262626→#232323 wash',        light:'#E5E3E3→#E9E6E6 wash'},
+];
+
+const TRACKS = [
+  {title:'Tidal Lines', meta:'Halcyon Bloom'},
+  {title:'Empty Rooms', meta:'Echo Fields'},
+];
+
+const Tag = ({children}) => <span style={{display:'inline-block',padding:'2px 8px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%'}}>{children}</span>;
+
+/* A real BackLayer with a real FrontLayer on it, at mobile metrics so the whole boundary fits in
+   a column narrow enough to put five of them beside each other. Nothing here holds artwork, so
+   there is no CoverArt containing-block to get wrong — the corner is the subject. */
+function Specimen({lift, probe}) {
+  return (
+    <div data-probe={probe} style={{display:'flex',flexDirection:'column',height:168,width:260,overflow:'hidden',borderRadius:'var(--radius-xs)',background:'var(--surface-bg-alt)'}}>
+      <BackLayer platform="mobile" title="Library" />
+      <FrontLayer platform="mobile" lift={lift} scroll={false}
+        subheader={<FrontLayerHeader platform="mobile" progress={0}>
+          <span style={{fontFamily:'var(--font-body)',fontSize:'var(--text-sm)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)'}}>Albums · Newest</span>
+        </FrontLayerHeader>}>
+        <div style={{padding:'0 var(--grid-margin-mobile)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
+          {TRACKS.map((t) => (
+            <div key={t.title} style={{display:'flex',alignItems:'baseline',gap:'var(--spacing-sm)',fontFamily:'var(--font-body)'}}>
+              <span style={{fontSize:'var(--text-sm)',color:'var(--surface-fg)'}}>{t.title}</span>
+              <span style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)'}}>{t.meta}</span>
+            </div>
+          ))}
+        </div>
+      </FrontLayer>
+    </div>
+  );
+}
+
+/* The same specimen again, scaled 4× and clipped to the top-left corner. A 1px line at 8% opacity
+   cannot be settled by looking at a 1× screenshot, so the magnified strip sits beside the real
+   size rather than replacing it: 1× answers "is it visible", 4× answers "what is it doing". */
+function Detail({lift}) {
+  return (
+    <div style={{position:'relative',width:260,height:84,overflow:'hidden',borderRadius:'var(--radius-xs)',background:'var(--surface-bg-alt)'}}>
+      <div style={{position:'absolute',left:0,top:0,transformOrigin:'top left',transform:'scale(4) translate(0px, calc(var(--appbar-height-mobile) * -1 + 8px))'}}>
+        <Specimen lift={lift} />
+      </div>
+    </div>
+  );
+}
+
+/* The second pill is not a design token — it is what the rendered pixels actually are, read back
+   out of a screenshot of this card by `.probe/lift-probe.mjs`. A 1px line at 8% opacity is not
+   something a screenshot settles by eye, and a treatment that turns out to move one value out of
+   255 should have to say so next to itself. */
+function Cell({c, reading}) {
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',width:260}}>
+      <div style={{minHeight:92,display:'flex',flexDirection:'column',gap:4}}>
+        <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>{c.n} · {c.name}</div>
+        <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',lineHeight:1.4,color:'var(--surface-fg-muted)'}}>{c.how}</div>
+        <Tag>{c.tokens}</Tag>
+        <Tag>measured · {reading}</Tag>
+      </div>
+      <Specimen lift={c.lift} probe={c.lift} />
+      <Detail lift={c.lift} />
+    </div>
+  );
+}
+
+function Section({label, note, theme}) {
+  return (
+    <div style={{padding:'var(--spacing-md) var(--spacing-xl) var(--spacing-lg)',background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)'}}>
+      <div style={{display:'flex',alignItems:'baseline',gap:'var(--spacing-md)',marginBottom:'var(--spacing-md)'}}>
+        <div style={{fontFamily:'var(--font-display)',fontSize:'var(--h3-size)',color:'var(--surface-fg)'}}>{label}</div>
+        <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>{note}</div>
+      </div>
+      <div style={{display:'flex',gap:'var(--spacing-md)',alignItems:'flex-start'}}>
+        {CANDIDATES.map((c) => <Cell key={c.lift} c={c} reading={c[theme]} />)}
+      </div>
+    </div>
+  );
+}
+
+function Intro() {
+  return (
+    <div style={{padding:'var(--spacing-xl) var(--spacing-xl) 0',background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)'}}>
+      <div style={{fontFamily:'var(--font-display)',fontSize:'var(--h2-size)',lineHeight:1.1}}>Front layer lift</div>
+      <div style={{marginTop:'var(--spacing-sm)',maxWidth:1140,fontSize:'var(--text-sm)',lineHeight:1.5,color:'var(--surface-fg-muted)'}}>
+        <b style={{color:'var(--surface-fg)'}}>--shadow-sm is 0 1px 3px — cast downward</b>, while the only edge where the front layer meets the back layer is its
+        <b style={{color:'var(--surface-fg)'}}> top</b> one. Read off the rendered pixels, what that shadow puts on the back layer just above the boundary is
+        <b style={{color:'var(--surface-fg)'}}> one value out of 255 in dark and at most three in light</b> — so in both themes the step you are actually
+        seeing is not the shadow at all, it is the tonal one: #FFFFFF→#F9F6F6 or #080808→#141414. Light gets away with it: that pair differs in hue as well as level and sits where a screen
+        can hold the difference. Near black it does not — a display's black floor and whatever light is in the room flatten #080808 and #141414 into the same
+        thing, which is what "no shadow on black" is. Enlarging the shadow cannot help, and 4 is the proof: --shadow-xxl still only reaches #070707, just over
+        25px instead of 2. Only a <i>light</i> mark survives there (2, 3, 5), and each one costs something in light — which is what the lower half is for.
+        <span style={{color:'var(--surface-fg)'}}> Recommendation: 2, gated to dark.</span> It is the smallest mark that reads on #080808, and --surface-border
+        is already the right value on both sides — but light does not need it, so what the lower row argues for is the gate, not a different treatment.
+        3 and 5 cannot ship ungated at all: both mix --surface-fg, which is dark in light theme, so the highlight inverts into an inner <i>shadow</i>.
+      </div>
+    </div>
+  );
+}
+
+function Themed(){
+  return <div>
+    <div data-theme="dark" style={{background:'var(--surface-bg)'}}>
+      <Intro/>
+      <Section theme="dark" label="Dark" note="back layer #080808 · front layer #141414 — a 12-value tonal step and, today, nothing else. Real size above, 4× top-left corner below" />
+    </div>
+    <div data-theme="light" style={{background:'var(--surface-bg)'}}>
+      <Section theme="light" label="Light" note="back layer #FFFFFF · front layer #F9F6F6 — the control already works here, so the question is what each option costs. Real size above, 4× corner below" />
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

@@ -395,6 +395,7 @@ The app frame as a real Material backdrop. Two surfaces, and only two. The **bac
 | `scroll` | `boolean` | false when the screen owns its own scrolling (mobile) — the front layer still tracks it. |
 | `scrollKey` | `string \| number` | Identifier of the current view — gives each one its own remembered scroll position. |
 | `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the front layer. |
+| `lift` | `'shadow' \| 'edge' \| 'highlight' \| 'glow' \| 'ambient'` |  Forwarded to the front layer: how its 1dp step is expressed. Omitted, the layer keeps the `--shadow-sm` it has always drawn. The alternatives exist because that shadow is offset downward, away from the layer's top edge, and a black shadow cannot mark a boundary against a `#080808` back layer — see `FrontLayerProps['lift']` for what each value draws and what it costs in light theme.  |
 | `theme` | `string` | Sets `data-theme` on the frame. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
@@ -485,17 +486,23 @@ The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content a
 | `threshold` | `number` | Scroll distance in px over which the subheader's divider fades in. Default 24. |
 | `squareLeft` | `boolean` | Square the abutting corner where a `sheetLayer="front"` panel meets the layer. |
 | `squareRight` | `boolean` |  |
+| `lift` | `'shadow' \| 'edge' \| 'highlight' \| 'glow' \| 'ambient'` |  How the 1dp step is expressed. Default `'shadow'` is exactly what the layer has always drawn; the other four exist because that shadow all but vanishes in dark, and picking between them is a judgement about the whole product, not about one screen.  The reason it vanishes is geometric before it is chromatic: `--shadow-sm` is `0 1px 3px`, cast *downward*, while the only edge where this layer meets the back layer is its **top** one. Measured off a render, the darkening it puts on the back layer above that boundary is one value out of 255 in dark and at most three in light — neither theme is separated by the shadow, only by the tonal step, `#080808` → `#141414` or `#FFFFFF` → `#F9F6F6`. The light pair differs in hue as well as level and holds; the dark pair sits where a display's black floor flattens it, which is the whole of "no shadow on black".  - `'shadow'` — `--shadow-sm`. The control. Correct in light, near-invisible in dark. - `'edge'` — the shadow plus a 1px line along the top edge in `--surface-border`, following the corner radius so it reads as the layer's edge and not as a rule across it. - `'highlight'` — the same line at roughly twice the strength, from a `color-mix` of `--surface-fg`: a raised surface catching light from above. - `'glow'` — the same idea unruled, as a soft wash fading out over `--spacing-2xl`. - `'ambient'` — `--shadow-xxl` instead of `--shadow-sm`: the largest, softest, highest-opacity step the scale has. Included so the shadow family gets its best shot.  None of them is gated to dark, so that the light-theme cost stays visible rather than engineered away — `components/layout/backdrop-lift.card.html` shows all five in both themes, with the rendered pixel values `docs/lift_probe.mjs` read back out of it.  What that card argues for: **`'edge'`, gated to dark** — light already reads without it, so the gate is the recommendation, not a different treatment. `'highlight'` and `'glow'` must not ship ungated whatever else is decided: both mix `--surface-fg`, which is dark in light theme, so an "inner highlight" inverts into an inner *shadow* there (measured `#D5D2D2` on `#F9F6F6`). Gating is one `[data-theme="light"]` rule, or simply not passing the prop on the light path.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### FrontLayerHeader
 
-The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — no hairline at all; a tab bar draws its own underline indicator and two stacked rules are noise. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half.
+The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — no hairline at all; a tab bar draws its own underline indicator and two stacked rules are noise. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half. ### The scroll-spy subheader (`spy`) A front layer that scrolls vertically **requires** a subheader — the band is what the content scrolls under. When the screen has no control to put in it, the band is not therefore empty: with `spy` it shows the title of the section that has most recently scrolled up past it. At the top, before any section has passed, it is blank, and that blank is a real state — the row keeps its height so nothing jumps when the first title arrives. Two ways to say what the titles are, neither of which requires rewriting page content: - **The caller supplies them** — `sections={['Jump back in', 'Recently added', …]}`, the same strings already passed to the `Section`s in the feed, in document order. They are matched positionally against the elements found by `spySelector`, whose default already matches the `<section>` that `Section` renders. Used only when the count matches exactly: a mismatch would label each section with its neighbour's name, so it falls back to blank instead. - **The content carries them** — any element in the scroll container with a `data-spy-title` attribute. Per-element, so it always wins over the positional list, and it is the way in when the feed is not built from `Section`. The band finds the scroller itself, by looking inside the front layer for the vertical scroller that contains sections, and watches it with a capture listener. It never writes `scrollTop`, so `FrontLayer`'s per-view scroll memory is untouched. Horizontal shelves are ignored. A title change cross-fades over `--duration-fast` on `--ease-standard`, and is instant under `prefers-reduced-motion`.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `children` | `ReactNode` | A `TabBar`, a `ButtonGroup`, a `SearchField` — whatever the screen's secondary header is. |
 | `tabs` | `boolean` | The content is a tab bar, which draws its own indicator — suppresses the hairline. |
 | `progress` | `number` | 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. |
+| `spy` | `boolean` |  Turn the band into a scroll spy: it reports the section title that last passed under it, and is blank until one does. Leading in the band, so `children` may still sit beside it — but the case this exists for is the subheader that has no control of its own and would otherwise be an empty strip.  |
+| `sections` | `Array<string \| { title?: string }>` |  The section titles, in document order — plain strings, or objects with a `title`. Matched positionally against the elements `spySelector` finds, and only when the counts agree. Ignored entirely without `spy`.  |
+| `spySelector` | `string` |  Which elements count as sections. Default `'[data-spy-title],section'` — the `<section>` that `Section` already renders, plus anything explicitly tagged. Narrow it when a feed nests sections it does not want spied.  |
+| `spyTitle` | `string` |  Controlled form: the title to show, `''` for the blank state. Supplying it switches the DOM watching off entirely, which is how a card shows a given state without being scrolled. Requires `spy` — the row is not rendered at all without it, so `spyTitle` alone does nothing.  |
+| `onSpyChange` | `(title: string) => void` | Fires with the new title each time it changes, `''` when the band goes back to blank. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### LayoutGrid
@@ -1152,6 +1159,24 @@ Material Symbols Rounded glyph name.
 | `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided. |
 | `footer` | `ReactNode` | Pinned to the bottom — an account row, theme switch, storage meter. |
 | `header` | `ReactNode` | Sits between the toggle and the items — a logo or brand mark. |
+
+### RailFooter
+
+The pinned bottom of a `NavRail` — the theme switch and the identity of the library you are looking at. Goes in the rail's `footer` slot, which is the one part of the rail that never scrolls, so this is where a persistent, whole-app control belongs rather than in `items`. It takes the rail's own `expanded` and mirrors it: expanded, the theme buttons sit side by side with their labels and the identity row shows its two lines; collapsed, the buttons stack and every label goes, so the footer narrows with the rail instead of clipping. Pass the same value you pass the rail — nothing is read from the DOM. Sections appear only when their handler or content does, the same rule `ItemActionBar` follows: no `onThemeChange` and there is no switch, no `title`/`image` and there is no identity row. A footer given neither renders only `children`. The theme switch sets the value; it does not apply it. Sonora's theming is `data-theme` on an ancestor, so the owning screen holds the state and puts it on the frame (`BackdropShell`'s or `AppShell`'s `theme`) — this is the control, not the mechanism.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `expanded` | `boolean` | The rail's expanded state. Pass the rail's own value so the two narrow together. |
+| `theme` | `string` | The theme currently applied, matched against `themes` to mark the pressed button. |
+| `themes` | `string[]` | Selectable theme names, in order. Default `['light', 'dark']`. |
+| `themeIcons` | `Record<string, string>` | Glyph per theme name, merged over the built-in `light`/`dark`/`system` table. |
+| `onThemeChange` | `(theme: string) => void` | Sets the theme. Omit it and no switch is rendered at all. |
+| `title` | `string` | The library's name — "Local Library". First line of the identity row. |
+| `sub` | `string` | What is in it — "Music · Books · Podcasts". Second line; hidden while collapsed. |
+| `image` | `string` | Artwork for the identity avatar, through `CoverArt`. Without it the avatar is a flat `--accent` disc. |
+| `avatarSize` | `number` | Avatar diameter in px. Default 28 — sized to the collapsed rail, not to a page. |
+| `onIdentityClick` | `() => void` | Makes the identity row a real button — opening an account menu or a server picker. |
+| `children` | `ReactNode` | Extra footer content, above the switch — a storage meter, an offline `StatusBanner`. |
 
 ### RailItem
 

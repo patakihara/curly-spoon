@@ -118,6 +118,11 @@ code{{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surfac
 .exbox{{height:{box}px;box-sizing:border-box;padding:var(--spacing-lg);display:flex;
        align-items:center;justify-content:center;border:1px solid var(--surface-border);
        border-radius:var(--radius-sm);background:var(--surface-bg-alt)}}
+.exmiss{{max-width:100%;text-align:center;border:1px dashed var(--state-warning);
+        border-radius:var(--radius-sm);padding:var(--spacing-sm) var(--spacing-lg)}}
+.exmiss b{{display:block;font-size:var(--text-xs);font-weight:700;letter-spacing:.06em;
+          text-transform:uppercase;color:var(--state-warning);margin-bottom:4px}}
+.exmiss code{{font-size:var(--text-sm);color:var(--surface-fg-muted);background:none;padding:0}}
 </style>
 """
 
@@ -130,12 +135,27 @@ function Page() {
       <section className="ex">
         <h2 className="exh">Live examples</h2>
         <div className="exgrid">
-          {EXAMPLES.map((e) => (
-            <div key={e.name}>
-              <div className={'exlabel ' + e.role}><code>{e.name}</code></div>
-              <div className="exbox">{e.node}</div>
-            </div>
-          ))}
+          {EXAMPLES.map((e) => {
+            // A name the bundle does not export destructures to `undefined`, and rendering
+            // <undefined/> throws "Element type is invalid" — which unmounts the WHOLE card,
+            // write-up included, and leaves a black pane nobody notices until they open it.
+            // So check first and draw a labelled placeholder instead. `node` is a thunk for
+            // this reason: an eagerly-built element would already have logged the error.
+            const miss = e.uses.filter((n) => !NS[n]);
+            return (
+              <div key={e.name}>
+                <div className={'exlabel ' + e.role}><code>{e.name}</code></div>
+                <div className="exbox">
+                  {miss.length
+                    ? <div className="exmiss">
+                        <b>Component not loaded</b>
+                        <code>{miss.join(', ')}</code>
+                      </div>
+                    : e.node()}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     )}
@@ -218,11 +238,17 @@ def card(s):
     for _, _, src in ex:
         wanted |= needed(src)
     parts.append('<script type="text/babel">')
-    parts.append("const { %s } = window.%s;" % (", ".join(sorted(wanted)), NAMESPACE))
+    # NS and the destructure both read window.<NAMESPACE> literally, on purpose. The
+    # destructure is what docs/render_cards.mjs greps for to report "not in namespace" —
+    # binding through NS instead would silence the only automated detector in the repo. The
+    # `|| {}` keeps a wholly absent bundle from throwing on the very first line.
+    parts.append("const NS = window.%s || {};" % NAMESPACE)
+    parts.append("const { %s } = window.%s || {};" % (", ".join(sorted(wanted)), NAMESPACE))
     parts.append("const DOC = document.getElementById('__doc').innerHTML;")
     parts.append("const EXAMPLES = [")
     for name, role, src in ex:
-        parts.append("  { name: '%s', role: '%s', node: (" % (name, role))
+        uses = ", ".join("'%s'" % n for n in sorted(needed(src) | ({name} & KNOWN)))
+        parts.append("  { name: '%s', role: '%s', uses: [%s], node: () => (" % (name, role, uses))
         parts.append(src)
         parts.append("  ) },")
     parts.append("];")

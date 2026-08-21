@@ -53,6 +53,14 @@ export interface BackdropShellProps {
   scrollKey?: string | number;
   /** 0–1 scroll progress from the front layer. */
   onProgress?: (progress: number) => void;
+  /**
+   * Forwarded to the front layer: how its 1dp step is expressed. Omitted, the layer keeps the
+   * `--shadow-sm` it has always drawn. The alternatives exist because that shadow is offset
+   * downward, away from the layer's top edge, and a black shadow cannot mark a boundary against
+   * a `#080808` back layer — see `FrontLayerProps['lift']` for what each value draws and what it
+   * costs in light theme.
+   */
+  lift?: 'shadow' | 'edge' | 'highlight' | 'glow' | 'ambient';
   /** Sets `data-theme` on the frame. */
   theme?: string;
   platform?: 'desktop' | 'mobile';

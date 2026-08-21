@@ -287,12 +287,16 @@
         "message": "<BackToTop> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:back|rail|children|subheader|sheet|sheetOpen|sheetLayer|player|contentMinWidth|scroll|scrollKey|onProgress|theme|platform|key|ref|className|style|children)$/]",
-        "message": "<BackdropShell> doesn't accept that prop. Declared props: back, rail, children, subheader, sheet, sheetOpen, sheetLayer, player, contentMinWidth, scroll, scrollKey, onProgress, theme, platform."
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:back|rail|children|subheader|sheet|sheetOpen|sheetLayer|player|contentMinWidth|scroll|scrollKey|onProgress|lift|theme|platform|key|ref|className|style|children)$/]",
+        "message": "<BackdropShell> doesn't accept that prop. Declared props: back, rail, children, subheader, sheet, sheetOpen, sheetLayer, player, contentMinWidth, scroll, scrollKey, onProgress, lift, theme, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='sheetLayer'] > Literal[value!=/^(?:front|behind)$/]",
         "message": "<BackdropShell> sheetLayer must be one of 'front' | 'behind'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='lift'] > Literal[value!=/^(?:shadow|edge|highlight|glow|ambient)$/]",
+        "message": "<BackdropShell> lift must be one of 'shadow' | 'edge' | 'highlight' | 'glow' | 'ambient'."
       },
       {
         "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -331,16 +335,20 @@
         "message": "<EditableList> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='FrontLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|subheader|scroll|scrollKey|onProgress|threshold|squareLeft|squareRight|platform|key|ref|className|style|children)$/]",
-        "message": "<FrontLayer> doesn't accept that prop. Declared props: children, subheader, scroll, scrollKey, onProgress, threshold, squareLeft, squareRight, platform."
+        "selector": "JSXOpeningElement[name.name='FrontLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|subheader|scroll|scrollKey|onProgress|threshold|squareLeft|squareRight|lift|platform|key|ref|className|style|children)$/]",
+        "message": "<FrontLayer> doesn't accept that prop. Declared props: children, subheader, scroll, scrollKey, onProgress, threshold, squareLeft, squareRight, lift, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FrontLayer'] > JSXAttribute[name.name='lift'] > Literal[value!=/^(?:shadow|edge|highlight|glow|ambient)$/]",
+        "message": "<FrontLayer> lift must be one of 'shadow' | 'edge' | 'highlight' | 'glow' | 'ambient'."
       },
       {
         "selector": "JSXOpeningElement[name.name='FrontLayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<FrontLayer> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='FrontLayerHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tabs|progress|platform|key|ref|className|style|children)$/]",
-        "message": "<FrontLayerHeader> doesn't accept that prop. Declared props: children, tabs, progress, platform."
+        "selector": "JSXOpeningElement[name.name='FrontLayerHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tabs|progress|spy|sections|spySelector|spyTitle|onSpyChange|platform|key|ref|className|style|children)$/]",
+        "message": "<FrontLayerHeader> doesn't accept that prop. Declared props: children, tabs, progress, spy, sections, spySelector, spyTitle, onSpyChange, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='FrontLayerHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -683,6 +691,10 @@
         "message": "<NavRail> doesn't accept that prop. Declared props: items, active, onChange, expanded, onToggleExpanded, footer, header."
       },
       {
+        "selector": "JSXOpeningElement[name.name='RailFooter'] > JSXAttribute > JSXIdentifier[name!=/^(?:expanded|theme|themes|themeIcons|onThemeChange|title|sub|image|avatarSize|onIdentityClick|children|key|ref|className|style|children)$/]",
+        "message": "<RailFooter> doesn't accept that prop. Declared props: expanded, theme, themes, themeIcons, onThemeChange, title, sub, image, avatarSize, onIdentityClick, children."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='RailItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|active|expanded|rowHeight|tabs|wideActive|centerIcon|onClick|key|ref|className|style|children)$/]",
         "message": "<RailItem> doesn't accept that prop. Declared props: icon, label, active, expanded, rowHeight, tabs, wideActive, centerIcon, onClick."
       },
@@ -909,6 +921,9 @@
         "replaces": []
       },
       "QuickPick": {
+        "replaces": []
+      },
+      "RailFooter": {
         "replaces": []
       },
       "RailItem": {
