@@ -39,7 +39,7 @@ import { LinearProgress, Skeleton } from '@auralis/ui';
 import { isExternalItem } from '../../api/availability.js';
 import { CoverImage } from '../../components/CoverImage.js';
 import { useBreakpoint } from '../../hooks/useBreakpoint.js';
-import { displaySubtitle, type FeedItem } from './forYouFeed.js';
+import type { FeedItem } from './forYouFeed.js';
 
 const CARD_WIDTH_DESKTOP = 176;
 const CARD_WIDTH_COMPACT = 152;
@@ -239,18 +239,9 @@ export interface CarouselProps {
  * itself has no accessible name (`alt=""`, deliberately — it's decorative next to the
  * visible title). Exported for `Carousel.test.tsx` — this repo has no `jsdom`/
  * `@testing-library/react` installed (see `ChapterList.test.tsx`'s header), so a
- * component's testable behaviour is whatever pure logic it delegates to, not a render.
- *
- * Wave 15c-2-W: `displaySubtitle(item)` — not the raw `item.subtitle` — is what feeds
- * "title, subtitle" below. On a mixed-medium recommended shelf this is where a card's
- * type label (`"Audiobook"`/`"Podcast"`/`"Album"`) actually reaches the accessible name:
- * the visible subtitle `<p>` below is `aria-hidden`, so this `aria-label` (wired at this
- * button's `aria-label={cardLabel(item)}`) is the *only* place a screen reader learns the
- * item's kind on a mixed shelf, exactly the same mechanism that already announces "not in
- * library" for an external item below. */
+ * component's testable behaviour is whatever pure logic it delegates to, not a render. */
 export function cardLabel(item: FeedItem): string {
-  const subtitle = displaySubtitle(item);
-  const base = subtitle ? `${item.title}, ${subtitle}` : item.title;
+  const base = item.subtitle ? `${item.title}, ${item.subtitle}` : item.title;
   // Wave 15d-1-W: announced, not just drawn — an external card's visual pill is
   // `aria-hidden`, so this is the only place a screen reader user learns the item
   // isn't in her library.
@@ -372,12 +363,9 @@ export function Carousel({
                     </h3>
                     {/* Always rendered, even with nothing to show — see subtitleStyleFor's
                       sibling comment on PROGRESS_ROW_STYLE: an item with no subtitle
-                      must not end up shorter than one that has one. Wave 15c-2-W:
-                      `displaySubtitle` leads with the mixed-shelf type label, when there
-                      is one — visually here, and via `cardLabel`'s `aria-label` above for
-                      assistive tech, since this `<p>` is `aria-hidden`. */}
+                      must not end up shorter than one that has one. */}
                     <p style={subtitleStyle} aria-hidden="true">
-                      {displaySubtitle(item) ?? ' '}
+                      {item.subtitle ?? ' '}
                     </p>
                     <div style={PROGRESS_ROW_STYLE}>
                       {item.progress != null ? (

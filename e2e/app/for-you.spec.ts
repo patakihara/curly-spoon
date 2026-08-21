@@ -19,10 +19,9 @@
  * uses. Jellyfin's connect state is process-global (see `search-music.spec.ts`'s
  * header for why), so the connect step is written idempotently.
  *
- * Recommended carousels (docs/ROADMAP.md section 13, wave 13c; wire route swapped to
- * the cross-medium GET /api/v1/recommended by wave 15c-2-W, same shelf-building code
- * underneath) need their own seed: the route returns nothing for a cold-start user, so
- * tests below drive listening progress through the real
+ * Recommended carousels (docs/ROADMAP.md section 13, wave 13c) need their own seed:
+ * GET /libraries/:id/recommended returns nothing for a cold-start user, so the last
+ * test below drives listening progress through the real
  * PATCH /api/v1/progress/:itemId route (via page.request, which shares the signed-in
  * browser context's cookies) rather than a fixture default -- a module-level fixture
  * seed silently broke three unrelated server suites when wave 13b tried that
@@ -434,72 +433,6 @@ test('recommended carousels appear below the ordinary shelves, each with a visib
     expect(reasonText).not.toBeNull();
     expect(reasonText!.trim().length).toBeGreaterThan(0);
   }
-});
-
-// Wave 15c-2-W: For You now reads GET /api/v1/recommended (the cross-medium
-// aggregator), whose shelves carry an optional `itemLabels` map -- present ONLY when
-// a shelf spans more than one media kind (server's `shelves.ts:80`). This test does
-// not force a mixed-kind shelf into existence (that would mean widening a shared
-// fixture with a cross-medium genre/author overlap, which this project's own history
-// warns invalidates other specs' count assertions in ways a single spec run can't
-// see -- see docs/HANDOVER.md's "widened fixture" lesson). Instead it reads the
-// server's own response and asserts the client renders it faithfully either way:
-// intercepting the real network response makes this a genuine end-to-end check of
-// the wiring, not an assumption about what shape the fixture happens to produce.
-test('a recommended card announces its server-supplied type label exactly, or omits it entirely when the shelf is single-kind', async ({
-  page,
-}) => {
-  const finished = await page.request.patch('/api/v1/progress/item-crimson', {
-    data: { currentTime: 500, duration: 500, progress: 1, isFinished: true },
-  });
-  expect(finished.ok()).toBe(true);
-  const inProgress = await page.request.patch('/api/v1/progress/item-emberwars1', {
-    data: { currentTime: 240, duration: 600, progress: 0.4, isFinished: false },
-  });
-  expect(inProgress.ok()).toBe(true);
-
-  await page.goto('/');
-  await expect(page.getByTestId('home-page')).toBeVisible();
-
-  // Fetched separately via `page.request` (the same signed-in cookies the browser
-  // already used) rather than intercepted from the app's own load: capturing a
-  // `Response` object across a `page.goto()` navigation is unreliable in Playwright
-  // ("Response body is not available for a response that was navigated away from"),
-  // and this route is a pure read over the progress signals already seeded above --
-  // asking it directly returns the exact same shelves the app just rendered.
-  const apiResponse = await page.request.get('/api/v1/recommended');
-  expect(apiResponse.ok()).toBe(true);
-  const body = (await apiResponse.json()) as {
-    shelves: {
-      id: string;
-      itemLabels?: Record<string, string>;
-      items: { id: string }[];
-    }[];
-  };
-  expect(body.shelves.length).toBeGreaterThan(0);
-
-  let checkedAtLeastOneCard = false;
-  for (const shelf of body.shelves) {
-    for (const item of shelf.items) {
-      const card = page.getByTestId(`shelf-item-${item.id}`);
-      await expect(card).toBeVisible();
-      const ariaLabel = await card.getAttribute('aria-label');
-      expect(ariaLabel).not.toBeNull();
-      const expectedLabel = shelf.itemLabels?.[item.id];
-      if (expectedLabel) {
-        // Byte-for-byte: the label the server sent, immediately followed by the
-        // bullet separator `displaySubtitle` (forYouFeed.ts) composes it with.
-        expect(ariaLabel).toContain(`${expectedLabel} • `);
-      } else {
-        // No mixed-shelf label was announced -- the bullet character only ever
-        // appears via a type label, so its absence proves none leaked in for a
-        // single-kind shelf (the itemLabels-absent contract, api/types.ts).
-        expect(ariaLabel).not.toContain('•');
-      }
-      checkedAtLeastOneCard = true;
-    }
-  }
-  expect(checkedAtLeastOneCard).toBe(true);
 });
 
 test('an ordinary shelf never renders a reason line', async ({ page }) => {

@@ -29,7 +29,6 @@ import type {
   Library,
   LoginResponse,
   MediaProgress,
-  MixedRecommendedShelf,
   MusicCandidate,
   MusicRecommendedShelf,
   MusicRequest,
@@ -39,6 +38,7 @@ import type {
   PodcastFeedPreview,
   ProviderEntry,
   ProviderUpdateBody,
+  RecommendedShelf,
   Release,
   RequestSearchResult,
   RequestSettings,
@@ -205,15 +205,14 @@ export class ApiClient {
     return this.request(`/libraries/${encodeURIComponent(libraryId)}/home`, { signal });
   }
 
-  /** `GET /api/v1/recommended` (docs/ROADMAP.md §15c-2, wave 15c-2-W,
-   * `docs/agent-specs/15c-2-CLIENTS.md`) — the cross-medium recommendation aggregator,
-   * scoped to the signed-in user rather than to one library: it pools candidates from
-   * both Audiobookshelf and Jellyfin and can return shelves mixing books, podcasts and
-   * albums. Replaces the book-only, library-scoped `getLibraryRecommended` this wave
-   * deleted (For You was its only web caller). A cold-start user (no listening history
-   * on either upstream) gets `{ shelves: [] }` back, which is correct and not an error. */
-  getRecommended(signal?: AbortSignal): Promise<{ shelves: MixedRecommendedShelf[] }> {
-    return this.request('/recommended', { signal });
+  /** `GET /libraries/:id/recommended` (docs/ROADMAP.md §13) — Auralis's own ranked
+   * shelves, each a `Shelf` plus a `reason` string. A cold-start user (no listening
+   * history) gets `{ shelves: [] }` back, which is correct and not an error. */
+  getLibraryRecommended(
+    libraryId: string,
+    signal?: AbortSignal,
+  ): Promise<{ shelves: RecommendedShelf[] }> {
+    return this.request(`/libraries/${encodeURIComponent(libraryId)}/recommended`, { signal });
   }
 
   getLibraryItems(
@@ -510,8 +509,7 @@ export class ApiClient {
   }
 
   /** `GET /music/recommended` (docs/ROADMAP.md §13, wave 13f-1) — Auralis's own ranked
-   * album shelves for the separate `/music` screen (untouched by wave 15c-2-W's
-   * `getRecommended` above, which is For You's own aggregator). Rejects with a typed
+   * album shelves, the music equivalent of `getLibraryRecommended`. Rejects with a typed
    * `ApiError` (`jellyfin_not_configured`, 409, or `jellyfin_unauthenticated`, 401) when
    * Jellyfin isn't reachable for this user — same as every other `/jellyfin/*` method
    * here, not a special case. Callers must treat that rejection as "no shelves", the same

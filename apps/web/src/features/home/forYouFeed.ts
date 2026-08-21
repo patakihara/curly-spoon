@@ -1,22 +1,16 @@
 /**
- * Pure aggregation for the For You feed (docs/ROADMAP.md §12d). Audiobookshelf's
- * per-library shelves, Jellyfin's favourite albums, and — since wave 15c-2-W —
- * `GET /api/v1/recommended`'s own cross-medium shelves are three independent client
- * fetches with no single upstream endpoint unifying all of Home, so this is where they
- * get stitched into one uniform list of `FeedCarousel`s, all meant to render with
- * exactly one card geometry (`Carousel.tsx`), plus a flat `quickPicks` list for the grid
- * at the top of the page. Kept out of `HomePage.tsx` for the same reason
- * `searchFilters.ts` is kept out of `SearchPage.tsx`: this is behaviour worth testing
- * directly, not through rendered JSX.
+ * Pure aggregation for the For You feed (docs/ROADMAP.md §12d). There is no
+ * BFF endpoint that returns one mixed-type home feed — Audiobookshelf's
+ * per-library shelves and Jellyfin's favourite albums are three independent
+ * fetches — so this is where they get stitched into one uniform list of
+ * `FeedCarousel`s, all meant to render with exactly one card geometry
+ * (`Carousel.tsx`), plus a flat `quickPicks` list for the grid at the top of
+ * the page. Kept out of `HomePage.tsx` for the same reason `searchFilters.ts`
+ * is kept out of `SearchPage.tsx`: this is behaviour worth testing directly,
+ * not through rendered JSX.
  */
 import type { IconName } from '@auralis/ui';
-import type {
-  JellyfinAlbum,
-  LibraryItem,
-  MixedRecommendedItem,
-  MixedRecommendedShelf,
-  Shelf,
-} from '../../api/types.js';
+import type { JellyfinAlbum, LibraryItem, RecommendedShelf, Shelf } from '../../api/types.js';
 
 export type ForYouContentType = 'books' | 'podcasts' | 'music';
 
@@ -34,51 +28,22 @@ export interface FeedItem {
    * content ("owned") or an external, not-yet-owned placeholder the user does not have
    * ("external") — `JellyfinAlbum.availability` and `LibraryItem.availability`'s doc
    * comments (`api/types.ts`) have the server contracts. Optional and `undefined` on every
-   * ordinary shelf; today only music's and mixed recommended shelves ever set it.
+   * ordinary shelf; today only music's and books' *recommended* shelves ever set it.
    * `Carousel.tsx` and every `onSelect` handler treat an absent value the same as `'owned'`,
    * so no existing carousel changes.
    */
   availability?: 'owned' | 'external';
-  /**
-   * Wave 15c-2-W: the noun a mixed-medium shelf's card leads its subtitle with —
-   * `"Audiobook"`/`"Podcast"`/`"Album"`, from `MixedRecommendedShelf.itemLabels`
-   * (`api/types.ts`). `undefined` on every ordinary or single-kind shelf, which render
-   * their plain subtitle exactly as before. Kept separate from `subtitle` itself (rather
-   * than baked in at construction time) so callers that need the *raw* subtitle — e.g.
-   * `HomePage.tsx`'s external-book request prefill — never see the label leak in; use
-   * `displaySubtitle()` below wherever the composed, announced text is what's wanted.
-   */
-  typeLabel?: string;
 }
 
 export interface FeedCarousel {
   id: string;
   label: string;
-  /** `'mixed'` only for a recommended shelf whose items span more than one kind
-   * (`mixedShelfToCarousel` below sets it from the same `itemLabels`-presence signal the
-   * server uses) — `filterCarousels` has no single content-type filter such a shelf could
-   * honestly match, so it is shown only under "all", never under a specific chip. A
-   * single-kind recommended shelf gets its one real `ForYouContentType` instead, exactly
-   * like any other carousel, and filters normally. */
-  contentType: ForYouContentType | 'mixed';
+  contentType: ForYouContentType;
   items: FeedItem[];
   /** Why this carousel was chosen for this user, e.g. "Because you finished Dune" —
    * present only on recommended carousels (docs/ROADMAP.md §13). An ordinary
    * Audiobookshelf/Jellyfin shelf carries no reason, since Auralis didn't choose it. */
   reason?: string;
-}
-
-/** The text a card actually shows and announces: the type label (when the item carries
- * one) leading the item's own subtitle, e.g. `"Audiobook • Ursula K. Le Guin"` — Sofia's
- * own Spotify reference disambiguates a mixed shelf exactly this way
- * (`docs/USER_DECISIONS.md` decision 2). Absent `typeLabel` (every ordinary or
- * single-kind shelf) returns `subtitle` unchanged. Shared by `Carousel.tsx`'s card (both
- * the visible `<p>` and, via `cardLabel`, the announced `aria-label`) and `HomePage.tsx`'s
- * quick-pick tiles, since quick picks are built from these same `FeedCarousel.items`
- * (`buildQuickPicks`) and must announce the same thing a shelf card does. */
-export function displaySubtitle(item: Pick<FeedItem, 'subtitle' | 'typeLabel'>): string | null {
-  if (!item.typeLabel) return item.subtitle;
-  return item.subtitle ? `${item.typeLabel} • ${item.subtitle}` : item.typeLabel;
 }
 
 /** `authors[]` is the richer, structured field and wins when present; `author`
@@ -123,77 +88,20 @@ export function shelfToCarousel(
   };
 }
 
-/** `MixedRecommendedItem.kind` -> the three-way `ForYouContentType` this module's
- * routing/filtering already understands. `HomePage.tsx`'s `handleSelect` and
- * `filterCarousels` both switch on `FeedItem.contentType`/`FeedCarousel.contentType`,
- * never on the wire's `kind` directly — this is the one place that translation happens
- * for a mixed shelf's items. */
-function contentTypeForKind(kind: MixedRecommendedItem['kind']): ForYouContentType {
-  if (kind === 'book') return 'books';
-  if (kind === 'podcast') return 'podcasts';
-  return 'music';
-}
-
-function fallbackIconForKind(kind: MixedRecommendedItem['kind']): IconName {
-  if (kind === 'book') return 'book';
-  if (kind === 'podcast') return 'podcasts';
-  return 'music_note';
-}
-
-/** One item off `GET /api/v1/recommended` becomes one `FeedItem`. Cover resolution
- * splits by kind exactly like `HomePage.tsx`'s existing book/podcast vs. album calls
- * (`coverUrl`/`artworkUrl` build a URL from the id alone — see `shelfToCarousel`'s and
- * `albumsToCarousel`'s identical pattern above), so `item.coverPath`/`item.imageTag`
- * themselves are never read here; they exist on the wire for Android, which has no
- * such per-id URL builder (`api/types.ts`'s doc comment on `MixedRecommendedItem`).
- *
- * `progress` is always `null`: a recommended item is by construction one the user has
- * no progress on — `score.ts:38` (server) excludes every id in `knownItemIds`, which
- * `profile.ts:123` populates from every progress-carrying item — the same property
- * that already made the deleted `recommendedShelvesToCarousels`'s progress bar
- * unreachable on the book-only route this replaces. See
- * `docs/agent-specs/15c-2-CLIENTS.md`'s "blocker recon" section. */
-function mixedItemToFeedItem(
-  item: MixedRecommendedItem,
-  itemLabels: MixedRecommendedShelf['itemLabels'],
+/** `GET /libraries/:id/recommended` (docs/ROADMAP.md §13) returns shelves that are
+ * `Shelf`-shaped plus a `reason` string, always about audiobooks (13a–13d; music's
+ * turn is 13e) — so this reuses `shelfToCarousel`'s 'books' mapping and carries the
+ * `reason` through onto the resulting `FeedCarousel`. A shelf with no items (the
+ * server guarantees at least 2, but this stays defensive rather than trusting that
+ * forever) is dropped, same as `HomePage.tsx` already does for ordinary shelves. */
+export function recommendedShelvesToCarousels(
+  shelves: RecommendedShelf[],
   coverUrl: (itemId: string) => string,
-  artworkUrl: (albumId: string) => string,
-): FeedItem {
-  return {
-    id: item.id,
-    contentType: contentTypeForKind(item.kind),
-    title: item.title,
-    subtitle: item.subtitle,
-    coverSrc: item.kind === 'album' ? artworkUrl(item.id) : coverUrl(item.id),
-    fallbackIcon: fallbackIconForKind(item.kind),
-    progress: null,
-    availability: item.availability,
-    typeLabel: itemLabels?.[item.id],
-  };
-}
-
-/** `GET /api/v1/recommended` (docs/ROADMAP.md §15c-2, wave 15c-2-W,
- * `docs/agent-specs/15c-2-CLIENTS.md`) — the cross-medium replacement for the deleted,
- * book-only `recommendedShelvesToCarousels`. A shelf's `contentType` is `'mixed'` when
- * the server's `itemLabels` is present (spans more than one kind) and the single real
- * kind otherwise — see `FeedCarousel.contentType`'s own doc comment for what that
- * controls. A shelf with no items (the server guarantees at least 2, but this stays
- * defensive rather than trusting that forever) is dropped, same as `HomePage.tsx`
- * already does for ordinary shelves. */
-export function mixedShelvesToCarousels(
-  shelves: MixedRecommendedShelf[],
-  coverUrl: (itemId: string) => string,
-  artworkUrl: (albumId: string) => string,
 ): FeedCarousel[] {
   return shelves
     .filter((shelf) => shelf.items.length > 0)
     .map((shelf) => ({
-      id: shelf.id,
-      label: shelf.label,
-      contentType: shelf.itemLabels ? ('mixed' as const) : contentTypeForKind(shelf.items[0]!.kind),
-      items: shelf.items.map((item) =>
-        mixedItemToFeedItem(item, shelf.itemLabels, coverUrl, artworkUrl),
-      ),
+      ...shelfToCarousel(shelf, 'books', coverUrl),
       reason: shelf.reason,
     }));
 }
@@ -218,12 +126,11 @@ export function buildForYouCarousels(params: {
   book: FeedCarousel[];
   podcast: FeedCarousel[];
   music: FeedCarousel[];
-  recommendedShelves: MixedRecommendedShelf[] | null;
+  recommendedShelves: RecommendedShelf[] | null;
   coverUrl: (itemId: string) => string;
-  artworkUrl: (albumId: string) => string;
 }): FeedCarousel[] {
   const recommended = params.recommendedShelves
-    ? mixedShelvesToCarousels(params.recommendedShelves, params.coverUrl, params.artworkUrl)
+    ? recommendedShelvesToCarousels(params.recommendedShelves, params.coverUrl)
     : [];
   return [...params.book, ...params.podcast, ...params.music, ...recommended];
 }

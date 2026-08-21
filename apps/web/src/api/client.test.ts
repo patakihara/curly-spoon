@@ -501,67 +501,6 @@ describe('ApiClient', () => {
     });
   });
 
-  describe('cross-medium recommendations (wave 15c-2-W)', () => {
-    it('fetches mixed-medium shelves from /recommended, not a library-scoped path', async () => {
-      const fetchFn = fakeFetch(
-        () =>
-          new Response(
-            JSON.stringify({
-              shelves: [
-                {
-                  id: 'shelf-mixed',
-                  label: 'Because you finished Dune',
-                  type: 'recommended',
-                  reason: 'Because you finished Dune',
-                  itemLabels: { 'book-1': 'Audiobook', 'album-1': 'Album' },
-                  items: [
-                    {
-                      kind: 'book',
-                      id: 'book-1',
-                      title: 'Children of Time',
-                      subtitle: 'Adrian Tchaikovsky',
-                      coverPath: '/covers/book-1.jpg',
-                      imageTag: null,
-                      availability: 'owned',
-                    },
-                    {
-                      kind: 'album',
-                      id: 'album-1',
-                      title: 'Nightglass',
-                      subtitle: 'Some Artist',
-                      coverPath: null,
-                      imageTag: 'tag-1',
-                      availability: 'owned',
-                    },
-                  ],
-                },
-              ],
-            }),
-            { status: 200 },
-          ),
-      );
-      const client = new ApiClient({ fetch: fetchFn });
-
-      const result = await client.getRecommended();
-
-      const [url] = fetchFn.mock.calls[0]!;
-      expect(url).toBe('/api/v1/recommended');
-      expect(result.shelves).toHaveLength(1);
-      expect(result.shelves[0]!.itemLabels).toEqual({ 'book-1': 'Audiobook', 'album-1': 'Album' });
-      expect(result.shelves[0]!.items.map((i) => i.kind)).toEqual(['book', 'album']);
-    });
-
-    it('a cold-start user with no signal on either upstream gets an empty shelf list', async () => {
-      const fetchFn = fakeFetch(
-        () => new Response(JSON.stringify({ shelves: [] }), { status: 200 }),
-      );
-      const client = new ApiClient({ fetch: fetchFn });
-
-      const result = await client.getRecommended();
-      expect(result).toEqual({ shelves: [] });
-    });
-  });
-
   describe('Jellyfin music (Phase 9 wave A)', () => {
     it('fetches config from /jellyfin/config', async () => {
       const fetchFn = fakeFetch(
