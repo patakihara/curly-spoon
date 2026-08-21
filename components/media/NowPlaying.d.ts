@@ -1,0 +1,38 @@
+import { NowPlayingPageProps } from './NowPlayingPage';
+import { LyricsPageProps } from './LyricsPage';
+import { QueuePageProps, QueueItem } from './QueuePage';
+import { BottomAppBarAction } from '../navigation/BottomAppBar';
+
+/**
+ * The player, whole — the canonical Currently Playing shape for both platforms from one set of props.
+ *
+ * Mobile: a sheet that covers the app and expands out of the now-playing bar (`from` = the bar's
+ * rect). Lyrics and queue appear as previews on the page and as buttons on the bottom app bar; both
+ * open as full pages over it.
+ *
+ * Desktop: a side panel where lyrics and queue are tabs beside Now playing rather than page sections.
+ */
+export interface NowPlayingProps {
+  platform?: 'desktop' | 'mobile';
+  open?: boolean;
+  /** Mobile only: the mini player's viewport rect, so the sheet grows out of it. */
+  from?: { top: number; left: number; width: number; height: number } | null;
+  onClose?: () => void;
+  /** Mobile sub-page. Omit to let the component own it. */
+  page?: 'now' | 'lyrics' | 'queue';
+  onPageChange?: (page: 'now' | 'lyrics' | 'queue') => void;
+  /** Desktop tab. Omit to let the panel own it. */
+  tab?: 'now' | 'queue' | 'lyrics' | string;
+  onTabChange?: (tab: string) => void;
+  track?: { image?: string; title?: string; artist?: string; context?: string };
+  /** Playback state and handlers (playing, progress, duration, onTogglePlay, onSeek, speed, sleep …). */
+  player?: Omit<NowPlayingPageProps, 'platform' | 'image' | 'title' | 'artist' | 'context' | 'lyrics' | 'queue' | 'footer' | 'header' | 'scroll'>;
+  /** Lyric sheet: lines, the line being sung, and the sync mode the LyricsSyncButton cycles. */
+  lyrics?: Pick<LyricsPageProps, 'lines' | 'activeIndex' | 'syncMode' | 'onSyncModeChange'>;
+  /** Queue: items plus the edit-mode handlers. */
+  queue?: Pick<QueuePageProps, 'items' | 'editing' | 'onEditingChange' | 'onPlay' | 'onRemove' | 'onReorder' | 'onRemoveSelected'>;
+  /** Replaces the mobile bottom app bar's four default actions. */
+  actions?: BottomAppBarAction[];
+  zIndex?: number;
+}
+export declare function NowPlaying(props: NowPlayingProps): JSX.Element;

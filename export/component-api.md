@@ -27,6 +27,21 @@ Small pill for counts, queue positions and status. Colors come from the status t
 | `children` *(required)* | `ReactNode` |  |
 | `tone` | `'accent' \| 'success' \| 'warning' \| 'error' \| 'neutral'` |  |
 | `size` | `'sm' \| 'md'` | md is the status-pill size used in list rows; sm is the count pill. |
+| `icon` | `string` | Leading Material Symbols Rounded glyph name — the verified check, the finished tick. |
+| `square` | `boolean` | Square with --radius-xs instead of a pill: the explicit-content "E" marker. |
+| `plain` | `boolean` | No fill; glyph and label take the tone colour as ink instead of the tone's contrast ink. |
+
+### BrowseCard
+
+Navigates into a category whose content you can't name yet — distinct from Chip, which filters an existing result set. Colour-coded, with its artwork tilted out of the bottom-right corner so the card reads as a stack of content rather than a label.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` |  |
+| `color` | `'red' \| 'orange' \| 'amber' \| 'yellow' \| 'lime' \| 'green' \| 'emerald' \| 'teal' \| 'cyan' \| 'sky' \| 'blue' \| 'indigo' \| 'violet' \| 'purple' \| 'fuchsia' \| 'pink' \| 'rose'` | One of the 17 accent hue names; defaults to a hue derived deterministically from `title`. |
+| `image` | `string` | Tilted thumbnail anchored to the bottom-right corner. |
+| `onClick` | `() => void` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### Button
 
@@ -41,6 +56,7 @@ Small pill for counts, queue positions and status. Colors come from the status t
 | `icon` | `ReactNode` |  |
 | `disabled` | `boolean` |  |
 | `onClick` | `() => void` |  |
+| `pressed` | `boolean` |  Marks the button as a toggle and sets `aria-pressed`. For a control whose label states the current state rather than the action it performs — FollowButton's "Following". Leave it undefined for an ordinary button and no attribute is emitted.  |
 
 ### ButtonGroup
 
@@ -52,6 +68,8 @@ M3 connected button group — a row of segments that read as one control: outer 
 | `value` | `string` | Key of the selected segment. |
 | `onChange` | `(next: string) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
+| `scroll` | `boolean` | Adds momentum scrolling and a soft edge fade so an overflowing row reads as scrollable, not clipped. |
+| `leading` | `ReactNode` | A pinned, non-scrolling slot before the first segment — an account avatar, in every Spotify filter row. |
 
 ### Chip
 
@@ -66,6 +84,44 @@ One of the 17 accent hues (renders as a big colorful genre card like Symphony's 
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `onClick` | `() => void` |  |
 
+### ExpandableText
+
+Long prose that neither dominates nor hides — a paragraph clamped with -webkit-line-clamp, with a real, keyboard-reachable toggle. Distinct from ExpanderRow, which folds a homogeneous list group rather than a paragraph.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` | The prose. `text` is the alternative when JSX children aren't convenient. |
+| `text` | `string` |  |
+| `lines` | `number` | Lines shown before clamping. |
+| `moreLabel` | `string` |  |
+| `lessLabel` | `string` |  |
+| `expanded` | `boolean` | Controlled expanded state. Omit to let the component keep its own. |
+| `onToggle` | `(next: boolean) => void` |  |
+
+### ExpanderRow
+
+Collapses a homogeneous group inside an otherwise heterogeneous list — seven versions of one song folded behind "More releases · Show all" so the other result types stay reachable.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `label` *(required)* | `string` | What is being folded, e.g. "More releases". |
+| `actionLabel` | `string` | The disclosure verb. |
+| `expanded` | `boolean` |  |
+| `onToggle` | `(next: boolean) => void` | Called with the next expanded state on click. |
+| `image` | `string` | Optional stacked-art hint, leading the row. |
+
+### FollowButton
+
+Subscription toggle whose label states the current state, not the action to take — "Following" means you are, and pressing it stops. Inverts a normal button, so it always carries `aria-pressed`. Wraps the existing Button rather than reimplementing it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `following` | `boolean` |  |
+| `onChange` | `(next: boolean) => void` | Called with the next following state on click. |
+| `labels` | `{ off?: string; on?: string }` | Overrides either label; the unset half falls back to "Follow" / "Following". |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `size` | `'sm' \| 'md' \| 'lg'` |  |
+
 ### IconButton
 
 
@@ -78,6 +134,20 @@ One of the 17 accent hues (renders as a big colorful genre card like Symphony's 
 | `muted` | `boolean` |  |
 | `label` *(required)* | `string` |  |
 | `onClick` | `() => void` |  |
+
+### PreviewButton
+
+Auditions a sample without committing it — plays without adding the item to the library or displacing whatever is currently playing. The disabled state covers a sample that hasn't loaded yet, a real fourth state alongside idle/sounding/muted.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `kind` | `'episode' \| 'playlist' \| 'audiobook' \| 'track'` | Selects the generated label ("Preview episode") when `label` is not supplied. |
+| `label` | `string` | Overrides the generated label entirely. |
+| `playing` | `boolean` | Sample is playing; the glyph flips to the sounding speaker. |
+| `muted` | `boolean` | Playing with sound off — the resting state a preview starts in. |
+| `disabled` | `boolean` | No sample available: dims the control, not-allowed cursor, aria-disabled. |
+| `onClick` | `() => void` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### ProgressRing
 
@@ -104,6 +174,19 @@ Continue-listening / jump-back-in tile: small square art plus title and a meta l
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `onClick` | `() => void` |  |
+| `progress` | `number \| null` | 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. |
+| `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. Ignored on the `icon` variant. |
+
+### Rating
+
+Aggregate community judgement at a glance — a single star and the value, not five stars; the number carries the information and five glyphs would only decorate it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `value` *(required)* | `number` | 0–max. |
+| `count` | `number` | Population; formatted compactly next to the value (17700 -> "17.7K"). |
+| `max` | `number` | Scale the value is out of. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### SectionHeader
 
@@ -116,6 +199,36 @@ Heading row above a carousel, grid or list, with an optional trailing icon actio
 | `actionLabel` | `string` |  |
 | `onAction` | `() => void` |  |
 | `platform` | `'mobile' \| 'desktop'` | mobile = body font at text-xl; desktop = display font at h3, 900 weight. |
+| `eyebrow` | `string` | Relationship line above the title — "More like", "Popular with listeners of" — that explains why this shelf exists. |
+| `image` | `string` | Subject artwork, leading the header. Falls back to the sibling CoverArt's own placeholder. |
+| `round` | `boolean` | Circular thumbnail for an artist or a person; square (the default) for a show or a genre. |
+| `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. |
+| `actionText` | `string` | A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. |
+
+### SortFilterBar
+
+Reports the active sort/filter state and opens its picker in one control — the label is data ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `icon` | `string` | Leading glyph. |
+| `label` *(required)* | `string` | The current state, rendered as the control's own label — e.g. "All episodes • Newest". |
+| `onClick` | `() => void` | Opens the sort/filter picker. |
+| `trailing` | `ReactNode` | Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### StatusBanner
+
+Persistent, non-blocking statement of system state — Spotify's "You're offline" bar. Unlike a toast it never times out; the message stands until the condition it describes changes.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` *(required)* | `ReactNode` | The message. |
+| `tone` | `'info' \| 'warning' \| 'error' \| 'success'` | Selects the background/ink pair from the state tokens. |
+| `icon` | `string` | Leading glyph. |
+| `actionLabel` | `string` | Label for the inline text action, e.g. "Retry". |
+| `onAction` | `() => void` |  |
+| `onDismiss` | `() => void` | Renders a close control when set; the banner has no other way to dismiss. |
 
 ### TonalIconButton
 
@@ -263,6 +376,18 @@ The app frame — the one component that ties the layout parts together, so a sc
 | `theme` | `string` | Sets `data-theme` on the frame. |
 | `flat` | `boolean` | Flattens the content pane — square top corners and a permanent divider — for a sub-page that owns the full surface. |
 | `square` | `boolean` | Squares the content pane's top corners while keeping its scroll-linked hairline — used when the app bar's controls row carries the rounding. |
+
+### BackToTop
+
+Escape from depth. A feed that pages in more content has no bottom, so scroll position becomes a trap; this floats a way back that only the caller's own scroll-position logic reveals.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `visible` | `boolean` | Caller-driven; the control stays mounted and fades/rises rather than mounting on demand. |
+| `label` | `string` |  |
+| `onClick` | `() => void` |  |
+| `offset` | `number` | Distance from the bottom edge, in px, to clear a docked player. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### CircleReveal
 
@@ -430,6 +555,11 @@ One block of a feed — a SectionHeader plus its content — carrying the standa
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `last` | `boolean` | Drops the trailing margin — set on the final section of a scroll view. |
 | `children` | `React.ReactNode` |  |
+| `eyebrow` | `string` | Forwarded to SectionHeader — relationship line above the title, e.g. "More like". |
+| `image` | `string` | Forwarded to SectionHeader — subject artwork, leading the header. |
+| `round` | `boolean` | Forwarded to SectionHeader — circular thumbnail for an artist or a person; square for a show or a genre. |
+| `onSubject` | `() => void` | Forwarded to SectionHeader — makes the eyebrow+title block a link to the subject. |
+| `actionText` | `string` | Forwarded to SectionHeader — a text action ("Show all") in place of the glyph `action`. |
 
 ### Shelf
 
@@ -460,6 +590,23 @@ Side sheet — a full-height panel beside the bar+content column, so it and its 
 | `closeGlyph` | `string` | Material Symbols glyph for the close button. Default 'close'. |
 
 ## media
+
+### AboutCard
+
+Learn about what you're listening to without leaving the player — about the episode, the show, the person, stacked beneath the transport as a filled card. Composes ExpandableText for `body` and CoverArt for `image`.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` | The card's own heading — "About the episode". |
+| `heading` | `string` | The subject's name inside the card. |
+| `meta` | `string` | "8 Aug 2024". |
+| `image` | `string` |  |
+| `round` | `boolean` | Circular art, for a person. |
+| `body` | `string` | Prose, rendered through ExpandableText. |
+| `lines` | `number` | Lines shown before "see more". Default 3. |
+| `action` | `ReactNode` | A FollowButton, typically. |
+| `badge` | `ReactNode` | A Badge — the played check. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### AlbumArt
 
@@ -519,6 +666,74 @@ The page for one library item — MediaHeader plus its list — opening as a Cir
 | `lastLabel` | `string` |  |
 | `listMaxWidth` | `string` | Measure cap on the list. Defaults to `--grid-max-width-list` on desktop, full width on mobile. |
 | `children` | `ReactNode` |  |
+
+### DownloadButton
+
+Offline availability as a three-state control: idle -> downloading (determinate or indeterminate, cancellable mid-flight) -> done, and pressing a done button removes the download. Composes ProgressRing for the downloading state rather than drawing a second ring.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `state` | `'idle' \| 'downloading' \| 'done'` |  |
+| `progress` | `number \| null` | 0–1. Indeterminate ring when null and `state` is 'downloading'. |
+| `onClick` | `() => void` | Fires on press in every state: starts, cancels, or removes, depending on `state`. |
+| `size` | `number` | Control diameter in px. |
+
+### EpisodeRow
+
+List row for serial spoken-word content — an episode, not a track. Carries a synopsis, a publication line, a listened/finished state and its own action bar, none of which ResultRow has room for without bending it out of shape for the lists that already use it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `image` | `string` | Cover art URL. Falls back to whatever CoverArt renders in its absence. |
+| `title` *(required)* | `string` |  |
+| `description` | `string` | Synopsis, clamped to 2 lines. |
+| `meta` | `string[]` | Parts joined with " • ", e.g. ["200K+ plays", "29 Dec 2025", "50min"]. |
+| `finished` | `boolean` | Appends a "Finished" marker with a filled check in --tone-library. |
+| `progress` | `number \| null` | 0–1 part-listened position; draws a thin rule under the meta line. |
+| `explicit` | `boolean` | Renders the "E" marker before the title. |
+| `actions` | `ReactNode` | An ItemActionBar, rendered below the synopsis. |
+| `onPlay` | `() => void` | Given, reveals a play control over the artwork (hover on desktop, always on mobile). |
+| `onClick` | `() => void` |  |
+| `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### FeatureCard
+
+Argues for one item, at length, inside a feed — the description is the point, so this exists for recommendations that need to persuade rather than just be scanned. Tinted from its own artwork so a column of these reads as distinct recommendations, not a list.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `image` | `string` |  |
+| `kind` | `string` | Eyebrow above the title — "Episode", "Playlist", "Audiobook". |
+| `title` *(required)* | `string` |  |
+| `meta` | `string` | e.g. "The LRB Podcast • 1 day ago • 56min". |
+| `description` | `string` | Clamped to 2 lines. |
+| `tint` | `string` | Card surface colour. Defaults to --surface-card. |
+| `explicit` | `boolean` | Renders the "E" marker before the title. |
+| `saved` | `boolean` | The save control shows this state. |
+| `onSave` | `() => void` |  |
+| `onPlay` | `() => void` |  Omit for an audiobook: a sample is the only playback a preview offers there, so when this is absent no play control is rendered at all.  |
+| `onMore` | `() => void` |  |
+| `preview` | `ReactNode` | A PreviewButton, rendered at the start of the bottom actions row. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### ItemActionBar
+
+The per-item verb set — save, download, share, more, play — with each verb's state legible without opening a menu. Only a control whose handler is supplied is rendered. Composes DownloadButton for the download toggle rather than reimplementing its ring.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `saved` | `boolean` |  |
+| `onSave` | `() => void` | Toggles the saved state. Given, renders the save control. |
+| `download` | `'idle' \| 'downloading' \| 'done'` |  |
+| `downloadProgress` | `number \| null` | 0–1; indeterminate when null and `download` is 'downloading'. |
+| `onDownload` | `() => void` | Given, renders the download control (a composed DownloadButton). |
+| `onShare` | `() => void` | Given, renders the share control. |
+| `onMore` | `() => void` | Given, renders the overflow-menu control. |
+| `onPlay` | `() => void` | Given, renders a trailing filled play circle pushed to the far edge of the bar. |
+| `playing` | `boolean` |  |
+| `size` | `number` | Diameter, in px, of every control in the bar. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### Lyrics
 
@@ -582,6 +797,10 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `onClick` | `() => void` |  |
 | `onMore` | `(e?: any) => void` | Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. |
+| `eyebrow` | `string` | Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. |
+| `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. |
+| `savedBadge` | `boolean` | Bookmark tab on the artwork's bottom-left, for an item the user has explicitly saved. |
+| `markers` | `string[]` | Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. |
 
 ### MediaHeader
 
@@ -604,6 +823,8 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `onPlayNext` | `() => void` |  |
 | `onPlayLast` | `() => void` |  |
 | `onSubtitle` | `() => void` | Makes the subtitle an accent-ink link. |
+| `actions` | `ReactNode` |  Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/ overflow). The default cluster renders exactly as it does today when this is absent.  |
+| `progress` | `number \| null` | 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. |
 
 ### MiniPlayer
 
@@ -692,6 +913,18 @@ The Currently Playing page: cover, song, seek, transport and the playback readou
 | `background` | `string` | Page surface. Defaults to `--surface-bg-alt`, a step off the library behind it. |
 | `divider` | `boolean` | Force the app bar's hairline on — used while a sub-page sits against it. Otherwise scroll-driven. |
 
+### OutputDeviceButton
+
+Where the audio is going, and at what quality — a listener needs both without leaving the player. Also the natural home for Auralis's direct-play-vs-transcode distinction.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `device` | `string` | "Living room", "RENAULT" … omit when playing locally. |
+| `quality` | `string` | "Lossless", "Transcoded" — a short badge beside the glyph. |
+| `connected` | `boolean` | Accent ink and a filled glyph while routed to something remote. |
+| `glyph` | `string` | Material Symbols Rounded glyph name. Default 'speaker'; 'cast'/'bluetooth' when the route says so. |
+| `onClick` | `() => void` |  |
+
 ### PlayActions
 
 The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --accent-rose) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
@@ -766,6 +999,7 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | `onClick` | `() => void` |  |
 | `onAction` | `() => void` |  |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
+| `trailing` | `ReactNode` | Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. |
 
 ### SeekBar
 
@@ -779,19 +1013,36 @@ Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; val
 | `onChange` | `(next: number) => void` |  |
 | `remainingAsCountdown` | `boolean` | false shows total length on the right instead of a countdown. |
 
+### SpeedControl
+
+Playback rate as a first-class transport control: the current multiplier plus a small "x", living inline in a transport row rather than on a settings page. Colour states default vs non-default rate — the point is that forgetting a rate change stays visible.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `value` | `number` | 1, 1.25, 1.5 … |
+| `onClick` | `() => void` | Opens the rate picker. |
+| `label` | `string` | Accessible name. Defaults to "Playback speed, <value> times". |
+| `size` | `number` | Control diameter in px. |
+
 ### TransportBar
 
-Now Playing control cluster: shuffle, previous, play/pause (the large accent control), next, repeat.
+Now Playing control cluster: shuffle, previous, play/pause (the large accent control), next, repeat. `variant="spoken"` swaps previous/next for skip-back/skip-forward-by-interval and replaces the shuffle/repeat ends with `leading`/`trailing` — different verbs for spoken-word content, where "previous track" across a two-hour episode is close to useless.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `playing` | `boolean` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `onTogglePlay` | `() => void` |  |
-| `onPrev` | `() => void` |  |
-| `onNext` | `() => void` |  |
-| `onShuffle` | `() => void` |  |
-| `onRepeat` | `() => void` |  |
+| `onPrev` | `() => void` | Ignored in `spoken`. |
+| `onNext` | `() => void` | Ignored in `spoken`. |
+| `onShuffle` | `() => void` | Ignored in `spoken`. |
+| `onRepeat` | `() => void` | Ignored in `spoken`. |
+| `variant` | `'music' \| 'spoken'` | 'music' (default) is today's shuffle/prev/play/next/repeat row, unchanged. |
+| `onSkipBack` | `() => void` | `spoken` only: replaces "Previous". |
+| `onSkipForward` | `() => void` | `spoken` only: replaces "Next". |
+| `skipSeconds` | `number` | Interval skipped, drawn into the skip glyph's overlaid number and its label. Default 15. |
+| `leading` | `ReactNode` | `spoken` only: replaces the shuffle end — a SpeedControl, typically. Nothing when omitted. |
+| `trailing` | `ReactNode` | `spoken` only: replaces the repeat end — a sleep-timer control. Nothing when omitted. |
 
 ## navigation
 

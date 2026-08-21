@@ -1,0 +1,18 @@
+/** Filled search field with no outline and soft rectangular corners (radius-xs) — the library search treatment, distinct from the pill Input. */
+export interface SearchFieldProps {
+  placeholder?: string;
+  value?: string;
+  onChange?: (next: string) => void;
+  onSubmit?: (value: string) => void;
+  platform?: 'desktop' | 'mobile';
+  /** Defaults to 100% — cap it with the parent when centering in a bar. */
+  width?: string;
+  /** Overrides the default height (40px mobile / 44px desktop) — the app bar fills its row with "100%". */
+  height?: string;
+  /** Focuses the input when it flips to true — for a field revealed by an app-bar search morph. */
+  autoFocus?: boolean;
+  /** Renders the field's own trailing close control — the app bar's search morph puts its cross here. */
+  onClose?: () => void;
+  closeGlyph?: string;
+}
+export declare function SearchField(props: SearchFieldProps): JSX.Element;

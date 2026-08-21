@@ -1,0 +1,24 @@
+import { ReactNode } from 'react';
+
+/**
+ * Side sheet — a full-height panel beside the bar+content column, so it and its divider run up
+ * alongside the app bar and its own title row (`--appbar-height`) lines up with the bar's title.
+ * Animates from zero width and holds its inner content at full width so nothing reflows
+ * mid-transition.
+ *
+ * Pair with `AppShell`'s `sheetOpen` so the content pane squares off the abutting corner.
+ */
+export interface SideSheetProps {
+  open?: boolean;
+  /** Heading in the sheet's own header row. */
+  title?: string;
+  /** Shows a close button in the header when provided. */
+  onClose?: () => void;
+  children?: ReactNode;
+  /** Open width. Defaults to `--side-sheet-width` (320px). */
+  width?: string;
+  side?: 'left' | 'right';
+  /** Material Symbols glyph for the close button. Default 'close'. */
+  closeGlyph?: string;
+}
+export declare function SideSheet(props: SideSheetProps): JSX.Element;

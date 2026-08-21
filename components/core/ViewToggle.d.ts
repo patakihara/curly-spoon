@@ -1,0 +1,10 @@
+/**
+ * The list ⇄ grid switch for a library page — one icon button showing the view it switches to.
+ * Sits at the top-right of the collection it controls.
+ */
+export interface ViewToggleProps {
+  value?: 'list' | 'grid';
+  onChange?: (value: 'list' | 'grid') => void;
+  platform?: 'desktop' | 'mobile';
+}
+export declare function ViewToggle(props: ViewToggleProps): JSX.Element;

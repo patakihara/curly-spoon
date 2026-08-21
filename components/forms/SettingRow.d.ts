@@ -1,0 +1,9 @@
+/** Settings list row: title, explanatory line, and a Switch on a filled card. */
+export interface SettingRowProps {
+  title: string;
+  sub?: string;
+  checked?: boolean;
+  platform?: 'desktop' | 'mobile';
+  onChange?: (next: boolean) => void;
+}
+export declare function SettingRow(props: SettingRowProps): JSX.Element;

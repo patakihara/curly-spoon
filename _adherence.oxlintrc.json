@@ -51,36 +51,8 @@
         "message": "<AccentSwatch> size must be one of 'sm' | 'lg'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='AlbumArt'] > JSXAttribute > JSXIdentifier[name!=/^(?:src|size|platform|key|ref|className|style|children)$/]",
-        "message": "<AlbumArt> doesn't accept that prop. Declared props: src, size, platform."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='AlbumArt'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<AlbumArt> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='AppShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|rail|bar|sheet|sheetOpen|player|contentMinWidth|scrollKey|scroll|onProgress|theme|flat|square|key|ref|className|style|children)$/]",
-        "message": "<AppShell> doesn't accept that prop. Declared props: children, rail, bar, sheet, sheetOpen, player, contentMinWidth, scrollKey, scroll, onProgress, theme, flat, square."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ArtistCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|image|width|onClick|key|ref|className|style|children)$/]",
-        "message": "<ArtistCard> doesn't accept that prop. Declared props: title, sub, platform, image, width, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ArtistCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<ArtistCard> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='BackLink'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|platform|onClick|key|ref|className|style|children)$/]",
-        "message": "<BackLink> doesn't accept that prop. Declared props: label, platform, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='BackLink'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<BackLink> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tone|size|key|ref|className|style|children)$/]",
-        "message": "<Badge> doesn't accept that prop. Declared props: children, tone, size."
+        "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tone|size|icon|square|plain|key|ref|className|style|children)$/]",
+        "message": "<Badge> doesn't accept that prop. Declared props: children, tone, size, icon, square, plain."
       },
       {
         "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|success|warning|error|neutral)$/]",
@@ -91,16 +63,20 @@
         "message": "<Badge> size must be one of 'sm' | 'md'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BottomAppBarAction'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|icon|label|caption|active|disabled|onClick|key|ref|className|style|children)$/]",
-        "message": "<BottomAppBarAction> doesn't accept that prop. Declared props: key, icon, label, caption, active, disabled, onClick."
+        "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|color|image|onClick|platform|key|ref|className|style|children)$/]",
+        "message": "<BrowseCard> doesn't accept that prop. Declared props: title, color, image, onClick, platform."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BottomNavItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|key|ref|className|style|children)$/]",
-        "message": "<BottomNavItem> doesn't accept that prop. Declared props: key, label, icon."
+        "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute[name.name='color'] > Literal[value!=/^(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)$/]",
+        "message": "<BrowseCard> color must be one of 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|variant|size|platform|icon|disabled|onClick|key|ref|className|style|children)$/]",
-        "message": "<Button> doesn't accept that prop. Declared props: children, variant, size, platform, icon, disabled, onClick."
+        "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<BrowseCard> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|variant|size|platform|icon|disabled|onClick|pressed|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: children, variant, size, platform, icon, disabled, onClick, pressed."
       },
       {
         "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|ghost|danger)$/]",
@@ -115,8 +91,8 @@
         "message": "<Button> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|value|onChange|platform|key|ref|className|style|children)$/]",
-        "message": "<ButtonGroup> doesn't accept that prop. Declared props: items, value, onChange, platform."
+        "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|value|onChange|platform|scroll|leading|key|ref|className|style|children)$/]",
+        "message": "<ButtonGroup> doesn't accept that prop. Declared props: items, value, onChange, platform, scroll, leading."
       },
       {
         "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -133,6 +109,174 @@
       {
         "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<Chip> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ExpandableText'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|text|lines|moreLabel|lessLabel|expanded|onToggle|key|ref|className|style|children)$/]",
+        "message": "<ExpandableText> doesn't accept that prop. Declared props: children, text, lines, moreLabel, lessLabel, expanded, onToggle."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ExpanderRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|actionLabel|expanded|onToggle|image|key|ref|className|style|children)$/]",
+        "message": "<ExpanderRow> doesn't accept that prop. Declared props: label, actionLabel, expanded, onToggle, image."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FollowButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:following|onChange|labels|platform|size|key|ref|className|style|children)$/]",
+        "message": "<FollowButton> doesn't accept that prop. Declared props: following, onChange, labels, platform, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FollowButton'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<FollowButton> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FollowButton'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md|lg)$/]",
+        "message": "<FollowButton> size must be one of 'sm' | 'md' | 'lg'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|size|active|muted|label|onClick|key|ref|className|style|children)$/]",
+        "message": "<IconButton> doesn't accept that prop. Declared props: children, size, active, muted, label, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:kind|label|playing|muted|disabled|onClick|platform|key|ref|className|style|children)$/]",
+        "message": "<PreviewButton> doesn't accept that prop. Declared props: kind, label, playing, muted, disabled, onClick, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute[name.name='kind'] > Literal[value!=/^(?:episode|playlist|audiobook|track)$/]",
+        "message": "<PreviewButton> kind must be one of 'episode' | 'playlist' | 'audiobook' | 'track'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<PreviewButton> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ProgressRing'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|value|thickness|color|track|label|key|ref|className|style|children)$/]",
+        "message": "<ProgressRing> doesn't accept that prop. Declared props: size, value, thickness, color, track, label."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='QuickPick'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|icon|image|platform|onClick|progress|unplayed|key|ref|className|style|children)$/]",
+        "message": "<QuickPick> doesn't accept that prop. Declared props: title, sub, icon, image, platform, onClick, progress, unplayed."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='QuickPick'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<QuickPick> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Rating'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|count|max|platform|key|ref|className|style|children)$/]",
+        "message": "<Rating> doesn't accept that prop. Declared props: value, count, max, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Rating'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<Rating> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|eyebrow|image|round|onSubject|actionText|key|ref|className|style|children)$/]",
+        "message": "<SectionHeader> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, eyebrow, image, round, onSubject, actionText."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:mobile|desktop)$/]",
+        "message": "<SectionHeader> platform must be one of 'mobile' | 'desktop'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SortFilterBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|onClick|trailing|platform|key|ref|className|style|children)$/]",
+        "message": "<SortFilterBar> doesn't accept that prop. Declared props: icon, label, onClick, trailing, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SortFilterBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<SortFilterBar> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatusBanner'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tone|icon|actionLabel|onAction|onDismiss|key|ref|className|style|children)$/]",
+        "message": "<StatusBanner> doesn't accept that prop. Declared props: children, tone, icon, actionLabel, onAction, onDismiss."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatusBanner'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:info|warning|error|success)$/]",
+        "message": "<StatusBanner> tone must be one of 'info' | 'warning' | 'error' | 'success'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TonalIconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:glyph|label|onClick|width|height|radius|iconSize|active|background|key|ref|className|style|children)$/]",
+        "message": "<TonalIconButton> doesn't accept that prop. Declared props: glyph, label, onClick, width, height, radius, iconSize, active, background."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ValueRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|value|platform|onClick|key|ref|className|style|children)$/]",
+        "message": "<ValueRow> doesn't accept that prop. Declared props: label, value, platform, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ValueRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<ValueRow> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|key|ref|className|style|children)$/]",
+        "message": "<ViewToggle> doesn't accept that prop. Declared props: value, onChange, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute[name.name='value'] > Literal[value!=/^(?:list|grid)$/]",
+        "message": "<ViewToggle> value must be one of 'list' | 'grid'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<ViewToggle> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FieldRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|placeholder|value|platform|onChange|key|ref|className|style|children)$/]",
+        "message": "<FieldRow> doesn't accept that prop. Declared props: label, placeholder, value, platform, onChange."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FieldRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<FieldRow> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|icon|platform|value|onChange|key|ref|className|style|children)$/]",
+        "message": "<Input> doesn't accept that prop. Declared props: placeholder, icon, platform, value, onChange."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<Input> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SearchBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|value|onChange|onSubmit|platform|width|key|ref|className|style|children)$/]",
+        "message": "<SearchBar> doesn't accept that prop. Declared props: placeholder, value, onChange, onSubmit, platform, width."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SearchBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<SearchBar> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|value|onChange|onSubmit|platform|width|height|autoFocus|onClose|closeGlyph|key|ref|className|style|children)$/]",
+        "message": "<SearchField> doesn't accept that prop. Declared props: placeholder, value, onChange, onSubmit, platform, width, height, autoFocus, onClose, closeGlyph."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<SearchField> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SettingRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|checked|platform|onChange|key|ref|className|style|children)$/]",
+        "message": "<SettingRow> doesn't accept that prop. Declared props: title, sub, checked, platform, onChange."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SettingRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<SettingRow> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|key|ref|className|style|children)$/]",
+        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<Slider> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Switch'] > JSXAttribute > JSXIdentifier[name!=/^(?:checked|onChange|label|key|ref|className|style|children)$/]",
+        "message": "<Switch> doesn't accept that prop. Declared props: checked, onChange, label."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AppShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|rail|bar|sheet|sheetOpen|player|contentMinWidth|scrollKey|scroll|onProgress|theme|flat|square|key|ref|className|style|children)$/]",
+        "message": "<AppShell> doesn't accept that prop. Declared props: children, rail, bar, sheet, sheetOpen, player, contentMinWidth, scrollKey, scroll, onProgress, theme, flat, square."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackToTop'] > JSXAttribute > JSXIdentifier[name!=/^(?:visible|label|onClick|offset|platform|key|ref|className|style|children)$/]",
+        "message": "<BackToTop> doesn't accept that prop. Declared props: visible, label, onClick, offset, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackToTop'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<BackToTop> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='CircleReveal'] > JSXAttribute > JSXIdentifier[name!=/^(?:x|y|style|duration|children|key|ref|className|style|children)$/]",
@@ -155,40 +299,16 @@
         "message": "<ContentPane> doesn't accept that prop. Declared props: children, squareRight, squareLeft, scroll, threshold, flat, square, scrollKey, onProgress."
       },
       {
-        "selector": "JSXOpeningElement[name.name='CoverArt'] > JSXAttribute > JSXIdentifier[name!=/^(?:src|fallback|alt|key|ref|className|style|children)$/]",
-        "message": "<CoverArt> doesn't accept that prop. Declared props: src, fallback, alt."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='DetailPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|origin|overlay|zIndex|kindLabel|title|subtitle|meta|image|round|onSubtitle|onPlay|onPlayNext|onPlayLast|playLabel|nextLabel|lastLabel|listMaxWidth|children|key|ref|className|style|children)$/]",
-        "message": "<DetailPage> doesn't accept that prop. Declared props: platform, origin, overlay, zIndex, kindLabel, title, subtitle, meta, image, round, onSubtitle, onPlay, onPlayNext, onPlayLast, playLabel, nextLabel, lastLabel, listMaxWidth, children."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='DetailPage'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<DetailPage> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
         "selector": "JSXOpeningElement[name.name='EditableListRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:item|index|key|selected|editing|toggle|drag|key|ref|className|style|children)$/]",
         "message": "<EditableListRow> doesn't accept that prop. Declared props: item, index, key, selected, editing, toggle, drag."
       },
       {
-        "selector": "JSXOpeningElement[name.name='FieldRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|placeholder|value|platform|onChange|key|ref|className|style|children)$/]",
-        "message": "<FieldRow> doesn't accept that prop. Declared props: label, placeholder, value, platform, onChange."
+        "selector": "JSXOpeningElement[name.name='EditableList'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|items|itemKey|editing|renderRow|onReorder|onRemoveSelected|actionLabel|hint|gap|key|ref|className|style|children)$/]",
+        "message": "<EditableList> doesn't accept that prop. Declared props: platform, items, itemKey, editing, renderRow, onReorder, onRemoveSelected, actionLabel, hint, gap."
       },
       {
-        "selector": "JSXOpeningElement[name.name='FieldRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<FieldRow> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|size|active|muted|label|onClick|key|ref|className|style|children)$/]",
-        "message": "<IconButton> doesn't accept that prop. Declared props: children, size, active, muted, label, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|icon|platform|value|onChange|key|ref|className|style|children)$/]",
-        "message": "<Input> doesn't accept that prop. Declared props: placeholder, icon, platform, value, onChange."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<Input> platform must be one of 'desktop' | 'mobile'."
+        "selector": "JSXOpeningElement[name.name='EditableList'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<EditableList> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='LayoutGrid'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|columns|item|min|gap|maxWidth|platform|key|ref|className|style|children)$/]",
@@ -213,6 +333,134 @@
       {
         "selector": "JSXOpeningElement[name.name='LibraryView'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:start|center)$/]",
         "message": "<LibraryView> align must be one of 'start' | 'center'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='LibraryShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|views|view|rail|sheet|sheetOpen|player|theme|contentMinWidth|scroll|flatDetail|leading|trailing|detailTrailing|backLabel|searchHeight|detailSearchPlaceholder|children|key|ref|className|style|children)$/]",
+        "message": "<LibraryShell> doesn't accept that prop. Declared props: platform, views, view, rail, sheet, sheetOpen, player, theme, contentMinWidth, scroll, flatDetail, leading, trailing, detailTrailing, backLabel, searchHeight, detailSearchPlaceholder, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='LibraryShell'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<LibraryShell> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PlayerPanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|tab|onTabChange|onClose|tabs|title|track|player|lyrics|queue|width|key|ref|className|style|children)$/]",
+        "message": "<PlayerPanel> doesn't accept that prop. Declared props: open, tab, onTabChange, onClose, tabs, title, track, player, lyrics, queue, width."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PlayerSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|from|onClose|zIndex|radius|background|children|key|ref|className|style|children)$/]",
+        "message": "<PlayerSheet> doesn't accept that prop. Declared props: open, from, onClose, zIndex, radius, background, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PlayerSubPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|heading|meta|controls|footer|scroll|onClose|closeGlyph|children|key|ref|className|style|children)$/]",
+        "message": "<PlayerSubPage> doesn't accept that prop. Declared props: platform, heading, meta, controls, footer, scroll, onClose, closeGlyph, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PlayerSubPage'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<PlayerSubPage> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|onScroll|style|scrollRef|axis|thumbWidth|hideAfter|fade|minThumb|edgeFade|key|ref|className|style|children)$/]",
+        "message": "<ScrollArea> doesn't accept that prop. Declared props: children, onScroll, style, scrollRef, axis, thumbWidth, hideAfter, fade, minThumb, edgeFade."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute[name.name='axis'] > Literal[value!=/^(?:y|x)$/]",
+        "message": "<ScrollArea> axis must be one of 'y' | 'x'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|last|children|eyebrow|image|round|onSubject|actionText|key|ref|className|style|children)$/]",
+        "message": "<Section> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, last, children, eyebrow, image, round, onSubject, actionText."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<Section> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Shelf'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|gap|margin|platform|step|arrows|scrollbar|key|ref|className|style|children)$/]",
+        "message": "<Shelf> doesn't accept that prop. Declared props: children, gap, margin, platform, step, arrows, scrollbar."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Shelf'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<Shelf> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SideSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|title|onClose|children|width|side|closeGlyph|key|ref|className|style|children)$/]",
+        "message": "<SideSheet> doesn't accept that prop. Declared props: open, title, onClose, children, width, side, closeGlyph."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SideSheet'] > JSXAttribute[name.name='side'] > Literal[value!=/^(?:left|right)$/]",
+        "message": "<SideSheet> side must be one of 'left' | 'right'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AboutCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|heading|meta|image|round|body|lines|action|badge|platform|key|ref|className|style|children)$/]",
+        "message": "<AboutCard> doesn't accept that prop. Declared props: title, heading, meta, image, round, body, lines, action, badge, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AboutCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<AboutCard> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AlbumArt'] > JSXAttribute > JSXIdentifier[name!=/^(?:src|size|platform|key|ref|className|style|children)$/]",
+        "message": "<AlbumArt> doesn't accept that prop. Declared props: src, size, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AlbumArt'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<AlbumArt> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ArtistCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|image|width|onClick|key|ref|className|style|children)$/]",
+        "message": "<ArtistCard> doesn't accept that prop. Declared props: title, sub, platform, image, width, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ArtistCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<ArtistCard> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CoverArt'] > JSXAttribute > JSXIdentifier[name!=/^(?:src|fallback|alt|key|ref|className|style|children)$/]",
+        "message": "<CoverArt> doesn't accept that prop. Declared props: src, fallback, alt."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DetailPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|origin|overlay|zIndex|kindLabel|title|subtitle|meta|image|round|onSubtitle|onPlay|onPlayNext|onPlayLast|playLabel|nextLabel|lastLabel|listMaxWidth|children|key|ref|className|style|children)$/]",
+        "message": "<DetailPage> doesn't accept that prop. Declared props: platform, origin, overlay, zIndex, kindLabel, title, subtitle, meta, image, round, onSubtitle, onPlay, onPlayNext, onPlayLast, playLabel, nextLabel, lastLabel, listMaxWidth, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DetailPage'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<DetailPage> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DownloadButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:state|progress|onClick|size|key|ref|className|style|children)$/]",
+        "message": "<DownloadButton> doesn't accept that prop. Declared props: state, progress, onClick, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DownloadButton'] > JSXAttribute[name.name='state'] > Literal[value!=/^(?:idle|downloading|done)$/]",
+        "message": "<DownloadButton> state must be one of 'idle' | 'downloading' | 'done'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='EpisodeRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:image|title|description|meta|finished|progress|explicit|actions|onPlay|onClick|divider|platform|key|ref|className|style|children)$/]",
+        "message": "<EpisodeRow> doesn't accept that prop. Declared props: image, title, description, meta, finished, progress, explicit, actions, onPlay, onClick, divider, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='EpisodeRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<EpisodeRow> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FeatureCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:image|kind|title|meta|description|tint|explicit|saved|onSave|onPlay|onMore|preview|platform|key|ref|className|style|children)$/]",
+        "message": "<FeatureCard> doesn't accept that prop. Declared props: image, kind, title, meta, description, tint, explicit, saved, onSave, onPlay, onMore, preview, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FeatureCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<FeatureCard> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ItemActionBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:saved|onSave|download|downloadProgress|onDownload|onShare|onMore|onPlay|playing|size|platform|key|ref|className|style|children)$/]",
+        "message": "<ItemActionBar> doesn't accept that prop. Declared props: saved, onSave, download, downloadProgress, onDownload, onShare, onMore, onPlay, playing, size, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ItemActionBar'] > JSXAttribute[name.name='download'] > Literal[value!=/^(?:idle|downloading|done)$/]",
+        "message": "<ItemActionBar> download must be one of 'idle' | 'downloading' | 'done'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ItemActionBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<ItemActionBar> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Lyrics'] > JSXAttribute > JSXIdentifier[name!=/^(?:lines|activeIndex|platform|syncMode|card|textSize|autoScroll|onLineClick|key|ref|className|style|children)$/]",
@@ -247,8 +495,8 @@
         "message": "<LyricsSyncButton> mode must be one of 'sync' | 'dot' | 'off'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|progress|absent|width|size|onPlay|onPlayNext|onPlayLast|playing|image|onClick|onMore|key|ref|className|style|children)$/]",
-        "message": "<MediaCard> doesn't accept that prop. Declared props: title, sub, platform, progress, absent, width, size, onPlay, onPlayNext, onPlayLast, playing, image, onClick, onMore."
+        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|progress|absent|width|size|onPlay|onPlayNext|onPlayLast|playing|image|onClick|onMore|eyebrow|unplayed|savedBadge|markers|key|ref|className|style|children)$/]",
+        "message": "<MediaCard> doesn't accept that prop. Declared props: title, sub, platform, progress, absent, width, size, onPlay, onPlayNext, onPlayLast, playing, image, onClick, onMore, eyebrow, unplayed, savedBadge, markers."
       },
       {
         "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -259,8 +507,8 @@
         "message": "<MediaCard> size must be one of 'md' | 'sm'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|image|compactAt|kindLabel|title|subtitle|meta|playLabel|nextLabel|lastLabel|round|onPlay|onPlayNext|onPlayLast|onSubtitle|key|ref|className|style|children)$/]",
-        "message": "<MediaHeader> doesn't accept that prop. Declared props: platform, image, compactAt, kindLabel, title, subtitle, meta, playLabel, nextLabel, lastLabel, round, onPlay, onPlayNext, onPlayLast, onSubtitle."
+        "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|image|compactAt|kindLabel|title|subtitle|meta|playLabel|nextLabel|lastLabel|round|onPlay|onPlayNext|onPlayLast|onSubtitle|actions|progress|key|ref|className|style|children)$/]",
+        "message": "<MediaHeader> doesn't accept that prop. Declared props: platform, image, compactAt, kindLabel, title, subtitle, meta, playLabel, nextLabel, lastLabel, round, onPlay, onPlayNext, onPlayLast, onSubtitle, actions, progress."
       },
       {
         "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -273,10 +521,6 @@
       {
         "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:mobile|desktop)$/]",
         "message": "<MiniPlayer> platform must be one of 'mobile' | 'desktop'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='NavRailItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|key|ref|className|style|children)$/]",
-        "message": "<NavRailItem> doesn't accept that prop. Declared props: key, label, icon."
       },
       {
         "selector": "JSXOpeningElement[name.name='NowPlaying'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|open|from|onClose|page|onPageChange|tab|onTabChange|track|player|lyrics|queue|actions|zIndex|key|ref|className|style|children)$/]",
@@ -303,32 +547,24 @@
         "message": "<NowPlayingPage> lyricsSyncMode must be one of 'sync' | 'dot' | 'off'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='OutputDeviceButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:device|quality|connected|glyph|onClick|key|ref|className|style|children)$/]",
+        "message": "<OutputDeviceButton> doesn't accept that prop. Declared props: device, quality, connected, glyph, onClick."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='PlayActions'] > JSXAttribute > JSXIdentifier[name!=/^(?:onNext|onPlay|onLast|playing|size|always|gap|key|ref|className|style|children)$/]",
         "message": "<PlayActions> doesn't accept that prop. Declared props: onNext, onPlay, onLast, playing, size, always, gap."
       },
       {
-        "selector": "JSXOpeningElement[name.name='PlayerPanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|tab|onTabChange|onClose|tabs|title|track|player|lyrics|queue|width|key|ref|className|style|children)$/]",
-        "message": "<PlayerPanel> doesn't accept that prop. Declared props: open, tab, onTabChange, onClose, tabs, title, track, player, lyrics, queue, width."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='PlayerSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|from|onClose|zIndex|radius|background|children|key|ref|className|style|children)$/]",
-        "message": "<PlayerSheet> doesn't accept that prop. Declared props: open, from, onClose, zIndex, radius, background, children."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='PlayerSubPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|heading|meta|controls|footer|scroll|onClose|closeGlyph|children|key|ref|className|style|children)$/]",
-        "message": "<PlayerSubPage> doesn't accept that prop. Declared props: platform, heading, meta, controls, footer, scroll, onClose, closeGlyph, children."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='PlayerSubPage'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<PlayerSubPage> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ProgressRing'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|value|thickness|color|track|label|key|ref|className|style|children)$/]",
-        "message": "<ProgressRing> doesn't accept that prop. Declared props: size, value, thickness, color, track, label."
-      },
-      {
         "selector": "JSXOpeningElement[name.name='QueueItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|title|sub|time|current|key|ref|className|style|children)$/]",
         "message": "<QueueItem> doesn't accept that prop. Declared props: id, title, sub, time, current."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='QueuePage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|heading|context|items|editing|onEditingChange|onPlay|onRemove|onReorder|onRemoveSelected|footer|scroll|onClose|key|ref|className|style|children)$/]",
+        "message": "<QueuePage> doesn't accept that prop. Declared props: platform, heading, context, items, editing, onEditingChange, onPlay, onRemove, onReorder, onRemoveSelected, footer, scroll, onClose."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='QueuePage'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<QueuePage> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='QueueRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|time|current|platform|onClick|onRemove|handle|editing|selected|onSelectToggle|draggable|onDragStart|onDragOver|onDrop|onDragEnd|key|ref|className|style|children)$/]",
@@ -339,20 +575,8 @@
         "message": "<QueueRow> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='QuickPick'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|icon|image|platform|onClick|key|ref|className|style|children)$/]",
-        "message": "<QuickPick> doesn't accept that prop. Declared props: title, sub, icon, image, platform, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='QuickPick'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<QuickPick> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='RailItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|active|expanded|rowHeight|tabs|wideActive|centerIcon|onClick|key|ref|className|style|children)$/]",
-        "message": "<RailItem> doesn't accept that prop. Declared props: icon, label, active, expanded, rowHeight, tabs, wideActive, centerIcon, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|status|progress|tone|actionGlyph|image|platform|onClick|onAction|divider|key|ref|className|style|children)$/]",
-        "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, status, progress, tone, actionGlyph, image, platform, onClick, onAction, divider."
+        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|status|progress|tone|actionGlyph|image|platform|onClick|onAction|divider|trailing|key|ref|className|style|children)$/]",
+        "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, status, progress, tone, actionGlyph, image, platform, onClick, onAction, divider, trailing."
       },
       {
         "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:library|request|progress|error)$/]",
@@ -363,50 +587,6 @@
         "message": "<ResultRow> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|onScroll|style|scrollRef|axis|thumbWidth|hideAfter|fade|minThumb|edgeFade|key|ref|className|style|children)$/]",
-        "message": "<ScrollArea> doesn't accept that prop. Declared props: children, onScroll, style, scrollRef, axis, thumbWidth, hideAfter, fade, minThumb, edgeFade."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute[name.name='axis'] > Literal[value!=/^(?:y|x)$/]",
-        "message": "<ScrollArea> axis must be one of 'y' | 'x'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SearchBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|value|onChange|onSubmit|platform|width|key|ref|className|style|children)$/]",
-        "message": "<SearchBar> doesn't accept that prop. Declared props: placeholder, value, onChange, onSubmit, platform, width."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SearchBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<SearchBar> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SearchButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|onToggle|muted|label|key|ref|className|style|children)$/]",
-        "message": "<SearchButton> doesn't accept that prop. Declared props: open, onToggle, muted, label."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|value|onChange|onSubmit|platform|width|height|autoFocus|onClose|closeGlyph|key|ref|className|style|children)$/]",
-        "message": "<SearchField> doesn't accept that prop. Declared props: placeholder, value, onChange, onSubmit, platform, width, height, autoFocus, onClose, closeGlyph."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<SearchField> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|last|children|key|ref|className|style|children)$/]",
-        "message": "<Section> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, last, children."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<Section> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|key|ref|className|style|children)$/]",
-        "message": "<SectionHeader> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:mobile|desktop)$/]",
-        "message": "<SectionHeader> platform must be one of 'mobile' | 'desktop'."
-      },
-      {
         "selector": "JSXOpeningElement[name.name='SeekBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|duration|platform|onChange|remainingAsCountdown|key|ref|className|style|children)$/]",
         "message": "<SeekBar> doesn't accept that prop. Declared props: value, duration, platform, onChange, remainingAsCountdown."
       },
@@ -415,48 +595,76 @@
         "message": "<SeekBar> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SettingRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|checked|platform|onChange|key|ref|className|style|children)$/]",
-        "message": "<SettingRow> doesn't accept that prop. Declared props: title, sub, checked, platform, onChange."
+        "selector": "JSXOpeningElement[name.name='SpeedControl'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onClick|label|size|key|ref|className|style|children)$/]",
+        "message": "<SpeedControl> doesn't accept that prop. Declared props: value, onClick, label, size."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SettingRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<SettingRow> platform must be one of 'desktop' | 'mobile'."
+        "selector": "JSXOpeningElement[name.name='TransportBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:playing|platform|onTogglePlay|onPrev|onNext|onShuffle|onRepeat|variant|onSkipBack|onSkipForward|skipSeconds|leading|trailing|key|ref|className|style|children)$/]",
+        "message": "<TransportBar> doesn't accept that prop. Declared props: playing, platform, onTogglePlay, onPrev, onNext, onShuffle, onRepeat, variant, onSkipBack, onSkipForward, skipSeconds, leading, trailing."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Shelf'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|gap|margin|platform|step|arrows|scrollbar|key|ref|className|style|children)$/]",
-        "message": "<Shelf> doesn't accept that prop. Declared props: children, gap, margin, platform, step, arrows, scrollbar."
+        "selector": "JSXOpeningElement[name.name='TransportBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<TransportBar> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Shelf'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<Shelf> platform must be one of 'desktop' | 'mobile'."
+        "selector": "JSXOpeningElement[name.name='TransportBar'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:music|spoken)$/]",
+        "message": "<TransportBar> variant must be one of 'music' | 'spoken'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SideSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|title|onClose|children|width|side|closeGlyph|key|ref|className|style|children)$/]",
-        "message": "<SideSheet> doesn't accept that prop. Declared props: open, title, onClose, children, width, side, closeGlyph."
+        "selector": "JSXOpeningElement[name.name='BackLink'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|platform|onClick|key|ref|className|style|children)$/]",
+        "message": "<BackLink> doesn't accept that prop. Declared props: label, platform, onClick."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SideSheet'] > JSXAttribute[name.name='side'] > Literal[value!=/^(?:left|right)$/]",
-        "message": "<SideSheet> side must be one of 'left' | 'right'."
+        "selector": "JSXOpeningElement[name.name='BackLink'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<BackLink> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|key|ref|className|style|children)$/]",
-        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform."
+        "selector": "JSXOpeningElement[name.name='BottomAppBarAction'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|icon|label|caption|active|disabled|onClick|key|ref|className|style|children)$/]",
+        "message": "<BottomAppBarAction> doesn't accept that prop. Declared props: key, icon, label, caption, active, disabled, onClick."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<Slider> platform must be one of 'desktop' | 'mobile'."
+        "selector": "JSXOpeningElement[name.name='BottomAppBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:actions|spread|align|background|divider|trailing|key|ref|className|style|children)$/]",
+        "message": "<BottomAppBar> doesn't accept that prop. Declared props: actions, spread, align, background, divider, trailing."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Switch'] > JSXAttribute > JSXIdentifier[name!=/^(?:checked|onChange|label|key|ref|className|style|children)$/]",
-        "message": "<Switch> doesn't accept that prop. Declared props: checked, onChange, label."
+        "selector": "JSXOpeningElement[name.name='BottomAppBar'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:start|end)$/]",
+        "message": "<BottomAppBar> align must be one of 'start' | 'end'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BottomNavItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|key|ref|className|style|children)$/]",
+        "message": "<BottomNavItem> doesn't accept that prop. Declared props: key, label, icon."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BottomNav'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|active|onChange|key|ref|className|style|children)$/]",
+        "message": "<BottomNav> doesn't accept that prop. Declared props: items, active, onChange."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NavRailItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|key|ref|className|style|children)$/]",
+        "message": "<NavRailItem> doesn't accept that prop. Declared props: key, label, icon."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NavRail'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|active|onChange|expanded|onToggleExpanded|footer|header|key|ref|className|style|children)$/]",
+        "message": "<NavRail> doesn't accept that prop. Declared props: items, active, onChange, expanded, onToggleExpanded, footer, header."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='RailItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|active|expanded|rowHeight|tabs|wideActive|centerIcon|onClick|key|ref|className|style|children)$/]",
+        "message": "<RailItem> doesn't accept that prop. Declared props: icon, label, active, expanded, rowHeight, tabs, wideActive, centerIcon, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SearchButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|onToggle|muted|label|key|ref|className|style|children)$/]",
+        "message": "<SearchButton> doesn't accept that prop. Declared props: open, onToggle, muted, label."
       },
       {
         "selector": "JSXOpeningElement[name.name='TabBarItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|key|ref|className|style|children)$/]",
         "message": "<TabBarItem> doesn't accept that prop. Declared props: key, label, icon."
       },
       {
-        "selector": "JSXOpeningElement[name.name='TonalIconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:glyph|label|onClick|width|height|radius|iconSize|active|background|key|ref|className|style|children)$/]",
-        "message": "<TonalIconButton> doesn't accept that prop. Declared props: glyph, label, onClick, width, height, radius, iconSize, active, background."
+        "selector": "JSXOpeningElement[name.name='TabBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|value|onChange|platform|key|ref|className|style|children)$/]",
+        "message": "<TabBar> doesn't accept that prop. Declared props: items, value, onChange, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TabBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<TabBar> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='TopAppBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|children|align|occlude|leading|trailing|platform|squareLeft|squareRight|progress|searchOpen|onSearchToggle|searchValue|onSearchChange|searchPlaceholder|searchButton|searchAutoFocus|searchHeight|background|key|ref|className|style|children)$/]",
@@ -469,34 +677,6 @@
       {
         "selector": "JSXOpeningElement[name.name='TopAppBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<TopAppBar> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='TransportBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:playing|platform|onTogglePlay|onPrev|onNext|onShuffle|onRepeat|key|ref|className|style|children)$/]",
-        "message": "<TransportBar> doesn't accept that prop. Declared props: playing, platform, onTogglePlay, onPrev, onNext, onShuffle, onRepeat."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='TransportBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<TransportBar> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ValueRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|value|platform|onClick|key|ref|className|style|children)$/]",
-        "message": "<ValueRow> doesn't accept that prop. Declared props: label, value, platform, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ValueRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<ValueRow> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|key|ref|className|style|children)$/]",
-        "message": "<ViewToggle> doesn't accept that prop. Declared props: value, onChange, platform."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute[name.name='value'] > Literal[value!=/^(?:list|grid)$/]",
-        "message": "<ViewToggle> value must be one of 'list' | 'grid'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<ViewToggle> platform must be one of 'desktop' | 'mobile'."
       }
     ]
   },
@@ -512,6 +692,9 @@
   ],
   "x-omelette": {
     "components": {
+      "AboutCard": {
+        "replaces": []
+      },
       "AccentSwatch": {
         "replaces": []
       },
@@ -527,13 +710,25 @@
       "BackLink": {
         "replaces": []
       },
+      "BackToTop": {
+        "replaces": []
+      },
       "Badge": {
+        "replaces": []
+      },
+      "BottomAppBar": {
         "replaces": []
       },
       "BottomAppBarAction": {
         "replaces": []
       },
+      "BottomNav": {
+        "replaces": []
+      },
       "BottomNavItem": {
+        "replaces": []
+      },
+      "BrowseCard": {
         "replaces": []
       },
       "Button": {
@@ -560,10 +755,31 @@
       "DetailPage": {
         "replaces": []
       },
+      "DownloadButton": {
+        "replaces": []
+      },
+      "EditableList": {
+        "replaces": []
+      },
       "EditableListRow": {
         "replaces": []
       },
+      "EpisodeRow": {
+        "replaces": []
+      },
+      "ExpandableText": {
+        "replaces": []
+      },
+      "ExpanderRow": {
+        "replaces": []
+      },
+      "FeatureCard": {
+        "replaces": []
+      },
       "FieldRow": {
+        "replaces": []
+      },
+      "FollowButton": {
         "replaces": []
       },
       "IconButton": {
@@ -572,7 +788,13 @@
       "Input": {
         "replaces": []
       },
+      "ItemActionBar": {
+        "replaces": []
+      },
       "LayoutGrid": {
+        "replaces": []
+      },
+      "LibraryShell": {
         "replaces": []
       },
       "LibraryView": {
@@ -596,6 +818,9 @@
       "MiniPlayer": {
         "replaces": []
       },
+      "NavRail": {
+        "replaces": []
+      },
       "NavRailItem": {
         "replaces": []
       },
@@ -603,6 +828,9 @@
         "replaces": []
       },
       "NowPlayingPage": {
+        "replaces": []
+      },
+      "OutputDeviceButton": {
         "replaces": []
       },
       "PlayActions": {
@@ -617,10 +845,16 @@
       "PlayerSubPage": {
         "replaces": []
       },
+      "PreviewButton": {
+        "replaces": []
+      },
       "ProgressRing": {
         "replaces": []
       },
       "QueueItem": {
+        "replaces": []
+      },
+      "QueuePage": {
         "replaces": []
       },
       "QueueRow": {
@@ -630,6 +864,9 @@
         "replaces": []
       },
       "RailItem": {
+        "replaces": []
+      },
+      "Rating": {
         "replaces": []
       },
       "ResultRow": {
@@ -668,7 +905,19 @@
       "Slider": {
         "replaces": []
       },
+      "SortFilterBar": {
+        "replaces": []
+      },
+      "SpeedControl": {
+        "replaces": []
+      },
+      "StatusBanner": {
+        "replaces": []
+      },
       "Switch": {
+        "replaces": []
+      },
+      "TabBar": {
         "replaces": []
       },
       "TabBarItem": {

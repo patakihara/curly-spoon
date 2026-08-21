@@ -1,0 +1,43 @@
+import { ReactNode } from 'react';
+
+export interface EditableListRow<T> {
+  item: T;
+  index: number;
+  /** Stable key for the row — pass it through as React's `key`. */
+  key: string | number;
+  selected: boolean;
+  editing: boolean;
+  /** Toggles this row's selection. */
+  toggle: () => void;
+  /** Spread onto the row: draggable plus the four drag handlers. */
+  drag: {
+    draggable: boolean;
+    onDragStart: () => void;
+    onDragOver: (e?: any) => void;
+    onDrop: (e?: any) => void;
+    onDragEnd: () => void;
+  };
+}
+
+/**
+ * A list with an edit mode. Out of it, ordinary tappable rows; in it, selection, drag reorder and a
+ * bottom-sticky action bar. Selection and drag state live in the component — the caller owns the
+ * `editing` flag (usually a toggle in its page's control row) and renders each row.
+ */
+export interface EditableListProps<T = any> {
+  platform?: 'desktop' | 'mobile';
+  items?: T[];
+  /** Row key. Defaults to `item.id`, then `item.title`, then the index. */
+  itemKey?: (item: T, index: number) => string | number;
+  editing?: boolean;
+  renderRow: (row: EditableListRow<T>) => ReactNode;
+  /** Drag reorder, by index into `items`. */
+  onReorder?: (from: number, to: number) => void;
+  /** The action bar's button, with the selected rows' keys. */
+  onRemoveSelected?: (keys: Array<string | number>) => void;
+  actionLabel?: string;
+  /** Shown in the action bar while nothing is selected. */
+  hint?: string;
+  gap?: string;
+}
+export declare function EditableList<T = any>(props: EditableListProps<T>): JSX.Element;

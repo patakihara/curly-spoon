@@ -1,0 +1,53 @@
+/**
+ * GENERATED — theme-dependent families — scope these selectors to your theme root
+ * Source: the Sonora design system's tokens/*.css. Do not hand-edit; regenerate with
+ * export/generate.js when tokens change.
+ */
+
+[data-theme="dark"] {
+  --accent-ink: #A78BFA;
+  --tone-progress: var(--accent);
+  --tone-library: var(--state-success);
+  --tone-request: var(--state-warning);
+  --tone-error: var(--state-error);
+  --tone-library-ink: #000;
+  --tone-request-ink: #000;
+  --tone-progress-ink: var(--accent-contrast);
+  --tone-error-ink: #fff;
+  --surface-now-playing: #462A3D;
+  --surface-now-playing-fg: #FFFFFF;
+  --surface-now-playing-fg-muted: rgb(255 255 255 / 78%);
+  --surface-bg: #141414;
+  --surface-bg-alt: #080808;
+  --surface-card: #1C1B1D;
+  --surface-fg: var(--neutral-50);
+  --surface-fg-muted: var(--neutral-300);
+  --surface-border: rgb(255 255 255 / 8%);
+  --surface-hover: rgb(255 255 255 / 10%);
+  --art-gradient-start: #B6C4FF;
+  --art-gradient-end: #FFB7DB;
+}
+
+[data-theme="light"] {
+  --accent-ink: #6D28D9;
+  --tone-progress: var(--accent);
+  --tone-library: var(--state-success);
+  --tone-request: var(--state-warning);
+  --tone-error: var(--state-error);
+  --tone-library-ink: #000;
+  --tone-request-ink: #000;
+  --tone-progress-ink: var(--accent-contrast);
+  --tone-error-ink: #fff;
+  --surface-now-playing: #E3CADB;
+  --surface-now-playing-fg: #1F1219;
+  --surface-now-playing-fg-muted: rgb(0 0 0 / 62%);
+  --surface-bg: #F9F6F6;
+  --surface-bg-alt: #FFFFFF;
+  --surface-card: #E8E1E1;
+  --surface-fg: rgb(25,25,25);
+  --surface-fg-muted: rgb(80,80,80);
+  --surface-border: rgb(0 0 0 / 8%);
+  --surface-hover: rgb(0 0 0 / 6%);
+  --art-gradient-start: #4D5C92;
+  --art-gradient-end: #75546F;
+}
