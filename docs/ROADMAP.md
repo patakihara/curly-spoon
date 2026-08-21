@@ -3235,6 +3235,28 @@ What they establish, which settles several questions without asking her:
     trigger it today; only the book/series fallback exercises dedupe against real data. A future
     wave adding episode/track candidates only needs to set `parentId`; `shelves.ts` will not change.
 
+  **15c-2 status, 2026-08-21 — the aggregator exists, its readers were landed and reverted, and
+  the re-land is THREE steps, not two.** `15c-2-S` built `GET /api/v1/recommended`, the cross-medium
+  aggregator that finally makes a mixed shelf reachable (blocker 2 above), and `15c-2-S-2` namespaced
+  its candidate ids before any client could depend on the format. `15c-2-W`/`-A` then gave it its
+  first reader and **were both reverted** (`5e03ccd`, `b31e724`): replacing the per-medium carousels
+  with the aggregator silently deleted **external book discovery** from For You, because
+  `libraries.ts` leads its response with `buildBookExternalDiscoveryShelf` and the aggregator carries
+  no external provider at all. The code is not lost — `5ce4bde` and `710461f` are in history, so
+  re-landing is a revert of the two reverts.
+
+  The three steps, in order, and none may be skipped:
+
+  1. **`15c-2-S-4`** — give the aggregator its own external-discovery shelves, additive and leading,
+     the way both existing routes already do. Spec parked at `docs/agent-specs/15c-2-S-4-EXTERNAL.md`.
+  2. **Revert the two reverts.**
+  3. **`15c-2-W2`** — re-point `e2e/app/for-you-external-book.spec.ts`, whose `page.route` glob names
+     the route the re-land removes, so it fails after re-land whether or not step 1 worked. The
+     original wave never touched it. Spec parked at `docs/agent-specs/15c-2-W2-E2E-REPOINT.md`.
+
+  Then **`15c-2-P`**, the parity review, whose brief is parked at `docs/agent-specs/15c-2-P-PARITY.md`
+  and must rule on the `contentType` divergence the two client waves resolved differently.
+
 - **15b-2 — the mapping table. Scouted 2026-08-16, and the scope it was written with does not
   survive contact with the code. Do not dispatch it as specced.** `HANDOVER.md` called this "the
   wave most likely to be skipped"; the real finding is that as framed it is **half a feature that
