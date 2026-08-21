@@ -777,7 +777,68 @@ invalidates every existing assertion that counted it while every unit suite stay
 full run sees it. The reviewer also grepped every count/pagination assertion against `lib-podcasts`
 and found none affected. Both checks agree, which is why this is settled rather than assumed.
 
-### DONE 2026-08-21 — `15c-2-W` + `15c-2-A` merged. **`-P` IS OWED AND NOT DISPATCHED.**
+### REVERTED 2026-08-21 — `15c-2-W` + `15c-2-A` landed, broke For You, and were backed out
+
+**`main` is `5e03ccd`. Both waves are reverted. Do not re-dispatch them — re-land them, after the
+one server wave named below.** The code is good and is not lost: `5ce4bde` (`-W`) and `710461f`
+(`-A`) are in history, so re-applying is `git revert` of the two reverts, not a rewrite.
+
+**What broke, and it was the orchestrator's placement decision, not either agent's work.**
+Replacement dropped **external book discovery from For You entirely** — the single thing Sofia said
+the feature is useless without (_"It is not useful to me if recommendations only show things already
+in my library"_).
+
+The mechanism, verified rather than inferred:
+
+- `routes/libraries.ts:330` — `GET /libraries/:id/recommended` **leads its response with**
+  `buildBookExternalDiscoveryShelf(...)`, the Open Library shelf wave `15e-books` built.
+- `routes/recommended.ts` — the aggregator has **no external provider at all**. Its own doc comment
+  says so in as many words: _"no external-discovery provider is mixed in here"_ (`:164`), and
+  anticipates a future wave adding one as **additive** (`:167`).
+- So swapping one fetch for the other silently deleted a whole shelf.
+
+**Caught by `e2e/app/for-you-external-book.spec.ts` — 3 failed, 238 passed.** Those tests did exactly
+their job. **Android carries the identical regression with nothing to catch it**, which is why both
+halves were reverted rather than just web: Android has no e2e, so its half looked clean and was not.
+
+### The lesson, and it is a new one for this file
+
+**I asked what the CARD loses. I should have asked what the RESPONSE loses.**
+
+Recon was explicitly asked the right-sounding question — _"what would be lost if the per-medium
+carousels were replaced?"_ — and it answered at **field level**: the flat item shape cannot express
+`progress`. That answer was correct, thorough, and irrelevant, because `progress` turned out to be
+structurally unreachable anyway (see the cancelled `15c-2-S-3` above). Meanwhile an entire **shelf**
+contributed by the replaced route went unmentioned by both the recon and by me, because nobody asked
+about shelves.
+
+**Before replacing one endpoint with another, diff the two RESPONSES, not the two item types.**
+Enumerate every shelf, section or collection the old route can emit and confirm the new one emits
+it. A field-level comparison is a comparison of the leaves; whole branches can vanish without any
+leaf changing shape.
+
+### The fix, named so it is not re-derived
+
+1. **A server wave first: give `GET /api/v1/recommended` its own external-discovery shelf**, the way
+   `libraries.ts` and `jellyfin.ts` already do. The aggregator's own comment already frames this as
+   additive and non-breaking. Nothing else is blocked on it.
+2. **Then re-land both waves** by reverting the two reverts, and re-run the full `--project=app`
+   suite — `for-you-external-book.spec.ts` is the discriminating check and must pass.
+3. **Then `-P`**, whose brief is already parked at `docs/agent-specs/15c-2-P-PARITY.md` and is still
+   valid, including the `contentType` divergence it must rule on (recorded below).
+
+**Do not "fix" this by having the client call both routes.** That is the addition shape replacement
+was chosen over, it reintroduces the duplication neither client can dedupe, and it leaves the
+aggregator permanently unable to serve For You alone.
+
+### An operational trap that nearly made me report a passing suite
+
+`pnpm exec playwright test … 2>&1 | tail -25` **exits with `tail`'s status, not Playwright's.** The
+run reported `exit code 0` while it had **3 failed, 238 passed**. I read the summary text and caught
+it; a session trusting the exit code would have pushed a red suite and called it verified. **Use
+`set -o pipefail`, or read the summary line — never trust the exit code of a piped test run.**
+
+### `-P` IS OWED AND NOT DISPATCHED, and is now blocked behind the re-land
 
 **`GET /api/v1/recommended` finally gets its reader.** It has been this project's fifth
 writer-with-no-reader since `e94005d`. Both agents are worktree-isolated (**checked** with
