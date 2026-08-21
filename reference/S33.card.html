@@ -1,5 +1,9 @@
-<!-- @dsCard group="Reference" viewport="1180x700" name="S33 · Now Playing — podcast" subtitle="Player, expanded, spoken-word content — 2 new, 1 extended, 4 already present" -->
+<!-- @dsCard group="Reference" viewport="1180x1417" name="S33 · Now Playing — podcast" subtitle="Player, expanded, spoken-word content — 2 new, 1 extended, 4 already present" -->
 <link rel="stylesheet" href="../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
 <style id="__card-page-css">
 html,body{margin:0;background:var(--surface-bg);color:var(--surface-fg);font-family:var(--font-body)}
 .wrap{display:flex;gap:var(--spacing-2xl);padding:var(--spacing-2xl);align-items:flex-start}
@@ -19,9 +23,17 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 .new code{color:var(--accent-ink)}
 .ext code{color:var(--state-warning)}
 .none{color:var(--surface-fg-muted);font-size:var(--text-sm)}
+.ex{border-top:1px solid var(--surface-border);padding:24px var(--spacing-2xl) 24px}
+.exh{margin:0 0 16px;line-height:16px}
+.exgrid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:24px}
+.exlabel{font-size:var(--text-sm);line-height:18px;margin:0 0 8px}
+.exbox{height:280px;box-sizing:border-box;padding:var(--spacing-lg);display:flex;
+       align-items:center;justify-content:center;border:1px solid var(--surface-border);
+       border-radius:var(--radius-sm);background:var(--surface-bg-alt)}
 </style>
 
-<div id="root"><div class="wrap">
+<template id="__doc">
+<div class="wrap">
 <img class="shot" src="../assets/reference/spotify/S33.jpg" alt="Now Playing — podcast">
 <div class="col">
 <h1>S33 — Now Playing — podcast</h1>
@@ -37,4 +49,53 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <div class="row new"><span class="tag">Created</span><code>SpeedControl</code> <code>OutputDeviceButton</code></div>
 <div class="row ext"><span class="tag">Extended</span><code>TransportBar</code></div>
 <div class="row "><span class="tag">Existing</span><code>NowPlayingPage</code> <code>SeekBar</code> <code>PlayerSheet</code> <code>ItemActionBar</code></div>
-</div></div></div>
+</div></div>
+</template>
+<div id="root"></div>
+<script type="text/babel">
+const { IconButton, OutputDeviceButton, SpeedControl, TransportBar } = window.SonoraDesignSystem_6c1435;
+const DOC = document.getElementById('__doc').innerHTML;
+const EXAMPLES = [
+  { name: 'SpeedControl', role: 'new', node: (
+<SpeedControl value={1.5} onClick={() => {}} />
+  ) },
+  { name: 'OutputDeviceButton', role: 'new', node: (
+<OutputDeviceButton device="Living room" quality="Lossless" connected glyph="cast" onClick={() => {}} />
+  ) },
+  { name: 'TransportBar', role: 'ext', node: (
+<TransportBar
+  variant="spoken"
+  playing
+  skipSeconds={15}
+  onTogglePlay={() => {}}
+  onSkipBack={() => {}}
+  onSkipForward={() => {}}
+  leading={<SpeedControl value={1.5} onClick={() => {}} />}
+  trailing={
+    <IconButton label="Sleep timer" onClick={() => {}}>
+      <span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)',lineHeight:1}}>bedtime</span>
+    </IconButton>
+  }
+/>
+  ) },
+];
+function Page() {
+  return <React.Fragment>
+    <div dangerouslySetInnerHTML={{ __html: DOC }} />
+    {EXAMPLES.length > 0 && (
+      <section className="ex">
+        <h2 className="exh">Live examples</h2>
+        <div className="exgrid">
+          {EXAMPLES.map((e) => (
+            <div key={e.name}>
+              <div className={'exlabel ' + e.role}><code>{e.name}</code></div>
+              <div className="exbox">{e.node}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+  </React.Fragment>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Page />);
+</script>
