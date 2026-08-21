@@ -292,7 +292,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T01:04:16Z` · `a3096cd65d8c877e3` · general-purpose · ended · ## Report — wave '16c-7-W' **1. Branch/commit:** 'worktree-agent-a3096cd65d8c877e3' at 'f2465f7', two commits on top of 'a63aac3' (base per spec). 'g…
 - `2026-08-21T04:10:54Z` · `a62004720b969710c` · general-purpose · ended · ## Report — For You / Home feed inventory, web and Android ### 1. Web — every async data source in Home's feed 'HomePage.tsx' (the "Browse"/For You s…
 - `2026-08-21T04:17:56Z` · `a349cd26638b65911` · general-purpose · running · —
-- `2026-08-21T04:23:53Z` · `aeb7302ff0eae9b44` · general-purpose · running · —
+- `2026-08-21T04:23:53Z` · `aeb7302ff0eae9b44` · general-purpose · ended · Everything is committed and clean. Here is my final report. ## Report — Wave '15c-2-W' **1. Branch/commit:** 'worktree-agent-aeb7302ff0eae9b44' at '2…
 - `2026-08-21T04:24:47Z` · `a006567403b5d06c8` · general-purpose · ended · ## Report — wave '15c-2-A' **Branch/commit:** worktree branch at '00ea28f', one commit on top of '6b191a6' (base per spec). 'git status --short' is c…
 
 <!-- AGENT_LOG_END -->
@@ -777,7 +777,7 @@ invalidates every existing assertion that counted it while every unit suite stay
 full run sees it. The reviewer also grepped every count/pagination assertion against `lib-podcasts`
 and found none affected. Both checks agree, which is why this is settled rather than assumed.
 
-### CLAIMED 2026-08-21 — `15c-2-W` + `15c-2-A`, the client triple. Base `6b191a6`.
+### DONE 2026-08-21 — `15c-2-W` + `15c-2-A` merged. **`-P` IS OWED AND NOT DISPATCHED.**
 
 **`GET /api/v1/recommended` finally gets its reader.** It has been this project's fifth
 writer-with-no-reader since `e94005d`. Both agents are worktree-isolated (**checked** with
@@ -792,12 +792,51 @@ responses, and replacement closes an existing divergence for free (web fetched
 `/libraries/:id/recommended` for the **book library only**; Android fetched it for **book and
 podcast**). Home's other three sources are untouched.
 
-**`15c-2-A` LANDED on its worktree branch, NOT yet merged: `worktree-agent-a006567403b5d06c8`
-at `00ea28f`** (one commit on `6b191a6`, tree clean, scope clean — nothing outside `apps/android`,
-verified by the orchestrator rather than taken from the report). All worktrees of one repo share one
-object database and that branch is a ref in it, so **this commit survives the worktree directory
-being removed**. If a session finds this claim open, `git log worktree-agent-a006567403b5d06c8` is
-where the work is.
+**Both merged by rebase-then-`--ff-only`, never cherry-pick** (the mistake that permanently strips
+`worktree-gc.sh`'s ability to prune a worktree). `-W` is `5ce4bde`, `-A` is `710461f`.
+
+**Verified here by the orchestrator before pushing, not taken from either report:** `pnpm typecheck`
+across every project **plus `pnpm --filter e2e typecheck`** (the one CI covers and the per-package
+run silently drops), `pnpm lint`, and unit **1778/1778 — up from 1764**, so the new tests are real
+rather than absent. Full `--project=app` Playwright run at `--workers=2` follows separately; **CI is
+the authoritative signal either way, and `apps/android` compiles on CI only** — there is no JDK here,
+so nothing mechanical has yet checked the Android half beyond textual invariants.
+
+**`-P` is owed and its brief is already written and parked at
+`docs/agent-specs/15c-2-P-PARITY.md`** — authored deliberately _before_ either wave reported, so it
+derives from the spec rather than from an implementing agent's paraphrase. **Dispatch it first.**
+
+### The divergence `-P` exists to rule on, found by reading both reports side by side
+
+**Both agents independently hit the same design question the spec did not answer, and answered it
+with different types.** A carousel carries a `contentType` used to filter For You by medium, and a
+genuinely mixed shelf has no single medium to report.
+
+- **Web** widened it to `ForYouContentType | 'mixed'`, and states the behaviour: a mixed shelf
+  renders under "All" only, never under a specific chip.
+- **Android** made it **nullable**, `null` meaning mixed, to keep every existing exhaustive `when`
+  untouched.
+
+**The types differ; whether the BEHAVIOUR differs is unverified and is `-P`'s first job.** If both
+render mixed shelves under "All" only, this is idiom and should be recorded as such. If Android's
+`null` falls through a filter branch differently — showing a mixed shelf under a medium chip, or
+hiding it from "All" — that is drift, and it is the kind that renders correctly in the default view
+and is wrong one tap away.
+
+### Two deviations from the dispatch spec, both reported honestly, one of which was the spec's fault
+
+1. **`-W` declined the spec's "parse with zod at the boundary" instruction, and was right to.**
+   `apps/web` has no zod dependency at all and `client.ts`'s `request<T>()` is a plain `JSON.parse`
+   cast across all ~30 of its methods. The instruction was mine and it was wrong for that package —
+   the parse-at-the-boundary rule governs **upstream** boundaries in `apps/server`, not the web
+   client's own BFF calls. Adding one validated method would have been a lone convention, and adding
+   a dependency was forbidden. **Recorded so nobody "fixes" this later as an oversight.**
+2. **`-W` could not build a genuine cross-kind e2e scenario without widening a shared fixture**, and
+   deliberately did not — this project's own history says a widened fixture invalidates every
+   existing assertion that counted it while every unit suite stays green. Instead its e2e fetches
+   the route's live response and asserts every rendered card's `aria-label` matches the server's
+   `itemLabels` exactly, whatever shape the data takes. **The multi-kind render path is therefore
+   proven at unit level only.** `-P` should say whether that is sufficient.
 
 **Three things `-P` must look at specifically in `-A`, beyond the standard checklist:**
 
