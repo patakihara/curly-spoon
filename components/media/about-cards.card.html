@@ -1,0 +1,90 @@
+<!-- @dsCard group="Components" viewport="1200x820" name="About Cards & Long Text" subtitle="AboutCard for an episode, a show and a person, ExpandableText, and MediaHeader with a custom action cluster" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { AboutCard, ExpandableText, MediaHeader, FollowButton, Badge, IconButton } = window.SonoraDesignSystem_6c1435;
+
+function Caption({ children }) {
+  return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:960}}>{children}</div>;
+}
+const glyph = (name, size) => <span style={{fontFamily:'Material Symbols Rounded',fontSize:size||'var(--icon-sm)'}}>{name}</span>;
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div>
+      <Caption>AboutCard for the three subjects a player page scrolls past: an episode (with a played-check Badge), a show (Follow as its action), and a person (round art, no action).</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-lg)',flexWrap:'wrap',alignItems:'flex-start'}}>
+        <div style={{width:340}}>
+          <AboutCard
+            title="About the episode"
+            heading="Aftershocks: the second call"
+            meta="8 Aug 2024 · 56min"
+            body="A dispatcher who quit the job three years ago picks the phone back up, once, for someone she can't say no to. This episode revisits the original 1997 tape, newly restored, alongside a present-day interview recorded two weeks before the caller's death."
+            badge={<Badge tone="success" icon="check_circle">Played</Badge>}
+          />
+        </div>
+        <div style={{width:340}}>
+          <AboutCard
+            title="About the show"
+            heading="Static & Signal"
+            meta="True crime · 214 episodes"
+            body="A true-crime podcast built entirely from found audio — 911 calls, answering-machine tapes, dispatch recordings — read straight, with as little narration laid over the top as the story allows."
+            action={<FollowButton following={false} onChange={() => {}} size="sm" />}
+          />
+        </div>
+        <div style={{width:340}}>
+          <AboutCard
+            title="About the narrator"
+            heading="Rosa Elin"
+            meta="14 audiobooks narrated"
+            round
+            body="Best known for the Glass Archivist trilogy, Rosa Elin narrates primarily literary fiction and has voiced most of the library's Halcyon Bloom-adjacent audiobook catalogue."
+          />
+        </div>
+      </div>
+    </div>
+    <div>
+      <Caption>ExpandableText clamped at 3 lines: a body long enough that "see more" actually appears, beside a one-sentence body short enough that it never does — the toggle only shows when the text genuinely overflows.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-lg)',flexWrap:'wrap',alignItems:'flex-start'}}>
+        <div style={{width:340,background:'var(--surface-card)',padding:'var(--spacing-md)',borderRadius:'var(--radius-sm)'}}>
+          <ExpandableText lines={3} text="Driftwave was recorded over eleven nights in a converted boathouse, using tape saturation and room mics instead of the click-track setup Halcyon Bloom had used on every prior release. Half the album was written after the sessions started, against material the other players had already laid down — which is the reason the credits list every track as a full-band composition rather than crediting a single writer." />
+        </div>
+        <div style={{width:340,background:'var(--surface-card)',padding:'var(--spacing-md)',borderRadius:'var(--radius-sm)'}}>
+          <ExpandableText lines={3} text="Recorded live to tape in one afternoon." />
+        </div>
+      </div>
+    </div>
+    <div>
+      <Caption>MediaHeader with a custom `actions` cluster — saved / downloaded / share / overflow, an episode's own verbs rather than a queue's — and a `progress` value drawing "22min left" under the meta line.</Caption>
+      <MediaHeader
+        kindLabel="Episode"
+        title="Aftershocks: the second call"
+        subtitle="Static & Signal"
+        onSubtitle={() => {}}
+        meta="8 Aug 2024 · 22min left"
+        progress={0.65}
+        actions={
+          <div style={{display:'flex',gap:'var(--spacing-sm)',alignItems:'center'}}>
+            <IconButton label="Saved" active onClick={() => {}}>{glyph('bookmark')}</IconButton>
+            <IconButton label="Downloaded" active onClick={() => {}}>{glyph('download_done')}</IconButton>
+            <IconButton label="Share" onClick={() => {}}>{glyph('share')}</IconButton>
+            <IconButton label="More" muted onClick={() => {}}>{glyph('more_vert')}</IconButton>
+          </div>
+        }
+      />
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>
