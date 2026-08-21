@@ -28,7 +28,11 @@ export const queryKeys = {
   authMe: ['auth', 'me'] as const,
   libraries: ['libraries'] as const,
   libraryHome: (libraryId: string) => ['libraries', libraryId, 'home'] as const,
-  libraryRecommended: (libraryId: string) => ['libraries', libraryId, 'recommended'] as const,
+  /** `GET /api/v1/recommended` (docs/ROADMAP.md §15c-2, wave 15c-2-W) — a single key,
+   * not parameterized by library: the route is scoped to the signed-in user across both
+   * upstreams, same shape as `musicRecommended` below. Replaces the deleted
+   * `libraryRecommended(libraryId)` key, whose route this wave stopped calling from web. */
+  recommended: ['recommended'] as const,
   libraryItems: (libraryId: string, page: number) =>
     ['libraries', libraryId, 'items', page] as const,
   librarySearch: (libraryId: string, q: string) => ['libraries', libraryId, 'search', q] as const,
@@ -132,15 +136,6 @@ export function useLibraryHomeQuery(libraryId: string) {
   return useQuery({
     queryKey: queryKeys.libraryHome(libraryId),
     queryFn: ({ signal }) => api.getLibraryHome(libraryId, signal),
-    staleTime: 30_000,
-  });
-}
-
-export function useLibraryRecommendedQuery(libraryId: string) {
-  const api = useApi();
-  return useQuery({
-    queryKey: queryKeys.libraryRecommended(libraryId),
-    queryFn: ({ signal }) => api.getLibraryRecommended(libraryId, signal),
     staleTime: 30_000,
   });
 }
@@ -589,6 +584,22 @@ export function useJellyfinConfigQuery() {
  * same pattern `useOptionalLibraryRecommendedQuery` in `HomePage.tsx` already uses for
  * the book side. Nothing here renders an error — a query hook shouldn't decide that.
  */
+/** `GET /api/v1/recommended` (docs/ROADMAP.md §15c-2, wave 15c-2-W,
+ * `docs/agent-specs/15c-2-CLIENTS.md`) — For You's cross-medium recommendation
+ * aggregator, replacing the deleted `useLibraryRecommendedQuery`. Scoped to the signed-in
+ * user with no parameters, same shape as `useMusicRecommendedQuery` below. `HomePage.tsx`
+ * gates `enabled` on Audiobookshelf being configured, mirroring every other query that
+ * page runs — the page itself shows nothing else until then. */
+export function useRecommendedQuery(enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.recommended,
+    queryFn: ({ signal }) => api.getRecommended(signal),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
 export function useMusicRecommendedQuery(enabled: boolean) {
   const api = useApi();
   return useQuery({

@@ -3,11 +3,18 @@ import {
   albumsToCarousel,
   buildForYouCarousels,
   buildQuickPicks,
+  displaySubtitle,
   filterCarousels,
-  recommendedShelvesToCarousels,
+  mixedShelvesToCarousels,
   shelfToCarousel,
 } from './forYouFeed.js';
-import type { JellyfinAlbum, LibraryItem, RecommendedShelf, Shelf } from '../../api/types.js';
+import type {
+  JellyfinAlbum,
+  LibraryItem,
+  MixedRecommendedItem,
+  MixedRecommendedShelf,
+  Shelf,
+} from '../../api/types.js';
 
 function bookItem(
   id: string,
@@ -238,60 +245,147 @@ describe('buildQuickPicks', () => {
   });
 });
 
-function recommendedShelf(id: string, label: string, reason: string): RecommendedShelf {
+function mixedItem(
+  kind: MixedRecommendedItem['kind'],
+  id: string,
+  title: string,
+  subtitle: string | null = 'Some Subtitle',
+  availability: MixedRecommendedItem['availability'] = 'owned',
+): MixedRecommendedItem {
   return {
+    kind,
     id,
-    label,
-    type: 'recommended',
-    reason,
-    items: [bookItem(`${id}-1`, 'Rec One'), bookItem(`${id}-2`, 'Rec Two')],
+    title,
+    subtitle,
+    coverPath: kind === 'album' ? null : `/covers/${id}.jpg`,
+    imageTag: kind === 'album' ? `tag-${id}` : null,
+    availability,
   };
 }
 
-describe('recommendedShelvesToCarousels', () => {
-  it('maps a recommended shelf to a books carousel, carrying the reason onto the carousel', () => {
-    const carousels = recommendedShelvesToCarousels(
-      [recommendedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune')],
+function mixedShelf(
+  id: string,
+  label: string,
+  reason: string,
+  items: MixedRecommendedItem[],
+  itemLabels?: MixedRecommendedShelf['itemLabels'],
+): MixedRecommendedShelf {
+  return { id, label, type: 'recommended', reason, itemLabels, items };
+}
+
+describe('mixedShelvesToCarousels', () => {
+  it('maps a single-kind (book) shelf: contentType is "books", no items carry a typeLabel', () => {
+    const carousels = mixedShelvesToCarousels(
+      [
+        mixedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune', [
+          mixedItem('book', 'rec-1-1', 'Rec One'),
+          mixedItem('book', 'rec-1-2', 'Rec Two'),
+        ]),
+      ],
       coverUrl,
+      artworkUrl,
     );
 
     expect(carousels).toHaveLength(1);
     expect(carousels[0]?.reason).toBe('Because you finished Dune');
     expect(carousels[0]?.contentType).toBe('books');
     expect(carousels[0]?.items.map((i) => i.id)).toEqual(['rec-1-1', 'rec-1-2']);
+    expect(carousels[0]?.items.every((i) => i.typeLabel === undefined)).toBe(true);
   });
 
   it('drops a shelf with no items, defensively, rather than rendering an empty carousel', () => {
-    const empty: RecommendedShelf = {
-      id: 'rec-empty',
-      label: 'Empty',
-      type: 'recommended',
-      reason: 'no items should never happen',
-      items: [],
-    };
-    expect(recommendedShelvesToCarousels([empty], coverUrl)).toEqual([]);
+    const empty = mixedShelf('rec-empty', 'Empty', 'no items should never happen', []);
+    expect(mixedShelvesToCarousels([empty], coverUrl, artworkUrl)).toEqual([]);
   });
 
-  // Wave 15d-1-books-W: end to end from `GET /libraries/:id/recommended`'s wire shape
-  // (wave 15e-books's `RecommendedLibraryItem`) through to what `Carousel.tsx` reads.
-  // Mixes owned and external items on one shelf, the shape the server actually sends.
   it('carries a mix of owned and external recommended items through to FeedItem.availability', () => {
-    const mixed: RecommendedShelf = {
-      id: 'rec-mix',
-      label: 'New to you',
-      type: 'recommended',
-      reason: 'Because you enjoy this genre',
-      items: [
-        bookItem('rec-mix-owned', 'Owned Rec', null, 'owned'),
-        bookItem('rec-mix-ext', 'External Rec', null, 'external'),
-      ],
-    };
-    const [carousel] = recommendedShelvesToCarousels([mixed], coverUrl);
+    const shelf = mixedShelf('rec-mix', 'New to you', 'Because you enjoy this genre', [
+      mixedItem('book', 'rec-mix-owned', 'Owned Rec', 'Some Author', 'owned'),
+      mixedItem('book', 'rec-mix-ext', 'External Rec', 'Some Author', 'external'),
+    ]);
+    const [carousel] = mixedShelvesToCarousels([shelf], coverUrl, artworkUrl);
 
     expect(carousel?.items.map((i) => ({ id: i.id, availability: i.availability }))).toEqual([
       { id: 'rec-mix-owned', availability: 'owned' },
       { id: 'rec-mix-ext', availability: 'external' },
     ]);
+  });
+
+  // The contract this route exists for: a shelf spanning more than one kind. `itemLabels`
+  // is what the server sends ONLY in this case (`shelves.ts:80`'s `typeLabelsFor`).
+  it('a mixed-kind shelf gets contentType "mixed" and each item its FeedItem.typeLabel', () => {
+    const shelf = mixedShelf(
+      'rec-mixed-kinds',
+      'Because you finished Dune',
+      'Because you finished Dune',
+      [
+        mixedItem('book', 'book-1', 'Children of Time', 'Adrian Tchaikovsky'),
+        mixedItem('podcast', 'pod-1', 'Deep Space News', 'Some Network'),
+        mixedItem('album', 'album-1', 'Nightglass', 'Some Artist'),
+      ],
+      { 'book-1': 'Audiobook', 'pod-1': 'Podcast', 'album-1': 'Album' },
+    );
+    const [carousel] = mixedShelvesToCarousels([shelf], coverUrl, artworkUrl);
+
+    expect(carousel?.contentType).toBe('mixed');
+    expect(
+      carousel?.items.map((i) => ({
+        id: i.id,
+        contentType: i.contentType,
+        typeLabel: i.typeLabel,
+      })),
+    ).toEqual([
+      { id: 'book-1', contentType: 'books', typeLabel: 'Audiobook' },
+      { id: 'pod-1', contentType: 'podcasts', typeLabel: 'Podcast' },
+      { id: 'album-1', contentType: 'music', typeLabel: 'Album' },
+    ]);
+  });
+
+  it('resolves an album cover through artworkUrl and a book/podcast cover through coverUrl', () => {
+    const shelf = mixedShelf(
+      'rec-covers',
+      'Mixed',
+      'r',
+      [mixedItem('book', 'book-1', 'A Book'), mixedItem('album', 'album-1', 'An Album')],
+      { 'book-1': 'Audiobook', 'album-1': 'Album' },
+    );
+    const [carousel] = mixedShelvesToCarousels([shelf], coverUrl, artworkUrl);
+
+    expect(carousel?.items.map((i) => i.coverSrc)).toEqual([
+      'https://covers.example/book-1',
+      'https://artwork.example/album-1',
+    ]);
+  });
+
+  // docs/agent-specs/15c-2-CLIENTS.md's "blocker recon": a recommended item is by
+  // construction one the user has no progress on (server's score.ts:38), so this route's
+  // items never carry a progress bar — pin `progress: null` so nobody re-adds one.
+  it('never carries a progress value — a recommended item cannot have one by construction', () => {
+    const shelf = mixedShelf('rec-progress', 'Mixed', 'r', [mixedItem('book', 'book-1', 'A Book')]);
+    const [carousel] = mixedShelvesToCarousels([shelf], coverUrl, artworkUrl);
+    expect(carousel?.items[0]?.progress).toBeNull();
+  });
+});
+
+describe('displaySubtitle', () => {
+  it('returns the plain subtitle when there is no typeLabel', () => {
+    expect(displaySubtitle({ subtitle: 'Frank Herbert', typeLabel: undefined })).toBe(
+      'Frank Herbert',
+    );
+  });
+
+  it('leads with the type label when both are present', () => {
+    expect(displaySubtitle({ subtitle: 'Frank Herbert', typeLabel: 'Audiobook' })).toBe(
+      'Audiobook • Frank Herbert',
+    );
+  });
+
+  it('is just the type label when subtitle is null', () => {
+    expect(displaySubtitle({ subtitle: null, typeLabel: 'Album' })).toBe('Album');
+  });
+
+  it('is null when both are absent', () => {
+    expect(displaySubtitle({ subtitle: null, typeLabel: undefined })).toBeNull();
   });
 });
 
@@ -329,9 +423,12 @@ describe('buildForYouCarousels', () => {
       podcast: [existingPodcast],
       music: [existingMusic],
       recommendedShelves: [
-        recommendedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune'),
+        mixedShelf('rec-1', 'Because you finished Dune', 'Because you finished Dune', [
+          mixedItem('book', 'rec-1-1', 'Rec One'),
+        ]),
       ],
       coverUrl,
+      artworkUrl,
     });
 
     expect(result.map((c) => c.id)).toEqual([
@@ -350,6 +447,7 @@ describe('buildForYouCarousels', () => {
       music: [existingMusic],
       recommendedShelves: [],
       coverUrl,
+      artworkUrl,
     });
 
     expect(result).toEqual([existingBook, existingPodcast, existingMusic]);
@@ -362,6 +460,7 @@ describe('buildForYouCarousels', () => {
       music: [existingMusic],
       recommendedShelves: null,
       coverUrl,
+      artworkUrl,
     });
 
     expect(result).toEqual([existingBook, existingPodcast, existingMusic]);
@@ -372,8 +471,13 @@ describe('buildForYouCarousels', () => {
       book: [],
       podcast: [],
       music: [],
-      recommendedShelves: [recommendedShelf('rec-1', 'x', 'Because you finished Dune')],
+      recommendedShelves: [
+        mixedShelf('rec-1', 'x', 'Because you finished Dune', [
+          mixedItem('book', 'rec-1-1', 'Rec One'),
+        ]),
+      ],
       coverUrl,
+      artworkUrl,
     });
 
     expect(result.map((c) => c.id)).toEqual(['rec-1']);

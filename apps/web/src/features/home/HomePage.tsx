@@ -12,12 +12,13 @@
  * episode cards) and is explicitly the anti-pattern this page must not
  * reproduce.
  *
- * There is no BFF endpoint that returns one mixed-type home feed, so this page
- * is where four independent sources get stitched together client-side:
- * Audiobookshelf's per-library home shelves (books, podcasts), Jellyfin's
- * favourite albums (music), and the book library's recommended shelves.
- * `forYouFeed.ts` holds that stitching as pure, tested functions; this file is
- * only the data-fetching and the chip/loading states around it.
+ * This page still stitches four independent sources together client-side rather than
+ * reading one BFF endpoint for the whole feed: Audiobookshelf's per-library home shelves
+ * (books, podcasts), Jellyfin's favourite albums (music), and — since wave 15c-2-W —
+ * `GET /api/v1/recommended`'s own cross-medium recommended shelves, which can mix all
+ * three kinds in one carousel and replaced the earlier book-only recommended fetch.
+ * `forYouFeed.ts` holds that stitching as pure, tested functions; this file is only the
+ * data-fetching and the chip/loading states around it.
  *
  * A source that errors (an unconfigured Jellyfin, a library whose shelves
  * fail to load) degrades to "that carousel doesn't appear" rather than
@@ -34,6 +35,7 @@ import {
   useJellyfinConfigQuery,
   useJellyfinFavoriteAlbumsQuery,
   useLibrariesQuery,
+  useRecommendedQuery,
   useSetupQuery,
 } from '../../api/queries.js';
 import { isExternalItem } from '../../api/availability.js';
@@ -45,6 +47,7 @@ import {
   albumsToCarousel,
   buildForYouCarousels,
   buildQuickPicks,
+  displaySubtitle,
   filterCarousels,
   shelfToCarousel,
   type FeedCarousel,
@@ -154,23 +157,6 @@ function useOptionalLibraryHomeQuery(libraryId: string | undefined) {
   });
 }
 
-/** Same shape as `useOptionalLibraryHomeQuery` above, for `GET /libraries/:id/recommended`
- * (docs/ROADMAP.md §13). Deliberately its own query, not merged into the home query: a
- * recommendation failure must not touch the shelves `useOptionalLibraryHomeQuery` already
- * fetched successfully — react-query already isolates failures per query key, this is just
- * two independent `useQuery` calls rather than one that could fail as a unit. */
-function useOptionalLibraryRecommendedQuery(libraryId: string | undefined) {
-  const api = useApi();
-  return useQuery({
-    queryKey: libraryId
-      ? queryKeys.libraryRecommended(libraryId)
-      : (['libraries', 'recommended', 'none'] as const),
-    queryFn: ({ signal }) => api.getLibraryRecommended(libraryId as string, signal),
-    enabled: Boolean(libraryId),
-    staleTime: 30_000,
-  });
-}
-
 function QuickPickGrid({
   items,
   loading,
@@ -207,7 +193,13 @@ function QuickPickGrid({
                 type="button"
                 style={tileStyle}
                 data-testid={`quick-pick-${item.id}`}
-                aria-label={item.subtitle ? `${item.title}, ${item.subtitle}` : item.title}
+                // Wave 15c-2-W: `displaySubtitle` (not the raw `item.subtitle`) so a
+                // mixed-shelf item that lands in the quick-picks grid — built from these
+                // same `FeedCarousel.items` via `buildQuickPicks` — announces its type
+                // label here too, same as the shelf card it was drawn from.
+                aria-label={
+                  displaySubtitle(item) ? `${item.title}, ${displaySubtitle(item)}` : item.title
+                }
                 onClick={() => onSelect(item)}
               >
                 <CoverImage src={item.coverSrc} size={coverSize} fallbackIcon={item.fallbackIcon} />
@@ -239,11 +231,15 @@ export function HomePage() {
 
   const bookHomeQuery = useOptionalLibraryHomeQuery(bookLibrary?.id);
   const podcastHomeQuery = useOptionalLibraryHomeQuery(podcastLibrary?.id);
-  // Recommendations are book-only through 13d (13e widens this to music) — scoped to
-  // the book library the same way bookHomeQuery is. Its own query, its own failure
-  // domain: see the hook's doc comment for why this must not be folded into
-  // bookHomeQuery.
-  const recommendedQuery = useOptionalLibraryRecommendedQuery(bookLibrary?.id);
+  // Wave 15c-2-W: `GET /api/v1/recommended`, the cross-medium aggregator that replaced
+  // the book-only per-library recommended fetch this hook used to run. Not scoped to
+  // `bookLibrary?.id` any more — the route pools both Audiobookshelf and Jellyfin itself
+  // — so it's gated on the same `configured` (Audiobookshelf) flag the rest of this page
+  // already requires before it renders anything else. Still its own query, its own
+  // failure domain: a recommendation failure must not touch the shelves
+  // `useOptionalLibraryHomeQuery` already fetched successfully — react-query already
+  // isolates failures per query key.
+  const recommendedQuery = useRecommendedQuery(configured);
 
   const jellyfinConfigQuery = useJellyfinConfigQuery();
   const jellyfinConfigured = jellyfinConfigQuery.data?.configured ?? false;
@@ -295,6 +291,7 @@ export function HomePage() {
         music: musicCarousels,
         recommendedShelves: recommendedQuery.isSuccess ? recommendedQuery.data.shelves : null,
         coverUrl: (id) => api.coverUrl(id, { width: 240 }),
+        artworkUrl: (id) => api.jellyfinArtworkUrl(id),
       }),
     [
       bookCarousels,
@@ -331,10 +328,11 @@ export function HomePage() {
   // does — only in when the page notices it has happened).
   //
   // A source with nothing to fetch is settled automatically and needs no special case:
-  // `useOptionalLibraryHomeQuery`/`useOptionalLibraryRecommendedQuery` pass `enabled:
-  // Boolean(libraryId)`, and react-query's `isLoading` (`isPending && isFetching`) is
-  // `false` for a disabled query that has never fetched — so a household with no
-  // podcast library, say, never blocks the page on `podcastHomeQuery`.
+  // `useOptionalLibraryHomeQuery` passes `enabled: Boolean(libraryId)`, and
+  // `useRecommendedQuery` (wave 15c-2-W) passes `enabled: configured` — react-query's
+  // `isLoading` (`isPending && isFetching`) is `false` for a disabled query that has
+  // never fetched — so a household with no podcast library, say, never blocks the page
+  // on `podcastHomeQuery`.
   const bookSettled = !bookHomeQuery.isLoading || bookHomeQuery.isError;
   const podcastSettled = !podcastHomeQuery.isLoading || podcastHomeQuery.isError;
   const musicSettled = !favoriteAlbumsQuery.isLoading || favoriteAlbumsQuery.isError;
@@ -370,8 +368,27 @@ export function HomePage() {
       }
       void navigate({ to: '/item/$itemId', params: { itemId: item.id } });
     } else if (item.contentType === 'podcasts') {
+      // Wave 15c-2-W: the same availability guard as the book branch above, for a
+      // podcast arriving through the mixed shelf `GET /api/v1/recommended` produces.
+      // Genuinely defensive, not load-bearing today — the route emits only the literal
+      // `'owned'` (`recommended.ts`'s three construction sites), so this is unreachable
+      // until an external-discovery wave feeds this route's pool. Unlike the book and
+      // music branches, there is no external-podcast request flow to hand off into yet
+      // — that decision is still open (docs/HANDOVER.md queue `969711e`: most likely a
+      // one-tap RSS subscribe rather than a request flow) — so this no-ops rather than
+      // inventing one, which still satisfies "must not reach a player or detail route".
+      if (isExternalItem(item)) return;
       void navigate({ to: '/podcast/$itemId', params: { itemId: item.id } });
     } else {
+      // Wave 15c-2-W: mirrors `MusicHomePage.tsx`'s `handleSelectRecommended` — an
+      // external (not-owned) album has no real Jellyfin album behind its id, so
+      // `/music/album/$albumId` would be a dead end (a page headed "Album", "No tracks
+      // found"). Same defensiveness note as the podcast branch above: this route emits
+      // only `'owned'` today, so this guard is untested against a real external album.
+      if (isExternalItem(item)) {
+        void navigate({ to: '/music/requests', search: { prefill: item.title } });
+        return;
+      }
       void navigate({ to: '/music/album/$albumId', params: { albumId: item.id } });
     }
   };

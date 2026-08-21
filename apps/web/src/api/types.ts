@@ -219,13 +219,16 @@ export interface LibraryItem {
   progress: MediaProgress | null;
   /**
    * Wave 15d-1-books-W: whether this is a real Audiobookshelf item ("owned") or an Open
-   * Library-derived placeholder the user does not have ("external") —
-   * `GET /libraries/:id/recommended`'s wave 15e-books contract (`docs/HANDOVER.md`), the
-   * book equivalent of `JellyfinAlbum.availability` above. Optional for the identical reason:
-   * every other endpoint returning a `LibraryItem` (library browse, shelves, search, item
-   * detail) never sets it, so the field is simply absent rather than `'owned'` everywhere.
-   * Today only `RecommendedShelf.items` ever carries `'external'`. Read this field directly;
-   * never infer availability by parsing the `external:<provider>:<id>` id prefix.
+   * Library-derived placeholder the user does not have ("external") — originally
+   * `GET /libraries/:id/recommended`'s wave 15e-books contract. Optional for the identical
+   * reason: every other endpoint returning a `LibraryItem` (library browse, shelves, search,
+   * item detail) never sets it, so the field is simply absent rather than `'owned'`
+   * everywhere. Wave 15c-2-W replaced For You's only web-side reader of the per-library
+   * recommended route with `GET /api/v1/recommended` (`MixedRecommendedItem`, below), so no
+   * web route sets this to `'external'` today — kept for API symmetry with
+   * `JellyfinAlbum.availability` below and for whatever next reads the per-library route
+   * directly. Read this field directly; never infer availability by parsing the
+   * `external:<provider>:<id>` id prefix.
    */
   availability?: 'owned' | 'external';
 }
@@ -237,26 +240,72 @@ export interface Shelf {
   items: LibraryItem[];
 }
 
-/** `GET /libraries/:id/recommended`'s shelf shape (docs/ROADMAP.md §13) — a `Shelf`
- * plus the `reason` string the server always attaches ("Because you finished …").
- * `shelfToCarousel` accepts a plain `Shelf`, so this widens rather than replaces it;
- * the reason is carried separately through `forYouFeed.ts` rather than folded into
- * `Shelf` itself, since ordinary Audiobookshelf shelves have no reason to show. */
-export interface RecommendedShelf extends Shelf {
-  reason: string;
-}
-
 /** `GET /music/recommended`'s shelf shape (docs/ROADMAP.md §13, wave 13f-1) — the music
- * equivalent of `RecommendedShelf`, but its `items` are Jellyfin albums, not Audiobookshelf
- * `LibraryItem`s, so it can't just extend `Shelf` (whose `items: LibraryItem[]` wouldn't
- * fit). Kept as its own type rather than a generic `Shelf<T>` for the same reason the rest
- * of this file avoids that: every other shelf-shaped response here is concrete too. */
+ * equivalent of the now-removed book-only `RecommendedShelf` (wave 15c-2-W deleted it: For
+ * You reads `GET /api/v1/recommended`/`MixedRecommendedShelf` instead), but its `items` are
+ * Jellyfin albums, not Audiobookshelf `LibraryItem`s, so it can't just extend `Shelf` (whose
+ * `items: LibraryItem[]` wouldn't fit). Kept as its own type rather than a generic
+ * `Shelf<T>` for the same reason the rest of this file avoids that: every other shelf-shaped
+ * response here is concrete too. Untouched by 15c-2-W — `MusicHomePage`/`MusicLibraryViewModel`
+ * is a different screen from For You. */
 export interface MusicRecommendedShelf {
   id: string;
   label: string;
   type: string;
   reason: string;
   items: JellyfinAlbum[];
+}
+
+/**
+ * `GET /api/v1/recommended`'s item shape (docs/ROADMAP.md §15c-2, wave 15c-2-W,
+ * `docs/agent-specs/15c-2-CLIENTS.md`) — a flat card projection across all three media
+ * kinds, deliberately **not** a union of `LibraryItem`/`JellyfinAlbum`. Forced by Android's
+ * kotlinx models throwing `MissingFieldException` on a missing non-nullable field on a
+ * device nobody here can test — see that spec for the full reasoning, followed here so both
+ * clients share one shape.
+ *
+ * `coverPath` (book/podcast) and `imageTag` (album) are two nullable fields rather than one
+ * normalized image ref because the two upstreams resolve cover URLs through different
+ * shapes; web resolves the actual `<img src>` from `id` alone via `coverUrl`/`artworkUrl`
+ * (the same pattern `shelfToCarousel`/`albumsToCarousel` already use), so neither field is
+ * read directly here — they exist for Android, which has no such per-id URL builder.
+ *
+ * `availability` is typed as the full union though this route emits only the literal
+ * `'owned'` today (`recommended.ts`'s three construction sites) — external discovery does
+ * not feed this route's pool, so the field stays wide for a future external wave to be
+ * additive rather than breaking. Guard on it anyway; see `HomePage.tsx`'s `handleSelect`.
+ */
+export interface MixedRecommendedItem {
+  kind: 'book' | 'podcast' | 'album';
+  id: string;
+  title: string;
+  subtitle: string | null;
+  coverPath: string | null;
+  imageTag: string | null;
+  availability: 'owned' | 'external';
+}
+
+/**
+ * `GET /api/v1/recommended`'s shelf shape — the cross-medium replacement for the book-only
+ * `RecommendedShelf` this wave deleted. A shelf's `items` can mix books, podcasts and
+ * albums in one carousel (`docs/USER_DECISIONS.md` decision 2).
+ *
+ * `itemLabels` is present **only** when the shelf spans more than one kind — the server's
+ * `typeLabelsFor` (`apps/server/src/features/recommendations/shelves.ts`) omits it entirely
+ * below a kind-count of two, so a single-kind shelf renders its plain subtitle with no type
+ * label, same as any other carousel. Keyed by item id; **`item.kind` is authoritative and
+ * `itemLabels` is a display convenience only** — on a true bare-id collision across the two
+ * upstreams (namespaced away server-side today, `15c-2-S-2`) `itemLabels` could only hold
+ * one label per key, but every item still carries its own `kind`, so never branch on the
+ * presence of a label to decide what an item *is*.
+ */
+export interface MixedRecommendedShelf {
+  id: string;
+  label: string;
+  type: 'recommended';
+  reason: string;
+  itemLabels?: Record<string, 'Audiobook' | 'Podcast' | 'Album'>;
+  items: MixedRecommendedItem[];
 }
 
 export interface MediaProgress {

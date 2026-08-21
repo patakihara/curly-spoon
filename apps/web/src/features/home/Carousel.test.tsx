@@ -71,4 +71,27 @@ describe('cardLabel', () => {
       cardLabel(item({ availability: 'not-a-real-value' as unknown as FeedItem['availability'] })),
     ).toBe('Dune, not in library');
   });
+
+  // Wave 15c-2-W: the mixed-shelf type label ("Audiobook"/"Podcast"/"Album") is
+  // announced through this exact mechanism — `cardLabel` folds `displaySubtitle(item)`
+  // (which leads with `item.typeLabel` when present) into the button's `aria-label`, the
+  // only accessible route to it since the visible subtitle `<p>` in `Carousel.tsx` is
+  // `aria-hidden`. This is the discriminating check: it fails if `typeLabel` is dropped
+  // from the item (announces plain "Dune, Frank Herbert") or if `cardLabel` reverts to
+  // reading `item.subtitle` directly instead of `displaySubtitle(item)`.
+  it('leads the announced subtitle with the type label on a mixed-shelf item', () => {
+    expect(cardLabel(item({ subtitle: 'Frank Herbert', typeLabel: 'Audiobook' }))).toBe(
+      'Dune, Audiobook • Frank Herbert',
+    );
+  });
+
+  it('announces just the type label when a mixed-shelf item has no subtitle', () => {
+    expect(cardLabel(item({ subtitle: null, typeLabel: 'Album' }))).toBe('Dune, Album');
+  });
+
+  it('composes the type label, subtitle and external suffix together', () => {
+    expect(
+      cardLabel(item({ subtitle: 'Some Artist', typeLabel: 'Album', availability: 'external' })),
+    ).toBe('Dune, Album • Some Artist, not in library');
+  });
 });
