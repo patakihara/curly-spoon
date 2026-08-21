@@ -39,8 +39,25 @@ const parts = [];
 const failed = [];
 for (const { name, file, rel } of files) {
   let src = fs.readFileSync(file, 'utf8');
+
+  // A few components (AppShell, ContentPane, SideSheet, NavRail) reach siblings with a real
+  // relative `import` rather than the NS() idiom. Stripping those leaves the name undefined, so
+  // each becomes a thin forwarder that resolves off the namespace at RENDER time — the module
+  // bodies run in alphabetical order, so AppShell's IIFE executes before ContentPane is
+  // registered and anything resolved eagerly would capture undefined.
+  const shims = [];
+  src = src.replace(/^\s*import\s*\{([^}]+)\}\s*from\s*['"]\.[^'"]*['"];?\s*$/gm, (_, names) => {
+    for (const raw of names.split(',')) {
+      const n = raw.trim().split(/\s+as\s+/).pop().trim();
+      if (n) shims.push('var ' + n + ' = function(props){ var C = (window.SonoraDesignSystem_6c1435||{})['
+        + JSON.stringify(n) + ']; return C ? React.createElement(C, props) : null; };');
+    }
+    return '';
+  });
+
   // React arrives as a UMD global, so the import is not only unnecessary, it is invalid here.
   src = src.replace(/^\s*import\s+[^;]+;\s*$/gm, '');
+  if (shims.length) src = shims.join('\n') + '\n' + src;
   src = src.replace(/^export\s+function\s+/gm, 'function ');
   src = src.replace(/^export\s+(const|let|var)\s+/gm, '$1 ');
   try {

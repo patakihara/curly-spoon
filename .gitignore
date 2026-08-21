@@ -6,3 +6,4 @@
 # It must never be pushed, or it would clobber the real one.
 _ds_bundle.js
 .render/
+.probe/

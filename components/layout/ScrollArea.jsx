@@ -1,0 +1,49 @@
+import React from 'react';
+const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+
+/** Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops. Native scrollbars are suppressed. */
+export function ScrollArea({ children, onScroll, style, scrollRef, axis = 'y', thumbWidth = 4, hideAfter = 900, fade = 500, minThumb = 32, edgeFade = false }) {
+  const ref = React.useRef(null);
+  const attach = (el) => { ref.current = el; if (typeof scrollRef === 'function') scrollRef(el); else if (scrollRef) scrollRef.current = el; };
+  const timer = React.useRef(null);
+  const [thumb, setThumb] = React.useState({ size: 0, offset: 0, visible: false });
+  // Whether content runs past each edge, so the fade marks hidden content rather than sitting there.
+  const [edges, setEdges] = React.useState({ top: false, bottom: false });
+  const measure = React.useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const client = el.clientHeight, scroll = el.scrollHeight;
+    const max = scroll - client;
+    setEdges({ top: el.scrollTop > 2, bottom: max > 2 && el.scrollTop < max - 2 });
+    if (scroll <= client + 1) { setThumb((t) => ({ ...t, visible: false })); return; }
+    const size = Math.max(minThumb, (client / scroll) * client);
+    const offset = (el.scrollTop / (scroll - client)) * (client - size);
+    setThumb({ size, offset, visible: true });
+  }, [minThumb]);
+  const handle = (e) => {
+    measure();
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), hideAfter);
+    if (onScroll) onScroll(e);
+  };
+  React.useEffect(() => () => timer.current && clearTimeout(timer.current), []);
+  React.useEffect(() => { if (edgeFade) measure(); }, [edgeFade, children, measure]);
+  const fadeSize = typeof edgeFade === 'number' ? edgeFade : 28;
+  const mask = edgeFade && (edges.top || edges.bottom)
+    ? 'linear-gradient(to bottom, transparent 0px, #000 ' + (edges.top ? fadeSize : 0) + 'px, #000 calc(100% - ' + (edges.bottom ? fadeSize : 0) + 'px), transparent 100%)'
+    : undefined;
+  return (
+    <div style={sx('position:relative;flex:1;min-width:0;min-height:0;display:flex;overflow:hidden')}>
+      <div ref={attach} onScroll={handle} style={Object.assign(sx('flex:1;min-width:0;min-height:0;overflow-' + axis + ':auto;scrollbar-width:none'), style || {}, mask ? { maskImage: mask, WebkitMaskImage: mask } : {})}>{children}</div>
+      <span aria-hidden="true" style={sx(
+        'position:absolute;right:2px;pointer-events:none;border-radius:var(--radius-pill);' +
+        'width:' + thumbWidth + 'px;' +
+        'height:' + thumb.size.toFixed(1) + 'px;' +
+        'transform:translateY(' + thumb.offset.toFixed(1) + 'px);' +
+        'top:0;background:var(--surface-fg-muted);' +
+        'opacity:' + (thumb.visible ? '0.6' : '0') + ';' +
+        'transition:opacity ' + (thumb.visible ? '120ms' : fade + 'ms') + ' linear'
+      )} />
+    </div>
+  );
+}
