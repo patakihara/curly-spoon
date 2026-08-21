@@ -279,7 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
 - `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
 - `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
@@ -294,6 +293,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T00:04:17Z` · `a142e6882657bdfd0` · general-purpose · ended · Matches exactly. I have what I need to write the report. ## Verdict **Merge with named follow-ups.** The route is correct, well-tested, and degrades…
 - `2026-08-21T00:07:48Z` · `a0945a250b7dbe6cc` · general-purpose · ended · Good, that confirms the "no container tier" claim cited by both Fab.tsx and ListItem.css comments is genuinely stated in Card.css. Report follows. ##…
 - `2026-08-21T00:38:33Z` · `a08d557597dcd2471` · general-purpose · ended · Working tree is clean, everything committed on the worktree branch. Task complete. ## Report — Wave '15c-2-S-2' **1. Branch/commit:** 'worktree-agent…
+- `2026-08-21T00:57:59Z` · `a21d6f864533eff15` · general-purpose · ended · Full 'apps/server' suite green (759/759). Report follows. ## Report — review of 'a1c0075' (recommended.ts / recommended.test.ts namespacing fix) **1.…
 
 <!-- AGENT_LOG_END -->
 
@@ -831,6 +831,17 @@ format, changing it is a breaking change, and the client triple is the next wave
   bare would have silently broken both the known-item exclusion and taste-affinity matching — no
   error, no failing test, just quietly worse recommendations. A "ten-line fix" that touches an id
   space has to account for every consumer of that id space, not just the one the bug was reported in.
+
+**Independently reviewed, clean, no follow-ups.** The reviewer audited the id's whole lifecycle —
+every place one is produced, compared, used as a map key, or serialized — and found no leak and no
+partial strip. Confirmed consistently namespaced: `candidate.id`, `signal.itemId`, `score.ts`'s
+known-item exclusion, `shelves.ts`'s `candidatesById` and `parentKeyOf` fallback. Confirmed bare on
+the wire: `items[].id`, every `itemLabels` key, `coverPath`/`imageTag`. Confirmed never id-derived,
+so never at risk: `shelf.id` (built from facet **names**) and `reason` (built from `seed.title`).
+It also verified the collision test fails pre-fix for **the reason claimed** — the two colliding
+candidates resolve through `candidatesById` to one value, `dedupeByParent` collapses them to a
+single item, and the shelf drops below the two-item threshold and never forms — rather than taking
+the commit message's word for it. `apps/server` 759/759.
 
 **One residual property, correctly left alone.** On a _true_ literal-id collision, `itemLabels` is a
 `Record<itemId, string>` and structurally cannot hold two labels under one bare key — last write
