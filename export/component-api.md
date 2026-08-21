@@ -377,6 +377,39 @@ The app frame — the one component that ties the layout parts together, so a sc
 | `flat` | `boolean` | Flattens the content pane — square top corners and a permanent divider — for a sub-page that owns the full surface. |
 | `square` | `boolean` | Squares the content pane's top corners while keeping its scroll-linked hairline — used when the app bar's controls row carries the rounding. |
 
+### BackdropShell
+
+The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a slight shadow marking the step; `subheader` is fixed to it and `children` scroll underneath. Prop names mirror `AppShell`'s wherever the meaning is the same, so a screen ports by swapping the component and moving its secondary header out of the bar into `subheader`. Unlike `AppShell` there is no `flat`/`square`: the front layer's shape is not scroll-linked and does not flatten for a sub-page. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `back` | `ReactNode` | Back-layer content — a `BackLayer` with the heading row and any contextual controls. |
+| `rail` | `ReactNode` | A `NavRail`. Sits at back-layer level, continuous with it. Omit on mobile. |
+| `children` | `ReactNode` | The screen itself — scrolls inside the front layer. |
+| `subheader` | `ReactNode` | A `FrontLayerHeader`. Fixed to the front layer; receives `progress` and `platform` from it. |
+| `sheet` | `ReactNode` |  The desktop side panel. With `sheetLayer="front"` pass a `SideSheet` — it draws its own dividers and animates its own width. With `sheetLayer="behind"` pass plain panel content (a title row of `--appbar-height`, then the list): the shell supplies the surface, the open/close width transition and both dividers, because a panel at the lower elevation must not be outlined.  |
+| `sheetOpen` | `boolean` | Whether that panel is open. Squares the front layer's abutting corner in `front` mode only. |
+| `sheetLayer` | `'front' \| 'behind'` |  Which layer the side panel belongs to. `'front'` (default) puts it above the front layer, full height, with a divider down its whole edge and the front layer squared where they meet. `'behind'` puts it below: both front-layer corners stay rounded, the front layer's shadow falls onto the panel, and the panel's rules shrink to a short one in the heading band and an inset one under it.  |
+| `player` | `ReactNode` | MiniPlayer, BottomNav, or a fragment of both. Docked across the full width beneath everything. |
+| `contentMinWidth` | `string` | Floor for the front-layer column, e.g. `var(--content-min-width)`. |
+| `scroll` | `boolean` | false when the screen owns its own scrolling (mobile) — the front layer still tracks it. |
+| `scrollKey` | `string \| number` | Identifier of the current view — gives each one its own remembered scroll position. |
+| `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the front layer. |
+| `theme` | `string` | Sets `data-theme` on the frame. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### BackLayer
+
+The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevation, carrying the page heading and the controls that inform the front layer. `BackdropShell` places it above the front layer and lets the rail run continuous with it. **Which controls belong here.** M2 puts "navigation, steppers, text fields, selection controls" on the back layer, and a filter group arguably qualifies — but a screen's secondary header belongs to the front layer. The line Sonora draws: *anything that scrolls away with the content or names a section of it goes in the front layer's `FrontLayerHeader`; anything that reconfigures what the front layer is showing may sit here in `controls`.* Sub-tabs and "Artists / Albums / Songs" are subheader; a library-scope switch or a sort mode is `controls`.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` | `string` | The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). |
+| `leading` | `ReactNode` | Before the title — a back link, a menu button. |
+| `trailing` | `ReactNode` | After the title — a search button, an avatar, an overflow menu. |
+| `controls` | `ReactNode` | Contextual controls that reconfigure the front layer, on a band below the heading. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
 ### BackToTop
 
 Escape from depth. A feed that pages in more content has no bottom, so scroll position becomes a trap; this floats a way back that only the caller's own scroll-position logic reveals.
@@ -437,6 +470,33 @@ Stable key for the row — pass it through as React's `key`.
 
 | prop | type | notes |
 | --- | --- | --- |
+
+### FrontLayer
+
+The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content and its fixed subheader. `BackdropShell` builds one for you; use it directly only when composing a frame by hand. Its top corners are `--radius-lg` at **every** scroll position. This is the behavioural difference from `ContentPane`, which flattens its corners as you scroll: a backdrop's front layer is a persistent surface, not a sheet that docks. The 1dp step is expressed by a slight `--shadow-sm` lift onto whatever is behind it, and the scroll-linked hairline moves to the subheader, where it is inset to the content measure. The layer owns the scrolling and remembers a scroll offset per `scrollKey`, so switching views and coming back lands where you left. With `scroll={false}` a descendant owns the scroller and the layer tracks it by capture instead.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` |  |
+| `subheader` | `ReactNode` | A `FrontLayerHeader`, fixed above the scrolling content. Cloned with `progress`/`platform`. |
+| `scroll` | `boolean` | false when a descendant owns the scrolling (mobile screens) — the layer still tracks it. |
+| `scrollKey` | `string \| number` |  Identifier for the view currently rendered inside. Changing it saves the outgoing view's scroll offset, restores the incoming one's (0 for a view not seen yet), and recomputes the subheader's divider state to match — without it, a fresh view inherits the previous scroll position and stays visually "scrolled".  |
+| `onProgress` | `(progress: number) => void` | Fires with 0–1 scroll progress. |
+| `threshold` | `number` | Scroll distance in px over which the subheader's divider fades in. Default 24. |
+| `squareLeft` | `boolean` | Square the abutting corner where a `sheetLayer="front"` panel meets the layer. |
+| `squareRight` | `boolean` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### FrontLayerHeader
+
+The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — no hairline at all; a tab bar draws its own underline indicator and two stacked rules are noise. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` | A `TabBar`, a `ButtonGroup`, a `SearchField` — whatever the screen's secondary header is. |
+| `tabs` | `boolean` | The content is a tab bar, which draws its own indicator — suppresses the hairline. |
+| `progress` | `number` | 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### LayoutGrid
 

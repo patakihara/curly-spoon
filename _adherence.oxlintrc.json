@@ -271,12 +271,32 @@
         "message": "<AppShell> doesn't accept that prop. Declared props: children, rail, bar, sheet, sheetOpen, player, contentMinWidth, scrollKey, scroll, onProgress, theme, flat, square."
       },
       {
+        "selector": "JSXOpeningElement[name.name='BackLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|leading|trailing|controls|platform|key|ref|className|style|children)$/]",
+        "message": "<BackLayer> doesn't accept that prop. Declared props: title, leading, trailing, controls, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackLayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<BackLayer> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='BackToTop'] > JSXAttribute > JSXIdentifier[name!=/^(?:visible|label|onClick|offset|platform|key|ref|className|style|children)$/]",
         "message": "<BackToTop> doesn't accept that prop. Declared props: visible, label, onClick, offset, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='BackToTop'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<BackToTop> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:back|rail|children|subheader|sheet|sheetOpen|sheetLayer|player|contentMinWidth|scroll|scrollKey|onProgress|theme|platform|key|ref|className|style|children)$/]",
+        "message": "<BackdropShell> doesn't accept that prop. Declared props: back, rail, children, subheader, sheet, sheetOpen, sheetLayer, player, contentMinWidth, scroll, scrollKey, onProgress, theme, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='sheetLayer'] > Literal[value!=/^(?:front|behind)$/]",
+        "message": "<BackdropShell> sheetLayer must be one of 'front' | 'behind'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<BackdropShell> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='CircleReveal'] > JSXAttribute > JSXIdentifier[name!=/^(?:x|y|style|duration|children|key|ref|className|style|children)$/]",
@@ -309,6 +329,22 @@
       {
         "selector": "JSXOpeningElement[name.name='EditableList'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<EditableList> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FrontLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|subheader|scroll|scrollKey|onProgress|threshold|squareLeft|squareRight|platform|key|ref|className|style|children)$/]",
+        "message": "<FrontLayer> doesn't accept that prop. Declared props: children, subheader, scroll, scrollKey, onProgress, threshold, squareLeft, squareRight, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FrontLayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<FrontLayer> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FrontLayerHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tabs|progress|platform|key|ref|className|style|children)$/]",
+        "message": "<FrontLayerHeader> doesn't accept that prop. Declared props: children, tabs, progress, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FrontLayerHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<FrontLayerHeader> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='LayoutGrid'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|columns|item|min|gap|maxWidth|platform|key|ref|className|style|children)$/]",
@@ -707,10 +743,16 @@
       "ArtistCard": {
         "replaces": []
       },
+      "BackLayer": {
+        "replaces": []
+      },
       "BackLink": {
         "replaces": []
       },
       "BackToTop": {
+        "replaces": []
+      },
+      "BackdropShell": {
         "replaces": []
       },
       "Badge": {
@@ -780,6 +822,12 @@
         "replaces": []
       },
       "FollowButton": {
+        "replaces": []
+      },
+      "FrontLayer": {
+        "replaces": []
+      },
+      "FrontLayerHeader": {
         "replaces": []
       },
       "IconButton": {

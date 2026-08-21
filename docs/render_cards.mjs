@@ -12,7 +12,7 @@
  *   node docs/build_bundle.js && node docs/render_cards.mjs
  */
 import { createRequire } from 'node:module';
-import { readFileSync, readdirSync, mkdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdirSync, statSync, existsSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
@@ -66,6 +66,27 @@ await new Promise((r) => setTimeout(r, 900));
 
 const { chromium } = loadPlaywright();
 const browser = await chromium.launch();
+
+// The cards pull React, ReactDOM and Babel from unpkg with pinned SRI hashes. Serve them from a
+// local cache instead: same URL so the bytes still satisfy the hashes, but 56 cards no longer make
+// 168 network requests whose timing decides whether a card renders at all.
+const VENDOR = path.join(ROOT, '.vendor');
+mkdirSync(VENDOR, { recursive: true });
+const CDN = [
+  'https://unpkg.com/react@18.3.1/umd/react.development.js',
+  'https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js',
+  'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js',
+];
+const vendored = new Map();
+for (const url of CDN) {
+  const file = path.join(VENDOR, url.split('/').pop());
+  if (!existsSync(file)) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('cannot vendor ' + url + ': HTTP ' + res.status);
+    writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  }
+  vendored.set(url, readFileSync(file));
+}
 mkdirSync(path.join(ROOT, '.render'), { recursive: true });
 
 let bad = 0;
@@ -87,8 +108,43 @@ for (const rel of cards) {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message.split('\n')[0]));
   page.on('console', (c) => { if (c.type() === 'error') errors.push('console: ' + c.text().slice(0, 160)); });
 
+  await page.route('https://unpkg.com/**', (route) => {
+    const body = vendored.get(route.request().url());
+    return body ? route.fulfill({ status: 200, contentType: 'application/javascript', body }) : route.continue();
+  });
+
+  // Babel transforms <script type="text/babel"> on DOMContentLoaded. If babel.min.js has not
+  // executed by then, the inline script is never transformed: every asset loads, no error is
+  // raised, and #root simply stays empty — indistinguishable from a genuinely broken card. So
+  // force the transform, then wait for a real child rather than guessing with a fixed delay.
+  const settle = async () => {
+    // Wait for Babel's OWN DOMContentLoaded transform first. Calling transformScriptTags() while
+    // that is still pending executes the inline script a second time, and the card's
+    // ReactDOM.createRoot() then logs "already been passed to createRoot()" — a self-inflicted
+    // error indistinguishable from a broken card. Only force it when Babel truly never ran.
+    const filled = () => page.waitForFunction(() => {
+      const r = document.getElementById('root');
+      return !!r && r.childElementCount > 0;
+    }, { timeout: 6000 }).then(() => true).catch(() => false);
+    if (await filled()) return;
+    await page.evaluate(() => {
+      const r = document.getElementById('root');
+      if (r && r.childElementCount === 0 && window.Babel && window.Babel.transformScriptTags) {
+        window.Babel.transformScriptTags();
+      }
+    }).catch(() => {});
+    await filled();
+  };
+
   await page.goto(`http://127.0.0.1:${PORT}/${rel}`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(700);
+  await settle();
+  // One reload if it is still empty — distinguishes a transform that lost the race from a card
+  // that genuinely renders nothing.
+  if (await page.evaluate(() => (document.getElementById('root') || {}).childElementCount === 0)) {
+    await page.reload({ waitUntil: 'networkidle' });
+    await settle();
+  }
+  await page.waitForTimeout(250);
 
   const res = await page.evaluate((names) => {
     const ns = window.SonoraDesignSystem_6c1435 || {};

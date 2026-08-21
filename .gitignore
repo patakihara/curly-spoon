@@ -10,3 +10,4 @@ _ds_bundle.js
 
 # Sub-agent scratch: probe pages and one-off screenshots.
 .probe/
+.vendor/
