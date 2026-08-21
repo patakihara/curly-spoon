@@ -5,9 +5,9 @@ import net.develivarr.auralis.data.model.JellyfinAlbum
 import net.develivarr.auralis.data.model.LibraryItem
 import net.develivarr.auralis.data.model.MediaProgress
 import net.develivarr.auralis.data.model.MediaSummary
-import net.develivarr.auralis.data.model.MixedRecommendedItem
-import net.develivarr.auralis.data.model.MixedRecommendedShelf
 import net.develivarr.auralis.data.model.MusicRecommendedAlbum
+import net.develivarr.auralis.data.model.RecommendedLibraryItem
+import net.develivarr.auralis.data.model.RecommendedShelf
 import net.develivarr.auralis.data.model.Shelf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -41,32 +41,26 @@ class ForYouFeedTest {
         reason: String? = null,
     ) = Shelf(id = id, label = label, type = type, items = items, reason = reason)
 
-    private fun mixedItem(
+    private fun recommendedLibraryItem(
         id: String,
-        kind: String = "book",
         title: String = "Title-$id",
-        subtitle: String? = null,
-        coverPath: String? = null,
-        imageTag: String? = null,
+        authors: List<AuthorRef>? = null,
+        author: String? = null,
         availability: String = "owned",
-    ) = MixedRecommendedItem(
-        kind = kind,
+    ) = RecommendedLibraryItem(
         id = id,
-        title = title,
-        subtitle = subtitle,
-        coverPath = coverPath,
-        imageTag = imageTag,
+        libraryId = "lib1",
+        media = MediaSummary(kind = "book", title = title, authors = authors, author = author),
         availability = availability,
     )
 
-    private fun mixedShelf(
+    private fun recommendedShelf(
         id: String,
         label: String = "Shelf $id",
         type: String = "recommended",
+        items: List<RecommendedLibraryItem>,
         reason: String? = null,
-        itemLabels: Map<String, String>? = null,
-        items: List<MixedRecommendedItem>,
-    ) = MixedRecommendedShelf(id = id, label = label, type = type, reason = reason, itemLabels = itemLabels, items = items)
+    ) = RecommendedShelf(id = id, label = label, type = type, items = items, reason = reason)
 
     @Test
     fun `shelfToCarousel uses the passed contentType, not shelf type`() {
@@ -171,142 +165,55 @@ class ForYouFeedTest {
         assertEquals("The Artist", carousel.items.single().subtitle)
     }
 
-    /** Wave 15c-2-A — [FeedItem.isExternal] must reflect [MixedRecommendedItem.availability]
-     * exactly: `"owned"` is not external, everything else (including a value this test has never
-     * seen) is. Deliberately includes a made-up third value to pin the "unknown degrades to
-     * external, not owned" rule every `availability`-string field in this file's `ApiModels.kt`
-     * doc comments states. */
+    /** Wave 15d-1-books — [FeedItem.isExternal] must reflect
+     * [RecommendedLibraryItem.availability] exactly: `"owned"` is not external, everything else
+     * (including a value this test has never seen) is. Deliberately includes a made-up third
+     * value to pin the "unknown degrades to external, not owned" rule from that field's own doc
+     * comment — the safer default, since treating an unrecognised value as owned would silently
+     * reintroduce the dead-end book-detail navigation this wave exists to close off. Mirrors
+     * `recommendedAlbumsToCarousel maps availability to isExternal, ...` above for the music
+     * side of this same wave family (15d). */
     @Test
-    fun `mixedShelfToCarousel maps availability to isExternal, treating anything but 'owned' as external`() {
+    fun `recommendedShelfToCarousel maps availability to isExternal, treating anything but 'owned' as external`() {
         val items =
             listOf(
-                mixedItem("b1", availability = "owned"),
-                mixedItem("b2", availability = "external"),
-                mixedItem("b3", availability = "quarantined"),
+                recommendedLibraryItem("b1", availability = "owned"),
+                recommendedLibraryItem("b2", availability = "external"),
+                recommendedLibraryItem("b3", availability = "quarantined"),
             )
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
+        val carousel = recommendedShelfToCarousel(recommendedShelf(id = "s1", items = items), ForYouContentType.BOOKS) { null }
         assertEquals(listOf(false, true, true), carousel.items.map { it.isExternal })
     }
 
     @Test
-    fun `mixedShelfToCarousel maps kind to contentType, book podcast and album`() {
-        val items = listOf(mixedItem("b1", kind = "book"), mixedItem("p1", kind = "podcast"), mixedItem("a1", kind = "album"))
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
-        assertEquals(
-            listOf(ForYouContentType.BOOKS, ForYouContentType.PODCASTS, ForYouContentType.MUSIC),
-            carousel.items.map { it.contentType },
-        )
+    fun `recommendedShelfToCarousel uses the passed contentType, not shelf type`() {
+        val items = listOf(recommendedLibraryItem("e1", author = "Host"))
+        val carousel = recommendedShelfToCarousel(recommendedShelf(id = "s1", items = items), ForYouContentType.PODCASTS) { null }
+        assertEquals(ForYouContentType.PODCASTS, carousel.contentType)
+        assertEquals(ForYouContentType.PODCASTS, carousel.items.single().contentType)
     }
 
     @Test
-    fun `mixedShelfToCarousel drops an item whose kind this build doesn't recognise, rather than crashing`() {
-        val items = listOf(mixedItem("b1", kind = "book"), mixedItem("x1", kind = "audiobook-series"))
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
-        assertEquals(listOf("b1"), carousel.items.map { it.id })
-    }
-
-    @Test
-    fun `mixedShelfToCarousel's contentType is the shared kind when every item agrees`() {
-        val items = listOf(mixedItem("b1", kind = "book"), mixedItem("b2", kind = "book"))
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
-        assertEquals(ForYouContentType.BOOKS, carousel.contentType)
-    }
-
-    @Test
-    fun `mixedShelfToCarousel's contentType is null when items span more than one kind`() {
-        val items = listOf(mixedItem("b1", kind = "book"), mixedItem("a1", kind = "album"))
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
-        assertNull(carousel.contentType)
-    }
-
-    @Test
-    fun `mixedShelfToCarousel reads typeLabel straight off itemLabels, never re-deriving it from kind`() {
-        val items = listOf(mixedItem("b1", kind = "book"), mixedItem("a1", kind = "album"))
-        val carousel =
-            mixedShelfToCarousel(
-                mixedShelf(id = "s1", items = items, itemLabels = mapOf("b1" to "Audiobook", "a1" to "Album")),
-                coverUrl = { null },
-                artworkUrl = { null },
+    fun `recommendedShelfToCarousel prefers structured authors over free-text author for a book, same as shelfToCarousel`() {
+        val withBoth =
+            recommendedLibraryItem(
+                "b1",
+                authors = listOf(AuthorRef("a1", "Structured Author")),
+                author = "Free Text Author",
             )
-        assertEquals("Audiobook", carousel.items.single { it.id == "b1" }.typeLabel)
-        assertEquals("Album", carousel.items.single { it.id == "a1" }.typeLabel)
-    }
-
-    @Test
-    fun `mixedShelfToCarousel leaves typeLabel null when the shelf carries no itemLabels`() {
-        val items = listOf(mixedItem("b1", kind = "book"))
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
-        assertNull(carousel.items.single().typeLabel)
-    }
-
-    @Test
-    fun `mixedShelfToCarousel resolves a book or podcast cover via coverUrl, keyed on the item id`() {
-        val items = listOf(mixedItem("b1", kind = "book", coverPath = "some/path"))
         val carousel =
-            mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { "cover/$it" }, artworkUrl = { "art/$it" })
-        assertEquals("cover/b1", carousel.items.single().coverUrl)
+            recommendedShelfToCarousel(recommendedShelf(id = "s1", items = listOf(withBoth)), ForYouContentType.BOOKS) { null }
+        assertEquals("Structured Author", carousel.items.single().subtitle)
     }
 
     @Test
-    fun `mixedShelfToCarousel resolves an album cover via artworkUrl, not coverUrl`() {
-        val items = listOf(mixedItem("a1", kind = "album", imageTag = "tag123"))
+    fun `recommendedShelfToCarousel carries reason through, same as shelfToCarousel`() {
         val carousel =
-            mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { "cover/$it" }, artworkUrl = { "art/$it" })
-        assertEquals("art/a1", carousel.items.single().coverUrl)
-    }
-
-    /** [MixedRecommendedItem.coverPath]/[MixedRecommendedItem.imageTag] are presence flags, not
-     * URL inputs — a `null` one means "no cover for this item", never "call the resolver
-     * anyway". */
-    @Test
-    fun `mixedShelfToCarousel yields no coverUrl when coverPath or imageTag is absent`() {
-        val items = listOf(mixedItem("b1", kind = "book", coverPath = null), mixedItem("a1", kind = "album", imageTag = null))
-        val carousel =
-            mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { "cover/$it" }, artworkUrl = { "art/$it" })
-        assertTrue(carousel.items.all { it.coverUrl == null })
-    }
-
-    @Test
-    fun `mixedShelfToCarousel always yields a null progress, this route can never produce one`() {
-        val items = listOf(mixedItem("b1"))
-        val carousel = mixedShelfToCarousel(mixedShelf(id = "s1", items = items), coverUrl = { null }, artworkUrl = { null })
-        assertNull(carousel.items.single().progress)
-    }
-
-    @Test
-    fun `mixedShelfToCarousel carries reason and label through, same as shelfToCarousel`() {
-        val carousel =
-            mixedShelfToCarousel(
-                mixedShelf(id = "rec", label = "Because you finished", items = listOf(mixedItem("b1")), reason = "Because you finished a book"),
-                coverUrl = { null },
-                artworkUrl = { null },
-            )
+            recommendedShelfToCarousel(
+                recommendedShelf(id = "s1", items = listOf(recommendedLibraryItem("b1")), reason = "Because you finished a book"),
+                ForYouContentType.BOOKS,
+            ) { null }
         assertEquals("Because you finished a book", carousel.reason)
-        assertEquals("Because you finished", carousel.label)
-    }
-
-    @Test
-    fun `feedItemDisplaySubtitle leads with typeLabel then subtitle, byte-for-byte separator`() {
-        val item = feedItem("i1").copy(subtitle = "Ursula K. Le Guin", typeLabel = "Audiobook")
-        assertEquals("Audiobook • Ursula K. Le Guin", feedItemDisplaySubtitle(item))
-    }
-
-    @Test
-    fun `feedItemDisplaySubtitle is the bare subtitle when there is no typeLabel`() {
-        val item = feedItem("i1").copy(subtitle = "Ursula K. Le Guin")
-        assertEquals("Ursula K. Le Guin", feedItemDisplaySubtitle(item))
-    }
-
-    @Test
-    fun `feedItemDisplaySubtitle is the bare typeLabel when there is no subtitle`() {
-        val item = feedItem("i1").copy(subtitle = null, typeLabel = "Album")
-        assertEquals("Album", feedItemDisplaySubtitle(item))
-    }
-
-    @Test
-    fun `feedItemDisplaySubtitle is null when neither is present`() {
-        val item = feedItem("i1").copy(subtitle = null)
-        assertNull(feedItemDisplaySubtitle(item))
     }
 
     @Test

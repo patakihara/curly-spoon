@@ -126,14 +126,9 @@ private fun fallbackIconFor(contentType: ForYouContentType): ImageVector =
     }
 
 /** An accessible name for a card/tile: title alone, or "title, subtitle" when there is one —
- * mirrors `Carousel.tsx`'s exported `cardLabel`. Wave 15c-2-A: reads
- * [feedItemDisplaySubtitle] rather than [FeedItem.subtitle] directly, so a mixed-shelf item's
- * type label (`"Audiobook"`/`"Podcast"`/`"Album"`) is *announced*, not just visually drawn — the
- * same string [ForYouCard]'s subtitle `Text` renders reaches this accessible name too. */
-internal fun feedItemContentDescription(item: FeedItem): String {
-    val subtitle = feedItemDisplaySubtitle(item)
-    return if (subtitle != null) "${item.title}, $subtitle" else item.title
-}
+ * mirrors `Carousel.tsx`'s exported `cardLabel`. */
+internal fun feedItemContentDescription(item: FeedItem): String =
+    if (item.subtitle != null) "${item.title}, ${item.subtitle}" else item.title
 
 /** The reason line's presence/absence decision, pulled out of [ForYouCarouselRow] so it is
  * testable without a Compose test harness (this project has none for `features/home/` — see
@@ -312,10 +307,8 @@ fun ForYouCard(
         )
         // Always rendered, even with no subtitle — see ForYouCarouselDimens.SUBTITLE_ROW_HEIGHT's
         // doc comment: an item with no subtitle must not end up shorter than one that has one.
-        // Wave 15c-2-A: feedItemDisplaySubtitle leads with item.typeLabel when the owning shelf
-        // is mixed (e.g. "Audiobook • Ursula K. Le Guin"), never item.subtitle directly.
         Text(
-            text = feedItemDisplaySubtitle(item) ?: " ",
+            text = item.subtitle ?: " ",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
