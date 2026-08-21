@@ -279,10 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
-- `2026-08-20T21:43:47Z` · `adeb514ba6ea1d786` · general-purpose · ended · Working tree clean. Here is my final report. ## Report — '16e-settings-P' **Verdict: ship as-is. No blocking defects on either platform.** 'main' at…
-- `2026-08-20T22:00:53Z` · `a12a64f119980693a` · general-purpose · ended · ## Report — '16g-design-reconcile' **Branch/commit:** 'worktree-agent-a12a64f119980693a' at 'b98ca76', one commit on top of '04a7f22'. 'git status --…
-- `2026-08-20T22:11:05Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · The 'ui-desktop'/'ui-mobile' Playwright run auto-backgrounded (task 'bd1b0vfm1') after the 2-minute default timeout. My work is already committed, so…
 - `2026-08-20T22:23:16Z` · `aa14b1c2b80bebfb8` · general-purpose · ended · ## 1. The seven-call-site classification All seven line numbers you gave me were accurate — I re-grepped them before touching anything and they match…
 - `2026-08-20T22:36:57Z` · `af5faf40ebd7f0c47` · general-purpose · ended · Working tree is clean, nothing uncommitted, nothing pushed. ## Report — wave '16i-handover-prune' **Branch/commit:** 'worktree-agent-af5faf40ebd7f0c4…
 - `2026-08-20T23:43:27Z` · `ac975afe5c449b45b` · general-purpose · ended · ## 1. Claim A verdict — **HOLDS**, unchanged since the record was written 'itemLabels' is computed in 'apps/server/src/features/recommendations/shelv…
@@ -294,6 +290,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T00:38:33Z` · `a08d557597dcd2471` · general-purpose · ended · Working tree is clean, everything committed on the worktree branch. Task complete. ## Report — Wave '15c-2-S-2' **1. Branch/commit:** 'worktree-agent…
 - `2026-08-21T00:57:59Z` · `a21d6f864533eff15` · general-purpose · ended · Full 'apps/server' suite green (759/759). Report follows. ## Report — review of 'a1c0075' (recommended.ts / recommended.test.ts namespacing fix) **1.…
 - `2026-08-21T01:04:16Z` · `a3096cd65d8c877e3` · general-purpose · ended · ## Report — wave '16c-7-W' **1. Branch/commit:** 'worktree-agent-a3096cd65d8c877e3' at 'f2465f7', two commits on top of 'a63aac3' (base per spec). 'g…
+- `2026-08-21T04:10:54Z` · `a62004720b969710c` · general-purpose · ended · ## Report — For You / Home feed inventory, web and Android ### 1. Web — every async data source in Home's feed 'HomePage.tsx' (the "Browse"/For You s…
+- `2026-08-21T04:17:56Z` · `a349cd26638b65911` · general-purpose · running · —
+- `2026-08-21T04:23:53Z` · `aeb7302ff0eae9b44` · general-purpose · running · —
+- `2026-08-21T04:24:47Z` · `a006567403b5d06c8` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -777,36 +777,54 @@ invalidates every existing assertion that counted it while every unit suite stay
 full run sees it. The reviewer also grepped every count/pagination assertion against `lib-podcasts`
 and found none affected. Both checks agree, which is why this is settled rather than assumed.
 
-### The one thing a session picking this up must do next: **`GET /recommended` has NO reader**
+### CLAIMED 2026-08-21 — `15c-2-W` + `15c-2-A`, the client triple. Base `6b191a6`.
 
-`15c-2-S` shipped the route deliberately without a client, and the reader is named rather than
-assumed: **`15c-2-W` / `15c-2-A` / `15c-2-P`, not yet built.** Until they are, this is by definition
-this project's most-repeated failure shape — a writer with no reader, four historical instances,
-every one green on its own tests. It is the top of the queue.
+**`GET /api/v1/recommended` finally gets its reader.** It has been this project's fifth
+writer-with-no-reader since `e94005d`. Both agents are worktree-isolated (**checked** with
+`ls .claude/worktrees/agent-<id>`, not assumed) and dispatched from one shared behaviour spec,
+`docs/agent-specs/15c-2-CLIENTS.md`. `-W` owns `apps/web` + `e2e`; `-A` owns `apps/android`.
+Disjoint. **`-P` is owed after both land**, by an agent that wrote neither half.
 
-**What the clients must consume**, so the spec does not have to re-derive it:
+**Placement was the orchestrator's call and is decided: REPLACEMENT.** The mixed shelf replaces the
+per-medium recommended carousels on For You rather than sitting beside them — Sofia asked for mixed
+carousels _rather than_ one shelf per medium, neither client can dedupe across independently-fetched
+responses, and replacement closes an existing divergence for free (web fetched
+`/libraries/:id/recommended` for the **book library only**; Android fetched it for **book and
+podcast**). Home's other three sources are untouched.
 
-```
-GET /api/v1/recommended  ->  { shelves: [ {
-    id, label, type: 'recommended', reason,
-    itemLabels?: Record<itemId, 'Audiobook' | 'Podcast' | 'Album'>,   // present ONLY when a shelf spans >1 kind
-    items: [ { kind, id, title, subtitle|null, coverPath|null, imageTag|null, availability } ]
-} ] }
-```
+**Two things pre-ruled so `-P` does not misgrade them:**
 
-`MixedRecommendedItem` is a **new flat card projection, not a union of the existing types** — and
-that was forced, not chosen. Android's `RecommendedLibraryItem` and `MusicRecommendedAlbum` have
-irreconcilable field sets, and kotlinx throws `MissingFieldException` on a missing non-nullable
-field, on a device nobody here can test and invisible to CI. So both clients need a **new** model,
-and every field's nullability is deliberate. `coverPath` and `imageTag` are kept as two nullable
-fields rather than one normalized image ref because the two upstreams resolve covers through
-different URL shapes and both clients already know both names.
+- **Web deletes one fetch, Android deletes two.** Correct and pre-existing, not drift.
+- **Cross-carousel dedupe on For You does not exist today on either platform** — grepped, not
+  inherited. Replacement reduces the duplication surface; it does not introduce it. Pre-existing and
+  out of scope.
 
-**The client triple must also settle a placement question the server wave could not.** Home stitches
-four independent fetches client-side (see 14c), so a fifth cross-medium source either duplicates
-content already on For You or replaces the two per-medium recommendation carousels. Her decision was
-**mixed-content carousels rather than one shelf per medium**, which argues for replacement — but no
-item may appear twice on For You either way, and that is the constraint to spec against.
+### A dispatched wave was cancelled mid-flight, and the reason is the useful part
+
+**`15c-2-S-3` was specced, dispatched, and killed with nothing committed.** Recon found that
+`MixedRecommendedItem` has no `progress` field while both clients render a progress bar on
+recommended cards — which reads exactly like replacement silently deleting a visible affordance, the
+signature failure shape here. So a server wave was dispatched to add the field.
+
+**It was vacuous.** `profile.ts:123` adds **every** item carrying a progress signal to
+`knownItemIds` — unconditionally, _not_ gated on `isFinished` — and `score.ts:38` skips every
+candidate in that set, commented "Never recommend what the user already has progress on." Both the
+new aggregator (`recommended.ts:381-382`) and the older per-library route (`libraries.ts:305-316`)
+run that same pair. **A recommended item is therefore by construction one the user has no progress
+on.** The field is already always `null` on the route being replaced, the bar has never rendered on
+a recommended card on either platform, and adding it would have shipped a wire field that can never
+hold a value — a writer with no reader, inside the wave whose whole purpose is to close one.
+
+**The generalisable lesson, and it is new: reading the writer tells you the shape; only reading the
+filter tells you the range.** The missing field was visible in the route's own type signature. Its
+emptiness was a property of a scorer two modules away. Every check that looks at the producer —
+review the diff, read the route, grep the type — returns "field absent, clients render it, therefore
+regression," and every one of them is wrong. **Before adding a field because a consumer renders it,
+find what excludes rows from that response and check the field is reachable through it.**
+
+**Adjacent finding, deliberately not fixed:** `RecommendedLibraryItem.progress` on the two existing
+routes is likewise a field that can never be non-null, and both clients hold progress-bar rendering
+for it that can never fire. Pre-existing, harmless, and a separate decision.
 
 ### DONE `a1c0075` — `15c-2-S-2` closed the id-collision follow-up, and found a second half
 
