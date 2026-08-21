@@ -93,11 +93,17 @@ describe('ListItem.css — off --m3-* except the two deliberate survivors', () =
     expect(css).toContain('transition: background-color 200ms ease-in-out;');
   });
 
-  it('selected state is the bold --accent/--accent-contrast pairing, not --m3-secondary-container', () => {
-    expect(css).toMatch(/\.m3-list-item--selected\s*{\s*background: var\(--accent,/);
-    expect(css).toMatch(/color: var\(--accent-contrast,/);
-    expect(stripBlockComments(css)).not.toContain('--m3-secondary-container');
-    expect(stripBlockComments(css)).not.toContain('--m3-on-secondary-container');
+  it('selected state is a tonal --surface-card step, not an --accent fill and not --m3-secondary-container', () => {
+    // Pins BOTH directions deliberately. The `--m3-*` half guards the migration; the
+    // `--accent` half guards the review finding that a solid accent fill both contradicts
+    // the queue view's own override of this class and fails WCAG AA on its text pairing.
+    // Reverting to either shape fails this test.
+    expect(css).toMatch(/\.m3-list-item--selected\s*{\s*background: var\(--surface-card,/);
+    expect(css).toMatch(/\.m3-list-item--selected\s*{[^}]*color: var\(--surface-fg,/);
+    const bare = stripBlockComments(css);
+    expect(bare).not.toContain('--m3-secondary-container');
+    expect(bare).not.toContain('--m3-on-secondary-container');
+    expect(bare).not.toContain('--accent-contrast');
   });
 
   it('overline/supporting text use --surface-fg-muted, not --m3-on-surface-variant', () => {

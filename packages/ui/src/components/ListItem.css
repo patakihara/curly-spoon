@@ -38,9 +38,29 @@
   padding-bottom: 12px;
 }
 
+/* Selected is a tonal surface step with inherited text, deliberately NOT the
+ * `--accent`/`--accent-contrast` fill wave 16c-6-W first shipped. Two reasons, both
+ * found in review rather than by a test, because neither is visible to one.
+ *
+ * `16e-nowplaying` had already overridden this exact class at the queue-view call site
+ * (`apps/web/src/styles/app.css`, `.auralis-queue-view__list .m3-list-item--selected`)
+ * precisely because a solid accent block reads wrong for "the currently-playing row".
+ * `ChapterList` renders that same semantic through the bare `selected` prop with no
+ * override, so a solid fill here silently split one concept across two treatments —
+ * loud on the chapter list, tonal three metres away in the queue.
+ *
+ * And `--accent-contrast` on `--accent` fails WCAG AA at the shipped default (4.23:1 at
+ * violet; nine of the seventeen presets fail even the 3:1 UI floor). The pairing it
+ * replaced, `--m3-on-secondary-container` on `--m3-secondary-container`, was a Material 3
+ * pair built to pass — so the fill was a contrast regression as well as an inconsistency.
+ * Whether accent-filled surfaces should carry text at all is an open question with Sofia
+ * (queue `c9887cb`); until it is answered, selection must not depend on that pairing.
+ *
+ * Selection stays conveyed by the surface step plus the `aria-current` this component
+ * already renders, so it survives for a screen reader even where the step is subtle. */
 .m3-list-item--selected {
-  background: var(--accent, #8b5cf6);
-  color: var(--accent-contrast, #fff);
+  background: var(--surface-card, rgb(20, 20, 20));
+  color: var(--surface-fg, rgb(225, 225, 225));
 }
 
 .m3-list-item__leading,
