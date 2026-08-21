@@ -293,7 +293,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T04:10:54Z` · `a62004720b969710c` · general-purpose · ended · ## Report — For You / Home feed inventory, web and Android ### 1. Web — every async data source in Home's feed 'HomePage.tsx' (the "Browse"/For You s…
 - `2026-08-21T04:17:56Z` · `a349cd26638b65911` · general-purpose · running · —
 - `2026-08-21T04:23:53Z` · `aeb7302ff0eae9b44` · general-purpose · running · —
-- `2026-08-21T04:24:47Z` · `a006567403b5d06c8` · general-purpose · running · —
+- `2026-08-21T04:24:47Z` · `a006567403b5d06c8` · general-purpose · ended · ## Report — wave '15c-2-A' **Branch/commit:** worktree branch at '00ea28f', one commit on top of '6b191a6' (base per spec). 'git status --short' is c…
 
 <!-- AGENT_LOG_END -->
 
@@ -791,6 +791,29 @@ carousels _rather than_ one shelf per medium, neither client can dedupe across i
 responses, and replacement closes an existing divergence for free (web fetched
 `/libraries/:id/recommended` for the **book library only**; Android fetched it for **book and
 podcast**). Home's other three sources are untouched.
+
+**`15c-2-A` LANDED on its worktree branch, NOT yet merged: `worktree-agent-a006567403b5d06c8`
+at `00ea28f`** (one commit on `6b191a6`, tree clean, scope clean — nothing outside `apps/android`,
+verified by the orchestrator rather than taken from the report). All worktrees of one repo share one
+object database and that branch is a ref in it, so **this commit survives the worktree directory
+being removed**. If a session finds this claim open, `git log worktree-agent-a006567403b5d06c8` is
+where the work is.
+
+**Three things `-P` must look at specifically in `-A`, beyond the standard checklist:**
+
+1. **`ForYouViewModelTest.kt` had its dispatcher "fully rewritten" (184 lines changed).** This file
+   is the single most dangerous one in the Android suite to touch mechanically — `HANDOVER`'s
+   Android-test-traps section records that the inject-the-test-dispatcher convention is **not
+   universal**, that one class of exception (`HomeViewModelTest`'s `startDownload` tests) **hangs**
+   rather than failing visibly, and that `f99b8fa` reverted exactly such a mechanical pass. Only CI
+   can settle it. Read the diff for tests that assert real `MockWebServer` interleaving via
+   `setBodyDelay`.
+2. **`FeedCarousel.contentType` became nullable, `null` meaning "mixed".** A change to a shared type
+   rather than a new enum case, chosen to keep every existing exhaustive `when` untouched. Judge it;
+   it is defensible but it is a design decision the spec did not make.
+3. **`ForYouScreen.kt` gained `isExternal` guards on `PODCASTS` and `MUSIC`.** These extend an
+   existing `BOOKS` guard and so change behaviour for the **pre-existing** carousels too, not only
+   the new mixed one. In scope by the availability requirement, but wider than the mixed shelf.
 
 **Two things pre-ruled so `-P` does not misgrade them:**
 
