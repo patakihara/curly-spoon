@@ -71,6 +71,48 @@ const MUSIC_TRACK_LIMIT = 5000;
 const MAX_SHELVES = 5;
 const ITEMS_PER_SHELF = 10;
 
+/**
+ * Namespace prefixes for candidate/signal ids, wave 15c-2-S-2.
+ *
+ * `shelves.ts` keys `candidatesById`, its `used` set and `itemLabels` by a bare
+ * `RecommendationCandidate.id` — and Audiobookshelf ids and Jellyfin ids come from two
+ * independent systems with no cross-namespace uniqueness guarantee. Without a prefix, a
+ * collision would let the last-written pool silently shadow the other in every map this
+ * route (and `shelves.ts`) keys by id, while `toMixedItem` below still resolved that id
+ * Audiobookshelf-first — so a colliding Jellyfin album could render with a book's title
+ * and cover, labelled `"Album"`, with the book unreachable.
+ *
+ * Every id this route hands to the scoring core (`RecommendationCandidate.id` *and*
+ * `ProgressSignal.itemId` — `profile.ts`'s `itemsById`/`knownItemIds` match the two
+ * against each other, so both must carry the same namespacing or the match breaks) is
+ * prefixed by `namespaceAbsId`/`namespaceJellyfinId` before it reaches
+ * `buildTasteProfile`/`scoreCandidates`/`buildRecommendationShelves`, and stripped back
+ * off by `toMixedItem`/`stripNamespace` before anything reaches the wire — so the
+ * response's `items[].id` is the original upstream id, unchanged from what ships today.
+ * No client consumes this route yet, so this is free to fix now and a breaking change
+ * later.
+ */
+const ABS_ID_PREFIX = 'abs:';
+const JELLYFIN_ID_PREFIX = 'jf:';
+
+function namespaceAbsId(id: string): string {
+  return `${ABS_ID_PREFIX}${id}`;
+}
+
+function namespaceJellyfinId(id: string): string {
+  return `${JELLYFIN_ID_PREFIX}${id}`;
+}
+
+/** Strips whichever namespace prefix `id` carries, for re-keying `itemLabels` back to
+ * the bare upstream ids the response's `items[].id` values use. Falls through
+ * unchanged if neither prefix matches, which should not happen — every key this route
+ * ever puts in `itemLabels` came from a candidate this route itself namespaced. */
+function stripNamespace(id: string): string {
+  if (id.startsWith(ABS_ID_PREFIX)) return id.slice(ABS_ID_PREFIX.length);
+  if (id.startsWith(JELLYFIN_ID_PREFIX)) return id.slice(JELLYFIN_ID_PREFIX.length);
+  return id;
+}
+
 /** Matches `routes/libraries.ts`'s and `routes/jellyfin.ts`'s own `*_RECOMMENDATION_SHELF_TYPE`
  * — nothing downstream branches on it today, kept for the same forward-looking reason those
  * two name it explicitly rather than inlining the string. */
@@ -170,11 +212,17 @@ async function tryBuildAbsPool(app: FastifyInstance, userId: string): Promise<Ab
     );
     const items = pages.flatMap((page) => page.items).slice(0, ABS_CANDIDATE_LIMIT);
 
+    // Keyed by the bare upstream id — `toMixedItem` looks items up here *after*
+    // stripping the namespace prefix back off, so this map is deliberately not
+    // re-keyed to match the namespaced candidate/signal ids below.
     const itemsById = new Map<string, LibraryItem>(items.map((item) => [item.id, item]));
     const signals: ProgressSignal[] = me.mediaProgress
       .filter((p) => itemsById.has(p.libraryItemId))
       .map((p) => ({
-        itemId: p.libraryItemId,
+        // Namespaced to match `candidates` below — `profile.ts`'s `buildTasteProfile`
+        // matches `signal.itemId` against `RecommendationCandidate.id` directly, so the
+        // two must carry identical ids, prefix included.
+        itemId: namespaceAbsId(p.libraryItemId),
         progress: p.progress,
         isFinished: p.isFinished,
         // Same fallback chain `routes/libraries.ts`'s own recommended-route handler
@@ -185,7 +233,11 @@ async function tryBuildAbsPool(app: FastifyInstance, userId: string): Promise<Ab
         lastActivityAt: p.lastUpdate ?? p.finishedAt ?? null,
       }));
 
-    return { candidates: items.map(toCandidate), signals, itemsById };
+    const candidates = items
+      .map(toCandidate)
+      .map((candidate) => ({ ...candidate, id: namespaceAbsId(candidate.id) }));
+
+    return { candidates, signals, itemsById };
   } catch (err) {
     if (err instanceof NotConfiguredError || err instanceof NoCredentialsError) {
       return null;
@@ -217,9 +269,17 @@ async function tryBuildJellyfinPool(
       client.getTracks({ limit: MUSIC_TRACK_LIMIT }),
     ]);
 
+    // Keyed by the bare upstream id, same reasoning as `tryBuildAbsPool`'s `itemsById`.
     const albumsById = new Map<string, Album>(albumsPage.items.map((a) => [a.id, a]));
-    const candidates = albumsPage.items.map(albumToCandidate);
-    const signals = buildMusicProgressSignals(tracksPage.items);
+    const candidates = albumsPage.items
+      .map(albumToCandidate)
+      .map((candidate) => ({ ...candidate, id: namespaceJellyfinId(candidate.id) }));
+    // Namespaced to match `candidates` — same `profile.ts` matching reasoning as the
+    // Audiobookshelf pool's signals above.
+    const signals = buildMusicProgressSignals(tracksPage.items).map((signal) => ({
+      ...signal,
+      itemId: namespaceJellyfinId(signal.itemId),
+    }));
 
     return { candidates, signals, albumsById };
   } catch (err) {
@@ -235,11 +295,12 @@ async function tryBuildJellyfinPool(
 }
 
 /**
- * Resolves one shelf `itemId` back to a renderable card. `id` originates from whichever
- * pool produced it, so exactly one of `absItemsById`/`albumsById` will have it — checking
- * both (rather than threading a kind tag through the scoring core, which doesn't need one)
- * keeps `RecommendationCandidate` itself unchanged. Returns `null` only if neither pool
- * recognizes the id, which should not happen: every `itemId` a shelf can contain
+ * Resolves one shelf `itemId` back to a renderable card. `id` arrives namespaced (see
+ * `namespaceAbsId`/`namespaceJellyfinId` above) — the prefix says which pool produced it,
+ * so this routes to the matching map directly rather than probing both, and strips the
+ * prefix before returning: every `id` in the response is the bare upstream id, matching
+ * what ships today. Returns `null` only if the matching pool's map doesn't recognize the
+ * bare id, which should not happen: every namespaced `itemId` a shelf can contain
  * originates from the `candidates` array both pools fed into `buildRecommendationShelves`.
  */
 function toMixedItem(
@@ -247,8 +308,9 @@ function toMixedItem(
   absItemsById: Map<string, LibraryItem> | undefined,
   albumsById: Map<string, Album> | undefined,
 ): MixedRecommendedItem | null {
-  const absItem = absItemsById?.get(id);
-  if (absItem) {
+  if (id.startsWith(ABS_ID_PREFIX)) {
+    const absItem = absItemsById?.get(id.slice(ABS_ID_PREFIX.length));
+    if (!absItem) return null;
     if (absItem.media.kind === 'book') {
       const authorNames = absItem.media.authors
         .map((a) => a.name)
@@ -274,8 +336,9 @@ function toMixedItem(
     };
   }
 
-  const album = albumsById?.get(id);
-  if (album) {
+  if (id.startsWith(JELLYFIN_ID_PREFIX)) {
+    const album = albumsById?.get(id.slice(JELLYFIN_ID_PREFIX.length));
+    if (!album) return null;
     return {
       kind: 'album',
       id: album.id,
@@ -322,20 +385,33 @@ export function registerRecommendedRoutes(app: FastifyInstance): void {
       itemsPerShelf: ITEMS_PER_SHELF,
     });
 
-    const responseShelves = shelves.map((shelf) => ({
-      id: shelf.id,
-      label: shelf.label,
-      type: MIXED_RECOMMENDATION_SHELF_TYPE,
-      reason: shelf.reason,
-      // Only set when `shelves.ts`'s `typeLabelsFor` populated it (a shelf spanning
-      // more than one kind) — omitted, not sent as `null`, for a single-kind shelf, the
-      // same "absent means not applicable" contract `RecommendationShelf.itemLabels`'s
-      // own doc comment already promises.
-      ...(shelf.itemLabels ? { itemLabels: shelf.itemLabels } : {}),
-      items: shelf.itemIds
-        .map((id) => toMixedItem(id, absPool?.itemsById, jellyfinPool?.albumsById))
-        .filter((item): item is MixedRecommendedItem => item !== null),
-    }));
+    const responseShelves = shelves.map((shelf) => {
+      // `shelf.itemLabels` (when present) is keyed by the *namespaced* candidate id —
+      // see this file's namespacing header comment. Re-key to the bare upstream id
+      // before serializing, or the keys match no `items[].id` this route actually sends
+      // (the trap this wave exists to close: prefixing without also stripping here
+      // would silently disable `itemLabels` for every mixed shelf).
+      const itemLabels = shelf.itemLabels
+        ? Object.fromEntries(
+            Object.entries(shelf.itemLabels).map(([id, label]) => [stripNamespace(id), label]),
+          )
+        : undefined;
+
+      return {
+        id: shelf.id,
+        label: shelf.label,
+        type: MIXED_RECOMMENDATION_SHELF_TYPE,
+        reason: shelf.reason,
+        // Only set when `shelves.ts`'s `typeLabelsFor` populated it (a shelf spanning
+        // more than one kind) — omitted, not sent as `null`, for a single-kind shelf, the
+        // same "absent means not applicable" contract `RecommendationShelf.itemLabels`'s
+        // own doc comment already promises.
+        ...(itemLabels ? { itemLabels } : {}),
+        items: shelf.itemIds
+          .map((id) => toMixedItem(id, absPool?.itemsById, jellyfinPool?.albumsById))
+          .filter((item): item is MixedRecommendedItem => item !== null),
+      };
+    });
 
     return reply.send({ shelves: responseShelves });
   });

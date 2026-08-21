@@ -5,6 +5,8 @@ import {
   FAKE_JELLYFIN_CREDENTIALS,
 } from '../testSupport/fakes/fakeJellyfin.js';
 import { NotConfiguredError } from '../absUpstream.js';
+import type { AbsClient, LibraryItem } from '@auralis/abs-client';
+import type { Album, JellyfinClient } from '@auralis/jellyfin-client';
 
 async function authedApp() {
   const { app } = buildTestApp();
@@ -117,6 +119,229 @@ describe('GET /api/v1/recommended', () => {
         expect(item.availability).toBe('owned');
       }
     }
+  });
+
+  // The regression guard for wave 15c-2-S-2's trap. `recommended.ts` namespaces every
+  // candidate/signal id (`abs:`/`jf:`) before handing the pool to the scoring core, so a
+  // colliding Audiobookshelf id and Jellyfin id no longer shadow each other in
+  // `shelves.ts`'s maps — but `shelf.itemLabels` is keyed by that same namespaced id, and
+  // if the route stripped the prefix from `items[].id` without *also* stripping it from
+  // every `itemLabels` key, the keys would match no rendered card and the mixed-shelf
+  // labelling feature would silently stop working while every other assertion still
+  // passed. This must fail if either side is left prefixed.
+  it('itemLabels keys are exactly the bare item ids of the shelf, not the internal namespaced pool ids', async () => {
+    const { app, cookie } = await authedApp();
+    await finishFantasySeed(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    const mixedShelves = shelves.filter(
+      (s: { itemLabels?: Record<string, string> }) => s.itemLabels !== undefined,
+    );
+    // Guard the guard: this test proves nothing if no shelf in the fixture actually
+    // spans more than one kind.
+    expect(mixedShelves.length).toBeGreaterThan(0);
+
+    for (const shelf of mixedShelves as {
+      items: { id: string }[];
+      itemLabels: Record<string, string>;
+    }[]) {
+      const itemIds = shelf.items.map((item) => item.id).sort();
+      const labelKeys = Object.keys(shelf.itemLabels).sort();
+      expect(labelKeys).toEqual(itemIds);
+    }
+
+    // No internal namespace prefix ever reaches the wire, on any shelf.
+    for (const shelf of shelves as { items: { id: string }[] }[]) {
+      for (const item of shelf.items) {
+        expect(item.id.startsWith('abs:')).toBe(false);
+        expect(item.id.startsWith('jf:')).toBe(false);
+      }
+    }
+  });
+
+  // Required test 2 (the collision case). Constructs a mock where an Audiobookshelf
+  // book and a Jellyfin album share the literal upstream id `collide-1`. Before this
+  // wave's fix, `shelves.ts`'s `candidatesById`/`used`/`itemLabels` maps were keyed by
+  // this bare id, so the last-written pool's candidate would silently shadow the
+  // other everywhere — `toMixedItem`'s Audiobookshelf-first lookup would then render
+  // whichever candidate happened to still resolve, mislabelled, while the other
+  // vanished from the shelf entirely. With namespacing, both candidates carry distinct
+  // internal ids (`abs:collide-1` / `jf:collide-1`) and both survive into the response.
+  it('keeps a colliding Audiobookshelf item and Jellyfin album distinct, both surviving as correctly-kinded items', async () => {
+    const { app, cookie } = await authedApp();
+
+    const seedBook: LibraryItem = {
+      id: 'seed-book',
+      libraryId: 'lib-1',
+      addedAt: null,
+      updatedAt: null,
+      coverPath: null,
+      size: 0,
+      progress: null,
+      media: {
+        kind: 'book',
+        title: 'Seed Book',
+        subtitle: null,
+        authors: [{ name: 'Seed Author' }],
+        narrator: null,
+        series: [],
+        genres: ['Fantasy'],
+        publishedYear: null,
+        description: null,
+        isbn: null,
+        asin: null,
+        duration: 0,
+        tracks: undefined,
+        chapters: undefined,
+      },
+    };
+
+    // Same literal id as `collideAlbum` below — the collision this test exists to
+    // exercise. Different genre-matching author than the seed so it isn't itself
+    // treated as a second seed.
+    const collideBook: LibraryItem = {
+      id: 'collide-1',
+      libraryId: 'lib-1',
+      addedAt: null,
+      updatedAt: null,
+      coverPath: '/cover/collide-book.jpg',
+      size: 0,
+      progress: null,
+      media: {
+        kind: 'book',
+        title: 'Colliding Book',
+        subtitle: null,
+        authors: [{ name: 'Other Author' }],
+        narrator: null,
+        series: [],
+        genres: ['Fantasy'],
+        publishedYear: null,
+        description: null,
+        isbn: null,
+        asin: null,
+        duration: 0,
+        tracks: undefined,
+        chapters: undefined,
+      },
+    };
+
+    const fakeAbsClient = {
+      async getMe() {
+        return {
+          id: 'user-1',
+          username: 'collision-tester',
+          permissions: {},
+          // Finishes `seed-book`, establishing genre affinity for 'Fantasy' — the
+          // facet the two colliding candidates below both match.
+          mediaProgress: [
+            {
+              id: 'mp-1',
+              libraryItemId: 'seed-book',
+              episodeId: null,
+              duration: 100,
+              currentTime: 100,
+              progress: 1,
+              isFinished: true,
+              lastUpdate: Date.now(),
+              startedAt: null,
+              finishedAt: Date.now(),
+            },
+          ],
+          bookmarks: [],
+        };
+      },
+      async getLibraries() {
+        return [{ id: 'lib-1', name: 'Lib', mediaType: 'book' as const, icon: null, folders: [] }];
+      },
+      async getLibraryItems() {
+        return { items: [seedBook, collideBook], total: 2, limit: 300, page: 0 };
+      },
+    };
+
+    // Same literal id as `collideBook` above.
+    const collideAlbum: Album = {
+      id: 'collide-1',
+      name: 'Colliding Album',
+      sortName: null,
+      artistId: null,
+      artistName: 'Album Artist',
+      productionYear: null,
+      overview: null,
+      genres: ['Fantasy'],
+      imageTag: 'tag-collide',
+      trackCount: 10,
+      favorite: false,
+      playCount: 0,
+      lastPlayedAt: null,
+      musicBrainzAlbumId: null,
+      musicBrainzReleaseGroupId: null,
+    };
+
+    const fakeJellyfinClient = {
+      async getAlbums() {
+        return { items: [collideAlbum], total: 1, startIndex: 0 };
+      },
+      async getTracks() {
+        return { items: [], total: 0, startIndex: 0 };
+      },
+    };
+
+    vi.spyOn(app.abs, 'forUser').mockReturnValue(fakeAbsClient as unknown as AbsClient);
+    vi.spyOn(app.jellyfin, 'forUser').mockReturnValue(
+      fakeJellyfinClient as unknown as JellyfinClient,
+    );
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    const fantasyShelf = shelves.find((s: { id: string }) => s.id === 'shelf-genre-fantasy');
+    expect(fantasyShelf).toBeDefined();
+
+    const items = fantasyShelf.items as {
+      kind: string;
+      id: string;
+      title: string;
+      subtitle: string | null;
+      coverPath: string | null;
+      imageTag: string | null;
+    }[];
+
+    // The headline assertion: without the fix, only one of these two survives (the
+    // last write into `shelves.ts`'s bare-id-keyed maps) — so the shelf would contain
+    // exactly one item bearing id `collide-1`, not two.
+    const collidingItems = items.filter((item) => item.id === 'collide-1');
+    expect(collidingItems).toHaveLength(2);
+
+    const book = collidingItems.find((item) => item.kind === 'book');
+    const album = collidingItems.find((item) => item.kind === 'album');
+    expect(book).toBeDefined();
+    expect(album).toBeDefined();
+
+    // Each retains its own upstream data — neither shadows the other's title/cover.
+    expect(book?.title).toBe('Colliding Book');
+    expect(book?.coverPath).toBe('/cover/collide-book.jpg');
+    expect(album?.title).toBe('Colliding Album');
+    expect(album?.imageTag).toBe('tag-collide');
+
+    // `items[].id` is the bare upstream id on the wire — no `abs:`/`jf:` prefix leaks.
+    for (const item of items) {
+      expect(item.id.startsWith('abs:')).toBe(false);
+      expect(item.id.startsWith('jf:')).toBe(false);
+    }
+
+    vi.restoreAllMocks();
   });
 
   it('degrades to Audiobookshelf-only (book/podcast) shelves when Jellyfin is unconfigured', async () => {
