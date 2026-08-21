@@ -19,10 +19,7 @@
  * applies every `--m3-*` colour as an **inline style scoped to `.auralis-theme-root`
  * itself** (same trap `sonora-theme.css`'s header comment documents for the three
  * portalled components, just inverted: outside-via-ancestor instead of
- * outside-via-portal). So `var(--m3-surface)`/`var(--m3-on-surface)` here can only
- * ever resolve against `packages/ui/src/styles/index.css`'s static `:root`
- * fallback — which is deliberately light-only (see that file's comment) — never
- * against `data-theme`. Before wave 16c-3-W this rule was the *only* place
+ * outside-via-portal). Before wave 16c-3-W this rule was the *only* place
  * painting a background/text colour at all, so a user with the app pinned dark
  * against a light OS (`prefers-color-scheme: light`) got this rule's permanently
  * light values wherever a descendant didn't re-assert its own `color` — e.g.
@@ -30,18 +27,32 @@
  * correctly-dark card background, near-invisible.
  *
  * Kept anyway, deliberately still light-only, as a **pre-mount / edge-case
- * fallback** — the same role `index.css`'s `:root` block already documents for
- * itself, not a fallback invented for this fix: `.auralis-theme-root`'s own
- * `--m3-*` values are applied by a `useEffect` (after first paint), so there is a
- * brief window before it runs, and `.auralis-theme-root` covers the viewport but
- * elastic overscroll on mobile can still expose a sliver of `body` beneath it.
- * Both are edge cases already unaffected by this fix (they showed the same
- * light values before it too) — the fix is that real content, once
- * `.auralis-theme-root` has painted, no longer falls through past it.
+ * fallback**: `.auralis-theme-root`'s own values are applied by a `useEffect`
+ * (after first paint), so there is a brief window before it runs, and
+ * `.auralis-theme-root` covers the viewport but elastic overscroll on mobile can
+ * still expose a sliver of `body` beneath it. Both are edge cases already
+ * unaffected by this fix (they showed the same light values before it too) — the
+ * fix is that real content, once `.auralis-theme-root` has painted, no longer
+ * falls through past it.
+ *
+ * Wave 16c-7-W: migrated off `--m3-surface`/`--m3-on-surface` onto
+ * `--surface-bg`/`--surface-fg`, with the mechanism now different rather than
+ * merely the names. `--m3-surface`/`--m3-on-surface` had a static, always-defined
+ * `:root` fallback in `packages/ui/src/styles/index.css` (the only token source
+ * for the three portalled components, deliberately light-only), so the old rule's
+ * `var()` resolved against that block automatically. `sonora-theme.css` defines
+ * `--surface-bg`/`--surface-fg` **only** under `.auralis-theme-root[data-theme]` —
+ * there is no bare `:root` definition — so outside that element the custom
+ * property does not exist at all. The literal fallbacks below are therefore load-
+ * bearing, not decorative: without them this rule would resolve to nothing
+ * (`background: transparent`/inherited `color`) rather than to a light value.
+ * They are Sonora's exact light-mode values (SONORA.md §1.2), matching what the
+ * old `--m3-*` fallback already equalled — same "deliberately light-only edge-case
+ * fallback" behaviour, new mechanism.
  */
 html body {
-  background: var(--m3-surface);
-  color: var(--m3-on-surface);
+  background: var(--surface-bg, rgb(235, 235, 235));
+  color: var(--surface-fg, rgb(25, 25, 25));
   min-height: 100vh;
 }
 
@@ -51,23 +62,35 @@ html body {
 
 /*
  * The real, theme-aware paint. `.auralis-theme-root` is the element
- * `ThemeProvider.tsx` actually applies the current (`data-theme`-correct)
- * `--m3-*` values to, as inline style — so, unlike `html body` above, a plain
- * CSS rule here resolves against the *live* scheme, not the static `:root`
- * fallback. Declaring `background`/`color` here (not just leaving them to
- * inherit) makes this element the inheritance stop for everything under it:
- * any descendant that does not set its own explicit `color` now inherits the
- * correct dark-or-light value from here rather than reaching past this element,
- * past `html body`'s rule above, all the way to `:root`'s permanently-light
- * fallback. Same pattern this file's `color-scheme: resolvedMode` fix already
- * uses one property over, in `ThemeProvider.tsx` itself: put the value on the
- * same element `data-theme` already lives on, rather than inventing a second
- * sync mechanism.
+ * `ThemeProvider.tsx` sets `data-theme="light"|"dark"` on, which is what
+ * `sonora-theme.css`'s `.auralis-theme-root[data-theme='dark'/'light']` blocks
+ * select — so, unlike `html body` above, a plain CSS rule here resolves against
+ * the *live* scheme, not a static fallback. Declaring `background`/`color` here
+ * (not just leaving them to inherit) makes this element the inheritance stop for
+ * everything under it: any descendant that does not set its own explicit `color`
+ * now inherits the correct dark-or-light value from here rather than reaching
+ * past this element, past `html body`'s rule above, all the way to its
+ * pre-mount/edge-case fallback. Same pattern this file's `color-scheme:
+ * resolvedMode` fix already uses one property over, in `ThemeProvider.tsx`
+ * itself: put the value on the same element `data-theme` already lives on,
+ * rather than inventing a second sync mechanism.
+ *
+ * Wave 16c-7-W: migrated off `--m3-surface`/`--m3-on-surface` onto
+ * `--surface-bg`/`--surface-fg`. No literal fallback here, unlike `html body`
+ * above — this rule and `sonora-theme.css`'s `[data-theme]` blocks that define
+ * these tokens target the *same* element (an attribute selector still matches
+ * its own element, not just descendants), so by the time this `background`/
+ * `color` is computed the custom property is already set for whichever theme is
+ * active. Matches this file's own established idiom elsewhere for content
+ * rendered inside `.auralis-theme-root` (see `.auralis-item-header__title` etc.,
+ * none of which carry a fallback either) rather than `packages/ui`'s
+ * always-fallback idiom, which exists specifically for the three components that
+ * can render *outside* this element.
  */
 .auralis-theme-root {
   min-height: 100vh;
-  background: var(--m3-surface);
-  color: var(--m3-on-surface);
+  background: var(--surface-bg);
+  color: var(--surface-fg);
 }
 
 /* ---------------------------------------------------------------------------
@@ -695,6 +718,13 @@ html body {
   gap: var(--spacing-lg);
 }
 
+/* Wave 16c-7-W: `--m3-surface-container-high` deliberately kept, extending the precedent
+ * `Menu.css` and `SearchField.css` already established — Sonora has no `--surface-*` token
+ * for "one step brighter than the surrounding surface" (SONORA.md §1.6's mix formula has no
+ * equivalent), and this `kbd` badge sits inside a portalled `Sheet` over otherwise-arbitrary
+ * content, the same shape those two components' floating surfaces have. Not an oversight —
+ * `--m3-surface-container-high` already resolves to Sonora's exact values since 16c-2-W-1
+ * redefined the substrate, so this is a naming deferral, not a design one. */
 .auralis-shortcut-list__row dt kbd {
   background: var(--m3-surface-container-high);
   border-radius: var(--radius-xs);
@@ -712,6 +742,10 @@ html body {
  * rail (medium/expanded), per docs/DESIGN.md § Layout.
  * ------------------------------------------------------------------------- */
 
+/* Wave 16c-7-W: `--m3-surface-container-high` deliberately kept, same reasoning as the
+ * shortcut sheet's `kbd` badge above — this bar is `position: fixed` in compact mode,
+ * docked directly over whatever page content scrolls beneath it, so it needs the same
+ * "one step brighter than arbitrary content" tier Sonora has no token for. */
 .auralis-mini-player {
   position: relative;
   display: flex;
@@ -1160,6 +1194,13 @@ html body {
   padding: 14px 16px;
 }
 
+/* Wave 16c-7-W: this dropdown is exactly the `Menu.css` shape (an absolutely-positioned
+ * floating surface opening over arbitrary content, no scrim) — `--m3-surface-container-high`
+ * is kept for the same reason as `Menu.css`'s own dropdown background. Its hover state
+ * below extends `SearchField.css`'s precedent for `--m3-surface-container-highest` a step
+ * further, for the same reason: a hover fill on a row inside an already-`-high` floating
+ * surface needs to read one step brighter still, and Sonora ships no token for that tier
+ * either. Both are naming deferrals, not design ones — see the two components' own comments. */
 .auralis-sleep-timer__menu {
   position: absolute;
   bottom: 100%;
@@ -1193,6 +1234,12 @@ html body {
  * PWA update banner
  * ------------------------------------------------------------------------- */
 
+/* Wave 16c-7-W: `--m3-secondary-container`/`--m3-on-secondary-container` had no entry in the
+ * Sonora primitives README's substitution table and no in-file precedent, so this is a new
+ * call rather than a mechanical rename. A tonal `--surface-card`/`--surface-fg` pair was
+ * chosen over an accent-tinted fill deliberately: this wave's spec forbids introducing new
+ * text-on-accent pairings while `--accent-contrast` on `--accent` remains an open WCAG
+ * question (queue `c9887cb`), and a sticky banner's text is exactly that kind of pairing. */
 .auralis-update-banner {
   position: sticky;
   top: 0;
@@ -1202,8 +1249,8 @@ html body {
   justify-content: space-between;
   gap: var(--spacing-lg);
   padding: var(--spacing-sm) var(--spacing-2xl);
-  background: var(--m3-secondary-container);
-  color: var(--m3-on-secondary-container);
+  background: var(--surface-card);
+  color: var(--surface-fg);
 }
 
 /* The standard visually-hidden idiom: present to assistive tech, absent from layout.
