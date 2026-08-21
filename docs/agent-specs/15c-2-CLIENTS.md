@@ -93,7 +93,7 @@ inventing a new card.
   because Android routed an external id straight into `playItem()`. Everything from this route is
   `'owned'` today, so the correct behaviour is reachable; guard on `availability` regardless.
 
-## Placement — DECIDED: replacement, and it needs one server wave first
+## Placement — DECIDED: replacement, and it needs no server wave
 
 **Decision: the mixed shelf REPLACES the per-medium recommended carousels on For You.** Web drops
 its `useOptionalLibraryRecommendedQuery` fetch; Android drops the `libraryRecommended` call inside
@@ -118,25 +118,43 @@ library home shelves, podcast library home shelves, and Jellyfin favourite album
 recommendations on the separate `MusicHomePage` / `MusicLibraryViewModel` also stay — that is a
 different screen, not For You.
 
-### The blocker recon found, and why it is a server wave rather than an accepted loss
+### The blocker recon found — and why it turned out NOT to be one. No server wave.
 
-`MixedRecommendedItem` **has no `progress` field**, and both clients render a real progress bar
-from one on recommended book/podcast cards (`Carousel.tsx:371-375`; `ForYouCarousel.kt:328-332`,
-fed by `FeedItem.progress`). Replacing the per-medium fetch as the contract stands today would
-**silently delete that bar** — visible to the user, invisible to every test, which is this
-project's signature failure shape.
+**Read this before you "notice" the missing field and try to help.** Recon flagged that
+`MixedRecommendedItem` has **no `progress` field**, while both clients render a progress bar on
+recommended cards (`Carousel.tsx:371-375`; `ForYouCarousel.kt:328-332`, fed by `FeedItem.progress`).
+That looks like replacement silently deleting a visible affordance, and a wave (`15c-2-S-3`) was
+specced and dispatched to add the field before this one was reconsidered and **cancelled**.
 
-**So `15c-2-S-3` lands first and adds it.** Same reasoning that put `15c-2-S-2`'s id namespacing
-ahead of any client: once a client depends on the shape, changing it is a breaking change.
+**It is vacuous, and the reason is a property of the scorer that no amount of reading the route
+would surface:**
 
-**Do not start the client waves until `15c-2-S-3` is on `main`.** The field is
-`progress: number | null`, a 0..1 fraction, flat rather than the nested `MediaProgress` object the
-older `RecommendedLibraryItem` carries — `MixedRecommendedItem` is deliberately a flat card
-projection, and both clients' own `FeedItem` types already hold exactly `number | null` /
-`Double?`, so the flat field is one hop shorter to map than what they do today.
+- `profile.ts:123` adds **every** item carrying a progress signal to `knownItemIds` —
+  unconditionally, not gated on `isFinished`.
+- `score.ts:38` then skips every candidate whose id is in that set, with the comment _"Never
+  recommend what the user already has progress on."_
+- **Both** `GET /api/v1/recommended` (`recommended.ts:381-382`) and the older
+  `GET /libraries/:id/recommended` (`libraries.ts:305-316`) run that same pair.
 
-**Render it exactly where each client renders it today**, so this reads as continuity rather than
-a new affordance. `null` means no bar — not a zero-width bar.
+So a recommended item is **by construction** one the user has no progress on. `progress` is
+already always `null` on the route being replaced, the bar has never rendered on a recommended
+card on either platform, and adding the field to the new route would have shipped a wire field
+that can never hold a value — a writer with no reader, in a wave whose entire purpose is to
+close one.
+
+**Consequences for you, stated so you do not re-derive them:**
+
+- **Replacement loses nothing.** Do not add, request, or work around a `progress` field.
+- **Do not carry the progress bar over** to the mixed card. It would be unreachable code, and
+  unreachable code that looks reasonable is how this project has shipped four writers with no
+  readers.
+- If your client's feed-item type requires a progress field to compile, pass `null` and say in a
+  comment that the recommendation path cannot produce one, citing `score.ts:38`.
+
+**A related finding, deliberately NOT in scope: `RecommendedLibraryItem.progress` is a wire field
+on the existing routes that can never be non-null, and both clients hold progress-bar rendering
+for it that can never fire.** Harmless, pre-existing, and a separate decision. Record it if you
+touch that code; do not fix it here, and `-P` must not grade it as a defect this wave introduced.
 
 ### One inherited property to be honest about, and NOT to fix here
 
