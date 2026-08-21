@@ -279,8 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T14:06:24Z` · `ad6d77230b8723fa8` · general-purpose · ended · ## Report — Wave '16e-foryou-A' **1. Branch/commit:** 'worktree-agent-ad6d77230b8723fa8' at '55ca4af', one commit on top of 'ff9440d'. 'git status --…
-- `2026-08-20T14:47:44Z` · `ab1c8e59fadc27f0d` · general-purpose · ended · ## Report — '16e-foryou-P' **Verdict: clean, with follow-ups — no defect that should block shipping.** Both waves are honest about what they built an…
 - `2026-08-20T14:59:38Z` · `aa135354468fa745f` · general-purpose · ended · ## Report — Wave 16e-foryou-A-2 **1. Branch/commit:** 'worktree-agent-aa135354468fa745f' at '95e27a4'. 'git status --short' is clean. Reset to base '…
 - `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
 - `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
@@ -292,8 +290,10 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T22:36:57Z` · `af5faf40ebd7f0c47` · general-purpose · ended · Working tree is clean, nothing uncommitted, nothing pushed. ## Report — wave '16i-handover-prune' **Branch/commit:** 'worktree-agent-af5faf40ebd7f0c4…
 - `2026-08-20T23:43:27Z` · `ac975afe5c449b45b` · general-purpose · ended · ## 1. Claim A verdict — **HOLDS**, unchanged since the record was written 'itemLabels' is computed in 'apps/server/src/features/recommendations/shelv…
 - `2026-08-20T23:44:00Z` · `a98b2440f08b1fb2e` · general-purpose · ended · # Phase 16 '--m3-*' Migration Audit — Findings ## Step 1 — the 501 split into three buckets Raw per-file counts (grep -c, i.e. lines containing '--m3…
-- `2026-08-20T23:50:13Z` · `a8aa0d365d7e1810e` · general-purpose · running · —
-- `2026-08-20T23:51:21Z` · `aa2569dc96b0baa5d` · general-purpose · running · —
+- `2026-08-20T23:50:13Z` · `a8aa0d365d7e1810e` · general-purpose · ended · Working tree is clean, one commit on top of 'e856c70'. Here is my final report. ## Report — Wave '15c-2-S' **1. Branch/commit:** 'worktree-agent-a8aa…
+- `2026-08-20T23:51:21Z` · `aa2569dc96b0baa5d` · general-purpose · ended · Everything is green and committed. Here is the final report. ## Report — Wave '16c-6-W' **1. Branch/commit:** 'worktree-agent-aa2569dc96b0baa5d' at '…
+- `2026-08-21T00:04:17Z` · `a142e6882657bdfd0` · general-purpose · ended · Matches exactly. I have what I need to write the report. ## Verdict **Merge with named follow-ups.** The route is correct, well-tested, and degrades…
+- `2026-08-21T00:07:48Z` · `a0945a250b7dbe6cc` · general-purpose · ended · Good, that confirms the "no container tier" claim cited by both Fab.tsx and ListItem.css comments is genuinely stated in Card.css. Report follows. ##…
 
 <!-- AGENT_LOG_END -->
 
@@ -752,7 +752,7 @@ which `CLAUDE.md`'s scope section reserves for the user. Report the overlap; lea
 
 ## Claimed work — check here before starting a wave
 
-### CLAIMED 2026-08-21 — two waves in flight, disjoint, both based on `e856c70`
+### DONE 2026-08-21 — `15c-2-S` and `16c-6-W` both landed. **`main` is `2f9b04f`.**
 
 Dispatched together because their directories do not overlap. **`main` is `e856c70`, green on `CI`,
 `Android` and `Publish`** (verified, not assumed).
@@ -762,10 +762,108 @@ Dispatched together because their directories do not overlap. **`main` is `e856c
 | `15c-2-S` | `apps/server/src/**`           | `GET /recommended` — the cross-medium aggregator that finally makes mixed shelves reachable          |
 | `16c-6-W` | seven `packages/ui` primitives | migrate `Fab`/`NavigationBar`/`ListItem`/`TopAppBar`/`SearchField`/`Snackbar`/`Marquee` off `--m3-*` |
 
-**Both are based on the same commit, so only the first can `git merge --ff-only`.** Rebase the
-second onto the new tip before merging it — do **not** cherry-pick. Cherry-picking lands identical
-content but permanently strips `worktree-gc.sh`'s ability to prune the worktree, which is why four
-stale worktrees are on disk today that can never be pruned.
+**Both were rebased onto the tip before merging, not cherry-picked**, so both worktrees stay
+prunable — the mistake that left four permanently-unprunable worktrees on disk was not repeated.
+`15c-2-S` merged as `e94005d`, `16c-6-W` as `65fcc69`, plus one review follow-up as `2f9b04f`.
+
+**Verified here before pushing, not inferred:** `pnpm typecheck` across every project,
+`pnpm --filter e2e typecheck` (the one CI covers and the per-package run silently drops),
+`pnpm lint`, unit **1764/1764** (up from 1732 — +8 server, +24 UI, so the new tests are real rather
+than absent), and a full `--project=app` Playwright run at `--workers=2`: **240 passed, 0 failed.**
+
+That Playwright run was not optional. `15c-2-S` widened a **shared fixture**
+(`items-podcasts.json`, one new podcast), and this project's own history says a widened fixture
+invalidates every existing assertion that counted it while every unit suite stays green — only a
+full run sees it. The reviewer also grepped every count/pagination assertion against `lib-podcasts`
+and found none affected. Both checks agree, which is why this is settled rather than assumed.
+
+### The one thing a session picking this up must do next: **`GET /recommended` has NO reader**
+
+`15c-2-S` shipped the route deliberately without a client, and the reader is named rather than
+assumed: **`15c-2-W` / `15c-2-A` / `15c-2-P`, not yet built.** Until they are, this is by definition
+this project's most-repeated failure shape — a writer with no reader, four historical instances,
+every one green on its own tests. It is the top of the queue.
+
+**What the clients must consume**, so the spec does not have to re-derive it:
+
+```
+GET /api/v1/recommended  ->  { shelves: [ {
+    id, label, type: 'recommended', reason,
+    itemLabels?: Record<itemId, 'Audiobook' | 'Podcast' | 'Album'>,   // present ONLY when a shelf spans >1 kind
+    items: [ { kind, id, title, subtitle|null, coverPath|null, imageTag|null, availability } ]
+} ] }
+```
+
+`MixedRecommendedItem` is a **new flat card projection, not a union of the existing types** — and
+that was forced, not chosen. Android's `RecommendedLibraryItem` and `MusicRecommendedAlbum` have
+irreconcilable field sets, and kotlinx throws `MissingFieldException` on a missing non-nullable
+field, on a device nobody here can test and invisible to CI. So both clients need a **new** model,
+and every field's nullability is deliberate. `coverPath` and `imageTag` are kept as two nullable
+fields rather than one normalized image ref because the two upstreams resolve covers through
+different URL shapes and both clients already know both names.
+
+**The client triple must also settle a placement question the server wave could not.** Home stitches
+four independent fetches client-side (see 14c), so a fifth cross-medium source either duplicates
+content already on For You or replaces the two per-medium recommendation carousels. Her decision was
+**mixed-content carousels rather than one shelf per medium**, which argues for replacement — but no
+item may appear twice on For You either way, and that is the constraint to spec against.
+
+### Follow-ups the two reviews named — none blocking, all precise
+
+1. **Id collision across upstream namespaces (`15c-2-S`), and the obvious fix is a trap.** The route
+   unions Audiobookshelf and Jellyfin candidates into one pool, and `shelves.ts` keys
+   `candidatesById`, its `used` set and `itemLabels` by a **bare `id`**. On a collision, last write
+   wins: the album shadows the book for every kind/parent lookup, while the route's own
+   `toMixedItem` resolves the id ABS-first — so the card would render a book and be **labelled
+   `Album`**, and the album becomes unreachable. Real, silent, and a wrong badge rather than a crash.
+   Probability is genuinely low (ABS ids are `li_`-prefixed nanoids, Jellyfin ids 32-char hex).
+   **The reviewer's proposed fix — prefix pool ids by kind, strip on serialization — is right in
+   outline and incomplete as stated: `itemLabels` is _keyed by item id_, so prefixing without also
+   stripping the prefix from every `itemLabels` key ships a map whose keys match no rendered card,
+   silently disabling the very feature the wave exists for.** Deferred for that reason rather than
+   rushed at the end of a session. Fix both sides together, with a test that a mixed shelf's
+   `itemLabels` keys still equal its item ids.
+2. **The Audiobookshelf pool over-fetches (`15c-2-S`).** `ABS_CANDIDATE_LIMIT` (300, correctly
+   reused from `libraries.ts`) is applied **per library** and the total is capped only afterwards, so
+   N libraries fetch up to 300xN to keep 300. Minor today (most households run two). Worth knowing
+   before "fixing" it: dividing the cap by library count rebalances the pool, which changes
+   recommendation composition — a behaviour change, not just an efficiency one.
+3. **`SearchField.css` keeps one live `--m3-surface-container-highest`** for the suggestion-hover
+   background, extending `Menu.css`'s documented reasoning. The reviewer endorsed keeping it but
+   found the stated analogy **overstated**: `Menu`'s dropdown container really is
+   `--m3-surface-container-high`, so its hover has a ladder to step up from, whereas `SearchField`'s
+   dropdown has no explicit background rule at all and inherits Mantine's popover default. Keeping
+   the deferral is still right; the comment claiming the two cases are "identical" is not.
+4. **`Fab` went from a tonal container to a saturated `--accent` fill.** Ruled an acceptable
+   divergence, and the reasoning matters: **`SONORA.md` says Fab has no Sonora equivalent at all**,
+   so nothing settles it, and `--accent`/`--accent-contrast` is the established pairing elsewhere.
+   Flagged because it is a real visual change nobody has seen on a screen, and because it inherits
+   the same `--accent-contrast` contrast question as everything else.
+
+### `ListItem`'s selected row — a mechanically-correct migration that was wrong twice over
+
+Caught in review, fixed in `2f9b04f`, and worth keeping because neither half was visible to a test.
+
+`16c-6-W` migrated `.m3-list-item--selected` to a solid `--accent`/`--accent-contrast` fill. That was
+a faithful reading of the token substitution and still wrong:
+
+- **`16e-nowplaying` had already overridden this exact class** at the queue-view call site in
+  `apps/web/src/styles/app.css`, deliberately, because a solid accent block reads wrong for "the
+  currently-playing row". `ChapterList` renders the same semantic through the bare `selected` prop
+  with **no** override — so the fill split one concept into two treatments, loud in one place and
+  tonal in another. **The call site that disagreed with the migration lives in a different package
+  from the component being migrated**, which is exactly why a per-component review missed it.
+- **It was a contrast regression.** `--accent-contrast` on `--accent` is 4.23:1 at the shipped
+  violet default; the `--m3-on-secondary-container` pair it replaced was built to pass AA.
+
+Now `--surface-card` with inherited `--surface-fg`, mirroring what the queue view chose when it made
+this call first. **The test pins both directions** — it fails on a revert to `--m3-*` _and_ on a
+revert to the accent fill — because pinning only the migration is what let the wrong shape look
+right.
+
+**The generalisable lesson: a shared primitive's `selected`/`active` state is a call-site question,
+not a component question.** Before migrating one, grep the app for overrides of that class; an
+override is a previous wave's design decision, and re-reading it is cheaper than rediscovering it.
 
 ### Phase 15's `15c-2` — all three blockers re-verified 2026-08-21, and all three still hold
 
