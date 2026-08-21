@@ -279,8 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T23:43:27Z` · `ac975afe5c449b45b` · general-purpose · ended · ## 1. Claim A verdict — **HOLDS**, unchanged since the record was written 'itemLabels' is computed in 'apps/server/src/features/recommendations/shelv…
-- `2026-08-20T23:44:00Z` · `a98b2440f08b1fb2e` · general-purpose · ended · # Phase 16 '--m3-*' Migration Audit — Findings ## Step 1 — the 501 split into three buckets Raw per-file counts (grep -c, i.e. lines containing '--m3…
 - `2026-08-20T23:50:13Z` · `a8aa0d365d7e1810e` · general-purpose · ended · Working tree is clean, one commit on top of 'e856c70'. Here is my final report. ## Report — Wave '15c-2-S' **1. Branch/commit:** 'worktree-agent-a8aa…
 - `2026-08-20T23:51:21Z` · `aa2569dc96b0baa5d` · general-purpose · ended · Everything is green and committed. Here is the final report. ## Report — Wave '16c-6-W' **1. Branch/commit:** 'worktree-agent-aa2569dc96b0baa5d' at '…
 - `2026-08-21T00:04:17Z` · `a142e6882657bdfd0` · general-purpose · ended · Matches exactly. I have what I need to write the report. ## Verdict **Merge with named follow-ups.** The route is correct, well-tested, and degrades…
@@ -294,6 +292,8 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-21T04:24:47Z` · `a006567403b5d06c8` · general-purpose · ended · ## Report — wave '15c-2-A' **Branch/commit:** worktree branch at '00ea28f', one commit on top of '6b191a6' (base per spec). 'git status --short' is c…
 - `2026-08-21T09:03:39Z` · `a434a0fb934cea666` · general-purpose · running · —
 - `2026-08-21T09:04:19Z` · `a16bacb3ae99def08` · general-purpose · running · —
+- `2026-08-21T09:44:20Z` · `aead06beb8ebc80df` · general-purpose · ended · ## Report — wave '15c-2-W2' **1. Branch/commit/status:** 'worktree-agent-aead06beb8ebc80df' at '7a6c8fb6fe3bd959917a45fe342f9c0edaef2c4f', one commit…
+- `2026-08-21T10:47:11Z` · `a2e231a830badcf9f` · general-purpose · running · —
 
 <!-- AGENT_LOG_END -->
 
@@ -777,11 +777,49 @@ invalidates every existing assertion that counted it while every unit suite stay
 full run sees it. The reviewer also grepped every count/pagination assertion against `lib-podcasts`
 and found none affected. Both checks agree, which is why this is settled rather than assumed.
 
-### REVERTED 2026-08-21 — `15c-2-W` + `15c-2-A` landed, broke For You, and were backed out
+### RE-LANDED AND VERIFIED 2026-08-21 — `15c-2` is complete on both clients. **`-P` is the only thing owed.**
 
-**`main` is `5e03ccd`. Both waves are reverted. Do not re-dispatch them — re-land them, after the
-one server wave named below.** The code is good and is not lost: `5ce4bde` (`-W`) and `710461f`
-(`-A`) are in history, so re-applying is `git revert` of the two reverts, not a rewrite.
+**`main` is `7a6c8fb`, pushed. The three-step re-land below is DONE and locally verified.** The
+record of the revert is kept underneath because its lessons are the most valuable thing this wave
+produced — but the revert itself is history, not a live state. Do not re-revert, and do not
+re-dispatch `-W`/`-A`; they are on `main`.
+
+**The four commits, in order:** `5fecc57` (`15c-2-S-4`, the aggregator's own external-discovery
+shelves) → `9d7a9d5` (`-W` re-land) → `45ad429` (`-A` re-land) → `7a6c8fb` (`15c-2-W2`, the e2e
+re-point). The `-W`/`-A` content is **byte-identical** to the pre-revert `5ce4bde`/`710461f`
+(verified with `git diff`), so the revert/re-land cycle introduced no drift.
+
+**Verified here before pushing, not taken from any agent's report:**
+
+| Check                                                               | Result                                                                    |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `pnpm format` / `typecheck` / **`--filter e2e typecheck`** / `lint` | clean                                                                     |
+| Unit                                                                | **1783/1783** (up from 1778 at the original merge — S-4's tests are real) |
+| Playwright `--project=app --workers=2`                              | **241 passed, 0 failed** (baseline 240)                                   |
+| `for-you-external-book.spec.ts` — the discriminating spec           | **all 4 green**                                                           |
+| `Android` CI on `1e1f088`, which carried this exact Kotlin          | green, and **genuinely uncached**                                         |
+
+**That last row is the one worth understanding.** There is no JDK here, so the Android half cannot be
+compiled locally. It is nonetheless compile-proven, by a chain rather than by a run: the re-landed
+Kotlin is byte-identical to `710461f`, `1e1f088` carried `710461f`, and that run's log shows bare
+`compileDebugKotlin`, `compileReleaseKotlin`, `testDebugUnitTest` **and** `testReleaseUnitTest` with
+no `FROM-CACHE`. Neither `5fecc57` nor `7a6c8fb` touches `apps/android`, so nothing since invalidates
+it. **This is the documented way to read a green Android badge as evidence** — grep the log for a bare
+task line; the badge alone means nothing.
+
+**The push was held deliberately, and that was the right call — not a session dying.** At `45ad429`
+the tree was **knowingly red**: `for-you-external-book.spec.ts` was failing by construction, because
+`7a6c8fb` had not yet re-pointed its mock. Pushing a red tree to `main` gates `publish.yml`, which
+mediaserver pulls every fifteen minutes, so a red `main` silently stops the live deployment updating.
+`7a6c8fb` is what made the push safe. **A deliberate hold looks exactly like an abandoned session
+from the outside** — four unpushed commits and an agent log entry with no follow-up. Ask the peer
+session before concluding it died; `ListAgents` plus one `SendMessage` settled it here in a minute.
+
+**`-P` is the only thing owed on `15c-2`**, and its brief at `docs/agent-specs/15c-2-P-PARITY.md`
+has been **reconciled** against all of the above (it predated the revert entirely). The reconciliation
+added the checks that only exist because of this history: external discovery still reaching For You on
+**both** media, whether `7a6c8fb`'s re-pointed mock still proves anything about the server, and the
+`contentType` divergence.
 
 **What broke, and it was the orchestrator's placement decision, not either agent's work.**
 Replacement dropped **external book discovery from For You entirely** — the single thing Sofia said
@@ -2287,19 +2325,41 @@ tree is fine; writing outside it is not.
 
 ### Worktrees currently on disk
 
-Three, none of them holding unmerged work. All three are **safe to ignore** — `worktree-gc.sh`
-refuses each of them, correctly, and will forever:
+**Re-measured 2026-08-21: there are FIFTEEN, not three.** The previous version of this section said
+"Three" and then listed four, and it named one (`agent-a8781e77885029281`) that is no longer on disk
+at all. Do not trust a remembered count here — `git worktree list` takes a second, and the loop below
+classifies every one of them:
 
-- `agent-a623d0d03e48b3297` — its two commits are on `main` under the same titles, landed by
-  re-commit rather than merge, so they share no ancestry. `worktree-gc.sh` therefore refuses it
-  ("not a confirmed ancestor of main") and will forever. That is the safety rail working. Removing
-  it needs a deliberate `git worktree remove` plus `git branch -D` — the user's call.
-- `agent-a8781e77885029281` — the 12f-2 draft, since superseded by `034c4cf`. **Locked**, so
-  `git worktree remove` refuses it without `-f -f`; left in place deliberately rather than forced.
-- `agent-a1b2a40eb1e9e4e64` — confirmed redundant against what landed on `main`.
-- `agent-a0edf63595b976e4e` — the concurrent-libraries test, on `main` as `3cda65c`. Refused for
-  the same reason as the first: it was **cherry-picked rather than fast-forwarded**, so it shares
-  no ancestry.
+```bash
+for d in .claude/worktrees/agent-*; do
+  b="worktree-agent-$(basename $d | sed 's/agent-//')"
+  git merge-base --is-ancestor "$b" main 2>/dev/null && echo "$b MERGED" || echo "$b not-ancestor"
+done
+```
+
+They fall into three groups, and only one group is worth any attention:
+
+1. **Six are merged ancestors of `main`** and `worktree-gc.sh` can prune them normally:
+   `a349cd26`, `abecf67b`, `abfc1e3c`, `ad7800b7`, `ada9aa18`, `ae238ca3`.
+2. **Three are degenerate and are the new thing to know about.** `a8bd5abd`, `ab1df5b1` and
+   `af88458c` are checked out **on `main` itself**, at the current tip, holding no unique commits.
+   Because `.claude/worktrees/` is nested inside the main checkout, `git -C <that worktree> status`
+   reports the **main checkout's own** modified files back at you through `../../../docs/...` paths.
+   That is alarming and means nothing: it is the shared checkout's dirt seen from one directory down,
+   not work sitting in a worktree. They appear to be left by background-job isolation attempts.
+   **They inflate the count and they hold nothing.**
+3. **Six are not ancestors of `main`**, and `worktree-gc.sh` correctly refuses each one forever:
+   `a0edf635`, `a1b2a40e`, `a623d0d0`, `ab5d9dfc` (superseded or landed by re-commit/cherry-pick, so
+   they share no ancestry), plus **`ab2cba47` and `ace64130`, which are the ones to leave alone**.
+
+**`ab2cba47` and `ace64130` hold real, deliberately-held work** — wave `15e-podcasts`, external
+podcast discovery via iTunes, parked pending Sofia's decision on what tapping an external podcast
+should do (queue `969711e`). **It is not lost if a worktree is removed:** the same commits are on the
+`hold-15e-podcasts` branch, which exists locally **and on `origin`**. Verified 2026-08-21 with
+`git branch -a --contains ee26e7e`. So the branch is the durable artefact and the worktrees are not.
+
+**None of the fifteen holds uncommitted work.** Checked with `git -C <each> status --short`; the only
+non-empty results are the `../../../docs/...` illusion described in group 2.
 
 **That last one is a lesson, not a fault.** Two agents based on the same commit cannot both
 ff-merge — the first moves `main`, and the second is no longer a descendant. Cherry-picking the
