@@ -1,3 +1,16 @@
+/*
+ * Wave 16c-6-W (docs/ROADMAP.md §16): `--m3-marquee-distance`/`--m3-marquee-duration`
+ * renamed to `--marquee-distance`/`--marquee-duration`. These were never a design token
+ * from either family — they're computed at runtime in Marquee.tsx (measured scroll
+ * overflow and derived duration) and set as component-private inline custom properties
+ * consumed only by this file's own `@keyframes`. Nothing in SONORA.md or index.css's
+ * `--m3-*` block defines them; the `--m3-` prefix was borrowed, not inherited. Keeping
+ * it would leave the one `--m3-*`-prefixed name in this file that isn't actually part of
+ * the token family this whole wave series is retiring — worth renaming out of that
+ * namespace so a future grep for "remaining --m3-* usage" doesn't miscount a private
+ * animation variable as a design-token holdout. Purely a rename: the animation's timing
+ * and behaviour are unchanged.
+ */
 .m3-marquee {
   overflow: hidden;
   white-space: nowrap;
@@ -9,7 +22,7 @@
 }
 
 .m3-marquee__text--animating {
-  animation: m3-marquee-scroll var(--m3-marquee-duration) ease-in-out infinite alternate;
+  animation: m3-marquee-scroll var(--marquee-duration) ease-in-out infinite alternate;
   animation-delay: 1s;
 }
 
@@ -18,6 +31,6 @@
     transform: translateX(0);
   }
   to {
-    transform: translateX(var(--m3-marquee-distance));
+    transform: translateX(var(--marquee-distance));
   }
 }

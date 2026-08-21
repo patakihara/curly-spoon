@@ -1,5 +1,20 @@
+/*
+ * Wave 16c-6-W (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1). `--m3-state-layer-color: currentColor` is dropped as a no-op
+ * duplicate of `.m3-state-layer::before`'s own default in `index.css` — the same
+ * simplification Card.css/NavigationBar.css already made; this component doesn't even carry
+ * the `m3-state-layer` class itself (its own callers may add it), so the declaration had
+ * nothing to feed regardless. `--m3-shape-sm` becomes `--radius-sm`, the literal value it
+ * already equals (16px either name — SONORA.md §1.10's radius scale). The spring transition
+ * becomes the literal `200ms ease-in-out` every other 16c wave uses in its place (Sonora ships
+ * no motion tokens; `index.css` had already flattened every spring pair to that exact value).
+ *
+ * `--selected` follows the same bold `--accent`/`--accent-contrast` pairing NavigationBar's
+ * active indicator and Chip's checked state already use, rather than a `--surface-*` tint —
+ * Sonora has no "container" surface tier (Card.css's comment), and a selected list row needs
+ * to read unambiguously against whatever surface the list itself sits on.
+ */
 .m3-list-item {
-  --m3-state-layer-color: currentColor;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -8,12 +23,12 @@
   padding: 8px 16px;
   border: none;
   background: transparent;
-  color: var(--m3-on-surface);
+  color: var(--surface-fg, rgb(225, 225, 225));
   text-align: left;
   font: inherit;
   cursor: pointer;
-  border-radius: var(--m3-shape-sm);
-  transition: background-color var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  border-radius: var(--radius-sm, 16px);
+  transition: background-color 200ms ease-in-out;
 }
 
 .m3-list-item--lines-2,
@@ -24,8 +39,8 @@
 }
 
 .m3-list-item--selected {
-  background: var(--m3-secondary-container);
-  color: var(--m3-on-secondary-container);
+  background: var(--accent, #8b5cf6);
+  color: var(--accent-contrast, #fff);
 }
 
 .m3-list-item__leading,
@@ -46,7 +61,7 @@
 
 .m3-list-item__overline {
   font-size: var(--m3-type-label-small-size);
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted, rgb(150, 150, 150));
 }
 
 .m3-list-item__headline {
@@ -59,7 +74,7 @@
 
 .m3-list-item__supporting {
   font-size: var(--m3-type-body-medium-size);
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted, rgb(150, 150, 150));
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;

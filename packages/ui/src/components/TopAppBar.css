@@ -1,9 +1,20 @@
+/*
+ * Wave 16c-6-W (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1). `--m3-surface`/`--m3-on-surface` map to `--surface-bg`/
+ * `--surface-fg` (SONORA.md §1.6's alias table — both are a direct, unconditional alias in
+ * both themes, not a color-mix). The spring transition becomes the literal `200ms
+ * ease-in-out` every other 16c wave uses in its place (Sonora ships no motion tokens;
+ * `index.css` had already flattened every spring pair to that exact value, so this is a
+ * rename, not a timing change). `--m3-touch-target-min` below is the one deliberate survivor
+ * (app-wide accessibility floor, no Sonora equivalent); typography (`--m3-type-*`) is
+ * untouched, matching every other 16c wave.
+ */
 .m3-top-app-bar {
   display: flex;
   flex-direction: column;
-  background: var(--m3-surface);
-  color: var(--m3-on-surface);
-  transition: padding-bottom var(--m3-spring-default-duration) var(--m3-spring-default-easing);
+  background: var(--surface-bg, rgb(12, 12, 12));
+  color: var(--surface-fg, rgb(225, 225, 225));
+  transition: padding-bottom 200ms ease-in-out;
 }
 
 .m3-top-app-bar__row {

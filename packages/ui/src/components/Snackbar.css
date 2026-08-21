@@ -6,9 +6,20 @@
  * glue for the one thing `Notification` doesn't model: an inline action button
  * (e.g. "Undo") sitting next to the message, and the entrance motion, which is
  * a motion-design detail rather than a colour/shape one.
+ *
+ * Wave 16c-6-W (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1). The entrance animation's spring duration becomes the
+ * literal `200ms ease-in-out` every other 16c wave uses in its place (Sonora ships no
+ * motion tokens; `index.css` had already flattened every spring pair to that exact
+ * value). `--m3-inverse-primary` (M3's role for an accent-coloured action against an
+ * "inverse surface" toast background) becomes `--accent`: `Notification` renders with
+ * Mantine's ordinary themed background here, not a fixed inverse-dark one, so the
+ * action needs to read as an accent-coloured link against the app's normal surface —
+ * the same affordance `--m3-inverse-primary` was providing, just under Sonora's name
+ * for "accent-coloured, interactive."
  */
 .m3-snackbar {
-  animation: m3-snackbar-enter var(--m3-spring-default-duration) var(--m3-spring-default-easing);
+  animation: m3-snackbar-enter 200ms ease-in-out;
 }
 
 @keyframes m3-snackbar-enter {
@@ -36,7 +47,7 @@
   flex: 0 0 auto;
   border: none;
   background: transparent;
-  color: var(--m3-inverse-primary, inherit);
+  color: var(--accent, inherit);
   font-size: var(--m3-type-label-large-size);
   font-weight: var(--m3-type-label-large-weight);
   cursor: pointer;

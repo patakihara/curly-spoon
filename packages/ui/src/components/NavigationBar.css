@@ -1,7 +1,7 @@
 .m3-nav-bar {
   display: flex;
-  background: var(--m3-surface-container);
-  border-top: 1px solid var(--m3-outline-variant);
+  background: var(--surface-card, rgb(20, 20, 20));
+  border-top: 1px solid var(--surface-border, rgb(255 255 255 / 8%));
 }
 
 .m3-nav-bar__items {
@@ -42,21 +42,41 @@
  * at nine of them (docs/HANDOVER.md). The label here is small real text
  * (`--m3-type-label-medium-size`), so it sits in the same already-flagged, already-shipped
  * risk class as Chip's checked label — not a new one.
+ *
+ * Wave 16c-6-W finishes what this comment left outstanding — the indicator's own `--accent`
+ * fill was already right, but its shape and motion still read `--m3-*`. `--m3-shape-full`
+ * becomes `--radius-pill` (999px either name) and both `--m3-spring-default-*` pairs become
+ * the literal `200ms ease-in-out` every other 16c wave already uses in their place (Dialog.css's
+ * comment has the full reasoning: Sonora ships no spring/motion tokens, and `index.css` had
+ * already flattened every spring pair to that exact value, so this is a rename, not a timing
+ * change). `.m3-nav-bar__item`'s own `--m3-state-layer-color: currentColor` is dropped as a
+ * no-op duplicate of `.m3-state-layer::before`'s own default (`var(--m3-state-layer-color,
+ * currentColor)`, index.css) — the same simplification Card.css already made for the same
+ * reason; this class does carry `m3-state-layer` (NavigationBar.tsx), so the rule still applies,
+ * just without a redundant local override.
+ *
+ * Checked explicitly for the focus-vs-selected trap 16c-2-W-3 shipped once already (an
+ * invisible pill where a focus ring rendered identically to the selected state): this file
+ * defines no local `:focus-visible` rule at all, so a focused nav item falls through to
+ * `index.css`'s global `:where(button, …):focus-visible` ring (`outline: 3px solid
+ * var(--m3-secondary, …)`, unrelated to this migration). That ring draws around the button
+ * itself; selection is conveyed by the separate `__indicator` pill's position/fill. The two
+ * compose rather than collide — a focused-and-selected item shows both the ring and the pill
+ * at once, not one masquerading as the other.
  */
 .m3-nav-bar__indicator {
   position: absolute;
   top: 8px;
   height: 32px;
-  border-radius: var(--m3-shape-full);
+  border-radius: var(--radius-pill, 999px);
   background: var(--accent, #8b5cf6);
   transition:
-    transform var(--m3-spring-default-duration) var(--m3-spring-default-easing),
-    width var(--m3-spring-default-duration) var(--m3-spring-default-easing);
+    transform 200ms ease-in-out,
+    width 200ms ease-in-out;
   pointer-events: none;
 }
 
 .m3-nav-bar__item {
-  --m3-state-layer-color: currentColor;
   position: relative;
   flex: 1 1 0;
   display: flex;
@@ -68,9 +88,9 @@
   padding: 8px 0;
   border: none;
   background: transparent;
-  color: var(--m3-on-surface-variant);
+  color: var(--surface-fg-muted, rgb(150, 150, 150));
   cursor: pointer;
-  transition: color var(--m3-spring-fast-duration) var(--m3-spring-fast-easing);
+  transition: color 200ms ease-in-out;
 }
 
 .m3-nav-bar__item--active {

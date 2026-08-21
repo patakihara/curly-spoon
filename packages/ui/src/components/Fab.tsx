@@ -5,11 +5,21 @@
  * (40/48/96px) via an explicit pixel `size` rather than Mantine's own size tokens, so
  * the FAB doesn't change shape when Mantine's default scale is retuned elsewhere.
  *
- * M3's `primary-container` surface (the FAB's fill) has no equivalent in the Mantine
- * theme's `auralis` colour ramp (that ramp is derived from `scheme.primary`, a
- * different M3 role — see `mantineColors.ts`), so the fill/elevation is applied as an
- * explicit style override referencing the M3 CSS custom properties directly, the same
- * approach `Button`'s `elevated` variant uses.
+ * Wave 16c-6-W (docs/ROADMAP.md §16): migrated off --m3-* onto Sonora's tokens
+ * (docs/design/SONORA.md §1). The FAB's fill has no Mantine theme equivalent either
+ * before or after this wave (the `auralis` colour ramp is derived from `scheme.primary`,
+ * a different role — see `mantineColors.ts`), so the fill/elevation stays an explicit
+ * style override, only the token names underneath it change.
+ *
+ * Sonora has no "container" surface tier at all (Card.css's comment makes the same
+ * observation for `Card`'s `elevated`/`filled` variants), so `--m3-primary-container`/
+ * `--m3-on-primary-container` are replaced with the `--accent`/`--accent-contrast`
+ * pairing this wave family already uses everywhere a control must read as bold/primary
+ * rather than blend into a surface — NavigationBar's active-indicator pill and Chip's
+ * checked state are the precedent. A FAB is exactly that kind of control: the one
+ * primary action on the screen, meant to stand out. `--m3-elevation-3` is dropped for
+ * `--shadow-lg`, the literal value it already equals (Dialog.css's/Sheet.css's identical
+ * note — `index.css`'s static fallback pins elevation-3 as byte-for-byte `--shadow-lg`).
  */
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
 import { ActionIcon, Button as MantineButtonPrimitive } from '@mantine/core';
@@ -36,11 +46,11 @@ const ICON_ONLY_RADIUS_PX: Record<FabSize, number> = {
   lg: SHAPE_SCALE.xl,
 };
 
-/** `primary-container`/`on-primary-container` + elevation-3, matching the old `.m3-fab`. */
+/** `--accent`/`--accent-contrast` + `--shadow-lg`, matching the old `.m3-fab`'s intent. */
 const FAB_SURFACE_STYLE: CSSProperties = {
-  backgroundColor: 'var(--m3-primary-container)',
-  color: 'var(--m3-on-primary-container)',
-  boxShadow: 'var(--m3-elevation-3, 0 4px 8px rgba(0, 0, 0, 0.3))',
+  backgroundColor: 'var(--accent, #8b5cf6)',
+  color: 'var(--accent-contrast, #fff)',
+  boxShadow: 'var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05))',
 };
 
 export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
