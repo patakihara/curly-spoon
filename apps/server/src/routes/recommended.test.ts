@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import { buildTestApp, loginTestUser } from '../testSupport/buildTestApp.js';
 import {
   FAKE_JELLYFIN_BASE_URL,
@@ -7,6 +8,8 @@ import {
 import { NotConfiguredError } from '../absUpstream.js';
 import type { AbsClient, LibraryItem } from '@auralis/abs-client';
 import type { Album, JellyfinClient } from '@auralis/jellyfin-client';
+import { buildBookExternalDiscoveryShelf } from './libraries.js';
+import type { ExternalProviderFactory, TasteProfile } from '../features/recommendations/index.js';
 
 async function authedApp() {
   const { app } = buildTestApp();
@@ -462,5 +465,356 @@ describe('GET /api/v1/recommended', () => {
     expect(warn).not.toHaveBeenCalled();
 
     vi.restoreAllMocks();
+  });
+});
+
+// Wave 15c-2-S-4 — external (unowned) discovery on the aggregator, mirroring what
+// `routes/libraries.ts` and `routes/jellyfin.ts` already give their own single-medium
+// routes. See `docs/HANDOVER.md`'s "REVERTED 2026-08-21" section for why this exists:
+// the client triple that replaced the per-medium For You carousels with this route
+// silently dropped external book discovery, because this route had no external
+// provider at all. This suite proves it now does, for both book and album external
+// shelves, using the exact same `providerFetch` seam `libraries.test.ts`/
+// `jellyfin.test.ts` already use for their own external-discovery suites.
+describe('GET /api/v1/recommended — external discovery, wave 15c-2-S-4', () => {
+  const OPENLIBRARY_ORIGIN = 'https://openlibrary.org';
+  const LISTENBRAINZ_ORIGIN = 'https://api.listenbrainz.org';
+
+  /** Same fake artist `routes/jellyfin.test.ts`'s own external-discovery suite seeds
+   * from — the only fixture artist carrying a resolvable `musicBrainzArtistId`, since
+   * ListenBrainz's endpoint is MBID-keyed. */
+  const NEBULA_MBID = 'mbid-fake-nebula-7a21';
+
+  function jsonResponse(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  function openLibraryFetch(
+    respond: (url: URL) => Response,
+  ): (input: string | URL, init?: RequestInit) => Promise<Response> {
+    return async (input) => {
+      const url = new URL(input);
+      if (url.origin !== OPENLIBRARY_ORIGIN) {
+        throw new Error(`getaddrinfo ENOTFOUND ${url.hostname}`);
+      }
+      return respond(url);
+    };
+  }
+
+  function listenBrainzFetch(
+    respond: (url: URL) => Response,
+  ): (input: string | URL, init?: RequestInit) => Promise<Response> {
+    return async (input) => {
+      const url = new URL(input);
+      if (url.origin !== LISTENBRAINZ_ORIGIN) {
+        throw new Error(`getaddrinfo ENOTFOUND ${url.hostname}`);
+      }
+      return respond(url);
+    };
+  }
+
+  function combinedProviderFetch(
+    respondOpenLibrary: (url: URL) => Response,
+    respondListenBrainz: (url: URL) => Response,
+  ): (input: string | URL, init?: RequestInit) => Promise<Response> {
+    return async (input) => {
+      const url = new URL(input);
+      if (url.origin === OPENLIBRARY_ORIGIN) return respondOpenLibrary(url);
+      if (url.origin === LISTENBRAINZ_ORIGIN) return respondListenBrainz(url);
+      throw new Error(`getaddrinfo ENOTFOUND ${url.hostname}`);
+    };
+  }
+
+  /** Same seeding `routes/libraries.test.ts`'s own external-discovery suite uses:
+   * finishing `item-crimson` makes 'Mara Voss' the strongest (only) author facet. */
+  async function finishCrimson(app: FastifyInstance, cookie: string): Promise<void> {
+    await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/progress/item-crimson',
+      cookies: { auralis_session: cookie },
+      payload: { currentTime: 500, duration: 500, progress: 1, isFinished: true },
+    });
+  }
+
+  async function connectJellyfin(app: FastifyInstance, cookie: string): Promise<void> {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/jellyfin/login',
+      payload: { baseUrl: FAKE_JELLYFIN_BASE_URL, ...FAKE_JELLYFIN_CREDENTIALS },
+      cookies: { auralis_session: cookie },
+    });
+    if (response.statusCode !== 200) {
+      throw new Error(
+        `jellyfin login failed in test setup: ${response.statusCode} ${response.body}`,
+      );
+    }
+  }
+
+  /** Same play-history seeding `routes/jellyfin.test.ts`'s own external-discovery suite
+   * uses: three stops on `track-driftwave-1` make 'The Nebula Collective' the strongest
+   * author facet. */
+  async function seedNebulaPlayHistory(app: FastifyInstance, cookie: string): Promise<void> {
+    for (let i = 0; i < 3; i += 1) {
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/jellyfin/playback/stopped',
+        cookies: { auralis_session: cookie },
+        payload: { itemId: 'track-driftwave-1', positionSeconds: 200 },
+      });
+    }
+  }
+
+  // Required test 1 + 2 (leads, and correct kind/availability for the book side).
+  it('mixes an external (Open Library) book shelf into the response, leading the library shelves', async () => {
+    const { app } = buildTestApp({
+      providerFetch: openLibraryFetch((url) => {
+        expect(url.pathname).toBe('/search.json');
+        expect(url.searchParams.get('author')).toBe('Mara Voss');
+        return jsonResponse({
+          docs: [
+            { key: '/works/OL0000001W', title: 'A Silence Kept', author_name: ['Mara Voss'] },
+            { key: '/works/OL0000002W', title: 'Moonless Tide', author_name: ['Mara Voss'] },
+            { key: '/works/OL0000003W', title: 'The Glass Orchard', author_name: ['Mara Voss'] },
+          ],
+        });
+      }),
+    });
+    const cookie = await loginTestUser(app);
+    await finishCrimson(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.length).toBeGreaterThan(0);
+
+    // Leads: the external shelf is shelves[0], every library-derived shelf follows.
+    const externalShelf = shelves[0];
+    expect(externalShelf.id).toBe('shelf-external-openlibrary');
+    // Decision (see report): a single-kind external shelf never gets `itemLabels` —
+    // its items are not in `candidatesById`, so `typeLabelsFor` could never have
+    // populated it, and shipping an empty/partial map here is the exact trap
+    // `a1c0075` closed for the library-derived shelves.
+    expect(externalShelf.itemLabels).toBeUndefined();
+
+    const externalTitles = externalShelf.items.map((item: { title: string }) => item.title);
+    expect(externalTitles).toEqual(expect.arrayContaining(['Moonless Tide', 'The Glass Orchard']));
+    // The owned-title-match candidate must never reach the response.
+    expect(externalTitles).not.toContain('A Silence Kept');
+
+    for (const item of externalShelf.items as {
+      kind: string;
+      availability: string;
+      coverPath: string | null;
+      imageTag: string | null;
+      id: string;
+    }[]) {
+      expect(item.kind).toBe('book');
+      expect(item.availability).toBe('external');
+      expect(item.coverPath).toBeNull();
+      expect(item.imageTag).toBeNull();
+      expect(item.id).toMatch(/^external:openlibrary:/);
+    }
+
+    // Every shelf after the external one is library-derived, hence `owned`.
+    for (const shelf of shelves.slice(1) as { items: { availability: string }[] }[]) {
+      for (const item of shelf.items) {
+        expect(item.availability).toBe('owned');
+      }
+    }
+  });
+
+  // Required test 3.
+  it('omits the external shelf entirely — not an empty one — and does not fail the request when the provider yields no new candidates', async () => {
+    const { app } = buildTestApp({
+      providerFetch: openLibraryFetch(() => jsonResponse({ docs: [] })),
+    });
+    const cookie = await loginTestUser(app);
+    await finishCrimson(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves.some((s: { id: string }) => s.id === 'shelf-external-openlibrary')).toBe(false);
+    // The route did not fail — library-derived shelves still render.
+    expect(shelves.length).toBeGreaterThan(0);
+  });
+
+  // Required test 4. `ExternalRecommendationProvider.recommend` is contractually total
+  // (see that interface's own doc comment) — every real failure class
+  // `openlibrary.ts` can hit (network error, non-OK response, unparseable JSON, schema
+  // mismatch) is caught *inside the provider itself* and folded to `[]` before it ever
+  // reaches `buildBookExternalDiscoveryShelf`. So no *registered* provider can be made
+  // to throw through a real HTTP round trip without breaking that contract for real —
+  // the same constraint `routes/libraries.test.ts`'s own "outer catch" test names
+  // verbatim. This mirrors that exact, already-established pattern: exercise
+  // `buildBookExternalDiscoveryShelf` directly with a factory that violates the
+  // contract, using the `providerFactories` parameter that exists specifically for
+  // this (its own doc comment says so), rather than mutating the shared default
+  // registry `getExternalProvidersForMedium` falls back to.
+  it('degrades to no external shelf and logs the fault, never failing the caller, when a provider breaks its "never throws" contract', async () => {
+    const { app } = buildTestApp();
+    const warn = vi.spyOn(app.log, 'warn');
+
+    const profile: TasteProfile = {
+      affinities: { genre: {}, author: { 'Some Author': 5 }, narrator: {}, series: {} },
+      seeds: [],
+      knownItemIds: [],
+      totalSignal: 5,
+      facetSeeds: {
+        genre: {},
+        author: { 'Some Author': { itemId: 'item-1', title: 'Book One' } },
+        narrator: {},
+        series: {},
+      },
+    };
+    const throwingFactories: Record<string, ExternalProviderFactory> = {
+      broken: () => ({
+        providerName: 'broken',
+        medium: 'book',
+        recommend: async () => {
+          throw new Error('this provider violates its own "never throws" contract');
+        },
+      }),
+    };
+
+    const shelf = await buildBookExternalDiscoveryShelf(
+      app,
+      profile,
+      { items: [] },
+      'lib-books',
+      throwingFactories,
+    );
+
+    expect(shelf).toBeNull();
+    expect(warn).toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+
+  // Extends required test 2 to the album side: proves `kind: 'album'` specifically,
+  // exercising `buildExternalDiscoveryShelf` (the music builder) through this route
+  // for the first time.
+  it('mixes an external (ListenBrainz) album shelf into the response with the correct kind', async () => {
+    const { app } = buildTestApp({
+      providerFetch: listenBrainzFetch((url) => {
+        expect(url.pathname).toBe(`/1/lb-radio/artist/${NEBULA_MBID}`);
+        return jsonResponse({
+          [NEBULA_MBID]: [
+            {
+              recording_mbid: 'rec-1',
+              similar_artist_mbid: 'mbid-outside-1',
+              similar_artist_name: 'Outside Orbit',
+              total_listen_count: 500,
+            },
+            {
+              recording_mbid: 'rec-2',
+              similar_artist_mbid: 'mbid-outside-2',
+              similar_artist_name: 'Second Horizon',
+              total_listen_count: 300,
+            },
+          ],
+        });
+      }),
+    });
+    const cookie = await loginTestUser(app);
+    await connectJellyfin(app, cookie);
+    await seedNebulaPlayHistory(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    const musicExternalShelf = shelves.find(
+      (s: { id: string }) => s.id === 'shelf-external-listenbrainz',
+    );
+    expect(musicExternalShelf).toBeDefined();
+    expect(musicExternalShelf.itemLabels).toBeUndefined();
+
+    const externalNames = musicExternalShelf.items.map((item: { title: string }) => item.title);
+    expect(externalNames).toEqual(expect.arrayContaining(['Outside Orbit', 'Second Horizon']));
+
+    for (const item of musicExternalShelf.items as {
+      kind: string;
+      availability: string;
+      coverPath: string | null;
+      imageTag: string | null;
+      id: string;
+    }[]) {
+      expect(item.kind).toBe('album');
+      expect(item.availability).toBe('external');
+      expect(item.coverPath).toBeNull();
+      expect(item.imageTag).toBeNull();
+      expect(item.id).toMatch(/^external:listenbrainz:/);
+    }
+  });
+
+  // Locks down the ordering decision between the two external shelves, since the spec
+  // only requires "external shelves lead" and does not say which comes first when both
+  // exist. Deliberate choice made by this wave: book, then music, both ahead of every
+  // library-derived shelf.
+  it('orders external shelves book-then-music, both ahead of every library-derived shelf, when both providers have candidates', async () => {
+    const { app } = buildTestApp({
+      providerFetch: combinedProviderFetch(
+        () =>
+          jsonResponse({
+            docs: [
+              { key: '/works/OL1', title: 'Moonless Tide', author_name: ['Mara Voss'] },
+              { key: '/works/OL2', title: 'The Glass Orchard', author_name: ['Mara Voss'] },
+            ],
+          }),
+        () =>
+          jsonResponse({
+            [NEBULA_MBID]: [
+              {
+                recording_mbid: 'r1',
+                similar_artist_mbid: 'm1',
+                similar_artist_name: 'Outside Orbit',
+                total_listen_count: 500,
+              },
+              {
+                recording_mbid: 'r2',
+                similar_artist_mbid: 'm2',
+                similar_artist_name: 'Second Horizon',
+                total_listen_count: 300,
+              },
+            ],
+          }),
+      ),
+    });
+    const cookie = await loginTestUser(app);
+    await connectJellyfin(app, cookie);
+    await finishCrimson(app, cookie);
+    await seedNebulaPlayHistory(app, cookie);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/recommended',
+      cookies: { auralis_session: cookie },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const { shelves } = response.json();
+    expect(shelves[0].id).toBe('shelf-external-openlibrary');
+    expect(shelves[1].id).toBe('shelf-external-listenbrainz');
+    expect(shelves.slice(2).every((s: { id: string }) => !s.id.startsWith('shelf-external-'))).toBe(
+      true,
+    );
   });
 });

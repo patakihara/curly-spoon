@@ -34,11 +34,13 @@
  * undiagnosably" as two different things).
  */
 import type { FastifyInstance } from 'fastify';
-import type { Album } from '@auralis/jellyfin-client';
+import type { Album, Artist } from '@auralis/jellyfin-client';
 import type { LibraryItem } from '@auralis/abs-client';
 import { createRequireSession } from '../auth/requireSession.js';
 import { NoCredentialsError, NotConfiguredError } from '../absUpstream.js';
 import { JellyfinNoCredentialsError, JellyfinNotConfiguredError } from '../jellyfinUpstream.js';
+import { buildBookExternalDiscoveryShelf } from './libraries.js';
+import { buildExternalDiscoveryShelf } from './jellyfin.js';
 import { toCandidate } from '../features/recommendations/adapt.js';
 import {
   albumToCandidate,
@@ -67,6 +69,7 @@ const ABS_CANDIDATE_LIMIT = 300;
  * ("a small independent fetch, not a shared code path"). */
 const MUSIC_ALBUM_LIMIT = 500;
 const MUSIC_TRACK_LIMIT = 5000;
+const MUSIC_ARTIST_LIMIT = 500;
 
 const MAX_SHELVES = 5;
 const ITEMS_PER_SHELF = 10;
@@ -181,12 +184,28 @@ interface AbsPool {
   candidates: RecommendationCandidate[];
   signals: ProgressSignal[];
   itemsById: Map<string, LibraryItem>;
+  /** Every fetched item, across every library — wave 15c-2-S-4's `pool.items` argument
+   * to `buildBookExternalDiscoveryShelf`, which itself filters to books internally
+   * (`bookLibraryItemToOwnershipLibraryItem` returns `null` for a podcast). Kept
+   * distinct from `itemsById` (bare-id-keyed, used by `toMixedItem`) since the
+   * external builder wants a plain array, not a map. */
+  items: LibraryItem[];
+  /** The first book-typed library, or `null` if the user has none. `libraries.ts`'s
+   * `buildBookExternalDiscoveryShelf` takes a single `libraryId` (used downstream for
+   * the request pre-fill flow) even though this route spans every library — see this
+   * route's own report for why the first book library is the deliberate choice. */
+  bookLibraryId: string | null;
 }
 
 interface JellyfinPool {
   candidates: RecommendationCandidate[];
   signals: ProgressSignal[];
   albumsById: Map<string, Album>;
+  /** Wave 15c-2-S-4: `buildExternalDiscoveryShelf`'s MBID-resolution chain (seed author
+   * name -> the seed's own album -> that album's `artistId` -> that artist's
+   * `musicBrainzArtistId`) needs this, and nothing before this wave fetched it — the
+   * aggregator's own candidate pool never needed artist rows, only albums. */
+  artistsById: Map<string, Artist>;
 }
 
 /**
@@ -237,7 +256,13 @@ async function tryBuildAbsPool(app: FastifyInstance, userId: string): Promise<Ab
       .map(toCandidate)
       .map((candidate) => ({ ...candidate, id: namespaceAbsId(candidate.id) }));
 
-    return { candidates, signals, itemsById };
+    // Wave 15c-2-S-4: the first book-typed library, for `buildBookExternalDiscoveryShelf`'s
+    // required `libraryId` parameter. `null` (not a fault) when the user has no book
+    // library at all — the caller must then skip the external book shelf entirely
+    // rather than pass a bogus id.
+    const bookLibraryId = libraries.find((library) => library.mediaType === 'book')?.id ?? null;
+
+    return { candidates, signals, itemsById, items, bookLibraryId };
   } catch (err) {
     if (err instanceof NotConfiguredError || err instanceof NoCredentialsError) {
       return null;
@@ -269,6 +294,26 @@ async function tryBuildJellyfinPool(
       client.getTracks({ limit: MUSIC_TRACK_LIMIT }),
     ]);
 
+    // Wave 15c-2-S-4: fetched separately from the pair above, and deliberately not
+    // inside the same `Promise.all` — this fetch exists only for
+    // `buildExternalDiscoveryShelf`'s MBID chain (external music discovery), while
+    // albums/tracks feed every *owned* shelf this route has served since 15c-2-S. A
+    // failure here (real network hiccup, an upstream that doesn't expose the artist
+    // list) must not take down owned recommendations too; it only means no music
+    // external shelf this response, exactly like `buildExternalDiscoveryShelf` itself
+    // returning `null`. Same limit `routes/jellyfin.ts`'s `/music/recommended` route
+    // uses for the identical fetch.
+    let artistsById = new Map<string, Artist>();
+    try {
+      const artistsPage = await client.getArtists({ limit: MUSIC_ARTIST_LIMIT });
+      artistsById = new Map(artistsPage.items.map((a) => [a.id, a]));
+    } catch (err) {
+      app.log.warn(
+        { err },
+        'recommended: Jellyfin artist fetch failed, degrading to no music external shelf',
+      );
+    }
+
     // Keyed by the bare upstream id, same reasoning as `tryBuildAbsPool`'s `itemsById`.
     const albumsById = new Map<string, Album>(albumsPage.items.map((a) => [a.id, a]));
     const candidates = albumsPage.items
@@ -281,7 +326,7 @@ async function tryBuildJellyfinPool(
       itemId: namespaceJellyfinId(signal.itemId),
     }));
 
-    return { candidates, signals, albumsById };
+    return { candidates, signals, albumsById, artistsById };
   } catch (err) {
     if (err instanceof JellyfinNotConfiguredError || err instanceof JellyfinNoCredentialsError) {
       return null;
@@ -303,6 +348,62 @@ async function tryBuildJellyfinPool(
  * bare id, which should not happen: every namespaced `itemId` a shelf can contain
  * originates from the `candidates` array both pools fed into `buildRecommendationShelves`.
  */
+/**
+ * Adapts one Audiobookshelf item to a card, for either an owned item (looked up by id
+ * in `toMixedItem` below) or an external-discovery placeholder (wave 15c-2-S-4's
+ * `buildBookExternalDiscoveryShelf` output, which is a real `LibraryItem` with a
+ * fabricated `external:openlibrary:...` id and `media.kind` always `'book'` — see
+ * `bookExternalDiscovery.ts`'s `externalCandidateToLibraryItemPlaceholder`). Takes
+ * `availability` explicitly rather than reading `LibraryItem`'s own bolted-on field, so
+ * one function serves both call sites.
+ */
+function absItemToMixedItem(
+  absItem: LibraryItem,
+  availability: 'owned' | 'external',
+): MixedRecommendedItem {
+  if (absItem.media.kind === 'book') {
+    const authorNames = absItem.media.authors
+      .map((a) => a.name)
+      .filter((name) => name.trim().length > 0);
+    return {
+      kind: 'book',
+      id: absItem.id,
+      title: absItem.media.title,
+      subtitle: authorNames.length > 0 ? authorNames.join(', ') : null,
+      coverPath: absItem.coverPath,
+      imageTag: null,
+      availability,
+    };
+  }
+  return {
+    kind: 'podcast',
+    id: absItem.id,
+    title: absItem.media.title,
+    subtitle: absItem.media.author,
+    coverPath: absItem.coverPath,
+    imageTag: null,
+    availability,
+  };
+}
+
+/**
+ * Adapts one Jellyfin album to a card — same "one function, two callers" reasoning as
+ * `absItemToMixedItem` above, serving both owned lookups and wave 15c-2-S-4's
+ * `buildExternalDiscoveryShelf` placeholders (`externalCandidateToAlbumPlaceholder`,
+ * always `artistName: null`, `imageTag: null`).
+ */
+function albumToMixedItem(album: Album, availability: 'owned' | 'external'): MixedRecommendedItem {
+  return {
+    kind: 'album',
+    id: album.id,
+    title: album.name,
+    subtitle: album.artistName,
+    coverPath: null,
+    imageTag: album.imageTag,
+    availability,
+  };
+}
+
 function toMixedItem(
   id: string,
   absItemsById: Map<string, LibraryItem> | undefined,
@@ -311,43 +412,13 @@ function toMixedItem(
   if (id.startsWith(ABS_ID_PREFIX)) {
     const absItem = absItemsById?.get(id.slice(ABS_ID_PREFIX.length));
     if (!absItem) return null;
-    if (absItem.media.kind === 'book') {
-      const authorNames = absItem.media.authors
-        .map((a) => a.name)
-        .filter((name) => name.trim().length > 0);
-      return {
-        kind: 'book',
-        id: absItem.id,
-        title: absItem.media.title,
-        subtitle: authorNames.length > 0 ? authorNames.join(', ') : null,
-        coverPath: absItem.coverPath,
-        imageTag: null,
-        availability: 'owned',
-      };
-    }
-    return {
-      kind: 'podcast',
-      id: absItem.id,
-      title: absItem.media.title,
-      subtitle: absItem.media.author,
-      coverPath: absItem.coverPath,
-      imageTag: null,
-      availability: 'owned',
-    };
+    return absItemToMixedItem(absItem, 'owned');
   }
 
   if (id.startsWith(JELLYFIN_ID_PREFIX)) {
     const album = albumsById?.get(id.slice(JELLYFIN_ID_PREFIX.length));
     if (!album) return null;
-    return {
-      kind: 'album',
-      id: album.id,
-      title: album.name,
-      subtitle: album.artistName,
-      coverPath: null,
-      imageTag: album.imageTag,
-      availability: 'owned',
-    };
+    return albumToMixedItem(album, 'owned');
   }
 
   return null;
@@ -385,7 +456,7 @@ export function registerRecommendedRoutes(app: FastifyInstance): void {
       itemsPerShelf: ITEMS_PER_SHELF,
     });
 
-    const responseShelves = shelves.map((shelf) => {
+    const libraryShelves = shelves.map((shelf) => {
       // `shelf.itemLabels` (when present) is keyed by the *namespaced* candidate id —
       // see this file's namespacing header comment. Re-key to the bare upstream id
       // before serializing, or the keys match no `items[].id` this route actually sends
@@ -413,6 +484,78 @@ export function registerRecommendedRoutes(app: FastifyInstance): void {
       };
     });
 
-    return reply.send({ shelves: responseShelves });
+    // Wave 15c-2-S-4: external (unowned) discovery, ahead of the library-derived
+    // shelves — mirrors `routes/libraries.ts` and `routes/jellyfin.ts`'s identical
+    // ordering for their own single-medium routes. Both builders are pre-existing,
+    // reused rather than reimplemented, and contractually total (never throw — see
+    // each builder's own doc comment), so calling them bare here needs no extra
+    // try/catch: a `null` return means "not this response", exactly like the two
+    // routes above already treat it, never an empty placeholder shelf.
+    //
+    // `itemLabels` is never set on either external shelf. `typeLabelsFor` (`shelves.ts`)
+    // only ever populates it from `candidatesById`, and external items are never
+    // candidates in that pool — and each external shelf is single-kind by construction
+    // (`buildBookExternalDiscoveryShelf` only ever emits `kind: 'book'`,
+    // `buildExternalDiscoveryShelf` only ever emits `kind: 'album'`), so it could not
+    // apply even if these shelves went through the shared shelf-building path. Shipping
+    // an empty/partial map here is the exact "keys match no rendered card" trap
+    // `a1c0075` closed for the library-derived shelves above.
+    const bookExternalShelf = absPool?.bookLibraryId
+      ? await buildBookExternalDiscoveryShelf(
+          app,
+          profile,
+          { items: absPool.items },
+          absPool.bookLibraryId,
+        )
+      : null;
+    const musicExternalShelf = jellyfinPool
+      ? await buildExternalDiscoveryShelf(
+          app,
+          profile,
+          // `buildExternalDiscoveryShelf`'s seed-resolution chain looks up
+          // `albumsById.get(seedInfo.itemId)`, and `profile.facetSeeds.author[...].itemId`
+          // carries the *namespaced* candidate id (this file's own namespacing header
+          // comment) — unlike every other use of `jellyfinPool.albumsById` in this file
+          // (bare ids, for `toMixedItem`/owned lookups). A bare-keyed map here would
+          // silently resolve zero seeds on every request: no error, no failing shelf,
+          // just a music external shelf that can never appear — the exact "reading the
+          // writer tells you the shape, only reading the filter tells you the range"
+          // trap this project has already paid for once (the cancelled `15c-2-S-3`).
+          new Map(
+            Array.from(jellyfinPool.albumsById.entries()).map(([id, album]) => [
+              namespaceJellyfinId(id),
+              album,
+            ]),
+          ),
+          jellyfinPool.artistsById,
+        )
+      : null;
+
+    const externalShelves = [
+      ...(bookExternalShelf
+        ? [
+            {
+              id: bookExternalShelf.id,
+              label: bookExternalShelf.label,
+              type: bookExternalShelf.type,
+              reason: bookExternalShelf.reason,
+              items: bookExternalShelf.items.map((item) => absItemToMixedItem(item, 'external')),
+            },
+          ]
+        : []),
+      ...(musicExternalShelf
+        ? [
+            {
+              id: musicExternalShelf.id,
+              label: musicExternalShelf.label,
+              type: musicExternalShelf.type,
+              reason: musicExternalShelf.reason,
+              items: musicExternalShelf.items.map((album) => albumToMixedItem(album, 'external')),
+            },
+          ]
+        : []),
+    ];
+
+    return reply.send({ shelves: [...externalShelves, ...libraryShelves] });
   });
 }
