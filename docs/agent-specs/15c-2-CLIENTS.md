@@ -93,20 +93,70 @@ inventing a new card.
   because Android routed an external id straight into `playItem()`. Everything from this route is
   `'owned'` today, so the correct behaviour is reachable; guard on `availability` regardless.
 
-## Placement — the one real decision, and it is yours to make
+## Placement — DECIDED: replacement, and it needs one server wave first
 
-Home stitches four independent async fetches client-side (see `HANDOVER.md`'s 14c section). Adding a
-fifth source either **duplicates** items already shown by the per-medium recommendation carousels or
-**replaces** them. Her decision — mixed carousels _rather than_ one shelf per medium — argues for
-replacement.
+**Decision: the mixed shelf REPLACES the per-medium recommended carousels on For You.** Web drops
+its `useOptionalLibraryRecommendedQuery` fetch; Android drops the `libraryRecommended` call inside
+`fetchAbsCarousel`. Both then fetch `GET /api/v1/recommended` instead, in the same slot.
 
-**Decide it in the spec before dispatch, and make it identical on both platforms.** The hard
-constraint either way: **no item may appear twice on For You.** Cross-shelf dedupe across
-independently-fetched responses is not something either client can do well, which is itself an
-argument for replacing the two per-medium recommendation fetches rather than adding to them.
+Three reasons, in order of weight:
 
-Note also her closed decision that **Home holds a loading state until its sources settle** — if this
-wave changes which sources Home waits on, it must not regress that.
+1. Sofia asked for **mixed-content carousels rather than one shelf per medium**
+   (`docs/USER_DECISIONS.md` decision 2). Adding a fifth source next to the per-medium ones
+   delivers the opposite of what she asked for while technically shipping the feature.
+2. **Neither client can dedupe across independently-fetched responses**, and "no item twice on
+   For You" is the hard constraint. Replacement makes duplication structurally impossible within
+   the recommendation slot; addition makes it likely, since the mixed pool is built from the same
+   libraries the per-medium routes read.
+3. It **closes an existing platform divergence for free.** Verified by the orchestrator's recon:
+   web calls `/libraries/:id/recommended` for the **book library only** (`HomePage.tsx:246`),
+   while Android calls it for **both book and podcast** libraries (`ForYouViewModel.kt:139-140`).
+   One aggregator serves both, so the divergence disappears rather than needing its own wave.
+
+**What replacement does NOT touch.** Home's other three sources stay exactly as they are: book
+library home shelves, podcast library home shelves, and Jellyfin favourite albums. Music
+recommendations on the separate `MusicHomePage` / `MusicLibraryViewModel` also stay — that is a
+different screen, not For You.
+
+### The blocker recon found, and why it is a server wave rather than an accepted loss
+
+`MixedRecommendedItem` **has no `progress` field**, and both clients render a real progress bar
+from one on recommended book/podcast cards (`Carousel.tsx:371-375`; `ForYouCarousel.kt:328-332`,
+fed by `FeedItem.progress`). Replacing the per-medium fetch as the contract stands today would
+**silently delete that bar** — visible to the user, invisible to every test, which is this
+project's signature failure shape.
+
+**So `15c-2-S-3` lands first and adds it.** Same reasoning that put `15c-2-S-2`'s id namespacing
+ahead of any client: once a client depends on the shape, changing it is a breaking change.
+
+**Do not start the client waves until `15c-2-S-3` is on `main`.** The field is
+`progress: number | null`, a 0..1 fraction, flat rather than the nested `MediaProgress` object the
+older `RecommendedLibraryItem` carries — `MixedRecommendedItem` is deliberately a flat card
+projection, and both clients' own `FeedItem` types already hold exactly `number | null` /
+`Double?`, so the flat field is one hop shorter to map than what they do today.
+
+**Render it exactly where each client renders it today**, so this reads as continuity rather than
+a new affordance. `null` means no bar — not a zero-width bar.
+
+### One inherited property to be honest about, and NOT to fix here
+
+**"No item may appear twice on For You" is not enforced today on either platform.** The
+orchestrator grepped both Home implementations for cross-carousel dedupe and found **none** — so a
+book can already appear in both a "Continue listening" home shelf and the recommended carousel.
+Replacement strictly reduces the duplication surface and does not introduce it. **Do not build a
+cross-carousel dedupe pass in this wave**; it is a separate decision about what Home is allowed to
+repeat, and bundling it would hide this wave's own regressions. `-P` should record the property as
+**pre-existing and out of scope**, not report it as a defect introduced here.
+
+### Loading state — do not regress it
+
+Both platforms already hold Home in a single loading state until **every** source settles, and
+that is Sofia's own closed decision. Web: `pageLoading` at `HomePage.tsx:339`, composed from four
+`*Settled` booleans at `:335-338`. Android: `ForYouViewModel.load()` sets `_uiState` exactly once
+after all three `async` children `.await()` (`ForYouViewModel.kt:96-104`). **Swapping one fetch for
+another must keep the count and the shape of that gate correct** — a `*Settled` boolean left
+pointing at a deleted query, or one silently dropped, regresses the layout-shift fix from 14c.
+Say in your report which gate expression you changed and what it now reads.
 
 ## Accessibility
 
