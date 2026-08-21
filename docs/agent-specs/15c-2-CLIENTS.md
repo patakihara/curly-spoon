@@ -49,6 +49,11 @@ Three properties that are contract, not incidental:
   (`apps/server/src/features/recommendations/shelves.ts:80`) returns `undefined` below a kind-count
   of two, deliberately. A single-kind shelf carries no labels and its cards must not invent one.
 - **`itemLabels` is keyed by item id**, and those ids are the same `id` the item carries.
+- **`item.kind` is authoritative; `itemLabels` is a convenience derived from it.** On a true
+  literal-id collision between the two upstreams, `itemLabels` — a `Record<itemId, string>` — can
+  only hold one label per bare key. Every item carries its own `kind` regardless, so **render chrome
+  from `item.kind` and use `itemLabels` only for the display string.** Never branch on the presence
+  of a label to decide what an item _is_.
 - **`availability` is always `'owned'` from this route today.** Treat anything other than the
   literal `"owned"` as external anyway — that is the contract both existing clients already
   document, and never derive externality by string-matching an `external:` prefix out of `id`.

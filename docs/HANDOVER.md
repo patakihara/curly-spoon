@@ -279,7 +279,6 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 
 <!-- AGENT_LOG_START -->
 
-- `2026-08-20T14:59:38Z` · `aa135354468fa745f` · general-purpose · ended · ## Report — Wave 16e-foryou-A-2 **1. Branch/commit:** 'worktree-agent-aa135354468fa745f' at '95e27a4'. 'git status --short' is clean. Reset to base '…
 - `2026-08-20T15:15:05Z` · `a97354ec6040f55c7` · general-purpose · ended · The spec is written to '/home/sofiapata/src/auralis-src/docs/design/screens/SETTINGS.md'. (Note: 'docs/HANDOVER.md' shows as modified in git status —…
 - `2026-08-20T21:16:08Z` · `a8f347adc09133521` · general-purpose · ended · Working tree is clean, all committed. Here is my final report. ## Report — Wave '16e-settings-W' **1. Branch/commit:** 'worktree-agent-a8f347adc09133…
 - `2026-08-20T21:16:57Z` · `ae1def9061591c7e3` · general-purpose · ended · Working tree clean, one commit on the worktree branch, no push performed. Here is my final report. ## Report — Wave '16e-settings-A' **Branch/commit:…
@@ -294,6 +293,7 @@ cat "$(git rev-parse --path-format=absolute --git-common-dir)/auralis-agent-log.
 - `2026-08-20T23:51:21Z` · `aa2569dc96b0baa5d` · general-purpose · ended · Everything is green and committed. Here is the final report. ## Report — Wave '16c-6-W' **1. Branch/commit:** 'worktree-agent-aa2569dc96b0baa5d' at '…
 - `2026-08-21T00:04:17Z` · `a142e6882657bdfd0` · general-purpose · ended · Matches exactly. I have what I need to write the report. ## Verdict **Merge with named follow-ups.** The route is correct, well-tested, and degrades…
 - `2026-08-21T00:07:48Z` · `a0945a250b7dbe6cc` · general-purpose · ended · Good, that confirms the "no container tier" claim cited by both Fab.tsx and ListItem.css comments is genuinely stated in Card.css. Report follows. ##…
+- `2026-08-21T00:38:33Z` · `a08d557597dcd2471` · general-purpose · ended · Working tree is clean, everything committed on the worktree branch. Task complete. ## Report — Wave '15c-2-S-2' **1. Branch/commit:** 'worktree-agent…
 
 <!-- AGENT_LOG_END -->
 
@@ -807,6 +807,37 @@ four independent fetches client-side (see 14c), so a fifth cross-medium source e
 content already on For You or replaces the two per-medium recommendation carousels. Her decision was
 **mixed-content carousels rather than one shelf per medium**, which argues for replacement — but no
 item may appear twice on For You either way, and that is the constraint to spec against.
+
+### DONE `a1c0075` — `15c-2-S-2` closed the id-collision follow-up, and found a second half
+
+Follow-up 1 below is **closed**, but the record stays because the fix was bigger than the review's
+description of it, in a way that would have bitten whoever did it "quickly".
+
+Candidate ids from the two upstreams are now namespaced (`abs:` / `jf:`) for the duration of
+scoring and stripped before serialization, so `items[].id` on the wire is unchanged. Landed **before**
+any client consumes the route, which was the point of doing it now — once a client depends on `id`'s
+format, changing it is a breaking change, and the client triple is the next wave.
+
+**Two traps, only one of which was known going in:**
+
+- **The known one:** `itemLabels` is keyed by item id, so stripping the prefix from `items[].id` but
+  not from every `itemLabels` key ships a map matching no rendered card — silently disabling the
+  feature while every existing test stays green. Now pinned by a test asserting
+  `Object.keys(itemLabels)` equals `items.map(i => i.id)` exactly, **verified discriminating** by
+  reverting the strip and watching it fail.
+- **The one nobody had named**, and the reason this was worth delegating rather than doing inline:
+  **`signals[].itemId` had to be namespaced too.** `profile.ts`'s `buildTasteProfile` matches
+  `signal.itemId` against `candidate.id` **directly**, so prefixing candidates while leaving signals
+  bare would have silently broken both the known-item exclusion and taste-affinity matching — no
+  error, no failing test, just quietly worse recommendations. A "ten-line fix" that touches an id
+  space has to account for every consumer of that id space, not just the one the bug was reported in.
+
+**One residual property, correctly left alone.** On a _true_ literal-id collision, `itemLabels` is a
+`Record<itemId, string>` and structurally cannot hold two labels under one bare key — last write
+wins. That is a wire-format property inherited from 15c-1, not something this wave introduced, and it
+is harmless **because every item carries its own `kind`**. **The client triple must therefore treat
+`item.kind` as authoritative and `itemLabels` as a convenience** — `docs/agent-specs/15c-2-CLIENTS.md`
+now says so.
 
 ### Follow-ups the two reviews named — none blocking, all precise
 
