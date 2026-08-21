@@ -64,7 +64,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def main():
     problems, scanned = [], 0
-    for base, _dirs, files in os.walk(os.path.join(ROOT, "components")):
+    for base, _dirs, files in os.walk(ROOT):
+        if os.sep + ".git" in base or os.sep + ".render" in base:
+            continue
         for f in sorted(files):
             if not f.endswith((".jsx", ".html")):
                 continue

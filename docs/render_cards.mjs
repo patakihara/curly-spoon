@@ -32,14 +32,19 @@ function loadPlaywright() {
   throw new Error('playwright not resolvable from any known location');
 }
 
+// Every card anywhere in the mirror, not just components/ — the Reference group lives in
+// reference/ and is just as capable of shipping a card that renders blank.
+const SKIP = new Set(['.git', '.render', 'node_modules', 'docs', 'assets']);
 const cards = [];
-for (const dir of readdirSync(path.join(ROOT, 'components'))) {
-  const d = path.join(ROOT, 'components', dir);
-  if (!statSync(d).isDirectory()) continue;
-  for (const f of readdirSync(d)) {
-    if (f.endsWith('.card.html')) cards.push('components/' + dir + '/' + f);
+(function walk(dir, rel) {
+  for (const f of readdirSync(dir)) {
+    if (SKIP.has(f)) continue;
+    const full = path.join(dir, f);
+    const r = rel ? rel + '/' + f : f;
+    if (statSync(full).isDirectory()) walk(full, r);
+    else if (f.endsWith('.card.html')) cards.push(r);
   }
-}
+})(ROOT, '');
 cards.sort();
 
 // Served over HTTP, not file://: the pinned CDN scripts carry integrity + crossorigin,
@@ -105,7 +110,9 @@ for (const rel of cards) {
   if (res.children <= 0) problems.push('EMPTY #root');
   if (res.text < 40) problems.push('almost no rendered text (' + res.text + ' chars)');
   if (res.missing.length) problems.push('not in namespace: ' + res.missing.join(', '));
-  if (!res.themed) problems.push('missing dark+light Themed() wrapper');
+  // Only component cards owe a dark/light pair — they exist to prove a component works in both.
+  // A Reference card is a screenshot beside its write-up; rendering it twice would prove nothing.
+  if (!res.themed && rel.startsWith('components/')) problems.push('missing dark+light Themed() wrapper');
   problems.push(...errors);
 
   if (problems.length) bad++;
