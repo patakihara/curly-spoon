@@ -13,6 +13,11 @@ Idempotent: if the port is already bound (another instance already running, e.g.
 previous VS Code window), this exits quietly rather than erroring — safe to invoke on every
 folder-open without accumulating duplicate servers.
 
+Uses ThreadingHTTPServer, not plain HTTPServer: the latter handles one request at a time,
+synchronously — fine for a bare curl, but a real browser (or a proxying layer in front of it,
+e.g. a port-forwarder holding a persistent/keep-alive connection open) can get an empty or
+dropped response while the single worker is busy with something else.
+
     python3 docs/serve.py            # foreground, Ctrl-C to stop
     python3 docs/serve.py &          # background
 """
@@ -49,7 +54,7 @@ def main():
         sys.exit(0)
     os.chdir(ROOT)
     print(f'docs/serve.py: serving {ROOT} at http://127.0.0.1:{PORT}/ (gallery.html, cards, everything)')
-    http.server.HTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
+    http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
 
 
 if __name__ == '__main__':
