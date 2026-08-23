@@ -254,20 +254,15 @@ def main():
       (#root, .h-dvh.flex.flex-col, the toolbar and its siblings) is deliberately cut as app chrome. */
     .om-gallery-mount{{
       flex:1;min-height:0;
-      /* NOT a reproduction of real inherited behavior — verified against the real captured
-         page.html that this is a deliberate departure. The --cds-font-sans custom property, read
-         off a bare :root, resolves to the plain system-sans fallback stack there, not Anthropic
-         Sans — the Anthropic Sans override is only assigned one level down, on the .cds-root class
-         rule itself, and in the real capture the design-system panel sits outside every
-         .cds-root[data-font] element on the page (confirmed: none of them contain the panel), so
-         it never receives that override. index-CrWB6CHH.css even carries its own plain
-         html-and-body font-family rule (a literal system-sans stack, no custom property involved),
-         which is what the real panel's nav/card-title/subtitle/README text actually renders in.
-         This block hardcodes Anthropic Sans anyway as an intentional branding choice for the
-         mirror, not a fidelity match — the h1 is the only element whose font genuinely matches the
-         real capture, via its own font-om-serif override, which does take real precedence in
-         both. */
-      font-family:"Anthropic Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      /* No font-family here — this deliberately does NOT set Anthropic Sans. Verified against the
+         real captured page.html: the --cds-font-sans custom property only resolves to Anthropic
+         Sans on the .cds-root class rule, and in the real capture the design-system panel sits
+         outside every .cds-root[data-font] element on the page (confirmed: none of them contain
+         the panel), so it never receives that override — index-CrWB6CHH.css's own plain
+         html-and-body font-family rule (a literal system-sans stack) is what the real panel's
+         nav/card-title/subtitle/README text actually renders in, and that rule is already linked
+         and applies here with no help needed. The h1 still matches separately via its own
+         font-om-serif override, which takes precedence in both. */
     }}
   </style>
 </head><body>
