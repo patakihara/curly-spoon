@@ -23,7 +23,7 @@ export function ButtonGroup({ items = [], value, onChange, platform = 'desktop',
           <div key={o.key} onClick={() => onChange && onChange(o.key)} role="button" aria-pressed={on} aria-label={o.ariaLabel || o.label || o.key} title={iconOnly ? (o.ariaLabel || o.label || o.key) : undefined}
             style={sx('display:flex;align-items:center;justify-content:center;gap:var(--spacing-sm);flex-shrink:0;white-space:nowrap;cursor:pointer;user-select:none;' +
               'height:' + h + 'px;' + (iconOnly ? 'width:' + (mobile ? 52 : 48) + 'px;padding:0;' : 'padding:0 var(--spacing-lg);') + 'border:none;' +
-              'font-family:var(--font-body);font-size:var(--text-sm);font-weight:700;' +
+              'font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);' +
               'background:' + (on ? 'var(--accent-rose)' : 'var(--surface-card)') + ';' +
               'color:' + (on ? 'var(--accent-contrast)' : 'var(--surface-fg)') + ';' +
               'transition:border-radius var(--duration-quick) ease-in-out,background var(--duration-quick) ease-in-out,color var(--duration-quick) ease-in-out;' +

@@ -31,7 +31,7 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
           {CoverArt && <CoverArt src={image} />}
         </div>
         <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;justify-content:center')}>
-          {kind && <div style={sx('font-size:var(--text-xs);font-weight:700;color:' + muted + ';text-transform:uppercase;letter-spacing:.02em')}>{kind}</div>}
+          {kind && <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);color:' + muted + ';text-transform:uppercase;letter-spacing:.02em')}>{kind}</div>}
           <div style={sx('display:flex;align-items:baseline;gap:6px;min-width:0')}>
             {/* Explicit qualifies the content rather than counting anything, which is what Badge's
                 square, uncounted form exists for. Announced, not hidden — someone choosing an
@@ -41,7 +41,7 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
                 <Badge tone="neutral" square>E</Badge>
               </span>
             )}
-            <div style={sx('flex:1;min-width:0;font-size:var(--text-lg);font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
+            <div style={sx('flex:1;min-width:0;font-size:var(--text-lg);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
           </div>
           {meta && <div style={sx('font-size:var(--text-sm);color:' + muted + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{meta}</div>}
         </div>

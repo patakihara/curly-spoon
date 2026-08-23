@@ -46,7 +46,7 @@ export function ExpandableText({ children, text, lines = 3, moreLabel = 'see mor
       </div>
       {showToggle && (
         <button onClick={toggle} aria-expanded={isExpanded}
-          style={sx('margin-top:2px;border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-body);font-size:var(--text-sm);font-weight:700;color:var(--accent-ink)')}>
+          style={sx('margin-top:2px;border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);color:var(--accent-ink)')}>
           {label}
         </button>
       )}

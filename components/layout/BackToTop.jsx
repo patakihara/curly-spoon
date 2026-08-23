@@ -25,7 +25,7 @@ export function BackToTop({ visible = false, label = 'Back to the top', onClick,
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}>
       <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 500;font-size:var(--icon-sm);line-height:1")}>arrow_upward</span>
-      <span style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:700')}>{label}</span>
+      <span style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:var(--weight-strong)')}>{label}</span>
     </button>
   );
 }

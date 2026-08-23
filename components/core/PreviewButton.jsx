@@ -23,7 +23,7 @@ export function PreviewButton({ kind = 'track', label, playing = false, muted = 
   const text = label || LABELS[kind] || LABELS.track;
   return (
     <button onClick={disabled ? undefined : onClick} disabled={disabled} aria-disabled={disabled}
-      style={sx('display:inline-flex;align-items:center;gap:var(--spacing-sm);border:none;border-radius:var(--radius-pill);cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';opacity:' + (disabled ? '0.5' : '1') + ';background:var(--scrim-soft);color:var(--on-scrim);padding:' + (mobile ? '8px 16px' : '6px 14px') + ';font-family:var(--font-body);font-size:var(--text-sm);font-weight:700')}>
+      style={sx('display:inline-flex;align-items:center;gap:var(--spacing-sm);border:none;border-radius:var(--radius-pill);cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';opacity:' + (disabled ? '0.5' : '1') + ';background:var(--scrim-soft);color:var(--on-scrim);padding:' + (mobile ? '8px 16px' : '6px 14px') + ';font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
       <span key={glyph} className="sn-pb-glyph" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>{glyph}</span>
       {text}
     </button>

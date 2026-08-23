@@ -30,8 +30,8 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
       <span style={sx('position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:height' + ease + ',top' + ease + ';top:' + shift + 'px;left:' + (center ? 'calc(50% - 28px)' : '0px') + ';width:56px;height:' + (open ? rowHeight + 'px' : '32px'))}>
         <span style={sx("font-family:'Material Symbols Rounded';font-size:24px;line-height:1;transition:font-variation-settings" + ease + ";font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{icon}</span>
       </span>
-      <span style={sx('position:absolute;left:50%;top:36px;transform:translateX(-50%);width:max-content;max-width:80px;text-align:center;font-size:12px;line-height:1;font-weight:700;letter-spacing:.02em;white-space:nowrap;pointer-events:none;transition:opacity .14s ease' + (open ? '' : ' .14s') + ';opacity:' + (open || iconOnly ? '0' : '1'))}>{label}</span>
-      <span ref={labelRef} style={sx('position:absolute;left:56px;top:' + (rowHeight / 2) + 'px;font-size:14px;font-weight:700;letter-spacing:.02em;white-space:nowrap;transform:translateY(-50%);pointer-events:none;transition:opacity .14s ease' + (open ? ' .14s' : '') + ';opacity:' + (open ? '1' : '0'))}>{label}</span>
+      <span style={sx('position:absolute;left:50%;top:36px;transform:translateX(-50%);width:max-content;max-width:80px;text-align:center;font-size:12px;line-height:1;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;pointer-events:none;transition:opacity .14s ease' + (open ? '' : ' .14s') + ';opacity:' + (open || iconOnly ? '0' : '1'))}>{label}</span>
+      <span ref={labelRef} style={sx('position:absolute;left:56px;top:' + (rowHeight / 2) + 'px;font-size:14px;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;transform:translateY(-50%);pointer-events:none;transition:opacity .14s ease' + (open ? ' .14s' : '') + ';opacity:' + (open ? '1' : '0'))}>{label}</span>
     </div>
   );
 }

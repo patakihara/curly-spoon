@@ -24,7 +24,7 @@ export function Rating({ value, count, max = 5, platform = 'desktop' }) {
   return (
     <div role="img" aria-label={label} style={sx('display:inline-flex;align-items:center;gap:4px;font-family:var(--font-body)')}>
       <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-" + (mobile ? 'xs' : 'sm') + ");line-height:1;color:var(--surface-fg);font-variation-settings:'FILL' 1,'wght' 500")}>star</span>
-      <span aria-hidden="true" style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:700;color:var(--surface-fg)')}>{display}</span>
+      <span aria-hidden="true" style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:var(--weight-strong);color:var(--surface-fg)')}>{display}</span>
       {countText && <span aria-hidden="true" style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted)')}>({countText})</span>}
     </div>
   );

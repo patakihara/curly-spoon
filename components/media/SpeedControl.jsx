@@ -16,7 +16,7 @@ export function SpeedControl({ value = 1, onClick, label, size = 40 }) {
   const aria = label || 'Playback speed, ' + text + ' times';
   return (
     <button onClick={onClick} aria-label={aria} title={aria}
-      style={sx('display:inline-flex;align-items:center;justify-content:center;gap:1px;min-width:' + size + 'px;height:' + size + 'px;padding:0 8px;border:none;border-radius:var(--radius-pill);background:transparent;cursor:pointer;color:' + ink + ';font-family:var(--font-body);font-weight:700;font-size:var(--text-sm);transition:color var(--duration-fast) var(--ease-standard)')}>
+      style={sx('display:inline-flex;align-items:center;justify-content:center;gap:1px;min-width:' + size + 'px;height:' + size + 'px;padding:0 8px;border:none;border-radius:var(--radius-pill);background:transparent;cursor:pointer;color:' + ink + ';font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-sm);transition:color var(--duration-fast) var(--ease-standard)')}>
       {text}
       <span aria-hidden="true" style={sx('font-size:var(--text-xs)')}>×</span>
     </button>
