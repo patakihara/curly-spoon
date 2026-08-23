@@ -35,14 +35,20 @@ function loadPlaywright() {
 // Every card anywhere in the mirror, not just components/ — the Reference group lives in
 // reference/ and is just as capable of shipping a card that renders blank.
 const SKIP = new Set(['.git', '.render', 'node_modules', 'docs', 'assets']);
+// A card is identified by its own @dsCard marker, not by filename suffix. The ui_kits/*/index.html
+// screens carry the marker like any other card but aren't named *.card.html, so a suffix-only glob
+// silently drops them — confirmed the marker check below matches exactly the manifest's 84 cards
+// (82 *.card.html + these 2), so this doesn't sweep in anything unintended.
 const cards = [];
 (function walk(dir, rel) {
   for (const f of readdirSync(dir)) {
     if (SKIP.has(f)) continue;
     const full = path.join(dir, f);
     const r = rel ? rel + '/' + f : f;
-    if (statSync(full).isDirectory()) walk(full, r);
-    else if (f.endsWith('.card.html')) cards.push(r);
+    if (statSync(full).isDirectory()) { walk(full, r); continue; }
+    if (!f.endsWith('.html')) continue;
+    const firstLine = readFileSync(full, 'utf8').split('\n')[0];
+    if (firstLine.startsWith('<!-- @dsCard ')) cards.push(r);
   }
 })(ROOT, '');
 cards.sort();
@@ -177,7 +183,11 @@ for (const rel of cards) {
     };
   }, { names: wanted, hasBabel });
 
-  await page.screenshot({ path: path.join(ROOT, '.render', path.basename(rel) + '.png'), fullPage: true });
+  // Keyed by the full relative path, not path.basename(rel): two cards can share a basename
+  // (ui_kits/desktop/index.html and ui_kits/mobile/index.html both are 'index.html') and would
+  // otherwise silently overwrite each other's screenshot.
+  const slug = rel.replace(/\//g, '_');
+  await page.screenshot({ path: path.join(ROOT, '.render', slug + '.png'), fullPage: true });
   await page.close();
 
   const problems = [];
