@@ -14,3 +14,17 @@ _ds_bundle.js
 
 # Local overview page (docs/gen_gallery.py), built from .render/ screenshots above.
 gallery.html
+
+# Vendored copies of the Claude Design app's OWN css/js, fetched by URL when reverse-engineering
+# its "Design System" pane styling. Same reasoning as .vendor/ above but for the app itself: its
+# asset URLs are versioned build hashes (e.g. index-D0fefd-i.js) that rot the moment a new build
+# ships, so anything read from them gets saved here rather than linked. Never a copy of a whole
+# page we saved by hand (that's a one-off, not vendored) -- just fetched CSS/JS by URL.
+.claude-design-vendor/
+
+# A raw browser save of the Claude Design app. The pre-render SSR shell has none of the actual
+# page's CSS or DOM (all client-rendered), so this is only ever useful as a "Webpage, Complete"
+# save's html file, and even then it embeds the account's own email/org id in a JSON payload.
+# Never push it.
+claude-design.html
+claude-design_files/
