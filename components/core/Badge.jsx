@@ -22,7 +22,7 @@ export function Badge({ children, tone = 'accent', size = 'sm', icon, square = f
       // `neutral`'s "tone colour" is the card surface itself, which would be invisible as ink on
       // a transparent background — fall back to the plain foreground for that one tone.
       background: plain ? 'transparent' : bg, color: plain ? (tone === 'neutral' ? fg : bg) : fg, whiteSpace: 'nowrap',
-      fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', fontWeight: 700,
+      fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-strong)',
     }}>
       {icon && <span aria-hidden="true" style={{ fontFamily: "'Material Symbols Rounded'", fontSize: 'var(--icon-xs)', lineHeight: 1, fontVariationSettings: "'FILL' 1,'wght' 500" }}>{icon}</span>}
       {children}

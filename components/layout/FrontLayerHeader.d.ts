@@ -11,8 +11,9 @@ import { ReactNode } from 'react';
  *
  * The divider rule:
  * - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress.
- * - `tabs={true}` — no hairline at all; a tab bar draws its own underline indicator and two
- *   stacked rules are noise.
+ * - `tabs={true}` — a hairline is always shown, static rather than scroll-linked, and the tabs
+ *   are pinned flush to the band's bottom edge (instead of centered) so the tab bar's own
+ *   underline indicator sits right on it, reading as one line instead of two.
  * - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so
  *   it reads as the top of the content column instead of cutting the surface in half.
  *
@@ -45,7 +46,7 @@ import { ReactNode } from 'react';
 export interface FrontLayerHeaderProps {
   /** A `TabBar`, a `ButtonGroup`, a `SearchField` — whatever the screen's secondary header is. */
   children?: ReactNode;
-  /** The content is a tab bar, which draws its own indicator — suppresses the hairline. */
+  /** The content is a tab bar: shows a static (non-scroll-linked) hairline and pins children to the band's bottom edge, so the tab bar's own indicator sits on that hairline. */
   tabs?: boolean;
   /** 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. */
   progress?: number;

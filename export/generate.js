@@ -35,9 +35,11 @@ const parseScope = (css, re) => {
 };
 
 const srcs = {};
-for (const f of TOKEN_FILES) {
+// Read in parallel: one round trip per file, serially, outgrew the script time limit as the
+// component count grew.
+await Promise.all(TOKEN_FILES.map(async (f) => {
   try { srcs[f] = await readFile('tokens/' + f + '.css'); } catch (e) { /* optional file */ }
-}
+}));
 const root = {};
 const order = [];
 for (const f of TOKEN_FILES) {
@@ -142,19 +144,24 @@ const kt = '// GENERATED — Sonora tokens as Compose values.\n'
 await saveFile('export/android/SonoraTokens.kt', kt);
 
 /* ---- component API ---- */
+const DIRS = ['core', 'forms', 'layout', 'media', 'navigation'];
 const dts = [];
-for (const dir of ['core', 'forms', 'layout', 'media', 'navigation']) {
-  let names = [];
-  try { names = await ls('components/' + dir); } catch (e) { continue; }
-  for (const n of names) if (/\.d\.ts$/.test(n)) dts.push(['components/' + dir + '/' + n, dir, n.replace(/\.d\.ts$/, '')]);
+const listings = await Promise.all(DIRS.map(async (dir) => {
+  try { return [dir, await ls('components/' + dir)]; } catch (e) { return [dir, []]; }
+}));
+for (const entry of listings) {
+  const dir = entry[0];
+  for (const n of entry[1]) if (/\.d\.ts$/.test(n)) dts.push(['components/' + dir + '/' + n, dir, n.replace(/\.d\.ts$/, '')]);
 }
 dts.sort((a, b) => (a[1] + a[2]).localeCompare(b[1] + b[2]));
+const sources = await Promise.all(dts.map((e) => readFile(e[0])));
 let md = '<!-- GENERATED from components/**/*.d.ts by export/generate.js. Do not hand-edit. -->\n\n'
   + '# Sonora component API\n\nEvery prop each component accepts, with its type and the note from its declaration.\n';
 let group = '';
-for (const entry of dts) {
-  const path = entry[0], dir = entry[1], name = entry[2];
-  const src = await readFile(path);
+for (let di = 0; di < dts.length; di++) {
+  const entry = dts[di];
+  const dir = entry[1], name = entry[2];
+  const src = sources[di];
   if (dir !== group) { group = dir; md += '\n## ' + dir + '\n'; }
   const leadMatch = src.match(/\/\*\*([\s\S]*?)\*\//);
   const lead = (leadMatch ? leadMatch[1] : '').split('\n').map((l) => l.replace(/^\s*\*\s?/, '').trim()).filter(Boolean).join(' ');

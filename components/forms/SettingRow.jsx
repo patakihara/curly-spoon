@@ -1,0 +1,18 @@
+import React from 'react';
+const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+
+/** Settings list row: title, explanatory line, and a Switch. */
+export function SettingRow({ title, sub, checked = false, platform = 'desktop', onChange }) {
+  const Switch = NS().Switch;
+  const mobile = platform === 'mobile';
+  return (
+    <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:' + (mobile ? '16px' : '24px') + ';padding:var(--spacing-lg) var(--spacing-lg);border-radius:var(--radius-' + (mobile ? 'sm' : 'xs') + ');background:var(--surface-card)')}>
+      <div style={sx('min-width:0')}>
+        <div style={sx('font-size:var(--text-md);font-weight:var(--weight-strong);color:var(--surface-fg)')}>{title}</div>
+        <div style={sx('font-size:var(--text-sm);line-height:1.5;color:var(--surface-fg-muted)')}>{sub}</div>
+      </div>
+      {Switch && <Switch checked={!!checked} onChange={onChange} />}
+    </div>
+  );
+}

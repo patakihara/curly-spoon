@@ -1,0 +1,45 @@
+<!-- @dsCard group="Components" viewport="1400x680" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states, and the media header at both sides of its breakpoint" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { MiniPlayer, ResultRow, MediaHeader } = window.SonoraDesignSystem_6c1435;
+function Demo(){
+  const [playing,setPlaying]=React.useState(true);
+  return <div style={{display:'flex',flexDirection:'column',gap:24}}>
+    <div style={{maxWidth:412}}>
+      <MiniPlayer title="Heartbeats in Silence" artist="Deep Inertia" playing={playing} onTogglePlay={()=>setPlaying(!playing)} />
+    </div>
+    <MiniPlayer platform="desktop" title="weathergirl" artist="weathergirl · FLAVOR FOLEY"
+      playing={playing} onTogglePlay={()=>setPlaying(!playing)} progress={0.42} duration={258} />
+    <div style={{maxWidth:620}}>
+      <ResultRow title="Wind and Truth" meta="Brandon Sanderson · Audiobook · 62 h" status="In library" tone="library" />
+      <ResultRow title="Escapes and Moons" meta="Soul Vertex · Single · 3:33" status="Requested · 87%" tone="request" actionGlyph="downloading" />
+      <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" />
+      <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" />
+      <ResultRow title="Tears of Ice" meta="Deep Inertia · Album · 9 tracks" status="Failed" tone="error" />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Media header — wide pane (≥600px): art beside the text</div>
+    <MediaHeader kindLabel="Audiobook" title="Ink Heart" subtitle="Cornelia Funke" onSubtitle={()=>{}}
+      meta="2023 · 18 chapters · 14 h 42 m" onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} />
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Same component in a 412px frame — the breakpoint flips it to stacked and centred</div>
+    <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
+      <MediaHeader kindLabel="Audiobook" title="Ink Heart" subtitle="Cornelia Funke" onSubtitle={()=>{}}
+        meta="2023 · 18 chapters · 14 h 42 m" onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} />
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script></body></html>

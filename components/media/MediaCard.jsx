@@ -87,7 +87,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           rather than trailing in `sub` — kept as its own line rather than folded into the title
           so the title's own two-line clamp is untouched. */}
       {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
-      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-strong);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
+      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
       {markers && markers.length > 0 ? (
         <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0')}>
           <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>

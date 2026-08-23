@@ -1,0 +1,18 @@
+import React from 'react';
+
+export function Switch({ checked, onChange, label }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--spacing-md)', cursor: 'pointer' }}>
+      {label && <span style={{ color: 'var(--surface-fg)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)' }}>{label}</span>}
+      <span onClick={() => onChange && onChange(!checked)} style={{
+        width: 40, height: 24, borderRadius: 999, position: 'relative', flexShrink: 0,
+        background: checked ? 'var(--accent)' : 'var(--surface-border)', transition: 'background 0.15s ease',
+      }}>
+        <span style={{
+          position: 'absolute', top: 3, left: checked ? 19 : 3, width: 18, height: 18, borderRadius: '50%',
+          background: '#fff', transition: 'left 0.15s ease', boxShadow: 'var(--shadow-xs)',
+        }} />
+      </span>
+    </label>
+  );
+}

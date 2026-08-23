@@ -31,7 +31,7 @@ export function Button({ children, variant = 'primary', size = 'md', platform = 
       aria-pressed={pressed}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-sm)',
-        fontFamily: 'var(--font-body)', fontWeight: 600, cursor: disabled ? 'default' : 'pointer',
+        fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-medium)', cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.5 : hover ? 0.85 : 1,
         transition: 'opacity 0.15s ease-in-out, transform 0.1s ease',
         transform: hover && !disabled ? 'translateY(-1px)' : 'none',

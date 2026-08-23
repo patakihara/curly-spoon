@@ -1,0 +1,62 @@
+import React from 'react';
+
+/**
+ * The mobile player surface: covers everything and opens as an expansion of the now-playing bar it
+ * came from. Give it the bar's viewport rect as `from` and the sheet grows out of exactly that
+ * rectangle; without one it slides up from the bottom edge. Closing plays the same move in reverse.
+ */
+export function PlayerSheet({ open = false, from, onClose, children, zIndex = 30, radius = 'var(--radius-lg)', background = 'var(--surface-bg)' }) {
+  const ref = React.useRef(null);
+  const [box, setBox] = React.useState(null);
+  const [shown, setShown] = React.useState(open);
+  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Measure the bar's rect against our own box the moment we are asked to open, so the clip starts
+  // exactly where the bar sits — not where it sat when the component mounted.
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !open || !from) { if (!open) setBox(null); return; }
+    const r = el.getBoundingClientRect();
+    setBox({
+      top: Math.max(0, from.top - r.top), right: Math.max(0, r.right - (from.left + from.width)),
+      bottom: Math.max(0, r.bottom - (from.top + from.height)), left: Math.max(0, from.left - r.left),
+    });
+  }, [open, from && from.top, from && from.left, from && from.width, from && from.height]);
+
+  // One frame at the collapsed geometry before expanding, so the transition has somewhere to run from.
+  const [expanded, setExpanded] = React.useState(false);
+  React.useEffect(() => {
+    if (open) setShown(true);
+    if (reduced) { setExpanded(open); if (!open) setShown(false); return; }
+    if (open) {
+      const id = requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
+      return () => cancelAnimationFrame(id);
+    }
+    setExpanded(false);
+    const t = setTimeout(() => setShown(false), 320);
+    return () => clearTimeout(t);
+  }, [open, reduced]);
+
+  const clip = box
+    ? (expanded ? 'inset(0px 0px 0px 0px round 0px)'
+      : 'inset(' + box.top + 'px ' + box.right + 'px ' + box.bottom + 'px ' + box.left + 'px round ' + radius + ')')
+    : undefined;
+  const slide = !box && !expanded;
+  return (
+    <div ref={ref} aria-hidden={!open} style={{
+      position: 'absolute', inset: 0, zIndex,
+      display: 'flex', flexDirection: 'column', background,
+      visibility: shown ? 'visible' : 'hidden', pointerEvents: open ? 'auto' : 'none',
+      clipPath: clip,
+      transform: slide ? 'translateY(100%)' : 'none',
+      transition: 'clip-path var(--duration-medium) var(--ease-standard), transform var(--duration-medium) var(--ease-standard)',
+    }}>
+      {/* Content fades in behind the growing clip so the bar's own row never appears stretched. */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0,
+        opacity: expanded ? 1 : 0,
+        transition: 'opacity var(--duration-quick) var(--ease-standard)' + (expanded ? ' var(--duration-fast)' : ''),
+      }}>{children}</div>
+    </div>
+  );
+}

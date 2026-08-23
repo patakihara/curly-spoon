@@ -5,6 +5,10 @@ import { ReactNode } from 'react';
  * outer ends fully rounded, 8px inner corners, and the selected segment morphs
  * to fully rounded on both sides. Use for library filters and mode switches,
  * not for navigation.
+ *
+ * Never shows a native scrollbar. When the row overflows, a soft edge fade (a shadow in light
+ * theme, a glow in dark) appears only on the side(s) where content is actually clipped right now
+ * — gone the instant scrolling reaches that end, absent entirely when nothing overflows.
  */
 export interface ButtonGroupProps {
   /**
@@ -17,7 +21,7 @@ export interface ButtonGroupProps {
   value?: string;
   onChange?: (next: string) => void;
   platform?: 'desktop' | 'mobile';
-  /** Adds momentum scrolling and a soft edge fade so an overflowing row reads as scrollable, not clipped. */
+  /** @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. */
   scroll?: boolean;
   /** A pinned, non-scrolling slot before the first segment — an account avatar, in every Spotify filter row. */
   leading?: ReactNode;

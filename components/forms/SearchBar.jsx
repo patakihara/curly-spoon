@@ -1,0 +1,15 @@
+import React from 'react';
+const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+
+/** Pill search bar: fully rounded, bordered on desktop, filled on mobile. The inline/compact search — distinct from the app-bar SearchField. */
+export function SearchBar({ placeholder = 'Search', value, onChange, onSubmit, platform = 'desktop', width = '100%' }) {
+  const mobile = platform === 'mobile';
+  return (
+    <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);box-sizing:border-box;width:' + width + ';height:' + (mobile ? '44px' : '40px') + ';padding:0 var(--spacing-lg);border-radius:var(--radius-pill);background:var(--surface-card)' + (mobile ? ';border:none' : ';border:1px solid var(--surface-border)'))}>
+      <span style={sx("font-family:'Material Symbols Rounded';font-size:20px;line-height:1;flex-shrink:0;color:var(--surface-fg-muted)")}>search</span>
+      <input value={value} placeholder={placeholder} onChange={(e) => onChange && onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && onSubmit) onSubmit(e.target.value); }}
+        style={sx('flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:var(--font-body);font-weight:var(--weight-body);font-size:var(--text-md);color:var(--surface-fg)')} />
+    </div>
+  );
+}

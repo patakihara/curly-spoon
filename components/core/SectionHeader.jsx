@@ -26,7 +26,7 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
       )}
       <div style={{ minWidth: 0 }}>
         {eyebrow && (
-          <div style={{ color: 'var(--surface-fg-muted)', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--text-xs)', marginBottom: 2 }}>{eyebrow}</div>
+          <div style={{ color: 'var(--surface-fg-muted)', fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-xs)', marginBottom: 2 }}>{eyebrow}</div>
         )}
         {titleEl}
       </div>
@@ -38,7 +38,7 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
       {actionText != null ? (
         <button onClick={onAction} style={{
           border: 'none', background: 'transparent', flexShrink: 0, cursor: 'pointer',
-          fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 700,
+          fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-strong)',
           color: 'var(--surface-fg-muted)',
         }}>{actionText}</button>
       ) : action && (

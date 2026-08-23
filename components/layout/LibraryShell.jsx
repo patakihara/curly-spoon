@@ -1,0 +1,119 @@
+import React from 'react';
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+
+if (typeof document !== 'undefined' && !document.getElementById('sonora-libraryshell-css')) {
+  const el = document.createElement('style');
+  el.id = 'sonora-libraryshell-css';
+  // Sub-tab changes read as a swipe: the incoming page slides in from the side the tab sits on.
+  el.textContent = '@keyframes ls-in-r{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}@keyframes ls-in-l{from{transform:translateX(-28px);opacity:0}to{transform:none;opacity:1}}@media (prefers-reduced-motion:reduce){.ls-page{animation:none!important}}';
+  document.head.appendChild(el);
+}
+
+/**
+ * The behaviour layer between a library's views and the chrome around them: which view is showing,
+ * the detail page each view remembers, its sub-tabs and list/grid mode, and the app bar's search
+ * morph. Renders AppShell + TopAppBar and hands the current state to `children` as a function.
+ */
+export function LibraryShell({
+  platform = 'desktop', views = [], view,
+  rail, sheet, sheetOpen, player, theme, contentMinWidth, scroll = true, flatDetail = false,
+  leading, trailing, detailTrailing, backLabel = 'Back',
+  searchHeight, detailSearchPlaceholder = 'Search album',
+  children,
+}) {
+  const { AppShell, TopAppBar, TabBar, IconButton } = NS();
+  const [details, setDetails] = React.useState({});
+  const [collections, setCollections] = React.useState({});
+  const [subtab, setSubtab] = React.useState({});
+  const [modes, setModes] = React.useState({});
+  const [query, setQuery] = React.useState('');
+  const [searching, setSearching] = React.useState(false);
+  const [searchFocus, setSearchFocus] = React.useState(false);
+  const [scrolled, setScrolled] = React.useState(0);
+  const [origin, setOrigin] = React.useState(null);
+  const [visit, setVisit] = React.useState(0);
+
+  const current = views.filter((v) => v.key === view)[0] || {};
+  const subtabs = current.subtabs;
+  const activeSub = subtabs ? (subtab[view] || current.defaultSubtab || subtabs[0].key) : null;
+  const viewKey = view + (activeSub ? ':' + activeSub : '');
+  const mode = modes[viewKey] || current.defaultMode || (activeSub === 'songs' ? 'list' : 'grid');
+  const detail = details[view] || null;
+  // A collection is the other kind of sub-page: the full contents of a feed section ("Recently
+  // added"), which the app bar titles and which has nothing of its own to search.
+  const collection = collections[view] || null;
+  const sub = detail || collection;
+
+  const enter = (e) => {
+    setOrigin(e && typeof e.clientX === 'number' ? { x: e.clientX, y: e.clientY } : null);
+    setVisit((v) => v + 1);
+    setSearching(false); setSearchFocus(false); setScrolled(0);
+  };
+  const openDetail = (item, e) => { enter(e); setDetails((d) => Object.assign({}, d, { [view]: item })); };
+  const openCollection = (title, e) => { enter(e); setCollections((c) => Object.assign({}, c, { [view]: title })); };
+  const closeSub = () => {
+    if (detail) setDetails((d) => Object.assign({}, d, { [view]: null }));
+    else setCollections((c) => Object.assign({}, c, { [view]: null }));
+    setSearching(false); setSearchFocus(false);
+  };
+  const closeDetail = closeSub;
+  const setMode = (m) => setModes((s) => Object.assign({}, s, { [viewKey]: m }));
+
+  // Direction of the last sub-tab move, so the incoming page can slide in from that side.
+  const lastSub = React.useRef(activeSub);
+  const [slide, setSlide] = React.useState(0);
+  React.useEffect(() => {
+    if (!subtabs || activeSub === lastSub.current) return;
+    const keys = subtabs.map((t) => t.key);
+    setSlide(keys.indexOf(activeSub) > keys.indexOf(lastSub.current) ? 1 : -1);
+    lastSub.current = activeSub;
+  }, [activeSub, subtabs]);
+
+  // A view with a search scope can search; so can any detail page. Switching views puts the field
+  // away (the Search view keeps it out), scrolling into a page pulls it out without taking focus.
+  const searchable = !!detail || (!collection && !!current.searchScope);
+  React.useEffect(() => { setSearching(!!current.searchOpen); setSearchFocus(false); }, [view]); // eslint-disable-line
+  React.useEffect(() => {
+    if (!searchable) return;
+    if (scrolled >= 1) setSearching(true);
+    else if (!searchFocus) setSearching(!sub && !!current.searchOpen);
+  }, [scrolled, view, detail, collection, searchable, searchFocus]); // eslint-disable-line
+
+  const ctx = {
+    view, detail, collection, origin, openDetail, openCollection, closeSub, closeDetail,
+    subtab: activeSub, setSubtab: (k) => setSubtab((s) => Object.assign({}, s, { [view]: k })),
+    mode, setMode, query, setQuery, viewKey, scrolled,
+  };
+  const backButton = IconButton && (
+    <IconButton label={backLabel} muted onClick={closeSub}>
+      <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)', lineHeight: 1 }}>arrow_back</span>
+    </IconButton>
+  );
+  const controls = sub ? null
+    : subtabs && TabBar ? <TabBar platform={platform} items={subtabs} value={activeSub} onChange={ctx.setSubtab} />
+    : (current.controls || null);
+  const placeholder = detail ? detailSearchPlaceholder
+    : current.searchPlaceholder || ('Search your ' + (current.searchScope || 'library'));
+  if (!AppShell) return null;
+  return (
+    <AppShell theme={theme} contentMinWidth={contentMinWidth} scroll={scroll}
+      flat={flatDetail && !!sub} square onProgress={setScrolled} scrollKey={sub ? viewKey + '/' + sub + '#' + visit : viewKey}
+      rail={rail} sheet={sheet} sheetOpen={sheetOpen} player={player}
+      bar={TopAppBar ? (
+        <TopAppBar platform={platform} title={detail ? '' : (collection || current.title)}
+          align={sub ? 'start' : (current.align || 'start')}
+          background={flatDetail && sub && scrolled < 1 ? 'var(--surface-bg)' : 'var(--surface-bg-alt)'}
+          occlude={!sub && !!controls} progress={scrolled}
+          squareRight={sheetOpen && !!sheet}
+          searchHeight={searchHeight} searchOpen={searching && searchable} searchAutoFocus={searchFocus}
+          onSearchToggle={searchable ? (next) => { setSearching(next); setSearchFocus(next); if (!next) setQuery(''); } : undefined}
+          searchValue={query} onSearchChange={setQuery} searchPlaceholder={placeholder}
+          leading={sub ? backButton : leading}
+          trailing={sub ? (detailTrailing || null) : trailing}>{controls}</TopAppBar>
+      ) : null}>
+      {typeof children === 'function'
+        ? <div key={viewKey} className="ls-page" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, animation: slide && !sub ? 'ls-in-' + (slide > 0 ? 'r' : 'l') + ' var(--duration-medium) var(--ease-standard)' : undefined }}>{children(ctx)}</div>
+        : children}
+    </AppShell>
+  );
+}
