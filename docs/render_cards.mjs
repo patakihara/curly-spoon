@@ -100,6 +100,13 @@ for (const rel of cards) {
   const firstLine = src.split('\n')[0];
   const marker = firstLine.startsWith('<!-- @dsCard ');
   const vp = /viewport="(\d+)x(\d+)"/.exec(firstLine);
+  // Some cards (guidelines/*) are plain static HTML with no <script type="text/babel"> at all —
+  // a token specimen, not a rendered component. They have no #root and nothing async to settle:
+  // the whole page is already painted once the network is idle. Every one of these used to run
+  // the full settle()/reload dance below anyway, which waits up to 6s for a #root that can never
+  // appear, twice, per card — that dead time is what made a run heavy with guidelines/ cards take
+  // several extra minutes for zero signal.
+  const hasBabel = /<script[^>]*type=["']text\/babel["']/.test(src);
 
   const page = await browser.newPage({
     viewport: { width: vp ? +vp[1] : 1200, height: vp ? +vp[2] : 800 },
@@ -137,17 +144,29 @@ for (const rel of cards) {
   };
 
   await page.goto(`http://127.0.0.1:${PORT}/${rel}`, { waitUntil: 'networkidle' });
-  await settle();
-  // One reload if it is still empty — distinguishes a transform that lost the race from a card
-  // that genuinely renders nothing.
-  if (await page.evaluate(() => (document.getElementById('root') || {}).childElementCount === 0)) {
-    await page.reload({ waitUntil: 'networkidle' });
+  if (hasBabel) {
     await settle();
+    // One reload if it is still empty — distinguishes a transform that lost the race from a card
+    // that genuinely renders nothing.
+    if (await page.evaluate(() => (document.getElementById('root') || {}).childElementCount === 0)) {
+      await page.reload({ waitUntil: 'networkidle' });
+      await settle();
+    }
+    await page.waitForTimeout(250);
   }
-  await page.waitForTimeout(250);
 
-  const res = await page.evaluate((names) => {
+  const res = await page.evaluate(({ names, hasBabel }) => {
     const ns = window.SonoraDesignSystem_6c1435 || {};
+    if (!hasBabel) {
+      // No #root convention here — the page itself is the content.
+      return {
+        children: document.body.childElementCount,
+        text: (document.body.innerText || '').trim().length,
+        missing: [],
+        themed: document.querySelectorAll('[data-theme="dark"]').length > 0
+             && document.querySelectorAll('[data-theme="light"]').length > 0,
+      };
+    }
     const root = document.getElementById('root');
     return {
       children: root ? root.childElementCount : -1,
@@ -156,15 +175,19 @@ for (const rel of cards) {
       themed: document.querySelectorAll('[data-theme="dark"]').length > 0
            && document.querySelectorAll('[data-theme="light"]').length > 0,
     };
-  }, wanted);
+  }, { names: wanted, hasBabel });
 
   await page.screenshot({ path: path.join(ROOT, '.render', path.basename(rel) + '.png'), fullPage: true });
   await page.close();
 
   const problems = [];
   if (!marker) problems.push('missing @dsCard first line');
-  if (res.children <= 0) problems.push('EMPTY #root');
-  if (res.text < 40) problems.push('almost no rendered text (' + res.text + ' chars)');
+  if (res.children <= 0) problems.push(hasBabel ? 'EMPTY #root' : 'EMPTY <body>');
+  // A static specimen card (colour swatches, a shadow scale) can be legitimately near-textless —
+  // verified against several: shadow-scale is five swatches and zero words, by design. This
+  // check exists to catch a JSX component that rendered nothing meaningful, which doesn't apply
+  // to a page that IS the visual. "Did anything render" is already covered by the check above.
+  if (hasBabel && res.text < 40) problems.push('almost no rendered text (' + res.text + ' chars)');
   if (res.missing.length) problems.push('not in namespace: ' + res.missing.join(', '));
   // Only component cards owe a dark/light pair — they exist to prove a component works in both.
   // A Reference card is a screenshot beside its write-up; rendering it twice would prove nothing.
