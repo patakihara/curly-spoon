@@ -1,10 +1,16 @@
 /**
  * Ground truth for `components/layout/backdrop-lift.card.html`.
  *
- * A 1px line at 8% opacity cannot be settled by looking at a PNG: 8% white on #141414 composites
- * to roughly #272727, a delta of about 19 — barely more than the #141414/#080808 tonal step the
- * treatment is meant to sharpen. So this reads the actual rendered pixels: for each candidate, a
- * vertical strip through the middle of the front layer's top edge, in both themes.
+ * A 1px inset edge cannot be settled by looking at a PNG: the shipped dark mix, 16% of a light
+ * grey over #141414, composites to roughly #343434 — a delta of about 30, not much more than the
+ * #141414/#080808 tonal step the edge exists to sharpen, and the light hairline is fainter still.
+ * So this reads the actual rendered pixels: a vertical strip through the middle of the front
+ * layer's top edge, once per theme.
+ *
+ * The card no longer compares five candidates — the `lift` prop is gone and the pair below is
+ * simply what the front layer does — so there is one probed specimen per theme rather than five.
+ * The selectors are unchanged: a `[data-probe]` element inside a `[data-theme]` one, containing
+ * exactly one node whose top-left corner is `--radius-lg`.
  *
  *   node docs/lift_probe.mjs
  */
@@ -107,10 +113,11 @@ for (const r of readings) {
   console.log(r.key.padEnd(18), '| back ' + r.back, '| above ' + r.above, '| edge ' + r.edge, '| step', String(r.step).padStart(3), '|', r.rows);
 }
 
-/* A band across all five specimens at the boundary itself, at 3x device pixels — the numbers say
-   what each treatment does, this says what it looks like doing it. Written per theme so the two
-   can be put side by side. */
-/* A second page, at 3x device pixels. The numeric pass above must stay at 1x — one CSS pixel has
+/* A band across the specimen at the boundary itself, at 3x device pixels — the numbers say what
+   the edge does, this says what it looks like doing it. Written per theme so the two can be put
+   side by side.
+
+   A second page, at 3x device pixels. The numeric pass above must stay at 1x — one CSS pixel has
    to be one screenshot pixel or "the line reads #262626" means nothing — so the magnification
    happens on its own page rather than by rescaling the one that was measured. */
 const hi = await browser.newPage({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 3 });

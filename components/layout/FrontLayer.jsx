@@ -2,8 +2,19 @@ import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
+if (typeof document !== 'undefined' && !document.getElementById('sonora-frontlayer-css')) {
+  const el = document.createElement('style');
+  el.id = 'sonora-frontlayer-css';
+  // Light is the base rule and dark the override, so an unthemed context gets the edge that cannot
+  // invert: `--surface-border` reads on either surface, the `--surface-fg` mix only where the
+  // foreground is light. Theme is `data-theme` on an ancestor, so this cannot be an inline style.
+  el.textContent = '.sn-front-edge{box-shadow:inset 0 1px 0 var(--surface-border)}'
+    + '[data-theme="dark"] .sn-front-edge{box-shadow:inset 0 1px 0 color-mix(in srgb, var(--surface-fg) 16%, transparent)}';
+  document.head.appendChild(el);
+}
+
 /** The backdrop's front layer: the 1dp --surface-bg surface holding primary content, with a fixed subheader above it and permanently rounded top corners. Owns the scrolling and the per-view scroll memory. */
-export function FrontLayer({ children, subheader, scroll = true, scrollKey, onProgress, threshold = 24, squareLeft = false, squareRight = false, lift = 'shadow', platform = 'desktop' }) {
+export function FrontLayer({ children, subheader, scroll = true, scrollKey, onProgress, threshold = 24, squareLeft = false, squareRight = false, platform = 'desktop' }) {
   const [p, setP] = React.useState(0);
   const scroller = React.useRef(null);
   const root = React.useRef(null);
@@ -54,31 +65,26 @@ export function FrontLayer({ children, subheader, scroll = true, scrollKey, onPr
     if (onProgress) onProgress(next);
   };
   /* A backdrop's front layer is a persistent surface, not a sheet that docks: the top corners are
-     --radius-lg at every scroll position and the 1dp step is expressed by a shadow, not by a
-     hairline. Only an abutting panel squares an edge. */
+     --radius-lg at every scroll position and the 1dp step is expressed by the layer's own top
+     edge, not by the scroll-linked hairline a docking sheet flattens into. Only an abutting panel
+     squares an edge. */
   const r = (sq) => (sq ? '0' : 'var(--radius-lg)');
-  /* How the 1dp step is expressed, and why there is a choice at all. `--shadow-sm` is
-     `0 1px 3px` — cast DOWNWARD, away from the top edge, which is the only place this layer meets
-     the back layer. Measured off a render (`docs/lift_probe.mjs`), what it lands on the back
-     layer just above that boundary is one value out of 255 in dark and at most three in light:
-     neither theme is really being separated by the shadow, only by the tonal step,
-     #080808 -> #141414 or #FFFFFF -> #F9F6F6. Light holds because that pair differs in hue as well as level; near black
-     a display's black floor flattens the other pair, which is the "no shadow on black" problem.
-     Enlarging the shadow cannot fix it — `--shadow-xxl` still only reaches #070707, just over
-     25px instead of 2 — so the rest draw a LIGHT edge, the only mark that survives on near-black.
-     None is gated to dark: each reads a token that inverts with the theme on its own, so the
-     light-theme cost stays visible rather than hidden behind a media query. */
-  const LIFT = {
-    shadow:    { drop: 'var(--shadow-sm)',  paint: null },
-    edge:      { drop: 'var(--shadow-sm)',  paint: 'box-shadow:inset 0 1px 0 var(--surface-border)' },
-    highlight: { drop: 'var(--shadow-sm)',  paint: 'box-shadow:inset 0 1px 0 color-mix(in srgb, var(--surface-fg) 16%, transparent)' },
-    glow:      { drop: 'var(--shadow-sm)',  paint: 'background:linear-gradient(to bottom, color-mix(in srgb, var(--surface-fg) 9%, transparent) 0, transparent var(--spacing-2xl))' },
-    ambient:   { drop: 'var(--shadow-xxl)', paint: null },
-  };
-  const step = LIFT[lift] || LIFT.shadow;
+  /* How the 1dp step is expressed. `--shadow-sm` is `0 1px 3px` — cast DOWNWARD, away from the top
+     edge, which is the only place this layer meets the back layer. Measured off a render
+     (`docs/lift_probe.mjs`), what it lands on the back layer just above that boundary is ONE value
+     out of 255 in dark and at most three in light: neither theme is really being separated by the
+     shadow, only by the tonal step, #080808 -> #141414 or #FFFFFF -> #F9F6F6. Light holds because
+     that pair differs in hue as well as level; near black a display's black floor flattens the
+     other pair, which is the "no shadow on black" problem. Enlarging the shadow cannot fix it —
+     `--shadow-xxl` still only reaches #070707, just over 25px instead of 2 — so a light 1px edge is
+     drawn along the top over the drop shadow, which stays underneath in both themes.
+     That edge is themed because a `--surface-fg` mix is a highlight only where the foreground is
+     light: #343434 on #141414 in dark, but inverting into an inner *shadow* in light (#D5D2D2 on
+     #F9F6F6). So dark takes the mix and light takes `--surface-border`, which reads on either
+     surface — the two rules are in `sonora-frontlayer-css` above. */
   const surface = sx(
     'position:relative;flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;' +
-    'background:var(--surface-bg);overflow:hidden;box-shadow:' + step.drop + ';' +
+    'background:var(--surface-bg);overflow:hidden;box-shadow:var(--shadow-sm);' +
     'border-radius:' + r(squareLeft) + ' ' + r(squareRight) + ' 0 0'
   );
   /* Drawn as an overlay rather than an inset shadow on the surface itself: the subheader is an
@@ -86,9 +92,8 @@ export function FrontLayer({ children, subheader, scroll = true, scrollKey, onPr
      shadow belonging to its parent. `border-radius:inherit` makes the edge follow the layer's own
      corners, including a squared one where a panel abuts — so it reads as the layer's edge rather
      than as a rule laid across it. */
-  const edge = step.paint
-    ? <span aria-hidden="true" style={sx('position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;' + step.paint)} />
-    : null;
+  const edge = <span aria-hidden="true" className="sn-front-edge"
+    style={sx('position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit')} />;
   // The subheader's divider is scroll-linked, and only the layer that owns the scroller knows how
   // far it has gone — so progress is handed down rather than asked for. An explicit `progress`
   // (a card showing the scrolled state statically) is left alone.
