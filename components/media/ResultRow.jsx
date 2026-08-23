@@ -55,7 +55,7 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
       </div>
       <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:3px')}>
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-md)')}>
-          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
+          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
           {mobile && statusPill}
           {mobile && trailing}
         </div>

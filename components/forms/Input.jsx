@@ -1,0 +1,21 @@
+import React from 'react';
+
+export function Input({ placeholder = 'Search', icon, platform = 'desktop', value, onChange }) {
+  const radius = 'var(--radius-pill)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', padding: '0 var(--spacing-md)', height: 40,
+      borderRadius: radius, background: platform === 'mobile' ? 'transparent' : 'var(--surface-card)',
+      border: platform === 'mobile' ? 'none' : '1px solid var(--surface-border)',
+    }}>
+      <span style={{ color: 'var(--surface-fg-muted)', display: 'flex' }}>{icon}</span>
+      <input
+        value={value} onChange={onChange} placeholder={placeholder}
+        style={{
+          flex: 1, border: 'none', outline: 'none', background: 'transparent',
+          color: 'var(--surface-fg)', fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-body)', fontSize: 'var(--text-md)',
+        }}
+      />
+    </div>
+  );
+}

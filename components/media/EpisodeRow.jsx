@@ -47,7 +47,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
               <Badge tone="neutral" square>E</Badge>
             </span>
           )}
-          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
+          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
         </div>
         {metaLine && (
           <div style={sx('display:flex;align-items:center;gap:6px;font-size:var(--text-sm);color:' + muted + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>
@@ -55,7 +55,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
             {finished && (
               // A filled check in --tone-library rather than a second pill — this is a state of
               // the episode, not another badge competing with the status pills elsewhere.
-              <span style={sx('flex-shrink:0;display:inline-flex;align-items:center;gap:2px;color:var(--tone-library);font-weight:700')}>
+              <span style={sx('flex-shrink:0;display:inline-flex;align-items:center;gap:2px;color:var(--tone-library);font-weight:var(--weight-strong)')}>
                 <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-xs);line-height:1")}>check_circle</span>
                 Finished
               </span>

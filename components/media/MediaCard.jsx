@@ -67,7 +67,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         {/* Not in library: the real artwork, darkened — the item exists, you just don't have it yet.
             Sits at the bottom, clear of the corner menu and any progress the item might otherwise show. */}
         {absent && <div style={sx('position:absolute;inset:0;background:var(--scrim-strong)')} />}
-        {absent && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:700;background:var(--scrim-strong);color:var(--on-scrim)')}><span style={sx("font-family:'Material Symbols Rounded';font-size:14px;line-height:1;font-variation-settings:'FILL' 0,'wght' 500")}>cloud_off</span>{!tight && 'Not in library'}</div>}
+        {absent && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><span style={sx("font-family:'Material Symbols Rounded';font-size:14px;line-height:1;font-variation-settings:'FILL' 0,'wght' 500")}>cloud_off</span>{!tight && 'Not in library'}</div>}
         {showActions && (
           <div className="sn-acts sn-acts-scrim" style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--scrim-soft)')}>
             <PlayActions onNext={onPlayNext} onPlay={onPlay} onLast={onPlayLast} playing={playing} always />
@@ -86,8 +86,8 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
       {/* Type-before-name: in a mixed shelf the kind of thing is scanned for first, so it leads
           rather than trailing in `sub` — kept as its own line rather than folded into the title
           so the title's own two-line clamp is untouched. */}
-      {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
-      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:700;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
+      {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
+      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
       {markers && markers.length > 0 ? (
         <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0')}>
           <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>

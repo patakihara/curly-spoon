@@ -1,0 +1,41 @@
+<!-- @dsCard group="Components" viewport="1240x320" name="Quick Picks & Section Headers" subtitle="Continue-listening tiles — artwork and icon variants — and the heading row above shelves" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { QuickPick, SectionHeader } = window.SonoraDesignSystem_6c1435;
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:24}}>
+    <div>
+      <SectionHeader title="Jump back in" platform="desktop" />
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:12,maxWidth:620}}>
+        <QuickPick title="The Silent Patient" sub="Book · 6 h 12 m left" />
+        <QuickPick title="Deep Inertia Radio" sub="Podcast · 24 min left" />
+        <QuickPick title="Between Two Worlds" sub="Album · 3 tracks left" />
+        <QuickPick title="Wind and Truth" sub="Book · 21 h 40 m left" />
+        <QuickPick icon="shuffle" title="Shuffle all" sub="Everything in your library" />
+        <QuickPick icon="download" title="Downloads" sub="184 items · 12.4 GB" />
+      </div>
+    </div>
+    <div style={{maxWidth:340}}>
+      <SectionHeader title="Recently added" action="arrow_forward" />
+      <QuickPick platform="mobile" title="Golden Scars" sub="Album · 2 tracks left" />
+      <div style={{height:12}} />
+      <QuickPick platform="mobile" icon="favorite" title="Liked" sub="92 tracks" />
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script></body></html>

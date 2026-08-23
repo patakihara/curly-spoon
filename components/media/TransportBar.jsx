@@ -24,7 +24,7 @@ export function TransportBar({ playing = false, platform = 'mobile', onTogglePla
     const skip = (dir, size) => (
       <span style={sx('position:relative;display:inline-flex;align-items:center;justify-content:center')}>
         <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:" + size + 'px;line-height:1;display:inline-block' + (dir === 'forward' ? ';transform:scaleX(-1)' : ''))}>replay</span>
-        <span aria-hidden="true" style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-weight:700;font-size:' + Math.round(size * 0.34) + 'px')}>{skipSeconds}</span>
+        <span aria-hidden="true" style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-weight:var(--weight-strong);font-size:' + Math.round(size * 0.34) + 'px')}>{skipSeconds}</span>
       </span>
     );
     return (

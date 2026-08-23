@@ -18,6 +18,9 @@ color-scheme:dark;
 --surface-fg:var(--neutral-50);
 --surface-fg-muted:var(--neutral-300);
 --surface-border:rgb(255 255 255 / 8%);
+/* A 1px rule that has to actually read as a line — subheader hairline, list separators. The
+   8% border is right for enclosing a shape, but disappears as a single hairline. */
+--divider:rgb(255 255 255 / 20%);
 --surface-overlay-header:linear-gradient(transparent 0%, rgb(0 0 0 / 85%) 100%);
 
 /* ---- Scrims over artwork. Black in both themes: they darken a photo, not a surface ---- */
@@ -28,6 +31,11 @@ color-scheme:dark;
 
 /* Hover wash for transparent controls — inverts with the theme */
 --surface-hover:rgb(255 255 255 / 10%);
+
+/* Edge fade for a clipped scrollable row (ButtonGroup, TabBar-style overflow) — a shadow reads
+   against a light surface; against dark chrome the same darkening vanishes, so this is a soft
+   light glow instead. */
+--scroll-edge:rgb(255 255 255 / 22%);
 
 /* ---- Accent (customizable primary — apps let the user pick this) ---- */
 --accent:#8B5CF6; /* violet — picked from the accent-preset family */
@@ -103,7 +111,9 @@ color-scheme:light;
 --surface-fg:rgb(25,25,25);
 --surface-fg-muted:rgb(80,80,80);
 --surface-border:rgb(0 0 0 / 8%);
+--divider:rgb(0 0 0 / 18%);
 --surface-hover:rgb(0 0 0 / 6%);
+--scroll-edge:rgb(0 0 0 / 18%);
 --art-gradient-start:#4D5C92;
 --art-gradient-end:#75546F;
 }
@@ -129,7 +139,9 @@ color-scheme:dark;
 --surface-fg:var(--neutral-50);
 --surface-fg-muted:var(--neutral-300);
 --surface-border:rgb(255 255 255 / 8%);
+--divider:rgb(255 255 255 / 20%);
 --surface-hover:rgb(255 255 255 / 10%);
+--scroll-edge:rgb(255 255 255 / 22%);
 --art-gradient-start:#B6C4FF;
 --art-gradient-end:#FFB7DB;
 }

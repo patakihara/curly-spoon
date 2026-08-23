@@ -25,15 +25,13 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-frontlay
 
 const spyTitleOf = (s) => (typeof s === 'string' ? s : (s && s.title) || '');
 
-/** The front layer's subheader: a fixed band at the same 1dp as the content below it, carrying tabs, a filter group or a scoped search field. Draws a scroll-linked hairline only when its content is not a tab bar. With `spy` it needs no control at all — it reports the section title that has most recently scrolled up past it, and is blank until the first one does. */
+/** The front layer's subheader: a fixed band at the same 1dp as the content below it, carrying tabs, a filter group or a scoped search field. Draws a scroll-linked hairline when its content is not a tab bar; when it is, the hairline is always shown (static, not scroll-linked) and the tabs sit flush to the bottom edge so their indicator lands right on it. With `spy` it needs no control at all — it reports the section title that has most recently scrolled up past it, and is blank until the first one does. */
 export function FrontLayerHeader({ children, tabs = false, progress = 0, platform = 'desktop', spy = false, sections, spyTitle, spySelector = '[data-spy-title],section', onSpyChange }) {
   const mobile = platform === 'mobile';
   /* The subheader shares the content's measure, so it takes the page margin rather than the app
      bar's inset — the tabs line up with the section headings underneath them. */
   const pad = 'var(--grid-margin' + (mobile ? '-mobile' : '') + ')';
-  // A tab bar already draws an underline indicator; a hairline under it would be a second
-  // horizontal rule saying the same thing.
-  const show = tabs ? 0 : Math.min(1, Math.max(0, progress || 0));
+  const show = Math.min(1, Math.max(0, progress || 0));
 
   const root = React.useRef(null);
   // `spyTitle` is the controlled form — a card showing one state statically, or a page that
@@ -122,7 +120,7 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
      does not push the content down. Deliberately no aria-live: the title restates a heading that
      is already in the content, and announcing it on every scroll would be noise. */
   const spyRow = spy ? (
-    <div className="sn-spy" style={sx('min-height:calc(var(--text-lg) * 1.5);font-family:var(--font-body);font-size:var(--text-lg);font-weight:var(--weight-strong);line-height:1.4;color:var(--surface-fg)')}>
+    <div className="sn-spy" style={sx('min-height:calc(var(--text-lg) * 1.5);font-family:var(--font-body);font-size:var(--text-md);font-weight:var(--weight-medium);line-height:1.4;color:var(--surface-fg)')}>
       {band.prev && (
         <span key={'p' + band.n} aria-hidden="true" className="sn-spy-prev"
           onAnimationEnd={() => setBand((s) => (s.prev ? { cur: s.cur, prev: null, n: s.n } : s))}>{band.prev}</span>
@@ -134,16 +132,18 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
   return (
     <div ref={root} style={sx('position:relative;flex-shrink:0;display:flex;align-items:center;box-sizing:border-box;width:100%;background:var(--surface-bg);min-height:var(--appbar-controls-height);padding:0 ' + pad)}>
       {spyRow}
-      <div style={sx('flex:1;min-width:0;max-width:100%')}>{children}</div>
+      {/* Tabs sit flush to the bottom edge, not centered in the band, so the tab bar's own
+          underline indicator lands right on the hairline instead of floating above it. */}
+      <div style={sx('flex:1;min-width:0;max-width:100%' + (tabs ? ';align-self:flex-end' : ''))}>{children}</div>
       {/* Inset to the content measure, not full-bleed: a rule that runs gutter to gutter cuts the
-          front layer in half instead of reading as the top of the content column. */}
-      {!tabs && (
-        <span aria-hidden="true" style={sx(
-          'position:absolute;bottom:0;height:1px;z-index:1;pointer-events:none;background:var(--surface-border);' +
-          'left:' + pad + ';right:' + pad + ';' +
-          'opacity:' + show.toFixed(2) + ';transition:opacity var(--duration-instant) linear'
-        )} />
-      )}
+          front layer in half instead of reading as the top of the content column. A tab bar's own
+          indicator still needs a rule to land on, so tabs get a static hairline rather than none. */}
+      <span aria-hidden="true" style={sx(
+        'position:absolute;bottom:0;height:1px;z-index:1;pointer-events:none;background:var(--divider);' +
+        'left:' + pad + ';right:' + pad + ';' +
+        'opacity:' + (tabs ? '1' : show.toFixed(2)) + ';' +
+        (tabs ? '' : 'transition:opacity var(--duration-instant) linear')
+      )} />
     </div>
   );
 }

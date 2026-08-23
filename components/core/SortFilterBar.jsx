@@ -8,7 +8,7 @@ export function SortFilterBar({ icon = 'tune', label, onClick, trailing, platfor
     <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-md);width:100%;background:transparent')}>
       <button onClick={onClick} style={sx('display:flex;align-items:center;gap:var(--spacing-sm);min-width:0;border:none;background:transparent;cursor:pointer;padding:' + (mobile ? '8px 4px' : '6px 4px'))}>
         <span style={sx("flex-shrink:0;font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;color:var(--surface-fg-muted);font-variation-settings:'FILL' 0,'wght' 400")}>{icon}</span>
-        <span style={sx('overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-body);font-size:var(--text-md);font-weight:700;color:var(--surface-fg)')}>{label}</span>
+        <span style={sx('overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-body);font-size:var(--text-md);font-weight:var(--weight-strong);color:var(--surface-fg)')}>{label}</span>
       </button>
       {trailing && <div style={sx('flex-shrink:0')}>{trailing}</div>}
     </div>

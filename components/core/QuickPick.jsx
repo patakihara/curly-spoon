@@ -29,7 +29,7 @@ export function QuickPick({ title, sub, platform = 'desktop', icon, image, onCli
     <div onClick={onClick} style={sx('display:flex;align-items:center;gap:var(--spacing-md);border-radius:var(--radius-xs);cursor:pointer;min-width:0;background:var(--surface-card)')}>
       {leading}
       <div style={sx('min-width:0;display:flex;flex-direction:column;gap:2px;margin-right:var(--spacing-md)')}>
-        <div style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--surface-fg)')}>{title}</div>
+        <div style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:var(--weight-strong);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--surface-fg)')}>{title}</div>
         <div style={sx('font-size:var(--text-sm);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--surface-fg-muted)')}>{sub}</div>
       </div>
     </div>

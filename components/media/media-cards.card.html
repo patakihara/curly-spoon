@@ -1,0 +1,39 @@
+<!-- @dsCard group="Components" viewport="1400x860" name="Media & Artist Cards" subtitle="Shelf cards with resume progress and not-in-library state, circular people cards, and the hover play-next / play / play-last actions" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { MediaCard, ArtistCard, PlayActions } = window.SonoraDesignSystem_6c1435;
+const cover = (t, s) => 'https://picsum.photos/seed/sonora-' + encodeURIComponent(String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '/' + (s || 400);
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:24}}>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Play actions — hover the first card; shown here unconditionally</div>
+    <div style={{display:'flex',gap:20,alignItems:'center'}}>{PlayActions && <PlayActions always onNext={()=>{}} onPlay={()=>{}} onLast={()=>{}} />}</div>
+    <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
+      <MediaCard title="Fairytale" sub="Album · Natasha Beller" image={cover("Fairytale")} onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} onMore={()=>{}} />
+      <MediaCard title="Foggy Trails" sub="Book · Adam Rivers" progress={0.42} image={cover("Foggy Trails")} onMore={()=>{}} />
+      <MediaCard title="Sonic Tales" sub="Podcast · 148 episodes" image={cover("Sonic Tales")} />
+      <MediaCard title="Ink Heart" sub="Book · Cornelia Funke" absent />
+      <MediaCard platform="mobile" title="Golden Scars" sub="Album · Fleeting Verses" image={cover("Golden Scars")} onMore={()=>{}} />
+    </div>
+    <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
+      <ArtistCard title="Natasha Beller" sub="Artist" image={cover("Natasha Beller", 320)} />
+      <ArtistCard title="Evelyn Harper" sub="Author" image={cover("Evelyn Harper", 320)} />
+      <ArtistCard platform="mobile" title="Deep Inertia" sub="Artist" image={cover("Deep Inertia", 320)} />
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script></body></html>
