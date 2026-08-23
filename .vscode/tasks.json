@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Serve Sonora gallery",
+      "type": "shell",
+      "command": "python3 docs/serve.py",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "close": false
+      },
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^never matches anything$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^docs/serve\\.py: serving",
+          "endsPattern": "^docs/serve\\.py: serving"
+        }
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}

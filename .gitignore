@@ -12,6 +12,9 @@ _ds_bundle.js
 .probe/
 .vendor/
 
+# Python bytecode cache.
+__pycache__/
+
 # Local overview page (docs/gen_gallery.py), built from .render/ screenshots above.
 gallery.html
 
