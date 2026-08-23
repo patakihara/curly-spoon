@@ -11,7 +11,7 @@ export function BackLayer({ title, leading, trailing, controls, platform = 'desk
           measured against the same token, still lines up with it. */}
       <div style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:100%;box-sizing:border-box;padding:0 ' + pad + ';height:var(--appbar-height' + (mobile ? '-mobile' : '') + ')')}>
         {leading}
-        <div style={sx('flex:1;min-width:0;font-family:var(--font-display);font-weight:400;letter-spacing:-.01em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
+        <div style={sx('flex:1;min-width:0;font-family:var(--font-display);font-weight:var(--display-weight);font-stretch:var(--display-stretch);letter-spacing:-.02em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
         {trailing && <div style={sx('display:flex;align-items:center;flex-shrink:0')}>{trailing}</div>}
       </div>
       {/* Controls that stay put while the front layer's content changes underneath them. Anything

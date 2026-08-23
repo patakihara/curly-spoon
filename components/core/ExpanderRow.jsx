@@ -23,8 +23,8 @@ export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false,
           <CoverArt src={image} />
         </div>
       )}
-      <div style={sx('flex:1;min-width:0;font-family:var(--font-body);font-size:var(--text-md);font-weight:700;color:var(--surface-fg)')}>{label}</div>
-      <div style={sx('flex-shrink:0;display:flex;align-items:center;gap:var(--spacing-xs);color:var(--surface-fg-muted);font-family:var(--font-body);font-size:var(--text-sm);font-weight:700')}>
+      <div style={sx('flex:1;min-width:0;font-family:var(--font-body);font-size:var(--text-md);font-weight:var(--weight-strong);color:var(--surface-fg)')}>{label}</div>
+      <div style={sx('flex-shrink:0;display:flex;align-items:center;gap:var(--spacing-xs);color:var(--surface-fg-muted);font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
         {actionLabel}
         <span aria-hidden="true" className={'sn-expander-chevron' + (expanded ? ' sn-open' : '')}
           style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 0,'wght' 400")}>expand_more</span>

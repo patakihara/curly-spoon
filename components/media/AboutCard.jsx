@@ -15,7 +15,7 @@ export function AboutCard({ title, heading, meta, image, round = false, body, li
   const artSize = mobile ? 64 : 80;
   return (
     <div style={sx('display:flex;flex-direction:column;gap:var(--spacing-md);padding:var(--spacing-md);border-radius:var(--radius-sm);background:var(--surface-card)')}>
-      <div style={sx('font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:' + muted)}>{title}</div>
+      <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);text-transform:uppercase;letter-spacing:.02em;color:' + muted)}>{title}</div>
       <div style={sx('display:flex;gap:var(--spacing-md);align-items:center')}>
         {/* position:relative is load-bearing: CoverArt fills its parent with position:absolute;
             inset:0, so without a containing block here the gradient escapes this box and covers
@@ -25,7 +25,7 @@ export function AboutCard({ title, heading, meta, image, round = false, body, li
         </div>
         <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:2px')}>
           <div style={sx('display:flex;align-items:center;gap:6px;min-width:0')}>
-            <div style={sx('flex:1;min-width:0;font-size:var(--text-lg);font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{heading}</div>
+            <div style={sx('flex:1;min-width:0;font-size:var(--text-lg);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{heading}</div>
             {badge}
           </div>
           {meta && <div style={sx('font-size:var(--text-sm);color:' + muted)}>{meta}</div>}

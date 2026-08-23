@@ -30,9 +30,9 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
     <div ref={ref} style={sx(mobile ? 'display:flex;flex-direction:column;align-items:center;gap:var(--spacing-md);text-align:center;padding-top:4px;padding-bottom:12px' : 'display:flex;gap:var(--spacing-2xl);align-items:flex-end')}>
       <div style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;overflow:hidden;border-radius:' + (round ? '50%' : 'var(--radius-lg)'))}>{CoverArt && <CoverArt src={image} />}</div>
       <div style={sx(mobile ? 'width:100%;display:flex;flex-direction:column;align-items:center;gap:var(--spacing-sm)' : 'flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-sm)')}>
-        <div style={sx('font-size:var(--text-xs);font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:' + muted + (mobile ? ';margin-top:6px' : ''))}>{kindLabel}</div>
-        <div style={sx('font-family:var(--font-display),Inter;font-weight:900;line-height:1.15;color:' + fg + ';font-size:var(--' + (mobile ? 'h4' : 'h2') + '-size)')}>{title}</div>
-        <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:600;color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>
+        <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;color:' + muted + (mobile ? ';margin-top:6px' : ''))}>{kindLabel}</div>
+        <div style={sx('font-family:var(--font-display),Inter;font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;color:' + fg + ';font-size:var(--' + (mobile ? 'h4' : 'h2') + '-size)')}>{title}</div>
+        <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium);color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>
         <div style={sx('font-size:var(--text-sm);color:' + muted)}>{meta}</div>
         {/* Resume position for a part-finished item — "1h 21m left" lives in `meta` above; this is
             the bar that describes it. Gated the QuickPick/MediaCard way: null (the default) draws

@@ -18,9 +18,9 @@ export function StatusBanner({ children, tone = 'info', icon, actionLabel, onAct
     <div role="status" aria-live="polite"
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:100%;padding:var(--spacing-sm) var(--spacing-lg);background:' + bg + ';color:' + fg)}>
       {icon && <span aria-hidden="true" style={sx("flex-shrink:0;font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>{icon}</span>}
-      <div style={sx('flex:1;min-width:0;font-family:var(--font-body);font-size:var(--text-sm);font-weight:500')}>{children}</div>
+      <div style={sx('flex:1;min-width:0;font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-body)')}>{children}</div>
       {actionLabel && (
-        <button onClick={onAction} style={sx('flex-shrink:0;border:none;background:transparent;cursor:pointer;padding:0;font-family:var(--font-body);font-size:var(--text-sm);font-weight:700;color:inherit;text-decoration:underline')}>{actionLabel}</button>
+        <button onClick={onAction} style={sx('flex-shrink:0;border:none;background:transparent;cursor:pointer;padding:0;font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);color:inherit;text-decoration:underline')}>{actionLabel}</button>
       )}
       {onDismiss && (
         <button onClick={onDismiss} aria-label="Dismiss"

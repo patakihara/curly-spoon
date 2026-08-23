@@ -19,7 +19,7 @@ export function SideSheet({ open = false, title, onClose, children, width = 'var
             {/* Title tracks the bar's bottom row; the close button stays pinned to the top corner
                 however tall the bar grows. */}
             <div style={sx('display:flex;align-items:center;width:100%;box-sizing:border-box;height:var(--appbar-height);padding:0 var(--spacing-xl)')}>
-              <div style={sx('flex:1;min-width:0;padding-right:44px;font-family:var(--font-heading);font-weight:900;font-size:var(--h3-size);color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
+              <div style={sx('flex:1;min-width:0;padding-right:44px;font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
             </div>
             {onClose && (
               <button onClick={onClose} aria-label={'Close ' + (title || 'panel')} style={sx("position:absolute;top:var(--spacing-md);right:var(--spacing-md);width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--surface-fg-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm)")}>{closeGlyph}</button>

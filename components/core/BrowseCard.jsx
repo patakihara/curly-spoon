@@ -28,7 +28,7 @@ export function BrowseCard({ title, color, image, onClick, platform = 'desktop' 
       {/* The title only has to dodge the thumbnail when there is one — reserving that gutter
           unconditionally pushed a three-word category onto a third line, which a fixed
           aspect-ratio card has no room for. Clamped at two lines as a backstop. */}
-      <div style={sx('position:absolute;left:var(--spacing-md);top:var(--spacing-md);right:' + (image ? 'calc(38% + var(--spacing-md))' : 'var(--spacing-md)') + ';font-family:var(--font-heading);font-size:var(--text-2xl);font-weight:900;line-height:1.1;color:var(--accent-contrast);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden')}>{title}</div>
+      <div style={sx('position:absolute;left:var(--spacing-md);top:var(--spacing-md);right:' + (image ? 'calc(38% + var(--spacing-md))' : 'var(--spacing-md)') + ';font-family:var(--font-heading);font-size:var(--text-2xl);font-weight:var(--weight-super-strong);line-height:1.1;color:var(--accent-contrast);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden')}>{title}</div>
       {image && CoverArt && (
         <div style={sx('position:absolute;right:6%;bottom:-14%;height:38%;aspect-ratio:1;transform:rotate(25deg);border-radius:var(--radius-xs);overflow:hidden;box-shadow:var(--shadow-md)')}>
           <CoverArt src={image} />
