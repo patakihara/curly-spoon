@@ -215,9 +215,14 @@ object SonoraMotion {
 /*
  * Not exported — no single Compose equivalent; read these from the CSS:
  *   --surface-overlay-header: linear-gradient(transparent 0%, rgb(0 0 0 / 85%) 100%)
+ *   --weight-regular: 400
  *   --weight-body: 500
+ *   --weight-medium: 600
  *   --weight-strong: 700
- *   --heading-weight: 900
+ *   --weight-super-strong: 900
+ *   --heading-weight: var(--weight-super-strong)
+ *   --display-weight: var(--weight-strong)
+ *   --display-stretch: 112%
  *   --grid-columns: 12
  *   --grid-columns-mobile: 3
  *   --grid-item-max-mobile: 1fr
@@ -230,6 +235,6 @@ object SonoraMotion {
  *   --shadow-xxl: 0 25px 50px rgba(0,0,0,0.25)
  *   --ease-standard: cubic-bezier(.4,0,.2,1)
  *   --font-body: 'Inter',-apple-system,'Segoe UI',sans-serif
- *   --font-display: 'Archivo Black','Archivo','Inter',sans-serif
+ *   --font-display: 'Archivo','Inter',sans-serif
  *   --font-heading: 'Archivo','Inter',sans-serif
  */
