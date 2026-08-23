@@ -2,8 +2,9 @@
 """Build one local HTML page that reproduces Claude Design's own "Design System" pane
 pixel-perfectly: the real captured DOM/class structure (see .claude-design-vendor/page.html,
 a browser capture of the live panel) linked against the real vendored CSS, with Sonora's own
-_ds_manifest.json data and render_cards.mjs's screenshots slotted into the matching real-DOM
-slots. Nothing here is pushed — it's a local index for browsing the mirror.
+_ds_manifest.json data slotted into the matching real-DOM slots and each card previewed as a
+live `<iframe>` onto its own file (render_cards.mjs's screenshots are only a fallback now — see
+preview_mount()). Nothing here is pushed — it's a local index for browsing the mirror.
 
 Only the panel itself is reproduced (nav + content pane), not Claude Design's surrounding app
 chrome (#root, sidebar, toolbar) — that's out of scope, and gallery.html supplies its own
@@ -13,9 +14,28 @@ publish-settings card (live workspace/account state, no manifest field) and the 
 upload button (an uploaded image with no local backend to serve one). Interactive-only elements
 (Feedback/Edit/Add-usage-notes buttons, the feedback-collapse box, group-header expand/collapse)
 are rendered with the real classes for pixel fidelity but are inert — no JS runs anywhere in this
-page. See docs/../QUESTIONS.md or the implementation plan for the full set of documented gaps
-(preview scale-vs-crop is a real unknown: every real card preview was captured empty, so the
-object-fit:cover treatment here is a deterministic, defensible guess, not a verified match).
+page. See docs/../QUESTIONS.md or the implementation plan for the full set of documented gaps.
+
+Card previews are live `<iframe src="...">`s onto the card's own file (see preview_mount()), not
+screenshots — matching what the real capture turned out to actually be (an iframe at native card
+size, CSS `transform:scale()`d down), which corrects an earlier wrong guess in this file that
+called that treatment "a real unknown" and used object-fit:cover on a screenshot instead. One real
+divergence from the real mechanism remains, deliberately: our iframe lays out at the preview box's
+own ~728px width, not the card's declared manifest viewport width (the real transform:scale()
+approach renders at native width first and shrinks the whole rendered result, so it never faces
+this tradeoff). A card whose layout assumes something close to its full declared width can overflow
+horizontally at 728px in a way it never would there — confirmed, not hypothetical, for one card:
+ui_kits/desktop/index.html (declared 1400px) overflows by ~481px, pushing its right-hand "Now
+Playing" column outside the visible box (its own layout is a fixed three-column shell, not a
+responsive one). It's still reachable, not lost — the iframe scrolls there on hover the same way
+S02's vertical overflow does (see review_card()) — which is the actual point of an iframe over a
+screenshot: a screenshot could never have shown that column at all. ui_kits/mobile/index.html and
+3 guidelines/* cards checked the same way do NOT overflow. That's 5 of 84 cards actually measured
+(docs/../.probe/preview-width-overflow.mjs, gitignored local scratch, not the full manifest — a
+full sweep is slow and, once both App Screens cards are covered, of thin marginal value), so treat
+this as "at least one real instance exists, here's the shape of it," not "the other 79 are clean."
+Previews also now depend on the network at view time (the CDN-hosted React/ReactDOM/Babel every
+card pulls in) — no such dependency existed for a screenshot.
 
 One-time setup before the first run (not needed on every run): the 4 CSS files and 5 font files
 under .claude-design-vendor/ must already be vendored, and index-CrWB6CHH.css's @font-face rules
@@ -23,11 +43,17 @@ must already point at the local font files rather than assets-proxy.anthropic.co
 renders with a system/serif fallback font or with tofu icon glyphs, that setup is what's missing —
 this script does not fetch or rewrite anything itself.
 
-Requires docs/.render/*.png to exist — that's render_cards.mjs's own output, so run it first (it's
-also how you'd notice a broken card, which this script does not check for). Screenshots are keyed
-by each card's full relative path with '/' replaced by '_' (matching render_cards.mjs's own output
-naming), not by basename, so ui_kits/desktop/index.html and ui_kits/mobile/index.html — which would
-otherwise collide on the same basename 'index.html' — each resolve to their own screenshot.
+Needs docs/build_bundle.js run at least once regardless: cards preview live now, and every card
+pulls in ../../_ds_bundle.js itself (that's what a card's own script tag resolves to), so a stale
+or missing bundle now breaks what you SEE in gallery.html, not just what render_cards.mjs reports.
+Running render_cards.mjs too is no longer required for gallery.html itself, but still worth doing —
+it's the only thing that checks for a broken card (blank #root, a console error, a bad destructure
+off the namespace), which a live iframe here will otherwise just render as an empty box with no
+diagnostic. Its docs/.render/*.png output now only backs the dev-facing fallback for a card whose
+own path doesn't resolve to a real file (see preview_mount()) — keyed by each card's full relative
+path with '/' replaced by '_' (matching render_cards.mjs's own output naming), not by basename, so
+ui_kits/desktop/index.html and ui_kits/mobile/index.html — which would otherwise collide on the
+same basename 'index.html' — each resolve to their own screenshot.
 
     node docs/build_bundle.js && node docs/render_cards.mjs && python3 docs/gen_gallery.py
 
@@ -41,6 +67,15 @@ to match the real app at that specific width, not at arbitrary sizes.
 import html, json, os, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def slugify(s):
+    # Group names only ("App Screens" -> "app-screens") — good enough since groups are a short,
+    # human-picked, ASCII set (see the sorted() list in main()). Card ids use the manifest path
+    # sanitized the same way render_cards.mjs/png_for() already key screenshots (see there), not
+    # this — a card path is already unique and filesystem-safe, slugifying it further would just
+    # be a second naming scheme for the same thing.
+    return re.sub(r'-+', '-', re.sub(r'[^a-z0-9]+', '-', s.lower())).strip('-')
 
 
 def md_to_html(src):
@@ -95,7 +130,15 @@ def md_to_html(src):
             continue
         para.append(line.strip())
     flush_para(); close_list()
-    return '\n'.join(out)
+    # Joined with NO separator, not '\n' — this HTML lands inside .om-prompt-md .ProseMirror,
+    # which PromptMdEditor-DTc_sH_1.css sets to `white-space:pre-wrap` (so the editor preserves
+    # a user's own blank lines as typed). A joining '\n' is therefore not inert whitespace the
+    # way it would be in a normal block context: pre-wrap renders it as a real line break, adding
+    # a blank line's worth of height *and* feeding non-empty "content" between adjacent blocks
+    # that would otherwise margin-collapse, doubling their gap on top of that. Confirmed against
+    # the real capture (page.html): its own ProseMirror serializer emits every block flush against
+    # the next with zero whitespace between them, e.g. `<h1>...</h1><p>...` with no newline.
+    return ''.join(out)
 
 
 def png_for(card_path):
@@ -119,25 +162,60 @@ def preview_height(card):
 
 def preview_mount(card, png):
     """The real DOM's two-level preview wrapper (outer bg-elevated box, inner bg-surface box
-    carrying the now-inert iframe-hover classes, innermost sized aria-hidden div) — restored
-    verbatim rather than flattened, for DOM-shape fidelity, even though no iframe exists here."""
+    carrying the iframe-hover classes, innermost sized div) — restored verbatim rather than
+    flattened, for DOM-shape fidelity. Those iframe-hover classes turn out not to be vestigial:
+    the real capture's own equivalent slot IS a live `<iframe src="...">` (924x540, CSS
+    `transform:scale()`d down to fit) — not an object-fit:cover screenshot, so that was a wrong
+    guess in the original pixel-fidelity pass. Card previews now do the same: an iframe onto the
+    card's own file, not a picture of one.
+
+    The real iframe also carries `inert` + `aria-hidden="true"` at rest, presumably lifted by app
+    JS on hover/focus — we drop both rather than copy them inert, since a permanently-inert iframe
+    would defeat the entire point of this fix (genuinely interactable previews) and this page runs
+    no JS to ever lift them. The `[&_iframe]:pointer-events-none [&:hover_iframe]:pointer-events-
+    auto` classes already on this wrapper (kept verbatim from the capture) give the same "inert
+    until you hover it" behavior with plain CSS instead. `aria-hidden` is kept only on the
+    non-interactive fallback branches below (a screenshot or a placeholder is legitimately
+    decorative; a live iframe is not — hiding interactive content from assistive tech is its own
+    bug, not a fidelity choice)."""
     h = preview_height(card)
-    if png:
+    src_path = os.path.join(ROOT, card['path'])
+    if os.path.exists(src_path):
+        # loading="lazy" is load-bearing, not cosmetic: 84 cards each independently bootstrap
+        # React+ReactDOM+Babel and run a JSX transform on load. Native lazy-loading means an
+        # offscreen card's iframe doesn't even start that work until scrolled near the viewport,
+        # which is what keeps opening this page from booting all 84 at once.
+        name = html.escape(card.get('name', card['path']))
+        inner = (f'<iframe src="{html.escape(os.path.relpath(src_path, ROOT))}" loading="lazy" '
+                  f'title="{name} preview" '
+                  'style="width:100%;height:100%;border:0;display:block"></iframe>')
+        hidden = ''
+    elif png:
+        # Only reachable if a manifest card's own path doesn't resolve to a real file — every
+        # card's path does today, so this is a dev-facing safety net, not the common case.
         inner = (f'<img src="{html.escape(os.path.relpath(png, ROOT))}" alt="" '
                   'style="width:100%;height:100%;object-fit:cover;object-position:top;display:block">')
+        hidden = ' aria-hidden="true"'
     else:
         # Dev-facing fallback, not a guess at the real app's state (which was never observed —
         # every real preview was captured empty). More useful for local dev than a silent blank box.
         inner = ('<div style="width:100%;height:100%;display:flex;align-items:center;'
                  'justify-content:center;text-align:center;font-size:11px;color:var(--om-text-tertiary)">'
                  'not rendered — run render_cards.mjs</div>')
+        hidden = ' aria-hidden="true"'
     return f'''<div class="bg-om-bg-elevated border border-om-border-default rounded-[10px] shadow-om-sm overflow-hidden">
               <div class="bg-om-bg-surface relative [&_iframe]:pointer-events-none [&:hover_iframe]:pointer-events-auto">
-                <div aria-hidden="true" style="height:{h}px">
+                <div{hidden} style="height:{h}px">
                   {inner}
                 </div>
               </div>
             </div>'''
+
+
+def card_id(card_path):
+    # Same slug render_cards.mjs/png_for() already use to key a screenshot ('/' -> '_'), prefixed
+    # so it can't collide with a section id or anything else on the page sharing a bare slug.
+    return 'card-' + card_path.replace('/', '_')
 
 
 def review_card(card):
@@ -145,7 +223,8 @@ def review_card(card):
     name = html.escape(card.get('name', card['path']))
     subtitle = html.escape(card.get('subtitle', ''))
     path = html.escape(card['path'])
-    return f'''<div class="om-review-card [&amp;+.om-review-card]:mt-[26px]" data-testid="ds-review-card">
+    cid = html.escape(card_id(card['path']))
+    return f'''<div id="{cid}" class="om-review-card [&amp;+.om-review-card]:mt-[26px]" data-testid="ds-review-card">
             <div class="flex items-center gap-3 mb-2.5">
               <div class="flex-1 min-w-0">
                 <div class="text-[13.5px] font-[550] leading-[1.3] text-om-text-primary">{name}</div>
@@ -197,17 +276,26 @@ def review_card(card):
 
 
 def nav_group(group, cards):
+    # <a href="#id">, not <button> — the real app jumps the content pane on click (via app JS we
+    # don't have); a same-page anchor link is the JS-free equivalent, and the real classes already
+    # neutralize an <a>'s usual look (index-CrWB6CHH.css: `a{color:inherit;text-decoration:none}`,
+    # plus `cursor-default` here beating the base stylesheets' `a{cursor:pointer}` on specificity —
+    # a class selector always outranks a bare-element one). The one thing NOT already neutralized:
+    # three vendored files each carry `a:hover{text-decoration:underline}` at (0,1,1) specificity,
+    # which these buttons never had to fight because a <button> was never a target of it. Handled
+    # with one rule in this page's own <style> block rather than per-link, since it's the same fix
+    # for every nav link — see `.om-ds-outline-aside a:hover` there.
     items = ''.join(
-        f'''<button type="button" title="{html.escape(c.get('name', c['path']))}" class="w-full flex items-center gap-2 py-[5px] pr-2 pl-6 text-xs leading-[1.35] bg-transparent rounded-md cursor-default text-left transition-colors duration-100 hover:text-om-text-primary font-normal text-om-text-secondary">
+        f'''<a href="#{html.escape(card_id(c['path']))}" title="{html.escape(c.get('name', c['path']))}" class="w-full flex items-center gap-2 py-[5px] pr-2 pl-6 text-xs leading-[1.35] bg-transparent rounded-md cursor-default text-left transition-colors duration-100 hover:text-om-text-primary font-normal text-om-text-secondary">
               <span class="flex-[1_1_auto] min-w-0 truncate">{html.escape(c.get('name', c['path']))}</span>
-            </button>'''
+            </a>'''
         for c in cards
     )
     return f'''<div class="mb-0.5">
-          <button type="button" aria-expanded="true" class="w-full flex items-center gap-1.5 py-1.5 px-2 text-xs font-[550] leading-snug text-om-text-secondary bg-transparent rounded-md cursor-default text-left transition-colors duration-100 hover:text-om-text-primary">
+          <a href="#{html.escape('section-' + slugify(group))}" aria-expanded="true" class="w-full flex items-center gap-1.5 py-1.5 px-2 text-xs font-[550] leading-snug text-om-text-secondary bg-transparent rounded-md cursor-default text-left transition-colors duration-100 hover:text-om-text-primary">
             <span class="inline-flex text-om-text-tertiary transition-transform duration-[120ms]"><i class="ai-CaretDownSmall leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:11px"></i></span>
             <span class="flex-[1_1_auto] min-w-0 truncate" title="{html.escape(group)}">{html.escape(group)}</span>
-          </button>
+          </a>
           <div class="flex flex-col gap-px pt-0.5 pb-1.5">
             {items}
           </div>
@@ -231,7 +319,7 @@ def main():
 
     nav_html = ''.join(nav_group(g, by_group[g]) for g in groups)
     sections_html = ''.join(
-        f'''<section>
+        f'''<section id="{html.escape('section-' + slugify(g))}">
           <h2 class="m-0 mb-3.5 text-xs font-medium text-om-text-tertiary">{html.escape(g)}</h2>
           {''.join(review_card(c) for c in by_group[g])}
         </section>'''
@@ -264,6 +352,17 @@ def main():
          and applies here with no help needed. The h1 still matches separately via its own
          font-om-serif override, which takes precedence in both. */
     }}
+    /* Nav jump targets (added functionality, see nav_group()/main()): the content pane
+       ([data-testid="ds-pane"]) is the scrolling ancestor, and it has no fixed/sticky header to
+       clear, but a jumped-to section or card landing exactly flush with its top edge still reads
+       as jarring — a little breathing room either way is worth the one rule. */
+    section[id], .om-review-card[id], #section-readme{{scroll-margin-top:16px}}
+    /* The real classes already neutralize an <a>'s look everywhere else (see nav_group()'s own
+       comment) except this: three vendored stylesheets each carry `a:hover{{text-decoration:
+       underline}}` at (0,1,1) specificity, higher than a bare `.no-underline` utility class alone
+       (0,1,0) would beat. `.om-ds-outline-aside a:hover` at (0,2,1) clears that regardless of
+       stylesheet order. */
+    .om-ds-outline-aside a:hover{{text-decoration:none}}
   </style>
 </head><body>
 <div class="om-gallery-mount">
@@ -277,10 +376,10 @@ def main():
     <nav aria-label="Design system outline" class="om-ds-outline-aside flex-[0_0_248px] min-w-0 flex-col overflow-hidden flex">
       <div class="flex-[1_1_auto] min-h-0 overflow-y-auto pt-[22px] px-2 pb-4">
         <div class="mb-1">
-          <button type="button" title="Readme" class="w-full flex items-center gap-2 py-[5px] pr-2 pl-6 text-xs leading-[1.35] bg-transparent rounded-md cursor-default text-left transition-colors duration-100 hover:text-om-text-primary font-normal text-om-text-secondary">
+          <a href="#section-readme" title="Readme" class="w-full flex items-center gap-2 py-[5px] pr-2 pl-6 text-xs leading-[1.35] bg-transparent rounded-md cursor-default text-left transition-colors duration-100 hover:text-om-text-primary font-normal text-om-text-secondary">
             <span class="inline-flex text-om-text-tertiary ml-[-17px] mr-[-3px]"><i class="ai-BookText leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:13px"></i></span>
             <span class="flex-[1_1_auto] min-w-0 truncate">Readme</span>
-          </button>
+          </a>
         </div>
         {nav_html}
       </div>
@@ -297,7 +396,7 @@ def main():
 
         <!-- publish-settings card: omitted (live account/workspace state, no manifest equivalent) -->
 
-        <div><div>
+        <div id="section-readme"><div>
           <div class="flex items-center h-8 py-0.5">
             <button class="inline-flex items-center gap-1.5 bg-transparent py-1 cursor-default text-xs font-medium text-om-text-tertiary hover:text-om-text-secondary">
               <i class="ai-CaretDown leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:10px"></i>Readme
@@ -306,9 +405,7 @@ def main():
           <div class="block">
             <div><div>
               <div translate="no" class="om-prompt-md relative rounded-lg [transition:background_0.15s_ease,box-shadow_0.15s_ease] cursor-text focus-within:bg-om-bg-elevated focus-within:shadow-[inset_0_0_0_1px_var(--om-border-default),var(--om-shadow-sm)]">
-                <div translate="no" class="ProseMirror">
-                  {readme_html}
-                </div>
+                <div translate="no" class="ProseMirror">{readme_html}</div>
               </div></div>
           </div>
         </div></div></div>
