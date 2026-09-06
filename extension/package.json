@@ -1,0 +1,44 @@
+{
+	"name": "sonora-design",
+	"displayName": "Sonora Design",
+	"description": "Design System panel for this repo, hosted in a VS Code webview — feature parity with claude.ai/design's own panel (see docs/EXTENSION-PLAN.md).",
+	"version": "0.1.0",
+	"publisher": "opesus-local",
+	"engines": {
+		"vscode": "^1.75.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"workspaceContains:_ds_manifest.json"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "sonora.openDesignSystem",
+				"title": "Sonora: Open Design System"
+			},
+			{
+				"command": "sonora.restartServer",
+				"title": "Sonora: Restart gallery server"
+			}
+		],
+		"configuration": {
+			"title": "Sonora",
+			"properties": {
+				"sonora.python": {
+					"type": "string",
+					"default": "python3",
+					"description": "Interpreter used to run docs/serve.py and docs/gen_gallery.py."
+				},
+				"sonora.serverPort": {
+					"type": "number",
+					"default": 8888,
+					"description": "Port the gallery server (docs/serve.py) answers on. docs/serve.py itself always binds 8888 — see extension/lib/server.js's header comment before changing this."
+				}
+			}
+		}
+	}
+}
