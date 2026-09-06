@@ -11,10 +11,20 @@ chrome (#root, sidebar, toolbar) — that's out of scope, and gallery.html suppl
 minimal plumbing (a full-height flex ancestor) for the panel's own `h-full` to resolve against.
 Two content pieces the real panel has no local equivalent for are dropped entirely: the
 publish-settings card (live workspace/account state, no manifest field) and the h1's thumbnail-
-upload button (an uploaded image with no local backend to serve one). Interactive-only elements
-(Feedback/Edit/Add-usage-notes buttons, the feedback-collapse box, group-header expand/collapse)
-are rendered with the real classes for pixel fidelity but are inert — no JS runs anywhere in this
-page. See docs/../QUESTIONS.md or the implementation plan for the full set of documented gaps.
+upload button (an uploaded image with no local backend to serve one).
+
+The Feedback and Edit buttons are live, and do locally what their originals do in the real app
+(hand the card to Claude to regenerate; open its source in the editor), plus the one piece of that
+app's in-preview editing model a local mirror can reproduce — clicking an element inside a preview
+to scope the feedback to it. That behaviour lives entirely in docs/gallery.js and docs/gallery.css,
+which the page links but does not depend on: with JS off it is still the static, pixel-faithful
+panel every measurement in this docstring was taken against, and the markup emitted below is still
+the captured markup (the script attaches by om-ds-* hook classes and a data-open attribute rather
+than rewriting any captured class). docs/gallery.js's header comment documents what the real app
+does, how that was established, and which of its editing modes are deliberately not reproduced.
+Still inert, for want of anything local to connect them to: the image-attach button, "Add usage
+notes", and group-header expand/collapse. See docs/../QUESTIONS.md or the implementation plan for
+the full set of documented gaps.
 
 Card previews are live `<iframe src="...">`s onto the card's own file (see preview_mount()), not
 screenshots — matching what the real capture turned out to actually be (an iframe at native card
@@ -203,7 +213,11 @@ def preview_mount(card, png):
                  'justify-content:center;text-align:center;font-size:11px;color:var(--om-text-tertiary)">'
                  'not rendered — run render_cards.mjs</div>')
         hidden = ' aria-hidden="true"'
-    return f'''<div class="bg-om-bg-elevated border border-om-border-default rounded-[10px] shadow-om-sm overflow-hidden">
+    # om-ds-preview-mount is ours, not a captured class: docs/gallery.js needs one stable handle
+    # per preview to reach its iframe (element picking), and docs/gallery.css hangs the pick-mode
+    # outline on it. Additive only — it carries no styling at rest, so the captured classes
+    # alongside it still decide every pixel.
+    return f'''<div class="om-ds-preview-mount bg-om-bg-elevated border border-om-border-default rounded-[10px] shadow-om-sm overflow-hidden">
               <div class="bg-om-bg-surface relative [&_iframe]:pointer-events-none [&:hover_iframe]:pointer-events-auto">
                 <div{hidden} style="height:{h}px">
                   {inner}
@@ -224,40 +238,57 @@ def review_card(card):
     subtitle = html.escape(card.get('subtitle', ''))
     path = html.escape(card['path'])
     cid = html.escape(card_id(card['path']))
-    return f'''<div id="{cid}" class="om-review-card [&amp;+.om-review-card]:mt-[26px]" data-testid="ds-review-card">
+    return f'''<div id="{cid}" class="om-review-card [&amp;+.om-review-card]:mt-[26px]" data-testid="ds-review-card" data-card-path="{path}" data-card-name="{name}">
             <div class="flex items-center gap-3 mb-2.5">
               <div class="flex-1 min-w-0">
                 <div class="text-[13.5px] font-[550] leading-[1.3] text-om-text-primary">{name}</div>
                 <div class="text-xs leading-[1.4] text-om-text-tertiary mt-0.5">{subtitle}</div>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <!-- Inert via aria-disabled+tabindex, never `disabled` (would trigger this stylesheet's
-                     own .disabled\\:opacity-50:disabled rule and dim these against a full-opacity real
-                     app) and never pointer-events:none (would kill the hover these title= tooltips need,
-                     and is unnecessary — these are plain buttons with no onclick in this JS-free page). -->
+                <!-- Feedback and Edit are live (docs/gallery.js) and do what their originals do:
+                     Feedback toggles the collapse below and Submit hands the card to a headless
+                     `claude -p`; Edit opens the file in this VS Code window. See the header comment
+                     in docs/gallery.js for how each was read out of the real app, and docs/serve.py
+                     for the endpoints they call. Everything about them at rest is still the captured
+                     markup — the only changes are dropping the aria-disabled/tabindex="-1" pair that
+                     marked them inert, and adding om-ds-* hooks for the script.
+                     Still deliberately inert: the image-attach button (there is no attachment channel
+                     to a headless run) and "Add usage notes" (nothing in the manifest to write to).
+                     Those keep aria-disabled+tabindex="-1" rather than `disabled`, which would trip
+                     this stylesheet's own .disabled\\:opacity-50:disabled rule and dim them against a
+                     full-opacity real app. -->
                 <span style="display:contents">
-                  <button type="button" aria-disabled="true" tabindex="-1" title="Leave feedback (static mirror — inert)" class="relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
+                  <button type="button" title="Leave feedback" class="om-ds-feedback-btn relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
                     <span class="inline-flex items-center gap-[inherit]">Feedback</span>
                   </button>
                 </span>
-                <button type="button" aria-disabled="true" tabindex="-1" title="{path}" class="relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
+                <button type="button" title="Open {path} in VS Code" class="om-ds-edit-btn relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
                   <span class="inline-flex items-center gap-[inherit]"><i class="ai-ArrowUpRight leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:11px"></i>Edit</span>
                 </button>
               </div>
             </div>
 
             <!-- Feedback-collapse box, at rest (grid-rows-[0fr], 0 visible height) — matches the real
-                 default-closed state exactly, no JS needed. Only Submit keeps the real `disabled`
-                 attribute (matching the real app's own empty-textarea state); its contents never render
-                 since the box itself is grid-rows-[0fr]/opacity-0/invisible at rest. -->
+                 default-closed state exactly, and still renders that way with JS off. docs/gallery.js
+                 opens it by setting data-open="1" (docs/gallery.css wins on specificity over the
+                 grid-rows-[0fr] utility) rather than by swapping class strings, so the captured class
+                 list stays verbatim. The textarea keeps its `disabled` attribute here — a focusable
+                 control inside a zero-height box is a real bug, not fidelity theatre — and the script
+                 clears it on open and restores it on close. Submit keeps `disabled` for the same
+                 reason the real app does: nothing to send yet. -->
             <div class="om-collapse grid [transition:grid-template-rows_var(--ms)_cubic-bezier(0.2,0,0,1)] grid-rows-[0fr] [&amp;&gt;div]:overflow-hidden [&amp;&gt;div]:[transition:opacity_var(--ms)_ease-out_var(--fade-delay),visibility_0s_linear_var(--vis-delay)] [&amp;&gt;div]:opacity-0 [&amp;&gt;div]:invisible" style="--ms:250ms;--fade-delay:0ms;--vis-delay:250ms">
               <div><div class="pb-3.5">
                 <div class="om-ds-feedback-box mt-1.5 pt-2.5 px-2.5 pb-1 border border-om-border-subtle rounded-[10px] bg-om-bg-surface">
+                  <!-- The picker hint and element chip have no counterpart in the captured markup
+                       because the real app only ever renders them while its own JS is running; both
+                       are hidden until the script fills them in (see docs/gallery.css). -->
+                  <p class="om-ds-pick-hint"></p>
+                  <span class="om-ds-element-chip"><code></code><button type="button" title="Clear the attached element" aria-label="Clear the attached element">×</button></span>
                   <textarea disabled placeholder="Describe what you'd prefer..." rows="2" class="w-full p-0 text-[13px] bg-transparent text-om-text-primary outline-none resize-none leading-normal overflow-y-hidden placeholder:text-om-text-tertiary om-max-700:text-base"></textarea>
                   <div class="om-actions flex gap-1" style="margin-top:6px;margin-bottom:6px;justify-content:flex-end">
-                    <button title="Attach image (static mirror — inert)" class="flex cursor-default select-none items-center justify-center rounded-md p-0 text-om-text-secondary outline-none disabled:cursor-not-allowed disabled:opacity-30 bg-transparent border border-transparent" style="width:22px;height:22px;margin-right:auto"><i class="ai-Image leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:13px"></i></button>
-                    <button class="relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">Cancel</button>
-                    <button disabled class="relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-accent-primary hover:bg-om-accent-primary-hover active:bg-om-accent-primary-active border-transparent text-om-text-inverse">Submit</button>
+                    <button aria-disabled="true" tabindex="-1" title="Attach image (no attachment channel to a headless run — inert)" class="flex cursor-default select-none items-center justify-center rounded-md p-0 text-om-text-secondary outline-none disabled:cursor-not-allowed disabled:opacity-30 bg-transparent border border-transparent" style="width:22px;height:22px;margin-right:auto"><i class="ai-Image leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:13px"></i></button>
+                    <button type="button" class="om-ds-cancel relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">Cancel</button>
+                    <button type="button" disabled class="om-ds-submit relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-accent-primary hover:bg-om-accent-primary-hover active:bg-om-accent-primary-active border-transparent text-om-text-inverse">Submit</button>
                   </div>
                 </div>
               </div></div>
@@ -335,6 +366,10 @@ def main():
   <link rel="stylesheet" href=".claude-design-vendor/FormList-DPI5FmbR.css">
   <link rel="stylesheet" href=".claude-design-vendor/PromptMdEditor-DTc_sH_1.css">
   <link rel="stylesheet" href=".claude-design-vendor/ProjectPage-D36IL5mP.css">
+  <!-- Ours, last so it can win ties against the vendored files: the states the captured DOM has no
+       markup for because they only exist while the real app's JS runs (open feedback box, picker,
+       element chip, run status). Nothing in it restyles a captured class at rest. -->
+  <link rel="stylesheet" href="docs/gallery.css">
   <style>/* plumbing only, not app chrome: */
     html,body{{height:100%;margin:0}}
     body{{display:flex;flex-direction:column}} /* real body has no such rule, but the panel needs SOME
@@ -416,6 +451,10 @@ def main():
     </div>
   </div>
 </div>
+<!-- defer, and last: the page is complete and correct without it (that is the point — every
+     pixel-fidelity measurement in this file's docstring was taken with the panel static), so
+     nothing here should block or reorder the render. -->
+<script src="docs/gallery.js" defer></script>
 </body></html>'''
 
     out_path = os.path.join(ROOT, 'gallery.html')

@@ -31,3 +31,8 @@ gallery.html
 # Never push it.
 claude-design.html
 claude-design_files/
+
+# Feedback queue + `claude -p` run logs from the gallery Feedback button (docs/serve.py).
+# Local workflow state, not part of the design system. The runs themselves edit tracked files;
+# only this bookkeeping is ignored.
+.feedback/
