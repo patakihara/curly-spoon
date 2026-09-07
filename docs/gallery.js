@@ -56,7 +56,31 @@
   var SENT_LINGER_MS = 5000; // the real app's own window.setTimeout(..., 5e3) on "Feedback sent"
   var MAX_ANCESTORS = 5;     // the real descriptor walks at most 5 levels up before stopping
 
+  /* --------------------------------------------------------------------- framed (VS Code) mode
+   *
+   * docs/EXTENSION-PLAN.md §2 "Bridge protocol": when this page is served through the Sonora
+   * extension's webview, it sits in an <iframe> whose parent document is media/webview.js — a
+   * pure relay that forwards every 'sonora:'-prefixed postMessage in both directions. Plain
+   * browser use (window.parent === window) is untouched below: it keeps talking to docs/serve.py
+   * over /_api/*, exactly as before this order.
+   */
+  var FRAMED = window.parent !== window;
+
+  /* targetOrigin '*' is acceptable here ONLY because docs/serve.py binds this page to
+   * 127.0.0.1 — every parent that could ever be framing it is a process on this same machine
+   * (the Sonora extension's webview), never a remote origin worth restricting a postMessage to. */
+  function postToHost(msg) {
+    if (FRAMED) window.parent.postMessage(msg, '*');
+  }
+
   /* ------------------------------------------------------------------ tiny helpers */
+
+  function cardByPath(path) {
+    // No CSS.escape: the value sits inside quotes in the attribute selector, where a
+    // repo-relative path needs no escaping — CSS.escape would actively break it by
+    // backslash-escaping every `/`.
+    return document.querySelector('.om-review-card[data-card-path="' + path + '"]');
+  }
 
   function toast(msg) {
     var el = document.getElementById('om-ds-toast');
@@ -69,6 +93,7 @@
     el.setAttribute('data-show', '1');
     clearTimeout(el._t);
     el._t = setTimeout(function () { el.removeAttribute('data-show'); }, 6000);
+    postToHost({ type: 'sonora:toast', text: msg });
   }
 
   function postJSON(url, body) {
@@ -859,7 +884,10 @@
       return postJSON('/_api/edit/apply', {
         path: path, charOffset: omId.charOffset, property: prop.key, allowUnset: true
       }).then(function (r) {
-        if (r.ok) return { done: true };
+        if (r.ok) {
+          notifyEditApplied(path, omId.charOffset, prop.key);
+          return { done: true };
+        }
         // Deleting a token-authored declaration is still an edit whose intent isn't ours to
         // guess (does removing the USE also mean the token itself is wrong?) — same "ask,
         // don't choose" rule as a value change, just phrased as a removal.
@@ -890,9 +918,19 @@
 
   function applyWrite(payload) {
     return postJSON('/_api/edit/apply', payload).then(function (r) {
-      if (r.ok) return { done: true };
+      if (r.ok) {
+        notifyEditApplied(payload.path, payload.charOffset, payload.property);
+        return { done: true };
+      }
       return { agentic: payload.property + ': write refused (' + (r.reason || 'unknown') + ').' };
     });
+  }
+
+  /* Told the extension host a literal write actually landed on disk, so it can reveal the
+     changed line if that file happens to be open in an editor (§2 bridge-protocol table). No-op
+     in plain-browser use. */
+  function notifyEditApplied(path, offset, property) {
+    postToHost({ type: 'sonora:edit-applied', path: path, offset: offset, property: property });
   }
 
   function writeValue(prop, raw) {
@@ -1080,6 +1118,13 @@
     var edit = card.querySelector('.om-ds-edit-btn');
     if (edit) {
       edit.addEventListener('click', function () {
+        if (FRAMED) {
+          // Framed mode: the extension host opens the file natively (showTextDocument),
+          // replacing the /_api/open -> Remote-WSL `code` CLI hop below, which stays exactly as
+          // it was for plain-browser use.
+          postToHost({ type: 'sonora:open', path: card.getAttribute('data-card-path') });
+          return;
+        }
         postJSON('/_api/open', { path: card.getAttribute('data-card-path') })
           .catch(function (err) {
             toast('Could not open the file: ' + err.message);
@@ -1135,6 +1180,49 @@
 
   document.querySelectorAll('.om-review-card').forEach(wire);
 
+  /* --------------------------------------------------------------- host -> gallery (framed) */
+
+  function flashCard(card) {
+    // Built purely in JS, the same way the picker's own hover outline is (overlayFor above) —
+    // gen_gallery.py's emitted markup and docs/gallery.css never gain a class for this.
+    var prevTransition = card.style.transition;
+    var prevShadow = card.style.boxShadow;
+    card.style.transition = 'box-shadow 150ms ease-out';
+    card.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.9)';
+    setTimeout(function () {
+      card.style.boxShadow = prevShadow;
+      setTimeout(function () { card.style.transition = prevTransition; }, 200);
+    }, 700);
+  }
+
+  function handleReveal(path) {
+    var card = cardByPath(path);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    flashCard(card);
+  }
+
+  function handleReload(path) {
+    if (path) {
+      var card = cardByPath(path);
+      if (card) reloadPreview(card);
+      return;
+    }
+    location.reload();
+  }
+
+  if (FRAMED) {
+    window.addEventListener('message', function (event) {
+      // Only the immediate parent frame (media/webview.js's relay) is ever a legitimate sender
+      // here — mirrors webview.js's own event.source check on the other side of this bridge.
+      if (event.source !== window.parent) return;
+      var data = event.data;
+      if (!data || typeof data.type !== 'string') return;
+      if (data.type === 'sonora:reveal') handleReveal(data.path);
+      else if (data.type === 'sonora:reload') handleReload(data.path);
+    });
+  }
+
   // Any run still in flight from a previous page load keeps its own status on the server; this
   // page just doesn't know which card it belongs to until it polls once.
   fetch('/_api/feedback', { cache: 'no-store' }).then(function (r) { return r.json(); })
@@ -1143,10 +1231,7 @@
         return e.status === 'queued' || e.status === 'running';
       });
       live.forEach(function (e) {
-        // No CSS.escape here: the value sits inside quotes in the attribute selector, where a
-        // repo-relative path needs no escaping — running it through CSS.escape would actively
-        // break it by backslash-escaping every `/`.
-        var card = document.querySelector('.om-review-card[data-card-path="' + e.path + '"]');
+        var card = cardByPath(e.path);
         if (card && !card._entryId) { card._entryId = e.id; card._lastStatus = null; }
       });
       if (live.length) startPolling();
