@@ -16,12 +16,12 @@ commit 530dec7.
 
 | # | Claude Design feature | Mirror today (browser) | Extension target | Phase |
 |---|---|---|---|---|
-| A1 | Project page shell: chat pane · preview · **Design System** pane · files | Only the Design System pane, pixel-faithful (`gallery.html`) | Same pane, hosted in a sidebar `WebviewView` (not an editor-column panel — see §2); files = the editor itself | 1 |
+| A1 | Project page shell: chat pane · preview · **Design System** pane · files | **landed (1.1, 1.3):** the pane is a sidebar `WebviewView` in the "Sonora" activitybar container, framing the served `gallery.html` | Same pane, hosted in a sidebar `WebviewView` (not an editor-column panel — see §2); files = the editor itself | 1 |
 | A2 | Project menu, "Back to projects", thumbnail upload, publish settings | dropped (no local backend) | Thumbnail = `thumbnail.html` open/edit; publish = n/a | 3 |
-| B1 | Card groups (App Screens / Components / Guidelines / Reference / Brand) with live `<iframe>` previews scaled from the card's declared viewport | done (iframe at box width, not scaled — one known overflow, see gen_gallery.py docstring) | same + sidebar tree of groups→cards, click-to-reveal | 1 |
-| B2 | **Edit** → opens the card source in the app's editor | `/_api/open` → Remote-WSL `code` CLI hop | native `vscode.window.showTextDocument`, line-accurate | 1 |
-| B3 | **Feedback** → "Regenerate "<name>": <text>" + `ds-feedback` attachment posted to the project's Claude | `/_api/feedback` → headless `claude -p` (on this machine the queue gate files that prompt instead of running it — §5) | file a queue item in the `sonora` instance, show its status on the card | 1 |
-| B4 | Comment mode: hover-outline, click selects, `File/Element/Feedback` attachment with a 5-deep ancestor breadcrumb | done (same-origin iframes, no injected agent) | unchanged — the gallery stays same-origin inside the webview (§2) | 1 |
+| B1 | Card groups (App Screens / Components / Guidelines / Reference / Brand) with live `<iframe>` previews scaled from the card's declared viewport | **landed (1.3):** the browser mirror plus a Cards tree (8 groups → 84 cards, click-to-reveal); iframe still at box width, not scaled | same + sidebar tree of groups→cards, click-to-reveal | 1 |
+| B2 | **Edit** → opens the card source in the app's editor | **landed (1.2):** framed mode posts `sonora:open`, the host calls `showTextDocument`; `/_api/open` stays for the plain browser | native `vscode.window.showTextDocument`, line-accurate | 1 |
+| B3 | **Feedback** → "Regenerate "<name>": <text>" + `ds-feedback` attachment posted to the project's Claude | **landed (1.4):** framed Feedback posts `sonora:feedback`, `lib/queue.js` files it via `bin/queue add` and polls `queue show` | file a queue item in the `sonora` instance, show its status on the card | 1 |
+| B4 | Comment mode: hover-outline, click selects, `File/Element/Feedback` attachment with a 5-deep ancestor breadcrumb | **landed (1.1–1.2):** unchanged, and still same-origin inside the webview as §2 requires | unchanged — the gallery stays same-origin inside the webview (§2) | 1 |
 | B5 | Add usage notes · group collapse · image attach on feedback | inert | usage notes → card `@dsCard` marker / manifest; image attach → `.feedback/<id>/` | 3 |
 | B6 | Versions per card, `pinned` wins over newest (memory: reference-claude-design-version-pinning) | none (git only) | version list = `git log -- <card>`, "pin" = preview a past blob, badge when local ≠ remote | 3 |
 | C1 | Property panel, **Simple / Pro / Code** modes; sections sizing·position·typography·layout·padding·margin·appearance·border·effects (+ tag-conditional ones) | six properties (display, gap, width, background, border-radius, font-weight) with scrub, undo/redo, token-aware writeback via `data-om-id` char offset | all sections of `.probe/pro-panel-spec.md` §1–2; Code mode = open the JSX at the element's offset | 2 |
@@ -31,7 +31,7 @@ commit 530dec7.
 | C5 | Image slot picking / reframing; drag-drop repositioning | none | slot: swap `src` + `object-position`; reposition: flex `order` / grid-area edits — both through edit_writeback | 2 |
 | D1 | Chat with the project's Claude: composer (attach image, voice, model picker, Send), streamed reply, "Edited N files", good/bad response | none | a chat view that files prompts into the `sonora` queue instance and renders that item's brief/notes/report + the resulting `git diff` — the queue *is* Claude on this machine | 3 |
 | E1 | DesignSync pull/push from Claude Code (orchestrator-only tool; `finalize_plan` always prompts) | `docs/design_pull.sh` (pull); push done by hand in a live session | "Pull" runs design_pull.sh in a terminal; "Push" opens a terminal with the prepared prompt — the tool cannot be driven headlessly (memories: designsync-orchestrator-only, finalize-plan-always-asks) | 3 |
-| E2 | Bundle build, token check, render check | `node docs/build_bundle.js`, `python3 docs/check_tokens.py`, `node docs/render_cards.mjs` | commands + a status bar item; run on save of `tokens/*.css` / `components/**` | 1 |
+| E2 | Bundle build, token check, render check | **landed (1.3):** the same three as commands in a "Sonora" terminal, plus regenerate/restart/pull and a status bar item | commands + a status bar item; run on save of `tokens/*.css` / `components/**` | 1 |
 | F1 | Export / share (`parts-*.js`, `selection-*.js`: screenshot + export plumbing) | `render_cards.mjs` screenshots into `.render/` | "Export card as PNG" (Playwright via render_cards) and "Export system as zip" | 3 |
 
 Not parity, deliberately: Claude Design's account/workspace chrome, publishing to a public URL,
@@ -127,7 +127,7 @@ One order = one sonnet owner session in the `sonora` instance, its own worktree,
 (memory: verify-against-real-input-not-mocks). File them in this order; 1.2–1.4 may run in
 parallel once 1.1 has landed.
 
-**1.1 Skeleton, install, panel.** Create `extension/` (package.json: publisher `opesus-local`,
+**1.1 Skeleton, install, panel.** — **landed** (`4a5fe91`, item f01fc61).  Create `extension/` (package.json: publisher `opesus-local`,
 name `sonora-design`, `engines.vscode ^1.75`, `activationEvents: [workspaceContains:_ds_manifest.json]`,
 command `sonora.openDesignSystem`), `extension.js`, `lib/server.js` (probe :8888, spawn
 `python3 docs/serve.py` detached if unbound, never a second copy), `media/webview.js`
@@ -137,12 +137,12 @@ picker outlines elements inside a card preview. (Order 1.1 opened this panel wit
 `createWebviewPanel(..., ViewColumn.Beside)`, an editor column; order 1.3 moved it into the
 "Sonora" activitybar container as a `WebviewViewProvider` — see §2.)
 
-**1.2 Bridge: Edit opens natively, toasts, edit-applied reveal.** Framed mode in `docs/gallery.js`
+**1.2 Bridge: Edit opens natively, toasts, edit-applied reveal.** — **landed** (`c63ccdb`, `2d198a4`, `b77f66a`; item 73df265).  Framed mode in `docs/gallery.js`
 (§2 table, first four messages); host handlers. Keep `/_api/open` for the unframed browser.
 Check: Edit on a card opens its file in an editor tab without the `code` CLI (kill it from PATH
 in a terminal and prove it); a Pro-panel save reveals the changed line.
 
-**1.3 Sidebar, and moving the panel into it.** `contributes.viewsContainers.activitybar` "Sonora"
+**1.3 Sidebar, and moving the panel into it.** — **landed** (`358ff73`, `1b5d0dc`, `5d0aeb1`, `6150350`; item ea69fb9, including the sidebar ruling c9311c0).  `contributes.viewsContainers.activitybar` "Sonora"
 (`extension/media/sonora-icon.svg`), holding three views: the Design System `WebviewView` (moved
 here from order 1.1's editor-column `WebviewPanel` — see §2), a Cards tree (Groups → Cards, click
 posts `sonora:reveal`, opening the view first if closed; context menu: Open source, Copy path)
@@ -156,13 +156,44 @@ Commands, each in a dedicated "Sonora" terminal: `sonora.rebuildBundle`, `sonora
 {path}` and `listCards`. Check: clicking a card scrolls the panel to it; rebuild reports the card
 count; `sonora-ctl.js listCards` returns all 84 cards grouped correctly.
 
-**1.4 Regenerate through the queue.** `lib/queue.js`: build the same sentence + attachment body
+**1.4 Regenerate through the queue.** — **landed** (`988a088`, `d4d300e`, `3e157d1`, `5163051`; item ca71c0c).  `lib/queue.js`: build the same sentence + attachment body
 `docs/serve.py::build_prompt` builds, run `python3 ~/.claude/skills/queue/bin/queue add` with
 cwd = repo root, parse "Filed as #id" / "held until"; card button reads "Filed #id" then polls
 `queue show <id>` (read-only) every 30 s until done/failed; on done, `sonora:reload` that card.
 `regenerate` setting as in §2. Check: submit feedback on one card → an entry appears in the
 `sonora` instance (`queue list` from `~/src/sonora`), the card shows its id, and a landed run
 reloads the preview.
+
+### Phase 1 status (reviewed 2026-09-07, item e817a0f)
+
+All four orders landed on `master`. Checks re-run from a clean worktree by the reviewer, not
+taken from the orders' own reports:
+
+| check | result |
+|---|---|
+| `node extension/test/check_build_prompt.mjs` | **passes** — `lib/queue.js` buildPrompt is byte-identical to `docs/serve.py::build_prompt` for all three entry shapes |
+| `node docs/check_bridge.mjs` | **passes** — 10 assertions in a real browser: `sonora:open` carries the clicked card's path, `sonora:reveal` scrolls it into view, `sonora:feedback` carries text + picker element descriptor |
+| `node extension/test/check_manifest.mjs` | **passes** — 84 cards across 8 groups, 206 tokens across 6 kinds, every alias colour resolved |
+| `node --check` on every `extension/**/*.js` | **passes** |
+| `extension/install.sh` | **passes**, idempotent; registers `opesus-local.sonora-design-0.1.0` → `/home/sofiapata/src/sonora/extension` |
+| `node extension/bin/sonora-ctl.js status` | **cannot pass yet** — "no live discovery file": nothing writes it until a window runs the extension |
+
+**Unverified until the user reloads her VS Code window** — no reviewer may claim these, since
+every one of them needs the extension actually running: the panel appearing in the Sonora
+sidebar and the picker outlining elements (1.1/1.3), Edit opening a file without the `code` CLI
+hop (1.2), `sonora-ctl.js listCards` and `reveal` answering over the loopback endpoint (1.3),
+and one real Feedback click filing a queue item and reloading the card on completion (1.4).
+The headless checks above cover every part of those paths that does not need a live window.
+
+Two things the review changed rather than reported. `extension/test/check_manifest.mjs` is new:
+order 1.3's check ("`listCards` returns all 84 cards") needed a live window, so nothing
+repeatable existed for the grouping. Writing it found a real defect — 19 alias colours
+(`var(--state-success)`) and one gradient were inlined into an SVG `fill=`, painting a black
+square that lied about the token's colour — fixed in `lib/manifest.js::resolveColor` (`7280efc`).
+
+Known and not a phase-1 defect: `check_bridge.mjs` reports 7 page errors from the `ui_kits`
+previews (`Cannot read properties of undefined (reading 'AppShell')`). That is the pre-existing
+bundle/render race already filed as item 5d48f18, not the bridge.
 
 **2.1 Pro panel: every section.** Extend `PROPS` in gallery.js and `docs/edit_writeback.mjs` to
 the full spec table in `.probe/pro-panel-spec.md` (number/select/color/size/fill/shadow editors;
@@ -214,8 +245,14 @@ The queue daemon on this machine runs exactly one instance (`bin/runner.py --ins
 machine-wide `daemon.lock`), and `main`'s project is the queue repo itself, so a sonnet owner
 there gets a worktree of the wrong repo. A `sonora` instance is registered
 (`devqueue.instances.json` and `~/.claude/state/queue/instances.json`, project_dir this repo,
-automation `worker`) but is unserved until the runner can serve more than one instance — the
-enabler item filed from 86fecc3 (its id is in that item's report). When it lands: file §4's
-orders into `sonora` (target_model sonnet), in the stated order, from a session whose cwd is this
-repo; review each landing against its check; keep this file's table honest as rows move to
-"done".
+automation `worker`). That enabler has since landed: the runner now serves `sonora`, phase 1's
+four orders ran there as sonnet owners in their own worktrees, and all four are on `master`
+(see the phase-1 status table in §4).
+
+The standing routine, now that it works: file §4's orders into `sonora` (target_model sonnet),
+in the stated order, from a session whose cwd is this repo; review each landing against its own
+check, re-running that check rather than trusting the order's report; keep §1's "Mirror today"
+column and §4 honest as rows move to done. One rule earned in phase 1: a check that needs a
+live VS Code window can only ever be *half* verified headlessly, so every order should also
+name the headless half, and a reviewer must say plainly which half still waits on the user's
+window instead of quietly claiming it.
