@@ -27,6 +27,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { GalleryServer, probeGallery } = require('./lib/server');
 const { discoveryDir, pruneStaleDiscoveryFiles } = require('./lib/discovery');
+const queueLib = require('./lib/queue');
 
 const MAX_BODY = 64 * 1024; // generous against a {tool, args} body; a guard, not a policy
 
@@ -62,6 +63,7 @@ function readConfig() {
   return {
     python: cfg.get('python', 'python3'),
     port: cfg.get('serverPort', 8888),
+    regenerate: cfg.get('regenerate', 'queue'),
   };
 }
 
@@ -204,10 +206,199 @@ async function handleGalleryMessage(repoRoot, msg) {
     case 'sonora:edit-applied':
       handleEditApplied(repoRoot, msg);
       break;
+    case 'sonora:feedback':
+      await handleFeedback(repoRoot, msg);
+      break;
     default:
-      // sonora:feedback etc. land in later work orders (§4 "1.4").
       break;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Regenerate through the queue (docs/EXTENSION-PLAN.md §4 "1.4"). One entry point,
+// handleFeedback, shared by the gallery's Feedback button (sonora:feedback above) and
+// the sonora.regenerateCard command below — "the same path" the plan's own check
+// names for both.
+// ---------------------------------------------------------------------------
+
+const REGEN_POLL_MS = 30 * 1000;
+const REGEN_MAX_MS = 2 * 60 * 60 * 1000; // 2h, per the plan's own "stop after 2 h"
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Reply straight to the panel's webview, when one is open. A queue-filed run
+ * outlives the panel (the user can close it while regeneration runs), so this is
+ * best-effort by design, never awaited for — postMessage into a disposed webview
+ * throws, which is exactly the "nowhere to reply to" case this swallows. */
+function postToWebview(msg) {
+  if (!panel) return;
+  try {
+    panel.webview.postMessage(msg);
+  } catch (e) {
+    /* panel disposed mid-flight */
+  }
+}
+
+/** sonora.regenerate: "claude" — the framed page's feedback behaves as if unframed
+ * for this one action (EXTENSION-PLAN.md §2 "Settings"): the request still reaches
+ * docs/serve.py's own /_api/feedback, exactly the POST docs/gallery.js's unframed
+ * submitFeedback makes, just issued by the host instead (the framed page never talks
+ * to serve.py's HTTP API directly — see docs/gallery.js's FRAMED branch). */
+function postFeedbackViaServe(port, entry) {
+  return new Promise((resolve, reject) => {
+    const body = Buffer.from(JSON.stringify({
+      path: entry.path,
+      name: entry.name,
+      text: entry.text || '',
+      element: entry.element || null,
+    }), 'utf8');
+    const req = http.request(
+      {
+        host: '127.0.0.1',
+        port,
+        path: '/_api/feedback',
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'content-length': body.length },
+      },
+      (res) => {
+        let out = '';
+        res.on('data', (d) => { out += d; });
+        res.on('end', () => {
+          let parsed;
+          try {
+            parsed = JSON.parse(out);
+          } catch (e) {
+            reject(new Error('docs/serve.py /_api/feedback: invalid JSON response'));
+            return;
+          }
+          if (res.statusCode !== 200 || !parsed.ok) {
+            reject(new Error((parsed && parsed.error) || `HTTP ${res.statusCode}`));
+            return;
+          }
+          resolve(parsed.entry);
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+/** Polls `queue show <id>` every 30s (read-only — never files anything) until it
+ * lands on done/failed, or 2h pass. A withProgress notification covers the wait; on
+ * done, the card's preview is told to reload (it changed on disk); on failed, a
+ * plain error toast — there is no per-card state left to update at this point, the
+ * button's own "Filed #<id>" already reverted on its own timer. */
+async function pollFeedbackRun(repoRoot, { id, name, path: cardPath }) {
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: `Sonora: regenerating ${name} (#${id})` },
+    async () => {
+      const deadline = Date.now() + REGEN_MAX_MS;
+      while (Date.now() < deadline) {
+        await sleep(REGEN_POLL_MS);
+        let status;
+        try {
+          status = await queueLib.show(id, repoRoot);
+        } catch (e) {
+          log(`queue show ${id} failed: ${e.message}`);
+          continue; // transient; the next tick retries, same tolerance as gallery.js's own poll()
+        }
+        if (status === null) continue; // refused during quiet hours — try again next tick
+        if (status === 'done') {
+          postToWebview({ type: 'sonora:reload', path: cardPath });
+          return;
+        }
+        if (status === 'failed') {
+          vscode.window.showErrorMessage(
+            `Sonora: regenerating "${name}" failed — see \`queue show ${id}\` for details.`
+          );
+          return;
+        }
+        // todo / todo_answered / in_progress / blocked / ... — still moving, keep polling
+      }
+      log(`gave up polling queue item #${id} (${name}) after 2h`);
+    }
+  );
+}
+
+/** Files `entry` ({name, path, text, element?}) per the sonora.regenerate setting,
+ * replies sonora:feedback-filed to the webview if one is open, and — only for the
+ * `queue` mode, where there is an actual run to watch — starts pollFeedbackRun in
+ * the background. Shared by handleGalleryMessage's sonora:feedback case and the
+ * sonora.regenerateCard command. */
+async function handleFeedback(repoRoot, entry) {
+  const { regenerate: mode } = readConfig();
+  let filed;
+  try {
+    if (mode === 'hold') {
+      filed = queueLib.hold(entry, repoRoot);
+    } else if (mode === 'claude') {
+      const server = getOrCreateServer(repoRoot);
+      await server.ensureRunning();
+      const served = await postFeedbackViaServe(server.port, entry);
+      filed = { id: served.id, held: served.status === 'held' ? true : undefined };
+    } else {
+      filed = await queueLib.add(entry, repoRoot);
+    }
+  } catch (e) {
+    vscode.window.showErrorMessage(`Sonora: could not file feedback for "${entry.name}": ${e.message}`);
+    log(`error filing feedback: ${e.message}`);
+    return;
+  }
+  postToWebview({ type: 'sonora:feedback-filed', id: filed.id, held: filed.held });
+  if (mode === 'queue') {
+    pollFeedbackRun(repoRoot, { id: filed.id, name: entry.name, path: entry.path }); // not awaited: background
+  }
+}
+
+/** _ds_manifest.json's own `cards` array ({path, name, group, ...}), read directly —
+ * a full tree-backed picker is order 1.3's (EXTENSION-PLAN.md §4 "1.3", lib/manifest.js,
+ * not landed yet); this QuickPick is only the sonora.regenerateCard command's own
+ * fallback for use before that tree exists, and is superseded (not duplicated) once
+ * 1.3's context menu starts passing a tree item's {path, name} directly. */
+async function pickCardFromManifest(repoRoot) {
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, '_ds_manifest.json'), 'utf8'));
+  } catch (e) {
+    vscode.window.showErrorMessage(`Sonora: could not read _ds_manifest.json: ${e.message}`);
+    return null;
+  }
+  const items = (manifest.cards || []).map((c) => ({
+    label: c.name,
+    description: c.group,
+    detail: c.path,
+    card: { path: c.path, name: c.name },
+  }));
+  const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Regenerate which card?' });
+  return picked ? picked.card : null;
+}
+
+/** Command sonora.regenerateCard (EXTENSION-PLAN.md §4 "1.4" deliverable 4): an
+ * input box for the feedback text, then handleFeedback's own path — "the same path"
+ * the plan's check names. `cardArg` is what a future tree context-menu item (order
+ * 1.3) passes; the command palette has no such argument, so it falls back to the
+ * manifest QuickPick above. */
+async function regenerateCard(cardArg) {
+  const repoRoot = findRepoRoot();
+  if (!repoRoot) {
+    vscode.window.showErrorMessage('Sonora: no open workspace folder contains _ds_manifest.json.');
+    return;
+  }
+  let card = cardArg && cardArg.path ? { path: cardArg.path, name: cardArg.name || path.basename(cardArg.path) } : null;
+  if (!card) {
+    card = await pickCardFromManifest(repoRoot);
+    if (!card) return; // cancelled
+  }
+  const text = await vscode.window.showInputBox({
+    prompt: `Regenerate "${card.name}"`,
+    placeHolder: 'What should change?',
+  });
+  if (text === undefined) return; // cancelled
+  await handleFeedback(repoRoot, { name: card.name, path: card.path, text, element: null });
 }
 
 async function restartServer() {
@@ -347,6 +538,7 @@ function activate(context) {
   // Commands must exist even if the control server below fails to bind.
   context.subscriptions.push(vscode.commands.registerCommand('sonora.openDesignSystem', openDesignSystem));
   context.subscriptions.push(vscode.commands.registerCommand('sonora.restartServer', restartServer));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.regenerateCard', regenerateCard));
 
   const dir = discoveryDir(process.env, os.homedir());
   try {

@@ -23,6 +23,10 @@
 			{
 				"command": "sonora.restartServer",
 				"title": "Sonora: Restart gallery server"
+			},
+			{
+				"command": "sonora.regenerateCard",
+				"title": "Sonora: Regenerate card…"
 			}
 		],
 		"configuration": {
@@ -37,6 +41,17 @@
 					"type": "number",
 					"default": 8888,
 					"description": "Port the gallery server (docs/serve.py) answers on. docs/serve.py itself always binds 8888 — see extension/lib/server.js's header comment before changing this."
+				},
+				"sonora.regenerate": {
+					"type": "string",
+					"enum": ["queue", "claude", "hold"],
+					"enumDescriptions": [
+						"File a queue item through ~/.claude/skills/queue's own CLI (extension/lib/queue.js) — the default on this machine, where a headless `claude -p` becomes a queue item anyway.",
+						"Fall back to docs/serve.py's own /_api/feedback — the same headless `claude -p` path the framed page's Feedback button would take if it were running unframed in a browser.",
+						"Record the feedback in .feedback/queue.jsonl (same shape docs/serve.py itself writes) without filing or running anything."
+					],
+					"default": "queue",
+					"description": "How the Feedback button's request is carried out. See docs/EXTENSION-PLAN.md §2 \"Settings\"."
 				}
 			}
 		}
