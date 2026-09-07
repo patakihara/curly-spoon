@@ -1,12 +1,15 @@
 'use strict';
 /**
  * Sonora Design — VS Code parity for the Design System pane of claude.ai/design
- * (docs/EXTENSION-PLAN.md §2, §4 "1.1"). Plain JS, no bundler, no npm dependencies —
+ * (docs/EXTENSION-PLAN.md §2, §4 "1.1"–"1.3"). Plain JS, no bundler, no npm dependencies —
  * mirrors opesus-local.claude-spotlight-0.3.0's shape exactly: vscode-free logic in
- * lib/, this file layers commands, the webview panel and the loopback control server
- * on top, same as claude-spotlight layers its extension.js over lib/core.js.
+ * lib/, this file layers commands, the sidebar (tree views + the Design System webview
+ * view), the status bar and the loopback control server on top, same as claude-spotlight
+ * layers its extension.js over lib/core.js.
  *
- * The panel frames the already-served gallery.html in an <iframe> rather than
+ * The Design System panel lives in the "Sonora" activitybar container as a
+ * WebviewViewProvider, alongside the Cards and Tokens trees — not a WebviewPanel in an
+ * editor column. It frames the already-served gallery.html in an <iframe> rather than
  * re-rendering it inside the webview: the webview's own origin (vscode-webview://…) is
  * foreign to the cards, so drawing there would need the injected-agent + postMessage
  * protocol Claude Design itself uses for its picker. Framing the served page keeps
@@ -27,16 +30,31 @@ const path = require('path');
 const crypto = require('crypto');
 const { GalleryServer, probeGallery } = require('./lib/server');
 const { discoveryDir, pruneStaleDiscoveryFiles } = require('./lib/discovery');
+const { loadManifest } = require('./lib/manifest');
 
 const MAX_BODY = 64 * 1024; // generous against a {tool, args} body; a guard, not a policy
+const DESIGN_VIEW_ID = 'sonora.designSystemView';
+const CARDS_VIEW_ID = 'sonora.cardsView';
+const TOKENS_VIEW_ID = 'sonora.tokensView';
+const DEFAULT_NODE = path.join(os.homedir(), '.local', 'share', 'node22', 'bin', 'node');
+const STATUS_BAR_REFRESH_MS = 15000;
 
 let output = null;
 let extensionUri = null;
 let globalStorageDir = null;
-let panel = null;
 let galleryServer = null;
 let controlServer = null;
 let discoveryFile = null;
+
+let designSystemView = null; // the resolved WebviewView, once the sidebar view has opened
+let designSystemViewRendered = false; // whether .webview.html currently holds the gallery iframe
+let designSystemViewReadyResolvers = [];
+
+let cardsProvider = null;
+let tokensProvider = null;
+let statusBarItem = null;
+let statusBarTimer = null;
+let sonoraTerminal = null;
 
 function log(msg) {
   if (output) output.appendLine(msg);
@@ -57,11 +75,18 @@ function findRepoRoot() {
   return null;
 }
 
+function requireRepoRootOrWarn() {
+  const repoRoot = findRepoRoot();
+  if (!repoRoot) vscode.window.showErrorMessage('Sonora: no open workspace folder contains _ds_manifest.json.');
+  return repoRoot;
+}
+
 function readConfig() {
   const cfg = vscode.workspace.getConfiguration('sonora');
   return {
     python: cfg.get('python', 'python3'),
     port: cfg.get('serverPort', 8888),
+    node: cfg.get('node', '') || DEFAULT_NODE,
   };
 }
 
@@ -81,11 +106,19 @@ function nonce() {
   return crypto.randomBytes(16).toString('base64');
 }
 
+function escapeHtmlText(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 /** Thin shell: an <iframe> of the served gallery plus the postMessage relay script.
  * CSP allows only this one loopback port to be framed, and only the nonce'd
  * media/webview.js to run (EXTENSION-PLAN.md §4 "1.1" deliverable 3). The gallery's
  * origin is threaded through as a data attribute, never templated into an inline
- * script, so no 'unsafe-inline' is ever needed in script-src. */
+ * script, so no 'unsafe-inline' is ever needed in script-src. Works for a WebviewPanel
+ * or a WebviewView alike — both expose the same `.webview` shape this function needs. */
 function buildPanelHtml(webview, port) {
   const n = nonce();
   const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'webview.js'));
@@ -104,50 +137,126 @@ function buildPanelHtml(webview, port) {
 </html>`;
 }
 
-async function openDesignSystem() {
+function emptyStateHtml(message) {
+  return `<!DOCTYPE html><html><body style="font-family:var(--vscode-font-family,sans-serif);padding:1em;color:var(--vscode-errorForeground,#f88);">${escapeHtmlText(
+    message
+  )}</body></html>`;
+}
+
+// ---------------------------------------------------------------------------
+// Design System sidebar view (WebviewViewProvider) — docs/EXTENSION-PLAN.md §4 "1.3":
+// the panel 1.1 built as a WebviewPanel(ViewColumn.Beside) now lives here instead, as a
+// view inside the "Sonora" activitybar container, beside the Cards and Tokens trees.
+// ---------------------------------------------------------------------------
+
+function markDesignSystemViewReady() {
+  const resolvers = designSystemViewReadyResolvers;
+  designSystemViewReadyResolvers = [];
+  resolvers.forEach((r) => r());
+}
+
+function resolveDesignSystemWebviewView(webviewView) {
+  designSystemView = webviewView;
+  designSystemViewRendered = false;
+  webviewView.webview.options = {
+    enableScripts: true,
+    localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
+  };
+  const messageSub = webviewView.webview.onDidReceiveMessage((msg) => {
+    const repoRoot = findRepoRoot();
+    if (repoRoot) handleGalleryMessage(repoRoot, msg);
+  });
+  webviewView.onDidDispose(() => {
+    messageSub.dispose();
+    if (designSystemView === webviewView) {
+      designSystemView = null;
+      designSystemViewRendered = false;
+    }
+  });
+  renderDesignSystemView().then(markDesignSystemViewReady);
+}
+
+/** Ensures docs/serve.py is answering, then (only if not already rendered) sets the
+ * webview's html to the gallery iframe shell. Deliberately does not re-render on every
+ * call — a card reveal must not reload the whole iframe each click; see revealCard(). */
+async function renderDesignSystemView() {
+  if (!designSystemView) return;
+  if (designSystemViewRendered) return;
   const repoRoot = findRepoRoot();
   if (!repoRoot) {
-    vscode.window.showErrorMessage('Sonora: no open workspace folder contains _ds_manifest.json.');
+    designSystemView.webview.html = emptyStateHtml('No open workspace folder contains _ds_manifest.json.');
+    refreshStatusBar();
     return;
   }
-
   const server = getOrCreateServer(repoRoot);
   try {
     const { started } = await server.ensureRunning();
     if (started) log(`docs/serve.py started on :${server.port}`);
   } catch (e) {
-    vscode.window.showErrorMessage(`Sonora: ${e.message}`);
+    designSystemView.webview.html = emptyStateHtml(`Sonora: ${e.message}`);
     log(`error: ${e.message}`);
+    refreshStatusBar();
     return;
   }
+  designSystemView.webview.html = buildPanelHtml(designSystemView.webview, server.port);
+  designSystemViewRendered = true;
+  refreshStatusBar();
+}
 
-  if (panel) {
-    panel.reveal(vscode.ViewColumn.Beside);
-    return;
-  }
+/** Force a fresh iframe shell next render (e.g. after restarting the server on a new
+ * port) — the opposite of renderDesignSystemView()'s normal "render once" behaviour. */
+async function forceRerenderDesignSystemView() {
+  designSystemViewRendered = false;
+  await renderDesignSystemView();
+}
 
-  panel = vscode.window.createWebviewPanel(
-    'sonoraDesignSystem',
-    'Design System',
-    vscode.ViewColumn.Beside,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
-    }
-  );
-  panel.webview.html = buildPanelHtml(panel.webview, server.port);
-  const messageSub = panel.webview.onDidReceiveMessage((msg) => handleGalleryMessage(repoRoot, msg));
-  panel.onDidDispose(() => {
-    messageSub.dispose();
-    panel = null;
+async function waitForDesignSystemView(timeoutMs) {
+  if (designSystemView) return designSystemView;
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(designSystemView), timeoutMs);
+    designSystemViewReadyResolvers.push(() => {
+      clearTimeout(timer);
+      resolve(designSystemView);
+    });
   });
+}
+
+/** Reveals the Design System view (opening the Sonora sidebar if it was closed) and
+ * makes sure it is rendered. Returns the WebviewView on success, null otherwise. */
+async function ensureDesignSystemViewOpen() {
+  // VS Code auto-registers a `<viewId>.focus` command for every contributed view —
+  // reveals the "Sonora" activitybar container and expands this view within it.
+  await vscode.commands.executeCommand(`${DESIGN_VIEW_ID}.focus`);
+  const view = await waitForDesignSystemView(8000);
+  if (!view) return null;
+  await renderDesignSystemView();
+  return designSystemViewRendered ? view : null;
+}
+
+async function openDesignSystem() {
+  const view = await ensureDesignSystemViewOpen();
+  if (!view) vscode.window.showErrorMessage('Sonora: could not open the Design System view.');
+}
+
+/** Opens the panel first if it is closed (EXTENSION-PLAN.md §4 "1.3"), then posts the
+ * reveal message the gallery's framed-mode handler already understands (docs/gallery.js,
+ * order 1.2). Returns whether the message was sent. */
+async function revealCard(cardPath) {
+  const view = await ensureDesignSystemViewOpen();
+  if (!view) {
+    vscode.window.showErrorMessage('Sonora: could not open the Design System view to reveal the card.');
+    return false;
+  }
+  view.webview.postMessage({ type: 'sonora:reveal', path: cardPath });
+  return true;
 }
 
 // ---------------------------------------------------------------------------
 // Gallery <-> host bridge (docs/EXTENSION-PLAN.md §2 "Bridge protocol", §4 "1.2").
 // media/webview.js relays every 'sonora:'-prefixed postMessage from docs/gallery.js
-// here unchanged; this is the only place that inspects message contents.
+// here unchanged; this is the only place that inspects message contents. Unchanged by
+// the sidebar move — the WebviewView's `.webview` exposes the same onDidReceiveMessage
+// shape a WebviewPanel's did.
 // ---------------------------------------------------------------------------
 
 function resolveCardPath(repoRoot, cardPath) {
@@ -211,11 +320,8 @@ async function handleGalleryMessage(repoRoot, msg) {
 }
 
 async function restartServer() {
-  const repoRoot = findRepoRoot();
-  if (!repoRoot) {
-    vscode.window.showErrorMessage('Sonora: no open workspace folder contains _ds_manifest.json.');
-    return;
-  }
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
   // stop() only kills a process THIS extension started (lib/server.js) — a server
   // found already running (folder-open task, another window) is left untouched, and
   // this command simply re-probes/re-spawns around it.
@@ -225,6 +331,8 @@ async function restartServer() {
   try {
     await server.ensureRunning();
     vscode.window.showInformationMessage(`Sonora: gallery server answering on :${server.port}`);
+    if (designSystemView) await forceRerenderDesignSystemView();
+    else refreshStatusBar();
   } catch (e) {
     vscode.window.showErrorMessage(`Sonora: ${e.message}`);
     log(`error: ${e.message}`);
@@ -232,24 +340,362 @@ async function restartServer() {
 }
 
 // ---------------------------------------------------------------------------
+// Manifest-backed sidebar trees (docs/EXTENSION-PLAN.md §4 "1.3") — grouping logic
+// lives in lib/manifest.js (vscode-free); everything TreeItem-shaped lives here.
+// ---------------------------------------------------------------------------
+
+function manifestFilePath(repoRoot) {
+  return path.join(repoRoot, '_ds_manifest.json');
+}
+
+function loadManifestSafe(repoRoot) {
+  if (!repoRoot) return null;
+  try {
+    return loadManifest(manifestFilePath(repoRoot));
+  } catch (e) {
+    log(`manifest read failed: ${e.message}`);
+    return null;
+  }
+}
+
+function escapeXmlAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/** A 16x16 SVG swatch of `value` as a data: URI TreeItem icon — the "inline swatch" the
+ * work order asks for on colour tokens. No file is written; VS Code accepts a data: URI
+ * as an icon path directly. */
+function colorSwatchUri(value) {
+  const safe = escapeXmlAttr(value);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">` +
+    `<rect x="1" y="1" width="14" height="14" rx="3" fill="${safe}" stroke="rgba(128,128,128,0.65)"/></svg>`;
+  return vscode.Uri.parse(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
+}
+
+class CardGroupTreeItem extends vscode.TreeItem {
+  constructor(group, cards) {
+    super(group || '(ungrouped)', vscode.TreeItemCollapsibleState.Expanded);
+    this.contextValue = 'sonora.group';
+    this.description = String(cards.length);
+    this.cards = cards;
+  }
+}
+
+class CardTreeItem extends vscode.TreeItem {
+  constructor(card) {
+    super(card.name || card.path, vscode.TreeItemCollapsibleState.None);
+    this.cardPath = card.path;
+    this.description = card.viewport || '';
+    this.tooltip = [card.subtitle, card.viewport].filter(Boolean).join('\n');
+    this.contextValue = 'sonora.card';
+    this.iconPath = new vscode.ThemeIcon('window');
+    this.command = { command: 'sonora.revealCard', title: 'Reveal in Design System', arguments: [card.path] };
+  }
+}
+
+class CardsTreeProvider {
+  constructor() {
+    this._onDidChangeTreeData = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+    this.groups = [];
+    this.message = 'Loading…';
+  }
+  refresh() {
+    const repoRoot = findRepoRoot();
+    const manifest = loadManifestSafe(repoRoot);
+    this.groups = manifest ? manifest.cardGroups : [];
+    if (manifest) this.message = this.groups.length ? null : 'The manifest has no cards.';
+    else this.message = repoRoot ? 'Could not read _ds_manifest.json — see the Sonora output channel.' : 'No open workspace folder contains _ds_manifest.json.';
+    this._onDidChangeTreeData.fire();
+  }
+  getTreeItem(el) {
+    return el;
+  }
+  getChildren(el) {
+    if (!el) {
+      if (this.message) return [new vscode.TreeItem(this.message)];
+      return this.groups.map((g) => new CardGroupTreeItem(g.group, g.cards));
+    }
+    if (el instanceof CardGroupTreeItem) return el.cards.map((c) => new CardTreeItem(c));
+    return [];
+  }
+}
+
+class TokenKindTreeItem extends vscode.TreeItem {
+  constructor(kind, tokens) {
+    super(kind || '(other)', vscode.TreeItemCollapsibleState.Collapsed);
+    this.contextValue = 'sonora.tokenKind';
+    this.description = String(tokens.length);
+    this.tokens = tokens;
+  }
+}
+
+class TokenTreeItem extends vscode.TreeItem {
+  constructor(token) {
+    super(token.name, vscode.TreeItemCollapsibleState.None);
+    this.description = token.value;
+    this.tooltip = `${token.name}: ${token.value}${token.definedIn ? `\n${token.definedIn}` : ''}`;
+    this.contextValue = 'sonora.token';
+    if (token.kind === 'color' && token.value) this.iconPath = colorSwatchUri(token.value);
+  }
+}
+
+class TokensTreeProvider {
+  constructor() {
+    this._onDidChangeTreeData = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+    this.kinds = [];
+    this.message = 'Loading…';
+  }
+  refresh() {
+    const repoRoot = findRepoRoot();
+    const manifest = loadManifestSafe(repoRoot);
+    this.kinds = manifest ? manifest.tokenGroups : [];
+    if (manifest) this.message = this.kinds.length ? null : 'The manifest has no tokens.';
+    else this.message = repoRoot ? 'Could not read _ds_manifest.json — see the Sonora output channel.' : 'No open workspace folder contains _ds_manifest.json.';
+    this._onDidChangeTreeData.fire();
+  }
+  getTreeItem(el) {
+    return el;
+  }
+  getChildren(el) {
+    if (!el) {
+      if (this.message) return [new vscode.TreeItem(this.message)];
+      return this.kinds.map((k) => new TokenKindTreeItem(k.kind, k.tokens));
+    }
+    if (el instanceof TokenKindTreeItem) return el.tokens.map((t) => new TokenTreeItem(t));
+    return [];
+  }
+}
+
+function setupManifestWatcher(context) {
+  let watchers = [];
+  function onChange() {
+    if (cardsProvider) cardsProvider.refresh();
+    if (tokensProvider) tokensProvider.refresh();
+    refreshStatusBar();
+  }
+  function rebuild() {
+    watchers.forEach((w) => w.dispose());
+    watchers = [];
+    for (const folder of vscode.workspace.workspaceFolders || []) {
+      if (folder.uri.scheme !== 'file') continue;
+      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, '_ds_manifest.json'));
+      watcher.onDidChange(onChange);
+      watcher.onDidCreate(onChange);
+      watcher.onDidDelete(onChange);
+      watchers.push(watcher);
+    }
+  }
+  rebuild();
+  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(rebuild));
+  context.subscriptions.push({ dispose: () => watchers.forEach((w) => w.dispose()) });
+}
+
+async function openCardSource(item) {
+  const cardPath = item && item.cardPath;
+  if (!cardPath) return;
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
+  const fsPath = resolveCardPath(repoRoot, cardPath);
+  try {
+    const doc = await vscode.workspace.openTextDocument(fsPath);
+    await vscode.window.showTextDocument(doc, { preserveFocus: false });
+  } catch (e) {
+    vscode.window.showErrorMessage(`Sonora: could not open ${cardPath}: ${e.message}`);
+  }
+}
+
+async function copyCardPath(item) {
+  const cardPath = item && item.cardPath;
+  if (!cardPath) return;
+  await vscode.env.clipboard.writeText(cardPath);
+  vscode.window.showInformationMessage(`Sonora: copied ${cardPath}`);
+}
+
+// ---------------------------------------------------------------------------
+// Terminal-backed commands (docs/EXTENSION-PLAN.md §4 "1.3" deliverable 3) — every one
+// runs in a single reused Terminal named "Sonora" so its output stays visible.
+// ---------------------------------------------------------------------------
+
+function quoteShellArg(s) {
+  return /^[A-Za-z0-9_\-.\/]+$/.test(s) ? s : `'${String(s).replace(/'/g, "'\\''")}'`;
+}
+
+function getSonoraTerminal(cwd) {
+  if (!sonoraTerminal) sonoraTerminal = vscode.window.createTerminal({ name: 'Sonora', cwd });
+  return sonoraTerminal;
+}
+
+function runInSonoraTerminal(repoRoot, commandLine) {
+  const terminal = getSonoraTerminal(repoRoot);
+  terminal.show(true);
+  terminal.sendText(commandLine);
+}
+
+async function rebuildBundle() {
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
+  const { node } = readConfig();
+  runInSonoraTerminal(repoRoot, `${quoteShellArg(node)} docs/build_bundle.js`);
+}
+
+async function renderCheck() {
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
+  const { node } = readConfig();
+  runInSonoraTerminal(repoRoot, `${quoteShellArg(node)} docs/render_cards.mjs`);
+}
+
+async function checkTokens() {
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
+  const { python } = readConfig();
+  runInSonoraTerminal(repoRoot, `${quoteShellArg(python)} docs/check_tokens.py`);
+}
+
+async function pull() {
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
+  runInSonoraTerminal(repoRoot, 'bash docs/design_pull.sh');
+}
+
+/** Runs docs/gen_gallery.py in the Sonora terminal and, once it exits 0, posts
+ * sonora:reload to the Design System view (docs/EXTENSION-PLAN.md §4 "1.3"). Needs the
+ * terminal's shell-integration API to know when the command finished; falls back to a
+ * fire-and-forget run with a toast explaining why no reload follows automatically if
+ * shell integration is unavailable (e.g. the user disabled it). */
+async function regenerateGallery() {
+  const repoRoot = requireRepoRootOrWarn();
+  if (!repoRoot) return;
+  const { python } = readConfig();
+  const commandLine = `${quoteShellArg(python)} docs/gen_gallery.py`;
+  const terminal = getSonoraTerminal(repoRoot);
+  terminal.show(true);
+  if (!terminal.shellIntegration) {
+    terminal.sendText(commandLine);
+    vscode.window.showInformationMessage(
+      "Sonora: shell integration is off, so the gallery can't auto-reload after this — run Sonora: Open Design System again once the terminal finishes."
+    );
+    return;
+  }
+  const execution = terminal.shellIntegration.executeCommand(commandLine);
+  const sub = vscode.window.onDidEndTerminalShellExecution((e) => {
+    if (e.execution !== execution) return;
+    sub.dispose();
+    if (e.exitCode === 0) {
+      if (designSystemView) designSystemView.webview.postMessage({ type: 'sonora:reload' });
+    } else {
+      vscode.window.showWarningMessage(`Sonora: docs/gen_gallery.py exited ${e.exitCode} — gallery not reloaded.`);
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Status bar (docs/EXTENSION-PLAN.md §4 "1.3" deliverable 4).
+// ---------------------------------------------------------------------------
+
+function formatAge(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return '0s';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
+async function refreshStatusBar() {
+  if (!statusBarItem) return;
+  const repoRoot = findRepoRoot();
+  if (!repoRoot) {
+    statusBarItem.text = 'Sonora: no workspace';
+    statusBarItem.tooltip = 'No open workspace folder contains _ds_manifest.json.';
+    return;
+  }
+  const { port } = readConfig();
+  const gallery = await probeGallery(port);
+  const up = gallery === 200;
+  let age = 'missing';
+  try {
+    const stat = fs.statSync(path.join(repoRoot, '_ds_bundle.js'));
+    age = formatAge(Date.now() - stat.mtimeMs);
+  } catch (e) {
+    /* no bundle yet */
+  }
+  statusBarItem.text = `Sonora: server ${up ? 'up' : 'down'} · bundle ${age}`;
+  statusBarItem.tooltip = 'Click to open the Sonora Design System view';
+}
+
+function setupStatusBar(context) {
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBarItem.command = 'sonora.openDesignSystem';
+  context.subscriptions.push(statusBarItem);
+  statusBarItem.show();
+  refreshStatusBar();
+  statusBarTimer = setInterval(refreshStatusBar, STATUS_BAR_REFRESH_MS);
+  context.subscriptions.push({
+    dispose: () => {
+      clearInterval(statusBarTimer);
+      statusBarTimer = null;
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Loopback control endpoint — protocol mirrors claude-spotlight exactly (its
 // extension.js header comment), swapping only the token header name and tool set.
+// `reveal` and `listCards` (docs/EXTENSION-PLAN.md §4 "1.3" deliverable 5) let
+// extension/bin/sonora-ctl.js drive and inspect the sidebar without clicking anything.
 // ---------------------------------------------------------------------------
 
 async function controlStatus() {
   const { port } = readConfig();
   const gallery = await probeGallery(port);
-  return { panelOpen: !!panel, serverUp: gallery === 200, port, gallery: gallery || 0 };
+  return {
+    designSystemVisible: !!(designSystemView && designSystemView.visible),
+    serverUp: gallery === 200,
+    port,
+    gallery: gallery || 0,
+  };
+}
+
+function controlListCards() {
+  const repoRoot = findRepoRoot();
+  const manifest = loadManifestSafe(repoRoot);
+  if (!manifest) return { groups: [], cards: [] };
+  const groups = [];
+  const cards = [];
+  for (const g of manifest.cardGroups) {
+    groups.push(g.group);
+    for (const c of g.cards) cards.push({ path: c.path, group: g.group, name: c.name, subtitle: c.subtitle, viewport: c.viewport });
+  }
+  return { groups, cards };
 }
 
 async function controlDispatch(payload) {
   const tool = payload && payload.tool;
+  const args = (payload && payload.args) || {};
   switch (tool) {
     case 'status':
       return await controlStatus();
     case 'openDesignSystem':
       await vscode.commands.executeCommand('sonora.openDesignSystem');
       return await controlStatus();
+    case 'reveal': {
+      if (typeof args.path !== 'string' || !args.path) throw new Error('reveal requires args.path (string)');
+      const revealed = await revealCard(args.path);
+      return { revealed, ...(await controlStatus()) };
+    }
+    case 'listCards':
+      return controlListCards();
     default:
       throw new Error(`Unknown tool: ${tool}`);
   }
@@ -347,6 +793,35 @@ function activate(context) {
   // Commands must exist even if the control server below fails to bind.
   context.subscriptions.push(vscode.commands.registerCommand('sonora.openDesignSystem', openDesignSystem));
   context.subscriptions.push(vscode.commands.registerCommand('sonora.restartServer', restartServer));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.rebuildBundle', rebuildBundle));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.renderCheck', renderCheck));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.checkTokens', checkTokens));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.regenerateGallery', regenerateGallery));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.pull', pull));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.revealCard', revealCard));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.openCardSource', openCardSource));
+  context.subscriptions.push(vscode.commands.registerCommand('sonora.copyCardPath', copyCardPath));
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      DESIGN_VIEW_ID,
+      { resolveWebviewView: resolveDesignSystemWebviewView },
+      { webviewOptions: { retainContextWhenHidden: true } }
+    )
+  );
+
+  cardsProvider = new CardsTreeProvider();
+  tokensProvider = new TokensTreeProvider();
+  context.subscriptions.push(vscode.window.registerTreeDataProvider(CARDS_VIEW_ID, cardsProvider));
+  context.subscriptions.push(vscode.window.registerTreeDataProvider(TOKENS_VIEW_ID, tokensProvider));
+  cardsProvider.refresh();
+  tokensProvider.refresh();
+  setupManifestWatcher(context);
+
+  setupStatusBar(context);
+  context.subscriptions.push(vscode.window.onDidCloseTerminal((t) => {
+    if (t === sonoraTerminal) sonoraTerminal = null;
+  }));
 
   const dir = discoveryDir(process.env, os.homedir());
   try {
