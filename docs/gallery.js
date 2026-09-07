@@ -73,6 +73,13 @@
     if (FRAMED) window.parent.postMessage(msg, '*');
   }
 
+  /* FIFO of cards awaiting a sonora:feedback-filed reply. The reply itself carries only
+   * {id, held?} — no path (EXTENSION-PLAN.md §2's bridge-protocol table) — so this file, not the
+   * host, is what remembers which card a given reply belongs to. Safe because the host processes
+   * one postMessage at a time and replies in the order it received them, the same ordering
+   * guarantee postMessage itself already gives this array's push/shift pair. */
+  var pendingFeedback = [];
+
   /* ------------------------------------------------------------------ tiny helpers */
 
   function cardByPath(path) {
@@ -371,11 +378,31 @@
     var text = ta ? ta.value.trim() : '';
     if (!text && !card._element) return;
     var btn = card.querySelector('.om-ds-feedback-btn');
+    var path = card.getAttribute('data-card-path');
+    var name = card.getAttribute('data-card-name');
+    var element = card._element ? card._element.descriptor : null;
+
+    if (FRAMED) {
+      // Framed mode: the extension host files this through the queue (or its own
+      // sonora.regenerate fallback) instead of the /_api/feedback POST below, which
+      // stays exactly as it was for plain-browser use. The host replies with
+      // sonora:feedback-filed (see the bottom of this file); pendingFeedback is the
+      // FIFO that reply is matched back to a card through, since the reply itself
+      // carries no path (EXTENSION-PLAN.md §2's bridge-protocol table).
+      if (ta) { ta.value = ''; autosize(ta); }
+      clearElement(card);
+      closeBox(card);
+      pendingFeedback.push(card);
+      setState(btn, 'queued');
+      postToHost({ type: 'sonora:feedback', name: name, path: path, text: text, element: element });
+      return;
+    }
+
     postJSON('/_api/feedback', {
-      path: card.getAttribute('data-card-path'),
-      name: card.getAttribute('data-card-name'),
+      path: path,
+      name: name,
       text: text,
-      element: card._element ? card._element.descriptor : null,
+      element: element,
       selector: card._element ? card._element.selector : null
     }).then(function (res) {
       if (ta) { ta.value = ''; autosize(ta); }
@@ -397,10 +424,20 @@
     done: 'Regenerated',
     failed: 'Run failed',
     sent: 'Feedback sent',   // SONORA_FEEDBACK_CLAUDE=0: recorded, not run
-    held: 'Feedback sent'
+    held: 'Feedback sent',
+    filed: 'Filed'           // framed mode: overridden with 'Filed #<id>' below, never shown bare
   };
 
-  function setState(btn, state) {
+  // Terminal states: shown briefly, then the button reverts to plain "Feedback" the same way the
+  // real app's own "Feedback sent" does. 'filed'/'held' are the framed-mode equivalents of
+  // 'sent'/'held' above (docs/EXTENSION-PLAN.md §4 "1.4" deliverable 1) — the queue takes over
+  // tracking the actual run from here (the extension's own withProgress notification, not this
+  // button), so there is nothing further for this button to poll toward.
+  var TERMINAL_STATES = { done: 1, failed: 1, sent: 1, held: 1, filed: 1 };
+
+  /* `text`, when given, overrides LABEL[state] verbatim — the framed-mode reply carries its own
+     id/held-until wording (handleFeedbackFiled below) that no static LABEL entry can hold. */
+  function setState(btn, state, text) {
     if (!btn) return;
     var label = btn.querySelector('span');
     clearTimeout(btn._revert);
@@ -410,9 +447,8 @@
       return;
     }
     btn.setAttribute('data-state', state);
-    if (label) label.textContent = LABEL[state] || 'Feedback';
-    // Terminal states linger and then revert, the same way the real app's "Feedback sent" does.
-    if (state === 'done' || state === 'failed' || state === 'sent' || state === 'held') {
+    if (label) label.textContent = text || LABEL[state] || 'Feedback';
+    if (TERMINAL_STATES[state]) {
       btn._revert = setTimeout(function () { setState(btn, null); }, SENT_LINGER_MS);
     }
   }
@@ -1211,6 +1247,23 @@
     location.reload();
   }
 
+  /* Reply to a sonora:feedback this page sent (submitFeedback's FRAMED branch above).
+   * `held`, when present, is either the "HH:MM" quiet-hours release time the queue's own soft-
+   * hold reported (extension/lib/queue.js's add()) — rendered verbatim — or a bare `true` from
+   * the sonora.regenerate "hold"/"claude" fallbacks, which falls back to LABEL.held's default
+   * "Feedback sent" text via setState's own `text || LABEL[state]`. */
+  function handleFeedbackFiled(data) {
+    var card = pendingFeedback.shift();
+    if (!card) return;
+    var btn = card.querySelector('.om-ds-feedback-btn');
+    if (data.held) {
+      var text = (typeof data.held === 'string') ? ('Held until ' + data.held) : undefined;
+      setState(btn, 'held', text);
+    } else {
+      setState(btn, 'filed', 'Filed #' + data.id);
+    }
+  }
+
   if (FRAMED) {
     window.addEventListener('message', function (event) {
       // Only the immediate parent frame (media/webview.js's relay) is ever a legitimate sender
@@ -1220,6 +1273,7 @@
       if (!data || typeof data.type !== 'string') return;
       if (data.type === 'sonora:reveal') handleReveal(data.path);
       else if (data.type === 'sonora:reload') handleReload(data.path);
+      else if (data.type === 'sonora:feedback-filed') handleFeedbackFiled(data);
     });
   }
 
