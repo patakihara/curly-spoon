@@ -1,13 +1,21 @@
 /**
  * Real-browser check for the gallery <-> Sonora extension postMessage bridge
- * (docs/EXTENSION-PLAN.md §2 "Bridge protocol", §4 "1.2"; queue item 73df265).
+ * (docs/EXTENSION-PLAN.md §2 "Bridge protocol", §4 "1.2"/"1.4"; queue items 73df265,
+ * ca71c0c).
  *
  * Drives docs/gallery.js's framed mode directly, the same way the Sonora extension's
  * media/webview.js would: a scratch top-level page under /tmp frames gallery.html and
  * both sends and receives 'sonora:'-prefixed postMessage traffic. media/webview.js
  * itself is a pure relay (confirmed by reading it) with nothing to unit-test beyond
  * that relay contract, so this script exercises gallery.js's own behaviour, which is
- * the part this order actually changed.
+ * the part these orders actually changed.
+ *
+ * The sonora:feedback check below (order 1.4) never reaches docs/serve.py's
+ * /_api/feedback or `bin/queue add` — this scratch page's own script intercepts every
+ * 'sonora:'-prefixed postMessage before it goes anywhere, exactly as
+ * media/webview.js's relay would if nothing were listening on the other end, so
+ * submitting feedback here never files a real queue item or spawns a real run (the
+ * plan's own "do NOT file a real queue item as verification").
  *
  * Assumes gallery.html + .claude-design-vendor/ already exist in this checkout (this
  * script only probes/starts docs/serve.py, it never runs docs/gen_gallery.py — that
@@ -170,6 +178,41 @@ try {
     await page.waitForTimeout(200);
   } while (Date.now() < deadline);
   ok(!!after && after.visible, 'sonora:reveal scrolled the target card into view', JSON.stringify(after));
+
+  /* -------------------------------------------------------- sonora:feedback (order 1.4) ---- */
+
+  // cardPaths[1], not firstPath (ui_kits/desktop, item 5d48f18's known preview-race card) or
+  // targetPath (already scrolled off-screen by the reveal check above) — a plain, uninvolved
+  // card whose own preview iframe this section is about to click into.
+  const fbPath = cardPaths[1];
+  const fbCard = frameLoc.locator(`.om-review-card[data-card-path="${fbPath}"]`);
+  await fbCard.scrollIntoViewIfNeeded();
+  const fbPreviewFrame = page.frameLocator('#g').frameLocator(
+    `.om-review-card[data-card-path="${fbPath}"] .om-ds-preview-mount iframe`
+  );
+  // enterPickMode (openBox's own call, below) needs contentDocument.body to already exist —
+  // wait out the lazy iframe's own load before opening the box.
+  await fbPreviewFrame.locator('body').waitFor({ state: 'attached', timeout: 15000 });
+
+  await fbCard.locator('.om-ds-feedback-btn').click(); // openBox -> enterPickMode
+  await fbPreviewFrame.locator('body *').first().click(); // the picker's own click handler -> attachElement
+  await fbCard.locator('.om-ds-feedback-box textarea').fill('Playwright bridge check: make this element bigger');
+  await fbCard.locator('.om-ds-submit').click(); // submitFeedback's FRAMED branch -> postToHost
+
+  await page.waitForFunction(
+    () => window.__received.some((m) => m.type === 'sonora:feedback'),
+    null,
+    { timeout: 5000 }
+  ).catch(() => {});
+  const feedbacks = await page.evaluate(() => window.__received.filter((m) => m.type === 'sonora:feedback'));
+  ok(feedbacks.length === 1, 'exactly one sonora:feedback message received', JSON.stringify(feedbacks));
+  const fb = feedbacks[0];
+  ok(!!fb && fb.path === fbPath, 'sonora:feedback carries the submitted card\'s path',
+    `expected ${fbPath}, got ${fb && fb.path}`);
+  ok(!!fb && fb.text === 'Playwright bridge check: make this element bigger',
+    'sonora:feedback carries the typed feedback text', JSON.stringify(fb && fb.text));
+  ok(!!fb && typeof fb.element === 'string' && fb.element.indexOf('→ ') === 0,
+    'sonora:feedback carries an element descriptor from the picker', JSON.stringify(fb && fb.element));
 
   // Not asserted: a pre-existing, unrelated rendering race in ui_kits/desktop/index.html's own
   // preview (confirmed reproducible with these same clicks against plain, unmodified, unframed
