@@ -16,7 +16,7 @@ commit 530dec7.
 
 | # | Claude Design feature | Mirror today (browser) | Extension target | Phase |
 |---|---|---|---|---|
-| A1 | Project page shell: chat pane · preview · **Design System** pane · files | Only the Design System pane, pixel-faithful (`gallery.html`) | Same pane, hosted in a VS Code webview; files = the editor itself | 1 |
+| A1 | Project page shell: chat pane · preview · **Design System** pane · files | Only the Design System pane, pixel-faithful (`gallery.html`) | Same pane, hosted in a sidebar `WebviewView` (not an editor-column panel — see §2); files = the editor itself | 1 |
 | A2 | Project menu, "Back to projects", thumbnail upload, publish settings | dropped (no local backend) | Thumbnail = `thumbnail.html` open/edit; publish = n/a | 3 |
 | B1 | Card groups (App Screens / Components / Guidelines / Reference / Brand) with live `<iframe>` previews scaled from the card's declared viewport | done (iframe at box width, not scaled — one known overflow, see gen_gallery.py docstring) | same + sidebar tree of groups→cards, click-to-reveal | 1 |
 | B2 | **Edit** → opens the card source in the app's editor | `/_api/open` → Remote-WSL `code` CLI hop | native `vscode.window.showTextDocument`, line-accurate | 1 |
@@ -53,17 +53,28 @@ treats that file as the authoritative list; the symlink alone is not enough — 
 
 ```
 VS Code (Remote-WSL extension host, node 24)
- ├─ extension.js            commands, tree views, status bar, server lifecycle, queue bridge
+ ├─ extension.js            commands, sidebar (trees + webview view), status bar, server lifecycle, queue bridge
  ├─ lib/server.js           finds/starts docs/serve.py on :8888 (idempotent — serve.py exits if bound)
  ├─ lib/manifest.js         reads _ds_manifest.json → groups/cards/tokens for the tree
  ├─ lib/queue.js            `python3 ~/.claude/skills/queue/bin/queue add …` with cwd = repo root
- └─ WebviewPanel "Design System"
-      └─ media/webview.js   thin shell: <iframe src="http://127.0.0.1:8888/gallery.html">
-                            + postMessage relay in both directions
-                                 └─ gallery.html + docs/gallery.js (unchanged rendering)
-                                      └─ card <iframe>s — same origin as the gallery, so the
-                                         picker keeps reaching into contentDocument directly
+ └─ activitybar container "Sonora"
+      ├─ WebviewView "Design System"     (webview, NOT a WebviewPanel/editor column — see 1.3)
+      │    └─ media/webview.js   thin shell: <iframe src="http://127.0.0.1:8888/gallery.html">
+      │                          + postMessage relay in both directions
+      │                               └─ gallery.html + docs/gallery.js (unchanged rendering)
+      │                                    └─ card <iframe>s — same origin as the gallery, so the
+      │                                       picker keeps reaching into contentDocument directly
+      ├─ TreeView "Cards"                group → card, click posts sonora:reveal to the webview view
+      └─ TreeView "Tokens"               kind → token, colour tokens show an inline swatch
 ```
+
+The Design System pane is a **WebviewView living in the "Sonora" activitybar container**,
+never a `WebviewPanel` opened beside the editor — the sidebar is the only place a design-system
+side panel belongs in an editor (user ruling, 2026-09-07; order 1.1 originally opened it with
+`vscode.window.createWebviewPanel(..., ViewColumn.Beside)`, corrected by order 1.3 to
+`vscode.window.registerWebviewViewProvider` inside the same container as the two trees below).
+`sonora.openDesignSystem` reveals that view (`<viewId>.focus`, auto-registered by VS Code for
+every contributed view) rather than opening/revealing a panel column.
 
 Why an iframe of the served gallery rather than re-rendering the panel inside the webview: the
 webview origin (`vscode-webview://…`) is foreign to the cards, so a panel drawn there would need
@@ -122,19 +133,28 @@ command `sonora.openDesignSystem`), `extension.js`, `lib/server.js` (probe :8888
 `python3 docs/serve.py` detached if unbound, never a second copy), `media/webview.js`
 (iframe shell, CSP), `install.sh` (symlink + extensions.json entry, idempotent), `README.md`.
 Check: run `install.sh`, reload the window, run the command → the panel shows gallery.html and the
-picker outlines elements inside a card preview.
+picker outlines elements inside a card preview. (Order 1.1 opened this panel with
+`createWebviewPanel(..., ViewColumn.Beside)`, an editor column; order 1.3 moved it into the
+"Sonora" activitybar container as a `WebviewViewProvider` — see §2.)
 
 **1.2 Bridge: Edit opens natively, toasts, edit-applied reveal.** Framed mode in `docs/gallery.js`
 (§2 table, first four messages); host handlers. Keep `/_api/open` for the unframed browser.
 Check: Edit on a card opens its file in an editor tab without the `code` CLI (kill it from PATH
 in a terminal and prove it); a Pro-panel save reveals the changed line.
 
-**1.3 Sidebar.** `contributes.views` "Sonora": tree Groups → Cards (click = `sonora:reveal`;
-context menu: Open source, Regenerate…, Copy path) and Tokens grouped by `kind` with the value
-as description. Status bar item: server state + bundle age; commands `sonora.rebuildBundle`,
-`sonora.renderCheck`, `sonora.checkTokens`, `sonora.regenerateGallery`, `sonora.restartServer`,
-`sonora.pull` (terminal running `docs/design_pull.sh`). Check: clicking a card scrolls the panel
-to it; rebuild reports the card count.
+**1.3 Sidebar, and moving the panel into it.** `contributes.viewsContainers.activitybar` "Sonora"
+(`extension/media/sonora-icon.svg`), holding three views: the Design System `WebviewView` (moved
+here from order 1.1's editor-column `WebviewPanel` — see §2), a Cards tree (Groups → Cards, click
+posts `sonora:reveal`, opening the view first if closed; context menu: Open source, Copy path)
+and a Tokens tree grouped by `kind` with the value as description (colour tokens get a generated
+16×16 SVG data-URI swatch icon). Both trees refresh on a `FileSystemWatcher` for
+`_ds_manifest.json`. Status bar item: server state + bundle age, click → `sonora.openDesignSystem`.
+Commands, each in a dedicated "Sonora" terminal: `sonora.rebuildBundle`, `sonora.renderCheck`,
+`sonora.checkTokens`, `sonora.regenerateGallery` (posts `sonora:reload` once
+`docs/gen_gallery.py` exits 0, via the terminal shell-integration API), `sonora.restartServer`,
+`sonora.pull` (`docs/design_pull.sh`). The loopback control endpoint (§4 "1.1") gains `reveal
+{path}` and `listCards`. Check: clicking a card scrolls the panel to it; rebuild reports the card
+count; `sonora-ctl.js listCards` returns all 84 cards grouped correctly.
 
 **1.4 Regenerate through the queue.** `lib/queue.js`: build the same sentence + attachment body
 `docs/serve.py::build_prompt` builds, run `python3 ~/.claude/skills/queue/bin/queue add` with
