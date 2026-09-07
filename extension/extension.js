@@ -137,9 +137,77 @@ async function openDesignSystem() {
     }
   );
   panel.webview.html = buildPanelHtml(panel.webview, server.port);
+  const messageSub = panel.webview.onDidReceiveMessage((msg) => handleGalleryMessage(repoRoot, msg));
   panel.onDidDispose(() => {
+    messageSub.dispose();
     panel = null;
   });
+}
+
+// ---------------------------------------------------------------------------
+// Gallery <-> host bridge (docs/EXTENSION-PLAN.md §2 "Bridge protocol", §4 "1.2").
+// media/webview.js relays every 'sonora:'-prefixed postMessage from docs/gallery.js
+// here unchanged; this is the only place that inspects message contents.
+// ---------------------------------------------------------------------------
+
+function resolveCardPath(repoRoot, cardPath) {
+  return path.isAbsolute(cardPath) ? cardPath : path.join(repoRoot, cardPath);
+}
+
+function findVisibleEditorFor(fsPath) {
+  return vscode.window.visibleTextEditors.find((e) => e.document.uri.fsPath === fsPath) || null;
+}
+
+async function handleOpen(repoRoot, msg) {
+  const fsPath = resolveCardPath(repoRoot, msg.path);
+  let doc;
+  try {
+    doc = await vscode.workspace.openTextDocument(fsPath);
+  } catch (e) {
+    vscode.window.showErrorMessage(`Sonora: could not open ${msg.path}: ${e.message}`);
+    return;
+  }
+  const editor = await vscode.window.showTextDocument(doc, { preserveFocus: false });
+  if (typeof msg.line === 'number' && msg.line > 0) {
+    const lineIndex = Math.min(Math.max(msg.line - 1, 0), doc.lineCount - 1);
+    const range = doc.lineAt(lineIndex).range;
+    editor.selection = new vscode.Selection(range.start, range.start);
+    editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+  }
+}
+
+function handleToast(msg) {
+  vscode.window.showInformationMessage(String(msg.text || ''));
+}
+
+function handleEditApplied(repoRoot, msg) {
+  const fsPath = resolveCardPath(repoRoot, msg.path);
+  const editor = findVisibleEditorFor(fsPath);
+  if (!editor || typeof msg.offset !== 'number') return;
+  // offset is a character offset (matches the data-om-id stamp docs/gallery.js reads it from),
+  // not a byte offset — positionAt is exactly that same char-offset space, so no decoding needed.
+  const offset = Math.min(Math.max(msg.offset, 0), editor.document.getText().length);
+  const pos = editor.document.positionAt(offset);
+  const range = editor.document.lineAt(pos.line).range;
+  editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+}
+
+async function handleGalleryMessage(repoRoot, msg) {
+  if (!msg || typeof msg.type !== 'string') return;
+  switch (msg.type) {
+    case 'sonora:open':
+      await handleOpen(repoRoot, msg);
+      break;
+    case 'sonora:toast':
+      handleToast(msg);
+      break;
+    case 'sonora:edit-applied':
+      handleEditApplied(repoRoot, msg);
+      break;
+    default:
+      // sonora:feedback etc. land in later work orders (§4 "1.4").
+      break;
+  }
 }
 
 async function restartServer() {
