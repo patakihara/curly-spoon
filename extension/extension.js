@@ -31,7 +31,7 @@ const crypto = require('crypto');
 const { GalleryServer, probeGallery } = require('./lib/server');
 const { discoveryDir, pruneStaleDiscoveryFiles } = require('./lib/discovery');
 const queueLib = require('./lib/queue');
-const { loadManifest } = require('./lib/manifest');
+const { loadManifest, resolveColor } = require('./lib/manifest');
 
 const MAX_BODY = 64 * 1024; // generous against a {tool, args} body; a guard, not a policy
 const DESIGN_VIEW_ID = 'sonora.designSystemView';
@@ -630,12 +630,18 @@ class TokenKindTreeItem extends vscode.TreeItem {
 }
 
 class TokenTreeItem extends vscode.TreeItem {
-  constructor(token) {
+  constructor(token, tokenIndex) {
     super(token.name, vscode.TreeItemCollapsibleState.None);
     this.description = token.value;
     this.tooltip = `${token.name}: ${token.value}${token.definedIn ? `\n${token.definedIn}` : ''}`;
     this.contextValue = 'sonora.token';
-    if (token.kind === 'color' && token.value) this.iconPath = colorSwatchUri(token.value);
+    // An alias (`var(--state-success)`) or a gradient cannot be painted into an SVG
+    // fill, so resolve it first and show no swatch at all rather than a black square
+    // claiming to be the token's colour.
+    if (token.kind === 'color' && token.value) {
+      const paint = resolveColor(token.value, tokenIndex);
+      if (paint) this.iconPath = colorSwatchUri(paint);
+    }
   }
 }
 
@@ -644,12 +650,14 @@ class TokensTreeProvider {
     this._onDidChangeTreeData = new vscode.EventEmitter();
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     this.kinds = [];
+    this.tokenIndex = null;
     this.message = 'Loading…';
   }
   refresh() {
     const repoRoot = findRepoRoot();
     const manifest = loadManifestSafe(repoRoot);
     this.kinds = manifest ? manifest.tokenGroups : [];
+    this.tokenIndex = manifest ? manifest.tokenIndex : null;
     if (manifest) this.message = this.kinds.length ? null : 'The manifest has no tokens.';
     else this.message = repoRoot ? 'Could not read _ds_manifest.json — see the Sonora output channel.' : 'No open workspace folder contains _ds_manifest.json.';
     this._onDidChangeTreeData.fire();
@@ -662,7 +670,7 @@ class TokensTreeProvider {
       if (this.message) return [new vscode.TreeItem(this.message)];
       return this.kinds.map((k) => new TokenKindTreeItem(k.kind, k.tokens));
     }
-    if (el instanceof TokenKindTreeItem) return el.tokens.map((t) => new TokenTreeItem(t));
+    if (el instanceof TokenKindTreeItem) return el.tokens.map((t) => new TokenTreeItem(t, this.tokenIndex));
     return [];
   }
 }
