@@ -250,6 +250,44 @@ if [ "$status" -eq 0 ]; then
   [ "$warn" = "1" ] || warn=0
 fi
 
+# Sofia's weekly share: the queue plugin's budget method, the same one bin/auralis-autorun checks
+# before starting. A session that keeps working must also stop when the time-aware weekly
+# allowance runs out or the week reaches the hard 95%, not only at 90% of a window, or it would
+# eat into the part of the week that is hers. Read on mediaserver next to the autorun switch
+# (claude-shared skills/auralis-autorun/budget.py), cached here for 60 s so a busy session makes at
+# most one SSH call a minute. Unreadable leaves the verdict unchanged, like the rest of this gate.
+if [ "$status" -eq 0 ] && [ "${AURALIS_WEEKLY_SHARE:-on}" != "off" ]; then
+  budget_cache="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-budget.json"
+  budget_age=$(( $(date +%s) - $(stat -c %Y "$budget_cache" 2>/dev/null || echo 0) ))
+  if [ ! -s "$budget_cache" ] || [ "$budget_age" -gt 60 ]; then
+    mkdir -p "$(dirname "$budget_cache")" 2>/dev/null
+    timeout 20 ssh -o ConnectTimeout=5 -o BatchMode=yes mediaserver \
+      "${AURALIS_BUDGET_CMD:-python3 .claude-shared/skills/auralis-autorun/budget.py}" \
+      >"$budget_cache.tmp" 2>/dev/null
+    mv -f "$budget_cache.tmp" "$budget_cache" 2>/dev/null
+  fi
+  weekly_verdict="$(python3 -c '
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    print("unknown"); raise SystemExit
+week, avail = d.get("seven_day"), d.get("availability")
+if not isinstance(week, (int, float)) or not isinstance(avail, (int, float)):
+    print("unknown")
+elif week >= 95 or avail <= 0:
+    print("over")
+elif week >= 90 or avail < 0.02:
+    print("warn")
+else:
+    print("ok")
+' "$budget_cache" 2>/dev/null)"
+  case "$weekly_verdict" in
+  over) status=1; warn=0 ;;
+  warn) warn=1 ;;
+  esac
+fi
+
 # The bar is stripped, not merely cosmetic waste: measured against the token
 # counter it is 21 of the 53 tokens in each injected report, and injected
 # context is re-read on every later turn, so it is paid hundreds of times over a
@@ -258,6 +296,10 @@ fi
 # untouched; this strips them on the way into context.
 windows="$(printf '%s\n' "$report" | grep -E '^(Session|Weekly) {2,}' | sed -E 's/\[[^]]*\] +//')"
 [ -n "$windows" ] || allow
+case "${weekly_verdict:-}" in
+over) windows="$windows"$'\n'"Weekly share   used up (autonomous work waits for Sofia's share of the week to refill)" ;;
+warn) windows="$windows"$'\n'"Weekly share   nearly used up" ;;
+esac
 
 emit() {
   # $1 = mode: deny | context
