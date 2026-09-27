@@ -2,21 +2,23 @@
 #
 # Tests for the plan-usage gate hook.
 #
-# The contract is entirely about exit codes and emitted JSON: the guard exits 1
-# and only 1 to mean "over the ceiling", and every other outcome must allow. The
-# fail-open paths are the ones worth pinning, because when they break they break
-# silently in the safe-looking direction — a gate that denies everything looks
-# like a working gate right up until it blocks real work.
+# The contract is entirely about the verdict in budget.py's JSON and the JSON
+# the hook emits: "over" denies, "warn" warns, "ok" reports, and every other
+# outcome must allow. The fail-open paths are the ones worth pinning, because
+# when they break they break silently in the safe-looking direction — a gate
+# that denies everything looks like a working gate right up until it blocks
+# real work.
 #
-# Each case substitutes a stub for scripts/usage-guard.py in a throwaway project
-# directory, so nothing here touches the real credentials or the real endpoint.
+# Each case points AURALIS_BUDGET_CMD at a stub that prints a chosen budget.py
+# line, run locally (AURALIS_MEDIASERVER_LOCAL=1) instead of over SSH, so
+# nothing here touches mediaserver, the real credentials or the real endpoint.
 
 set -uo pipefail
 
 HOOK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/usage-gate.sh"
-# The live checks against mediaserver (weekly share, autorun switch) are exercised separately; keep
-# this suite offline and deterministic.
-export AURALIS_WEEKLY_SHARE=off AURALIS_SWITCH_CHECK=off
+# Offline and deterministic: both mediaserver reads run locally, and the autorun
+# switch is off except in the cases that exercise it.
+export AURALIS_MEDIASERVER_LOCAL=1 AURALIS_SWITCH_CHECK=off
 
 passed=0
 failed=0
@@ -29,24 +31,32 @@ ok() {
   passed=$((passed + 1))
 }
 
-REPORT='Plan usage  (ceiling 90%, checked now)
+STUBS="$(mktemp -d)"
+trap 'rm -rf "$STUBS"' EXIT
 
-Session   [##############]  94.0%   resets in 1h02m  <- OVER
-Weekly    [##]  6.0%   resets in 1d20h
-'
-
-# A project dir whose usage-guard.py exits with $1 after printing the report.
-stub_project() {
-  local code="$1" dir
-  dir="$(mktemp -d)"
-  mkdir -p "$dir/scripts"
-  cat >"$dir/scripts/usage-guard.py" <<EOF
-import sys
-sys.stdout.write("""$REPORT""")
-sys.exit($code)
-EOF
-  printf '%s' "$dir"
+# Points the hook at a budget.py stub printing one reading, the same shape as
+# budget.py's CLI. Resets are given as seconds from now (plus 0.9 s, so the
+# whole seconds the hook computes a moment later come out exact).
+#   budget <verdict> <reason> <five_hour> <seven_day> <availability> <five_reset_s> <week_reset_s>
+budget() {
+  local f
+  f="$(mktemp "$STUBS/budget.XXXXXX")"
+  python3 - "$@" >"$f" <<'PY'
+import json, sys
+from datetime import datetime, timedelta, timezone
+verdict, reason, five, week, avail, five_s, week_s = sys.argv[1:8]
+now = datetime.now(timezone.utc)
+at = lambda s: (now + timedelta(seconds=float(s) + 0.9)).isoformat()
+print(json.dumps({"allowed": verdict != "over", "reason": reason, "verdict": verdict,
+                  "five_hour": float(five), "seven_day": float(week), "availability": float(avail),
+                  "five_hour_ceiling": 80, "seven_day_ceiling": 95,
+                  "five_hour_resets_at": at(five_s), "seven_day_resets_at": at(week_s)}))
+PY
+  export AURALIS_BUDGET_CMD="cat '$f'"
 }
+budget_over() { budget over session_ceiling 94 6 0.3 111 999999; }
+budget_ok() { budget ok ok 40 6 0.3 3600 999999; }
+budget_warn() { budget warn ok 77 6 0.3 3600 999999; }
 
 # Fresh stamp dir per case so the throttle never leaks between tests.
 run_hook() {
@@ -59,9 +69,10 @@ run_hook() {
   return $rc
 }
 
-# --- over the ceiling: deny, on every gated event ------------------------------
+# --- over the limit: deny, on every gated event --------------------------------
 
-dir="$(stub_project 1)"
+dir="$(mktemp -d)"
+budget_over
 
 for event in PreToolUse UserPromptSubmit; do
   out="$(run_hook "$dir" "$event")"
@@ -82,25 +93,43 @@ else:
     assert hs["permissionDecision"] == "deny", hs
     assert hs["hookEventName"] == event, hs
     reason = hs["permissionDecisionReason"]
-assert "94.0%" in reason, reason
-assert "6.0%" in reason, reason
+assert "5-hour  94% of 80% limit, resets in 0h01m" in reason, reason
+assert "Weekly  6% of 95% limit, resets in 11d13h" in reason, reason
+assert "Weekly share" not in reason, reason
 ' "$event" 2>/dev/null; then
-    ok "$event: emits a well-formed deny carrying both windows"
+    ok "$event: emits a well-formed deny carrying both windows, limits and resets"
   else
     fail "$event: deny payload malformed: $out"
   fi
 done
+
+# --- the weekly share: an availability stop says so in the report -------------
+
+budget over weekly_availability 30 60 -0.01 3600 5000
+out="$(run_hook "$dir" PreToolUse)"
+if printf '%s' "$out" | python3 -c '
+import json, sys
+hs = json.load(sys.stdin)["hookSpecificOutput"]
+assert hs["permissionDecision"] == "deny", hs
+assert "Weekly share  used up" in hs["permissionDecisionReason"], hs
+' 2>/dev/null; then
+  ok "weekly_availability: denies and names the weekly share"
+else
+  fail "weekly_availability should deny with a weekly share line: $out"
+fi
 rm -rf "$dir"
 
-# --- under the ceiling: SessionStart reports, and does not deny ----------------
+# --- under the limit: SessionStart reports, and does not deny -----------------
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 out="$(run_hook "$dir" SessionStart)"
 if printf '%s' "$out" | python3 -c '
 import json, sys
 hs = json.load(sys.stdin)["hookSpecificOutput"]
 assert hs["hookEventName"] == "SessionStart", hs
-assert "94.0%" in hs["additionalContext"], hs
+assert "5-hour  40% of 80% limit" in hs["additionalContext"], hs
+assert "Weekly share" not in hs["additionalContext"], hs
 assert "permissionDecision" not in hs, hs
 ' 2>/dev/null; then
   ok "SessionStart: reports usage as context without denying"
@@ -135,25 +164,31 @@ if [ -n "$a" ] && [ -n "$b" ]; then
 else
   fail "REPORT_EVERY=0 should report every time (a='$a' b='$b')"
 fi
+
+# --- the budget reading is cached: one read a minute, not one per call ---------
+
+count_file="$STUBS/budget-count"
+export AURALIS_BUDGET_CMD="echo x >>'$count_file'; $AURALIS_BUDGET_CMD"
+cache="$(mktemp -d)"
+for _ in 1 2 3; do
+  printf '{"hook_event_name":"PreToolUse"}' |
+    CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" AURALIS_USAGE_REPORT_EVERY=0 "$HOOK" >/dev/null 2>&1
+done
+rm -rf "$cache"
+if [ "$(wc -l <"$count_file" 2>/dev/null)" -eq 1 ]; then
+  ok "the budget reading is read once and cached for later calls"
+else
+  fail "expected one budget read for three calls, got $(wc -l <"$count_file" 2>/dev/null)"
+fi
 rm -rf "$dir"
 
-# --- the warning band: under the ceiling, over the warn line -------------------
+# --- the warning band: budget.py says warn -------------------------------------
 #
 # The band matters because the hard stop blocks the very tools needed to commit
-# and write the branch description. A stub that answers "under" at 0.90 and "over" at 0.85
-# is exactly a session sitting between the two.
+# and write the branch description.
 
 dir="$(mktemp -d)"
-mkdir -p "$dir/scripts"
-cat >"$dir/scripts/usage-guard.py" <<EOF
-import sys
-threshold = 0.90
-for i, a in enumerate(sys.argv):
-    if a == "--threshold" and i + 1 < len(sys.argv):
-        threshold = float(sys.argv[i + 1])
-sys.stdout.write("""$REPORT""")
-sys.exit(1 if 87.0 >= threshold * 100 else 0)
-EOF
+budget_warn
 
 out="$(run_hook "$dir" PreToolUse)"
 status=$?
@@ -164,6 +199,7 @@ ctx = hs["additionalContext"]
 assert "permissionDecision" not in hs, "warning band must not deny"
 assert "branch description" in ctx, ctx
 assert "NOW" in ctx, ctx
+assert "5-hour  77% of 80% limit" in ctx, ctx
 ' 2>/dev/null; then
   ok "warning band urges a handoff without blocking"
 else
@@ -193,7 +229,7 @@ fi
 if printf '%s' "$w2" | grep -q "branch description"; then
   ok "the nudge still names the branch description"
 else
-  fail "the short nudge must still name the file: $w2"
+  fail "the short nudge must still name the branch description: $w2"
 fi
 for text in "$w1" "$w2"; do
   printf '%s' "$text" | grep -q "Plan: line" ||
@@ -202,37 +238,43 @@ done
 printf '%s' "$w1" | grep -q "Plan: line" &&
   printf '%s' "$w2" | grep -q "Plan: line" &&
   ok "both warnings ask for the commit's Plan: line"
+
+# A warning driven by the weekly share names it.
+budget warn ok 30 40 0.01 3600 5000
+out="$(run_hook "$dir" PreToolUse)"
+if printf '%s' "$out" | grep -q "Weekly share  nearly used up (1.0% of the week left to spend now)"; then
+  ok "a warning from the weekly share names the share"
+else
+  fail "expected a weekly share line in the warning: $out"
+fi
 rm -rf "$dir"
 
-# --- anything other than exit 1 allows, silently -------------------------------
-
-for code in 2 3; do
-  dir="$(stub_project "$code")"
-  out="$(run_hook "$dir" PreToolUse)"
-  status=$?
-  rm -rf "$dir"
-  if [ "$status" -eq 0 ] && [ -z "$out" ]; then
-    ok "guard exit $code allows with no output"
-  else
-    fail "guard exit $code should allow silently (status=$status output=$out)"
-  fi
-done
-
-# --- a missing guard allows rather than blocking work it cannot measure -------
+# --- unknown or unreadable readings allow, silently ----------------------------
 
 dir="$(mktemp -d)"
-out="$(run_hook "$dir" PreToolUse)"
-status=$?
+for case in unknown garbage empty failing; do
+  case "$case" in
+  unknown) budget unknown read_failed:network 0 0 0 60 60 ;;
+  garbage) export AURALIS_BUDGET_CMD="echo 'not json'" ;;
+  empty) export AURALIS_BUDGET_CMD="true" ;;
+  failing) export AURALIS_BUDGET_CMD="exit 255" ;;
+  esac
+  for event in PreToolUse UserPromptSubmit SessionStart; do
+    out="$(run_hook "$dir" "$event")"
+    status=$?
+    if [ "$status" -eq 0 ] && [ -z "$out" ]; then
+      ok "$case reading ($event) allows with no output"
+    else
+      fail "$case reading ($event) should allow silently (status=$status output=$out)"
+    fi
+  done
+done
 rm -rf "$dir"
-if [ "$status" -eq 0 ] && [ -z "$out" ]; then
-  ok "missing guard allows"
-else
-  fail "missing guard should allow (status=$status output=$out)"
-fi
 
 # --- stdin larger than a pipe buffer is drained without blocking --------------
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 big="$(head -c 200000 /dev/zero | tr '\0' 'x')"
 cache="$(mktemp -d)"
 if printf '{"hook_event_name":"PreToolUse","junk":"%s"}' "$big" |
@@ -246,9 +288,9 @@ rm -rf "$cache" "$dir"
 # =============================================================================
 # Retire-marker check and retirement actions
 #
-# None of the 16 cases above ever set a payload session_id, so they never
-# reach any of this — they are the regression proof that ordinary
-# (interactive, or session_id-less) traffic is completely unaffected.
+# None of the cases above ever set a payload session_id, so they never reach
+# any of this — they are the regression proof that ordinary (interactive, or
+# session_id-less) traffic is completely unaffected.
 # =============================================================================
 
 # A jobs-dir fixture with exactly one job whose state.json carries the given
@@ -259,35 +301,6 @@ make_job() {
   local jobs_dir="$1" session_id="$2" job_id="$3"
   mkdir -p "$jobs_dir/$job_id"
   printf '{"sessionId":"%s"}' "$session_id" >"$jobs_dir/$job_id/state.json"
-}
-
-# Like stub_project, but the stub also answers `--json [--threshold X]`,
-# which arm_respawn_timer needs. Session window is fixed over the ceiling
-# (94%, resets in 111s); weekly is fixed under it (6%) — matching $REPORT's
-# own numbers, so the same fixture project dir works for both the plain
-# report path and the --json path in one hard-trigger test.
-stub_project_json() {
-  local code="$1" dir
-  dir="$(mktemp -d)"
-  mkdir -p "$dir/scripts"
-  cat >"$dir/scripts/usage-guard.py" <<PYEOF
-import sys
-if "--json" in sys.argv:
-    import json
-    print(json.dumps({
-        "available": True,
-        "threshold": 0.90,
-        "over_threshold": True,
-        "windows": {
-            "session": {"percent": 94.0, "resets_at": "2026-01-01T00:00:00+00:00", "seconds_until_reset": 111},
-            "weekly": {"percent": 6.0, "resets_at": "2026-01-08T00:00:00+00:00", "seconds_until_reset": 999999},
-        },
-    }))
-    sys.exit(0)
-sys.stdout.write("""$REPORT""")
-sys.exit($code)
-PYEOF
-  printf '%s' "$dir"
 }
 
 # A recorder: appends its full argv to a log file, so a test can see what
@@ -302,9 +315,36 @@ EOF
   chmod +x "$path"
 }
 
+# A fake bin dir for the retirement actions: recorders for systemd-run and
+# claude, a worktree-gc.sh that touches gc-ran, and an auralis-autorun that
+# does nothing. Sets fake_bin, sysrun_log, claude_log, gc_marker.
+make_fake_bin() {
+  fake_bin="$(mktemp -d)"
+  sysrun_log="$fake_bin/systemd-run.log"
+  claude_log="$fake_bin/claude.log"
+  gc_marker="$fake_bin/gc-ran"
+  make_recorder "$fake_bin/systemd-run" "$sysrun_log"
+  make_recorder "$fake_bin/claude" "$claude_log"
+  printf '#!/usr/bin/env bash\n: >"%s"\n' "$gc_marker" >"$fake_bin/worktree-gc.sh"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$fake_bin/auralis-autorun"
+  chmod +x "$fake_bin/worktree-gc.sh" "$fake_bin/auralis-autorun"
+}
+
+# Runs one retiring PreToolUse call for session $1 with the fake bin dir.
+run_retire() {
+  printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"%s"}' "$1" |
+    env CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" \
+      AURALIS_JOBS_DIR="$jobs_dir" AURALIS_RESPAWN_STATE_DIR="$state_dir" \
+      AURALIS_SYSTEMD_RUN="$fake_bin/systemd-run" AURALIS_CLAUDE_BIN="$fake_bin/claude" \
+      AURALIS_WORKTREE_GC_BIN="$fake_bin/worktree-gc.sh" AURALIS_AUTORUN_BIN="$fake_bin/auralis-autorun" \
+      AURALIS_RESPAWN_MARGIN=10 \
+      "$HOOK" 2>&1 >/dev/null
+}
+
 # --- row 1: no session_id at all -- not a job, falls through, even denying --
 
-dir="$(stub_project 1)"
+dir="$(mktemp -d)"
+budget_over
 jobs_dir="$(mktemp -d)"
 make_job "$jobs_dir" "some-other-session" "otherjob1"
 state_dir="$(mktemp -d)"
@@ -312,7 +352,7 @@ cache="$(mktemp -d)"
 out="$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash"}' |
   env CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" AURALIS_JOBS_DIR="$jobs_dir" AURALIS_RESPAWN_STATE_DIR="$state_dir" "$HOOK" 2>/dev/null)"
 status=$?
-if [ "$status" -eq 0 ] && printf '%s' "$out" | grep -q "94.0%" && ! printf '%s' "$out" | grep -q "retired"; then
+if [ "$status" -eq 0 ] && printf '%s' "$out" | grep -q "94%" && ! printf '%s' "$out" | grep -q "retired"; then
   ok "row 1: no session_id -- ordinary deny, unaffected by an unrelated job existing"
 else
   fail "row 1 broken: status=$status out=$out"
@@ -323,7 +363,8 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache"
 
 # --- row 2: session_id present, no matching job -- interactive, falls through
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 jobs_dir="$(mktemp -d)"
 make_job "$jobs_dir" "some-other-session" "otherjob2"
 state_dir="$(mktemp -d)"
@@ -344,7 +385,8 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache"
 
 # --- row 3: session_id present, jobs dir unreadable -- unresolvable, deny -----
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 jobs_dir="$(mktemp -d)"
 chmod 000 "$jobs_dir"
 state_dir="$(mktemp -d)"
@@ -378,7 +420,8 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache"
 # would let a retired incumbent through on exactly the call this check exists
 # to cover, the moment its usage reading itself reads back under the ceiling.
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 jobs_dir="$(mktemp -d)"
 job_id="already-retired-malformed-payload"
 make_job "$jobs_dir" "sess-does-not-matter" "$job_id"
@@ -403,12 +446,13 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache"
 
 # --- row 4: job found, retire marker already present -- deny, durably --------
 #
-# The guard stub answers UNDER the ceiling (status 0) here deliberately: the
-# whole point of the marker is that it denies regardless of what the current
-# usage reading says, because the job was already retired earlier and must
-# never un-retire just because the window came back under the ceiling.
+# The budget stub answers UNDER the limit here deliberately: the whole point
+# of the marker is that it denies regardless of what the current usage
+# reading says, because the job was already retired earlier and must never
+# un-retire just because the window came back under the limit.
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 jobs_dir="$(mktemp -d)"
 make_job "$jobs_dir" "sess-already-retired" "retiredjob1"
 state_dir="$(mktemp -d)"
@@ -445,7 +489,8 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache"
 
 # --- row 5: job found, no marker -- ordinary gating, JOB_ID resolved silently -
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 jobs_dir="$(mktemp -d)"
 make_job "$jobs_dir" "sess-not-yet-retired" "notretiredjob1"
 state_dir="$(mktemp -d)"
@@ -468,11 +513,12 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache"
 #
 # The retire-marker check itself needs python3; without it, this check
 # cannot run at all -- deliberately a fall-through, not a deny, since
-# nothing here can even tell whether a job record exists. The pre-existing
-# GUARD/python3 fail-open checks further down independently allow the rest
-# of the hook once they see python3 is missing too.
+# nothing here can even tell whether a job record exists. The python3
+# fail-open check further down independently allows the rest of the hook
+# once it sees python3 is missing too.
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 jobs_dir="$(mktemp -d)"
 make_job "$jobs_dir" "sess-nopy" "nopyjob1"
 state_dir="$(mktemp -d)"
@@ -494,38 +540,14 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$cache" "$fakebin"
 
 # --- hard trigger: marker written, timer armed, gc launched, courtesy stop ----
 
-dir="$(stub_project_json 1)"
+dir="$(mktemp -d)"
+budget_over # session_ceiling, 5-hour resets in 111 s
 jobs_dir="$(mktemp -d)"
 state_dir="$(mktemp -d)"
 make_job "$jobs_dir" "sess-retire-1" "job00001"
-
-fake_bin="$(mktemp -d)"
-sysrun_log="$(mktemp)"
-claude_log="$(mktemp)"
-gc_marker="$fake_bin/gc-ran"
-make_recorder "$fake_bin/systemd-run" "$sysrun_log"
-make_recorder "$fake_bin/claude" "$claude_log"
-
-cat >"$fake_bin/worktree-gc.sh" <<EOF
-#!/usr/bin/env bash
-: >"$gc_marker"
-EOF
-chmod +x "$fake_bin/worktree-gc.sh"
-
-cat >"$fake_bin/auralis-autorun" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-chmod +x "$fake_bin/auralis-autorun"
-
+make_fake_bin
 cache="$(mktemp -d)"
-printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"sess-retire-1"}' |
-  env CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" \
-    AURALIS_JOBS_DIR="$jobs_dir" AURALIS_RESPAWN_STATE_DIR="$state_dir" \
-    AURALIS_SYSTEMD_RUN="$fake_bin/systemd-run" AURALIS_CLAUDE_BIN="$fake_bin/claude" \
-    AURALIS_WORKTREE_GC_BIN="$fake_bin/worktree-gc.sh" AURALIS_AUTORUN_BIN="$fake_bin/auralis-autorun" \
-    AURALIS_RESPAWN_MARGIN=10 \
-    "$HOOK" >/dev/null 2>&1
+run_retire "sess-retire-1" >/dev/null
 status=$?
 
 # retire_job's own side effects are backgrounded/detached -- poll briefly
@@ -541,8 +563,8 @@ else
   fail "hard trigger: retire marker not written (status=$status)"
 fi
 
-if grep -q "auralis-respawn-job00001" "$sysrun_log" 2>/dev/null && grep -q -- "--on-active=121" "$sysrun_log" 2>/dev/null; then
-  ok "hard trigger: one-shot timer armed with seconds_until_reset + margin (111 + 10 = 121)"
+if grep -q "auralis-respawn-job00001" "$sysrun_log" 2>/dev/null && grep -q -- "--on-active=121 " "$sysrun_log" 2>/dev/null; then
+  ok "hard trigger, session_ceiling: one-shot armed at five_hour_resets_at + margin (111 + 10 = 121)"
 else
   fail "hard trigger: systemd-run not invoked with the expected delay: $(cat "$sysrun_log" 2>/dev/null)"
 fi
@@ -558,31 +580,57 @@ if grep -q "stop job00001" "$claude_log" 2>/dev/null; then
 else
   fail "hard trigger: courtesy stop not issued: $(cat "$claude_log" 2>/dev/null)"
 fi
-rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache" "$sysrun_log" "$claude_log"
+rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache"
+
+# --- the restart moment follows the reason, as in the queue plugin's runner ---
+#
+# A weekly stop (hard ceiling or time-aware share) arms at the weekly reset, the
+# share's true upper bound. Any other reason has no known moment: no one-shot,
+# said on stderr, and the job is still retired.
+
+for case in weekly_availability weekly_ceiling other; do
+  dir="$(mktemp -d)"
+  case "$case" in
+  weekly_availability) budget over weekly_availability 30 60 -0.01 111 5000 ;;
+  weekly_ceiling) budget over weekly_ceiling 30 96 -0.5 111 5000 ;;
+  other) budget over some_new_reason 30 60 0.1 111 5000 ;;
+  esac
+  jobs_dir="$(mktemp -d)"
+  state_dir="$(mktemp -d)"
+  make_job "$jobs_dir" "sess-$case" "job-$case"
+  make_fake_bin
+  cache="$(mktemp -d)"
+  err_out="$(run_retire "sess-$case")"
+  sleep 0.2
+  if [ "$case" = other ]; then
+    if [ ! -s "$sysrun_log" ] && [ -f "$state_dir/retired/job-$case" ] &&
+      printf '%s' "$err_out" | grep -q "no restart moment"; then
+      ok "hard trigger, unrecognised reason: retired, no one-shot armed, said on stderr"
+    else
+      fail "hard trigger, unrecognised reason: sysrun=$(cat "$sysrun_log" 2>/dev/null) err=$err_out"
+    fi
+  elif grep -q -- "--on-active=5010 " "$sysrun_log" 2>/dev/null; then
+    ok "hard trigger, $case: one-shot armed at seven_day_resets_at + margin (5000 + 10)"
+  else
+    fail "hard trigger, $case: expected --on-active=5010: $(cat "$sysrun_log" 2>/dev/null) $err_out"
+  fi
+  rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache"
+done
 
 # --- hard trigger, interactive session (no job record): never retired --------
 #
 # The single highest-consequence case: an interactive session must never be
 # retired, marker-written, timer-armed, or stopped, even when it happens to
-# be over the ceiling and gets denied normally.
+# be over the limit and gets denied normally.
 
-dir="$(stub_project_json 1)"
+dir="$(mktemp -d)"
+budget_over
 jobs_dir="$(mktemp -d)"
 state_dir="$(mktemp -d)"
 # jobs_dir intentionally has no job matching this session -- interactive.
-
-fake_bin="$(mktemp -d)"
-sysrun_log="$(mktemp)"
-claude_log="$(mktemp)"
-make_recorder "$fake_bin/systemd-run" "$sysrun_log"
-make_recorder "$fake_bin/claude" "$claude_log"
-
+make_fake_bin
 cache="$(mktemp -d)"
-printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"sess-interactive-over-ceiling"}' |
-  env CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" \
-    AURALIS_JOBS_DIR="$jobs_dir" AURALIS_RESPAWN_STATE_DIR="$state_dir" \
-    AURALIS_SYSTEMD_RUN="$fake_bin/systemd-run" AURALIS_CLAUDE_BIN="$fake_bin/claude" \
-    "$HOOK" >/dev/null 2>&1
+run_retire "sess-interactive-over-ceiling" >/dev/null
 status=$?
 sleep 0.3 # give any (wrongly-fired) background job a moment to land
 
@@ -591,7 +639,7 @@ if [ "$status" -eq 0 ] && [ ! -d "$state_dir/retired" ] && [ ! -s "$sysrun_log" 
 else
   fail "an interactive session must never be retired: marker_dir=$([ -d "$state_dir/retired" ] && echo present || echo absent) sysrun=$(cat "$sysrun_log" 2>/dev/null) claude=$(cat "$claude_log" 2>/dev/null)"
 fi
-rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache" "$sysrun_log" "$claude_log"
+rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache"
 
 # --- hard trigger: a hanging systemd-run does not exceed the arm-timeout bound
 #
@@ -603,36 +651,17 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache" "$sysrun_log" "$clau
 # invocation take anywhere near that long, and the timeout must be logged as
 # a failure on stderr, not swallowed silently.
 
-dir="$(stub_project_json 1)"
+dir="$(mktemp -d)"
+budget_over
 jobs_dir="$(mktemp -d)"
 state_dir="$(mktemp -d)"
 make_job "$jobs_dir" "sess-retire-hang" "job-hang-1"
-
-fake_bin="$(mktemp -d)"
-claude_log="$(mktemp)"
-make_recorder "$fake_bin/claude" "$claude_log"
-
-cat >"$fake_bin/systemd-run" <<'EOF'
-#!/usr/bin/env bash
-sleep 30
-EOF
-chmod +x "$fake_bin/systemd-run"
-
-cat >"$fake_bin/auralis-autorun" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-chmod +x "$fake_bin/auralis-autorun"
-
+make_fake_bin
+printf '#!/usr/bin/env bash\nsleep 30\n' >"$fake_bin/systemd-run"
+rm -f "$fake_bin/worktree-gc.sh"
 cache="$(mktemp -d)"
 start_ts=$(date +%s)
-err_out="$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"sess-retire-hang"}' |
-  env CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" \
-    AURALIS_JOBS_DIR="$jobs_dir" AURALIS_RESPAWN_STATE_DIR="$state_dir" \
-    AURALIS_SYSTEMD_RUN="$fake_bin/systemd-run" AURALIS_CLAUDE_BIN="$fake_bin/claude" \
-    AURALIS_WORKTREE_GC_BIN="$fake_bin/no-such-worktree-gc.sh" AURALIS_AUTORUN_BIN="$fake_bin/auralis-autorun" \
-    AURALIS_RESPAWN_MARGIN=10 AURALIS_RESPAWN_ARM_TIMEOUT=1 \
-    "$HOOK" 2>&1 >/dev/null)"
+err_out="$(AURALIS_RESPAWN_ARM_TIMEOUT=1 run_retire "sess-retire-hang")"
 status=$?
 end_ts=$(date +%s)
 elapsed=$((end_ts - start_ts))
@@ -648,7 +677,71 @@ if printf '%s' "$err_out" | grep -q "systemd-run timed out"; then
 else
   fail "hard trigger: no timeout failure logged on stderr: $err_out"
 fi
-rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache" "$claude_log"
+rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache"
+
+# =============================================================================
+# The autorun pause switch (background jobs only)
+# =============================================================================
+#
+# AURALIS_SWITCH_CMD stands in for reading the control file on mediaserver.
+
+switch_case() {
+  # $1 = session id, $2 = switch file contents; prints the hook's stdout
+  printf '%s' "$2" >"$STUBS/control"
+  printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"%s"}' "$1" |
+    env CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" AURALIS_JOBS_DIR="$jobs_dir" \
+      AURALIS_RESPAWN_STATE_DIR="$state_dir" AURALIS_SWITCH_CHECK=on \
+      AURALIS_SWITCH_CMD="cat '$STUBS/control'" "$HOOK" 2>/dev/null
+}
+
+dir="$(mktemp -d)"
+budget_ok
+jobs_dir="$(mktemp -d)"
+state_dir="$(mktemp -d)"
+make_job "$jobs_dir" "sess-switch" "job-switch"
+
+cache="$(mktemp -d)"
+out="$(switch_case sess-switch "paused
+at: $(date -d '-20 minutes' -Iseconds)
+")"
+if printf '%s' "$out" | python3 -c '
+import json, sys
+hs = json.load(sys.stdin)["hookSpecificOutput"]
+assert hs["permissionDecision"] == "deny", hs
+assert "paused" in hs["permissionDecisionReason"], hs
+' 2>/dev/null; then
+  ok "switch paused past the 10-minute grace: a background job is denied"
+else
+  fail "paused switch past grace should deny: $out"
+fi
+rm -rf "$cache"
+
+cache="$(mktemp -d)"
+out="$(switch_case sess-switch "paused
+at: $(date -d '-2 minutes' -Iseconds)
+")"
+if printf '%s' "$out" | python3 -c '
+import json, sys
+hs = json.load(sys.stdin)["hookSpecificOutput"]
+assert "permissionDecision" not in hs, hs
+assert "Land your work now" in hs["additionalContext"], hs
+' 2>/dev/null; then
+  ok "switch paused within the grace: a background job is warned, not denied"
+else
+  fail "paused switch within grace should warn: $out"
+fi
+rm -rf "$cache"
+
+cache="$(mktemp -d)"
+out="$(switch_case sess-interactive "paused
+at: $(date -d '-20 minutes' -Iseconds)
+")"
+if ! printf '%s' "$out" | grep -q "paused"; then
+  ok "switch paused: an interactive session is never affected"
+else
+  fail "paused switch must not touch an interactive session: $out"
+fi
+rm -rf "$cache" "$dir" "$jobs_dir" "$state_dir"
 
 # =============================================================================
 # Worktree-gc dispatch cadences
@@ -656,7 +749,8 @@ rm -rf "$dir" "$jobs_dir" "$state_dir" "$fake_bin" "$cache" "$claude_log"
 
 # --- SessionStart launches worktree-gc unconditionally ------------------------
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 fake_bin="$(mktemp -d)"
 gc_marker="$fake_bin/gc-ran"
 cat >"$fake_bin/worktree-gc.sh" <<EOF
@@ -677,7 +771,8 @@ rm -rf "$dir" "$fake_bin" "$cache"
 
 # --- PreToolUse: throttled -- first call launches, second (same cache) does not
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 fake_bin="$(mktemp -d)"
 gc_log="$fake_bin/gc.log"
 cat >"$fake_bin/worktree-gc.sh" <<EOF
@@ -706,7 +801,8 @@ rm -rf "$dir" "$fake_bin" "$cache"
 
 # --- AURALIS_WORKTREE_GC_EVERY=0 disables the throttle -------------------------
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 fake_bin="$(mktemp -d)"
 gc_log="$fake_bin/gc.log"
 cat >"$fake_bin/worktree-gc.sh" <<EOF
@@ -730,11 +826,12 @@ fi
 rm -rf "$dir" "$fake_bin" "$cache"
 
 # --- when worktree-gc.sh is absent, nothing is launched and nothing errors ----
-# (this is what every one of the original 16 cases above already exercised
-# implicitly -- their throwaway project dirs never have scripts/hooks/
-# worktree-gc.sh -- but it is worth pinning explicitly.)
+# (most cases above already exercise this implicitly -- their throwaway
+# project dirs never have scripts/hooks/worktree-gc.sh -- but it is worth
+# pinning explicitly.)
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 cache="$(mktemp -d)"
 out="$(printf '{"hook_event_name":"SessionStart"}' |
   CLAUDE_PROJECT_DIR="$dir" XDG_CACHE_HOME="$cache" "$HOOK" 2>&1)"
@@ -753,7 +850,8 @@ rm -rf "$dir" "$cache"
 # WARN_STAMP, JOBS_DIR, RESPAWN_STATE_DIR, GC_STAMP, AUTORUN_BIN) is written
 # as ${VAR:-${HOME:-}/...}, never ${VAR:-$HOME/...}, for exactly this reason.
 
-dir="$(stub_project 0)"
+dir="$(mktemp -d)"
+budget_ok
 out="$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash"}' |
   env -u HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME -u CLAUDE_CONFIG_DIR \
     -u AURALIS_JOBS_DIR -u AURALIS_RESPAWN_STATE_DIR -u AURALIS_AUTORUN_BIN \

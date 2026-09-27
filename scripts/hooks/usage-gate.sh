@@ -26,8 +26,19 @@
 #
 # ## Failing open
 #
-# Every path allows unless the guard positively reports being over the ceiling.
-# See scripts/usage-guard.py for why that direction is deliberate.
+# Every path allows unless the reading positively says over the limit. The
+# reading is the whole account's real usage, asked of the same endpoint `/usage`
+# uses; it is either right or unavailable, and unavailable must never mean
+# blocked.
+#
+# ## One set of limits
+#
+# The limits live in one place: budget.py in the claude-shared auralis-autorun
+# skill on mediaserver, the same check bin/auralis-autorun makes before it
+# starts a session. A session may start only while usage is under them, and
+# this gate stops a running session when usage reaches them, so the two can
+# never disagree. This script takes budget.py's verdict as it is and has no
+# thresholds of its own.
 #
 # ## Retirement, the one deliberate exception to "failing open"
 #
@@ -41,7 +52,7 @@
 # session may already be running in the same checkout.
 #
 # The retire-marker check below runs BEFORE every other fail-open bail-out in
-# this file (missing GUARD, missing python3, an unparseable usage report) and
+# this file (missing python3, an unreadable usage reading) and
 # INVERTS the philosophy above for this one check only: it denies when it
 # cannot determine whether a job is retired, rather than allowing. Placed
 # after those bail-outs, it would inherit "allow" on exactly the inputs it
@@ -72,7 +83,6 @@
 set -uo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-GUARD="$PROJECT_DIR/scripts/usage-guard.py"
 STAMP="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-usage-report.stamp"
 REPORT_EVERY="${AURALIS_USAGE_REPORT_EVERY:-600}"
 
@@ -90,6 +100,32 @@ RETIRE_DIR="$RESPAWN_STATE_DIR/retired"
 payload="$(cat 2>/dev/null)"
 
 allow() { exit 0; }
+
+# Runs a shell command on mediaserver, where the autorun switch and budget.py
+# live. AURALIS_MEDIASERVER_LOCAL=1 runs it here instead, which is how the
+# tests stub both reads without a network.
+on_mediaserver() {
+  if [ "${AURALIS_MEDIASERVER_LOCAL:-}" = "1" ]; then
+    timeout 20 sh -c "$1"
+  else
+    timeout 20 ssh -o ConnectTimeout=5 -o BatchMode=yes mediaserver "$1"
+  fi
+}
+
+# Refreshes a cached mediaserver reading when it is missing or older than 60 s,
+# so a busy session makes at most one SSH call a minute per reading. A failed
+# read is cached as empty for the same minute, so an unreachable mediaserver
+# costs one connect timeout a minute rather than one per tool call.
+refresh_cache() {
+  # $1 = cache file, $2 = command
+  local age
+  age=$(( $(date +%s) - $(stat -c %Y "$1" 2>/dev/null || echo 0) ))
+  if [ ! -e "$1" ] || [ "$age" -gt 60 ]; then
+    mkdir -p "$(dirname "$1")" 2>/dev/null
+    on_mediaserver "$2" >"$1.tmp" 2>/dev/null
+    mv -f "$1.tmp" "$1" 2>/dev/null
+  fi
+}
 
 # Deny form used only for a retired-or-unresolvable job (see the header
 # comment). Independent of emit()/$windows below -- this can fire before
@@ -225,17 +261,11 @@ esac
 # lives on mediaserver). Only background jobs are affected, never Sofia's own sessions in this repo.
 # When it says paused, the job gets a 10-minute grace to land its work, warned on every tool call,
 # and after that every tool call is denied; bin/auralis-autorun then stops the session on its next
-# tick. Read over SSH at most once a minute; unreadable leaves the session alone (the start check
-# in bin/auralis-autorun is the part that fails closed).
+# tick. Read at most once a minute; unreadable leaves the session alone (the start check in
+# bin/auralis-autorun is the part that fails closed).
 if [ -n "$JOB_ID" ] && [ "$event" = "PreToolUse" ] && [ "${AURALIS_SWITCH_CHECK:-on}" != "off" ]; then
   switch_cache="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-switch"
-  switch_age=$(( $(date +%s) - $(stat -c %Y "$switch_cache" 2>/dev/null || echo 0) ))
-  if [ ! -s "$switch_cache" ] || [ "$switch_age" -gt 60 ]; then
-    mkdir -p "$(dirname "$switch_cache")" 2>/dev/null
-    timeout 20 ssh -o ConnectTimeout=5 -o BatchMode=yes mediaserver \
-      'cat .local/state/auralis-autorun/control' >"$switch_cache.tmp" 2>/dev/null
-    mv -f "$switch_cache.tmp" "$switch_cache" 2>/dev/null
-  fi
+  refresh_cache "$switch_cache" "${AURALIS_SWITCH_CMD:-cat .local/state/auralis-autorun/control}"
   if [ "$(head -1 "$switch_cache" 2>/dev/null)" = "paused" ]; then
     paused_at="$(sed -n 's/^at: //p' "$switch_cache" | head -1)"
     paused_for=$(( $(date +%s) - $(date -d "$paused_at" +%s 2>/dev/null || date +%s) ))
@@ -259,84 +289,78 @@ PAUSE
   fi
 fi
 
-[ -f "$GUARD" ] || allow
 command -v python3 >/dev/null 2>&1 || allow
 
-# Stated explicitly rather than inherited from the guard's CLI default: the
-# ceiling is a decision, and leaving it implicit means a change to that default
-# silently moves it. The user set 90.
-CEILING="${AURALIS_USAGE_CEILING:-0.90}"
-WARN_AT="${AURALIS_USAGE_WARN:-0.85}"
+# --- The usage reading: budget.py's one JSON line (see "One set of limits") --
+budget_cache="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-budget.json"
+refresh_cache "$budget_cache" "${AURALIS_BUDGET_CMD:-python3 .claude-shared/skills/auralis-autorun/budget.py}"
 
-report="$(python3 "$GUARD" --threshold "$CEILING" 2>/dev/null)"
-status=$?
-
-# 1 means over the ceiling. 0 means under. Anything else could not measure.
-[ "$status" -eq 0 ] || [ "$status" -eq 1 ] || allow
-
-# The warning band exists because the hard stop blocks the tools needed to stop
-# *well*. Past the ceiling every call is denied — including the Bash and Edit
-# calls required to commit, push, or write the branch description. A
-# session gated mid-task therefore cannot record what it was doing, and the
-# fresh session that replaces it starts blind. So there is a band below the
-# ceiling where work is still permitted but the session is told, on every tool
-# call, to land what it has now. Losing an hour of uncommitted work to a limit
-# is a worse outcome than stopping a few minutes early.
-warn=0
-if [ "$status" -eq 0 ]; then
-  warn="$(python3 "$GUARD" --threshold "$WARN_AT" >/dev/null 2>&1 || echo 1)"
-  [ "$warn" = "1" ] || warn=0
-fi
-
-# Sofia's weekly share: the queue plugin's budget method, the same one bin/auralis-autorun checks
-# before starting. A session that keeps working must also stop when the time-aware weekly
-# allowance runs out or the week reaches the hard 95%, not only at 90% of a window, or it would
-# eat into the part of the week that is hers. Read on mediaserver next to the autorun switch
-# (claude-shared skills/auralis-autorun/budget.py), cached here for 60 s so a busy session makes at
-# most one SSH call a minute. Unreadable leaves the verdict unchanged, like the rest of this gate.
-if [ "$status" -eq 0 ] && [ "${AURALIS_WEEKLY_SHARE:-on}" != "off" ]; then
-  budget_cache="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-budget.json"
-  budget_age=$(( $(date +%s) - $(stat -c %Y "$budget_cache" 2>/dev/null || echo 0) ))
-  if [ ! -s "$budget_cache" ] || [ "$budget_age" -gt 60 ]; then
-    mkdir -p "$(dirname "$budget_cache")" 2>/dev/null
-    timeout 20 ssh -o ConnectTimeout=5 -o BatchMode=yes mediaserver \
-      "${AURALIS_BUDGET_CMD:-python3 .claude-shared/skills/auralis-autorun/budget.py}" \
-      >"$budget_cache.tmp" 2>/dev/null
-    mv -f "$budget_cache.tmp" "$budget_cache" 2>/dev/null
-  fi
-  weekly_verdict="$(python3 -c '
+# Line 1: the verdict (ok | warn | over | unknown). Line 2: seconds until the
+# moment a stopped session can restart, or empty. The rest: the windows report.
+#
+# The restart moment mirrors the queue plugin's runner: a 5-hour stop waits for
+# the 5-hour reset; a weekly stop, by the hard ceiling or by the time-aware
+# share, waits for the weekly reset. The share can clear earlier, but the reset
+# is its true upper bound, and bin/auralis-autorun's 10-minute tick re-checks
+# in between. Any other reason has no known moment, so no one-shot.
+reading="$(python3 - "$budget_cache" <<'PY' 2>/dev/null
 import json, sys
+from datetime import datetime, timezone
+
 try:
     d = json.load(open(sys.argv[1]))
 except Exception:
     print("unknown"); raise SystemExit
-week, avail = d.get("seven_day"), d.get("availability")
-if not isinstance(week, (int, float)) or not isinstance(avail, (int, float)):
-    print("unknown")
-elif week >= 95 or avail <= 0:
-    print("over")
-elif week >= 90 or avail < 0.02:
-    print("warn")
-else:
-    print("ok")
-' "$budget_cache" 2>/dev/null)"
-  case "$weekly_verdict" in
-  over) status=1; warn=0 ;;
-  warn) warn=1 ;;
-  esac
-fi
+if not isinstance(d, dict) or d.get("verdict") not in ("ok", "warn", "over"):
+    print("unknown"); raise SystemExit
+now = datetime.now(timezone.utc)
 
-# The bar is stripped, not merely cosmetic waste: measured against the token
-# counter it is 21 of the 53 tokens in each injected report, and injected
-# context is re-read on every later turn, so it is paid hundreds of times over a
-# session. It carries no information the adjacent percentage does not, and the
-# only reader here is a model. The terminal output keeps its bars — the guard is
-# untouched; this strips them on the way into context.
-windows="$(printf '%s\n' "$report" | grep -E '^(Session|Weekly) {2,}' | sed -E 's/\[[^]]*\] +//')"
-[ -n "$windows" ] || allow
-case "${weekly_verdict:-}" in
-over) windows="$windows"$'\n'"Weekly share   used up (autonomous work waits for Sofia's share of the week to refill)" ;;
-warn) windows="$windows"$'\n'"Weekly share   nearly used up" ;;
+def seconds_until(raw):
+    try:
+        return max(0, int((datetime.fromisoformat(raw) - now).total_seconds()))
+    except Exception:
+        return None
+
+def until(raw):
+    s = seconds_until(raw)
+    if s is None:
+        return ""
+    m = s // 60
+    if m >= 1440:
+        return ", resets in %dd%02dh" % (m // 1440, m % 1440 // 60)
+    return ", resets in %dh%02dm" % (m // 60, m % 60)
+
+def pct(v):
+    return "%.0f%%" % v if isinstance(v, (int, float)) else "?"
+
+reason = d.get("reason") or ""
+key = {"session_ceiling": "five_hour_resets_at", "weekly_ceiling": "seven_day_resets_at",
+       "weekly_availability": "seven_day_resets_at"}.get(reason)
+restart = seconds_until(d.get(key)) if key else None
+
+lines = [
+    "5-hour  %s of %s limit%s" % (pct(d.get("five_hour")), pct(d.get("five_hour_ceiling")),
+                                  until(d.get("five_hour_resets_at"))),
+    "Weekly  %s of %s limit%s" % (pct(d.get("seven_day")), pct(d.get("seven_day_ceiling")),
+                                  until(d.get("seven_day_resets_at"))),
+]
+avail = d.get("availability")
+if reason == "weekly_availability":
+    lines.append("Weekly share  used up (autonomous work waits for Sofia's share of the week to refill)")
+elif d["verdict"] == "warn" and isinstance(avail, (int, float)) and avail < 0.02:
+    lines.append("Weekly share  nearly used up (%.1f%% of the week left to spend now)" % (avail * 100))
+print(d["verdict"])
+print("" if restart is None else restart)
+print("\n".join(lines))
+PY
+)"
+verdict="$(printf '%s\n' "$reading" | sed -n 1p)"
+restart_seconds="$(printf '%s\n' "$reading" | sed -n 2p)"
+windows="$(printf '%s\n' "$reading" | sed -n '3,$p')"
+
+case "$verdict" in
+ok | warn | over) : ;;
+*) allow ;; # unknown or unreadable: fail open
 esac
 
 emit() {
@@ -442,53 +466,19 @@ launch_worktree_gc() {
   fi
 }
 
-# Arms a one-shot systemd --user timer at the reset moment of whichever
-# window(s) triggered the ceiling (the later of the two, if both are over),
-# plus a margin. bin/auralis-autorun is the literal ExecStart -- not a new
-# command -- so this shares every check that script already does (existence,
-# busy, cooldown, start-ceiling) without a second "should I start" to keep in
-# sync. Never blocks on network beyond the (already-cached, just-fetched)
-# --json read below.
+# Arms a one-shot systemd --user timer at the restart moment the reading gave
+# (restart_seconds, see the reading above), plus a margin. bin/auralis-autorun
+# is the literal ExecStart -- not a new command -- so this shares every check
+# that script already does (existence, busy, cooldown, the same budget.py
+# limits) without a second "should I start" to keep in sync. No network here:
+# the moment comes from the reading this call already made.
 arm_respawn_timer() {
   local job_id="$1"
-  local json
-  json="$(python3 "$GUARD" --json --threshold "$CEILING" 2>/dev/null)"
-  if [ -z "$json" ]; then
-    echo "usage-gate: could not read usage --json to arm the respawn timer for $job_id" >&2
-    return 0
-  fi
-
-  local seconds
-  seconds="$(printf '%s' "$json" | python3 -c '
-import json, sys
-
-try:
-    data = json.load(sys.stdin)
-except Exception:
-    raise SystemExit
-if not data.get("available"):
-    raise SystemExit
-
-ceiling_pct = float(sys.argv[1]) * 100
-windows = data.get("windows") or {}
-candidates = []
-for key in ("session", "weekly"):
-    window = windows.get(key) or {}
-    percent = window.get("percent")
-    secs = window.get("seconds_until_reset")
-    if isinstance(percent, (int, float)) and percent >= ceiling_pct and isinstance(secs, (int, float)):
-        candidates.append(secs)
-
-# Whichever window(s) are over: use the LATER reset. Starting after only one
-# resets while the other is still over would fail the start-ceiling check
-# again for no reason.
-if candidates:
-    print(int(max(candidates)))
-' "$CEILING" 2>/dev/null)"
+  local seconds="$restart_seconds"
 
   case "$seconds" in
   '' | *[!0-9]*)
-    echo "usage-gate: usage --json did not report a numeric seconds_until_reset for the over window(s) -- one-shot not armed for $job_id" >&2
+    echo "usage-gate: the usage reading gave no restart moment for this stop -- one-shot not armed for $job_id" >&2
     return 0
     ;;
   esac
@@ -512,7 +502,7 @@ if candidates:
   # hook's *entire* 20s PreToolUse budget (.claude/settings.json) on every
   # single retirement. `timeout` bounds it the same way every git call in
   # this file and worktree-gc.sh's own pass already are; the default leaves
-  # ample room in the 20s budget for the usage-guard reads and git work that
+  # ample room in the 20s budget for the usage reading and git work that
   # happen around this call in the same retire_job() pass. Overridable via
   # env, same naming convention as AURALIS_RESPAWN_MARGIN/AURALIS_SYSTEMD_RUN
   # above.
@@ -554,12 +544,20 @@ retire_job() {
   ("${AURALIS_CLAUDE_BIN:-claude}" stop "$job_id" >/dev/null 2>&1 &) 2>/dev/null
 }
 
-if [ "$status" -eq 1 ]; then
+if [ "$verdict" = "over" ]; then
   emit deny
   [ -n "$JOB_ID" ] && retire_job "$JOB_ID"
   exit 0
 fi
 
+# The warning band (budget.py's "warn": a few points below either limit, or the
+# weekly share nearly spent) exists because the hard stop blocks the tools
+# needed to stop *well*. Past the limit every call is denied, including the
+# Bash and Edit calls required to commit, push, or write the branch
+# description, so a session stopped mid-task cannot record what it was doing
+# and the fresh session that replaces it starts blind. Losing an hour of
+# uncommitted work to a limit is worse than stopping a few minutes early.
+#
 # In the warning band, speak on every call rather than on the throttle. The
 # throttle exists to keep a routine status line from being repeated; this is not
 # routine, and a session that sees it once at the start of a long turn may be
@@ -568,7 +566,7 @@ fi
 # The full instruction lands once; after that it is a one-line nudge, because
 # every injection accumulates in context and is re-read on every later turn.
 WARN_STAMP="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-usage-warned"
-if [ "$warn" = "1" ]; then
+if [ "$verdict" = "warn" ]; then
   if [ -f "$WARN_STAMP" ]; then
     emit warn-again
   else

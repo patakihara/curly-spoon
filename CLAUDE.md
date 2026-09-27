@@ -43,11 +43,12 @@ record.
 ## Usage gate
 
 - `scripts/hooks/usage-gate.sh` runs on SessionStart, UserPromptSubmit and every PreToolUse.
-  `./scripts/usage-guard.py` prints the reading: the whole account's real usage.
-- From 85% of the 5-hour window it warns on every call: commit, push, write the branch note,
-  start nothing new. It blocks every tool call at 90% of the 5-hour window, at 95% of the
-  week, or when the weekly share runs out. A background job also stops, after a 10-minute
-  grace, when the autorun switch is paused.
+  The reading and the limits come from budget.py on mediaserver, the same check the autorun
+  makes before starting a session: `ssh mediaserver python3 .claude-shared/skills/auralis-autorun/budget.py`.
+- It blocks every tool call at 80% of the 5-hour window, at 95% of the week, or when the
+  weekly share runs out. A few points before that it warns on every call: commit, push, write
+  the branch note, start nothing new. A background job also stops, after a 10-minute grace,
+  when the autorun switch is paused.
 - When it denies, stop. Do not retry or switch tools; say where usage stands and end the turn.
 - The thresholds and the hooks are Sofia's. Never edit them, `.claude/settings.json` or
   `scripts/hooks/`. Start sessions from the repo root, or the hooks do not load.
