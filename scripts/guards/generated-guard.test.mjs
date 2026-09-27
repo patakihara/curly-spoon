@@ -111,26 +111,22 @@ test('it fails open on a payload it cannot read', () => {
   assert.match(run.stderr, /generated-guard:/);
 });
 
-test(
-  '[M0.uikit/b] .claude/settings.json registers the generated-folder guard for every edit tool',
-  { todo: 'orchestrator registers hooks' },
-  () => {
-    const { hooks } = JSON.parse(readFileSync(join(REPO_ROOT, '.claude', 'settings.json'), 'utf8'));
-    const commands = (event) =>
-      (hooks[event] ?? []).flatMap((entry) => entry.hooks.map((h) => h.command));
+test('[M0.uikit/b] .claude/settings.json registers the generated-folder guard for every edit tool', () => {
+  const { hooks } = JSON.parse(readFileSync(join(REPO_ROOT, '.claude', 'settings.json'), 'utf8'));
+  const commands = (event) =>
+    (hooks[event] ?? []).flatMap((entry) => entry.hooks.map((h) => h.command));
+  assert.ok(
+    hooks.PreToolUse.some(
+      (entry) =>
+        entry.matcher === 'Edit|Write|MultiEdit|NotebookEdit' &&
+        entry.hooks.some((h) => h.command.endsWith('scripts/guards/generated-guard.mjs"')),
+    ),
+  );
+  assert.ok(commands('SessionStart').some((c) => c.includes('scripts/guards/session-start.mjs')));
+  assert.ok(commands('Stop').some((c) => c.includes('scripts/guards/stop-publish.mjs')));
+  for (const event of ['SessionStart', 'UserPromptSubmit', 'PreToolUse'])
     assert.ok(
-      hooks.PreToolUse.some(
-        (entry) =>
-          entry.matcher === 'Edit|Write|MultiEdit|NotebookEdit' &&
-          entry.hooks.some((h) => h.command.endsWith('scripts/guards/generated-guard.mjs"')),
-      ),
+      commands(event).some((c) => c.includes('usage-gate.sh')),
+      `${event} keeps usage-gate.sh`,
     );
-    assert.ok(commands('SessionStart').some((c) => c.includes('scripts/guards/session-start.mjs')));
-    assert.ok(commands('Stop').some((c) => c.includes('scripts/guards/stop-publish.mjs')));
-    for (const event of ['SessionStart', 'UserPromptSubmit', 'PreToolUse'])
-      assert.ok(
-        commands(event).some((c) => c.includes('usage-gate.sh')),
-        `${event} keeps usage-gate.sh`,
-      );
-  },
-);
+});

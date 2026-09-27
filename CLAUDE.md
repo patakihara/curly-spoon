@@ -50,8 +50,9 @@ record.
   the branch note, start nothing new. A background job also stops, after a 10-minute grace,
   when the autorun switch is paused.
 - When it denies, stop. Do not retry or switch tools; say where usage stands and end the turn.
-- The thresholds and the hooks are Sofia's. Never edit them, `.claude/settings.json` or
-  `scripts/hooks/`. Start sessions from the repo root, or the hooks do not load.
+- The thresholds, the usage gate and its entries in `.claude/settings.json` are Sofia's; never
+  edit them or `scripts/hooks/`. The plan's own guards live in `scripts/guards/`. Start sessions
+  from the repo root, or the hooks do not load.
 
 ## Scope
 
@@ -69,6 +70,8 @@ record.
 - Adapters are tested only against responses recorded from mediaserver, secrets scrubbed.
   No fixtures guessed from docs. No network in unit tests; clients take an injected `fetch`.
 - Parse every upstream boundary with zod.
+- Generated code lives under a folder named `generated` and is never edited by hand; change
+  `design/` or `schema/` and regenerate. A hook refuses the edit.
 - Never commit credentials, tokens or hostnames. The repo is public.
 
 ## Done
