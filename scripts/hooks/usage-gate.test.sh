@@ -47,7 +47,9 @@ from datetime import datetime, timedelta, timezone
 verdict, reason, five, week, avail, five_s, week_s = sys.argv[1:8]
 now = datetime.now(timezone.utc)
 at = lambda s: (now + timedelta(seconds=float(s) + 0.9)).isoformat()
+# share_low mirrors budget.py, which owns the threshold; this fixture only needs one low value.
 print(json.dumps({"allowed": verdict != "over", "reason": reason, "verdict": verdict,
+                  "share_low": float(avail) < 0.02,
                   "five_hour": float(five), "seven_day": float(week), "availability": float(avail),
                   "five_hour_ceiling": 80, "seven_day_ceiling": 95,
                   "five_hour_resets_at": at(five_s), "seven_day_resets_at": at(week_s)}))

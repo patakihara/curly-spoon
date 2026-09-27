@@ -347,7 +347,7 @@ lines = [
 avail = d.get("availability")
 if reason == "weekly_availability":
     lines.append("Weekly share  used up (autonomous work waits for Sofia's share of the week to refill)")
-elif d["verdict"] == "warn" and isinstance(avail, (int, float)) and avail < 0.02:
+elif d["verdict"] == "warn" and d.get("share_low") and isinstance(avail, (int, float)):
     lines.append("Weekly share  nearly used up (%.1f%% of the week left to spend now)" % (avail * 100))
 print(d["verdict"])
 print("" if restart is None else restart)
