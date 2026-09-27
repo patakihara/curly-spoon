@@ -5,16 +5,53 @@
  * CLI: node scripts/plan/record-publish.mjs --artifact plan --url <url> --version <v> --stamp build/plan/stamp.json [--root <dir>]
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-/** The folder each artifact is generated from; the merge check compares its tree to `tree`. */
-export const SOURCES = { plan: 'docs/plan', sonora: 'design/sonora', canvas: 'design/app' };
+/**
+ * The folders each artifact is generated from. The plan page shows the outbox, so an outbox
+ * change needs a republish too. The merge check compares `sourcesTree` to the recorded `tree`.
+ */
+export const SOURCES = {
+  plan: ['docs/plan', 'docs/outbox'],
+  sonora: ['design/sonora'],
+  canvas: ['design/app'],
+};
+
+/**
+ * One hash for an artifact's folders: sha1 over a `<path> <git tree|none>` line per folder, so
+ * it changes exactly when one of the folders does. Null when none of the folders exists.
+ */
+export function combineTrees(trees) {
+  if (trees.every(([, tree]) => !tree)) return null;
+  const lines = trees.map(([path, tree]) => `${path} ${tree ?? 'none'}\n`).join('');
+  return createHash('sha1').update(lines).digest('hex');
+}
+
+/** The combined tree of `paths` at `rev` (default HEAD) in the repo at `root`. */
+export function sourcesTree(root, paths, rev = 'HEAD') {
+  return combineTrees(
+    paths.map((path) => {
+      try {
+        const tree = execFileSync('git', ['rev-parse', `${rev}:${path}`], {
+          cwd: root,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim();
+        return [path, tree];
+      } catch {
+        return [path, null];
+      }
+    }),
+  );
+}
 
 export function recordPublish({ root, artifact, url, version, stamp, now = new Date() }) {
-  const source = SOURCES[artifact];
-  if (!source)
+  const sources = SOURCES[artifact];
+  if (!sources)
     throw new Error(`unknown artifact "${artifact}"; one of ${Object.keys(SOURCES).join(', ')}`);
   if (stamp.draft) throw new Error('the stamp is from a --draft render; publish a clean render');
   if (!stamp.commit || !stamp.tree) throw new Error('the stamp has no commit or tree');
@@ -22,7 +59,7 @@ export function recordPublish({ root, artifact, url, version, stamp, now = new D
   const published = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
   published[artifact] = {
     url,
-    source,
+    sources,
     commit: stamp.commit,
     tree: stamp.tree,
     version: String(version),

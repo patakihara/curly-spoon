@@ -115,7 +115,8 @@ commit, read the artifact first and fold in any edits or comments, publish
 `build/plan/index.html` to it, then
 `node scripts/plan/record-publish.mjs --artifact plan --url <url> --version <v> --stamp build/plan/stamp.json`,
 commit `design/published.json`, and push both commits together before merging. CI never sees a
-plan change without its record.
+plan change without its record. The page shows the outbox, so a `docs/outbox` change needs the
+same publish: the recorded tree covers `docs/plan` and `docs/outbox` together.
 
 ## Size
 

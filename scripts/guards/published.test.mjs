@@ -33,7 +33,7 @@ function withRepo(checked, fn) {
 }
 
 const brief = (drift) =>
-  drift.map(({ artifact, source, reason }) => ({ artifact, source, reason }));
+  drift.map(({ artifact, sources, reason }) => ({ artifact, sources, reason }));
 
 test('[M0.uikit/c] the merge check passes when every published source matches its recorded tree', () => {
   withRepo(['plan', 'sonora'], (root) => {
@@ -49,7 +49,7 @@ test('[M0.uikit/c] the merge check fails when design/ changed after the recorded
     write(root, 'design/sonora/README.md', '# Sonora, changed\n');
     commitAll(root, 'Change Sonora');
     assert.deepEqual(brief(publishedDrift({ root })), [
-      { artifact: 'sonora', source: 'design/sonora', reason: 'changed since the publish' },
+      { artifact: 'sonora', sources: ['design/sonora'], reason: 'changed since the publish' },
     ]);
     const run = cli(root);
     assert.equal(run.status, 1);
@@ -63,9 +63,30 @@ test('[M0.uikit/c] the merge check fails when docs/plan changed after the record
     edit(root, PLAN_SECTION, (t) => t + '\nOne more sentence.\n');
     commitAll(root, 'Change the plan');
     assert.deepEqual(brief(publishedDrift({ root })), [
-      { artifact: 'plan', source: 'docs/plan', reason: 'changed since the publish' },
+      {
+        artifact: 'plan',
+        sources: ['docs/plan', 'docs/outbox'],
+        reason: 'changed since the publish',
+      },
     ]);
     assert.equal(cli(root).status, 1);
+  });
+});
+
+test('[M0.uikit/c] the merge check fails when docs/outbox changed after the recorded publish', () => {
+  withRepo(['plan'], (root) => {
+    git(root, 'rm', '-q', 'docs/outbox/screenshots.md');
+    commitAll(root, 'Answer the screenshots question');
+    assert.deepEqual(brief(publishedDrift({ root })), [
+      {
+        artifact: 'plan',
+        sources: ['docs/plan', 'docs/outbox'],
+        reason: 'changed since the publish',
+      },
+    ]);
+    const run = cli(root);
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, /docs\/plan, docs\/outbox \(plan\): changed since the publish/);
   });
 });
 
@@ -77,7 +98,7 @@ test('[M0.uikit/c] a checked source with no recorded publish fails as never publ
     commitAll(root, 'Drop the canvas record');
     const drift = publishedDrift({ root });
     assert.deepEqual(brief(drift), [
-      { artifact: 'canvas', source: 'design/app', reason: 'never published' },
+      { artifact: 'canvas', sources: ['design/app'], reason: 'never published' },
     ]);
     assert.equal(drift[0].recorded, null);
   });
@@ -97,7 +118,11 @@ test('an uncommitted change counts only in working-tree mode', () => {
     edit(root, PLAN_SECTION, (t) => t + '\nNot committed yet.\n');
     assert.deepEqual(publishedDrift({ root }), []);
     assert.deepEqual(brief(publishedDrift({ root, worktree: true })), [
-      { artifact: 'plan', source: 'docs/plan', reason: 'uncommitted changes since the publish' },
+      {
+        artifact: 'plan',
+        sources: ['docs/plan', 'docs/outbox'],
+        reason: 'uncommitted changes since the publish',
+      },
     ]);
     assert.equal(staged(), '');
     git(root, 'checkout', '--', 'docs/plan');

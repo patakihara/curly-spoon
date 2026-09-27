@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { recordPublish } from './record-publish.mjs';
+import { SOURCES, combineTrees, recordPublish, sourcesTree } from './record-publish.mjs';
 import { read, removeTree, REPO_ROOT, write } from './testing.mjs';
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), 'record-publish.mjs');
@@ -21,13 +21,21 @@ const STAMP = {
   draft: false,
 };
 
-test('[M0.plan/d] design/published.json records the current tree of docs/plan', () => {
+test('[M0.plan/d] design/published.json records the current tree of docs/plan and docs/outbox', () => {
   const published = JSON.parse(readFileSync(join(REPO_ROOT, 'design/published.json'), 'utf8'));
-  const tree = execFileSync('git', ['rev-parse', 'HEAD:docs/plan'], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-  }).trim();
-  assert.equal(published.plan?.tree, tree);
+  assert.equal(published.plan?.tree, sourcesTree(REPO_ROOT, SOURCES.plan));
+});
+
+test('the combined tree changes when either the plan or the outbox changes', () => {
+  const plan = ['docs/plan', 'a'.repeat(40)];
+  const outbox = ['docs/outbox', 'b'.repeat(40)];
+  const base = combineTrees([plan, outbox]);
+  assert.match(base, /^[0-9a-f]{40}$/);
+  assert.equal(combineTrees([plan, outbox]), base);
+  assert.notEqual(combineTrees([['docs/plan', 'c'.repeat(40)], outbox]), base);
+  assert.notEqual(combineTrees([plan, ['docs/outbox', 'c'.repeat(40)]]), base);
+  assert.notEqual(combineTrees([plan, ['docs/outbox', null]]), base);
+  assert.equal(combineTrees([['docs/plan', null]]), null);
 });
 
 function inTree(fn) {
@@ -56,7 +64,7 @@ test('recording a publish writes the stamp, url and version under the artifact k
         {
           plan: {
             url: URL_,
-            source: 'docs/plan',
+            sources: ['docs/plan', 'docs/outbox'],
             commit: STAMP.commit,
             tree: STAMP.tree,
             version: '7',
@@ -74,13 +82,13 @@ test('other artifacts are kept, keys stay sorted, and a design publish records i
     write(
       root,
       'design/published.json',
-      `${JSON.stringify({ sonora: { url: 'u', source: 'design/sonora' } })}\n`,
+      `${JSON.stringify({ sonora: { url: 'u', sources: ['design/sonora'] } })}\n`,
     );
     recordPublish({ root, artifact: 'plan', url: URL_, version: '1', stamp: STAMP });
     recordPublish({ root, artifact: 'canvas', url: URL_, version: '2', stamp: STAMP });
     const published = JSON.parse(read(root, 'design/published.json'));
     assert.deepEqual(Object.keys(published), ['canvas', 'plan', 'sonora']);
-    assert.equal(published.canvas.source, 'design/app');
+    assert.deepEqual(published.canvas.sources, ['design/app']);
     assert.equal(published.sonora.url, 'u');
   }));
 

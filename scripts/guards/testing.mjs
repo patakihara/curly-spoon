@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { REPO_ROOT, fixtureRepo, git, write } from '../plan/testing.mjs';
-import { SOURCES } from '../plan/record-publish.mjs';
+import { SOURCES, sourcesTree } from '../plan/record-publish.mjs';
 
 export const HOOKS_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -45,13 +45,13 @@ export function publishedRepo({ checked }) {
   git(root, 'commit', '-q', '-m', 'Add design sources');
   const published = {};
   for (const artifact of checked) {
-    const source = SOURCES[artifact];
-    if (!source) continue;
+    const sources = SOURCES[artifact];
+    if (!sources) continue;
     published[artifact] = {
       url: `https://claude.ai/artifact/${artifact}`,
-      source,
+      sources,
       commit: git(root, 'rev-parse', 'HEAD'),
-      tree: git(root, 'rev-parse', `HEAD:${source}`),
+      tree: sourcesTree(root, sources),
     };
   }
   write(root, 'design/published.json', JSON.stringify(published, null, 2) + '\n');

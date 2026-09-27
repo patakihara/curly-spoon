@@ -16,6 +16,7 @@ import { lintPlan } from './lint.mjs';
 import { loadPlan, parseDirectives } from './parse.mjs';
 import { computeProgress, sourcesLine } from './progress.mjs';
 import { defaultExec, git } from './results.mjs';
+import { SOURCES, sourcesTree } from './record-publish.mjs';
 
 const REPO_URL = 'https://github.com/patakihara/curly-spoon';
 const FONTS =
@@ -343,15 +344,9 @@ function main() {
     if (dirty) fail(`uncommitted changes (use --draft to render them anyway):\n${dirty}`);
   }
   const progress = computeProgress({ root, results: values.results });
-  let tree = null;
-  try {
-    tree = git(defaultExec, root, 'rev-parse', 'HEAD:docs/plan');
-  } catch {
-    // No docs/plan at HEAD yet.
-  }
   const stamp = {
     commit: progress.commit,
-    tree,
+    tree: sourcesTree(root, SOURCES.plan),
     renderedAt: new Date().toISOString(),
     draft: values.draft,
   };

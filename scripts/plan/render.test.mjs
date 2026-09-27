@@ -9,6 +9,7 @@ import { existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { computeProgress } from './progress.mjs';
+import { SOURCES, sourcesTree } from './record-publish.mjs';
 import { renderPlan } from './render.mjs';
 import { edit, fakeExec, fixtureRepo, git, read, removeTree, tag } from './testing.mjs';
 
@@ -47,7 +48,7 @@ function rendered(change = () => {}) {
     const progress = computeProgress({ root, results: 'ci', exec });
     const stamp = {
       commit: commits.head,
-      tree: git(root, 'rev-parse', 'HEAD:docs/plan'),
+      tree: sourcesTree(root, SOURCES.plan),
       renderedAt: '2026-01-04T00:00:00.000Z',
       draft: false,
     };
@@ -266,6 +267,7 @@ test('render.mjs --draft writes the page and a draft stamp, even with uncommitte
     assert.deepEqual(Object.keys(stamp), ['commit', 'tree', 'renderedAt', 'draft']);
     assert.equal(stamp.commit, commits.head);
     assert.equal(stamp.draft, true);
+    assert.equal(stamp.tree, sourcesTree(root, SOURCES.plan), 'the plan and outbox trees combined');
   } finally {
     removeTree(root);
   }

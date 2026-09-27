@@ -49,7 +49,7 @@ test('[M0.uikit/f] the end-of-session hook blocks while a plan change is unpubli
   withRepo((root, cache) => {
     changePlan(root);
     const reason = blocked(stop(root, cache));
-    assert.match(reason, /docs\/plan \(plan\): changed since the publish/);
+    assert.match(reason, /docs\/plan, docs\/outbox \(plan\): changed since the publish/);
     assert.match(reason, /docs\/plan\/README\.md/);
   });
 });
