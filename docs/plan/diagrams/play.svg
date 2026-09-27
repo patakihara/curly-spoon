@@ -1,0 +1,15 @@
+  <svg viewBox="0 0 1000 250" role="img" aria-label="Playback flow">
+    <defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b5cf6"/></marker></defs>
+    <g font-size="13">
+      <rect x="10" y="30" width="170" height="70" rx="14" fill="#1c1c1c"/><text x="95" y="60" fill="#e1e1e1" font-weight="700" text-anchor="middle">Tap play</text><text x="95" y="80" fill="#969696" font-size="11.5" text-anchor="middle">POST /play {ref}</text>
+      <rect x="215" y="30" width="200" height="70" rx="14" fill="#1c1c1c"/><text x="315" y="58" fill="#e1e1e1" font-weight="700" text-anchor="middle">Server builds plan</text><text x="315" y="78" fill="#969696" font-size="11.5" text-anchor="middle">direct / ABS HLS proxy /</text><text x="315" y="93" fill="#969696" font-size="11.5" text-anchor="middle">YouTube Music stream via extractor</text>
+      <rect x="450" y="30" width="200" height="70" rx="14" fill="#1c1c1c"/><text x="550" y="58" fill="#e1e1e1" font-weight="700" text-anchor="middle">Client plays plan</text><text x="550" y="78" fill="#969696" font-size="11.5" text-anchor="middle">web: two audio elements, preloaded</text><text x="550" y="93" fill="#969696" font-size="11.5" text-anchor="middle">Android: ExoPlayer playlist</text>
+      <rect x="685" y="30" width="140" height="70" rx="14" fill="#1c1c1c"/><text x="755" y="60" fill="#e1e1e1" font-weight="700" text-anchor="middle">Progress</text><text x="755" y="80" fill="#969696" font-size="11.5" text-anchor="middle">every 15 s + on pause</text>
+      <rect x="860" y="30" width="130" height="70" rx="14" fill="#1c1c1c"/><text x="925" y="60" fill="#e1e1e1" font-weight="700" text-anchor="middle">Fan-out</text><text x="925" y="80" fill="#969696" font-size="11.5" text-anchor="middle">ABS session · Jellyfin</text>
+      <path d="M180 65 H210" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ar2)"/><path d="M415 65 H445" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ar2)"/><path d="M650 65 H680" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ar2)"/><path d="M825 65 H855" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ar2)"/>
+      <rect x="450" y="150" width="200" height="70" rx="14" fill="#161616" stroke="#2a2a2a"/><text x="550" y="178" fill="#e1e1e1" font-weight="700" text-anchor="middle">Item ends</text><text x="550" y="198" fill="#969696" font-size="11.5" text-anchor="middle">queue has more? play it.</text><text x="550" y="212" fill="#969696" font-size="11.5" text-anchor="middle">empty? follow plan.next</text>
+      <path d="M550 100 V145" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ar2)"/>
+      <path fill="none" d="M450 185 H330 V105" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar2)"/>
+      <text x="340" y="175" fill="#969696" font-size="11.5">next plan</text>
+    </g>
+  </svg>

@@ -1,0 +1,35 @@
+  <svg viewBox="0 0 1000 270" role="img" aria-label="Request pipeline">
+    <defs><marker id="ar3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b5cf6"/></marker></defs>
+    <g font-size="12.5">
+      <text x="10" y="22" fill="#969696" font-size="11.5" font-weight="700" letter-spacing="1">STATUS</text>
+      <g transform="translate(0,34)">
+        <rect x="10" width="130" height="34" rx="17" fill="rgb(167 139 250 / 14%)"/><text x="75" y="22" fill="#a78bfa" font-weight="700" text-anchor="middle">Searching</text>
+        <rect x="170" width="130" height="34" rx="17" fill="rgb(255 204 139 / 12%)"/><text x="235" y="22" fill="#ffcc8b" font-weight="700" text-anchor="middle">Needs choice</text>
+        <rect x="330" width="130" height="34" rx="17" fill="rgb(167 139 250 / 14%)"/><text x="395" y="22" fill="#a78bfa" font-weight="700" text-anchor="middle">Queued</text>
+        <rect x="490" width="150" height="34" rx="17" fill="rgb(167 139 250 / 14%)"/><text x="565" y="22" fill="#a78bfa" font-weight="700" text-anchor="middle">Downloading · %</text>
+        <rect x="670" width="130" height="34" rx="17" fill="rgb(167 139 250 / 14%)"/><text x="735" y="22" fill="#a78bfa" font-weight="700" text-anchor="middle">Importing</text>
+        <rect x="830" width="160" height="34" rx="17" fill="rgb(66 228 119 / 12%)"/><text x="910" y="22" fill="#42e477" font-weight="700" text-anchor="middle">In library</text>
+        <path d="M140 17 H165 M300 17 H325 M460 17 H485 M640 17 H665 M800 17 H825" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ar3)"/>
+      </g>
+      <text x="735" y="100" fill="#ff6b7d" font-size="11.5" text-anchor="middle">any step → Failed (retry · pick another release)</text>
+      <!-- per medium -->
+      <rect x="10" y="120" width="320" height="130" rx="14" fill="#1c1c1c"/>
+      <text x="26" y="146" fill="#e1e1e1" font-weight="800">Audiobook</text>
+      <text x="26" y="170" fill="#969696">search: Prowlarr, then AudiobookBay</text>
+      <text x="26" y="190" fill="#969696">pick: best match by title/author/narrator,</text>
+      <text x="26" y="206" fill="#969696">format, seeders (auto unless ambiguous)</text>
+      <text x="26" y="228" fill="#969696">fulfil: qBittorrent → import → ABS picks it up</text>
+      <rect x="340" y="120" width="320" height="130" rx="14" fill="#1c1c1c"/>
+      <text x="356" y="146" fill="#e1e1e1" font-weight="800">Music · two routes</text>
+      <text x="356" y="170" fill="#969696"><tspan fill="#e1e1e1">Song</tspan>: kept from YouTube Music, seconds,</text>
+      <text x="356" y="188" fill="#969696">original Opus, tagged via MusicBrainz</text>
+      <text x="356" y="210" fill="#969696"><tspan fill="#e1e1e1">Album</tspan>: always Prowlarr → pick → qBittorrent</text>
+      <text x="356" y="228" fill="#969696">→ tag + import, replaces kept songs</text>
+      <rect x="670" y="120" width="320" height="130" rx="14" fill="#1c1c1c"/>
+      <text x="686" y="146" fill="#e1e1e1" font-weight="800">Podcast</text>
+      <text x="686" y="170" fill="#969696">search: PodcastIndex + iTunes</text>
+      <text x="686" y="190" fill="#969696">"request" = subscribe in ABS</text>
+      <text x="686" y="206" fill="#969696">(no download, no choice step)</text>
+      <text x="686" y="228" fill="#969696">fulfil: stub reconciler fills back catalogue</text>
+    </g>
+  </svg>

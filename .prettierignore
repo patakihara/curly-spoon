@@ -12,3 +12,6 @@ design/sonora/
 # The plan's own lint is its formatter, and prettier's table realignment would turn
 # one-word edits into whole-table diffs.
 docs/plan/
+
+# Plan test fixtures follow the plan's own grammar, which the plan lint checks, not prettier.
+scripts/plan/test-fixtures/
