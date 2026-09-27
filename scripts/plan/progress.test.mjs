@@ -36,6 +36,8 @@ function scenario(tests, { failGh = false } = {}) {
   return { ...repo, exec: fakeExec({ runs, artifacts, failGh }) };
 }
 
+const DONE_LINE = 'Done (2): M0.bb, M0.exit';
+
 const STANDARD = [
   check('M0.aa', 'a', 'passed'),
   check('M0.bb', 'a', 'passed'),
@@ -52,7 +54,7 @@ function progressOf(tests = STANDARD, options, change = () => {}) {
   }
 }
 
-test('[M0.plan/c] progress.mjs --summary prints the milestone, next, in-flight, failing, outbox and decision lines', () => {
+test('[M0.plan/c] progress.mjs --summary prints the milestone, done items, next, in-flight, failing, outbox and decision lines', () => {
   const { progress, commits } = progressOf();
   const lines = formatSummary(progress).split('\n');
   assert.ok(lines.length <= 25);
@@ -60,15 +62,16 @@ test('[M0.plan/c] progress.mjs --summary prints the milestone, next, in-flight, 
     lines[0],
     `Auralis plan · current M0 Foundations · 2/5 done · checks from CI@${commits.third.slice(0, 7)} (1 behind HEAD)`,
   );
-  assert.equal(lines[1], 'Next: M0.cc: The third item.');
-  assert.equal(lines[2], 'In flight: plan/M0.aa: "parser done; next: lint"');
-  assert.equal(lines[3], `Failing: M0.dd (a): ${tag('M0.dd', 'a')} check`);
+  assert.equal(lines[1], DONE_LINE);
+  assert.equal(lines[2], 'Next: M0.cc: The third item.');
+  assert.equal(lines[3], 'In flight: plan/M0.aa: "parser done; next: lint"');
+  assert.equal(lines[4], `Failing: M0.dd (a): ${tag('M0.dd', 'a')} check`);
   assert.equal(
-    lines[4],
+    lines[5],
     'Waiting on you (1): Screenshots in the public repo? (default: They stay out of git.)',
   );
   assert.match(
-    lines[5],
+    lines[6],
     /^Recent decisions: [0-9a-f]{7} Gapless is part of playback · [0-9a-f]{7} Keep the screenshots local$/,
   );
 });

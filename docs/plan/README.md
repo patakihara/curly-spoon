@@ -110,10 +110,12 @@ code spans, quoted text and a commit citation like `` `781efd4` (2026-08-21 `` a
 The render refuses on any lint error, and on uncommitted changes to `docs/plan`, `docs/outbox`
 or `scripts/plan` unless `--draft`.
 
-Publishing is the orchestrator's alone: push to `main`, render, read the artifact first and
-fold in any edits or comments, publish `build/plan/index.html` to it, then
-`node scripts/plan/record-publish.mjs --artifact plan --url <url> --version <v> --stamp build/plan/stamp.json`
-and commit `design/published.json`.
+Publishing is the orchestrator's alone: commit the plan change on its branch, render from that
+commit, read the artifact first and fold in any edits or comments, publish
+`build/plan/index.html` to it, then
+`node scripts/plan/record-publish.mjs --artifact plan --url <url> --version <v> --stamp build/plan/stamp.json`,
+commit `design/published.json`, and push both commits together before merging. CI never sees a
+plan change without its record.
 
 ## Size
 

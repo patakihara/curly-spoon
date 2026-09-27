@@ -233,6 +233,10 @@ export function formatSummary(p) {
     lines.push(
       `Auralis plan · current ${current.id} ${current.title} · ${current.done}/${current.total} done · ${checks}`,
     );
+  const done = p.milestones.flatMap((m) => m.items).filter((i) => i.status === 'done');
+  lines.push(
+    done.length ? `Done (${done.length}): ${done.map((i) => i.id).join(', ')}` : 'Done: nothing',
+  );
   lines.push(`Next: ${p.next ? `${p.next.id}: ${plain(p.next.text)}` : 'nothing'}`);
   lines.push(
     `In flight: ${p.inFlight.map((f) => `${f.branch}: "${f.note}"`).join(' · ') || 'nothing'}`,

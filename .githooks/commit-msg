@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#
+# commit-msg: every app change names the plan item it serves. The rules and the CI twin live in
+# scripts/guards/commit-check.mjs. Fails open when node is missing. Bypass: --no-verify.
+set -uo pipefail
+here="$(dirname "$(readlink -f "$0")")"
+command -v node >/dev/null 2>&1 || { echo "commit-msg: node not found, skipping" >&2; exit 0; }
+exec node "$here/../scripts/guards/commit-check.mjs" --msg-file "$1"

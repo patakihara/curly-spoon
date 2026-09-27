@@ -48,13 +48,43 @@ jobs:
       # test globs must match package.json's `test` script.
       - run: pnpm exec vitest run --reporter=default --reporter=junit --outputFile.junit=reports/junit/vitest.xml
       - if: always()
-        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs
+        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs
       - if: always()
         run: node scripts/plan/collect-results.mjs --workflow ci --job unit --out reports/plan-results.json reports/junit/*.xml
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           { name: plan-results-ci-unit, path: reports/plan-results.json, if-no-files-found: warn }
+
+  published:
+    name: Published artifacts are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Fails when a source listed in scripts/guards/published-sources.json differs from its
+      # tree in design/published.json. Publish, record and push the record with the change.
+      - run: node scripts/guards/published.mjs
+
+  commits:
+    name: Plan lines on commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Only the commits this push or pull request adds; see scripts/guards/commit-check.mjs.
+      - name: Check the new commits
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          AFTER: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }}
+          REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+        run: node scripts/guards/commit-check.mjs --before "$BEFORE" --after "$AFTER" --ref "$REF" --default-branch main
 
   web:
     name: Web build
