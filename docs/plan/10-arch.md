@@ -49,7 +49,7 @@ Books, music and podcasts share one state machine, table and status vocabulary. 
 ::: card
 #### 6 · Secure by default
 
-Setup can only run once (or by an admin). There's an admin role for providers, paths and approvals. Download URLs are only ever taken from the server's own search results, never from the client. `trustProxy` and cookie `secure` are set by config, so login works on plain LAN HTTP and behind Caddy.
+Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin can run it. There's an admin role for providers, paths and approvals. Download URLs are only ever taken from the server's own search results, never from the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is the app's own public origin.
 :::
 
 ::: card

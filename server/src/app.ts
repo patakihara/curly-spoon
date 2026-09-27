@@ -1,12 +1,28 @@
 import { existsSync } from 'node:fs';
+import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { health } from '@auralis/schema';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { registerAccess } from './auth/access.js';
+import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
+import type { CookieSecure } from './config.js';
 import { serve } from './route.js';
+import { adminRoutes } from './routes/admin.js';
+import { authRoutes } from './routes/auth.js';
+import { setupRoutes } from './routes/setup.js';
+import type { Db } from './store/connection.js';
 
 export interface BuildAppOptions {
   /** web's build output; `null`, or a path that does not exist, serves no web app. */
   webDistDir: string | null;
+  db: Db;
+  /** Who may set `X-Forwarded-*`; trusts no one when omitted. */
+  proxy?: ProxyTrust;
+  cookieSecure?: CookieSecure;
+  /** Where browsers load the app from; a signed-in write from elsewhere is refused. */
+  publicOrigin?: string | undefined;
+  /** Where the one-time setup code was written, removed once it is used. */
+  setupCodeFile?: string | null;
   logger?: boolean;
 }
 
@@ -17,9 +33,18 @@ function isIndexHtml(path: string): boolean {
 }
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: options.logger ?? false });
+  const { db } = options;
+  const proxy = options.proxy ?? createProxyTrust([]);
+  const cookieSecure = options.cookieSecure ?? 'auto';
+  const app = Fastify({ logger: options.logger ?? false, trustProxy: proxy.trust });
+
+  await app.register(fastifyCookie);
+  registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
 
   serve(app, health, () => ({ status: 'ok' as const }));
+  setupRoutes(app, { db, cookieSecure, setupCodeFile: options.setupCodeFile ?? null });
+  authRoutes(app, { db, cookieSecure });
+  adminRoutes(app, { db });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

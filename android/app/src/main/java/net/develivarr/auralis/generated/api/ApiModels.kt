@@ -5,6 +5,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class ErrorResponse(
+    val error: String,
+)
+
+@Serializable
 data class HealthResponse(
     val status: HealthResponseStatus,
 )
@@ -14,3 +19,38 @@ enum class HealthResponseStatus {
     @SerialName("ok")
     OK,
 }
+
+@Serializable
+data class LogoutResponse(
+    val ok: Boolean,
+)
+
+@Serializable
+data class Me(
+    val username: String,
+    val role: Role,
+)
+
+@Serializable
+enum class Role {
+    @SerialName("admin")
+    ADMIN,
+    @SerialName("member")
+    MEMBER,
+}
+
+@Serializable
+data class SetupBody(
+    val code: String? = null,
+    val username: String,
+)
+
+@Serializable
+data class SetupStatus(
+    val configured: Boolean,
+)
+
+@Serializable
+data class UserList(
+    val users: List<Me>,
+)

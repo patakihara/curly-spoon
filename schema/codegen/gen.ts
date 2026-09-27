@@ -7,6 +7,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+import type { z } from 'zod';
 import type { Route } from '../src/routes.js';
 import { generateKotlin } from './kotlin.js';
 import { buildOpenApiDocument } from './openapi.js';
@@ -22,11 +23,12 @@ const { values } = parseArgs({
 const src = resolve(values.src);
 const out = resolve(values.out);
 
-const { routes } = (await import(pathToFileURL(join(src, 'index.ts')).href)) as {
+const { routes, ErrorResponse } = (await import(pathToFileURL(join(src, 'index.ts')).href)) as {
   routes: readonly Route[];
+  ErrorResponse: z.ZodTypeAny;
 };
 
-const json = `${JSON.stringify(buildOpenApiDocument(routes), null, 2)}\n`;
+const json = `${JSON.stringify(buildOpenApiDocument(routes, ErrorResponse), null, 2)}\n`;
 // Both clients come from exactly the bytes that are committed.
 const doc = JSON.parse(json) as object;
 

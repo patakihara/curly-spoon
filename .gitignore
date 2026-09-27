@@ -4,6 +4,7 @@ build/
 coverage/
 *.tsbuildinfo
 
+data/
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

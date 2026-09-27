@@ -78,7 +78,8 @@ Grouped by what they serve. Every response shape lives in the one schema; route 
 
 `/admin/providers` (CRUD + test)\
 `/admin/settings` (paths, approval)\
-`/admin/jobs` (status, run now)
+`/admin/jobs` (status, run now)\
+`GET /admin/users` (who can sign in, and their role)
 :::
 
 ::: card
