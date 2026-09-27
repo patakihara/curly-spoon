@@ -1,1 +1,10 @@
-{}
+{
+  "plan": {
+    "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
+    "source": "docs/plan",
+    "commit": "7d3d80be8671ef2050b7ded2f086ff85fd7f810f",
+    "tree": "dba79f1db564d858f84d5521494ca0325bf46bd5",
+    "version": "1790542375-6e20",
+    "publishedAt": "2026-09-27T20:53:08.184Z"
+  }
+}

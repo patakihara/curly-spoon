@@ -21,18 +21,14 @@ const STAMP = {
   draft: false,
 };
 
-test(
-  '[M0.plan/d] design/published.json records the current tree of docs/plan',
-  { todo: 'passes after the first publish' },
-  () => {
-    const published = JSON.parse(readFileSync(join(REPO_ROOT, 'design/published.json'), 'utf8'));
-    const tree = execFileSync('git', ['rev-parse', 'HEAD:docs/plan'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-    }).trim();
-    assert.equal(published.plan?.tree, tree);
-  },
-);
+test('[M0.plan/d] design/published.json records the current tree of docs/plan', () => {
+  const published = JSON.parse(readFileSync(join(REPO_ROOT, 'design/published.json'), 'utf8'));
+  const tree = execFileSync('git', ['rev-parse', 'HEAD:docs/plan'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  }).trim();
+  assert.equal(published.plan?.tree, tree);
+});
 
 function inTree(fn) {
   const root = mkdtempSync(join(tmpdir(), 'plan-publish-'));
