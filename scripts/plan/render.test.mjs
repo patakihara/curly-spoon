@@ -9,8 +9,9 @@ import { existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { computeProgress } from './progress.mjs';
+import { SOURCES, sourcesTree } from './record-publish.mjs';
 import { renderPlan } from './render.mjs';
-import { edit, fakeExec, fixtureRepo, git, read, removeTree, tag } from './testing.mjs';
+import { edit, fakeExec, fixtureRepo, git, read, removeTree, tag, write } from './testing.mjs';
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), 'render.mjs');
 const check = (item, criterion, status) => ({
@@ -47,7 +48,7 @@ function rendered(change = () => {}) {
     const progress = computeProgress({ root, results: 'ci', exec });
     const stamp = {
       commit: commits.head,
-      tree: git(root, 'rev-parse', 'HEAD:docs/plan'),
+      tree: sourcesTree(root, SOURCES.plan),
       renderedAt: '2026-01-04T00:00:00.000Z',
       draft: false,
     };
@@ -246,6 +247,27 @@ test('the Now section shows progress per milestone, next, in flight, failing and
   );
 });
 
+test('[M0.plan/b] the Now section lists inbox ideas waiting to be sorted, with title and file', () => {
+  const { html } = rendered((root) => {
+    write(root, 'docs/inbox/README.md', '# Inbox\n\nHow the inbox works.\n');
+    write(root, 'docs/inbox/shuffle.md', '# Shuffle by album\n\n> shuffle albums, not tracks\n');
+    write(root, 'docs/inbox/a-sleep.md', '# Sleep timer <soon>\n\n> a sleep timer\n');
+  });
+  assert.match(
+    html,
+    /<h4>Recently sorted ideas<\/h4>\n<ul class="small">.*<\/ul>\n<h4>Waiting to be sorted \(2\)<\/h4>\n<ul class="small"><li>Sleep timer &lt;soon&gt; <code>a-sleep\.md<\/code><\/li><li>Shuffle by album <code>shuffle\.md<\/code><\/li><\/ul>/,
+  );
+  assert.doesNotMatch(html, /README\.md<\/code>/);
+});
+
+test('[M0.plan/b] with an empty inbox, the page says nothing is waiting to be sorted', () => {
+  const { html } = rendered();
+  assert.match(
+    html,
+    /<h4>Waiting to be sorted \(0\)<\/h4>\n<ul class="small"><li>None\.<\/li><\/ul>/,
+  );
+});
+
 test('with nothing in the outbox, the page says nothing is waiting', () => {
   const { html } = rendered((root) => git(root, 'rm', '-q', 'docs/outbox/screenshots.md'));
   assert.match(html, /<div class="callout">Nothing is waiting on you\.<\/div>/);
@@ -266,6 +288,7 @@ test('render.mjs --draft writes the page and a draft stamp, even with uncommitte
     assert.deepEqual(Object.keys(stamp), ['commit', 'tree', 'renderedAt', 'draft']);
     assert.equal(stamp.commit, commits.head);
     assert.equal(stamp.draft, true);
+    assert.equal(stamp.tree, sourcesTree(root, SOURCES.plan), 'the plan and outbox trees combined');
   } finally {
     removeTree(root);
   }

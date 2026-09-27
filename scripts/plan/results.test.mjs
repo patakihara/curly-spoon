@@ -292,6 +292,40 @@ test('loadResults reports an error and no tests when gh fails', () => {
   }
 });
 
+test('[M0.uikit/e] loadResults gives every gh call a kill-on-timeout that ends by the deadline', () => {
+  const { root, exec } = ciScenario();
+  const ghOpts = [];
+  const spy = (cmd, args, opts = {}) => {
+    if (cmd === 'gh') ghOpts.push({ ...opts, at: Date.now() });
+    return exec(cmd, args, opts);
+  };
+  try {
+    const deadline = Date.now() + 60_000;
+    loadResults({ root, mode: 'ci', exec: spy, ghDeadline: deadline });
+    assert.ok(ghOpts.length >= 2, 'run list and downloads');
+    for (const opts of ghOpts) {
+      assert.equal(opts.killSignal, 'SIGKILL');
+      assert.ok(opts.timeout > 0 && opts.at + opts.timeout <= deadline + 5, 'within the deadline');
+    }
+  } finally {
+    removeTree(root);
+  }
+});
+
+test('[M0.uikit/e] loadResults says gh timed out when a gh call is killed at its deadline', () => {
+  const { root } = fixtureRepo();
+  const exec = (cmd, args, opts = {}) => {
+    if (cmd !== 'gh') return fakeExec()(cmd, args, opts);
+    throw Object.assign(new Error('spawnSync gh ETIMEDOUT'), { code: 'ETIMEDOUT' });
+  };
+  try {
+    const { error } = loadResults({ root, mode: 'ci', exec, ghDeadline: Date.now() + 2000 });
+    assert.match(error, /gh run list timed out after 2 s/);
+  } finally {
+    removeTree(root);
+  }
+});
+
 test('loadResults with mode none reads nothing and says so', () => {
   const exec = fakeExec();
   const { sources, tests, error } = loadResults({ root: '/nonexistent', mode: 'none', exec });

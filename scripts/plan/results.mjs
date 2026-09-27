@@ -27,6 +27,22 @@ const firstLine = (err) =>
     .trim()
     .split('\n')[0];
 
+/**
+ * Options for one `gh` call: killed (SIGKILL) at `deadline` (epoch ms), so a hanging `gh` never
+ * outlives the caller's budget. Throws a timeout when the deadline has already passed.
+ */
+function ghOpts(root, deadline) {
+  if (deadline === undefined) return { cwd: root };
+  const timeout = deadline - Date.now();
+  if (timeout <= 0) throw Object.assign(new Error('deadline passed'), { code: 'ETIMEDOUT' });
+  return { cwd: root, timeout, killSignal: 'SIGKILL' };
+}
+
+const ghFailure = (what, err, budget) =>
+  err?.code === 'ETIMEDOUT' && budget !== undefined
+    ? `${what} timed out after ${Math.round(budget / 1000)} s`
+    : `${what} failed: ${firstLine(err)}`;
+
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 const decode = (s) =>
   s.replace(/&(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);/gi, (_, e) =>
@@ -101,14 +117,16 @@ function isAncestor(exec, root, sha) {
 }
 
 /** Downloads (once per run id) and reads a run's plan-results files. */
-function runResults(exec, root, runId) {
+function runResults(exec, root, runId, deadline) {
   const rel = join('.cache', 'plan', 'runs', String(runId));
   const dir = join(root, rel);
   if (!existsSync(dir)) {
     try {
-      exec('gh', ['run', 'download', String(runId), '--pattern', 'plan-results-*', '--dir', rel], {
-        cwd: root,
-      });
+      exec(
+        'gh',
+        ['run', 'download', String(runId), '--pattern', 'plan-results-*', '--dir', rel],
+        ghOpts(root, deadline),
+      );
     } catch {
       return [];
     }
@@ -116,7 +134,7 @@ function runResults(exec, root, runId) {
   return [...jsonFiles(dir)].flatMap((f) => JSON.parse(readFileSync(f, 'utf8')).tests ?? []);
 }
 
-function ciResults(exec, root) {
+function ciResults(exec, root, deadline, budget) {
   let runs;
   try {
     const out = exec(
@@ -131,11 +149,11 @@ function ciResults(exec, root) {
         '--json',
         'databaseId,headSha,workflowName,status,conclusion,createdAt',
       ],
-      { cwd: root },
+      ghOpts(root, deadline),
     );
     runs = JSON.parse(out);
   } catch (err) {
-    return { runs: [], error: `gh run list failed: ${firstLine(err)}` };
+    return { runs: [], error: ghFailure('gh run list', err, budget) };
   }
   const newest = new Map();
   for (const run of runs) {
@@ -187,15 +205,17 @@ function localResults(exec, root) {
 /**
  * Loads check results. `mode`: 'ci' (the newest CI artifacts HEAD contains), 'local' (those,
  * then this checkout's own test run on top) or 'none'. Returns `{ sources, tests, error }`;
- * `error` set means no results could be read, so criteria are unknown.
+ * `error` set means no results could be read, so criteria are unknown. `ghDeadline` (epoch ms)
+ * kills any `gh` call still running then, so none outlives a hook's budget.
  */
-export function loadResults({ root, mode = 'ci', exec = defaultExec }) {
+export function loadResults({ root, mode = 'ci', exec = defaultExec, ghDeadline }) {
   if (mode === 'none') return { sources: [], tests: [], error: 'not requested (--no-results)' };
   const byName = new Map();
   const sources = [];
-  const ci = ciResults(exec, root);
+  const budget = ghDeadline === undefined ? undefined : ghDeadline - Date.now();
+  const ci = ciResults(exec, root, ghDeadline, budget);
   for (const run of ci.runs) {
-    for (const t of runResults(exec, root, run.databaseId)) byName.set(t.name, t);
+    for (const t of runResults(exec, root, run.databaseId, ghDeadline)) byName.set(t.name, t);
     const behind = Number(git(exec, root, 'rev-list', '--count', `${run.headSha}..HEAD`));
     sources.push({
       workflow: run.workflowName,

@@ -16,6 +16,7 @@ import { lintPlan } from './lint.mjs';
 import { loadPlan, parseDirectives } from './parse.mjs';
 import { computeProgress, sourcesLine } from './progress.mjs';
 import { defaultExec, git } from './results.mjs';
+import { SOURCES, sourcesTree } from './record-publish.mjs';
 
 const REPO_URL = 'https://github.com/patakihara/curly-spoon';
 const FONTS =
@@ -213,13 +214,17 @@ function renderNow(progress) {
           `<li><code>${esc(s.file.replace(/^docs\/inbox\//, ''))}</code> → ${esc(s.plan ?? 'no Plan: line')}</li>`,
       )
       .join('') || '<li>None yet.</li>';
+  const unsorted =
+    progress.waitingIdeas
+      .map((w) => `<li>${esc(w.title)} <code>${esc(w.file)}</code></li>`)
+      .join('') || '<li>None.</li>';
   return [
     '<section id="now">',
     '  <h2>Now</h2>',
     `  ${waiting}`,
     '  <div class="grid g2">',
     `<div class="card"><h4>Progress</h4>\n<ul class="small">${rows.join('')}</ul></div>`,
-    `<div class="card"><h4>Recent decisions</h4>\n<ul class="small">${decisions}</ul>\n<h4>Recently sorted ideas</h4>\n<ul class="small">${ideas}</ul></div>`,
+    `<div class="card"><h4>Recent decisions</h4>\n<ul class="small">${decisions}</ul>\n<h4>Recently sorted ideas</h4>\n<ul class="small">${ideas}</ul>\n<h4>Waiting to be sorted (${progress.waitingIdeas.length})</h4>\n<ul class="small">${unsorted}</ul></div>`,
     '  </div>',
     '</section>',
   ].join('\n');
@@ -343,15 +348,9 @@ function main() {
     if (dirty) fail(`uncommitted changes (use --draft to render them anyway):\n${dirty}`);
   }
   const progress = computeProgress({ root, results: values.results });
-  let tree = null;
-  try {
-    tree = git(defaultExec, root, 'rev-parse', 'HEAD:docs/plan');
-  } catch {
-    // No docs/plan at HEAD yet.
-  }
   const stamp = {
     commit: progress.commit,
-    tree,
+    tree: sourcesTree(root, SOURCES.plan),
     renderedAt: new Date().toISOString(),
     draft: values.draft,
   };
