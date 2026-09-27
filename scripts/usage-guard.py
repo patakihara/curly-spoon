@@ -51,10 +51,9 @@ WINDOWS = (("Session", "five_hour"), ("Weekly", "seven_day"))
 
 # The endpoint rate-limits — HTTP 429, hit within a dozen calls while testing.
 #
-# The hooks themselves are infrequent: SessionStart fires once per session and
-# the PreToolUse matcher only covers subagent spawns. The caller that actually
-# repeats is the restart poller (scripts/auralis-autorun.sh), plus anyone
-# iterating on this script. Both are enough to earn the cache.
+# The PreToolUse hook fires on every tool call, the restart poller
+# (scripts/auralis-autorun.sh) repeats on its own schedule, and anyone iterating
+# on this script adds more. Any one of them is enough to earn the cache.
 #
 # FRESH_SECONDS is how long a reading is reused without asking again;
 # STALE_SECONDS is how long a cached reading is still preferable to no reading

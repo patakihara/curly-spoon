@@ -140,7 +140,7 @@ rm -rf "$dir"
 # --- the warning band: under the ceiling, over the warn line -------------------
 #
 # The band matters because the hard stop blocks the very tools needed to commit
-# and write a handover. A stub that answers "under" at 0.90 and "over" at 0.85
+# and write the branch description. A stub that answers "under" at 0.90 and "over" at 0.85
 # is exactly a session sitting between the two.
 
 dir="$(mktemp -d)"
@@ -162,7 +162,7 @@ import json, sys
 hs = json.load(sys.stdin)["hookSpecificOutput"]
 ctx = hs["additionalContext"]
 assert "permissionDecision" not in hs, "warning band must not deny"
-assert "HANDOVER" in ctx, ctx
+assert "branch description" in ctx, ctx
 assert "NOW" in ctx, ctx
 ' 2>/dev/null; then
   ok "warning band urges a handoff without blocking"
@@ -190,18 +190,18 @@ if printf '%s' "$w1" | grep -q "FRESH session" && ! printf '%s' "$w2" | grep -q 
 else
   fail "expected the full text once then a nudge (w1='$w1' w2='$w2')"
 fi
-if printf '%s' "$w2" | grep -q "HANDOVER.md"; then
-  ok "the nudge still names HANDOVER.md"
+if printf '%s' "$w2" | grep -q "branch description"; then
+  ok "the nudge still names the branch description"
 else
   fail "the short nudge must still name the file: $w2"
 fi
 for text in "$w1" "$w2"; do
-  printf '%s' "$text" | grep -q "docs/agent-specs/" ||
-    fail "hand-off text must point unlaunched specs at docs/agent-specs/: $text"
+  printf '%s' "$text" | grep -q "Plan: line" ||
+    fail "hand-off text must ask for the Plan: line on the commit: $text"
 done
-printf '%s' "$w1" | grep -q "docs/agent-specs/" &&
-  printf '%s' "$w2" | grep -q "docs/agent-specs/" &&
-  ok "both warnings route unlaunched subagent specs to docs/agent-specs/"
+printf '%s' "$w1" | grep -q "Plan: line" &&
+  printf '%s' "$w2" | grep -q "Plan: line" &&
+  ok "both warnings ask for the commit's Plan: line"
 rm -rf "$dir"
 
 # --- anything other than exit 1 allows, silently -------------------------------
@@ -748,9 +748,8 @@ rm -rf "$dir" "$cache"
 
 # --- HOME and XDG_STATE_HOME/XDG_CACHE_HOME unset: no crash on default paths --
 #
-# The shape time-gate.sh's own 32 tests structurally could not catch: every
-# case there set the env override, so the bare ${HOME:-...} default branch
-# never evaluated under set -u. Every default touched by this file (STAMP,
+# A suite where every case sets the env override never evaluates the bare
+# ${HOME:-...} default branch under set -u. Every default touched by this file (STAMP,
 # WARN_STAMP, JOBS_DIR, RESPAWN_STATE_DIR, GC_STAMP, AUTORUN_BIN) is written
 # as ${VAR:-${HOME:-}/...}, never ${VAR:-$HOME/...}, for exactly this reason.
 

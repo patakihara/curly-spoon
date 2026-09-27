@@ -11,8 +11,8 @@
 #      already running on the way to denying that tool call.
 #   2. usage-gate.sh, on every SessionStart. Second-strongest: once per new
 #      session, unconditionally -- the fresh successor's own chance to finish
-#      whatever the retiring incumbent could not (e.g. a subagent still live
-#      at that moment; see the liveness gate below).
+#      whatever the retiring incumbent could not (e.g. a worktree still too
+#      young at that moment; see the age gate below).
 #   3. usage-gate.sh, throttled, riding ordinary PreToolUse traffic. Weakest
 #      guarantee, but the one that matches where the real backlog was found
 #      to accumulate: worktree-agent-* branches and worktrees pile up during
@@ -34,10 +34,8 @@
 # code. Nothing here should ever gain an Agent call or a `claude -p`
 # classification step. A pruning decision that depends on a model's read of
 # "does this look done" applied to a *destructive* operation is a strictly
-# worse bet than the one delegation-nudge.sh's own abandoned live-
-# classification path already lost on a non-blocking nudge (see
-# docs/HANDOVER.md). Determinism is the entire basis for trusting an
-# unattended, irreversible operation at all.
+# worse bet than a deterministic check. Determinism is the entire basis for
+# trusting an unattended, irreversible operation at all.
 #
 # ## The safety rail, four layers
 #
@@ -63,23 +61,14 @@
 # A locked worktree (`git worktree lock`) is skipped unconditionally,
 # regardless of what the other checks say.
 #
-# ## Liveness gate (why git-clean is not enough by itself)
+# ## Age gate (why git-clean is not enough by itself)
 #
-# agent-log.sh's global JSONL (<git-common-dir>/auralis-agent-log.jsonl, or
-# AURALIS_AGENT_LOG_SHARED in tests) records SubagentStart/SubagentStop per
-# agent_id, but does not record which worktree an agent used -- correlation
-# to a specific `.claude/worktrees/agent-<id>` directory relies on the
-# observed `agent-<id>` / `worktree-agent-<id>` naming convention alone, not
-# on anything the log structurally guarantees. If a candidate's name does not
-# parse into a recognizable agent_id, or the log has no entries for the id it
-# does parse into, liveness is UNKNOWN -- never treated as safe. An unknown
-# candidate is skipped unless it is already older than
-# AURALIS_WORKTREE_GC_MIN_AGE, in which case it falls through to the git-
-# level checks above (which remain the real, harness-independent safety net
-# either way). A "running" entry (SubagentStart with no matching
-# SubagentStop) is skipped unconditionally, regardless of git state --
-# whether a killed-mid-flight agent ever gets a SubagentStop at all is
-# unverified, so absence of a Stop is never read as "done".
+# Nothing records whether the subagent that owns a worktree is still running,
+# so every candidate must also be older than AURALIS_WORKTREE_GC_MIN_AGE
+# (mtime of its directory) before the git-level checks above are even
+# attempted. A younger worktree is skipped regardless of git state: a live
+# agent that has just committed is git-clean and merged-looking, and absence
+# of a writer is never inferred from a clean tree alone.
 #
 # This is a *reduction* of the timing race Auralis's own CLAUDE.md documents
 # (exiting a worktree while a subagent was still writing into it dropped a
@@ -113,32 +102,25 @@
 #   AURALIS_WORKTREE_GC_BRANCH_PREFIX  branch-name prefix considered for the
 #                                       orphan-branch pass (default:
 #                                       worktree-agent-)
-#   AURALIS_WORKTREE_GC_MIN_AGE        fallback age threshold in seconds for
-#                                       an unparseable/unknown-liveness
-#                                       candidate before the git-level checks
-#                                       are even attempted (default: 86400)
+#   AURALIS_WORKTREE_GC_MIN_AGE        age threshold in seconds every
+#                                       candidate must pass before the
+#                                       git-level checks are even attempted
+#                                       (default: 86400)
 #   AURALIS_WORKTREE_GC_GIT_TIMEOUT    per-git-call timeout in seconds
 #                                       (default: 30)
-#   AURALIS_AGENT_LOG_SHARED           path to the shared agent-log JSONL
-#                                       (default: derived from git-common-dir,
-#                                       same override agent-log.sh itself
-#                                       uses -- shared name deliberately, so a
-#                                       test pointing agent-log.sh at a
-#                                       fixture log also points this here)
 #   AURALIS_WORKTREE_GC_LOG            where this script's own run log is
 #                                       appended (default:
 #                                       $XDG_STATE_HOME/auralis-respawn/
 #                                       worktree-gc.log)
 #   CLAUDE_PROJECT_DIR                 which checkout this pass runs for
 #                                       (same signal every hook in this repo
-#                                       already uses); the MAIN checkout and
-#                                       the shared log are both resolved from
-#                                       this via git-common-dir, never from
-#                                       this process's own HEAD/cwd.
+#                                       already uses); the MAIN checkout is
+#                                       resolved from this via git-common-dir,
+#                                       never from this process's own HEAD/cwd.
 #
 # ## Failing open
 #
-# Same direction as usage-gate.sh/agent-log.sh: not a git repo, no git, no
+# Same direction as usage-gate.sh: not a git repo, no git, no
 # python3, no resolvable integration branch, an unreadable candidate -- all
 # of these skip that candidate (or the whole pass) rather than guessing or
 # crashing. Failing open here means "prune nothing", never "prune anyway".
@@ -159,7 +141,6 @@ GIT_TIMEOUT="${AURALIS_WORKTREE_GC_GIT_TIMEOUT:-30}"
 MIN_AGE="${AURALIS_WORKTREE_GC_MIN_AGE:-86400}"
 TARGET_BRANCH="${AURALIS_WORKTREE_GC_BRANCH:-main}"
 PREFIX="${AURALIS_WORKTREE_GC_BRANCH_PREFIX:-worktree-agent-}"
-SHARED_LOG="${AURALIS_AGENT_LOG_SHARED:-$GIT_COMMON_DIR/auralis-agent-log.jsonl}"
 LOG_FILE="${AURALIS_WORKTREE_GC_LOG:-${XDG_STATE_HOME:-${HOME:-}/.local/state}/auralis-respawn/worktree-gc.log}"
 
 mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null
@@ -244,45 +225,6 @@ done <<<"$rows"
 
 is_attached() {
   printf '%s\n' "$attached_branches" | grep -qxF "$1"
-}
-
-extract_agent_id() {
-  local base="$1" branch="$2"
-  if [[ "$base" =~ ^agent-([0-9a-f]+)$ ]]; then
-    printf '%s' "${BASH_REMATCH[1]}"
-    return
-  fi
-  if [[ "$branch" =~ ^worktree-agent-([0-9a-f]+)$ ]]; then
-    printf '%s' "${BASH_REMATCH[1]}"
-    return
-  fi
-  printf ''
-}
-
-# Bounded: grep filters the (intentionally unbounded, per agent-log.sh's own
-# header) shared log to lines mentioning this agent_id first; only those
-# lines are ever inspected further. Never a full parse of the file.
-agent_liveness() {
-  local agent_id="$1"
-  if [ -z "$agent_id" ] || [ ! -f "$SHARED_LOG" ]; then
-    printf 'unknown'
-    return
-  fi
-  local matches
-  matches="$(grep -F "\"agent_id\":\"$agent_id\"" "$SHARED_LOG" 2>/dev/null)"
-  if [ -z "$matches" ]; then
-    printf 'unknown'
-    return
-  fi
-  if printf '%s\n' "$matches" | grep -q '"event":"SubagentStop"'; then
-    printf 'ended'
-    return
-  fi
-  if printf '%s\n' "$matches" | grep -q '"event":"SubagentStart"'; then
-    printf 'running'
-    return
-  fi
-  printf 'unknown'
 }
 
 worktree_age_ok() {
@@ -391,20 +333,9 @@ while IFS=$'\x1f' read -r path head branch locked; do
     continue
   fi
 
-  base="$(basename "$path")"
-  agent_id="$(extract_agent_id "$base" "$branch")"
-  liveness="$(agent_liveness "$agent_id")"
-
-  if [ "$liveness" = "running" ]; then
-    log "skip $path: agent-log shows agent_id ${agent_id:-<unparsed>} still running"
+  if ! worktree_age_ok "$path"; then
+    log "skip $path: younger than the ${MIN_AGE}s age threshold"
     continue
-  fi
-  if [ "$liveness" = "unknown" ]; then
-    if ! worktree_age_ok "$path"; then
-      log "skip $path: liveness unknown (agent_id=${agent_id:-<unparsed>}) and younger than the ${MIN_AGE}s fallback threshold"
-      continue
-    fi
-    log "note $path: liveness unknown (agent_id=${agent_id:-<unparsed>}) but past the age threshold -- relying on the git-level checks"
   fi
 
   if [ -z "$head" ]; then

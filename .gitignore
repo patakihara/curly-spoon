@@ -32,20 +32,8 @@ apps/server/data/
 
 # Personal, per-checkout Claude Code overrides — Claude Code's own convention
 # for local settings not meant to be committed to this public repo (unlike
-# .claude/settings.json, which is team-visible policy). Currently holds the
-# quiet-hours prompt-queuing hook, a personal habit-management preference,
-# not project policy.
+# .claude/settings.json, which is team-visible policy).
 .claude/settings.local.json
-# The quiet-hours hook's queue: raw prompt text plus timestamps, written by
-# scripts/hooks/time-gate.sh. Never belongs in a public repo.
-.claude/deferred-prompts.jsonl
-
-# The subagent-activity log's lockfile and crash-leftover temp files, written
-# by scripts/hooks/agent-log.sh around its read-modify-write of
-# docs/HANDOVER.md. Neither is meaningful content — the lock is empty, and a
-# .tmp.<pid> file only survives if the hook was killed mid-write.
-docs/.HANDOVER.md.lock
-docs/.HANDOVER.md.tmp.*
 
 # editors / os
 .DS_Store

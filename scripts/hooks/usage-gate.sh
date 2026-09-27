@@ -244,8 +244,9 @@ import json, sys
 left = 600 - int(sys.argv[1])
 if left > 0:
     out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": (
-        "Sofia has paused the Auralis autorun. Land your work now: commit, push, and leave a short "
-        "note on the branch saying where you stopped and what is next. In about %d minutes every "
+        "Sofia has paused the Auralis autorun. Land your work now: commit with its Plan: line, push "
+        "the branch, and write where you stopped and what is next as the branch description "
+        "(git config branch.<branch>.description \"...\"). In about %d minutes every "
         "tool call will be blocked and this session will be stopped." % max(1, left // 60))}}
 else:
     out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
@@ -275,7 +276,7 @@ status=$?
 
 # The warning band exists because the hard stop blocks the tools needed to stop
 # *well*. Past the ceiling every call is denied — including the Bash and Edit
-# calls required to commit, push, or write state into docs/HANDOVER.md. A
+# calls required to commit, push, or write the branch description. A
 # session gated mid-task therefore cannot record what it was doing, and the
 # fresh session that replaces it starts blind. So there is a band below the
 # ceiling where work is still permitted but the session is told, on every tool
@@ -383,14 +384,14 @@ elif mode == "warn":
             "additionalContext": (
                 f"Plan usage — approaching the ceiling:\n{windows}\n"
                 "Hand off NOW, in this order:\n"
-                "1. Any subagent spec you wrote but did not launch: save it verbatim to "
-                "docs/agent-specs/ and list it in the handover as the next TODO. The spec "
-                "is most of the work of delegating; losing it means writing it again.\n"
-                "2. Update docs/HANDOVER.md: what you were doing, what is half-finished "
-                "and in which files, and the exact next step. Whatever replaces you is a "
-                "FRESH session with no memory of this one — it reads only what is on "
-                "disk, so anything you do not write down is lost.\n"
-                "3. Commit and push.\n"
+                "1. Get to a clean state and commit your work, with its Plan: line.\n"
+                "2. Write where you stopped and what is next as the branch description: "
+                "git config branch.<branch>.description \"...\" (or git branch "
+                "--edit-description). Say what is half-finished, in which files, and the "
+                "exact next step. Whatever replaces you is a FRESH session with no memory "
+                "of this one — it reads only the branch, so anything you do not write "
+                "down is lost.\n"
+                "3. Push the branch.\n"
                 "Past the ceiling every tool call is blocked, including these. "
                 "Start nothing new."
             ),
@@ -401,8 +402,9 @@ elif mode == "warn-again":
         "hookSpecificOutput": {
             "hookEventName": event,
             "additionalContext": (
-                f"{windows}\nStill in the hand-off band: unlaunched specs to "
-                f"docs/agent-specs/, HANDOVER.md, then commit and push."
+                f"{windows}\nStill in the hand-off band: commit with its Plan: line, "
+                f"set the branch description (git config branch.<branch>.description), "
+                f"push the branch."
             ),
         }
     }

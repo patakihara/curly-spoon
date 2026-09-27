@@ -1,7 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "worktree": {
-    "bgIsolation": "worktree"
+    "bgIsolation": "worktree",
+    "baseRef": "head"
   },
   "hooks": {
     "SessionStart": [
@@ -37,38 +38,6 @@
             "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/usage-gate.sh\"",
             "timeout": 20,
             "statusMessage": "Checking plan usage"
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/delegation-nudge.sh\"",
-            "timeout": 5,
-            "statusMessage": "Delegation nudge"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/agent-log.sh\"",
-            "timeout": 15,
-            "statusMessage": "Logging subagent launch"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/agent-log.sh\"",
-            "timeout": 15,
-            "statusMessage": "Logging subagent completion"
           }
         ]
       }

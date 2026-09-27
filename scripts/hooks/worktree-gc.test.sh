@@ -10,9 +10,8 @@
 # The contract under test: a candidate worktree is removed only when all of
 # (1) a confirmed ancestor of the named integration branch, (2) a clean
 # porcelain, (3) an empty stash, and (4) git's own `worktree remove`/
-# `branch -d` (never --force/-D) all agree. A locked worktree, a live
-# subagent (per the shared agent-log JSONL), or an unparseable/too-young
-# candidate is left alone regardless of git state.
+# `branch -d` (never --force/-D) all agree. A locked worktree or one younger
+# than the age threshold is left alone regardless of git state.
 
 set -uo pipefail
 
@@ -44,15 +43,13 @@ new_repo() {
 }
 
 # Run the hook against $1 (main checkout dir), with a throwaway, per-call log
-# and (unless overridden) an empty shared agent log so liveness is never
-# accidentally "running" or "ended" for a fixture that didn't set one up.
+# and (unless overridden) an age threshold of zero.
 # Extra args after $1 are passed through as `VAR=value` env overrides.
 run_gc() {
   local dir="$1" logfile="$2"
   shift 2
   env CLAUDE_PROJECT_DIR="$dir" \
     AURALIS_WORKTREE_GC_LOG="$logfile" \
-    AURALIS_AGENT_LOG_SHARED="${AURALIS_AGENT_LOG_SHARED_OVERRIDE:-$dir/unused-shared-log.jsonl}" \
     AURALIS_WORKTREE_GC_MIN_AGE="${AURALIS_WORKTREE_GC_MIN_AGE_OVERRIDE:-0}" \
     "$@" "$HOOK" >/dev/null 2>&1
 }
@@ -216,42 +213,7 @@ else
 fi
 rm -rf "$dir" "$log"
 
-# --- a live subagent (SubagentStart, no Stop) blocks removal unconditionally --
-
-dir="$(new_repo)"
-git -C "$dir" worktree add -q -b worktree-agent-beef01 "$dir/.claude/worktrees/agent-beef01" >/dev/null
-shared="$(mktemp)"
-printf '{"event":"SubagentStart","ts":"t","agent_id":"beef01","agent_type":"claude","checkout":"c"}\n' >"$shared"
-log="$(mktemp)"
-AURALIS_AGENT_LOG_SHARED_OVERRIDE="$shared" run_gc "$dir" "$log"
-
-if worktree_exists "$dir" "$dir/.claude/worktrees/agent-beef01"; then
-  ok "clean, merged worktree with a running agent-log entry: kept"
-else
-  fail "a live subagent's worktree must never be removed: $(cat "$log")"
-fi
-rm -rf "$dir" "$log" "$shared"
-
-# --- an ended agent (Start + Stop) is removed like any other eligible one -----
-
-dir="$(new_repo)"
-git -C "$dir" worktree add -q -b worktree-agent-c0ffee "$dir/.claude/worktrees/agent-c0ffee" >/dev/null
-shared="$(mktemp)"
-{
-  printf '{"event":"SubagentStart","ts":"t","agent_id":"c0ffee","agent_type":"claude","checkout":"c"}\n'
-  printf '{"event":"SubagentStop","ts":"t","agent_id":"c0ffee","agent_type":"claude","checkout":"c","summary":"done"}\n'
-} >"$shared"
-log="$(mktemp)"
-AURALIS_AGENT_LOG_SHARED_OVERRIDE="$shared" run_gc "$dir" "$log"
-
-if ! worktree_exists "$dir" "$dir/.claude/worktrees/agent-c0ffee"; then
-  ok "clean, merged worktree whose agent-log shows Start+Stop: removed"
-else
-  fail "an ended agent's eligible worktree should be removed: $(cat "$log")"
-fi
-rm -rf "$dir" "$log" "$shared"
-
-# --- a name that does not parse into an agent id is a fallback age gate -------
+# --- the age gate: a young worktree is kept, an old one falls through ---------
 
 dir="$(new_repo)"
 git -C "$dir" worktree add -q -b some-unrelated-branch "$dir/.claude/worktrees/notanagent" >/dev/null
@@ -269,9 +231,9 @@ old_removed=1
 worktree_exists "$dir" "$dir/.claude/worktrees/notanagent" && old_removed=0
 
 if [ "$young_kept" -eq 1 ] && [ "$old_removed" -eq 1 ]; then
-  ok "unparseable name: kept while younger than the age threshold, removed once past it"
+  ok "age gate: kept while younger than the threshold, removed once past it"
 else
-  fail "unparseable-name age gate broken (young_kept=$young_kept old_removed=$old_removed): $(cat "$log") / $(cat "$log2")"
+  fail "age gate broken (young_kept=$young_kept old_removed=$old_removed): $(cat "$log") / $(cat "$log2")"
 fi
 rm -rf "$dir" "$log" "$log2"
 
@@ -315,7 +277,6 @@ git -C "$dir" worktree add -q -b worktree-agent-self1 "$dir/.claude/worktrees/ag
 log="$(mktemp)"
 env CLAUDE_PROJECT_DIR="$dir/.claude/worktrees/agent-self1" \
   AURALIS_WORKTREE_GC_LOG="$log" \
-  AURALIS_AGENT_LOG_SHARED="$dir/unused.jsonl" \
   AURALIS_WORKTREE_GC_MIN_AGE=0 \
   "$HOOK" >/dev/null 2>&1
 
@@ -370,7 +331,6 @@ git -C "$dir" worktree add -q -b worktree-agent-noTarget "$dir/.claude/worktrees
 log="$(mktemp)"
 env CLAUDE_PROJECT_DIR="$dir" \
   AURALIS_WORKTREE_GC_LOG="$log" \
-  AURALIS_AGENT_LOG_SHARED="$dir/unused.jsonl" \
   AURALIS_WORKTREE_GC_BRANCH="branch-that-does-not-exist" \
   AURALIS_WORKTREE_GC_MIN_AGE=0 \
   "$HOOK" >/dev/null 2>&1
@@ -396,13 +356,12 @@ rm -rf "$dir"
 
 # --- HOME and every XDG var unset: the default-path branches must not crash ---
 #
-# This is the shape time-gate.sh's own tests structurally could not catch
-# (every case there set the env override, so the bare ${HOME:-...} default
-# branch never evaluated under set -u). Every default here is written as
+# A suite where every case sets the env override never evaluates the bare
+# ${HOME:-...} default branch under set -u. Every default here is written as
 # ${VAR:-${HOME:-}/...} for exactly this reason -- assert it holds.
 
 dir="$(new_repo)"
-out="$(env -u HOME -u XDG_STATE_HOME -u AURALIS_WORKTREE_GC_LOG -u AURALIS_AGENT_LOG_SHARED \
+out="$(env -u HOME -u XDG_STATE_HOME -u AURALIS_WORKTREE_GC_LOG \
   CLAUDE_PROJECT_DIR="$dir" PATH="$PATH" "$HOOK" 2>&1)"
 status=$?
 if [ "$status" -eq 0 ] && ! printf '%s' "$out" | grep -qi "unbound variable"; then
