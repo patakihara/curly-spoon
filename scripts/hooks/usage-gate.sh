@@ -221,6 +221,43 @@ not-retired:*)
 *) : ;; # not-a-job, or python3 missing/failed -- both fall through, deliberately
 esac
 
+# The autorun switch (flipped from any session by the claude-shared auralis-autorun skill; the file
+# lives on mediaserver). Only background jobs are affected, never Sofia's own sessions in this repo.
+# When it says paused, the job gets a 10-minute grace to land its work, warned on every tool call,
+# and after that every tool call is denied; bin/auralis-autorun then stops the session on its next
+# tick. Read over SSH at most once a minute; unreadable leaves the session alone (the start check
+# in bin/auralis-autorun is the part that fails closed).
+if [ -n "$JOB_ID" ] && [ "$event" = "PreToolUse" ] && [ "${AURALIS_SWITCH_CHECK:-on}" != "off" ]; then
+  switch_cache="${XDG_CACHE_HOME:-${HOME:-}/.cache}/auralis-switch"
+  switch_age=$(( $(date +%s) - $(stat -c %Y "$switch_cache" 2>/dev/null || echo 0) ))
+  if [ ! -s "$switch_cache" ] || [ "$switch_age" -gt 60 ]; then
+    mkdir -p "$(dirname "$switch_cache")" 2>/dev/null
+    timeout 20 ssh -o ConnectTimeout=5 -o BatchMode=yes mediaserver \
+      'cat .local/state/auralis-autorun/control' >"$switch_cache.tmp" 2>/dev/null
+    mv -f "$switch_cache.tmp" "$switch_cache" 2>/dev/null
+  fi
+  if [ "$(head -1 "$switch_cache" 2>/dev/null)" = "paused" ]; then
+    paused_at="$(sed -n 's/^at: //p' "$switch_cache" | head -1)"
+    paused_for=$(( $(date +%s) - $(date -d "$paused_at" +%s 2>/dev/null || date +%s) ))
+    python3 - "$paused_for" <<'PAUSE'
+import json, sys
+left = 600 - int(sys.argv[1])
+if left > 0:
+    out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": (
+        "Sofia has paused the Auralis autorun. Land your work now: commit, push, and leave a short "
+        "note on the branch saying where you stopped and what is next. In about %d minutes every "
+        "tool call will be blocked and this session will be stopped." % max(1, left // 60))}}
+else:
+    out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+        "permissionDecisionReason": ("Sofia has paused the Auralis autorun. Stop working: do not "
+        "retry or route around this. End the turn; the session will be stopped.")},
+        "systemMessage": "Auralis autorun paused: tool call blocked."}
+print(json.dumps(out))
+PAUSE
+    exit 0
+  fi
+fi
+
 [ -f "$GUARD" ] || allow
 command -v python3 >/dev/null 2>&1 || allow
 

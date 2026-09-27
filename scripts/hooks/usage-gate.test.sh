@@ -14,6 +14,9 @@
 set -uo pipefail
 
 HOOK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/usage-gate.sh"
+# The live checks against mediaserver (weekly share, autorun switch) are exercised separately; keep
+# this suite offline and deterministic.
+export AURALIS_WEEKLY_SHARE=off AURALIS_SWITCH_CHECK=off
 
 passed=0
 failed=0
