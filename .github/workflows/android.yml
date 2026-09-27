@@ -31,6 +31,9 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
+        with:
+          packages: platform-tools
+
       # The repo does ship a wrapper, so the Gradle version is pinned by
       # gradle/wrapper/gradle-wrapper.properties (8.11.1) rather than by this file — one
       # source of truth, and the reproducibility phase 11 will want. Because that wrapper is
