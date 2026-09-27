@@ -5,20 +5,30 @@ import { type z } from 'zod';
 /** Thrown from a handler to answer `{ error }` with a status instead of the route's response. */
 export class Refusal extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404,
+    readonly status: 400 | 401 | 403 | 404 | 429 | 502,
     readonly error: string,
   ) {
     super(`${status} ${error}`);
   }
 }
 
-type BodyOf<R extends Route> = R['body'] extends z.ZodTypeAny ? z.infer<R['body']> : undefined;
+type Parsed<S> = S extends z.ZodTypeAny ? z.infer<S> : undefined;
+type BodyOf<R extends Route> = Parsed<R['body']>;
+interface InputOf<R extends Route> {
+  params: Parsed<R['params']>;
+  query: Parsed<R['query']>;
+}
+
+/** `/devices/{id}` as Fastify writes it: `/devices/:id`. */
+function fastifyPath(path: string): string {
+  return path.replace(/\{(\w+)\}/g, ':$1');
+}
 
 /**
  * Serves one declared route. The route's `access` goes into its config, where the access hook
- * reads it. A body is parsed through the route's body schema (400 if it does not fit), and the
- * handler's answer through its response schema, so the server cannot answer a shape the OpenAPI
- * document does not describe.
+ * reads it. The body, path parameters and query are parsed through the route's schemas (400 if
+ * one does not fit), and the handler's answer through its response schema, so the server cannot
+ * answer a shape the OpenAPI document does not describe. A redirect route answers 302.
  */
 export function serve<R extends Route>(
   app: FastifyInstance,
@@ -27,21 +37,40 @@ export function serve<R extends Route>(
     request: FastifyRequest,
     reply: FastifyReply,
     body: BodyOf<R>,
+    input: InputOf<R>,
   ) => z.infer<R['response']> | Promise<z.infer<R['response']>>,
 ): void {
   app.route({
     method: route.method,
-    url: route.path,
+    url: fastifyPath(route.path),
     config: { access: route.access },
     handler: async (request, reply) => {
-      let body: unknown;
-      if (route.body !== undefined) {
-        const parsed = route.body.safeParse(request.body);
-        if (!parsed.success) return reply.code(400).send({ error: 'bad_request' });
-        body = parsed.data;
+      const parts = [
+        ['body', route.body, request.body],
+        ['params', route.params, request.params],
+        ['query', route.query, request.query],
+      ] as const;
+      const parsed: Record<string, unknown> = {};
+      for (const [name, schema, value] of parts) {
+        if (schema === undefined) continue;
+        const result = schema.safeParse(value);
+        if (!result.success) return reply.code(400).send({ error: 'bad_request' });
+        parsed[name] = result.data;
       }
       try {
-        return route.response.parse(await handler(request, reply, body as BodyOf<R>));
+        const answer = route.response.parse(
+          await handler(
+            request,
+            reply,
+            parsed.body as BodyOf<R>,
+            {
+              params: parsed.params,
+              query: parsed.query,
+            } as InputOf<R>,
+          ),
+        );
+        if (route.redirect) return reply.redirect((answer as { location: string }).location, 302);
+        return answer;
       } catch (err) {
         if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
         throw err;

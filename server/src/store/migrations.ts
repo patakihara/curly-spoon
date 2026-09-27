@@ -17,7 +17,7 @@ export const migrations: readonly Migration[] = [
     name: 'security',
     up: (db) => {
       db.exec(`
-        -- Everyone who can sign in. The username is the join key with the household sign-on.
+        -- Everyone who can sign in, by the household sign-on's login name.
         CREATE TABLE users (
           id         TEXT PRIMARY KEY,
           username   TEXT NOT NULL UNIQUE,
@@ -41,6 +41,81 @@ export const migrations: readonly Migration[] = [
           only       INTEGER PRIMARY KEY CHECK (only = 1),
           code_hash  TEXT NOT NULL,
           created_at INTEGER NOT NULL
+        );
+      `);
+    },
+  },
+  {
+    id: 2,
+    name: 'sso',
+    up: (db) => {
+      db.exec(`
+        -- The sign-on subject keys a user; setup-only users have none. A setup admin keeps the
+        -- role; a directory admin loses it on leaving the directory's admin group.
+        ALTER TABLE users ADD COLUMN oidc_issuer TEXT;
+        ALTER TABLE users ADD COLUMN oidc_sub TEXT;
+        ALTER TABLE users ADD COLUMN role_source TEXT NOT NULL DEFAULT 'setup'
+          CHECK (role_source IN ('setup', 'directory'));
+        CREATE UNIQUE INDEX idx_users_oidc ON users(oidc_issuer, oidc_sub);
+
+        -- Each browser or app install a user signs in from.
+        CREATE TABLE devices (
+          id           TEXT PRIMARY KEY,
+          user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          kind         TEXT NOT NULL CHECK (kind IN ('web', 'android')),
+          name         TEXT NOT NULL,
+          created_at   INTEGER NOT NULL,
+          last_seen_at INTEGER NOT NULL
+        );
+        CREATE INDEX idx_devices_user_id ON devices(user_id);
+
+        -- Every session now belongs to a device; nothing is deployed, so old rows go.
+        DROP TABLE sessions;
+        CREATE TABLE sessions (
+          id_hash    TEXT PRIMARY KEY,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          device_id  TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+          kind       TEXT NOT NULL CHECK (kind IN ('cookie', 'bearer')),
+          created_at INTEGER NOT NULL,
+          expires_at INTEGER NOT NULL
+        );
+        CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+        CREATE INDEX idx_sessions_device_id ON sessions(device_id);
+
+        -- One sign-in in flight: only the state's hash, for ten minutes.
+        CREATE TABLE login_requests (
+          state_hash    TEXT PRIMARY KEY,
+          nonce         TEXT NOT NULL,
+          verifier      TEXT NOT NULL,
+          client        TEXT NOT NULL CHECK (client IN ('web', 'android')),
+          return_to     TEXT NOT NULL,
+          app_challenge TEXT,
+          device_id     TEXT,
+          expires_at    INTEGER NOT NULL
+        );
+
+        -- The one-time code the app swaps for its bearer token, bound to its PKCE challenge.
+        CREATE TABLE app_codes (
+          code_hash     TEXT PRIMARY KEY,
+          user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          device_id     TEXT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+          app_challenge TEXT NOT NULL,
+          expires_at    INTEGER NOT NULL
+        );
+
+        -- Each person's own account on each upstream. The unique pair means two Auralis users
+        -- can never hold one upstream account.
+        CREATE TABLE upstream_links (
+          user_id          TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          service          TEXT NOT NULL CHECK (service IN ('abs', 'jellyfin')),
+          upstream_user_id TEXT,
+          token_ciphertext TEXT,
+          upstream_key_id  TEXT,
+          state            TEXT NOT NULL CHECK (state IN ('linked', 'unlinked', 'stale', 'error')),
+          detail           TEXT,
+          updated_at       INTEGER NOT NULL,
+          PRIMARY KEY (user_id, service),
+          UNIQUE (service, upstream_user_id)
         );
       `);
     },

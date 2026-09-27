@@ -8,29 +8,19 @@
 export interface UpstreamCandidate {
   id: string;
   username: string;
-  /** Audiobookshelf's `authOpenIDSub`: when present, it must be this person's subject. */
-  oidcSub?: string | null;
 }
 
 export type Pick =
-  | { state: 'linked'; id: string }
-  | { state: 'unlinked'; detail: 'no_account' | 'ambiguous' | 'subject_mismatch' };
+  { state: 'linked'; id: string } | { state: 'unlinked'; detail: 'no_account' | 'ambiguous' };
 
 export function foldName(name: string): string {
   return name.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
-export function pickUpstreamUser(
-  candidates: readonly UpstreamCandidate[],
-  who: { loginId: string; sub?: string },
-): Pick {
-  const want = foldName(who.loginId);
+export function pickUpstreamUser(candidates: readonly UpstreamCandidate[], loginId: string): Pick {
+  const want = foldName(loginId);
   const hits = candidates.filter((c) => foldName(c.username) === want);
   if (hits.length === 0) return { state: 'unlinked', detail: 'no_account' };
   if (hits.length > 1) return { state: 'unlinked', detail: 'ambiguous' };
-  const [hit] = hits as [UpstreamCandidate];
-  if (hit.oidcSub != null && hit.oidcSub !== '' && hit.oidcSub !== who.sub) {
-    return { state: 'unlinked', detail: 'subject_mismatch' };
-  }
-  return { state: 'linked', id: hit.id };
+  return { state: 'linked', id: (hits[0] as UpstreamCandidate).id };
 }

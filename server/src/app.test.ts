@@ -22,7 +22,8 @@ describe('the API', () => {
     const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
     await app.ready();
     for (const r of routes) {
-      expect(app.hasRoute({ method: r.method, url: r.path }), `${r.method} ${r.path}`).toBe(true);
+      const url = r.path.replace(/\{(\w+)\}/g, ':$1');
+      expect(app.hasRoute({ method: r.method, url }), `${r.method} ${r.path}`).toBe(true);
     }
     await app.close();
   });

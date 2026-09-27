@@ -1,4 +1,20 @@
-import { LogoutResponse, Me, SetupBody, SetupStatus, UserList } from './auth.js';
+import {
+  Account,
+  AppToken,
+  CallbackQuery,
+  DeviceList,
+  DeviceParams,
+  Device,
+  LoginQuery,
+  Me,
+  Ok,
+  Redirect,
+  RenameDeviceBody,
+  SetupBody,
+  SetupStatus,
+  TokenBody,
+  UserList,
+} from './auth.js';
 import { HealthResponse } from './health.js';
 import { type z } from './zod.js';
 
@@ -10,7 +26,8 @@ export type Access = 'public' | 'member' | 'admin' | 'setup';
 
 /** One HTTP route: the server serves it and the OpenAPI document describes it, from this alone. */
 export interface Route<Response extends z.ZodTypeAny = z.ZodTypeAny> {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** `{name}` marks a path parameter, as OpenAPI writes it. */
   path: string;
   operationId: string;
   summary: string;
@@ -20,6 +37,14 @@ export interface Route<Response extends z.ZodTypeAny = z.ZodTypeAny> {
   access: Access;
   /** The JSON request body; the server answers 400 to one that does not parse. */
   body?: z.ZodTypeAny;
+  /** The query string; the server answers 400 to one that does not parse. */
+  query?: z.AnyZodObject;
+  /** The path parameters, one per `{name}` in the path. */
+  params?: z.AnyZodObject;
+  /** Answers 302 to the `location` the handler returns, not 200 with a body. */
+  redirect?: true;
+  /** May answer 429 with `Retry-After`. */
+  rateLimited?: true;
 }
 
 export const health = {
@@ -53,13 +78,51 @@ export const postSetup = {
   body: SetupBody,
 } as const satisfies Route;
 
+export const login = {
+  method: 'GET',
+  path: '/auth/login',
+  operationId: 'login',
+  summary: 'Start signing in through the household sign-on',
+  responseDescription: 'Sent on to the sign-on.',
+  response: Redirect,
+  access: 'public',
+  query: LoginQuery,
+  redirect: true,
+  rateLimited: true,
+} as const satisfies Route;
+
+export const loginCallback = {
+  method: 'GET',
+  path: '/auth/callback',
+  operationId: 'loginCallback',
+  summary: 'Finish signing in: the sign-on sends the browser back here',
+  responseDescription: 'Signed in: back to the web app, or on to the Android app with a code.',
+  response: Redirect,
+  access: 'public',
+  query: CallbackQuery,
+  redirect: true,
+  rateLimited: true,
+} as const satisfies Route;
+
+export const appToken = {
+  method: 'POST',
+  path: '/auth/token',
+  operationId: 'appToken',
+  summary: "Swap the Android app's one-time code for its bearer token",
+  responseDescription: "The app's token and device.",
+  response: AppToken,
+  access: 'public',
+  body: TokenBody,
+  rateLimited: true,
+} as const satisfies Route;
+
 export const getMe = {
   method: 'GET',
   path: '/auth/me',
   operationId: 'getMe',
-  summary: 'Who is signed in',
+  summary: 'Who is signed in, on which device, and their upstream links',
   responseDescription: 'The signed-in user.',
-  response: Me,
+  response: Account,
   access: 'member',
 } as const satisfies Route;
 
@@ -69,8 +132,41 @@ export const logout = {
   operationId: 'logout',
   summary: 'Sign out of this session',
   responseDescription: 'Signed out.',
-  response: LogoutResponse,
+  response: Ok,
   access: 'member',
+} as const satisfies Route;
+
+export const listDevices = {
+  method: 'GET',
+  path: '/devices',
+  operationId: 'listDevices',
+  summary: "The signed-in user's own devices",
+  responseDescription: 'Every device this user has signed in from.',
+  response: DeviceList,
+  access: 'member',
+} as const satisfies Route;
+
+export const renameDevice = {
+  method: 'PATCH',
+  path: '/devices/{id}',
+  operationId: 'renameDevice',
+  summary: 'Rename one of your own devices',
+  responseDescription: 'The renamed device.',
+  response: Device,
+  access: 'member',
+  params: DeviceParams,
+  body: RenameDeviceBody,
+} as const satisfies Route;
+
+export const deleteDevice = {
+  method: 'DELETE',
+  path: '/devices/{id}',
+  operationId: 'deleteDevice',
+  summary: 'Remove one of your own devices, signing it out',
+  responseDescription: 'The device and its sessions are gone.',
+  response: Ok,
+  access: 'member',
+  params: DeviceParams,
 } as const satisfies Route;
 
 export const listUsers = {
@@ -84,4 +180,17 @@ export const listUsers = {
 } as const satisfies Route;
 
 /** Every route the API has. The generator and the server's route test both read this list. */
-export const routes: readonly Route[] = [health, getSetup, postSetup, getMe, logout, listUsers];
+export const routes: readonly Route[] = [
+  health,
+  getSetup,
+  postSetup,
+  login,
+  loginCallback,
+  appToken,
+  getMe,
+  logout,
+  listDevices,
+  renameDevice,
+  deleteDevice,
+  listUsers,
+];

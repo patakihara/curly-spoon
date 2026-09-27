@@ -1,6 +1,9 @@
-/** The one cookie the server issues: an opaque, HttpOnly pointer to a row in `sessions`. */
+/**
+ * The server's two cookies, both HttpOnly: the session, an opaque pointer to a row in `sessions`,
+ * and the device id, which only says which device this browser is and signs no one in.
+ */
 
-import { SESSION_COOKIE } from '@auralis/schema';
+import { DEVICE_COOKIE, SESSION_COOKIE } from '@auralis/schema';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CookieSecure } from '../config.js';
 
@@ -37,4 +40,19 @@ export function clearSessionCookie(
   secure: CookieSecure,
 ): void {
   reply.clearCookie(SESSION_COOKIE, options(request, secure));
+}
+
+/** Browsers cap a cookie's life at 400 days. */
+const DEVICE_COOKIE_MAX_AGE_S = 400 * 24 * 60 * 60;
+
+export function setDeviceCookie(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  secure: CookieSecure,
+  deviceId: string,
+): void {
+  reply.setCookie(DEVICE_COOKIE, deviceId, {
+    ...options(request, secure),
+    maxAge: DEVICE_COOKIE_MAX_AGE_S,
+  });
 }

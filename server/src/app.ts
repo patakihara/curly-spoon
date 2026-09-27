@@ -1,16 +1,22 @@
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { health } from '@auralis/schema';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { registerAccess } from './auth/access.js';
+import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
+import { deviceRoutes } from './routes/devices.js';
 import { setupRoutes } from './routes/setup.js';
+import { signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
+import type { Random } from './store/signIn.js';
+import type { Linker } from './upstream/links.js';
 
 export interface BuildAppOptions {
   /** web's build output; `null`, or a path that does not exist, serves no web app. */
@@ -23,6 +29,12 @@ export interface BuildAppOptions {
   publicOrigin?: string | undefined;
   /** Where the one-time setup code was written, removed once it is used. */
   setupCodeFile?: string | null;
+  /** The household sign-on; without it the sign-in routes answer 404. */
+  signOn?: SignOn | null;
+  /** Links each person's upstream accounts at sign-in. */
+  linker?: Linker | null;
+  random?: Random;
+  now?: () => number;
   logger?: boolean;
 }
 
@@ -43,7 +55,16 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
 
   serve(app, health, () => ({ status: 'ok' as const }));
   setupRoutes(app, { db, cookieSecure, setupCodeFile: options.setupCodeFile ?? null });
+  signOnRoutes(app, {
+    db,
+    cookieSecure,
+    signOn: options.signOn ?? null,
+    linker: options.linker ?? null,
+    random: options.random ?? randomBytes,
+    now: options.now ?? Date.now,
+  });
   authRoutes(app, { db, cookieSecure });
+  deviceRoutes(app, { db, cookieSecure });
   adminRoutes(app, { db });
 
   const distDir = options.webDistDir;

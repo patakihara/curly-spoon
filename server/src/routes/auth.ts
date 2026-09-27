@@ -5,12 +5,15 @@ import type { CookieSecure } from '../config.js';
 import { serve } from '../route.js';
 import type { Db } from '../store/connection.js';
 import { deleteSession } from '../store/sessions.js';
+import { listLinks, SERVICES } from '../store/upstreamLinks.js';
 import type { User } from '../store/users.js';
 
 /** The access hook has already refused a request without a session on these routes. */
-function signedIn(request: FastifyRequest): User {
-  if (request.user === null) throw new Error('invariant: a member route ran without a session');
-  return request.user;
+export function signedIn(request: FastifyRequest): User & { deviceId: string } {
+  if (request.user === null || request.deviceId === null) {
+    throw new Error('invariant: a member route ran without a session');
+  }
+  return { ...request.user, deviceId: request.deviceId };
 }
 
 export function authRoutes(
@@ -21,7 +24,16 @@ export function authRoutes(
 
   serve(app, getMe, (request) => {
     const user = signedIn(request);
-    return { username: user.username, role: user.role };
+    const links = listLinks(db, user.id);
+    return {
+      username: user.username,
+      role: user.role,
+      deviceId: user.deviceId,
+      links: SERVICES.map((service) => {
+        const link = links.find((l) => l.service === service);
+        return { service, state: link?.state ?? 'unlinked', detail: link?.detail ?? null };
+      }),
+    };
   });
 
   serve(app, logout, (request, reply) => {

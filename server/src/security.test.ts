@@ -8,6 +8,7 @@ import { buildApp } from './app.js';
 import { createProxyTrust, type Lookup } from './auth/proxy.js';
 import { type CookieSecure } from './config.js';
 import { openDatabase, type Db } from './store/connection.js';
+import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
 import { issueSetupCode } from './store/setupCode.js';
 import { listUsers, upsertUser } from './store/users.js';
@@ -93,7 +94,8 @@ async function claimedAdmin(app: FastifyInstance, code: string) {
 
 function memberCookie(db: Db) {
   const member = upsertUser(db, { username: 'kara', role: 'member' });
-  return cookieHeader(createSession(db, member.id).token);
+  const device = createDevice(db, { userId: member.id, kind: 'web' });
+  return cookieHeader(createSession(db, { userId: member.id, deviceId: device.id }).token);
 }
 
 const signedIn = (cookie: string, origin = SAME_ORIGIN) => ({ cookie, origin });
@@ -232,7 +234,7 @@ describe('roles', () => {
     }
   });
 
-  it('[M0.security/b] every route declares its access, and only /health and GET /setup are public', async () => {
+  it('[M0.security/b] every route declares its access, and only /health, GET /setup and sign-in are public', async () => {
     const { app, code } = await server();
     await claimedAdmin(app, code);
 
@@ -240,7 +242,7 @@ describe('roles', () => {
       expect(['public', 'member', 'admin', 'setup'], `${r.method} ${r.path}`).toContain(r.access);
     }
     expect(routes.filter((r) => r.access === 'public').map((r) => `${r.method} ${r.path}`)).toEqual(
-      ['GET /health', 'GET /setup'],
+      ['GET /health', 'GET /setup', 'GET /auth/login', 'GET /auth/callback', 'POST /auth/token'],
     );
     for (const r of routes.filter((route) => route.access !== 'public')) {
       const payload = bodyFor(r.method, r.path);
@@ -387,7 +389,7 @@ describe('the session cookie and the proxy', () => {
       headers: { cookie: cookieHeader(cookie.value) },
     });
     expect(me.statusCode).toBe(200);
-    expect(me.json()).toEqual({ username: 'sofia', role: 'admin' });
+    expect(me.json()).toMatchObject({ username: 'sofia', role: 'admin' });
   });
 
   it('marks the cookie Secure even over plain HTTP when COOKIE_SECURE=true', async () => {

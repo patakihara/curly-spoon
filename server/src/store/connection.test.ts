@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openDatabase } from './connection.js';
 import { runMigrations } from './migrations.js';
+import { createDevice } from './devices.js';
 import { createSession, validateSession } from './sessions.js';
 import { upsertUser } from './users.js';
 
@@ -35,7 +36,8 @@ describe('openDatabase', () => {
   it("enforces foreign keys, so deleting a user deletes that user's sessions", () => {
     const db = openDatabase(':memory:');
     const user = upsertUser(db, { username: 'kara', role: 'member' });
-    const session = createSession(db, user.id);
+    const device = createDevice(db, { userId: user.id, kind: 'web' });
+    const session = createSession(db, { userId: user.id, deviceId: device.id });
 
     db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
 

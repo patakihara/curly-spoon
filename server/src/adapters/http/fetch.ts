@@ -29,6 +29,8 @@ export interface RequestInitJson {
   headers?: Record<string, string>;
   /** Serialized as JSON with `content-type: application/json`. */
   json?: unknown;
+  /** Serialized as `application/x-www-form-urlencoded`, as OAuth token endpoints take it. */
+  form?: Record<string, string>;
   timeoutMs?: number;
 }
 
@@ -49,6 +51,9 @@ export async function requestJson<T>(
   if (init.json !== undefined) {
     headers['content-type'] = 'application/json';
     body = JSON.stringify(init.json);
+  } else if (init.form !== undefined) {
+    headers['content-type'] = 'application/x-www-form-urlencoded';
+    body = new URLSearchParams(init.form).toString();
   }
 
   const timeoutMs = init.timeoutMs ?? DEFAULT_TIMEOUT_MS;

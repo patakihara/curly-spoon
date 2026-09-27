@@ -3,48 +3,69 @@ import type { z } from 'zod';
 import { SESSION_COOKIE } from '../src/auth.js';
 import type { Route } from '../src/routes.js';
 
-const SECURITY_SCHEME = 'session';
+const SESSION_SCHEME = 'session';
+const BEARER_SCHEME = 'bearer';
 
 /**
  * The OpenAPI 3.1 document for these routes; every `.openapi('Name')` schema becomes a component.
- * A route that is not public asks for the session cookie and may answer 401 or 403 with `error`.
+ * A route that is not public asks for the session cookie or an app's bearer token, and may answer
+ * 401 or 403 with `error`. A route that parses its input may answer 400; a rate-limited one, 429.
  */
 export function buildOpenApiDocument(
   routes: readonly Route[],
   error: z.ZodTypeAny,
 ): ReturnType<OpenApiGeneratorV31['generateDocument']> {
   const registry = new OpenAPIRegistry();
-  registry.registerComponent('securitySchemes', SECURITY_SCHEME, {
+  registry.registerComponent('securitySchemes', SESSION_SCHEME, {
     type: 'apiKey',
     in: 'cookie',
     name: SESSION_COOKIE,
   });
+  registry.registerComponent('securitySchemes', BEARER_SCHEME, { type: 'http', scheme: 'bearer' });
   const refusal = (description: string) => ({
     description,
     content: { 'application/json': { schema: error } },
   });
   for (const route of routes) {
     const signedIn = route.access !== 'public';
+    const parsesInput =
+      route.body !== undefined || route.query !== undefined || route.params !== undefined;
+    const request = {
+      ...(route.params === undefined ? {} : { params: route.params }),
+      ...(route.query === undefined ? {} : { query: route.query }),
+      ...(route.body === undefined
+        ? {}
+        : { body: { content: { 'application/json': { schema: route.body } } } }),
+    };
     registry.registerPath({
-      method: route.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete',
+      method: route.method.toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete',
       path: route.path,
       operationId: route.operationId,
       summary: route.summary,
-      ...(route.body === undefined
-        ? {}
-        : { request: { body: { content: { 'application/json': { schema: route.body } } } } }),
-      ...(signedIn ? { security: [{ [SECURITY_SCHEME]: [] }] } : {}),
+      ...(Object.keys(request).length === 0 ? {} : { request }),
+      ...(signedIn ? { security: [{ [SESSION_SCHEME]: [] }, { [BEARER_SCHEME]: [] }] } : {}),
       responses: {
-        200: {
-          description: route.responseDescription,
-          content: { 'application/json': { schema: route.response } },
-        },
+        ...(route.redirect
+          ? {
+              302: {
+                description: route.responseDescription,
+                headers: { Location: { schema: { type: 'string' } } },
+              },
+            }
+          : {
+              200: {
+                description: route.responseDescription,
+                content: { 'application/json': { schema: route.response } },
+              },
+            }),
+        ...(parsesInput ? { 400: refusal('The request does not parse, or was refused.') } : {}),
         ...(signedIn
           ? {
               401: refusal('No session.'),
               403: refusal('Without the role this route needs, or sent from another site.'),
             }
           : {}),
+        ...(route.rateLimited ? { 429: refusal('Too many attempts; see Retry-After.') } : {}),
       },
     });
   }

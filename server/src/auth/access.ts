@@ -1,8 +1,9 @@
 /**
  * The one hook between every request and its handler. It resolves the session cookie (rotating it
- * past half its life), refuses a signed-in write from another site, then enforces the access the
- * route declared in schema/: 401 without a session, 403 without the role. A route that declares
- * no access cannot be registered at all.
+ * past half its life) or an app's bearer token, refuses a cookie-signed write from another site,
+ * then enforces the access the route declared in schema/: 401 without a session, 403 without the
+ * role. A bearer token is never sent by a browser on its own, so it needs no Origin check; both
+ * at once is refused. A route that declares no access cannot be registered at all.
  */
 
 import { type Access, SESSION_COOKIE } from '@auralis/schema';
@@ -20,8 +21,10 @@ declare module 'fastify' {
   }
   interface FastifyRequest {
     user: User | null;
-    /** The session cookie's current value, after any rotation. */
+    /** The session cookie's or bearer token's current value, after any rotation. */
     sessionToken: string | null;
+    /** The device the session belongs to. */
+    deviceId: string | null;
   }
 }
 
@@ -53,14 +56,21 @@ function fromOwnSite(request: FastifyRequest, publicOrigin: string | undefined):
   return claimed !== undefined && claimed === expected;
 }
 
-function refuse(reply: FastifyReply, status: 401 | 403, error: string) {
+function refuse(reply: FastifyReply, status: 400 | 401 | 403, error: string) {
   return reply.code(status).send({ error });
+}
+
+/** The token of an `Authorization: Bearer` header, else undefined. */
+function bearerToken(header: string | undefined): string | undefined {
+  const match = /^Bearer\s+(\S+)\s*$/i.exec(header ?? '');
+  return match?.[1];
 }
 
 export function registerAccess(app: FastifyInstance, options: AccessOptions): void {
   const { db, proxy, cookieSecure, publicOrigin } = options;
   app.decorateRequest('user', null);
   app.decorateRequest('sessionToken', null);
+  app.decorateRequest('deviceId', null);
 
   // Fails closed: a route added without an access declaration stops the app from being built.
   app.addHook('onRoute', (route) => {
@@ -74,17 +84,30 @@ export function registerAccess(app: FastifyInstance, options: AccessOptions): vo
     await proxy.refreshIfStale();
 
     const token = request.cookies[SESSION_COOKIE];
-    if (token !== undefined && token !== '') {
+    const hasCookie = token !== undefined && token !== '';
+    const bearer = bearerToken(request.headers.authorization);
+    if (hasCookie && bearer !== undefined) return refuse(reply, 400, 'ambiguous_credentials');
+
+    if (bearer !== undefined) {
+      const session = validateSession(db, bearer, 'bearer');
+      const user = session ? getUserById(db, session.userId) : null;
+      if (session !== null && user !== null) {
+        request.user = user;
+        request.sessionToken = bearer;
+        request.deviceId = session.deviceId;
+      }
+    } else if (hasCookie) {
       if (UNSAFE_METHODS.has(request.method) && !fromOwnSite(request, publicOrigin)) {
         return refuse(reply, 403, 'cross_origin');
       }
-      const session = validateSession(db, token);
+      const session = validateSession(db, token, 'cookie');
       const user = session ? getUserById(db, session.userId) : null;
       if (session === null || user === null) {
         clearSessionCookie(request, reply, cookieSecure);
       } else {
         request.user = user;
         request.sessionToken = token;
+        request.deviceId = session.deviceId;
         if (session.shouldRotate) {
           const rotated = rotateSession(db, token);
           if (rotated) {

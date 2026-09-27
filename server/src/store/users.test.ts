@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { openDatabase } from './connection.js';
-import { getUserById, hasAdmin, listUsers, upsertUser } from './users.js';
+import {
+  getUserById,
+  hasAdmin,
+  listUsers,
+  signInUser,
+  upsertUser,
+  UsernameTaken,
+} from './users.js';
 
 describe('users', () => {
   it('creates a new user with the role asked for', () => {
@@ -53,5 +60,39 @@ describe('users', () => {
   it('returns null for an unknown id', () => {
     const db = openDatabase(':memory:');
     expect(getUserById(db, 'does-not-exist')).toBeNull();
+  });
+});
+
+describe('[M0.sso/b] who a sign-on identity is', () => {
+  const ISSUER = 'https://upstream.invalid';
+  const kara = { issuer: ISSUER, sub: 'sub-kara', username: 'kara', directoryAdmin: false };
+
+  it('makes a new member at first sign-in, and finds the same user by subject after', () => {
+    const db = openDatabase(':memory:');
+    const first = signInUser(db, kara);
+    expect(first).toMatchObject({ username: 'kara', role: 'member', roleSource: 'directory' });
+    const renamed = signInUser(db, { ...kara, username: 'kara2' });
+    expect(renamed.id).toBe(first.id);
+    expect(renamed.username).toBe('kara2');
+  });
+
+  it('adopts the setup admin of the same username, and never demotes them', () => {
+    const db = openDatabase(':memory:');
+    const admin = upsertUser(db, { username: 'kara', role: 'admin' });
+    const signedIn = signInUser(db, kara);
+    expect(signedIn.id).toBe(admin.id);
+    expect(signedIn).toMatchObject({ role: 'admin', roleSource: 'setup' });
+  });
+
+  it('gives admin to the directory admin group, and takes it back on leaving', () => {
+    const db = openDatabase(':memory:');
+    expect(signInUser(db, { ...kara, directoryAdmin: true }).role).toBe('admin');
+    expect(signInUser(db, kara).role).toBe('member');
+  });
+
+  it('refuses a username already tied to another subject', () => {
+    const db = openDatabase(':memory:');
+    signInUser(db, kara);
+    expect(() => signInUser(db, { ...kara, sub: 'sub-other' })).toThrow(UsernameTaken);
   });
 });

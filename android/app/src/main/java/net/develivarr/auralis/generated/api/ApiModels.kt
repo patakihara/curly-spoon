@@ -5,6 +5,44 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class Account(
+    val username: String,
+    val role: Role,
+    val deviceId: String,
+    val links: List<LinkStatus>,
+)
+
+@Serializable
+data class AppToken(
+    val token: String,
+    val deviceId: String,
+    val expiresAt: Long,
+)
+
+@Serializable
+enum class ClientKind {
+    @SerialName("web")
+    WEB,
+    @SerialName("android")
+    ANDROID,
+}
+
+@Serializable
+data class Device(
+    val id: String,
+    val kind: ClientKind,
+    val name: String,
+    val createdAt: Long,
+    val lastSeenAt: Long,
+    val current: Boolean,
+)
+
+@Serializable
+data class DeviceList(
+    val devices: List<Device>,
+)
+
+@Serializable
 data class ErrorResponse(
     val error: String,
 )
@@ -21,14 +59,38 @@ enum class HealthResponseStatus {
 }
 
 @Serializable
-data class LogoutResponse(
-    val ok: Boolean,
+enum class LinkState {
+    @SerialName("linked")
+    LINKED,
+    @SerialName("unlinked")
+    UNLINKED,
+    @SerialName("stale")
+    STALE,
+    @SerialName("error")
+    ERROR,
+}
+
+@Serializable
+data class LinkStatus(
+    val service: Service,
+    val state: LinkState,
+    val detail: String?,
 )
 
 @Serializable
 data class Me(
     val username: String,
     val role: Role,
+)
+
+@Serializable
+data class Ok(
+    val ok: Boolean,
+)
+
+@Serializable
+data class RenameDeviceBody(
+    val name: String,
 )
 
 @Serializable
@@ -40,6 +102,14 @@ enum class Role {
 }
 
 @Serializable
+enum class Service {
+    @SerialName("abs")
+    ABS,
+    @SerialName("jellyfin")
+    JELLYFIN,
+}
+
+@Serializable
 data class SetupBody(
     val code: String? = null,
     val username: String,
@@ -48,6 +118,12 @@ data class SetupBody(
 @Serializable
 data class SetupStatus(
     val configured: Boolean,
+)
+
+@Serializable
+data class TokenBody(
+    val code: String,
+    val codeVerifier: String,
 )
 
 @Serializable
