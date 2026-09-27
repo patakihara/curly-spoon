@@ -97,7 +97,7 @@ else:
     reason = hs["permissionDecisionReason"]
 assert "5-hour  94% of 80% limit, resets in 0h01m" in reason, reason
 assert "Weekly  6% of 95% limit, resets in 11d13h" in reason, reason
-assert "Weekly share" not in reason, reason
+assert "Weekly share  6% used of a 36% cap for now (the cap rises as waking hours pass)" in reason, reason
 ' "$event" 2>/dev/null; then
     ok "$event: emits a well-formed deny carrying both windows, limits and resets"
   else
@@ -131,7 +131,7 @@ import json, sys
 hs = json.load(sys.stdin)["hookSpecificOutput"]
 assert hs["hookEventName"] == "SessionStart", hs
 assert "5-hour  40% of 80% limit" in hs["additionalContext"], hs
-assert "Weekly share" not in hs["additionalContext"], hs
+assert "Weekly share  6% used of a 36% cap for now (the cap rises as waking hours pass)" in hs["additionalContext"], hs
 assert "permissionDecision" not in hs, hs
 ' 2>/dev/null; then
   ok "SessionStart: reports usage as context without denying"
@@ -223,7 +223,7 @@ else
   fail "warning should repeat every call (w1='$w1' w2='$w2')"
 fi
 
-if printf '%s' "$w1" | grep -q "FRESH session" && ! printf '%s' "$w2" | grep -q "FRESH session"; then
+if printf '%s' "$w1" | grep -q "branch description is what you rely on" && ! printf '%s' "$w2" | grep -q "branch description is what you rely on"; then
   ok "full hand-off instruction lands once, then a short nudge"
 else
   fail "expected the full text once then a nudge (w1='$w1' w2='$w2')"
@@ -244,7 +244,7 @@ printf '%s' "$w1" | grep -q "Plan: line" &&
 # A warning driven by the weekly share names it.
 budget warn ok 30 40 0.01 3600 5000
 out="$(run_hook "$dir" PreToolUse)"
-if printf '%s' "$out" | grep -q "Weekly share  nearly used up (1.0% of the week left to spend now)"; then
+if printf '%s' "$out" | grep -q "Weekly share  40% used of a 41% cap for now, nearly reached (the cap rises as waking hours pass)"; then
   ok "a warning from the weekly share names the share"
 else
   fail "expected a weekly share line in the warning: $out"

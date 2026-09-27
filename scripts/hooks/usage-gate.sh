@@ -345,10 +345,15 @@ lines = [
                                   until(d.get("seven_day_resets_at"))),
 ]
 avail = d.get("availability")
+# Sofia's weekly share (the time-aware allowance) is a limit like the two windows, so every report
+# shows it, not only when it is nearly used up.
 if reason == "weekly_availability":
     lines.append("Weekly share  used up (autonomous work waits for Sofia's share of the week to refill)")
-elif d["verdict"] == "warn" and d.get("share_low") and isinstance(avail, (int, float)):
-    lines.append("Weekly share  nearly used up (%.1f%% of the week left to spend now)" % (avail * 100))
+elif isinstance(avail, (int, float)) and isinstance(d.get("seven_day"), (int, float)):
+    # budget.py's availability is the room left under the share's cap: cap = used + availability.
+    used = d["seven_day"]
+    lines.append("Weekly share  %.0f%% used of a %.0f%% cap for now%s (the cap rises as waking hours pass)"
+                 % (used, used + avail * 100, ", nearly reached" if d.get("share_low") else ""))
 print(d["verdict"])
 print("" if restart is None else restart)
 print("\n".join(lines))
@@ -412,9 +417,9 @@ elif mode == "warn":
                 "2. Write where you stopped and what is next as the branch description: "
                 "git config branch.<branch>.description \"...\" (or git branch "
                 "--edit-description). Say what is half-finished, in which files, and the "
-                "exact next step. Whatever replaces you is a FRESH session with no memory "
-                "of this one — it reads only the branch, so anything you do not write "
-                "down is lost.\n"
+                "exact next step. The restart resumes this conversation, but compaction can "
+                "drop detail, so the branch description is what you rely on: anything you "
+                "do not write down may be lost.\n"
                 "3. Push the branch.\n"
                 "Past the ceiling every tool call is blocked, including these. "
                 "Start nothing new."
