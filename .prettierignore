@@ -8,3 +8,7 @@ android/
 # Sonora, imported with its history via git subtree. Its own conventions govern it;
 # reformatting would make every file diverge from the history it arrived with.
 design/sonora/
+
+# The plan's own lint is its formatter, and prettier's table realignment would turn
+# one-word edits into whole-table diffs.
+docs/plan/

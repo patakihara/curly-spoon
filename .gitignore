@@ -35,3 +35,7 @@ __pycache__/
 
 # Sofia's own Spotify screenshots: personal listening data, and this repo is public.
 design/sonora/assets/reference/spotify/
+
+# Plan progress: cached CI results and local test reports, never committed.
+.cache/
+reports/
