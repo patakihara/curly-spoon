@@ -44,7 +44,17 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      # The same tests as `pnpm test`, with JUnit reports for the plan's progress. The two node
+      # test globs must match package.json's `test` script.
+      - run: pnpm exec vitest run --reporter=default --reporter=junit --outputFile.junit=reports/junit/vitest.xml
+      - if: always()
+        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs
+      - if: always()
+        run: node scripts/plan/collect-results.mjs --workflow ci --job unit --out reports/plan-results.json reports/junit/*.xml
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          { name: plan-results-ci-unit, path: reports/plan-results.json, if-no-files-found: warn }
 
   web:
     name: Web build
