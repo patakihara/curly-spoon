@@ -3,7 +3,8 @@
 kind: physical
 default: Audiobookshelf recordings go ahead; Jellyfin's wait, and M0.record stays open.
 
-Auralis needs its own Jellyfin key to record Jellyfin's answers. Creating one needs an admin
+Auralis needs its own Jellyfin key to record Jellyfin's answers. The same key also unblocks
+linking each person's Jellyfin account at sign-in. Creating one needs an admin
 login, and a session can't use yours. In Jellyfin: Dashboard → API Keys → + → name it
 `Auralis`, then copy the key. On mediaserver, run this and paste the key when it waits (it
 isn't echoed):

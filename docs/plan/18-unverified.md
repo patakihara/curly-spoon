@@ -14,7 +14,7 @@ part: Delivery
 - Whether the ThinkPad holds unpushed Auralis work newer than `781efd4`: it was unreachable when the repo was read.
 - Which step of the book pipeline is slow. The four `audiobook-*` commands show what imports need fixing by hand, not where the time goes; timing it is the first book task.
 - That Audiobookshelf's folder watcher reliably picks up a new book folder on its own (it's on for the Books library). If it doesn't, Auralis asks for a scan of that one library at a quiet moment instead.
-- How Auralis acts as each user in Audiobookshelf and Jellyfin after a single sign-on login (both are on the sign-on already, but getting an API token per user hasn't been tried).
+- Minting per-user tokens is read from ABS 2.36.1 and Jellyfin 10.11.11 source; the M0.sso recordings prove it live.
 - Watched-state and position sync on your account: reading watch history and marking videos watched with sign-in cookies is known to work in the extractor, but hasn't been tried here. Setting YouTube's resume position by sending a real position instead of "the end" should work but isn't done by any tool known to this plan, and how long exported cookies last in practice is unknown.
 - Cutting SponsorBlock segments without re-encoding is only as precise as the audio's frame size (tens of milliseconds for YouTube's audio), which should be inaudible. Audiobookshelf picking up a re-cut file of an unstarted episode cleanly (new length, no stale progress) is to be tested with the first channel.
 - Where the Android signing keys are kept besides GitHub's secrets. If the app signing key were lost, the installed app could no longer update in place and would have to be reinstalled. A backup outside GitHub is checked before the first release.

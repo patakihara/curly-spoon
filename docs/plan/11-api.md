@@ -12,8 +12,8 @@ Grouped by what they serve. Every response shape lives in the one schema; route 
 #### Session
 
 `GET/POST /setup` (first run or admin)\
-`POST /auth/login|logout` · `GET /auth/me`\
-`GET/POST /devices` · `GET /sessions` (per device)\
+`GET /auth/login` · `GET /auth/callback` · `POST /auth/token` · `POST /auth/logout` · `GET /auth/me`\
+`GET /devices` · `PATCH/DELETE /devices/{id}` · `GET /sessions` (per device)\
 `POST /sessions/{id}/continue-here` (later)\
 `GET /health`
 :::
