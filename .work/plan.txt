@@ -1,0 +1,1125 @@
+
+
+Auralis rebuild plan
+- 
+- 
+
+ Auralis
+
+ Rebuild plan · 2026-09-27
+
+ Why and what
+
+ 0The short version
+ 1Where it stands
+ 2Replacing Spotify
+ 3Your decisions
+ The product
+
+ 4Playback & queues
+ 5Library & accounts
+ 6Getting things
+ 7YouTube shows
+ 8Discovery
+ 9Search & lyrics
+ How it's built
+
+ 10Architecture
+ 11API surface
+ 12Design & frontend
+ 13Staying on track
+ 14How the work runs
+ Delivery
+
+ 15Milestones
+ 16Keep or rewrite
+ 17Still open
+ 18Not verified
+
+ Auralis · from scratch
+
+## A plan that ends with Spotify uninstalled
+
+ Based on patakihara/curly-spoon at 781efd4 (2026-08-21, the latest commit on GitHub), its docs, a read of every app and package, and live checks against the Audiobookshelf and Jellyfin on mediaserver. The design input is Sonora, from its repo on the ThinkPad (~/src/sonora) and its Design System artifact: the two Spotify affordance specs, the 43 reference screens, the backdrop-shell spec, the component APIs and the token export. Also in: your voice-memo notes (52 minutes, cleaned up with your corrections as ~/auralis-notes-2026-09-27.md) and your comments on this page. Where those differ from older decisions, they win.
+
+Part 1Why and what
+
+## The short version
+
+ - Start a fresh codebase, keep the decisions and a few proven parts. The old repo's product decisions and research stand as written. Its code mostly doesn't: audiobook playback breaks on your real server (checked today), Android plays only the first file of a book and never saves progress, and the API is hand-copied three times.
+
+ - The same stack, but every seam is shared. One container and a TypeScript backend, a React web app and native Android, as you decided. What's new: one API schema generates both clients, one playback plan drives every player, and one request pipeline serves all three media.
+
+ - Nothing counts until it works on your real servers. Every upstream adapter is tested against responses recorded from mediaserver's own Audiobookshelf, Jellyfin, qBittorrent and so on, never against fixtures written from docs. This single rule would have prevented most of the old project's failures.
+
+ - Music works the way AbleMusicPlayer does. Anything on YouTube Music is searchable and plays straight away, through a NewPipe-style extractor that runs in the server container. Keep saves it, tagged, into your Jellyfin library. Torrents stay for lossless albums; books and podcasts come through requests.
+
+ - Build in slices you can use, in Spotify's order. First it plays, with no gaps between files and chapters and autoplay onward. Then your library, then play or get anything, then Browse recommending things you don't own. Each milestone ends with you using it for a week, not with CI going green.
+
+ - The frontend is Sonora from day one, on both platforms together. Sonora already covers the Spotify affordances: "More like X" shelf headers, feature cards with preview, spoken-word transport, and offline and quality status. It also exports tokens for both web and Kotlin. Everything in the app starts as a Sonora component: the web app uses Sonora's own components, and Android's are generated against the same prop definitions. Every screen gets one API call returning exactly what its components take.
+
+ - Multiple users, one listening session per device. Each person has their own accounts, taste and queues. Each of their devices keeps its own session, and sessions don't mix unless you choose to.
+
+ 1
+
+## Where it stands
+
+ The old project shipped a lot, but almost none of it was ever run against your real servers or a real phone. Each row below was checked either directly (live) or by reading the code.
+
+ What | Evidence | Effect | 
+
+ Audiobook playback on the real server | live-checked Auralis asks Audiobookshelf to play with an empty body. Your server answers with an HLS playlist (/hls/…/output.m3u8). Both clients treat output.m3u8 as a file id, and the backend has no HLS proxy. | Audiobooks don't play. The test fixtures only ever held direct-play URLs, so no test could catch it. | 
+
+ Android multi-file books | code firstPlayableTrack in PlaybackItemResolver.kt | Only file 1 of a multi-file book plays, including downloaded books. | 
+
+ Android progress | code syncSession/closeSession have no callers | No resume across devices. There's also no speed control, sleep timer or bookmarks. | 
+
+ Web multi-file books | code, not run the queue router's onTrackEnded overrides the next-file step | Probably stops at the first file boundary. | 
+
+ Autoplay | code the podcast/audiobook queue loaders are never called; web music has no next/previous buttons | Nothing continues after a podcast episode or a book, which is what you hit in the ABS app today. | 
+
+ API contract | code server zod, web types.ts (800 lines), Android ApiModels.kt (1,141 lines) | Three hand-kept copies of the same shapes, with nothing checking they agree. | 
+
+ Recommendations | code ListenBrainz and Open Library are wired in, but uncached and fanned out on every request (500 albums + 5,000 tracks + 300 books each time); no podcast provider | Slow, and nothing external reaches podcasts. | 
+
+ Security | code POST /setup is unauthenticated and can be called again; no admin role; a client-supplied downloadUrl is fetched by the server | Anyone who can reach the port can point Auralis at their own server and collect passwords. | 
+
+ Process | docs ROADMAP (6.7k lines) and HANDOVER (2.5k lines) | Features were built with nothing calling them (seven recorded cases), CI badges went green without running tests, parallel sessions collided on main, and a blind Android build was never run by anyone. | 
+
+ The deployed container on mediaserver is up and answering. The breakage is in what it does, not in whether it runs.
+
+ 2
+
+## What replacing Spotify means
+
+ Spotify does six jobs. Each column shows where Auralis gets that job done for one medium. The sources are the ones already decided; this table just puts them in one place.
+
+ Job | Audiobooks | Podcasts | Music | 
+
+ Play it, seamlessly | Audiobookshelf, gapless across files, chapters, speed, sleep timer, bookmarks | Audiobookshelf, via your podcast stubs (first play hydrates the file) | Jellyfin for what you own; YouTube Music for everything else, playing straight away | 
+
+ Keep going | Next in series, when owned | Next unplayed episode of the show | Rest of the album or playlist, then a radio: YouTube Music's own radio for the seed track, mixed with similar music you own | 
+
+ Your library | Books, series, authors, progress | Subscriptions, new episodes, in progress | Albums, artists, playlists, favourites, history | 
+
+ Get what you don't have | Prowlarr → AudiobookBay → qBittorrent, then Auralis's own import (folder layout, metadata, series, author photo), which Audiobookshelf picks up without a full library scan | Subscribe in Audiobookshelf, to a regular feed or to a YouTube channel (as audio); the stub reconciler fills in the back catalogue | It already plays. A song is saved from YouTube Music in seconds (from its menu, or by itself once mostly played). An album added to the library is always torrented in lossless (Prowlarr → qBittorrent, Auralis's own matching and import), replacing any songs kept from it when it lands | 
+
+ Discover | Audible's "listeners also enjoyed", seeded from books you've listened to | Apple Podcasts' "You Might Also Like", seeded from shows you listen to | YouTube Music radio and related, plus ListenBrainz similar artists | 
+
+ Find by memory | Search with suggestions | Search with suggestions | Search your library and YouTube Music together, with suggestions, plus lyrics search (LRCLIB) and synced lyrics | 
+
+ Anywhere | Web and PWA on desktop and phone; Android with background playback, downloads and Android Auto for all three media; progress shared between devices, each device keeping its own queue | 
+
+ This is how the plan closes the biggest gap to Spotify, instant play of music you don't own. It uses the approach you asked for. The costs are known from the research, and the plan budgets for them rather than avoiding them. YouTube keeps changing its internals, so the extractor needs frequent updates (AbleMusicPlayer bumps its pin daily). A broken day shows up as a clear "streaming unavailable" state, while your owned and kept music keeps working.
+
+ 3
+
+## Your decisions
+
+ Fixed inputs, not re-opened.
+
+ These come from USER_DECISIONS.md, the spec addendum and the research notes. The plan builds on them as written. Where a decision rested on a factual premise that turned out false, the plan keeps the decision and fixes the premise (one case, marked).
+
+## Product and platforms
+
+ - Bundle music, podcasts and audiobooks and replace Spotify. "spotify killer, don't forget ;)"
+
+ - Spotify is the reference, and should be looked at rather than guessed at.
+
+ - Browse (icon explore) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from Search. The name lives only in UI strings.
+
+ - Five destinations: Browse, Music, Books, Podcasts, Search, one button each (as Sonora draws it), not a single Library button with a sub-menu.
+
+ - Web includes desktop, runs in Docker, one container with one port, a PWA rather than Electron, native Compose + Media3 on Android.
+
+ - Web and Android are developed together, with parity.
+
+ - Android installs through your own F-Droid repository, added in Droid-ify (https://patakihara.github.io/curly-spoon/repo, live, serving 0.2.0), or through Obtainium from GitHub Releases. The rebuild keeps this path: same app id (net.develivarr.auralis), same signing key, same repository address, so the installed app updates in place.
+
+ - Downloads are Android-only; web leaves the button out rather than faking it. Android Auto is a design constraint, not a toggle.
+
+ - Android gets a Settings screen. Ebooks with read-along sync are wanted but lower priority. The launcher icon stays as it is for now.
+
+## Playback
+
+ - Queues: a music queue and a spoken queue that podcasts and audiobooks share by default, with books split into chapters. The music queue works YouTube Music-style by default, Spotify-style as an option. Back always walks play history. Every queue can be cleared.
+
+ - Transcoding is acceptable. premise fixed It was said to work; it doesn't (see "Where it stands"). The plan makes it work and adds direct play, since offline downloads need the original files anyway.
+
+ - Never video. Auralis has no way to show video, anywhere: not for YouTube, not for music, not for podcast feeds that publish video episodes. Everything plays as audio, and YouTube thumbnails are only used as cover art.
+
+## Library and getting things
+
+ - Library pages show only what you own plus what you've requested.
+
+ - Each person sees their own library (what they added, requested, subscribed to or played). Files stay shared; "show everyone's library" is a setting, off by default, and search always covers the household.
+
+ - Artist and author pages show the whole catalogue, with unowned titles greyed out and requestable. On by default, with a setting to turn it off.
+
+ - Books come through Prowlarr first, with the AudiobookBay scraper as fallback, via qBittorrent or Transmission. Approval is automatic by default.
+
+ - Music follows AbleMusicPlayer's approach (researched from its source on 2026-08-06, at your request): YouTube Music is the catalogue and the audio source, reached through a NewPipe-style extractor, with Spotify used only to import playlists.
+
+ - Torrents stay for music too, above all for higher quality. YouTube Music gives instant play and single-song keeps; adding an album to the library always goes the torrent route, for lossless.
+
+ - A kept song is saved as the original stream (YouTube Music's Opus, about 160 kbps) as-is, with no re-encoding.
+
+## YouTube shows
+
+ - YouTube channels can be added as podcasts, as audio-only shows that behave like any other subscription.
+
+ - SponsorBlock on YouTube shows, in Auralis and in the Audiobookshelf app alike.
+
+ - Watched state and position sync with your YouTube account only for channels you've added as shows, both ways, as an opt-in setting per person. The rest of your YouTube history never comes into Auralis, and YouTube videos and channels are never recommended.
+
+## Discovery and search
+
+ - Recommendations come from external sources and are mixed into Browse. "not useful to me if recommendations only show things already in my library."
+
+ - Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state that holds until everything has arrived.
+
+ - One provider per medium: "Why would the recommendation services for the THREE different kinds of content we have be the same?" Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
+
+ - Research picks: ListenBrainz for music; for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live 2026-09-27.
+
+ - Things you already own show up in search but can't be requested. Global search has suggestions.
+
+ - Search doubles as the request view, with library results and requestable results clearly separated.
+
+ - Lyrics search uses an external provider (LRCLIB).
+
+## Design
+
+ - Sonora is the design source of truth: flat surfaces, one accent you pick, motion by named role, no emoji. From Spotify it takes affordances, not visual design ("not to copy spotify's visual design, but moreso the affordances of the components"), and no new search bar.
+
+ - One Auralis repo holds the design and the apps; the Sonora and canvas artifacts are published from it. You work on the design by commenting on the artifacts or asking in chat.
+
+ Also carried over: the escalation test "would she have an opinion, and does the answer change what she gets?" Ordinary calls are made, not escalated. The research finding that the extractor is a poor recommender still stands. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
+
+Part 2The product
+
+ 4
+
+## Playback & queues
+
+ This is the part most visibly broken today, and the first thing to get right. The rule: the server works out how to play something; the clients just play the plan.
+
+ Tap playPOST /play {ref}
+ Server builds plandirect / ABS HLS proxy /YouTube Music stream via extractor
+ Client plays planweb: two audio elements, preloadedAndroid: ExoPlayer playlist
+ Progressevery 15 s + on pause
+ Fan-outABS session · Jellyfin
+
+ Item endsqueue has more? play it.empty? follow plan.next
+
+ next plan
+
+## What each player does
+
+ - Gapless across files. A multi-file book or an album is one plan. Web keeps two audio elements and preloads the next track about 20 s before the end; Android hands the whole plan to ExoPlayer as a playlist. Chapters are positions on one timeline, so they work across file boundaries.
+
+ - Dirty-streamed tracks (YouTube Music) are resolved by the server when the plan is built, then passed through the same range proxy as everything else, with no transcoding, so seeking and the lock screen behave identically. The next track is fetched in ranged chunks ahead of time (as AbleMusicPlayer does, which dodges throttling) into a small capped cache. The next track in the queue is resolved ahead of time, so there's no gap. Playing a stream reports to the taste profile just like a Jellyfin play.
+
+ - Transcode, made to work. When the server has to transcode, the backend proxies Audiobookshelf's /hls/ playlist and segments. Web plays them with hls.js, Android with Media3's HLS module. Offline downloads always use the original files.
+
+ - Controls on both platforms: speed (pitch preserved), sleep timer (including "end of chapter"), bookmarks synced to Audiobookshelf, skip back/forward, next/previous (chapter for books, track for music), shuffle and repeat for music. Lock screen and notification controls use the same actions (setPositionState on web).
+
+## Queues and autoplay
+
+ Queues belong to a device's listening session (see "Library and accounts"). They're stored on the server so each device resumes its own, and they don't follow you to another device unless you say "Continue here".
+
+## Two queues
+
+ - Music queue. Spoken queue, shared by podcasts and audiobooks by default. A book enters as its chapters, since a chapter is roughly an episode.
+
+ - Switching is a meta-queue over the two. Play next on an episode or chapter while music plays makes it play right after the current song, and playback moves over to the spoken queue there. Starting one queue pauses the other; it isn't cleared.
+
+ - Back walks your play history, Forward walks the queue. Nothing leaves the queue unrecoverably (the Spotify flaw you called out).
+
+ - Autoplay always comes at the end and continues from the last queue that played.
+
+## Music queue: two styles, a setting
+
+ - YouTube Music style, the default. No "playing from": an album goes into the queue whole. Play next inserts after the current item; Add to queue appends after everything, album included. Then autoplay.
+
+ - Spotify style. Current → your queue → the "playing from" album or playlist → autoplay.
+
+ - Default button actions: a song → Play next, an album → end of queue. When a podcast or book is playing, music's default becomes Play. Long-press or double-tap for the other action (to be tried in design). Buttons never move.
+
+ Queue runs out | What autoplay does | 
+
+ Music | First version: YouTube Music's own radio for the last track (not personalised, as you noted), mixed with similar music you own. Then the autoplay algorithm in the recommendation section takes over. | 
+
+ Spoken | The next unplayed episode of the same show (oldest first for serial shows, newest first for episodic ones, from the feed's itunes:type), or the next chapter or book in the series. Later, the next entry of your listening list. | 
+
+## Lists that aren't queues
+
+ - Listening lists (books, and limited-run podcasts): a watch list you tick through, with finished items crossed off. At the bottom, recommendations for what to add next, filterable by type.
+
+ - Podcast playlists: episodes you pick. Digests: a rule over shows. The Digest covers every subscription; custom digests cover a group you name. Played in chronological or reverse order, and an episode leaves once played. Neither ever takes over your queue.
+
+ - Later: alternating two books, meaning a generated spoken queue that interleaves their chapters, skips each chapter's intro where chapter metadata allows, and can be edited.
+
+ 5
+
+## Library and accounts
+
+## Your library
+
+ - Library pages stay pure. Music, Books and Podcasts only ever show what's in your library plus your requests. External items appear only on Browse, in Search's requestable section, and on artist or author pages (on by default).
+
+ - Artist and author pages show the whole catalogue by default, unowned titles greyed out and requestable, with a setting to hide them.
+
+ - Library: a 3-across grid on phones, bigger on desktop, a grid/list toggle, and sort by title, artist or Random (tap again to reshuffle).
+
+ - In-library marking: not-playable items are greyed out. Streamable ones stay normal, with a subtle marker. Where the marker goes is still open.
+
+ - Artist pages: what Spotify does, plus a bit more. Not limited to your library, with an "In your library" carousel.
+
+## Accounts, and one listening session per device
+
+ - Users: each household member has their own account, taste profile, queues, lists, digests and recommendations. Everyone signs in through the household's single sign-on (Delivarr, at auth.delivarr.net, already live for Audiobookshelf, Jellyfin and Shelfarr), with Auralis as one more OpenID Connect client. The same username is their Audiobookshelf and Jellyfin account, so Auralis maps each person to their own upstream users. That fixes the old code, where identity depended on Audiobookshelf alone. Members of the lldap_admin group are Auralis admins, and the admin role owns providers, paths and approvals.
+
+ - Sessions are per device, and by default they don't mix: the phone's queue and the laptop's queue are separate. Each device resumes its own session where it left off, even after a restart, because sessions are stored on the server per (user, device).
+
+ - What is shared across a user's devices is the library state, not the session. Your position in a book or episode is the same everywhere (it lives in Audiobookshelf), as are favourites, lists and history. So opening the book on the laptop resumes from where the phone left it, without the laptop taking over the phone's queue.
+
+ - Mixing is explicit: "Continue here" moves another device's session to this one, and "Play on…" sends this one elsewhere, like Spotify Connect but opt-in. Both are later additions; the default stays separate.
+
+ - Recommendations are per user. A household member's listening never leaks into someone else's Browse.
+
+## Shared files, personal view
+
+ - Files are stored once, for the whole household, as today: one Music, one Books and one Podcasts library in Jellyfin and Audiobookshelf.
+
+ - Auralis shows each person their own library: what they added, requested, subscribed to, or have played. Auralis records who added what; things already on the server count as yours once you've played them.
+
+ - Everyone else's things stay findable. Search covers the whole household library, and those results play straight away instead of offering a request.
+
+ - "Show everyone's library" is a setting, off by default and only in Settings, not a toggle in the library screens.
+
+ - The Audiobookshelf and Jellyfin apps are unchanged and still show everything.
+
+ 6
+
+## Getting what you don't have
+
+ One pipeline and one status vocabulary for music, books and podcasts. Only the search and fulfil steps differ per medium, which is also why Browse and Search can render every request the same way.
+
+ STATUS
+
+ Searching
+ Needs choice
+ Queued
+ Downloading · %
+ Importing
+ In library
+
+ any step → Failed (retry · pick another release)
+
+ Audiobook
+ search: Prowlarr, then AudiobookBay
+ pick: best match by title/author/narrator,
+ format, seeders (auto unless ambiguous)
+ fulfil: qBittorrent → import → ABS picks it up
+
+ Music · two routes
+ Song: kept from YouTube Music, seconds,
+ original Opus, tagged via MusicBrainz
+ Album: always Prowlarr → pick → qBittorrent
+ → tag + import, replaces kept songs
+
+ Podcast
+ search: PodcastIndex + iTunes
+ "request" = subscribe in ABS
+ (no download, no choice step)
+ fulfil: stub reconciler fills back catalogue
+
+ - "Done" means it plays. A request only reaches In library once the item shows up in the local index, so the card turns into a playable one by itself. The old importRequested dead end goes away.
+
+ - A Requests view (a Browse chip in the Sonora mock-up) lists everything in flight with source, size and status, plus retry or cancel.
+
+## Music
+
+ - Songs: kept from YouTube Music. A song you stream is added automatically once about 90% of it has played; a few seconds and a skip doesn't count. You can also add one by hand, but that's a menu option (Add to library in the song's three-dot menu), not a button on the card or in Now Playing. The server saves the original Opus stream without re-encoding, reusing whatever is already cached, and writes tags from the matching MusicBrainz release (artist, album, track number, cover art) so Jellyfin files it properly. It lands in /data/media/Music and turns into an owned card.
+
+ - Albums: always by torrent, in lossless. Add to library on an album never keeps it from YouTube Music; it requests the album by torrent. Until it arrives, the album still streams from YouTube Music. This doesn't go through Lidarr. You find it patchy, and its logs from the last month show why. Its indexers are public ones (Knaben, The Pirate Bay, BT.etree), which keep hitting request limits and getting disabled. It also insists on an exact edition match, which music torrents rarely fit. And its catalogue is a mess in practice: artist pages mix different editions of one album and miss albums outright. So Auralis does what you do by hand:
+
+ - searches Prowlarr with several query forms (artist + album, album alone, discography packs), with results cached and spread across indexers so it stays under their limits;
+
+ - scores each release on format (FLAC over 320 over the rest), how well its track list fits one of the album's editions, a sensible size and seeders;
+
+ - picks automatically only when one release clearly wins. Otherwise the request shows Needs choice with the candidates listed, so choosing takes one tap instead of a manual hunt;
+
+ - imports itself: tags against the edition whose track list matches the files, tags them, files them under /data/media/Music (hardlinked, so seeding continues) and refreshes Jellyfin. Any songs from that album already kept from YouTube Music are replaced by the lossless copies, with play history and favourites following the MusicBrainz ids.
+
+ - A clean album catalogue. Lidarr's catalogue is MusicBrainz served through its own metadata server, and it shows MusicBrainz's structure raw. Auralis uses MusicBrainz too (for tagging and artist pages), so it avoids the same mess:
+
+ - one entry per album, with its editions, remasters and regional releases folded under it, never listed side by side;
+
+ - EPs, singles, compilations and live albums shown in their own groups rather than hidden;
+
+ - gaps filled from YouTube Music and Deezer: albums they list that MusicBrainz lacks still appear, play through YouTube Music, and can be added like any other.
+
+ Which indexers Prowlarr has matters more than any of this code: public trackers carry little lossless music. deemix, which already runs here, can slot in as another source.
+
+## Books
+
+ - Books are request-only, a hard line. A book you don't own is greyed out. Tapping it requests it and shows Requested, with download progress visible in search. Requests show up in the library under their own filter, next to Downloaded (on the phone).
+
+ - Book imports are Auralis's job, not yours. Today a finished download still needs hand fixes, which is why mediaserver has four Claude commands for it (in ~/.claude/commands/). Each becomes a step of the book fulfil job:
+
+ - audiobook-import: hardlink the download into /data/media/Books/<Author>/<Book>, wrapping loose audio files in their own book folder, without copying data, so seeding continues;
+
+ - audiobook-narrator-tag: write a clean title to metadata.json, and add the narrator's name only when you own the same book in more than one narration;
+
+ - audiobook-series-tag: set the series and its number from Audible and Audnexus, one narration per series so the series view has no duplicates or gaps;
+
+ - audiobook-author-image: add an author photo when the folder has none (Audnexus has author images, so no web scraping).
+
+ Then Audiobookshelf picks up only the new folder, through its folder watcher (on for your Books library), never a full library scan. Which step of today's pipeline is slow hasn't been pinned down, so the book work in the "Play or get anything" milestone starts by timing each step on a real request: Prowlarr search, the download, the import and the scan.
+
+## Podcasts
+
+ - Podcasts are subscriptions, and per your notes you subscribe to listen. Episodes of shows you don't follow are greyed out, and playing one subscribes you automatically. Subscribing gives you the whole show as stubs within the hour. The episodes stay in Audiobookshelf too, so Audiobookshelf keeps working on its own if Auralis ever breaks: no lock-in, as you said. YouTube channels come in the same way; they have their own section next.
+
+ 7
+
+## YouTube shows
+
+ YouTube channels you add come in as podcasts: audio only, in your Podcasts library, with SponsorBlock and optional sync with your YouTube account. Two hard lines: Auralis never shows video (enforced in the build, see the architecture rules), and YouTube is never recommended.
+
+ - Adding a channel. Paste a channel link, or find the channel in Search's podcast results. Auralis serves an ordinary podcast feed for it (/feeds/youtube/{channel}.xml): one episode per upload, with the title, description, date and thumbnail as cover art. Each episode's file is the video's audio-only stream with the SponsorBlock segments cut out (see below). Audiobookshelf subscribes to that feed like any other, so the show sits in your Podcasts library with your other shows, and gets the same progress, autoplay and digests. New episodes download automatically; older ones download when you ask for them in either app, and all of them follow the same 7-day clean-up as your other shows. They don't use stubs, because an episode's length is only known once it's cut. Shorts and livestreams are left out by default, per channel. Unlike other shows, a YouTube show needs Auralis running to fetch new episodes.
+
+ - SponsorBlock. Segments come from SponsorBlock's public API (no key; checked live). By default Auralis removes sponsor reads, self-promotion and "like and subscribe" reminders; intros, outros, filler and non-music sections in music videos can be switched on per show. Two layers:
+
+ - Cut from the file. When an episode file is made, the segments are cut out without re-encoding, so the Audiobookshelf app, downloads and Android Auto all get the clean version. The file is cached, so every fetch of it is identical.
+
+ - Skipped while playing. Segments are community-submitted and often arrive in the first days after an upload. Auralis's players also skip segments live, so ones added after the file was made are still skipped in Auralis. An episode you haven't started is re-cut when new segments arrive; one you've started is left alone, so your position doesn't jump.
+
+ Auralis keeps each episode's cut list, so position sync converts between the cut episode and the full YouTube video: 10 minutes into the episode becomes the matching point in the video, and back.
+
+ - Watched state and position for YouTube shows (opt-in, per person, off until you connect your account). It covers only the channels you've added as shows; the rest of your YouTube history is never read into Auralis. Google's official API no longer gives access to watch history, so this uses your own sign-in cookies, exported from your browser and stored encrypted on the server under your user only.
+
+ - From YouTube: an hourly job checks your watch history for videos from your YouTube shows. A finished video marks the episode played; a half-watched one sets your position in it. YouTube only exposes that position as a percentage of the length, so Auralis resumes a few seconds before it (1% of an hour is 36 s). Anything else in the history is skipped, not stored.
+
+ - To YouTube: on pause and on stop, Auralis sends YouTube your position, using the same "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
+
+ - Accounts never mix. Each person connects their own YouTube account, and their cookies are only ever used for their own sync, writing to their own Audiobookshelf progress. The show feeds themselves are fetched without any account, so they're identical for everyone and carry nothing personal. A person who hasn't connected YouTube just has no sync.
+
+ - When it breaks: the cookies expire every so often. When they stop working, sync pauses and Settings shows a clear "YouTube sign-in expired" warning with how to re-export them. Nothing else is affected: YouTube shows keep updating and playing, since they don't need your account.
+
+ Google doesn't support this use, so it can break when YouTube changes, the same trade-off as the extractor.
+
+ - YouTube is never recommended. Browse, autoplay and "Are you feeling lucky?" never suggest YouTube videos or channels. A channel only enters Auralis when you add it yourself.
+
+ 8
+
+## Discovery
+
+ Browse, recommending what you don't own.
+
+ The old recommendation code works out your taste from your library and play history, and that part is worth keeping. What's new is where candidates come from (outside), how they're matched against what you own, and how Browse mixes them in.
+
+ Taste profileABS progress + Jellyfin playsgenres cross media
+ Music · YT Music radio + ListenBrainzartist MBIDs → lb-radio similar artists
+ Books · Audible similarlisteners also enjoyed · series
+ Podcasts · Apple "Might also like"listener overlap · genre search
+ Candidate poolmatched vs library by id,then fuzzy · scored · cached
+ Browse composermixed shelves · 1 ep/showreason line · requestable
+
+ rebuilt nightly + after big library changes
+
+## How it becomes Browse
+
+ - Identity first. The index keeps the ids the old code threw away: ASIN from Audiobookshelf books, feed URL and GUID from podcasts, MusicBrainz ids from Jellyfin's ProviderIds. Matching a candidate against your library tries exact ids, then a normalised title plus creator, and falls back to "not sure", which counts as owned rather than risk showing you something you already have.
+
+ - Browse layout, from your notes. No search bar. A single-choice filter: All, Music, Podcasts, Books. Each single type gets its own tailored page. In "All", six quick picks: last played music, last played podcast content (in the exact configuration you left it), last played audiobook, and one "Are you feeling lucky?" pick per type. Then Up next (next episode or chapter, like Jellyfin's Next Up), with your second most recent book or show kept visible too, so a paused book isn't forgotten. Then carousels.
+
+ - Carousel rules (your notes): Most played shows only "orphaned" songs, never the tracks of an album you played whole. A carousel never shows two songs from one album, nor a song and its album. There's no repeating content: at most one episode per podcast, dated by publication. There's no "podcasts you recently added". Mixed carousels name the content type under each title. Any carousel opens into a full page, as a list or grid.
+
+ - Context shelves follow the Spotify screens Sonora documented (S05–S30), with headers that say why they're there. More like an artist, show or episode, Popular with listeners of a show, Based on your interest in a genre, each with the subject's own art (Sonora's extended SectionHeader). Feature cards argue for single items at length, with a blurb and a Preview. The server sends each shelf's eyebrow, subject and subjectArt, not just a title. Each external card has a reason line. External music cards play straight away through YouTube Music; an album card offers Add to library (a torrent request), a song keeps it only from its menu. External books and shows have a request button. Owned cards just play.
+
+ - Previews before commitment (Sonora's PreviewButton). Music previews play a YouTube Music clip, and episodes play the first minutes of the public feed enclosure. Audiobooks play the publisher's retail sample, looked up by ASIN (source to be confirmed in M4). A preview never touches your queue or library.
+
+ - Precomputed, then composed. Provider calls run as background jobs within their rate limits (MusicBrainz 1 req/s, Audnexus about 100/min). The Browse endpoint only reads the pool and your live progress, so it answers in one fast call and the loading state is short and honest.
+
+ - Seeds are what you listened to. Every provider is seeded from listening history (with weight for how much of it you played), never from library contents.
+
+ - How recommendations are ranked (details in the next part of this section).
+
+ - Quality gets judged on your real library, the first time any session has been able to: 231 books, your podcast subscriptions and your Jellyfin history. A small review page lists each shelf with its reasons, so bad picks are easy to spot.
+
+## The recommendation algorithm
+
+ Your taste comes from what you've actually listened to, not what's in your library: plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something only affects how it's shown (owned items play; others can be requested or streamed). A book you own but never started says nothing about your taste.
+
+ Researched across Spotify's and YouTube's published work, open-source recommenders, and what fits a household on this server. The honest headline: the famous systems are barely documented (Discover Weekly, Spotify radio, YouTube Music's retrieval), and the well-documented techniques are the ones that work at small scale. Nothing here needs a GPU or a model trained from scratch.
+
+ Phase | What it does | Why it fits | 
+
+ 1 · Seeded from your history | Import your Spotify export (and the older account's, if found) and your YouTube Music takeout into one play-history table per user, merged with Jellyfin and Audiobookshelf plays. From it: a co-occurrence table (what you play near what, within a listening session), weighted to damp popular items (PPMI), and a next-item table (what you tend to play after what). | Plain SQL, no training, works from day one on years of real data. Solves cold start without asking you anything. | 
+
+ 2 · Candidates from outside | Each medium gets its own listener-overlap source, all checked live on 2026-09-27:
+
+ - Music: YouTube Music's radio and "related" for a track (per track, no account, instant), ListenBrainz similar artists (by MusicBrainz ID), and Deezer related artists as a no-key fallback.
+
+ - Books: Audible's "listeners also enjoyed" for each book you've listened to, plus series order.
+
+ - Podcasts: Apple Podcasts' "You Might Also Like" for each show you listen to, read from the show page, plus iTunes and PodcastIndex search by genre.
+
+ Description similarity (a small text-embedding model on the server) covers items those sources miss. All candidates are scored against your taste profile, not taken in the provider's order. | Uses the providers already chosen. Every shown item logs where it came from, so later phases learn which sources you actually like. | 
+
+ 3 · Learning from you | Your reactions become the signal: completions, graded skips (instant, early, late), favourites, adds to library, requests. Every Browse shelf and autoplay pick keeps a small share of exploration (about 10–20%) so taste can move. Later this becomes a per-source bandit that shifts weight to the sources you respond to. Once your own history is big enough, a nightly item2vec job learns "sounds like it belongs next to" vectors from your sessions. | Tiny counters in SQLite and one small batch job, the same pattern as Spotify's home-screen ranking (BaRT), at household size. | 
+
+ 4 · Maybe: audio similarity | Audio features from the files themselves (Essentia models), for "sounds like" radio. | Only if a benchmark on this box shows it fits in RAM overnight. Skipping it entirely is fine. | 
+
+ - Autoplay, when a queue runs out: music takes the last track's next-item and co-occurrence neighbours, mixed with ListenBrainz and YouTube Music radio candidates. Spoken continues the show or series, then close matches by author, narrator and description.
+
+ - "Are you feeling lucky?" is the exploration share turned up: a strong candidate from outside your usual neighbourhood, one per medium.
+
+ - Diversity is hard rules first (one per artist, show and album per shelf, your carousel rules). Finer "not too similar to what's already shown" tuning comes only once there are similarity scores to tune.
+
+ - Per user: every table is keyed by user, so household members never mix.
+
+ - Measured, not guessed: hold out your most recent months of history, and check whether each version would have put what you actually played next in its top 10. That score has to not drop between versions.
+
+ Checked live today. The book and podcast seeds come from your library. The music seeds were picked for the test (Alkaline Trio appears in your Spotify screenshots).
+
+ - YouTube Music radio: Private Eye → blink-182, Green Day, Jimmy Eat World, Sum 41; Motion Sickness → Big Thief, Mitski, Manchester Orchestra. Each track also exposes "You might also like" and "Similar artists".
+
+ - ListenBrainz: Alkaline Trio → Bad Religion, Yellowcard, Rise Against, Jimmy Eat World, My Chemical Romance. Deezer: → The Ataris, New Found Glory, MxPx.
+
+ - Audible: If Anyone Builds It, Everyone Dies → Life 3.0, The Alignment Problem. Only 7 of your 233 books carry an Audible ID, but Audible's search finds them by title and author (3 of 3), so a job backfills them. Audnexus has no "similar" field; it stays for metadata.
+
+ - Apple Podcasts: If Books Could Kill → Maintenance Phase, You're Wrong About, 5-4, You Are Good, American Hysteria. It's read from the page's HTML, so expect to repair it when Apple changes the page.
+
+Not established: that the old YouTube Music algorithm worked in some knowable way (no public source explains it). Music-to-book taste transfer (no prior art found; treat it as an experiment). How fast the embedding and audio models run on this box (benchmark first).
+
+ 9
+
+## Search & lyrics
+
+ - One tap opens Search with the keyboard up. It searches everything as you type, with the single most relevant result at the top whatever its type (possibly a carousel), then filters.
+
+ - Suggestions as you type come from a prefix index over your local catalogue (titles, creators, series) plus recent searches, served by one GET /search/suggest within about 50 ms. Spotify-style: each suggestion names its kind.
+
+ - Results are one call with two sections. Your library, ranked by relevance, which plays and has no request action. Below it, results from outside the library, from each medium's own search. Music comes from YouTube Music and plays straight away. Books (Prowlarr/AudiobookBay) and podcasts (PodcastIndex) come with a request or subscribe button and live status. Chips filter by kind.
+
+ - Lyrics. LRCLIB fills in synced and plain lyrics for every owned track as a background job and caches them. Now Playing shows synced lyrics. Search gets a Lyrics chip that matches a remembered line against the local lyric index first, then LRCLIB's full-text search, so a hit you own plays, and one you don't is found on YouTube Music and plays too.
+
+Part 3How it's built
+
+ 10
+
+## Architecture
+
+ The shape you chose stays: one container, one port, a TypeScript backend that holds every secret and talks to every service, and two clients on one API. What changes is inside that box.
+
+ Web / PWA
+ React · Mantine · Sonora · generated client
+
+ Android
+ Compose · Media3 · Sonora · generated models
+
+ one API, from one schema (OpenAPI → TS + Kotlin)
+
+ AURALIS SERVER · one container · one port
+
+ Screen APIsone response per screen
+ Playbackplans · queues · progress
+ Requestsone pipeline, per-medium steps
+ Discoverytaste · candidates · shelves
+
+ Catalogue index & identityMediaRef · ASIN / MBID / feed GUID · ownership · search index
+ SQLite store + job runnersnapshots · caches · queues · request state · schedules
+
+ Upstream adapters, each tested against responses recorded from mediaserver
+ ABS · Jellyfin · YouTube Music · Prowlarr · AudiobookBay · qBittorrent · ListenBrainz · MusicBrainz · Audnexus · Open Library · PodcastIndex · LRCLIB
+
+ Your serversAudiobookshelf · Jellyfin(media bytes via range proxy)
+ Streaming & acquisitionYouTube Music (play + keep songs)Prowlarr · AudiobookBay · qBittorrent
+ Public cataloguesListenBrainz · MusicBrainz · AudnexusOpen Library · PodcastIndex · iTunes · LRCLIB
+
+ Features sit on a shared index and store. Only adapters talk to the outside world, and only the server holds secrets.
+
+## Eight rules the rebuild is organised around
+
+## 1 · One schema, generated clients
+Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are generated in CI, and a change that breaks either fails the build. Nothing is hand-copied.
+
+## 2 · Screen-shaped endpoints
+Every screen gets one call that returns what the screen draws, with fields named for the UI (status, progress, reason, kind). Clients don't stitch five calls together, so web and Android can't drift apart in how they combine data.
+
+## 3 · A local index, refreshed in the background
+A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite (ids, titles, creators, genres, external ids, progress). Browse, search, ownership checks and recommendations read that index, not live fan-out. The screen APIs stay fast on this RAM-starved box, and Browse can hold its loading state briefly and reliably.
+
+## 4 · Recorded reality, not guesses
+Each adapter has a record mode that captures real responses from mediaserver (secrets scrubbed) into fixtures. Tests run against those, and a nightly job re-records and diffs them, so upstream drift shows up as a failing diff, not a silent break.
+
+## 5 · One request pipeline
+Books, music and podcasts share one state machine, table and status vocabulary. Only the search and fulfil steps are per medium, and music has two fulfil routes: a single song is kept from YouTube Music, and an album is always torrented in lossless. This replaces the two near-identical request services in the old code.
+
+## 6 · Secure by default
+Setup can only run once (or by an admin). There's an admin role for providers, paths and approvals. Download URLs are only ever taken from the server's own search results, never from the client. trustProxy and cookie secure are set by config, so login works on plain LAN HTTP and behind Caddy.
+
+## 7 · The extractor lives in the server
+AbleMusicPlayer runs NewPipeExtractor on the phone. The research showed nothing in it needs the device, and that the server-side equivalent is yt-dlp run as a subprocess. That keeps it inside the one container, so web and Android both get it, as parity requires, and there's one place to update. Per your notes it should point and forward, not burden the server: no transcoding, bytes passed straight through, a cache only for preloading the next track and for songs being added to the library. The same path is what would let people without a media server use Auralis as a streaming app. Audiobooks always come from Audiobookshelf. The extractor only ever asks YouTube for audio-only formats, for YouTube Music and for YouTube channels alike. A daily job updates the extractor and runs a canary search-and-resolve; failures show up in the admin jobs page. Android can add NewPipeExtractor directly later as an offline fallback if that ever proves useful.
+
+## 8 · Audio only, enforced
+There is no video path to switch on by mistake. The extractor adapter's type only has audio-only formats, and a test fails if a recorded response would hand a client anything with a video stream. Web plays everything through audio elements, and lint rejects <video> anywhere in the app. Android builds Media3 with no video renderer, so a podcast episode published as video plays its soundtrack. Sonora has no video component, and none gets added.
+
+## The shared domain model
+
+ Four types carry every screen. Getting them right early is most of the work.
+
+ Type | What it is | Key fields | 
+
+ MediaRef | A pointer to anything: book, episode, show, track, album, artist, author, series, owned or not | kind, source (abs · jellyfin · ytmusic · external), ids (local id, ASIN, ISBN, MBID, feed GUID, provider id), parentRef (show, album or series, which is what the per-podcast dedupe keys on) | 
+
+ Availability | Where you stand with it, on every card and row | owned · streamable (plays now, can be kept) · requested{status, progress} · external{requestable}. Maps straight onto Sonora's four tones: In library Downloading · 87% Not in library Failed | 
+
+ PlaybackPlan | Everything a player needs to play one item, from the start or a resume point | ordered tracks[] (url, mime, duration, offset), chapters[], startAt, progressTarget (where the server reports progress), next (the autoplay rule) | 
+
+ User · Device | Who is listening, and on what | An Auralis user maps to their own Audiobookshelf and Jellyfin accounts, so progress, favourites and play history stay theirs upstream too. Each device (a browser or a phone) registers under a user. | 
+
+ ListeningSession | What's playing on one device | Owned by (user, device): its queues, current item and position, and play history. Sessions on different devices don't mix by default. | 
+
+ Shelf | A carousel on Browse or a library home | eyebrow ("More like"), title, subject + subjectArt (what the shelf is about), subtitle (names the types in a mixed shelf), items[] of MediaCard or FeatureCard data, mixed flag | 
+
+ 11
+
+## API surface
+
+ Grouped by what they serve. Every response shape lives in the one schema; route names avoid "browse", so the UI name can change freely.
+
+## Session
+GET/POST /setup (first run or admin)
+POST /auth/login|logout · GET /auth/me
+GET/POST /devices · GET /sessions (per device)
+POST /sessions/{id}/continue-here (later)
+GET /health
+
+## Screens
+GET /feed · /feed/shelves/{id}
+GET /library/{medium}
+GET /items/{ref} · /people/{ref} · /series/{ref}
+
+## Search
+GET /search/suggest?q
+GET /search?q&kinds
+GET /search/lyrics?q
+
+## Playback
+POST /play → PlaybackPlan
+POST /progress · POST /play/{id}/close
+GET/PUT /queues/{type}
+GET/POST/DELETE /bookmarks
+GET /lyrics/{ref}
+
+## Media bytes
+GET|HEAD /media/{ref}/tracks/{n} (range)
+GET /media/{ref}/hls/*
+GET /media/{ref}/art?size (resized, cached)
+GET /media/{ref}/preview (sample)
+
+## Library actions
+POST/DELETE /favorites/{ref}
+/playlists (CRUD)
+POST/DELETE /subscriptions (a podcast feed, or a YouTube channel)
+GET /feeds/youtube/{channel}.xml · /feeds/youtube/{channel}/{video} (audio only)
+PUT /items/{ref}/played
+
+## Requests
+POST /requests {ref | query}
+GET /requests · /requests/{id}
+POST /requests/{id}/retry|cancel|choose
+POST /keep {ref} (a song, from YouTube Music)
+POST /requests {ref} on an album: always a lossless torrent
+
+## Admin
+/admin/providers (CRUD + test)
+/admin/settings (paths, approval)
+/admin/jobs (status, run now)
+
+## Settings
+GET/PUT /settings (theme, accent, autoplay rules, artist-page catalogue toggle on by default, show everyone's library off by default)
+PUT/DELETE /settings/youtube-account (connect or disconnect watched-state and position sync for YouTube shows) · GET /settings/youtube-account (status, last sync, expired)
+GET/PUT /shows/{ref}/youtube (SponsorBlock categories, Shorts and livestreams)
+
+ 12
+
+## Design system and frontend
+
+ Everything in the app starts as a Sonora component, and every page starts on the canvas.
+
+## How you work on the design
+
+ - Two things to look at, one place it lives. You work with two artifacts: the Sonora Design System (the building blocks) and the Auralis canvas (the app's pages and navigation). Both are published from the one Auralis repo: design/sonora and design/app, next to server, web and android. Sonora's repo on the ThinkPad moves in with its history.
+
+ - Asking for a change: comment on either artifact, or ask in chat. Claude changes the repo, regenerates, and republishes the artifact. If you edit an artifact directly, those edits are pulled into the repo before anything else changes there.
+
+ - How a design change reaches the apps. Design and apps are in the same repo, so one commit carries both:
+
+ - colours, spacing and fonts change on both platforms automatically;
+
+ - a component's look changes on web automatically, since web uses Sonora's components directly;
+
+ - a new or changed component option fails the Android build until it's implemented there, so the platforms can't drift;
+
+ - a new or changed page, or navigation, regenerates both apps' routes and page layouts;
+
+ - screenshots of both apps are compared against the design, and differences are shown to you before they ship.
+
+## Where Sonora ends and the canvas begins
+
+## Sonora: the design system
+
+ - Tokens, basic pieces, components and page layouts, each with a .d.ts, a card, and dark and light previews. No Auralis data.
+
+ - Grows because the app needs something, but anything that lands here is generic: a FeatureCard, not "the podcast digest card".
+
+## The canvas: the app
+
+ - The navigation map (every destination, route, parameter and back behaviour, per breakpoint) and every page, composed only of Sonora components, with real copy and states.
+
+ - If a page needs something Sonora lacks, the component is added to Sonora first. The canvas never styles anything itself.
+
+ Where the screens come from. Your "Auralis redesign kickoff" project in Claude Design only partly uses the design system (26 Sonora components, against 110 hand-built boxes and 137 inline styles). Other screens you drew in Sonora itself: its desktop and mobile UI kits and the 43 Spotify reference screens. The screen map is the union of both, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. The UI kits move out of Sonora onto the canvas, since screens don't belong in the design system. The Claude Design projects stay as read-only references.
+
+## Sonora, pruned and ordered
+
+ Sonora has 80 components today, filed by kind (core, forms, layout, media, navigation). 18 of them were added in the Spotify affordance pass (checked in its git history): Button, BrowseCard, ExpanderRow, FollowButton, Rating, SortFilterBar, StatusBanner, BackToTop, DownloadButton, EpisodeRow, FeatureCard, ItemActionBar, ExpandableText, AboutCard, MediaHeader, OutputDeviceButton, SpeedControl and TransportBar. Most of the rest came from the original Claude Design project.
+
+ - One hierarchy: tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (shell, backdrop, shelf, detail and collection pages). The artifact is organised the same way. Pages live only on the canvas.
+
+ - Pruned against the screens. Once the canvas has the full screen map, in the foundations milestone, each component lists the pages that use it. Anything no page uses is removed, whichever pass it came from. Candidates to look at first: OutputDeviceButton (only needed for "Play on…", which comes late), FollowButton, Rating, BrowseCard and BackToTop.
+
+## From design to both apps
+
+## From Sonora
+
+ - About 80 components with typed props (export/component-api.md, generated from each .d.ts): shell (AppShell, NavRail, BottomNav, TopAppBar, LibraryShell), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader, DetailPage, CollectionPage), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a spoken variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes, OutputDeviceButton), status (StatusBanner, DownloadButton, ProgressRing, Badge).
+
+ - A token exporter: export/web/sonora-tokens.css, sonora-theme.css and export/android/SonoraTokens.kt, all generated. Motion, scrim, tone and layout families included.
+
+ - 43 Spotify reference screens, each mapped to the components it motivated. They stay as reference pictures, not components.
+
+## What the rebuild does with it
+
+ - Web uses Sonora's components directly, not ports. They're real React with typed props. A build step turns Sonora's global-namespace lookups (NS().CoverArt) into normal imports and publishes them as the app's UI package. The .d.ts files are the props, unchanged.
+
+ - Android: SonoraTokens.kt as the theme, plus one Compose component per Sonora component with the same name. Its props class is generated from the same .d.ts, so a prop added in Sonora breaks the Android build until it's implemented. Layout bodies are hand-written, as export/README.md spells out.
+
+ - Sonora's QUESTIONS.md (Now Playing shape, speed and sleep sheets, queue edit scope) is answered on the Auralis canvas before the player screens are built.
+
+ Your rule: pages and navigation are added to the design first, then ported to the apps mechanically:
+
+ - Navigation is data. The canvas holds nav.json: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph, so both apps get the same flows from the same file.
+
+ - Pages are a restricted format. Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types ({feed.shelves}). No custom styling, no logic. A parser turns it into a small page tree. From that tree the web page is generated as React and the Android page as Compose, both calling the same component names.
+
+ - Generated code is off-limits. Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
+
+ - CI enforces it:
+
+ - the app's routes must equal nav.json exactly;
+
+ - every page must match its generated layout;
+
+ - web and Android must build the same route set;
+
+ - each page's screenshot on both platforms is compared against the design's render of that page.
+
+ Adding a screen in code alone fails the build.
+
+ - The frontend build starts with navigation. The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
+
+ - Mantine is optional: used only inside a component that needs a behaviour primitive (menus, focus traps), never as the visual layer.
+
+ - The app frame is Sonora's backdrop shell (BackdropShell, BackLayer, FrontLayer, per SPEC-backdrop.md), a real Material backdrop, which also settles the old scroll bug.
+
+## Shell and navigation
+
+ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600 px, icon rail from 600, labelled rail from 1024, and from 1240 a Now Playing panel next to the content. Settings sits at the foot of the rail, or in a header button on phones. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded.
+
+## Rules from your notes that the components must follow
+
+ - Shapes never change meaning: artists, authors and hosts are circles; all content is rounded squares. Don't copy Spotify's podcast-versus-album split.
+
+ - Now Playing matches the content: podcasts and books get speed and skip (Sonora's TransportBar spoken variant); music gets shuffle and repeat, with music speed buried elsewhere, not removed.
+
+ - Lyrics: a sync toggle always in the top corner. With sync off, every line is at full opacity and a dot marks the current line; the dot can be switched off from the three-dot menu. Sonora already specifies this.
+
+## Screens and the one call behind each
+
+ Screen | Endpoint | What it returns | Design | 
+
+ Browse | GET /feed | kind chips, quick picks (progress, unplayed), shelves (eyebrow, subject, subject art, mixed items, availability), feature cards with preview | Sonora S05–S30 | 
+
+ Music / Books / Podcasts homes | GET /library/{music|books|podcasts} | library list with sort and filter, list or grid, pins and downloaded markers | Sonora S31 · LibraryShell | 
+
+ Search | GET /search/suggest, GET /search | suggestions; library results + outside results, status per row, "more releases" folding | Sonora S03–S04, S32 | 
+
+ Book · Show · Episode · Album | GET /items/{ref} | MediaHeader data (actions, progress, rating), episodes with sort, chapters or tracks, about text, related | Sonora S01–S02, S35 | 
+
+ Artist · Author · Series | GET /people/{ref}, GET /series/{ref} | owned works grouped; unowned works greyed out (on by default) | mock only | 
+
+ Shelf ("See all") | GET /feed/shelves/{id} | paged items | Sonora CollectionPage | 
+
+ Now Playing · mini-player · queue · lyrics | POST /play, GET /queues, GET /lyrics/{ref} | plan (with transport variant and direct or transcoded quality), per-type queues, synced lyrics, about cards | Sonora S33–S43 | 
+
+ Requests | GET /requests | status, %, source, size, retry | mock only | 
+
+ Downloads (Android) | local, plus GET /items/{ref} | what's on the device, size, remove | parts DownloadButton, no screen | 
+
+ Settings · onboarding | GET/PUT /settings, /setup, /auth | theme and accent, autoplay rules, services, providers, requests | Sonora | 
+
+ Still to design on the Auralis canvas, before their milestone: artist, author and series pages (with the greyed unowned catalogue), the Requests view, the Downloads screen, playlists, the music Add to library menu item and album request, the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection in Settings, and loading and empty states per screen. Everything else has a Sonora component and a reference screen. Nobody invents UI in code.
+
+## How parity stays true
+
+ - Both clients consume the same generated models and the same screen endpoints, so there's no logic to port by hand.
+
+ - Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set and produce screenshots. Those get reviewed side by side against Sonora's own card for that component or screen. This is the visual check the old project never had.
+
+ 13
+
+## Staying on track, enforced
+
+ The old project drifted: code built outside the design, pages nobody refreshed, a roadmap and handover that grew until they stopped describing reality. Each rule here is a check that fails, not a habit to remember.
+
+## Build through the design
+
+ - Generated code can't be edited by hand. The web UI package, Android's component props, the routes and the page layouts are all generated from design/. CI regenerates them and fails on any difference, and a Claude Code hook in the repo refuses edits to those folders, so the only way to change UI is through the design.
+
+ - No component without a design. CI fails if app code uses a component that doesn't exist in Sonora with its .d.ts, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package.
+
+ - No screen without a page. The app's routes must equal the canvas's nav.json, and every page must match its generated layout. Adding a screen in code alone fails the build.
+
+ - Looks match. Each page's screenshot, on both platforms, is compared against the canvas's render of the same page.
+
+## Keep the artifacts current
+
+ - Every artifact says what it was built from. Its footer shows the repo commit, and design/published.json records the commit and artifact version of each publish.
+
+ - Unpublished design changes block the merge. CI fails if design/ changed after the recorded publish. Publishing needs a Claude session, so a hook in the repo also stops a Claude session from finishing while a design change is unpublished.
+
+ - Your side is read first. Before touching design/, the session compares the live artifact with the recorded version. If you've edited it or left comments since, those are pulled in or answered first. Open comments are listed at the start of every session.
+
+## Keep the plan clean and the progress true
+
+ The plan and the progress are two different things, kept apart on purpose. The plan is written by hand and says what is being built and why. The progress is never written by hand; it's worked out from the repo.
+
+## The plan: edited in place
+
+ - Lives in the repo (docs/plan/) and is published to this artifact, with the same commit stamp and merge check as the design.
+
+ - Only ever describes the current decision. No dated update notes, no "a previous version said". Why something changed is in git history, not in the text.
+
+ - Asking for an adjustment means that sentence gets rewritten where it stands. It's the only place decisions live, so nothing else needs chasing.
+
+ - Every item has an id and a concrete done when, and a size limit keeps the whole thing readable.
+
+## The progress: computed, never written
+
+ - Done: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so ("you used it for a week") get your sign-off as a git tag.
+
+ - In progress: unfinished work lives on a branch, and its "where I stopped, what's next" note is the branch's description. It disappears when the branch merges, so nothing piles up.
+
+ - Next: the first unfinished item of the current milestone.
+
+ - No progress file exists, so none can grow or go stale.
+
+ - A new session knows where things stand. A session-start hook in the repo prints a short summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open comments on the artifacts.
+
+ - You see it too. When the plan is published, each item gets a done or in-progress badge worked out at that moment, so progress shows on the page without the text changing.
+
+ - Every commit names its plan item (a Plan: line). CI rejects app changes without one. Work that isn't in the plan gets added to it first, in the same commit, so the code can't run ahead of the plan.
+
+ - Checked with you at every milestone. The demo ends with the plan read through together; anything that changed is rewritten in place, and the milestone gets your sign-off tag.
+
+## No scars
+
+ - Replacing something deletes the old thing in the same change, everywhere it lives: code, config, containers, timers, settings, secrets, data folders, docs, map entries, memory notes, scripts on either host. No legacy folders, compatibility shims, commented-out code, "formerly" notes or backups. Git history is the only record.
+
+ - The old Auralis goes completely. Its code leaves main (kept only at the legacy tag), and its leftovers on mediaserver and the ThinkPad are deleted once nothing uses them: the old container setup and data folder, the update timer, the old autorun machinery, old docs and map entries.
+
+ - Checked before a milestone counts as done: a sweep for references to removed things, unused files and settings, and orphaned containers or timers, on top of the dead-code lint.
+
+## Your ideas, without derailing
+
+ - Say it in any session, on either host. The session files it in the inbox (docs/inbox/, one short file per idea, your words verbatim), replies Noted: <title>, and carries on with what it was doing. It doesn't start building and doesn't touch the plan. A shared skill (auralis-idea) does this the same way everywhere; it's already live, filing into a shared inbox until the repo exists.
+
+ - Bugs take the short path. A bug in something done becomes a check that fails, which reopens that plan item, so it shows up in the next session's summary.
+
+ - Sorted at set moments: each milestone demo, when you say "let's go through my ideas", or once there are about ten. Each idea is written into the plan where it belongs (with what else it affects), merged with something already planned, dropped with your OK, or answered with one question. The inbox file is deleted in the same commit, so the inbox only ever holds unsorted ideas.
+
+ - The milestone in progress is protected. An idea only lands there if you say "do it now", or if it's a small fix to what that milestone builds. Comments on the artifacts are handled the same way, and so is anything you say directly to the running development session: it files it, replies Noted, and carries on, unless you say "do it now", you're answering one of its outbox items, or you're telling the session itself to stop or pause.
+
+## What needs you, without waiting on you
+
+ Almost everything is decided by the session doing the work. The outbox (docs/outbox/) holds only what genuinely needs you, and nothing ever waits on it.
+
+ - Five kinds only: a product call that passes your test ("would she have an opinion, and does the answer change what she gets?"); a name; anything published or shared beyond the machines; anything destructive or irreversible; something only you can physically do (try a milestone build, sign off, export YouTube cookies, test in the car).
+
+ - Every item carries its default, and work goes ahead on it: a working name gets used until you rename it, a product call gets the session's best choice, which you can overturn later. Only irreversible or outward-facing actions hold until you answer, and the rest of the work continues around them.
+
+ - Kept small by checks. An item without its kind and default is rejected. More than about five open items means sessions are over-asking, and the session-start summary says so. Answered items are deleted.
+
+ - Decisions made for you are visible, not queued. They're written into the plan in place, and their commits carry a Decision: line. The session-start summary and this page list the recent ones for you to skim; overruling one is just saying so.
+
+ - Where you see it: a "waiting on you" box at the top of this page, in every session's opening summary, and as a phone notification when an item is time-sensitive.
+
+ 14
+
+## How the work runs
+
+ Most of what went wrong before was process, not code. These rules each answer a failure recorded in the old ROADMAP and HANDOVER.
+
+ Failure before | Rule now | 
+
+ Fixtures written from docs; playback broken "since the client was written" | Adapters are only tested against recordings from mediaserver. No recording, no merge. A nightly re-record-and-diff catches upstream changes. | 
+
+ Code with nothing calling it (7 cases) | Every change names its plan item and the screen or job that uses it, and the milestone demo exercises it. Dead code fails lint (knip on web, detekt on Android). | 
+
+ Green CI that ran no tests (Gradle cache); unstyled screens passing | Android CI runs uncached tests plus an emulator smoke test; screenshot review replaces "testid exists" as the UI check. | 
+
+ Android written blind, a post-login crash nobody could see | Emulator in CI from M0; at each milestone, a build that arrives as an ordinary update through Droid-ify, with a one-tap crash report (logcat to the server). | 
+
+ main auto-deployed half-finished work to your daily container | Until you use Auralis, the container on mediaserver simply follows main as the test instance. Before "It plays" ships, main moves to :edge and only releases reach :latest, so from then on your daily container moves only when you've tried a milestone. | 
+
+ Parallel sessions colliding; 9,000 lines of handover | No parallelism. One Opus 5.5 orchestrator session keeps the big picture and never stops between items; all the work is done by Opus 5.5 subagents, strictly one at a time. Each task is sized so its subagent has enough context to understand it and never so much that its window grows large, splitting a plan item into parts where needed. Each part runs as a short sequence: plan, build, test (in a fresh context, against real recordings), and fix if the test failed, with the written plan and the test output as the hand-offs. No handover or status file: progress is computed from the repo at the start of every session (see "Staying on track"). History lives in git, not in docs. | 
+
+ Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code), like the "Where it stands" table on this page. | 
+
+## Autonomous runs
+
+ - Started from the ThinkPad by a timer every 10 minutes, as one orchestrator session in the repo, only when nothing else is working there.
+
+ - Paused and resumed from any session on either host, by asking Claude (the auralis-autorun skill). The switch is a file on mediaserver, so it works while the ThinkPad sleeps, and the timer itself is never toggled, so pausing can't break it. Pausing can also stop a running session; its conversation is kept.
+
+ - Budget, the queue plugin's method: a session starts only with the 5-hour window under 70%, the week under a hard 95%, and the time-aware weekly allowance above zero. Autonomous work gets half of each day's unspent budget, growing only as your waking hours (outside 20:00–06:00) run out, so your own use keeps priority. Every check fails closed. Inside a session the stop is automatic: a hook warns on every tool call from 85% of the 5-hour window (or when the weekly share is nearly used up), then blocks every tool call at 90%, at 95% of the week, or when the weekly share runs out. The session is then stopped, and the timer restarts it once there's room again.
+
+ - Changing mediaserver is allowed, with guard rails. The session reads mediaserver's own rules and known hazards first, commits every change in mediaserver's config repo, and applies one change at a time: validate, restart only that service, check it's healthy, and roll back automatically if not. Deleting household media or other services' data, anything that could cut the network or SSH, and household passwords go to the outbox instead, while other work continues. Every change shows in the recent decisions.
+
+ Where the work happens: development on SofiaThinkPad, which has the RAM. Recording and staging on mediaserver, which is always on and has the real services. Recordings travel as scrubbed fixture files committed to the repo.
+
+Part 4Delivery
+
+ 15
+
+## Milestones
+
+ Each milestone is a slice that runs end to end, from the Sonora screen through the API to your real servers, on web and Android at the same time. It ends when you have used it, not when CI is green.
+
+ M0
+
+## Foundations
+
+ - The rebuild happens in the same GitHub repository (patakihara/curly-spoon), so the F-Droid repository address, the signing secrets and the release workflows carry over untouched. The old code stays at a legacy tag, read-only. The first real Android build is released through the F-Droid repository and installed over 0.2.0 as an update, proving the path end to end. New layout: server, web, android, schema, design/sonora (moved in from the ThinkPad with its history), design/app and docs/plan.
+
+ - zod → OpenAPI → generated TS and Kotlin clients, enforced in CI.
+
+ - Adapter record mode; the first recordings from mediaserver's Audiobookshelf and Jellyfin, with secrets scrubbed.
+
+ - Security baseline: one-time setup, admin role, cookie and proxy config. Multi-user from day one: an auralis OpenID Connect client in the household sign-on (Authelia, backed by LLDAP), sign-in mapped by username to each person's Audiobookshelf and Jellyfin accounts, and device registration. How Auralis gets a per-user Audiobookshelf and Jellyfin token without asking for their password again is settled first.
+
+ - Sonora pipeline: web UI package built from Sonora's components, Android props generated from the .d.ts files, and every check in "Staying on track": generated folders locked, publish stamps, the merge checks, the end-of-session and session-start hooks, and Plan: lines on commits.
+
+ - The Auralis canvas in design/app: nav.json plus the full screen map as pages, then Sonora pruned to what those pages use and reordered into its hierarchy. Generators for the web router, the Android nav graph and the pages, and their CI checks. Both apps navigate the whole map with placeholder data before any screen gets real content.
+
+ - Sonora tokens generated for web (CSS) and Android (SonoraTokens.kt), fonts and icons; web gallery and Android Paparazzi screenshots in CI.
+
+ - This plan moved into docs/plan and published from there, with an id and a "done when" check on every item, the progress badges, and the session-start summary hook.
+
+ - The existing Auralis container on mediaserver (unused today) follows main as the test instance.
+
+ - The Android emulator in CI actually runs the app (a smoke test: log in, open Browse, play 5 s).
+
+ Done when you sign in to the staging container with your Delivarr account, it reaches your own Audiobookshelf and Jellyfin, and both clients render the shell from generated types.
+
+ M1
+
+## It plays
+
+ - Local index job for Audiobookshelf and Jellyfin.
+
+ - POST /play with direct play and a working HLS path; gapless multi-file playback; chapters across files.
+
+ - Progress fan-out to Audiobookshelf and Jellyfin; bookmarks; speed; sleep timer; media session and notification controls.
+
+ - Per-device listening sessions, stored on the server and never mixing by default. Their queues: music plus the shared spoken queue, the meta-queue switch, YouTube Music style with Spotify style as an option, history-based Back, default button actions, and autoplay (next episode, next in series, album then radio).
+
+ - Sonora shell, mini-player, Now Playing (stacked), queue, synced lyrics (Jellyfin's own for now); basic Books, Podcasts and Music lists to start playback from.
+
+ - Android: background playback, and Android Auto browse for all three media (continue, books, shows, albums).
+
+ Done when you listen for a week, on phone and desktop, and resume across both without thinking about it. This also replaces the ABS app for you.
+
+ M2
+
+## My library
+
+ - Library homes and every detail screen (book, show, episode, album, artist, author, series, playlist, favourites), drawn on the canvas first where Sonora lacks them.
+
+ - Search: suggestions plus library results with relevance ranking; context menus (Play next, Play last, Go to album or artist).
+
+ - LRCLIB lyric backfill and cache.
+
+ - Android downloads (whole plan: every file of a book), with a Downloads screen.
+
+ - Listening lists, podcast playlists, The Digest and custom digests.
+
+ - Library grid/list with Random sort; Up next and second-most-recent on Browse (from owned content).
+
+ - Settings, including accent picker, theme, queue style and autoplay switches.
+
+ Done when you can find and play anything you own faster than in Spotify, Audiobookshelf or Jellyfin's own apps.
+
+ M3
+
+## Play or get anything
+
+ - The unified request pipeline and status vocabulary.
+
+ - Books: first, time each step of today's pipeline on a real request to find what's slow. Then Prowlarr and AudiobookBay (real tracker rows, recorded markup), qBittorrent, and the import job that replaces the four audiobook-* commands (folder layout, clean titles, narrator only where needed, series, author photo), with Audiobookshelf picking up just the new folder.
+
+ - Music: YouTube Music adapter (extractor in the container, daily update and canary), search, instant streaming with a disk cache. Songs: Add to library in the song menu and automatically at ~90% played, saved as the original Opus with MusicBrainz tags, then a Jellyfin refresh. Albums: always a lossless torrent via Prowlarr → qBittorrent, with multi-query search, release scoring, a one-tap picker for unclear matches and Auralis's own tagging import, replacing any kept songs from that album on arrival. Spotify playlist import (read the public playlist, resolve each track on YouTube Music), as AbleMusicPlayer does.
+
+ - Podcasts: subscribe or unsubscribe through PodcastIndex/iTunes search; greyed-out episodes that subscribe you when played. YouTube channels as audio-only shows, through the generated feed, with SponsorBlock segments cut from the files and skipped live, and per-show category settings, once a test channel has run through stubs, hydration and playback.
+
+ - Watched-state and position sync for YouTube shows, opt-in per person, starting with a test on your account: episodes of your YouTube shows marked played and resumed at the same spot both ways, nothing else from your YouTube history, each person's sync kept to their own account, and the "sign-in expired" warning.
+
+ - Search's requestable section; artist and author catalogue with unowned titles greyed out (on by default, with a setting to hide it); Requests view; lyrics search.
+
+ Done when any song you think of plays within a couple of seconds, your Spotify playlists are imported and playing, and a lossless album you add arrives and replaces any songs you kept from it. Five books and two shows you request also turn into playable cards without you touching anything else.
+
+ M4
+
+## Browse like Spotify
+
+ - Identity fields end to end (ASIN, feed GUID, MBID).
+
+ - ListenBrainz (music), Audible similar products with an Audible-ID backfill (books), Apple Podcasts "You Might Also Like" (podcasts), YouTube Music radio, all as background jobs feeding the candidate pool.
+
+ - Browse composer: mixed shelves with context headers, one episode per show, feature cards with previews. External music plays straight away, external books and shows are requestable. Loading state held until ready. Plus the shelf review page.
+
+ - Recommendation phases 1–2: history import (Spotify, YouTube Music takeout), co-occurrence and next-item tables, provider candidates scored against taste, source logging, and the held-out replay score. Phase 3's exploration share ships with Browse.
+
+ - A short Hardcover check first: if its API exposes "readers also liked", it strengthens books.
+
+ Done when Browse puts at least one thing you didn't own, and then wanted, in front of you each week. That's the bar from your brief: "cleverly serve me audiobooks it thinks i will enjoy."
+
+ M5
+
+## Everywhere, polished
+
+ - Android Auto voice search and resumption on a real head unit or DHU.
+
+ - Offline behaviour on Android: queue and progress catch-up after reconnecting.
+
+ - Performance budget on this box (RAM ceiling for the container, Lighthouse on phone).
+
+ - Contrast fixes for the accent presets that fail WCAG.
+
+ - "Continue here" and "Play on…" between a user's devices. A streaming-only account for people without a media server.
+
+ Done when Spotify is uninstalled.
+
+ M6
+
+## Later, and separate
+
+ - EPUB downloaded with the audiobook, read-along via cheap speech-to-text matched against a small window of the text.
+
+ - Spotify: import your history, sync listening from Spotify, push the Auralis queue into a Spotify Jam if that's possible, browse public playlists.
+
+ - Alternating two books in one generated queue. Lyric screenshot formatting.
+
+ - ListenBrainz personal recommendations (tier 2), if you create an account and connect Jellyfin scrobbling.
+
+ 16
+
+## Keep or rewrite
+
+## Carry over
+
+ - Session and crypto: db/crypto.ts, sessionsRepo, auth/* (fix the cookie flags)
+
+ - packages/jellyfin-client: the most complete module; re-record its fixtures
+
+ - Request building blocks: requestStatus, torrentId, downloadPoller, prowlarr, qbittorrent/transmission (check the cookie name live)
+
+ - Recommendation core: profile, score, shelves, ownership (pure functions), listenbrainz.ts
+
+ - Self-hosted fonts and the SVG icon set (tokens come fresh from Sonora; the old repo's copies have drifted)
+
+ - Android: ApiClient cookie jar, DownloadManager wiring, Auto BrowseTree, the service skeleton
+
+ - Release and F-Droid publishing (release.yml, fdroid-repo.yml, docs/FDROID_REPO.md), the app id and both signing keys
+
+ - The e2e idea: the real server with recorded upstreams
+
+## Rewrite
+
+ - Playback on both platforms: the file-id/HLS chain, the player core, queues and loaders
+
+ - Android PlayerViewModel (multi-file, progress, speed, sleep)
+
+ - The three hand-copied contracts → generated
+
+ - abs-client schemas (re-derived from recordings; request body; token type)
+
+ - Setup and the authorisation model
+
+ - AudiobookBay scraper; the duplicated book and music request services. The slskd single-file flow is dropped in favour of YouTube Music.
+
+ - Live fan-out in recommendations → index plus candidate pool
+
+ - Fake-upstream routing that ships in the image
+
+ 17
+
+## Still open
+
+ Nothing here blocks starting. These are calls you left open in your notes, and each is needed only by the milestone that builds it.
+
+ Call | Options | Needed by | 
+
+ In-library marking | Mark in-library items (your lean), or mark the ones not in the library | My library | 
+
+ User-created queues | Two queues for now; any number later | Not scheduled | 
+
+ Mixed-content playlists | Parked, as you said | Not scheduled | 
+
+ 18
+
+## What this plan hasn't verified
+
+ - Sonora was read through its docs and component APIs. The 43 reference screenshots were read through their per-screen notes, not opened one by one.
+
+ - Where audiobook previews come from (a retail sample URL keyed by ASIN) is to be confirmed at the start of M4.
+
+ - Why Lidarr misses music: a month of its warning logs (indexer request limits and outages), its strict edition matching, and your experience of its catalogue (editions mixed together, albums missing). Its matching wasn't tested directly, and the rebuild doesn't use it. How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists is checked when music requests are built.
+
+ - The web multi-file stall is read from code, not reproduced. The Android first-file-only and missing progress sync are unambiguous in code but weren't run.
+
+ - Jellyfin's real lyrics and ProviderIds responses and the qBittorrent cookie name are unverified until M0's recordings. So is the current reliability of YouTube Music extraction from this server's IP; M3 starts with a canary.
+
+ - Whether the ThinkPad holds unpushed Auralis work newer than 781efd4: it was unreachable when the repo was read.
+
+ - Which step of the book pipeline is slow. The four audiobook-* commands show what imports need fixing by hand, not where the time goes; timing it is the first book task.
+
+ - That Audiobookshelf's folder watcher reliably picks up a new book folder on its own (it's on for the Books library). If it doesn't, Auralis asks for a scan of that one library at a quiet moment instead.
+
+ - How Auralis acts as each user in Audiobookshelf and Jellyfin after a single sign-on login (both are on the sign-on already, but getting an API token per user hasn't been tried).
+
+ - Watched-state and position sync on your account: reading watch history and marking videos watched with sign-in cookies is known to work in the extractor, but hasn't been tried here. Setting YouTube's resume position by sending a real position instead of "the end" should work but isn't done by any tool known to this plan, and how long exported cookies last in practice is unknown.
+
+ - Cutting SponsorBlock segments without re-encoding is only as precise as the audio's frame size (tens of milliseconds for YouTube's audio), which should be inaudible. Audiobookshelf picking up a re-cut file of an unstarted episode cleanly (new length, no stale progress) is to be tested with the first channel.
+
+ - Where the Android signing keys are kept besides GitHub's secrets. If the app signing key were lost, the installed app could no longer update in place and would have to be reinstalled. A backup outside GitHub is checked before the first release.
+
+ - Recommendation quality: measured by the held-out replay score on your own history once phase 1 runs, not predicted here. The embedding and audio models' speed on this box needs a benchmark.
+
