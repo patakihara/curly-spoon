@@ -1,0 +1,723 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.36.1",
+  "call": "item-play",
+  "request": {
+    "method": "POST",
+    "path": "/api/items/6d9c389e-cc45-4e17-9bcb-6bc33ee88b06/play",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "deviceInfo": {
+          "clientName": "Auralis",
+          "clientVersion": "0.0.0",
+          "deviceId": "auralis-recorder"
+        },
+        "mediaPlayer": "html5",
+        "supportedMimeTypes": [
+          "audio/flac",
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/ogg",
+          "audio/aac",
+          "audio/webm"
+        ],
+        "forceDirectPlay": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "69636cb5-1478-457d-ba4f-3378aaca1571",
+        "userId": "169161f6-18a9-4b97-804e-4870fe980143",
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "libraryItemId": "6d9c389e-cc45-4e17-9bcb-6bc33ee88b06",
+        "bookId": "950be393-39ba-40bc-9b83-85470acd8378",
+        "episodeId": null,
+        "mediaType": "book",
+        "mediaMetadata": {
+          "title": "Exhalation - Stories",
+          "subtitle": null,
+          "authors": [
+            {
+              "id": "0461edb8-d5bd-47db-b812-5b755f235c5e",
+              "name": "Ted Chiang"
+            }
+          ],
+          "narrators": [],
+          "series": [],
+          "genres": [
+            "Scifi"
+          ],
+          "publishedYear": "2019",
+          "publishedDate": null,
+          "publisher": null,
+          "description": null,
+          "isbn": null,
+          "asin": null,
+          "language": null,
+          "explicit": false,
+          "abridged": false
+        },
+        "chapters": [
+          {
+            "start": 0,
+            "end": 17,
+            "title": "Exhalation Stories -00- Intro",
+            "id": 0
+          },
+          {
+            "start": 17,
+            "end": 3571,
+            "title": "Exhalation Stories -01- The Merchant and the Alchemist's Gate",
+            "id": 1
+          },
+          {
+            "start": 3571,
+            "end": 6462,
+            "title": "Exhalation Stories -02- Exhalation",
+            "id": 2
+          },
+          {
+            "start": 6462,
+            "end": 6869,
+            "title": "Exhalation Stories -03- What's Expected of Us",
+            "id": 3
+          },
+          {
+            "start": 6869,
+            "end": 20261,
+            "title": "Exhalation Stories -04- The Lifecycle of Software Objects",
+            "id": 4
+          },
+          {
+            "start": 20261,
+            "end": 21429,
+            "title": "Exhalation Stories -05- Dacey's Patent Automatic Nanny",
+            "id": 5
+          },
+          {
+            "start": 21429,
+            "end": 27559,
+            "title": "Exhalation Stories -06- The Truth of Fact, the Truth of Feeling",
+            "id": 6
+          },
+          {
+            "start": 27559,
+            "end": 28212,
+            "title": "Exhalation Stories -07- The Great Silence",
+            "id": 7
+          },
+          {
+            "start": 28212,
+            "end": 32586,
+            "title": "Exhalation Stories -08- Omphalos",
+            "id": 8
+          },
+          {
+            "start": 32586,
+            "end": 40895,
+            "title": "Exhalation Stories -09- Anxiety is the Dizziness of Freedom",
+            "id": 9
+          },
+          {
+            "start": 40895,
+            "end": 40928.104,
+            "title": "Exhalation Stories -10- Outro",
+            "id": 10
+          },
+          {
+            "start": 40928.104,
+            "end": 40928.188,
+            "title": "012",
+            "id": 11
+          }
+        ],
+        "displayTitle": "Exhalation - Stories",
+        "displayAuthor": "Ted Chiang",
+        "coverPath": "/data/Books/Ted Chiang/Exhalation - Stories/cover.jpg",
+        "duration": 40928.188662,
+        "playMethod": 0,
+        "mediaPlayer": "html5",
+        "deviceInfo": {
+          "id": "d2ee23d1-8727-413b-8332-d7af461ddf4a",
+          "userId": "169161f6-18a9-4b97-804e-4870fe980143",
+          "deviceId": "auralis-recorder",
+          "ipAddress": "::ffff:192.0.2.1",
+          "clientVersion": "0.0.0",
+          "manufacturer": "",
+          "model": "",
+          "sdkVersion": "",
+          "clientName": "Auralis",
+          "deviceName": ""
+        },
+        "serverVersion": "2.36.1",
+        "date": "2026-09-28",
+        "dayOfWeek": "Monday",
+        "timeListening": 0,
+        "startTime": 0,
+        "currentTime": 0,
+        "startedAt": 1790548888167,
+        "updatedAt": 1790548888167,
+        "audioTracks": [
+          {
+            "index": 1,
+            "ino": "45152",
+            "metadata": {
+              "filename": "Ted Chiang - Exhalation - Stories.m4b",
+              "ext": ".m4b",
+              "path": "/data/Books/Ted Chiang/Exhalation - Stories/Ted Chiang - Exhalation - Stories.m4b",
+              "relPath": "Ted Chiang - Exhalation - Stories.m4b",
+              "size": 158919642,
+              "mtimeMs": 1777746537321,
+              "ctimeMs": 1777746928207,
+              "birthtimeMs": 1777746497428
+            },
+            "addedAt": 1777746949562,
+            "updatedAt": 1777746949562,
+            "trackNumFromMeta": null,
+            "discNumFromMeta": null,
+            "trackNumFromFilename": null,
+            "discNumFromFilename": null,
+            "manuallyVerified": false,
+            "exclude": false,
+            "error": null,
+            "format": "QuickTime / MOV",
+            "duration": 40928.188662,
+            "bitRate": 29581,
+            "language": "und",
+            "codec": "aac",
+            "timeBase": "1/22050",
+            "channels": 1,
+            "channelLayout": "mono",
+            "chapters": [
+              {
+                "start": 0,
+                "end": 17,
+                "title": "Exhalation Stories -00- Intro",
+                "id": 0
+              },
+              {
+                "start": 17,
+                "end": 3571,
+                "title": "Exhalation Stories -01- The Merchant and the Alchemist's Gate",
+                "id": 1
+              },
+              {
+                "start": 3571,
+                "end": 6462,
+                "title": "Exhalation Stories -02- Exhalation",
+                "id": 2
+              },
+              {
+                "start": 6462,
+                "end": 6869,
+                "title": "Exhalation Stories -03- What's Expected of Us",
+                "id": 3
+              },
+              {
+                "start": 6869,
+                "end": 20261,
+                "title": "Exhalation Stories -04- The Lifecycle of Software Objects",
+                "id": 4
+              },
+              {
+                "start": 20261,
+                "end": 21429,
+                "title": "Exhalation Stories -05- Dacey's Patent Automatic Nanny",
+                "id": 5
+              },
+              {
+                "start": 21429,
+                "end": 27559,
+                "title": "Exhalation Stories -06- The Truth of Fact, the Truth of Feeling",
+                "id": 6
+              },
+              {
+                "start": 27559,
+                "end": 28212,
+                "title": "Exhalation Stories -07- The Great Silence",
+                "id": 7
+              },
+              {
+                "start": 28212,
+                "end": 32586,
+                "title": "Exhalation Stories -08- Omphalos",
+                "id": 8
+              },
+              {
+                "start": 32586,
+                "end": 40895,
+                "title": "Exhalation Stories -09- Anxiety is the Dizziness of Freedom",
+                "id": 9
+              },
+              {
+                "start": 40895,
+                "end": 40928.104,
+                "title": "Exhalation Stories -10- Outro",
+                "id": 10
+              },
+              {
+                "start": 40928.104,
+                "end": 40928.188,
+                "title": "012",
+                "id": 11
+              }
+            ],
+            "embeddedCoverArt": null,
+            "metaTags": {
+              "tagAlbum": "Ted Chiang - Exhalation Stories",
+              "tagArtist": "Ted Chiang",
+              "tagGenre": "Scifi",
+              "tagTitle": "Exhalation Stories",
+              "tagDate": "2019",
+              "tagEncoder": "Nero AAC codec / 192.0.2.1"
+            },
+            "mimeType": "audio/mp4",
+            "title": "Ted Chiang - Exhalation - Stories.m4b",
+            "startOffset": 0,
+            "contentUrl": "/api/items/6d9c389e-cc45-4e17-9bcb-6bc33ee88b06/file/45152"
+          }
+        ],
+        "libraryItem": {
+          "id": "6d9c389e-cc45-4e17-9bcb-6bc33ee88b06",
+          "ino": "45168",
+          "oldLibraryItemId": null,
+          "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+          "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+          "path": "/data/Books/Ted Chiang/Exhalation - Stories",
+          "relPath": "Ted Chiang/Exhalation - Stories",
+          "isFile": false,
+          "mtimeMs": 1777747028652,
+          "ctimeMs": 1777747028652,
+          "birthtimeMs": 1777746928175,
+          "addedAt": 1777746973916,
+          "updatedAt": 1778671399012,
+          "isMissing": false,
+          "isInvalid": false,
+          "mediaType": "book",
+          "media": {
+            "id": "950be393-39ba-40bc-9b83-85470acd8378",
+            "metadata": {
+              "title": "Exhalation - Stories",
+              "subtitle": null,
+              "authors": [
+                {
+                  "id": "0461edb8-d5bd-47db-b812-5b755f235c5e",
+                  "name": "Ted Chiang"
+                }
+              ],
+              "narrators": [],
+              "series": [],
+              "genres": [
+                "Scifi"
+              ],
+              "publishedYear": "2019",
+              "publishedDate": null,
+              "publisher": null,
+              "description": null,
+              "isbn": null,
+              "asin": null,
+              "language": null,
+              "explicit": false,
+              "abridged": false,
+              "titleIgnorePrefix": "Exhalation - Stories",
+              "authorName": "Ted Chiang",
+              "authorNameLF": "Chiang, Ted",
+              "narratorName": "",
+              "seriesName": "",
+              "descriptionPlain": null
+            },
+            "coverPath": "/data/Books/Ted Chiang/Exhalation - Stories/cover.jpg",
+            "tags": [],
+            "numTracks": 1,
+            "numAudioFiles": 1,
+            "numChapters": 12,
+            "duration": 40928.188662,
+            "size": 158919642,
+            "libraryItemId": "6d9c389e-cc45-4e17-9bcb-6bc33ee88b06",
+            "audioFiles": [
+              {
+                "index": 1,
+                "ino": "45152",
+                "metadata": {
+                  "filename": "Ted Chiang - Exhalation - Stories.m4b",
+                  "ext": ".m4b",
+                  "path": "/data/Books/Ted Chiang/Exhalation - Stories/Ted Chiang - Exhalation - Stories.m4b",
+                  "relPath": "Ted Chiang - Exhalation - Stories.m4b",
+                  "size": 158919642,
+                  "mtimeMs": 1777746537321,
+                  "ctimeMs": 1777746928207,
+                  "birthtimeMs": 1777746497428
+                },
+                "addedAt": 1777746949562,
+                "updatedAt": 1777746949562,
+                "trackNumFromMeta": null,
+                "discNumFromMeta": null,
+                "trackNumFromFilename": null,
+                "discNumFromFilename": null,
+                "manuallyVerified": false,
+                "exclude": false,
+                "error": null,
+                "format": "QuickTime / MOV",
+                "duration": 40928.188662,
+                "bitRate": 29581,
+                "language": "und",
+                "codec": "aac",
+                "timeBase": "1/22050",
+                "channels": 1,
+                "channelLayout": "mono",
+                "chapters": [
+                  {
+                    "start": 0,
+                    "end": 17,
+                    "title": "Exhalation Stories -00- Intro",
+                    "id": 0
+                  },
+                  {
+                    "start": 17,
+                    "end": 3571,
+                    "title": "Exhalation Stories -01- The Merchant and the Alchemist's Gate",
+                    "id": 1
+                  },
+                  {
+                    "start": 3571,
+                    "end": 6462,
+                    "title": "Exhalation Stories -02- Exhalation",
+                    "id": 2
+                  },
+                  {
+                    "start": 6462,
+                    "end": 6869,
+                    "title": "Exhalation Stories -03- What's Expected of Us",
+                    "id": 3
+                  },
+                  {
+                    "start": 6869,
+                    "end": 20261,
+                    "title": "Exhalation Stories -04- The Lifecycle of Software Objects",
+                    "id": 4
+                  },
+                  {
+                    "start": 20261,
+                    "end": 21429,
+                    "title": "Exhalation Stories -05- Dacey's Patent Automatic Nanny",
+                    "id": 5
+                  },
+                  {
+                    "start": 21429,
+                    "end": 27559,
+                    "title": "Exhalation Stories -06- The Truth of Fact, the Truth of Feeling",
+                    "id": 6
+                  },
+                  {
+                    "start": 27559,
+                    "end": 28212,
+                    "title": "Exhalation Stories -07- The Great Silence",
+                    "id": 7
+                  },
+                  {
+                    "start": 28212,
+                    "end": 32586,
+                    "title": "Exhalation Stories -08- Omphalos",
+                    "id": 8
+                  },
+                  {
+                    "start": 32586,
+                    "end": 40895,
+                    "title": "Exhalation Stories -09- Anxiety is the Dizziness of Freedom",
+                    "id": 9
+                  },
+                  {
+                    "start": 40895,
+                    "end": 40928.104,
+                    "title": "Exhalation Stories -10- Outro",
+                    "id": 10
+                  },
+                  {
+                    "start": 40928.104,
+                    "end": 40928.188,
+                    "title": "012",
+                    "id": 11
+                  }
+                ],
+                "embeddedCoverArt": null,
+                "metaTags": {
+                  "tagAlbum": "Ted Chiang - Exhalation Stories",
+                  "tagArtist": "Ted Chiang",
+                  "tagGenre": "Scifi",
+                  "tagTitle": "Exhalation Stories",
+                  "tagDate": "2019",
+                  "tagEncoder": "Nero AAC codec / 192.0.2.1"
+                },
+                "mimeType": "audio/mp4"
+              }
+            ],
+            "chapters": [
+              {
+                "start": 0,
+                "end": 17,
+                "title": "Exhalation Stories -00- Intro",
+                "id": 0
+              },
+              {
+                "start": 17,
+                "end": 3571,
+                "title": "Exhalation Stories -01- The Merchant and the Alchemist's Gate",
+                "id": 1
+              },
+              {
+                "start": 3571,
+                "end": 6462,
+                "title": "Exhalation Stories -02- Exhalation",
+                "id": 2
+              },
+              {
+                "start": 6462,
+                "end": 6869,
+                "title": "Exhalation Stories -03- What's Expected of Us",
+                "id": 3
+              },
+              {
+                "start": 6869,
+                "end": 20261,
+                "title": "Exhalation Stories -04- The Lifecycle of Software Objects",
+                "id": 4
+              },
+              {
+                "start": 20261,
+                "end": 21429,
+                "title": "Exhalation Stories -05- Dacey's Patent Automatic Nanny",
+                "id": 5
+              },
+              {
+                "start": 21429,
+                "end": 27559,
+                "title": "Exhalation Stories -06- The Truth of Fact, the Truth of Feeling",
+                "id": 6
+              },
+              {
+                "start": 27559,
+                "end": 28212,
+                "title": "Exhalation Stories -07- The Great Silence",
+                "id": 7
+              },
+              {
+                "start": 28212,
+                "end": 32586,
+                "title": "Exhalation Stories -08- Omphalos",
+                "id": 8
+              },
+              {
+                "start": 32586,
+                "end": 40895,
+                "title": "Exhalation Stories -09- Anxiety is the Dizziness of Freedom",
+                "id": 9
+              },
+              {
+                "start": 40895,
+                "end": 40928.104,
+                "title": "Exhalation Stories -10- Outro",
+                "id": 10
+              },
+              {
+                "start": 40928.104,
+                "end": 40928.188,
+                "title": "012",
+                "id": 11
+              }
+            ],
+            "ebookFile": null,
+            "tracks": [
+              {
+                "index": 1,
+                "ino": "45152",
+                "metadata": {
+                  "filename": "Ted Chiang - Exhalation - Stories.m4b",
+                  "ext": ".m4b",
+                  "path": "/data/Books/Ted Chiang/Exhalation - Stories/Ted Chiang - Exhalation - Stories.m4b",
+                  "relPath": "Ted Chiang - Exhalation - Stories.m4b",
+                  "size": 158919642,
+                  "mtimeMs": 1777746537321,
+                  "ctimeMs": 1777746928207,
+                  "birthtimeMs": 1777746497428
+                },
+                "addedAt": 1777746949562,
+                "updatedAt": 1777746949562,
+                "trackNumFromMeta": null,
+                "discNumFromMeta": null,
+                "trackNumFromFilename": null,
+                "discNumFromFilename": null,
+                "manuallyVerified": false,
+                "exclude": false,
+                "error": null,
+                "format": "QuickTime / MOV",
+                "duration": 40928.188662,
+                "bitRate": 29581,
+                "language": "und",
+                "codec": "aac",
+                "timeBase": "1/22050",
+                "channels": 1,
+                "channelLayout": "mono",
+                "chapters": [
+                  {
+                    "start": 0,
+                    "end": 17,
+                    "title": "Exhalation Stories -00- Intro",
+                    "id": 0
+                  },
+                  {
+                    "start": 17,
+                    "end": 3571,
+                    "title": "Exhalation Stories -01- The Merchant and the Alchemist's Gate",
+                    "id": 1
+                  },
+                  {
+                    "start": 3571,
+                    "end": 6462,
+                    "title": "Exhalation Stories -02- Exhalation",
+                    "id": 2
+                  },
+                  {
+                    "start": 6462,
+                    "end": 6869,
+                    "title": "Exhalation Stories -03- What's Expected of Us",
+                    "id": 3
+                  },
+                  {
+                    "start": 6869,
+                    "end": 20261,
+                    "title": "Exhalation Stories -04- The Lifecycle of Software Objects",
+                    "id": 4
+                  },
+                  {
+                    "start": 20261,
+                    "end": 21429,
+                    "title": "Exhalation Stories -05- Dacey's Patent Automatic Nanny",
+                    "id": 5
+                  },
+                  {
+                    "start": 21429,
+                    "end": 27559,
+                    "title": "Exhalation Stories -06- The Truth of Fact, the Truth of Feeling",
+                    "id": 6
+                  },
+                  {
+                    "start": 27559,
+                    "end": 28212,
+                    "title": "Exhalation Stories -07- The Great Silence",
+                    "id": 7
+                  },
+                  {
+                    "start": 28212,
+                    "end": 32586,
+                    "title": "Exhalation Stories -08- Omphalos",
+                    "id": 8
+                  },
+                  {
+                    "start": 32586,
+                    "end": 40895,
+                    "title": "Exhalation Stories -09- Anxiety is the Dizziness of Freedom",
+                    "id": 9
+                  },
+                  {
+                    "start": 40895,
+                    "end": 40928.104,
+                    "title": "Exhalation Stories -10- Outro",
+                    "id": 10
+                  },
+                  {
+                    "start": 40928.104,
+                    "end": 40928.188,
+                    "title": "012",
+                    "id": 11
+                  }
+                ],
+                "embeddedCoverArt": null,
+                "metaTags": {
+                  "tagAlbum": "Ted Chiang - Exhalation Stories",
+                  "tagArtist": "Ted Chiang",
+                  "tagGenre": "Scifi",
+                  "tagTitle": "Exhalation Stories",
+                  "tagDate": "2019",
+                  "tagEncoder": "Nero AAC codec / 192.0.2.1"
+                },
+                "mimeType": "audio/mp4",
+                "title": "Ted Chiang - Exhalation - Stories.m4b",
+                "startOffset": 0,
+                "contentUrl": "/api/items/6d9c389e-cc45-4e17-9bcb-6bc33ee88b06/file/45152"
+              }
+            ]
+          },
+          "numFiles": 3,
+          "size": 159051163,
+          "lastScan": 1778670843521,
+          "scanVersion": "2.34.0",
+          "libraryFiles": [
+            {
+              "ino": "45152",
+              "metadata": {
+                "filename": "Ted Chiang - Exhalation - Stories.m4b",
+                "ext": ".m4b",
+                "path": "/data/Books/Ted Chiang/Exhalation - Stories/Ted Chiang - Exhalation - Stories.m4b",
+                "relPath": "Ted Chiang - Exhalation - Stories.m4b",
+                "size": 158919642,
+                "mtimeMs": 1777746537321,
+                "ctimeMs": 1777746928207,
+                "birthtimeMs": 1777746497428
+              },
+              "isSupplementary": null,
+              "addedAt": 1777746947292,
+              "updatedAt": 1777746947292,
+              "fileType": "audio"
+            },
+            {
+              "ino": "45172",
+              "metadata": {
+                "filename": "metadata.json",
+                "ext": ".json",
+                "path": "/data/Books/Ted Chiang/Exhalation - Stories/metadata.json",
+                "relPath": "metadata.json",
+                "size": 1945,
+                "mtimeMs": 1778671399009,
+                "ctimeMs": 1778671399009,
+                "birthtimeMs": 1777746974404
+              },
+              "isSupplementary": null,
+              "addedAt": 1777746974408,
+              "updatedAt": 1778670843521,
+              "fileType": "metadata"
+            },
+            {
+              "ino": "45177",
+              "metadata": {
+                "filename": "cover.jpg",
+                "ext": ".jpg",
+                "path": "/data/Books/Ted Chiang/Exhalation - Stories/cover.jpg",
+                "relPath": "cover.jpg",
+                "size": 129576,
+                "mtimeMs": 1777747028036,
+                "ctimeMs": 1777747028652,
+                "birthtimeMs": 1777747028024
+              },
+              "isSupplementary": null,
+              "addedAt": 1777746988571,
+              "updatedAt": 1777796983205,
+              "fileType": "image"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

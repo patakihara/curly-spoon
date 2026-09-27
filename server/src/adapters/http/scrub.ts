@@ -28,8 +28,14 @@ export const SECRET_BODY_KEY =
 export const HOST_FIELD = /host|address|^addr$|servername|domain|origin|endpoint|url$/i;
 /** Four octets only, so versions such as 2.36.1 or 10.11.11 never match. */
 export const IPV4 = /(?<!\d|\d\.)(?:\d{1,3}\.){3}\d{1,3}(?!\.?\d)/g;
-/** Candidates only; `isIPv6` decides. Needs two colons, so clocks like 12:30:00 fail `isIPv6`. */
-export const IPV6_CANDIDATE = /(?<![\w:])(?:[0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}(?![\w:])/gi;
+/**
+ * Candidates only; `isIPv6` decides. Needs two colons, so clocks like 12:30:00 fail `isIPv6`.
+ * A dotted IPv4 tail (`::ffff:10.1.2.3`) is part of the candidate, never cut off at its first dot.
+ */
+export const IPV6_CANDIDATE =
+  /(?<![\w:])(?:[0-9a-f]{0,4}:){2,7}(?:(?:\d{1,3}\.){3}\d{1,3}|[0-9a-f]{0,4}(?!\.\d))(?![\w:])/gi;
+/** An IPv4-mapped IPv6 address; it leaks exactly when its IPv4 part does. */
+const IPV4_MAPPED = /^::ffff:((?:\d{1,3}\.){3}\d{1,3})$/i;
 /** Any address, dotted domain or not (`someone@box` too). */
 export const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*/g;
 /** `/home/<user>` and `/Users/<user>`, raw or URL-encoded. */
@@ -70,7 +76,11 @@ export function isAllowedIp(ip: string): boolean {
 export function ipv6Leaks(value: string): string[] {
   return [...value.matchAll(IPV6_CANDIDATE)]
     .map((m) => m[0])
-    .filter((c) => isIPv6(c) && c !== '::' && c !== '::1' && !/^2001:db8:/i.test(c));
+    .filter((c) => {
+      const mapped = IPV4_MAPPED.exec(c);
+      if (mapped) return !isAllowedIp(mapped[1] as string);
+      return isIPv6(c) && c !== '::' && c !== '::1' && !/^2001:db8:/i.test(c);
+    });
 }
 
 /** True for a host that is allowed to stay in a recording as it is. */

@@ -146,6 +146,32 @@ describe('[M0.record/c] scrubbing a recording', () => {
     });
   });
 
+  it('[M0.record/c] an IPv4-mapped IPv6 address keeps its form with the IPv4 part replaced', () => {
+    const r = scrub(
+      exchange({
+        response: {
+          status: 200,
+          headers: {},
+          body: {
+            json: {
+              deviceInfo: { ipAddress: '::ffff:100.101.102.103' },
+              upper: '::FFFF:10.1.2.3',
+              loopback: '::ffff:127.0.0.1',
+            },
+          },
+        },
+      }),
+      opts,
+    );
+    expect(r.response.body).toEqual({
+      json: {
+        deviceInfo: { ipAddress: '::ffff:192.0.2.1' },
+        upper: '::FFFF:192.0.2.1',
+        loopback: '::ffff:127.0.0.1',
+      },
+    });
+  });
+
   it('[M0.record/c] emails become user@upstream.invalid', () => {
     const r = scrub(
       exchange({

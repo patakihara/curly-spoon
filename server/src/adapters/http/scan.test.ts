@@ -211,6 +211,20 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
         { kind: 'ip', path: '$.response.body.json.Server' },
       ],
       [
+        'an IPv4-mapped IPv6 address',
+        leak((r) => {
+          body(r).Server = '::ffff:100.101.102.103';
+        }),
+        { kind: 'ip', path: '$.response.body.json.Server' },
+      ],
+      [
+        'an IPv6 address with an embedded IPv4 tail',
+        leak((r) => {
+          body(r).Server = '64:ff9b::192.0.2.1';
+        }),
+        { kind: 'ip', path: '$.response.body.json.Server' },
+      ],
+      [
         'an IPv4 under a version key',
         leak((r) => {
           body(r).Version = '10.1.2.3';
@@ -277,6 +291,14 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
   });
 
   it('[M0.record/c] the scrubbed placeholders pass the scan', () => {
+    expect(
+      scanRecording(
+        leak((r) => {
+          body(r).ipAddress = '::ffff:192.0.2.1';
+        }),
+      ),
+      'a mapped placeholder address',
+    ).toEqual([]);
     for (const authorization of ['<token>', 'Basic <token>', 'Bearer <token>']) {
       expect(
         scanRecording(

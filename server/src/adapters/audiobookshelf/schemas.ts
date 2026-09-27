@@ -1,15 +1,18 @@
 /**
  * Zod schemas for the Audiobookshelf calls Auralis makes, cut to the fields it reads.
  * `.passthrough()` keeps the rest: ABS adds fields between versions, and a recording shows the
- * whole answer anyway. Tightened to what mediaserver's recordings show once they exist.
+ * whole answer anyway. The shapes follow mediaserver's recordings in `recordings/` (ABS 2.36.1).
  */
 import { z } from 'zod';
 
 /** `GET /status`, unauthenticated. */
 export const statusSchema = z.object({ serverVersion: z.string() }).passthrough();
 
+/** ABS has two library media types; Auralis plays both. */
+export const mediaTypeSchema = z.enum(['book', 'podcast']);
+
 export const librarySchema = z
-  .object({ id: z.string(), name: z.string(), mediaType: z.string() })
+  .object({ id: z.string(), name: z.string(), mediaType: mediaTypeSchema })
   .passthrough();
 
 /** `GET /api/libraries`. */
@@ -22,7 +25,7 @@ export const libraryItemsSchema = z
 
 /** `GET /api/items/:id?expanded=1`. */
 export const itemSchema = z
-  .object({ id: z.string(), mediaType: z.string(), media: z.object({}).passthrough() })
+  .object({ id: z.string(), mediaType: mediaTypeSchema, media: z.object({}).passthrough() })
   .passthrough();
 
 /**
@@ -48,6 +51,11 @@ export interface PlayRequest {
   forceDirectPlay: true;
 }
 
+/**
+ * A direct-play track carries its file's `metadata` and a `contentUrl` of
+ * `/api/items/:id/file/:ino` (recorded); a transcoded HLS track has `metadata: null` (not
+ * recorded, since recording it would start a transcode on mediaserver).
+ */
 export const audioTrackSchema = z
   .object({
     contentUrl: z.string(),
@@ -56,7 +64,10 @@ export const audioTrackSchema = z
   })
   .passthrough();
 
-/** `POST /api/items/:id/play`: the playback session. `playMethod` 0 is direct play. */
+/**
+ * `POST /api/items/:id/play`: the playback session. `playMethod` 0 is direct play, which the
+ * recording shows for the direct-play body.
+ */
 export const playSessionSchema = z
   .object({ id: z.string(), playMethod: z.number(), audioTracks: z.array(audioTrackSchema) })
   .passthrough();
