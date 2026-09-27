@@ -1,0 +1,34 @@
+import { ReactNode } from 'react';
+
+/**
+ * Argues for one item, at length, inside a feed — the description is the point, so this exists
+ * for recommendations that need to persuade rather than just be scanned. Tinted from its own
+ * artwork so a column of these reads as distinct recommendations, not a list.
+ */
+export interface FeatureCardProps {
+  image?: string;
+  /** Eyebrow above the title — "Episode", "Playlist", "Audiobook". */
+  kind?: string;
+  title: string;
+  /** e.g. "The LRB Podcast • 1 day ago • 56min". */
+  meta?: string;
+  /** Clamped to 2 lines. */
+  description?: string;
+  /** Card surface colour. Defaults to --surface-card. */
+  tint?: string;
+  /** Renders the "E" marker before the title. */
+  explicit?: boolean;
+  /** The save control shows this state. */
+  saved?: boolean;
+  onSave?: () => void;
+  /**
+   * Omit for an audiobook: a sample is the only playback a preview offers there, so when this is
+   * absent no play control is rendered at all.
+   */
+  onPlay?: () => void;
+  onMore?: () => void;
+  /** A PreviewButton, rendered at the start of the bottom actions row. */
+  preview?: ReactNode;
+  platform?: 'desktop' | 'mobile';
+}
+export declare function FeatureCard(props: FeatureCardProps): JSX.Element;

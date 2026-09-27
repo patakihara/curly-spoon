@@ -1,0 +1,11 @@
+import { ReactNode } from 'react';
+
+export interface ChipProps {
+  children: ReactNode;
+  /** One of the 17 accent hues (renders as a big colorful genre card like Symphony's Genres grid). Omit for a plain outlined tag. */
+  color?: 'red'|'orange'|'amber'|'yellow'|'lime'|'green'|'emerald'|'teal'|'cyan'|'sky'|'blue'|'indigo'|'violet'|'purple'|'fuchsia'|'pink'|'rose';
+  count?: number;
+  selected?: boolean;
+  platform?: 'desktop' | 'mobile';
+  onClick?: () => void;
+}

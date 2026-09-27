@@ -1,0 +1,82 @@
+<!-- @dsCard group="Components" viewport="1400x820" name="Episode Rows & Item Actions" subtitle="EpisodeRow finished / part-played / unstarted / explicit, ItemActionBar saved states, and DownloadButton's three states" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { EpisodeRow, ItemActionBar, DownloadButton } = window.SonoraDesignSystem_6c1435;
+
+function Caption({ children }) {
+  return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:640}}>{children}</div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div>
+      <Caption>EpisodeRow across its listened states — finished, part-played (a progress rule under the meta), unstarted, and an explicit episode — each carrying its own ItemActionBar.</Caption>
+      <div style={{display:'flex',flexDirection:'column'}}>
+        <EpisodeRow
+          title="Episode 41 — The last dispatch"
+          description="The call that made her quit in the first place resurfaces on an evidence tape nobody logged."
+          meta={["12K plays", "3 Aug 2026", "48min"]}
+          finished={true}
+          onPlay={() => {}}
+          divider={true}
+          actions={<ItemActionBar saved={true} onSave={() => {}} download="done" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
+        />
+        <EpisodeRow
+          title="Episode 42 — Silence on Channel 9"
+          description="Half the department swears the frequency has been dead for a decade. The other half won't say why."
+          meta={["9.4K plays", "10 Aug 2026", "51min"]}
+          progress={0.35}
+          onPlay={() => {}}
+          divider={true}
+          actions={<ItemActionBar saved={false} onSave={() => {}} download="downloading" downloadProgress={0.42} onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
+        />
+        <EpisodeRow
+          title="Episode 43 — Static returns"
+          description="A rookie logs a call from a number that was disconnected in 2019, and it's not the first time this week."
+          meta={["6.1K plays", "17 Aug 2026", "44min"]}
+          onPlay={() => {}}
+          divider={true}
+          actions={<ItemActionBar saved={false} onSave={() => {}} download="idle" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
+        />
+        <EpisodeRow
+          title="Episode 44 — After the tape ran out"
+          description="Listener mail this week is one letter, handwritten, postmarked from a town that isn't on any map we could find."
+          meta={["4.8K plays", "21 Aug 2026", "39min"]}
+          explicit={true}
+          onPlay={() => {}}
+          divider={false}
+          actions={<ItemActionBar saved={true} onSave={() => {}} download="idle" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
+        />
+      </div>
+    </div>
+    <div>
+      <Caption>ItemActionBar on its own, saved and unsaved — each control only renders when its handler is supplied.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-2xl)',alignItems:'center'}}>
+        <ItemActionBar saved={true} onSave={() => {}} download="done" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />
+        <ItemActionBar saved={false} onSave={() => {}} download="idle" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} playing />
+      </div>
+    </div>
+    <div>
+      <Caption>DownloadButton's three states — idle, downloading with a determinate ring, and done.</Caption>
+      <div style={{display:'flex',gap:'var(--spacing-2xl)',alignItems:'center'}}>
+        <DownloadButton state="idle" onClick={() => {}} />
+        <DownloadButton state="downloading" progress={0.6} onClick={() => {}} />
+        <DownloadButton state="done" onClick={() => {}} />
+      </div>
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

@@ -1,0 +1,140 @@
+<!-- @dsCard group="Components" viewport="1400x900" name="Backdrop — Scroll-Spy Subheader" subtitle="The subheader a scrolling front layer requires: blank at rest, then carrying the section title that just passed it" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BackdropShell, BackLayer, FrontLayer, FrontLayerHeader, NavRail, Section, Shelf, MediaCard, ResultRow, ButtonGroup } = window.SonoraDesignSystem_6c1435;
+
+const NAV = [{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'speaker'},{key:'books',label:'Audiobooks',icon:'headphones'}];
+
+/* The five titles the feed's Sections already carry. This same array is what goes to the
+   subheader's `sections` prop — the caller is not writing anything new, it is handing over the
+   strings it was going to pass to Section anyway. */
+const FEED = [
+  {title:'Jump back in', cards:[
+    {title:'Driftwave', sub:'Album · Halcyon Bloom'},
+    {title:'Static & Signal', sub:'Podcast · 214 episodes'},
+    {title:'The Glass Archivist', sub:'Book · Rosa Elin', progress:0.42},
+    {title:'Nightglass', sub:'Album · Echo Fields'},
+  ]},
+  {title:'Recently added', cards:[
+    {title:'Lantern Season', sub:'Podcast · 61 episodes'},
+    {title:'Halcyon Bloom', sub:'Artist · 4 albums'},
+    {title:'Tidal Lines', sub:'Single · Halcyon Bloom'},
+    {title:'Rosa Elin', sub:'Author · 9 books'},
+  ]},
+  {title:'Because you finished The Glass Archivist', rows:[
+    {title:'The Salt Cartographer', meta:'Rosa Elin · 11h 04m'},
+    {title:'A Winter of Signals', meta:'Rosa Elin · 8h 47m'},
+    {title:'Driftwave — the sessions', meta:'Halcyon Bloom · 52min'},
+  ]},
+  {title:'Podcasts you follow', cards:[
+    {title:'Static & Signal', sub:'3 new episodes'},
+    {title:'Lantern Season', sub:'1 new episode'},
+    {title:'Low Orbit Radio', sub:'Podcast · 88 episodes'},
+    {title:'Field Notes', sub:'Podcast · 30 episodes'},
+  ]},
+  {title:'Unfinished audiobooks', rows:[
+    {title:'The Glass Archivist', meta:'Rosa Elin · 2h 18m left', progress:0.58},
+    {title:'Every Harbour Twice', meta:'Rosa Elin · 6h 02m left', progress:0.19},
+    {title:'Static & Signal — the book', meta:'Echo Fields · 4h 41m left', progress:0.35},
+  ]},
+];
+
+const TITLES = FEED.map((s) => s.title);
+
+const Tag = ({children}) => <span style={{flexShrink:0,padding:'3px 10px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap'}}>{children}</span>;
+const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',minHeight:30,lineHeight:1.35}}>{children}</div>;
+
+// The feed itself is ordinary: Section, Shelf, MediaCard, ResultRow, exactly as any other page
+// builds them. Nothing here knows a scroll spy exists — that is the point of the `sections` prop.
+function Feed(){
+  return <div style={{padding:'var(--spacing-xl) var(--grid-margin) var(--grid-margin)'}}>
+    {FEED.map((s, i) => (
+      <Section key={s.title} title={s.title} platform="desktop" last={i === FEED.length - 1}>
+        {s.cards
+          ? <Shelf>{s.cards.map((c) => <MediaCard key={c.title} size="sm" {...c} />)}</Shelf>
+          : <div>{s.rows.map((r) => <ResultRow key={r.title} {...r} />)}</div>}
+      </Section>
+    ))}
+  </div>;
+}
+
+/* The live one. Scroll it: the band is blank until "Jump back in" goes under it, then it carries
+   whichever heading passed last. `sections` is the caller-supplied form; the subheader matches
+   those titles against the <section> elements Section already renders. */
+function Live(){
+  const [seen, setSeen] = React.useState('');
+  return <div style={{height:450}}>
+    <BackdropShell platform="desktop" scrollKey="browse"
+      rail={<NavRail items={NAV} active="browse" expanded={false} />}
+      back={<BackLayer title="Browse" trailing={<Tag>{'onSpyChange → ' + (seen ? '“' + seen + '”' : 'blank')}</Tag>} />}
+      subheader={<FrontLayerHeader spy sections={TITLES} onSpyChange={setSeen} />}>
+      <Feed />
+    </BackdropShell>
+  </div>;
+}
+
+/* The same band with `spyTitle` supplied, so the progression is reviewable without touching it.
+   Each cell is a front layer on a strip of back layer; `offset` fakes the scroll the title
+   implies, and `progress` fades in the hairline the same scroll would. */
+function Still({caption, title, offset, progress}){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',minWidth:0}}>
+    <Caption>{caption}</Caption>
+    <div style={{height:186,display:'flex',background:'var(--surface-bg-alt)',paddingTop:'var(--spacing-md)'}}>
+      <FrontLayer scroll={false} subheader={<FrontLayerHeader spy spyTitle={title} progress={progress} />}>
+        {/* The clip is the outer box, the offset the inner one: a negative margin on the flex
+            item itself would drag the content up over the subheader instead of under it. */}
+        <div style={{flex:1,minHeight:0,overflow:'hidden'}}><div style={{marginTop:offset}}><Feed /></div></div>
+      </FrontLayer>
+    </div>
+  </div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+      <Caption>Live — scroll the front layer. Blank at the top, then the title of the section that last passed under the band.</Caption>
+      <Live />
+    </div>
+    <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+      <Caption>Static — the same band with a supplied spyTitle, so the progression reviews without being touched.</Caption>
+      <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-sm)'}}>
+        <Tag>Subheader · fixed · 1dp · --surface-bg</Tag>
+        <Tag>Row height reserved · calc(--text-lg * 1.5)</Tag>
+        <Tag>Swap · --duration-fast / --ease-standard</Tag>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'var(--spacing-lg)'}}>
+        <Still caption="At rest — blank" title="" offset={0} progress={0} />
+        <Still caption="“Jump back in” has passed" title="Jump back in" offset={-150} progress={1} />
+        <Still caption="…later, “Recently added”" title="Recently added" offset={-330} progress={1} />
+      </div>
+    </div>
+    <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+      <Caption>With a control after it — the title leads the band, the control keeps the trailing edge.</Caption>
+      <div style={{display:'flex',background:'var(--surface-bg-alt)',paddingTop:'var(--spacing-md)'}}>
+        <FrontLayer scroll={false} subheader={
+          <FrontLayerHeader spy spyTitle="Recently added" progress={1}>
+            <div style={{display:'flex',justifyContent:'flex-end'}}>
+              <ButtonGroup items={['All','Music','Books']} value="All" />
+            </div>
+          </FrontLayerHeader>}>
+          <div style={{height:'var(--spacing-2xl)'}} />
+        </FrontLayer>
+      </div>
+    </div>
+  </div>;
+}
+
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

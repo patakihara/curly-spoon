@@ -1,0 +1,26 @@
+/**
+ * The lyric list in the three states the sync control cycles through. Only `sync` scrolls to follow
+ * the song; `dot` and `off` are static sheets.
+ */
+export interface LyricsProps {
+  lines?: string[];
+  /** Index of the line being sung. */
+  activeIndex?: number;
+  platform?: 'desktop' | 'mobile';
+  /**
+   * `sync` — the line being sung takes accent ink a step larger, sung lines stay full strength and
+   * lines still to come are muted (and the list scrolls to follow);
+   * `dot` — all lines full strength, the current one marked by an accent dot that slides between
+   * lines; its gutter is held in every mode, so switching never moves the text;
+   * `off` — no sync and no indication.
+   */
+  syncMode?: 'sync' | 'dot' | 'off';
+  /** Draw the card surface behind the lines. Off for a full lyrics page, which owns its surface. */
+  card?: boolean;
+  /** Line size — any CSS length or type token. Defaults to `--text-lg`. */
+  textSize?: string;
+  /** Follow the song by scrolling the nearest scrolling ancestor. Only applies in `sync`. */
+  autoScroll?: boolean;
+  onLineClick?: (index: number) => void;
+}
+export declare function Lyrics(props: LyricsProps): JSX.Element;

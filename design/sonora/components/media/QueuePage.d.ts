@@ -1,0 +1,42 @@
+import { ReactNode } from 'react';
+
+export interface QueueItem {
+  /** Stable key. Falls back to `title`. */
+  id?: string | number;
+  title: string;
+  sub?: string;
+  time?: string;
+  /** The row now playing — pulled out above the "Up next" list and never editable. */
+  current?: boolean;
+}
+
+/**
+ * The full queue page — the player's sub-page shell: what it is playing from on the meta row beside
+ * the edit toggle, then now playing and up next. Edit mode turns on selection, drag handles and the
+ * remove bar. Leave `editing` unset and the page owns the mode itself. No back affordance — the
+ * surface that expanded it collapses it again.
+ */
+export interface QueuePageProps {
+  platform?: 'desktop' | 'mobile';
+  /** Page heading. Pass `null` inside the desktop player panel, whose tab already names it. */
+  heading?: string | null;
+  /** Line under the heading — "Playing from Driftwave". */
+  context?: string;
+  items?: QueueItem[];
+  /** Controlled edit mode. Omit to let the page keep its own. */
+  editing?: boolean;
+  onEditingChange?: (editing: boolean) => void;
+  onPlay?: (item: QueueItem, index: number) => void;
+  onRemove?: (item: QueueItem, index: number) => void;
+  /** Drag reorder, by index into `items`. */
+  onReorder?: (from: number, to: number) => void;
+  /** The edit bar's Remove, with the selected rows' keys. */
+  onRemoveSelected?: (keys: Array<string | number>) => void;
+  /** Docked below the list — a BottomAppBar, for instance. */
+  footer?: ReactNode;
+  /** Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. */
+  scroll?: boolean;
+  /** Renders the app bar's close button, which collapses the page back into what opened it. */
+  onClose?: () => void;
+}
+export declare function QueuePage(props: QueuePageProps): JSX.Element;

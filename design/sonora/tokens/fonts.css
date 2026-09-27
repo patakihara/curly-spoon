@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Archivo:wdth,wght@62.5..125,100..900&display=swap');
+/* One grotesque, all its axes: Archivo variable carries weight 100–900 *and* width 62.5–125%, so
+   the display role is a wider cut of the same family rather than a separate Archivo Black file —
+   and a wide, squat title is `font-stretch`, never a transform on the type. */
+:root{
+--font-body:'Inter',-apple-system,'Segoe UI',sans-serif;
+--font-display:'Archivo','Inter',sans-serif;
+--font-heading:'Archivo','Inter',sans-serif;
+}
+/* Body copy is medium by default — 400 read too light in the player UI. */
+body{font-family:var(--font-body);font-weight:var(--weight-body)}

@@ -1,0 +1,22 @@
+import { ReactNode } from 'react';
+
+/**
+ * The mobile player surface — covers the whole app frame and opens as an expansion of the
+ * now-playing bar. Pass the bar's `getBoundingClientRect()` as `from` and the sheet grows out of
+ * that exact rectangle; without one it slides up from the bottom edge. Instant under
+ * prefers-reduced-motion.
+ */
+export interface PlayerSheetProps {
+  open?: boolean;
+  /** The mini player's viewport rect — a DOMRect, or `{ top, left, width, height }`. */
+  from?: { top: number; left: number; width: number; height: number } | null;
+  onClose?: () => void;
+  /** Stacking order over the app frame. */
+  zIndex?: number;
+  /** Corner radius of the collapsed rectangle, matched to the bar it grows from. */
+  radius?: string;
+  /** Sheet surface, so the expansion never flashes a different colour than the page inside it. */
+  background?: string;
+  children?: ReactNode;
+}
+export declare function PlayerSheet(props: PlayerSheetProps): JSX.Element;

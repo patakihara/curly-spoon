@@ -1,0 +1,15 @@
+/**
+ * Navigates into a category whose content you can't name yet — distinct from Chip, which filters
+ * an existing result set. Colour-coded, with its artwork tilted out of the bottom-right corner so
+ * the card reads as a stack of content rather than a label.
+ */
+export interface BrowseCardProps {
+  title: string;
+  /** One of the 17 accent hue names; defaults to a hue derived deterministically from `title`. */
+  color?: 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose';
+  /** Tilted thumbnail anchored to the bottom-right corner. */
+  image?: string;
+  onClick?: () => void;
+  platform?: 'desktop' | 'mobile';
+}
+export declare function BrowseCard(props: BrowseCardProps): JSX.Element;

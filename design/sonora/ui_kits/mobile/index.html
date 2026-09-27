@@ -1,0 +1,345 @@
+<!-- @dsCard group="App Screens" viewport="900x900" name="Mobile" subtitle="Android-style library — Browse, Music, detail, search requests, settings, Now Playing; light and dark" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0;background:#e9e9ee}#root{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px}.phone{width:412px;height:860px;background:var(--surface-bg);color:var(--surface-fg);font-family:var(--font-body);overflow:hidden;position:relative;box-shadow:0 0 0 1px #0002;flex:none}*{scrollbar-width:none}*::-webkit-scrollbar{display:none}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { AppShell, LayoutGrid, Shelf, TopAppBar, SearchField, BottomNav, ButtonGroup, MediaCard, ArtistCard, MediaHeader, ResultRow, QuickPick, BackLink, FieldRow, SettingRow, IconButton, Slider, SectionHeader, Section, TabBar, ViewToggle, LibraryShell, DetailPage, CollectionPage, MiniPlayer, NowPlaying } = window.SonoraDesignSystem_6c1435;
+
+// Demo cover art. Deterministic per title, so a card keeps the same cover across renders.
+const cover = (t, s) => 'https://picsum.photos/seed/sonora-' + encodeURIComponent(String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '/' + (s || 400);
+const PICKS = [
+  { title: 'The Silent Patient', sub: 'Book · 6 h 12 m left' },
+  { title: 'Deep Inertia Radio', sub: 'Podcast · 24 min left' },
+  { title: 'Between Lines of Light', sub: 'Album · 3 tracks left' },
+  { title: 'Wind and Truth', sub: 'Book · 21 h 40 m left' },
+];
+const SHELF = [
+  { title: 'Between Lines of Light', sub: 'Album · Sonic Tales' },
+  { title: 'Shadows and Sighs', sub: 'Book · Evelyn Harper', progress: 0.42 },
+  { title: 'Tears of Ice', sub: 'Podcast · 88 episodes' },
+  { title: 'Golden Scars', sub: 'Album · Fleeting Verses' },
+  { title: 'The Silent Patient', sub: 'Book · Alex Michaelides', progress: 0.55 },
+  { title: 'Signal & Noise', sub: 'Podcast · 64 episodes' },
+  { title: 'Escapes and Moons', sub: 'Album · Soul Vertex' },
+  { title: 'Ink Heart', sub: 'Book · Cornelia Funke', absent: true },
+];
+const MORE = [
+  { title: 'Wind and Truth', sub: 'Book · Brandon Sanderson', progress: 0.12 },
+  { title: 'Deep Inertia Radio', sub: 'Podcast · 212 episodes' },
+  { title: 'Fragments of the Wind', sub: 'Album · Evelyn Harper' },
+  { title: 'The Long Read', sub: 'Podcast · 212 episodes' },
+  { title: 'Foggy Trails', sub: 'Book · Adam Rivers', progress: 0.7 },
+];
+const PEOPLE = ['Sonic Tales', 'Evelyn Harper', 'Adam Rivers', 'Deep Inertia', 'Fleeting Verses', 'Soul Vertex', 'Alex Michaelides'];
+const SONGS = [
+  { title: 'Between Lines of Light', meta: 'Sonic Tales · 3:50' },
+  { title: 'Escapes and Moons', meta: 'Soul Vertex · 3:33' },
+  { title: 'Foggy Trails', meta: 'Adam Rivers · 4:12' },
+  { title: 'Fragments of the Wind', meta: 'Evelyn Harper · 2:58' },
+  { title: 'Golden Scars', meta: 'Fleeting Verses · 2:53' },
+  { title: 'Heartbeats in Silence', meta: 'Deep Inertia · 4:03' },
+  { title: 'Paper Lanterns', meta: 'Sonic Tales · 3:21' },
+  { title: 'Salt and Static', meta: 'Soul Vertex · 4:44' },
+  { title: 'Tears of Ice', meta: 'Deep Inertia · 3:07' },
+  { title: 'Wind Debt', meta: 'Fleeting Verses · 5:10' },
+  { title: 'Half Light', meta: 'Evelyn Harper · 2:41' },
+  { title: 'Signal & Noise', meta: 'Adam Rivers · 3:58' },
+];
+const RESULTS = [
+  { title: 'Wind and Truth', meta: 'Brandon Sanderson · 62 h', status: 'In library', tone: 'library' },
+  { title: 'Escapes and Moons', meta: 'Soul Vertex · Single', status: '87%', tone: 'request', actionGlyph: 'downloading' },
+  { title: 'Shadows and Sighs', meta: 'Evelyn Harper · 11 tracks', status: 'Queued', tone: 'progress' },
+  { title: 'Tears of Ice', meta: 'Deep Inertia · 9 tracks', status: 'Failed', tone: 'error' },
+];
+const person = (name, role) => ({ title: name, sub: role });
+const ALBUMS = [...SHELF, ...MORE].filter(x => (x.sub || '').startsWith('Album')).concat([
+  { title: 'Paper Lanterns', sub: 'Album · Sonic Tales' },
+  { title: 'Salt and Static', sub: 'Album · Soul Vertex', progress: 0.24 },
+  { title: 'Half Light', sub: 'Album · Evelyn Harper' },
+  { title: 'Wind Debt', sub: 'Album · Fleeting Verses', absent: true },
+  { title: 'Low Tide Sessions', sub: 'Album · Deep Inertia' },
+]);
+const BOOKS = [
+  { title: 'The Silent Patient', sub: 'Book · Alex Michaelides', progress: 0.55 },
+  { title: 'Wind and Truth', sub: 'Book · Brandon Sanderson', progress: 0.12 },
+  { title: 'Shadows and Sighs', sub: 'Book · Evelyn Harper' },
+  { title: 'Ink Heart', sub: 'Book · Cornelia Funke', absent: true },
+  { title: 'Foggy Trails', sub: 'Book · Adam Rivers', progress: 0.7 },
+  { title: 'The Long Read', sub: 'Book · Evelyn Harper' },
+  { title: 'Escapes and Moons', sub: 'Book · Soul Vertex' },
+  { title: 'Between Two Worlds', sub: 'Book · Alex Michaelides', absent: true },
+];
+const SERIES = [
+  { title: 'The Stormlight Archive', sub: '5 books · 212 h' },
+  { title: 'Inkworld', sub: '3 books · 41 h' },
+  { title: 'Quiet Places', sub: '4 books · 58 h' },
+];
+const LIBRARY = {
+  'songs:artists': { round: true, items: PEOPLE.map(p => person(p, 'Artist')) },
+  'songs:albums': { items: ALBUMS },
+  'songs:songs': { items: SONGS.map(s => ({ title: s.title, sub: s.meta })) },
+  'albums:authors': { round: true, items: ['Alex Michaelides', 'Brandon Sanderson', 'Evelyn Harper', 'Cornelia Funke'].map(p => person(p, 'Author')) },
+  'albums:books': { items: BOOKS },
+  'albums:series': { items: SERIES },
+  'albums:narrators': { round: true, items: ['Louise Brealey', 'Ray Porter', 'Michael Kramer', 'Adam Rivers'].map(p => person(p, 'Narrator')) },
+};
+const SUBTABS = {
+  songs: [
+    { key: 'artists', label: 'Artists', icon: 'artist' },
+    { key: 'albums', label: 'Albums', icon: 'album' },
+    { key: 'songs', label: 'Songs', icon: 'music_note' },
+  ],
+  albums: [
+    { key: 'authors', label: 'Authors', icon: 'history_edu' },
+    { key: 'books', label: 'Books', icon: 'menu_book' },
+    { key: 'series', label: 'Series', icon: 'auto_stories' },
+    { key: 'narrators', label: 'Narrators', icon: 'record_voice_over' },
+  ],
+};
+
+const EYEBROW = { color: 'var(--surface-fg-muted)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-strong)', textTransform: 'uppercase', letterSpacing: 0.5, padding: '0 8px 8px' };
+const SHEET = { position: 'absolute', inset: 0, background: 'var(--surface-bg)', display: 'flex', flexDirection: 'column', zIndex: 5 };
+const SHEET_TITLE = { color: 'var(--surface-fg)', fontFamily: 'var(--font-body)', fontSize: '22px' };
+
+const FILTERS = ['All', 'Music', 'Audiobooks', 'Podcasts'];
+const KIND = { Music: 'Album', Audiobooks: 'Book', Podcasts: 'Podcast' };
+const keep = (list, f) => f === 'All' ? list : list.filter(x => (x.sub || '').startsWith(KIND[f] || f));
+
+const SECTIONS = {
+  'Recently added': { items: SHELF },
+  'Artists & authors': { items: PEOPLE.map(p => person(p, 'Artist')), round: true },
+  'Picked for you': { items: MORE },
+};
+
+function Browse({ open, openAll, filter }) {
+  const picks = keep(PICKS, filter), shelf = keep(SHELF, filter);
+  return (
+    <div style={{ padding: 'var(--spacing-2xl) var(--spacing-lg) 0', overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
+      <Section title="Jump back in" platform="mobile">
+        <LayoutGrid platform="mobile" item="wide">
+          {picks.map(p => <QuickPick key={p.title} platform="mobile" title={p.title} sub={p.sub} image={cover(p.title, 120)} onClick={(e) => open(p.title, e)} />)}
+        </LayoutGrid>
+      </Section>
+      <Section title="Recently added" platform="mobile" action="arrow_forward" onAction={(e) => openAll('Recently added', e)}>
+        <Shelf platform="mobile" gap="calc(var(--spacing-md) + 2px)" margin="var(--spacing-lg)">
+          {shelf.map(s => <MediaCard key={s.title} title={s.title} sub={s.sub} progress={s.progress} platform="mobile" image={cover(s.title)} onClick={(e) => open(s.title, e)} />)}
+        </Shelf>
+      </Section>
+      <Section title="Artists & authors" platform="mobile" action="arrow_forward" onAction={(e) => openAll('Artists & authors', e)}>
+        <Shelf platform="mobile" gap="calc(var(--spacing-md) + 2px)" margin="var(--spacing-lg)">
+          {PEOPLE.map(p => <ArtistCard key={p} title={p} sub="Artist" platform="mobile" image={cover(p, 320)} onClick={(e) => open(p, e)} />)}
+        </Shelf>
+      </Section>
+      <Section title="Picked for you" platform="mobile" action="arrow_forward" onAction={(e) => openAll('Picked for you', e)}>
+        <Shelf platform="mobile" gap="calc(var(--spacing-md) + 2px)" margin="var(--spacing-lg)">
+          {keep(MORE, filter).map(s => <MediaCard key={s.title} size="sm" title={s.title} sub={s.sub} progress={s.progress} platform="mobile" image={cover(s.title)} onClick={(e) => open(s.title, e)} />)}
+        </Shelf>
+      </Section>
+      <Section title="Recently played" platform="mobile" last>
+        <div style={{ paddingBottom: 'var(--spacing-2xl)' }}>
+          {SONGS.map((s, i) => <ResultRow key={s.title} platform="mobile" title={s.title} meta={s.meta} image={cover(s.title, 120)} divider={i < SONGS.length - 1} onClick={(e) => open(s.title, e)} />)}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+// One tabbed library section, in either view. Grid vs list is the only difference between the
+// seven sub-pages — the data decides whether the cards are square or circular.
+function Items({ items = [], round = false, mode = 'grid', open }) {
+  return (
+    <React.Fragment>
+      {mode === 'grid' ? (
+        <LayoutGrid platform="mobile">
+          {items.map(i => round
+            ? <ArtistCard key={i.title} title={i.title} sub={i.sub} platform="mobile" width="100%" image={cover(i.title, 320)} onClick={(e) => open(i.title, e)} />
+            : <MediaCard key={i.title} title={i.title} sub={i.sub} progress={i.progress} absent={i.absent} platform="mobile" width="100%" image={cover(i.title)} onClick={(e) => open(i.title, e)} />)}
+        </LayoutGrid>
+      ) : (
+        <div>
+          {items.map((i, n) => <ResultRow key={i.title} platform="mobile" title={i.title} meta={i.sub} image={cover(i.title, 120)}
+            divider={n < items.length - 1} onClick={(e) => open(i.title, e)} />)}
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+function Library({ items, round, mode = 'grid', onMode, open }) {
+  return (
+    <div style={{ padding: 'var(--spacing-lg) var(--spacing-lg) 0', overflowY: 'auto', height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--spacing-md)' }}>
+        <ViewToggle platform="mobile" value={mode} onChange={onMode} />
+      </div>
+      <Items items={items} round={round} mode={mode} open={open} />
+      <div style={{ height: 'var(--spacing-2xl)' }} />
+    </div>
+  );
+}
+
+function LibraryGrid({ title, items, open }) {
+  return (
+    <div style={{ padding: 'var(--spacing-lg) var(--spacing-lg) 0', overflowY: 'auto', height: '100%' }}>
+      <LayoutGrid platform="mobile">
+        {items.map(i => <MediaCard key={i.title} title={i.title} sub={i.sub} progress={i.progress} absent={i.absent} platform="mobile" image={cover(i.title)} width="100%" onClick={(e) => open(i.title, e)} />)}
+      </LayoutGrid>
+    </div>
+  );
+}
+
+function SearchTab() {
+  return (
+    <div style={{ padding: 'var(--spacing-lg) var(--spacing-lg) 0', overflowY: 'auto', height: '100%' }}>
+      <div style={EYEBROW}>Results</div>
+      {RESULTS.map((r, i) => <ResultRow key={r.title} platform="mobile" {...r} image={cover(r.title, 120)} divider={i < RESULTS.length - 1} />)}
+    </div>
+  );
+}
+
+function SettingsSheet({ close }) {
+  const [flags, setFlags] = React.useState({ auto: true, wifi: true, gapless: false });
+  const set = k => v => setFlags(f => ({ ...f, [k]: v }));
+  return (
+    <div style={SHEET}>
+      <div style={{ padding: 'var(--spacing-md) var(--spacing-lg) 0' }}><BackLink label="Browse" platform="mobile" onClick={close} /></div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--spacing-lg) var(--spacing-lg) var(--spacing-2xl)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+        <div style={SHEET_TITLE}>Settings</div>
+        <FieldRow label="Library folder" platform="mobile" value="/storage/Sonora" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <SettingRow platform="mobile" title="Auto-download requests" sub="Fetch approved requests automatically." checked={flags.auto} onChange={set('auto')} />
+          <SettingRow platform="mobile" title="Wi-Fi only" sub="Pause transfers on mobile data." checked={flags.wifi} onChange={set('wifi')} />
+          <SettingRow platform="mobile" title="Gapless playback" sub="No silence between album tracks." checked={flags.gapless} onChange={set('gapless')} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DETAIL_TRACKS = SONGS.slice(0, 5);
+
+function Detail({ title, play, origin }) {
+  return (
+    <DetailPage platform="mobile" overlay origin={origin} kindLabel="Album" title={title} subtitle="Sonic Tales"
+      meta={`2023 · ${DETAIL_TRACKS.length} tracks · 18 min`} image={cover(title, 640)} onSubtitle={() => {}}
+      onPlay={play} onPlayNext={play} onPlayLast={play}>
+      {DETAIL_TRACKS.map((t, i) => <ResultRow key={t.title} platform="mobile" title={t.title} meta={t.meta} image={cover(t.title, 120)} divider={i < DETAIL_TRACKS.length - 1}
+        status={t.title === 'Heartbeats in Silence' ? 'Playing' : undefined} tone="progress" onClick={play} />)}
+    </DetailPage>
+  );
+}
+
+/* What the player shows: the lyric sheet and the queue behind the now-playing bar. */
+const LYRICS = [
+  'Heartbeats in silence, counting down the hall',
+  'Every room you left still holds the sound',
+  'I keep the record spinning, needle in the groove',
+  'Static on the tape where your voice used to move',
+  'Morning finds the window, dust inside the light',
+  'And the song plays on without you tonight',
+];
+const QUEUE = [
+  { id: 'np', title: 'Heartbeats in Silence', sub: 'Deep Inertia · Ink Heart', time: '4:03', current: true },
+].concat(SONGS.slice(0, 6).map((t, i) => ({ id: 'q' + i, title: t.title, sub: t.meta.split(' · ')[0], time: t.meta.split(' · ').pop() })));
+
+function App() {
+  const [tab, setTab] = React.useState('for-you');
+  const [open, setOpen] = React.useState(false);
+  const [from, setFrom] = React.useState(null);
+  const [sync, setSync] = React.useState('sync');
+  const [queue, setQueue] = React.useState(QUEUE);
+  const barRef = React.useRef(null);
+  // Measure the bar at the moment of opening, so the sheet grows out of exactly where it sits.
+  const openPlayer = () => { const el = barRef.current; setFrom(el ? el.getBoundingClientRect() : null); setOpen(true); };
+  const [settings, setSettings] = React.useState(false);
+  const [playing, setPlaying] = React.useState(true);
+  const [progress, setProgress] = React.useState(0.33);
+  const [filter, setFilter] = React.useState('All');
+  React.useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => setProgress(p => (p >= 1 ? 0 : p + 0.003)), 200);
+    return () => clearInterval(id);
+  }, [playing]);
+  // Each view declares its own chrome; LibraryShell owns how they behave (detail memory, sub-tabs,
+  // list/grid mode, scroll memory, the search morph).
+  const VIEWS = [
+    { key: 'for-you', title: 'Browse', controls: ButtonGroup ? <ButtonGroup platform="mobile" items={FILTERS} value={filter} onChange={setFilter} /> : null },
+    { key: 'songs', title: 'Music', searchScope: 'Music', subtabs: SUBTABS.songs, defaultSubtab: 'songs' },
+    { key: 'albums', title: 'Audiobooks', searchScope: 'Audiobooks', subtabs: SUBTABS.albums, defaultSubtab: 'books' },
+    { key: 'artists', title: 'Podcasts', searchScope: 'Podcasts' },
+    { key: 'playlists', title: 'Search', searchScope: 'library', searchPlaceholder: 'What do you want to listen to?', searchOpen: true },
+  ];
+  const glyph = (name) => <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)' }}>{name}</span>;
+  return (
+    <React.Fragment>
+    <LibraryShell platform="mobile" views={VIEWS} view={tab} scroll={false} flatDetail searchHeight="32px"
+      leading={<IconButton label="Menu" muted onClick={() => setSettings(true)}>{glyph('menu')}</IconButton>}
+      trailing={<IconButton label="Settings" muted onClick={() => setSettings(true)}>{glyph('settings')}</IconButton>}
+      detailTrailing={<IconButton label="More" muted>{glyph('more_vert')}</IconButton>}
+      player={<React.Fragment>
+        <div ref={barRef}>
+          <MiniPlayer title="Heartbeats in Silence" artist="Deep Inertia" image={cover('Heartbeats in Silence', 160)} playing={playing}
+            onTogglePlay={() => setPlaying(!playing)} onOpen={openPlayer} />
+        </div>
+        <BottomNav active={tab} onChange={setTab} items={[
+          { key: 'for-you', label: 'Browse', icon: 'explore' },
+          { key: 'songs', label: 'Music', icon: 'speaker' },
+          { key: 'albums', label: 'Audiobooks', icon: 'headphones' },
+          { key: 'artists', label: 'Podcasts', icon: 'mic' },
+          { key: 'playlists', label: 'Search', icon: 'search' },
+        ]} />
+      </React.Fragment>}>
+      {({ view, viewKey, detail, collection, origin, openDetail, openCollection, mode, setMode }) => (
+        <React.Fragment>
+          {view === 'for-you' && <Browse open={openDetail} openAll={openCollection} filter={filter} />}
+          {LIBRARY[viewKey] && <Library {...LIBRARY[viewKey]} mode={mode} onMode={setMode} open={openDetail} />}
+          {view === 'artists' && <LibraryGrid title="Podcasts" open={openDetail} items={[
+            { title: 'Deep Inertia Radio', sub: 'Podcast · 212 eps' },
+            { title: 'Sonic Tales', sub: 'Podcast · 148 eps', progress: 0.3 },
+            { title: 'Fleeting Verses', sub: 'Podcast · 64 eps' },
+            { title: 'Soul Vertex Live', sub: 'Podcast · 31 eps', absent: true },
+          ]} />}
+          {view === 'playlists' && <SearchTab />}
+          {detail && <Detail key={detail} title={detail} origin={origin} play={openPlayer} />}
+          {collection && SECTIONS[collection] && (
+            <CollectionPage key={collection} platform="mobile" overlay origin={origin} mode={mode} onMode={setMode}>
+              <Items {...SECTIONS[collection]} mode={mode} open={openDetail} />
+            </CollectionPage>
+          )}
+          {settings && <SettingsSheet close={() => setSettings(false)} />}
+        </React.Fragment>
+      )}
+    </LibraryShell>
+    {/* Sibling of the shell, not content inside it: the player covers the bar and the nav as well. */}
+    <NowPlaying platform="mobile" open={open} from={from} onClose={() => setOpen(false)}
+      track={{ title: 'Heartbeats in Silence', artist: 'Deep Inertia', context: 'Playing from Ink Heart', image: cover('Heartbeats in Silence', 640) }}
+      player={{ playing, progress, duration: 243, onTogglePlay: () => setPlaying(!playing), onSeek: setProgress,
+        favourite: true, onFavourite: () => {}, speed: '1.0x', sleep: 'Off', onSpeed: () => {}, onSleep: () => {} }}
+      lyrics={{ lines: LYRICS, activeIndex: Math.min(LYRICS.length - 1, Math.floor(progress * LYRICS.length)), syncMode: sync, onSyncModeChange: setSync }}
+      queue={{ items: queue,
+        onPlay: () => {},
+        onReorder: (f, t) => setQueue((l) => { const n = l.slice(); n.splice(t, 0, n.splice(f, 1)[0]); return n; }),
+        onRemove: (it) => setQueue((l) => l.filter((x) => x !== it)),
+        onRemoveSelected: (keys) => setQueue((l) => l.filter((x) => keys.indexOf(x.id) < 0)) }} />
+    </React.Fragment>
+  );
+}
+/* Two phones side by side, one per theme — the kit doubles as the light/dark specimen. */
+function Framed() {
+  return (
+    <React.Fragment>
+      {['light', 'dark'].map(t => (
+        <div key={t} className="phone" data-theme={t}><App /></div>
+      ))}
+    </React.Fragment>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Framed />);
+</script>
+</body></html>

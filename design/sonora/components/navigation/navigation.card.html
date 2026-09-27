@@ -1,0 +1,54 @@
+<!-- @dsCard group="Components" viewport="1400x560" name="Navigation" subtitle="Rail items expanded and collapsed, back link, mobile bottom tab bar" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { RailItem, BottomNav, BackLink } = window.SonoraDesignSystem_6c1435;
+const ITEMS = [
+  {key:'search',icon:'search',label:'Search'},
+  {key:'home',icon:'explore',label:'Browse'},
+  {key:'tracks',icon:'speaker',label:'Music'},
+  {key:'books',icon:'headphones',label:'Audiobooks'},
+];
+function Rail({expanded}){
+  const [active,setActive]=React.useState('home');
+  return <div style={{width:expanded?240:undefined,boxSizing:'border-box',display:'flex',flexDirection:'column',gap:0,background:'var(--surface-bg-alt)',padding:'24px 20px',borderRadius:'var(--radius-md)'}}>
+    {ITEMS.map(it=> <div key={it.key} style={{height:56,width:'100%'}}>
+      <RailItem icon={it.icon} label={it.label} expanded={expanded} active={active===it.key} onClick={()=>setActive(it.key)} />
+    </div>)}
+  </div>;
+}
+function Demo(){
+  const [tab,setTab]=React.useState('home');
+  return <div style={{display:'flex',gap:28,alignItems:'flex-start',flexWrap:'wrap'}}>
+    <Rail expanded />
+    <Rail expanded={false} />
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <BackLink label="Library" />
+      <BackLink platform="mobile" label="Browse" />
+      <div style={{borderRadius:16,overflow:'hidden',width:500,padding:'6px 0',background:'var(--surface-bg-alt)'}}>
+        <BottomNav active={tab} onChange={setTab} items={[
+          {key:'home',label:'Browse',icon:'explore'},
+          {key:'songs',label:'Music',icon:'speaker'},
+          {key:'albums',label:'Audiobooks',icon:'headphones'},
+          {key:'artists',label:'Podcasts',icon:'mic'},
+          {key:'search',label:'Search',icon:'search'},
+        ]}/>
+      </div>
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script></body></html>

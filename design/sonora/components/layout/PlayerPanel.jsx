@@ -1,0 +1,43 @@
+import React from 'react';
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+
+const TABS = [
+  { key: 'now', label: 'Now playing', icon: 'album' },
+  { key: 'queue', label: 'Queue', icon: 'queue_music' },
+  { key: 'lyrics', label: 'Lyrics', icon: 'lyrics' },
+];
+
+/**
+ * The desktop player: the Currently Playing page as a side panel beside the content column, with the
+ * queue and the lyrics as its other two tabs rather than sections of the page. Pass `tab`/`onTabChange`
+ * to drive it from outside (the transport bar's queue and lyrics buttons); leave them off and the
+ * panel keeps its own tab.
+ */
+export function PlayerPanel({
+  open = false, tab, onTabChange, onClose, tabs = TABS, title = 'Player',
+  track = {}, player = {}, lyrics = {}, queue = {}, width,
+}) {
+  const { SideSheet, TabBar, NowPlayingPage, QueuePage, LyricsPage } = NS();
+  const [ownTab, setOwnTab] = React.useState('now');
+  const active = tab === undefined ? ownTab : tab;
+  const setTab = (k) => { if (tab === undefined) setOwnTab(k); if (onTabChange) onTabChange(k); };
+  if (!SideSheet) return null;
+  return (
+    <SideSheet open={open} title={title} onClose={onClose} width={width}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+        {TabBar && <TabBar platform="desktop" items={tabs} value={active} onChange={setTab} />}
+        {active === 'now' && NowPlayingPage && (
+          <NowPlayingPage platform="desktop" scroll={false} header={null}
+            image={track.image} title={track.title} artist={track.artist} context={track.context}
+            {...player} />
+        )}
+        {active === 'queue' && QueuePage && (
+          <QueuePage platform="desktop" scroll={false} heading={null} context={track.context} {...queue} />
+        )}
+        {active === 'lyrics' && LyricsPage && (
+          <LyricsPage platform="desktop" scroll={false} heading={null} {...lyrics} />
+        )}
+      </div>
+    </SideSheet>
+  );
+}

@@ -1,0 +1,146 @@
+<!-- @dsCard group="Reference" viewport="1180x1417" name="S22 · Home — Podcasts, Recents and Catch up" subtitle="Home tab, Podcasts, scrolled — 2 new, 2 extended, 5 already present" -->
+<link rel="stylesheet" href="../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<style id="__card-page-css">
+html,body{margin:0;background:var(--surface-bg);color:var(--surface-fg);font-family:var(--font-body)}
+.wrap{display:flex;gap:var(--spacing-2xl);padding:var(--spacing-2xl);align-items:flex-start}
+.shot{width:280px;flex-shrink:0;border-radius:var(--radius-sm);border:1px solid var(--surface-border);display:block}
+.col{flex:1;min-width:0}
+h1{font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);margin:0 0 4px}
+.src{color:var(--surface-fg-muted);font-size:var(--text-sm);margin:0 0 var(--spacing-lg)}
+h2{font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;
+   color:var(--surface-fg-muted);margin:var(--spacing-lg) 0 var(--spacing-sm)}
+ul{margin:0;padding-left:1.1em}
+li{font-size:var(--text-sm);line-height:1.5;margin-bottom:4px}
+code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface-card);
+     padding:1px 5px;border-radius:var(--radius-xs)}
+.row{font-size:var(--text-sm);line-height:1.6;margin-bottom:2px}
+.tag{display:inline-block;min-width:78px;font-weight:var(--weight-strong);font-size:var(--text-xs);
+     text-transform:uppercase;letter-spacing:.06em;color:var(--surface-fg-muted)}
+.new code{color:var(--accent-ink)}
+.ext code{color:var(--state-warning)}
+.none{color:var(--surface-fg-muted);font-size:var(--text-sm)}
+.ex{border-top:1px solid var(--surface-border);padding:24px var(--spacing-2xl) 24px}
+.exh{margin:0 0 16px;line-height:16px}
+.exgrid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:24px}
+.exlabel{font-size:var(--text-sm);line-height:18px;margin:0 0 8px}
+.exbox{height:280px;box-sizing:border-box;padding:var(--spacing-lg);display:flex;
+       align-items:center;justify-content:center;border:1px solid var(--surface-border);
+       border-radius:var(--radius-sm);background:var(--surface-bg-alt)}
+.exmiss{max-width:100%;text-align:center;border:1px dashed var(--state-warning);
+        border-radius:var(--radius-sm);padding:var(--spacing-sm) var(--spacing-lg)}
+.exmiss b{display:block;font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.06em;
+          text-transform:uppercase;color:var(--state-warning);margin-bottom:4px}
+.exmiss code{font-size:var(--text-sm);color:var(--surface-fg-muted);background:none;padding:0}
+</style>
+
+<template id="__doc">
+<div class="wrap">
+<img class="shot" src="../assets/reference/spotify/S22.jpg" alt="Home — Podcasts, Recents and Catch up">
+<div class="col">
+<h1>S22 — Home — Podcasts, Recents and Catch up</h1>
+<p class="src">Home tab, Podcasts, scrolled.</p>
+<h2>Affordances observed</h2><ul>
+<li>Recents shows saved-episode tabs, finished checks and progress bars side by side in one shelf.</li>
+<li>&quot;Catch up on your shows&quot; is a feature card seeded by subscription rather than by similarity.</li>
+</ul>
+<h2>Components</h2>
+<div class="row new"><span class="tag">Created</span><code>FeatureCard</code> <code>PreviewButton</code></div>
+<div class="row ext"><span class="tag">Extended</span><code>MediaCard</code> <code>SectionHeader</code></div>
+<div class="row "><span class="tag">Existing</span><code>Badge</code> <code>MediaCard</code> <code>Shelf</code> <code>MiniPlayer</code> <code>BottomNav</code></div>
+</div></div>
+</template>
+<div id="root"></div>
+<script type="text/babel">
+const NS = window.SonoraDesignSystem_6c1435 || {};
+const { FeatureCard, MediaCard, PreviewButton, SectionHeader } = window.SonoraDesignSystem_6c1435 || {};
+const DOC = document.getElementById('__doc').innerHTML;
+const EXAMPLES = [
+  { name: 'FeatureCard', role: 'new', uses: ['FeatureCard', 'PreviewButton'], node: () => (
+<FeatureCard
+  kind="Episode"
+  title="Aftershocks: the second call"
+  meta="Static & Signal • 1 day ago • 48min"
+  description="A dispatcher who walked away from the job three years ago picks the phone back up, once, for the one caller she was never able to refuse."
+  saved
+  onSave={() => {}}
+  onPlay={() => {}}
+  onMore={() => {}}
+  preview={<PreviewButton kind="episode" muted onClick={() => {}} />}
+/>
+  ) },
+  { name: 'PreviewButton', role: 'new', uses: ['PreviewButton'], node: () => (
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 'var(--spacing-lg)',
+  borderRadius: 'var(--radius-md)',
+  background: 'linear-gradient(135deg, var(--accent), var(--accent-violet))'
+}}>
+  <PreviewButton kind="episode" muted onClick={() => {}} />
+</div>
+  ) },
+  { name: 'MediaCard', role: 'ext', uses: ['MediaCard'], node: () => (
+<MediaCard
+  size="sm"
+  width="120px"
+  eyebrow="Podcast"
+  title="Aftershocks: the second call"
+  sub="Static & Signal"
+  unplayed
+  savedBadge
+  markers={["push_pin", "download_done"]}
+  onClick={() => {}}
+/>
+  ) },
+  { name: 'SectionHeader', role: 'ext', uses: ['SectionHeader'], node: () => (
+<SectionHeader
+  eyebrow="Popular with listeners of"
+  title="Rosa Elin"
+  image={'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="hsl(210 52% 38%)"/><circle cx="40" cy="34" r="13" fill="hsl(210 68% 76%)"/><circle cx="40" cy="72" r="24" fill="hsl(210 68% 76%)"/></svg>')}
+  round
+  onSubject={() => {}}
+  actionText="Show all"
+  onAction={() => {}}
+/>
+  ) },
+];
+function Page() {
+  return <React.Fragment>
+    <div dangerouslySetInnerHTML={{ __html: DOC }} />
+    {EXAMPLES.length > 0 && (
+      <section className="ex">
+        <h2 className="exh">Live examples</h2>
+        <div className="exgrid">
+          {EXAMPLES.map((e) => {
+            // A name the bundle does not export destructures to `undefined`, and rendering
+            // <undefined/> throws "Element type is invalid" — which unmounts the WHOLE card,
+            // write-up included, and leaves a black pane nobody notices until they open it.
+            // So check first and draw a labelled placeholder instead. `node` is a thunk for
+            // this reason: an eagerly-built element would already have logged the error.
+            const miss = e.uses.filter((n) => !NS[n]);
+            return (
+              <div key={e.name}>
+                <div className={'exlabel ' + e.role}><code>{e.name}</code></div>
+                <div className="exbox">
+                  {miss.length
+                    ? <div className="exmiss">
+                        <b>Component not loaded</b>
+                        <code>{miss.join(', ')}</code>
+                      </div>
+                    : e.node()}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    )}
+  </React.Fragment>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Page />);
+</script>

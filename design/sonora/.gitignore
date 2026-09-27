@@ -1,0 +1,45 @@
+# Local tooling scratch, not part of the design system.
+.extract.py
+
+# Local render-check artifacts. _ds_bundle.js is a stand-in for the bundle the
+# Claude Design app generates itself -- regenerate with `node docs/build_bundle.js`.
+# It must never be pushed, or it would clobber the real one.
+_ds_bundle.js
+.render/
+.probe/
+
+# Sub-agent scratch: probe pages and one-off screenshots.
+.probe/
+.vendor/
+
+# Python bytecode cache.
+__pycache__/
+
+# Local overview page (docs/gen_gallery.py), built from .render/ screenshots above.
+gallery.html
+
+# Vendored copies of the Claude Design app's OWN css/js, fetched by URL when reverse-engineering
+# its "Design System" pane styling. Same reasoning as .vendor/ above but for the app itself: its
+# asset URLs are versioned build hashes (e.g. index-D0fefd-i.js) that rot the moment a new build
+# ships, so anything read from them gets saved here rather than linked. Never a copy of a whole
+# page we saved by hand (that's a one-off, not vendored) -- just fetched CSS/JS by URL.
+.claude-design-vendor/
+
+# A raw browser save of the Claude Design app. The pre-render SSR shell has none of the actual
+# page's CSS or DOM (all client-rendered), so this is only ever useful as a "Webpage, Complete"
+# save's html file, and even then it embeds the account's own email/org id in a JSON payload.
+# Never push it.
+claude-design.html
+claude-design_files/
+
+# Feedback queue + `claude -p` run logs from the gallery Feedback button (docs/serve.py).
+# Local workflow state, not part of the design system. The runs themselves edit tracked files;
+# only this bookkeeping is ignored.
+.feedback/
+
+# Queue owner worktrees: the runner cuts one per claimed item at
+# .agents/<item-id>-<session8> when this repo is a served queue instance
+# (queue item 428f0e0). Working state of an agent, never part of the
+# design system.
+.agents/
+/.artifact/

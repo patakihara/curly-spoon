@@ -1,0 +1,62 @@
+<!-- @dsCard group="Layout" viewport="1180x760" name="App Shell" subtitle="The frame that ties rail, app bar, content pane and side sheet together — plus grid, shelf and the fading overlay scrollbar" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>*{scrollbar-width:none}*::-webkit-scrollbar{display:none}</style>
+</head><body style="margin:0;background:#e9e9ee">
+<div id="root"></div>
+<script type="text/babel">
+const { AppShell, NavRail, ScrollArea, TopAppBar, SideSheet, LayoutGrid, Shelf, ButtonGroup, MediaCard, ResultRow, MiniPlayer, IconButton, SectionHeader } = window.SonoraDesignSystem_6c1435;
+const ITEMS = [
+  { key: 'browse', label: 'Browse', icon: 'explore' },
+  { key: 'music', label: 'Music', icon: 'speaker' },
+  { key: 'books', label: 'Audiobooks', icon: 'headphones' },
+  { key: 'podcasts', label: 'Podcasts', icon: 'mic' },
+];
+const CARDS = [
+  { title: 'Fairytale', sub: 'Album · Natasha Beller' },
+  { title: 'Foggy Trails', sub: 'Book · Adam Rivers', progress: 0.42 },
+  { title: 'Sonic Tales', sub: 'Podcast · 148 episodes' },
+  { title: 'Between Lines of Light', sub: 'Album · Sonic Tales' },
+  { title: 'Ink Heart', sub: 'Book · Cornelia Funke', absent: true },
+];
+function Demo(){
+  const [active,setActive]=React.useState('browse');
+  const [expanded,setExpanded]=React.useState(true);
+  const [sheet,setSheet]=React.useState(true);
+  const [scope,setScope]=React.useState('All');
+  return <div style={{height:720,margin:20,overflow:'hidden',boxShadow:'0 0 0 1px #0002'}} data-theme="dark">
+    <AppShell
+      theme="dark"
+      contentMinWidth="var(--content-min-width)"
+      rail={<NavRail items={ITEMS} active={active} onChange={setActive} expanded={expanded} onToggleExpanded={()=>setExpanded(!expanded)} />}
+      bar={<TopAppBar title="Browse" trailing={<IconButton label="Queue" muted onClick={()=>setSheet(!sheet)}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>queue_music</span></IconButton>}>
+        <ButtonGroup value={scope} onChange={setScope} options={['All','Music','Audiobooks','Podcasts']} />
+      </TopAppBar>}
+      sheet={<SideSheet open={sheet} title="Queue" onClose={()=>setSheet(false)}>
+        <ResultRow title="Heartbeats in Silence" meta="Deep Inertia · 4:03" status="Playing" tone="progress" actionGlyph="pause" />
+        <ResultRow title="Golden Scars" meta="Fleeting Verses · 2:53" />
+        <ResultRow title="Escapes and Moons" meta="Soul Vertex · 3:33" />
+      </SideSheet>}
+      sheetOpen={sheet}
+      player={<MiniPlayer platform="desktop" title="Heartbeats in Silence" artist="Deep Inertia" playing progress={0.42} duration={243} queueOpen={sheet} onToggleQueue={()=>setSheet(!sheet)} />}>
+      <div style={{padding:'36px var(--grid-margin) var(--grid-margin)',display:'flex',flexDirection:'column',gap:28}}>
+        <div>
+          <SectionHeader title="Shelf — bleeds past the page margin" platform="desktop" action="arrow_forward" />
+          <Shelf>{CARDS.map(c=><MediaCard key={c.title} {...c} />)}</Shelf>
+        </div>
+        <div>
+          <SectionHeader title="LayoutGrid — auto-fills at --grid-item-min" platform="desktop" />
+          <LayoutGrid maxWidth="var(--grid-max-width)">
+            {CARDS.map(c=><MediaCard key={c.title} {...c} width="100%" />)}
+          </LayoutGrid>
+        </div>
+      </div>
+    </AppShell>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script></body></html>

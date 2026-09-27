@@ -1,0 +1,29 @@
+/**
+ * The persistent now-playing surface, in both platform variants: the tinted pill
+ * docked above the mobile bottom nav, or the desktop three-column transport bar.
+ */
+export interface MiniPlayerProps {
+  title: string;
+  artist: string;
+  image?: string;
+  playing?: boolean;
+  onTogglePlay?: () => void;
+  /** Tapping the card body (mobile) or the track block (desktop) expands the full player. */
+  onOpen?: () => void;
+  /** mobile = docked tinted pill; desktop = full-width transport bar with seek and queue controls. */
+  platform?: 'mobile' | 'desktop';
+  /** 0–1. Desktop only — drives the seek bar and the mm:ss elapsed readout. */
+  progress?: number;
+  onSeek?: (value: number) => void;
+  /** Track length in seconds, for the mm:ss readouts. Desktop only. */
+  duration?: number;
+  onPrev?: () => void;
+  onNext?: () => void;
+  /** Desktop only — tints the queue button accent while the queue panel is open. */
+  queueOpen?: boolean;
+  onToggleQueue?: () => void;
+  /** Desktop only — same for the lyrics button, which opens the player panel's Lyrics tab. */
+  lyricsOpen?: boolean;
+  onToggleLyrics?: () => void;
+}
+export declare function MiniPlayer(props: MiniPlayerProps): JSX.Element;

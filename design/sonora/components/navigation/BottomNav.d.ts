@@ -1,0 +1,12 @@
+/** Mobile bottom tab bar. Each destination is a collapsed RailItem — same pill indicator, same always-visible stacked label, same transition as the desktop rail. */
+export interface BottomNavItem {
+  key: string;
+  label: string;
+  /** Material Symbols Rounded glyph name, e.g. "home" or "album". */
+  icon: string;
+}
+export interface BottomNavProps {
+  items: BottomNavItem[];
+  active: string;
+  onChange?: (key: string) => void;
+}

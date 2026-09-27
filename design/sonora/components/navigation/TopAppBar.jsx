@@ -1,0 +1,59 @@
+import React from 'react';
+const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+
+/** Top app bar: a bg-alt strip carrying the page title, with the page's controls (filter ButtonGroup, or a centred SearchField) on a second row below it. */
+export function TopAppBar({ title, children, align = 'start', leading, trailing, occlude = false, platform = 'desktop',
+  searchOpen = false, onSearchToggle, searchValue, onSearchChange, searchPlaceholder = 'Search', searchButton = true, searchAutoFocus = true, searchHeight = '100%', progress = 0, background = 'var(--surface-bg-alt)',
+  squareLeft = false, squareRight = false }) {
+  const mobile = platform === 'mobile';
+  const centered = align === 'center';
+  const { SearchField, SearchButton } = NS();
+  // In-bar search: the title fades out to the left while the field grows from the search button,
+  // so the two read as one control morphing rather than two rows swapping.
+  const searchable = !!onSearchToggle;
+  const sOpen = searchable && searchOpen;
+  const ease = ' var(--duration-medium) var(--ease-standard)';
+  const edge = (side) => 'position:relative;z-index:1;flex-shrink:0;display:flex;align-items:center' + (occlude ? ';background:var(--surface-bg-alt);box-shadow:' + side + '8px 0 12px 4px var(--surface-bg-alt)' : '');
+  return (
+    <div style={sx('display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box;width:100%;background:' + background + ';transition:background var(--duration-instant) linear')}>
+      {/* The bar proper: one fixed-height bg-alt strip, whatever else the page needs below it. */}
+      <div style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:100%;box-sizing:border-box;padding:0 var(--spacing-' + (mobile ? 'md' : 'xl') + ');height:var(--appbar-height' + (mobile ? '-mobile' : '') + ')')}>
+        {leading}
+        <div style={sx('position:relative;align-self:stretch;flex:1;min-width:0;display:flex;align-items:center')}>
+          <div style={sx('flex:1;min-width:0;font-family:var(--font-display);font-weight:var(--display-weight);font-stretch:var(--display-stretch);letter-spacing:-.02em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:' + (sOpen ? '0' : '1') + ';transform:translateX(' + (sOpen ? '-12px' : '0') + ');transition:opacity var(--duration-fast) ease,transform' + ease)}>{title}</div>
+          {searchable && (
+            <div style={sx('position:absolute;top:0;bottom:0;right:0;display:flex;align-items:center;overflow:hidden;width:' + (sOpen ? '100%' : '0') + ';opacity:' + (sOpen ? '1' : '0') + ';transition:width' + ease + ',opacity var(--duration-fast) ease')}>
+              {SearchField && <SearchField platform={platform} height={searchHeight} placeholder={searchPlaceholder} value={searchValue} onChange={onSearchChange} autoFocus={sOpen && searchAutoFocus} onClose={() => onSearchToggle(false)} />}
+            </div>
+          )}
+        </div>
+        {/* The button hands its slot to the field — while the field is out, its close control lives
+            inside it, so the bar's own actions stay put instead of being swapped away. */}
+        {searchable && SearchButton && searchButton && (
+          <div style={sx('display:flex;align-items:center;overflow:hidden;flex-shrink:0;max-width:' + (sOpen ? '0px' : '44px') + ';opacity:' + (sOpen ? '0' : '1') +
+            // Collapsed to zero it still sits between two of the row's gaps: pull one back so the
+            // field's right edge keeps the same inset as the title's left one.
+            ';margin-right:' + (sOpen ? 'calc(-1 * var(--spacing-md))' : '0') + ';transition:max-width' + ease + ',margin-right' + ease + ',opacity var(--duration-fast) ease')}>
+            <SearchButton onToggle={onSearchToggle} />
+          </div>
+        )}
+        {trailing && <div style={sx('display:flex;align-items:center;flex-shrink:0')}>{trailing}</div>}
+      </div>
+      {/* The controls row is the page surface reaching up behind the bar: it carries the rounded top
+         corners (left only when a side sheet squares the right edge) and keeps them at every scroll
+         position — past the threshold the content below marks itself with a hairline instead. */}
+      {/* Collapsed with a grid track, not a measured pixel height: the row's own layout decides how
+         tall it is, so nothing can clip it away if a measurement is missed. */}
+      <div style={sx('display:grid;width:100%;overflow:hidden;grid-template-rows:' + (children ? '1fr' : '0fr') + ';transition:grid-template-rows var(--duration-medium) var(--ease-standard)')}>
+        {/* A fixed band, so swapping chips for a search field never changes the bar's height. */}
+        <div style={sx('display:flex;align-items:center;width:100%;min-height:0;box-sizing:border-box;background:var(--surface-bg);' +
+          'border-radius:' + (squareLeft ? '0' : 'var(--radius-lg)') + ' ' + (squareRight ? '0' : 'var(--radius-lg)') + ' 0 0;' +
+          'height:var(--appbar-controls-height);padding:0 var(--spacing-' + (mobile ? 'md' : 'xl') + ');' +
+          (centered ? 'justify-content:center' : 'justify-content:flex-start'))}>
+          {centered ? <div style={sx('width:100%;max-width:' + (mobile ? '100%' : '560px'))}>{children}</div> : <div style={sx('flex:1;min-width:0;max-width:100%')}>{children}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}

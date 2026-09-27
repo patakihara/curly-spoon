@@ -1,0 +1,150 @@
+{
+	"name": "sonora-design",
+	"displayName": "Sonora Design",
+	"description": "Design System panel for this repo, hosted in a VS Code webview — feature parity with claude.ai/design's own panel (see docs/EXTENSION-PLAN.md).",
+	"version": "0.1.0",
+	"publisher": "opesus-local",
+	"engines": {
+		"vscode": "^1.75.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"workspaceContains:_ds_manifest.json"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "sonora",
+					"title": "Sonora",
+					"icon": "media/sonora-icon.svg"
+				}
+			]
+		},
+		"views": {
+			"sonora": [
+				{
+					"id": "sonora.designSystemView",
+					"name": "Design System",
+					"type": "webview"
+				},
+				{
+					"id": "sonora.cardsView",
+					"name": "Cards"
+				},
+				{
+					"id": "sonora.tokensView",
+					"name": "Tokens"
+				}
+			]
+		},
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "sonora.openCardSource",
+					"when": "view == sonora.cardsView && viewItem == sonora.card",
+					"group": "sonora@1"
+				},
+				{
+					"command": "sonora.copyCardPath",
+					"when": "view == sonora.cardsView && viewItem == sonora.card",
+					"group": "sonora@2"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "sonora.revealCard",
+					"when": "false"
+				},
+				{
+					"command": "sonora.openCardSource",
+					"when": "false"
+				},
+				{
+					"command": "sonora.copyCardPath",
+					"when": "false"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "sonora.openDesignSystem",
+				"title": "Sonora: Open Design System"
+			},
+			{
+				"command": "sonora.restartServer",
+				"title": "Sonora: Restart gallery server"
+			},
+			{
+				"command": "sonora.regenerateCard",
+				"title": "Sonora: Regenerate card…"
+			},
+			{
+				"command": "sonora.rebuildBundle",
+				"title": "Sonora: Rebuild bundle"
+			},
+			{
+				"command": "sonora.renderCheck",
+				"title": "Sonora: Render check"
+			},
+			{
+				"command": "sonora.checkTokens",
+				"title": "Sonora: Check tokens"
+			},
+			{
+				"command": "sonora.regenerateGallery",
+				"title": "Sonora: Regenerate gallery"
+			},
+			{
+				"command": "sonora.pull",
+				"title": "Sonora: Pull design"
+			},
+			{
+				"command": "sonora.revealCard",
+				"title": "Sonora: Reveal card"
+			},
+			{
+				"command": "sonora.openCardSource",
+				"title": "Open source"
+			},
+			{
+				"command": "sonora.copyCardPath",
+				"title": "Copy path"
+			}
+		],
+		"configuration": {
+			"title": "Sonora",
+			"properties": {
+				"sonora.python": {
+					"type": "string",
+					"default": "python3",
+					"description": "Interpreter used to run docs/serve.py and docs/gen_gallery.py."
+				},
+				"sonora.serverPort": {
+					"type": "number",
+					"default": 8888,
+					"description": "Port the gallery server (docs/serve.py) answers on. docs/serve.py itself always binds 8888 — see extension/lib/server.js's header comment before changing this."
+				},
+				"sonora.node": {
+					"type": "string",
+					"default": "",
+					"description": "Node executable used for the terminal commands that run docs/build_bundle.js and docs/render_cards.mjs. Empty (the default) falls back to ~/.local/share/node22/bin/node — node is not on this machine's non-interactive PATH (see docs/EXTENSION-PLAN.md §3)."
+				},
+				"sonora.regenerate": {
+					"type": "string",
+					"enum": ["queue", "claude", "hold"],
+					"enumDescriptions": [
+						"File a queue item through ~/.claude/skills/queue's own CLI (extension/lib/queue.js) — the default on this machine, where a headless `claude -p` becomes a queue item anyway.",
+						"Fall back to docs/serve.py's own /_api/feedback — the same headless `claude -p` path the framed page's Feedback button would take if it were running unframed in a browser.",
+						"Record the feedback in .feedback/queue.jsonl (same shape docs/serve.py itself writes) without filing or running anything."
+					],
+					"default": "queue",
+					"description": "How the Feedback button's request is carried out. See docs/EXTENSION-PLAN.md §2 \"Settings\"."
+				}
+			}
+		}
+	}
+}

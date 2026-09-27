@@ -1,0 +1,147 @@
+:root{
+/* ---- Neutral scale (flat dark chrome) ---- */
+--neutral-950:rgb(8,8,8);
+--neutral-900:rgb(12,12,12);
+--neutral-850:rgb(20,20,20);
+--neutral-700:rgb(45,45,45);
+--neutral-500:rgb(90,90,90);
+--neutral-300:rgb(150,150,150);
+--neutral-100:rgb(215,215,215);
+--neutral-50:rgb(225,225,225);
+--neutral-0:rgb(255,255,255);
+
+/* ---- One surface system for both platforms — dark is the default, set data-theme="light" to flip ---- */
+color-scheme:dark;
+--surface-bg:#141414;
+--surface-bg-alt:#080808;
+--surface-card:#1C1B1D;
+--surface-fg:var(--neutral-50);
+--surface-fg-muted:var(--neutral-300);
+--surface-border:rgb(255 255 255 / 8%);
+/* A 1px rule that has to actually read as a line — subheader hairline, list separators. The
+   8% border is right for enclosing a shape, but disappears as a single hairline. */
+--divider:rgb(255 255 255 / 20%);
+--surface-overlay-header:linear-gradient(transparent 0%, rgb(0 0 0 / 85%) 100%);
+
+/* ---- Scrims over artwork. Black in both themes: they darken a photo, not a surface ---- */
+--scrim-soft:rgb(0 0 0 / 34%);   /* hover actions over a cover */
+--scrim:rgb(0 0 0 / 46%);        /* state overlay: progress, queued, failed */
+--scrim-strong:rgb(0 0 0 / 55%); /* label pills and "not in library" darkening */
+--on-scrim:#fff;                 /* ink on any scrim */
+
+/* Hover wash for transparent controls — inverts with the theme */
+--surface-hover:rgb(255 255 255 / 10%);
+
+/* Edge fade for a clipped scrollable row (ButtonGroup, TabBar-style overflow) — a shadow reads
+   against a light surface; against dark chrome the same darkening vanishes, so this is a soft
+   light glow instead. */
+--scroll-edge:rgb(255 255 255 / 22%);
+
+/* ---- Accent (customizable primary — apps let the user pick this) ---- */
+--accent:#8B5CF6; /* violet — picked from the accent-preset family */
+--accent-contrast:#fff;
+
+/* Accent preset palette — offer as swatches, not fixed brand colors */
+--accent-red:#EF4444;
+--accent-orange:#F97316;
+--accent-amber:#F59E0B;
+--accent-yellow:#EAB308;
+--accent-lime:#84CC16;
+--accent-green:#22C55E;
+--accent-emerald:#10B981;
+--accent-teal:#14B8A6;
+--accent-cyan:#06B6D4;
+--accent-sky:#0EA5E9;
+--accent-blue:#3B82F6;
+--accent-indigo:#6366F1;
+--accent-violet:#8B5CF6;
+--accent-purple:#A855F7;
+--accent-fuchsia:#D946EF;
+--accent-pink:#EC4899;
+--accent-rose:#F44862;
+
+/* ---- Accent as readable text/icon ink (accent itself is a fill, not always legible as type) ---- */
+--accent-ink:#A78BFA;
+
+/* ---- Status tones for request/progress pills and rings ---- */
+--tone-library:var(--state-success);
+--tone-request:var(--state-warning);
+--tone-progress:var(--accent);
+--tone-error:var(--state-error);
+/* Ink on a solid tone fill — always plain black or white, picked per tone for contrast */
+--tone-library-ink:#000;
+--tone-request-ink:#000;
+--tone-progress-ink:var(--accent-contrast);
+--tone-error-ink:#fff;
+
+/* ---- Semantic state colors ---- */
+--state-error:#E12F43;
+--state-success:#42E477;
+--state-warning:#FFCC8B;
+--state-info:#9B66E9;
+
+/* ---- Now-playing surface (mini player / transport bar) — same in both themes ---- */
+--surface-now-playing:#462A3D;
+--surface-now-playing-fg:#FFFFFF;
+--surface-now-playing-fg-muted:rgb(255 255 255 / 78%);
+
+/* ---- Decorative duotone for album-art placeholders ---- */
+--art-gradient-start:#B6C4FF;
+--art-gradient-end:#FFB7DB;
+}
+
+/* Light theme — set data-theme="light" on any container (never OS/browser sniffing). Dark above is the default. */
+[data-theme="light"]{
+color-scheme:light;
+--accent-ink:#6D28D9;
+--tone-progress:var(--accent);
+--tone-library:var(--state-success);
+--tone-request:var(--state-warning);
+--tone-error:var(--state-error);
+--tone-library-ink:#000;
+--tone-request-ink:#000;
+--tone-progress-ink:var(--accent-contrast);
+--tone-error-ink:#fff;
+--surface-now-playing:#E3CADB;
+--surface-now-playing-fg:#1F1219;
+--surface-now-playing-fg-muted:rgb(0 0 0 / 62%);
+--surface-bg:#F9F6F6;
+--surface-bg-alt:#FFFFFF;
+--surface-card:#E8E1E1;
+--surface-fg:rgb(25,25,25);
+--surface-fg-muted:rgb(80,80,80);
+--surface-border:rgb(0 0 0 / 8%);
+--divider:rgb(0 0 0 / 18%);
+--surface-hover:rgb(0 0 0 / 6%);
+--scroll-edge:rgb(0 0 0 / 18%);
+--art-gradient-start:#4D5C92;
+--art-gradient-end:#75546F;
+}
+
+/* Dark declared explicitly too, so data-theme="dark" forces dark even nested inside a light scope. */
+[data-theme="dark"]{
+color-scheme:dark;
+--accent-ink:#A78BFA;
+--tone-progress:var(--accent);
+--tone-library:var(--state-success);
+--tone-request:var(--state-warning);
+--tone-error:var(--state-error);
+--tone-library-ink:#000;
+--tone-request-ink:#000;
+--tone-progress-ink:var(--accent-contrast);
+--tone-error-ink:#fff;
+--surface-now-playing:#462A3D;
+--surface-now-playing-fg:#FFFFFF;
+--surface-now-playing-fg-muted:rgb(255 255 255 / 78%);
+--surface-bg:#141414;
+--surface-bg-alt:#080808;
+--surface-card:#1C1B1D;
+--surface-fg:var(--neutral-50);
+--surface-fg-muted:var(--neutral-300);
+--surface-border:rgb(255 255 255 / 8%);
+--divider:rgb(255 255 255 / 20%);
+--surface-hover:rgb(255 255 255 / 10%);
+--scroll-edge:rgb(255 255 255 / 22%);
+--art-gradient-start:#B6C4FF;
+--art-gradient-end:#FFB7DB;
+}

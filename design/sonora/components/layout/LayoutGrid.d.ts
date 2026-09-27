@@ -1,0 +1,30 @@
+import { ReactNode } from 'react';
+
+/**
+ * Responsive card grid — the vertical half of the grid system (Shelf is the horizontal half).
+ * By default it auto-fills columns no narrower than `--grid-item-min`, so a shelf of media
+ * cards reflows without breakpoints. Pass `columns` when the count is part of the design
+ * (mobile "Jump back in" is always 2-up).
+ */
+export interface LayoutGridProps {
+  children?: ReactNode;
+  /**
+   * Fixed column count. Rarely needed — prefer letting the item minimums decide, so the same
+   * grid reflows in a narrow pane as well as it does on a phone.
+   */
+  columns?: number;
+  /**
+   * Item shape, which selects the minimum-width token: 'standard' for square media cards
+   * (`--grid-item-min`), 'wide' for horizontal tiles like QuickPick (`--grid-item-min-wide`).
+   * Mobile variants of both tokens are tuned to auto-fill to two columns on a phone.
+   */
+  item?: 'standard' | 'wide';
+  /** Explicit minimum width, overriding the `item` token. */
+  min?: string;
+  /** Gap override. Defaults to `--grid-gutter`. */
+  gap?: string;
+  /** Measure cap, e.g. `var(--grid-max-width)`. */
+  maxWidth?: string;
+  platform?: 'desktop' | 'mobile';
+}
+export declare function LayoutGrid(props: LayoutGridProps): JSX.Element;

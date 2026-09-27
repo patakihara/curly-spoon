@@ -1,0 +1,59 @@
+:root{
+/* ---- Grid system ---- */
+/* Column counts per platform. The kits use auto-fill grids sized by --grid-item-min rather than
+   hard column counts, so these are the ceiling, not a mandate. */
+--grid-columns:12; /* @kind other */
+--grid-columns-mobile:3; /* @kind other */
+
+/* Gutters between grid/shelf items */
+--grid-gutter:20px;
+--grid-gutter-mobile:8px;
+
+/* Page margin — also the distance a Shelf bleeds past the content edge */
+--grid-margin:28px;
+--grid-margin-mobile:16px;
+
+/* Minimum item width before a grid drops a column.
+   "standard" is a square media card; "wide" is a horizontal tile (QuickPick) that needs more
+   width before it reads as a row. The desktop floor is deliberately far below the cap: a narrow
+   pane may shrink cards to about a third of a full-size one rather than drop to one column.
+   The mobile values are tuned so a 360–430px viewport minus the page margins auto-fills to exactly
+   three columns — no hard column count needed. */
+--grid-item-min:50px;
+--grid-item-min-mobile:100px;
+--grid-item-min-wide:240px;
+--grid-item-min-wide-mobile:170px;
+
+/* Upper bound on an auto-filled column: past this the grid adds a column rather than growing the
+   card, so a wide pane shows more items instead of poster-sized art. */
+--grid-item-max:190px;
+--grid-item-max-mobile:1fr; /* @kind other */
+--grid-item-max-wide:300px;
+--grid-item-max-wide-mobile:1fr; /* @kind other */
+
+/* Readable measure caps */
+--grid-max-width:1100px;
+--grid-max-width-tiles:1000px;
+--grid-max-width-list:860px;
+--grid-max-width-form:640px;
+
+/* Width at which a self-measuring component (MediaHeader) drops to its compact layout */
+--breakpoint-compact:600px;
+
+/* ---- App frame ---- */
+--rail-width-expanded:268px;
+--rail-width-collapsed:108px;
+--rail-row-height:56px;
+--side-sheet-width:320px;
+--content-min-width:620px;
+--appbar-height:96px;
+--appbar-height-mobile:60px;
+/* The controls band under the bar strip — chips, sub-tabs, the centred search field */
+--appbar-controls-height:60px;
+/* Bottom app bar — the page-level action row docked opposite the top bar (Now Playing) */
+--bottom-app-bar-height:64px;
+/* Cover art on the mobile Now Playing page: capped so the page keeps air around it */
+--now-playing-art-max:300px;
+/* Lyrics/queue preview windows on that page — both the same fixed height, contents clipped */
+--now-playing-preview-height:204px;
+}

@@ -1,0 +1,61 @@
+import { ReactNode } from 'react';
+import { QueueItem } from './QueuePage';
+
+/**
+ * The Currently Playing page: cover, song, seek, transport and the playback readouts — the shape
+ * both platforms share. On mobile it also carries previews of the lyrics and the queue, each opening
+ * its full page; on desktop those are the player panel's own tabs, so the previews are left out.
+ */
+export interface NowPlayingPageProps {
+  platform?: 'desktop' | 'mobile';
+  image?: string;
+  title?: string;
+  artist?: string;
+  /** "Playing from Driftwave" — the uppercase line in the mobile bar, meta on desktop. */
+  context?: string;
+  playing?: boolean;
+  /** 0–1. */
+  progress?: number;
+  /** Seconds, for the seek readouts. */
+  duration?: number;
+  onTogglePlay?: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onShuffle?: () => void;
+  onRepeat?: () => void;
+  onSeek?: (value: number) => void;
+  /** Collapses the sheet back to the bar (mobile). */
+  onClose?: () => void;
+  closeGlyph?: string;
+  onMore?: () => void;
+  favourite?: boolean;
+  /** Renders the favourite control when set. */
+  onFavourite?: () => void;
+  speed?: string;
+  sleep?: string;
+  onSpeed?: () => void;
+  onSleep?: () => void;
+  /** Lyrics preview (mobile only) — the full sheet lives on LyricsPage. */
+  lyrics?: string[];
+  lyricsActiveIndex?: number;
+  lyricsSyncMode?: 'sync' | 'dot' | 'off';
+  /** Receives the preview row's rect, so the full page can expand out of it. */
+  onOpenLyrics?: (origin: DOMRect | null) => void;
+  /** Queue preview (mobile only) — the full list lives on QueuePage. */
+  queue?: QueueItem[];
+  /** Receives the preview row's rect, so the full page can expand out of it. */
+  onOpenQueue?: (origin: DOMRect | null) => void;
+  onPlayQueueItem?: (item: QueueItem, index: number) => void;
+  queuePreviewCount?: number;
+  /** Replaces the top row. `null` removes it — the desktop default, where the panel has its own. */
+  header?: ReactNode;
+  /** Docked below the page — the BottomAppBar on mobile. */
+  footer?: ReactNode;
+  /** Own the scrolling (mobile default). Off inside the desktop panel, which scrolls itself. */
+  scroll?: boolean;
+  /** Page surface. Defaults to `--surface-bg-alt`, a step off the library behind it. */
+  background?: string;
+  /** Force the app bar's hairline on — used while a sub-page sits against it. Otherwise scroll-driven. */
+  divider?: boolean;
+}
+export declare function NowPlayingPage(props: NowPlayingPageProps): JSX.Element;

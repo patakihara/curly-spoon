@@ -1,0 +1,20 @@
+import { ReactNode } from 'react';
+
+/**
+ * Persistent, non-blocking statement of system state — Spotify's "You're offline" bar. Unlike a
+ * toast it never times out; the message stands until the condition it describes changes.
+ */
+export interface StatusBannerProps {
+  /** The message. */
+  children: ReactNode;
+  /** Selects the background/ink pair from the state tokens. */
+  tone?: 'info' | 'warning' | 'error' | 'success';
+  /** Leading glyph. */
+  icon?: string;
+  /** Label for the inline text action, e.g. "Retry". */
+  actionLabel?: string;
+  onAction?: () => void;
+  /** Renders a close control when set; the banner has no other way to dismiss. */
+  onDismiss?: () => void;
+}
+export declare function StatusBanner(props: StatusBannerProps): JSX.Element;
