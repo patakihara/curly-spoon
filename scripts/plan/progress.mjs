@@ -4,6 +4,7 @@
  * outbox, recent Decision: lines and recently sorted inbox ideas.
  *
  * CLI: node scripts/plan/progress.mjs [--summary] [--local|--no-results] [--json] [--root <dir>]
+ *   [--gh-deadline <epoch ms>]
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -82,6 +83,21 @@ function readOutbox(root) {
     });
 }
 
+/** The ideas still in docs/inbox, each `{ file, title }`, title from its `# ` line. */
+function readWaitingIdeas(root) {
+  const dir = join(root, 'docs', 'inbox');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.md') && f !== 'README.md')
+    .sort()
+    .map((file) => {
+      const heading = readFileSync(join(dir, file), 'utf8')
+        .split('\n')
+        .find((l) => l.startsWith('# '));
+      return { file, title: heading ? heading.slice(2).trim() : file.replace(/\.md$/, '') };
+    });
+}
+
 function readDecisions(exec, root) {
   const log = tryGit(exec, root, 'log', '-n', '300', '--format=%H%x1f%cs%x1f%B%x1e') ?? '';
   const decisions = [];
@@ -125,9 +141,9 @@ function readSortedIdeas(exec, root) {
  * Computes the plan's progress for the repo at `root`. `results`: 'ci' (default), 'local' or
  * 'none'. Returns the JSON-serialisable Progress object that --json prints.
  */
-export function computeProgress({ root, results = 'ci', exec = defaultExec }) {
+export function computeProgress({ root, results = 'ci', exec = defaultExec, ghDeadline }) {
   const plan = readPlan(join(root, 'docs', 'plan'), []);
-  const loaded = loadResults({ root, mode: results, exec });
+  const loaded = loadResults({ root, mode: results, exec, ghDeadline });
   const signoffs = new Set(
     (tryGit(exec, root, 'tag', '-l', 'signoff/*') ?? '').split('\n').filter(Boolean),
   );
@@ -201,6 +217,7 @@ export function computeProgress({ root, results = 'ci', exec = defaultExec }) {
     overAsking: outbox.length > 5,
     decisions: readDecisions(exec, root),
     sortedIdeas: readSortedIdeas(exec, root),
+    waitingIdeas: readWaitingIdeas(root),
   };
 }
 
@@ -264,10 +281,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       local: { type: 'boolean' },
       'no-results': { type: 'boolean' },
       root: { type: 'string' },
+      'gh-deadline': { type: 'string' },
     },
   });
   const root = values.root ?? join(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
   const results = values['no-results'] ? 'none' : values.local ? 'local' : 'ci';
-  const progress = computeProgress({ root, results });
+  const ghDeadline = values['gh-deadline'] ? Number(values['gh-deadline']) : undefined;
+  const progress = computeProgress({ root, results, ghDeadline });
   console.log(values.json ? JSON.stringify(progress, null, 2) : formatSummary(progress));
 }

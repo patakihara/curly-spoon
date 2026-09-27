@@ -77,6 +77,7 @@ if (mode === 'fail') {
   process.exit(1);
 }
 if (mode === 'hang') {
+  fs.appendFileSync(path.join(__dirname, 'gh.pids'), process.pid + '\\n');
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60000);
   process.exit(1);
 }

@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { REPO_ROOT, removeTree } from '../plan/testing.mjs';
@@ -55,6 +55,41 @@ test('edits outside generated folders are allowed', () => {
   withRoot((root) => {
     for (const file of ['web/src/app.tsx', 'docs/plan/15-milestones.md', 'web/src/generated.ts']) {
       const run = edit(root, 'Edit', { file_path: join(root, file) });
+      assert.equal(run.status, 0);
+      assert.equal(run.stdout, '', file);
+    }
+  });
+});
+
+test('[M0.uikit/b] a symlink into the repo does not hide a generated folder', () => {
+  withRoot((root) => {
+    mkdirSync(join(root, 'web/src/generated'), { recursive: true });
+    symlinkSync(join(root, 'web/src'), join(root, 'link'));
+    symlinkSync(join(root, 'web/src/generated'), join(root, 'gen'));
+    for (const file of ['link/generated/x.ts', 'gen/x.ts', 'gen/new/deeper/y.ts']) {
+      const run = edit(root, 'Write', { file_path: join(root, file) });
+      assert.equal(decision(run).permissionDecision, 'deny', file);
+    }
+  });
+});
+
+test('[M0.uikit/b] a repo reached through a symlink still guards its generated folders', () => {
+  withRoot((root) => {
+    const alias = join(mkdtempSync(join(tmpdir(), 'generated-alias-')), 'repo');
+    symlinkSync(root, alias);
+    try {
+      const run = edit(alias, 'Edit', { file_path: join(alias, 'web/generated/y/z.ts') });
+      assert.equal(decision(run).permissionDecision, 'deny');
+    } finally {
+      removeTree(join(alias, '..'));
+    }
+  });
+});
+
+test('[M0.uikit/b] a file literally named generated is not a folder, so it is allowed', () => {
+  withRoot((root) => {
+    for (const file of ['web/src/generated', 'generated']) {
+      const run = edit(root, 'Write', { file_path: join(root, file) });
       assert.equal(run.status, 0);
       assert.equal(run.stdout, '', file);
     }

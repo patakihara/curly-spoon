@@ -9,24 +9,41 @@
  *
  * CLI: node scripts/guards/generated-guard.mjs < payload.json
  */
-import { isAbsolute, relative, resolve } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { repoRoot, runHook } from './hook.mjs';
+
+/**
+ * The path with every symlink resolved. The file may not exist yet, so the deepest existing
+ * ancestor is resolved and the missing tail is joined back on.
+ */
+function realPath(path) {
+  const tail = [];
+  for (let dir = path; ; dir = dirname(dir)) {
+    try {
+      return join(realpathSync(dir), ...tail.reverse());
+    } catch {
+      if (dirname(dir) === dir) return path;
+      tail.push(basename(dir));
+    }
+  }
+}
 
 function roots(payload) {
   const found = [];
   try {
-    found.push(repoRoot(payload));
+    found.push(realPath(repoRoot(payload)));
   } catch {
     // no git root; CLAUDE_PROJECT_DIR may still apply
   }
-  if (process.env.CLAUDE_PROJECT_DIR) found.push(resolve(process.env.CLAUDE_PROJECT_DIR));
+  if (process.env.CLAUDE_PROJECT_DIR) found.push(realPath(resolve(process.env.CLAUDE_PROJECT_DIR)));
   return [...new Set(found)];
 }
 
 runHook('generated-guard', (payload) => {
   const target = payload.tool_input?.file_path ?? payload.tool_input?.notebook_path;
   if (!target) return null;
-  const path = resolve(payload.cwd ?? process.cwd(), target);
+  const path = realPath(resolve(payload.cwd ?? process.cwd(), target));
   for (const root of roots(payload)) {
     const rel = relative(root, path);
     if (!rel || rel.startsWith('..') || isAbsolute(rel)) continue;

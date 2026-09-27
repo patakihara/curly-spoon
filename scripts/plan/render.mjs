@@ -214,13 +214,17 @@ function renderNow(progress) {
           `<li><code>${esc(s.file.replace(/^docs\/inbox\//, ''))}</code> → ${esc(s.plan ?? 'no Plan: line')}</li>`,
       )
       .join('') || '<li>None yet.</li>';
+  const unsorted =
+    progress.waitingIdeas
+      .map((w) => `<li>${esc(w.title)} <code>${esc(w.file)}</code></li>`)
+      .join('') || '<li>None.</li>';
   return [
     '<section id="now">',
     '  <h2>Now</h2>',
     `  ${waiting}`,
     '  <div class="grid g2">',
     `<div class="card"><h4>Progress</h4>\n<ul class="small">${rows.join('')}</ul></div>`,
-    `<div class="card"><h4>Recent decisions</h4>\n<ul class="small">${decisions}</ul>\n<h4>Recently sorted ideas</h4>\n<ul class="small">${ideas}</ul></div>`,
+    `<div class="card"><h4>Recent decisions</h4>\n<ul class="small">${decisions}</ul>\n<h4>Recently sorted ideas</h4>\n<ul class="small">${ideas}</ul>\n<h4>Waiting to be sorted (${progress.waitingIdeas.length})</h4>\n<ul class="small">${unsorted}</ul></div>`,
     '  </div>',
     '</section>',
   ].join('\n');

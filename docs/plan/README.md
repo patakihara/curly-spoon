@@ -117,6 +117,8 @@ commit, read the artifact first and fold in any edits or comments, publish
 commit `design/published.json`, and push both commits together before merging. CI never sees a
 plan change without its record. The page shows the outbox, so a `docs/outbox` change needs the
 same publish: the recorded tree covers `docs/plan` and `docs/outbox` together.
+The page also lists `docs/inbox` ideas waiting to be sorted, but the recorded tree leaves
+`docs/inbox` out on purpose: sessions file ideas without publishing, and that must not turn CI red.
 
 ## Size
 

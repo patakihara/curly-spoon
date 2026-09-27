@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fixtureRepo, git, removeTree, tag, write } from '../plan/testing.mjs';
@@ -112,7 +112,7 @@ test('[M0.uikit/e] offline, the hook still prints the summary with checks unavai
   );
 });
 
-test('[M0.uikit/e] a hanging gh is cut off and the summary comes without results', () => {
+test('[M0.uikit/e] a hanging gh is cut off within the budget and the summary shows checks unavailable', () => {
   withRepo(
     () => ({ mode: 'hang' }),
     (root, commits, ghDir) => {
@@ -121,8 +121,34 @@ test('[M0.uikit/e] a hanging gh is cut off and the summary comes without results
       assert.ok(Date.now() - began < 10_000, 'the hook finishes in under 10 s');
       assert.equal(run.status, 0, run.stderr);
       const lines = context(run);
-      assert.match(lines[0], /checks unavailable: not requested \(--no-results\)/);
-      assert.ok(lines.includes('(CI results timed out after 1 s; shown without them)'));
+      assert.match(lines[0], /checks unavailable: gh run list timed out/);
+    },
+  );
+});
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+test('[M0.uikit/e] a hanging gh is killed, not left running after the hook returns', () => {
+  withRepo(
+    () => ({ mode: 'hang' }),
+    (root, commits, ghDir) => {
+      const run = start(root, ghDir, { AURALIS_SUMMARY_TIMEOUT_MS: '3000' });
+      assert.equal(run.status, 0, run.stderr);
+      const pids = readFileSync(join(ghDir, 'gh.pids'), 'utf8').split('\n').filter(Boolean);
+      assert.ok(pids.length > 0, 'the fake gh ran');
+      assert.deepEqual(
+        pids.filter((pid) => alive(Number(pid))),
+        [],
+        'no gh survives',
+      );
+      assert.match(context(run)[0], /checks unavailable: gh run list timed out/);
     },
   );
 });

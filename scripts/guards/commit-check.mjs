@@ -2,7 +2,8 @@
  * Plan: line rules. A commit that touches an app path (APP_PATHS) names the plan item it serves
  * in a `Plan: <item id>` line; every Plan: line names an item in docs/plan or is `Plan: none`,
  * and `Plan: none` is only for commits that touch no app path. The commit-msg hook
- * (.githooks/commit-msg) checks a commit being made; CI checks the commits a push adds.
+ * (.githooks/commit-msg) checks a commit being made; CI checks the commits a push adds. A merge
+ * is judged by its own changes only: the paths that differ from every parent.
  *
  * CLI: node scripts/guards/commit-check.mjs --msg-file <path>
  *      node scripts/guards/commit-check.mjs --before <sha> --after <sha> --ref <name>
@@ -65,7 +66,19 @@ export function checkMessage({ message, files, ids }) {
   return problems;
 }
 
-/** The non-merge commits a push from `before` to `after` on `ref` adds, oldest first. */
+/** Every remote-tracking ref except the pushed `ref` itself and the symbolic origin/HEAD. */
+function otherRemoteRefs(root, ref) {
+  const pushed = new Set([`refs/remotes/origin/${ref}`, 'refs/remotes/origin/HEAD']);
+  return lines(gitIn(root, 'for-each-ref', '--format=%(refname)', 'refs/remotes')).filter(
+    (r) => !pushed.has(r),
+  );
+}
+
+/**
+ * The commits, merges included, a push from `before` to `after` on `ref` adds, oldest first.
+ * With no usable `before` (a new branch, or a force-push from a tip this clone lacks) that is
+ * every commit no other remote branch has; only when that is empty or fails, the tip alone.
+ */
 export function rangeCommits({ root, before, after, ref, defaultBranch = 'main' }) {
   if (!after || ZERO.test(after)) return { shas: [], note: 'nothing pushed' };
   const main = `origin/${defaultBranch}`;
@@ -73,25 +86,39 @@ export function rangeCommits({ root, before, after, ref, defaultBranch = 'main' 
     ref !== defaultBranch && succeeds(root, 'rev-parse', '--verify', '-q', `refs/remotes/${main}`);
   const known =
     before && !ZERO.test(before) && succeeds(root, 'cat-file', '-e', `${before}^{commit}`);
-  const list = (...args) => lines(gitIn(root, 'rev-list', '--reverse', '--no-merges', ...args));
+  const list = (...args) => lines(gitIn(root, 'rev-list', '--reverse', ...args));
   if (known) return { shas: list(after, '--not', before, ...(excludeDefault ? [main] : [])) };
-  if (excludeDefault)
-    return {
-      shas: list(after, '--not', main),
-      note: `new branch: checking commits not on ${main}`,
-    };
+  const why = before && !ZERO.test(before) ? 'unknown previous tip' : 'new branch';
+  let shas = [];
+  try {
+    shas = list(after, '--not', ...otherRemoteRefs(root, ref));
+  } catch {
+    // fall back to the tip below
+  }
+  if (shas.length) return { shas, note: `${why}: checking commits on no other remote branch` };
   return {
     shas: list('-1', after),
-    note: `unknown previous tip: checking ${gitIn(root, 'rev-parse', after).slice(0, 7)} only`,
+    note: `${why}: checking ${gitIn(root, 'rev-parse', after).slice(0, 7)} only`,
   };
+}
+
+/**
+ * The paths a merge changes itself: those differing from every parent, i.e. its conflict
+ * resolutions. `diff` lists the paths the result differs from one parent in.
+ */
+export function mergeOwnFiles(parents, diff) {
+  const [first, ...rest] = parents.map((p) => new Set(diff(p)));
+  return [...first].filter((f) => rest.every((s) => s.has(f)));
 }
 
 /** The problems with one commit; a commit whose tree has no docs/plan is foreign and skipped. */
 export function checkCommit(root, sha, ids) {
   if (!succeeds(root, 'cat-file', '-e', `${sha}:docs/plan`)) return [];
-  const files = lines(
-    gitIn(root, 'diff-tree', '--no-commit-id', '--name-only', '-r', '--root', sha),
-  );
+  const parents = gitIn(root, 'rev-list', '--parents', '-n', '1', sha).split(' ').slice(1);
+  const files =
+    parents.length > 1
+      ? mergeOwnFiles(parents, (p) => lines(gitIn(root, 'diff', '--name-only', p, sha)))
+      : lines(gitIn(root, 'diff-tree', '--no-commit-id', '--name-only', '-r', '--root', sha));
   const message = gitIn(root, 'log', '-1', '--format=%B', sha);
   return checkMessage({ message, files, ids });
 }
@@ -101,8 +128,11 @@ function hookMode(msgFile) {
     const root = gitIn(process.cwd(), 'rev-parse', '--show-toplevel');
     let mergeHead = gitIn(root, 'rev-parse', '--git-path', 'MERGE_HEAD');
     if (!isAbsolute(mergeHead)) mergeHead = join(root, mergeHead);
-    if (existsSync(mergeHead)) return 0;
-    const files = lines(gitIn(root, 'diff', '--cached', '--name-only'));
+    const staged = (...against) =>
+      lines(gitIn(root, 'diff', '--cached', '--name-only', ...against));
+    const files = existsSync(mergeHead)
+      ? mergeOwnFiles(['HEAD', ...lines(readFileSync(mergeHead, 'utf8'))], staged)
+      : staged();
     const problems = checkMessage({
       message: readFileSync(msgFile, 'utf8'),
       files,
