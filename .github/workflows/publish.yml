@@ -1,36 +1,26 @@
 name: Publish
 
-# Split out of `ci.yml` on 2026-08-17, at the user's direction, after one hung job blocked
-# every CI run on `main` for two hours.
-#
-# The problem it solves. `ci.yml` deliberately queues rather than cancels on `main`
-# precisely to protect this job: cancelling a superseded run also cancelled its publish, so
-# the registry silently stopped being updated while every run still reported green. Sound
-# reasoning — but it put a slow, network-dependent, deployment-coupled job in the *same
-# concurrency group* as every verification job. On 2026-08-16 `docker/build-push-action`
-# hung here for over two hours after all six verification jobs had passed, and because a run
-# is not complete until all its jobs are, that single step held the group and three
-# subsequent CI runs sat `pending` with nothing allocated. The project's authoritative
-# signal was unavailable, and the symptom was indistinguishable from a runner-allocation
-# failure — which is what the docs had blamed for it before.
-#
-# Separating them lets each take the concurrency policy it actually wants: verification
-# cancels freely (only the newest commit's result is interesting), while publishing is
-# serialized on its own group and can never block a test run again.
+# Publishing is its own workflow so a slow or hung image build never holds CI's
+# concurrency group: verification cancels freely, publishing runs on its own.
 on:
   workflow_run:
     workflows: ['CI']
     types: [completed]
 
-# `cancel-in-progress: true` is safe *here* in a way it was not inside `ci.yml`, and the
-# difference is worth stating because it looks like the exact mistake the old comment warns
-# against. There, a cancel came from a superseded *verification* run and nothing replaced
-# the lost publish. Here, the only thing that can cancel a publish is a *newer* publish,
-# which by definition pushes a newer commit to the same tags. `:latest` therefore always
-# converges on the most recent green build of `main` rather than being left stale — the very
-# failure the old comment feared — and a hung build stops blocking the next one.
+# A newer publish of `main` cancels an older one. That is safe: both push the same tags, so
+# `:latest` converges on the newest green build of `main`, and a hung build stops blocking.
+#
+# For `workflow_run`, `github.ref` is always the default branch, so the group is keyed on the
+# triggering run's `head_branch`. Only a run that will actually publish joins `publish-main`;
+# every other run gets a group of its own, so a skipped run never cancels a real publish.
 concurrency:
-  group: publish-${{ github.ref }}
+  group: >-
+    publish-${{
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_branch || github.run_id
+    }}
   cancel-in-progress: true
 
 jobs:
@@ -51,9 +41,8 @@ jobs:
     permissions:
       packages: write
       contents: read
-    # The hang that prompted this split ran unbounded toward GitHub's six-hour default. An
-    # hour is generous against the emulated arm64 build's normal runtime and turns a hang
-    # into a visible failure rather than an invisible stall.
+    # An hour is generous against the emulated arm64 build's normal runtime and turns a hang
+    # into a visible failure rather than a stall toward GitHub's six-hour default.
     timeout-minutes: 60
     steps:
       # `workflow_run` starts from the default branch, not from the commit under test, so the
@@ -76,10 +65,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # `linux/amd64` + `linux/arm64` since 2026-08-06, which is what makes a Pi or an arm64
-      # NAS a supported target rather than an aspiration. The arm64 half is emulated through
-      # QEMU above, so this is by far the slowest step here; the cost is accepted rather than
-      # worked around, since it is fully cached between runs and a native arm64 runner is not
+      # `linux/amd64` + `linux/arm64` makes a Pi or an arm64 NAS a supported target. The arm64
+      # half is emulated through QEMU above, so this is by far the slowest step here; the cost
+      # is accepted, since it is fully cached between runs and a native arm64 runner is not
       # available on this account.
       #
       # `docker/build-push-action` writes both architectures under one tag as a multi-arch
