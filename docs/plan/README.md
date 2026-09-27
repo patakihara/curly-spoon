@@ -45,8 +45,7 @@ nestable. `::: diagram <name>` stands alone with no body.
 | `::: diagram <name>` | `diagrams/<name>.svg`, inlined |
 
 Raw HTML is limited to `<span class="pill t-lib|t-prog|t-req|t-err">…</span>`, and `<ul>`/`<li>`
-inside a table row for a cell that holds a list. A hard line break is a trailing `\`. `&nbsp;`
-is allowed.
+inside a table row for a cell that holds a list. A hard line break is a trailing `\`; `&nbsp;` works.
 
 ## Items and criteria
 
@@ -106,7 +105,6 @@ The lint checks structure, directives, raw HTML, the item grammar, orphan test t
 names an existing item and test criterion), the size limit, dated notes, and the outbox format.
 A dated note is an ISO or month-name date, or a history phrase such as "previously" or "as of";
 code spans, quoted text and a commit citation like `` `781efd4` (2026-08-21 `` are exempt.
-
 The render refuses on any lint error, and on uncommitted changes to `docs/plan`, `docs/outbox`
 or `scripts/plan` unless `--draft`.
 
@@ -119,4 +117,3 @@ and commit `design/published.json`.
 
 The plan stays within 18,000 words: `\S+` tokens in `_header.md` and the section files, after
 dropping front matter, directive lines and HTML tags. Diagrams and this README don't count.
-Over the limit, tighten something before adding more.
