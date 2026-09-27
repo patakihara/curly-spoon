@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { isProxyEntry } from './auth/proxy.js';
@@ -36,6 +37,18 @@ const envSchema = z.object({
     }, 'an http or https origin with no path')
     .transform((value) => new URL(value).origin)
     .optional(),
+  // The household sign-on. With an issuer, the client secret file and PUBLIC_ORIGIN are required.
+  OIDC_ISSUER: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().min(1).default('auralis'),
+  OIDC_CLIENT_SECRET_FILE: z.string().min(1).optional(),
+  // Each upstream, with the file its admin-level key is in.
+  ABS_URL: z.string().url().optional(),
+  ABS_PROVISION_KEY_FILE: z.string().min(1).optional(),
+  JELLYFIN_URL: z.string().url().optional(),
+  JELLYFIN_API_KEY_FILE: z.string().min(1).optional(),
+  // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
+  SECRET_KEY: z.string().min(1).optional(),
+  SECRET_KEY_FILE: z.string().min(1).optional(),
 });
 
 export type CookieSecure = 'auto' | boolean;
@@ -48,6 +61,38 @@ export interface AppConfig {
   trustProxy: string[];
   cookieSecure: CookieSecure;
   publicOrigin: string | undefined;
+  oidc: OidcConfig | null;
+  abs: UpstreamConfig | null;
+  jellyfin: UpstreamConfig | null;
+  secretKey: string | undefined;
+  secretKeyFile: string;
+}
+
+export interface OidcConfig {
+  issuer: string;
+  clientId: string;
+  clientSecretFile: string;
+  redirectUri: string;
+}
+
+export interface UpstreamConfig {
+  url: string;
+  keyFile: string;
+}
+
+function required<T>(value: T | undefined, name: string, because: string): T {
+  if (value === undefined) throw new Error(`${name} is required ${because}`);
+  return value;
+}
+
+function upstream(
+  url: string | undefined,
+  keyFile: string | undefined,
+  keyName: string,
+  urlName: string,
+) {
+  if (url === undefined) return null;
+  return { url, keyFile: required(keyFile, keyName, `with ${urlName}`) };
 }
 
 /** Fails fast at boot: a server started with a malformed environment should not start at all. */
@@ -61,5 +106,32 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     trustProxy: parsed.TRUST_PROXY,
     cookieSecure: parsed.COOKIE_SECURE,
     publicOrigin: parsed.PUBLIC_ORIGIN,
+    oidc:
+      parsed.OIDC_ISSUER === undefined
+        ? null
+        : {
+            issuer: parsed.OIDC_ISSUER,
+            clientId: parsed.OIDC_CLIENT_ID,
+            clientSecretFile: required(
+              parsed.OIDC_CLIENT_SECRET_FILE,
+              'OIDC_CLIENT_SECRET_FILE',
+              'with OIDC_ISSUER',
+            ),
+            redirectUri: `${required(parsed.PUBLIC_ORIGIN, 'PUBLIC_ORIGIN', 'with OIDC_ISSUER')}/auth/callback`,
+          },
+    abs: upstream(
+      parsed.ABS_URL,
+      parsed.ABS_PROVISION_KEY_FILE,
+      'ABS_PROVISION_KEY_FILE',
+      'ABS_URL',
+    ),
+    jellyfin: upstream(
+      parsed.JELLYFIN_URL,
+      parsed.JELLYFIN_API_KEY_FILE,
+      'JELLYFIN_API_KEY_FILE',
+      'JELLYFIN_URL',
+    ),
+    secretKey: parsed.SECRET_KEY,
+    secretKeyFile: parsed.SECRET_KEY_FILE ?? join(parsed.DATA_DIR, 'secret.key'),
   };
 }

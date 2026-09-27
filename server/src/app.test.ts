@@ -119,3 +119,53 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PORT: 'eighty' })).toThrow();
   });
 });
+
+describe('[M0.sso/b] loadConfig for the sign-on and the upstreams', () => {
+  const oidc = {
+    OIDC_ISSUER: 'https://upstream.invalid',
+    OIDC_CLIENT_SECRET_FILE: '/run/secrets/oidc',
+    PUBLIC_ORIGIN: 'https://app.upstream.invalid',
+  };
+
+  it('has no sign-on unless an issuer is given, and keeps the upstream token key in DATA_DIR', () => {
+    const config = loadConfig({ DATA_DIR: '/data' });
+    expect(config.oidc).toBeNull();
+    expect(config.secretKeyFile).toBe('/data/secret.key');
+  });
+
+  it('derives the redirect URI from PUBLIC_ORIGIN, with the client id auralis by default', () => {
+    expect(loadConfig(oidc).oidc).toEqual({
+      issuer: 'https://upstream.invalid',
+      clientId: 'auralis',
+      clientSecretFile: '/run/secrets/oidc',
+      redirectUri: 'https://app.upstream.invalid/auth/callback',
+    });
+  });
+
+  it('refuses a sign-on without PUBLIC_ORIGIN or without the client secret file', () => {
+    expect(() => loadConfig({ ...oidc, PUBLIC_ORIGIN: undefined })).toThrow(/PUBLIC_ORIGIN/);
+    expect(() => loadConfig({ ...oidc, OIDC_CLIENT_SECRET_FILE: undefined })).toThrow(
+      /OIDC_CLIENT_SECRET_FILE/,
+    );
+  });
+
+  it('reads each upstream with the file its key is in', () => {
+    const config = loadConfig({
+      ABS_URL: 'http://upstream.invalid:13378',
+      ABS_PROVISION_KEY_FILE: '/run/secrets/abs',
+      JELLYFIN_URL: 'http://upstream.invalid:8096',
+      JELLYFIN_API_KEY_FILE: '/run/secrets/jellyfin',
+    });
+    expect(config.abs).toEqual({
+      url: 'http://upstream.invalid:13378',
+      keyFile: '/run/secrets/abs',
+    });
+    expect(config.jellyfin).toEqual({
+      url: 'http://upstream.invalid:8096',
+      keyFile: '/run/secrets/jellyfin',
+    });
+    expect(() => loadConfig({ ABS_URL: 'http://upstream.invalid:13378' })).toThrow(
+      /ABS_PROVISION_KEY_FILE/,
+    );
+  });
+});
