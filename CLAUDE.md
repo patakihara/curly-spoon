@@ -31,7 +31,8 @@ standing instructions for every Claude session in this repo.
   that changes what she gets, a name, anything published beyond these machines, anything
   destructive or irreversible, and something only she can physically do. Each has `kind:`
   and `default:` lines. Work goes ahead on the default; only irreversible or outward-facing
-  actions wait for her answer.
+  actions wait for her answer. When an item lands in the outbox, send her a push notification
+  (`PushNotification`) naming it and its default.
 - Every other call is yours. Make it, and say how you checked (live, recording, code).
 
 ## No scars
