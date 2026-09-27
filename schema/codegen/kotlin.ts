@@ -8,6 +8,9 @@ interface SchemaObject {
   items?: SchemaObject;
   properties?: Record<string, SchemaObject>;
   required?: string[];
+  allOf?: SchemaObject[];
+  anyOf?: SchemaObject[];
+  oneOf?: SchemaObject[];
 }
 
 export interface OpenApiDocument {
@@ -47,6 +50,24 @@ const KOTLIN_KEYWORDS = new Set([
 const PROPERTY_NAME = /^[a-z][A-Za-z0-9]*$/;
 const TYPE_NAME = /^[A-Z][A-Za-z0-9]*$/;
 
+/** A companion that only says "or null", as zod emits beside a `$ref` for `.nullable()`. */
+function isNullCompanion(schema: SchemaObject): boolean {
+  if (Object.keys(schema).some((key) => key !== 'type')) return false;
+  const types = Array.isArray(schema.type) ? schema.type : [schema.type];
+  return types.includes('null') && types.filter((t) => t !== 'null').length <= 1;
+}
+
+/** The `$ref` of a composition that is exactly one reference plus a null type, else undefined. */
+function nullableRef(schema: SchemaObject): SchemaObject | undefined {
+  const keys = Object.keys(schema);
+  if (keys.length !== 1) return undefined;
+  const parts = schema.allOf ?? schema.anyOf ?? schema.oneOf;
+  if (parts === undefined || parts.length !== 2) return undefined;
+  const refs = parts.filter((part) => part.$ref !== undefined && Object.keys(part).length === 1);
+  const nulls = parts.filter(isNullCompanion);
+  return refs.length === 1 && nulls.length === 1 ? refs[0] : undefined;
+}
+
 const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function enumConstant(value: string, where: string): string {
@@ -75,14 +96,20 @@ function enumClass(name: string, values: unknown[], where: string): string {
 export function generateKotlin(doc: OpenApiDocument, packageName: string): string {
   const schemas = doc.components?.schemas ?? {};
   const blocks: string[] = [];
+  const classNames = new Set(Object.keys(schemas));
   let usesSerialName = false;
 
-  /** The Kotlin type for one schema; an inline enum becomes the class `<Owner><Property>`. */
+  /**
+   * The Kotlin type for one schema; an inline enum becomes the class `<Owner><Property>`, which
+   * must not already name a component or another inline enum.
+   */
   function typeOf(
     schema: SchemaObject,
     owner: string,
     where: string,
   ): { type: string; nullable: boolean } {
+    const ref = nullableRef(schema);
+    if (ref !== undefined) return { type: typeOf(ref, owner, where).type, nullable: true };
     if (schema.$ref !== undefined) {
       const name = schema.$ref.replace(/^#\/components\/schemas\//, '');
       if (name === schema.$ref || !(name in schemas)) {
@@ -102,6 +129,10 @@ export function generateKotlin(doc: OpenApiDocument, packageName: string): strin
     const [type] = nonNull;
     if (schema.enum !== undefined) {
       if (type !== 'string') throw new Error(`${where}: only string enums are supported`);
+      if (classNames.has(owner)) {
+        throw new Error(`${where}: the inline enum's class name ${owner} is already taken`);
+      }
+      classNames.add(owner);
       blocks.push(enumClass(owner, schema.enum, where));
       usesSerialName = true;
       return { type: owner, nullable };
@@ -114,7 +145,7 @@ export function generateKotlin(doc: OpenApiDocument, packageName: string): strin
       case 'number':
         return { type: 'Double', nullable };
       case 'integer':
-        return { type: schema.format === 'int64' ? 'Long' : 'Int', nullable };
+        return { type: schema.format === 'int32' ? 'Int' : 'Long', nullable };
       case 'array': {
         if (schema.items === undefined) throw new Error(`${where}: array without items`);
         const item = typeOf(schema.items, `${owner}Item`, `${where}[]`);

@@ -27,10 +27,90 @@ describe('the Kotlin generator', () => {
       PACKAGE,
     );
     expect(kotlin).toContain('    val name: String,\n');
-    expect(kotlin).toContain('    val count: Int? = null,\n');
+    expect(kotlin).toContain('    val count: Long? = null,\n');
     expect(kotlin).toContain('    val note: String?,\n');
     expect(kotlin).toContain('    val size: Long,\n');
     expect(kotlin).toContain('    val tags: List<String>,\n');
+  });
+
+  it('maps an integer to Long, and to Int only for format int32', () => {
+    const kotlin = generateKotlin(
+      withHealth(
+        {
+          plain: { type: 'integer' },
+          wide: { type: 'integer', format: 'int64' },
+          narrow: { type: 'integer', format: 'int32' },
+        },
+        ['plain', 'wide', 'narrow'],
+      ),
+      PACKAGE,
+    );
+    expect(kotlin).toContain('    val plain: Long,\n');
+    expect(kotlin).toContain('    val wide: Long,\n');
+    expect(kotlin).toContain('    val narrow: Int,\n');
+  });
+
+  it('maps a nullable reference, as zod emits it, to the referenced type made nullable', () => {
+    const ref = { $ref: '#/components/schemas/Chapter' };
+    const kotlin = generateKotlin(
+      {
+        components: {
+          schemas: {
+            Chapter: { type: 'object', properties: { title: { type: 'string' } } },
+            Kind: { type: 'string', enum: ['book'] },
+            Book: {
+              type: 'object',
+              properties: {
+                current: { allOf: [ref, { type: ['object', 'null'] }] },
+                next: { allOf: [ref, { type: ['object', 'null'] }] },
+                previous: { anyOf: [ref, { type: 'null' }] },
+                first: { oneOf: [{ type: 'null' }, ref] },
+                kind: {
+                  allOf: [{ $ref: '#/components/schemas/Kind' }, { type: ['string', 'null'] }],
+                },
+              },
+              required: ['current', 'previous', 'first', 'kind'],
+            },
+          },
+        },
+      },
+      PACKAGE,
+    );
+    expect(kotlin).toContain('    val current: Chapter?,\n');
+    expect(kotlin).toContain('    val next: Chapter? = null,\n');
+    expect(kotlin).toContain('    val previous: Chapter?,\n');
+    expect(kotlin).toContain('    val first: Chapter?,\n');
+    expect(kotlin).toContain('    val kind: Kind?,\n');
+  });
+
+  it('refuses an inline enum whose name another class already has', () => {
+    const status = { type: 'string', enum: ['ok'] };
+    const clashes: OpenApiDocument[] = [
+      {
+        components: {
+          schemas: {
+            Health: { type: 'object', properties: { status }, required: ['status'] },
+            HealthStatus: { type: 'string', enum: ['up'] },
+          },
+        },
+      },
+      {
+        components: {
+          schemas: {
+            Health: {
+              type: 'object',
+              properties: { status: { type: 'array', items: status }, statusItem: status },
+            },
+          },
+        },
+      },
+    ];
+    expect(() => generateKotlin(clashes[0]!, PACKAGE)).toThrow(
+      /Health\.status: the inline enum's class name HealthStatus is already taken/,
+    );
+    expect(() => generateKotlin(clashes[1]!, PACKAGE)).toThrow(
+      /Health\.statusItem: the inline enum's class name HealthStatusItem is already taken/,
+    );
   });
 
   it('names an inline enum after its object and property', () => {
@@ -88,6 +168,17 @@ describe('the Kotlin generator', () => {
       { class: { type: 'string' } },
       { nested: { type: 'object', properties: { a: { type: 'string' } } } },
       { other: { $ref: '#/components/schemas/Missing' } },
+      { mixed: { allOf: [{ $ref: '#/components/schemas/HealthResponse' }, { type: 'object' }] } },
+      { both: { anyOf: [{ type: 'string' }, { type: 'null' }] } },
+      {
+        two: {
+          oneOf: [
+            { $ref: '#/components/schemas/HealthResponse' },
+            { $ref: '#/components/schemas/HealthResponse' },
+            { type: 'null' },
+          ],
+        },
+      },
     ];
     for (const properties of shapes) {
       expect(() => generateKotlin(withHealth(properties), PACKAGE)).toThrow(/HealthResponse\./);
