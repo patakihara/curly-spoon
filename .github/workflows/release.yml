@@ -3,7 +3,7 @@
 # Watchtower keeps auto-updating from that tag exactly as it does today; nothing here changes
 # what `:latest` means or how it gets written. This workflow is a second, slower channel for
 # anyone who wants to pin a specific, named version instead of riding continuous deployment —
-# see docs/SELF_HOSTING.md's "Release channels" section for who should pick which.
+# see README.md for how to run the image.
 name: Release
 
 # Tags only, never a branch push and never a pull_request — a `v*` tag is a deliberate act
@@ -194,7 +194,7 @@ jobs:
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
 
       - name: Build and test
-        working-directory: apps/android
+        working-directory: android
         env:
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -209,7 +209,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: auralis-release-apk
-          path: apps/android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -265,8 +265,8 @@ jobs:
             ghcr.io/patakihara/auralis:${{ needs.validate-version.outputs.version }}
             ```
 
-            Also tagged `:stable`. See `docs/SELF_HOSTING.md`'s "Release channels" section for
-            how this differs from `:latest`.
+            Also tagged `:stable`, a pinned alternative to `:latest`. See `README.md` for how to
+            run the image.
 
             ## Android APK
 

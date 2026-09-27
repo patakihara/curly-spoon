@@ -4,15 +4,17 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
+    // ESLint's flat config ignores only node_modules and .git by default. The whole-repo
+    // pre-push hook lints `.`, so anything vendored, generated or checked out elsewhere must be
+    // listed here or it gets linted.
     ignores: [
       '**/dist/**',
       '**/build/**',
       '**/coverage/**',
       '**/node_modules/**',
-      '**/playwright-report/**',
-      '**/test-results/**',
-      'apps/android/**',
+      'android/**',
       'design/sonora/**',
+      '.claude/worktrees/**',
     ],
   },
   js.configs.recommended,
@@ -32,8 +34,6 @@ export default tseslint.config(
     },
   },
   {
-    // Build-time scripts run under Node, not in a browser, and printing progress
-    // is their whole point — so they get Node globals and an unrestricted console.
     files: ['**/scripts/**/*.{js,mjs,cjs,ts}'],
     languageOptions: {
       globals: {

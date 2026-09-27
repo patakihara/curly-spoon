@@ -2,15 +2,8 @@ pnpm-lock.yaml
 dist/
 build/
 coverage/
-playwright-report/
-test-results/
-apps/android/
-
-# Vendored upstream sources — reformatting them destroys the one property that makes
-# them worth vendoring: they can be diffed against a fresh pull when the design is
-# revised. The pre-commit hook auto-fixed and re-staged these once already, silently
-# turning a "byte-for-byte" copy into a reflowed one.
-docs/design/sonora/
+android/
+.claude/worktrees/
 
 # Sonora, imported with its history via git subtree. Its own conventions govern it;
 # reformatting would make every file diverge from the history it arrived with.

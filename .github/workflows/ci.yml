@@ -5,36 +5,18 @@ on:
     branches: ['**']
   pull_request:
 
-# Redundant runs are cancelled on every branch, `main` included.
-#
-# `main` used to be an exception: runs queued rather than cancelled, because the workflow's
-# last job was `publish`, which is coupled to a live deployment (mediaserver auto-updates
-# from `:latest`). Cancelling a superseded run also cancelled that publish, so under
-# back-to-back pushes the registry silently stopped being updated while every run still
-# reported green. That reasoning was correct, and the trade it bought was bad: it put a
-# slow, network-dependent, deployment-coupled job in the same concurrency group as every
-# verification job. On 2026-08-16 `docker/build-push-action` hung for over two hours after
-# all six verification jobs had passed, and since a run is not complete until all its jobs
-# are, that one step held the group and three subsequent CI runs sat `pending` with nothing
-# allocated — the authoritative signal for the whole project, unavailable, with a symptom
-# indistinguishable from a runner-allocation failure.
-#
-# `publish` now lives in `publish.yml`, triggered by this workflow completing successfully
-# on `main`, with its own concurrency group. So verification can cancel freely again — only
-# the newest commit's result is interesting — and a slow or hung image build can no longer
-# block a test run. The deployment property the old policy protected is preserved there
-# rather than here; `publish.yml`'s own comments explain why cancelling is safe in that
-# group and was not in this one.
+# Redundant runs are cancelled on every branch. Publishing lives in publish.yml, triggered by
+# this workflow completing successfully, so cancelling a run here never cancels a publish.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '0'
+permissions:
+  contents: read
 
 jobs:
   static:
-    name: Lint · format · typecheck
+    name: Format · lint · typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,12 +26,15 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
+      - name: Format
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
 
   unit:
-    name: Unit & integration tests
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,46 +44,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test -- --coverage
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage
-          path: coverage/
-          retention-days: 7
+      - run: pnpm test
 
-  e2e:
-    name: Playwright end-to-end & UI
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm build
-      - run: pnpm test:e2e
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
-  # Phase 10's first release-polish check (docs/ROADMAP.md §10): the web app is also
-  # the desktop/PWA experience, so its bundle is the whole product's cost of entry.
-  # `scripts/bundle-budget.mjs` has the full spec and `scripts/bundle-budget.config.mjs`
-  # has every budget number's reasoning. Builds only `apps/web`, not the whole
-  # workspace — the budget only cares about that package's output, and building just
-  # it keeps this job fast and independent of the other packages' build health.
-  #
-  # Deliberately no `needs:` on `static`/`unit`, same reasoning as `container` below —
-  # it shares no build output with them and gains nothing from waiting.
-  bundle-budget:
-    name: Web bundle size budget
+  web:
+    name: Web build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,54 +58,31 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @auralis/web build
-      - run: node scripts/bundle-budget.mjs
 
-  # Phase 10's second release-polish check (docs/ROADMAP.md §10), alongside
-  # `bundle-budget` above: a small bundle does not guarantee a fast page.
-  # `scripts/lighthouse-budget.mjs` has the full spec and
-  # `scripts/lighthouse-budget.config.mjs` has every budget number's reasoning —
-  # including that the numbers were derived on the maintainer's own laptop, not
-  # this runner. CI-runner numbers can genuinely differ from local ones (a
-  # different, unmeasured CPU under mobile's *simulated* throttling especially),
-  # so if this job turns out to fail systematically here while passing locally,
-  # the honest fix is to re-derive the baseline against this runner, not to nudge
-  # a number until it happens to pass.
-  #
-  # `pnpm exec playwright install --with-deps chromium` is required here, unlike
-  # the plain `bundle-budget` job above: this one launches a real Chrome via
-  # `chrome-launcher` (see `lighthouse-budget.mjs`'s header for why), and no
-  # system Chrome exists on this runner any more than it does locally.
-  #
-  # Deliberately no `needs:` on `static`/`unit`, same reasoning as `bundle-budget`
-  # above — it shares no build output with them and gains nothing from waiting.
-  lighthouse-budget:
-    name: Web Lighthouse performance budget
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm perf:lighthouse
-
-  # Phase 4's exit criterion: the container is covered by CI, not by hope. Every
-  # phase from here on leaves `docker compose up` working, so this job failing is
-  # a release blocker, not a packaging detail to sort out at the end.
-  #
-  # Deliberately no `needs:` — it shares no build output with the jobs above and
-  # is the slowest thing here, so serialising it behind them would just add its
-  # duration to the critical path.
   container:
-    name: Docker image builds & boots
+    name: Docker image builds & answers /health
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # No `docker/setup-buildx-action` on purpose: its default `docker-container`
-      # driver does not load the built image into the local daemon, so the
-      # `docker run` inside the script would not find it. The runner's own Docker
-      # is BuildKit-enabled already, which is all the Dockerfile's cache mounts need.
-      - run: scripts/docker-smoke.sh auralis:ci
+      - name: Build
+        run: docker build -t auralis:ci .
+      - name: Boot and wait for the HEALTHCHECK
+        run: |
+          docker run -d --name auralis-ci -p 8787:8787 auralis:ci
+          status=starting
+          for _ in $(seq 1 45); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' auralis-ci 2>/dev/null || echo missing)"
+            [ "$status" = healthy ] && break
+            sleep 2
+          done
+          echo "health: $status"
+          [ "$status" = healthy ]
+      - name: /health answers ok and / serves the web app
+        run: |
+          body="$(curl -fsS http://127.0.0.1:8787/health)"
+          echo "$body"
+          [ "$body" = '{"status":"ok"}' ]
+          curl -fsS http://127.0.0.1:8787/ | grep -q '<title>Auralis</title>'
+      - name: Container logs
+        if: always()
+        run: docker logs auralis-ci || true

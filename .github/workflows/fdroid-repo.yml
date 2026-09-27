@@ -2,8 +2,7 @@
 # user can add it to Droid-ify as a custom repo — see `docs/FDROID_REPO.md` for what that
 # means and what the user has to do by hand first.
 #
-# Deliberately NOT IzzyOnDroid and NOT official F-Droid: `docs/HANDOVER.md`'s phase 11 entry
-# and `docs/research/FDROID_DISTRIBUTION.md` §8 record why IzzyOnDroid is closed (its
+# Deliberately NOT IzzyOnDroid and NOT official F-Droid: IzzyOnDroid is closed (its
 # inclusion policy opposes AI-authored apps) and official F-Droid was never pursued. This is
 # a *binary* repo — it indexes the same release-signed APK `release.yml` builds (the app
 # signing key, `ANDROID_KEYSTORE_*`, not this file's own `FDROID_REPO_*` repo-index key — see
@@ -170,7 +169,7 @@ jobs:
       # an install from this F-Droid repo updates in place across the app's other release
       # channel rather than certificate-conflicting with it.
       - name: Build versioned release APK
-        working-directory: apps/android
+        working-directory: android
         env:
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -188,7 +187,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: fdroid-apk
-          path: apps/android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -258,8 +257,8 @@ jobs:
           else
             git log --pretty='format:- %s' "${prev_tag}..${tag}" >> "$out"
           fi
-          # Fastlane/F-Droid changelog convention caps entries at 500 characters (see
-          # docs/research/FDROID_DISTRIBUTION.md §6) — truncate rather than let a large
+          # Fastlane/F-Droid changelog convention caps entries at 500 characters, so
+          # truncate rather than let a large
           # release produce a file the client won't render in full anyway.
           head -c 500 "$out" > "$out.trunc" && mv "$out.trunc" "$out"
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colour and type are applied in Compose. This XML theme only removes the system action
+         bar. It is a platform theme because androidx.compose.material3 ships no XML styles. -->
+    <style name="Theme.Auralis" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

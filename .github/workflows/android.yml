@@ -1,5 +1,5 @@
 # For now this is the ONLY place Android gets compiled: the development machine has no JDK,
-# no Android SDK and no Gradle installed, so `apps/android` was written blind and a red run
+# no Android SDK and no Gradle installed, so `android` was written blind and a red run
 # here is the first real signal. Treat it as such.
 #
 # Note the reason is "not installed", not "cannot be installed". An earlier version of this
@@ -42,13 +42,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build and test
-        working-directory: apps/android
-        run: ./gradlew test assembleDebug
+        working-directory: android
+        run: ./gradlew --no-build-cache --rerun-tasks test assembleDebug
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: auralis-debug-apk
-          path: apps/android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 14
           if-no-files-found: ignore

@@ -2,64 +2,36 @@ node_modules/
 dist/
 build/
 coverage/
-.turbo/
 *.tsbuildinfo
 
-# test output
-playwright-report/
-test-results/
-blob-report/
-.playwright/
-# A signed-in browser state, written by e2e/app/onboarding.spec.ts for the rest
-# of the suite. Regenerated every run; committing it would commit a session cookie.
-e2e/.auth/
-
-# runtime data — anchored to apps/server specifically: a bare `data/` matches any
-# directory named `data` anywhere in the tree, which silently swallowed the Android
-# app's `net.develivarr.auralis.data` package (phase 7 wave A) until this was caught.
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
-apps/server/data/
 .env
 .env.*
 !.env.example
 
-# Claude Code worktrees live inside the repo and git does not auto-ignore a
-# nested worktree — untracked, it reads as a mountain of phantom work.
+# Claude Code worktrees live inside the repo and git does not auto-ignore a nested worktree.
 .claude/worktrees/
-
-# Personal, per-checkout Claude Code overrides — Claude Code's own convention
-# for local settings not meant to be committed to this public repo (unlike
-# .claude/settings.json, which is team-visible policy).
+# Per-checkout Claude Code overrides; .claude/settings.json is the shared policy.
 .claude/settings.local.json
 
-# editors / os
 .DS_Store
 .idea/
 .vscode/*
 !.vscode/extensions.json
 
 # android
-apps/android/.gradle/
-apps/android/local.properties
-apps/android/**/build/
-apps/android/.cxx/
-# Kotlin compile-daemon session files, written under the module root by any
-# Gradle invocation — never source, and noisy in `git status`.
-apps/android/.kotlin/
+android/.gradle/
+android/local.properties
+android/**/build/
+android/.cxx/
+android/.kotlin/
 *.keystore
 
-# python bytecode from scripts/
 __pycache__/
 *.pyc
 
-# The user's own Spotify screenshots, used as phase 12 design references.
-# Personal listening data; this repo is public. Kept on disk, out of git,
-# pending the user's decision -- see docs/ROADMAP.md §12.
-docs/research/spec-addendum/
-
-# Sonora's Spotify reference screenshots (Sofia's own listening data). Filtered out of
-# the imported design/sonora history and kept on disk only, because this repo is public.
+# Sofia's own Spotify screenshots: personal listening data, and this repo is public.
 design/sonora/assets/reference/spotify/

@@ -3,9 +3,9 @@
  *
  * `PackageManager` (and F-Droid's own repo index) require a strictly increasing
  * integer `versionCode` on every release, and Android refuses to "downgrade" a
- * device to a lower one. `docs/research/FDROID_DISTRIBUTION.md` §6 proposed
- * counting release tags rather than deriving the number from semver directly,
- * because semver can't be trusted to sort monotonically pre-1.0 (a `0.9.0`
+ * device to a lower one. The scheme counts release tags rather than deriving
+ * the number from semver directly, because semver can't be trusted to sort
+ * monotonically pre-1.0 (a `0.9.0`
  * after a `0.10.0` would sort backwards numerically). This module is that
  * counting scheme, implemented as a pure function so it can be unit tested
  * without a real git checkout or a real Gradle invocation.
@@ -20,7 +20,7 @@
  * Never used directly by Gradle (there is no Kotlin git-tag-walking in this
  * repo) — CI computes the versionCode once, from the full tag list, and
  * passes it to `./gradlew` as `-PauralisVersionCode=<n>` and
- * `-PauralisVersionName=<version>`. See `apps/android/app/build.gradle.kts`.
+ * `-PauralisVersionName=<version>`. See `android/app/build.gradle.kts`.
  */
 
 /** Parses `v1.2.3` or `v1.2.3-beta.1` into a comparable `[major, minor, patch]` triple.

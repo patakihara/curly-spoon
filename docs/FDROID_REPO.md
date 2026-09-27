@@ -1,7 +1,7 @@
 # Self-hosted F-Droid repository — operator's guide
 
 This is how to get Auralis into Droid-ify **without** IzzyOnDroid and **without** official
-F-Droid. `docs/HANDOVER.md`'s phase 11 entry has why: IzzyOnDroid's inclusion policy opposes
+F-Droid. Why: IzzyOnDroid's inclusion policy opposes
 apps "fully or in part created by generative AI tools," and Auralis was written almost
 entirely by Claude subagents, so that route is closed by their own stated policy. Official
 F-Droid needs a reproducible from-source build recipe this project has not pursued. A
@@ -73,8 +73,7 @@ commit to the repo.
 `.github/workflows/fdroid-repo.yml` will not run past its `check-secrets` job — it fails
 loudly and does nothing else — until all four secrets below exist. Nothing here can be
 automated further without generating a key on your behalf, which this implementation
-deliberately does not do (see `docs/research/FDROID_DISTRIBUTION.md` §5 on why a lost or
-CI-generated-and-forgotten key is unrecoverable).
+deliberately does not do: a lost or CI-generated-and-forgotten key is unrecoverable.
 
 1. **Generate the app signing key**, in an empty directory outside this git repo (never
    commit it — same rule as step 3 below):
@@ -110,7 +109,7 @@ CI-generated-and-forgotten key is unrecoverable).
 
    Until these four exist, `.github/workflows/release.yml`'s `check-secrets` job fails
    loudly and builds nothing — it does not fall back to publishing a debug-signed APK.
-   `apps/android/app/build.gradle.kts`'s own fallback (debug signing, with a build-time
+   `android/app/build.gradle.kts`'s own fallback (debug signing, with a build-time
    warning) exists only for local developer builds and `android.yml`'s branch/PR runs, which
    carry no secrets and were never meant to produce a distributable artifact.
 
@@ -284,9 +283,7 @@ Verified correct, so nobody re-derives it:
   string in GitHub Actions rather than erroring, so a name mismatch here fails silently.
 - The app-signing chain is sound end to end. `ANDROID_KEYSTORE_BASE64` (the secret) is
   `base64 -d`'d to a runner temp file, and the path is exported as `ANDROID_KEYSTORE_FILE`
-  (the env var), which is the exact name `build.gradle.kts` reads. **`docs/HANDOVER.md`
-  documents only the `_FILE` name and so appears to contradict `gh secret list` — it does
-  not; it elides the decode step.**
+  (the env var), which is the exact name `build.gradle.kts` reads.
 - Both `check-secrets` guards genuinely gate their builds via `needs:`, so nothing publishes
   before they pass.
 - The debug-signing fallback still cannot throw when secrets are absent.
@@ -347,9 +344,7 @@ wiring that was actually audited, then fix the stamp against the evidence of a r
   uninstall and lose all app state. Through Droid-ify that reads as a client bug rather than
   a signing problem. Anyone acting on the old paragraph would have concluded exactly the
   opposite of the truth.
-- **No IzzyOnDroid or official F-Droid submission.** Both remain closed per
-  `docs/HANDOVER.md`'s phase 11 entry; nothing here changes that.
-- **No launcher icon.** `docs/research/FDROID_DISTRIBUTION.md` §6 already flagged that
-  Auralis has no app icon at all (default Android icon only) — that's a separate, still-open
+- **No IzzyOnDroid or official F-Droid submission.** Both remain closed.
+- **No launcher icon.** Auralis has no app icon at all (default Android icon only) — that's a separate, still-open
   gap this workflow does not touch, and it will show up as a generic icon in Droid-ify's
   listing too.

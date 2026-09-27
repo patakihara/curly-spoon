@@ -1,0 +1,13 @@
+import { buildApp } from './app.js';
+import { loadConfig } from './config.js';
+
+const config = loadConfig();
+const app = await buildApp({ webDistDir: config.webDistDir, logger: true });
+
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.once(signal, () => {
+    void app.close().then(() => process.exit(0));
+  });
+}
+
+await app.listen({ port: config.port, host: config.host });

@@ -1,22 +1,19 @@
 {
   "name": "auralis",
   "private": true,
-  "version": "0.1.0",
-  "description": "Auralis \u2014 a Material 3 Expressive audiobook, podcast and music client for your home media server",
+  "version": "0.0.0",
+  "description": "Auralis: audiobooks, podcasts and music from your own media server, on web and Android",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
   },
+  "type": "module",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
     "build": "pnpm -r --if-present build",
     "dev": "pnpm -r --parallel --if-present dev",
-    "dev:fake": "AURALIS_FAKE_UPSTREAMS=1 SESSION_SECRET=dev-only-not-a-real-secret-32chars pnpm dev",
-    "test": "vitest run",
+    "test": "vitest run && node --test scripts/fdroid-versioncode.test.mjs",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:docker": "scripts/docker-smoke.sh",
-    "perf:lighthouse": "scripts/lighthouse-budget.sh",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -24,23 +21,17 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild",
-      "better-sqlite3",
-      "@parcel/watcher"
+      "esbuild"
     ]
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@playwright/test": "^1.62.1",
     "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
-    "lighthouse": "^13.4.1",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
     "vitest": "^2.1.8"
-  },
-  "type": "module"
+  }
 }

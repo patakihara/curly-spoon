@@ -1,6 +1,0 @@
-/*
- * Now a Mantine `ActionIcon`/`Button` wrapper (see Fab.tsx) — sizing, radius and the
- * `primary-container` surface are all applied inline in Fab.tsx (explicit pixel sizes
- * and a style override, respectively), so the hand-rolled `.m3-fab*` rules that used
- * to live here are gone.
- */

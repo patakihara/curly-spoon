@@ -1,9 +1,8 @@
 /**
  * Tests for the release-tag versionCode scheme in `fdroid-versioncode.mjs`.
  *
- * Uses Node's built-in test runner, not Vitest, for the same reason
- * `scripts/bundle-budget.test.mjs` does: this file lives under `scripts/`, outside
- * `vitest.config.ts`'s `include` globs (each workspace package's own `src/`).
+ * Uses Node's built-in test runner, not Vitest: this file lives under `scripts/`, outside
+ * `vitest.config.ts`'s `include` globs (`server/src` and `web/src`).
  *
  * Run directly:
  *   node --test scripts/fdroid-versioncode.test.mjs
