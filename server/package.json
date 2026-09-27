@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "record": "tsx src/adapters/record-cli.ts"
   },
   "dependencies": {
     "@auralis/schema": "workspace:*",
