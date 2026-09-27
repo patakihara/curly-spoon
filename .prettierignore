@@ -18,3 +18,7 @@ scripts/plan/test-fixtures/
 
 # Written by `pnpm gen`; CI compares them byte for byte, so no formatter touches them.
 generated/
+
+# Recordings are byte-for-byte what the recorder writes; prettier would reflow short arrays and
+# turn every re-record into a formatting diff.
+server/src/adapters/*/recordings/
