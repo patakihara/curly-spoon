@@ -59,3 +59,7 @@ __pycache__/
 # Personal listening data; this repo is public. Kept on disk, out of git,
 # pending the user's decision -- see docs/ROADMAP.md §12.
 docs/research/spec-addendum/
+
+# Sonora's Spotify reference screenshots (Sofia's own listening data). Filtered out of
+# the imported design/sonora history and kept on disk only, because this repo is public.
+design/sonora/assets/reference/spotify/

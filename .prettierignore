@@ -11,3 +11,7 @@ apps/android/
 # revised. The pre-commit hook auto-fixed and re-staged these once already, silently
 # turning a "byte-for-byte" copy into a reflowed one.
 docs/design/sonora/
+
+# Sonora, imported with its history via git subtree. Its own conventions govern it;
+# reformatting would make every file diverge from the history it arrived with.
+design/sonora/

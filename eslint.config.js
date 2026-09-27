@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/playwright-report/**',
       '**/test-results/**',
       'apps/android/**',
+      'design/sonora/**',
     ],
   },
   js.configs.recommended,
