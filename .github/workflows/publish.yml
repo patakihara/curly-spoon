@@ -83,9 +83,8 @@ jobs:
       # available on this account.
       #
       # `docker/build-push-action` writes both architectures under one tag as a multi-arch
-      # manifest list, so `ghcr.io/patakihara/auralis:latest` keeps meaning exactly what it
-      # meant before — a client pulls the image matching its own architecture. Nothing in
-      # `compose.yaml`, `docs/SELF_HOSTING.md` or mediaserver's Watchtower setup changes.
+      # manifest list, so a client pulling `ghcr.io/patakihara/auralis:latest` gets the image
+      # matching its own architecture.
       #
       # Both tags hardcode the lowercase `patakihara/auralis` path rather than interpolating
       # `github.repository_owner` — GHCR rejects uppercase, and the owner's account casing
