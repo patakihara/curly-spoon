@@ -35,7 +35,7 @@ const SIGNOFF = /^Sofia['’]s sign-off/;
 const FENCE = /^\s*(```|~~~)/;
 
 export const DIRECTIVE_OPEN =
-  /^::: (hero|grid g2|grid g3|card|callout warn|callout|lede|cap|small muted)$/;
+  /^::: (hero|grid g2|grid g3|card|callout warn|callout|lede|cap|small muted|small)$/;
 export const DIRECTIVE_DIAGRAM = /^::: diagram ([a-z0-9-]+)$/;
 const DIRECTIVE_CLOSE = /^:::$/;
 

@@ -68,17 +68,42 @@ function checkRawHtml(lines, bodyLine, file, errors) {
   }
 }
 
-function checkDatedNotes(lines, bodyLine, file, errors) {
+// A line that opens its own block: a heading, a list item, a table row, a quote, a directive.
+const BLOCK_START = /^\s*(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|\||>|:::)/;
+const blank = (m) => ' '.repeat(m.length);
+
+/**
+ * The unfenced paragraphs, each `{ text, starts }`: its lines joined by single spaces, and the
+ * offset in `text` where each line begins, so a match anywhere maps back to its line.
+ */
+function paragraphs(lines) {
+  const out = [];
+  let current = null;
   for (const { text, index, fenced } of markdownLines(lines)) {
-    if (fenced) continue;
+    if (fenced || text.trim() === '' || BLOCK_START.test(text)) current = null;
+    if (fenced || text.trim() === '') continue;
+    if (current) {
+      current.starts.push({ offset: current.text.length + 1, index });
+      current.text += ` ${text}`;
+    } else {
+      out.push((current = { text, starts: [{ offset: 0, index }] }));
+    }
+  }
+  return out;
+}
+
+function checkDatedNotes(lines, bodyLine, file, errors) {
+  for (const { text, starts } of paragraphs(lines)) {
+    // Blanking the exemptions in place keeps every match at its own offset.
     const stripped = text
-      .replace(COMMIT_CITATION, ' ')
-      .replace(CODE_SPAN, ' ')
-      .replace(QUOTED, ' ');
+      .replace(COMMIT_CITATION, blank)
+      .replace(CODE_SPAN, blank)
+      .replace(QUOTED, blank);
     for (const pattern of DATED) {
-      for (const [match] of stripped.matchAll(pattern)) {
+      for (const m of stripped.matchAll(pattern)) {
+        const { index } = starts.findLast((s) => s.offset <= m.index);
         errors.push(
-          at(file, bodyLine + index, `dated note "${match}"; state the fact, not its history`),
+          at(file, bodyLine + index, `dated note "${m[0]}"; state the fact, not its history`),
         );
       }
     }

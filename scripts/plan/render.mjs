@@ -31,8 +31,26 @@ const marked = new Marked({
     em({ tokens }) {
       return `<i>${this.parser.parseInline(tokens)}</i>`;
     },
+    // A body row's trailing empty cells fold into its last filled cell, as a colspan.
+    table(token) {
+      token.rows = token.rows.map(spanTrailingEmpty);
+      return false;
+    },
+    tablecell(token) {
+      if (!token.colspan) return false;
+      const type = token.header ? 'th' : 'td';
+      const align = token.align ? ` align="${token.align}"` : '';
+      return `<${type}${align} colspan="${token.colspan}">${this.parser.parseInline(token.tokens)}</${type}>\n`;
+    },
   },
 });
+
+function spanTrailingEmpty(row) {
+  let last = row.length - 1;
+  while (last > 0 && row[last].text.trim() === '') last--;
+  if (last === 0 || last === row.length - 1) return row;
+  return [...row.slice(0, last), { ...row[last], colspan: row.length - last }];
+}
 const esc = (s) =>
   String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -83,6 +101,8 @@ function renderNode(node, ctx, small) {
       return `<div class="${node.name}">\n${inner()}</div>\n`;
     case 'card':
       return `<div class="card">${renderNodes(node.children, ctx, { small: true })}</div>\n`;
+    case 'small':
+      return renderNodes(node.children, ctx, { small: true });
     case 'callout':
     case 'callout warn': {
       const single = onlyParagraph(node);

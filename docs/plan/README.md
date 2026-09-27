@@ -41,11 +41,13 @@ nestable. `::: diagram <name>` stands alone with no body.
 | `::: grid g2`, `::: grid g3` | a two- or three-column grid |
 | `::: card` | a card; its top-level lists and paragraphs get `class="small"` |
 | `::: callout`, `::: callout warn` | a callout; a single paragraph is unwrapped |
+| `::: small` | no wrapper; its top-level lists and paragraphs get `class="small"` |
 | `::: lede`, `::: cap`, `::: small muted` | a paragraph with that class (a div if longer) |
 | `::: diagram <name>` | `diagrams/<name>.svg`, inlined |
 
 Raw HTML is limited to `<span class="pill t-lib|t-prog|t-req|t-err">…</span>`, and `<ul>`/`<li>`
-inside a table row for a cell that holds a list. A hard line break is a trailing `\`; `&nbsp;` works.
+inside a table row for a cell that holds a list. A table row whose trailing cells are empty
+renders its last filled cell with a `colspan` over them, so one value can span several columns. A hard line break is a trailing `\`; `&nbsp;` works.
 
 ## Items and criteria
 
@@ -73,9 +75,9 @@ _Done when:_ (a) Sofia's sign-off.
 
 ## How a criterion is checked
 
-- **Test criterion** `(x)` of `M1.gapless`: tests whose name carries its tag.
-  - JS/TS (vitest, node:test, Playwright): `[M1.gapless/x]` anywhere in the full test name.
-  - Kotlin/JVM: the method name starts `M1_gapless_x_`, e.g. `` fun `M1_gapless_b_second file follows first`() ``.
+- **Test criterion** `(x)` of `M1.play`: tests whose name carries its tag.
+  - JS/TS (vitest, node:test, Playwright): `[M1.play/x]` anywhere in the full test name.
+  - Kotlin/JVM: the method name starts `M1_play_x_`, e.g. `` fun `M1_play_d_second file follows first`() ``.
 - **Sign-off criterion**: an annotated tag `signoff/<ID>` (for example `signoff/M0.exit`),
   created only when Sofia says so, with her words as the message, and pushed.
 

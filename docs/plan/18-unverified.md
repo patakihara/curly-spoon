@@ -5,6 +5,7 @@ part: Delivery
 ---
 ## What this plan hasn't verified
 
+::: small
 - Sonora was read through its docs and component APIs. The 43 reference screenshots were read through their per-screen notes, not opened one by one.
 - Where audiobook previews come from (a retail sample URL keyed by ASIN) is to be confirmed at the start of M4.
 - Why Lidarr misses music: a month of its warning logs (indexer request limits and outages), its strict edition matching, and your experience of its catalogue (editions mixed together, albums missing). Its matching wasn't tested directly, and the rebuild doesn't use it. How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists is checked when music requests are built.
@@ -18,3 +19,4 @@ part: Delivery
 - Cutting SponsorBlock segments without re-encoding is only as precise as the audio's frame size (tens of milliseconds for YouTube's audio), which should be inaudible. Audiobookshelf picking up a re-cut file of an unstarted episode cleanly (new length, no stale progress) is to be tested with the first channel.
 - Where the Android signing keys are kept besides GitHub's secrets. If the app signing key were lost, the installed app could no longer update in place and would have to be reinstalled. A backup outside GitHub is checked before the first release.
 - Recommendation quality: measured by the held-out replay score on your own history once phase 1 runs, not predicted here. The embedding and audio models' speed on this box needs a benchmark.
+:::

@@ -187,6 +187,26 @@ test('next skips items in progress, and the exit counts only once every other it
   assert.deepEqual(withSignoff.next, { id: 'M0.exit', text: 'you sign in and it works.' });
 });
 
+test('next is nothing while every item but the exit is in flight: the exit waits for them', () => {
+  const { progress } = progressOf([check('M0.aa', 'a', 'passed')], {}, (root) => {
+    git(root, 'tag', '-d', 'signoff/M0.exit');
+    for (const id of ['bb', 'cc', 'dd']) git(root, 'branch', `plan/M0.${id}`);
+  });
+  const items = progress.milestones[0].items;
+  assert.deepEqual(
+    items.map((i) => [i.id, i.inProgress, i.status === 'done']),
+    [
+      ['M0.aa', true, false],
+      ['M0.bb', true, false],
+      ['M0.cc', true, false],
+      ['M0.dd', true, false],
+      ['M0.exit', false, false],
+    ],
+  );
+  assert.equal(progress.current, 'M0');
+  assert.equal(progress.next, null);
+});
+
 test('decisions are the newest Decision: lines, and sorted ideas the inbox files deleted with their Plan: line', () => {
   const { progress, commits } = progressOf();
   assert.deepEqual(

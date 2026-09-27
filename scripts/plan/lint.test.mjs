@@ -96,6 +96,7 @@ test('directives: only the closed set is allowed', () => {
     lintAfter(appendTo('01-flow.md', '\n::: aside\nx\n:::\n')),
     /unknown directive "::: aside"/,
   );
+  assert.deepEqual(lintAfter(appendTo('01-flow.md', '\n::: small\n- x\n:::\n')).errors, []);
 });
 
 test('directives: every block is closed and every close has a block', () => {
@@ -269,6 +270,23 @@ test('no dated notes: dates and history phrases fail', () => {
   );
 });
 
+test('no dated notes: a date split across two lines of one paragraph still fails', () => {
+  assertFails(
+    lintAfter(appendTo('01-flow.md', '\nThis changed on September 3,\n2026 for good.\n')),
+    /dated note "September 3, 2026"/,
+  );
+  assertFails(
+    lintAfter(appendTo('01-flow.md', '\nThe queue was changed\nto a list.\n')),
+    /dated note "was changed to"/,
+  );
+});
+
+test('no dated notes: a blank line or a new list item ends the paragraph', () => {
+  const ok =
+    '\nThe plan covers September 3,\n\n2026 is a year.\n\n- Step September 3,\n- 2026 again.\n';
+  assert.deepEqual(lintAfter(appendTo('01-flow.md', ok)).errors, []);
+});
+
 test('no dated notes: "previously" after an article describes a thing, not history', () => {
   const ok = '\nBack returns to the previously played item.\n';
   assert.deepEqual(lintAfter(appendTo('01-flow.md', ok)).errors, []);
@@ -285,6 +303,9 @@ test('no dated notes: code spans, quotes and commit citations are exempt', () =>
     'She said "as of today, it works".',
     'She said “previously it failed”.',
     'Based on `781efd4` (2026-08-21, the latest commit).',
+    '',
+    'She said "it changed on September 3,',
+    '2026, and stayed".',
     '',
   ].join('\n');
   assert.deepEqual(lintAfter(appendTo('01-flow.md', ok)).errors, []);

@@ -173,6 +173,31 @@ test('tables are wrapped for scrolling, and a table cell may hold a list', () =>
   assert.match(html, /<\/table>\n?<\/div>/);
 });
 
+test('a row whose trailing cells are empty spans its last filled cell over them', () => {
+  const table = [
+    '',
+    '| Job | A | B | C |',
+    '|---|---|---|---|',
+    '| Anywhere | all three |  |  |',
+    '| Middle |  | only B |  |',
+    '| Full | a | b | c |',
+    '',
+  ].join('\n');
+  const { html } = rendered((root) => edit(root, 'docs/plan/01-flow.md', (t) => t + table));
+  assert.match(html, /<tr>\n<td>Anywhere<\/td>\n<td colspan="3">all three<\/td>\n<\/tr>/);
+  assert.match(html, /<tr>\n<td>Middle<\/td>\n<td><\/td>\n<td colspan="2">only B<\/td>\n<\/tr>/);
+  assert.match(html, /<tr>\n<td>Full<\/td>\n<td>a<\/td>\n<td>b<\/td>\n<td>c<\/td>\n<\/tr>/);
+});
+
+test('::: small gives the lists and paragraphs inside it class="small"', () => {
+  const block = '\n::: small\n- one\n- two\n\nA note.\n:::\n';
+  const { html } = rendered((root) => edit(root, 'docs/plan/01-flow.md', (t) => t + block));
+  assert.match(
+    html,
+    /<ul class="small">\n<li>one<\/li>\n<li>two<\/li>\n<\/ul>\n<p class="small">A note\.<\/p>/,
+  );
+});
+
 test('milestones render as .ms blocks, with criteria coloured by status', () => {
   const { html } = rendered();
   assert.match(html, /<p>Each milestone is a slice that runs end to end\.<\/p>/);
