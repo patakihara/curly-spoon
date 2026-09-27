@@ -1,5 +1,7 @@
 /**
  * The Audiobookshelf API key script, with its database read, HTTP calls and files injected.
+ * The fake answers what ABS 2.36.1 answers (server/controllers/{ApiKey,User,Me}Controller.js):
+ * JSON bodies, or the plain text Express's `sendStatus` sends.
  * Run: node --test scripts/mediaserver/abs-api-key.test.mjs
  */
 import { test } from 'node:test';
@@ -15,14 +17,54 @@ const NEW_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJrZXlJZCI6ImsxIn0.sig';
 const b64url = (s) => Buffer.from(s).toString('base64url');
 const decode = (part) => JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
 
+/** ABS's `getDefaultPermissionsForUserType` (server/models/User.js), without the two arrays. */
+function defaultPermissions(type) {
+  const elevated = type === 'root' || type === 'admin';
+  return {
+    download: true,
+    update: elevated,
+    delete: type === 'root',
+    upload: elevated,
+    createEreader: elevated,
+    accessAllLibraries: true,
+    accessAllTags: true,
+    accessExplicitContent: elevated,
+    selectedTagsNotAccessible: false,
+  };
+}
+
+/** A user as `toOldJSONForBrowser` shows it, minimal. */
+function userJson({ id, username, type, isActive = true, permissions }) {
+  return {
+    id,
+    username,
+    email: null,
+    type,
+    token: '',
+    isActive,
+    isLocked: false,
+    lastSeen: null,
+    createdAt: NOW,
+    permissions: permissions ?? defaultPermissions(type),
+    librariesAccessible: [],
+    itemTagsSelected: [],
+    hasOpenIDLink: false,
+  };
+}
+
+const ROOT = userJson({ id: 'root-id', username: 'admin', type: 'root' });
+
 /** A fake world: the ABS database, its HTTP API, the key file and the two output streams. */
-function world({ keyFile, apiKeys = [], postStatus = 200 } = {}) {
+function world({ keyFile, keyFileMode, apiKeys = [], users = [ROOT], adminStatus = 200 } = {}) {
   const files = new Map(keyFile === undefined ? [] : [[KEY_FILE, keyFile]]);
-  const modes = new Map();
+  const modes = new Map(keyFile === undefined ? [] : [[KEY_FILE, keyFileMode ?? 0o600]]);
+  const fsOps = [];
   const dirs = [];
   const requests = [];
   const out = [];
   const err = [];
+  const userList = [...users];
+  const keyList = [...apiKeys];
   const exec = (cmd, args) => {
     assert.equal(cmd, 'sqlite3');
     assert.ok(args.includes('-readonly'), 'the database is only ever opened read-only');
@@ -31,27 +73,86 @@ function world({ keyFile, apiKeys = [], postStatus = 200 } = {}) {
     if (/FROM users/.test(sql)) return JSON.stringify([{ id: 'root-id', username: 'admin' }]);
     throw new Error(`unexpected sql ${sql}`);
   };
+  const json = (status, body) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    });
+  /** Express's `res.sendStatus`: the status text as a plain-text body. */
+  const sendStatus = (status) =>
+    new Response({ 200: 'OK', 400: 'Bad Request', 401: 'Unauthorized', 404: 'Not Found' }[status], {
+      status,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
   const fetch = async (url, init = {}) => {
     const method = init.method ?? 'GET';
     const body = init.body ? JSON.parse(init.body) : undefined;
     requests.push({ url, method, headers: init.headers ?? {}, body });
     const path = new URL(url).pathname;
-    const reply = (status, json) =>
-      new Response(JSON.stringify(json), {
-        status,
-        headers: { 'content-type': 'application/json' },
-      });
-    if (method === 'GET' && path === '/api/api-keys') return reply(200, { apiKeys });
+    const bearer = (init.headers?.authorization ?? '').replace(/^Bearer /, '');
+    const asAdmin = bearer !== NEW_KEY;
+    if (asAdmin && adminStatus !== 200) return sendStatus(adminStatus);
+
+    if (method === 'GET' && path === '/api/api-keys') return json(200, { apiKeys: keyList });
     if (method === 'POST' && path === '/api/api-keys') {
-      if (postStatus !== 200)
-        return reply(postStatus, { error: `bad token ${init.headers.authorization}` });
-      return reply(200, { apiKey: { id: 'k1', name: body.name, isActive: true, apiKey: NEW_KEY } });
+      if (typeof body?.name !== 'string' || typeof body?.userId !== 'string')
+        return sendStatus(400);
+      const owner = userList.find((u) => u.id === body.userId);
+      if (!owner) return sendStatus(400);
+      const created = {
+        id: 'k1',
+        name: body.name,
+        description: null,
+        expiresAt: body.expiresIn ? new Date(NOW + body.expiresIn * 1000).toISOString() : null,
+        lastUsedAt: null,
+        isActive: !!body.isActive,
+        permissions: {},
+        userId: owner.id,
+        createdByUserId: 'root-id',
+        user: { id: owner.id, username: owner.username, type: owner.type },
+      };
+      keyList.push(created);
+      return json(200, { apiKey: { apiKey: NEW_KEY, ...created } });
     }
-    if (method === 'DELETE' && path === '/api/api-keys/k1') return reply(200, {});
+    const keyMatch = /^\/api\/api-keys\/([^/]+)$/.exec(path);
+    if (method === 'DELETE' && keyMatch) {
+      const i = keyList.findIndex((k) => k.id === decodeURIComponent(keyMatch[1]));
+      if (i < 0) return sendStatus(404);
+      keyList.splice(i, 1);
+      return sendStatus(200);
+    }
+    if (method === 'GET' && path === '/api/users') return json(200, { users: userList });
+    if (method === 'POST' && path === '/api/users') {
+      if (typeof body?.username !== 'string' || typeof body?.password !== 'string') {
+        return new Response('Username and password are required', { status: 400 });
+      }
+      if (userList.some((u) => u.username === body.username)) {
+        return new Response('Username already taken', { status: 400 });
+      }
+      const type = body.type || 'user';
+      const permissions = { ...defaultPermissions(type) };
+      for (const [k, v] of Object.entries(body.permissions ?? {})) {
+        if (k in permissions && typeof v === 'boolean') permissions[k] = v;
+      }
+      const user = userJson({
+        id: 'auralis-id',
+        username: body.username,
+        type,
+        isActive: !!body.isActive,
+        permissions,
+      });
+      userList.push(user);
+      return json(200, { user });
+    }
+    if (method === 'GET' && path === '/api/me') {
+      const key = keyList.find((k) => k.id === 'k1');
+      const owner = userList.find((u) => u.id === key?.userId);
+      return owner ? json(200, owner) : sendStatus(401);
+    }
     if (method === 'GET' && path === '/api/libraries') {
-      return reply(200, { libraries: [{ id: 'l1', name: 'Books', mediaType: 'book' }] });
+      return json(200, { libraries: [{ id: 'l1', name: 'Books', mediaType: 'book' }] });
     }
-    return reply(404, {});
+    return sendStatus(404);
   };
   const fs = {
     readFileSync: (p) => {
@@ -59,11 +160,16 @@ function world({ keyFile, apiKeys = [], postStatus = 200 } = {}) {
       return files.get(p);
     },
     writeFileSync: (p, data, opts) => {
+      fsOps.push({ op: 'write', mode: modes.get(p) });
+      if (!files.has(p)) modes.set(p, opts?.mode);
       files.set(p, data);
-      modes.set(p, opts?.mode);
     },
     mkdirSync: (p, opts) => dirs.push({ p, mode: opts?.mode }),
-    chmodSync: (p, mode) => modes.set(p, mode),
+    chmodSync: (p, mode) => {
+      if (!files.has(p)) throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      fsOps.push({ op: 'chmod', mode });
+      modes.set(p, mode);
+    },
   };
   const deps = {
     exec,
@@ -75,8 +181,19 @@ function world({ keyFile, apiKeys = [], postStatus = 200 } = {}) {
     out: (l) => out.push(l),
     err: (l) => err.push(l),
   };
-  return { deps, files, modes, dirs, requests, out, err };
+  return { deps, files, modes, fsOps, dirs, requests, out, err, userList, keyList };
 }
+
+const AURALIS = userJson({
+  id: 'auralis-id',
+  username: 'auralis',
+  type: 'user',
+  permissions: {
+    ...defaultPermissions('user'),
+    download: false,
+    accessExplicitContent: true,
+  },
+});
 
 test('the admin token is an HS256 JWT that verifies with the secret and expires in five minutes', () => {
   const token = signAdminToken({
@@ -100,23 +217,89 @@ test('the admin token is an HS256 JWT that verifies with the secret and expires 
   assert.equal(b64url(JSON.stringify(decode(header))), header);
 });
 
-test('create posts name Auralis, the root user id and isActive true, and writes the key 0600', async () => {
+test('create makes a non-admin auralis user that can only listen, with a random password', async () => {
+  const w = world();
+  assert.equal(await run(['create'], w.deps), 0);
+  const post = w.requests.find((r) => r.method === 'POST' && r.url.endsWith('/api/users'));
+  assert.equal(post.url, 'http://127.0.0.1:13378/api/users');
+  const { password, ...rest } = post.body;
+  assert.equal(typeof password, 'string');
+  assert.ok(password.length >= 32, 'the password is long and random');
+  assert.deepEqual(rest, {
+    username: 'auralis',
+    type: 'user',
+    isActive: true,
+    permissions: {
+      download: false,
+      update: false,
+      delete: false,
+      upload: false,
+      createEreader: false,
+      accessAllLibraries: true,
+      accessAllTags: true,
+      accessExplicitContent: true,
+      selectedTagsNotAccessible: false,
+    },
+  });
+  const made = w.userList.find((u) => u.username === 'auralis');
+  assert.equal(made.type, 'user');
+  assert.equal(made.isActive, true);
+  const everything = [...w.out, ...w.err, ...w.files.values()].join('\n');
+  assert.ok(!everything.includes(password), 'the password is never printed or stored');
+});
+
+test('create posts the Auralis key for the auralis user, with no expiry, and writes it 0600', async () => {
   const w = world({ keyFile: 'JELLYFIN_API_KEY=jf\n' });
   assert.equal(await run(['create'], w.deps), 0);
-  const post = w.requests.find((r) => r.method === 'POST');
+  const post = w.requests.find((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys'));
   assert.equal(post.url, 'http://127.0.0.1:13378/api/api-keys');
-  assert.deepEqual(post.body, { name: 'Auralis', userId: 'root-id', isActive: true });
+  assert.deepEqual(post.body, { name: 'Auralis', userId: 'auralis-id', isActive: true });
   assert.match(post.headers.authorization, /^Bearer eyJ/);
+  assert.equal(w.keyList.at(-1).expiresAt, null);
   assert.equal(w.files.get(KEY_FILE), `JELLYFIN_API_KEY=jf\nABS_API_KEY=${NEW_KEY}\n`);
   assert.equal(w.modes.get(KEY_FILE), 0o600);
   assert.deepEqual(w.dirs, [{ p: '/home/test/.config/auralis', mode: 0o700 }]);
-  assert.deepEqual(w.out, ['created Audiobookshelf API key Auralis, id k1']);
+  assert.deepEqual(w.out, [
+    'created Audiobookshelf user auralis, id auralis-id',
+    'created Audiobookshelf API key Auralis for auralis, id k1',
+  ]);
+});
+
+test('create reuses an auralis user that already exists', async () => {
+  const w = world({ users: [ROOT, AURALIS] });
+  assert.equal(await run(['create'], w.deps), 0);
+  assert.ok(!w.requests.some((r) => r.method === 'POST' && r.url.endsWith('/api/users')));
+  const post = w.requests.find((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys'));
+  assert.equal(post.body.userId, 'auralis-id');
+  assert.equal(w.out[0], 'using the existing Audiobookshelf user auralis, id auralis-id');
+});
+
+test('create refuses an existing auralis user that is an admin or may change the library', async () => {
+  for (const user of [
+    { ...AURALIS, type: 'admin' },
+    { ...AURALIS, permissions: { ...AURALIS.permissions, delete: true } },
+    { ...AURALIS, isActive: false },
+  ]) {
+    const w = world({ users: [ROOT, user] });
+    assert.equal(await run(['create'], w.deps), 1);
+    assert.ok(!w.requests.some((r) => r.method === 'POST'), 'nothing is created');
+    assert.match(w.err.join('\n'), /user auralis exists but/);
+  }
 });
 
 test('create is the default command, and makes the key file when there is none', async () => {
   const w = world();
   assert.equal(await run([], w.deps), 0);
   assert.equal(w.files.get(KEY_FILE), `ABS_API_KEY=${NEW_KEY}\n`);
+});
+
+test('create tightens a key file with a loose mode before writing the key into it', async () => {
+  const w = world({ keyFile: 'JELLYFIN_API_KEY=jf\n', keyFileMode: 0o644 });
+  assert.equal(await run(['create'], w.deps), 0);
+  assert.deepEqual(w.fsOps[0], { op: 'chmod', mode: 0o600 });
+  const firstWrite = w.fsOps.find((o) => o.op === 'write');
+  assert.equal(firstWrite.mode, 0o600, 'the file is 0600 before the key is written');
+  assert.equal(w.modes.get(KEY_FILE), 0o600);
 });
 
 test('create refuses when the key file already has ABS_API_KEY or an active Auralis key exists', async () => {
@@ -132,41 +315,86 @@ test('create refuses when the key file already has ABS_API_KEY or an active Aura
   assert.equal(onServer.files.size, 0);
 });
 
-test('check reads the libraries with the stored key and expects Books', async () => {
-  const w = world({ keyFile: `ABS_API_KEY=${NEW_KEY}\n` });
-  assert.equal(await run(['check'], w.deps), 0);
-  const [req] = w.requests;
-  assert.equal(req.url, 'http://127.0.0.1:13378/api/libraries');
-  assert.equal(req.headers.authorization, `Bearer ${NEW_KEY}`);
-  assert.deepEqual(w.out, ['the Auralis key reads the libraries, Books included']);
+test('create explains a 401: the server signs with JWT_SECRET_KEY, not its tokenSecret', async () => {
+  const w = world({ adminStatus: 401 });
+  assert.equal(await run(['create'], w.deps), 1);
+  assert.match(w.err.join('\n'), /refused the signed admin token \(401\).*JWT_SECRET_KEY/);
+  assert.equal(w.files.size, 0);
 });
 
-test('revoke deletes the Auralis key and removes its line', async () => {
+test('check confirms the key authenticates as auralis, not an admin, and reads Books', async () => {
+  const w = world({
+    keyFile: `ABS_API_KEY=${NEW_KEY}\n`,
+    users: [ROOT, AURALIS],
+    apiKeys: [{ id: 'k1', name: 'Auralis', isActive: true, userId: 'auralis-id' }],
+  });
+  assert.equal(await run(['check'], w.deps), 0);
+  assert.deepEqual(
+    w.requests.map((r) => [r.url, r.headers.authorization]),
+    [
+      ['http://127.0.0.1:13378/api/me', `Bearer ${NEW_KEY}`],
+      ['http://127.0.0.1:13378/api/libraries', `Bearer ${NEW_KEY}`],
+    ],
+  );
+  assert.deepEqual(w.out, [
+    'the Auralis key authenticates as auralis, a user that is not an admin, and reads Books',
+  ]);
+});
+
+test('check fails when the key authenticates as someone else or as an admin', async () => {
+  for (const owner of [ROOT, { ...AURALIS, type: 'admin' }]) {
+    const w = world({
+      keyFile: `ABS_API_KEY=${NEW_KEY}\n`,
+      users: [owner],
+      apiKeys: [{ id: 'k1', name: 'Auralis', isActive: true, userId: owner.id }],
+    });
+    assert.equal(await run(['check'], w.deps), 1);
+    assert.match(w.err.join('\n'), /authenticates as/);
+  }
+});
+
+test('revoke deletes the Auralis key, which ABS answers with a plain-text OK, and removes its line', async () => {
   const w = world({
     keyFile: `JELLYFIN_API_KEY=jf\nABS_API_KEY=${NEW_KEY}\n`,
+    users: [ROOT, AURALIS],
     apiKeys: [
       { id: 'other', name: 'Another service', isActive: true },
       { id: 'k1', name: 'Auralis', isActive: true },
     ],
   });
-  assert.equal(await run(['revoke'], w.deps), 0);
+  assert.equal(await run(['revoke'], w.deps), 0, w.err.join('\n'));
   const del = w.requests.filter((r) => r.method === 'DELETE');
   assert.deepEqual(
     del.map((r) => r.url),
     ['http://127.0.0.1:13378/api/api-keys/k1'],
   );
+  assert.deepEqual(
+    w.keyList.map((k) => k.id),
+    ['other'],
+  );
   assert.equal(w.files.get(KEY_FILE), 'JELLYFIN_API_KEY=jf\n');
   assert.equal(w.modes.get(KEY_FILE), 0o600);
+  assert.ok(
+    w.userList.some((u) => u.username === 'auralis'),
+    'the user stays',
+  );
 });
 
 test('the secret never reaches stdout, stderr or the key file', async () => {
-  for (const w of [world(), world({ postStatus: 401 }), world({ keyFile: 'ABS_API_KEY=x\n' })]) {
+  for (const w of [world(), world({ adminStatus: 401 }), world({ keyFile: 'ABS_API_KEY=x\n' })]) {
     await run(['create'], w.deps).catch(() => 1);
     const everything = [...w.out, ...w.err, ...w.files.values()].join('\n');
     assert.ok(!everything.includes(SECRET), 'no tokenSecret in any output');
-    const admin = w.requests.find((r) => r.method === 'POST')?.headers.authorization;
+    const admin = w.requests.find((r) => r.method === 'GET')?.headers.authorization;
     if (admin) assert.ok(!everything.includes(admin.slice(7)), 'no admin token in any output');
   }
+});
+
+test('--help says revoke leaves the auralis user in place', async () => {
+  const w = world();
+  assert.equal(await run(['--help'], w.deps), 0);
+  assert.match(w.out.join('\n'), /revoke.*leaves the auralis user/s);
+  assert.equal(w.requests.length, 0);
 });
 
 test('an unknown command is refused with the usage', async () => {

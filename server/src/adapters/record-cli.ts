@@ -45,6 +45,20 @@ export interface RecordIo {
   err: (line: string) => void;
 }
 
+/** The `id` of a play answer, from its raw text, whether or not the rest of it parses. */
+export function rawSessionId(text: string): string | undefined {
+  try {
+    const value: unknown = JSON.parse(text);
+    if (value !== null && typeof value === 'object' && 'id' in value) {
+      const { id } = value;
+      if (typeof id === 'string' && id.length > 0) return id;
+    }
+  } catch {
+    // Not JSON: there is no id to close.
+  }
+  return undefined;
+}
+
 /** Reads `KEY=value` lines; anything else is ignored. */
 export function parseKeys(text: string): Record<string, string> {
   const keys: Record<string, string> = {};
@@ -75,7 +89,17 @@ async function recordAbs(
     secrets,
     baseUrl,
   });
-  const abs = new AbsClient({ baseUrl, token, fetch: rec.fetch });
+  // The play answer's session id is read from the raw JSON, before zod parses it, so a session
+  // is closed even when the answer fails its schema.
+  let sessionId: string | undefined;
+  const peekSession: FetchLike = async (url, init) => {
+    const response = await rec.fetch(url, init);
+    if (init?.method === 'POST' && new URL(url).pathname.endsWith('/play')) {
+      sessionId = rawSessionId(await response.clone().text()) ?? sessionId;
+    }
+    return response;
+  };
+  const abs = new AbsClient({ baseUrl, token, fetch: peekSession });
 
   const libraries = await rec.capture('library-list', () => abs.getLibraries());
   // Never the Podcasts library: opening a podcast stub hydrates it.
@@ -85,23 +109,18 @@ async function recordAbs(
   if (!first) throw new Error('the book library is empty');
 
   await rec.capture('item-detail', () => abs.getItem(first.id));
-  let sessionId: string | undefined;
   let closed = false;
   try {
-    await rec.capture('item-play', async () => {
-      const session = await abs.play(first.id, {
-        deviceId: 'auralis-recorder',
-        clientVersion: CLIENT_VERSION,
-      });
-      sessionId = session.id;
-      return session;
-    });
-    const id = sessionId as string;
-    await rec.capture('session-close', () => abs.closeSession(id));
+    const session = await rec.capture('item-play', () =>
+      abs.play(first.id, { deviceId: 'auralis-recorder', clientVersion: CLIENT_VERSION }),
+    );
+    await rec.capture('session-close', () => abs.closeSession(session.id));
     closed = true;
   } finally {
     // Never leave a playback session open on the server, whatever failed.
-    if (sessionId && !closed) await abs.closeSession(sessionId).catch(() => undefined);
+    if (sessionId !== undefined && !closed) {
+      await abs.closeSession(sessionId).catch(() => undefined);
+    }
   }
   return ['library-list', 'item-detail', 'item-play', 'session-close'].map((c) =>
     join(dir, `${c}.json`),

@@ -37,7 +37,7 @@ A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite (ids, titles
 ::: card
 #### 4 · Recorded reality, not guesses
 
-Each adapter has a `record` mode that captures real responses from mediaserver (secrets scrubbed) into fixtures. Tests run against those, and a nightly job re-records and diffs them, so upstream drift shows up as a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service and kept in a 0600 file on mediaserver; no other service's key is reused.
+Each adapter has a `record` mode that captures real responses from mediaserver (secrets scrubbed) into fixtures. Tests run against those, and a nightly job re-records and diffs them, so upstream drift shows up as a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service and kept in a 0600 file on mediaserver; no other service's key is reused. The Audiobookshelf key belongs to a dedicated user, `auralis`, that is not an admin and can only listen.
 :::
 
 ::: card

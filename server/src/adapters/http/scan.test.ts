@@ -32,7 +32,7 @@ function committedRecordings(): [string, unknown][] {
 function clean(): Recording {
   return {
     upstream: 'jellyfin',
-    upstreamVersion: '23.0.0.0',
+    upstreamVersion: '10.11.11',
     call: 'item-detail',
     request: {
       method: 'GET',
@@ -51,7 +51,8 @@ function clean(): Recording {
       body: {
         json: {
           Name: 'An Album',
-          Version: '23.0.0.0',
+          Version: '10.11.11',
+          ServerVersion: '2.36.1',
           Path: '/data/media/Music/An Album',
           Link: 'http://upstream.invalid/Items/abc',
           AccessToken: '<token>',
@@ -151,7 +152,140 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
     }
   });
 
-  it('[M0.record/c] a clean recording has no findings, and a version like 23.0.0.0 is not an IP', () => {
+  it('[M0.record/c] the scan catches what the scrubber could miss', () => {
+    const cases: [string, Recording, Finding][] = [
+      [
+        'an unquoted MediaBrowser token',
+        leak((r) => {
+          r.request.headers.authorization = 'MediaBrowser Client="Auralis", Token=abc';
+        }),
+        { kind: 'secret-field', path: '$.request.headers.authorization' },
+      ],
+      [
+        'a lowercase MediaBrowser token',
+        leak((r) => {
+          r.request.headers.authorization = 'MediaBrowser Client="Auralis", token="abc"';
+        }),
+        { kind: 'secret-field', path: '$.request.headers.authorization' },
+      ],
+      [
+        'an authorization header it cannot parse',
+        leak((r) => {
+          r.request.headers.authorization = 'MediaBrowser Client="Auralis" Token="<token>" x';
+        }),
+        { kind: 'secret-field', path: '$.request.headers.authorization' },
+      ],
+      [
+        'a token-named header',
+        leak((r) => {
+          r.request.headers['x-emby-token'] = 'abc';
+        }),
+        { kind: 'secret-field', path: '$.request.headers.x-emby-token' },
+      ],
+      [
+        'an X-Emby-Token query key',
+        leak((r) => {
+          r.request.query['X-Emby-Token'] = 'abc';
+        }),
+        { kind: 'query-secret', path: '$.request.query.X-Emby-Token' },
+      ],
+      [
+        'an accessToken in a URL inside the body',
+        leak((r) => {
+          body(r).Link = 'http://upstream.invalid/Items/abc?accessToken=abc';
+        }),
+        { kind: 'query-secret', path: '$.response.body.json.Link' },
+      ],
+      [
+        'a token in a text body',
+        leak((r) => {
+          r.response.body = { text: '#EXTM3U\nseg0.ts?token=abc\n' };
+        }),
+        { kind: 'query-secret', path: '$.response.body.text' },
+      ],
+      [
+        'an IPv6 address',
+        leak((r) => {
+          body(r).Server = 'fd7a:115c:a1e0::1';
+        }),
+        { kind: 'ip', path: '$.response.body.json.Server' },
+      ],
+      [
+        'an IPv4 under a version key',
+        leak((r) => {
+          body(r).Version = '10.1.2.3';
+        }),
+        { kind: 'ip', path: '$.response.body.json.Version' },
+      ],
+      [
+        'the bare host name',
+        leak((r) => {
+          body(r).Name = 'Served by mediaserver';
+        }),
+        { kind: 'host', path: '$.response.body.json.Name' },
+      ],
+      [
+        'a hostname in a host field',
+        leak((r) => {
+          body(r).ServerName = 'nas-box';
+        }),
+        { kind: 'host', path: '$.response.body.json.ServerName' },
+      ],
+      [
+        'an email without a dotted domain',
+        leak((r) => {
+          body(r).Contact = 'someone@box';
+        }),
+        { kind: 'email', path: '$.response.body.json.Contact' },
+      ],
+      [
+        'a home folder',
+        leak((r) => {
+          body(r).Path = '/home/someone/Music/An Album';
+        }),
+        { kind: 'home-path', path: '$.response.body.json.Path' },
+      ],
+      [
+        'a key under "key"',
+        leak((r) => {
+          body(r).key = 'abc';
+        }),
+        { kind: 'secret-field', path: '$.response.body.json.key' },
+      ],
+      [
+        'a numeric secret',
+        leak((r) => {
+          body(r).password = 1234;
+        }),
+        { kind: 'secret-field', path: '$.response.body.json.password' },
+      ],
+      [
+        'a Basic header with its credentials',
+        leak((r) => {
+          r.request.headers.authorization = 'Basic dXNlcjpwYXNz';
+        }),
+        { kind: 'secret-field', path: '$.request.headers.authorization' },
+      ],
+    ];
+    for (const [name, recording, finding] of cases) {
+      expect(scanRecording(recording), name).toEqual([finding]);
+    }
+  });
+
+  it('[M0.record/c] a clean recording has no findings, and versions like 2.36.1 or 10.11.11 are not IPs', () => {
     expect(scanRecording(clean())).toEqual([]);
+  });
+
+  it('[M0.record/c] the scrubbed placeholders pass the scan', () => {
+    for (const authorization of ['<token>', 'Basic <token>', 'Bearer <token>']) {
+      expect(
+        scanRecording(
+          leak((r) => {
+            r.request.headers.authorization = authorization;
+          }),
+        ),
+        authorization,
+      ).toEqual([]);
+    }
   });
 });
