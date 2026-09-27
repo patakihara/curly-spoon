@@ -15,6 +15,7 @@ export default tseslint.config(
       'android/**',
       'design/sonora/**',
       '.claude/worktrees/**',
+      '**/generated/**',
     ],
   },
   js.configs.recommended,

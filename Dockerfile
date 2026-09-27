@@ -26,6 +26,9 @@ WORKDIR /app
 
 COPY --from=prod-deps --chown=auralis:auralis /app/node_modules ./node_modules
 COPY --from=prod-deps --chown=auralis:auralis /app/server/node_modules ./server/node_modules
+COPY --from=prod-deps --chown=auralis:auralis /app/schema/node_modules ./schema/node_modules
+COPY --chown=auralis:auralis schema/package.json ./schema/package.json
+COPY --chown=auralis:auralis schema/src ./schema/src
 COPY --chown=auralis:auralis server/package.json ./server/package.json
 COPY --chown=auralis:auralis server/src ./server/src
 COPY --from=build --chown=auralis:auralis /app/web/dist ./web/dist

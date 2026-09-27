@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
+import { health } from '@auralis/schema';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { serve } from './route.js';
 
 export interface BuildAppOptions {
   /** web's build output; `null`, or a path that does not exist, serves no web app. */
@@ -17,7 +19,7 @@ function isIndexHtml(path: string): boolean {
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: options.logger ?? false });
 
-  app.get('/health', async () => ({ status: 'ok' as const }));
+  serve(app, health, () => ({ status: 'ok' as const }));
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

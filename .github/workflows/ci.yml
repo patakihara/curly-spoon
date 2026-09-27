@@ -33,6 +33,25 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+  generated:
+    name: Generated code is current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm gen
+      # The paths are schema/codegen/outputs.ts's folders. Untracked output counts as a difference.
+      - name: No difference from what is committed
+        run: |
+          paths="schema/generated web/src/generated/api android/app/src/main/java/net/develivarr/auralis/generated/api"
+          git diff --exit-code -- $paths
+          test -z "$(git status --porcelain -- $paths)" || { git status --porcelain -- $paths; exit 1; }
+
   unit:
     name: Unit tests
     runs-on: ubuntu-latest

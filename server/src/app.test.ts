@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { routes } from '@auralis/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
@@ -11,6 +12,17 @@ describe('GET /health', () => {
     const res = await app.inject({ method: 'GET', url: '/health' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ status: 'ok' });
+    await app.close();
+  });
+});
+
+describe('the API', () => {
+  it('serves every route the schema declares', async () => {
+    const app = await buildApp({ webDistDir: null });
+    await app.ready();
+    for (const r of routes) {
+      expect(app.hasRoute({ method: r.method, url: r.path }), `${r.method} ${r.path}`).toBe(true);
+    }
     await app.close();
   });
 });

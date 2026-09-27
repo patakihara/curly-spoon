@@ -19,7 +19,7 @@ Features sit on a shared index and store. Only adapters talk to the outside worl
 ::: card
 #### 1 · One schema, generated clients
 
-Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** in CI, and a change that breaks either fails the build. Nothing is hand-copied.
+Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference, and a change that breaks either fails the build. Nothing is hand-copied.
 :::
 
 ::: card

@@ -11,6 +11,7 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
     "build": "pnpm -r --if-present build",
+    "gen": "pnpm --filter @auralis/schema gen",
     "dev": "pnpm -r --parallel --if-present dev",
     "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/repo/layout.test.mjs",
     "test:watch": "vitest",
