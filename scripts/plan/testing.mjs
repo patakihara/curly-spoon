@@ -22,6 +22,7 @@ export const tag = (item, criterion) => '[' + item + '/' + criterion + ']';
 export function fixtureTree() {
   const root = mkdtempSync(join(tmpdir(), 'plan-fixture-'));
   cpSync(join(FIXTURES, 'plan'), join(root, 'docs', 'plan'), { recursive: true });
+  cpSync(join(REPO_ROOT, 'docs', 'plan', 'page.css'), join(root, 'docs', 'plan', 'page.css'));
   mkdirSync(join(root, 'docs', 'outbox'), { recursive: true });
   writeFileSync(join(root, 'docs', 'outbox', 'README.md'), '# docs/outbox\n\nNot an item.\n');
   cpSync(
