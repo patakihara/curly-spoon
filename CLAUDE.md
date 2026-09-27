@@ -24,3 +24,18 @@ component gains behaviour the token layer cannot carry.
 - Scrims over artwork are `--scrim*`/`--on-scrim`; surface washes are `--surface-hover`.
 - Every component has a sibling `.d.ts` — it is the source for `export/component-api.md`, so document
   props there, not only in the JSX.
+
+## Keep the Design System artifact in step too
+
+Sonora is also published as a claude.ai **Design System artifact**
+(https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB), which the Auralis design canvas installs. It is
+generated from this repo, never edited by hand:
+
+```
+curl -sSo /tmp/babel-standalone.js https://unpkg.com/@babel/standalone@7.29.0/babel.min.js  # once
+node docs/build_bundle.js && node docs/build_artifact.js    # -> .artifact/project/** (gitignored)
+```
+
+then publish `.artifact/project/**` to that url with the Artifact tool (`.d.ts` files as `text/plain`),
+and re-install it on the canvas (copy `tokens.json` + `components/bundle.*` from the system, plus
+`.artifact/canvas/tokens.css`). Do this in the same turn as any change to `tokens/`, a component or its `.d.ts`.
