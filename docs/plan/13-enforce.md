@@ -62,13 +62,15 @@ The plan and the progress are two different things, kept apart on purpose. The p
 Anything you say about Auralis, in any session, in a comment on an artifact, or directly to the running development session, goes through one fixed path. Each step is safe to interrupt: nothing is lost if a session dies halfway.
 
 1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from (chat, a comment thread, a direct message), and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress. The only exceptions: you say "do it now", you're answering one of its outbox items, or you're telling the session itself to stop or pause.
-2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands sorting to a subagent in a fresh context, one idea at a time: it reads the idea and the whole plan, and decides which of these it is:  It also lists what else in the plan the change affects, and those edits go in too.
+2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands sorting to a subagent in a fresh context, one idea at a time: it reads the idea and the whole plan, and decides which of these it is:
    - **new work**: a new plan item, with an id and a concrete "done when", in the milestone where it belongs (usually a later one; the milestone in progress only takes small fixes to what it builds, or anything you pulled in);
    - **a change** to an existing item: that item is rewritten in place, including its "done when";
    - **a bug** in something done: a check that catches it is added to that item, which reopens it;
    - **already planned**: the existing sentence is sharpened if your words add something;
    - **a call only you can make**: an outbox item with its default, and the idea waits for your answer;
    - **a drop**: only with your OK, asked through the outbox.
+
+   It also lists what else in the plan the change affects, and those edits go in too.
 3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash never loses one. The plan checks run on that commit: unique ids, every item has a "done when", the size limit, no dated notes.
 4. **Progress follows by itself.** Nothing is written by hand: a new item shows as planned, a changed item whose check no longer passes shows as not done, and a bug's new check reopens its item. It all appears in the next session-start summary.
 5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the plan page and the session-start summary list recently sorted ideas and where each went.
