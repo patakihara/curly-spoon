@@ -56,7 +56,10 @@ async function server(options: Options = {}) {
     setupCodeFile,
   });
   // Shows what the server made of the forwarded headers.
-  app.get('/probe', (request) => ({ ip: request.ip, protocol: request.protocol }));
+  app.get('/probe', { config: { access: 'public' } }, (request) => ({
+    ip: request.ip,
+    protocol: request.protocol,
+  }));
   apps.push(app);
   return { app, db, code, setupCodeFile };
 }
@@ -128,6 +131,20 @@ describe('one-time setup', () => {
 
     const admins = listUsers(db).filter((u) => u.role === 'admin');
     expect(admins.map((u) => u.username)).toEqual(['sofia']);
+  });
+
+  it('[M0.security/a] a codeless setup racing the claim gets nothing, even once the claim lands', async () => {
+    const { app, db, code } = await server();
+
+    const [claimed, codeless] = await Promise.all([
+      claim(app, code),
+      app.inject({ method: 'POST', url: '/setup', payload: { username: 'mallory' } }),
+    ]);
+
+    expect(claimed.statusCode).toBe(200);
+    expect(codeless.statusCode).toBe(401);
+    expect(codeless.headers['set-cookie']).toBeUndefined();
+    expect(listUsers(db).map((u) => [u.username, u.role])).toEqual([['sofia', 'admin']]);
   });
 
   it('[M0.security/a] setup with the wrong code is refused and claims nothing', async () => {
@@ -237,6 +254,16 @@ describe('roles', () => {
   });
 });
 
+describe('routes without declared access', () => {
+  it('[M0.security/b] the app refuses to register a route that declares no access', async () => {
+    const { app } = await server();
+    expect(() => app.get('/admin/secret', () => ({ leak: true }))).toThrow(/access/);
+    expect(() =>
+      app.route({ method: 'POST', url: '/also-secret', config: {}, handler: () => ({}) }),
+    ).toThrow(/access/);
+  });
+});
+
 describe('the session cookie and the proxy', () => {
   it('[M0.security/c] the session cookie is HttpOnly, Secure and SameSite=Lax', async () => {
     const { app, code } = await server({ trustProxy: [PROXY_IP] });
@@ -317,6 +344,32 @@ describe('the session cookie and the proxy', () => {
     expect(await probe(PROXY_IP)).toBe('http');
     expect(await probe(OTHER_IP)).toBe('https');
     expect(asked).toEqual(['proxy.example', 'proxy.example']);
+  });
+
+  it('[M0.security/c] a hostname proxy that stops resolving is no longer trusted until it resolves again', async () => {
+    let clock = 1_000_000;
+    let failing = false;
+    const warnings: string[] = [];
+    const proxy = createProxyTrust(['proxy.example'], {
+      now: () => clock,
+      lookup: () =>
+        failing ? Promise.reject(new Error('ENOTFOUND')) : Promise.resolve([PROXY_IP]),
+      warn: (message) => warnings.push(message),
+    });
+    await proxy.refresh();
+    expect(proxy.trust(PROXY_IP, 0)).toBe(true);
+
+    failing = true;
+    clock += 61_000;
+    await proxy.refreshIfStale();
+    expect(proxy.trust(PROXY_IP, 0)).toBe(false);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('proxy.example');
+
+    failing = false;
+    clock += 61_000;
+    await proxy.refreshIfStale();
+    expect(proxy.trust(PROXY_IP, 0)).toBe(true);
   });
 
   it('[M0.security/c] plain HTTP sign-in works with COOKIE_SECURE=auto', async () => {

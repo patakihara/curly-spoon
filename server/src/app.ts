@@ -48,10 +48,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {
+    // The plugin only lends `reply.sendFile`; the routes are declared here, public, so the
+    // access hook has no undeclared route to guess about.
     await app.register(fastifyStatic, {
       root: distDir,
+      serve: false,
       index: false,
-      wildcard: true,
       cacheControl: false,
       // Built assets carry content hashes, so they can be cached forever; index.html names
       // them and must always be revalidated.
@@ -63,10 +65,17 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       },
     });
 
-    app.get('/', (_request, reply) => reply.sendFile(INDEX_FILE));
+    const publicRoute = { config: { access: 'public' as const } };
+    app.get('/', publicRoute, (_request, reply) => reply.sendFile(INDEX_FILE));
+    app.route({
+      ...publicRoute,
+      method: ['GET', 'HEAD'],
+      url: '/*',
+      handler: (request, reply) => reply.sendFile((request.params as { '*': string })['*']),
+    });
 
     // Client-side routes: a browser navigating to a path the server does not know gets the
-    // app, which routes it. Anything else (an API client, a missing asset) gets a JSON 404.
+    // app, which routes it. The access hook lets every not-found request through. Anything else (an API client, a missing asset) gets a JSON 404.
     app.setNotFoundHandler((request, reply) => {
       if (request.method === 'GET' && (request.headers.accept ?? '').includes('text/html')) {
         return reply.sendFile(INDEX_FILE);

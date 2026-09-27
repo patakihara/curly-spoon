@@ -1,7 +1,8 @@
 /**
  * Which socket addresses may speak for a client through `X-Forwarded-*`. IPs and CIDRs go
  * through Fastify's own matcher; a hostname (a container name, say) is resolved at boot and again
- * once a minute, so the trust follows the proxy to a new address and drops the old one.
+ * once a minute, so the trust follows the proxy to a new address and drops the old one. A name
+ * that fails to resolve is trusted at no address until it resolves again.
  */
 
 import { lookup as dnsLookup } from 'node:dns/promises';
@@ -36,7 +37,7 @@ const defaultLookup: Lookup = async (hostname) =>
 export interface ProxyTrust {
   /** Fastify's `trustProxy` function. */
   trust: (address: string, hop: number) => boolean;
-  /** Resolves the hostnames again. A failed lookup keeps that name's last addresses. */
+  /** Resolves the hostnames again. A failed lookup drops that name's addresses. */
   refresh: () => Promise<void>;
   /** Refreshes when the last resolution is a minute old; call it before a request is read. */
   refreshIfStale: () => Promise<void>;
@@ -44,10 +45,11 @@ export interface ProxyTrust {
 
 export function createProxyTrust(
   entries: readonly string[],
-  options: { lookup?: Lookup; now?: () => number } = {},
+  options: { lookup?: Lookup; now?: () => number; warn?: (message: string) => void } = {},
 ): ProxyTrust {
   const lookup = options.lookup ?? defaultLookup;
   const now = options.now ?? Date.now;
+  const warn = options.warn ?? ((message: string) => console.warn(message));
   const fixed = entries.filter(isAddressEntry);
   const hostnames = entries.filter((entry) => !isAddressEntry(entry));
   const resolved = new Map<string, string[]>();
@@ -66,8 +68,11 @@ export function createProxyTrust(
       hostnames.map(async (hostname) => {
         try {
           resolved.set(hostname, await lookup(hostname));
-        } catch {
-          // The proxy may be restarting; keep believing its last known address until it answers.
+        } catch (err) {
+          // Its old address may belong to something else by now, so it is believed nowhere.
+          resolved.delete(hostname);
+          const reason = err instanceof Error && 'code' in err ? String(err.code) : 'lookup failed';
+          warn(`Proxy ${hostname} did not resolve (${reason}); its forwarded headers are ignored.`);
         }
       }),
     );

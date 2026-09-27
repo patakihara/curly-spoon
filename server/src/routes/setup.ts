@@ -1,6 +1,6 @@
 /**
- * Setup claims the admin role once, with the one-time code from the data folder; after that the
- * access hook lets only an admin in, and setup grants admin to another username.
+ * Setup claims the admin role once, with the one-time code from the data folder; after that only
+ * a signed-in admin may run it, and it grants admin to another username.
  */
 
 import { getSetup, postSetup } from '@auralis/schema';
@@ -21,21 +21,31 @@ export function setupRoutes(
 
   serve(app, getSetup, () => ({ configured: hasAdmin(db) }));
 
+  // Claim or grant is decided here, in one transaction, never from the access hook's earlier
+  // look: a request that passed the hook while unclaimed may run only after the claim lands.
   serve(app, postSetup, (request, reply, body) => {
-    if (hasAdmin(db)) {
-      // Only an admin reaches here once setup has run.
-      const granted = upsertUser(db, { username: body.username, role: 'admin' });
-      return { username: granted.username, role: granted.role };
-    }
-    if (body.code === undefined || !verifySetupCode(db, body.code)) {
-      throw new Refusal(403, 'wrong_code');
-    }
-    const { admin, session } = db.transaction(() => {
-      const admin = upsertUser(db, { username: body.username, role: 'admin' });
+    const outcome = db.transaction(() => {
+      if (hasAdmin(db)) {
+        if (request.user === null) throw new Refusal(401, 'unauthenticated');
+        if (request.user.role !== 'admin') throw new Refusal(403, 'forbidden');
+        return { user: upsertUser(db, { username: body.username, role: 'admin' }), session: null };
+      }
+      if (body.code === undefined || !verifySetupCode(db, body.code)) {
+        throw new Refusal(403, 'wrong_code');
+      }
+      const user = upsertUser(db, { username: body.username, role: 'admin' });
       consumeSetupCode(db, setupCodeFile);
-      return { admin, session: createSession(db, admin.id) };
+      return { user, session: createSession(db, user.id) };
     })();
-    setSessionCookie(request, reply, cookieSecure, session.token, session.expiresAt);
-    return { username: admin.username, role: admin.role };
+    if (outcome.session !== null) {
+      setSessionCookie(
+        request,
+        reply,
+        cookieSecure,
+        outcome.session.token,
+        outcome.session.expiresAt,
+      );
+    }
+    return { username: outcome.user.username, role: outcome.user.role };
   });
 }

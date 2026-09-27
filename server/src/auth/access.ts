@@ -1,7 +1,8 @@
 /**
  * The one hook between every request and its handler. It resolves the session cookie (rotating it
  * past half its life), refuses a signed-in write from another site, then enforces the access the
- * route declared in schema/: 401 without a session, 403 without the role.
+ * route declared in schema/: 401 without a session, 403 without the role. A route that declares
+ * no access cannot be registered at all.
  */
 
 import { type Access, SESSION_COOKIE } from '@auralis/schema';
@@ -61,6 +62,13 @@ export function registerAccess(app: FastifyInstance, options: AccessOptions): vo
   app.decorateRequest('user', null);
   app.decorateRequest('sessionToken', null);
 
+  // Fails closed: a route added without an access declaration stops the app from being built.
+  app.addHook('onRoute', (route) => {
+    if (route.config?.access === undefined) {
+      throw new Error(`${String(route.method)} ${route.url} declares no access`);
+    }
+  });
+
   app.addHook('onRequest', async (request, reply) => {
     // Before anything reads request.ip or request.protocol, which consult the trust.
     await proxy.refreshIfStale();
@@ -87,8 +95,11 @@ export function registerAccess(app: FastifyInstance, options: AccessOptions): vo
       }
     }
 
+    // No route matched: the not-found handler answers, public by declaration here.
+    if (request.is404) return;
     const access = request.routeOptions.config.access;
-    if (access === undefined || access === 'public') return;
+    if (access === 'public') return;
+    // Only a first look: the setup handler decides claim or grant again, atomically.
     if (access === 'setup' && !hasAdmin(db)) return;
     if (request.user === null) return refuse(reply, 401, 'unauthenticated');
     if (access !== 'member' && request.user.role !== 'admin') {

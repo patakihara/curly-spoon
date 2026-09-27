@@ -79,3 +79,22 @@ export function rotateSession(
     return createSession(db, validated.userId, ttlMs);
   })();
 }
+
+/** Deletes every session expired by `now`, and says how many. */
+export function sweepExpiredSessions(db: Db, now: number = Date.now()): number {
+  return db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now).changes;
+}
+
+const SWEEP_EVERY_MS = 60 * 60 * 1000;
+
+/**
+ * Sweeps now and then hourly, so a session nobody presents again does not sit in the store past
+ * its expiry. The timer never keeps the process alive. Returns the function that stops it.
+ */
+export function startSessionSweep(db: Db, options: { now?: () => number } = {}): () => void {
+  const now = options.now ?? Date.now;
+  sweepExpiredSessions(db, now());
+  const timer = setInterval(() => sweepExpiredSessions(db, now()), SWEEP_EVERY_MS);
+  timer.unref();
+  return () => clearInterval(timer);
+}

@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openDatabase } from './connection.js';
-import { createSession, deleteSession, rotateSession, validateSession } from './sessions.js';
+import {
+  createSession,
+  deleteSession,
+  rotateSession,
+  startSessionSweep,
+  sweepExpiredSessions,
+  validateSession,
+} from './sessions.js';
 import { upsertUser } from './users.js';
 
 function withUser() {
@@ -72,5 +79,46 @@ describe('sessions', () => {
   it('returns null when rotating an invalid session', () => {
     const db = openDatabase(':memory:');
     expect(rotateSession(db, 'garbage')).toBeNull();
+  });
+});
+
+describe('sweeping expired sessions', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const count = (db: ReturnType<typeof openDatabase>) =>
+    db.prepare('SELECT * FROM sessions').all().length;
+
+  it('removes only the sessions that have expired by the given time', () => {
+    const { db, user } = withUser();
+    createSession(db, user.id, 1_000);
+    const kept = createSession(db, user.id, 60_000);
+
+    expect(sweepExpiredSessions(db, Date.now() + 2_000)).toBe(1);
+    expect(count(db)).toBe(1);
+    expect(validateSession(db, kept.token)?.userId).toBe(user.id);
+  });
+
+  it('sweeps once at start and then every hour, until stopped', () => {
+    vi.useFakeTimers();
+    const { db, user } = withUser();
+    let clock = Date.now();
+    createSession(db, user.id, 1_000);
+    createSession(db, user.id, 2 * 60 * 60 * 1000);
+
+    clock += 5_000;
+
+    const stop = startSessionSweep(db, { now: () => clock });
+    expect(count(db)).toBe(1);
+
+    clock += 3 * 60 * 60 * 1000;
+    vi.advanceTimersByTime(59 * 60 * 1000);
+    expect(count(db)).toBe(1);
+    vi.advanceTimersByTime(60 * 1000);
+    expect(count(db)).toBe(0);
+
+    stop();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
