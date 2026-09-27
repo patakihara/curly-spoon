@@ -20,11 +20,12 @@ const HTML_TAG = /<\/?[a-zA-Z][a-zA-Z0-9]*(?=[\s/>])[^>]*>/g;
 
 const MONTH =
   'Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?';
+// "The previously played item" describes a thing; only a bare "previously" dates a note.
 const DATED = [
   /\b(?:19|20)\d\d-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?\b/g,
   new RegExp(`\\b(?:${MONTH})\\.? \\d{1,2}(?:st|nd|rd|th)?,? \\d{4}\\b`, 'g'),
   new RegExp(`\\b\\d{1,2} (?:${MONTH}) \\d{4}\\b`, 'g'),
-  /\b(?:previously|formerly|used to|as of|a previous version|an earlier version|earlier draft|changelog|was changed to)\b/gi,
+  /\b(?:(?<!\b(?:the|a|an|any|each|every|its|your|their|our) )previously|formerly|used to|as of|a previous version|an earlier version|earlier draft|changelog|was changed to)\b/gi,
   /\b(?:update|updated|edit):/gi,
   /\((?:new|updated)\)/gi,
   /\bNEW:/g,

@@ -269,6 +269,15 @@ test('no dated notes: dates and history phrases fail', () => {
   );
 });
 
+test('no dated notes: "previously" after an article describes a thing, not history', () => {
+  const ok = '\nBack returns to the previously played item.\n';
+  assert.deepEqual(lintAfter(appendTo('01-flow.md', ok)).errors, []);
+  assertFails(
+    lintAfter(appendTo('01-flow.md', '\nThe queue previously played it.\n')),
+    /dated note "previously"/,
+  );
+});
+
 test('no dated notes: code spans, quotes and commit citations are exempt', () => {
   const ok = [
     '',
