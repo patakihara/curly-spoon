@@ -1,0 +1,33 @@
+name: Live
+
+# Checks against what is published beyond these machines (scripts/repo/live.test.mjs, gated by
+# LIVE=1). A failure here only marks plan criteria; publish.yml follows "CI" alone, never this.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: Live checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: mkdir -p reports/junit && LIVE=1 node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/live.xml scripts/repo/live.test.mjs
+      - if: always()
+        run: node scripts/plan/collect-results.mjs --workflow live --job live --out reports/plan-results.json reports/junit/*.xml
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: plan-results-live, path: reports/plan-results.json, if-no-files-found: warn }

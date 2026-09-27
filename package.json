@@ -12,7 +12,7 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "build": "pnpm -r --if-present build",
     "dev": "pnpm -r --parallel --if-present dev",
-    "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs",
+    "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/repo/layout.test.mjs",
     "test:watch": "vitest",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",

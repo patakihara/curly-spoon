@@ -167,11 +167,12 @@ function ciResults(exec, root, deadline, budget) {
   };
 }
 
+/** This checkout's node tests, as `pnpm test` runs them: live checks (live.test.mjs) left out. */
 const nodeTestFiles = (root) =>
-  ['scripts', 'scripts/plan'].flatMap((d) =>
+  ['scripts', 'scripts/plan', 'scripts/repo'].flatMap((d) =>
     existsSync(join(root, d))
       ? readdirSync(join(root, d))
-          .filter((f) => f.endsWith('.test.mjs'))
+          .filter((f) => f.endsWith('.test.mjs') && f !== 'live.test.mjs')
           .sort()
           .map((f) => `${d}/${f}`)
       : [],

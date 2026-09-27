@@ -263,6 +263,49 @@ test('loadResults unions the tests, and for the same test name the newer run win
   }
 });
 
+test('loadResults reads the Live workflow newest run alongside CI', () => {
+  const repo = fixtureRepo();
+  const { second, third } = repo.commits;
+  const run = (databaseId, headSha, workflowName, createdAt) => ({
+    databaseId,
+    headSha,
+    workflowName,
+    status: 'completed',
+    conclusion: 'failure',
+    createdAt,
+  });
+  const runs = [
+    run(21, third, 'CI', '2026-01-03T00:00:00Z'),
+    run(22, second, 'Live', '2026-01-02T00:00:00Z'),
+    run(23, third, 'Live', '2026-01-04T00:00:00Z'),
+  ];
+  const artifacts = {
+    21: [result(third, [t('M0.aa', 'a', 'passed')])],
+    22: [result(second, [t('M0.cc', 'c', 'passed')])],
+    23: [result(third, [t('M0.cc', 'c', 'failed')])],
+  };
+  try {
+    const { sources, tests } = loadResults({
+      root: repo.root,
+      mode: 'ci',
+      exec: fakeExec({ runs, artifacts }),
+    });
+    assert.deepEqual(
+      sources.map((s) => [s.workflow, s.runId]),
+      [
+        ['CI', 21],
+        ['Live', 23],
+      ],
+    );
+    assert.deepEqual(tests.map((x) => [x.item, x.criterion, x.status]).sort(), [
+      ['M0.aa', 'a', 'passed'],
+      ['M0.cc', 'c', 'failed'],
+    ]);
+  } finally {
+    removeTree(repo.root);
+  }
+});
+
 test('loadResults caches a downloaded run by its id', () => {
   const { root, exec } = ciScenario();
   try {
