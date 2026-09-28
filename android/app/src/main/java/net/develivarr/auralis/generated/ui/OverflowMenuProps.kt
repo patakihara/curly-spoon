@@ -13,9 +13,12 @@ data class OverflowMenuItem(
 
 /**
  * The three-dot button and the menu it opens: the verbs an item offers that are not worth a
- * button of their own, such as adding it to the library or going to its artist. The menu drops
- * below the button on a raised card and lies over what follows it. Pass it where a row, a card or
- * a header takes a trailing control.
+ * button of their own, such as adding it to the library or going to its artist. On desktop the
+ * menu drops below the button on a raised card and lies over what follows it. On a phone
+ * (`platform="mobile"`) it is a modal bottom sheet instead: fixed to the window's foot, over a
+ * scrim that covers everything, the bottom bar and mini-player included, with a drag handle and
+ * 56px rows; tapping the scrim closes it. Pass it where a row, a card or a header takes a
+ * trailing control.
  */
 data class OverflowMenuProps(
     val items: List<OverflowMenuItem>,
