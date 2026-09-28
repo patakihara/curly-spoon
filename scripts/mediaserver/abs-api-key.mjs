@@ -100,6 +100,10 @@ function unfitListener(user) {
 function unfitProvisioner(user) {
   if (user.type !== 'admin') return `is of type ${user.type}, not admin`;
   if (!user.isActive) return 'is not active';
+  const reach = user.librariesAccessible ?? [];
+  if (user.permissions?.accessAllLibraries !== false || !Array.isArray(reach) || reach.length > 0) {
+    return 'can reach a library';
+  }
   return undefined;
 }
 

@@ -34,7 +34,7 @@ function defaultPermissions(type) {
 }
 
 /** A user as `toOldJSONForBrowser` shows it, minimal. */
-function userJson({ id, username, type, isActive = true, permissions }) {
+function userJson({ id, username, type, isActive = true, permissions, librariesAccessible = [] }) {
   return {
     id,
     username,
@@ -46,7 +46,7 @@ function userJson({ id, username, type, isActive = true, permissions }) {
     lastSeen: null,
     createdAt: NOW,
     permissions: permissions ?? defaultPermissions(type),
-    librariesAccessible: [],
+    librariesAccessible,
     itemTagsSelected: [],
     hasOpenIDLink: false,
   };
@@ -404,7 +404,12 @@ test('an unknown command is refused with the usage', async () => {
   assert.match(w.err.join('\n'), /provision \| check-provision \| revoke-provision/);
 });
 
-const ADMIN = userJson({ id: 'auralis-admin-id', username: 'auralis-admin', type: 'admin' });
+const ADMIN = userJson({
+  id: 'auralis-admin-id',
+  username: 'auralis-admin',
+  type: 'admin',
+  permissions: { ...defaultPermissions('admin'), accessAllLibraries: false },
+});
 
 test('[M0.sso/c] provision makes an admin, not root, that may touch no library', async () => {
   const w = world();
@@ -464,6 +469,23 @@ test('[M0.sso/c] provision reuses an existing admin auralis-admin, and refuses a
     const w = world({ users: [ROOT, other] });
     assert.equal(await run(['provision'], w.deps), 1);
     assert.match(w.err.join('\n'), new RegExp(`auralis-admin exists but is of type ${type}`));
+    assert.ok(!w.requests.some((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys')));
+  }
+});
+
+test('[M0.sso/c] provision refuses to reuse an auralis-admin that can reach a library', async () => {
+  const cases = [
+    { permissions: defaultPermissions('admin') },
+    {
+      permissions: { ...defaultPermissions('admin'), accessAllLibraries: false },
+      librariesAccessible: ['l1'],
+    },
+  ];
+  for (const extra of cases) {
+    const other = userJson({ id: 'x', username: 'auralis-admin', type: 'admin', ...extra });
+    const w = world({ users: [ROOT, other] });
+    assert.equal(await run(['provision'], w.deps), 1);
+    assert.match(w.err.join('\n'), /auralis-admin exists but can reach a library/);
     assert.ok(!w.requests.some((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys')));
   }
 });
