@@ -339,6 +339,7 @@ const shell = {
 const CHROME: Record<LayoutId, Chrome> = {
   w0: {
     platform: 'mobile',
+    appBar: true,
     leading: (
       <IconButton icon="close" label="Close" />
     ),
@@ -352,8 +353,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w600: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={false} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={false} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -365,8 +367,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1024: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={true} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -378,8 +381,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1240: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={true} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -416,6 +420,7 @@ export default function Album({ data = placeholder, state = 'full', layout: give
       player={chrome.player}
       sheet={chrome.sheet}
       sheetOpen={chrome.sheetOpen}
+      appBar={chrome.appBar}
       platform={platform}
     >
       <PageBody width="list" platform={platform}>

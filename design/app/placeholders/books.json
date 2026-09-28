@@ -1,24 +1,14 @@
 {
-  "filters": [
-    {
-      "key": "all",
-      "label": "All"
-    },
-    {
-      "key": "requested",
-      "label": "Requested"
-    }
-  ],
   "tabs": [
-    {
-      "key": "authors",
-      "label": "Authors",
-      "icon": "history_edu"
-    },
     {
       "key": "books",
       "label": "Books",
       "icon": "menu_book"
+    },
+    {
+      "key": "authors",
+      "label": "Authors",
+      "icon": "history_edu"
     },
     {
       "key": "series",

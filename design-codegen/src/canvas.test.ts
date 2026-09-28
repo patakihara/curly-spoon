@@ -247,12 +247,12 @@ describe('the canvas generated from design/app', () => {
   it('draws each page inside the app shell at the layout its width gets', () => {
     const phone = board('book.phone.dc.html');
     expect(phone).toContain(
-      `<x-import component-from-global-scope="SonoraDesignSystem_6c1435.BackdropShell" back="{{slots.s0}}" player="{{slots.s1}}" sheet-open="{{ false }}" platform="mobile">`,
+      `<x-import component-from-global-scope="SonoraDesignSystem_6c1435.BackdropShell" back="{{slots.s0}}" player="{{slots.s1}}" sheet-open="{{ false }}" app-bar="{{ true }}" platform="mobile">`,
     );
     expect(phone).not.toContain('rail=');
     const desktop = board('book.desktop.dc.html');
     expect(desktop).toContain('rail="{{slots.s0}}"');
-    expect(desktop).toContain('sheet-open="{{ true }}" platform="desktop">');
+    expect(desktop).toContain('sheet-open="{{ true }}" app-bar="{{ false }}" platform="desktop">');
     expect(phone).toContain('overflow: hidden');
   });
 

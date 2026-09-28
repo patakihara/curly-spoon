@@ -58,7 +58,6 @@ describe('Search', () => {
       'outside',
       'placeholder',
       'query',
-      'scopes',
       'top',
     ]);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
@@ -70,18 +69,26 @@ describe('Search', () => {
     expect(field?.props.value).toEqual({ kind: 'binding', path: ['data', 'query'] });
   });
 
-  it('[M0.canvas] renders its filters in the back layer, the kinds with Lyrics among them and the library scope, and nowhere on the front layer', () => {
+  it('[M0.canvas] renders its kind filters in the back layer, with no Lyrics chip and no library scope, and nowhere on the front layer', () => {
     const groups = elements(frame.controls).filter((e) => e.component === 'ButtonGroup');
     expect(groups.map((g) => g.props.items)).toEqual([
       { kind: 'binding', path: ['data', 'kinds'] },
-      { kind: 'binding', path: ['data', 'scopes'] },
     ]);
     const label = (list: unknown) => (list as { label: string }[]).map((k) => k.label);
-    expect(label(data.kinds)).toContain('Lyrics');
+    expect(label(data.kinds)).not.toContain('Lyrics');
     expect(label(data.kinds)[0]).toBe('All');
-    expect(label(data.scopes)).toEqual(['Everywhere', 'In your library', 'Outside']);
+    expect(data).not.toHaveProperty('scopes');
+    expect(String(data.activeFilters)).not.toMatch(/Everywhere|library|Outside/);
     const front = [...elements(frame.subheader), ...frame.content.flatMap((c) => elements(c))];
     expect(front.filter((e) => ['ButtonGroup', 'Chip'].includes(e.component))).toEqual([]);
+  });
+
+  it('[M0.canvas] matches songs on their lyrics too, a song found by a line showing that line in its row', () => {
+    const results = [data.top, ...(data.library as Row[])] as { meta: string }[];
+    const byLine = results.filter((r) => /“[^”]+”/.test(r.meta));
+    expect(byLine.length).toBeGreaterThan(0);
+    for (const { meta } of byLine) expect(meta).toMatch(/^Song · /);
+    for (const { meta } of results) expect(meta).not.toMatch(/^Lyrics/);
   });
 
   it('[M0.canvas] names the active filters in the results header, which conceals the back layer', () => {

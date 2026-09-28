@@ -158,11 +158,11 @@ describe('a generated web page', () => {
 
   it('holds the shell’s parts for every layout: the avatar and bottom bar on the phone, the rail wider', () => {
     expect(homeOut).toContain(
-      "  w0: {\n    platform: 'mobile',\n    leading: (\n      <AccountButton label={shell.account.label} />",
+      "  w0: {\n    platform: 'mobile',\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} />",
     );
     expect(homeOut).toContain('<BottomNav items={shell.nav.w0} active="books" />');
     expect(homeOut).toContain(
-      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} />',
+      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} />',
     );
     expect(homeOut).toContain(
       '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />',

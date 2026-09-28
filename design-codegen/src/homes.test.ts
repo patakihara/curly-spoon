@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { APP_DIR, REPO_ROOT } from './outputs.js';
 import { framePage } from './shell.js';
 import { bindings, elements, readPage as read, type Element } from './test-pages.js';
 
@@ -18,7 +21,7 @@ const HOMES = [
     id: 'books',
     person: 'Author',
     searches: 'Search your books and requests',
-    binds: ['filters', 'library', 'sort', 'tabs'],
+    binds: ['library', 'sort', 'tabs'],
   },
   {
     id: 'podcasts',
@@ -91,11 +94,49 @@ describe('the library homes', () => {
     expect([...seen].sort()).toEqual(['error', 'progress', 'request']);
   });
 
-  it('[M0.canvas] gives Books a Requested filter in its back layer, beside All', () => {
-    const { tree, data } = read('books');
-    const controls = framePage(tree).controls as Element;
-    expect(controls.component).toBe('ButtonGroup');
-    expect(controls.props.items).toEqual({ kind: 'binding', path: ['data', 'filters'] });
-    expect((data.filters as { label: string }[]).map((f) => f.label)).toEqual(['All', 'Requested']);
+  it('[M0.canvas] gives no library home a filter row: its requests sit among its items, greyed with their status', () => {
+    for (const home of HOMES) {
+      const { tree, data } = read(home.id);
+      expect(framePage(tree).controls, home.id).toBeUndefined();
+      expect(data, home.id).not.toHaveProperty('filters');
+    }
+  });
+
+  it('[M0.canvas] opens Music on Albums, its first tab, then Artists and Songs', () => {
+    const tabs = read('music').data.tabs as { key: string }[];
+    expect(tabs.map((t) => t.key)).toEqual(['albums', 'artists', 'songs']);
+  });
+
+  it('[M0.canvas] opens Books on Books, its first tab, then Authors, Series and Narrators', () => {
+    const tabs = read('books').data.tabs as { key: string }[];
+    expect(tabs.map((t) => t.key)).toEqual(['books', 'authors', 'series', 'narrators']);
+  });
+});
+
+describe('a tab row', () => {
+  const drawn = readdirSync(join(REPO_ROOT, APP_DIR, 'pages')).map((f) =>
+    f.replace('.page.jsx', ''),
+  );
+
+  it('[M0.canvas] always opens on its first tab, on every page', () => {
+    let rows = 0;
+    for (const id of drawn) {
+      const { tree, data } = read(id);
+      for (const bar of elements(tree).filter((e) => e.component === 'TabBar')) {
+        rows++;
+        const items = bar.props.items;
+        expect(items?.kind, id).toBe('binding');
+        const path = (items as { path: string[] }).path;
+        expect(path[0], id).toBe('data');
+        const tabs = path
+          .slice(1)
+          .reduce<unknown>((at, k) => (at as Record<string, unknown>)[k], data);
+        expect(bar.props.value, id).toEqual({
+          kind: 'literal',
+          value: (tabs as { key: string }[])[0]!.key,
+        });
+      }
+    }
+    expect(rows).toBeGreaterThan(0);
   });
 });

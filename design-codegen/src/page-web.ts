@@ -159,7 +159,7 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
 }
 
 function chromeEntry(parts: Chrome, components: Ctx): string[] {
-  const out = [`    platform: '${parts.platform}',`];
+  const out = [`    platform: '${parts.platform}',`, `    appBar: ${parts.appBar},`];
   for (const key of ['rail', 'leading', 'player', 'sheet'] as const) {
     const tree = parts[key];
     if (tree === undefined) continue;
@@ -189,6 +189,7 @@ export function generateWebPage(
     player: binding('chrome.player'),
     sheet: binding('chrome.sheet'),
     sheetOpen: binding('chrome.sheetOpen'),
+    appBar: binding('chrome.appBar'),
   });
   const chromes = nav.layouts.map(
     (layout) =>

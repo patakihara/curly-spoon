@@ -227,7 +227,7 @@
           },
           {
             "name": "Tabs",
-            "holds": "Artists, Albums, Songs, as the Sonora kit has them."
+            "holds": "Albums, Artists, Songs, opening on Albums, the first."
           },
           {
             "name": "Sort and view",
@@ -413,15 +413,15 @@
           },
           {
             "name": "Tabs",
-            "holds": "Authors, Books, Series, Narrators, as the Sonora kit has them."
+            "holds": "Books, Authors, Series, Narrators, opening on Books, the first."
           },
           {
-            "name": "Sort, filter and view",
-            "holds": "Sort by title, author or Random; a grid or list toggle; a Requested filter, and on the phone a Downloaded filter that opens Downloads."
+            "name": "Sort and view",
+            "holds": "Sort by title, author or Random; a grid or list toggle; on the phone, a Downloaded filter that opens Downloads."
           },
           {
             "name": "Library",
-            "holds": "Covers with progress; a requested book shows its download progress."
+            "holds": "Covers with progress. A requested book sits among them, greyed, with its live status and download progress."
           }
         ],
         "empty": "No books yet: says so, and that books are requested from Search.",
@@ -728,7 +728,7 @@
         "sections": [
           {
             "name": "Filters, in the back layer",
-            "holds": "The backdrop's back layer, behind the results. Concealed, the results' header names the active filters; tapping it, from any scroll position, slides the results down to reveal kind chips (Lyrics among them, to match a remembered line) and In your library or Outside. Results update as a filter changes; tapping the results or the close icon conceals it."
+            "holds": "The backdrop's back layer, behind the results. Concealed, the results' header names the active filters; tapping it, from any scroll position, slides the results down to reveal the kind chips. Results update as a filter changes; tapping the results or the close icon conceals it."
           },
           {
             "name": "Suggestions",
@@ -740,7 +740,7 @@
           },
           {
             "name": "Your library",
-            "holds": "Ranked by relevance; plays straight away, no request action."
+            "holds": "Ranked by relevance; plays straight away, no request action. Songs match on their lyrics too: one found by a remembered line shows that line in its row."
           },
           {
             "name": "Outside your library",

@@ -1,6 +1,6 @@
 ---
 page: requests
-pageHash: 288179b1b17643b305e1affa5651fc0e8b4e232a6a5cb5629140b9c15eb0d498
+pageHash: 1e890bc742460c21a8633f1b34affb72850ab0abc83189fc654e6de3a98713d0
 sonora: [none]
 ---
 
@@ -47,3 +47,5 @@ is where things are requested, as Sonora's `EmptyState`.
 - Open: the candidates repeat the request's art, since a release has none of its own; they are not
   indented under their request, as Sonora has no nested row.
 - Open: the phone truncates longer metas ("AudiobookBay · 286 …"); ResultRow keeps one line.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Browse's rail item lit.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

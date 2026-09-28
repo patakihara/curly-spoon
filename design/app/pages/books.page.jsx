@@ -1,12 +1,7 @@
 export default function Books({ data }) {
   return (
     <BackdropShell
-      back={
-        <BackLayer
-          search="Search your books and requests"
-          controls={<ButtonGroup items={data.filters} value="all" />}
-        />
-      }
+      back={<BackLayer search="Search your books and requests" />}
       subheader={
         <FrontLayerHeader tabs>
           <TabBar items={data.tabs} value="books" />

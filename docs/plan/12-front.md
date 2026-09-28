@@ -90,16 +90,17 @@ Your rule: nothing frontend reaches code before it is in the published design, i
 
 ### Shell and navigation
 
-Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px with Search rightmost, icon rail from 600 and labelled rail from 1024 with Search topmost. Now Playing, with Queue and Lyrics perhaps as its tabs, is a panel next to the content from 1240; narrower, the mini-player opens it as a full-screen sheet over the bottom bar. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded.
+Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px with Search rightmost, icon rail from 600 and labelled rail from 1024 with Search topmost, a hamburger at its top collapsing the labelled rail to the icon rail and back. Now Playing, with Queue and Lyrics perhaps as its tabs, is a panel next to the content from 1240; narrower, the mini-player opens it as a full-screen sheet over the bottom bar. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded. On the phone, a page that is not a destination (a shelf, Requests, an album) shows a top app bar with ✕ and its title, not the backdrop; on desktop it sits in the backdrop of the destination that opened it, that rail item lit.
 
 - **Back.** ✕ (or up) returns to whatever opened a screen, and each destination keeps its own stack: leave Music on an album, come back, and ✕ goes to the artist you opened it from. Android's back does what ✕ does; the browser's back goes to the previous view, wherever that was. A sheet closes to the page under it.
 - **Search, global and local.** The Search destination searches everything, its filters in the backdrop's back layer. Each library home, shelf, album, playlist, show and book has a bar that appears as you scroll and searches only that page, or that library and its requests.
 
 ### Rules from your notes that the components must follow
 
-- **One accent, one play colour:** violet everywhere, rose (`--play`) only for Now Playing, the mini-player, transport, seek and progress fills, and Browse's media filter.
+- **One accent, one play colour:** violet everywhere, rose (`--play`) only for Now Playing, the mini-player, transport, seek and progress fills, and Browse's media filter. A rose play button's glyph is white.
 - **Shapes never change meaning:** artists, authors and hosts are circles; all content is rounded squares. Don't copy Spotify's podcast-versus-album split.
 - **Now Playing matches the content:** podcasts and books get speed and skip (Sonora's `TransportBar` _spoken_ variant); music gets shuffle and repeat, with music speed buried elsewhere, not removed.
+- **Tabs and menus:** a tab row opens on its first tab. On the phone a context menu is a modal bottom sheet over the bottom bar and mini-player; on desktop it hangs from its button.
 - **Lyrics:** a sync toggle always in the top corner. With sync off, every line is at full opacity and a dot marks the current line; the dot can be switched off from the three-dot menu. Sonora already specifies this.
 
 ### Screens and the one call behind each

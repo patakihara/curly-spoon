@@ -1,6 +1,6 @@
 ---
 page: notFound
-pageHash: b4a6d7d1078b1727a72144c405f67d2e66222bd30787f89e89d29337c754984d
+pageHash: a608db38c1088d8e63f563cd1892015d76563749838ff8614a0258f0d4e05e54
 sonora: [none]
 ---
 
@@ -28,3 +28,5 @@ library.", and "Go to Browse". It binds no data; its placeholder is empty.
 - Matches the Empty State card: glyph, heading, line and button, centred in the front layer.
 - Changed on purpose: the close control and "Go to Browse" both lead away; the close returns to
   the opener, as every closing page does, and the button is the way back nav.json names.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, no rail item lit.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

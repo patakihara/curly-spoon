@@ -30,8 +30,7 @@ Grouped by what they serve. Every response shape lives in the one schema; route 
 #### Search
 
 `GET /search/suggest?q`\
-`GET /search?q&kinds`\
-`GET /search/lyrics?q`
+`GET /search?q&kinds`
 :::
 
 ::: card

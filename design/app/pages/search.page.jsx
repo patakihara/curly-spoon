@@ -7,7 +7,6 @@ export default function Search({ data }) {
             <LayoutGrid columns={1} gap="12px" maxWidth="var(--grid-max-width-list)">
               <SearchField value={data.query} placeholder={data.placeholder} autoFocus />
               <ButtonGroup items={data.kinds} value="all" />
-              <ButtonGroup items={data.scopes} value="everywhere" />
             </LayoutGrid>
           }
         />

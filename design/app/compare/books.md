@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: 7e4d658c264012f5d9a39434ed8ae7c32dd1fbacc51c19b1d705f558fd030c86
+pageHash: 6f4ae43c45fe744cd75d7c16868da1885e41c4d5186f19cd81d6127c6e5a75f7
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -25,14 +25,14 @@ Artist Cards and Backdrop Local Search cards, the page scrolled on the phone, an
 ## What the canvas page draws
 
 The back layer holds the heading "Books" ending in the local search's button (`BackLayer
-search="Search your books and requests"`: out as the front layer scrolls, as on Music), and as its
-controls the filter `ButtonGroup` All, Requested, All selected in the accent. Requests show up in
-the library under their own filter, as the plan says. The subheader is the `TabBar` with Books
-active. The body: the `SortFilterBar` "Title" with the `ViewToggle` opposite, then a `LayoutGrid`
+search="Search your books and requests"`: out as the front layer scrolls, as on Music), and no
+filter row: requests sit among the books, greyed with their status, as the plan says. The subheader
+is the `TabBar` Books, Authors, Series, Narrators, opening on Books, its first tab. The body: the `SortFilterBar` "Title" with the `ViewToggle` opposite, then a `LayoutGrid`
 of `MediaCard`s in title order: 3 across on the phone, filling the front layer on desktop. Owned books carry
 their rose resume bar (Foggy Trails, The Silent Patient, Wind and Truth). Three are requests, their
 art greyed and a pill in their tone: "Downloading · 64%" and "Downloading · 18%" in the accent
-(the download progress the structure asks for; on a phone card it keeps "64%" with its glyph) and
+(the download progress the structure asks for; on a phone card it keeps "64%" with its glyph,
+sized to the pill's text by Sonora's `--icon-2xs`) and
 "Failed" in the error tone. No book shows "Needs choice": the plan keeps that for album torrents,
 and a book's release is picked automatically.
 
@@ -40,7 +40,7 @@ Measured in the browser: the desktop grid starts where the kit's does, at x = 29
 apart, and runs to the front layer's margin at x = 1091, 4 cards of 184 px across; the phone's first tab now starts at the page margin as the kit's does, after Sonora's
 `TabBar` learnt to place itself again once the icon font has loaded.
 
-**Empty state**, per nav.json (not drawn as an artboard): the heading, filter, tabs and sort row
+**Empty state**, per nav.json (not drawn as an artboard): the heading, tabs and sort row
 stay; the grid gives way to one line saying there are no books yet, and that books are requested
 from Search.
 
@@ -53,8 +53,8 @@ from Search.
   3 at 1240, 4 at 1024, 3 at 600 and 7 at 1920, as the plan's "bigger on desktop" asks.
 - Changed on purpose: the heading is "Books" (nav.json's label), not "Audiobooks".
 - Changed on purpose: the kit's app-bar search is the back layer's local search, out on scroll.
-- Changed on purpose: a Requested filter sits in the back layer, as Browse's filter does; the kit
-  has none.
+- Changed on purpose: the tabs run Books, Authors, Series, Narrators and open on Books, the first,
+  where the kit leads with Authors: a tab row opens on its first tab.
 - Changed on purpose: a sort row ("Title"; the picker holds Title, Author, Random) leads the grid,
   as in S31, where the kit has the toggle alone.
 - Changed on purpose: requests carry their status tone on greyed art (`MediaCard.status`), where
@@ -63,3 +63,4 @@ from Search.
 - Open: the in-library marker is still open in the plan and is not drawn.
 - Open: the Downloaded filter is Android's alone and not drawn; the page format has no
   per-platform content yet.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

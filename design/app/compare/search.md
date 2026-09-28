@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: ce567b2017f0dd4e50c256ce351ffc921c7204efc049f096a7e93851f1270c01
+pageHash: 4663c7398be3d17e6aff759c507d99d791ac48f1980de1fb68a5279964d28afd
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -34,16 +34,16 @@ scrolled to its end on both widths, the Result Rows card, M2's backdrop page
 The back layer, revealed, as M2 puts filters: the heading "Search" (led by the account avatar on
 the phone), then as its controls a one-column `LayoutGrid` capped at the list width holding the
 `SearchField` with the query "salt" and `autoFocus` (the field has focus; the keyboard is implied,
-since Sonora has no keyboard), the kind filter `ButtonGroup` (All, Songs, Albums, Artists, Books,
-Authors, Series, Podcasts, Episodes, Lyrics; All selected) and the scope `ButtonGroup`
-(Everywhere, In your library, Outside). On the phone the kind row runs off the edge behind
+since Sonora has no keyboard), and the kind filter `ButtonGroup` (All, Songs, Albums, Artists, Books,
+Authors, Series, Podcasts, Episodes; All selected), the one filter row. On the phone the kind row runs off the edge behind
 ButtonGroup's edge fade, as S32's pills do. The front layer's subheader is a `SortFilterBar`
-naming the active filters, "All kinds · Everywhere", with an `expand_less` glyph: tapping it
+naming the active filters, "All kinds", with an `expand_less` glyph: tapping it
 conceals the back layer. Then, in `PageBody` at the list width:
 
 - **Top result**: one `ResultRow`, the album Salt and Static, whatever its type.
-- **In your library**: a song, a book and a Lyrics match quoting the remembered line, each a
-  plain row: it plays, with no status and no request action.
+- **In your library**: two songs and a book, each a plain row: it plays, with no status and no
+  request action. One song, Tears of Ice, was found by a remembered line of its lyrics, and its
+  row shows that line: "Song · Deep Inertia · “salt on my tongue, ice in my hands”".
 - **Not in your library**, with a "Your requests" text action leading to Requests: a song that
   plays from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
   (ring on the art, "Downloading · 42%" in the progress tone, a pressed "Requested" button; on the
@@ -57,7 +57,7 @@ search and the results above replace them.
 
 **Concealed state**: the back layer shrinks to the heading and the field; the results' header
 still names the active filters, now with `expand_more`, and tapping it from any scroll position
-slides the results down to show the kind and scope rows again.
+slides the results down to show the kind row again.
 
 **Empty states**, per nav.json: with no query, the front layer lists recent searches; with no
 results, one line says nothing matched, in your library or outside it.
@@ -87,3 +87,5 @@ results, one line says nothing matched, in your library or outside it.
 - Open: suggestions are described, not drawn (see above).
 - Open: a result row has no play control a page can show; ResultRow draws its art action only
   when given a handler, which a canvas page cannot pass.
+- Changed on purpose: no library scope and no Lyrics chip: songs match on their lyrics anyway, a song found by a line showing it in its row, and the sections already split your library from outside it.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

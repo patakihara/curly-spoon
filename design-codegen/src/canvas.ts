@@ -239,6 +239,7 @@ function artboard(
       player: slot(parts.player),
       sheet: slot(parts.sheet),
       sheetOpen: { kind: 'literal', value: parts.sheetOpen },
+      appBar: { kind: 'literal', value: parts.appBar },
     }),
     parts.platform,
     app.components.platformed,

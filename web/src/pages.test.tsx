@@ -42,3 +42,37 @@ describe('every drawn canvas page', () => {
     }
   }
 });
+
+describe('the shell around each drawn page', () => {
+  const nav = JSON.parse(
+    readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
+  ) as { destinations: { id: string }[]; pages: { id: string }[] };
+  const destinations = new Set(nav.destinations.map((d) => d.id));
+  const idOf = (file: string) => file.replace('.tsx', '').replace(/^./, (c) => c.toLowerCase());
+  const render = async (file: string, layout: LayoutId) => {
+    const page = (
+      (await import(new URL(file, dir).href)) as {
+        default: ComponentType<{ layout?: LayoutId }>;
+      }
+    ).default;
+    return renderToString(createElement(MemoryRouter, null, createElement(page, { layout })));
+  };
+  /** The frame's own surface: the back layer's colour, or the page's under a top app bar. */
+  const frame = (html: string) => /<div style="[^"]*background:var\((--[\w-]+)\)/.exec(html)?.[1];
+
+  for (const file of pages) {
+    const id = idOf(file);
+    it(`[M0.canvas] ${id} on the phone ${destinations.has(id) ? 'sits in the backdrop' : 'shows a top app bar, never a back layer'}`, async () => {
+      expect(nav.pages.map((p) => p.id)).toContain(id);
+      expect(frame(await render(file, 'w0'))).toBe(
+        destinations.has(id) ? '--surface-bg-alt' : '--surface-bg',
+      );
+    });
+
+    it(`[M0.canvas] ${id} on desktop sits in the backdrop, with the rail's hamburger`, async () => {
+      expect(frame(await render(file, 'w1024'))).toBe('--surface-bg-alt');
+      expect(await render(file, 'w1024')).toContain('aria-label="Collapse rail"');
+      expect(await render(file, 'w600')).toContain('aria-label="Expand rail"');
+    });
+  }
+});

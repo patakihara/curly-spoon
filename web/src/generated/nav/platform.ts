@@ -9,6 +9,8 @@ export type LayoutId = 'w0' | 'w600' | 'w1024' | 'w1240';
 /** The shell's parts at one layout: its density, its rail, what leads the heading, the player and the side panel. */
 export interface Chrome {
   platform: Platform;
+  /** A top app bar in place of the backdrop: a page that is not a destination, on the phone. */
+  appBar: boolean;
   rail?: ReactNode;
   leading?: ReactNode;
   player?: ReactNode;

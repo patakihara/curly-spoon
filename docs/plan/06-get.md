@@ -29,7 +29,7 @@ One pipeline and one status vocabulary for music, books and podcasts. Only the s
 
 ### Books
 
-- **Books are request-only**, a hard line. A book you don't own is greyed out. Tapping it requests it and shows _Requested_, with download progress visible in search. Requests show up in the library under their own filter, next to _Downloaded_ (on the phone).
+- **Books are request-only**, a hard line. A book you don't own is greyed out. Tapping it requests it and shows _Requested_, with download progress visible in search. Requests sit among the library's items, greyed with their live status, with no separate filter.
 - **Book imports are Auralis's job, not yours.** Today a finished download still needs hand fixes, which is why mediaserver has four Claude commands for it (in `~/.claude/commands/`). Each becomes a step of the book fulfil job:
   - `audiobook-import`: hardlink the download into `/data/media/Books/<Author>/<Book>`, wrapping loose audio files in their own book folder, without copying data, so seeding continues;
   - `audiobook-narrator-tag`: write a clean title to `metadata.json`, and add the narrator's name only when you own the same book in more than one narration;

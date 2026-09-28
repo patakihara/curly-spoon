@@ -7,14 +7,14 @@ import { AccountButton, BackLayer, BackdropShell, BottomNav, FrontLayerHeader, L
 const placeholder = {
   "tabs": [
     {
-      "key": "artists",
-      "label": "Artists",
-      "icon": "artist"
-    },
-    {
       "key": "albums",
       "label": "Albums",
       "icon": "album"
+    },
+    {
+      "key": "artists",
+      "label": "Artists",
+      "icon": "artist"
     },
     {
       "key": "songs",
@@ -225,6 +225,7 @@ const shell = {
 const CHROME: Record<LayoutId, Chrome> = {
   w0: {
     platform: 'mobile',
+    appBar: false,
     leading: (
       <AccountButton label={shell.account.label} />
     ),
@@ -238,8 +239,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w600: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={false} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={false} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -248,8 +250,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1024: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={true} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -258,8 +261,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1240: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={true} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -299,6 +303,7 @@ export default function Music({ data = placeholder, state = 'full', layout: give
       player={chrome.player}
       sheet={chrome.sheet}
       sheetOpen={chrome.sheetOpen}
+      appBar={chrome.appBar}
       platform={platform}
     >
       <PageBody platform={platform}>

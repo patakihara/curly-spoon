@@ -76,6 +76,53 @@ describe('the app shell', () => {
     expect(at(1440).sheetOpen).toBe(true);
   });
 
+  it('[M0.canvas] gives every rail the hamburger that collapses the labelled rail to the icon rail and back', () => {
+    for (const layout of nav.layouts.filter((l) => l.nav !== 'bottomBar')) {
+      for (const page of nav.pages) {
+        const rail = el(chrome(nav, shell, page, layout, platformed).rail, 'NavRail');
+        expect(rail.props.toggle, `${page.id} at ${layoutId(layout)}`).toEqual({
+          kind: 'literal',
+          value: true,
+        });
+      }
+    }
+  });
+
+  it('[M0.canvas] shows a page that is not a destination under a top app bar on the phone, never the backdrop’s back layer', () => {
+    const destinations = new Set(nav.destinations.map((d) => d.id));
+    const phone = layoutAt(nav, 390);
+    const details = nav.pages.filter((p) => !destinations.has(p.id));
+    expect(details.map((p) => p.id)).toEqual(
+      expect.arrayContaining(['shelf', 'requests', 'album', 'artist', 'playlist', 'favourites']),
+    );
+    for (const page of nav.pages) {
+      const parts = chrome(nav, shell, page, phone, platformed);
+      expect(parts.appBar, page.id).toBe(!destinations.has(page.id));
+      const root = el(
+        framed(framePage({ kind: 'fragment', children: [] }), page.title, {
+          appBar: { kind: 'literal', value: parts.appBar },
+        }),
+        'BackdropShell',
+      );
+      expect(root.props.appBar, page.id).toEqual({ kind: 'literal', value: parts.appBar });
+    }
+  });
+
+  it('[M0.canvas] keeps a page that is not a destination in its destination’s backdrop on desktop, its rail item lit', () => {
+    for (const layout of nav.layouts.filter((l) => l.nav !== 'bottomBar')) {
+      for (const id of ['shelf', 'requests', 'album', 'artist']) {
+        const parts = chrome(nav, shell, pageOf(id), layout, platformed);
+        expect(parts.appBar, id).toBe(false);
+        expect(el(parts.rail, 'NavRail').props.active).toEqual({
+          kind: 'literal',
+          value: pageOf(id).lights,
+        });
+      }
+    }
+    expect(pageOf('shelf').lights).toBe('browse');
+    expect(pageOf('requests').lights).toBe('browse');
+  });
+
   it('[M0.canvas] lights the page’s destination, and Settings at the rail’s foot', () => {
     const rail = (id: string) =>
       el(chrome(nav, shell, pageOf(id), layoutAt(nav, 1440), platformed).rail, 'NavRail');

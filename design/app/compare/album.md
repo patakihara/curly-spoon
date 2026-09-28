@@ -1,6 +1,6 @@
 ---
 page: album
-pageHash: 6233f987df4b2b39fa88ed2d26363cf215c84ddecf575c7e5fa333ca243ed5a0
+pageHash: 8bccdd643cc5d732d7c65247554d6f51c39a9fc9cba51494216ae53bc70eee79
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S02, S35]
 ---
@@ -53,10 +53,14 @@ one line where the tracks would be.
 - Changed on purpose: two buttons, Play and Add to queue, where the kit has Play, Next and Last:
   04-play puts play next on the long press, and nav.json names only these two.
 - Changed on purpose: Add to library sits in the header's menu, never a button (06-get); the menu is
-  drawn open to show it, over the first rows.
+  drawn open to show it: on desktop hanging from its button over the first rows, on the phone as a
+  modal bottom sheet (Sonora's `OverflowMenu` on mobile) over a scrim that covers the page, the
+  bottom bar and the mini-player.
 - Changed on purpose: rows lead with the track number, not the art every track shares (Sonora's
   `ResultRow.number`), and end in a menu instead of a status pill; there is no "In library" pill
   on a row.
 - Changed on purpose: an album you don't own says it plays from YouTube Music in its meta line; the
   kit has no unowned album.
 - Provisional, per nav.json: the editions fold and "More by", drawn as a guess.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

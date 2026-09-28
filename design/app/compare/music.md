@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 04b255f2d9fa06ed65db99a27a61dbf936f1719862475b8a5f1c3b92ec9d2446
+pageHash: 9325f77d90ba9e1ccac38e4beb9aa87816e5c019d0f69501919450eff7a7046c
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -32,12 +32,13 @@ requests"`, which Sonora now draws as the kit's search morph moved to the backdr
 it is the search button the kit has; once the front layer scrolls, the heading becomes the field,
 without focus; tapped, it comes out with focus. It searches only this library and its requests.
 There is no filter row: nav.json's only Music filter is Downloaded, which is Android's. The front
-layer's subheader is the `TabBar` (Artists, Albums, Songs, Albums active) with its static hairline.
+layer's subheader is the `TabBar` (Albums, Artists, Songs, opening on Albums, its first tab) with its
+static hairline.
 Then `PageBody`: a `SortFilterBar` reading "Title" with the `ViewToggle` opposite it, as in S31,
 and a `LayoutGrid` of `MediaCard`s filling their cells: 3 across on the phone, and on desktop
 filling the front layer (4 across here, beside the panel). Albums are in title order. Two
 are requests: "Paper Lanterns" with a "Needs choice" pill in the request tone, "Salt and Static"
-downloading at 64% in the accent, both with their art greyed since they cannot play yet.
+downloading at 64% in the accent, its glyph sized to the pill's text (`--icon-2xs`), both with their art greyed since they cannot play yet.
 
 Measured in the browser: page margin 16 px on the phone and 28 px on desktop, as in the kits;
 desktop cards 184 px wide, 20 px apart, from x = 296 to the front layer's margin at x = 1091.
@@ -49,7 +50,8 @@ yet and pointing to Search to find, play and add music.
 ## Differences
 
 - Changed on purpose: the kit opens on Songs as a list; the page opens on Albums as a grid, since
-  the plan's library is "a 3-across grid on phones, bigger on desktop". The list view is the
+  the plan's library is "a 3-across grid on phones, bigger on desktop", and Albums leads the tabs,
+  since a tab row opens on its first tab. The list view is the
   toggle's other state and is not drawn.
 - Changed on purpose: on desktop the grid fills the front layer, where the kit's stops at 190 px
   columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns
@@ -69,3 +71,4 @@ yet and pointing to Search to find, play and add music.
 - Open: playlists and favourites are not placed yet, per nav.json.
 - Open: the Downloaded filter that opens Downloads is Android's alone, and the page format has no
   per-platform content yet, so it is not drawn.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

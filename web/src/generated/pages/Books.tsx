@@ -2,29 +2,19 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { AccountButton, BackLayer, BackdropShell, BottomNav, ButtonGroup, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, PlayerPanel, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
+import { AccountButton, BackLayer, BackdropShell, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, PlayerPanel, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
-  "filters": [
-    {
-      "key": "all",
-      "label": "All"
-    },
-    {
-      "key": "requested",
-      "label": "Requested"
-    }
-  ],
   "tabs": [
-    {
-      "key": "authors",
-      "label": "Authors",
-      "icon": "history_edu"
-    },
     {
       "key": "books",
       "label": "Books",
       "icon": "menu_book"
+    },
+    {
+      "key": "authors",
+      "label": "Authors",
+      "icon": "history_edu"
     },
     {
       "key": "series",
@@ -254,6 +244,7 @@ const shell = {
 const CHROME: Record<LayoutId, Chrome> = {
   w0: {
     platform: 'mobile',
+    appBar: false,
     leading: (
       <AccountButton label={shell.account.label} />
     ),
@@ -267,8 +258,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w600: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -277,8 +269,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1024: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="books" expanded={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="books" expanded={true} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -287,8 +280,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1240: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="books" expanded={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="books" expanded={true} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -319,15 +313,7 @@ export default function Books({ data = placeholder, state = 'full', layout: give
   return (
     <BackdropShell
       rail={chrome.rail}
-      back={
-        <BackLayer
-          title="Books"
-          leading={chrome.leading}
-          controls={<ButtonGroup items={data.filters} value="all" onChange={ignore} platform={platform} />}
-          search="Search your books and requests"
-          platform={platform}
-        />
-      }
+      back={<BackLayer title="Books" leading={chrome.leading} search="Search your books and requests" platform={platform} />}
       subheader={
         <FrontLayerHeader tabs={true} platform={platform}>
           <TabBar items={data.tabs} value="books" onChange={ignore} platform={platform} />
@@ -336,6 +322,7 @@ export default function Books({ data = placeholder, state = 'full', layout: give
       player={chrome.player}
       sheet={chrome.sheet}
       sheetOpen={chrome.sheetOpen}
+      appBar={chrome.appBar}
       platform={platform}
     >
       <PageBody platform={platform}>

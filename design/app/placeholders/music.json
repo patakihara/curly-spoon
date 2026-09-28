@@ -1,14 +1,14 @@
 {
   "tabs": [
     {
-      "key": "artists",
-      "label": "Artists",
-      "icon": "artist"
-    },
-    {
       "key": "albums",
       "label": "Albums",
       "icon": "album"
+    },
+    {
+      "key": "artists",
+      "label": "Artists",
+      "icon": "artist"
     },
     {
       "key": "songs",

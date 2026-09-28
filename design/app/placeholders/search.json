@@ -37,27 +37,9 @@
     {
       "key": "episodes",
       "label": "Episodes"
-    },
-    {
-      "key": "lyrics",
-      "label": "Lyrics"
     }
   ],
-  "scopes": [
-    {
-      "key": "everywhere",
-      "label": "Everywhere"
-    },
-    {
-      "key": "library",
-      "label": "In your library"
-    },
-    {
-      "key": "outside",
-      "label": "Outside"
-    }
-  ],
-  "activeFilters": "All kinds · Everywhere",
+  "activeFilters": "All kinds",
   "top": {
     "title": "Salt and Static",
     "meta": "Album · Soul Vertex · 11 tracks",
@@ -76,7 +58,7 @@
     },
     {
       "title": "Tears of Ice",
-      "meta": "Lyrics · \"salt on my tongue, ice in my hands\" · Deep Inertia",
+      "meta": "Song · Deep Inertia · “salt on my tongue, ice in my hands”",
       "image": "/art/tears-of-ice.jpg"
     }
   ],

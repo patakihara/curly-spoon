@@ -235,6 +235,7 @@ const shell = {
 const CHROME: Record<LayoutId, Chrome> = {
   w0: {
     platform: 'mobile',
+    appBar: true,
     leading: (
       <IconButton icon="close" label="Close" />
     ),
@@ -248,8 +249,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w600: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={false} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={false} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -261,8 +263,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1024: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={true} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -274,8 +277,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1240: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={true} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -311,6 +315,7 @@ export default function Requests({ data = placeholder, state = 'full', layout: g
       player={chrome.player}
       sheet={chrome.sheet}
       sheetOpen={chrome.sheetOpen}
+      appBar={chrome.appBar}
       platform={platform}
     >
       <PageBody width="list" platform={platform}>

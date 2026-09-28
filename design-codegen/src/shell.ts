@@ -12,8 +12,10 @@
  *
  * The shell fills in the rest: the heading (nav.json's title for the page, unless the page binds
  * its own from its data, `title={data.title}`, as an album does with its name and a shelf with its own title), what leads it (the account avatar
- * on a phone's destination home, a close control on a page that closes), the rail or bottom bar,
- * the player and the side panel. A page whose root is anything else is its front layer's content
+ * on a phone's destination home, a close control on a page that closes), the rail or bottom bar
+ * with the rail's hamburger, the player and the side panel. On the phone a page that is not a
+ * destination has no backdrop: its heading is a top app bar on the page surface. On desktop it
+ * stays in the backdrop of the destination it lights. A page whose root is anything else is its front layer's content
  * alone. The account avatar is the shell's alone: a page never draws one, so it is never in a
  * filter row.
  */
@@ -120,6 +122,8 @@ export function shellData(nav: Nav, shell: ShellFile): ShellData {
 /** The shell's parts for one page at one layout, each a tree of Sonora elements. */
 export interface Chrome {
   platform: 'mobile' | 'desktop';
+  /** A page that is not a destination, on the phone: a top app bar in place of the backdrop. */
+  appBar: boolean;
   rail?: PageTree;
   leading?: PageTree;
   player?: PageTree;
@@ -163,6 +167,7 @@ export function chrome(
   const platform = platformOf(layout);
   const id = layoutId(layout);
   const phone = layout.nav === 'bottomBar';
+  const destination = nav.destinations.some((d) => d.id === page.id);
   const active = page.lights ?? shell.railFoot.find((f) => f.page === page.id)?.page;
   const withPlatform = (tree: PageTree): PageTree => {
     if (tree.kind === 'fragment') return { ...tree, children: tree.children.map(withPlatform) };
@@ -189,7 +194,7 @@ export function chrome(
             ...(shell.account.image === undefined ? {} : { image: bind('shell.account.image') }),
           })
         : undefined;
-  const parts: Chrome = { platform, leading, sheetOpen: false };
+  const parts: Chrome = { platform, appBar: phone && !destination, leading, sheetOpen: false };
   if (phone) {
     const bar = el('BottomNav', { items: bind(`shell.nav.${id}`), active: lit(page.lights ?? '') });
     parts.player = mini === undefined ? bar : { kind: 'fragment', children: [mini, bar] };
@@ -199,6 +204,7 @@ export function chrome(
       ...(shell.railFoot.length > 0 ? { footerItems: bind('shell.footer') } : {}),
       ...(active === undefined ? {} : { active: lit(active) }),
       expanded: lit(layout.nav === 'labelledRail'),
+      toggle: lit(true),
     });
     parts.player = mini;
     if (layout.sidePanel === 'nowPlaying' && shell.playing !== null) {
@@ -305,7 +311,9 @@ export function framePage(tree: PageTree): PageFrame {
 export function framed(
   frame: PageFrame,
   title: string,
-  parts: Partial<Record<'rail' | 'leading' | 'player' | 'sheet' | 'sheetOpen', PropValue>>,
+  parts: Partial<
+    Record<'rail' | 'leading' | 'player' | 'sheet' | 'sheetOpen' | 'appBar', PropValue>
+  >,
 ): PageTree {
   const named = (name: string, tree: PageTree | undefined): Record<string, PropValue> =>
     tree === undefined ? {} : { [name]: { kind: 'slot', tree } };
@@ -329,6 +337,7 @@ export function framed(
       ...given('player'),
       ...given('sheet'),
       ...given('sheetOpen'),
+      ...given('appBar'),
     },
     children: frame.content,
   };

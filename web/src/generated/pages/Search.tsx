@@ -43,27 +43,9 @@ const placeholder = {
     {
       "key": "episodes",
       "label": "Episodes"
-    },
-    {
-      "key": "lyrics",
-      "label": "Lyrics"
     }
   ],
-  "scopes": [
-    {
-      "key": "everywhere",
-      "label": "Everywhere"
-    },
-    {
-      "key": "library",
-      "label": "In your library"
-    },
-    {
-      "key": "outside",
-      "label": "Outside"
-    }
-  ],
-  "activeFilters": "All kinds · Everywhere",
+  "activeFilters": "All kinds",
   "top": {
     "title": "Salt and Static",
     "meta": "Album · Soul Vertex · 11 tracks",
@@ -82,7 +64,7 @@ const placeholder = {
     },
     {
       "title": "Tears of Ice",
-      "meta": "Lyrics · \"salt on my tongue, ice in my hands\" · Deep Inertia",
+      "meta": "Song · Deep Inertia · “salt on my tongue, ice in my hands”",
       "image": "/art/tears-of-ice.jpg"
     }
   ],
@@ -275,6 +257,7 @@ const shell = {
 const CHROME: Record<LayoutId, Chrome> = {
   w0: {
     platform: 'mobile',
+    appBar: false,
     leading: (
       <AccountButton label={shell.account.label} />
     ),
@@ -288,8 +271,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w600: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="search" expanded={false} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="search" expanded={false} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -298,8 +282,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1024: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="search" expanded={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="search" expanded={true} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -308,8 +293,9 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
   w1240: {
     platform: 'desktop',
+    appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="search" expanded={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="search" expanded={true} toggle={true} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
@@ -348,7 +334,6 @@ export default function Search({ data = placeholder, state = 'full', layout: giv
             <LayoutGrid columns={1} gap="12px" maxWidth="var(--grid-max-width-list)" platform={platform}>
               <SearchField value={data.query} placeholder={data.placeholder} autoFocus={true} onChange={ignore} platform={platform} />
               <ButtonGroup items={data.kinds} value="all" onChange={ignore} platform={platform} />
-              <ButtonGroup items={data.scopes} value="everywhere" onChange={ignore} platform={platform} />
             </LayoutGrid>
           }
           platform={platform}
@@ -362,6 +347,7 @@ export default function Search({ data = placeholder, state = 'full', layout: giv
       player={chrome.player}
       sheet={chrome.sheet}
       sheetOpen={chrome.sheetOpen}
+      appBar={chrome.appBar}
       platform={platform}
     >
       <PageBody width="list" platform={platform}>
