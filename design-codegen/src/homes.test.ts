@@ -7,11 +7,30 @@ import { framePage } from './shell.js';
 
 const appDir = join(REPO_ROOT, APP_DIR);
 
-/** Each library home, the person its second sort names, and what its local search names. */
+/**
+ * Each library home, the person its second sort names, what its local search names, and the
+ * placeholder data it may bind: its own controls (tabs, filters, spy sections, sort) and its own
+ * library, nothing else.
+ */
 const HOMES = [
-  { id: 'music', person: 'Artist', searches: 'Search your music and requests' },
-  { id: 'books', person: 'Author', searches: 'Search your books and requests' },
-  { id: 'podcasts', person: 'Host', searches: 'Search your shows and their episodes' },
+  {
+    id: 'music',
+    person: 'Artist',
+    searches: 'Search your music and requests',
+    binds: ['library', 'sort', 'tabs'],
+  },
+  {
+    id: 'books',
+    person: 'Author',
+    searches: 'Search your books and requests',
+    binds: ['filters', 'library', 'sort', 'tabs'],
+  },
+  {
+    id: 'podcasts',
+    person: 'Host',
+    searches: 'Search your shows and their episodes',
+    binds: ['library', 'lists', 'sections', 'sort'],
+  },
 ] as const;
 
 type Element = Extract<PageTree, { kind: 'element' }>;
@@ -65,18 +84,19 @@ describe('the library homes', () => {
       expect(options).toContain(value);
     });
 
-    it(`[M0.canvas] ${home.id} binds only its own library, never Browse's feed, Browse's filter or search results`, () => {
+    it(`[M0.canvas] ${home.id} binds only its own library (${home.binds.join(', ')}), never Browse's feed, Browse's filter or search results`, () => {
       const paths = bindings(tree);
       const roots = new Set(paths.filter((p) => p.startsWith('data.')).map((p) => p.split('.')[1]));
+      expect([...roots].sort()).toEqual([...home.binds]);
       // `sections` is any spied page's own section titles, not Browse's content.
       const feed = Object.keys(browse).filter((key) => key !== 'sections');
-      for (const key of feed) expect(roots).not.toContain(key);
+      for (const key of feed) expect(home.binds).not.toContain(key);
       expect(paths.filter((p) => p.startsWith('shell.'))).toEqual([]);
       expect(paths.some((p) => /search|results|feed/i.test(p))).toBe(false);
     });
 
     it(`[M0.canvas] ${home.id} has a local search in its back layer, scoped to it: "${home.searches}"`, () => {
-      expect(framePage(tree).search).toEqual({ kind: 'literal', value: home.searches });
+      expect(framePage(tree).search).toBe(home.searches);
     });
 
     it(`[M0.canvas] ${home.id} draws no in-library marker: where it goes is still open in the plan`, () => {

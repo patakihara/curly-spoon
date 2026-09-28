@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: 45ddfc0590af4c48767132c242a3e817fff45fc0a758c7d64f19a7aeb8b455fd
+pageHash: ae0ad39ba397623b893fe986dc8623f6bc2d561d247a1c8421d161eb45743ed1
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -29,14 +29,14 @@ search="Search your books and requests"`: out as the front layer scrolls, as on 
 controls the filter `ButtonGroup` All, Requested, All selected in the accent. Requests show up in
 the library under their own filter, as the plan says. The subheader is the `TabBar` with Books
 active. The body: the `SortFilterBar` "Title" with the `ViewToggle` opposite, then a `LayoutGrid`
-of `MediaCard`s in title order: 3 across on the phone, 190 px columns on desktop. Owned books carry
+of `MediaCard`s in title order: 3 across on the phone, filling the front layer on desktop. Owned books carry
 their rose resume bar (Foggy Trails, The Silent Patient, Wind and Truth). Three are requests, their
 art greyed and a pill in their tone: "Downloading · 64%" in the accent (the download progress the
 structure asks for; on a phone card it keeps "64%" with its glyph), "Needs choice" in the request
 tone and "Failed" in the error tone.
 
-Measured in the browser: the desktop grid matches the kit's, 190 px cards 20 px apart from
-x = 296; the phone's first tab now starts at the page margin as the kit's does, after Sonora's
+Measured in the browser: the desktop grid starts where the kit's does, at x = 296 with cards 20 px
+apart, and runs to the front layer's margin at x = 1091, 4 cards of 184 px across; the phone's first tab now starts at the page margin as the kit's does, after Sonora's
 `TabBar` learnt to place itself again once the icon font has loaded.
 
 **Empty state**, per nav.json (not drawn as an artboard): the heading, filter, tabs and sort row
@@ -45,7 +45,11 @@ from Search.
 
 ## Differences
 
-- Matches: tabs, toggle placement, 3-across phone grid, 190 px desktop grid, rose resume bars.
+- Matches: tabs, toggle placement, 3-across phone grid, rose resume bars.
+- Changed on purpose: on desktop the grid fills the front layer, where the kit's stops at 190 px
+  columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns
+  as its 160 px minimum allows, sharing the rest, so 4 across at 184 px beside the panel at 1440 px,
+  3 at 1240, 4 at 1024, 3 at 600 and 7 at 1920, as the plan's "bigger on desktop" asks.
 - Changed on purpose: the heading is "Books" (nav.json's label), not "Audiobooks".
 - Changed on purpose: the kit's app-bar search is the back layer's local search, out on scroll.
 - Changed on purpose: a Requested filter sits in the back layer, as Browse's filter does; the kit

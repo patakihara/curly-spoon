@@ -103,7 +103,15 @@ const gridOut = generateWebPage(
   {
     platformed: new Set(),
     handled: new Set(),
-    choices: new Map([['MediaCard', new Set(['tone', 'size'])]]),
+    choices: new Map([
+      [
+        'MediaCard',
+        new Map([
+          ['tone', { words: ['progress', 'request', 'error'], nullable: true }],
+          ['size', { words: ['md', 'sm'], nullable: false }],
+        ]),
+      ],
+    ]),
   },
   shellOf('books'),
 );

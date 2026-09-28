@@ -172,21 +172,23 @@ describe('a page in the shell', () => {
   <PageBody />
 </BackdropShell>`),
     );
-    expect(frame.search).toEqual({ kind: 'literal', value: 'Search your books and requests' });
+    expect(frame.search).toBe('Search your books and requests');
     const shellTree = el(framed(frame, 'Books', {}), 'BackdropShell');
     const slot = shellTree.props.back;
     const back = el(slot?.kind === 'slot' ? slot.tree : undefined, 'BackLayer');
     expect(back.props.search).toEqual({ kind: 'literal', value: 'Search your books and requests' });
   });
 
-  it('refuses a local search given as an element: it is the placeholder text', () => {
-    expect(() =>
-      framePage(
-        page(
-          '<BackdropShell back={<BackLayer search={<SearchField />} />}><PageBody /></BackdropShell>',
+  it('[M0.canvas] refuses a local search given as anything but its placeholder text', () => {
+    for (const search of ['{<SearchField />}', '{data.search}', '{42}', '{null}', '']) {
+      expect(() =>
+        framePage(
+          page(
+            `<BackdropShell back={<BackLayer search${search === '' ? '' : `=${search}`} />}><PageBody /></BackdropShell>`,
+          ),
         ),
-      ),
-    ).toThrow(/BackLayer.search is the placeholder text/);
+      ).toThrow(/BackLayer.search is the placeholder text, a string/);
+    }
   });
 
   it('is its front layer’s content alone when its root is not the shell', () => {

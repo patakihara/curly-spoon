@@ -196,6 +196,63 @@ describe('checking a page', () => {
     ]);
   });
 
+  describe('a prop that takes one of a set of words', () => {
+    const cards = new Map([['MediaCard', new Set(['title', 'tone', 'size'])]]);
+    const choices = new Map([
+      [
+        'MediaCard',
+        new Map([
+          ['tone', { words: ['progress', 'request', 'error'], nullable: true }],
+          ['size', { words: ['md', 'sm'], nullable: false }],
+        ]),
+      ],
+    ]);
+    const grid = (library: unknown[], size = '"sm"') =>
+      checkPage(
+        tree(`<Each of={data.library} as="item">
+  <MediaCard title={item.title} tone={item.tone} size={${size}} />
+</Each>`),
+        { library, size: 'huge' },
+        cards,
+        undefined,
+        undefined,
+        choices,
+      );
+
+    it('[M0.canvas] accepts a bound value that is one of its words, and null where the prop takes null', () => {
+      expect(
+        grid([
+          { title: 'A', tone: 'request' },
+          { title: 'B', tone: null },
+        ]),
+      ).toEqual([]);
+    });
+
+    it('[M0.canvas] names a bound value outside its words, so a placeholder cannot smuggle one in', () => {
+      expect(
+        grid([
+          { title: 'A', tone: 'rose' },
+          { title: 'B', tone: 3 },
+        ]),
+      ).toEqual([
+        'line 4: MediaCard.tone takes progress, request or error, not "rose" (item.tone)',
+        'line 4: MediaCard.tone takes progress, request or error, not 3 (item.tone)',
+      ]);
+    });
+
+    it('[M0.canvas] names a literal outside its words, and null where the prop takes no null', () => {
+      expect(grid([{ title: 'A', tone: null }], '"xl"')).toEqual([
+        'line 4: MediaCard.size takes md or sm, not "xl"',
+      ]);
+      expect(grid([{ title: 'A', tone: null }], 'data.size')).toEqual([
+        'line 4: MediaCard.size takes md or sm, not "huge" (data.size)',
+      ]);
+      expect(grid([{ title: 'A', tone: null }], 'null')).toEqual([
+        'line 4: MediaCard.size takes md or sm, not null',
+      ]);
+    });
+  });
+
   it('names children given to a component that takes none', () => {
     expect(checkPage(tree('<EpisodeRow>Hi</EpisodeRow>'), data, props)).toEqual([
       'line 3: EpisodeRow takes no children',

@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 907a07058a908527a174401acd9f74c821c66728f8632a91c301e40e1a655532
+pageHash: e91c66816c8def3c455e0accc24138ab1ccd00d79ad434b54e6d532bf08d634f
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -34,13 +34,13 @@ without focus; tapped, it comes out with focus. It searches only this library an
 There is no filter row: nav.json's only Music filter is Downloaded, which is Android's. The front
 layer's subheader is the `TabBar` (Artists, Albums, Songs, Albums active) with its static hairline.
 Then `PageBody`: a `SortFilterBar` reading "Title" with the `ViewToggle` opposite it, as in S31,
-and a `LayoutGrid` of `MediaCard`s filling their cells: 3 across on the phone, and on desktop as
-many 190 px columns as the pane takes (3 here, beside the panel). Albums are in title order. Two
+and a `LayoutGrid` of `MediaCard`s filling their cells: 3 across on the phone, and on desktop
+filling the front layer (4 across here, beside the panel). Albums are in title order. Two
 are requests: "Paper Lanterns" with a "Needs choice" pill in the request tone, "Salt and Static"
 downloading at 64% in the accent, both with their art greyed since they cannot play yet.
 
 Measured in the browser: page margin 16 px on the phone and 28 px on desktop, as in the kits;
-desktop cards 190 px wide, 20 px apart, starting at x = 296 as the desktop kit's books grid does.
+desktop cards 184 px wide, 20 px apart, from x = 296 to the front layer's margin at x = 1091.
 
 **Empty state**, per nav.json (not drawn as an artboard; the canvas has no variant form): the
 heading, the tabs and the sort row stay; the grid gives way to one line saying there is no music
@@ -51,6 +51,10 @@ yet and pointing to Search to find, play and add music.
 - Changed on purpose: the kit opens on Songs as a list; the page opens on Albums as a grid, since
   the plan's library is "a 3-across grid on phones, bigger on desktop". The list view is the
   toggle's other state and is not drawn.
+- Changed on purpose: on desktop the grid fills the front layer, where the kit's stops at 190 px
+  columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns
+  as its 160 px minimum allows, sharing the rest, so 4 across at 184 px beside the panel at 1440 px,
+  3 at 1240, 4 at 1024, 3 at 600 and 7 at 1920, as the plan's "bigger on desktop" asks.
 - Changed on purpose: the kit's app-bar search button is now the back layer's local search, which
   comes out as the front layer scrolls (Sonora `BackLayer.search`, added for these homes).
 - Changed on purpose: a sort row ("Title", the sort picker's current choice) leads the collection

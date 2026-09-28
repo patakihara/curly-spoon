@@ -154,6 +154,18 @@ export function parsePage(source: string, id: string): PageTree {
 
 type Json = unknown;
 
+/** The words a prop takes one of, and whether it also takes null. */
+export interface Choice {
+  words: string[];
+  nullable: boolean;
+}
+
+/** Each component's props that take one of a fixed set of words. */
+export type Choices = Map<string, Map<string, Choice>>;
+
+const listed = (words: string[]) =>
+  words.length === 1 ? words[0]! : `${words.slice(0, -1).join(', ')} or ${words.at(-1)!}`;
+
 /** The value at `path` below `value`, or undefined. */
 function resolve(value: Json, path: string[]): Json {
   let at = value;
@@ -170,7 +182,8 @@ function resolve(value: Json, path: string[]): Json {
  * placeholder (inside `<Each>`, in each item) or, as `shell.…`, in what the shell shows, and every
  * component and prop must be Sonora's. `props` maps each component to the prop names its `.d.ts`
  * declares, `slots` to those of them that take an element; without `slots`, any declared prop may
- * take one.
+ * take one. A prop in `choices` takes one of its words (or null, where it takes null), given in
+ * the page or bound, in every item a binding resolves to.
  */
 export function checkPage(
   tree: PageTree,
@@ -178,6 +191,7 @@ export function checkPage(
   props: Map<string, Set<string>>,
   slots?: Map<string, Set<string>>,
   shell?: Json,
+  choices?: Choices,
 ): string[] {
   const errors: string[] = [];
   const walk = (node: PageTree, scope: Map<string, Json[]>) => {
@@ -236,7 +250,22 @@ export function checkPage(
           }
         }
         for (const [prop, value] of Object.entries(node.props)) {
-          if (value.kind === 'binding') check(node.line, value.path);
+          const found = value.kind === 'binding' ? check(node.line, value.path) : [];
+          const choice = choices?.get(node.component)?.get(prop);
+          if (choice !== undefined && value.kind !== 'slot') {
+            const given = value.kind === 'literal' ? [value.value] : found;
+            const from = value.kind === 'binding' ? ` (${value.path.join('.')})` : '';
+            for (const v of given) {
+              const fits =
+                (typeof v === 'string' && choice.words.includes(v)) ||
+                (v === null && choice.nullable);
+              if (!fits) {
+                errors.push(
+                  `line ${node.line}: ${node.component}.${prop} takes ${listed(choice.words)}, not ${JSON.stringify(v)}${from}`,
+                );
+              }
+            }
+          }
           if (value.kind !== 'slot') continue;
           const takes = slots?.get(node.component);
           if (declared?.has(prop) && takes !== undefined && !takes.has(prop)) {

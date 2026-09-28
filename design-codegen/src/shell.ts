@@ -221,7 +221,7 @@ export function chrome(
 export interface PageFrame {
   controls?: PageTree;
   /** The back layer's local search: its placeholder, which names what it searches. */
-  search?: PropValue;
+  search?: string;
   trailing?: PageTree;
   subheader?: PageTree;
   content: PageTree[];
@@ -266,10 +266,11 @@ export function framePage(tree: PageTree): PageFrame {
       ) {
         for (const [p, v] of Object.entries(value.tree.props)) {
           if ((p === 'controls' || p === 'trailing') && v.kind === 'slot') frame[p] = v.tree;
-          else if (p === 'search' && v.kind !== 'slot') frame.search = v;
-          else if (p === 'search') {
+          else if (p === 'search' && v.kind === 'literal' && typeof v.value === 'string') {
+            frame.search = v.value;
+          } else if (p === 'search') {
             errors.push(
-              `line ${value.tree.line}: BackLayer.search is the placeholder text, not an element`,
+              `line ${value.tree.line}: BackLayer.search is the placeholder text, a string written in the page`,
             );
           } else {
             errors.push(
@@ -307,7 +308,7 @@ export function framed(
     ...(parts.leading === undefined ? {} : { leading: parts.leading }),
     ...named('controls', frame.controls),
     ...named('trailing', frame.trailing),
-    ...(frame.search === undefined ? {} : { search: frame.search }),
+    ...(frame.search === undefined ? {} : { search: lit(frame.search) }),
   });
   return {
     kind: 'element',

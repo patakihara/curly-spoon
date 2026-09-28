@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: 2c456fdb3e7a4e0fed7afb9246076f68b9533ef10411bc02231e7fc5afca5892
+pageHash: c199816c034f257ead3164631d759e292ceeefe0d7654c79760ce1eb54efb3b9
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -38,7 +38,11 @@ or to pasting a YouTube channel link, with the Add a YouTube channel row kept.
 
 ## Differences
 
-- Matches: the 3-across phone grid and 190 px desktop grid of show covers.
+- Matches: the 3-across phone grid of show covers.
+- Changed on purpose: on desktop the Shows and Lists grids fill the front layer, where the kit's grid stops at 190 px
+  columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns
+  as its 160 px minimum allows, sharing the rest, so 4 across at 184 px beside the panel at 1440 px,
+  3 at 1240, 4 at 1024, 3 at 600 and 7 at 1920, as the plan's "bigger on desktop" asks.
 - Changed on purpose: captions carry the unplayed count, as nav.json's Shows section asks, not
   "Podcast · 212 eps"; the unplayed dot follows S20.
 - Changed on purpose: the kit's empty band is a scroll-spy subheader, hidden at rest.

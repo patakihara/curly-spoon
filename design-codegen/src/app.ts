@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { componentName, generatePlatform, generateRoutes, readNav, type Nav } from './nav.js';
-import { checkPage, parsePage, type PageTree } from './page.js';
+import { checkPage, parsePage, type Choice, type Choices, type PageTree } from './page.js';
 import { generateWebPage, type WebComponents } from './page-web.js';
 import type { KType, PropsModel } from './props.js';
 import { framePage, readShell, shellData, type ShellData, type ShellFile } from './shell.js';
@@ -61,19 +61,23 @@ const enumOf = (type: KType): string | undefined =>
   type.kind === 'nullable' ? enumOf(type.type) : type.kind === 'named' ? type.name : undefined;
 
 /** Each component's props that take one of a fixed set of words: an enum in its declarations. */
-export function choiceNames(model: PropsModel): Map<string, Set<string>> {
-  const enums = new Set(model.shared.map((e) => e.name));
+export function choicesOf(model: PropsModel): Choices {
+  const enums = new Map(model.shared.map((e) => [e.name, e.values]));
   for (const decls of model.files.values()) {
-    for (const d of decls) if (d.kind === 'enum') enums.add(d.name);
+    for (const d of decls) if (d.kind === 'enum') enums.set(d.name, d.values);
   }
-  const names = new Map<string, Set<string>>();
+  const choices: Choices = new Map();
   for (const [component, decls] of model.files) {
     const decl = decls.find((d) => d.kind === 'class' && d.name === `${component}Props`);
     if (decl?.kind !== 'class') continue;
-    const words = decl.props.filter((p) => enums.has(enumOf(p.type) ?? '')).map((p) => p.name);
-    if (words.length > 0) names.set(component, new Set(words));
+    const taking = new Map<string, Choice>();
+    for (const p of decl.props) {
+      const words = enums.get(enumOf(p.type) ?? '');
+      if (words !== undefined) taking.set(p.name, { words, nullable: p.type.kind === 'nullable' });
+    }
+    if (taking.size > 0) choices.set(component, taking);
   }
-  return names;
+  return choices;
 }
 
 /** Reads and checks the canvas; throws naming every problem in every page. */
@@ -81,6 +85,7 @@ export function readApp(appDir: string, model: PropsModel): App {
   const nav = readNav(appDir);
   const props = propNames(model);
   const slots = slotNames(model);
+  const choices = choicesOf(model);
   const pagesDir = join(appDir, 'pages');
   const files = existsSync(pagesDir) ? readdirSync(pagesDir).sort() : [];
   const ids = new Set(nav.pages.map((p) => p.id));
@@ -109,7 +114,7 @@ export function readApp(appDir: string, model: PropsModel): App {
         JSON.parse(readFileSync(join(appDir, 'placeholders', `${id}.json`), 'utf8')),
       );
       errors.push(
-        ...checkPage(tree, placeholder, props, slots, shown).map(
+        ...checkPage(tree, placeholder, props, slots, shown, choices).map(
           (e) => `pages/${id}.page.jsx ${e}`,
         ),
       );
@@ -131,7 +136,7 @@ export function readApp(appDir: string, model: PropsModel): App {
     components: {
       platformed: taking('platform'),
       handled: taking('onChange'),
-      choices: choiceNames(model),
+      choices,
     },
   };
 }

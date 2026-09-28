@@ -5,7 +5,7 @@
  */
 import { componentName, type Nav, type NavPage } from './nav.js';
 import { APP_NOTE } from './outputs.js';
-import type { PageTree, PropValue } from './page.js';
+import type { Choices, PageTree, PropValue } from './page.js';
 import {
   chrome,
   framePage,
@@ -45,9 +45,10 @@ export interface WebComponents {
   handled: Set<string>;
   /**
    * Each component's props that take one of a fixed set of words (`tone`, `size`). A placeholder's
-   * JSON reads as a plain string, so a bound value for one is read as the prop's own type.
+   * JSON reads as a plain string, so a bound value for one is read as the prop's own type; the
+   * canvas check has already refused any value that is not one of its words.
    */
-  choices?: Map<string, Set<string>>;
+  choices?: Choices;
 }
 
 const chosen = (tree: PageTree, name: string, components: WebComponents) =>
