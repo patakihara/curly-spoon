@@ -15,7 +15,7 @@ data class TopAppBarProps(
     /** Second-row content: a ButtonGroup, a SearchField, whatever the screen needs. */
     val children: (@Composable () -> Unit)? = null,
     /** center caps the second row at 560px and centres it (the library search treatment). */
-    val align: Align? = null,
+    val align: AlignStartCenter? = null,
     /** Sits the leading/trailing controls on their own bg-alt layer so scrolling second-row content fades under them. */
     val occlude: Boolean? = null,
     /** Before the title. On mobile, the account avatar lives here, never in the filter row below. */

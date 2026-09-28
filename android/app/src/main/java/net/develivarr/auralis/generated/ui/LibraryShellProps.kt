@@ -20,7 +20,7 @@ data class LibraryView(
     val defaultMode: Mode? = null,
     /** Second-row content for a view with no sub-tabs (a filter ButtonGroup). */
     val controls: (@Composable () -> Unit)? = null,
-    val align: Align? = null,
+    val align: AlignStartCenter? = null,
 )
 
 data class LibraryViewSubtab(

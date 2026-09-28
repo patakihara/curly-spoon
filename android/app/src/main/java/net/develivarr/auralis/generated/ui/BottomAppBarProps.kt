@@ -25,15 +25,10 @@ data class BottomAppBarProps(
     /** Spread the actions evenly across the bar (default) instead of packing them to one edge. */
     val spread: Boolean? = null,
     /** Which edge they pack against when `spread` is off. */
-    val align: BottomAppBarAlign? = null,
+    val align: AlignStartEnd? = null,
     val background: String? = null,
     /** Hairline along the top edge. */
     val divider: Boolean? = null,
     /** Pinned to the trailing edge — a primary action, for instance. */
     val trailing: (@Composable () -> Unit)? = null,
 )
-
-enum class BottomAppBarAlign(val value: String) {
-    START("start"),
-    END("end"),
-}

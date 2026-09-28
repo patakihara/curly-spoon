@@ -135,6 +135,22 @@
         "message": "<IconButton> tone must be one of 'accent' | 'play'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='OverflowMenuItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|sub|key|ref|className|style|children)$/]",
+        "message": "<OverflowMenuItem> doesn't accept that prop. Declared props: key, label, icon, sub."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|label|open|onOpenChange|onSelect|align|platform|key|ref|className|style|children)$/]",
+        "message": "<OverflowMenu> doesn't accept that prop. Declared props: items, label, open, onOpenChange, onSelect, align, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:start|end)$/]",
+        "message": "<OverflowMenu> align must be one of 'start' | 'end'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<OverflowMenu> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:kind|label|playing|muted|disabled|onClick|platform|key|ref|className|style|children)$/]",
         "message": "<PreviewButton> doesn't accept that prop. Declared props: kind, label, playing, muted, disabled, onClick, platform."
       },
@@ -910,6 +926,12 @@
         "replaces": []
       },
       "OutputDeviceButton": {
+        "replaces": []
+      },
+      "OverflowMenu": {
+        "replaces": []
+      },
+      "OverflowMenuItem": {
         "replaces": []
       },
       "PageBody": {

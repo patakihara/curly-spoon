@@ -135,6 +135,20 @@ A round, transparent glyph button: surface ink, muted ink, or the active colour.
 | `label` *(required)* | `string` |  |
 | `onClick` | `() => void` |  |
 
+### OverflowMenu
+
+One verb in an OverflowMenu.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `items` *(required)* | `OverflowMenuItem[]` |  |
+| `label` | `string` | The button's accessible name and the menu's. Default "More options". |
+| `open` | `boolean` | Shows the menu open (true) or shut (false), for a still. Omit to let the button decide. |
+| `onOpenChange` | `(next: boolean) => void` | Called with the next open state when the button is pressed or a verb is chosen. |
+| `onSelect` | `(key: string) => void` | Called with the chosen item's key. |
+| `align` | `'start' \| 'end'` | Which edge of the button the menu lines up with. Default 'end'. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
 ### PreviewButton
 
 Auditions a sample without committing it — plays without adding the item to the library or displacing whatever is currently playing. The disabled state covers a sample that hasn't loaded yet, a real fourth state alongside idle/sounding/muted.
