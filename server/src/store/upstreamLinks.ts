@@ -21,6 +21,8 @@ export interface Link {
   upstreamUserId: string | null;
   /** Audiobookshelf's key id, so the key can be deleted later. */
   upstreamKeyId: string | null;
+  /** Auralis created the upstream account itself instead of finding it. */
+  createdByAuralis: boolean;
   state: LinkState;
   detail: string | null;
   updatedAt: number;
@@ -34,6 +36,7 @@ const LinkRow = z
     upstream_user_id: z.string().nullable(),
     token_ciphertext: z.string().nullable(),
     upstream_key_id: z.string().nullable(),
+    created_by_auralis: z.union([z.literal(0), z.literal(1)]),
     state: LinkState,
     detail: z.string().nullable(),
     updated_at: z.number(),
@@ -43,6 +46,7 @@ const LinkRow = z
     service: row.service,
     upstreamUserId: row.upstream_user_id,
     upstreamKeyId: row.upstream_key_id,
+    createdByAuralis: row.created_by_auralis === 1,
     state: row.state,
     detail: row.detail,
     updatedAt: row.updated_at,
@@ -92,6 +96,7 @@ export interface SaveLink {
   upstreamUserId: string | null;
   token: string | null;
   upstreamKeyId?: string | null;
+  createdByAuralis?: boolean;
   state: LinkState;
   detail?: string | null;
 }
@@ -107,11 +112,12 @@ export function saveLink(db: Db, key: Buffer, link: SaveLink, now: number = Date
   }
   db.prepare(
     `INSERT INTO upstream_links (user_id, service, upstream_user_id, token_ciphertext,
-       upstream_key_id, state, detail, updated_at)
-     VALUES (@userId, @service, @upstreamUserId, @ciphertext, @keyId, @state, @detail, @now)
+       upstream_key_id, created_by_auralis, state, detail, updated_at)
+     VALUES (@userId, @service, @upstreamUserId, @ciphertext, @keyId, @created, @state, @detail,
+       @now)
      ON CONFLICT (user_id, service) DO UPDATE SET upstream_user_id = excluded.upstream_user_id,
        token_ciphertext = excluded.token_ciphertext, upstream_key_id = excluded.upstream_key_id,
-       state = excluded.state, detail = excluded.detail, updated_at = excluded.updated_at`,
+       created_by_auralis = excluded.created_by_auralis, state = excluded.state, detail = excluded.detail, updated_at = excluded.updated_at`,
   ).run({
     userId: link.userId,
     service: link.service,
@@ -119,6 +125,7 @@ export function saveLink(db: Db, key: Buffer, link: SaveLink, now: number = Date
     ciphertext:
       link.token === null ? null : encryptSecret(link.token, key, aad(link.userId, link.service)),
     keyId: link.upstreamKeyId ?? null,
+    created: link.createdByAuralis === true ? 1 : 0,
     state: link.state,
     detail: link.detail ?? null,
     now,

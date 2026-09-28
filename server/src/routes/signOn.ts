@@ -38,8 +38,10 @@ import {
 import { signInUser, UsernameTaken } from '../store/users.js';
 import type { Linker } from '../upstream/links.js';
 
+/** The group whose members get a missing Audiobookshelf account created at first sign-in. */
+export const HOUSEHOLD_GROUP = 'household';
 /** Who may sign in at all: household members, and the recording service account. */
-export const MEMBER_GROUPS = ['household', 'auralis_service'] as const;
+export const MEMBER_GROUPS = [HOUSEHOLD_GROUP, 'auralis_service'] as const;
 /** Directory admins are Auralis admins. */
 export const ADMIN_GROUP = 'lldap_admin';
 export const APP_REDIRECT = 'auralis://auth/callback';
@@ -165,7 +167,7 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
       if (error instanceof UsernameTaken) throw new Refusal(403, 'username_taken');
       throw error;
     }
-    await linker?.linkAll(user);
+    await linker?.linkAll(user, { household: identity.groups.includes(HOUSEHOLD_GROUP) });
 
     if (started.client === 'android') {
       const device = reuseOrCreateDevice(

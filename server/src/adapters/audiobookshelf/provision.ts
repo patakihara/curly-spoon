@@ -5,7 +5,12 @@
  * a root user's key, so root accounts are never candidates. The user list cannot say which sign-on
  * subject an account is tied to: even for an admin key, `GET /api/users` and `/api/users/:id`
  * answer `User.toOldJSONForBrowser`, which carries only `hasOpenIDLink`, never `authOpenIDSub`.
+ *
+ * A household member with no account gets one: `UserController.create` takes `{username,
+ * password, type, isActive, permissions}` and answers `{user}`. The password is random and never
+ * kept; nobody signs in with it, since their own API key is Auralis's credential.
  */
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import { type UpstreamCandidate } from '../../upstream/mapping.js';
@@ -20,6 +25,26 @@ export const absUsersSchema = z.object({
     }),
   ),
 });
+
+export const absUserCreatedSchema = z.object({
+  user: z.object({ id: z.string(), username: z.string(), type: z.literal('user') }),
+});
+
+/**
+ * ABS's own defaults for a new `user` (`User.getDefaultPermissionsForUserType`), except download,
+ * which is off: the account streams every library and changes nothing.
+ */
+export const CREATED_USER_PERMISSIONS = {
+  download: false,
+  update: false,
+  delete: false,
+  upload: false,
+  createEreader: false,
+  accessAllLibraries: true,
+  accessAllTags: true,
+  accessExplicitContent: false,
+  selectedTagsNotAccessible: false,
+} as const;
 
 export const absApiKeyCreatedSchema = z.object({
   apiKey: z.object({ id: z.string(), apiKey: z.string().min(1), userId: z.string() }),
@@ -47,7 +72,10 @@ export class AbsProvisioner {
     return { authorization: `Bearer ${this.opts.provisionKey}` };
   }
 
-  /** Every active account; root is marked, because this key cannot mint a key for it. */
+  /**
+   * Every account. Root is marked, because this key cannot mint a key for it; so is an inactive
+   * one, which is never linked and still stops a new account being made in its name.
+   */
   async accounts(): Promise<UpstreamCandidate[]> {
     const { users } = await requestJson(
       this.opts.fetch,
@@ -55,9 +83,34 @@ export class AbsProvisioner {
       { headers: this.headers },
       absUsersSchema,
     );
-    return users
-      .filter((u) => u.isActive)
-      .map((u) => ({ id: u.id, username: u.username, root: u.type === 'root' }));
+    return users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      root: u.type === 'root',
+      ...(u.isActive ? {} : { disabled: true }),
+    }));
+  }
+
+  /** Creates a listening user named `username`, with a password nobody keeps; returns its id. */
+  async create(username: string): Promise<string> {
+    const { user } = await requestJson(
+      this.opts.fetch,
+      this.url('api/users'),
+      {
+        method: 'POST',
+        headers: this.headers,
+        json: {
+          username,
+          password: randomBytes(32).toString('base64url'),
+          type: 'user',
+          isActive: true,
+          permissions: CREATED_USER_PERMISSIONS,
+        },
+      },
+      absUserCreatedSchema,
+    );
+    if (user.username !== username) throw new Error('the account was created under another name');
+    return user.id;
   }
 
   /** A key that never expires, acting as `upstreamUserId`. */

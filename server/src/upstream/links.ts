@@ -1,8 +1,10 @@
 /**
  * Links each person to their own upstream accounts at sign-in, and builds the clients that act as
  * them. A link failure is stored on the link and never blocks sign-in. The upstream account is
- * pinned at first link; a stale token is re-minted for the same account, never re-matched.
- * `upstreamFor` decrypts per request: nothing is cached across users.
+ * pinned at first link; a stale token is re-minted for the same account, never re-matched. A
+ * household member with no account on an upstream that can create one (Audiobookshelf; never
+ * Jellyfin) gets one made, pinned and marked as Auralis's. `upstreamFor` decrypts per request:
+ * nothing is cached across users.
  */
 import { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
@@ -27,6 +29,13 @@ export interface Provisioner {
   mint(upstreamUserId: string, auralisUserId: string): Promise<{ token: string; keyId?: string }>;
   /** Deletes a refused key upstream, so re-mints never pile keys up; one already gone is fine. */
   revoke?(keyId: string): Promise<void>;
+  /** Creates an account named by the login id and returns its id; absent where Auralis never may. */
+  create?(loginId: string): Promise<string>;
+}
+
+export interface LinkOptions {
+  /** The sign-in carries the `household` group; only then is a missing account created. */
+  household?: boolean;
 }
 
 /** What a failure says on the link: the call and status, never a header or a body. */
@@ -46,17 +55,30 @@ export class Linker {
   private readonly now: () => number;
   /** Re-mints in flight, one per person and service: calls refused together share it. */
   private readonly reminting = new Map<string, Promise<boolean>>();
+  /** Links in flight, one per person and service: sign-ins at once share it, creating once. */
+  private readonly linking = new Map<string, Promise<void>>();
 
   constructor(private readonly opts: LinkerOptions) {
     this.now = opts.now ?? Date.now;
   }
 
   /** Links every service this user has no working link to. Never throws. */
-  async linkAll(user: User): Promise<void> {
+  async linkAll(user: User, options: LinkOptions = {}): Promise<void> {
+    const mayCreate = options.household === true;
     for (const provisioner of this.opts.provisioners) {
+      const flight = `${user.id}\u0000${provisioner.service}`;
+      const running = this.linking.get(flight);
+      if (running !== undefined) {
+        await running;
+        continue;
+      }
       const link = getLink(this.opts.db, user.id, provisioner.service);
       if (link?.state === 'linked' && link.hasToken) continue;
-      await this.link(user, provisioner, link?.upstreamUserId ?? null);
+      const started = this.link(user, provisioner, link?.upstreamUserId ?? null, mayCreate).finally(
+        () => this.linking.delete(flight),
+      );
+      this.linking.set(flight, started);
+      await started;
     }
   }
 
@@ -92,14 +114,26 @@ export class Linker {
     return getLink(db, user.id, service)?.state === 'linked';
   }
 
-  private async link(user: User, provisioner: Provisioner, pinned: string | null) {
+  private async link(
+    user: User,
+    provisioner: Provisioner,
+    pinned: string | null,
+    mayCreate = false,
+  ) {
     const { db, key } = this.opts;
     const { service } = provisioner;
     let upstreamUserId = pinned;
+    let createdByAuralis =
+      pinned !== null && getLink(db, user.id, service)?.createdByAuralis === true;
     try {
       if (upstreamUserId === null) {
         const pick = pickUpstreamUser(service, await provisioner.accounts(), user.username);
-        if (pick.state === 'unlinked') {
+        if (pick.state === 'linked') {
+          upstreamUserId = pick.id;
+        } else if (pick.detail === 'no_account' && mayCreate && provisioner.create) {
+          upstreamUserId = await provisioner.create(user.username);
+          createdByAuralis = true;
+        } else {
           saveLink(
             db,
             key,
@@ -108,10 +142,17 @@ export class Linker {
           );
           return;
         }
-        upstreamUserId = pick.id;
       }
-      // Refuse an account someone else holds before minting anything for it.
-      saveLink(db, key, { userId: user.id, service, upstreamUserId, token: null, state: 'stale' });
+      // Refuse an account someone else holds before minting anything for it, and pin one just
+      // created before minting, so a failed mint never leads to a second account.
+      saveLink(db, key, {
+        userId: user.id,
+        service,
+        upstreamUserId,
+        token: null,
+        createdByAuralis,
+        state: 'stale',
+      });
       const minted = await provisioner.mint(upstreamUserId, user.id);
       saveLink(
         db,
@@ -122,6 +163,7 @@ export class Linker {
           upstreamUserId,
           token: minted.token,
           upstreamKeyId: minted.keyId ?? null,
+          createdByAuralis,
           state: 'linked',
         },
         this.now(),
@@ -136,6 +178,7 @@ export class Linker {
           service,
           upstreamUserId: taken ? null : upstreamUserId,
           token: null,
+          createdByAuralis: taken ? false : createdByAuralis,
           state: taken ? 'unlinked' : 'error',
           detail: taken ? 'account_taken' : failureDetail(error),
         },

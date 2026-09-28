@@ -56,12 +56,23 @@ describe('[M0.sso/c] finding a person on an upstream at first link', () => {
       { id: 's1', username: 'auralis' },
       { id: 's2', username: 'Auralis-Admin' },
     ];
-    expect(pickUpstreamUser('abs', service, 'auralis').state).toBe('unlinked');
-    expect(pickUpstreamUser('abs', service, 'auralis-admin').state).toBe('unlinked');
-    expect(pickUpstreamUser('jellyfin', service, 'auralis').state).toBe('unlinked');
+    const serviceAccount = { state: 'unlinked', detail: 'service_account' };
+    expect(pickUpstreamUser('abs', service, 'auralis')).toEqual(serviceAccount);
+    expect(pickUpstreamUser('abs', service, 'auralis-admin')).toEqual(serviceAccount);
+    expect(pickUpstreamUser('jellyfin', service, 'auralis')).toEqual(serviceAccount);
     expect(pickUpstreamUser('jellyfin', service, 'auralis-admin')).toEqual({
       state: 'linked',
       id: 's2',
     });
+  });
+
+  it('never links a disabled account, and says so, but links the one active twin', () => {
+    const disabled = [{ id: 'd1', username: 'Kara', disabled: true }, ...users.slice(1)];
+    expect(pickUpstreamUser('abs', disabled, 'kara')).toEqual({
+      state: 'unlinked',
+      detail: 'disabled',
+    });
+    const twin = [...disabled, { id: 'a1', username: 'kara' }];
+    expect(pickUpstreamUser('abs', twin, 'kara')).toEqual({ state: 'linked', id: 'a1' });
   });
 });

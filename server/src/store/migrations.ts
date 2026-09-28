@@ -122,6 +122,18 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 3,
+    name: 'abs_created',
+    up: (db) => {
+      db.exec(`
+        -- Whether Auralis created this upstream account itself (a missing Audiobookshelf account,
+        -- made at the person's first sign-in), rather than finding it.
+        ALTER TABLE upstream_links ADD COLUMN created_by_auralis INTEGER NOT NULL DEFAULT 0
+          CHECK (created_by_auralis IN (0, 1));
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

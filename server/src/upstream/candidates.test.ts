@@ -11,7 +11,7 @@ const answer = (body: unknown) => async () =>
   new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
 
 describe('upstream accounts offered for linking', () => {
-  it('Audiobookshelf marks root accounts, offers admins like anyone, and drops inactive ones', async () => {
+  it('Audiobookshelf marks root and inactive accounts, and offers admins like anyone', async () => {
     const abs = new AbsProvisioner({
       baseUrl: 'http://abs.invalid',
       provisionKey: 'k',
@@ -28,6 +28,7 @@ describe('upstream accounts offered for linking', () => {
       { id: 'r', username: 'root', root: true },
       { id: 'a', username: 'Sofia', root: false },
       { id: 'u', username: 'Kara', root: false },
+      { id: 'g', username: 'Old', root: false, disabled: true },
     ]);
   });
 
