@@ -5,3 +5,7 @@
 > also, for global search, i would search filters to be in the backdrop (you MUST check the m2 backdrop docs for examples).
 
 On the Search screen's structure. (Sofia, comment on the canvas artifact, thread 7eeb7a7f, 2026-09-28)
+
+> ok second thought lets keep it as a navrail item on desktop. but it's the topmost item there, unlike on mobile where it's the rightmost
+
+On where global search sits on desktop. (Sofia, in the orchestrator session, 2026-09-28)
