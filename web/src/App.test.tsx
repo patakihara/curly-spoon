@@ -13,6 +13,6 @@ describe('App', () => {
   });
 
   it('routes /settings to the Settings page', () => {
-    expect(at('/settings')).toContain('Settings');
+    expect(at('/settings')).toContain('Gapless playback');
   });
 });

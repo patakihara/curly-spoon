@@ -62,6 +62,22 @@ const web = await startWeb();
 const sonora = await serve(SONORA);
 try {
   for (const page of pages) {
+    for (const source of page.sources.sonora.filter((s) => s.startsWith('card:'))) {
+      const file = join(APP, 'compare', sonoraShot(source));
+      if (existsSync(file)) continue;
+      const rel = cardFile(source.slice('card:'.length));
+      const marker = readFileSync(join(SONORA, rel), 'utf8').split('\n')[0];
+      const [, w = '1200', h = '800'] = /viewport="(\d+)x(\d+)"/.exec(marker) ?? [];
+      const tab = await browser.newPage({ viewport: { width: Number(w), height: Number(h) } });
+      await tab.goto(`${sonora.origin}/${rel}`, { waitUntil: 'networkidle' });
+      await tab.waitForFunction("(document.getElementById('root')?.childElementCount ?? 0) > 0");
+      await tab.waitForTimeout(500);
+      await tab.screenshot({ path: file, fullPage: true, animations: 'disabled' });
+      await tab.close();
+      process.stdout.write(`${source} -> ${file}\n`);
+    }
+    // A page not drawn yet has only its Sonora sources to look at.
+    if (!existsSync(join(APP, 'pages', `${page.id}.page.jsx`))) continue;
     const dir = join(APP, 'compare', page.id);
     mkdirSync(dir, { recursive: true });
     const path = splitRoute(page.route).path.replace(/:([A-Za-z0-9]+)/g, 'placeholder-$1');
@@ -78,20 +94,6 @@ try {
       await tab.waitForTimeout(400);
       await tab.screenshot({ path: join(dir, `canvas-${name}.png`), animations: 'disabled' });
       await tab.close();
-    }
-    for (const source of page.sources.sonora.filter((s) => s.startsWith('card:'))) {
-      const file = join(APP, 'compare', sonoraShot(source));
-      if (existsSync(file)) continue;
-      const rel = cardFile(source.slice('card:'.length));
-      const marker = readFileSync(join(SONORA, rel), 'utf8').split('\n')[0];
-      const [, w = '1200', h = '800'] = /viewport="(\d+)x(\d+)"/.exec(marker) ?? [];
-      const tab = await browser.newPage({ viewport: { width: Number(w), height: Number(h) } });
-      await tab.goto(`${sonora.origin}/${rel}`, { waitUntil: 'networkidle' });
-      await tab.waitForFunction("(document.getElementById('root')?.childElementCount ?? 0) > 0");
-      await tab.waitForTimeout(500);
-      await tab.screenshot({ path: file, fullPage: true, animations: 'disabled' });
-      await tab.close();
-      process.stdout.write(`${source} -> ${file}\n`);
     }
     process.stdout.write(`${page.id}: pageHash ${pageHash(APP, page.id)}\n`);
   }

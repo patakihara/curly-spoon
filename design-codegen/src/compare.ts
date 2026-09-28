@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import { SonoraSource, type NavPage } from './nav.js';
 
@@ -37,37 +38,20 @@ export function pngSize(bytes: Buffer): { width: number; height: number } | unde
   return width > 0 && height > 0 ? { width, height } : undefined;
 }
 
-const list = z.preprocess(
-  (v) =>
-    typeof v === 'string'
-      ? v
-          .replace(/^\[|\]$/g, '')
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : v,
-  z.array(z.string()),
-);
-
 const FrontMatter = z
   .object({
     page: z.string(),
     pageHash: z.string().regex(/^[0-9a-f]{64}$/),
-    sonora: list.pipe(z.array(SonoraSource)),
-    spotify: list,
+    sonora: z.array(SonoraSource),
+    spotify: z.array(z.string()),
   })
   .strict();
 
-/** Splits a comparison into its front matter (`key: value` lines) and its body. */
+/** Splits a comparison into its YAML front matter and its body. */
 export function readComparison(text: string): { front: unknown; body: string } {
   const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(text);
   if (match === null) return { front: undefined, body: text };
-  const front: Record<string, string> = {};
-  for (const line of match[1]!.split('\n')) {
-    const at = line.indexOf(':');
-    if (at > 0) front[line.slice(0, at).trim()] = line.slice(at + 1).trim();
-  }
-  return { front, body: match[2]! };
+  return { front: parseYaml(match[1]!), body: match[2]! };
 }
 
 /** What is wrong with a page's comparison, empty when nothing is. */
