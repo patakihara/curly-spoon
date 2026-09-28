@@ -17,3 +17,7 @@
 > I agree with this idea; but it also think the navigation flows should be shown to me as a flowchart in the artifact, which helps both me and the dev agents.
 
 (Sofia, in the orchestrator session, 2026-09-28)
+
+> ok, and let's remind agents to review mockups to make sure they're only using components rather than custom-made stuff. if new components are needed, they ought to be added to Sonora
+
+(Sofia, same session, 2026-09-28)
