@@ -4,11 +4,11 @@
  * recorded `kid`, and the recorded signing keys' `n` and `e` become the test key's. So a replayed
  * sign-in verifies exactly as a live one does, and no real signature or key is committed.
  */
-import { type RawExchange, scrubString } from './scrub.js';
+import { PLACEHOLDER_ORIGIN, type RawExchange, scrubString } from './scrub.js';
 import { decodePart, JWT_SHAPE, signWithTestKey, TEST_PUBLIC_JWK } from './testSigningKey.js';
 
-/** Where a scrubbed ID token says it came from. */
-export const PLACEHOLDER_ISSUER = 'https://upstream.invalid';
+/** Where a scrubbed ID token says it came from: the same origin the rest of a recording gets. */
+export const PLACEHOLDER_ISSUER = PLACEHOLDER_ORIGIN;
 
 function scrubClaims(value: unknown, issuer: string): unknown {
   if (typeof value === 'string') return scrubString(value.split(issuer).join(PLACEHOLDER_ISSUER));

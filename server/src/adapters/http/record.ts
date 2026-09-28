@@ -15,8 +15,11 @@ export interface RecorderOptions {
   dir: string;
   upstream: string;
   upstreamVersion: string;
+  /** Read at each capture, so a secret learned mid-run (a one-time code) can be added. */
   secrets: string[];
   baseUrl: string;
+  /** Runs on each raw exchange before the scrubber: re-signing tokens, anonymizing accounts. */
+  prepare?: (raw: RawExchange) => RawExchange;
 }
 
 export interface Recorder {
@@ -82,10 +85,16 @@ export function createRecorder(opts: RecorderOptions): Recorder {
       throw new Error(`capture ${call}: expected exactly one request, saw ${captured.length}`);
     }
     const [exchange] = captured as [Captured];
-    const recording: Recording = scrub(
-      { upstream: opts.upstream, upstreamVersion: opts.upstreamVersion, call, ...exchange },
-      { secrets: opts.secrets, baseUrl: opts.baseUrl },
-    );
+    const raw: RawExchange = {
+      upstream: opts.upstream,
+      upstreamVersion: opts.upstreamVersion,
+      call,
+      ...exchange,
+    };
+    const recording: Recording = scrub(opts.prepare ? opts.prepare(raw) : raw, {
+      secrets: opts.secrets,
+      baseUrl: opts.baseUrl,
+    });
     await mkdir(opts.dir, { recursive: true });
     await writeFile(join(opts.dir, `${call}.json`), serializeRecording(recording));
     return result;

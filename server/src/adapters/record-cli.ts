@@ -6,6 +6,12 @@
  *   ssh mediaserver cat .config/auralis/upstream-keys.env \
  *     | pnpm --filter @auralis/server record -- --abs <url> --jellyfin <url> [--only abs|jellyfin]
  *
+ * `--only oidc` records one real sign-in as the service identity, and the links made for it:
+ *
+ *   ssh mediaserver cat .config/auralis/upstream-keys.env .config/auralis/oidc.env \
+ *     | pnpm --filter @auralis/server record -- --only oidc --oidc <issuer> --oidc-version <v> \
+ *         --abs <url> --jellyfin <url>
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -20,6 +26,7 @@ import { createRecorder } from './http/record.js';
 import { recordingSchema } from './http/recording.js';
 import { scanRecording } from './http/scan.js';
 import { JellyfinClient } from './jellyfin/client.js';
+import { recordOidc } from './record-oidc.js';
 
 const USAGE = `Usage: <keys on stdin> | pnpm --filter @auralis/server record -- [options]
 
@@ -27,11 +34,14 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
 
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
-  --only <name>      record only abs or jellyfin
+  --only <name>      record only abs or jellyfin; or oidc, a sign-in and its links
+  --oidc <url>       the sign-on's issuer, for --only oidc
+  --oidc-version <v> the sign-on's version, for --only oidc
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
 
-stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines.
+stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines; for --only oidc,
+OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
 const CLIENT_VERSION = '0.0.0';
@@ -43,6 +53,9 @@ export interface RecordIo {
   fetch: FetchLike;
   out: (line: string) => void;
   err: (line: string) => void;
+  /** For --only oidc: the state, nonce and verifier's bytes, and the time. */
+  random?: (bytes: number) => Buffer;
+  now?: () => number;
 }
 
 /** The `id` of a play answer, from its raw text, whether or not the rest of it parses. */
@@ -164,6 +177,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
       abs: { type: 'string' },
       jellyfin: { type: 'string' },
       only: { type: 'string' },
+      oidc: { type: 'string' },
+      'oidc-version': { type: 'string' },
       'dry-run': { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
@@ -173,10 +188,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
     return 0;
   }
   const only = values.only;
-  if (only !== undefined && only !== 'abs' && only !== 'jellyfin') {
-    io.err(`--only is abs or jellyfin, not ${only}`);
+  if (only !== undefined && only !== 'abs' && only !== 'jellyfin' && only !== 'oidc') {
+    io.err(`--only is abs, jellyfin or oidc, not ${only}`);
     return 2;
   }
+  const root = values['dry-run'] ? mkdtempSync(join(tmpdir(), 'auralis-record-')) : here;
+  if (only === 'oidc') return runOidc(io, values, parseKeys(io.stdin), root);
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
   const keys = parseKeys(io.stdin);
@@ -194,7 +211,6 @@ export async function runRecord(io: RecordIo): Promise<number> {
   }
 
   const secrets = [absKey, jellyfinKey].filter((k): k is string => Boolean(k));
-  const root = values['dry-run'] ? mkdtempSync(join(tmpdir(), 'auralis-record-')) : here;
   const written: string[] = [];
   if (wantAbs) {
     written.push(
@@ -219,10 +235,15 @@ export async function runRecord(io: RecordIo): Promise<number> {
     );
   }
 
+  return scanWritten(io, written, []);
+}
+
+/** Scans every written recording; any finding, a name seen while recording included, fails. */
+function scanWritten(io: RecordIo, written: string[], names: readonly string[]): number {
   let findings = 0;
   for (const file of written) {
     const recording = recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
-    for (const f of scanRecording(recording)) {
+    for (const f of scanRecording(recording, { names })) {
       findings += 1;
       io.err(`${file}: ${f.kind} at ${f.path}`);
     }
@@ -233,6 +254,49 @@ export async function runRecord(io: RecordIo): Promise<number> {
     return 1;
   }
   return 0;
+}
+
+async function runOidc(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--oidc': values.oidc,
+    '--oidc-version': values['oidc-version'],
+    '--abs': values.abs,
+    '--jellyfin': values.jellyfin,
+    'OIDC_CLIENT_SECRET on stdin': keys.OIDC_CLIENT_SECRET,
+    'OIDC_TEST_PASSWORD on stdin': keys.OIDC_TEST_PASSWORD,
+    'ABS_PROVISION_KEY on stdin': keys.ABS_PROVISION_KEY,
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written, names } = await recordOidc({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    issuer: values.oidc as string,
+    oidcVersion: values['oidc-version'] as string,
+    absUrl: values.abs as string,
+    jellyfinUrl: values.jellyfin as string,
+    keys: {
+      clientSecret: keys.OIDC_CLIENT_SECRET as string,
+      password: keys.OIDC_TEST_PASSWORD as string,
+      absProvisionKey: keys.ABS_PROVISION_KEY as string,
+      jellyfinApiKey: keys.JELLYFIN_API_KEY as string,
+    },
+    ...(io.random ? { random: io.random } : {}),
+    ...(io.now ? { now: io.now } : {}),
+  });
+  return scanWritten(io, written, names);
 }
 
 async function readStdin(): Promise<string> {

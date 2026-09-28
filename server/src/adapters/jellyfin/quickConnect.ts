@@ -78,23 +78,41 @@ export class JellyfinProvisioner {
   }
 
   async mint(upstreamUserId: string, auralisUserId: string): Promise<{ token: string }> {
-    const device = { authorization: buildAuthorizationHeader(personDevice(auralisUserId)) };
-    const { Secret, Code } = await requestJson(
+    const { Secret, Code } = await this.initiate(auralisUserId);
+    await this.authorize(Code, upstreamUserId);
+    return this.authenticate(Secret, auralisUserId, upstreamUserId);
+  }
+
+  /** A Quick Connect request from the person's Auralis device. */
+  initiate(auralisUserId: string) {
+    return requestJson(
       this.opts.fetch,
       this.url('QuickConnect/Initiate'),
-      { method: 'POST', headers: device },
+      { method: 'POST', headers: this.asPerson(auralisUserId) },
       quickConnectResultSchema,
     );
+  }
+
+  /** Approves the request for their Jellyfin user, as the API key. */
+  async authorize(code: string, upstreamUserId: string): Promise<void> {
     await requestJson(
       this.opts.fetch,
-      this.url('QuickConnect/Authorize', { code: Code, userId: upstreamUserId }),
+      this.url('QuickConnect/Authorize', { code, userId: upstreamUserId }),
       { method: 'POST', headers: this.asServer() },
       quickConnectAuthorizedSchema,
     );
+  }
+
+  /** Swaps the approved request's secret for their own access token. */
+  async authenticate(
+    secret: string,
+    auralisUserId: string,
+    upstreamUserId: string,
+  ): Promise<{ token: string }> {
     const result = await requestJson(
       this.opts.fetch,
       this.url('Users/AuthenticateWithQuickConnect'),
-      { method: 'POST', headers: device, json: { Secret } },
+      { method: 'POST', headers: this.asPerson(auralisUserId), json: { Secret: secret } },
       authenticationResultSchema,
     );
     // A Guid may come back with or without dashes.
@@ -102,5 +120,9 @@ export class JellyfinProvisioner {
       a.replace(/-/g, '').toLowerCase() === b.replace(/-/g, '').toLowerCase();
     if (!same(result.User.Id, upstreamUserId)) throw new Error('the session is for another user');
     return { token: result.AccessToken };
+  }
+
+  private asPerson(auralisUserId: string) {
+    return { authorization: buildAuthorizationHeader(personDevice(auralisUserId)) };
   }
 }

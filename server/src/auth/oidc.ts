@@ -144,34 +144,12 @@ export class OidcClient implements SignOn {
 
   async complete(code: string, request: { verifier: string; nonce: string }): Promise<Identity> {
     const discovery = await this.discover();
-    const tokens = await upstream('the token exchange', () =>
-      requestJson(
-        this.opts.fetch,
-        discovery.token_endpoint,
-        {
-          method: 'POST',
-          headers: { authorization: basicAuth(this.opts.clientId, this.opts.clientSecret) },
-          form: {
-            grant_type: 'authorization_code',
-            code,
-            redirect_uri: this.opts.redirectUri,
-            code_verifier: request.verifier,
-          },
-        },
-        tokenResponseSchema,
-      ),
-    );
+    const tokens = await this.exchange(code, request.verifier, discovery);
     const claims = await this.verifyIdToken(tokens.id_token, request.nonce, discovery);
-    const info = await upstream('userinfo', () =>
-      requestJson(
-        this.opts.fetch,
-        discovery.userinfo_endpoint,
-        { headers: { authorization: `Bearer ${tokens.access_token}` } },
-        userinfoSchema,
-      ),
-    );
-    if (info.sub !== claims.sub)
+    const info = await this.userinfo(tokens.access_token, discovery);
+    if (info.sub !== claims.sub) {
       throw new SignOnError('bad_token', 'userinfo names another subject');
+    }
     const username = info.preferred_username ?? claims.preferred_username;
     if (username === undefined) throw new SignOnError('bad_token', 'no preferred_username');
     return {
@@ -180,6 +158,40 @@ export class OidcClient implements SignOn {
       username,
       groups: [...new Set([...(claims.groups ?? []), ...(info.groups ?? [])])],
     };
+  }
+
+  /** The authorization code and PKCE verifier for the tokens, with the client's Basic auth. */
+  async exchange(code: string, verifier: string, discovery?: Discovery) {
+    const { token_endpoint } = discovery ?? (await this.discover());
+    return upstream('the token exchange', () =>
+      requestJson(
+        this.opts.fetch,
+        token_endpoint,
+        {
+          method: 'POST',
+          headers: { authorization: basicAuth(this.opts.clientId, this.opts.clientSecret) },
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: this.opts.redirectUri,
+            code_verifier: verifier,
+          },
+        },
+        tokenResponseSchema,
+      ),
+    );
+  }
+
+  async userinfo(accessToken: string, discovery?: Discovery) {
+    const { userinfo_endpoint } = discovery ?? (await this.discover());
+    return upstream('userinfo', () =>
+      requestJson(
+        this.opts.fetch,
+        userinfo_endpoint,
+        { headers: { authorization: `Bearer ${accessToken}` } },
+        userinfoSchema,
+      ),
+    );
   }
 
   /** RS256 only, against the sign-on's published keys, at the injected time. */
