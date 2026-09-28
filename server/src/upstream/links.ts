@@ -25,6 +25,8 @@ export interface Provisioner {
   readonly service: Service;
   accounts(): Promise<UpstreamCandidate[]>;
   mint(upstreamUserId: string, auralisUserId: string): Promise<{ token: string; keyId?: string }>;
+  /** Deletes a refused key upstream, so re-mints never pile keys up; one already gone is fine. */
+  revoke?(keyId: string): Promise<void>;
 }
 
 /** What a failure says on the link: the call and status, never a header or a body. */
@@ -42,6 +44,8 @@ export interface LinkerOptions {
 
 export class Linker {
   private readonly now: () => number;
+  /** Re-mints in flight, one per person and service: calls refused together share it. */
+  private readonly reminting = new Map<string, Promise<boolean>>();
 
   constructor(private readonly opts: LinkerOptions) {
     this.now = opts.now ?? Date.now;
@@ -56,13 +60,36 @@ export class Linker {
     }
   }
 
-  /** Mints a new token for the pinned account after the old one was refused. */
-  async remint(user: User, service: Service): Promise<boolean> {
+  /**
+   * Mints a new token for the pinned account after the old one was refused, deleting the old key
+   * upstream first. Concurrent calls for the same person and service share one re-mint.
+   */
+  remint(user: User, service: Service): Promise<boolean> {
+    const flight = `${user.id}\u0000${service}`;
+    const running = this.reminting.get(flight);
+    if (running !== undefined) return running;
+    const started = this.remintOnce(user, service).finally(() => this.reminting.delete(flight));
+    this.reminting.set(flight, started);
+    return started;
+  }
+
+  private async remintOnce(user: User, service: Service): Promise<boolean> {
+    const { db, key } = this.opts;
     const provisioner = this.opts.provisioners.find((p) => p.service === service);
-    const pinned = getLink(this.opts.db, user.id, service)?.upstreamUserId ?? null;
+    const link = getLink(db, user.id, service);
+    const pinned = link?.upstreamUserId ?? null;
     if (provisioner === undefined || pinned === null) return false;
+    if (link?.upstreamKeyId && provisioner.revoke) {
+      try {
+        await provisioner.revoke(link.upstreamKeyId);
+      } catch (error) {
+        const failed = { userId: user.id, service, upstreamUserId: pinned, token: null };
+        saveLink(db, key, { ...failed, state: 'error', detail: failureDetail(error) }, this.now());
+        return false;
+      }
+    }
     await this.link(user, provisioner, pinned);
-    return getLink(this.opts.db, user.id, service)?.state === 'linked';
+    return getLink(db, user.id, service)?.state === 'linked';
   }
 
   private async link(user: User, provisioner: Provisioner, pinned: string | null) {

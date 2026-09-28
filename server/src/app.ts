@@ -35,7 +35,30 @@ export interface BuildAppOptions {
   linker?: Linker | null;
   random?: Random;
   now?: () => number;
-  logger?: boolean;
+  /** Off by default; `true` logs to stdout, a stream to it (for a test). */
+  logger?: boolean | { stream: { write(line: string): void } };
+}
+
+/**
+ * Every `/auth` route's query is left out of the log: the callback's carries the one-time code and
+ * state, and the others say where a person was going.
+ */
+export function loggedUrl(url: string): string {
+  const q = url.indexOf('?');
+  const path = q === -1 ? url : url.slice(0, q);
+  return q !== -1 && (path === '/auth' || path.startsWith('/auth/')) ? `${path}?<redacted>` : url;
+}
+
+function loggerOptions(logger: BuildAppOptions['logger']) {
+  if (logger === undefined || logger === false) return false;
+  const serializers = {
+    req: (req: { method: string; url: string; ip?: string }) => ({
+      method: req.method,
+      url: loggedUrl(req.url),
+      remoteAddress: req.ip,
+    }),
+  };
+  return logger === true ? { serializers } : { stream: logger.stream, serializers };
 }
 
 const INDEX_FILE = 'index.html';
@@ -48,7 +71,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const { db } = options;
   const proxy = options.proxy ?? createProxyTrust([]);
   const cookieSecure = options.cookieSecure ?? 'auto';
-  const app = Fastify({ logger: options.logger ?? false, trustProxy: proxy.trust });
+  const app = Fastify({ logger: loggerOptions(options.logger), trustProxy: proxy.trust });
 
   await app.register(fastifyCookie);
   registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });

@@ -148,17 +148,23 @@ describe('[M0.sso/c] upstream calls act as the person who made them', () => {
 describe('[M0.sso/c] linking at sign-in', () => {
   function provisioner(service: Service, accounts: { id: string; username: string }[]) {
     const minted: string[] = [];
+    const calls: string[] = [];
     let fail = false;
     const p: Provisioner = {
       service,
-      accounts: async () => accounts,
+      accounts: async () => accounts.map((a) => ({ ...a, admin: false })),
       mint: async (id) => {
         if (fail) throw new Error('mint failed');
+        await new Promise((resolve) => setTimeout(resolve, 5));
         minted.push(id);
+        calls.push(`mint ${id}`);
         return { token: `${service}-token-${minted.length}`, keyId: `key-${minted.length}` };
       },
+      revoke: async (keyId) => {
+        calls.push(`revoke ${keyId}`);
+      },
     };
-    return { p, minted, failNext: () => (fail = true) };
+    return { p, minted, calls, failNext: () => (fail = true) };
   }
 
   it('pins the matched account and stores its token, and links nothing without a match', async () => {
@@ -203,5 +209,45 @@ describe('[M0.sso/c] linking at sign-in', () => {
     await expect(up.abs!.getLibraries()).resolves.toBeDefined();
     expect(seen).toEqual(['Bearer abs-token-1', 'Bearer abs-token-2']);
     expect(abs.minted).toEqual(['abs-1', 'abs-1']);
+  });
+
+  /** Refuses the first token, answers every other from the recording. */
+  function refusingFirst() {
+    const replay = replayFetch([libraryList]);
+    const seen: string[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      const auth = ((init?.headers ?? {}) as Record<string, string>).authorization ?? '';
+      seen.push(auth);
+      return auth === 'Bearer abs-token-1'
+        ? new Response(null, { status: 401 })
+        : replay(url, init);
+    };
+    return { fetch, seen };
+  }
+
+  it('deletes the refused ABS key before minting its replacement', async () => {
+    const db = openDatabase(':memory:');
+    const kara = upsertUser(db, { username: 'kara', role: 'member' });
+    const abs = provisioner('abs', [{ id: 'abs-1', username: 'kara' }]);
+    const linker = new Linker({ db, key: KEY, provisioners: [abs.p] });
+    await linker.linkAll(kara);
+    const { fetch } = refusingFirst();
+    await upstreamFor({ db, key: KEY, config, fetch, linker }, kara).abs!.getLibraries();
+    expect(abs.calls).toEqual(['mint abs-1', 'revoke key-1', 'mint abs-1']);
+  });
+
+  it('re-mints once for two calls refused at the same time, and both succeed', async () => {
+    const db = openDatabase(':memory:');
+    const kara = upsertUser(db, { username: 'kara', role: 'member' });
+    const abs = provisioner('abs', [{ id: 'abs-1', username: 'kara' }]);
+    const linker = new Linker({ db, key: KEY, provisioners: [abs.p] });
+    await linker.linkAll(kara);
+    const { fetch } = refusingFirst();
+    const up = upstreamFor({ db, key: KEY, config, fetch, linker }, kara);
+    await expect(
+      Promise.all([up.abs!.getLibraries(), up.abs!.getLibraries()]),
+    ).resolves.toHaveLength(2);
+    expect(abs.minted).toEqual(['abs-1', 'abs-1']);
+    expect(abs.calls.filter((c) => c.startsWith('revoke'))).toEqual(['revoke key-1']);
   });
 });

@@ -7,7 +7,7 @@
  * answer `User.toOldJSONForBrowser`, which carries only `hasOpenIDLink`, never `authOpenIDSub`.
  */
 import { z } from 'zod';
-import { type FetchLike, requestJson } from '../http/fetch.js';
+import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import { type UpstreamCandidate } from '../../upstream/mapping.js';
 
 export const absUsersSchema = z.object({
@@ -74,5 +74,17 @@ export class AbsProvisioner {
     );
     if (apiKey.userId !== upstreamUserId) throw new Error('the key was minted for another user');
     return { token: apiKey.apiKey, keyId: apiKey.id };
+  }
+
+  /** Deletes a key, as the provisioning key; one that is already gone is fine. */
+  async revoke(keyId: string): Promise<void> {
+    const call = 'DELETE api/api-keys';
+    const response = await this.opts.fetch(this.url(`api/api-keys/${encodeURIComponent(keyId)}`), {
+      method: 'DELETE',
+      headers: this.headers,
+    });
+    if (!response.ok && response.status !== 404) {
+      throw new AdapterError('status', call, `answered ${response.status}`, response.status);
+    }
   }
 }

@@ -56,3 +56,26 @@ describe('upstream accounts offered for linking', () => {
     expect(await jf.accounts()).toEqual([{ id: 'x', username: 'Kara', admin: true }]);
   });
 });
+
+describe('deleting a refused Audiobookshelf key', () => {
+  const abs = (status: number, seen: string[]) =>
+    new AbsProvisioner({
+      baseUrl: 'http://abs.invalid',
+      provisionKey: 'k',
+      fetch: async (url, init) => {
+        seen.push(`${init?.method} ${new URL(url).pathname}`);
+        return new Response(status === 200 ? 'OK' : null, { status });
+      },
+    });
+
+  it('deletes it by id, and counts one already gone as deleted', async () => {
+    const seen: string[] = [];
+    await abs(200, seen).revoke('key-1');
+    await abs(404, seen).revoke('key-2');
+    expect(seen).toEqual(['DELETE /api/api-keys/key-1', 'DELETE /api/api-keys/key-2']);
+  });
+
+  it('fails when Audiobookshelf will not delete it', async () => {
+    await expect(abs(500, []).revoke('key-1')).rejects.toThrow(/answered 500/);
+  });
+});
