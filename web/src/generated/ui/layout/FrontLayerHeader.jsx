@@ -20,13 +20,14 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-frontlay
     + 'animation:sn-spy-out var(--duration-fast) var(--ease-standard) both}'
     + '@keyframes sn-spy-in{from{opacity:0;transform:translateY(var(--spacing-xs))}to{opacity:1;transform:translateY(0)}}'
     + '@keyframes sn-spy-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(calc(var(--spacing-xs) * -1))}}'
-    + '@media (prefers-reduced-motion:reduce){.sn-spy-cur,.sn-spy-prev{animation:none}}';
+    + '.sn-spy-band{transition:opacity var(--duration-fast) var(--ease-standard),visibility var(--duration-fast) var(--ease-standard)}'
+    + '@media (prefers-reduced-motion:reduce){.sn-spy-cur,.sn-spy-prev{animation:none}.sn-spy-band{transition:none}}';
   document.head.appendChild(el);
 }
 
 const spyTitleOf = (s) => (typeof s === 'string' ? s : (s && s.title) || '');
 
-/** The front layer's subheader: a fixed band at the same 1dp as the content below it, carrying tabs, a filter group or a scoped search field. Draws a scroll-linked hairline when its content is not a tab bar; when it is, the hairline is always shown (static, not scroll-linked) and the tabs sit flush to the bottom edge so their indicator lands right on it. With `spy` it needs no control at all — it reports the section title that has most recently scrolled up past it, and is blank until the first one does. */
+/** The front layer's subheader: a fixed band at the same 1dp as the content below it, carrying tabs, a filter group or a scoped search field. Draws a scroll-linked hairline when its content is not a tab bar; when it is, the hairline is always shown (static, not scroll-linked) and the tabs sit flush to the bottom edge so their indicator lands right on it. With `spy` it needs no control at all — it reports the section title that has most recently scrolled up past it, and with nothing else in it, it shows only once one has: at rest there is no band. */
 export function FrontLayerHeader({ children, tabs = false, progress = 0, platform = 'desktop', spy = false, sections, spyTitle, spySelector = '[data-spy-title],section', onSpyChange }) {
   const mobile = platform === 'mobile';
   /* The subheader shares the content's measure, so it takes the page margin rather than the app
@@ -44,6 +45,12 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
   // the caller passed a fresh array literal or closure this render.
   const sectionsRef = React.useRef(sections); sectionsRef.current = sections;
   const notify = React.useRef(onSpyChange); notify.current = onSpyChange;
+  /* A spy band with nothing else in it shows only once a title has scrolled under it: at rest
+     there is no band, not a blank one. So it lies over the top of the content instead of in flow,
+     and arriving or leaving never moves the content. With a control in it, the band is always
+     there, in flow, and the title leads it once one has passed. */
+  const alone = spy && React.Children.count(children) === 0;
+  const aloneRef = React.useRef(alone); aloneRef.current = alone;
   const apply = React.useCallback((next) => {
     const t = next || '';
     if (last.current === t) return;
@@ -59,25 +66,28 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
     if (!spy || spyTitle !== undefined) return undefined;
     const host = root.current && root.current.parentElement;
     if (!host) return undefined;
-    /* Which title has "passed" is measured against the top edge of the scrolling area, because
-       that edge is the underside of this band — the line the behaviour is described against. */
+    /* Which title has "passed" is measured against the underside of this band — the line the
+       behaviour is described against. In flow that is the top edge of the scrolling area; laid
+       over the content, it is the band's own bottom edge, which it keeps while hidden. A band
+       laid over the content stays away until the content has actually scrolled under its top
+       edge: at rest the first section may already reach up behind where the band would be. */
     const read = (scroller) => {
-      if (!scroller) return null;
+      if (!scroller || !root.current) return null;
       const nodes = scroller.querySelectorAll(spySelector);
       if (!nodes.length) return null;
+      if (aloneRef.current && nodes[0].getBoundingClientRect().top >= scroller.getBoundingClientRect().top) return '';
       const list = sectionsRef.current;
       // Positional titles only line up when the caller's list matches what the container holds.
       // A mismatch would label every section with its neighbour's name, which is worse than
       // saying nothing — so the list is used only on an exact count match, and a `data-spy-title`
       // on the element itself always wins over it.
       const positional = Array.isArray(list) && list.length === nodes.length;
-      const line = scroller.getBoundingClientRect().top;
+      const line = root.current.getBoundingClientRect().bottom;
       let title = '';
       for (let i = 0; i < nodes.length; i++) {
         const el = nodes[i];
         // Strictly above the line, not level with it: at rest the first section still starts
-        // below the band, so nothing has passed and the row is blank. That is a state, not a
-        // missing value.
+        // below the band, so nothing has passed and there is no title.
         if (el.getBoundingClientRect().top - line >= 0) break;
         const attr = el.getAttribute('data-spy-title');
         const t = attr != null ? attr : (positional ? spyTitleOf(list[i]) : '');
@@ -117,9 +127,8 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
     return () => { host.removeEventListener('scroll', onScroll, true); cancelAnimationFrame(id); };
   }, [spy, spyTitle, spySelector, sectionsKey, apply]);
 
-  /* The row reserves its height whether or not it holds a title, so the first title to arrive
-     does not push the content down. Deliberately no aria-live: the title restates a heading that
-     is already in the content, and announcing it on every scroll would be noise. */
+  /* Deliberately no aria-live: the title restates a heading that is already in the content, and
+     announcing it on every scroll would be noise. */
   const spyRow = spy ? (
     <div className="sn-spy" style={sx('min-height:calc(var(--text-lg) * 1.5);font-family:var(--font-body);font-size:var(--text-md);font-weight:var(--weight-medium);line-height:1.4;color:var(--surface-fg)')}>
       {band.prev && (
@@ -130,8 +139,12 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
     </div>
   ) : null;
 
+  const place = alone
+    ? 'position:absolute;top:0;left:0;right:0;z-index:2;' +
+      (band.cur ? 'opacity:1;visibility:visible' : 'opacity:0;visibility:hidden;pointer-events:none')
+    : 'position:relative';
   return (
-    <div ref={root} style={sx('position:relative;flex-shrink:0;display:flex;align-items:center;box-sizing:border-box;width:100%;background:var(--surface-bg);min-height:var(--appbar-controls-height);padding:0 ' + pad)}>
+    <div ref={root} className={alone ? 'sn-spy-band' : undefined} style={sx(place + ';flex-shrink:0;display:flex;align-items:center;box-sizing:border-box;width:100%;background:var(--surface-bg);min-height:var(--appbar-controls-height);padding:0 ' + pad)}>
       {spyRow}
       {/* Tabs sit flush to the bottom edge, not centered in the band, so the tab bar's own
           underline indicator lands right on the hairline instead of floating above it. */}

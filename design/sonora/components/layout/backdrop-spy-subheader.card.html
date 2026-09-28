@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x900" name="Backdrop — Scroll-Spy Subheader" subtitle="The subheader a scrolling front layer requires: blank at rest, then carrying the section title that just passed it" -->
+<!-- @dsCard group="Components" viewport="1400x900" name="Backdrop — Scroll-Spy Subheader" subtitle="The subheader a scrolling front layer shows once a section title has scrolled under it: no band at rest, then the title that just passed it" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -64,7 +64,7 @@ function Feed(){
   </div>;
 }
 
-/* The live one. Scroll it: the band is blank until "Jump back in" goes under it, then it carries
+/* The live one. Scroll it: there is no band until "Jump back in" goes under it, then it carries
    whichever heading passed last. `sections` is the caller-supplied form; the subheader matches
    those titles against the <section> elements Section already renders. */
 function Live(){
@@ -72,7 +72,7 @@ function Live(){
   return <div style={{height:450}}>
     <BackdropShell platform="desktop" scrollKey="browse"
       rail={<NavRail items={NAV} active="browse" expanded={false} />}
-      back={<BackLayer title="Browse" trailing={<Tag>{'onSpyChange → ' + (seen ? '“' + seen + '”' : 'blank')}</Tag>} />}
+      back={<BackLayer title="Browse" trailing={<Tag>{'onSpyChange → ' + (seen ? '“' + seen + '”' : 'no title')}</Tag>} />}
       subheader={<FrontLayerHeader spy sections={TITLES} onSpyChange={setSeen} />}>
       <Feed />
     </BackdropShell>
@@ -98,18 +98,18 @@ function Still({caption, title, offset, progress}){
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
     <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
-      <Caption>Live — scroll the front layer. Blank at the top, then the title of the section that last passed under the band.</Caption>
+      <Caption>Live — scroll the front layer. No band at the top, then the title of the section that last passed under it.</Caption>
       <Live />
     </div>
     <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
       <Caption>Static — the same band with a supplied spyTitle, so the progression reviews without being touched.</Caption>
       <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-sm)'}}>
         <Tag>Subheader · fixed · 1dp · --surface-bg</Tag>
-        <Tag>Row height reserved · calc(--text-lg * 1.5)</Tag>
+        <Tag>Laid over the content · none at rest</Tag>
         <Tag>Swap · --duration-fast / --ease-standard</Tag>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'var(--spacing-lg)'}}>
-        <Still caption="At rest — blank" title="" offset={0} progress={0} />
+        <Still caption="At rest — no band" title="" offset={0} progress={0} />
         <Still caption="“Jump back in” has passed" title="Jump back in" offset={-150} progress={1} />
         <Still caption="…later, “Recently added”" title="Recently added" offset={-330} progress={1} />
       </div>

@@ -22,11 +22,13 @@ import androidx.compose.runtime.Composable
  *
  * ### The scroll-spy subheader (`spy`)
  *
- * A front layer that scrolls vertically **requires** a subheader — the band is what the content
- * scrolls under. When the screen has no control to put in it, the band is not therefore empty:
- * with `spy` it shows the title of the section that has most recently scrolled up past it. At the
- * top, before any section has passed, it is blank, and that blank is a real state — the row keeps
- * its height so nothing jumps when the first title arrives.
+ * The band is what the content scrolls under. When the screen has no control to put in it, the
+ * band is not therefore an empty strip: with `spy` it shows the title of the section that has most
+ * recently scrolled up past it, and it shows **only once a title has scrolled under it**. At the
+ * top, before any section has passed, there is no band at all. A spy band with nothing else in it
+ * lies over the top of the content rather than in flow, so it fades in and out without moving the
+ * content. With `children` beside it, the band is always there, in flow, and the title leads it
+ * once one has passed. A screen with no section titles to spy has no subheader.
  *
  * Two ways to say what the titles are, neither of which requires rewriting page content:
  *
@@ -34,7 +36,7 @@ import androidx.compose.runtime.Composable
  *   strings already passed to the `Section`s in the feed, in document order. They are matched
  *   positionally against the elements found by `spySelector`, whose default already matches the
  *   `<section>` that `Section` renders. Used only when the count matches exactly: a mismatch
- *   would label each section with its neighbour's name, so it falls back to blank instead.
+ *   would label each section with its neighbour's name, so it falls back to no title instead.
  * - **The content carries them** — any element in the scroll container with a `data-spy-title`
  *   attribute. Per-element, so it always wins over the positional list, and it is the way in when
  *   the feed is not built from `Section`.
@@ -54,10 +56,10 @@ data class FrontLayerHeaderProps(
     /** 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. */
     val progress: Float? = null,
     /**
-     * Turn the band into a scroll spy: it reports the section title that last passed under it, and
-     * is blank until one does. Leading in the band, so `children` may still sit beside it — but the
-     * case this exists for is the subheader that has no control of its own and would otherwise be
-     * an empty strip.
+     * Turn the band into a scroll spy: it reports the section title that last passed under it.
+     * Alone, the band is hidden until one does. Leading in the band, so `children` may still sit
+     * beside it — but the case this exists for is the subheader that has no control of its own and
+     * would otherwise be an empty strip.
      */
     val spy: Boolean? = null,
     /**
@@ -73,12 +75,13 @@ data class FrontLayerHeaderProps(
      */
     val spySelector: String? = null,
     /**
-     * Controlled form: the title to show, `''` for the blank state. Supplying it switches the DOM
+     * Controlled form: the title to show, `''` for none, which hides a band with nothing else in
+     * it. Supplying it switches the DOM
      * watching off entirely, which is how a card shows a given state without being scrolled.
      * Requires `spy` — the row is not rendered at all without it, so `spyTitle` alone does nothing.
      */
     val spyTitle: String? = null,
-    /** Fires with the new title each time it changes, `''` when the band goes back to blank. */
+    /** Fires with the new title each time it changes, `''` when no title has passed any more. */
     val onSpyChange: ((String) -> Unit)? = null,
     val platform: Platform? = null,
 )
