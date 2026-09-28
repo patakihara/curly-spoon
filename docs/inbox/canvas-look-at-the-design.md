@@ -5,3 +5,9 @@
 On the item: "M0.canvas The Auralis canvas in design/app"
 
 (Sofia, comment on the plan artifact, thread f2dd6f36, 2026-09-28)
+
+> To my recollection, the most complete design was on Sonora. Thinking about it more, I don't think there actually was that much more content on the redesign project, and I ended up only importing Sonora into the old Auralis.
+>
+> You can probably see it from the code.
+
+(Sofia, same thread, 2026-09-28)
