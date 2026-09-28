@@ -13,10 +13,10 @@
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
     "sources": ["docs/plan", "docs/outbox"],
-    "commit": "eace63ba18d8e2f4a126198361e857c9f12d78f2",
-    "tree": "289d034046fe1dee59ea3a259bfd2a58765a9a5b",
-    "version": "1790594206-b6c5",
-    "publishedAt": "2026-09-28T11:16:57.470Z"
+    "commit": "e1ba204a9a56ef18a021f3f47457cddb0de7ea12",
+    "tree": "511d9680e7746a3954b8cf1e4b0078136b1b2967",
+    "version": "1790594386-9f0a",
+    "publishedAt": "2026-09-28T11:19:52.433Z"
   },
   "sonora": {
     "url": "https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB",
