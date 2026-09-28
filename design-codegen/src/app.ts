@@ -1,0 +1,82 @@
+/**
+ * The canvas, `design/app`: nav.json, `pages/<id>.page.jsx` and `placeholders/<id>.json`, read and
+ * checked, then generated into the web route table and web pages.
+ */
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { z } from 'zod';
+import { componentName, generateRoutes, readNav, type Nav } from './nav.js';
+import { checkPage, parsePage, type PageTree } from './page.js';
+import { generateWebPage } from './page-web.js';
+import type { PropsModel } from './props.js';
+
+const Placeholder = z.record(z.string(), z.unknown());
+
+export interface AppPage {
+  id: string;
+  tree: PageTree;
+  placeholder: Record<string, unknown>;
+}
+
+export interface App {
+  nav: Nav;
+  /** The pages drawn so far, in nav.json's order. */
+  pages: AppPage[];
+}
+
+/** Each component's prop names, from its `<Name>Props` declaration. */
+export function propNames(model: PropsModel): Map<string, Set<string>> {
+  const names = new Map<string, Set<string>>();
+  for (const [component, decls] of model.files) {
+    const decl = decls.find((d) => d.kind === 'class' && d.name === `${component}Props`);
+    if (decl?.kind !== 'class') continue;
+    names.set(component, new Set([...decl.props.map((p) => p.name), ...decl.webOnly]));
+  }
+  return names;
+}
+
+/** Reads and checks the canvas; throws naming every problem in every page. */
+export function readApp(appDir: string, model: PropsModel): App {
+  const nav = readNav(appDir);
+  const props = propNames(model);
+  const pagesDir = join(appDir, 'pages');
+  const files = existsSync(pagesDir) ? readdirSync(pagesDir).sort() : [];
+  const ids = new Set(nav.pages.map((p) => p.id));
+  const errors: string[] = [];
+  for (const file of files) {
+    const id = /^([a-z][A-Za-z0-9]*)\.page\.jsx$/.exec(file)?.[1];
+    if (id === undefined || !ids.has(id)) errors.push(`pages/${file}: not a page in nav.json`);
+  }
+  const pages: AppPage[] = [];
+  for (const { id } of nav.pages) {
+    const file = join(pagesDir, `${id}.page.jsx`);
+    if (!existsSync(file)) continue;
+    try {
+      const tree = parsePage(readFileSync(file, 'utf8'), id);
+      const placeholder = Placeholder.parse(
+        JSON.parse(readFileSync(join(appDir, 'placeholders', `${id}.json`), 'utf8')),
+      );
+      errors.push(...checkPage(tree, placeholder, props).map((e) => `pages/${id}.page.jsx ${e}`));
+      pages.push({ id, tree, placeholder });
+    } catch (e) {
+      errors.push(`pages/${id}.page.jsx: ${(e as Error).message}`);
+    }
+  }
+  if (errors.length > 0) throw new Error(`design/app:\n  ${errors.join('\n  ')}`);
+  return { nav, pages };
+}
+
+export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map<string, string> } {
+  const drawn = new Set(app.pages.map((p) => p.id));
+  return {
+    nav: new Map([['routes.tsx', generateRoutes(app.nav, drawn)]]),
+    pages: new Map(
+      app.pages
+        .filter(({ id }) => app.nav.pages.find((p) => p.id === id)?.platforms.includes('web'))
+        .map(({ id, tree, placeholder }) => [
+          `${componentName(id)}.tsx`,
+          generateWebPage(tree, id, placeholder),
+        ]),
+    ),
+  };
+}

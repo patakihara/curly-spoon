@@ -1,0 +1,434 @@
+{
+  "destinations": [
+    {
+      "id": "browse",
+      "label": "Browse",
+      "icon": "explore"
+    },
+    {
+      "id": "music",
+      "label": "Music",
+      "icon": "album"
+    },
+    {
+      "id": "books",
+      "label": "Books",
+      "icon": "book_2"
+    },
+    {
+      "id": "podcasts",
+      "label": "Podcasts",
+      "icon": "podcasts"
+    },
+    {
+      "id": "search",
+      "label": "Search",
+      "icon": "search"
+    }
+  ],
+  "layouts": [
+    {
+      "minWidth": 0,
+      "nav": "bottomBar"
+    },
+    {
+      "minWidth": 600,
+      "nav": "iconRail"
+    },
+    {
+      "minWidth": 1024,
+      "nav": "labelledRail"
+    },
+    {
+      "minWidth": 1240,
+      "nav": "labelledRail",
+      "sidePanel": "nowPlaying"
+    }
+  ],
+  "pages": [
+    {
+      "id": "browse",
+      "route": "/",
+      "lights": "browse",
+      "back": "history",
+      "presentation": "screen",
+      "title": "Browse",
+      "sources": {
+        "sonora": ["kit:mobile/browse", "kit:desktop/browse"],
+        "spotify": [
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16",
+          "S17",
+          "S18",
+          "S19",
+          "S20",
+          "S21",
+          "S22",
+          "S23",
+          "S24",
+          "S25",
+          "S26",
+          "S27",
+          "S28",
+          "S29",
+          "S30"
+        ],
+        "kickoff": "forYou"
+      }
+    },
+    {
+      "id": "requests",
+      "route": "/requests",
+      "lights": "browse",
+      "back": "up:browse",
+      "presentation": "screen",
+      "title": "Requests",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "shelf",
+      "route": "/shelves/:id",
+      "params": {
+        "id": "ShelfId"
+      },
+      "lights": "browse",
+      "back": "up:browse",
+      "presentation": "screen",
+      "title": "Shelf",
+      "sources": {
+        "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
+        "spotify": ["S12"],
+        "kickoff": "shelf"
+      }
+    },
+    {
+      "id": "music",
+      "route": "/music",
+      "lights": "music",
+      "back": "history",
+      "presentation": "screen",
+      "title": "Music",
+      "sources": {
+        "sonora": ["kit:mobile/music", "kit:desktop/music"],
+        "spotify": ["S19", "S31"],
+        "kickoff": "music"
+      }
+    },
+    {
+      "id": "album",
+      "route": "/music/albums/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "music",
+      "back": "up:music",
+      "presentation": "screen",
+      "title": "Album",
+      "sources": {
+        "sonora": ["kit:mobile/album", "kit:desktop/album"],
+        "spotify": [],
+        "kickoff": "album"
+      }
+    },
+    {
+      "id": "artist",
+      "route": "/music/artists/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "music",
+      "back": "up:music",
+      "presentation": "screen",
+      "title": "Artist",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": ["S41"],
+        "kickoff": "artist"
+      }
+    },
+    {
+      "id": "playlist",
+      "route": "/music/playlists/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "music",
+      "back": "up:music",
+      "presentation": "screen",
+      "title": "Playlist",
+      "sources": {
+        "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "favourites",
+      "route": "/music/favourites",
+      "lights": "music",
+      "back": "up:music",
+      "presentation": "screen",
+      "title": "Favourites",
+      "sources": {
+        "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "books",
+      "route": "/books",
+      "lights": "books",
+      "back": "history",
+      "presentation": "screen",
+      "title": "Books",
+      "sources": {
+        "sonora": ["kit:desktop/books", "kit:mobile/books"],
+        "spotify": ["S25", "S31"],
+        "kickoff": "books"
+      }
+    },
+    {
+      "id": "book",
+      "route": "/books/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "books",
+      "back": "up:books",
+      "presentation": "screen",
+      "title": "Book",
+      "sources": {
+        "sonora": ["kit:mobile/album", "kit:desktop/album"],
+        "spotify": ["S35"],
+        "kickoff": "book"
+      }
+    },
+    {
+      "id": "author",
+      "route": "/books/authors/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "books",
+      "back": "up:books",
+      "presentation": "screen",
+      "title": "Author",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": [],
+        "kickoff": "author"
+      }
+    },
+    {
+      "id": "series",
+      "route": "/books/series/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "books",
+      "back": "up:books",
+      "presentation": "screen",
+      "title": "Series",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "podcasts",
+      "route": "/podcasts",
+      "lights": "podcasts",
+      "back": "history",
+      "presentation": "screen",
+      "title": "Podcasts",
+      "sources": {
+        "sonora": ["kit:desktop/podcasts", "kit:mobile/podcasts"],
+        "spotify": ["S20", "S21", "S22", "S23", "S24", "S31"],
+        "kickoff": "podcasts"
+      }
+    },
+    {
+      "id": "show",
+      "route": "/podcasts/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "podcasts",
+      "back": "up:podcasts",
+      "presentation": "screen",
+      "title": "Show",
+      "sources": {
+        "sonora": ["card:episode-rows"],
+        "spotify": ["S01", "S02"],
+        "kickoff": "show"
+      }
+    },
+    {
+      "id": "episode",
+      "route": "/podcasts/episodes/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "podcasts",
+      "back": "history",
+      "presentation": "screen",
+      "title": "Episode",
+      "sources": {
+        "sonora": ["card:episode-rows"],
+        "spotify": ["S35"],
+        "kickoff": "episode"
+      }
+    },
+    {
+      "id": "list",
+      "route": "/lists/:ref",
+      "params": {
+        "ref": "ItemRef"
+      },
+      "lights": "podcasts",
+      "back": "history",
+      "presentation": "screen",
+      "title": "List",
+      "sources": {
+        "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "search",
+      "route": "/search?q",
+      "lights": "search",
+      "back": "history",
+      "presentation": "screen",
+      "title": "Search",
+      "sources": {
+        "sonora": ["kit:desktop/search", "kit:mobile/search"],
+        "spotify": ["S03", "S04", "S32"],
+        "kickoff": "search"
+      }
+    },
+    {
+      "id": "nowPlaying",
+      "route": "/playing",
+      "lights": null,
+      "back": "history",
+      "presentation": "sheet",
+      "title": "Now Playing",
+      "sources": {
+        "sonora": ["kit:mobile/nowplaying", "card:now-playing-page"],
+        "spotify": ["S33", "S34", "S38", "S39", "S40", "S41", "S42"]
+      }
+    },
+    {
+      "id": "queue",
+      "route": "/playing/queue",
+      "lights": null,
+      "back": "history",
+      "presentation": "sheet",
+      "title": "Queue",
+      "sources": {
+        "sonora": ["kit:mobile/queue", "kit:desktop/queue"],
+        "spotify": ["S36", "S37"]
+      }
+    },
+    {
+      "id": "lyrics",
+      "route": "/playing/lyrics",
+      "lights": null,
+      "back": "history",
+      "presentation": "sheet",
+      "title": "Lyrics",
+      "sources": {
+        "sonora": ["kit:mobile/lyrics", "kit:desktop/lyrics", "card:now-playing-page"],
+        "spotify": ["S40", "S43"]
+      }
+    },
+    {
+      "id": "downloads",
+      "route": "/downloads",
+      "lights": null,
+      "back": "history",
+      "presentation": "screen",
+      "platforms": ["android"],
+      "title": "Downloads",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "settings",
+      "route": "/settings",
+      "lights": null,
+      "back": "history",
+      "presentation": "screen",
+      "title": "Settings",
+      "sources": {
+        "sonora": ["card:inputs-switches-sliders", "kit:mobile/settings", "kit:desktop/settings"],
+        "spotify": [],
+        "kickoff": "settings"
+      }
+    },
+    {
+      "id": "setup",
+      "route": "/setup",
+      "lights": null,
+      "back": "history",
+      "presentation": "screen",
+      "title": "Setup",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": [],
+        "kickoff": "onboarding"
+      }
+    },
+    {
+      "id": "signIn",
+      "route": "/sign-in",
+      "lights": null,
+      "back": "history",
+      "presentation": "screen",
+      "title": "Sign in",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "shelfReview",
+      "route": "/admin/shelves",
+      "lights": null,
+      "back": "up:settings",
+      "presentation": "screen",
+      "title": "Shelf review",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": []
+      }
+    },
+    {
+      "id": "notFound",
+      "route": "*",
+      "lights": null,
+      "back": "up:browse",
+      "presentation": "screen",
+      "title": "Not found",
+      "sources": {
+        "sonora": ["none"],
+        "spotify": []
+      }
+    }
+  ]
+}

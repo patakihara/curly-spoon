@@ -1,8 +1,8 @@
-/** The app's root: a placeholder until the generated router and Sonora shell land. */
-export function App() {
-  return (
-    <main>
-      <h1>Auralis</h1>
-    </main>
-  );
+import { RouterProvider, type createBrowserRouter } from 'react-router';
+
+type Router = ReturnType<typeof createBrowserRouter>;
+
+/** The app's root: the route table generated from design/app/nav.json. */
+export function App({ router }: { router: Router }) {
+  return <RouterProvider router={router} />;
 }

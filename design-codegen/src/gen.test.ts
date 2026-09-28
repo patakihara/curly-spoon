@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -118,13 +119,20 @@ describe('pnpm gen, from design/sonora', () => {
       tmp = mkdtempSync(join(tmpdir(), 'auralis-uikit-'));
       const sonora = join(tmp, 'sonora');
       cpSync(fixtures, sonora, { recursive: true });
+      // The canvas's pages use components the fixture lacks, so this run has a canvas of none.
+      const app = join(tmp, 'app');
+      mkdirSync(app);
+      writeFileSync(
+        join(app, 'nav.json'),
+        JSON.stringify({ destinations: [], layouts: [], pages: [] }),
+      );
       const out = join(tmp, 'out');
-      gen(['--sonora', sonora, '--out', out]);
+      gen(['--sonora', sonora, '--app', app, '--out', out]);
       expect(outputFiles(out)).toContain(`${OUTPUTS.kotlin}/EditableListProps.kt`);
 
       rmSync(join(sonora, 'components', 'layout', 'EditableList.jsx'));
       rmSync(join(sonora, 'components', 'layout', 'EditableList.d.ts'));
-      gen(['--sonora', sonora, '--out', out]);
+      gen(['--sonora', sonora, '--app', app, '--out', out]);
 
       const files = outputFiles(out);
       for (const gone of [
