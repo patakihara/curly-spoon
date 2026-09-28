@@ -406,3 +406,26 @@ test('loadResults in local mode lays this checkout’s own test run over CI as t
     removeTree(root);
   }
 });
+
+test('the Live workflow runs every six hours and by hand, never on push, so a failing live check never marks a commit red', () => {
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const live = read(repoRoot, '.github/workflows/live.yml');
+  const on = /^on:\n((?:[ #].*\n|\n)*)/m.exec(live)?.[1] ?? '';
+  assert.doesNotMatch(on, /^\s+push:/m);
+  assert.match(on, /^\s+schedule:\n\s+- cron: '\d+ \*\/6 \* \* \*'/m);
+  assert.match(on, /^\s+workflow_dispatch:/m);
+});
+
+test('loadResults reads runs on main of every event, so a scheduled Live run counts', () => {
+  const repo = fixtureRepo();
+  const exec = fakeExec({ runs: [] });
+  try {
+    loadResults({ root: repo.root, mode: 'ci', exec });
+    const list = exec.calls.find(([cmd, a, b]) => cmd === 'gh' && a === 'run' && b === 'list');
+    assert.ok(list);
+    assert.equal(list[list.indexOf('--branch') + 1], 'main');
+    assert.ok(!list.includes('--event'));
+  } finally {
+    removeTree(repo.root);
+  }
+});

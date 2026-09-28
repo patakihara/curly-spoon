@@ -2,11 +2,11 @@ name: Live
 
 # Checks against what is published beyond these machines (scripts/repo/live.test.mjs, gated by
 # LIVE=1). A failure here only marks plan criteria; publish.yml follows "CI" alone, never this.
+# Scheduled, never on push, so an expected live failure never marks a commit red. A scheduled
+# run is on main, so scripts/plan/results.mjs reads it like any other run there.
 on:
-  push:
-    branches: [main]
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 concurrency:

@@ -95,8 +95,8 @@ newest completed run per workflow that HEAD contains. Without `gh` or the networ
 criteria are `unknown` and nothing is marked done.
 
 Live checks, which reach something published such as the F-Droid repository, run only with
-`LIVE=1`: the workflow Live runs them on every push to `main`, nightly and by hand, and uploads
-`plan-results-live`. `pnpm test` stays offline and leaves them out.
+`LIVE=1`: the workflow Live runs them on `main` every six hours and by hand, never on push, and
+uploads `plan-results-live`. `pnpm test` stays offline and leaves them out.
 
 ## Commands
 
