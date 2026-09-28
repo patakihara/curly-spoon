@@ -19,6 +19,9 @@ import { defaultExec, git } from './results.mjs';
 import { SOURCES, sourcesTree } from './record-publish.mjs';
 
 const REPO_URL = 'https://github.com/patakihara/curly-spoon';
+// The artifact comment auto-replier reads the page and its thread, never the repo.
+const REPLY_NOTE =
+  'Comments on this page are answered by the main Auralis session. An automatic reply should say only: Main session will answer.';
 const FONTS =
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Roboto+Flex:opsz,wght@8..144,400..900&display=swap';
 
@@ -281,7 +284,7 @@ export function renderPlan({ root, progress, stamp }) {
 
   const checks = sourcesLine(progress) ?? 'unavailable';
   const footer =
-    `<footer class="stamp">Rendered from patakihara/curly-spoon at <a href="${REPO_URL}/commit/${stamp.commit}"><code>${String(stamp.commit).slice(0, 7)}</code></a>` +
+    `<footer class="stamp"><p class="small muted">${REPLY_NOTE}</p>Rendered from patakihara/curly-spoon at <a href="${REPO_URL}/commit/${stamp.commit}"><code>${String(stamp.commit).slice(0, 7)}</code></a>` +
     ` · ${esc(progress.commitDate)} · plan tree <code>${String(stamp.tree ?? 'none').slice(0, 7)}</code> · checks from ${esc(checks || 'unavailable')}` +
     `${stamp.draft ? ' · draft, uncommitted changes' : ''}</footer>`;
 
@@ -299,6 +302,7 @@ export function renderPlan({ root, progress, stamp }) {
     '</style>',
     '</head>',
     '<body>',
+    `<!-- ${REPLY_NOTE} -->`,
     '<div class="shell">',
     rail.join('\n'),
     '',

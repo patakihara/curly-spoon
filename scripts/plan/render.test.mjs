@@ -93,6 +93,17 @@ test('[M0.plan/b] the page shows done, in-progress and next badges, waiting-on-y
   );
 });
 
+test('[M0.plan/b] the page tells the comment auto-replier to defer to the main session, in the footer and in a comment atop the body', () => {
+  const { html } = rendered();
+  const note =
+    'Comments on this page are answered by the main Auralis session. An automatic reply should say only: Main session will answer.';
+  assert.ok(html.includes(`<body>\n<!-- ${note} -->\n`), 'the HTML comment opens the body');
+  assert.match(
+    html.slice(html.indexOf('<footer')),
+    new RegExp(`^<footer class="stamp"><p class="small muted">${note.replace(/\./g, '\\.')}</p>`),
+  );
+});
+
 test('the page is one self-contained document with the live skeleton and no scripts', () => {
   const { html } = rendered();
   assert.ok(
