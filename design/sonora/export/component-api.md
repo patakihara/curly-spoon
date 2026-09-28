@@ -114,7 +114,8 @@ A round, transparent glyph button: surface ink, muted ink, or the active colour.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `children` *(required)* | `ReactNode` |  |
+| `children` | `ReactNode` | A glyph span, or any content. Ignored when `icon` is given. |
+| `icon` | `string` | A Material Symbols Rounded glyph name, drawn at `--icon-sm` in place of `children`. |
 | `size` | `number` |  |
 | `active` | `boolean` |  |
 | `tone` | `'accent' \| 'play'` | The colour `active` takes: `accent` (default), or `play` for the transport's play/pause. |
@@ -1109,6 +1110,17 @@ Now Playing control cluster: shuffle, previous, play/pause (the large accent con
 
 ## navigation
 
+### AccountButton
+
+The account avatar that leads the phone's top bar: a `BackLayer`'s `leading` on a destination's home, opening Settings. A round button holding the account's picture through `CoverArt`, or, with no picture, a filled person glyph on `--surface-card`. It belongs to the heading row only, never to a filter row: a filter reconfigures the content, and the account is not a filter. On desktop, Settings sits at the foot of the rail instead.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `image` | `string` | The account's picture. Without it, a person glyph. |
+| `label` | `string` | Accessible name and tooltip. Default "Account". |
+| `size` | `number` | Diameter in px. Default 32, the mobile app bar's avatar. |
+| `onClick` | `() => void` |  |
+
 ### BackLink
 
 Back affordance above a detail page, naming the place it returns to.
@@ -1149,7 +1161,8 @@ Material Symbols Rounded glyph name.
 | prop | type | notes |
 | --- | --- | --- |
 | `items` | `NavRailItem[]` |  |
-| `active` | `string` | Key of the active item. |
+| `footerItems` | `NavRailItem[]` |  Destinations pinned to the rail's foot, below the items and above `footer` — Settings. Drawn as the same rows, so they light, collapse and click exactly as `items` do.  |
+| `active` | `string` | Key of the active item, in `items` or `footerItems`. |
 | `onChange` | `(key: string) => void` |  |
 | `expanded` | `boolean` |  |
 | `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided. |

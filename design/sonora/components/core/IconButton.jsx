@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function IconButton({ children, size = 36, active, muted, tone = 'accent', onClick, label }) {
+export function IconButton({ children, icon, size = 36, active, muted, tone = 'accent', onClick, label }) {
   const [hover, setHover] = React.useState(false);
   return (
     <button
@@ -16,7 +16,9 @@ export function IconButton({ children, size = 36, active, muted, tone = 'accent'
         cursor: 'pointer', transition: 'background var(--duration-fast) ease, color var(--duration-fast) ease',
       }}
     >
-      {children}
+      {icon
+        ? <span aria-hidden="true" style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)', lineHeight: 1 }}>{icon}</span>
+        : children}
     </button>
   );
 }

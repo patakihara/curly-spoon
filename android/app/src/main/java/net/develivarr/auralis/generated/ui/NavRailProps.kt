@@ -20,7 +20,12 @@ data class NavRailItem(
  */
 data class NavRailProps(
     val items: List<NavRailItem>? = null,
-    /** Key of the active item. */
+    /**
+     * Destinations pinned to the rail's foot, below the items and above `footer` — Settings. Drawn as
+     * the same rows, so they light, collapse and click exactly as `items` do.
+     */
+    val footerItems: List<NavRailItem>? = null,
+    /** Key of the active item, in `items` or `footerItems`. */
     val active: String? = null,
     val onChange: ((String) -> Unit)? = null,
     val expanded: Boolean? = null,

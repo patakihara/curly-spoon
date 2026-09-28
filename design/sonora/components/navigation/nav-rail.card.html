@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1500x1100" name="Navigation Rail & Footer" subtitle="The rail collapsed and expanded inside a backdrop: the toggle band matches the back layer's heading strip, the glyph carries the state, and RailFooter narrows with the rail instead of clipping" -->
+<!-- @dsCard group="Components" viewport="1500x1100" name="Navigation Rail & Footer" subtitle="The rail collapsed and expanded inside a backdrop: the toggle band matches the back layer's heading strip, the glyph carries the state, and RailFooter narrows with the rail instead of clipping; Settings is pinned to the foot as a row like the others" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -34,7 +34,7 @@ function Frame({start, theme, onTheme}){
   const [view, setView] = React.useState('browse');
   return <div style={{height:440}}>
     <BackdropShell platform="desktop" scroll={false} theme={theme}
-      rail={<NavRail items={NAV} active={view} onChange={setView}
+      rail={<NavRail items={NAV} footerItems={[{key:'settings',label:'Settings',icon:'settings'}]} active={view} onChange={setView}
         expanded={expanded} onToggleExpanded={() => setExpanded(!expanded)}
         footer={<RailFooter expanded={expanded} theme={theme} onThemeChange={onTheme}
           title="Local Library" sub="Music · Books · Podcasts" onIdentityClick={() => {}} />} />}

@@ -3,8 +3,19 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 
 import { RailItem } from './RailItem.jsx';
 
-/** The desktop navigation rail: a bg-alt column of RailItems that widens between collapsed and expanded, with a menu toggle above and an optional footer below. */
-export function NavRail({ items = [], active, onChange, expanded = true, onToggleExpanded, footer, header }) {
+/** The desktop navigation rail: a bg-alt column of RailItems that widens between collapsed and expanded, with a menu toggle above, destinations pinned to its foot, and an optional footer below. */
+export function NavRail({ items = [], footerItems = [], active, onChange, expanded = true, onToggleExpanded, footer, header }) {
+  const pad = 'padding-right:' + (expanded ? 'var(--spacing-xl)' : 'calc(var(--spacing-xl) + 6px)') + ';padding-left:calc(var(--spacing-xl) + 6px)';
+  /* One row for the items and the pinned ones alike, so a destination at the foot is the same
+     control as one at the top: same pill, same collapsed tab-bar treatment. */
+  const row = (it) => (
+    <div key={it.key} style={sx('flex-shrink:0;height:var(--rail-row-height)')}>
+      {/* Collapsed rail borrows the tab-bar behaviour: only the active row keeps its label,
+          inactive rows are icon-only — the same treatment as BottomNav. */}
+      <RailItem icon={it.icon} label={it.label} expanded={expanded} tabs={!expanded} wideActive={false} centerIcon={false}
+        active={active === it.key} onClick={() => onChange && onChange(it.key)} />
+    </div>
+  );
   return (
     <div style={sx(
       'flex-shrink:0;display:flex;flex-direction:column;height:100%;background:var(--surface-bg-alt);' +
@@ -22,16 +33,14 @@ export function NavRail({ items = [], active, onChange, expanded = true, onToggl
       {header}
       {/* The item list is the only part that gives: the head keeps the bar's height and the footer
          stays put, so a rail too short for its items scrolls rather than squashing them. */}
-      <div style={sx('flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding-top:var(--spacing-lg);padding-bottom:0px;padding-right:' + (expanded ? 'var(--spacing-xl)' : 'calc(var(--spacing-xl) + 6px)') + ';padding-left:calc(var(--spacing-xl) + 6px)')}>
-        {items.map((it) => (
-          <div key={it.key} style={sx('flex-shrink:0;height:var(--rail-row-height)')}>
-            {/* Collapsed rail borrows the tab-bar behaviour: only the active row keeps its label,
-                inactive rows are icon-only — the same treatment as BottomNav. */}
-            <RailItem icon={it.icon} label={it.label} expanded={expanded} tabs={!expanded} wideActive={false} centerIcon={false}
-              active={active === it.key} onClick={() => onChange && onChange(it.key)} />
-          </div>
-        ))}
+      <div style={sx('flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding-top:var(--spacing-lg);padding-bottom:0px;' + pad)}>
+        {items.map(row)}
       </div>
+      {footerItems.length > 0 && (
+        <div style={sx('flex-shrink:0;display:flex;flex-direction:column;padding-top:0px;padding-bottom:var(--spacing-lg);' + pad)}>
+          {footerItems.map(row)}
+        </div>
+      )}
       {footer && <div style={sx('flex-shrink:0')}>{footer}</div>}
     </div>
   );

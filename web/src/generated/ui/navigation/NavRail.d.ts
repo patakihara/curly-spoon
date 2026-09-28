@@ -18,7 +18,12 @@ export interface NavRailItem {
  */
 export interface NavRailProps {
   items?: NavRailItem[];
-  /** Key of the active item. */
+  /**
+   * Destinations pinned to the rail's foot, below the items and above `footer` — Settings. Drawn as
+   * the same rows, so they light, collapse and click exactly as `items` do.
+   */
+  footerItems?: NavRailItem[];
+  /** Key of the active item, in `items` or `footerItems`. */
   active?: string;
   onChange?: (key: string) => void;
   expanded?: boolean;

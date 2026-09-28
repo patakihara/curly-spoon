@@ -29,6 +29,8 @@ function Demo(){
       <IconButton label="Next"><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>skip_next</span></IconButton>
       <IconButton label="Shuffle" muted><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>shuffle</span></IconButton>
       <IconButton label="More" muted><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>more_vert</span></IconButton>
+      <IconButton label="Close" icon="close" />
+      <IconButton label="Queue" icon="queue_music" active />
     </div>
     <div style={{display:'flex',gap:10,flexWrap:'wrap',background:'var(--surface-card)',padding:12,borderRadius:12}}>
       <Button variant="primary" platform="mobile" icon={glyph('play_arrow')}>Play all</Button>

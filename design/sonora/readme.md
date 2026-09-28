@@ -21,14 +21,14 @@ No unified logo exists (and none was invented) — see **Brand marks** below.
 - `assets/reference/` — real screenshots used as ground truth while building the UI kits
 - `components/core/` — Button, ButtonGroup, IconButton, Chip, Badge, ProgressRing, QuickPick, SectionHeader, ValueRow, ViewToggle, BrowseCard, ExpandableText, ExpanderRow, FollowButton, PreviewButton, Rating, SortFilterBar, StatusBanner
 - `components/forms/` — Input, SearchBar, SearchField, Switch, Slider, FieldRow, SettingRow
-- `components/navigation/` — NavRail, RailItem, RailFooter (desktop rail), TopAppBar, TabBar, BottomAppBar, SearchButton, BackLink, BottomNav (mobile)
+- `components/navigation/` — NavRail, RailItem, RailFooter (desktop rail), TopAppBar, TabBar, BottomAppBar, SearchButton, BackLink, BottomNav, AccountButton (mobile)
 - `components/layout/` — AppShell, ContentPane, SideSheet, PlayerSheet, PlayerSubPage, PlayerPanel, EditableList, ScrollArea, LayoutGrid, PageBody, Shelf, BackLayer, BackToTop, BackdropShell, FrontLayer, FrontLayerHeader
 - `components/media/` — AlbumArt, CoverArt, MediaCard, ArtistCard, MediaHeader, ResultRow, MiniPlayer, PlayActions, TransportBar, SeekBar, QueueRow, Lyrics, LyricsSyncButton, NowPlaying, NowPlayingPage, LyricsPage, QueuePage, AboutCard, DownloadButton, EpisodeRow, FeatureCard, ItemActionBar, OutputDeviceButton, SpeedControl
 - `SKILL.md` — Claude Code / Agent Skills manifest
 
 ## Components
 
-Badge, Button, ButtonGroup, Chip, IconButton, ProgressRing, QuickPick, SearchButton, SectionHeader, TabBar, ValueRow, ViewToggle, FieldRow, Input, SearchBar, SearchField, SettingRow, Slider, Switch, AlbumArt, ArtistCard, Lyrics, LyricsSyncButton, LyricsPage, MediaCard, MediaHeader, MiniPlayer, NowPlaying, NowPlayingPage, QueuePage, QueueRow, ResultRow, PlayActions, SeekBar, TransportBar, BackLink, BottomAppBar, BottomNav, NavRail, RailItem, TopAppBar, AppShell, ContentPane, EditableList, PlayerPanel, PlayerSheet, PlayerSubPage, ScrollArea, SideSheet, LayoutGrid, PageBody, Shelf, AboutCard, BackLayer, BackToTop, BackdropShell, BrowseCard, DownloadButton, EpisodeRow, ExpandableText, ExpanderRow, FeatureCard, FollowButton, FrontLayer, FrontLayerHeader, ItemActionBar, OutputDeviceButton, PreviewButton, Rating, SortFilterBar, SpeedControl, StatusBanner.
+Badge, Button, ButtonGroup, Chip, IconButton, ProgressRing, QuickPick, SearchButton, SectionHeader, TabBar, ValueRow, ViewToggle, FieldRow, Input, SearchBar, SearchField, SettingRow, Slider, Switch, AlbumArt, ArtistCard, Lyrics, LyricsSyncButton, LyricsPage, MediaCard, MediaHeader, MiniPlayer, NowPlaying, NowPlayingPage, QueuePage, QueueRow, ResultRow, PlayActions, SeekBar, TransportBar, AccountButton, BackLink, BottomAppBar, BottomNav, NavRail, RailItem, TopAppBar, AppShell, ContentPane, EditableList, PlayerPanel, PlayerSheet, PlayerSubPage, ScrollArea, SideSheet, LayoutGrid, PageBody, Shelf, AboutCard, BackLayer, BackToTop, BackdropShell, BrowseCard, DownloadButton, EpisodeRow, ExpandableText, ExpanderRow, FeatureCard, FollowButton, FrontLayer, FrontLayerHeader, ItemActionBar, OutputDeviceButton, PreviewButton, Rating, SortFilterBar, SpeedControl, StatusBanner.
 
 None of the three source apps ships a shared, importable web component library (two are native Android/Compose, one is an Electron/React app with no exported design-system package), so this set is a standard practical inventory sized to what a music-player UI actually needs — every value inside each component (radii, colors, spacing, the slider's two very different treatments) is copied from the real source code and screenshots, not invented. See **Intentional additions** below.
 
@@ -143,7 +143,7 @@ The layout family exists because the app frame has relationships that are easy t
 
 Grid tokens live in `tokens/layout.css`: 12 columns desktop / 3 mobile, `--grid-gutter` 20px (8 mobile), `--grid-margin` 28px (16 mobile), `--grid-item-min` 50px with `--grid-item-max` 190px (the floor sits far below the cap so a narrow pane shrinks cards instead of dropping to one column) (100 mobile — three cards across a phone; a desktop pane past the cap adds a column instead of growing the cards), and measure caps `--grid-max-width` 1100 / `-list` 860 / `-form` 640. Frame dimensions are tokens too — rail widths, `--side-sheet-width`, `--appbar-height`, `--content-min-width`.
 - **Forms**: FieldRow, Input, SearchBar, SearchField, SettingRow, Slider, Switch
-- **Navigation**: BackLink, BottomAppBar, BottomNav, RailFooter, RailItem, TopAppBar
+- **Navigation**: AccountButton, BackLink, BottomAppBar, BottomNav, RailFooter, RailItem, TopAppBar
 
 Retired (removed August 2026 — both UI kits migrated):
 

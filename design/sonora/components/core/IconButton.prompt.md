@@ -6,4 +6,4 @@ A circular icon-only button used for player transport controls, toolbar actions,
 <IconButton label="More" muted><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>more_vert</span></IconButton>
 ```
 
-Pass a **Material Symbols Rounded** glyph span as children (the system uses Material Symbols on every surface, desktop and mobile — see Iconography guidelines). Never hand-draw an SVG. `active` tints the icon accent color; `muted` dims it.
+Name the glyph with `icon` (`<IconButton label="Close" icon="close" />`), or pass a **Material Symbols Rounded** glyph span as children (the system uses Material Symbols on every surface, desktop and mobile — see Iconography guidelines). Never hand-draw an SVG. `active` tints the icon accent color; `muted` dims it.

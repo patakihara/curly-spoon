@@ -5,7 +5,10 @@ import androidx.compose.runtime.Composable
 
 /** A round, transparent glyph button: surface ink, muted ink, or the active colour. */
 data class IconButtonProps(
-    val children: (@Composable () -> Unit)?,
+    /** A glyph span, or any content. Ignored when `icon` is given. */
+    val children: (@Composable () -> Unit)? = null,
+    /** A Material Symbols Rounded glyph name, drawn at `--icon-sm` in place of `children`. */
+    val icon: String? = null,
     val size: Float? = null,
     val active: Boolean? = null,
     /** The colour `active` takes: `accent` (default), or `play` for the transport's play/pause. */
