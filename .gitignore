@@ -40,3 +40,6 @@ design/sonora/assets/reference/spotify/
 # Plan progress: cached CI results and local test reports, never committed.
 .cache/
 reports/
+
+# A local list of household names the recording scan checks for; it names real people.
+names.txt

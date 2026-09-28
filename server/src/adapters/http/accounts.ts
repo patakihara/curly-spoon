@@ -1,11 +1,11 @@
 /**
  * Before the scrubber: a user list keeps only the test identity as it is. Every other account in
  * Audiobookshelf's `GET /api/users` and Jellyfin's `GET /Users` becomes `user-1`, `user-2`...:
- * username, name, email and id, with its listening history emptied. The names replaced are
+ * username, name, email, id and sign-on subject, with its listening history emptied. The names
+ * replaced are
  * handed back, so the scan can check none of them is left anywhere.
  */
-import { type RawExchange } from './scrub.js';
-import { PLACEHOLDER_EMAIL } from './scrub.js';
+import { PLACEHOLDER, PLACEHOLDER_EMAIL, type RawExchange } from './scrub.js';
 
 /** Per-person history a user object may carry; nobody but the test identity keeps it. */
 const HISTORY_FIELDS = ['mediaProgress', 'bookmarks', 'seriesHideFromContinueListening'];
@@ -75,6 +75,10 @@ export function anonymizeAccounts(raw: RawExchange, keep: readonly string[]): An
       }
     }
     for (const field of HISTORY_FIELDS) if (Array.isArray(account[field])) out[field] = [];
+    if (typeof account.authOpenIDSub === 'string') out.authOpenIDSub = PLACEHOLDER;
+    if (isRecord(account.extraData) && typeof account.extraData.authOpenIDSub === 'string') {
+      out.extraData = { ...account.extraData, authOpenIDSub: PLACEHOLDER };
+    }
     if (typeof name === 'string') names.push(name);
     return out;
   });

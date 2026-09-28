@@ -16,7 +16,7 @@
  * committed recordings, and says where.
  */
 import { mkdtempSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -24,6 +24,7 @@ import { AbsClient } from './audiobookshelf/client.js';
 import { type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { recordingSchema } from './http/recording.js';
+import { localNames } from './http/localNames.js';
 import { scanRecording } from './http/scan.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { recordOidc } from './record-oidc.js';
@@ -56,6 +57,8 @@ export interface RecordIo {
   /** For --only oidc: the state, nonce and verifier's bytes, and the time. */
   random?: (bytes: number) => Buffer;
   now?: () => number;
+  /** People's names from the local, uncommitted names file: the scan fails on any of them. */
+  names?: readonly string[];
 }
 
 /** The `id` of a play answer, from its raw text, whether or not the rest of it parses. */
@@ -239,7 +242,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
 }
 
 /** Scans every written recording; any finding, a name seen while recording included, fails. */
-function scanWritten(io: RecordIo, written: string[], names: readonly string[]): number {
+function scanWritten(io: RecordIo, written: string[], seen: readonly string[]): number {
+  const names = [...seen, ...(io.names ?? [])];
   let findings = 0;
   for (const file of written) {
     const recording = recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
@@ -315,6 +319,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     fetch: (url, init) => globalThis.fetch(url, init),
     out: (line) => process.stdout.write(`${line}\n`),
     err: (line) => process.stderr.write(`${line}\n`),
+    names: localNames(process.env, homedir()),
   }).then(
     (code) => process.exit(code),
     (error: unknown) => {

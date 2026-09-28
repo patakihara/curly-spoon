@@ -47,7 +47,7 @@ describe('re-signing the recorded ID token', () => {
       id_token: liveToken(claims),
       token_type: 'bearer',
     });
-    const recording = scrub(resignExchange(raw, ISSUER), options);
+    const recording = scrub(resignExchange(raw, ISSUER, ['auralis']), options);
     const json = (recording.response.body as { json: Record<string, string> }).json;
     const idToken = json.id_token as string;
 
@@ -70,6 +70,75 @@ describe('re-signing the recorded ID token', () => {
     expect(findings).not.toContain('jwt');
     const leaked = scrub(exchange('/x', { note: liveToken(claims) }), options);
     expect(scanRecording(leaked).map((f) => f.kind)).toContain('jwt');
+  });
+
+  it("replaces every person's name and email claim, keeping only the test identity's username", () => {
+    const person = {
+      ...claims,
+      name: 'Kara Example',
+      given_name: 'Kara',
+      family_name: 'Example',
+      preferred_username: 'kara',
+    };
+    const other = resignExchange(
+      exchange('/api/oidc/token', { id_token: liveToken(person) }),
+      ISSUER,
+      ['auralis'],
+    );
+    const token = (other.response.body as { json: { id_token: string } }).json.id_token;
+    expect(jwtClaims(token)).toMatchObject({
+      name: 'user',
+      given_name: 'user',
+      family_name: 'user',
+      email: 'user@upstream.invalid',
+      preferred_username: 'user',
+    });
+    const test = resignExchange(
+      exchange('/api/oidc/token', {
+        id_token: liveToken({ ...person, preferred_username: 'auralis' }),
+      }),
+      ISSUER,
+      ['auralis'],
+    );
+    const kept = (test.response.body as { json: { id_token: string } }).json.id_token;
+    expect(jwtClaims(kept)).toMatchObject({ name: 'user', preferred_username: 'auralis' });
+  });
+
+  it('replaces the same claims in a userinfo answer', () => {
+    const raw = exchange('/api/oidc/userinfo', {
+      sub: claims.sub,
+      name: 'Kara Example',
+      email: 'kara@example-household.test',
+      preferred_username: 'kara',
+      groups: ['household'],
+    });
+    expect(
+      (resignExchange(raw, ISSUER, ['auralis']).response.body as { json: unknown }).json,
+    ).toEqual({
+      sub: claims.sub,
+      name: 'user',
+      email: 'user@upstream.invalid',
+      preferred_username: 'user',
+      groups: ['household'],
+    });
+  });
+
+  it('drops the certificate chain and thumbprints from the recorded signing keys', () => {
+    const raw = exchange('/jwks.json', {
+      keys: [
+        {
+          kty: 'RSA',
+          kid: 'live-kid',
+          n: 'live-n',
+          e: 'AQAB',
+          x5c: ['MIIC-live'],
+          x5t: 'live-t',
+          'x5t#S256': 'live-t256',
+        },
+      ],
+    });
+    const json = (resignExchange(raw, ISSUER).response.body as { json: { keys: unknown[] } }).json;
+    expect(json.keys).toEqual([{ kty: 'RSA', kid: 'live-kid', n: TEST_PUBLIC_JWK.n, e: 'AQAB' }]);
   });
 
   it("gives the recorded signing keys the test key's modulus and exponent, keeping their kid", () => {
@@ -101,6 +170,32 @@ describe('keeping other people out of a recorded user list', () => {
       ],
     });
     expect(names).toEqual(['e@example-household.test', 'Élise', 'Kara']);
+  });
+
+  it("replaces other people's sign-on subject, and keeps the test identity's", () => {
+    const raw = exchange('/api/users', {
+      users: [
+        { id: 'id-a', username: 'auralis', authOpenIDSub: 'sub-test' },
+        {
+          id: 'id-b',
+          username: 'Kara',
+          authOpenIDSub: 'sub-kara',
+          extraData: { authOpenIDSub: 'sub-kara' },
+        },
+      ],
+    });
+    const { raw: out } = anonymizeAccounts(raw, ['auralis']);
+    expect((out.response.body as { json: unknown }).json).toEqual({
+      users: [
+        { id: 'id-a', username: 'auralis', authOpenIDSub: 'sub-test' },
+        {
+          id: 'user-1',
+          username: 'user-1',
+          authOpenIDSub: '<token>',
+          extraData: { authOpenIDSub: '<token>' },
+        },
+      ],
+    });
   });
 
   it("replaces every Jellyfin account but the test identity's", () => {

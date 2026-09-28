@@ -125,7 +125,7 @@ export async function recordOidc(
     upstreamVersion: input.oidcVersion,
     secrets,
     baseUrl: input.issuer,
-    prepare: (raw) => resignExchange(raw, input.issuer),
+    prepare: (raw) => resignExchange(raw, input.issuer, [TEST_IDENTITY]),
   });
   const client = new OidcClient({
     issuer: input.issuer,
