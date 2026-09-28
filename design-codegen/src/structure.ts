@@ -211,123 +211,165 @@ export function generateStructure(
 }
 
 export const FLOWS_BOARD = {
-  node: { w: 240, h: 56 },
-  column: 360,
-  row: 104,
+  node: { w: 250, h: 56 },
+  /** How far a child sits right of its parent; its line runs down that gap. */
+  indent: 34,
+  gap: 72,
+  /** Space between two nodes of a column. */
+  space: 24,
   pad: 72,
-  top: 260,
+  top: 250,
+  /** A link line: 16 px tall, about 7 px a character at 12 px. */
+  linkLine: 16,
+  charPx: 7,
 };
 
-interface Box {
+/** A page's node: where it sits, its column, and the text it carries. */
+export interface Box {
   page: NavPage;
   x: number;
   y: number;
+  w: number;
+  h: number;
+  column: number;
+  depth: number;
   root: boolean;
+  backLine: string;
+  /** Links that aren't tree children, by page id, and wrapped for the node. */
+  links: string[];
+  linkLines: string[];
 }
 
-/** Every page's box on the flowchart: one column per group, rows in the group's order. */
+/** A tree line from a page down to a page whose back goes up to it, as a polyline. */
+export interface TreeLine {
+  from: Box;
+  to: Box;
+  points: [number, number][];
+}
+
+/**
+ * Wraps `→ A · B · C` at the separators so no line runs past `chars` characters; a continued
+ * line is drawn indented under the first title.
+ */
+function wrapLinks(titles: string[], chars: number): string[] {
+  const out: string[] = [];
+  let line = '→';
+  for (const t of titles) {
+    const next = line === '→' ? `→ ${t}` : `${line} · ${t}`;
+    if (next.length + (out.length > 0 ? 2 : 0) > chars && line !== '→') {
+      out.push(line);
+      line = t;
+    } else line = next;
+  }
+  if (titles.length > 0) out.push(line);
+  return out;
+}
+
+/**
+ * Every page's node on the flowchart. One column per group; within it each page sits under the
+ * page its back goes up to, indented, so the column reads as a small tree. Every other link is
+ * text on the node, and the node grows to fit it.
+ */
 export function layoutFlows(nav: Nav): {
   boxes: Map<string, Box>;
   groups: Group[];
+  lines: TreeLine[];
+  columns: { x: number; w: number }[];
   width: number;
   height: number;
 } {
-  const { node, column, row, pad, top } = FLOWS_BOARD;
+  const { node, indent, gap, space, pad, top, linkLine, charPx } = FLOWS_BOARD;
   const groups = groupPages(nav);
   const boxes = new Map<string, Box>();
-  groups.forEach((g, col) => {
-    g.pages.forEach((page, i) => {
-      boxes.set(page.id, {
+  const lines: TreeLine[] = [];
+  const columns: { x: number; w: number }[] = [];
+  let x = pad;
+  let bottom = top;
+  groups.forEach((g, column) => {
+    const inGroup = new Set(g.pages.map((p) => p.id));
+    const parentOf = (p: NavPage) => {
+      const up = p.back.startsWith('up:') ? p.back.slice(3) : null;
+      return up !== null && up !== p.id && inGroup.has(up) ? up : null;
+    };
+    const childrenOf = (id: string) => g.pages.filter((p) => parentOf(p) === id);
+    const order: { page: NavPage; depth: number }[] = [];
+    const visit = (page: NavPage, depth: number) => {
+      if (order.some((o) => o.page === page)) return;
+      order.push({ page, depth });
+      for (const child of childrenOf(page.id)) visit(child, depth + 1);
+    };
+    for (const page of g.pages) if (parentOf(page) === null) visit(page, 0);
+    for (const page of g.pages) visit(page, 0);
+    const deepest = Math.max(...order.map((o) => o.depth));
+    const w = node.w + deepest * indent;
+    columns.push({ x, w });
+    let y = top;
+    for (const { page, depth } of order) {
+      const children = new Set(childrenOf(page.id).map((p) => p.id));
+      const links = [...new Set(page.structure.links)].filter((l) => !children.has(l));
+      const linkLines = wrapLinks(
+        links.map((l) => titleOf(nav, l)),
+        Math.floor((node.w - 28) / charPx),
+      );
+      const sheet = page.presentation === 'sheet' ? ' · sheet' : '';
+      const box: Box = {
         page,
-        x: pad + 48 + col * column,
-        y: top + i * row,
+        x: x + depth * indent,
+        y,
+        w: node.w,
+        h: node.h + (linkLines.length > 0 ? linkLines.length * linkLine + 4 : 0),
+        column,
+        depth,
         root: page.id === g.id,
-      });
-    });
-  });
-  const rows = Math.max(...groups.map((g) => g.pages.length));
-  return {
-    boxes,
-    groups,
-    width: pad * 2 + 48 + (groups.length - 1) * column + node.w + 48,
-    height: top + rows * row + 150,
-  };
-}
-
-type Side = 'left' | 'right';
-
-/**
- * Which side of each box a link leaves and enters by: across columns side to side, within one
- * column both on the left.
- */
-function sides(from: Box, to: Box): [Side, Side] {
-  if (from.x === to.x) return ['left', 'left'];
-  return to.x > from.x ? ['right', 'left'] : ['left', 'right'];
-}
-
-/**
- * Every link as a curve. The links meeting one side of a box spread along it in the order of
- * their other ends, so arrows arrive at separate points and don't cross at the box.
- */
-function edgePaths(boxes: Map<string, Box>): { from: Box; to: Box; d: string }[] {
-  const { w, h } = FLOWS_BOARD.node;
-  const links = [...boxes.values()].flatMap((from) =>
-    from.page.structure.links.map((l) => ({ from, to: boxes.get(l)! })),
-  );
-  const ports = new Map<string, { key: number; other: Box }[]>();
-  const port = (box: Box, side: Side, key: number, other: Box) => {
-    const id = `${box.page.id}:${side}`;
-    ports.set(id, [...(ports.get(id) ?? []), { key, other }]);
-  };
-  links.forEach(({ from, to }, i) => {
-    const [out, into] = sides(from, to);
-    port(from, out, i, to);
-    port(to, into, i, from);
-  });
-  const yAt = (box: Box, side: Side, key: number) => {
-    const list = [...ports.get(`${box.page.id}:${side}`)!].sort(
-      (a, b) => a.other.y - b.other.y || a.other.x - b.other.x || a.key - b.key,
-    );
-    const i = list.findIndex((p) => p.key === key);
-    return box.y + 8 + ((h - 16) * (i + 1)) / (list.length + 1);
-  };
-  return links.map(({ from, to }, i) => {
-    const [out, into] = sides(from, to);
-    const y1 = yAt(from, out, i);
-    const y2 = yAt(to, into, i);
-    if (out === 'left' && into === 'left') {
-      const bulge = 24 + Math.abs(to.y - from.y) / 6;
-      const x = from.x;
-      return {
+        backLine: `${page.back.startsWith('up:') ? '↑ ' : '← '}${backOf(nav, page)}${sheet}`,
+        links,
+        linkLines,
+      };
+      boxes.set(page.id, box);
+      y += box.h + space;
+    }
+    bottom = Math.max(bottom, y - space);
+    for (const { page } of order) {
+      const parent = parentOf(page);
+      if (parent === null) continue;
+      const from = boxes.get(parent)!;
+      const to = boxes.get(page.id)!;
+      const lx = from.x + indent / 2;
+      const ly = to.y + 26;
+      lines.push({
         from,
         to,
-        d: `M ${x} ${y1} C ${x - bulge} ${y1}, ${x - bulge} ${y2}, ${x - 2} ${y2}`,
-      };
+        points: [
+          [lx, from.y + from.h],
+          [lx, ly],
+          [to.x - 2, ly],
+        ],
+      });
     }
-    const x1 = out === 'right' ? from.x + w : from.x;
-    const x2 = into === 'left' ? to.x - 2 : to.x + w + 2;
-    const dx = Math.max(60, Math.abs(x2 - x1) / 3) * (x2 > x1 ? 1 : -1);
-    return { from, to, d: `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}` };
+    x += w + gap;
   });
+  return { boxes, groups, lines, columns, width: x - gap + pad, height: bottom + 150 };
 }
 
-/** `flows.dc.html`: the navigation flowchart, the five destinations as roots, links as edges. */
+/** `flows.dc.html`: the navigation flowchart, a small tree per column, other links as text. */
 export function generateFlows(
   nav: Nav,
   drawn: Set<string>,
   head: string[],
 ): { html: string; width: number; height: number } {
-  const { node } = FLOWS_BOARD;
-  const { boxes, groups, width, height } = layoutFlows(nav);
+  const { pad, linkLine } = FLOWS_BOARD;
+  const { boxes, groups, lines, width, height } = layoutFlows(nav);
+  const muted = 'fill: var(--surface-fg-muted)';
   const svg: string[] = [
     `<svg width="${width}" height="${height}" style="display: block" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How the screens link to each other">`,
     '<defs>',
     '<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">',
-    '<path d="M 0 0 L 10 5 L 0 10 z" style="fill: var(--surface-fg-muted)"></path>',
+    `<path d="M 0 0 L 10 5 L 0 10 z" style="${muted}"></path>`,
     '</marker>',
     '</defs>',
-    `<text x="${FLOWS_BOARD.pad}" y="${FLOWS_BOARD.pad + 36}" style="font-family: var(--font-display); font-size: 36px; font-weight: 900; fill: var(--surface-fg)">How the screens link</text>`,
-    `<text x="${FLOWS_BOARD.pad}" y="${FLOWS_BOARD.pad + 72}" style="font-size: 18px; fill: var(--surface-fg-muted)">The five destinations are the roots. An arrow is a link a screen offers; every screen also reaches the destinations, Settings, and Now Playing through the mini-player.</text>`,
+    `<text x="${pad}" y="${pad + 36}" style="font-family: var(--font-display); font-size: 36px; font-weight: 900; fill: var(--surface-fg)">How the screens link</text>`,
+    `<text x="${pad}" y="${pad + 72}" style="font-size: 18px; ${muted}">Each column is a destination drawn as a tree: a line runs from a screen to the screens that go back up to it. The → line on a screen lists its other links.</text>`,
+    `<text x="${pad}" y="${pad + 100}" style="font-size: 18px; ${muted}">Not shown: every screen also reaches the destinations, Settings, and Now Playing through the mini-player.</text>`,
   ];
   groups.forEach((g) => {
     const first = boxes.get(g.pages[0]!.id)!;
@@ -335,33 +377,36 @@ export function generateFlows(
       `<text x="${first.x}" y="${first.y - 28}" style="font-family: var(--font-display); font-size: 22px; font-weight: 900; fill: var(--accent)">${escapeText(g.label)}</text>`,
     );
   });
-  for (const { from, to, d } of edgePaths(boxes)) {
+  for (const { from, to, points } of lines) {
     svg.push(
-      `<path d="${d}" style="fill: none; stroke: var(--surface-fg-muted); stroke-opacity: 0.45; stroke-width: 1.5" marker-end="url(#arrow)"><title>${escapeText(`${from.page.title} to ${to.page.title}`)}</title></path>`,
+      `<polyline points="${points.map((p) => p.join(',')).join(' ')}" style="fill: none; stroke: var(--surface-fg-muted); stroke-opacity: 0.7; stroke-width: 1.5" marker-end="url(#arrow)"><title>${escapeText(`${from.page.title} to ${to.page.title}`)}</title></polyline>`,
     );
   }
   for (const box of boxes.values()) {
     const dashed = drawn.has(box.page.id) ? '' : ' stroke-dasharray: 6 4;';
     const stroke = box.root ? 'var(--accent)' : 'var(--surface-fg-muted)';
-    const sheet = box.page.presentation === 'sheet' ? ' · sheet' : '';
     svg.push(
       `<g><title>${escapeText(box.page.structure.purpose)}</title>`,
-      `<rect x="${box.x}" y="${box.y}" width="${node.w}" height="${node.h}" rx="10" style="fill: var(--surface-card); stroke: ${stroke}; stroke-width: ${box.root ? 2.5 : 1.25};${dashed}"></rect>`,
+      `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="10" style="fill: var(--surface-card); stroke: ${stroke}; stroke-width: ${box.root ? 2.5 : 1.25};${dashed}"></rect>`,
       `<text x="${box.x + 14}" y="${box.y + 24}" style="font-size: 16px; font-weight: 700; fill: var(--surface-fg)">${escapeText(box.page.title)}</text>`,
-      `<text x="${box.x + 14}" y="${box.y + 44}" style="font-size: 12px; fill: var(--surface-fg-muted)">${escapeText(`${box.page.back.startsWith('up:') ? '↑ ' : '← '}${backOf(nav, box.page)}${sheet}`)}</text>`,
+      `<text x="${box.x + 14}" y="${box.y + 44}" style="font-size: 12px; ${muted}">${escapeText(box.backLine)}</text>`,
+      ...box.linkLines.map(
+        (text, i) =>
+          `<text x="${box.x + (i === 0 ? 14 : 28)}" y="${box.y + 64 + i * linkLine}" style="font-size: 12px; fill: var(--surface-fg)">${escapeText(text)}</text>`,
+      ),
       '</g>',
     );
   }
   const legendY = height - 90;
-  const lx = FLOWS_BOARD.pad;
+  const lx = pad;
   svg.push(
     `<rect x="${lx}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--accent); stroke-width: 2.5"></rect>`,
-    `<text x="${lx + 48}" y="${legendY + 16}" style="font-size: 14px; fill: var(--surface-fg-muted)">a destination</text>`,
+    `<text x="${lx + 48}" y="${legendY + 16}" style="font-size: 14px; ${muted}">a destination</text>`,
     `<rect x="${lx + 200}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--surface-fg-muted); stroke-width: 1.25"></rect>`,
-    `<text x="${lx + 248}" y="${legendY + 16}" style="font-size: 14px; fill: var(--surface-fg-muted)">drawn on the canvas</text>`,
+    `<text x="${lx + 248}" y="${legendY + 16}" style="font-size: 14px; ${muted}">drawn on the canvas</text>`,
     `<rect x="${lx + 440}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--surface-fg-muted); stroke-width: 1.25; stroke-dasharray: 6 4"></rect>`,
-    `<text x="${lx + 488}" y="${legendY + 16}" style="font-size: 14px; fill: var(--surface-fg-muted)">structure only, not drawn yet</text>`,
-    `<text x="${lx + 760}" y="${legendY + 16}" style="font-size: 14px; fill: var(--surface-fg-muted)">↑ up to its parent · ← back through history</text>`,
+    `<text x="${lx + 488}" y="${legendY + 16}" style="font-size: 14px; ${muted}">structure only, not drawn yet</text>`,
+    `<text x="${lx + 760}" y="${legendY + 16}" style="font-size: 14px; ${muted}">↑ up to its parent · ← back through history · → its other links</text>`,
   );
   svg.push('</svg>');
   const html = artboard(head, 'Flows', width, height, '', svg);

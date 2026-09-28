@@ -80,16 +80,23 @@ describe('the structure artboard', () => {
 
 describe('the flowchart artboard', () => {
   const { html } = generateFlows(nav, drawn, head);
-  const { boxes, width, height } = layoutFlows(nav);
-  const edges = nav.pages.flatMap((p) => p.structure.links.map((l) => [p, l] as const));
+  const { boxes, lines, columns, width, height } = layoutFlows(nav);
+  const box = (id: string) => boxes.get(id)!;
 
-  it('[M0.canvas/f] draws every page as a node and every link as an arrow', () => {
+  it('[M0.canvas/f] draws every page as a node and every link, as a tree line or on the node', () => {
     for (const page of nav.pages) expect(html).toContain(`>${page.title}</text>`);
-    expect(html.match(/marker-end="url\(#arrow\)"/g)?.length).toBe(edges.length);
-    for (const [from, to] of edges) {
-      const title = nav.pages.find((p) => p.id === to)!.title;
-      expect(html).toContain(`<title>${from.title} to ${title}</title>`);
+    for (const page of nav.pages) {
+      const shown = new Set([
+        ...lines.filter((l) => l.from.page.id === page.id).map((l) => l.to.page.id),
+        ...box(page.id).links,
+      ]);
+      expect([...shown].sort(), page.id).toEqual([...new Set(page.structure.links)].sort());
     }
+    for (const { from, to } of lines)
+      expect(html).toContain(`<title>${from.page.title} to ${to.page.title}</title>`);
+    for (const b of boxes.values())
+      for (const text of b.linkLines) expect(html).toContain(`>${text}</text>`);
+    expect(box('album').linkLines.join(' ')).toContain('Artist');
   });
 
   it('[M0.canvas/f] changes when a page’s links change', () => {
@@ -97,8 +104,28 @@ describe('the flowchart artboard', () => {
       s.links.push('book');
     });
     const after = generateFlows(edited, drawn, head).html;
-    expect(after).toContain('<title>Album to Book</title>');
-    expect(html).not.toContain('<title>Album to Book</title>');
+    expect(after).toContain('→ Artist · Book');
+    expect(html).not.toContain('→ Artist · Book');
+  });
+
+  it('draws a line only from a page to a page in its column whose back goes up to it', () => {
+    expect(lines.length).toBeGreaterThan(0);
+    for (const { from, to } of lines) {
+      expect(to.page.back, `${from.page.id} to ${to.page.id}`).toBe(`up:${from.page.id}`);
+      expect(to.column).toBe(from.column);
+    }
+    const tree = lines.map((l) => `${l.from.page.id}>${l.to.page.id}`);
+    expect(tree).toContain('music>album');
+    expect(tree).toContain('settings>shelfReview');
+    expect(tree).not.toContain('browse>notFound');
+  });
+
+  it('keeps every line inside its column', () => {
+    for (const { from, to, points } of lines) {
+      const col = columns[from.column]!;
+      for (const [x] of points)
+        expect(x >= col.x && x <= col.x + col.w, `${from.page.id} to ${to.page.id}`).toBe(true);
+    }
   });
 
   it('shows each page’s back behaviour on its node', () => {
@@ -106,27 +133,47 @@ describe('the flowchart artboard', () => {
     expect(html).toContain('← back through history');
   });
 
-  it('lays nodes out with no two overlapping and every one inside the artboard', () => {
-    const { w, h } = FLOWS_BOARD.node;
+  it('keeps the note that every screen reaches the destinations through the mini-player', () => {
+    expect(html).toContain('every screen also reaches the destinations, Settings, and Now Playing');
+  });
+
+  it('lays nodes out with no two overlapping, each inside its column and the artboard', () => {
     const all = [...boxes.values()];
     for (const a of all) {
-      expect(a.x >= 0 && a.y >= 0 && a.x + w <= width && a.y + h <= height, a.page.id).toBe(true);
+      const col = columns[a.column]!;
+      expect(a.x >= col.x && a.x + a.w <= col.x + col.w, a.page.id).toBe(true);
+      expect(a.x >= 0 && a.y >= 0 && a.x + a.w <= width && a.y + a.h <= height, a.page.id).toBe(
+        true,
+      );
       for (const b of all) {
         if (a === b) continue;
-        const apart = a.x + w <= b.x || b.x + w <= a.x || a.y + h <= b.y || b.y + h <= a.y;
+        const apart = a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
         expect(apart, `${a.page.id} and ${b.page.id}`).toBe(true);
       }
     }
+    for (let i = 1; i < columns.length; i++)
+      expect(columns[i]!.x).toBeGreaterThanOrEqual(columns[i - 1]!.x + columns[i - 1]!.w);
   });
 
-  it('keeps every node label inside its box', () => {
+  it('keeps every node’s text inside its box', () => {
     // A 16 px bold character is under 10 px wide, a 12 px one under 7; 14 px padding each side.
-    const lines = [...html.matchAll(/font-size: (16|12)px[^>]*>([^<]*)<\/text>/g)];
-    expect(lines.length).toBe(nav.pages.length * 2);
-    for (const [, size, text] of lines) {
-      const chars = text!.replaceAll('&amp;', '&').length;
-      expect(chars * (size === '16' ? 10 : 7) + 28, text).toBeLessThanOrEqual(FLOWS_BOARD.node.w);
+    for (const b of boxes.values()) {
+      const texts: [string, number][] = [
+        [b.page.title, 10],
+        [b.backLine, 7],
+        ...b.linkLines.map((t) => [t, 7] as [string, number]),
+      ];
+      for (const [text, px] of texts) expect(text.length * px + 28, text).toBeLessThanOrEqual(b.w);
+      expect(b.h).toBeGreaterThanOrEqual(56 + b.linkLines.length * 16);
     }
+    expect(box('search').linkLines.length).toBeGreaterThan(1);
+  });
+
+  it('sizes the artboard to its content', () => {
+    const right = Math.max(...columns.map((c) => c.x + c.w));
+    const bottom = Math.max(...[...boxes.values()].map((b) => b.y + b.h));
+    expect(width - right).toBeLessThanOrEqual(FLOWS_BOARD.pad);
+    expect(height - bottom).toBeLessThanOrEqual(FLOWS_BOARD.pad + 120);
   });
 
   it('is the same drawing every time', () => {
