@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import { HAND_UI_ALLOWED, noHandUi } from './scripts/lint/no-hand-ui.mjs';
 
 export default tseslint.config(
   {
@@ -15,6 +16,8 @@ export default tseslint.config(
       'android/**',
       'design/sonora/**',
       'design-codegen/src/fixtures/**',
+      // Samples the no-hand-ui test lints as if they lived in web/src.
+      'scripts/lint/fixtures/**',
       '.claude/worktrees/**',
       '**/generated/**',
     ],
@@ -54,6 +57,13 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
     },
+  },
+  {
+    // The web app composes generated pages and Sonora components; see scripts/lint/no-hand-ui.mjs.
+    files: ['web/src/**/*.{ts,tsx}'],
+    ignores: ['web/src/generated/**', ...HAND_UI_ALLOWED],
+    plugins: { auralis: { rules: { 'no-hand-ui': noHandUi } } },
+    rules: { 'auralis/no-hand-ui': 'error' },
   },
   prettier,
 );

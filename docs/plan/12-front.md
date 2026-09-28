@@ -68,7 +68,7 @@ Sonora has 80 components today, filed by kind (core, forms, layout, media, navig
 :::
 :::
 
-Your rule: pages and navigation are added to the design first, then ported to the apps mechanically:
+Your rule: nothing frontend reaches code before it is in the published design, in the order Sonora artifact, then the Auralis canvas artifact, then code. Pages and navigation are added to the design first, then ported to the apps mechanically:
 
 1. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph, so both apps get **the same flows from the same file**.
 2. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a small page tree. From that tree the web page is generated as React and the Android page as Compose, both calling the same component names.
@@ -77,7 +77,9 @@ Your rule: pages and navigation are added to the design first, then ported to th
    - the app's routes must equal `nav.json` exactly;
    - every page must match its generated layout;
    - web and Android must build the same route set;
-   - each page's screenshot on both platforms is compared against the design's render of that page.
+   - each page's screenshot on both platforms is compared against the design's render of that page;
+   - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora` or `design/app` differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
+   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
 
    Adding a screen in code alone fails the build.
 5. **The frontend build starts with navigation.** The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
