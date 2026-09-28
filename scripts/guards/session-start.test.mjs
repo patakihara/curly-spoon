@@ -117,7 +117,7 @@ test('[M0.uikit/e] a hanging gh is cut off within the budget and the summary sho
     () => ({ mode: 'hang' }),
     (root, commits, ghDir) => {
       const began = Date.now();
-      const run = start(root, ghDir, { AURALIS_SUMMARY_TIMEOUT_MS: '1000' });
+      const run = start(root, ghDir, { AURALIS_GH_TIMEOUT_MS: '4000' });
       assert.ok(Date.now() - began < 10_000, 'the hook finishes in under 10 s');
       assert.equal(run.status, 0, run.stderr);
       const lines = context(run);
@@ -139,7 +139,7 @@ test('[M0.uikit/e] a hanging gh is killed, not left running after the hook retur
   withRepo(
     () => ({ mode: 'hang' }),
     (root, commits, ghDir) => {
-      const run = start(root, ghDir, { AURALIS_SUMMARY_TIMEOUT_MS: '3000' });
+      const run = start(root, ghDir, { AURALIS_GH_TIMEOUT_MS: '4000' });
       assert.equal(run.status, 0, run.stderr);
       const pids = readFileSync(join(ghDir, 'gh.pids'), 'utf8').split('\n').filter(Boolean);
       assert.ok(pids.length > 0, 'the fake gh ran');
