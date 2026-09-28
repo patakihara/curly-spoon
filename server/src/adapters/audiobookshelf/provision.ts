@@ -2,7 +2,9 @@
  * Mints each person's own Audiobookshelf API key with the admin-level provisioning key, which
  * lives only on mediaserver. ABS 2.36.1 (`ApiKeyController.create`) takes `{name, userId,
  * isActive}`, returns the key once, and resolves every later call to that user. Only root may mint
- * a root user's key, so root accounts are never candidates.
+ * a root user's key, so root accounts are never candidates. The user list cannot say which sign-on
+ * subject an account is tied to: even for an admin key, `GET /api/users` and `/api/users/:id`
+ * answer `User.toOldJSONForBrowser`, which carries only `hasOpenIDLink`, never `authOpenIDSub`.
  */
 import { z } from 'zod';
 import { type FetchLike, requestJson } from '../http/fetch.js';
