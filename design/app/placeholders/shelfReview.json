@@ -1,0 +1,103 @@
+{
+  "shelves": [
+    {
+      "id": "more-like-deep-inertia",
+      "eyebrow": "More like",
+      "subject": "Deep Inertia",
+      "image": "/art/deep-inertia.jpg",
+      "round": true,
+      "items": [
+        {
+          "title": "Salt and Static",
+          "meta": "Album · Soul Vertex · ListenBrainz",
+          "reason": "Listeners of Deep Inertia play Soul Vertex most weeks.",
+          "image": "/art/salt-and-static.jpg",
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Paper Lanterns",
+          "meta": "Album · Sonic Tales · YouTube Music",
+          "reason": "On YouTube Music's radio for Heartbeats in Silence.",
+          "image": "/art/paper-lanterns.jpg",
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Golden Scars",
+          "meta": "Album · Fleeting Verses · Deezer",
+          "reason": "Deezer lists Fleeting Verses as related to Deep Inertia.",
+          "image": "/art/golden-scars.jpg",
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Tears of Ice",
+          "meta": "Album · Deep Inertia · your history",
+          "reason": "Deep Inertia's own album, which you played last week.",
+          "image": "/art/tears-of-ice.jpg",
+          "status": "In library",
+          "tone": "library"
+        }
+      ]
+    },
+    {
+      "id": "because-you-finished-the-salt-cartographer",
+      "eyebrow": "Because you finished",
+      "subject": "The Salt Cartographer",
+      "image": "/art/the-salt-cartographer.jpg",
+      "round": false,
+      "items": [
+        {
+          "title": "The Glass Archivist",
+          "meta": "Book · Rosa Elin · Audible",
+          "reason": "Next in The Salt Cartographer's series, by the same author.",
+          "image": "/art/the-long-read.jpg",
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Wind and Truth",
+          "meta": "Book · Brandon Sanderson · Audible",
+          "reason": "Audible's listeners also enjoyed it after The Salt Cartographer.",
+          "image": "/art/wind-and-truth.jpg",
+          "status": "In library",
+          "tone": "library"
+        },
+        {
+          "title": "The Silent Patient",
+          "meta": "Book · Alex Michaelides · description match",
+          "reason": "Its description reads like The Salt Cartographer's.",
+          "image": "/art/the-silent-patient.jpg",
+          "status": null,
+          "tone": null
+        }
+      ]
+    },
+    {
+      "id": "popular-with-listeners-of-the-long-read",
+      "eyebrow": "Popular with listeners of",
+      "subject": "The Long Read",
+      "image": "/art/the-long-read.jpg",
+      "round": false,
+      "items": [
+        {
+          "title": "Signal & Noise",
+          "meta": "Podcast · Apple Podcasts",
+          "reason": "Under You Might Also Like on The Long Read's show page.",
+          "image": "/art/signal-noise.jpg",
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Foggy Trails",
+          "meta": "Podcast · PodcastIndex",
+          "reason": "Top of Society & Culture, The Long Read's genre.",
+          "image": "/art/foggy-trails.jpg",
+          "status": null,
+          "tone": null
+        }
+      ]
+    }
+  ]
+}

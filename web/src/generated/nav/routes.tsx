@@ -21,6 +21,9 @@ import NowPlaying from '../pages/NowPlaying';
 import Queue from '../pages/Queue';
 import Lyrics from '../pages/Lyrics';
 import Settings from '../pages/Settings';
+import Setup from '../pages/Setup';
+import SignIn from '../pages/SignIn';
+import ShelfReview from '../pages/ShelfReview';
 import NotFound from '../pages/NotFound';
 
 export const destinations = [
@@ -113,7 +116,7 @@ export interface PageRoute {
   title: string;
   lights: string | null;
   close: 'opener' | 'sheet' | 'none';
-  presentation: 'screen' | 'sheet';
+  presentation: 'screen' | 'sheet' | 'bare';
 }
 
 export const pages: readonly PageRoute[] = [
@@ -138,8 +141,8 @@ export const pages: readonly PageRoute[] = [
   { id: 'queue', path: '/playing/queue', query: [], title: 'Queue', lights: null, close: 'sheet', presentation: 'sheet' },
   { id: 'lyrics', path: '/playing/lyrics', query: [], title: 'Lyrics', lights: null, close: 'sheet', presentation: 'sheet' },
   { id: 'settings', path: '/settings', query: [], title: 'Settings', lights: null, close: 'opener', presentation: 'screen' },
-  { id: 'setup', path: '/setup', query: [], title: 'Setup', lights: null, close: 'none', presentation: 'screen' },
-  { id: 'signIn', path: '/sign-in', query: [], title: 'Sign in', lights: null, close: 'none', presentation: 'screen' },
+  { id: 'setup', path: '/setup', query: [], title: 'Setup', lights: null, close: 'none', presentation: 'bare' },
+  { id: 'signIn', path: '/sign-in', query: [], title: 'Sign in', lights: null, close: 'none', presentation: 'bare' },
   { id: 'shelfReview', path: '/admin/shelves', query: [], title: 'Shelf review', lights: null, close: 'opener', presentation: 'screen' },
   { id: 'notFound', path: '*', query: [], title: 'Not found', lights: null, close: 'opener', presentation: 'screen' },
 ];
@@ -166,8 +169,8 @@ export const routes: RouteObject[] = [
   { id: 'queue', path: '/playing/queue', element: <Queue /> },
   { id: 'lyrics', path: '/playing/lyrics', element: <Lyrics /> },
   { id: 'settings', path: '/settings', element: <Settings /> },
-  { id: 'setup', path: '/setup' },
-  { id: 'signIn', path: '/sign-in' },
-  { id: 'shelfReview', path: '/admin/shelves' },
+  { id: 'setup', path: '/setup', element: <Setup /> },
+  { id: 'signIn', path: '/sign-in', element: <SignIn /> },
+  { id: 'shelfReview', path: '/admin/shelves', element: <ShelfReview /> },
   { id: 'notFound', path: '*', element: <NotFound /> },
 ];

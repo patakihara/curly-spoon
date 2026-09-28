@@ -88,7 +88,12 @@ const Page = z
      * sheet to the page under it, `none` is the bottom of a stack, with nothing to close.
      */
     close: z.enum(['opener', 'sheet', 'none']),
-    presentation: z.enum(['screen', 'sheet']),
+    /**
+     * How the shell shows the page: a `screen` in it, one of the player's `sheet`s, or `bare`, a
+     * screen before the app is yours (signing in, first-run setup), with no navigation, player or
+     * account around it, only its heading.
+     */
+    presentation: z.enum(['screen', 'sheet', 'bare']),
     platforms: z
       .array(z.enum(['web', 'android']))
       .min(1)
@@ -154,6 +159,12 @@ export function parseNav(json: unknown): Nav {
     }
     if ((page.presentation === 'sheet') !== (page.close === 'sheet')) {
       errors.push(`${page.id}: a sheet, and only a sheet, closes as a sheet`);
+    }
+    if (page.presentation === 'bare' && page.close !== 'none') {
+      errors.push(`${page.id}: a bare page is the bottom of its stack, so its close is none`);
+    }
+    if (page.presentation === 'bare' && page.lights !== null) {
+      errors.push(`${page.id}: a bare page lights no destination, since it shows none`);
     }
     const narrows = page.filter?.narrows ?? [];
     if (new Set(narrows).size !== narrows.length)
@@ -227,7 +238,7 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
     '  title: string;',
     '  lights: string | null;',
     "  close: 'opener' | 'sheet' | 'none';",
-    "  presentation: 'screen' | 'sheet';",
+    "  presentation: 'screen' | 'sheet' | 'bare';",
     '}',
     '',
     'export const pages: readonly PageRoute[] = [',

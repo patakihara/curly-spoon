@@ -118,6 +118,22 @@ describe('nav.json', () => {
     expect(() => parseNav(small([page({ presentation: 'sheet' })]))).toThrow(/album: a sheet/);
   });
 
+  it('[M0.canvas] shows Sign in and Setup bare, before the app is yours: closing to nothing and lighting no destination', () => {
+    expect(nav.pages.filter((p) => p.presentation === 'bare').map((p) => p.id)).toEqual([
+      'setup',
+      'signIn',
+    ]);
+    const bare = (over: Record<string, unknown>) =>
+      page({ presentation: 'bare', lights: null, close: 'none', ...over });
+    expect(() => parseNav(small([bare({})]))).not.toThrow();
+    expect(() => parseNav(small([bare({ close: 'opener' })]))).toThrow(
+      /album: a bare page is the bottom of its stack/,
+    );
+    expect(() => parseNav(small([bare({ lights: 'music' })]))).toThrow(
+      /album: a bare page lights no destination/,
+    );
+  });
+
   it('puts Search last on the phone’s bottom bar and first on the desktop rails', () => {
     for (const layout of nav.layouts) {
       if (layout.nav === 'bottomBar')

@@ -877,7 +877,7 @@
         "spotify": []
       },
       "structure": {
-        "purpose": "What is on this phone for offline play. Android only, reached from the Downloaded filter on Music, Books and Podcasts and from Storage in Settings. Still to design.",
+        "purpose": "What is on this phone for offline play. Android only, reached from the Downloaded filter on Music, Books and Podcasts and from Storage in Settings.",
         "sections": [
           {
             "name": "Downloaded",
@@ -945,7 +945,7 @@
       "route": "/setup",
       "lights": null,
       "close": "none",
-      "presentation": "screen",
+      "presentation": "bare",
       "title": "Setup",
       "sources": {
         "sonora": ["none"],
@@ -970,7 +970,7 @@
       "route": "/sign-in",
       "lights": null,
       "close": "none",
-      "presentation": "screen",
+      "presentation": "bare",
       "title": "Sign in",
       "sources": {
         "sonora": ["none"],

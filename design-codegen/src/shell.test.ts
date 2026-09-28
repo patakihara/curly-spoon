@@ -49,6 +49,18 @@ function components(tree: PageTree | undefined, into: string[] = []): string[] {
 }
 
 describe('the app shell', () => {
+  it('[M0.canvas] leaves a bare page its heading alone, a top app bar on the phone, with no navigation, player, panel or account', () => {
+    for (const id of ['signIn', 'setup']) {
+      for (const layout of nav.layouts) {
+        const parts = chrome(nav, shell, pageOf(id), layout, platformed);
+        expect(parts.appBar, `${id} ${layout.nav}`).toBe(layout.nav === 'bottomBar');
+        for (const key of ['rail', 'leading', 'player', 'sheet'] as const)
+          expect(parts[key], `${id} ${layout.nav} ${key}`).toBeUndefined();
+        expect(parts.sheetOpen).toBe(false);
+      }
+    }
+  });
+
   it('[M0.canvas] orders each layout’s destinations as nav.json does: Search last on the bottom bar, first on the rails', () => {
     for (const layout of nav.layouts) {
       const parts = chrome(nav, shell, pageOf('browse'), layout, platformed);
@@ -80,7 +92,7 @@ describe('the app shell', () => {
 
   it('[M0.canvas] gives every rail the hamburger that collapses the labelled rail to the icon rail and back', () => {
     for (const layout of nav.layouts.filter((l) => l.nav !== 'bottomBar')) {
-      for (const page of nav.pages) {
+      for (const page of nav.pages.filter((p) => p.presentation !== 'bare')) {
         const rail = el(chrome(nav, shell, page, layout, platformed).rail, 'NavRail');
         expect(rail.props.toggle, `${page.id} at ${layoutId(layout)}`).toEqual({
           kind: 'literal',

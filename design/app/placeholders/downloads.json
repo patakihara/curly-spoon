@@ -1,0 +1,41 @@
+{
+  "total": "2.1 GB · 38 GB free",
+  "downloaded": [
+    {
+      "title": "The Salt Cartographer",
+      "meta": "Book · Rosa Elin · 38 files · 612 MB",
+      "image": "/art/the-salt-cartographer.jpg"
+    },
+    {
+      "title": "Wind and Truth",
+      "meta": "Book · Brandon Sanderson · 1.3 GB",
+      "image": "/art/wind-and-truth.jpg"
+    },
+    {
+      "title": "Tears of Ice",
+      "meta": "Album · Deep Inertia · 8 tracks · 96 MB",
+      "image": "/art/tears-of-ice.jpg"
+    },
+    {
+      "title": "Winter tapes, part two",
+      "meta": "Episode · Deep Inertia Radio · 54 MB",
+      "image": "/art/deep-inertia-radio.jpg"
+    }
+  ],
+  "inProgress": [
+    {
+      "title": "Ink Heart",
+      "meta": "Book · Cornelia Funke · 104 of 286 MB",
+      "image": "/art/ink-heart.jpg",
+      "status": "Downloading · 36%",
+      "tone": "progress"
+    },
+    {
+      "title": "Rereading the classics",
+      "meta": "Episode · The Long Read · waiting for Wi-Fi",
+      "image": "/art/the-long-read.jpg",
+      "status": "Queued",
+      "tone": "progress"
+    }
+  ]
+}

@@ -48,10 +48,11 @@ describe('the shell around each drawn page', () => {
     readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
   ) as {
     destinations: { id: string }[];
-    pages: { id: string; title: string; presentation: 'screen' | 'sheet' }[];
+    pages: { id: string; title: string; presentation: 'screen' | 'sheet' | 'bare' }[];
   };
   const destinations = new Set(nav.destinations.map((d) => d.id));
   const sheets = new Set(nav.pages.filter((p) => p.presentation === 'sheet').map((p) => p.id));
+  const bare = new Set(nav.pages.filter((p) => p.presentation === 'bare').map((p) => p.id));
   const idOf = (file: string) => file.replace('.tsx', '').replace(/^./, (c) => c.toLowerCase());
   const render = async (file: string, layout: LayoutId) => {
     const page = (
@@ -64,7 +65,23 @@ describe('the shell around each drawn page', () => {
   /** The frame's own surface: the back layer's colour, or the page's under a top app bar. */
   const frame = (html: string) => /<div style="[^"]*background:var\((--[\w-]+)\)/.exec(html)?.[1];
 
-  for (const file of pages.filter((f) => !sheets.has(idOf(f)))) {
+  for (const file of pages.filter((f) => bare.has(idOf(f)))) {
+    const id = idOf(file);
+    it(`[M0.canvas] ${id} is bare: a top app bar on the phone, the backdrop on desktop, with no navigation, player or account`, async () => {
+      expect(frame(await render(file, 'w0'))).toBe('--surface-bg');
+      expect(frame(await render(file, 'w1024'))).toBe('--surface-bg-alt');
+      for (const layout of ['w0', 'w600', 'w1024', 'w1240'] as const) {
+        const html = await render(file, layout);
+        for (const label of ['Browse', 'Search']) expect(html, layout).not.toContain(`>${label}<`);
+        expect(html, layout).not.toMatch(
+          /aria-label="(?:Collapse rail|Expand rail|Account|Close|Play|Pause)"/,
+        );
+        expect(html, layout).not.toContain('Heartbeats in Silence');
+      }
+    });
+  }
+
+  for (const file of pages.filter((f) => !sheets.has(idOf(f)) && !bare.has(idOf(f)))) {
     const id = idOf(file);
     it(`[M0.canvas] ${id} on the phone ${destinations.has(id) ? 'sits in the backdrop' : 'shows a top app bar, never a back layer'}`, async () => {
       expect(nav.pages.map((p) => p.id)).toContain(id);
@@ -109,7 +126,7 @@ describe('the shell around each drawn page', () => {
       / {2}w1240: \{[\s\S]*?\n {4}sheet: \(\n([\s\S]*?)\n {4}\),/.exec(
         readFileSync(new URL(file, dir), 'utf8'),
       )?.[1];
-    const screens = pages.filter((f) => !sheets.has(idOf(f)));
+    const screens = pages.filter((f) => !sheets.has(idOf(f)) && !bare.has(idOf(f)));
     const first = panel(screens[0]!);
     expect(first).toContain('<AboutCard');
     for (const file of screens) {
@@ -120,7 +137,7 @@ describe('the shell around each drawn page', () => {
   });
 
   it('[M0.canvas] never repeats the transport on desktop: the player bar alone carries it, panel open or not', async () => {
-    for (const file of pages) {
+    for (const file of pages.filter((f) => !bare.has(idOf(f)))) {
       for (const layout of ['w600', 'w1024', 'w1240'] as const) {
         const html = await render(file, layout);
         if (sheets.has(idOf(file)) && layout !== 'w1240') continue;

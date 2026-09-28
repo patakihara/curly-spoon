@@ -15,7 +15,9 @@
  * on a phone's destination home, a close control on a page that closes), the rail or bottom bar
  * with the rail's hamburger, the player and the side panel. On the phone a page that is not a
  * destination has no backdrop: its heading is a top app bar on the page surface. On desktop it
- * stays in the backdrop of the destination it lights. A page whose root is anything else is its front layer's content
+ * stays in the backdrop of the destination it lights. A bare page, signing in or first-run setup,
+ * is its heading and its content alone, with no navigation, player or account: a top app bar on
+ * the phone, the backdrop with no rail on desktop. A page whose root is anything else is its front layer's content
  * alone. The account avatar is the shell's alone: a page never draws one, so it is never in a
  * filter row.
  */
@@ -264,6 +266,9 @@ export function chrome(
             ...(shell.account.image === undefined ? {} : { image: bind('shell.account.image') }),
           })
         : undefined;
+  // A bare page is its heading and its content alone: a top app bar on the phone, the back
+  // layer's heading over the front layer on desktop, with no rail beside them.
+  if (page.presentation === 'bare') return { platform, appBar: phone, sheetOpen: false };
   const parts: Chrome = { platform, appBar: phone && !destination, leading, sheetOpen: false };
   if (phone) {
     const bar = el('BottomNav', { items: bind(`shell.nav.${id}`), active: lit(page.lights ?? '') });

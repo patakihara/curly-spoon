@@ -103,10 +103,11 @@ export function backModel(nav: Nav): string[] {
   ];
 }
 
-/** What sets a page apart: a sheet, or one platform only. */
+/** What sets a page apart: a sheet, a bare page, or one platform only. */
 function kind(page: NavPage): string[] {
   const out: string[] = [];
   if (page.presentation === 'sheet') out.push('sheet');
+  if (page.presentation === 'bare') out.push('bare');
   if (page.platforms.length === 1)
     out.push(`${page.platforms[0] === 'android' ? 'Android' : 'web'} only`);
   return out;

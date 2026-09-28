@@ -1,0 +1,49 @@
+---
+page: downloads
+pageHash: 9abeb07500ea68b69cc6af32e560280dca0d50cdecc1f718f026089e6083e395
+sonora: [none]
+---
+
+# Downloads
+
+Canvas renders: `downloads/canvas-phone.png` (390 px) and `downloads/canvas-desktop.png` (1440 px,
+an Android tablet's width), both in the app shell. Downloads is Android only, so the web app has no
+route for it: `pnpm canvas:shoot` generates the page as the web generator would and mounts it for
+the render. No Sonora UI kit screen exists for Downloads (nav.json names `none`); the page is
+compared with the Episode Rows & Item Actions card, which holds `DownloadButton`'s three states,
+and the Mini Player, Result Rows & Media Header card, whose request rows carry the same statuses.
+No Spotify screen covers it.
+
+## What Sonora shows for downloads
+
+- **Episode Rows card.** `DownloadButton` idle (a download glyph), downloading (a determinate
+  ring with a stop square) and done (a tick, which removes the download when pressed), on an
+  episode's action bar.
+- **Result Rows card.** Rows with a ring over the art at a percentage, "Queued" with a clock, and
+  a status pill in its tone.
+
+## What the canvas page draws
+
+The heading "Downloads" led by a close control; nothing lit. In `PageBody` at the list width:
+
+- **Downloaded**: first a `ValueRow`, "On this phone · 2.1 GB · 38 GB free", the total the
+  downloads take; then one `ResultRow` per item, its meta naming kind, creator and size ("Book ·
+  Rosa Elin · 38 files · 612 MB": a book is one row however many files it is), and an
+  `IconButton` Remove (a bin) at its end.
+- **In progress**: the downloads still running, each with its status in the progress tone
+  ("Downloading · 36%" with the ring over the art, "Queued" waiting for Wi-Fi) and ✕ Cancel.
+
+**Empty state**, per nav.json (not drawn): Sonora's `EmptyState` saying nothing is downloaded, and
+that a book, episode or album downloads from its page.
+
+## Differences
+
+- Changed on purpose: a download is removed with an explicit bin at the row's end, not by pressing
+  a done `DownloadButton`, whose tick says "downloaded" rather than "remove".
+- Changed on purpose: a running download is a row with its status and ✕, as Requests draws a
+  request in flight, not a `DownloadButton` ring beside a ring already over the art.
+- Open: rows do not open their book, episode or album yet. On a phone a `ResultRow` with a tap
+  handler shows a play overlay over its art, which would say the tap plays; no drawn page gives a
+  `ResultRow` a tap yet.
+- Open: the total is a `ValueRow` at the top of Downloaded, not a storage bar; Sonora has none.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`): the close control and the title on the page surface, no back layer. The bottom bar and mini-player stay. On desktop it keeps the backdrop, no rail item lit, since nothing opens it from a destination.

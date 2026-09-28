@@ -6,17 +6,24 @@
  *   pnpm canvas:shoot <page id> ...
  *
  * Cards load React from unpkg and read Sonora's _ds_bundle.js (design/sonora/docs/build_bundle.js).
+ * A page the web app has no route for, as Android-only Downloads, is generated as the web would
+ * generate it into web/src/generated/shoot/, mounted in place of the app, and removed afterwards.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { pageHash, sonoraShot } from '../../design-codegen/src/compare.ts';
-import { readNav, splitRoute } from '../../design-codegen/src/nav.ts';
+import { readApp } from '../../design-codegen/src/app.ts';
+import { componentName, readNav, splitRoute } from '../../design-codegen/src/nav.ts';
+import { generateWebPage } from '../../design-codegen/src/page-web.ts';
+import { readProps } from '../../design-codegen/src/props.ts';
+import { discoverComponents } from '../../design-codegen/src/sonora.ts';
 import { REPO, launch, serve } from './lib.mjs';
 
 const APP = join(REPO, 'design/app');
 const SONORA = join(REPO, 'design/sonora');
+const OFF_ROUTE = join(REPO, 'web/src/generated/shoot');
 const SIZES = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
 
 const ids = process.argv.slice(2);
@@ -57,6 +64,41 @@ function cardFile(stem) {
   throw new Error(`no card ${stem}.card.html in Sonora`);
 }
 
+/**
+ * Writes a page with no web route as the web generator would, beside a module that mounts it in
+ * a memory router; returns that module's path on the dev server.
+ */
+function offRoute(page) {
+  const app = readApp(APP, readProps(discoverComponents(SONORA)));
+  const drawn = app.pages.find((p) => p.id === page.id);
+  const name = componentName(page.id);
+  mkdirSync(OFF_ROUTE, { recursive: true });
+  writeFileSync(
+    join(OFF_ROUTE, `${name}.tsx`),
+    generateWebPage(drawn.tree, page.id, drawn.placeholder, app.components, {
+      nav: app.nav,
+      shell: app.shell,
+      page,
+      now: app.now,
+    }),
+  );
+  writeFileSync(
+    join(OFF_ROUTE, `mount-${name}.ts`),
+    [
+      "import { createElement } from 'react';",
+      "import { createRoot } from 'react-dom/client';",
+      "import { MemoryRouter } from 'react-router';",
+      `import Page from './${name}';`,
+      '',
+      'export function mount(root: HTMLElement) {',
+      '  createRoot(root).render(createElement(MemoryRouter, null, createElement(Page)));',
+      '}',
+      '',
+    ].join('\n'),
+  );
+  return `/src/generated/shoot/mount-${name}.ts`;
+}
+
 const browser = await launch();
 const web = await startWeb();
 const sonora = await serve(SONORA);
@@ -88,9 +130,20 @@ try {
         'console',
         (m) => m.type() === 'error' && console.error(`${page.id} ${name}: ${m.text()}`),
       );
-      await tab.goto(web.origin + (path === '*' ? '/no-such-page' : path), {
+      const mount = page.platforms.includes('web') ? undefined : offRoute(page);
+      await tab.goto(web.origin + (path === '*' || mount ? '/no-such-page' : path), {
         waitUntil: 'networkidle',
       });
+      if (mount !== undefined) {
+        await tab.evaluate(async (url) => {
+          const { mount } = await import(url);
+          const root = globalThis.document.getElementById('root');
+          const fresh = root.cloneNode(false);
+          root.replaceWith(fresh);
+          mount(fresh);
+        }, mount);
+        await tab.waitForLoadState('networkidle');
+      }
       await tab.waitForTimeout(400);
       await tab.screenshot({ path: join(dir, `canvas-${name}.png`), animations: 'disabled' });
       await tab.close();
@@ -98,6 +151,7 @@ try {
     process.stdout.write(`${page.id}: pageHash ${pageHash(APP, SONORA, page.id)}\n`);
   }
 } finally {
+  rmSync(OFF_ROUTE, { recursive: true, force: true });
   await browser.close();
   web.close();
   await sonora.close();

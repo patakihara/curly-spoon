@@ -1,0 +1,36 @@
+{
+  "intro": "Nobody signs up in Auralis: everyone signs in with their household account. Setup makes you its admin and connects the servers you already run.",
+  "codeHint": "The code the server wrote to its data folder",
+  "services": [
+    { "label": "Audiobookshelf", "address": "https://books.example.org" },
+    { "label": "Jellyfin", "address": "https://media.example.org" },
+    { "label": "Household sign-on", "address": "https://sign-in.example.org" }
+  ],
+  "providers": [
+    {
+      "title": "Prowlarr",
+      "sub": "Finds albums and books to request, by torrent.",
+      "checked": true
+    },
+    {
+      "title": "AudiobookBay",
+      "sub": "Finds books when Prowlarr has none.",
+      "checked": true
+    },
+    {
+      "title": "YouTube Music",
+      "sub": "Streams songs and albums you don't have yet.",
+      "checked": true
+    },
+    {
+      "title": "ListenBrainz",
+      "sub": "Similar artists for Browse.",
+      "checked": true
+    }
+  ],
+  "approval": {
+    "title": "Approve requests",
+    "sub": "An admin approves what others request before it downloads.",
+    "checked": false
+  }
+}

@@ -77,8 +77,9 @@ describe('the structure artboard', () => {
   });
 
   it('says which pages are drawn and which are structure only', () => {
-    expect(html).toContain(drawn.size > 0 ? 'drawn' : 'structure only');
-    expect(html).toContain('structure only');
+    expect(html).toContain('drawn');
+    const partial = new Set([...drawn].filter((id) => id !== 'setup'));
+    expect(generateStructure(nav, partial, head).html).toContain('structure only');
   });
 
   it('keeps text braces from reading as bindings', () => {
@@ -206,13 +207,7 @@ describe('the flowchart artboard', () => {
 });
 
 describe('the canvas draws every page', () => {
-  // A todo while pages are undrawn keeps (f) open without failing the build; progress counts a
-  // skipped tagged test as a check not yet made. With none left it is the real assertion.
-  const undrawn = nav.pages.map((p) => p.id).filter((id) => !drawn.has(id));
-  const name = '[M0.canvas/f] gives every page of nav.json a page file before M0.canvas is done';
-  if (undrawn.length > 0) it.todo(`${name} (undrawn: ${undrawn.join(', ')})`);
-  else
-    it(name, () => {
-      expect(nav.pages.every((p) => drawn.has(p.id))).toBe(true);
-    });
+  it('[M0.canvas/f] gives every page of nav.json a page file before M0.canvas is done', () => {
+    expect(nav.pages.filter((p) => !drawn.has(p.id)).map((p) => p.id)).toEqual([]);
+  });
 });

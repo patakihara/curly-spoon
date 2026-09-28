@@ -17,21 +17,15 @@ const appDir = join(REPO_ROOT, APP_DIR);
 const sonoraDir = join(REPO_ROOT, SONORA_DIR);
 const nav = readNav(appDir);
 
-/**
- * The pages not drawn yet, which parts 2 to 4 of the canvas draw. It only shrinks; the canvas is
- * done when it is empty and this list is gone.
- */
-const UNDRAWN = ['downloads', 'setup', 'signIn', 'shelfReview'];
-
 describe('the visual comparisons', () => {
-  it('[M0.canvas/e] leave undrawn exactly the pages that have no page file yet', () => {
+  it('[M0.canvas/e] cover every page of nav.json, each drawn in its page file', () => {
     const missing = nav.pages
       .map((p) => p.id)
       .filter((id) => !existsSync(join(appDir, 'pages', `${id}.page.jsx`)));
-    expect(missing).toEqual(UNDRAWN);
+    expect(missing).toEqual([]);
   });
 
-  for (const page of nav.pages.filter((p) => !UNDRAWN.includes(p.id))) {
+  for (const page of nav.pages) {
     it(`[M0.canvas/e] ${page.id} has a comparison made from its current page, with both renders beside its Sonora UI kit renders`, () => {
       expect(checkComparison(appDir, sonoraDir, page)).toEqual([]);
     });

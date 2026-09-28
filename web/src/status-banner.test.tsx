@@ -6,7 +6,11 @@ import { StatusBanner } from './generated/ui/index.js';
 describe("Sonora's StatusBanner in a page column", () => {
   it('[M0.canvas] stays inside the column it is given, its padding counted in its width', () => {
     const html = renderToString(
-      createElement(StatusBanner, { tone: 'error', actionLabel: 'Try again' }, 'Not signed in.'),
+      createElement(StatusBanner, {
+        tone: 'error',
+        actionLabel: 'Try again',
+        children: 'Not signed in.',
+      }),
     );
     expect(html).toMatch(/width:100%;box-sizing:border-box/);
   });
