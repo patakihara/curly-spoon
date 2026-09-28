@@ -34,4 +34,8 @@ dependencies {
     api(platform(libs.androidx.compose.bom))
     api(libs.androidx.ui)
     api(libs.androidx.animation.core)
+    // BasicText, for SonoraIcon.
+    implementation(libs.androidx.foundation)
+
+    testImplementation(libs.junit)
 }

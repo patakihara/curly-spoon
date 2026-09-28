@@ -146,6 +146,28 @@ jobs:
           echo "$body"
           [ "$body" = '{"status":"ok"}' ]
           curl -fsS http://127.0.0.1:8787/ | grep -q '<title>Auralis</title>'
+      # The browser tests run against the booted image: every font and icon comes from it.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @auralis/web exec playwright install --with-deps chromium
+      - name: Browser tests against the container
+        env:
+          AURALIS_URL: http://127.0.0.1:8787
+        run: pnpm --filter @auralis/web exec playwright test
+      - if: always()
+        run: node scripts/plan/collect-results.mjs --workflow ci --job container --out reports/plan-results.json web/reports/junit/e2e.xml
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          {
+            name: plan-results-ci-container,
+            path: reports/plan-results.json,
+            if-no-files-found: warn,
+          }
       - name: Container logs
         if: always()
         run: docker logs auralis-ci || true

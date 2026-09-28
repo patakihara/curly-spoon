@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.e2e.json --noEmit"
   },
   "dependencies": {
     "openapi-fetch": "^0.17.0",
@@ -16,6 +16,7 @@
     "react-router": "^7.18.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.49.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",

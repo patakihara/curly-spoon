@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter } from 'react-router';
+import './fonts/fonts.css';
 import './generated/tokens/sonora-tokens.css';
 import './generated/tokens/sonora-theme.css';
 import './base.css';

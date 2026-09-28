@@ -2,6 +2,9 @@ node_modules/
 dist/
 build/
 coverage/
+# Playwright's per-run output.
+test-results/
+playwright-report/
 *.tsbuildinfo
 
 data/
