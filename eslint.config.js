@@ -14,6 +14,7 @@ export default tseslint.config(
       '**/node_modules/**',
       'android/**',
       'design/sonora/**',
+      'design-codegen/src/fixtures/**',
       '.claude/worktrees/**',
       '**/generated/**',
     ],

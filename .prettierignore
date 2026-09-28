@@ -8,6 +8,8 @@ android/
 # Sonora, imported with its history via git subtree. Its own conventions govern it;
 # reformatting would make every file diverge from the history it arrived with.
 design/sonora/
+# design-codegen's fixtures are byte-for-byte copies of Sonora files.
+design-codegen/src/fixtures/
 
 # The plan's own lint is its formatter, and prettier's table realignment would turn
 # one-word edits into whole-table diffs.

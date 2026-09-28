@@ -1,0 +1,18 @@
+{
+  "name": "@auralis/design-codegen",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generators from design/: Sonora's components to the web UI package and Android props",
+  "scripts": {
+    "gen": "tsx src/gen.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@auralis/schema": "workspace:*",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.0.2",
+    "tsx": "^4.23.2",
+    "typescript": "^5.9.3"
+  }
+}
