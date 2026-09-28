@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x560" name="Navigation" subtitle="Rail items expanded and collapsed, back link, the account avatar, mobile bottom tab bar" -->
+<!-- @dsCard group="Components" viewport="1400x560" name="Navigation" subtitle="Rail items expanded and collapsed, the account avatar, mobile bottom tab bar" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -9,7 +9,7 @@
 </head><body>
 <div id="root"></div>
 <script type="text/babel">
-const { RailItem, BottomNav, BackLink, AccountButton } = window.SonoraDesignSystem_6c1435;
+const { RailItem, BottomNav, AccountButton } = window.SonoraDesignSystem_6c1435;
 const ITEMS = [
   {key:'search',icon:'search',label:'Search'},
   {key:'home',icon:'explore',label:'Browse'},
@@ -30,8 +30,6 @@ function Demo(){
     <Rail expanded />
     <Rail expanded={false} />
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
-      <BackLink label="Library" />
-      <BackLink platform="mobile" label="Browse" />
       <div style={{display:'flex',gap:16,alignItems:'center'}}>
         <AccountButton />
         <AccountButton image="https://picsum.photos/seed/sonora-account/96/96" />

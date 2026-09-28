@@ -27,7 +27,7 @@ data class EpisodeRowProps(
     val absent: Boolean? = null,
     /** Renders the "E" marker before the title. */
     val explicit: Boolean? = null,
-    /** An ItemActionBar, rendered below the synopsis. */
+    /** The episode's own controls, rendered below the synopsis. */
     val actions: (@Composable () -> Unit)? = null,
     /** Given, reveals a play control over the artwork (hover on desktop, always on mobile). */
     val onPlay: (() -> Unit)? = null,

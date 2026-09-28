@@ -1,4 +1,4 @@
-<!-- @dsCard group="Reference" viewport="1180x1087" name="S04 · Search — browse hub, scrolled" subtitle="Search tab, scrolled — 1 new, 0 extended, 4 already present" -->
+<!-- @dsCard group="Reference" viewport="1180x700" name="S04 · Search — browse hub, scrolled" subtitle="Search tab, scrolled — 0 new, 0 extended, 4 already present" -->
 <link rel="stylesheet" href="../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -48,7 +48,7 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <li>Category tiles continue in the same rhythm; hue is decorative, not semantic.</li>
 </ul>
 <h2>Components</h2>
-<div class="row new"><span class="tag">Created</span><code>BrowseCard</code></div>
+<div class="row"><span class="tag">Created</span><span class="none">none</span></div>
 <div class="row"><span class="tag">Extended</span><span class="none">none</span></div>
 <div class="row "><span class="tag">Existing</span><code>SearchField</code> <code>LayoutGrid</code> <code>MiniPlayer</code> <code>BottomNav</code></div>
 </div></div>
@@ -56,18 +56,9 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <div id="root"></div>
 <script type="text/babel">
 const NS = window.SonoraDesignSystem_6c1435 || {};
-const { BrowseCard } = window.SonoraDesignSystem_6c1435 || {};
+const {  } = window.SonoraDesignSystem_6c1435 || {};
 const DOC = document.getElementById('__doc').innerHTML;
 const EXAMPLES = [
-  { name: 'BrowseCard', role: 'new', uses: ['BrowseCard'], node: () => (
-<div style={{ width: 340, maxWidth: '100%', paddingBottom: 'var(--spacing-lg)' }}>
-  <BrowseCard
-    title="Late-night radio"
-    image={'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="hsl(250 48% 26%)"/><circle cx="100" cy="118" r="46" fill="hsl(250 70% 70%)"/><rect x="52" y="36" width="96" height="16" rx="8" fill="hsl(250 70% 70%)"/></svg>')}
-    onClick={() => {}}
-  />
-</div>
-  ) },
 ];
 function Page() {
   return <React.Fragment>

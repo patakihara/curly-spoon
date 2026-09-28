@@ -6,15 +6,5 @@
     description="A dispatcher who walked away from the job three years ago picks the phone back up, once."
     onPlay={() => {}}
     onClick={() => {}}
-    actions={
-      <ItemActionBar
-        saved
-        onSave={() => {}}
-        download="done"
-        onDownload={() => {}}
-        onShare={() => {}}
-        onMore={() => {}}
-      />
-    }
   />
 </div>

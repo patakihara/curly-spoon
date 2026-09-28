@@ -8,11 +8,10 @@ namespace — and every card demoing it renders blank. That reads as "the compon
 rather than "the manifest is stale", which is why this is worth doing by hand.
 
 Two rules keep this honest:
-  - `components[]` is rebuilt from the .jsx files themselves, grouped in the manifest's own
-    directory order and alphabetical within a group, matching the existing convention exactly.
+  - `components[]` is rebuilt from the .jsx files themselves, grouped in directory order and
+    alphabetical within a group.
   - `cards[]` entries are read from each card's own first-line @dsCard marker, never retyped,
-    so the manifest and the marker cannot disagree. Entries whose file isn't in this mirror
-    (the ui_kits screens, guidelines, the original component cards) are preserved untouched.
+    so the manifest and the marker cannot disagree. A card whose file is gone is dropped.
 
 Everything else in the manifest — tokens, themes, brandFonts, globalCssPaths — is app-derived
 and is passed through unchanged.
@@ -61,20 +60,9 @@ def main():
             components.append({"name": name, "sourcePath": "components/%s/%s" % (d, f)})
     known = {c["name"] for c in man["components"]}
     added_c = [c["name"] for c in components if c["name"] not in known]
-    dropped_c = sorted(known - {c["name"] for c in components})
-
-    # A component in the manifest but not in this mirror is one we never pulled, not one that
-    # was deleted — keep it, or the bundle would stop exporting a component that still exists.
-    if dropped_c:
-        have = {c["name"] for c in components}
-        for c in man["components"]:
-            if c["name"] not in have:
-                components.append(c)
-        order = {d: i for i, d in enumerate(GROUP_DIRS)}
-        components.sort(key=lambda c: (order.get(c["sourcePath"].split("/")[1], 99), c["name"]))
 
     # --- cards: upsert from each file's own marker ----------------------------------------
-    cards = list(man["cards"])
+    cards = [c for c in man["cards"] if os.path.exists(os.path.join(ROOT, c["path"]))]
     by_path = {c["path"]: c for c in cards}
     found = []
     for base, _dirs, files in os.walk(ROOT):

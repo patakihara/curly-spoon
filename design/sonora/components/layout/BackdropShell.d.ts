@@ -9,10 +9,7 @@ import { ReactNode } from 'react';
  * 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking
  * the step; `subheader` is fixed to it and `children` scroll underneath.
  *
- * Prop names mirror `AppShell`'s wherever the meaning is the same, so a screen ports by swapping
- * the component and moving its secondary header out of the bar into `subheader`. Unlike
- * `AppShell` there is no `square`, and the front layer's shape is not scroll-linked: it flattens
- * only for a page shown with `appBar`.
+ * The front layer's shape is not scroll-linked: it flattens only for a page shown with `appBar`.
  *
  * On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
  */

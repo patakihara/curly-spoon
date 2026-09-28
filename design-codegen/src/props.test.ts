@@ -288,15 +288,6 @@ describe('the props model read from Sonora .d.ts files', () => {
     expect(() => classOf(`  ${member}`, "import { RefObject } from 'react';\n")).toThrow(message);
   });
 
-  it("[M0.uikit/a] LibraryShell's opaque detail item is Any?, the one known any", () => {
-    const model = modelOf({
-      'layout/LibraryShell.d.ts':
-        'export interface LibraryShellContext { detail: any; openDetail: (item: any, event?: React.MouseEvent) => void; }\nexport interface LibraryShellProps { view: string; }\n',
-    });
-    const ctx = model.files.get('LibraryShell')![0] as ClassDecl;
-    expect(ctx.props.map((p) => p.type)).toEqual([{ kind: 'unknown' }, fn([{ kind: 'unknown' }])]);
-  });
-
   it('[M0.uikit/a] refuses a type it cannot map, naming the component and prop', () => {
     expect(() => classOf('  weird?: symbol;')).toThrow('X.weird: unsupported type symbol');
     expect(() => classOf("  mixed?: 'a' | 1;")).toThrow("X.mixed: unsupported type 'a' | 1");

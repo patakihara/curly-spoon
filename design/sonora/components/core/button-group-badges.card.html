@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1200x560" name="Button Group, Chips & Badges" subtitle="M3 connected button group (the media filter in play rose, a mode switch in the accent), genre tags, count pills, value rows" -->
+<!-- @dsCard group="Components" viewport="1200x560" name="Button Group & Badges" subtitle="M3 connected button group (the media filter in play rose, a mode switch in the accent), count pills, value rows" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -9,19 +9,13 @@
 </head><body>
 <div id="root"></div>
 <script type="text/babel">
-const { ButtonGroup, Chip, Badge, IconButton, ValueRow } = window.SonoraDesignSystem_6c1435;
+const { ButtonGroup, Badge, IconButton, ValueRow } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   const [filter,setFilter]=React.useState('All');
   const [mode,setMode]=React.useState('Grid');
   return <div style={{display:'flex',flexDirection:'column',gap:16}}>
     <ButtonGroup tone="play" items={['All','Music','Podcasts','Books']} value={filter} onChange={setFilter} />
     <ButtonGroup platform="mobile" items={[{key:'Grid',icon:'grid_view'},{key:'List',icon:'view_list'},{key:'Compact',icon:'view_agenda'}]} value={mode} onChange={setMode} />
-    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-      <Chip platform="desktop">Alt Rock</Chip>
-      <Chip platform="desktop" selected>Electronic</Chip>
-      <Chip platform="mobile">Audiobooks</Chip>
-      <Chip platform="mobile" selected>Podcasts</Chip>
-    </div>
     <div style={{display:'flex',flexDirection:'column',gap:8,maxWidth:300}}>
       <ValueRow label="Speed" value="1.0x" />
       <ValueRow label="Sleep timer" value="Off" platform="mobile" />

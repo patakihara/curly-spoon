@@ -7,8 +7,8 @@ import { ReactNode, CSSProperties, UIEvent } from 'react';
  * Native scrollbars are suppressed, and the thumb is an overlay, so content never reflows when
  * it appears.
  *
- * ContentPane and SideSheet use this internally; wrap your own scrollers in it when a screen
- * owns its scrolling (mobile pages under `AppShell scroll={false}`).
+ * SideSheet uses this internally; wrap your own scrollers in it when a screen owns its
+ * scrolling.
  */
 export interface ScrollAreaProps {
   children?: ReactNode;

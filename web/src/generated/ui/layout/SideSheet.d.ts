@@ -6,8 +6,6 @@ import { ReactNode } from 'react';
  * alongside the app bar and its own title row (`--appbar-height`) lines up with the bar's title.
  * Animates from zero width and holds its inner content at full width so nothing reflows
  * mid-transition.
- *
- * Pair with `AppShell`'s `sheetOpen` so the content pane squares off the abutting corner.
  */
 export interface SideSheetProps {
   open?: boolean;

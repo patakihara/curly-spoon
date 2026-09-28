@@ -97,16 +97,16 @@ html,body{{margin:0;background:var(--surface-bg);color:var(--surface-fg);font-fa
 .wrap{{display:flex;gap:var(--spacing-2xl);padding:var(--spacing-2xl);align-items:flex-start}}
 .shot{{width:280px;flex-shrink:0;border-radius:var(--radius-sm);border:1px solid var(--surface-border);display:block}}
 .col{{flex:1;min-width:0}}
-h1{{font-family:var(--font-heading);font-weight:900;font-size:var(--h3-size);margin:0 0 4px}}
+h1{{font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);margin:0 0 4px}}
 .src{{color:var(--surface-fg-muted);font-size:var(--text-sm);margin:0 0 var(--spacing-lg)}}
-h2{{font-size:var(--text-xs);font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+h2{{font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;
    color:var(--surface-fg-muted);margin:var(--spacing-lg) 0 var(--spacing-sm)}}
 ul{{margin:0;padding-left:1.1em}}
 li{{font-size:var(--text-sm);line-height:1.5;margin-bottom:4px}}
 code{{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface-card);
      padding:1px 5px;border-radius:var(--radius-xs)}}
 .row{{font-size:var(--text-sm);line-height:1.6;margin-bottom:2px}}
-.tag{{display:inline-block;min-width:78px;font-weight:700;font-size:var(--text-xs);
+.tag{{display:inline-block;min-width:78px;font-weight:var(--weight-strong);font-size:var(--text-xs);
      text-transform:uppercase;letter-spacing:.06em;color:var(--surface-fg-muted)}}
 .new code{{color:var(--accent-ink)}}
 .ext code{{color:var(--state-warning)}}
@@ -120,7 +120,7 @@ code{{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surfac
        border-radius:var(--radius-sm);background:var(--surface-bg-alt)}}
 .exmiss{{max-width:100%;text-align:center;border:1px dashed var(--state-warning);
         border-radius:var(--radius-sm);padding:var(--spacing-sm) var(--spacing-lg)}}
-.exmiss b{{display:block;font-size:var(--text-xs);font-weight:700;letter-spacing:.06em;
+.exmiss b{{display:block;font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.06em;
           text-transform:uppercase;color:var(--state-warning);margin-bottom:4px}}
 .exmiss code{{font-size:var(--text-sm);color:var(--surface-fg-muted);background:none;padding:0}}
 </style>
@@ -262,13 +262,13 @@ INDEX_HEAD = """<!-- @dsCard group="Reference" viewport="{vp}" name="00 · Scree
 <style id="__card-page-css">
 html,body{{margin:0;background:var(--surface-bg);color:var(--surface-fg);font-family:var(--font-body)}}
 .pad{{padding:var(--spacing-2xl)}}
-h1{{font-family:var(--font-heading);font-weight:900;font-size:var(--h3-size);margin:0 0 4px}}
+h1{{font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);margin:0 0 4px}}
 p.lede{{color:var(--surface-fg-muted);font-size:var(--text-sm);margin:0 0 var(--spacing-lg);max-width:70ch}}
 .cols{{column-count:2;column-gap:var(--spacing-2xl)}}
 .r{{break-inside:avoid;font-size:var(--text-sm);line-height:1.45;margin-bottom:6px;
    padding-bottom:6px;border-bottom:1px solid var(--surface-border)}}
-.id{{font-weight:700;color:var(--accent-ink);margin-right:6px}}
-.t{{font-weight:700}}
+.id{{font-weight:var(--weight-strong);color:var(--accent-ink);margin-right:6px}}
+.t{{font-weight:var(--weight-strong)}}
 .m{{color:var(--surface-fg-muted)}}
 </style>
 """

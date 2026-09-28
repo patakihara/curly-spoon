@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 728dae4e2f720ec427d9f9d6e46451c939b4ee6d4a20fb204d5539c5e11dfdb3
+pageHash: a8ad6d6a52a34f24d4208ff1eb343a17079e63d3fb137e851acdff7c75e130d5
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -58,7 +58,7 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   black ink, and the resume bars on "Recently added" cards are rose, in both kits and on the
   page (`ButtonGroup tone="play"`). The Now Playing panel keeps its "Now playing" tab in the violet
   accent, as the desktop kit does, since tabs are not play-related.
-- Changed on purpose, from the Backdrop cards: the kits draw the old `AppShell`; the page now sits
+- Changed on purpose, from the Backdrop cards: the kits draw the old app shell; the page now sits
   in the backdrop Sonora's latest mockups draw. The front layer is a rounded 1dp surface under the
   heading and the filters, with its corners kept at every scroll position.
 - Changed on purpose: the filters moved out of the feed to the back layer's controls, as the

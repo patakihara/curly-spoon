@@ -49,21 +49,15 @@ accent, not a user-picked one.
 
 Behaviour that did not exist when the copy was vendored, and which the token layer alone will not carry:
 
-- **LibraryShell** — per-view detail memory, sub-tabs, list/grid mode, scroll memory, and the app bar's
-  search morph (out on scroll without focus, focused on tap, reset when a sub-page opens or closes).
-- **DetailPage / CollectionPage / CircleReveal** — an item's page and a section's full contents, both
-  revealed as a circle from the point that opened them.
 - **Section**, **TabBar**, **ViewToggle**, **SearchButton**, **ProgressRing**.
-- New props on existing components: `TopAppBar` (`flush`, `progress`, `background`, `searchHeight`,
-  `searchButton`, `searchAutoFocus`), `ContentPane`/`AppShell` (`flat`), `MediaCard` (`size`),
-  `ResultRow` (`divider`).
+- New props on existing components: `MediaCard` (`size`), `ResultRow` (`divider`).
 
-- **NowPlaying + PlayerSheet / PlayerPanel / NowPlayingPage / LyricsPage / QueuePage / BottomAppBar /
+- **NowPlaying + PlayerSheet / PlayerPanel / NowPlayingPage / LyricsPage / QueuePage /
   LyricsSyncButton** — the Currently Playing surface, componentized to one canonical shape with two
   platform forms. `NowPlaying` takes one set of props and renders either: on mobile a `PlayerSheet`
   covering the app frame, opening by expanding the now-playing bar's own rectangle (a `clip-path`
   inset animation off the bar's measured rect — nothing the token layer can express), with lyrics and
-  queue as previews that open full pages, also reachable from a `BottomAppBar`; on desktop a
+  queue as previews that open full pages; on desktop a
   `PlayerPanel` where lyrics and queue are sibling tabs. Behaviour to port, not just values:
   `LyricsSyncButton`'s three states (synced → current line marked by an accent dot only → no sync and
   no indication; the last two ungrey every line) and `QueuePage`'s edit mode (selection, drag reorder,

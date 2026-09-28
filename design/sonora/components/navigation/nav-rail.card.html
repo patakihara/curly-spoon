@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1500x1100" name="Navigation Rail & Footer" subtitle="The rail collapsed and expanded inside a backdrop: the toggle band matches the back layer's heading strip, the glyph carries the state, and RailFooter narrows with the rail instead of clipping; Settings is pinned to the foot as a row like the others" -->
+<!-- @dsCard group="Components" viewport="1500x1100" name="Navigation Rail" subtitle="The rail collapsed and expanded inside a backdrop: the toggle band matches the back layer's heading strip, the glyph carries the state, and Settings is pinned to the foot as a row like the others" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { BackdropShell, BackLayer, NavRail, RailFooter, SectionHeader, ResultRow } = window.SonoraDesignSystem_6c1435;
+const { BackdropShell, BackLayer, NavRail, SectionHeader, ResultRow } = window.SonoraDesignSystem_6c1435;
 
 const NAV = [
   {key:'browse',label:'Browse',icon:'explore'},
@@ -29,15 +29,13 @@ const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontS
    uses. Shown beside a bare column you could not tell whether the hamburger lines up with the
    page heading, which is the whole reason the rail reads as part of the back layer.
    `scroll={false}`: a scrollbar in a 300px frame would sit on the edge being demonstrated. */
-function Frame({start, theme, onTheme}){
+function Frame({start, theme}){
   const [expanded, setExpanded] = React.useState(start);
   const [view, setView] = React.useState('browse');
   return <div style={{height:440}}>
     <BackdropShell platform="desktop" scroll={false} theme={theme}
       rail={<NavRail items={NAV} footerItems={[{key:'settings',label:'Settings',icon:'settings'}]} active={view} onChange={setView}
-        expanded={expanded} onToggleExpanded={() => setExpanded(!expanded)}
-        footer={<RailFooter expanded={expanded} theme={theme} onThemeChange={onTheme}
-          title="Local Library" sub="Music · Books · Podcasts" onIdentityClick={() => {}} />} />}
+        expanded={expanded} onToggleExpanded={() => setExpanded(!expanded)} />}
       back={<BackLayer title="Library" trailing={<Tag>Back layer · 0dp</Tag>} />}>
       <div style={{padding:'var(--spacing-sm) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
         <SectionHeader title="Recently played" platform="desktop" />
@@ -47,32 +45,27 @@ function Frame({start, theme, onTheme}){
   </div>;
 }
 
-function Case({start, caption, notes, theme, onTheme}){
+function Case({start, caption, notes, theme}){
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',minWidth:0}}>
     <Caption>{caption}</Caption>
-    <Frame start={start} theme={theme} onTheme={onTheme} />
+    <Frame start={start} theme={theme} />
     <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-xs)'}}>{notes.map((n) => <Tag key={n}>{n}</Tag>)}</div>
   </div>;
 }
 
-/* The theme lives one level above the two frames so the switch in either footer moves both — the
-   footer sets the value, the frame's `theme` applies it, which is the split RailFooter documents. */
 function Demo({start}){
-  const [theme, setTheme] = React.useState(start);
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
-    <Case start={false} theme={theme} onTheme={setTheme}
+    <Case start={false} theme={start}
       caption="Collapsed — 108px. Press the hamburger to widen it." notes={[
       'Glyph · menu · no caret',
       'Rail · --rail-width-collapsed',
       'Inactive rows drop their label; the active one keeps it',
-      'Footer · switch stacks · every label gone',
     ]} />
-    <Case start={true} theme={theme} onTheme={setTheme}
+    <Case start={true} theme={start}
       caption="Expanded — 268px. The toggle band is the heading strip's own height, so the two share a line." notes={[
       'Glyph · menu_open · hamburger with its caret',
       'Rail · --rail-width-expanded',
       'Toggle band · --appbar-height · same as BackLayer',
-      'Footer · switch side by side · identity in two lines',
     ]} />
   </div>;
 }

@@ -16,7 +16,7 @@ data class PlayerSubPageProps(
     val meta: String? = null,
     /** The page's own controls, on the meta row: the sync group, the edit toggle. */
     val controls: (@Composable () -> Unit)? = null,
-    /** Docked below the body — an edit action bar, a BottomAppBar. */
+    /** Docked below the body — such as an edit action bar. */
     val footer: (@Composable () -> Unit)? = null,
     /** Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. */
     val scroll: Boolean? = null,

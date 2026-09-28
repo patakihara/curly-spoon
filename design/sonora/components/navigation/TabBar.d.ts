@@ -1,5 +1,5 @@
 /**
- * Icon + label tabs for the second row of a TopAppBar — the sub-sections of a library page
+ * Icon + label tabs for a page's subheader — the sub-sections of a library page
  * (Artists / Albums / Songs, Authors / Books / Series / Narrators). Scrolls sideways when the
  * labels outrun the width; the active tab is accent-coloured with an underline indicator.
  * For a filter row of mutually exclusive pills use ButtonGroup instead.

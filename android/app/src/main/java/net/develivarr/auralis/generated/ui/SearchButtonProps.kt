@@ -3,8 +3,8 @@ package net.develivarr.auralis.generated.ui
 
 /**
  * The app bar's search control: a search icon button that swaps to a close icon while the
- * search field is open. TopAppBar renders one automatically when given `onSearchToggle`;
- * use it directly only for a bar you are composing by hand.
+ * search field is open. BackLayer renders one for a page's local search; use it directly only
+ * for a bar you are composing by hand.
  */
 data class SearchButtonProps(
     val open: Boolean? = null,

@@ -60,21 +60,14 @@ rather than taken on trust.
 
 | Component | Screens | Seen in |
 | --- | --- | --- |
-| `FeatureCard` | 15 | S05, S15, S17, S18, S20, S21, S22, S23, S24, S25, S26, S27, S28, S29, S30 |
-| `PreviewButton` | 10 | S15, S17, S18, S20, S21, S22, S23, S25, S27, S30 |
 | `AboutCard` | 4 | S34, S38, S40, S41 |
 | `SortFilterBar` | 3 | S01, S02, S31 |
 | `EpisodeRow` | 2 | S01, S02 |
-| `ItemActionBar` | 2 | S01, S02 |
 | `DownloadButton` | 2 | S01, S02 |
-| `BrowseCard` | 2 | S03, S04 |
 | `StatusBanner` | 2 | S05, S25 |
 | `SpeedControl` | 2 | S33, S36 |
-| `OutputDeviceButton` | 2 | S33, S39 |
 | `ExpandableText` | 2 | S34, S35 |
-| `BackToTop` | 1 | S01 |
 | `FollowButton` | 1 | S02 |
-| `Rating` | 1 | S02 |
 | `ExpanderRow` | 1 | S32 |
 
 ## Components extended, and the screens that motivated them

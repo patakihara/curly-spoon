@@ -1,6 +1,6 @@
 ---
 page: book
-pageHash: 7f7eb6bec3cc80753296568851c7464733f56ec6cddab0952a94fd867cd0df29
+pageHash: 90f8fba0165415017e13c9871e9396b849199184cbe8e2b658fc6947582e7dea
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S35]
 ---
@@ -62,7 +62,7 @@ M0; the greyed and requested states are drawn on the cards.
   current chapter carries what is left of it as a pill, not the equalizer bars, since the book is
   not what is playing.
 - Changed on purpose: the rating sits in the meta line as "4.6 ★"; one value from Audiobookshelf
-  needs no `Rating` of its own.
+  needs no component of its own.
 - Changed on purpose: chapters, bookmarks, speed and sleep controls are not here; they live in the
   player (04-play).
 - Changed on purpose: other narrations are cards opening that narration's own book page, greyed

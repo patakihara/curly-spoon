@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 1ff0311d43a9d55ba4502afaf436c21a7c015290df7b678dada9530427c0556d
+pageHash: 748a11e6bd9b06fc8789916e90d766817c45e3115786e9e0f2998e023091b7e3
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -41,7 +41,7 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 
 - Matches, after the one-accent change: the switches stay in the violet accent in both kits
   and on the page; settings are not play-related, so nothing here turned rose.
-- Changed on purpose, from the Backdrop cards: the kits draw the old `AppShell`; the page now sits
+- Changed on purpose, from the Backdrop cards: the kits draw the old app shell; the page now sits
   in the backdrop, its content on the rounded 1dp front layer under the heading.
 - Changed on purpose: on the phone the mobile kit opens Settings as a sheet over Browse, with a
   "Browse" back link and a "Settings" heading inside the content; here Settings is a page of its

@@ -11,7 +11,7 @@ export function BackLayer({ title, eyebrow, image, round = false, leading, trail
   const mobile = platform === 'mobile';
   /* At the page margin the heading starts where PageBody starts the content under it. */
   const pad = atMargin ? 'var(--grid-margin' + (mobile ? '-mobile' : '') + ')' : 'var(--spacing-' + (mobile ? 'md' : 'xl') + ')';
-  /* The local search is TopAppBar's search morph, moved to the backdrop's heading: the title fades
+  /* The local search morphs in the backdrop's heading: the title fades
      out to the left while the field grows from the search button. Scrolling the front layer pulls
      the field out without focus; tapping the button pulls it out with focus and keeps it out at
      the top. `searchOpen` fixes the state, for a card or a page shown still. */

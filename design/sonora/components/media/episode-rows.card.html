@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x820" name="Episode Rows & Item Actions" subtitle="EpisodeRow finished / part-played / unstarted / explicit / greyed, ItemActionBar saved states, and DownloadButton's three states" -->
+<!-- @dsCard group="Components" viewport="1400x820" name="Episode Rows & Downloads" subtitle="EpisodeRow finished / part-played / unstarted / explicit / greyed, and DownloadButton's three states" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { EpisodeRow, ItemActionBar, DownloadButton } = window.SonoraDesignSystem_6c1435;
+const { EpisodeRow, DownloadButton } = window.SonoraDesignSystem_6c1435;
 
 function Caption({ children }) {
   return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:640}}>{children}</div>;
@@ -16,7 +16,7 @@ function Caption({ children }) {
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
     <div>
-      <Caption>EpisodeRow across its listened states — finished, part-played (a progress rule under the meta), unstarted, and an explicit episode — each carrying its own ItemActionBar.</Caption>
+      <Caption>EpisodeRow across its listened states — finished, part-played (a progress rule under the meta), unstarted, and an explicit episode.</Caption>
       <div style={{display:'flex',flexDirection:'column'}}>
         <EpisodeRow
           title="Episode 41 — The last dispatch"
@@ -25,7 +25,6 @@ function Demo(){
           finished={true}
           onPlay={() => {}}
           divider={true}
-          actions={<ItemActionBar saved={true} onSave={() => {}} download="done" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
         />
         <EpisodeRow
           title="Episode 42 — Silence on Channel 9"
@@ -34,7 +33,6 @@ function Demo(){
           progress={0.35}
           onPlay={() => {}}
           divider={true}
-          actions={<ItemActionBar saved={false} onSave={() => {}} download="downloading" downloadProgress={0.42} onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
         />
         <EpisodeRow
           title="Episode 43 — Static returns"
@@ -42,7 +40,6 @@ function Demo(){
           meta={["6.1K plays", "17 Aug 2026", "44min"]}
           onPlay={() => {}}
           divider={true}
-          actions={<ItemActionBar saved={false} onSave={() => {}} download="idle" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
         />
         <EpisodeRow
           title="Episode 44 — After the tape ran out"
@@ -51,7 +48,6 @@ function Demo(){
           explicit={true}
           onPlay={() => {}}
           divider={false}
-          actions={<ItemActionBar saved={true} onSave={() => {}} download="idle" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />}
         />
       </div>
     </div>
@@ -64,13 +60,6 @@ function Demo(){
         absent={true}
         onPlay={() => {}}
       />
-    </div>
-    <div>
-      <Caption>ItemActionBar on its own, saved and unsaved — each control only renders when its handler is supplied.</Caption>
-      <div style={{display:'flex',gap:'var(--spacing-2xl)',alignItems:'center'}}>
-        <ItemActionBar saved={true} onSave={() => {}} download="done" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} />
-        <ItemActionBar saved={false} onSave={() => {}} download="idle" onDownload={() => {}} onShare={() => {}} onMore={() => {}} onPlay={() => {}} playing />
-      </div>
     </div>
     <div>
       <Caption>DownloadButton's three states — idle, downloading with a determinate ring, and done.</Caption>

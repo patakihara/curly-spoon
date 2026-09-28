@@ -70,7 +70,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           </button>
         )}
         {/* New/unlistened is a property of the item, not of the card chrome, so it sits on the art
-            itself rather than in the caption — same corner PreviewButton/QuickPick use for it.
+            itself rather than in the caption — same corner QuickPick uses for it.
             Dropped below the more-options button when both are present, so it doesn't paint
             under that button's hit area. */}
         {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:' + (showMore ? '40px' : '6px') + ';right:6px;width:10px;height:10px;border-radius:50%;background:var(--accent)')} />}

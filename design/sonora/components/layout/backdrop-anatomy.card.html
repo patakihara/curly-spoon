@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { BackdropShell, BackLayer, FrontLayerHeader, NavRail, RailFooter, ButtonGroup, MediaCard, Shelf, SectionHeader } = window.SonoraDesignSystem_6c1435;
+const { BackdropShell, BackLayer, FrontLayerHeader, NavRail, ButtonGroup, MediaCard, Shelf, SectionHeader } = window.SonoraDesignSystem_6c1435;
 
 const NAV = [{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'speaker'},{key:'books',label:'Audiobooks',icon:'headphones'},{key:'shows',label:'Podcasts',icon:'podcasts'}];
 const CARDS = [
@@ -37,22 +37,17 @@ function Tabs({items, value, onChange}) {
    toggle at all, and that toggle's band is `--appbar-height` — the same token BackLayer's heading
    strip uses. Supplying it is therefore what puts the hamburger on the heading's own line and
    makes the rail read as a region of the back layer rather than a stripe beside it. The glyph
-   carries the state: `menu` collapsed, `menu_open` — the hamburger with its caret — expanded.
-   The theme switch in the footer drives the frame's own `theme`, so it really does switch. */
+   carries the state: `menu` collapsed, `menu_open` — the hamburger with its caret — expanded. */
 function Demo({start}){
   const [scope, setScope] = React.useState('All');
   const [tab, setTab] = React.useState('Recent');
   const [view, setView] = React.useState('browse');
   const [expanded, setExpanded] = React.useState(true);
-  const [theme, setTheme] = React.useState(start);
   return <div style={{height:760}}>
-    <BackdropShell platform="desktop" scrollKey={view} theme={theme}
-      rail={<NavRail items={NAV} active={view} onChange={setView}
+    <BackdropShell platform="desktop" scrollKey={view} theme={start}
+      rail={<NavRail items={NAV} footerItems={[{key:'settings',label:'Settings',icon:'settings'}]} active={view} onChange={setView}
         expanded={expanded} onToggleExpanded={() => setExpanded(!expanded)}
-        footer={<RailFooter expanded={expanded} theme={theme} onThemeChange={setTheme}
-          title="Local Library" sub="Music · Books · Podcasts">
-          {expanded && <div style={{padding:'0 var(--spacing-md) var(--spacing-md)'}}><Tag>Rail · back layer · 0dp</Tag></div>}
-        </RailFooter>} />}
+        footer={expanded && <div style={{padding:'0 var(--spacing-md) var(--spacing-md)'}}><Tag>Rail · back layer · 0dp</Tag></div>} />}
       back={<BackLayer title="Browse"
         trailing={<Tag>Back layer · 0dp · --surface-bg-alt · rail included</Tag>}
         /* A library-scope switch reconfigures WHAT the front layer shows, so it stays on the

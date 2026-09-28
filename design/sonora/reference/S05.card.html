@@ -1,4 +1,4 @@
-<!-- @dsCard group="Reference" viewport="1180x1747" name="S05 · Home — All filter" subtitle="Home tab, &quot;All&quot; selected, top of scroll — 2 new, 3 extended, 5 already present" -->
+<!-- @dsCard group="Reference" viewport="1180x1417" name="S05 · Home — All filter" subtitle="Home tab, &quot;All&quot; selected, top of scroll — 1 new, 3 extended, 5 already present" -->
 <link rel="stylesheet" href="../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -50,7 +50,7 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <li>A persistent bar states that the client is offline. It does not time out; it is a condition, not an event.</li>
 </ul>
 <h2>Components</h2>
-<div class="row new"><span class="tag">Created</span><code>FeatureCard</code> <code>StatusBanner</code></div>
+<div class="row new"><span class="tag">Created</span><code>StatusBanner</code></div>
 <div class="row ext"><span class="tag">Extended</span><code>QuickPick</code> <code>ButtonGroup</code> <code>SectionHeader</code></div>
 <div class="row "><span class="tag">Existing</span><code>LayoutGrid</code> <code>Shelf</code> <code>Section</code> <code>MiniPlayer</code> <code>BottomNav</code></div>
 </div></div>
@@ -58,22 +58,9 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <div id="root"></div>
 <script type="text/babel">
 const NS = window.SonoraDesignSystem_6c1435 || {};
-const { ButtonGroup, CoverArt, FeatureCard, PreviewButton, QuickPick, SectionHeader, StatusBanner } = window.SonoraDesignSystem_6c1435 || {};
+const { ButtonGroup, CoverArt, QuickPick, SectionHeader, StatusBanner } = window.SonoraDesignSystem_6c1435 || {};
 const DOC = document.getElementById('__doc').innerHTML;
 const EXAMPLES = [
-  { name: 'FeatureCard', role: 'new', uses: ['FeatureCard', 'PreviewButton'], node: () => (
-<FeatureCard
-  kind="Episode"
-  title="Aftershocks: the second call"
-  meta="Static & Signal • 1 day ago • 48min"
-  description="A dispatcher who walked away from the job three years ago picks the phone back up, once, for the one caller she was never able to refuse."
-  saved
-  onSave={() => {}}
-  onPlay={() => {}}
-  onMore={() => {}}
-  preview={<PreviewButton kind="episode" muted onClick={() => {}} />}
-/>
-  ) },
   { name: 'StatusBanner', role: 'new', uses: ['StatusBanner'], node: () => (
 <div style={{ width: 520, maxWidth: '100%' }}>
   <StatusBanner tone="error" icon="cloud_off" actionLabel="Retry" onAction={() => {}}>

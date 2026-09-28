@@ -62,6 +62,38 @@ function drawn(tree: PageTree, into: Set<string>): Set<string> {
 }
 
 /**
+ * The Sonora components page `id` draws with: its own, those of the Now Playing page every side
+ * panel shows, and the shell's, each with every component they reach through their lookups.
+ */
+export function pageComponents(appDir: string, sonoraDir: string, id: string): string[] {
+  const own = readFileSync(join(appDir, 'pages', `${id}.page.jsx`), 'utf8');
+  const panel = nowPlayingPanel(appDir);
+  const names = [
+    ...drawn(parsePage(own, id), new Set()),
+    ...(panel === '' ? [] : drawn(parsePage(panel, 'nowPlaying'), new Set())),
+    ...SHELL_COMPONENTS,
+  ];
+  return usedComponents(sonoraDir, names);
+}
+
+/** Each Sonora component drawn by some page of nav.json, with the ids of the pages drawing it. */
+export function componentPages(appDir: string, sonoraDir: string): Map<string, string[]> {
+  const pages = new Map<string, string[]>();
+  for (const { id } of readNav(appDir).pages) {
+    for (const name of pageComponents(appDir, sonoraDir, id)) {
+      pages.set(name, [...(pages.get(name) ?? []), id]);
+    }
+  }
+  return pages;
+}
+
+/** Now Playing's page file, which every page's side panel shows; empty if there is none. */
+function nowPlayingPanel(appDir: string): string {
+  const now = join(appDir, 'pages', 'nowPlaying.page.jsx');
+  return existsSync(now) ? readFileSync(now, 'utf8') : '';
+}
+
+/**
  * sha256 of the page file, its placeholder, the shell it sits in (shell.json, nav.json's
  * destinations and layouts, and what the shell draws from the page's own entry: its title, close,
  * lights and filter) and the source of every Sonora component it and the shell draw with,
@@ -86,15 +118,8 @@ export function pageHash(appDir: string, sonoraDir: string, id: string): string 
     .update('\0')
     .update(JSON.stringify({ destinations, layouts, page: drawnFrom }));
   // Every page's side panel shows Now Playing's page, so a change to it changes every render.
-  const now = join(appDir, 'pages', 'nowPlaying.page.jsx');
-  const panel = existsSync(now) ? readFileSync(now, 'utf8') : '';
-  hash.update('\0').update(panel);
-  const names = [
-    ...drawn(parsePage(page, id), new Set()),
-    ...(panel === '' ? [] : drawn(parsePage(panel, 'nowPlaying'), new Set())),
-    ...SHELL_COMPONENTS,
-  ];
-  for (const name of usedComponents(sonoraDir, names)) {
+  hash.update('\0').update(nowPlayingPanel(appDir));
+  for (const name of pageComponents(appDir, sonoraDir, id)) {
     hash.update(`\0${name}\0`).update(readFileSync(componentFile(sonoraDir, name)!));
   }
   return hash.digest('hex');

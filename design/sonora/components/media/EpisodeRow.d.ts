@@ -24,7 +24,7 @@ export interface EpisodeRowProps {
   absent?: boolean;
   /** Renders the "E" marker before the title. */
   explicit?: boolean;
-  /** An ItemActionBar, rendered below the synopsis. */
+  /** The episode's own controls, rendered below the synopsis. */
   actions?: ReactNode;
   /** Given, reveals a play control over the artwork (hover on desktop, always on mobile). */
   onPlay?: () => void;

@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1200x900" name="Spoken Transport & Routing" subtitle="TransportBar's music and spoken variants, SpeedControl, and output routing with a quality badge" -->
+<!-- @dsCard group="Components" viewport="1200x760" name="Spoken Transport" subtitle="TransportBar's music and spoken variants, and SpeedControl" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { TransportBar, SpeedControl, OutputDeviceButton, IconButton, MiniPlayer } = window.SonoraDesignSystem_6c1435;
+const { TransportBar, SpeedControl, IconButton, MiniPlayer } = window.SonoraDesignSystem_6c1435;
 
 function Caption({ children }) {
   return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:960}}>{children}</div>;
@@ -44,14 +44,6 @@ function Demo(){
       <div style={{display:'flex',gap:'var(--spacing-lg)',alignItems:'center'}}>
         <SpeedControl value={1} onClick={() => {}} />
         <SpeedControl value={1.5} onClick={() => {}} />
-      </div>
-    </div>
-    <div>
-      <Caption>OutputDeviceButton across its three states: playing locally, routed to a named device, and routed with a quality badge alongside — the direct-play-vs-transcode distinction Auralis has nowhere else to state.</Caption>
-      <div style={{display:'flex',gap:'var(--spacing-lg)',alignItems:'center',flexWrap:'wrap'}}>
-        <OutputDeviceButton onClick={() => {}} />
-        <OutputDeviceButton device="Living room" connected glyph="cast" onClick={() => {}} />
-        <OutputDeviceButton device="Living room" connected glyph="cast" quality="Lossless" onClick={() => {}} />
       </div>
     </div>
   </div>;

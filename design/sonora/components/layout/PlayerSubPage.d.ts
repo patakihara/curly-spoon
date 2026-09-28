@@ -13,7 +13,7 @@ export interface PlayerSubPageProps {
   meta?: string;
   /** The page's own controls, on the meta row: the sync group, the edit toggle. */
   controls?: ReactNode;
-  /** Docked below the body — an edit action bar, a BottomAppBar. */
+  /** Docked below the body — such as an edit action bar. */
   footer?: ReactNode;
   /** Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. */
   scroll?: boolean;

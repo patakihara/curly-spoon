@@ -1,6 +1,6 @@
 ---
 page: show
-pageHash: c204ecffca99ba740aa9ddd53724e8f42b645a5a9fff91b8dc8261a4ded3d767
+pageHash: 0038695c78440477983333353d05440ab12b4226369198d13ede8b36b4550486
 sonora: [card:episode-rows]
 spotify: [S01, S02]
 ---
@@ -18,7 +18,7 @@ and Album pages as the detail pattern.
 ## What the sources show
 
 - **Episode Rows card.** `EpisodeRow` finished, part-played (a rose rule under the meta), unstarted,
-  explicit and now greyed, each with an `ItemActionBar` (save, download, share, more, play).
+  explicit and now greyed, with `DownloadButton`'s three states beside them.
 - **S02.** The subscribe control states the state ("Following"); bell and gear sit beside it; search
   is scoped to the show.
 - **S01.** Episodes carry a two-line synopsis and a meta chain; "Finished" is its own state; the sort
@@ -47,8 +47,8 @@ provisional "YouTube settings" section, so they are not drawn.
 
 - Matches the Sonora card: `EpisodeRow` with synopsis, meta chain, the rose progress rule and
   "Finished" with its check; play glyphs white and filled over the art.
-- Changed on purpose: no `ItemActionBar` under each episode. Save and share have no Auralis meaning,
-  and the Episode page carries play next, add to a list and download, so rows stay scannable.
+- Changed on purpose: no per-episode verbs under each row, as S01 has. Save and share have no Auralis
+  meaning, and the Episode page carries play next, add to a list and download, so rows stay scannable.
 - Changed on purpose: the subscribe control is "Subscribed" / "Subscribe" (`FollowButton labels`),
   the plan's word, and it stands alone: no bell or gear as in S02; a show's settings go in its menu.
 - Changed on purpose: Spotify's Episodes / About / More like this tabs become sections in that order,

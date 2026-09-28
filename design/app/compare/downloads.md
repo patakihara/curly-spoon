@@ -1,6 +1,6 @@
 ---
 page: downloads
-pageHash: 11f3b20a31a6f0d85193d533b4da1d58607ab96faf1372ec356a6cc16a2511f7
+pageHash: 86b219d3463e200699f992989837cc3331738e402a4904f2845abf293c759993
 sonora: [none]
 ---
 
@@ -10,7 +10,7 @@ Canvas renders: `downloads/canvas-phone.png` (390 px) and `downloads/canvas-desk
 an Android tablet's width), both in the app shell. Downloads is Android only, so the web app has no
 route for it: `pnpm canvas:shoot` generates the page as the web generator would and mounts it for
 the render. No Sonora UI kit screen exists for Downloads (nav.json names `none`); the page is
-compared with the Episode Rows & Item Actions card, which holds `DownloadButton`'s three states,
+compared with the Episode Rows & Downloads card, which holds `DownloadButton`'s three states,
 and the Mini Player, Result Rows & Media Header card, whose request rows carry the same statuses.
 No Spotify screen covers it.
 

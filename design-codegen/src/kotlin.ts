@@ -20,8 +20,6 @@ function typeText(type: KType): string {
       return 'Float';
     case 'any':
       return 'Any';
-    case 'unknown':
-      return 'Any?';
     case 'rect':
       return 'Rect';
     case 'named':
@@ -48,7 +46,7 @@ function typeText(type: KType): string {
   }
 }
 
-const isNullable = (type: KType) => type.kind === 'nullable' || type.kind === 'unknown';
+const isNullable = (type: KType) => type.kind === 'nullable';
 
 /** Everything a type needs imported. */
 function importsOf(type: KType, into: Set<string>): void {

@@ -24,7 +24,7 @@ await new Function(src + '; return generateExport;')()({ readFile, saveFile, ls,
 Tokens and prop signatures transfer near-losslessly. Layout bodies do not: flex/grid with `gap`,
 `auto-fill minmax()`, `aspect-ratio`, percentage-height chains and `position:absolute; inset:0` overlays
 are a rewrite against Compose's `Row`/`Column`/`LazyVerticalGrid`/`Box`. Neither do the DOM-specific
-parts: ResizeObserver self-measuring (MediaHeader, MediaCard's compact badge, TopAppBar's row height),
+parts: ResizeObserver self-measuring (MediaHeader, MediaCard's compact badge),
 the `clip-path` reveal, `-webkit-line-clamp`, and scroll progress from captured scroll events — each has
 a Compose equivalent (`onSizeChanged`, `maxLines`, `nestedScroll`, circular reveal), but as its own
-implementation. LibraryShell's render-prop seam is React-shaped; in Compose it is hoisted state.
+implementation.

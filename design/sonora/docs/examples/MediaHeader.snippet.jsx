@@ -6,15 +6,5 @@
   onSubtitle={() => {}}
   meta="11h 40min • 4h 21m left"
   progress={0.62}
-  actions={
-    <ItemActionBar
-      saved
-      onSave={() => {}}
-      download="done"
-      onDownload={() => {}}
-      onShare={() => {}}
-      onMore={() => {}}
-      onPlay={() => {}}
-    />
-  }
+  actions={<DownloadButton state="done" onClick={() => {}} />}
 />

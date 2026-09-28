@@ -19,17 +19,6 @@ Small pill for counts, queue positions and status. Colors come from the status t
 | `square` | `boolean` | Square with --radius-xs instead of a pill: the explicit-content "E" marker. |
 | `plain` | `boolean` | No fill; glyph and label take the tone colour as ink instead of the tone's contrast ink. |
 
-### BrowseCard
-
-Navigates into a category whose content you can't name yet — distinct from Chip, which filters an existing result set. Filled with a shade of the accent, with its artwork tilted out of the bottom-right corner so the card reads as a stack of content rather than a label.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `image` | `string` | Tilted thumbnail anchored to the bottom-right corner. |
-| `onClick` | `() => void` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
 ### Button
 
 
@@ -57,18 +46,6 @@ M3 connected button group — a row of segments that read as one control: outer 
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `scroll` | `boolean` | @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. |
 | `tone` | `'accent' \| 'play'` | The selected segment's fill: `accent` (default), or `play` for the Browse media filter (All, Music, Podcasts, Books). |
-
-### Chip
-
-A tag/genre pill for filter tags: outlined at rest, filled with the accent when selected, with an optional song count.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` *(required)* | `ReactNode` |  |
-| `count` | `number` |  |
-| `selected` | `boolean` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
 
 ### EmptyState
 
@@ -150,20 +127,6 @@ One verb in an OverflowMenu.
 | `tone` | `'surface' \| 'scrim'` |  The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
-### PreviewButton
-
-Auditions a sample without committing it — plays without adding the item to the library or displacing whatever is currently playing. The disabled state covers a sample that hasn't loaded yet, a real fourth state alongside idle/sounding/muted.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `kind` | `'episode' \| 'playlist' \| 'audiobook' \| 'track'` | Selects the generated label ("Preview episode") when `label` is not supplied. |
-| `label` | `string` | Overrides the generated label entirely. |
-| `playing` | `boolean` | Sample is playing; the glyph flips to the sounding speaker. |
-| `muted` | `boolean` | Playing with sound off — the resting state a preview starts in. |
-| `disabled` | `boolean` | No sample available: dims the control, not-allowed cursor, aria-disabled. |
-| `onClick` | `() => void` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
 ### ProgressRing
 
 Circular progress indicator. Pass `value` (0–1) for a determinate ring that animates to its position; omit it for an indeterminate arc that rotates and breathes while work is in flight. Used over cover art in ResultRow, and anywhere a small inline "working" state is needed.
@@ -191,17 +154,6 @@ Continue-listening / jump-back-in tile: small square art plus title and a meta l
 | `onClick` | `() => void` |  |
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. |
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. Ignored on the `icon` variant. |
-
-### Rating
-
-Aggregate community judgement at a glance — a single star and the value, not five stars; the number carries the information and five glyphs would only decorate it.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `value` *(required)* | `number` | 0–max. |
-| `count` | `number` | Population; formatted compactly next to the value (17700 -> "17.7K"). |
-| `max` | `number` | Scale the value is out of. |
-| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### SectionHeader
 
@@ -309,19 +261,6 @@ The new text, on every keystroke.
 | `value` | `string` |  |
 | `onChange` | `(next: string) => void` | The new text, on every keystroke. |
 
-### SearchBar
-
-Pill search bar — fully rounded, bordered on desktop and filled on mobile. Use inline (a filter row, a sheet, a settings page). For the centred library search in the top app bar use SearchField, which is filled with soft rectangular corners instead.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `placeholder` | `string` |  |
-| `value` | `string` |  |
-| `onChange` | `(next: string) => void` |  |
-| `onSubmit` | `(value: string) => void` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `width` | `string` |  |
-
 ### SearchField
 
 Filled search field with no outline and soft rectangular corners (radius-xs) — the library search treatment, distinct from the pill Input.
@@ -374,29 +313,9 @@ Settings list row: title, explanatory line, and a Switch on a filled card.
 
 ## layout
 
-### AppShell
-
-The app frame — the one component that ties the layout parts together, so a screen only has to supply its own content. Composes NavRail (or nothing, on mobile) beside a column of TopAppBar + ContentPane, with an optional SideSheet abutting the content and MiniPlayer docked across the full width beneath everything. The shell owns the relationships that are easy to get wrong: the bar spans only the content column, so the sheet runs full height beside it with its title at the bar's level; the player spans everything; and the content pane squares its top-right corner whenever the sheet is open. On mobile pass no `rail` and put the bottom nav in `player` alongside the mini player.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` | The screen itself — goes inside the ContentPane. |
-| `rail` | `ReactNode` | A NavRail. Omit on mobile. |
-| `bar` | `ReactNode` | A TopAppBar. |
-| `sheet` | `ReactNode` | A SideSheet. |
-| `sheetOpen` | `boolean` | Whether that sheet is open — squares the content's abutting corner. |
-| `player` | `ReactNode` | MiniPlayer, BottomNav, or a fragment of both. Docked across the bottom. |
-| `contentMinWidth` | `string` | Floor for the content column, e.g. `var(--content-min-width)`. |
-| `scrollKey` | `string \| number` | Identifier of the current view — gives each one its own remembered scroll position. |
-| `scroll` | `boolean` | false when the screen owns its own scrolling (mobile). |
-| `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the content pane. |
-| `theme` | `string` | Sets `data-theme` on the frame. |
-| `flat` | `boolean` | Flattens the content pane — square top corners and a permanent divider — for a sub-page that owns the full surface. |
-| `square` | `boolean` | Squares the content pane's top corners while keeping its scroll-linked hairline — used when the app bar's controls row carries the rounding. |
-
 ### BackdropShell
 
-The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking the step; `subheader` is fixed to it and `children` scroll underneath. Prop names mirror `AppShell`'s wherever the meaning is the same, so a screen ports by swapping the component and moving its secondary header out of the bar into `subheader`. Unlike `AppShell` there is no `square`, and the front layer's shape is not scroll-linked: it flattens only for a page shown with `appBar`. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
+The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking the step; `subheader` is fixed to it and `children` scroll underneath. The front layer's shape is not scroll-linked: it flattens only for a page shown with `appBar`. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -437,60 +356,6 @@ The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevati
 | `atMargin` | `boolean` |  Starts the heading at the page margin (`--grid-margin`, or `--grid-margin-mobile`), where `PageBody` starts the content under it, rather than at the heading strip's own inset. `BackdropShell`'s `column` passes it down.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
-### BackToTop
-
-Escape from depth. A feed that pages in more content has no bottom, so scroll position becomes a trap; this floats a way back that only the caller's own scroll-position logic reveals.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `visible` | `boolean` | Caller-driven; the control stays mounted and fades/rises rather than mounting on demand. |
-| `label` | `string` |  |
-| `onClick` | `() => void` |  |
-| `offset` | `number` | Distance from the bottom edge, in px, to clear a docked player. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### CircleReveal
-
-Wraps a surface so it grows into view as a circle from the point that opened it — a detail page expanding out of the card you tapped. Pass the pointer's viewport coordinates; with no coordinates it expands from the centre. Honours prefers-reduced-motion by appearing at once.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `x` | `number` | Pointer clientX that triggered the open. |
-| `y` | `number` | Pointer clientY that triggered the open. |
-| `style` | `React.CSSProperties` | Styles for the revealed surface itself (position, background, layout). |
-| `duration` | `string` | Defaults to `var(--duration-medium)`. |
-| `children` | `React.ReactNode` |  |
-
-### CollectionPage
-
-The full contents of a feed section — the page its action arrow opens. Pair it with LibraryShell's `openCollection`, which titles the app bar and gives the page its back arrow.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `origin` | `{ x: number; y: number } \| null` | Pointer coordinates of the click that opened it, for the reveal. |
-| `overlay` | `boolean` | Floats the page over the view beneath it instead of sitting in the page flow. |
-| `zIndex` | `number` |  |
-| `mode` | `'list' \| 'grid'` | Shows the list/grid switch above the content when `onMode` is given. |
-| `onMode` | `(mode: 'list' \| 'grid') => void` |  |
-| `children` | `ReactNode` |  |
-
-### ContentPane
-
-The scrolling page surface inside AppShell. Sits in `--surface-bg` against the app bar's `--surface-bg-alt`, with its top corners rounded so the bar reads as the layer behind it. Once scrolled past `threshold` the corners flatten and a hairline fades in along the top edge, marking that the content now runs under the bar. Square off whichever side another surface abuts — AppShell squares the right edge for you when a SideSheet is open.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` |  |
-| `squareRight` | `boolean` | Keep the top-right corner square (a side sheet is open). |
-| `squareLeft` | `boolean` |  |
-| `scroll` | `boolean` | false when a descendant owns the scrolling (mobile screens) — the pane still tracks it. |
-| `threshold` | `number` | Scroll distance in px over which the corners flatten and the divider fades in. Default 24. |
-| `flat` | `boolean` | Square top corners and a permanent top divider, regardless of scroll. |
-| `square` | `boolean` |  Square top corners with the scroll-linked hairline kept — for when the app bar's controls row carries the rounding instead. Unlike `flat`, the divider still fades in on scroll.  |
-| `scrollKey` | `string \| number` |  |
-| `onProgress` | `(progress: number) => void` | Fires with 0–1 scroll progress. |
-
 ### EditableList
 
 Stable key for the row — pass it through as React's `key`.
@@ -500,7 +365,7 @@ Stable key for the row — pass it through as React's `key`.
 
 ### FrontLayer
 
-The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content and its fixed subheader. `BackdropShell` builds one for you; use it directly only when composing a frame by hand. Its top corners are `--radius-lg` at **every** scroll position. This is the behavioural difference from `ContentPane`, which flattens its corners as you scroll: a backdrop's front layer is a persistent surface, not a sheet that docks. The 1dp step is expressed by a 1px light edge along the layer's own top, over a `--shadow-sm` lift onto whatever is behind it, and the scroll-linked hairline moves to the subheader, where it is inset to the content measure. That edge is not configurable and it is themed, because `--shadow-sm` is `0 1px 3px` cast *downward*, away from the top edge — the only place this layer meets the back layer. Measured off a render, the darkening it puts on the back layer above that boundary is **one value out of 255** in dark and at most three in light: what separates the two surfaces is the tonal step, `#080808` → `#141414` or `#FFFFFF` → `#F9F6F6`, and near black a display's black floor flattens that pair. Dark therefore draws an inner highlight (`color-mix` of `--surface-fg` at 16%, the only mark that survives on near-black); light draws a hairline in `--surface-border`, because mixing `--surface-fg` there inverts into an inner *shadow*. Light is the base rule and dark the `[data-theme="dark"]` override, so an unthemed context gets the treatment that cannot invert. The layer owns the scrolling and remembers a scroll offset per `scrollKey`, so switching views and coming back lands where you left. With `scroll={false}` a descendant owns the scroller and the layer tracks it by capture instead.
+The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content and its fixed subheader. `BackdropShell` builds one for you; use it directly only when composing a frame by hand. Its top corners are `--radius-lg` at **every** scroll position: a backdrop's front layer is a persistent surface, not a sheet that docks. The 1dp step is expressed by a 1px light edge along the layer's own top, over a `--shadow-sm` lift onto whatever is behind it, and the scroll-linked hairline moves to the subheader, where it is inset to the content measure. That edge is not configurable and it is themed, because `--shadow-sm` is `0 1px 3px` cast *downward*, away from the top edge — the only place this layer meets the back layer. Measured off a render, the darkening it puts on the back layer above that boundary is **one value out of 255** in dark and at most three in light: what separates the two surfaces is the tonal step, `#080808` → `#141414` or `#FFFFFF` → `#F9F6F6`, and near black a display's black floor flattens that pair. Dark therefore draws an inner highlight (`color-mix` of `--surface-fg` at 16%, the only mark that survives on near-black); light draws a hairline in `--surface-border`, because mixing `--surface-fg` there inverts into an inner *shadow*. Light is the base rule and dark the `[data-theme="dark"]` override, so an unthemed context gets the treatment that cannot invert. The layer owns the scrolling and remembers a scroll offset per `scrollKey`, so switching views and coming back lands where you left. With `scroll={false}` a descendant owns the scroller and the layer tracks it by capture instead.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -544,31 +409,6 @@ Responsive card grid — the vertical half of the grid system (Shelf is the hori
 | `gap` | `string` |  Gap override. Defaults to `--grid-gutter` (`--grid-gutter-mobile` on mobile), and to half of `--grid-gutter` for wide items on desktop.  |
 | `maxWidth` | `string` | Measure cap, e.g. `var(--grid-max-width)`. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-
-### LibraryShell
-
-App bar title for this view.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `views` *(required)* | `LibraryView[]` |  |
-| `view` *(required)* | `string` | The showing view's key. The kit owns the nav widget (NavRail or BottomNav) and this state. |
-| `rail` | `ReactNode` |  |
-| `sheet` | `ReactNode` |  |
-| `sheetOpen` | `boolean` |  |
-| `player` | `ReactNode` |  |
-| `theme` | `string` |  |
-| `contentMinWidth` | `string` |  |
-| `scroll` | `boolean` |  |
-| `flatDetail` | `boolean` | Square corners + permanent divider while a detail page is open. |
-| `leading` | `ReactNode` | Bar controls outside a detail page; a detail replaces leading with a back arrow. |
-| `trailing` | `ReactNode` |  |
-| `detailTrailing` | `ReactNode` |  |
-| `backLabel` | `string` |  |
-| `searchHeight` | `string` |  |
-| `detailSearchPlaceholder` | `string` |  |
-| `children` | `((ctx: LibraryShellContext) => ReactNode) \| ReactNode` |  |
 
 ### PageBody
 
@@ -619,7 +459,7 @@ The shell the player's Queue and Lyrics tabs share (QueuePage, LyricsPage): a sc
 | `heading` | `string \| null` | Page name in the app bar. `null` as a tab of the player, whose tab names it: with no close button either, there is no app bar. |
 | `meta` | `string` | What the page is about — "Playing from Driftwave", "Song · Artist". |
 | `controls` | `ReactNode` | The page's own controls, on the meta row: the sync group, the edit toggle. |
-| `footer` | `ReactNode` | Docked below the body — an edit action bar, a BottomAppBar. |
+| `footer` | `ReactNode` | Docked below the body — such as an edit action bar. |
 | `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
 | `onClose` | `() => void` | Renders the app bar's close button when set. |
 | `closeGlyph` | `string` |  |
@@ -627,7 +467,7 @@ The shell the player's Queue and Lyrics tabs share (QueuePage, LyricsPage): a sc
 
 ### ScrollArea
 
-Scroll container with an Android-style overlay scrollbar — the thumb appears while the user scrolls and fades out `hideAfter` ms after they stop, on every platform including desktop. Native scrollbars are suppressed, and the thumb is an overlay, so content never reflows when it appears. ContentPane and SideSheet use this internally; wrap your own scrollers in it when a screen owns its scrolling (mobile pages under `AppShell scroll={false}`).
+Scroll container with an Android-style overlay scrollbar — the thumb appears while the user scrolls and fades out `hideAfter` ms after they stop, on every platform including desktop. Native scrollbars are suppressed, and the thumb is an overlay, so content never reflows when it appears. SideSheet uses this internally; wrap your own scrollers in it when a screen owns its scrolling.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -678,7 +518,7 @@ Horizontal carousel row. Negative side margins pull it out to the page edge whil
 
 ### SideSheet
 
-Side sheet — a full-height panel beside the bar+content column, so it and its divider run up alongside the app bar and its own title row (`--appbar-height`) lines up with the bar's title. Animates from zero width and holds its inner content at full width so nothing reflows mid-transition. Pair with `AppShell`'s `sheetOpen` so the content pane squares off the abutting corner.
+Side sheet — a full-height panel beside the bar+content column, so it and its divider run up alongside the app bar and its own title row (`--appbar-height`) lines up with the bar's title. Animates from zero width and holds its inner content at full width so nothing reflows mid-transition.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -709,16 +549,6 @@ Learn about what you're listening to without leaving the player — about the ep
 | `badge` | `ReactNode` | A Badge — the played check. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
-### AlbumArt
-
-
-
-| prop | type | notes |
-| --- | --- | --- |
-| `src` | `string` |  |
-| `size` | `number` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
 ### ArtistCard
 
 Circular artist/author/narrator card for a people shelf.
@@ -742,32 +572,6 @@ The artwork layer used inside every art container in the system. Absolutely fill
 | `covers` | `string[]` |  A collection's item covers, drawn when it has no `src` of its own: four different ones make a 2×2 mosaic of the first four, one to three the first alone, none the flat placeholder.  |
 | `fallback` | `string` | CSS background for the placeholder. Defaults to a flat `--accent`. |
 | `alt` | `string` |  |
-
-### DetailPage
-
-The page for one library item — MediaHeader plus its list — opening as a CircleReveal from the point that was tapped. Pass the list rows (ResultRows) as children.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `origin` | `{ x: number; y: number } \| null` | Pointer coordinates of the click that opened it, for the reveal. |
-| `overlay` | `boolean` | Floats the page over the view beneath it instead of sitting in the page flow. |
-| `zIndex` | `number` |  |
-| `kindLabel` | `string` | MediaHeader content. |
-| `title` | `string` |  |
-| `subtitle` | `string` |  |
-| `meta` | `string` |  |
-| `image` | `string` |  |
-| `round` | `boolean` | Circular art, for a person page. |
-| `onSubtitle` | `() => void` |  |
-| `onPlay` | `() => void` |  |
-| `onPlayNext` | `() => void` |  |
-| `onPlayLast` | `() => void` |  |
-| `playLabel` | `string` |  |
-| `nextLabel` | `string` |  |
-| `lastLabel` | `string` |  |
-| `listMaxWidth` | `string` | Measure cap on the list. Defaults to `--grid-max-width-list` on desktop, full width on mobile. |
-| `children` | `ReactNode` |  |
 
 ### DownloadButton
 
@@ -794,48 +598,10 @@ List row for serial spoken-word content — an episode, not a track. Carries a s
 | `progress` | `number \| null` | 0–1 part-listened position; draws a thin rule under the meta line. |
 | `absent` | `boolean` |  An episode of a show you don't follow: the art greyed to no colour and the title in muted ink, as MediaCard greys an item you don't own. It still plays.  |
 | `explicit` | `boolean` | Renders the "E" marker before the title. |
-| `actions` | `ReactNode` | An ItemActionBar, rendered below the synopsis. |
+| `actions` | `ReactNode` | The episode's own controls, rendered below the synopsis. |
 | `onPlay` | `() => void` | Given, reveals a play control over the artwork (hover on desktop, always on mobile). |
 | `onClick` | `() => void` |  |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### FeatureCard
-
-Argues for one item, at length, inside a feed — the description is the point, so this exists for recommendations that need to persuade rather than just be scanned. Tinted from its own artwork so a column of these reads as distinct recommendations, not a list.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `image` | `string` |  |
-| `kind` | `string` | Eyebrow above the title — "Episode", "Playlist", "Audiobook". |
-| `title` *(required)* | `string` |  |
-| `meta` | `string` | e.g. "The LRB Podcast • 1 day ago • 56min". |
-| `description` | `string` | Clamped to 2 lines. |
-| `tint` | `string` | Card surface colour. Defaults to --surface-card. |
-| `explicit` | `boolean` | Renders the "E" marker before the title. |
-| `saved` | `boolean` | The save control shows this state. |
-| `onSave` | `() => void` |  |
-| `onPlay` | `() => void` |  Omit for an audiobook: a sample is the only playback a preview offers there, so when this is absent no play control is rendered at all.  |
-| `onMore` | `() => void` |  |
-| `preview` | `ReactNode` | A PreviewButton, rendered at the start of the bottom actions row. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### ItemActionBar
-
-The per-item verb set — save, download, share, more, play — with each verb's state legible without opening a menu. Only a control whose handler is supplied is rendered. Composes DownloadButton for the download toggle rather than reimplementing its ring.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `saved` | `boolean` |  |
-| `onSave` | `() => void` | Toggles the saved state. Given, renders the save control. |
-| `download` | `'idle' \| 'downloading' \| 'done'` |  |
-| `downloadProgress` | `number \| null` | 0–1; indeterminate when null and `download` is 'downloading'. |
-| `onDownload` | `() => void` | Given, renders the download control (a composed DownloadButton). |
-| `onShare` | `() => void` | Given, renders the share control. |
-| `onMore` | `() => void` | Given, renders the overflow-menu control. |
-| `onPlay` | `() => void` | Given, renders a trailing filled play circle pushed to the far edge of the bar. |
-| `playing` | `boolean` |  |
-| `size` | `number` | Diameter, in px, of every control in the bar. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### Lyrics
@@ -1028,18 +794,6 @@ The player's first tab: cover, titles, then the controls matched to what plays. 
 | `scroll` | `boolean` | Own the scrolling (mobile default). Off inside the desktop panel, which scrolls itself. |
 | `children` | `ReactNode` | Stacked below the controls: the about cards. |
 
-### OutputDeviceButton
-
-Where the audio is going, and at what quality — a listener needs both without leaving the player. Also the natural home for Auralis's direct-play-vs-transcode distinction.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `device` | `string` | "Living room", "RENAULT" … omit when playing locally. |
-| `quality` | `string` | "Lossless", "Transcoded" — a short badge beside the glyph. |
-| `connected` | `boolean` | Accent ink and a filled glyph while routed to something remote. |
-| `glyph` | `string` | Material Symbols Rounded glyph name. Default 'speaker'; 'cast'/'bluetooth' when the route says so. |
-| `onClick` | `() => void` |  |
-
 ### PlayActions
 
 The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --play) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
@@ -1181,29 +935,6 @@ The account avatar that leads the phone's top bar: a `BackLayer`'s `leading` on 
 | `size` | `number` | Diameter in px. Default 32, the mobile app bar's avatar. |
 | `onClick` | `() => void` |  |
 
-### BackLink
-
-Back affordance above a detail page, naming the place it returns to.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `label` *(required)* | `string` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
-
-### BottomAppBar
-
-Material Symbols glyph name.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `actions` | `BottomAppBarAction[]` |  |
-| `spread` | `boolean` | Spread the actions evenly across the bar (default) instead of packing them to one edge. |
-| `align` | `'start' \| 'end'` | Which edge they pack against when `spread` is off. |
-| `background` | `string` |  |
-| `divider` | `boolean` | Hairline along the top edge. |
-| `trailing` | `ReactNode` | Pinned to the trailing edge — a primary action, for instance. |
-
 ### BottomNav
 
 Mobile bottom tab bar. Each destination is a collapsed RailItem — same pill indicator, same always-visible stacked label, same transition as the desktop rail.
@@ -1230,24 +961,6 @@ Material Symbols Rounded glyph name.
 | `footer` | `ReactNode` | Pinned to the bottom — an account row, theme switch, storage meter. |
 | `header` | `ReactNode` | Sits between the toggle and the items — a logo or brand mark. |
 
-### RailFooter
-
-The pinned bottom of a `NavRail` — the theme switch and the identity of the library you are looking at. Goes in the rail's `footer` slot, which is the one part of the rail that never scrolls, so this is where a persistent, whole-app control belongs rather than in `items`. It takes the rail's own `expanded` and mirrors it: expanded, the theme buttons sit side by side with their labels and the identity row shows its two lines; collapsed, the buttons stack and every label goes, so the footer narrows with the rail instead of clipping. Pass the same value you pass the rail — nothing is read from the DOM. Sections appear only when their handler or content does, the same rule `ItemActionBar` follows: no `onThemeChange` and there is no switch, no `title`/`image` and there is no identity row. A footer given neither renders only `children`. The theme switch sets the value; it does not apply it. Sonora's theming is `data-theme` on an ancestor, so the owning screen holds the state and puts it on the frame (`BackdropShell`'s or `AppShell`'s `theme`) — this is the control, not the mechanism.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `expanded` | `boolean` | The rail's expanded state. Pass the rail's own value so the two narrow together. |
-| `theme` | `string` | The theme currently applied, matched against `themes` to mark the pressed button. |
-| `themes` | `string[]` | Selectable theme names, in order. Default `['light', 'dark']`. |
-| `themeIcons` | `Record<string, string>` | Glyph per theme name, merged over the built-in `light`/`dark`/`system` table. |
-| `onThemeChange` | `(theme: string) => void` | Sets the theme. Omit it and no switch is rendered at all. |
-| `title` | `string` | The library's name — "Local Library". First line of the identity row. |
-| `sub` | `string` | What is in it — "Music · Books · Podcasts". Second line; hidden while collapsed. |
-| `image` | `string` | Artwork for the identity avatar, through `CoverArt`. Without it the avatar is a flat `--accent` disc. |
-| `avatarSize` | `number` | Avatar diameter in px. Default 28 — sized to the collapsed rail, not to a page. |
-| `onIdentityClick` | `() => void` | Makes the identity row a real button — opening an account menu or a server picker. |
-| `children` | `ReactNode` | Extra footer content, above the switch — a storage meter, an offline `StatusBanner`. |
-
 ### RailItem
 
 Navigation rail row, following the M3 rail spec. One highlight element morphs from a 56×32 icon pill (collapsed) to a pill that hugs the icon and label (expanded), so the selection never jumps; two label copies cross-fade rather than travelling. The highlight is always the width of the item's own content, never of the rail. Rows are 56px tall and stack with no gap in either state. Collapsed: 80px rail, 12px side padding. Expanded: 220–360px rail, 16px side padding. Hovering shows a faint highlight.
@@ -1266,7 +979,7 @@ Navigation rail row, following the M3 rail spec. One highlight element morphs fr
 
 ### SearchButton
 
-The app bar's search control: a search icon button that swaps to a close icon while the search field is open. TopAppBar renders one automatically when given `onSearchToggle`; use it directly only for a bar you are composing by hand.
+The app bar's search control: a search icon button that swaps to a close icon while the search field is open. BackLayer renders one for a page's local search; use it directly only for a bar you are composing by hand.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -1277,7 +990,7 @@ The app bar's search control: a search icon button that swaps to a close icon wh
 
 ### TabBar
 
-Icon + label tabs for the second row of a TopAppBar — the sub-sections of a library page (Artists / Albums / Songs, Authors / Books / Series / Narrators). Scrolls sideways when the labels outrun the width; the active tab is accent-coloured with an underline indicator. For a filter row of mutually exclusive pills use ButtonGroup instead.
+Icon + label tabs for a page's subheader — the sub-sections of a library page (Artists / Albums / Songs, Authors / Books / Series / Narrators). Scrolls sideways when the labels outrun the width; the active tab is accent-coloured with an underline indicator. For a filter row of mutually exclusive pills use ButtonGroup instead.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -1286,29 +999,3 @@ Icon + label tabs for the second row of a TopAppBar — the sub-sections of a li
 | `onChange` | `(key: string) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `fill` | `boolean` | Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. |
-
-### TopAppBar
-
-Top app bar — a `--surface-bg-alt` strip above the page content. The first row carries the page title (plus optional leading/trailing controls); the page's controls — a filter ButtonGroup, or a centred SearchField — sit on a second row beneath it. The content below should have rounded top corners so the bar reads as the surface behind it.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` | `string` | Page title, set in the display face at 900. |
-| `children` | `ReactNode` | Second-row content: a ButtonGroup, a SearchField, whatever the screen needs. |
-| `align` | `'start' \| 'center'` | center caps the second row at 560px and centres it (the library search treatment). |
-| `occlude` | `boolean` | Sits the leading/trailing controls on their own bg-alt layer so scrolling second-row content fades under them. |
-| `leading` | `ReactNode` | Before the title. On mobile, the account avatar lives here, never in the filter row below. |
-| `trailing` | `ReactNode` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `squareLeft` | `boolean` | Square the top corners of the controls row — right when a side sheet abuts it. |
-| `squareRight` | `boolean` |  |
-| `progress` | `number` | 0–1 scroll progress, as reported by AppShell's `onProgress`. |
-| `searchOpen` | `boolean` |  In-bar search. Passing onSearchToggle adds a search button before `trailing`; when searchOpen the title fades out, a SearchField grows across the title row (autofocused), `trailing` collapses, and the button becomes a close.  |
-| `onSearchToggle` | `(next: boolean) => void` |  |
-| `searchValue` | `string` |  |
-| `onSearchChange` | `(value: string) => void` |  |
-| `searchPlaceholder` | `string` |  |
-| `searchButton` | `boolean` | false hides the search icon while the field is closed — for a bar where scrolling opens search. The close icon still appears while open. |
-| `searchAutoFocus` | `boolean` | false opens the field without focusing it — for search that expands on scroll rather than on a tap. |
-| `searchHeight` | `string` | Height of the in-bar search field. Defaults to "100%" (fills the bar row). |
-| `background` | `string` | Bar surface. Defaults to `--surface-bg-alt`; a page that owns the surface can pass `--surface-bg`. |

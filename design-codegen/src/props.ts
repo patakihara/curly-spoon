@@ -31,8 +31,6 @@ export type KType =
   | { kind: 'float' }
   /** A non-null value of any type: `string | number` keys and ids, compared by equality. */
   | { kind: 'any' }
-  /** One of OPAQUE_ITEMS, a caller's own item the kit only passes back: Kotlin's `Any?`. */
-  | { kind: 'unknown' }
   /** `DOMRect`, as Compose's `Rect`. */
   | { kind: 'rect' }
   /** A generated data class, enum or sealed interface. */
@@ -105,14 +103,6 @@ const WEB_EVENTS = new Set([
   'TransitionEvent',
   'UIEvent',
   'WheelEvent',
-]);
-/**
- * The `any`s known to hold a caller's own item, which the kit only hands back: `Any?`. Every other
- * `any` or `unknown` is refused, bar a handler's parameter, which is its web event.
- */
-const OPAQUE_ITEMS = new Set([
-  'LibraryShellContext.detail',
-  'LibraryShellContext.openDetail(item)',
 ]);
 /**
  * Names Kotlin's standard library or Compose already give a type. An enum named one takes the
@@ -194,7 +184,7 @@ const isWebEvent = (node: ts.TypeNode) =>
 const isAnyOrUnknown = (node: ts.TypeNode) =>
   node.kind === ts.SyntaxKind.AnyKeyword || node.kind === ts.SyntaxKind.UnknownKeyword;
 const nullable = (type: KType): KType =>
-  type.kind === 'nullable' || type.kind === 'unknown' ? type : { kind: 'nullable', type };
+  type.kind === 'nullable' ? type : { kind: 'nullable', type };
 
 /** The string values of a pure string literal union (nulls aside), else undefined. */
 function literalValues(node: ts.TypeNode): string[] | undefined {
@@ -334,10 +324,6 @@ export function readProps(components: Component[]): PropsModel {
         return { kind: 'boolean' };
       case ts.SyntaxKind.NumberKeyword:
         return { kind: 'float' };
-      case ts.SyntaxKind.AnyKeyword: {
-        const at = `${ctx.owner}.${ctx.prop}${ctx.param !== undefined ? `(${ctx.param})` : ''}`;
-        return OPAQUE_ITEMS.has(at) ? { kind: 'unknown' } : fail(node, ctx);
-      }
     }
     if (isStringLiteral(node) || ts.isUnionTypeNode(node)) {
       const values = literalValues(node);
@@ -424,12 +410,7 @@ export function readProps(components: Component[]): PropsModel {
       const param = p.name.getText();
       const pType = unparen(p.type);
       if (isWebEvent(pType)) continue;
-      if (
-        isAnyOrUnknown(pType) &&
-        !OPAQUE_ITEMS.has(`${ctx.owner}.${ctx.prop}(${param})`) &&
-        isHandler(ctx.prop)
-      )
-        continue;
+      if (isAnyOrUnknown(pType) && isHandler(ctx.prop)) continue;
       const type = mapType(p.type, { ...ctx, param, name: `${ctx.name}${pascal(param)}` });
       params.push(p.questionToken !== undefined ? nullable(type) : type);
     }

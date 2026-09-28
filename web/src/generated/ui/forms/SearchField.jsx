@@ -2,7 +2,7 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
-/** Filled search field: no outline, softly rectangular (not a pill). Sits in the TopAppBar on library pages. */
+/** Filled search field: no outline, softly rectangular (not a pill). Sits in a back layer's heading as its local search. */
 export function SearchField({ placeholder, value, onChange, platform = 'desktop', width = '100%', height, onSubmit, autoFocus = false, onClose, closeGlyph = 'close' }) {
   const mobile = platform === 'mobile';
   const ref = React.useRef(null);

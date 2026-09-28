@@ -5,9 +5,8 @@ import { ReactNode } from 'react';
  * subheader. `BackdropShell` builds one for you; use it directly only when composing a frame
  * by hand.
  *
- * Its top corners are `--radius-lg` at **every** scroll position. This is the behavioural
- * difference from `ContentPane`, which flattens its corners as you scroll: a backdrop's front
- * layer is a persistent surface, not a sheet that docks. The 1dp step is expressed by a 1px light
+ * Its top corners are `--radius-lg` at **every** scroll position: a backdrop's front layer is a
+ * persistent surface, not a sheet that docks. The 1dp step is expressed by a 1px light
  * edge along the layer's own top, over a `--shadow-sm` lift onto whatever is behind it, and the
  * scroll-linked hairline moves to the subheader, where it is inset to the content measure.
  *

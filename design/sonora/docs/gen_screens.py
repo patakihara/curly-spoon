@@ -29,10 +29,8 @@ SCREENS = [
  ],
  "created": [
    ("EpisodeRow", "A row that can carry a synopsis, a multi-part meta chain and a finished state. `ResultRow` holds one meta line and one status pill; widening it would bend it out of shape for the track and request lists already using it."),
-   ("ItemActionBar", "The per-item verb set with save and download as *stateful toggles*. `PlayActions` is a one-shot queue group and has no persistent state to show."),
    ("DownloadButton", "Offline availability as idle → downloading → done, cancellable mid-flight."),
    ("SortFilterBar", "One control that both reports the active ordering and opens the picker. The label is data, not a name, which is why a plain button will not do."),
-   ("BackToTop", "Escape from depth in a feed that pages in more content."),
  ],
  "extended": [
    ("Badge", "`icon`, `plain`", "The \"Finished\" marker qualifies the episode rather than counting anything, so a filled counting pill reads wrongly for it."),
@@ -56,9 +54,7 @@ SCREENS = [
  ],
  "created": [
    ("FollowButton", "A subscription toggle whose label is the state. That inverts a normal button and needs `aria-pressed`; it wraps the existing `Button` rather than reimplementing it."),
-   ("Rating", "`MediaHeader` carries one freeform `meta` string, which cannot express the value / scale / population distinction. Audiobookshelf and Jellyfin both expose real ratings."),
    ("EpisodeRow", "See S01."),
-   ("ItemActionBar", "Shown here in its saved + downloaded state."),
    ("DownloadButton", "The `done` state."),
    ("SortFilterBar", "See S01."),
  ],
@@ -85,12 +81,10 @@ SCREENS = [
    "Each tile is colour-coded and carries artwork tilted out of its corner, so it reads as a stack of content rather than a label.",
  ],
  "created": [
-   ("BrowseCard", "Distinct from `Chip`, which *filters an existing result set*; this *navigates into* one. Different affordance, so a separate component rather than a `Chip` variant."),
  ],
  "extended": [],
  "existing": [
    ("SearchField", "The query input. No new search component is needed."),
-   ("TopAppBar", "Title row with leading avatar and a trailing action."),
    ("LayoutGrid", "Reflows the tiles without breakpoints."),
  ] + CHROME,
  "notbuilt": [
@@ -104,10 +98,10 @@ SCREENS = [
    "The search field pins to the top while the categories scroll under it — search stays reachable at any depth.",
    "Category tiles continue in the same rhythm; hue is decorative, not semantic.",
  ],
- "created": [("BrowseCard", "See S03.")],
+ "created": [],
  "extended": [],
  "existing": [
-   ("SearchField", "Pinned; `TopAppBar` already handles a sticky controls row."),
+   ("SearchField", "Pinned; a page's heading already holds its search."),
    ("LayoutGrid", "Same grid, continued."),
  ] + CHROME,
  "notbuilt": [],
@@ -122,7 +116,6 @@ SCREENS = [
    "A persistent bar states that the client is offline. It does not time out; it is a condition, not an event.",
  ],
  "created": [
-   ("FeatureCard", "The most-repeated shape in the whole set. `MediaCard` is a square tile with two caption lines and `ResultRow` is a compact row; neither can carry a description, and the description is the point — this is a recommendation that has to persuade."),
    ("StatusBanner", "Sonora had no ambient status surface. This matters more for Auralis than for Spotify: a self-hosted library on a LAN goes unreachable routinely, and the user needs to know that is why the shelves are empty."),
  ],
  "extended": [
@@ -285,8 +278,6 @@ SCREENS = [
    "The card is tinted, so a column of them reads as distinct recommendations rather than a list.",
  ],
  "created": [
-   ("FeatureCard", "See S05. Shown here in its episode form."),
-   ("PreviewButton", "Audition before committing. `Button` commits and `PlayActions` commits; Sonora had no control for sampling."),
  ],
  "extended": [("SectionHeader", "`eyebrow`, `image`, `round`", "The \"More like The Cardigans\" shelf beneath it.")],
  "existing": [("CoverArt", "Artwork."), ("IconButton", "The overflow control.")] + CHROME,
@@ -315,8 +306,6 @@ SCREENS = [
    "The feature card also serves playlists: owner, track count and seed artists replace the blurb, and \"Preview playlist\" replaces \"Preview episode\".",
  ],
  "created": [
-   ("FeatureCard", "The playlist form — same shape, different content."),
-   ("PreviewButton", "`kind=\"playlist\"` selects the label."),
  ],
  "extended": [("SectionHeader", "`eyebrow`, `image`", "Free-text relationship, square subject thumbnail.")],
  "existing": [("CoverArt", "Placeholder artwork."), ("Shelf", "Carousel.")] + CHROME,
@@ -329,7 +318,7 @@ SCREENS = [
    "A subject with no artwork still gets a thumbnail slot, filled with a generic person glyph — the header shape never collapses.",
    "The feature card's tint is derived from its artwork, not from the content type.",
  ],
- "created": [("FeatureCard", "Tinted playlist card."), ("PreviewButton", "Playlist preview.")],
+ "created": [],
  "extended": [("SectionHeader", "`eyebrow`, `image`, `round`", "Circular subject thumbnail with a glyph fallback.")],
  "existing": [("CoverArt", "Fallback."), ("MediaCard", "Shelf cards.")] + CHROME,
  "notbuilt": [],
@@ -358,7 +347,7 @@ SCREENS = [
    "An unplayed show carries a small dot on its artwork; that dot is the entire unread model.",
    "A feature card recommends an episode under \"Similar to your interests\".",
  ],
- "created": [("FeatureCard", "Episode recommendation."), ("PreviewButton", "Sample control.")],
+ "created": [],
  "extended": [
    ("MediaCard", "`unplayed`", "The dot is the whole unread affordance and there was no way to express it."),
    ("ButtonGroup", "`scroll`, `leading`", "Filter row."),
@@ -375,8 +364,6 @@ SCREENS = [
    "One card's preview control is dimmed: **no sample is available**. A fourth state, not a disabled button in the ordinary sense.",
  ],
  "created": [
-   ("FeatureCard", "`tint` is what keeps stacked cards separable."),
-   ("PreviewButton", "`disabled` — no sample available is a real state, distinct from idle, playing and muted."),
  ],
  "extended": [("SectionHeader", "`eyebrow`", "Relationship lines above both shelves.")],
  "existing": [("CoverArt", "Artwork."), ("IconButton", "Overflow.")] + CHROME,
@@ -389,7 +376,7 @@ SCREENS = [
    "Recents shows saved-episode tabs, finished checks and progress bars side by side in one shelf.",
    "\"Catch up on your shows\" is a feature card seeded by subscription rather than by similarity.",
  ],
- "created": [("FeatureCard", "Catch-up card."), ("PreviewButton", "Sample control.")],
+ "created": [],
  "extended": [
    ("MediaCard", "`savedBadge`, `eyebrow`", "Saved tab on artwork; kind above the title."),
    ("SectionHeader", "`actionText`", "\"Show all\"."),
@@ -405,8 +392,6 @@ SCREENS = [
    "A card with placeholder artwork still takes a tint, so the layout never loses its rhythm.",
  ],
  "created": [
-   ("FeatureCard", "`tint` holds even with placeholder artwork."),
-   ("PreviewButton", "`disabled` again — confirming it is a recurring state, not an edge case."),
  ],
  "extended": [],
  "existing": [("CoverArt", "Placeholder."), ("Section", "Feed rhythm.")] + CHROME,
@@ -419,7 +404,7 @@ SCREENS = [
    "An explicit-content marker sits inline before the title: a small square glyph, not a pill.",
    "\"New episode from <show>\" is a fourth relationship phrasing.",
  ],
- "created": [("FeatureCard", "`explicit` renders the marker before the title.")],
+ "created": [],
  "extended": [
    ("Badge", "`square`, `plain`", "The E marker is square, not a pill — a pill reads as a count. `square` is the whole reason this extension exists."),
    ("SectionHeader", "`eyebrow`, `image`", "Another relationship phrasing; free text confirmed necessary."),
@@ -435,8 +420,6 @@ SCREENS = [
    "The offline banner persists across filters.",
  ],
  "created": [
-   ("FeatureCard", "This screen is why `onPlay` is optional and the play control is omitted when it is absent, rather than disabled. A deliberate asymmetry, not an oversight."),
-   ("PreviewButton", "`kind=\"audiobook\"`."),
    ("StatusBanner", "Offline condition."),
  ],
  "extended": [("ButtonGroup", "`scroll`, `leading`", "Filter row.")],
@@ -450,7 +433,7 @@ SCREENS = [
    "An audiobook shelf captions with author rather than genre.",
    "The explained-shelf pattern spans all three media types unchanged.",
  ],
- "created": [("FeatureCard", "Audiobook form.")],
+ "created": [],
  "extended": [("SectionHeader", "`eyebrow`, `image`", "Same component, third media type — evidence the abstraction is right.")],
  "existing": [("MediaCard", "Author in `sub`."), ("Shelf", "Carousel.")] + CHROME,
  "notbuilt": [],
@@ -463,8 +446,6 @@ SCREENS = [
    "The dimmed preview recurs on audiobooks too.",
  ],
  "created": [
-   ("FeatureCard", "Two-line description clamp."),
-   ("PreviewButton", "`disabled`."),
  ],
  "extended": [],
  "existing": [("CoverArt", "Artwork."), ("Section", "Feed rhythm.")] + CHROME,
@@ -477,7 +458,7 @@ SCREENS = [
    "A fifth relationship phrasing, seeded by a *genre* rather than by an item — the thumbnail is a generic glyph on a flat surface.",
    "The subject of an explained shelf need not be a library item at all.",
  ],
- "created": [("FeatureCard", "Audiobook card.")],
+ "created": [],
  "extended": [
    ("SectionHeader", "`eyebrow`, `image`", "A genre subject is why `image` is a plain string with a fallback rather than a required item reference."),
  ],
@@ -491,7 +472,7 @@ SCREENS = [
    "A *podcast* seeds an *audiobook* shelf — the relationship crosses media types.",
    "This is exactly the cross-media affinity Auralis already computes and has never surfaced.",
  ],
- "created": [("FeatureCard", "Audiobook card.")],
+ "created": [],
  "extended": [
    ("SectionHeader", "`eyebrow`, `image`", "The subject and the shelf contents are different media types; nothing in the component may assume they match."),
  ],
@@ -506,8 +487,6 @@ SCREENS = [
    "Save is offered without play, consistently across every audiobook card.",
  ],
  "created": [
-   ("FeatureCard", "Confirms the no-play audiobook rule is systematic."),
-   ("PreviewButton", "Idle and disabled side by side."),
  ],
  "extended": [],
  "existing": [("CoverArt", "Placeholder."), ("IconButton", "Overflow.")] + CHROME,
@@ -533,7 +512,6 @@ SCREENS = [
    ("ViewToggle", "The list/grid switch already exists; it goes in `SortFilterBar`'s `trailing` slot."),
    ("ArtistCard", "Circular artwork for people."),
    ("LayoutGrid", "The item grid."),
-   ("TopAppBar", "Title, leading avatar, trailing search and add."),
  ] + CHROME,
  "notbuilt": [],
 },
@@ -572,7 +550,6 @@ SCREENS = [
  ],
  "created": [
    ("SpeedControl", "Rate has to be visible and one tap away while playing, and must show its current value. `ValueRow` is a filled settings row on a settings page; this is the inline form that lives in a transport row."),
-   ("OutputDeviceButton", "Where the audio is going — stated nowhere in Sonora. For Auralis this is the natural home for direct-play vs transcode, which the handover records as invisible today."),
  ],
  "extended": [
    ("TransportBar", "`variant`, `onSkipBack`, `onSkipForward`, `skipSeconds`, `leading`, `trailing`", "Spoken-word transport is a different verb set, not a relabelled one. Wrapping it in the music cluster would be wrong, and Auralis serves both media from one player."),
@@ -581,7 +558,6 @@ SCREENS = [
    ("NowPlayingPage", "Cover, title, artist, context line, seek and the readouts — and it already declares `speed`, `sleep`, `onSpeed`, `onSleep`."),
    ("SeekBar", "Elapsed / total readouts either side of the scrubber."),
    ("PlayerSheet", "Grows out of the mini player's own rect, which is exactly this collapse gesture in reverse."),
-   ("ItemActionBar", "The add-to-library control (wave 1)."),
  ],
  "notbuilt": [],
 },
@@ -620,9 +596,7 @@ SCREENS = [
    ("MediaHeader", "`actions`, `progress`", "**Owed from S02 and deferred there**, because `MediaHeader.jsx` was not mirrored at the time; it is now. `MediaHeader`'s verbs are Play / Next / Last, and neither a show header nor an episode header wants a queue cluster. `progress` puts the resume figure and its bar on one line."),
  ],
  "existing": [
-   ("ItemActionBar", "Saved / downloaded / share / overflow (wave 1)."),
    ("DownloadButton", "The `done` state (wave 1)."),
-   ("BackLink", "Return to the show."),
    ("MiniPlayer", "Docked while the page is open."),
  ],
  "notbuilt": ["Comments — see S34."],
@@ -680,7 +654,7 @@ SCREENS = [
    "Audio quality is stated beside the output route: \"Lossless\".",
    "A lyrics card sits directly below the transport, tinted from the artwork.",
  ],
- "created": [("OutputDeviceButton", "`quality` is the half Sonora had no way to state. For Auralis this is where direct play vs transcode becomes visible.")],
+ "created": [],
  "extended": [],
  "existing": [
    ("TransportBar", "Shuffle / previous / play / next / repeat — unchanged, and the reason `variant` defaults to `'music'`."),
@@ -723,7 +697,7 @@ SCREENS = [
    ("FollowButton", "The follow control."),
  ],
  "notbuilt": [
-   "**World ranking and monthly-listener counts.** Service-scale popularity is meaningless for a private library. `Rating` already covers the ratings a real Audiobookshelf or Jellyfin item carries.",
+   "**World ranking and monthly-listener counts.** Service-scale popularity is meaningless for a private library.",
    "**A dedicated credits card.** The affordance — who made this, in what role — is already served by `ArtistCard` (`sub` = role) laid out by `Shelf` under a `Section`. Worth building only if a role-grouped layout is wanted.",
  ],
 },
