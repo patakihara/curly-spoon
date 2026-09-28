@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x680" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states, and the media header at both sides of its breakpoint" -->
+<!-- @dsCard group="Components" viewport="1400x800" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states, and the media header at both sides of its breakpoint" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -9,7 +9,7 @@
 </head><body>
 <div id="root"></div>
 <script type="text/babel">
-const { MiniPlayer, ResultRow, MediaHeader } = window.SonoraDesignSystem_6c1435;
+const { MiniPlayer, ResultRow, MediaHeader, Button } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   const [playing,setPlaying]=React.useState(true);
   return <div style={{display:'flex',flexDirection:'column',gap:24}}>
@@ -24,6 +24,11 @@ function Demo(){
       <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" />
       <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" />
       <ResultRow title="Tears of Ice" meta="Deep Inertia · Album · 9 tracks" status="Failed" tone="error" />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows on a phone — a status with a percentage keeps only the percentage beside a trailing control</div>
+    <div style={{maxWidth:380}}>
+      <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed>Requested</Button>} />
+      <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile">Request</Button>} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Media header — wide pane (≥600px): art beside the text</div>
     <MediaHeader kindLabel="Audiobook" title="Ink Heart" subtitle="Cornelia Funke" onSubtitle={()=>{}}

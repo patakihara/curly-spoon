@@ -29,9 +29,12 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
   const showAction = !!(onAction || onClick) && !(mobile && dimmed);
   const badgeTone = { library: 'accent', request: 'warning', progress: 'warning', error: 'error' }[tone || 'library'] || 'accent';
   const nowPlaying = st === 'playing';
+  // On a phone the title shares its line with the pill and any trailing control, so a status
+  // with a percentage keeps only the percentage: the ring over the art already says it is in flight.
+  const label = mobile && pctMatch ? pctMatch[1] + '%' : status;
   const statusPill = nowPlaying
     ? <div className="rr-bars" role="img" aria-label="Now playing"><i /><i /><i /></div>
-    : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{status}</Badge></div> : null);
+    : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{label}</Badge></div> : null);
   return (
     <div onClick={onClick} style={sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
       <div className="rr-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>

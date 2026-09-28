@@ -13,7 +13,8 @@ data class ResultRowProps(
     val meta: String? = null,
     /**
      * e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with
-     * no status. "Playing" renders animated equalizer bars instead of a pill.
+     * no status. "Playing" renders animated equalizer bars instead of a pill. On mobile a status
+     * with a percentage shows only the percentage ("42%"), beside the ring over the art.
      */
     val status: String? = null,
     val progress: Float? = null,
