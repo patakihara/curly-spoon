@@ -217,9 +217,11 @@ export function chrome(
   return parts;
 }
 
-/** What a page gives the shell: its back layer's controls and trailing, its subheader, and its content. */
+/** What a page gives the shell: its back layer's controls, trailing and local search, its subheader, and its content. */
 export interface PageFrame {
   controls?: PageTree;
+  /** The back layer's local search: its placeholder, which names what it searches. */
+  search?: PropValue;
   trailing?: PageTree;
   subheader?: PageTree;
   content: PageTree[];
@@ -264,9 +266,14 @@ export function framePage(tree: PageTree): PageFrame {
       ) {
         for (const [p, v] of Object.entries(value.tree.props)) {
           if ((p === 'controls' || p === 'trailing') && v.kind === 'slot') frame[p] = v.tree;
-          else {
+          else if (p === 'search' && v.kind !== 'slot') frame.search = v;
+          else if (p === 'search') {
             errors.push(
-              `line ${value.tree.line}: BackLayer.${p} is the shell's; a page gives only controls and trailing, each one element`,
+              `line ${value.tree.line}: BackLayer.search is the placeholder text, not an element`,
+            );
+          } else {
+            errors.push(
+              `line ${value.tree.line}: BackLayer.${p} is the shell's; a page gives only controls and trailing, each one element, and search`,
             );
           }
         }
@@ -300,6 +307,7 @@ export function framed(
     ...(parts.leading === undefined ? {} : { leading: parts.leading }),
     ...named('controls', frame.controls),
     ...named('trailing', frame.trailing),
+    ...(frame.search === undefined ? {} : { search: frame.search }),
   });
   return {
     kind: 'element',

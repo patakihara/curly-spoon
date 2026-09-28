@@ -57,6 +57,25 @@ export function slotNames(model: PropsModel): Map<string, Set<string>> {
   return names;
 }
 
+const enumOf = (type: KType): string | undefined =>
+  type.kind === 'nullable' ? enumOf(type.type) : type.kind === 'named' ? type.name : undefined;
+
+/** Each component's props that take one of a fixed set of words: an enum in its declarations. */
+export function choiceNames(model: PropsModel): Map<string, Set<string>> {
+  const enums = new Set(model.shared.map((e) => e.name));
+  for (const decls of model.files.values()) {
+    for (const d of decls) if (d.kind === 'enum') enums.add(d.name);
+  }
+  const names = new Map<string, Set<string>>();
+  for (const [component, decls] of model.files) {
+    const decl = decls.find((d) => d.kind === 'class' && d.name === `${component}Props`);
+    if (decl?.kind !== 'class') continue;
+    const words = decl.props.filter((p) => enums.has(enumOf(p.type) ?? '')).map((p) => p.name);
+    if (words.length > 0) names.set(component, new Set(words));
+  }
+  return names;
+}
+
 /** Reads and checks the canvas; throws naming every problem in every page. */
 export function readApp(appDir: string, model: PropsModel): App {
   const nav = readNav(appDir);
@@ -109,7 +128,11 @@ export function readApp(appDir: string, model: PropsModel): App {
     nav,
     shell,
     pages,
-    components: { platformed: taking('platform'), handled: taking('onChange') },
+    components: {
+      platformed: taking('platform'),
+      handled: taking('onChange'),
+      choices: choiceNames(model),
+    },
   };
 }
 

@@ -5,6 +5,7 @@ import { parsePage, type PageTree, type PropValue } from './page.js';
 import {
   chrome,
   framePage,
+  framed,
   layoutAt,
   layoutId,
   readShell,
@@ -163,6 +164,29 @@ describe('a page in the shell', () => {
     expect(el(frame.controls, 'ButtonGroup')).toBeTruthy();
     expect(el(frame.subheader, 'FrontLayerHeader')).toBeTruthy();
     expect(frame.content.map((c) => c.kind === 'element' && c.component)).toEqual(['PageBody']);
+  });
+
+  it('[M0.canvas] gives its back layer a local search, named by its placeholder, which the shell keeps', () => {
+    const frame = framePage(
+      page(`<BackdropShell back={<BackLayer search="Search your books and requests" />}>
+  <PageBody />
+</BackdropShell>`),
+    );
+    expect(frame.search).toEqual({ kind: 'literal', value: 'Search your books and requests' });
+    const shellTree = el(framed(frame, 'Books', {}), 'BackdropShell');
+    const slot = shellTree.props.back;
+    const back = el(slot?.kind === 'slot' ? slot.tree : undefined, 'BackLayer');
+    expect(back.props.search).toEqual({ kind: 'literal', value: 'Search your books and requests' });
+  });
+
+  it('refuses a local search given as an element: it is the placeholder text', () => {
+    expect(() =>
+      framePage(
+        page(
+          '<BackdropShell back={<BackLayer search={<SearchField />} />}><PageBody /></BackdropShell>',
+        ),
+      ),
+    ).toThrow(/BackLayer.search is the placeholder text/);
   });
 
   it('is its front layer’s content alone when its root is not the shell', () => {

@@ -1,0 +1,42 @@
+export default function Books({ data }) {
+  return (
+    <BackdropShell
+      back={
+        <BackLayer
+          search="Search your books and requests"
+          controls={<ButtonGroup items={data.filters} value="all" />}
+        />
+      }
+      subheader={
+        <FrontLayerHeader tabs>
+          <TabBar items={data.tabs} value="books" />
+        </FrontLayerHeader>
+      }
+    >
+      <PageBody>
+        <Section>
+          <SortFilterBar
+            icon="swap_vert"
+            label={data.sort.value}
+            trailing={<ViewToggle value="grid" />}
+          />
+        </Section>
+        <Section last>
+          <LayoutGrid>
+            <Each of={data.library} as="book">
+              <MediaCard
+                width="100%"
+                title={book.title}
+                sub={book.sub}
+                image={book.image}
+                progress={book.progress}
+                status={book.status}
+                tone={book.tone}
+              />
+            </Each>
+          </LayoutGrid>
+        </Section>
+      </PageBody>
+    </BackdropShell>
+  );
+}

@@ -1,0 +1,59 @@
+{
+  "sections": ["", "Shows", "Lists", "Add a YouTube channel"],
+  "sort": {
+    "value": "Title",
+    "options": ["Title", "Host", "Random"]
+  },
+  "library": [
+    {
+      "title": "Deep Inertia Radio",
+      "sub": "3 unplayed",
+      "image": "/art/deep-inertia-radio.jpg",
+      "unplayed": true
+    },
+    {
+      "title": "Fleeting Verses",
+      "sub": "YouTube · 2 unplayed",
+      "image": "/art/fleeting-verses.jpg",
+      "unplayed": true
+    },
+    {
+      "title": "Signal & Noise",
+      "sub": "All played",
+      "image": "/art/signal-noise.jpg",
+      "unplayed": false
+    },
+    {
+      "title": "Sonic Tales",
+      "sub": "1 unplayed",
+      "image": "/art/sonic-tales.jpg",
+      "unplayed": true
+    },
+    {
+      "title": "Tears of Ice",
+      "sub": "All played",
+      "image": "/art/tears-of-ice.jpg",
+      "unplayed": false
+    },
+    {
+      "title": "The Long Read",
+      "sub": "5 unplayed",
+      "image": "/art/the-long-read.jpg",
+      "unplayed": true
+    }
+  ],
+  "lists": [
+    {
+      "title": "The Digest",
+      "sub": "Digest · 8 episodes"
+    },
+    {
+      "title": "Commute",
+      "sub": "List · 12 episodes"
+    },
+    {
+      "title": "Saved for later",
+      "sub": "List · 4 episodes"
+    }
+  ]
+}

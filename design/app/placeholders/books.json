@@ -1,0 +1,96 @@
+{
+  "filters": [
+    {
+      "key": "all",
+      "label": "All"
+    },
+    {
+      "key": "requested",
+      "label": "Requested"
+    }
+  ],
+  "tabs": [
+    {
+      "key": "authors",
+      "label": "Authors",
+      "icon": "history_edu"
+    },
+    {
+      "key": "books",
+      "label": "Books",
+      "icon": "menu_book"
+    },
+    {
+      "key": "series",
+      "label": "Series",
+      "icon": "auto_stories"
+    },
+    {
+      "key": "narrators",
+      "label": "Narrators",
+      "icon": "record_voice_over"
+    }
+  ],
+  "sort": {
+    "value": "Title",
+    "options": ["Title", "Author", "Random"]
+  },
+  "library": [
+    {
+      "title": "Between Two Worlds",
+      "sub": "Maya Lind",
+      "image": "/art/between-two-worlds.jpg",
+      "progress": null,
+      "status": "Failed",
+      "tone": "error"
+    },
+    {
+      "title": "Foggy Trails",
+      "sub": "Adam Rivers",
+      "image": "/art/foggy-trails.jpg",
+      "progress": 0.35,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Ink Heart",
+      "sub": "Cornelia Funke",
+      "image": "/art/ink-heart.jpg",
+      "progress": null,
+      "status": "Downloading · 64%",
+      "tone": "progress"
+    },
+    {
+      "title": "Shadows and Sighs",
+      "sub": "Evelyn Harper",
+      "image": "/art/shadows-and-sighs.jpg",
+      "progress": null,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "The Salt Cartographer",
+      "sub": "Rosa Elin",
+      "image": "/art/the-salt-cartographer.jpg",
+      "progress": null,
+      "status": "Needs choice",
+      "tone": "request"
+    },
+    {
+      "title": "The Silent Patient",
+      "sub": "Alex Michaelides",
+      "image": "/art/the-silent-patient.jpg",
+      "progress": 0.55,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Wind and Truth",
+      "sub": "Brandon Sanderson",
+      "image": "/art/wind-and-truth.jpg",
+      "progress": 0.1,
+      "status": null,
+      "tone": null
+    }
+  ]
+}

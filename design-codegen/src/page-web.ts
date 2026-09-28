@@ -43,7 +43,15 @@ export interface WebComponents {
   platformed: Set<string>;
   /** The components that take an `onChange` handler. */
   handled: Set<string>;
+  /**
+   * Each component's props that take one of a fixed set of words (`tone`, `size`). A placeholder's
+   * JSON reads as a plain string, so a bound value for one is read as the prop's own type.
+   */
+  choices?: Map<string, Set<string>>;
 }
+
+const chosen = (tree: PageTree, name: string, components: WebComponents) =>
+  tree.kind === 'element' && components.choices?.get(tree.component)?.has(name) === true;
 
 /** The shell a page is generated into: the navigation map, shell.json and the page's own entry. */
 export interface WebShell {
@@ -64,7 +72,14 @@ function propLines(
   value: PropValue,
   at: string,
   components: WebComponents,
+  owner: string,
+  choice: boolean,
 ): string[] {
+  if (value.kind === 'binding' && choice) {
+    return [
+      `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,
+    ];
+  }
   if (value.kind === 'binding') return [`${name}={${value.path.join('.')}}`];
   if (value.kind === 'literal') {
     return [
@@ -106,7 +121,7 @@ function render(tree: PageTree, indent: string, components: WebComponents): stri
       ];
     case 'element': {
       const props = Object.entries(tree.props).map(([name, value]) =>
-        propLines(name, value, inner, components),
+        propLines(name, value, inner, components, tree.component, chosen(tree, name, components)),
       );
       if (ignored(tree, components)) props.push(['onChange={ignore}']);
       if (components.platformed.has(tree.component) && !('platform' in tree.props)) {
@@ -171,6 +186,13 @@ export function generateWebPage(
     for (const key of ['rail', 'leading', 'player', 'sheet'] as const) drawn(parts[key], used);
   }
   const react = some(root, (n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
+  const typed = some(
+    root,
+    (n) =>
+      n.kind === 'element' &&
+      Object.entries(n.props).some(([p, v]) => v.kind === 'binding' && chosen(n, p, components)),
+  );
+  if (typed) react.push("import type { ComponentProps } from 'react';");
   return [
     `// ${APP_NOTE}`,
     ...react,

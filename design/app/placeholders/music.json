@@ -1,0 +1,67 @@
+{
+  "tabs": [
+    {
+      "key": "artists",
+      "label": "Artists",
+      "icon": "artist"
+    },
+    {
+      "key": "albums",
+      "label": "Albums",
+      "icon": "album"
+    },
+    {
+      "key": "songs",
+      "label": "Songs",
+      "icon": "music_note"
+    }
+  ],
+  "sort": {
+    "value": "Title",
+    "options": ["Title", "Artist", "Random"]
+  },
+  "library": [
+    {
+      "title": "Between Lines of Light",
+      "sub": "Sonic Tales",
+      "image": "/art/between-lines-of-light.jpg",
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Escapes and Moons",
+      "sub": "Soul Vertex",
+      "image": "/art/escapes-and-moons.jpg",
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Golden Scars",
+      "sub": "Fleeting Verses",
+      "image": "/art/golden-scars.jpg",
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Heartbeats in Silence",
+      "sub": "Deep Inertia",
+      "image": "/art/deep-inertia.jpg",
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Paper Lanterns",
+      "sub": "Sonic Tales",
+      "image": "/art/paper-lanterns.jpg",
+      "status": "Needs choice",
+      "tone": "request"
+    },
+    {
+      "title": "Salt and Static",
+      "sub": "Soul Vertex",
+      "image": "/art/salt-and-static.jpg",
+      "status": "Downloading · 64%",
+      "tone": "progress"
+    }
+  ]
+}

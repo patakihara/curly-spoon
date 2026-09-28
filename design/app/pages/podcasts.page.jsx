@@ -1,0 +1,44 @@
+export default function Podcasts({ data }) {
+  return (
+    <BackdropShell
+      back={<BackLayer search="Search your shows and their episodes" />}
+      subheader={<FrontLayerHeader spy sections={data.sections} />}
+    >
+      <PageBody>
+        <Section>
+          <SortFilterBar
+            icon="swap_vert"
+            label={data.sort.value}
+            trailing={<ViewToggle value="grid" />}
+          />
+        </Section>
+        <Section title="Shows">
+          <LayoutGrid>
+            <Each of={data.library} as="show">
+              <MediaCard
+                width="100%"
+                title={show.title}
+                sub={show.sub}
+                image={show.image}
+                unplayed={show.unplayed}
+              />
+            </Each>
+          </LayoutGrid>
+        </Section>
+        <Section title="Lists">
+          <LayoutGrid>
+            <Each of={data.lists} as="list">
+              <MediaCard width="100%" title={list.title} sub={list.sub} />
+            </Each>
+          </LayoutGrid>
+        </Section>
+        <Section title="Add a YouTube channel" last>
+          <LayoutGrid columns={1} gap="10px" maxWidth="var(--grid-max-width-form)">
+            <Input placeholder="Paste a channel link" />
+            <Button variant="secondary">Add as a show</Button>
+          </LayoutGrid>
+        </Section>
+      </PageBody>
+    </BackdropShell>
+  );
+}

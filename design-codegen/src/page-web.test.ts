@@ -88,7 +88,35 @@ const homeOut = generateWebPage(
   shellOf('books'),
 );
 
+const grid = `export default function Books({ data }) {
+  return (
+    <Each of={data.library} as="item">
+      <MediaCard title={item.title} tone={item.tone} size="sm" />
+    </Each>
+  );
+}
+`;
+const gridOut = generateWebPage(
+  parsePage(grid, 'books'),
+  'books',
+  { library: [{ title: 'Tidal Lines', tone: 'progress' }] },
+  {
+    platformed: new Set(),
+    handled: new Set(),
+    choices: new Map([['MediaCard', new Set(['tone', 'size'])]]),
+  },
+  shellOf('books'),
+);
+
 describe('a generated web page', () => {
+  it('reads a bound value for a prop that takes one of a set of words as that prop’s type', () => {
+    expect(gridOut).toContain("import type { ComponentProps } from 'react';");
+    expect(gridOut).toContain(
+      '<MediaCard title={item.title} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>[\'tone\'], undefined>} size="sm" />',
+    );
+    expect(out).not.toContain('ComponentProps');
+  });
+
   it('imports each Sonora component it and its shell use from the web UI package, once', () => {
     expect(out).toContain(
       "import { BackLayer, BackdropShell, BottomNav, Button, DetailPage, EpisodeRow, IconButton, MediaHeader, MiniPlayer, NavRail } from '../ui/index.js';",
