@@ -42,4 +42,3 @@ claude-design_files/
 # (queue item 428f0e0). Working state of an agent, never part of the
 # design system.
 .agents/
-/.artifact/

@@ -71,7 +71,7 @@ jobs:
       # test globs must match package.json's `test` script; scripts/repo/live.test.mjs runs in live.yml.
       - run: pnpm exec vitest run --reporter=default --reporter=junit --outputFile.junit=reports/junit/vitest.xml
       - if: always()
-        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs
+        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs
       - if: always()
         run: node scripts/plan/collect-results.mjs --workflow ci --job unit --out reports/plan-results.json reports/junit/*.xml
       - if: always()

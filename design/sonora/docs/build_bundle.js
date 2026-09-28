@@ -17,13 +17,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const BABEL = '/tmp/babel-standalone.js';
-
-if (!fs.existsSync(BABEL)) {
-  console.error('Missing ' + BABEL + '\n  curl -sSo ' + BABEL + ' https://unpkg.com/@babel/standalone@7.29.0/babel.min.js');
-  process.exit(1);
-}
-const Babel = require(BABEL);
+// Pinned in the Auralis root package.json's devDependencies; `pnpm install` provides it.
+const Babel = require('@babel/standalone');
 
 const files = [];
 for (const dir of fs.readdirSync(path.join(ROOT, 'components'))) {

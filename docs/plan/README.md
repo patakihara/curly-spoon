@@ -105,6 +105,8 @@ node scripts/plan/lint.mjs                      every check, plus the word count
 node scripts/plan/progress.mjs --summary        the session summary; --local adds a local test run,
                                                 --no-results skips results, --json prints everything
 node scripts/plan/render.mjs [--draft]          build/plan/index.html and build/plan/stamp.json
+pnpm sonora:build [--draft]                     build/sonora/project/** and build/sonora/stamp.json
+pnpm canvas:build [--draft]                     build/canvas/project/** and build/canvas/stamp.json
 ```
 
 The lint checks structure, directives, raw HTML, the item grammar, orphan test tags (every tag
@@ -123,6 +125,9 @@ plan change without its record. The page shows the outbox, so a `docs/outbox` ch
 same publish: the recorded tree covers `docs/plan` and `docs/outbox` together.
 The page also lists `docs/inbox` ideas waiting to be sorted, but the recorded tree leaves
 `docs/inbox` out on purpose: sessions file ideas without publishing, and that must not turn CI red.
+Sonora (`design/sonora`) and the canvas (`design/app`) publish the same way, Sonora first: the
+canvas build installs the recorded Sonora publish and stamps its version, and the merge check
+fails while the canvas installs any other.
 
 ## Size
 

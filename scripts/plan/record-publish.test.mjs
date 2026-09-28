@@ -82,14 +82,45 @@ test('other artifacts are kept, keys stay sorted, and a design publish records i
     write(
       root,
       'design/published.json',
-      `${JSON.stringify({ sonora: { url: 'u', sources: ['design/sonora'] } })}\n`,
+      `${JSON.stringify({ sonora: { url: 'u', sources: ['design/sonora'], version: '5' } })}\n`,
     );
     recordPublish({ root, artifact: 'plan', url: URL_, version: '1', stamp: STAMP });
-    recordPublish({ root, artifact: 'canvas', url: URL_, version: '2', stamp: STAMP });
+    const canvasStamp = { ...STAMP, sonora: { version: '5', tree: 'e'.repeat(40) } };
+    recordPublish({ root, artifact: 'canvas', url: URL_, version: '2', stamp: canvasStamp });
     const published = JSON.parse(read(root, 'design/published.json'));
     assert.deepEqual(Object.keys(published), ['canvas', 'plan', 'sonora']);
     assert.deepEqual(published.canvas.sources, ['design/app']);
     assert.equal(published.sonora.url, 'u');
+  }));
+
+test('a canvas publish records the Sonora publish it installs', () =>
+  inTree((root) => {
+    write(root, 'design/published.json', `${JSON.stringify({ sonora: { version: '9-ab' } })}\n`);
+    const stamp = { ...STAMP, sonora: { version: '9-ab', tree: 'e'.repeat(40) } };
+    recordPublish({ root, artifact: 'canvas', url: URL_, version: '3', stamp });
+    assert.deepEqual(JSON.parse(read(root, 'design/published.json')).canvas.installs, {
+      sonora: '9-ab',
+    });
+  }));
+
+test('a canvas built on a Sonora other than the one published is never recorded', () =>
+  inTree((root) => {
+    const before = `${JSON.stringify({ sonora: { version: '9-ab' } })}\n`;
+    write(root, 'design/published.json', before);
+    const record = (sonora) => () =>
+      recordPublish({
+        root,
+        artifact: 'canvas',
+        url: URL_,
+        version: '3',
+        stamp: { ...STAMP, sonora },
+      });
+    assert.throws(
+      record({ version: '8-old', tree: 'e'.repeat(40) }),
+      /installs sonora 8-old, but sonora is published at 9-ab/,
+    );
+    assert.throws(record(undefined), /installs sonora none, but sonora is published at 9-ab/);
+    assert.equal(read(root, 'design/published.json'), before);
   }));
 
 test('a draft render is never recorded as published', () =>

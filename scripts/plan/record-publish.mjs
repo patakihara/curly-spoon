@@ -3,6 +3,7 @@
  * latest publish (git history is the record). The orchestrator runs it after publishing.
  *
  * CLI: node scripts/plan/record-publish.mjs --artifact plan --url <url> --version <v> --stamp build/plan/stamp.json [--root <dir>]
+ * The stamps: build/plan/stamp.json, build/sonora/stamp.json, build/canvas/stamp.json.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -20,6 +21,24 @@ export const SOURCES = {
   sonora: ['design/sonora'],
   canvas: ['design/app'],
 };
+
+/**
+ * The published artifacts each artifact installs a copy of: the canvas installs Sonora's bundle.
+ * A publish records the version it installed; the merge check requires it to be the current one.
+ */
+export const INSTALLS = {
+  canvas: ['sonora'],
+};
+
+/** Why `installs` (artifact to version) differs from the current publishes, or [] when it does not. */
+export function staleInstalls(artifact, installs, published) {
+  return (INSTALLS[artifact] ?? [])
+    .filter((dep) => (installs?.[dep] ?? null) !== (published[dep]?.version ?? null))
+    .map(
+      (dep) =>
+        `installs ${dep} ${installs?.[dep] ?? 'none'}, but ${dep} is published at ${published[dep]?.version ?? 'none'}`,
+    );
+}
 
 /**
  * One hash for an artifact's folders: sha1 over a `<path> <git tree|none>` line per folder, so
@@ -49,6 +68,28 @@ export function sourcesTree(root, paths, rev = 'HEAD') {
   );
 }
 
+/**
+ * The stamp a build writes beside its output for recordPublish: the commit, the combined tree of
+ * the artifact's sources and whether it is a draft. Uncommitted changes to the sources are refused
+ * unless `draft`, and a draft stamp is never recorded.
+ */
+export function buildStamp({ root, artifact, draft = false, now = new Date() }) {
+  const sources = SOURCES[artifact];
+  if (!sources) throw new Error(`unknown artifact "${artifact}"`);
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const dirty = git('status', '--porcelain', '--', ...sources).trimEnd();
+  if (dirty && !draft) {
+    throw new Error(`uncommitted changes (use --draft to build them anyway):\n${dirty}`);
+  }
+  return {
+    commit: git('rev-parse', 'HEAD').trim(),
+    tree: sourcesTree(root, sources),
+    builtAt: now.toISOString(),
+    draft,
+  };
+}
+
 export function recordPublish({ root, artifact, url, version, stamp, now = new Date() }) {
   const sources = SOURCES[artifact];
   if (!sources)
@@ -57,12 +98,18 @@ export function recordPublish({ root, artifact, url, version, stamp, now = new D
   if (!stamp.commit || !stamp.tree) throw new Error('the stamp has no commit or tree');
   const path = join(root, 'design', 'published.json');
   const published = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
+  const installs = INSTALLS[artifact]
+    ? Object.fromEntries(INSTALLS[artifact].map((dep) => [dep, stamp[dep]?.version ?? null]))
+    : undefined;
+  const stale = staleInstalls(artifact, installs, published);
+  if (stale.length) throw new Error(`the stamp ${stale.join('; ')}; rebuild it`);
   published[artifact] = {
     url,
     sources,
     commit: stamp.commit,
     tree: stamp.tree,
     version: String(version),
+    ...(installs && { installs }),
     publishedAt: now.toISOString(),
   };
   const sorted = Object.fromEntries(

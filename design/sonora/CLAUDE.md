@@ -32,10 +32,9 @@ Sonora is also published as a claude.ai **Design System artifact**
 generated from this repo, never edited by hand:
 
 ```
-curl -sSo /tmp/babel-standalone.js https://unpkg.com/@babel/standalone@7.29.0/babel.min.js  # once
-node docs/build_bundle.js && node docs/build_artifact.js    # -> .artifact/project/** (gitignored)
+pnpm sonora:build    # from the Auralis root: build/sonora/project/**, canvas/tokens.css, stamp.json
 ```
 
-then publish `.artifact/project/**` to that url with the Artifact tool (`.d.ts` files as `text/plain`),
-and re-install it on the canvas (copy `tokens.json` + `components/bundle.*` from the system, plus
-`.artifact/canvas/tokens.css`). Do this in the same turn as any change to `tokens/`, a component or its `.d.ts`.
+then the Auralis orchestrator publishes `build/sonora/project/**` to that url with the Artifact tool
+(`.d.ts` files as `text/plain`), records it with `record-publish.mjs --artifact sonora`, and rebuilds
+the canvas (`pnpm canvas:build`), which installs this publish. Do this in the same turn as any change to `tokens/`, a component or its `.d.ts`.

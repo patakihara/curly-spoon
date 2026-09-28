@@ -13,13 +13,15 @@
     "build": "pnpm -r --if-present build",
     "gen": "pnpm -r --if-present gen",
     "dev": "pnpm -r --parallel --if-present dev",
-    "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs",
+    "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs",
     "test:watch": "vitest",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "canvas:shoot": "tsx scripts/canvas/shoot.mjs"
+    "canvas:shoot": "tsx scripts/canvas/shoot.mjs",
+    "sonora:build": "node scripts/sonora/build.mjs",
+    "canvas:build": "tsx scripts/canvas/build.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -28,6 +30,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/standalone": "7.29.0",
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",

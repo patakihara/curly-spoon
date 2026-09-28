@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { edit, git, read, removeTree, write } from '../plan/testing.mjs';
+import { REPO_ROOT, edit, git, read, removeTree, write } from '../plan/testing.mjs';
 import { HOOKS_DIR, publishedRepo } from './testing.mjs';
 import { publishedDrift, readChecked } from './published.mjs';
 
@@ -102,6 +102,51 @@ test('[M0.uikit/c] a checked source with no recorded publish fails as never publ
     ]);
     assert.equal(drift[0].recorded, null);
   });
+});
+
+test('the merge check passes when the canvas installs the published Sonora', () => {
+  withRepo(['plan', 'sonora', 'canvas'], (root) => {
+    assert.deepEqual(publishedDrift({ root }), []);
+  });
+});
+
+test('the merge check fails when the canvas installs a Sonora other than the published one', () => {
+  withRepo(['plan', 'sonora', 'canvas'], (root) => {
+    const published = JSON.parse(read(root, 'design/published.json'));
+    published.sonora.version = '2-sonora';
+    write(root, 'design/published.json', JSON.stringify(published));
+    commitAll(root, 'Republish Sonora only');
+    assert.deepEqual(brief(publishedDrift({ root })), [
+      {
+        artifact: 'canvas',
+        sources: ['design/app'],
+        reason: 'installs sonora 1-sonora, but sonora is published at 2-sonora',
+      },
+    ]);
+    const run = cli(root);
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, /design\/app \(canvas\): installs sonora 1-sonora/);
+  });
+});
+
+test('a canvas record that names no installed Sonora fails', () => {
+  withRepo(['plan', 'sonora', 'canvas'], (root) => {
+    const published = JSON.parse(read(root, 'design/published.json'));
+    delete published.canvas.installs;
+    write(root, 'design/published.json', JSON.stringify(published));
+    commitAll(root, 'Record the canvas without its install');
+    assert.deepEqual(
+      publishedDrift({ root }).map((d) => d.reason),
+      ['installs sonora none, but sonora is published at 1-sonora'],
+    );
+  });
+});
+
+test('this repo checks the plan, Sonora and the canvas', () => {
+  assert.deepEqual(
+    readChecked(REPO_ROOT).map((c) => c.artifact),
+    ['plan', 'sonora', 'canvas'],
+  );
 });
 
 test('a source the config does not check is ignored', () => {

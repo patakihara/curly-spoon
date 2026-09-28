@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@babel/standalone':
+        specifier: 7.29.0
+        version: 7.29.0
       '@eslint/js':
         specifier: ^9.17.0
         version: 9.39.5
@@ -242,6 +245,10 @@ packages:
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
+
+  '@babel/standalone@7.29.0':
+    resolution: {integrity: sha512-ZbVDXDodISaxYugID/OCXRv6kMnADgTnHqNtSm2oBq4vHI81uFkbxXtdlSlguYe3BB4HiFwZ5kxa1kjrLMOuWg==}
+    engines: {node: '>=6.9.0'}
 
   '@babel/template@7.29.7':
     resolution: {integrity: sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==}
@@ -2212,6 +2219,8 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
+
+  '@babel/standalone@7.29.0': {}
 
   '@babel/template@7.29.7':
     dependencies:

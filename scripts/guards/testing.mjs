@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { REPO_ROOT, fixtureRepo, git, write } from '../plan/testing.mjs';
-import { SOURCES, sourcesTree } from '../plan/record-publish.mjs';
+import { INSTALLS, SOURCES, sourcesTree } from '../plan/record-publish.mjs';
 
 export const HOOKS_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -32,8 +32,9 @@ export function runHook(name, payload, { env = {}, cwd, timeout } = {}) {
 
 /**
  * `fixtureRepo()` plus design/sonora and design/app, the guards' published-sources.json with
- * `checked`, and design/published.json recording the current tree of every checked source,
- * committed as one `Publish fixtures` commit.
+ * `checked`, and design/published.json recording the current tree of every checked source (version
+ * `1-<artifact>`, installing version `1-<dep>` of what it installs), committed as one
+ * `Publish fixtures` commit.
  */
 export function publishedRepo({ checked }) {
   const repo = fixtureRepo();
@@ -52,6 +53,10 @@ export function publishedRepo({ checked }) {
       sources,
       commit: git(root, 'rev-parse', 'HEAD'),
       tree: sourcesTree(root, sources),
+      version: `1-${artifact}`,
+      ...(INSTALLS[artifact] && {
+        installs: Object.fromEntries(INSTALLS[artifact].map((dep) => [dep, `1-${dep}`])),
+      }),
     };
   }
   write(root, 'design/published.json', JSON.stringify(published, null, 2) + '\n');

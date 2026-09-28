@@ -1,6 +1,8 @@
 /**
  * The merge check: every artifact listed in scripts/guards/published-sources.json must have the
- * tree design/published.json recorded for its last publish. Used by CI (committed trees) and by
+ * tree design/published.json recorded for its last publish, and a record for it at all (a missing
+ * one fails as never published). An artifact that installs another (the canvas installs Sonora)
+ * must have installed the version recorded as that one's current publish. Used by CI (committed trees) and by
  * the Stop hook (working tree, uncommitted changes included). SOURCES in
  * scripts/plan/record-publish.mjs maps each artifact to its folders (the plan's are docs/plan and
  * docs/outbox), and its sourcesTree/combineTrees are the one tree scheme everything compares.
@@ -14,7 +16,7 @@ import { isAbsolute, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { SOURCES, combineTrees, sourcesTree } from '../plan/record-publish.mjs';
+import { SOURCES, combineTrees, sourcesTree, staleInstalls } from '../plan/record-publish.mjs';
 
 const gitIn = (root, args, env) =>
   execFileSync('git', args, {
@@ -84,8 +86,10 @@ export function publishedDrift({ root, worktree = false }) {
       current,
       reason,
     });
+    const stale = recorded ? staleInstalls(artifact, recorded.installs, published) : [];
     if (!recorded) drift.push(entry('never published'));
     else if (committed !== recorded.tree) drift.push(entry('changed since the publish'));
+    else if (stale.length) drift.push(entry(stale.join('; ')));
     else if (worktree) {
       const current = currentTree(root, sources, { worktree: true });
       if (current !== recorded.tree)
@@ -118,7 +122,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     } else {
       for (const line of describeDrift(drift)) console.error(line);
       console.error(
-        'Render and publish them (docs/plan/README.md, Commands), then run record-publish.mjs and commit design/published.json.',
+        'Render and publish them (docs/plan/README.md, Commands: the plan, pnpm sonora:build, pnpm canvas:build), then run record-publish.mjs and commit design/published.json.',
       );
       process.exitCode = 1;
     }
