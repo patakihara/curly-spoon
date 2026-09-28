@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { App } from './app.js';
-import { CANVAS_BOARDS, DS_FOLDER, generateCanvas, type SonoraInstall } from './canvas.js';
+import {
+  CANVAS_BOARDS,
+  CANVAS_CREATED_AT,
+  DS_FOLDER,
+  generateCanvas,
+  type SonoraInstall,
+} from './canvas.js';
 import { parseNav } from './nav.js';
 import { parsePage } from './page.js';
 
@@ -99,11 +105,11 @@ describe('the canvas generated from design/app', () => {
     });
   });
 
-  it('records the Sonora publish it installs in the index', () => {
+  it("keeps the artifact's creation date and records the Sonora publish it installs", () => {
     expect(index).toMatchObject({
       v: 3,
       title: 'Auralis',
-      createdOnFiles: { v: 1, at: now.toISOString() },
+      createdOnFiles: { v: 1, at: CANVAS_CREATED_AT },
       launch: { view: 'canvas' },
       designSystems: [
         {

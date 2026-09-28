@@ -19,6 +19,9 @@ export const DS_FILES = [
   'components/bundle.js',
 ];
 
+/** When the canvas artifact was created; the type's marker, kept on every republish. */
+export const CANVAS_CREATED_AT = '2026-09-27T14:27:33Z';
+
 export const CANVAS_BOARDS = {
   phone: { width: 390, height: 844, platform: 'mobile', label: 'phone' },
   desktop: { width: 1440, height: 900, platform: 'desktop', label: 'desktop' },
@@ -149,7 +152,7 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
   const at = now.toISOString();
   const index = {
     v: 3,
-    createdOnFiles: { v: 1, at },
+    createdOnFiles: { v: 1, at: CANVAS_CREATED_AT },
     title: 'Auralis',
     launch: { view: 'canvas' },
     pages: [],
