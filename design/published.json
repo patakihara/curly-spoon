@@ -2,9 +2,9 @@
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
     "sources": ["docs/plan", "docs/outbox"],
-    "commit": "372769e0482590278d32aff11795925f459e32d9",
-    "tree": "cc6e8f1b91b5d074ca067231eb575fa236a27c9d",
-    "version": "1790585269-2c3d",
-    "publishedAt": "2026-09-28T08:47:54.770Z"
+    "commit": "0f8691d713008c83a360510666df388dc9e9722d",
+    "tree": "48179beb13094d4283cc27d62a4c834c6b40f876",
+    "version": "1790586878-274d",
+    "publishedAt": "2026-09-28T09:14:45.207Z"
   }
 }
