@@ -2,21 +2,21 @@
   "canvas": {
     "url": "https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq",
     "sources": ["design/app", "web/public/art"],
-    "commit": "81d65bc18c5df1dc91eefd1987482491eb6a73ae",
-    "tree": "a5a2190e04d1577415224a0bb0731d04832fa731",
-    "version": "1790610356-5f09",
+    "commit": "2da0b55bba7c711988ed39caf49ba58d41ca3566",
+    "tree": "02d254fb61596d0e37030ef1e7f7dbfc295c2c8f",
+    "version": "1790615869-864f",
     "installs": {
-      "sonora": "1790610331-c61c"
+      "sonora": "1790615817-72ac"
     },
-    "publishedAt": "2026-09-28T15:46:03.816Z"
+    "publishedAt": "2026-09-28T17:18:20.028Z"
   },
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
     "sources": ["docs/plan", "docs/outbox"],
-    "commit": "d879a2849599a0cd1fdb582970f5697984e6ffd6",
-    "tree": "bc77adb292d3f4277bb1bc5ea18a1b7b359bc00a",
-    "version": "1790604365-f209",
-    "publishedAt": "2026-09-28T14:06:11.579Z"
+    "commit": "2da0b55bba7c711988ed39caf49ba58d41ca3566",
+    "tree": "4420ff1586288795bdb61cfac2fe5fc77cdb2d05",
+    "version": "1790615876-b777",
+    "publishedAt": "2026-09-28T17:18:20.382Z"
   },
   "sonora": {
     "url": "https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB",
