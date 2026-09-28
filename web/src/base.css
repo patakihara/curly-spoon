@@ -5,4 +5,5 @@ body {
   background: var(--surface-bg);
   color: var(--surface-fg);
   font-family: var(--font-body);
+  font-weight: var(--weight-body);
 }

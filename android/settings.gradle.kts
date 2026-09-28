@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "auralis"
 include(":app")
+include(":sonora")

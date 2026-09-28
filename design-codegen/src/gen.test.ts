@@ -35,6 +35,13 @@ function filesUnder(dir: string): string[] {
     .sort();
 }
 
+/** Sonora's tokens and their export, which every `pnpm gen` run reads, copied into `sonora`. */
+function withTokens(sonora: string) {
+  for (const dir of ['tokens', 'export']) {
+    cpSync(join(repoRoot, SONORA_DIR, dir), join(sonora, dir), { recursive: true });
+  }
+}
+
 /** Every file under both outputs, as `<output root>/<path>`, relative to `root`. */
 const outputFiles = (root: string) =>
   Object.values(OUTPUTS).flatMap((rel) => filesUnder(join(root, rel)).map((f) => `${rel}/${f}`));
@@ -92,6 +99,7 @@ describe('pnpm gen, from design/sonora', () => {
       cpSync(join(repoRoot, SONORA_DIR, 'components'), join(sonora, 'components'), {
         recursive: true,
       });
+      withTokens(sonora);
       const dts = join(sonora, 'components', 'core', 'Button.d.ts');
       const original = readFileSync(dts, 'utf8');
       const probed = original.replace(
@@ -119,6 +127,7 @@ describe('pnpm gen, from design/sonora', () => {
       tmp = mkdtempSync(join(tmpdir(), 'auralis-uikit-'));
       const sonora = join(tmp, 'sonora');
       cpSync(fixtures, sonora, { recursive: true });
+      withTokens(sonora);
       // The canvas's pages use components the fixture lacks, so this run has a canvas of none.
       const app = join(tmp, 'app');
       mkdirSync(app);

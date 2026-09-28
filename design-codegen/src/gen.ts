@@ -1,6 +1,7 @@
 /**
  * `pnpm gen`: the web UI package and the Android props classes, from Sonora's components; the
- * web route table and pages, from the canvas.
+ * web CSS tokens and `SonoraTokens.kt`, from Sonora's token export; the web route table and
+ * pages, from the canvas. It fails when Sonora's committed token export is out of date.
  *
  *   tsx src/gen.ts [--sonora <Sonora dir>] [--app <canvas dir>] [--out <output root>]
  */
@@ -12,6 +13,7 @@ import { generateKotlin } from './kotlin.js';
 import { APP_DIR, KOTLIN_PACKAGE, OUTPUTS, REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { readProps } from './props.js';
 import { discoverComponents } from './sonora.js';
+import { exportDrift, generateTokens } from './tokens.js';
 import { generateWeb } from './web.js';
 
 const { values } = parseArgs({
@@ -22,8 +24,19 @@ const { values } = parseArgs({
   },
 });
 const out = resolve(values.out);
+const sonora = resolve(values.sonora);
 
-const components = discoverComponents(resolve(values.sonora));
+const tokens = await generateTokens(sonora);
+const drift = exportDrift(sonora, tokens.exported);
+if (drift.length > 0) {
+  process.stderr.write(
+    `Sonora's committed export differs from what its tokens give now: ${drift.join(', ')}.\n` +
+      'Re-export in Sonora with export/generate.js, publish it, and pull it in before pnpm gen.\n',
+  );
+  process.exit(1);
+}
+
+const components = discoverComponents(sonora);
 const props = readProps(components);
 const app = generateAppWeb(readApp(resolve(values.app), props));
 const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
@@ -31,6 +44,8 @@ const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
   kotlin: generateKotlin(props, KOTLIN_PACKAGE),
   webNav: app.nav,
   webPages: app.pages,
+  webTokens: tokens.web,
+  kotlinTheme: tokens.kotlin,
 };
 
 // Every folder belongs to this generator alone, so a stale file cannot survive a run.
