@@ -343,6 +343,69 @@ describe('a page opening another', () => {
     });
   });
 
+  describe('whose items name the page they open', () => {
+    const mixed = (items: Record<string, unknown>[], links = ['album', 'settings', 'artist']) =>
+      checkPage(
+        parsePage(
+          page(
+            '<Each of={data.items} as="item"><MediaCard title={item.title} onClick={<Open page={item.page} ref={item.ref} />} /></Each>',
+          ),
+          'book',
+        ),
+        { items },
+        props,
+        undefined,
+        undefined,
+        undefined,
+        { ...opens, links },
+      );
+
+    it('[M0.canvas] reads <Open page={item.page}> as the page each item names', () => {
+      const tree = parsePage(
+        page('<MediaCard onClick={<Open page={data.page} ref={data.ref} />} />'),
+        'book',
+      );
+      expect(tree.kind === 'element' && tree.props.onClick).toEqual({
+        kind: 'open',
+        page: { path: ['data', 'page'] },
+        params: { ref: ['data', 'ref'] },
+      });
+    });
+
+    it('[M0.canvas] accepts items of several kinds, each opening a page in its structure links', () => {
+      expect(
+        mixed([
+          { title: 'A', page: 'album', ref: 'a' },
+          { title: 'B', page: 'artist', ref: 'b' },
+        ]),
+      ).toEqual([]);
+    });
+
+    it('[M0.canvas] refuses a bound page outside nav.json or the structure links, or no page at all', () => {
+      expect(
+        mixed(
+          [
+            { title: 'A', page: 'album', ref: 'a' },
+            { title: 'B', page: 'artist', ref: 'b' },
+            { title: 'C', page: 'albums', ref: 'c' },
+            { title: 'D', page: 3, ref: 'd' },
+          ],
+          ['album'],
+        ),
+      ).toEqual([
+        'line 3: MediaCard.onClick: the page (item.page) is not a page id',
+        "line 3: MediaCard.onClick opens artist, which is not in this page's structure links",
+        'line 3: MediaCard.onClick opens albums, which is not a page in nav.json',
+      ]);
+      expect(mixed([{ title: 'S', page: 'settings', ref: 's' }])).toEqual([
+        'line 3: MediaCard.onClick gives settings [ref], and its route takes []',
+      ]);
+      expect(() =>
+        parsePage(page('<MediaCard onClick={<Open page={() => 1} ref={data.ref} />} />'), 'book'),
+      ).toThrow(/not allowed/);
+    });
+  });
+
   it('[M0.canvas] accepts a link to a page in its structure links, each parameter bound', () => {
     expect(check('<MediaCard onClick={<Open page="album" ref={album.ref} />} />')).toEqual([]);
   });
@@ -395,8 +458,8 @@ describe('a page opening another', () => {
       parsePage(page('<MediaCard onClick={<Open page="album" ref="tears-of-ice" />} />'), 'book'),
     ).toThrow(/Open's ref must be a data path/);
     expect(() =>
-      parsePage(page('<MediaCard onClick={<Open page={data.page} />} />'), 'book'),
-    ).toThrow(/page must be a string literal/);
+      parsePage(page('<MediaCard onClick={<Open page ref={data.ref} />} />'), 'book'),
+    ).toThrow(/Open's page must be a page id or a data path/);
   });
 
   it('[M0.canvas] refuses an Open anywhere but a handler prop', () => {

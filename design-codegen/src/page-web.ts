@@ -81,7 +81,11 @@ function propLines(
 ): string[] {
   if (value.kind === 'open') {
     const params = Object.entries(value.params).map(([k, path]) => `${k}: ${path.join('.')}`);
-    const path = `'${components.paths.get(value.page)!}'`;
+    // A page bound to the item's data looks its route up among the pages this page may open.
+    const path =
+      typeof value.page === 'string'
+        ? `'${components.paths.get(value.page)!}'`
+        : `routes[${value.page.path.join('.')}]!`;
     const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
     return [`${name}={() => navigate(${to})}`];
   }
@@ -222,6 +226,12 @@ export function generateWebPage(
       n.kind === 'element' &&
       Object.values(n.props).some((v) => v.kind === 'open' && Object.keys(v.params).length > 0),
   );
+  const routed = some(
+    root,
+    (n) =>
+      n.kind === 'element' &&
+      Object.values(n.props).some((v) => v.kind === 'open' && typeof v.page !== 'string'),
+  );
   if (opens) {
     const names = bound ? 'generatePath, useNavigate' : 'useNavigate';
     react.push(`import { ${names} } from 'react-router';`);
@@ -234,6 +244,21 @@ export function generateWebPage(
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
     '',
+    ...(routed
+      ? [
+          '/** The route of each page this page may open: its structure links, and its own. */',
+          `const routes: Record<string, string> = ${JSON.stringify(
+            Object.fromEntries(
+              [...(page.structure?.links ?? []), id]
+                .filter((p) => components.paths.has(p))
+                .map((p) => [p, components.paths.get(p)!]),
+            ),
+            null,
+            2,
+          )};`,
+          '',
+        ]
+      : []),
     '/** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */',
     `const shell = ${JSON.stringify(shellData(nav, shell), null, 2)};`,
     '',

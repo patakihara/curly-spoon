@@ -266,3 +266,38 @@ describe('a page opening another, on the web', () => {
     expect(out).not.toContain('useNavigate');
   });
 });
+
+describe('a page whose items name the page they open, on the web', () => {
+  const linked = (id: string, links: string[]): WebShell => {
+    const shell = shellOf(id);
+    return { ...shell, page: { ...shell.page, structure: { ...shell.page.structure!, links } } };
+  };
+  const mixed = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <Each of={data.more} as="m"><MediaCard title={m.title} onClick={<Open page={m.page} ref={m.ref} />} /></Each>;
+}
+`,
+      'book',
+    ),
+    'book',
+    {
+      more: [
+        { title: 'Your books', page: 'books', ref: 'all' },
+        { title: 'Another book', page: 'book', ref: 'another' },
+      ],
+    },
+    { platformed: new Set(), handled: new Set() },
+    linked('book', ['books']),
+  );
+
+  it("[M0.canvas] navigates each item to its own page's route, looked up among the pages it may open", () => {
+    expect(mixed).toContain(
+      'onClick={() => navigate(generatePath(routes[m.page]!, { ref: m.ref }))}',
+    );
+    expect(mixed).toMatch(
+      /const routes: Record<string, string> = \{\s+"books": "\/books",\s+"book": "\/book"\s+\};/,
+    );
+    expect(mixed).not.toContain('"settings": "/settings"');
+  });
+});

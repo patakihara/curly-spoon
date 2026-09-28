@@ -2,7 +2,8 @@
  * A canvas page, `design/app/pages/<id>.page.jsx`: one default-exported function returning Sonora
  * components with literal props, `data` paths and, for a prop that takes an element, one Sonora
  * element (a slot, `back={<BackLayer …/>}`), plus `<Each of as>` and `<When state>`. A handler
- * prop may open another page, `onClick={<Open page="album" ref={release.ref} />}`: the page's id
+ * prop may open another page, `onClick={<Open page="album" ref={release.ref} />}` (or `page={item.page}`, each
+ * item naming its own): the page's id
  * in nav.json and each of its route's parameters bound to a data path; or request an item,
  * `onRequest={<Request ref={book.ref} />}`, its ref bound the same way; or play one on the queue it
  * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next, `source` for a list played on its own. It is read into a page
@@ -18,8 +19,11 @@ export type PropValue =
   | { kind: 'binding'; path: string[] }
   /** One Sonora element given to a prop that takes an element: `back={<BackLayer />}`. */
   | { kind: 'slot'; tree: PageTree }
-  /** A handler that opens a page of nav.json, each route parameter bound to a data path. */
-  | { kind: 'open'; page: string; params: Record<string, string[]> }
+  /**
+   * A handler that opens a page of nav.json, each route parameter bound to a data path. The page
+   * is its id, or `{ path }`, bound to the item's data, for a list of items of several kinds.
+   */
+  | { kind: 'open'; page: string | { path: string[] }; params: Record<string, string[]> }
   /** A handler that requests the item its `ref` binds, such as a book you don't own. */
   | { kind: 'request'; params: Record<string, string[]> }
   /**
@@ -126,7 +130,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
  */
 function handlerAttrs(node: t.JSXElement, what: string) {
   if (node.children.length > 0) return fail(node, `${what} takes no children`);
-  let page: string | undefined;
+  let page: string | { path: string[] } | undefined;
   let queue: string | undefined;
   let next = false;
   let source = false;
@@ -156,9 +160,13 @@ function handlerAttrs(node: t.JSXElement, what: string) {
       continue;
     }
     if (name === 'page' && what === 'Open') {
-      if (value?.type !== 'StringLiteral')
-        return fail(attr, "Open's page must be a string literal");
-      page = value.value;
+      if (value?.type === 'StringLiteral') page = value.value;
+      else if (
+        value?.type === 'JSXExpressionContainer' &&
+        value.expression.type !== 'JSXEmptyExpression'
+      ) {
+        page = { path: memberPath(value.expression) };
+      } else return fail(attr, "Open's page must be a page id or a data path");
       continue;
     }
     const e = value?.type === 'JSXExpressionContainer' ? value.expression : undefined;
@@ -170,10 +178,13 @@ function handlerAttrs(node: t.JSXElement, what: string) {
   return { page, queue, next, source, params };
 }
 
-/** `<Open page="album" ref={release.ref} />`: the page it opens, and its parameters' bindings. */
+/**
+ * `<Open page="album" ref={release.ref} />`: the page it opens, and its parameters' bindings; or
+ * `<Open page={item.page} ref={item.ref} />`, the page named by each item's data.
+ */
 function open(node: t.JSXElement): PropValue {
   const { page, params } = handlerAttrs(node, 'Open');
-  if (page === undefined) return fail(node, 'Open needs page="<page id>"');
+  if (page === undefined) return fail(node, 'Open needs page="<page id>" or page={item.page}');
   return { kind: 'open', page, params };
 }
 
@@ -353,32 +364,44 @@ export function checkPage(
     check: (line: number, path: string[]) => Json[],
   ) => {
     const at = `line ${line}: ${component}.${prop}`;
+    const named = typeof value.page === 'string' ? value.page : `{${value.page.path.join('.')}}`;
     if (opens === undefined) {
-      errors.push(`${at} opens ${value.page}, and no navigation map was given to check it`);
+      errors.push(`${at} opens ${named}, and no navigation map was given to check it`);
       return;
     }
     const handlers = opens.handlers.get(component);
     if (handlers !== undefined && !handlers.has(prop)) {
       errors.push(`${at} takes no handler, so it cannot open a page`);
     }
-    const params = opens.pages.get(value.page);
-    if (params === undefined) {
-      errors.push(`${at} opens ${value.page}, which is not a page in nav.json`);
-      return;
+    // A bound page opens, for each item, the page its data names: every one is checked.
+    let targets: string[];
+    if (typeof value.page === 'string') targets = [value.page];
+    else {
+      targets = [];
+      for (const v of check(line, value.page.path)) {
+        if (typeof v !== 'string' || v === '') {
+          errors.push(`${at}: the page (${value.page.path.join('.')}) is not a page id`);
+        } else if (!targets.includes(v)) targets.push(v);
+      }
     }
-    if (!opens.links.includes(value.page) && value.page !== opens.self) {
-      errors.push(`${at} opens ${value.page}, which is not in this page's structure links`);
-    }
-    const given = Object.keys(value.params);
-    if ([...given].sort().join() !== [...params].sort().join()) {
-      errors.push(`${at} gives ${value.page} [${given}], and its route takes [${params}]`);
+    for (const page of targets) {
+      const params = opens.pages.get(page);
+      if (params === undefined) {
+        errors.push(`${at} opens ${page}, which is not a page in nav.json`);
+        continue;
+      }
+      if (!opens.links.includes(page) && page !== opens.self) {
+        errors.push(`${at} opens ${page}, which is not in this page's structure links`);
+      }
+      const given = Object.keys(value.params);
+      if ([...given].sort().join() !== [...params].sort().join()) {
+        errors.push(`${at} gives ${page} [${given}], and its route takes [${params}]`);
+      }
     }
     for (const [name, path] of Object.entries(value.params)) {
       for (const v of check(line, path)) {
         if (typeof v !== 'string' || v === '') {
-          errors.push(
-            `${at}: ${value.page}'s ${name} (${path.join('.')}) is not a non-empty string`,
-          );
+          errors.push(`${at}: ${named}'s ${name} (${path.join('.')}) is not a non-empty string`);
         }
       }
     }

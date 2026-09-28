@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 0fbe2c637adeb896780b81aae4d2a5b8e407c2e6955e52837fbde8e21b9d95c7
+pageHash: 12ee289e4be7cd2075ec0a130aa28998f44a4beca4492a485b3a721114f5f703
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -39,9 +39,9 @@ choices are All, Music, Podcasts, Books: nav.json's filter for Browse, labelled 
 `FrontLayerHeader`, which shows only once a section title has scrolled under it and then carries
 the title that last passed; at rest there is no band. Under it, `PageBody`: "Jump back in" as an auto-filled grid of wide `QuickPick`s, then
 the "Recently added", "Artists & authors" and "Picked for you" shelves and the "Recently played"
-rows, in the mobile kit's order and with its titles and art. Every tile and card opens its item's page:
-an album, a book, a show, an artist or an author. A shelf is one list per kind, so its cards come
-grouped by kind: albums, then books, then shows; artists, then authors. Around it: the bottom bar and the
+rows, in the mobile kit's order and with its titles and art. Every tile and card opens its own item's page,
+an album, a book, a show, an artist or an author, named by the item (`<Open page={item.page}>`), so
+the shelves stay mixed, their kinds interleaved. Around it: the bottom bar and the
 mini-player on the phone; on desktop the labelled rail (Search first, Settings at its foot), the
 docked transport bar and the Now Playing panel.
 
@@ -94,6 +94,3 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   come from untitled and titled `Section`s, the browser's body margin is reset, and `LayoutGrid`
   auto-fills wide items capped at `--grid-max-width-tiles` 10 px apart, as the desktop kit does.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
-- Changed on purpose: the mixed shelves list their items grouped by kind, where the kit interleaves
-  them. A card opens a page fixed per list (`<Open page>` takes a literal), so each kind is its own
-  list in the shelf.

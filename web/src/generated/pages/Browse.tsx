@@ -12,181 +12,181 @@ const placeholder = {
     "Picked for you",
     "Recently played"
   ],
-  "jumpBackIn": {
-    "books": [
-      {
-        "title": "The Silent Patient",
-        "ref": "the-silent-patient",
-        "sub": "Book · 6 h 12 m left",
-        "image": "/art/the-silent-patient.jpg"
-      },
-      {
-        "title": "Wind and Truth",
-        "ref": "wind-and-truth",
-        "sub": "Book · 21 h 40 m left",
-        "image": "/art/wind-and-truth.jpg"
-      }
-    ],
-    "shows": [
-      {
-        "title": "Deep Inertia Radio",
-        "ref": "deep-inertia-radio",
-        "sub": "Podcast · 24 min left",
-        "image": "/art/deep-inertia-radio.jpg"
-      }
-    ],
-    "albums": [
-      {
-        "title": "Between Lines of Light",
-        "ref": "between-lines-of-light",
-        "sub": "Album · 3 tracks left",
-        "image": "/art/between-lines-of-light.jpg"
-      }
-    ]
-  },
-  "recentlyAdded": {
-    "albums": [
-      {
-        "title": "Between Lines of Light",
-        "ref": "between-lines-of-light",
-        "sub": "Album · Sonic Tales",
-        "image": "/art/between-lines-of-light.jpg",
-        "progress": null
-      },
-      {
-        "title": "Golden Scars",
-        "ref": "golden-scars",
-        "sub": "Album · Fleeting Verses",
-        "image": "/art/golden-scars.jpg",
-        "progress": null
-      },
-      {
-        "title": "Escapes and Moons",
-        "ref": "escapes-and-moons",
-        "sub": "Album · Soul Vertex",
-        "image": "/art/escapes-and-moons.jpg",
-        "progress": null
-      }
-    ],
-    "books": [
-      {
-        "title": "Shadows and Sighs",
-        "ref": "shadows-and-sighs",
-        "sub": "Book · Evelyn Harper",
-        "image": "/art/shadows-and-sighs.jpg",
-        "progress": 0.42
-      },
-      {
-        "title": "The Silent Patient",
-        "ref": "the-silent-patient",
-        "sub": "Book · Alex Michaelides",
-        "image": "/art/the-silent-patient.jpg",
-        "progress": 0.55
-      },
-      {
-        "title": "Ink Heart",
-        "ref": "ink-heart",
-        "sub": "Book · Cornelia Funke",
-        "image": "/art/ink-heart.jpg",
-        "progress": null
-      }
-    ],
-    "shows": [
-      {
-        "title": "Tears of Ice",
-        "ref": "tears-of-ice",
-        "sub": "Podcast · 88 episodes",
-        "image": "/art/tears-of-ice.jpg",
-        "progress": null
-      },
-      {
-        "title": "Signal & Noise",
-        "ref": "signal-noise",
-        "sub": "Podcast · 64 episodes",
-        "image": "/art/signal-noise.jpg",
-        "progress": null
-      }
-    ]
-  },
-  "people": {
-    "artists": [
-      {
-        "title": "Sonic Tales",
-        "ref": "sonic-tales",
-        "sub": "Artist",
-        "image": "/art/sonic-tales.jpg"
-      },
-      {
-        "title": "Deep Inertia",
-        "ref": "deep-inertia",
-        "sub": "Artist",
-        "image": "/art/deep-inertia.jpg"
-      },
-      {
-        "title": "Fleeting Verses",
-        "ref": "fleeting-verses",
-        "sub": "Artist",
-        "image": "/art/fleeting-verses.jpg"
-      }
-    ],
-    "authors": [
-      {
-        "title": "Evelyn Harper",
-        "ref": "evelyn-harper",
-        "sub": "Author",
-        "image": "/art/evelyn-harper.jpg"
-      },
-      {
-        "title": "Adam Rivers",
-        "ref": "adam-rivers",
-        "sub": "Author",
-        "image": "/art/adam-rivers.jpg"
-      }
-    ]
-  },
-  "pickedForYou": {
-    "books": [
-      {
-        "title": "Wind and Truth",
-        "ref": "wind-and-truth",
-        "sub": "Book · Brandon Sanderson",
-        "image": "/art/wind-and-truth.jpg",
-        "progress": 0.12
-      },
-      {
-        "title": "Foggy Trails",
-        "ref": "foggy-trails",
-        "sub": "Book · Adam Rivers",
-        "image": "/art/foggy-trails.jpg",
-        "progress": 0.7
-      }
-    ],
-    "shows": [
-      {
-        "title": "Deep Inertia Radio",
-        "ref": "deep-inertia-radio",
-        "sub": "Podcast · 212 episodes",
-        "image": "/art/deep-inertia-radio.jpg",
-        "progress": null
-      },
-      {
-        "title": "The Long Read",
-        "ref": "the-long-read",
-        "sub": "Podcast · 212 episodes",
-        "image": "/art/the-long-read.jpg",
-        "progress": null
-      }
-    ],
-    "albums": [
-      {
-        "title": "Fragments of the Wind",
-        "ref": "fragments-of-the-wind",
-        "sub": "Album · Evelyn Harper",
-        "image": "/art/fragments-of-the-wind.jpg",
-        "progress": null
-      }
-    ]
-  },
+  "jumpBackIn": [
+    {
+      "title": "The Silent Patient",
+      "page": "book",
+      "ref": "the-silent-patient",
+      "sub": "Book · 6 h 12 m left",
+      "image": "/art/the-silent-patient.jpg"
+    },
+    {
+      "title": "Deep Inertia Radio",
+      "page": "show",
+      "ref": "deep-inertia-radio",
+      "sub": "Podcast · 24 min left",
+      "image": "/art/deep-inertia-radio.jpg"
+    },
+    {
+      "title": "Between Lines of Light",
+      "page": "album",
+      "ref": "between-lines-of-light",
+      "sub": "Album · 3 tracks left",
+      "image": "/art/between-lines-of-light.jpg"
+    },
+    {
+      "title": "Wind and Truth",
+      "page": "book",
+      "ref": "wind-and-truth",
+      "sub": "Book · 21 h 40 m left",
+      "image": "/art/wind-and-truth.jpg"
+    }
+  ],
+  "recentlyAdded": [
+    {
+      "title": "Between Lines of Light",
+      "page": "album",
+      "ref": "between-lines-of-light",
+      "sub": "Album · Sonic Tales",
+      "image": "/art/between-lines-of-light.jpg",
+      "progress": null
+    },
+    {
+      "title": "Shadows and Sighs",
+      "page": "book",
+      "ref": "shadows-and-sighs",
+      "sub": "Book · Evelyn Harper",
+      "image": "/art/shadows-and-sighs.jpg",
+      "progress": 0.42
+    },
+    {
+      "title": "Tears of Ice",
+      "page": "show",
+      "ref": "tears-of-ice",
+      "sub": "Podcast · 88 episodes",
+      "image": "/art/tears-of-ice.jpg",
+      "progress": null
+    },
+    {
+      "title": "Golden Scars",
+      "page": "album",
+      "ref": "golden-scars",
+      "sub": "Album · Fleeting Verses",
+      "image": "/art/golden-scars.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Silent Patient",
+      "page": "book",
+      "ref": "the-silent-patient",
+      "sub": "Book · Alex Michaelides",
+      "image": "/art/the-silent-patient.jpg",
+      "progress": 0.55
+    },
+    {
+      "title": "Signal & Noise",
+      "page": "show",
+      "ref": "signal-noise",
+      "sub": "Podcast · 64 episodes",
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    },
+    {
+      "title": "Escapes and Moons",
+      "page": "album",
+      "ref": "escapes-and-moons",
+      "sub": "Album · Soul Vertex",
+      "image": "/art/escapes-and-moons.jpg",
+      "progress": null
+    },
+    {
+      "title": "Ink Heart",
+      "page": "book",
+      "ref": "ink-heart",
+      "sub": "Book · Cornelia Funke",
+      "image": "/art/ink-heart.jpg",
+      "progress": null
+    }
+  ],
+  "people": [
+    {
+      "title": "Sonic Tales",
+      "page": "artist",
+      "ref": "sonic-tales",
+      "sub": "Artist",
+      "image": "/art/sonic-tales.jpg"
+    },
+    {
+      "title": "Evelyn Harper",
+      "page": "author",
+      "ref": "evelyn-harper",
+      "sub": "Author",
+      "image": "/art/evelyn-harper.jpg"
+    },
+    {
+      "title": "Adam Rivers",
+      "page": "author",
+      "ref": "adam-rivers",
+      "sub": "Author",
+      "image": "/art/adam-rivers.jpg"
+    },
+    {
+      "title": "Deep Inertia",
+      "page": "artist",
+      "ref": "deep-inertia",
+      "sub": "Artist",
+      "image": "/art/deep-inertia.jpg"
+    },
+    {
+      "title": "Fleeting Verses",
+      "page": "artist",
+      "ref": "fleeting-verses",
+      "sub": "Artist",
+      "image": "/art/fleeting-verses.jpg"
+    }
+  ],
+  "pickedForYou": [
+    {
+      "title": "Wind and Truth",
+      "page": "book",
+      "ref": "wind-and-truth",
+      "sub": "Book · Brandon Sanderson",
+      "image": "/art/wind-and-truth.jpg",
+      "progress": 0.12
+    },
+    {
+      "title": "Deep Inertia Radio",
+      "page": "show",
+      "ref": "deep-inertia-radio",
+      "sub": "Podcast · 212 episodes",
+      "image": "/art/deep-inertia-radio.jpg",
+      "progress": null
+    },
+    {
+      "title": "Fragments of the Wind",
+      "page": "album",
+      "ref": "fragments-of-the-wind",
+      "sub": "Album · Evelyn Harper",
+      "image": "/art/fragments-of-the-wind.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Long Read",
+      "page": "show",
+      "ref": "the-long-read",
+      "sub": "Podcast · 212 episodes",
+      "image": "/art/the-long-read.jpg",
+      "progress": null
+    },
+    {
+      "title": "Foggy Trails",
+      "page": "book",
+      "ref": "foggy-trails",
+      "sub": "Book · Adam Rivers",
+      "image": "/art/foggy-trails.jpg",
+      "progress": 0.7
+    }
+  ],
   "recentlyPlayed": [
     {
       "title": "Between Lines of Light",
@@ -214,6 +214,19 @@ const placeholder = {
       "image": "/art/golden-scars.jpg"
     }
   ]
+};
+
+/** The route of each page this page may open: its structure links, and its own. */
+const routes: Record<string, string> = {
+  "shelf": "/shelves/:id",
+  "requests": "/requests",
+  "album": "/music/albums/:ref",
+  "artist": "/music/artists/:ref",
+  "book": "/books/:ref",
+  "author": "/books/authors/:ref",
+  "show": "/podcasts/:ref",
+  "episode": "/podcasts/episodes/:ref",
+  "browse": "/"
 };
 
 /** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */
@@ -453,71 +466,36 @@ export default function Browse({ data = placeholder, state = 'full', layout: giv
       <PageBody platform={platform}>
         <Section title="Jump back in" platform={platform}>
           <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
-            {data.jumpBackIn.albums.map((album, i) => (
+            {data.jumpBackIn.map((pick, i) => (
               <Fragment key={i}>
-                <QuickPick title={album.title} sub={album.sub} image={album.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: album.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.jumpBackIn.books.map((book, i) => (
-              <Fragment key={i}>
-                <QuickPick title={book.title} sub={book.sub} image={book.image} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.jumpBackIn.shows.map((show, i) => (
-              <Fragment key={i}>
-                <QuickPick title={show.title} sub={show.sub} image={show.image} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+                <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={() => navigate(generatePath(routes[pick.page]!, { ref: pick.ref }))} platform={platform} />
               </Fragment>
             ))}
           </LayoutGrid>
         </Section>
         <Section title="Recently added" action="arrow_forward" actionLabel="See all" platform={platform}>
           <Shelf platform={platform}>
-            {data.recentlyAdded.albums.map((album, i) => (
+            {data.recentlyAdded.map((item, i) => (
               <Fragment key={i}>
-                <MediaCard title={album.title} sub={album.sub} image={album.image} progress={album.progress} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: album.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.recentlyAdded.books.map((book, i) => (
-              <Fragment key={i}>
-                <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.recentlyAdded.shows.map((show, i) => (
-              <Fragment key={i}>
-                <MediaCard title={show.title} sub={show.sub} image={show.image} progress={show.progress} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+                <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
               </Fragment>
             ))}
           </Shelf>
         </Section>
         <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" platform={platform}>
           <Shelf platform={platform}>
-            {data.people.artists.map((artist, i) => (
+            {data.people.map((person, i) => (
               <Fragment key={i}>
-                <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={() => navigate(generatePath('/music/artists/:ref', { ref: artist.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.people.authors.map((author, i) => (
-              <Fragment key={i}>
-                <ArtistCard title={author.title} sub={author.sub} image={author.image} onClick={() => navigate(generatePath('/books/authors/:ref', { ref: author.ref }))} platform={platform} />
+                <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={() => navigate(generatePath(routes[person.page]!, { ref: person.ref }))} platform={platform} />
               </Fragment>
             ))}
           </Shelf>
         </Section>
         <Section title="Picked for you" action="arrow_forward" actionLabel="See all" platform={platform}>
           <Shelf platform={platform}>
-            {data.pickedForYou.albums.map((album, i) => (
+            {data.pickedForYou.map((item, i) => (
               <Fragment key={i}>
-                <MediaCard size="sm" title={album.title} sub={album.sub} image={album.image} progress={album.progress} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: album.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.pickedForYou.books.map((book, i) => (
-              <Fragment key={i}>
-                <MediaCard size="sm" title={book.title} sub={book.sub} image={book.image} progress={book.progress} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-            {data.pickedForYou.shows.map((show, i) => (
-              <Fragment key={i}>
-                <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} progress={show.progress} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+                <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
               </Fragment>
             ))}
           </Shelf>

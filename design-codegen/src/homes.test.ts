@@ -185,18 +185,31 @@ describe('a card on a library home', () => {
           .reduce<unknown>((at, k) => (at as Record<string, unknown>)[k], data) as {
           sub: string;
           ref: string;
+          page?: string;
         }[];
         expect(list.length, of.join('.')).toBeGreaterThan(0);
-        const pages = new Set(list.map((entry) => opens(entry, of)));
-        expect(pages.size, of.join('.')).toBe(1);
-        expect(card.props.onClick, `${card.component} over ${of.join('.')}`).toEqual({
-          kind: 'open',
-          page: [...pages][0],
-          params: { ref: [item, 'ref'] },
-        });
+        const onClick = card.props.onClick;
+        expect(onClick?.kind, `${card.component} over ${of.join('.')}`).toBe('open');
+        if (onClick?.kind !== 'open') continue;
+        expect(onClick.params).toEqual({ ref: [item, 'ref'] });
+        if (typeof onClick.page === 'string') {
+          for (const entry of list) expect(onClick.page, entry.sub).toBe(opens(entry, of));
+        } else {
+          // A mixed list: each item names the page of its own kind.
+          expect(onClick.page).toEqual({ path: [item, 'page'] });
+          for (const entry of list) expect(entry.page, entry.sub).toBe(opens(entry, of));
+        }
       }
     });
   }
+
+  it('[M0.canvas] on browse, keeps its shelves mixed, the kinds interleaved', () => {
+    const { data } = read('browse');
+    const kinds = (data.recentlyAdded as { page: string }[]).map((e) => e.page);
+    expect(new Set(kinds).size).toBeGreaterThan(1);
+    const runs = kinds.filter((k, i) => i === 0 || k !== kinds[i - 1]).length;
+    expect(runs).toBeGreaterThan(new Set(kinds).size);
+  });
 
   it('[M0.canvas] on books, requests a greyed book with a tap, as a series does', () => {
     const { tree } = read('books');

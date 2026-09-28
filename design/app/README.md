@@ -17,7 +17,8 @@ Now Playing panel.
 A handler prop may open another page: `onClick={<Open page="album" ref={release.ref} />}` names a
 page of `nav.json` that the page's structure `links` list, or its own page for another item of
 its kind, and binds each of its route's parameters
-to a data path; the check refuses anything else. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
+to a data path. A list of several kinds binds the page instead, `<Open page={item.page} ref={item.ref} />`,
+and every page its data names must be one of those; the check refuses anything else. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
 plays the item its ref binds on the queue it names, spoken or music, `next` makes it Play next,
 and `source` plays a list on its own, leaving the queue as it is;
 until the player exists, the web gives it a handler that does nothing. The web page navigates to the route through the
