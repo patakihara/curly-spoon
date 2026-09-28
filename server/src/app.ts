@@ -59,6 +59,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     db,
     cookieSecure,
     signOn: options.signOn ?? null,
+    publicOrigin: options.publicOrigin,
     linker: options.linker ?? null,
     random: options.random ?? randomBytes,
     now: options.now ?? Date.now,

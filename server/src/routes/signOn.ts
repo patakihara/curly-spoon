@@ -33,19 +33,37 @@ export interface SignOnRoutesOptions {
   cookieSecure: CookieSecure;
   /** `null` when the sign-on is not configured: the routes answer 404 `sign_on_off`. */
   signOn: SignOn | null;
+  /** Where browsers load the app from; a return path must stay on it. */
+  publicOrigin: string | undefined;
   linker: Linker | null;
   random: Random;
   now: () => number;
 }
 
-/** Only a path on this site: never another origin, a scheme, or a protocol-relative URL. */
-function sameSitePath(value: string | undefined): string {
-  if (value === undefined || !value.startsWith('/') || /^\/[/\\]/.test(value)) return '/';
-  return value;
+/** Stands in for PUBLIC_ORIGIN when none is set, so a path is still checked the same way. */
+const NO_ORIGIN = 'http://auralis.invalid';
+
+/**
+ * Only a path on this site: it starts with one `/` (never `//` or `/\`), carries no whitespace,
+ * control character or backslash, and still names this origin once parsed against it. Anything
+ * else goes home to `/`, so nothing a caller sends can reach the `Location` header raw.
+ */
+export function sameSitePath(value: string | undefined, publicOrigin: string | undefined): string {
+  if (value === undefined || !value.startsWith('/') || value.startsWith('//')) return '/';
+  if (/[\s\\\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(value)) return '/';
+  const origin = publicOrigin ?? NO_ORIGIN;
+  let url: URL;
+  try {
+    url = new URL(value, origin);
+  } catch {
+    return '/';
+  }
+  if (url.origin !== new URL(origin).origin) return '/';
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions): void {
-  const { db, cookieSecure, signOn, linker, random, now } = options;
+  const { db, cookieSecure, signOn, publicOrigin, linker, random, now } = options;
   const limiter = new RateLimiter({ windowMs: RATE_WINDOW_MS, max: RATE_MAX });
 
   function limit(request: FastifyRequest, reply: FastifyReply) {
@@ -73,7 +91,7 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
       db,
       {
         client: query.client,
-        returnTo: query.client === 'web' ? sameSitePath(query.return_to) : '/',
+        returnTo: query.client === 'web' ? sameSitePath(query.return_to, publicOrigin) : '/',
         appChallenge: query.client === 'android' ? (query.code_challenge ?? null) : null,
         deviceId: query.client === 'android' ? (query.device_id ?? null) : null,
       },

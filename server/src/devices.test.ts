@@ -210,14 +210,41 @@ describe('[M0.sso/b] signing in', () => {
   });
 
   it('sends the browser back only to a path on this site', async () => {
-    const app = await server();
-    for (const target of ['https://elsewhere.invalid/', '//elsewhere.invalid/', '/\\x']) {
+    const elsewhere = [
+      'https://elsewhere.invalid/',
+      '//elsewhere.invalid/',
+      '/\\x',
+      '/\\elsewhere.invalid/',
+      '/library\\x',
+      '/\t/elsewhere.invalid/',
+      '/library\nSet-Cookie: x=1',
+      '/library\r\nLocation: https://elsewhere.invalid/',
+      '/ library',
+      '/library\u0000',
+      '/library\u2028',
+      'library',
+      '',
+    ];
+    for (const target of elsewhere) {
+      const app = await server();
       const state = stateOf(
         await app.inject({ url: `/auth/login?return_to=${encodeURIComponent(target)}` }),
       );
       const res = await app.inject({ url: `/auth/callback?code=kara&state=${state}` });
-      expect(res.headers.location).toBe('/');
+      expect(res.statusCode, JSON.stringify(target)).toBe(302);
+      expect(res.headers.location, JSON.stringify(target)).toBe('/');
     }
+  });
+
+  it('keeps a path on this site with its query and fragment', async () => {
+    const app = await server();
+    const state = stateOf(
+      await app.inject({
+        url: `/auth/login?return_to=${encodeURIComponent('/library/item?tab=chapters#now')}`,
+      }),
+    );
+    const res = await app.inject({ url: `/auth/callback?code=kara&state=${state}` });
+    expect(res.headers.location).toBe('/library/item?tab=chapters#now');
   });
 
   it('needs the app to send a PKCE challenge, and its verifier to swap the code', async () => {
