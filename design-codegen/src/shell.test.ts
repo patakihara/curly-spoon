@@ -12,7 +12,8 @@ import {
   shellData,
   type ShellFile,
 } from './shell.js';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { elements } from './test-pages.js';
 import { join } from 'node:path';
 
 const appDir = join(REPO_ROOT, APP_DIR);
@@ -237,6 +238,48 @@ describe('a page in the shell', () => {
     };
     expect(heading(plain)).toEqual({ kind: 'literal', value: 'Shelf' });
     expect(heading(bound)).toEqual({ kind: 'binding', path: ['data', 'title'] });
+  });
+
+  it('[M0.canvas] names a page by its subject when the page binds an eyebrow, art and roundness from its data', () => {
+    const frame = framePage(
+      page(
+        '<BackdropShell back={<BackLayer title={data.subject} eyebrow={data.eyebrow} image={data.art} round={data.round} />}><PageBody /></BackdropShell>',
+      ),
+    );
+    const slot = el(framed(frame, 'Shelf', {}), 'BackdropShell').props.back;
+    const back = el(slot?.kind === 'slot' ? slot.tree : undefined, 'BackLayer');
+    expect(back.props.eyebrow).toEqual({ kind: 'binding', path: ['data', 'eyebrow'] });
+    expect(back.props.image).toEqual({ kind: 'binding', path: ['data', 'art'] });
+    expect(back.props.round).toEqual({ kind: 'binding', path: ['data', 'round'] });
+    for (const prop of ['eyebrow="More like"', 'image={shell.account.image}', 'round']) {
+      expect(() =>
+        framePage(page(`<BackdropShell back={<BackLayer ${prop} />}><PageBody /></BackdropShell>`)),
+      ).toThrow(
+        /BackLayer\.(eyebrow|image|round) names the page's subject; a page may only bind its own data\.…/,
+      );
+    }
+  });
+
+  it('[M0.canvas] never repeats a page’s heading in a header below it, on any page', () => {
+    const drawn = readdirSync(join(appDir, 'pages')).map((f) => f.replace('.page.jsx', ''));
+    const bound = (v: PropValue | undefined) =>
+      v?.kind === 'binding' ? v.path.join('.') : undefined;
+    for (const id of drawn) {
+      const tree = parsePage(readFileSync(join(appDir, 'pages', `${id}.page.jsx`), 'utf8'), id);
+      const frame = framePage(tree);
+      const heading = [bound(frame.title), bound(frame.context?.eyebrow)].filter(
+        (p): p is string => p !== undefined,
+      );
+      for (const content of frame.content) {
+        for (const header of elements(content)) {
+          for (const prop of ['title', 'eyebrow']) {
+            const path = bound(header.props[prop]);
+            if (path !== undefined)
+              expect(heading, `${id}: ${header.component}.${prop}`).not.toContain(path);
+          }
+        }
+      }
+    }
   });
 
   it('[M0.canvas] refuses a heading written in the page, or bound to anything but its data', () => {

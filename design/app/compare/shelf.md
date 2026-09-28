@@ -1,6 +1,6 @@
 ---
 page: shelf
-pageHash: f17fa1d85199a11addd8034d456faf2ea0ab0fa7670fc430398a9e9f47ecc5f3
+pageHash: e7e81109772fd095b1ba76c3b2467160af9d53699522369017c380ca58b83c1c
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: [S12]
 ---
@@ -25,14 +25,16 @@ and Spotify's S12 for the shelf header.
 
 ## What the canvas page draws
 
-The back layer holds the heading, the shelf's own title "More like Deep Inertia", bound from its
-data (`BackLayer title={data.title}`), led by a close control (the shelf closes to
-Browse), and ends in the local search's button (`BackLayer search="Search this shelf"`, out as the
-front layer scrolls). The front layer, with no subheader, holds one `Section` whose header is the shelf as on
-Browse: the eyebrow "More like", the subject "Deep Inertia" and its round art (an artist), with
-the `ViewToggle` at its trailing edge (Sonora's new `Section.trailing`). Below it a `LayoutGrid`
-of seven `MediaCard`s, none of them the subject's own work, captions naming each item's type, one with a resume bar: 3 across on the
-phone, 4 across beside the panel on desktop, filling the front layer as the library homes do.
+The back layer holds the heading in SectionHeader's context form, named by the shelf's subject
+(`BackLayer title={data.subject} eyebrow={data.eyebrow} image={data.subjectArt} round={data.round}`):
+the round art of Deep Inertia (an artist), the eyebrow "More like" over "Deep Inertia", led by a
+close control (the shelf closes to Browse), and ending in the local search's button
+(`BackLayer search="Search this shelf"`, out as the front layer scrolls) and the `ViewToggle`.
+On the phone that heading is the top app bar, in the body face; on desktop it is the backdrop's
+display heading. The front layer, with no subheader and no header of its own, holds one `Section`
+with a `LayoutGrid` of seven `MediaCard`s, none of them the subject's own work, captions naming
+each item's type, one with a resume bar: 3 across on the phone, 4 across beside the panel on
+desktop, filling the front layer as the library homes do.
 
 **Empty state**, per nav.json: a shelf with no items is never offered on Browse; reached by an old
 link, the page says the shelf has gone, with the way back to Browse.
@@ -41,16 +43,17 @@ link, the page says the shelf has gone, with the way back to Browse.
 
 - Matches: the 3-across phone grid, captions naming the type, resume bars, the toggle at the top
   right of the collection.
-- Changed on purpose: the shelf's own header (eyebrow, subject, subject art) leads the items, as
-  S12 and Browse's shelves have it; the kit has only the title in the app bar.
-- Changed on purpose: the view toggle shares the header's row instead of a row of its own.
+- Changed on purpose: the shelf is headed by its subject, as S12 and Browse's shelves have it:
+  the subject's art and the eyebrow "More like" over its name, in the heading itself; the kit has
+  only the title in the app bar. No header over the items says it again.
+- Changed on purpose: the view toggle ends the heading, beside the search button, instead of a row
+  of its own.
 - Changed on purpose: the grid fills the front layer on desktop (4 across at 1440 px), as on the
   library homes.
 - Changed on purpose: no "Not in library" pill; where an in-library marker goes is still open in
   the plan.
-- Changed on purpose: the heading is the shelf's own title, as the kit's app bar says "Recently
-  added", not nav.json's "Shelf"; the header over the items keeps the eyebrow and the subject's art
-  with only the subject's name, "Deep Inertia", so no line says the whole title twice.
+- Changed on purpose: the heading is the shelf's own, as the kit's app bar says "Recently added",
+  not nav.json's "Shelf".
 - Open: paging is not drawn; the placeholder holds one page of items.
-- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Browse's rail item lit.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control, the subject's art and the eyebrow over the subject's name, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Browse's rail item lit.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).

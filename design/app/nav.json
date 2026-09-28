@@ -190,8 +190,8 @@
         "purpose": "One Browse carousel opened in full (\"See all\").",
         "sections": [
           {
-            "name": "Header",
-            "holds": "The shelf's eyebrow, subject and subject art, as on Browse."
+            "name": "Heading",
+            "holds": "The shelf's subject under its eyebrow, beside the subject's art, as on Browse: the app bar on the phone, with no header below repeating it."
           },
           {
             "name": "Local search",

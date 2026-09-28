@@ -4,7 +4,6 @@ import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
 import { BackLayer, BackdropShell, BottomNav, IconButton, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, PlayerPanel, Section, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
-  "title": "More like Deep Inertia",
   "eyebrow": "More like",
   "subject": "Deep Inertia",
   "subjectArt": "/art/deep-inertia.jpg",
@@ -282,7 +281,18 @@ export default function Shelf({ data = placeholder, state = 'full', layout: give
   return (
     <BackdropShell
       rail={chrome.rail}
-      back={<BackLayer title={data.title} leading={chrome.leading} search="Search this shelf" platform={platform} />}
+      back={
+        <BackLayer
+          title={data.subject}
+          eyebrow={data.eyebrow}
+          image={data.subjectArt}
+          round={data.round}
+          leading={chrome.leading}
+          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          search="Search this shelf"
+          platform={platform}
+        />
+      }
       player={chrome.player}
       sheet={chrome.sheet}
       sheetOpen={chrome.sheetOpen}
@@ -290,15 +300,7 @@ export default function Shelf({ data = placeholder, state = 'full', layout: give
       platform={platform}
     >
       <PageBody platform={platform}>
-        <Section
-          eyebrow={data.eyebrow}
-          title={data.subject}
-          image={data.subjectArt}
-          round={data.round}
-          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
-          last={true}
-          platform={platform}
-        >
+        <Section last={true} platform={platform}>
           <LayoutGrid platform={platform}>
             {data.items.map((item, i) => (
               <Fragment key={i}>

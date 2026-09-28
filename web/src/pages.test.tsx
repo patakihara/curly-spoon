@@ -75,4 +75,11 @@ describe('the shell around each drawn page', () => {
       expect(await render(file, 'w600')).toContain('aria-label="Expand rail"');
     });
   }
+
+  it('[M0.canvas] heads a shelf on the phone with an app bar in the context form, saying "More like" once', async () => {
+    const html = await render('Shelf.tsx', 'w0');
+    expect(html.match(/More like/g)).toHaveLength(1);
+    expect(html).toContain('aria-label="Close"');
+    expect(html).toContain('/art/deep-inertia.jpg');
+  });
 });

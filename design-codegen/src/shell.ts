@@ -11,7 +11,7 @@
  *   </BackdropShell>
  *
  * The shell fills in the rest: the heading (nav.json's title for the page, unless the page binds
- * its own from its data, `title={data.title}`, as an album does with its name and a shelf with its own title), what leads it (the account avatar
+ * its own from its data, `title={data.title}`, as an album does with its name, and a shelf with its subject in the heading's context form), what leads it (the account avatar
  * on a phone's destination home, a close control on a page that closes), the rail or bottom bar
  * with the rail's hamburger, the player and the side panel. On the phone a page that is not a
  * destination has no backdrop: its heading is a top app bar on the page surface. On desktop it
@@ -224,10 +224,15 @@ export function chrome(
   return parts;
 }
 
+/** The back layer's props that name a page by its subject, SectionHeader's context form. */
+const CONTEXT = ['eyebrow', 'image', 'round'] as const;
+
 /** What a page gives the shell: its back layer's controls, trailing and local search, its subheader, and its content. */
 export interface PageFrame {
   /** The heading bound to the page's data, `title={data.title}`, in place of nav.json's title. */
   title?: Extract<PropValue, { kind: 'binding' }>;
+  /** The heading's context form, each bound to the page's data: what the page is to its subject, the subject's art, and whether that art is round. */
+  context?: Partial<Record<(typeof CONTEXT)[number], Extract<PropValue, { kind: 'binding' }>>>;
   controls?: PageTree;
   /** The back layer's local search: its placeholder, which names what it searches. */
   search?: string;
@@ -276,7 +281,15 @@ export function framePage(tree: PageTree): PageFrame {
         for (const [p, v] of Object.entries(value.tree.props)) {
           if ((p === 'controls' || p === 'trailing') && v.kind === 'slot') frame[p] = v.tree;
           else if (p === 'title' && v.kind === 'binding' && v.path[0] === 'data') frame.title = v;
-          else if (p === 'title') {
+          else if ((CONTEXT as readonly string[]).includes(p)) {
+            if (v.kind === 'binding' && v.path[0] === 'data') {
+              frame.context = { ...frame.context, [p]: v };
+            } else {
+              errors.push(
+                `line ${value.tree.line}: BackLayer.${p} names the page's subject; a page may only bind its own data.… there`,
+              );
+            }
+          } else if (p === 'title') {
             errors.push(
               `line ${value.tree.line}: BackLayer.title is nav.json's page title; a page may only bind its own data.… in its place`,
             );
@@ -288,7 +301,7 @@ export function framePage(tree: PageTree): PageFrame {
             );
           } else {
             errors.push(
-              `line ${value.tree.line}: BackLayer.${p} is the shell's; a page gives only controls and trailing, each one element, search and a bound title`,
+              `line ${value.tree.line}: BackLayer.${p} is the shell's; a page gives only controls and trailing, each one element, search, a bound title and its bound context`,
             );
           }
         }
@@ -321,6 +334,7 @@ export function framed(
     parts[name] === undefined ? {} : { [name]: parts[name]! };
   const back = el('BackLayer', {
     title: frame.title ?? lit(title),
+    ...frame.context,
     ...(parts.leading === undefined ? {} : { leading: parts.leading }),
     ...named('controls', frame.controls),
     ...named('trailing', frame.trailing),

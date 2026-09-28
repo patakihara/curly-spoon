@@ -149,27 +149,23 @@ describe('Search', () => {
 describe('Shelf', () => {
   const { tree, data } = readPage('shelf');
 
-  it('[M0.canvas] binds only the shelf: its title, eyebrow, subject, subject art and items', () => {
-    expect(dataRoots(tree)).toEqual([
-      'eyebrow',
-      'items',
-      'round',
-      'subject',
-      'subjectArt',
-      'title',
-    ]);
+  it('[M0.canvas] binds only the shelf: its eyebrow, subject, subject art and items', () => {
+    expect(dataRoots(tree)).toEqual(['eyebrow', 'items', 'round', 'subject', 'subjectArt']);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
   });
 
-  it('[M0.canvas] is headed by the shelf\'s own title, not nav.json\'s "Shelf", and its header names only the subject', () => {
+  it('[M0.canvas] is headed in the context form, its art and eyebrow over the subject, with no header below saying it again', () => {
     const slot = framed(framePage(tree), 'Shelf', {}) as Element;
     const back = slot.props.back?.kind === 'slot' ? (slot.props.back.tree as Element) : undefined;
-    expect(back?.props.title).toEqual({ kind: 'binding', path: ['data', 'title'] });
-    expect(data.title).toBe(`${data.eyebrow as string} ${data.subject as string}`);
-    const header = elements(tree).find((e) => e.component === 'Section' && e.props.eyebrow);
-    expect(header?.props.eyebrow).toEqual({ kind: 'binding', path: ['data', 'eyebrow'] });
-    expect(header?.props.title).toEqual({ kind: 'binding', path: ['data', 'subject'] });
-    expect(header?.props.image).toEqual({ kind: 'binding', path: ['data', 'subjectArt'] });
+    expect(back?.props.title).toEqual({ kind: 'binding', path: ['data', 'subject'] });
+    expect(back?.props.eyebrow).toEqual({ kind: 'binding', path: ['data', 'eyebrow'] });
+    expect(back?.props.image).toEqual({ kind: 'binding', path: ['data', 'subjectArt'] });
+    expect(back?.props.round).toEqual({ kind: 'binding', path: ['data', 'round'] });
+    expect(data.eyebrow).toBe('More like');
+    for (const header of elements(tree).filter((e) => e.component === 'Section')) {
+      expect(Object.keys(header.props)).not.toContain('title');
+      expect(Object.keys(header.props)).not.toContain('eyebrow');
+    }
   });
 
   it('[M0.canvas] never holds its own subject\'s work in a "More like" shelf', () => {
@@ -178,12 +174,8 @@ describe('Shelf', () => {
     }
   });
 
-  it('[M0.canvas] heads its items with the shelf, as on Browse, and the grid or list toggle', () => {
-    const header = elements(tree).find((e) => e.component === 'Section');
-    expect(header?.props.eyebrow).toEqual({ kind: 'binding', path: ['data', 'eyebrow'] });
-    expect(header?.props.title).toEqual({ kind: 'binding', path: ['data', 'subject'] });
-    expect(header?.props.image).toEqual({ kind: 'binding', path: ['data', 'subjectArt'] });
-    expect(slotted(header!, 'trailing')?.component).toBe('ViewToggle');
+  it('[M0.canvas] ends its heading with the grid or list toggle', () => {
+    expect(framePage(tree).trailing).toMatchObject({ kind: 'element', component: 'ViewToggle' });
   });
 
   it('[M0.canvas] has a local search in its back layer, scoped to the shelf', () => {
