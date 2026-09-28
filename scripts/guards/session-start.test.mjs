@@ -186,6 +186,26 @@ test('[M0.plan/e] after a compaction, the hook says the context was just compact
   });
 });
 
+test('[M0.plan/e] when the summary step fails, the hook still tells the orchestrator to read all of docs/plan', () => {
+  withRepo(answering, (root, commits, ghDir) => {
+    write(root, 'scripts/plan/progress.mjs', "console.error('summary broke');\nprocess.exit(1);\n");
+    const run = start(root, ghDir, {}, 'compact');
+    assert.equal(run.status, 0, run.stderr);
+    const lines = context(run);
+    assert.match(
+      lines[0],
+      /^Orchestrator: before any other work, read every file in docs\/plan in full/,
+    );
+    assert.match(lines[1], /^Brief subagents with node scripts\/plan\/brief\.mjs <id>/);
+    assert.ok(
+      lines.includes('Progress summary unavailable: progress.mjs failed: summary broke'),
+      lines.join('\n'),
+    );
+    assert.equal(summaryLine(lines), undefined);
+    assert.match(lines.at(-1), /ArtifactComments/);
+  });
+});
+
 test('it fails open on a payload it cannot read', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'session-start-'));
   const ghDir = fakeGh({ mode: 'fail' });

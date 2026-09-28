@@ -5,8 +5,9 @@
  * a reminder to read the published artifacts' open comments into the session's context. Every
  * `gh` call is killed a little before AURALIS_SUMMARY_TIMEOUT_MS (default 20000), so none
  * outlives the hook, and the summary is shown with checks unavailable. AURALIS_GH_TIMEOUT_MS
- * sets that gh cut on its own, leaving the rest of the budget to progress.mjs. If progress.mjs itself
- * overruns the budget it is killed and rerun without CI results. Fails open: on any error the session starts without it.
+ * sets that gh cut on its own, leaving the rest of the budget to progress.mjs. If progress.mjs
+ * itself overruns the budget it is killed and rerun without CI results. Fails open: the
+ * read-the-plan and brief lines always print, and a one-line note stands in for a failed summary.
  *
  * CLI: node scripts/guards/session-start.mjs < payload.json
  */
@@ -48,8 +49,8 @@ function commentsLine(root) {
   return `Before other work, read open comments on the plan, Sonora and canvas artifacts with the ArtifactComments tool: ${urls.length ? urls.join(', ') : '(none published yet)'}`;
 }
 
-runHook('session-start', (payload) => {
-  const root = repoRoot(payload);
+/** The progress summary's lines, plus a note when CI results timed out; throws if it fails. */
+function summaryLines(root) {
   const budget = Number(process.env.AURALIS_SUMMARY_TIMEOUT_MS) || 20000;
   const ghCut = Number(process.env.AURALIS_GH_TIMEOUT_MS) || budget - Math.min(2000, budget / 4);
   const ghDeadline = Date.now() + Math.min(ghCut, budget);
@@ -67,11 +68,24 @@ runHook('session-start', (payload) => {
       (result.stderr ?? '').trim().split('\n')[0] || result.error?.message || 'no output';
     throw new Error(`progress.mjs failed: ${first}`);
   }
-  extra.push(commentsLine(root));
+  return [text, ...extra];
+}
+
+runHook('session-start', (payload) => {
+  const lines = readPlanLines(payload?.source);
+  try {
+    const root = repoRoot(payload);
+    try {
+      lines.push(...summaryLines(root));
+    } catch (error) {
+      process.stderr.write(`session-start: ${error.message}\n`);
+      lines.push(`Progress summary unavailable: ${error.message}`);
+    }
+    lines.push(commentsLine(root));
+  } catch (error) {
+    lines.push(`Progress summary unavailable: ${error.message}`);
+  }
   return {
-    hookSpecificOutput: {
-      hookEventName: 'SessionStart',
-      additionalContext: [...readPlanLines(payload?.source), text, ...extra].join('\n'),
-    },
+    hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: lines.join('\n') },
   };
 });
