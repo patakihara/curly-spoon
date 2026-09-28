@@ -5,12 +5,13 @@ const WIDTHS = { full: 'none', tiles: 'var(--grid-max-width-tiles)', list: 'var(
 
 /**
  * The body of a page inside the shell: the page margin on both sides, the feed's top gap, and an
- * optional reading width. Shelf bleeds back out through exactly this margin.
+ * optional reading width. The width caps the content, inside the margin, as the kits cap it.
+ * Shelf bleeds back out through exactly this margin.
  */
 export function PageBody({ children, platform = 'desktop', width = 'full' }) {
   const m = platform === 'mobile' ? 'var(--grid-margin-mobile)' : 'var(--grid-margin)';
   return (
-    <div style={{ boxSizing: 'border-box', padding: 'var(--spacing-2xl) ' + m + ' ' + m, maxWidth: WIDTHS[width] || 'none', minWidth: 0 }}>
+    <div style={{ boxSizing: 'content-box', padding: 'var(--spacing-2xl) ' + m + ' ' + m, maxWidth: WIDTHS[width] || 'none', minWidth: 0 }}>
       {children}
     </div>
   );

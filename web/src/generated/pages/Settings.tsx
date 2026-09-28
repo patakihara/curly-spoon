@@ -8,26 +8,23 @@ const placeholder = {
   "settings": [
     {
       "title": "Auto-download requests",
-      "sub": "Fetch approved requests as soon as a source appears.",
+      "sub": "Fetch approved requests automatically.",
       "checked": true
     },
     {
       "title": "Wi-Fi only",
-      "sub": "Pause transfers on metered connections.",
+      "sub": "Pause transfers on mobile data.",
       "checked": true
     },
     {
       "title": "Gapless playback",
       "sub": "No silence between album tracks.",
       "checked": false
-    },
-    {
-      "title": "Show explicit content",
-      "sub": "Include explicit titles in search and shelves.",
-      "checked": true
     }
   ]
 };
+
+const ignore = () => {};
 
 export type SettingsData = typeof placeholder;
 
@@ -45,13 +42,13 @@ export default function Settings({ data = placeholder, state = 'full', platform:
   return (
     <PageBody width="form" platform={platform}>
       <Section platform={platform}>
-        <FieldRow label="Server" value={data.server} platform={platform} />
+        <FieldRow label="Server" value={data.server} onChange={ignore} platform={platform} />
       </Section>
       <Section last={true} platform={platform}>
-        <LayoutGrid columns={1} gap="var(--spacing-sm)" platform={platform}>
+        <LayoutGrid columns={1} gap="10px" platform={platform}>
           {data.settings.map((setting, i) => (
             <Fragment key={i}>
-              <SettingRow title={setting.title} sub={setting.sub} checked={setting.checked} platform={platform} />
+              <SettingRow title={setting.title} sub={setting.sub} checked={setting.checked} onChange={ignore} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

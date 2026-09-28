@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { componentName, generatePlatform, generateRoutes, readNav, type Nav } from './nav.js';
 import { checkPage, parsePage, type PageTree } from './page.js';
-import { generateWebPage } from './page-web.js';
+import { generateWebPage, type WebComponents } from './page-web.js';
 import type { PropsModel } from './props.js';
 
 const Placeholder = z.record(z.string(), z.unknown());
@@ -22,8 +22,8 @@ export interface App {
   nav: Nav;
   /** The pages drawn so far, in nav.json's order. */
   pages: AppPage[];
-  /** The components that take a `platform` prop. */
-  platformed: Set<string>;
+  /** The components that take a `platform` prop, and those that take an `onChange` handler. */
+  components: WebComponents;
 }
 
 /** Each component's prop names, from its `<Name>Props` declaration. */
@@ -65,10 +65,13 @@ export function readApp(appDir: string, model: PropsModel): App {
     }
   }
   if (errors.length > 0) throw new Error(`design/app:\n  ${errors.join('\n  ')}`);
-  const platformed = new Set(
-    [...props].filter(([, names]) => names.has('platform')).map(([c]) => c),
-  );
-  return { nav, pages, platformed };
+  const taking = (prop: string) =>
+    new Set([...props].filter(([, names]) => names.has(prop)).map(([c]) => c));
+  return {
+    nav,
+    pages,
+    components: { platformed: taking('platform'), handled: taking('onChange') },
+  };
 }
 
 export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map<string, string> } {
@@ -83,7 +86,7 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
         .filter(({ id }) => app.nav.pages.find((p) => p.id === id)?.platforms.includes('web'))
         .map(({ id, tree, placeholder }) => [
           `${componentName(id)}.tsx`,
-          generateWebPage(tree, id, placeholder, app.platformed),
+          generateWebPage(tree, id, placeholder, app.components),
         ]),
     ),
   };

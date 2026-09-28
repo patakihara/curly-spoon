@@ -1,0 +1,8 @@
+/* The page itself, as Sonora's UI kits set it: no browser margin, the surface behind everything. */
+html,
+body {
+  margin: 0;
+  background: var(--surface-bg);
+  color: var(--surface-fg);
+  font-family: var(--font-body);
+}

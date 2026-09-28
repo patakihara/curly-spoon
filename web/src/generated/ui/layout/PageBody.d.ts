@@ -9,7 +9,10 @@ import { ReactNode } from 'react';
 export interface PageBodyProps {
   children?: ReactNode;
   platform?: 'desktop' | 'mobile';
-  /** The widest the content runs: a tile grid, a list, a form, or the whole pane (default). */
+  /**
+   * The widest the content runs, not counting the margin: a tile grid, a list, a form (640 px),
+   * or the whole pane (default).
+   */
   width?: 'full' | 'tiles' | 'list' | 'form';
 }
 

@@ -24,7 +24,10 @@ data class LayoutGridProps(
     val item: LayoutGridItem? = null,
     /** Explicit minimum width, overriding the `item` token. */
     val min: String? = null,
-    /** Gap override. Defaults to `--grid-gutter`. */
+    /**
+     * Gap override. Defaults to `--grid-gutter` (`--grid-gutter-mobile` on mobile), and to half
+     * of `--grid-gutter` for wide items on desktop.
+     */
     val gap: String? = null,
     /** Measure cap, e.g. `var(--grid-max-width)`. */
     val maxWidth: String? = null,

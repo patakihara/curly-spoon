@@ -3,23 +3,18 @@
   "settings": [
     {
       "title": "Auto-download requests",
-      "sub": "Fetch approved requests as soon as a source appears.",
+      "sub": "Fetch approved requests automatically.",
       "checked": true
     },
     {
       "title": "Wi-Fi only",
-      "sub": "Pause transfers on metered connections.",
+      "sub": "Pause transfers on mobile data.",
       "checked": true
     },
     {
       "title": "Gapless playback",
       "sub": "No silence between album tracks.",
       "checked": false
-    },
-    {
-      "title": "Show explicit content",
-      "sub": "Include explicit titles in search and shelves.",
-      "checked": true
     }
   ]
 }

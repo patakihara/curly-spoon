@@ -11,7 +11,10 @@ import androidx.compose.runtime.Composable
 data class PageBodyProps(
     val children: (@Composable () -> Unit)? = null,
     val platform: Platform? = null,
-    /** The widest the content runs: a tile grid, a list, a form, or the whole pane (default). */
+    /**
+     * The widest the content runs, not counting the margin: a tile grid, a list, a form (640 px),
+     * or the whole pane (default).
+     */
     val width: PageBodyWidth? = null,
 )
 

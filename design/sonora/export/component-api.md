@@ -513,7 +513,7 @@ Responsive card grid — the vertical half of the grid system (Shelf is the hori
 | `columns` | `number` |  Fixed column count. Rarely needed — prefer letting the item minimums decide, so the same grid reflows in a narrow pane as well as it does on a phone.  |
 | `item` | `'standard' \| 'wide'` |  Item shape, which selects the minimum-width token: 'standard' for square media cards (`--grid-item-min`), 'wide' for horizontal tiles like QuickPick (`--grid-item-min-wide`). Mobile variants of both tokens are tuned to auto-fill to two columns on a phone.  |
 | `min` | `string` | Explicit minimum width, overriding the `item` token. |
-| `gap` | `string` | Gap override. Defaults to `--grid-gutter`. |
+| `gap` | `string` |  Gap override. Defaults to `--grid-gutter` (`--grid-gutter-mobile` on mobile), and to half of `--grid-gutter` for wide items on desktop.  |
 | `maxWidth` | `string` | Measure cap, e.g. `var(--grid-max-width)`. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
@@ -550,7 +550,7 @@ The body of a page inside the shell: the page margin on both sides (`--grid-marg
 | --- | --- | --- |
 | `children` | `ReactNode` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `width` | `'full' \| 'tiles' \| 'list' \| 'form'` | The widest the content runs: a tile grid, a list, a form, or the whole pane (default). |
+| `width` | `'full' \| 'tiles' \| 'list' \| 'form'` |  The widest the content runs, not counting the margin: a tile grid, a list, a form (640 px), or the whole pane (default).  |
 
 ### PlayerPanel
 

@@ -104,11 +104,11 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Search | `GET /search/suggest`, `GET /search` | suggestions; library results + outside results, status per row, "more releases" folding | <span class="pill t-lib">Sonora</span> S03–S04, S32 |
 | Book · Show · Episode · Album | `GET /items/{ref}` | MediaHeader data (actions, progress, rating), episodes with sort, chapters or tracks, about text, related | <span class="pill t-lib">Sonora</span> S01–S02, S35 |
 | Artist · Author · Series | `GET /people/{ref}`, `GET /series/{ref}` | owned works grouped; unowned works greyed out (on by default) | <span class="pill t-req">mock only</span> |
-| Shelf ("See all") | `GET /feed/shelves/{id}` | paged items | <span class="pill t-lib">Sonora</span> CollectionPage |
+| Shelf ("See all") | `GET /feed/shelves/{id}` | paged items | <span class="pill t-lib">Sonora</span> UI kit collection screen |
 | Now Playing · mini-player · queue · lyrics | `POST /play`, `GET /queues`, `GET /lyrics/{ref}` | plan (with transport variant and direct or transcoded quality), per-type queues, synced lyrics, about cards | <span class="pill t-lib">Sonora</span> S33–S43 |
 | Requests | `GET /requests` | status, %, source, size, retry | <span class="pill t-req">mock only</span> |
 | Downloads (Android) | local, plus `GET /items/{ref}` | what's on the device, size, remove | <span class="pill t-req">parts</span> DownloadButton, no screen |
-| Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme and accent, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> |
+| Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme and accent, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
 
 ::: callout warn
 **Still to design on the Auralis canvas, before their milestone:** artist, author and series pages (with the greyed unowned catalogue), the Requests view, the Downloads screen, playlists, the music _Add to library_ menu item and album request, the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection in Settings, and loading and empty states per screen. Everything else has a Sonora component and a reference screen. Nobody invents UI in code.

@@ -4,7 +4,8 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 /** Responsive card grid. Auto-fills columns at --grid-item-min unless a fixed column count is given. */
 export function LayoutGrid({ children, columns, item = 'standard', min, max, gap, maxWidth, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
-  const g = gap || 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')';
+  // Wide tiles sit half a gutter apart on desktop, where full gutters would split them into islands.
+  const g = gap || (item === 'wide' && !mobile ? 'calc(var(--grid-gutter) / 2)' : 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')');
   // Token per item shape and platform: the mobile minimums are set so a phone viewport auto-fills
   // to two columns, which is why neither platform needs a hard column count.
   const m = min || 'var(--grid-item-min' + (item === 'wide' ? '-wide' : '') + (mobile ? '-mobile' : '') + ')';

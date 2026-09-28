@@ -22,7 +22,10 @@ export interface LayoutGridProps {
   item?: 'standard' | 'wide';
   /** Explicit minimum width, overriding the `item` token. */
   min?: string;
-  /** Gap override. Defaults to `--grid-gutter`. */
+  /**
+   * Gap override. Defaults to `--grid-gutter` (`--grid-gutter-mobile` on mobile), and to half
+   * of `--grid-gutter` for wide items on desktop.
+   */
   gap?: string;
   /** Measure cap, e.g. `var(--grid-max-width)`. */
   maxWidth?: string;

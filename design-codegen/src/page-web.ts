@@ -6,9 +6,9 @@ import { componentName } from './nav.js';
 import { APP_NOTE } from './outputs.js';
 import type { PageTree, PropValue } from './page.js';
 
-function components(tree: PageTree, into: Set<string>): Set<string> {
+function drawn(tree: PageTree, into: Set<string>): Set<string> {
   if (tree.kind === 'element') into.add(tree.component);
-  if ('children' in tree) tree.children.forEach((child) => components(child, into));
+  if ('children' in tree) tree.children.forEach((child) => drawn(child, into));
   return into;
 }
 
@@ -23,10 +23,31 @@ const prop = (name: string, value: PropValue) =>
       ? `${name}=${JSON.stringify(value.value)}`
       : `${name}={${JSON.stringify(value.value)}}`;
 
-/** `platformed` names the components that take a `platform` prop; each gets the page's own. */
-function render(tree: PageTree, indent: string, platformed: Set<string>): string[] {
+/** What the generator needs to know of the Sonora components a page uses. */
+export interface WebComponents {
+  /** The components that take a `platform` prop; each gets the page's own. */
+  platformed: Set<string>;
+  /** The components that take an `onChange` handler. */
+  handled: Set<string>;
+}
+
+/** A page is a still: a field it shows a value in gets a handler that ignores changes. */
+const ignored = (tree: PageTree, components: WebComponents) =>
+  tree.kind === 'element' &&
+  components.handled.has(tree.component) &&
+  ('value' in tree.props || 'checked' in tree.props) &&
+  !('onChange' in tree.props);
+
+function ignores(tree: PageTree, components: WebComponents): boolean {
+  return (
+    ignored(tree, components) ||
+    ('children' in tree && tree.children.some((c) => ignores(c, components)))
+  );
+}
+
+function render(tree: PageTree, indent: string, components: WebComponents): string[] {
   const inner = indent + '  ';
-  const kids = (nodes: PageTree[], at: string) => nodes.flatMap((n) => render(n, at, platformed));
+  const kids = (nodes: PageTree[], at: string) => nodes.flatMap((n) => render(n, at, components));
   switch (tree.kind) {
     case 'text':
       return [`${indent}{${JSON.stringify(tree.value)}}`];
@@ -50,7 +71,8 @@ function render(tree: PageTree, indent: string, platformed: Set<string>): string
       ];
     case 'element': {
       const props = Object.entries(tree.props).map(([name, value]) => ' ' + prop(name, value));
-      if (platformed.has(tree.component) && !('platform' in tree.props)) {
+      if (ignored(tree, components)) props.push(' onChange={ignore}');
+      if (components.platformed.has(tree.component) && !('platform' in tree.props)) {
         props.push(' platform={platform}');
       }
       const open = `<${tree.component}${props.join('')}`;
@@ -64,10 +86,10 @@ export function generateWebPage(
   tree: PageTree,
   id: string,
   placeholder: unknown,
-  platformed: Set<string>,
+  components: WebComponents,
 ): string {
   const name = componentName(id);
-  const used = [...components(tree, new Set())].sort();
+  const used = [...drawn(tree, new Set())].sort();
   const react = uses(tree, 'each') ? ["import { Fragment } from 'react';"] : [];
   return [
     `// ${APP_NOTE}`,
@@ -77,6 +99,7 @@ export function generateWebPage(
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
     '',
+    ...(ignores(tree, components) ? ['const ignore = () => {};', ''] : []),
     `export type ${name}Data = typeof placeholder;`,
     '',
     `export interface ${name}Props {`,
@@ -91,7 +114,7 @@ export function generateWebPage(
     '  const detected = usePlatform();',
     '  const platform = given ?? detected;',
     '  return (',
-    ...render(tree, '    ', platformed),
+    ...render(tree, '    ', components),
     '  );',
     '}',
     '',

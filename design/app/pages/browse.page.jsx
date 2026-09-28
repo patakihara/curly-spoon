@@ -5,7 +5,7 @@ export default function Browse({ data }) {
         <ButtonGroup items={data.filters} value="All" />
       </Section>
       <Section title="Jump back in">
-        <LayoutGrid item="wide" columns={2} maxWidth="var(--grid-max-width-tiles)">
+        <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)">
           <Each of={data.jumpBackIn} as="pick">
             <QuickPick title={pick.title} sub={pick.sub} image={pick.image} />
           </Each>

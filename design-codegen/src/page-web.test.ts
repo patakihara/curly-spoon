@@ -18,7 +18,24 @@ const out = generateWebPage(
   parsePage(source, 'book'),
   'book',
   { title: 'Wind and Truth', chapters: [{ title: 'Prologue' }] },
-  new Set(['MediaHeader', 'Button']),
+  { platformed: new Set(['MediaHeader', 'Button']), handled: new Set() },
+);
+
+const form = `export default function Settings({ data }) {
+  return (
+    <PageBody>
+      <FieldRow label="Server" value={data.server} />
+      <Switch checked onChange="kept" />
+      <Chip label="All" />
+    </PageBody>
+  );
+}
+`;
+const formOut = generateWebPage(
+  parsePage(form, 'settings'),
+  'settings',
+  { server: 'https://media.example.org' },
+  { platformed: new Set(), handled: new Set(['FieldRow', 'Switch', 'Chip']) },
 );
 
 describe('a generated web page', () => {
@@ -53,5 +70,16 @@ describe('a generated web page', () => {
 
   it('escapes text children', () => {
     expect(out).toContain('{"Play \\"it\\""}');
+  });
+
+  it('gives a field that shows a value a handler that ignores changes, since a page is a still', () => {
+    expect(formOut).toContain('const ignore = () => {};');
+    expect(formOut).toContain('<FieldRow label="Server" value={data.server} onChange={ignore} />');
+  });
+
+  it('leaves a handler the page gives, and components showing no value, alone', () => {
+    expect(formOut).toContain('<Switch checked={true} onChange="kept" />');
+    expect(formOut).toContain('<Chip label="All" />');
+    expect(out).not.toContain('ignore');
   });
 });

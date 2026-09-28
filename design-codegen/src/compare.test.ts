@@ -2,12 +2,19 @@ import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { checkComparison, pageHash, pngSize, sonoraShot } from './compare.js';
+import {
+  checkComparison,
+  componentFile,
+  pageHash,
+  pngSize,
+  sonoraShot,
+  usedComponents,
+} from './compare.js';
 import { readNav } from './nav.js';
 import { APP_DIR, REPO_ROOT, SONORA_DIR } from './outputs.js';
 
 const appDir = join(REPO_ROOT, APP_DIR);
-const screensReadme = join(REPO_ROOT, SONORA_DIR, 'docs/screens/README.md');
+const sonoraDir = join(REPO_ROOT, SONORA_DIR);
 const nav = readNav(appDir);
 
 /**
@@ -51,7 +58,7 @@ describe('the visual comparisons', () => {
 
   for (const page of nav.pages.filter((p) => !UNDRAWN.includes(p.id))) {
     it(`[M0.canvas/e] ${page.id} has a comparison made from its current page, with both renders beside its Sonora UI kit renders`, () => {
-      expect(checkComparison(appDir, page, screensReadme)).toEqual([]);
+      expect(checkComparison(appDir, sonoraDir, page)).toEqual([]);
     });
   }
 });
@@ -64,29 +71,47 @@ describe('checking a comparison', () => {
   });
   const settings = nav.pages.find((p) => p.id === 'settings')!;
 
-  /** A copy of the canvas holding settings' page, placeholder and comparison. */
+  /** A copy of the canvas holding settings' page, placeholder and comparison, and of Sonora. */
   function copy(): string {
     tmp = mkdtempSync(join(tmpdir(), 'auralis-compare-'));
     for (const rel of ['pages/settings.page.jsx', 'placeholders/settings.json', 'compare']) {
-      cpSync(join(appDir, rel), join(tmp, rel), { recursive: true });
+      cpSync(join(appDir, rel), join(tmp, 'app', rel), { recursive: true });
     }
-    return tmp;
+    for (const rel of ['components', 'docs/screens/README.md']) {
+      cpSync(join(sonoraDir, rel), join(tmp, 'sonora', rel), { recursive: true });
+    }
+    return join(tmp, 'app');
   }
+  const sonora = () => join(tmp ?? '', 'sonora');
 
   it('[M0.canvas/e] fails once the page has changed since its comparison was made', () => {
     const app = copy();
     const file = join(app, 'pages/settings.page.jsx');
     writeFileSync(file, readFileSync(file, 'utf8').replace('</', '\n</'));
-    expect(checkComparison(app, settings, screensReadme)).toEqual([
+    expect(checkComparison(app, sonora(), settings)).toEqual([
       'settings: the page changed since compare/settings.md was made; look again',
     ]);
   });
+
+  for (const [component, why] of [
+    ['PageBody', 'a component the page draws'],
+    ['SectionHeader', 'a component one the page draws looks up'],
+  ] as const) {
+    it(`[M0.canvas/e] fails once ${why} has changed since the comparison was made`, () => {
+      const app = copy();
+      const file = componentFile(sonora(), component)!;
+      writeFileSync(file, readFileSync(file, 'utf8') + '\n');
+      expect(checkComparison(app, sonora(), settings)).toEqual([
+        'settings: the page changed since compare/settings.md was made; look again',
+      ]);
+    });
+  }
 
   it('[M0.canvas/e] fails when a render is missing or is not a PNG', () => {
     const app = copy();
     rmSync(join(app, 'compare/settings/canvas-phone.png'));
     writeFileSync(join(app, 'compare/settings/canvas-desktop.png'), 'not a png');
-    expect(checkComparison(app, settings, screensReadme)).toEqual([
+    expect(checkComparison(app, sonora(), settings)).toEqual([
       'settings: compare/settings/canvas-phone.png is missing',
       'settings: compare/settings/canvas-desktop.png is not a PNG',
     ]);
@@ -99,7 +124,7 @@ describe('checking a comparison', () => {
       md,
       readFileSync(md, 'utf8').replace(/## Differences[\s\S]*$/, '## Differences\n'),
     );
-    expect(checkComparison(app, settings, screensReadme)).toEqual([
+    expect(checkComparison(app, sonora(), settings)).toEqual([
       'settings: compare/settings.md lists no differences (write - none if there are none)',
     ]);
   });
@@ -110,10 +135,16 @@ describe('checking a comparison', () => {
     expect(sonoraShot('none')).toBeUndefined();
   });
 
-  it('hashes the page file with its placeholder', () => {
-    const hash = pageHash(appDir, 'settings');
+  it('hashes the page file with its placeholder and the Sonora sources it draws with', () => {
+    const hash = pageHash(appDir, sonoraDir, 'settings');
     expect(hash).toMatch(/^[0-9a-f]{64}$/);
-    expect(pageHash(appDir, 'browse')).not.toBe(hash);
+    expect(pageHash(appDir, sonoraDir, 'browse')).not.toBe(hash);
+  });
+
+  it('follows the components a page uses through their NS() lookups and imports', () => {
+    const used = usedComponents(sonoraDir, ['Section', 'PageBody']);
+    expect(used).toEqual(expect.arrayContaining(['PageBody', 'Section', 'SectionHeader']));
+    expect(used).toEqual([...used].sort());
   });
 
   it('reads a PNG size, and refuses what is not one', () => {

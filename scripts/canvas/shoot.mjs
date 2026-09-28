@@ -95,7 +95,7 @@ try {
       await tab.screenshot({ path: join(dir, `canvas-${name}.png`), animations: 'disabled' });
       await tab.close();
     }
-    process.stdout.write(`${page.id}: pageHash ${pageHash(APP, page.id)}\n`);
+    process.stdout.write(`${page.id}: pageHash ${pageHash(APP, SONORA, page.id)}\n`);
   }
 } finally {
   await browser.close();

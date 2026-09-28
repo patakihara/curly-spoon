@@ -170,6 +170,8 @@ const placeholder = {
   ]
 };
 
+const ignore = () => {};
+
 export type BrowseData = typeof placeholder;
 
 export interface BrowseProps {
@@ -186,10 +188,10 @@ export default function Browse({ data = placeholder, state = 'full', platform: g
   return (
     <PageBody platform={platform}>
       <Section platform={platform}>
-        <ButtonGroup items={data.filters} value="All" platform={platform} />
+        <ButtonGroup items={data.filters} value="All" onChange={ignore} platform={platform} />
       </Section>
       <Section title="Jump back in" platform={platform}>
-        <LayoutGrid item="wide" columns={2} maxWidth="var(--grid-max-width-tiles)" platform={platform}>
+        <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
           {data.jumpBackIn.map((pick, i) => (
             <Fragment key={i}>
               <QuickPick title={pick.title} sub={pick.sub} image={pick.image} platform={platform} />
