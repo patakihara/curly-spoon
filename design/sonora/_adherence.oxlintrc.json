@@ -559,6 +559,10 @@
         "message": "<MediaCard> size must be one of 'md' | 'sm'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:progress|request|error)$/]",
+        "message": "<MediaCard> tone must be one of 'progress' | 'request' | 'error'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|image|compactAt|kindLabel|title|subtitle|meta|playLabel|nextLabel|lastLabel|round|onPlay|onPlayNext|onPlayLast|onSubtitle|actions|progress|key|ref|className|style|children)$/]",
         "message": "<MediaHeader> doesn't accept that prop. Declared props: platform, image, compactAt, kindLabel, title, subtitle, meta, playLabel, nextLabel, lastLabel, round, onPlay, onPlayNext, onPlayLast, onSubtitle, actions, progress."
       },
@@ -629,6 +633,10 @@
       {
         "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|status|progress|tone|actionGlyph|image|platform|onClick|onAction|divider|trailing|key|ref|className|style|children)$/]",
         "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, status, progress, tone, actionGlyph, image, platform, onClick, onAction, divider, trailing."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:library|request|progress|error)$/]",
+        "message": "<ResultRow> tone must be one of 'library' | 'request' | 'progress' | 'error'."
       },
       {
         "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",

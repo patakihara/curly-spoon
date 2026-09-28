@@ -85,8 +85,11 @@ def props_of(src, iface):
 
 
 def literal_union(t):
-    """['sm','lg'] for a type made only of quoted literals; None otherwise."""
-    parts = [p.strip() for p in t.split("|")]
+    """['sm','lg'] for a type made only of quoted literals, and perhaps null; None otherwise.
+
+    A null in the union is dropped: JSX writes null as {null}, never as a string literal, so the
+    rule on a string literal holds the words alone."""
+    parts = [p.strip() for p in t.split("|") if p.strip() != "null"]
     if len(parts) < 2:
         return None
     vals = []
