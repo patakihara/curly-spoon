@@ -1,20 +1,24 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
-/** Responsive card grid. Auto-fills columns at --grid-item-min unless a fixed column count is given. */
+/** Responsive card grid. Auto-fills columns at --grid-item-min unless a fixed column count is given; a standard grid fills its row. */
 export function LayoutGrid({ children, columns, item = 'standard', min, max, gap, maxWidth, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
+  const wide = item === 'wide';
   // Wide tiles sit half a gutter apart on desktop, where full gutters would split them into islands.
-  const g = gap || (item === 'wide' && !mobile ? 'calc(var(--grid-gutter) / 2)' : 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')');
-  // Token per item shape and platform: the mobile minimums are set so a phone viewport auto-fills
-  // to two columns, which is why neither platform needs a hard column count.
-  const m = min || 'var(--grid-item-min' + (item === 'wide' ? '-wide' : '') + (mobile ? '-mobile' : '') + ')';
-  // Columns are capped as well as floored: left to stretch at 1fr, a wide pane turns four cards into
-  // four posters. Past the cap the grid adds a column instead of growing the cards.
-  const cap = max || 'var(--grid-item-max' + (item === 'wide' ? '-wide' : '') + (mobile ? '-mobile' : '') + ')';
+  const g = gap || (wide && !mobile ? 'calc(var(--grid-gutter) / 2)' : 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')');
+  // Token per item shape and platform: the mobile minimum is set so a phone viewport auto-fills to
+  // three columns, which is why neither platform needs a hard column count.
+  const m = min || 'var(--grid-item-min' + (wide ? '-wide' : '') + (mobile ? '-mobile' : '') + ')';
+  // A standard grid fills its row: as many columns as the minimum allows, sharing what is left, so a
+  // wider pane adds a column instead of leaving the row's end empty. The minimum gives way to a third
+  // of the row, so a narrow pane shrinks its cards rather than dropping below three across. Wide
+  // tiles are capped instead: past the cap the grid adds a column rather than stretching them.
+  const floor = wide ? m : 'min(' + m + ', calc((100% - 2 * ' + g + ') / 3))';
+  const cap = max || (wide ? 'var(--grid-item-max-wide' + (mobile ? '-mobile' : '') + ')' : '1fr');
   const cols = columns
     ? 'repeat(' + columns + ', minmax(0, 1fr))'
-    : 'repeat(auto-fill, minmax(' + m + ', ' + cap + '))';
+    : 'repeat(auto-fill, minmax(' + floor + ', ' + cap + '))';
   return (
     <div style={sx('display:grid;grid-template-columns:' + cols + ';gap:' + g + (maxWidth ? ';max-width:' + maxWidth : ''))}>{children}</div>
   );

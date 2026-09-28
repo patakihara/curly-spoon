@@ -44,11 +44,10 @@
   --grid-gutter-mobile: 8px;
   --grid-margin: 28px;
   --grid-margin-mobile: 16px;
-  --grid-item-min: 50px;
+  --grid-item-min: 160px;
   --grid-item-min-mobile: 100px;
   --grid-item-min-wide: 240px;
   --grid-item-min-wide-mobile: 170px;
-  --grid-item-max: 190px;
   --grid-item-max-wide: 300px;
   --grid-max-width: 1100px;
   --grid-max-width-tiles: 1000px;
@@ -117,7 +116,6 @@
   --display-stretch: 112%;
   --grid-columns: 12;
   --grid-columns-mobile: 3;
-  --grid-item-max-mobile: 1fr;
   --grid-item-max-wide-mobile: 1fr;
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);

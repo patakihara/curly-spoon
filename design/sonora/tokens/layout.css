@@ -15,19 +15,18 @@
 
 /* Minimum item width before a grid drops a column.
    "standard" is a square media card; "wide" is a horizontal tile (QuickPick) that needs more
-   width before it reads as a row. The desktop floor is deliberately far below the cap: a narrow
-   pane may shrink cards to about a third of a full-size one rather than drop to one column.
-   The mobile values are tuned so a 360–430px viewport minus the page margins auto-fills to exactly
-   three columns — no hard column count needed. */
---grid-item-min:50px;
+   width before it reads as a row. A standard grid fills its row: it fits as many columns as the
+   minimum allows and shares the rest of the row between them, so a wider pane adds a column rather
+   than leaving space at the end. It never drops below three across: a narrow pane shrinks the
+   cards to a third of the row instead. The mobile value is tuned so a 360-430px viewport minus the
+   page margins auto-fills to exactly three columns, no hard column count needed. */
+--grid-item-min:160px;
 --grid-item-min-mobile:100px;
 --grid-item-min-wide:240px;
 --grid-item-min-wide-mobile:170px;
 
-/* Upper bound on an auto-filled column: past this the grid adds a column rather than growing the
-   card, so a wide pane shows more items instead of poster-sized art. */
---grid-item-max:190px;
---grid-item-max-mobile:1fr; /* @kind other */
+/* Upper bound on an auto-filled wide column: past this the grid adds a column rather than
+   stretching the tile, so a wide pane shows more tiles instead of long bars. */
 --grid-item-max-wide:300px;
 --grid-item-max-wide-mobile:1fr; /* @kind other */
 

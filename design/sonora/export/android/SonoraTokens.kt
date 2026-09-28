@@ -134,11 +134,10 @@ object SonoraDimens {
     val gridGutterMobile = 8.dp
     val gridMargin = 28.dp
     val gridMarginMobile = 16.dp
-    val gridItemMin = 50.dp
+    val gridItemMin = 160.dp
     val gridItemMinMobile = 100.dp
     val gridItemMinWide = 240.dp
     val gridItemMinWideMobile = 170.dp
-    val gridItemMax = 190.dp
     val gridItemMaxWide = 300.dp
     val gridMaxWidth = 1100.dp
     val gridMaxWidthTiles = 1000.dp
@@ -220,7 +219,6 @@ object SonoraMotion {
  *   --display-stretch: 112%
  *   --grid-columns: 12
  *   --grid-columns-mobile: 3
- *   --grid-item-max-mobile: 1fr
  *   --grid-item-max-wide-mobile: 1fr
  *   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05)
  *   --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)
