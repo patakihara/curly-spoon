@@ -33,6 +33,9 @@ export function NowPlayingPage({
   const icon = (name, size) => <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: size || 'var(--icon-sm)', lineHeight: 1 }}>{name}</span>;
   // Song, art and seek share one measure: the art's width, centred, with the seek bar inset a hair.
   const artWidth = mobile ? 'min(76%, var(--now-playing-art-max))' : '100%';
+  // A word too wide for the phone's display step beside the favourite, as an episode's often is, takes
+  // the desktop's step; a word wider still breaks rather than running under the favourite.
+  const longWord = String(title || '').split(/\s+/).some((w) => w.length > 10);
   const sleeping = sleep !== 'Off';
   const sleepButton = IconButton && (
     <IconButton label={'Sleep timer, ' + sleep} active={sleeping} muted={!sleeping} size={mobile ? 48 : 40} onClick={onSleep}>{icon('bedtime')}</IconButton>
@@ -46,7 +49,7 @@ export function NowPlayingPage({
       </div>
       <div style={sx('display:flex;align-items:flex-start;gap:var(--spacing-md);align-self:center;box-sizing:border-box;width:' + artWidth)}>
         <div style={sx('flex:1;min-width:0')}>
-          <div style={sx('font-family:var(--font-display);font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;color:var(--surface-fg);font-size:' + (mobile ? 'var(--text-4xl)' : 'var(--text-2xl)'))}>{title}</div>
+          <div style={sx('font-family:var(--font-display);font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;overflow-wrap:break-word;color:var(--surface-fg);font-size:' + (mobile && !longWord ? 'var(--text-4xl)' : 'var(--text-2xl)'))}>{title}</div>
           <div style={sx('margin-top:2px;color:var(--surface-fg-muted);font-size:' + (mobile ? 'var(--text-lg)' : 'var(--text-md)'))}>{artist}</div>
           {!mobile && context && <div style={sx('margin-top:6px;font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{context}</div>}
         </div>

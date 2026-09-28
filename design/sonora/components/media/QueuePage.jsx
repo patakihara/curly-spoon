@@ -5,8 +5,9 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 /**
  * The player's Queue tab. `queues` switches between the music and spoken queues, starting one
  * pausing the other; then what the queue is on the meta row beside the edit toggle; what already
- * played, which Back walks; now playing; up next, which Clear empties and an item from the other
- * queue marks where playback moves over to it; and what autoplay plays once the queue runs out.
+ * played, which Back walks; now playing; up next, which Clear empties, an item from the other
+ * queue marking where playback moves over to it and a label where this queue's rest waits, paused;
+ * and what autoplay plays once the queue runs out.
  * Up next is an EditableList, so selection, drag reorder and the remove bar behave as in any
  * editable list. Leave `editing` off and the page owns the mode.
  */
@@ -30,6 +31,14 @@ export function QueuePage({
       handle={false} draggable={false} onClick={() => onPlay && onPlay(item, -1)} />
   );
   const header = (title, extra) => SectionHeader && <SectionHeader platform={platform} title={title} {...extra} />;
+  // A labelled point in up next: where playback moves to the other queue, or where this queue's
+  // rest waits, paused, until it is started again.
+  const mark = (glyph, label, color) => (
+    <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm) 0;font-size:var(--text-sm);font-weight:var(--weight-strong);color:' + color)}>
+      <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>{glyph}</span>
+      {label}
+    </div>
+  );
 
   if (!PlayerSubPage || !EditableList) return null;
   return (
@@ -57,12 +66,8 @@ export function QueuePage({
           onRemoveSelected={onRemoveSelected}
           renderRow={({ item, index, key, selected, editing: on, toggle, drag }) => (
             <div key={key} style={sx('display:flex;flex-direction:column')}>
-              {item.handoff && (
-                <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm) 0;font-size:var(--text-sm);font-weight:var(--weight-strong);color:var(--accent-ink)')}>
-                  <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>swap_horiz</span>
-                  {item.handoff}
-                </div>
-              )}
+              {item.handoff && mark('swap_horiz', item.handoff, 'var(--accent-ink)')}
+              {item.waiting && mark('pause_circle', item.waiting, 'var(--surface-fg-muted)')}
               {QueueRow && (
                 <QueueRow platform={platform} title={item.title} sub={item.sub} time={item.time} image={item.image}
                   handle={false} editing={on} selected={selected} onSelectToggle={toggle}

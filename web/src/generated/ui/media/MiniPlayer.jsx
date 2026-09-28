@@ -80,7 +80,7 @@ export function MiniPlayer({
             {spoken ? (
               <>
                 <button aria-label={'Skip forward ' + skipSeconds + ' seconds'} onClick={onSkipForward} style={iconBtn(fg)}>{skip('forward')}</button>
-                <button aria-label={'Sleep timer, ' + sleep} onClick={onSleep} style={iconBtn(sleep === 'Off' ? fg : 'var(--play-ink)', 36, 'var(--icon-sm)', sleep === 'Off')}>bedtime</button>
+                <button aria-label={'Sleep timer, ' + sleep} onClick={onSleep} style={iconBtn(sleep === 'Off' ? fg : 'var(--accent-ink)', 36, 'var(--icon-sm)', sleep === 'Off')}>bedtime</button>
               </>
             ) : (
               <>

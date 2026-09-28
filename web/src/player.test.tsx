@@ -59,6 +59,34 @@ describe("Sonora's spoken transport", () => {
     expect(bar('spoken')).not.toContain('Lyrics');
     expect(bar('music')).toEqual(expect.arrayContaining(['Previous', 'Next', 'Lyrics']));
   });
+
+  it('[M0.canvas] shows a set sleep timer on the player bar in violet, as the page does, leaving rose to play', () => {
+    const html = draw(MiniPlayer, {
+      title: 't',
+      artist: 'a',
+      platform: 'desktop',
+      variant: 'spoken',
+      sleep: '23 min',
+    });
+    const button = /<button aria-label="Sleep timer, 23 min"[^>]*>/.exec(html)?.[0];
+    expect(button).toContain('color:var(--accent-ink)');
+    expect(button).not.toContain('--play');
+  });
+
+  it('[M0.canvas] steps a title with a word too wide for its column down, never running it under the favourite', () => {
+    const html = draw(NowPlayingPage, {
+      ...spoken,
+      title: 'Aftershocks: the second call',
+      platform: 'mobile',
+      favourite: false,
+    });
+    expect(html).toMatch(
+      /overflow-wrap:break-word;[^"]*font-size:var\(--text-2xl\)"[^>]*>Aftershocks: the second call</,
+    );
+    expect(draw(NowPlayingPage, { ...spoken, platform: 'mobile' })).toContain(
+      'font-size:var(--text-4xl)">The Anxious Generation<',
+    );
+  });
 });
 
 describe("Sonora's player on desktop", () => {
@@ -92,7 +120,7 @@ describe("Sonora's player on the phone", () => {
     });
 
   it('[M0.canvas] covers the whole frame, the bottom bar included', () => {
-    expect(html()).toMatch(/^<div aria-hidden="false" style="position:absolute;inset:0/);
+    expect(html()).toMatch(/^<div aria-hidden="false" style="position:absolute;inset:0;/);
   });
 
   it('[M0.canvas] holds Now playing, Queue and Lyrics as tabs, and a spoken item has no Lyrics tab', () => {
@@ -122,7 +150,8 @@ describe("Sonora's queue tab", () => {
     items: [
       item('Heartbeats in Silence', { current: true }),
       item('Episode 12', { handoff: 'Then the spoken queue' }),
-      item('Glass Coast'),
+      item('Episode 13'),
+      item('Glass Coast', { waiting: 'Waiting in the music queue' }),
     ],
     autoplay: { title: 'From Deep Inertia radio', items: [item('Night Drive')] },
     onClear: () => {},
@@ -145,6 +174,19 @@ describe("Sonora's queue tab", () => {
       'Night Drive',
     ];
     const at = order.map((text) => html.indexOf(`>${text}<`));
+    expect(at.every((i) => i > -1)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+  it('[M0.canvas] marks where playback moves to the spoken queue, what it plays there, then where the music waits', () => {
+    const order = [
+      'Then the spoken queue',
+      'Episode 12',
+      'Episode 13',
+      'Waiting in the music queue',
+      'Glass Coast',
+    ];
+    const at = order.map((text) => html.indexOf(text));
     expect(at.every((i) => i > -1)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
   });

@@ -11,6 +11,11 @@ export interface QueueItem {
   current?: boolean;
   /** Where playback moves over to the other queue at this row, "Then the spoken queue". */
   handoff?: string;
+  /**
+   * Where the rest of this queue waits, paused, once playback has moved to the other queue:
+   * "Waiting in the music queue". Drawn above the row, muted.
+   */
+  waiting?: string;
 }
 
 /**

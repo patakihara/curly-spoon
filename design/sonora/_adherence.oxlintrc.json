@@ -639,8 +639,8 @@
         "message": "<PlayActions> doesn't accept that prop. Declared props: onNext, onPlay, onLast, playing, size, always, gap."
       },
       {
-        "selector": "JSXOpeningElement[name.name='QueueItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|title|sub|time|image|current|handoff|key|ref|className|style|children)$/]",
-        "message": "<QueueItem> doesn't accept that prop. Declared props: id, title, sub, time, image, current, handoff."
+        "selector": "JSXOpeningElement[name.name='QueueItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|title|sub|time|image|current|handoff|waiting|key|ref|className|style|children)$/]",
+        "message": "<QueueItem> doesn't accept that prop. Declared props: id, title, sub, time, image, current, handoff, waiting."
       },
       {
         "selector": "JSXOpeningElement[name.name='QueuePage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|heading|context|items|queues|queue|onQueueChange|played|autoplay|onClear|editing|onEditingChange|onPlay|onRemove|onReorder|onRemoveSelected|footer|scroll|onClose|key|ref|className|style|children)$/]",
