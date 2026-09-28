@@ -22,6 +22,7 @@ export { CoverArt } from './media/CoverArt.jsx';
 export { DetailPage } from './media/DetailPage.jsx';
 export { DownloadButton } from './media/DownloadButton.jsx';
 export { EditableList } from './layout/EditableList.jsx';
+export { EmptyState } from './core/EmptyState.jsx';
 export { EpisodeRow } from './media/EpisodeRow.jsx';
 export { ExpandableText } from './core/ExpandableText.jsx';
 export { ExpanderRow } from './core/ExpanderRow.jsx';

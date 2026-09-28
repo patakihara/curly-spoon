@@ -99,6 +99,14 @@
         "message": "<Chip> platform must be one of 'desktop' | 'mobile'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='EmptyState'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|title|body|action|platform|key|ref|className|style|children)$/]",
+        "message": "<EmptyState> doesn't accept that prop. Declared props: icon, title, body, action, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='EmptyState'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<EmptyState> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='ExpandableText'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|text|lines|moreLabel|lessLabel|expanded|onToggle|key|ref|className|style|children)$/]",
         "message": "<ExpandableText> doesn't accept that prop. Declared props: children, text, lines, moreLabel, lessLabel, expanded, onToggle."
       },
@@ -816,6 +824,9 @@
         "replaces": []
       },
       "EditableListRow": {
+        "replaces": []
+      },
+      "EmptyState": {
         "replaces": []
       },
       "EpisodeRow": {

@@ -70,6 +70,18 @@ A tag/genre pill for filter tags: outlined at rest, filled with the accent when 
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `onClick` | `() => void` |  |
 
+### EmptyState
+
+What a page shows when it has nothing to show: a link that leads nowhere, a library with no books yet, a search that matched nothing. A glyph, the fact as a heading and one plain line, then the one way on, centred in the content column at the form width. States facts, never reassurance.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `icon` | `string` | Material Symbols Rounded glyph naming what is missing, drawn muted in a card-tone circle. |
+| `title` *(required)* | `string` | The fact, e.g. "This page doesn't exist". |
+| `body` | `string` | One line more, e.g. where the thing is found instead. |
+| `action` | `ReactNode` | The one way on: a `Button`, secondary unless it plays. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
 ### ExpandableText
 
 Long prose that neither dominates nor hides — a paragraph clamped with -webkit-line-clamp, with a real, keyboard-reachable toggle. Distinct from ExpanderRow, which folds a homogeneous list group rather than a paragraph.

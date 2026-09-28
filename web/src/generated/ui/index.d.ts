@@ -22,6 +22,7 @@ export { CoverArt, type CoverArtProps } from './media/CoverArt';
 export { DetailPage, type DetailPageProps } from './media/DetailPage';
 export { DownloadButton, type DownloadButtonProps } from './media/DownloadButton';
 export { EditableList, type EditableListProps, type EditableListRow } from './layout/EditableList';
+export { EmptyState, type EmptyStateProps } from './core/EmptyState';
 export { EpisodeRow, type EpisodeRowProps } from './media/EpisodeRow';
 export { ExpandableText, type ExpandableTextProps } from './core/ExpandableText';
 export { ExpanderRow, type ExpanderRowProps } from './core/ExpanderRow';

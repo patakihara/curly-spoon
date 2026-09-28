@@ -19,7 +19,7 @@ No unified logo exists (and none was invented) — see **Brand marks** below.
 - `guidelines/` — foundation specimen cards (colors, type, spacing, radius, shadows, brand marks)
 - `assets/logos/` — the three real product icons/wordmarks (Feishin, Booming Music, Symphony)
 - `assets/reference/` — real screenshots used as ground truth while building the UI kits
-- `components/core/` — Button, ButtonGroup, IconButton, Chip, Badge, ProgressRing, QuickPick, SectionHeader, ValueRow, ViewToggle, BrowseCard, ExpandableText, ExpanderRow, FollowButton, PreviewButton, Rating, SortFilterBar, StatusBanner
+- `components/core/` — Button, ButtonGroup, IconButton, Chip, Badge, ProgressRing, QuickPick, SectionHeader, ValueRow, ViewToggle, BrowseCard, ExpandableText, ExpanderRow, FollowButton, PreviewButton, Rating, SortFilterBar, StatusBanner, EmptyState
 - `components/forms/` — Input, SearchBar, SearchField, Switch, Slider, FieldRow, SettingRow
 - `components/navigation/` — NavRail, RailItem, RailFooter (desktop rail), TopAppBar, TabBar, BottomAppBar, SearchButton, BackLink, BottomNav, AccountButton (mobile)
 - `components/layout/` — AppShell, ContentPane, SideSheet, PlayerSheet, PlayerSubPage, PlayerPanel, EditableList, ScrollArea, LayoutGrid, PageBody, Shelf, BackLayer, BackToTop, BackdropShell, FrontLayer, FrontLayerHeader
@@ -28,7 +28,7 @@ No unified logo exists (and none was invented) — see **Brand marks** below.
 
 ## Components
 
-Badge, Button, ButtonGroup, Chip, IconButton, ProgressRing, QuickPick, SearchButton, SectionHeader, TabBar, ValueRow, ViewToggle, FieldRow, Input, SearchBar, SearchField, SettingRow, Slider, Switch, AlbumArt, ArtistCard, Lyrics, LyricsSyncButton, LyricsPage, MediaCard, MediaHeader, MiniPlayer, NowPlaying, NowPlayingPage, QueuePage, QueueRow, ResultRow, PlayActions, SeekBar, TransportBar, AccountButton, BackLink, BottomAppBar, BottomNav, NavRail, RailItem, TopAppBar, AppShell, ContentPane, EditableList, PlayerPanel, PlayerSheet, PlayerSubPage, ScrollArea, SideSheet, LayoutGrid, PageBody, Shelf, AboutCard, BackLayer, BackToTop, BackdropShell, BrowseCard, DownloadButton, EpisodeRow, ExpandableText, ExpanderRow, FeatureCard, FollowButton, FrontLayer, FrontLayerHeader, ItemActionBar, OutputDeviceButton, PreviewButton, Rating, SortFilterBar, SpeedControl, StatusBanner.
+Badge, Button, ButtonGroup, Chip, IconButton, ProgressRing, QuickPick, SearchButton, SectionHeader, TabBar, ValueRow, ViewToggle, FieldRow, Input, SearchBar, SearchField, SettingRow, Slider, Switch, AlbumArt, ArtistCard, Lyrics, LyricsSyncButton, LyricsPage, MediaCard, MediaHeader, MiniPlayer, NowPlaying, NowPlayingPage, QueuePage, QueueRow, ResultRow, PlayActions, SeekBar, TransportBar, AccountButton, BackLink, BottomAppBar, BottomNav, NavRail, RailItem, TopAppBar, AppShell, ContentPane, EditableList, PlayerPanel, PlayerSheet, PlayerSubPage, ScrollArea, SideSheet, LayoutGrid, PageBody, Shelf, AboutCard, BackLayer, BackToTop, BackdropShell, BrowseCard, DownloadButton, EpisodeRow, ExpandableText, ExpanderRow, FeatureCard, FollowButton, FrontLayer, FrontLayerHeader, ItemActionBar, OutputDeviceButton, PreviewButton, Rating, SortFilterBar, SpeedControl, StatusBanner, EmptyState.
 
 None of the three source apps ships a shared, importable web component library (two are native Android/Compose, one is an Electron/React app with no exported design-system package), so this set is a standard practical inventory sized to what a music-player UI actually needs — every value inside each component (radii, colors, spacing, the slider's two very different treatments) is copied from the real source code and screenshots, not invented. See **Intentional additions** below.
 
@@ -114,7 +114,7 @@ Explore these directly for anything this summary simplifies — they're the grou
 
 Current — use these:
 
-- **Core**: Badge, Button, ButtonGroup, BrowseCard, Chip, ExpandableText, ExpanderRow, FollowButton, IconButton, PreviewButton, ProgressRing, QuickPick, Rating, SectionHeader, SortFilterBar, StatusBanner, TonalIconButton, ValueRow, ViewToggle
+- **Core**: Badge, Button, ButtonGroup, BrowseCard, Chip, EmptyState, ExpandableText, ExpanderRow, FollowButton, IconButton, PreviewButton, ProgressRing, QuickPick, Rating, SectionHeader, SortFilterBar, StatusBanner, TonalIconButton, ValueRow, ViewToggle
 - **Media**: AboutCard, AlbumArt, ArtistCard, CoverArt, DetailPage, DownloadButton, EpisodeRow, FeatureCard, ItemActionBar, Lyrics, LyricsPage, LyricsSyncButton, MediaCard, MediaHeader, MiniPlayer, NowPlaying, NowPlayingPage, OutputDeviceButton, PlayActions, QueuePage, QueueRow, ResultRow, SeekBar, SpeedControl, TransportBar
 - **Layout**: AppShell, BackLayer, BackToTop, BackdropShell, CircleReveal, CollectionPage, ContentPane, EditableList, FrontLayer, FrontLayerHeader, LibraryShell, PlayerPanel, PlayerSheet, PlayerSubPage, ScrollArea, Section, SideSheet, LayoutGrid, PageBody, Shelf
 
