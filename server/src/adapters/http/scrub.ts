@@ -8,6 +8,7 @@
  */
 import { isIPv6 } from 'node:net';
 import { type RecordedBody, type Recording, recordingSchema } from './recording.js';
+import { isTestSignedJwt } from './testSigningKey.js';
 
 export const PLACEHOLDER = '<token>';
 export const PLACEHOLDER_ORIGIN = 'http://upstream.invalid';
@@ -201,6 +202,8 @@ function walk(value: unknown, key: string | undefined, fields: boolean): unknown
   const secretKey = fields && key !== undefined && SECRET_BODY_KEY.test(key);
   if (typeof value === 'number' && secretKey) return PLACEHOLDER;
   if (typeof value === 'string') {
+    // A re-signed ID token is kept whole: its claims were scrubbed before it was signed.
+    if (isTestSignedJwt(value)) return value;
     if (secretKey && value.length > 0) return PLACEHOLDER;
     const out = scrubString(value);
     if (fields && key !== undefined && HOST_FIELD.test(key) && HOSTNAME_VALUE.test(out)) {

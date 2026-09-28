@@ -22,9 +22,23 @@ import {
   SECRET_BODY_KEY,
   SECRET_QUERY_KEY,
 } from './scrub.js';
+import { isTestSignedJwt, jwtClaims } from './testSigningKey.js';
 
 export type FindingKind =
-  'jwt' | 'secret-field' | 'query-secret' | 'cookie' | 'ip' | 'host' | 'email' | 'home-path';
+  | 'jwt'
+  | 'secret-field'
+  | 'query-secret'
+  | 'cookie'
+  | 'ip'
+  | 'host'
+  | 'email'
+  | 'home-path'
+  | 'name';
+
+export interface ScanOptions {
+  /** People's names seen while recording, other than the test identity's: none may remain. */
+  names?: readonly string[];
+}
 
 export interface Finding {
   kind: FindingKind;
@@ -36,7 +50,7 @@ export interface Finding {
 export const PUBLIC_HOSTS: readonly string[] = [];
 const ALLOWED_HOSTS = new Set(PUBLIC_HOSTS);
 
-const JWT = /eyJ[\w-]+\.[\w-]+\.[\w-]+/;
+const JWT = /eyJ[\w-]+\.[\w-]+\.[\w-]+/g;
 const URL_HOST = /https?:\/\/\[?([^/\s:"'?#<>\]]+)/gi;
 /** Dotted names on a well-known top-level domain, in any case. */
 const LISTED_TLD_HOST =
@@ -81,13 +95,20 @@ function authorizationIsClean(value: string): boolean {
   });
 }
 
+function containsName(value: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu').test(value);
+}
+
 function scanString(
   value: string,
   key: string | undefined,
   fields: boolean,
   add: (k: FindingKind) => void,
+  names: readonly string[],
 ) {
-  if (JWT.test(value)) add('jwt');
+  if ([...value.matchAll(JWT)].some((m) => !isTestSignedJwt(m[0]))) add('jwt');
+  if (names.some((name) => name.length > 1 && containsName(value, name))) add('name');
   if ([...value.matchAll(IPV4)].some((m) => !isAllowedIp(m[0])) || ipv6Leaks(value).length > 0) {
     add('ip');
   }
@@ -109,7 +130,8 @@ function scanString(
   }
 }
 
-export function scanRecording(recording: Recording): Finding[] {
+export function scanRecording(recording: Recording, options: ScanOptions = {}): Finding[] {
+  const names = options.names ?? [];
   const findings: Finding[] = [];
   const seen = new Set<string>();
   const add = (kind: FindingKind, path: string) => {
@@ -123,8 +145,13 @@ export function scanRecording(recording: Recording): Finding[] {
     const secretKey = fields && key !== undefined && SECRET_BODY_KEY.test(key);
     if (typeof value === 'number' && secretKey) add('secret-field', path);
     if (typeof value === 'string') {
-      if (secretKey && value.length > 0 && value !== PLACEHOLDER) add('secret-field', path);
-      scanString(value, key, fields, (k) => add(k, path));
+      const testSigned = isTestSignedJwt(value);
+      if (secretKey && value.length > 0 && value !== PLACEHOLDER && !testSigned) {
+        add('secret-field', path);
+      }
+      scanString(value, key, fields, (k) => add(k, path), names);
+      // A re-signed ID token is allowed, and its claims are scanned like any body.
+      if (testSigned) walk(jwtClaims(value), undefined, `${path}#claims`, true);
       return;
     }
     if (Array.isArray(value)) {
