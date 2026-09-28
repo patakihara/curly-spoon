@@ -318,3 +318,15 @@ test('outbox: each item has a title, a kind and a default near the top', () => {
   assertFails(bad('# A name\n\nkind: name\n'), /docs\/outbox\/bad\.md:1: .*default:/);
   assert.deepEqual(bad('# A name\n\nkind: name\ndefault: Auralis\n').errors, []);
 });
+
+test('[M0.plan/f] standing rules: the plan fails without its standing-rules subsection', () => {
+  const heading = '### Standing rules for subagents';
+  assertFails(
+    lintAfter(replaceIn('01-flow.md', heading, '### Rules')),
+    /docs\/plan: no "### Standing rules for subagents" subsection/,
+  );
+  assertFails(
+    lintAfter(replaceIn('01-flow.md', /### Standing rules for subagents[\s\S]*$/, `${heading}\n`)),
+    /docs\/plan: the "### Standing rules for subagents" subsection is empty/,
+  );
+});

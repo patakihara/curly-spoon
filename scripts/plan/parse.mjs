@@ -335,6 +335,26 @@ function readSection(dir, name, label, errors) {
   };
 }
 
+export const STANDING_RULES_HEADING = '### Standing rules for subagents';
+
+/**
+ * The standing-rules subsection of a read plan, verbatim: its heading line through the line
+ * before the next `##`/`###` heading or the section's end, trailing blank lines dropped. Null
+ * when no section holds the heading.
+ */
+export function standingRules(plan) {
+  for (const section of plan.sections ?? []) {
+    const lines = [...markdownLines(section.lines)];
+    const start = lines.findIndex((l) => !l.fenced && l.text === STANDING_RULES_HEADING);
+    if (start === -1) continue;
+    const end = lines.findIndex((l, i) => i > start && !l.fenced && /^#{2,3} /.test(l.text));
+    const body = section.lines.slice(start, end === -1 ? undefined : end);
+    while (body.length && body.at(-1).trim() === '') body.pop();
+    return body.join('\n');
+  }
+  return null;
+}
+
 /**
  * Reads the plan, pushing every grammar error onto `errors` (strings `file:line: message`).
  * A folder with no `_header.md` and no section files is `{ empty: true }`.

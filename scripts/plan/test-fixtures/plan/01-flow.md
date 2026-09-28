@@ -20,3 +20,8 @@ Everything flows.
 
 A second paragraph.
 :::
+
+### Standing rules for subagents
+
+- Read the rules first.
+- Test first.

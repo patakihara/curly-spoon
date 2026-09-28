@@ -1,13 +1,20 @@
 /**
  * The plan checks: structure, directives, raw HTML, item grammar, orphan test tags, size,
- * no dated notes, and the outbox format. `pnpm test` runs them through lint.test.mjs.
+ * no dated notes, the standing rules for subagents, and the outbox format. `pnpm test` runs them through lint.test.mjs.
  *
  * CLI: node scripts/plan/lint.mjs   (prints errors and the word count; exit 1 on errors)
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { markdownLines, parseDirectives, readPlan, wordCount } from './parse.mjs';
+import {
+  markdownLines,
+  parseDirectives,
+  readPlan,
+  STANDING_RULES_HEADING,
+  standingRules,
+  wordCount,
+} from './parse.mjs';
 
 export const WORD_LIMIT = 18000;
 
@@ -183,6 +190,23 @@ function checkOrphanTags(root, plan, errors) {
   }
 }
 
+/** Every subagent brief begins with the standing rules, so the plan must hold them. */
+function checkStandingRules(plan, errors) {
+  const rules = standingRules(plan);
+  if (rules === null) {
+    errors.push(
+      `${PLAN}: no "${STANDING_RULES_HEADING}" subsection; every subagent brief opens with it`,
+    );
+  } else if (
+    !rules
+      .split('\n')
+      .slice(1)
+      .some((l) => l.trim() !== '')
+  ) {
+    errors.push(`${PLAN}: the "${STANDING_RULES_HEADING}" subsection is empty`);
+  }
+}
+
 function checkOutbox(root, errors) {
   const dir = join(root, 'docs', 'outbox');
   if (!existsSync(dir)) return;
@@ -239,6 +263,7 @@ export function lintPlan(root) {
     }
     checkDirectives(plan, dir, errors);
     checkOrphanTags(root, plan, errors);
+    checkStandingRules(plan, errors);
     if (words > WORD_LIMIT)
       errors.push(`${PLAN}: ${words} words, over the ${WORD_LIMIT}-word limit`);
   }

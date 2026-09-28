@@ -17,6 +17,24 @@ Most of what went wrong before was process, not code. These rules each answer a 
 | Parallel sessions colliding; 9,000 lines of handover | **No parallelism.** One Opus 5.5 orchestrator session keeps the big picture and never stops between items; all the work is done by Opus 5.5 subagents, strictly one at a time. Each task is sized so its subagent has enough context to understand it and never so much that its window grows large, splitting a plan item into parts where needed. Each part runs as a short sequence: plan, build, test (in a fresh context, against real recordings), and fix if the test failed, with the written plan and the test output as the hand-offs. No handover or status file: progress is computed from the repo at the start of every session (see "Staying on track"). History lives in git, not in docs. |
 | Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code), like the "Where it stands" table on this page. |
 
+### Standing rules for subagents
+
+Every subagent brief opens with this list, verbatim (`node scripts/plan/brief.mjs <item id>`).
+
+- Read `CLAUDE.md` first and follow it.
+- Test first; tests read as behaviour.
+- Adapters are tested only against recordings from mediaserver, secrets scrubbed. Unit tests use no network.
+- zod parses every upstream boundary.
+- Nobody edits a `generated` folder by hand: change `design/` or `schema/` and regenerate.
+- Frontend work goes Sonora artifact, then the Auralis canvas, then code. Nothing reaches code before it is in the published design.
+- Mockups and pages use only Sonora components. A missing component is added to Sonora first, never styled on the page.
+- A design is judged by its render and its Sonora UI-kit source, not only its props.
+- No credentials, tokens, hostnames or personal names in the repo; it is public.
+- Every commit carries a `Plan: <item id>` line.
+- No scars: replacing something deletes the old thing everywhere, in the same change.
+- Publishing artifacts is the orchestrator's alone.
+- The report says how each claim was checked: live, recording or code.
+
 ### Autonomous runs
 
 - **Started from the ThinkPad** by a timer every 10 minutes, as one orchestrator session in the repo, only when nothing else is working there.

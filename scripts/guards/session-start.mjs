@@ -1,5 +1,7 @@
 /**
- * SessionStart hook: puts the plan's progress summary (scripts/plan/progress.mjs --summary) and
+ * SessionStart hook: opens with the orchestrator's instruction to read all of docs/plan before
+ * anything else (on every source: startup, resume, clear and compact) and the brief command,
+ * then puts the plan's progress summary (scripts/plan/progress.mjs --summary) and
  * a reminder to read the published artifacts' open comments into the session's context. Every
  * `gh` call is killed a little before AURALIS_SUMMARY_TIMEOUT_MS (default 20000), so none
  * outlives the hook, and the summary is shown with checks unavailable. AURALIS_GH_TIMEOUT_MS
@@ -22,6 +24,16 @@ const summary = (progress, root, extra, timeout) =>
     timeout,
     killSignal: 'SIGKILL',
   });
+
+/** The opening lines: read the whole plan first, again after a compaction, and brief from it. */
+function readPlanLines(source) {
+  const when =
+    source === 'compact' ? 'again after this compaction' : 'now, and again after every compaction';
+  return [
+    `Orchestrator: before any other work, read every file in docs/plan in full ${when} (README.md and every section); it is the only source of truth.`,
+    'Brief subagents with node scripts/plan/brief.mjs <id>; the brief opens with the standing rules for subagents.',
+  ];
+}
 
 function commentsLine(root) {
   let published = {};
@@ -59,7 +71,7 @@ runHook('session-start', (payload) => {
   return {
     hookSpecificOutput: {
       hookEventName: 'SessionStart',
-      additionalContext: `${text}\n${extra.join('\n')}`,
+      additionalContext: [...readPlanLines(payload?.source), text, ...extra].join('\n'),
     },
   };
 });

@@ -104,13 +104,16 @@ uploads `plan-results-live`. `pnpm test` stays offline and leaves them out.
 node scripts/plan/lint.mjs                      every check, plus the word count (also in pnpm test)
 node scripts/plan/progress.mjs --summary        the session summary; --local adds a local test run,
                                                 --no-results skips results, --json prints everything
+node scripts/plan/brief.mjs <id>                a subagent brief: the standing rules, the item, `## Task`
 node scripts/plan/render.mjs [--draft]          build/plan/index.html and build/plan/stamp.json
 pnpm sonora:build [--draft]                     build/sonora/project/** and build/sonora/stamp.json
 pnpm canvas:build [--draft]                     build/canvas/project/** and build/canvas/stamp.json
 ```
 
-The lint checks structure, directives, raw HTML, the item grammar, orphan test tags (every tag
-names an existing item and test criterion), the size limit, dated notes, and the outbox format.
+The lint checks structure, directives, raw HTML, the item grammar, the standing rules for
+subagents (a `### Standing rules for subagents` subsection that every brief opens with), orphan
+test tags (every tag names an existing item and test criterion), the size limit, dated notes,
+and the outbox format.
 A dated note is an ISO or month-name date, or a history phrase such as "previously" or "as of";
 code spans, quoted text and a commit citation like `` `781efd4` (2026-08-21 `` are exempt.
 The render refuses on any lint error, and on uncommitted changes to `docs/plan`, `docs/outbox`

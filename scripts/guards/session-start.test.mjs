@@ -35,10 +35,10 @@ function withRepo(gh, fn) {
   }
 }
 
-const start = (root, ghDir, env = {}) =>
+const start = (root, ghDir, env = {}, source = 'startup') =>
   runHook(
     'session-start.mjs',
-    { hook_event_name: 'SessionStart', cwd: root },
+    { hook_event_name: 'SessionStart', source, cwd: root },
     {
       env: { PATH: pathWith(ghDir), ...env },
     },
@@ -49,6 +49,9 @@ const context = (run) => {
   assert.equal(out.hookEventName, 'SessionStart');
   return out.additionalContext.split('\n');
 };
+
+/** The progress summary's first line, after the orchestrator's reading instructions. */
+const summaryLine = (lines) => lines.find((l) => l.startsWith('Auralis plan · '));
 
 const answering = (commits) => ({
   mode: 'answer',
@@ -84,7 +87,7 @@ test('[M0.uikit/e] the session-start hook prints milestone, done items, work in 
     assert.equal(run.status, 0, run.stderr);
     const lines = context(run);
     assert.match(
-      lines[0],
+      summaryLine(lines),
       new RegExp(
         `^Auralis plan · current M0 Foundations · 2/5 done · checks from CI@${commits.third.slice(0, 7)}`,
       ),
@@ -107,7 +110,7 @@ test('[M0.uikit/e] offline, the hook still prints the summary with checks unavai
     (root, commits, ghDir) => {
       const run = start(root, ghDir);
       assert.equal(run.status, 0, run.stderr);
-      assert.match(context(run)[0], /checks unavailable: gh run list failed/);
+      assert.match(summaryLine(context(run)), /checks unavailable: gh run list failed/);
     },
   );
 });
@@ -121,7 +124,7 @@ test('[M0.uikit/e] a hanging gh is cut off within the budget and the summary sho
       assert.ok(Date.now() - began < 10_000, 'the hook finishes in under 10 s');
       assert.equal(run.status, 0, run.stderr);
       const lines = context(run);
-      assert.match(lines[0], /checks unavailable: gh run list timed out/);
+      assert.match(summaryLine(lines), /checks unavailable: gh run list timed out/);
     },
   );
 });
@@ -148,9 +151,39 @@ test('[M0.uikit/e] a hanging gh is killed, not left running after the hook retur
         [],
         'no gh survives',
       );
-      assert.match(context(run)[0], /checks unavailable: gh run list timed out/);
+      assert.match(summaryLine(context(run)), /checks unavailable: gh run list timed out/);
     },
   );
+});
+
+for (const source of ['startup', 'compact']) {
+  test(`[M0.plan/e] on ${source}, the hook first tells the orchestrator to read all of docs/plan, compactions included`, () => {
+    withRepo(answering, (root, commits, ghDir) => {
+      const run = start(root, ghDir, {}, source);
+      assert.equal(run.status, 0, run.stderr);
+      const lines = context(run);
+      assert.match(
+        lines[0],
+        /^Orchestrator: before any other work, read every file in docs\/plan in full/,
+      );
+      assert.match(lines[0], /after (every|this) compaction/);
+      assert.match(lines[1], /^Brief subagents with node scripts\/plan\/brief\.mjs <id>/);
+      assert.match(summaryLine(lines), /^Auralis plan · current M0 Foundations/);
+      assert.ok(lines.includes('Next: M0.cc: The third item.'));
+      assert.match(lines.at(-1), /ArtifactComments/);
+    });
+  });
+}
+
+test('[M0.plan/e] after a compaction, the hook says the context was just compacted', () => {
+  withRepo(answering, (root, commits, ghDir) => {
+    const run = start(root, ghDir, {}, 'compact');
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(
+      context(run)[0],
+      /read every file in docs\/plan in full again after this compaction/,
+    );
+  });
 });
 
 test('it fails open on a payload it cannot read', () => {
