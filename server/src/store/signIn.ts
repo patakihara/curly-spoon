@@ -1,7 +1,9 @@
 /**
  * A sign-in in flight, and the one-time code an app swaps for its bearer token. Only hashes of
  * the state and the code are stored, and each is taken exactly once: the row is deleted in the
- * same transaction that reads it, so a replay finds nothing.
+ * same transaction that reads it, so a replay finds nothing. A web sign-in is also bound to its
+ * browser: a random binding value goes into a cookie there and only its hash into the row, so a
+ * state finished in any other browser is refused. The app is bound by its PKCE challenge instead.
  */
 
 import { createHash } from 'node:crypto';
@@ -30,26 +32,31 @@ export interface LoginRequest {
   returnTo: string;
   appChallenge: string | null;
   deviceId: string | null;
+  /** The web browser's binding cookie value; `null` for the app. */
+  binding: string | null;
 }
 
-/** Makes the state, nonce and PKCE verifier, 32 bytes each, and stores the request. */
+/**
+ * Makes the state, nonce and PKCE verifier, 32 bytes each, plus a web sign-in's binding value, and
+ * stores the request.
+ */
 export function startLogin(
   db: Db,
   params: Pick<LoginRequest, 'client' | 'returnTo' | 'appChallenge' | 'deviceId'>,
   random: Random,
   now: number,
 ): LoginRequest {
-  const request: LoginRequest = {
-    state: random(32).toString('base64url'),
-    nonce: random(32).toString('base64url'),
-    verifier: random(32).toString('base64url'),
-    ...params,
-  };
+  const state = random(32).toString('base64url');
+  const nonce = random(32).toString('base64url');
+  const verifier = random(32).toString('base64url');
+  const binding = params.client === 'web' ? random(32).toString('base64url') : null;
+  const request: LoginRequest = { state, nonce, verifier, ...params, binding };
   db.prepare(
-    `INSERT INTO login_requests (state_hash, nonce, verifier, client, return_to, app_challenge,
-       device_id, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO login_requests (state_hash, binding_hash, nonce, verifier, client, return_to,
+       app_challenge, device_id, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     sha256(request.state),
+    binding === null ? null : sha256(binding),
     request.nonce,
     request.verifier,
     request.client,
@@ -62,6 +69,7 @@ export function startLogin(
 }
 
 const LoginRow = z.object({
+  binding_hash: z.string().nullable(),
   nonce: z.string(),
   verifier: z.string(),
   client: DeviceKind,
@@ -71,8 +79,16 @@ const LoginRow = z.object({
   expires_at: z.number(),
 });
 
-/** The request this state started, once; `null` when unknown, already used or expired. */
-export function takeLogin(db: Db, state: string, now: number): LoginRequest | null {
+/**
+ * The request this state started, once; `null` when unknown, already used, expired, or a web
+ * sign-in finished without its own browser's binding. A refused state is burned all the same.
+ */
+export function takeLogin(
+  db: Db,
+  state: string,
+  binding: string | undefined,
+  now: number,
+): LoginRequest | null {
   return db.transaction(() => {
     const hash = sha256(state);
     const raw = db.prepare('SELECT * FROM login_requests WHERE state_hash = ?').get(hash);
@@ -80,6 +96,12 @@ export function takeLogin(db: Db, state: string, now: number): LoginRequest | nu
     db.prepare('DELETE FROM login_requests WHERE state_hash = ?').run(hash);
     const row = LoginRow.parse(raw);
     if (row.expires_at <= now) return null;
+    if (
+      row.binding_hash !== null &&
+      (binding === undefined || sha256(binding) !== row.binding_hash)
+    ) {
+      return null;
+    }
     return {
       state,
       nonce: row.nonce,
@@ -88,6 +110,7 @@ export function takeLogin(db: Db, state: string, now: number): LoginRequest | nu
       returnTo: row.return_to,
       appChallenge: row.app_challenge,
       deviceId: row.device_id,
+      binding: row.binding_hash === null ? null : (binding ?? null),
     };
   })();
 }

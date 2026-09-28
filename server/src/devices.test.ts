@@ -2,7 +2,7 @@
  * Devices, through the real routes. The sign-on is a stand-in that answers with a fixed identity
  * per code: what the ID token check does is the recorded test's job, not this one's.
  */
-import { DEVICE_COOKIE, SESSION_COOKIE } from '@auralis/schema';
+import { DEVICE_COOKIE, LOGIN_COOKIE, SESSION_COOKIE } from '@auralis/schema';
 import { type FastifyInstance, type LightMyRequestResponse } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
@@ -52,13 +52,34 @@ function stateOf(res: LightMyRequestResponse): string {
   return new URL(String(res.headers.location)).searchParams.get('state') ?? '';
 }
 
-async function webSignIn(app: FastifyInstance, who: string, deviceCookie?: string) {
-  const cookie = deviceCookie ? `${DEVICE_COOKIE}=${deviceCookie}` : undefined;
-  const state = stateOf(await app.inject({ url: '/auth/login?return_to=/library' }));
-  const res = await app.inject({
-    url: `/auth/callback?code=${who}&state=${encodeURIComponent(state)}`,
-    ...(cookie ? { headers: { cookie } } : {}),
+/** A web sign-in started in one browser: its state, and the cookie that binds it there. */
+async function startWeb(app: FastifyInstance, query = '') {
+  const res = await app.inject({ url: `/auth/login${query}` });
+  const binding = cookieOf(res, LOGIN_COOKIE);
+  expect(binding).toBeDefined();
+  return { state: stateOf(res), cookie: `${LOGIN_COOKIE}=${String(binding)}` };
+}
+
+function callback(
+  app: FastifyInstance,
+  code: string,
+  started: { state: string; cookie: string },
+  more?: string,
+) {
+  return app.inject({
+    url: `/auth/callback?code=${code}&state=${encodeURIComponent(started.state)}`,
+    headers: { cookie: more ? `${started.cookie}; ${more}` : started.cookie },
   });
+}
+
+async function webSignIn(app: FastifyInstance, who: string, deviceCookie?: string) {
+  const started = await startWeb(app, '?return_to=/library');
+  const res = await callback(
+    app,
+    who,
+    started,
+    deviceCookie ? `${DEVICE_COOKIE}=${deviceCookie}` : undefined,
+  );
   expect(res.statusCode).toBe(302);
   expect(res.headers.location).toBe('/library');
   return {
@@ -180,10 +201,9 @@ describe('[M0.sso/b] one user on two devices', () => {
 describe('[M0.sso/b] signing in', () => {
   it('refuses a state that was already used, or never issued', async () => {
     const app = await server();
-    const state = stateOf(await app.inject({ url: '/auth/login' }));
-    const url = `/auth/callback?code=kara&state=${encodeURIComponent(state)}`;
-    expect((await app.inject({ url })).statusCode).toBe(302);
-    const replay = await app.inject({ url });
+    const started = await startWeb(app);
+    expect((await callback(app, 'kara', started)).statusCode).toBe(302);
+    const replay = await callback(app, 'kara', started);
     expect(replay.statusCode).toBe(400);
     expect(replay.json()).toEqual({ error: 'bad_state' });
     expect((await app.inject({ url: '/auth/callback?code=kara&state=made-up' })).statusCode).toBe(
@@ -193,8 +213,7 @@ describe('[M0.sso/b] signing in', () => {
 
   it('refuses someone outside the household, and makes no user for them', async () => {
     const app = await server();
-    const state = stateOf(await app.inject({ url: '/auth/login' }));
-    const res = await app.inject({ url: `/auth/callback?code=guest&state=${state}` });
+    const res = await callback(app, 'guest', await startWeb(app));
     expect(res.statusCode).toBe(403);
     expect(res.json()).toEqual({ error: 'not_household' });
     expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
@@ -202,8 +221,7 @@ describe('[M0.sso/b] signing in', () => {
 
   it('refuses a token the sign-on check rejects with 400 and no session', async () => {
     const app = await server();
-    const state = stateOf(await app.inject({ url: '/auth/login' }));
-    const res = await app.inject({ url: `/auth/callback?code=forged&state=${state}` });
+    const res = await callback(app, 'forged', await startWeb(app));
     expect(res.statusCode).toBe(400);
     expect(res.json()).toEqual({ error: 'bad_token' });
     expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
@@ -227,10 +245,8 @@ describe('[M0.sso/b] signing in', () => {
     ];
     for (const target of elsewhere) {
       const app = await server();
-      const state = stateOf(
-        await app.inject({ url: `/auth/login?return_to=${encodeURIComponent(target)}` }),
-      );
-      const res = await app.inject({ url: `/auth/callback?code=kara&state=${state}` });
+      const started = await startWeb(app, `?return_to=${encodeURIComponent(target)}`);
+      const res = await callback(app, 'kara', started);
       expect(res.statusCode, JSON.stringify(target)).toBe(302);
       expect(res.headers.location, JSON.stringify(target)).toBe('/');
     }
@@ -238,13 +254,54 @@ describe('[M0.sso/b] signing in', () => {
 
   it('keeps a path on this site with its query and fragment', async () => {
     const app = await server();
-    const state = stateOf(
-      await app.inject({
-        url: `/auth/login?return_to=${encodeURIComponent('/library/item?tab=chapters#now')}`,
-      }),
+    const started = await startWeb(
+      app,
+      `?return_to=${encodeURIComponent('/library/item?tab=chapters#now')}`,
     );
-    const res = await app.inject({ url: `/auth/callback?code=kara&state=${state}` });
+    const res = await callback(app, 'kara', started);
     expect(res.headers.location).toBe('/library/item?tab=chapters#now');
+  });
+
+  it('binds a web sign-in to its browser with a short-lived HttpOnly, SameSite=Lax cookie', async () => {
+    const app = await server();
+    const res = await app.inject({ url: '/auth/login' });
+    const binding = res.cookies.find((c) => c.name === LOGIN_COOKIE);
+    expect(binding).toMatchObject({ httpOnly: true, sameSite: 'Lax' });
+    expect(binding?.maxAge).toBeGreaterThan(0);
+    expect(binding?.maxAge).toBeLessThanOrEqual(10 * 60);
+    expect(binding?.value).not.toContain(stateOf(res));
+  });
+
+  it("refuses the attacker's own code and state finished in someone else's browser", async () => {
+    const app = await server();
+    const attacker = await startWeb(app);
+    const victim = await startWeb(app);
+    for (const cookie of [undefined, victim.cookie]) {
+      const res = await app.inject({
+        url: `/auth/callback?code=otto&state=${encodeURIComponent(attacker.state)}`,
+        ...(cookie ? { headers: { cookie } } : {}),
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toEqual({ error: 'bad_state' });
+      expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
+    }
+  });
+
+  it('refuses a state swapped between two browsers', async () => {
+    const app = await server();
+    const one = await startWeb(app);
+    const two = await startWeb(app);
+    const swapped = await callback(app, 'kara', { state: two.state, cookie: one.cookie });
+    expect(swapped.statusCode).toBe(400);
+    expect(cookieOf(swapped, SESSION_COOKIE)).toBeUndefined();
+  });
+
+  it('clears the binding cookie once the sign-in finishes', async () => {
+    const app = await server();
+    const res = await callback(app, 'kara', await startWeb(app));
+    expect(res.statusCode).toBe(302);
+    const cleared = res.cookies.find((c) => c.name === LOGIN_COOKIE);
+    expect(cleared?.value).toBe('');
   });
 
   it('needs the app to send a PKCE challenge, and its verifier to swap the code', async () => {

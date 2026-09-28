@@ -23,20 +23,39 @@ describe('[M0.sso/b] a sign-in in flight', () => {
     const db = openDatabase(':memory:');
     const started = startLogin(db, web, random, T0);
     expect(new Set([started.state, started.nonce, started.verifier]).size).toBe(3);
-    expect(takeLogin(db, started.state, T0 + 1)).toEqual(started);
-    expect(takeLogin(db, started.state, T0 + 2)).toBeNull();
+    expect(takeLogin(db, started.state, started.binding ?? undefined, T0 + 1)).toEqual(started);
+    expect(takeLogin(db, started.state, started.binding ?? undefined, T0 + 2)).toBeNull();
   });
 
-  it('stores only a hash of the state', () => {
+  it("refuses a web sign-in without its own browser's binding, and burns the state", () => {
     const db = openDatabase(':memory:');
-    const { state } = startLogin(db, web, random, T0);
-    expect(JSON.stringify(db.prepare('SELECT * FROM login_requests').all())).not.toContain(state);
+    const started = startLogin(db, web, random, T0);
+    const other = startLogin(db, web, random, T0);
+    expect(takeLogin(db, started.state, other.binding ?? undefined, T0 + 1)).toBeNull();
+    expect(takeLogin(db, started.state, started.binding ?? undefined, T0 + 2)).toBeNull();
+    expect(takeLogin(db, other.state, undefined, T0 + 3)).toBeNull();
+  });
+
+  it('binds an app sign-in by its PKCE challenge, with no browser binding', () => {
+    const db = openDatabase(':memory:');
+    const app = { client: 'android' as const, returnTo: '/', appChallenge: 'c', deviceId: null };
+    const started = startLogin(db, app, random, T0);
+    expect(started.binding).toBeNull();
+    expect(takeLogin(db, started.state, undefined, T0 + 1)).toEqual(started);
+  });
+
+  it('stores only a hash of the state and of the binding', () => {
+    const db = openDatabase(':memory:');
+    const { state, binding } = startLogin(db, web, random, T0);
+    const stored = JSON.stringify(db.prepare('SELECT * FROM login_requests').all());
+    expect(stored).not.toContain(state);
+    expect(stored).not.toContain(String(binding));
   });
 
   it('expires after ten minutes, and is swept', () => {
     const db = openDatabase(':memory:');
     const late = startLogin(db, web, random, T0);
-    expect(takeLogin(db, late.state, T0 + LOGIN_TTL_MS)).toBeNull();
+    expect(takeLogin(db, late.state, late.binding ?? undefined, T0 + LOGIN_TTL_MS)).toBeNull();
     startLogin(db, web, random, T0);
     expect(sweepExpiredSessions(db, T0 + LOGIN_TTL_MS)).toBe(1);
   });

@@ -1,9 +1,10 @@
 /**
- * The server's two cookies, both HttpOnly: the session, an opaque pointer to a row in `sessions`,
- * and the device id, which only says which device this browser is and signs no one in.
+ * The server's cookies, all HttpOnly: the session, an opaque pointer to a row in `sessions`; the
+ * device id, which only says which device this browser is and signs no one in; and, for the ten
+ * minutes a web sign-in is in flight, the value that binds it to this browser.
  */
 
-import { DEVICE_COOKIE, SESSION_COOKIE } from '@auralis/schema';
+import { DEVICE_COOKIE, LOGIN_COOKIE, SESSION_COOKIE } from '@auralis/schema';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CookieSecure } from '../config.js';
 
@@ -55,4 +56,29 @@ export function setDeviceCookie(
     ...options(request, secure),
     maxAge: DEVICE_COOKIE_MAX_AGE_S,
   });
+}
+
+/** Only `/auth/callback` needs to see it. */
+const LOGIN_COOKIE_PATH = '/auth';
+
+export function setLoginCookie(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  secure: CookieSecure,
+  binding: string,
+  maxAgeMs: number,
+): void {
+  reply.setCookie(LOGIN_COOKIE, binding, {
+    ...options(request, secure),
+    path: LOGIN_COOKIE_PATH,
+    maxAge: Math.round(maxAgeMs / 1000),
+  });
+}
+
+export function clearLoginCookie(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  secure: CookieSecure,
+): void {
+  reply.clearCookie(LOGIN_COOKIE, { ...options(request, secure), path: LOGIN_COOKIE_PATH });
 }

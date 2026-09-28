@@ -4,6 +4,8 @@ import { z } from './zod.js';
 export const SESSION_COOKIE = 'auralis_session';
 /** Which device this browser is, so signing in again reuses it. HttpOnly, not a credential. */
 export const DEVICE_COOKIE = 'auralis_device';
+/** Binds a web sign-in in flight to the browser that started it. HttpOnly, ten minutes. */
+export const LOGIN_COOKIE = 'auralis_login';
 
 /** An admin manages providers, paths and approvals; a member only listens and asks. */
 export const Role = z.enum(['admin', 'member']).openapi('Role');

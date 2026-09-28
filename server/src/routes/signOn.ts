@@ -5,9 +5,21 @@
  * and rate-limited per client address.
  */
 
-import { appToken, DEVICE_COOKIE, login, loginCallback, Username } from '@auralis/schema';
+import {
+  appToken,
+  DEVICE_COOKIE,
+  LOGIN_COOKIE,
+  login,
+  loginCallback,
+  Username,
+} from '@auralis/schema';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { setDeviceCookie, setSessionCookie } from '../auth/cookie.js';
+import {
+  clearLoginCookie,
+  setDeviceCookie,
+  setLoginCookie,
+  setSessionCookie,
+} from '../auth/cookie.js';
 import { type SignOn, SignOnError } from '../auth/oidc.js';
 import { RateLimiter } from '../auth/rateLimit.js';
 import type { CookieSecure } from '../config.js';
@@ -15,7 +27,14 @@ import { Refusal, serve } from '../route.js';
 import type { Db } from '../store/connection.js';
 import { reuseOrCreateDevice } from '../store/devices.js';
 import { BEARER_TTL_MS, createSession } from '../store/sessions.js';
-import { issueAppCode, type Random, startLogin, takeAppCode, takeLogin } from '../store/signIn.js';
+import {
+  issueAppCode,
+  LOGIN_TTL_MS,
+  type Random,
+  startLogin,
+  takeAppCode,
+  takeLogin,
+} from '../store/signIn.js';
 import { signInUser, UsernameTaken } from '../store/users.js';
 import type { Linker } from '../upstream/links.js';
 
@@ -98,14 +117,18 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
       random,
       now(),
     );
+    if (started.binding !== null) {
+      setLoginCookie(request, reply, cookieSecure, started.binding, LOGIN_TTL_MS);
+    }
     return { location: await provider.authorizationUrl(started) };
   });
 
   serve(app, loginCallback, async (request, reply, _body, { query }) => {
     limit(request, reply);
     const provider = configured();
+    clearLoginCookie(request, reply, cookieSecure);
     if (query.state === undefined) throw new Refusal(400, 'bad_state');
-    const started = takeLogin(db, query.state, now());
+    const started = takeLogin(db, query.state, request.cookies[LOGIN_COOKIE], now());
     if (started === null) throw new Refusal(400, 'bad_state');
     if (query.error !== undefined || query.code === undefined) {
       throw new Refusal(400, 'sign_on_refused');

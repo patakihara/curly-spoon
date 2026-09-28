@@ -82,9 +82,11 @@ export const migrations: readonly Migration[] = [
         CREATE INDEX idx_sessions_user_id ON sessions(user_id);
         CREATE INDEX idx_sessions_device_id ON sessions(device_id);
 
-        -- One sign-in in flight: only the state's hash, for ten minutes.
+        -- One sign-in in flight: only the state's hash, for ten minutes. A web sign-in also keeps
+        -- the hash of the binding cookie that ties it to the browser that started it.
         CREATE TABLE login_requests (
           state_hash    TEXT PRIMARY KEY,
+          binding_hash  TEXT,
           nonce         TEXT NOT NULL,
           verifier      TEXT NOT NULL,
           client        TEXT NOT NULL CHECK (client IN ('web', 'android')),

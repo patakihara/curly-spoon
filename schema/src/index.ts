@@ -9,6 +9,7 @@ export {
   DeviceParams,
   ErrorResponse,
   LinkStatus,
+  LOGIN_COOKIE,
   LoginQuery,
   Me,
   Ok,
