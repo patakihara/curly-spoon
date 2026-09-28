@@ -90,7 +90,10 @@ Your rule: nothing frontend reaches code before it is in the published design, i
 
 ### Shell and navigation
 
-Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px, icon rail from 600, labelled rail from 1024, and from 1240 a Now Playing panel next to the content. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded.
+Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px with Search rightmost, icon rail from 600 and labelled rail from 1024 with Search topmost. Now Playing, with Queue and Lyrics perhaps as its tabs, is a panel next to the content from 1240; narrower, the mini-player opens it as a full-screen sheet over the bottom bar. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded.
+
+- **Back.** ✕ (or up) returns to whatever opened a screen, and each destination keeps its own stack: leave Music on an album, come back, and ✕ goes to the artist you opened it from. Android's back does what ✕ does; the browser's back goes to the previous view, wherever that was. A sheet closes to the page under it.
+- **Search, global and local.** The Search destination searches everything, its filters in the backdrop's back layer. Each library home, shelf, album, playlist, show and book has a bar that appears as you scroll and searches only that page, or that library and its requests.
 
 ### Rules from your notes that the components must follow
 
@@ -106,7 +109,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Browse | `GET /feed` | kind chips, quick picks (progress, unplayed), shelves (eyebrow, subject, subject art, mixed items, availability), feature cards with preview | <span class="pill t-lib">Sonora</span> S05–S30 |
 | Music / Books / Podcasts homes | `GET /library/{music\|books\|podcasts}` | library list with sort and filter, list or grid, pins and downloaded markers | <span class="pill t-lib">Sonora</span> S31 · LibraryShell |
 | Search | `GET /search/suggest`, `GET /search` | suggestions; library results + outside results, status per row, "more releases" folding | <span class="pill t-lib">Sonora</span> S03–S04, S32 |
-| Book · Show · Episode · Album | `GET /items/{ref}` | MediaHeader data (actions, progress, rating), episodes with sort, chapters or tracks, about text, related | <span class="pill t-lib">Sonora</span> S01–S02, S35 |
+| Book · Show · Episode · Album | `GET /items/{ref}` | MediaHeader data (actions, progress, rating), episodes with sort, chapters or tracks, about text, related, a book's other narrations | <span class="pill t-lib">Sonora</span> S01–S02, S35 |
 | Artist · Author · Series | `GET /people/{ref}`, `GET /series/{ref}` | owned works grouped; unowned works greyed out (on by default) | <span class="pill t-req">mock only</span> |
 | Shelf ("See all") | `GET /feed/shelves/{id}` | paged items | <span class="pill t-lib">Sonora</span> UI kit collection screen |
 | Now Playing · mini-player · queue · lyrics | `POST /play`, `GET /queues`, `GET /lyrics/{ref}` | plan (with transport variant and direct or transcoded quality), per-type queues, synced lyrics, about cards | <span class="pill t-lib">Sonora</span> S33–S43 |

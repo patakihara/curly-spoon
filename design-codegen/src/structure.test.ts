@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { parseNav, readNav, type Nav } from './nav.js';
 import { APP_DIR, REPO_ROOT } from './outputs.js';
 import {
+  backModel,
   FLOWS_BOARD,
   generateFlows,
   generateStructure,
@@ -65,6 +66,16 @@ describe('the structure artboard', () => {
     expect(after).toContain('>Credits</strong>');
   });
 
+  it('says in the header where each kind of navigation puts Search', () => {
+    expect(html).toContain('On the phone’s bottom bar: Browse, Music, Books, Podcasts, Search.');
+    expect(html).toContain('On the rail: Search, Browse, Music, Books, Podcasts.');
+  });
+
+  it('says what back does once, in the header, not per page', () => {
+    for (const line of backModel(nav)) expect(html.split(line).length - 1, line).toBe(1);
+    expect(html).not.toContain('>Back: </strong><span');
+  });
+
   it('says which pages are drawn and which are structure only', () => {
     expect(html).toContain(drawn.size > 0 ? 'drawn' : 'structure only');
     expect(html).toContain('structure only');
@@ -80,7 +91,7 @@ describe('the structure artboard', () => {
 
 describe('the flowchart artboard', () => {
   const { html } = generateFlows(nav, drawn, head);
-  const { boxes, lines, columns, width, height } = layoutFlows(nav);
+  const { boxes, groups, lines, columns, width, height } = layoutFlows(nav);
   const box = (id: string) => boxes.get(id)!;
 
   it('[M0.canvas/f] draws every page as a node and every link, as a tree line or on the node', () => {
@@ -108,14 +119,20 @@ describe('the flowchart artboard', () => {
     expect(html).not.toContain('→ Artist · Book');
   });
 
-  it('draws a line only from a page to a page in its column whose back goes up to it', () => {
+  it('draws a line to a page only from the first page of its column that links to it', () => {
     expect(lines.length).toBeGreaterThan(0);
     for (const { from, to } of lines) {
-      expect(to.page.back, `${from.page.id} to ${to.page.id}`).toBe(`up:${from.page.id}`);
+      const column = groups[to.column]!.pages;
+      const first = column.find((p) => p.structure.links.includes(to.page.id));
+      expect(first?.id, `${from.page.id} to ${to.page.id}`).toBe(from.page.id);
       expect(to.column).toBe(from.column);
+      expect(from.y).toBeLessThan(to.y);
     }
     const tree = lines.map((l) => `${l.from.page.id}>${l.to.page.id}`);
     expect(tree).toContain('music>album');
+    expect(tree).toContain('podcasts>show');
+    expect(tree).toContain('show>episode');
+    expect(tree).toContain('nowPlaying>queue');
     expect(tree).toContain('settings>shelfReview');
     expect(tree).not.toContain('browse>notFound');
   });
@@ -128,9 +145,16 @@ describe('the flowchart artboard', () => {
     }
   });
 
-  it('shows each page’s back behaviour on its node', () => {
-    expect(html).toContain('↑ up to Music');
-    expect(html).toContain('← back through history');
+  it('says what back does once, in the legend, and nothing about it on the nodes', () => {
+    for (const line of backModel(nav)) expect(html.split(line).length - 1, line).toBe(1);
+    expect(html).not.toContain('back through history');
+    expect(html).not.toContain('up to');
+  });
+
+  it('puts each page’s route on its node, and whether it is a sheet or Android only', () => {
+    expect(box('album').detail).toBe('/music/albums/:ref');
+    expect(box('nowPlaying').detail).toBe('/playing · sheet');
+    expect(box('downloads').detail).toBe('/downloads · Android only');
   });
 
   it('keeps the note that every screen reaches the destinations through the mini-player', () => {
@@ -160,7 +184,7 @@ describe('the flowchart artboard', () => {
     for (const b of boxes.values()) {
       const texts: [string, number][] = [
         [b.page.title, 10],
-        [b.backLine, 7],
+        [b.detail, 7],
         ...b.linkLines.map((t) => [t, 7] as [string, number]),
       ];
       for (const [text, px] of texts) expect(text.length * px + 28, text).toBeLessThanOrEqual(b.w);

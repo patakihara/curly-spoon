@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 055cb3b839d245b36557a3706d2f13eec9efa0c9be05d7b1b8d370b6ae52e0c0
+pageHash: 4f55767a7280e9a20c261db2f16278fc1832da3d85f462b6fd5bb5dca3dde800
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -22,8 +22,8 @@ kit's Settings destination). No Spotify screen was needed for intent.
 
 ## What the canvas page draws
 
-`PageBody` at the form width, a "Server" `FieldRow`, then the mobile kit's three `SettingRow`
-cards with its descriptions, in a one-column `LayoutGrid` 10 px apart, the field and the rows
+`PageBody` at the form width, a "Server" `FieldRow`, then the mobile kit's first two
+`SettingRow` cards with its descriptions, in a one-column `LayoutGrid` 10 px apart, the field and the rows
 each in an untitled `Section` for the gap between.
 
 Measured in the browser (`getBoundingClientRect`), kit against page: page margin 16 px against
@@ -46,14 +46,15 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 - Fixed: the desktop column was 584 px, since `PageBody` capped its width with the margin
   inside it. Sonora's `PageBody` now caps the content alone, 640 px, as the desktop kit does.
 - Fixed: a fourth "Show explicit content" row came from the desktop kit. The plan names no
-  explicit-content setting, so it is gone, and the page follows the mobile kit's three rows.
+  explicit-content setting, so it is gone, and the page follows the mobile kit's rows.
 - Fixed: the first two descriptions now read as the mobile kit's ("Fetch approved requests
   automatically.", "Pause transfers on mobile data.").
 - Open: the field sits 24 px above the rows on the phone, where the mobile kit leaves 16 px;
   `Section`'s phone gap is 24 px, and a page cannot set a gap between two sections. Desktop
   matches, 20 px against 20 px.
-- Open: the desktop kit's longer Gapless description ("Crossfade album tracks with no silence
-  between them.") and its desktop wording of the first two differ from the mobile kit's; one
+- Changed on purpose: no "Gapless playback" row. Gapless playback is always on, so it is not a
+  setting; both kits still draw the row.
+- Open: the desktop kit's wording of the first two rows differs from the mobile kit's; one
   placeholder serves both, so the page carries the mobile kit's.
 - Changed on purpose: "Library folder" is "Server", since Auralis reads a server, not a
   folder on the device. Its value is a placeholder address, not a real host.

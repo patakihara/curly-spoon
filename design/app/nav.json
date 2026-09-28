@@ -29,28 +29,38 @@
   "layouts": [
     {
       "minWidth": 0,
-      "nav": "bottomBar"
+      "nav": "bottomBar",
+      "order": ["browse", "music", "books", "podcasts", "search"]
     },
     {
       "minWidth": 600,
-      "nav": "iconRail"
+      "nav": "iconRail",
+      "order": ["search", "browse", "music", "books", "podcasts"]
     },
     {
       "minWidth": 1024,
-      "nav": "labelledRail"
+      "nav": "labelledRail",
+      "order": ["search", "browse", "music", "books", "podcasts"]
     },
     {
       "minWidth": 1240,
       "nav": "labelledRail",
+      "order": ["search", "browse", "music", "books", "podcasts"],
       "sidePanel": "nowPlaying"
     }
   ],
+  "back": {
+    "close": "opener",
+    "stacks": "perDestination",
+    "android": "close",
+    "web": "previousView"
+  },
   "pages": [
     {
       "id": "browse",
       "route": "/",
       "lights": "browse",
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Browse",
       "sources": {
@@ -129,7 +139,7 @@
       "id": "requests",
       "route": "/requests",
       "lights": "browse",
-      "back": "up:browse",
+      "close": "opener",
       "presentation": "screen",
       "title": "Requests",
       "sources": {
@@ -137,7 +147,7 @@
         "spotify": []
       },
       "structure": {
-        "purpose": "Everything you asked for that is still on its way: albums, books and shows.",
+        "purpose": "Everything you asked for that is still on its way: albums and books. Podcasts are never requested, since subscribing is instant.",
         "sections": [
           {
             "name": "In flight",
@@ -154,7 +164,7 @@
           }
         ],
         "empty": "Nothing requested: says so, and that Search is where things are requested.",
-        "links": ["album", "book", "show", "search"]
+        "links": ["album", "book", "search"]
       }
     },
     {
@@ -164,7 +174,7 @@
         "id": "ShelfId"
       },
       "lights": "browse",
-      "back": "up:browse",
+      "close": "opener",
       "presentation": "screen",
       "title": "Shelf",
       "sources": {
@@ -180,6 +190,10 @@
             "holds": "The shelf's eyebrow, subject and subject art, as on Browse."
           },
           {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only this shelf's items."
+          },
+          {
             "name": "Items",
             "holds": "Every item of the shelf, paged, as a list or a grid."
           }
@@ -192,7 +206,7 @@
       "id": "music",
       "route": "/music",
       "lights": "music",
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Music",
       "sources": {
@@ -204,12 +218,16 @@
         "purpose": "Your music library: only what is yours, plus your requests. Outside music lives on Browse and Search.",
         "sections": [
           {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only your music and your music requests."
+          },
+          {
             "name": "Tabs",
             "holds": "Artists, Albums, Songs, as the Sonora kit has them."
           },
           {
             "name": "Sort and view",
-            "holds": "Sort by title, artist or Random (tap again to reshuffle); a grid or list toggle."
+            "holds": "Sort by title, artist or Random (tap again to reshuffle); a grid or list toggle; on the phone, a Downloaded filter that opens Downloads."
           },
           {
             "name": "Library",
@@ -223,7 +241,7 @@
           }
         ],
         "empty": "No music yet: says so, and points to Search to find, play and add music.",
-        "links": ["album", "artist", "playlist", "favourites"]
+        "links": ["album", "artist", "playlist", "favourites", "downloads"]
       }
     },
     {
@@ -233,7 +251,7 @@
         "ref": "ItemRef"
       },
       "lights": "music",
-      "back": "up:music",
+      "close": "opener",
       "presentation": "screen",
       "title": "Album",
       "sources": {
@@ -247,6 +265,10 @@
           {
             "name": "Header",
             "holds": "Cover, title, artist, year, track count and length."
+          },
+          {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only this album's tracks."
           },
           {
             "name": "Actions",
@@ -273,7 +295,7 @@
         "ref": "ItemRef"
       },
       "lights": "music",
-      "back": "up:music",
+      "close": "opener",
       "presentation": "screen",
       "title": "Artist",
       "sources": {
@@ -313,7 +335,7 @@
         "ref": "ItemRef"
       },
       "lights": "music",
-      "back": "up:music",
+      "close": "opener",
       "presentation": "screen",
       "title": "Playlist",
       "sources": {
@@ -329,6 +351,10 @@
             "provisional": true
           },
           {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only this playlist's songs."
+          },
+          {
             "name": "Songs",
             "holds": "Song rows, reorderable.",
             "provisional": true
@@ -342,7 +368,7 @@
       "id": "favourites",
       "route": "/music/favourites",
       "lights": "music",
-      "back": "up:music",
+      "close": "opener",
       "presentation": "screen",
       "title": "Favourites",
       "sources": {
@@ -366,7 +392,7 @@
       "id": "books",
       "route": "/books",
       "lights": "books",
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Books",
       "sources": {
@@ -378,12 +404,16 @@
         "purpose": "Your audiobook library: the books you own and the ones you requested.",
         "sections": [
           {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only your books and your book requests."
+          },
+          {
             "name": "Tabs",
             "holds": "Authors, Books, Series, Narrators, as the Sonora kit has them."
           },
           {
             "name": "Sort, filter and view",
-            "holds": "Sort by title, author or Random; a grid or list toggle; Requested and Downloaded (on the phone) filters."
+            "holds": "Sort by title, author or Random; a grid or list toggle; a Requested filter, and on the phone a Downloaded filter that opens Downloads."
           },
           {
             "name": "Library",
@@ -391,7 +421,7 @@
           }
         ],
         "empty": "No books yet: says so, and that books are requested from Search.",
-        "links": ["book", "author", "series"]
+        "links": ["book", "author", "series", "downloads"]
       }
     },
     {
@@ -401,7 +431,7 @@
         "ref": "ItemRef"
       },
       "lights": "books",
-      "back": "up:books",
+      "close": "opener",
       "presentation": "screen",
       "title": "Book",
       "sources": {
@@ -417,6 +447,10 @@
             "holds": "Cover, title, author, narrator, series and number, progress and rating."
           },
           {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only this book's chapters."
+          },
+          {
             "name": "Actions",
             "holds": "Play or resume, Play next, download on the phone. Unowned: Request, then Requested with its progress."
           },
@@ -427,6 +461,10 @@
           {
             "name": "About",
             "holds": "The description, expandable."
+          },
+          {
+            "name": "Other narrations",
+            "holds": "The same book read by other narrators: the ones you own play, the rest are greyed and requestable."
           },
           {
             "name": "Related",
@@ -445,7 +483,7 @@
         "ref": "ItemRef"
       },
       "lights": "books",
-      "back": "up:books",
+      "close": "opener",
       "presentation": "screen",
       "title": "Author",
       "sources": {
@@ -480,7 +518,7 @@
         "ref": "ItemRef"
       },
       "lights": "books",
-      "back": "up:books",
+      "close": "opener",
       "presentation": "screen",
       "title": "Series",
       "sources": {
@@ -507,7 +545,7 @@
       "id": "podcasts",
       "route": "/podcasts",
       "lights": "podcasts",
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Podcasts",
       "sources": {
@@ -519,8 +557,12 @@
         "purpose": "The shows you subscribe to, YouTube channels among them, and your lists.",
         "sections": [
           {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only your shows and their episodes."
+          },
+          {
             "name": "Sort and view",
-            "holds": "Sort, filter, and a grid or list toggle."
+            "holds": "Sort, a grid or list toggle, and on the phone a Downloaded filter that opens Downloads."
           },
           {
             "name": "Shows",
@@ -538,7 +580,7 @@
           }
         ],
         "empty": "No subscriptions: says so, and points to Search's podcast results or pasting a YouTube channel link.",
-        "links": ["show", "list"]
+        "links": ["show", "list", "downloads"]
       }
     },
     {
@@ -548,7 +590,7 @@
         "ref": "ItemRef"
       },
       "lights": "podcasts",
-      "back": "up:podcasts",
+      "close": "opener",
       "presentation": "screen",
       "title": "Show",
       "sources": {
@@ -562,6 +604,10 @@
           {
             "name": "Header",
             "holds": "Art, title, host and the subscribe state."
+          },
+          {
+            "name": "Local search",
+            "holds": "A bar that appears as you scroll and searches only this show's episodes."
           },
           {
             "name": "Episodes",
@@ -593,7 +639,7 @@
         "ref": "ItemRef"
       },
       "lights": "podcasts",
-      "back": "history",
+      "close": "opener",
       "presentation": "screen",
       "title": "Episode",
       "sources": {
@@ -633,7 +679,7 @@
         "ref": "ItemRef"
       },
       "lights": "podcasts",
-      "back": "history",
+      "close": "opener",
       "presentation": "screen",
       "title": "List",
       "sources": {
@@ -665,7 +711,7 @@
       "id": "search",
       "route": "/search?q",
       "lights": "search",
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Search",
       "sources": {
@@ -674,8 +720,12 @@
         "kickoff": "search"
       },
       "structure": {
-        "purpose": "Find anything, in your library or outside it. One tap opens it with the keyboard up.",
+        "purpose": "Global search: find anything, in your library or outside it. One tap opens it with the keyboard up.",
         "sections": [
+          {
+            "name": "Filters, in the back layer",
+            "holds": "The backdrop's back layer, behind the results. Concealed, the results' header names the active filters; tapping it, from any scroll position, slides the results down to reveal kind chips (Lyrics among them, to match a remembered line) and In your library or Outside. Results update as a filter changes; tapping the results or the close icon conceals it."
+          },
           {
             "name": "Suggestions",
             "holds": "As you type: titles, creators and series you have, plus recent searches, each naming its kind."
@@ -685,16 +735,12 @@
             "holds": "The single most relevant result, whatever its type."
           },
           {
-            "name": "Chips",
-            "holds": "Filter by kind, Lyrics among them (match a remembered line)."
-          },
-          {
             "name": "Your library",
             "holds": "Ranked by relevance; plays straight away, no request action."
           },
           {
             "name": "Outside your library",
-            "holds": "Music plays from YouTube Music; books and podcasts get Request or Subscribe with live status; more releases fold away."
+            "holds": "Music plays from YouTube Music; books get Request and podcasts Subscribe, with live status; more releases fold away."
           }
         ],
         "empty": "No query: recent searches. No results: says nothing matched, in your library or outside it.",
@@ -705,7 +751,7 @@
       "id": "nowPlaying",
       "route": "/playing",
       "lights": null,
-      "back": "history",
+      "close": "sheet",
       "presentation": "sheet",
       "title": "Now Playing",
       "sources": {
@@ -713,7 +759,7 @@
         "spotify": ["S33", "S34", "S38", "S39", "S40", "S41", "S42"]
       },
       "structure": {
-        "purpose": "The full player for what is playing, its controls matched to the content.",
+        "purpose": "The full player for what is playing, its controls matched to the content. On the phone, a full-screen sheet opened from the mini-player that covers the bottom bar; on desktop, a side panel beside the content.",
         "sections": [
           {
             "name": "Art and titles",
@@ -735,6 +781,11 @@
             "name": "About cards",
             "holds": "The artist, show or book below the player.",
             "provisional": true
+          },
+          {
+            "name": "Tabs",
+            "holds": "Player, Queue and Lyrics as tabs of the one sheet or panel.",
+            "provisional": true
           }
         ],
         "empty": "Nothing loaded: Now Playing has nothing to open, and the mini-player is hidden.",
@@ -745,7 +796,7 @@
       "id": "queue",
       "route": "/playing/queue",
       "lights": null,
-      "back": "history",
+      "close": "sheet",
       "presentation": "sheet",
       "title": "Queue",
       "sources": {
@@ -753,7 +804,7 @@
         "spotify": ["S36", "S37"]
       },
       "structure": {
-        "purpose": "What plays next, on the music queue or the spoken queue, with Back walking your history.",
+        "purpose": "Now Playing's Queue tab: what plays next, on the music queue or the spoken queue, and what already played.",
         "sections": [
           {
             "name": "Now playing",
@@ -786,7 +837,7 @@
       "id": "lyrics",
       "route": "/playing/lyrics",
       "lights": null,
-      "back": "history",
+      "close": "sheet",
       "presentation": "sheet",
       "title": "Lyrics",
       "sources": {
@@ -794,7 +845,7 @@
         "spotify": ["S40", "S43"]
       },
       "structure": {
-        "purpose": "The playing song's lyrics, synced where they can be.",
+        "purpose": "Now Playing's Lyrics tab: the playing song's lyrics, synced where they can be.",
         "sections": [
           {
             "name": "Sync toggle",
@@ -813,7 +864,7 @@
       "id": "downloads",
       "route": "/downloads",
       "lights": null,
-      "back": "history",
+      "close": "opener",
       "presentation": "screen",
       "platforms": ["android"],
       "title": "Downloads",
@@ -822,7 +873,7 @@
         "spotify": []
       },
       "structure": {
-        "purpose": "What is on this phone for offline play. Android only; still to design.",
+        "purpose": "What is on this phone for offline play. Android only, reached from the Downloaded filter on Music, Books and Podcasts and from Storage in Settings. Still to design.",
         "sections": [
           {
             "name": "Downloaded",
@@ -843,7 +894,7 @@
       "id": "settings",
       "route": "/settings",
       "lights": null,
-      "back": "history",
+      "close": "opener",
       "presentation": "screen",
       "title": "Settings",
       "sources": {
@@ -860,11 +911,15 @@
           },
           {
             "name": "Playback",
-            "holds": "Autoplay rules, the music queue style (YouTube Music or Spotify), gapless."
+            "holds": "Autoplay rules and the music queue style (YouTube Music or Spotify)."
           },
           {
             "name": "Library",
             "holds": "Show everyone's library (off by default); hide unowned titles on artist and author pages."
+          },
+          {
+            "name": "Storage",
+            "holds": "On the phone: what downloads take up, opening Downloads."
           },
           {
             "name": "YouTube account",
@@ -885,7 +940,7 @@
       "id": "setup",
       "route": "/setup",
       "lights": null,
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Setup",
       "sources": {
@@ -910,7 +965,7 @@
       "id": "signIn",
       "route": "/sign-in",
       "lights": null,
-      "back": "history",
+      "close": "none",
       "presentation": "screen",
       "title": "Sign in",
       "sources": {
@@ -938,7 +993,7 @@
       "id": "shelfReview",
       "route": "/admin/shelves",
       "lights": null,
-      "back": "up:settings",
+      "close": "opener",
       "presentation": "screen",
       "title": "Shelf review",
       "sources": {
@@ -962,7 +1017,7 @@
       "id": "notFound",
       "route": "*",
       "lights": null,
-      "back": "up:browse",
+      "close": "opener",
       "presentation": "screen",
       "title": "Not found",
       "sources": {

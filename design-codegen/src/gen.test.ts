@@ -133,7 +133,17 @@ describe('pnpm gen, from design/sonora', () => {
       mkdirSync(app);
       writeFileSync(
         join(app, 'nav.json'),
-        JSON.stringify({ destinations: [], layouts: [], pages: [] }),
+        JSON.stringify({
+          destinations: [],
+          layouts: [],
+          back: {
+            close: 'opener',
+            stacks: 'perDestination',
+            android: 'close',
+            web: 'previousView',
+          },
+          pages: [],
+        }),
       );
       const out = join(tmp, 'out');
       gen(['--sonora', sonora, '--app', app, '--out', out]);

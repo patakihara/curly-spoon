@@ -13,17 +13,20 @@ import { APP_DIR, OUTPUTS, REPO_ROOT } from './outputs.js';
 
 const nav = readNav(join(REPO_ROOT, APP_DIR));
 
-const small = (pages: unknown[]): unknown => ({
+const back = { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' };
+const small = (pages: unknown[], over: Record<string, unknown> = {}): unknown => ({
   destinations: [{ id: 'music', label: 'Music', icon: 'album' }],
-  layouts: [{ minWidth: 0, nav: 'bottomBar' }],
+  layouts: [{ minWidth: 0, nav: 'bottomBar', order: ['music'] }],
+  back,
   pages,
+  ...over,
 });
 const page = (over: Record<string, unknown> = {}) => ({
   id: 'album',
   route: '/music/albums/:ref',
   params: { ref: 'ItemRef' },
   lights: 'music',
-  back: 'history',
+  close: 'opener',
   presentation: 'screen',
   title: 'Album',
   sources: { sonora: ['kit:mobile/album'], spotify: [] },
@@ -79,8 +82,72 @@ describe('nav.json', () => {
     expect(() => parseNav(small([page({ params: {} })]))).toThrow(/album.*ref/);
   });
 
-  it('refuses going up to a page that does not exist', () => {
-    expect(() => parseNav(small([page({ back: 'up:music' })]))).toThrow(/album.*music/);
+  it('gives back one model for the whole app: ✕ to the opener, a stack per destination', () => {
+    expect(nav.back).toEqual(back);
+    expect(() => parseNav(small([page()], { back: { ...back, web: 'close' } }))).toThrow(/web/);
+    expect(() => parseNav(small([page()], { back: undefined }))).toThrow(/back/);
+  });
+
+  it('makes each destination’s home the bottom of its stack, with nothing to close', () => {
+    const homes = nav.pages.filter((p) => nav.destinations.some((d) => d.id === p.id));
+    expect(homes.map((p) => p.id)).toEqual(['browse', 'music', 'books', 'podcasts', 'search']);
+    for (const p of homes) expect(p.close, p.id).toBe('none');
+    expect(() =>
+      parseNav(small([page({ id: 'music', route: '/music', params: {}, close: 'opener' })])),
+    ).toThrow(/music: a destination's home/);
+  });
+
+  it('closes the player’s sheets to the page under them, and every other page to its opener', () => {
+    for (const p of nav.pages.filter((p) => p.presentation === 'sheet'))
+      expect(p.close, p.id).toBe('sheet');
+    expect(nav.pages.filter((p) => p.presentation === 'sheet').map((p) => p.id)).toEqual([
+      'nowPlaying',
+      'queue',
+      'lyrics',
+    ]);
+    expect(nav.pages.find((p) => p.id === 'album')?.close).toBe('opener');
+    expect(() => parseNav(small([page({ close: 'sheet' })]))).toThrow(/album: a sheet/);
+    expect(() => parseNav(small([page({ presentation: 'sheet' })]))).toThrow(/album: a sheet/);
+  });
+
+  it('puts Search last on the phone’s bottom bar and first on the desktop rails', () => {
+    for (const layout of nav.layouts) {
+      if (layout.nav === 'bottomBar')
+        expect(layout.order).toEqual(['browse', 'music', 'books', 'podcasts', 'search']);
+      else expect(layout.order).toEqual(['search', 'browse', 'music', 'books', 'podcasts']);
+    }
+    expect(nav.layouts.some((l) => l.nav !== 'bottomBar')).toBe(true);
+  });
+
+  it('refuses a layout that leaves out a destination or shows one twice', () => {
+    const layouts = (order: string[]) => [{ minWidth: 0, nav: 'bottomBar', order }];
+    expect(() => parseNav(small([page()], { layouts: layouts([]) }))).toThrow(/bottomBar from 0/);
+    expect(() => parseNav(small([page()], { layouts: layouts(['music', 'music']) }))).toThrow(
+      /bottomBar from 0/,
+    );
+  });
+
+  it('gives each library home and each collection page a local search, and Search the global one', () => {
+    const sections = (id: string) =>
+      nav.pages.find((p) => p.id === id)!.structure.sections.map((s) => s.name);
+    const local = ['music', 'books', 'podcasts', 'shelf', 'album', 'playlist', 'show', 'book'];
+    for (const p of nav.pages)
+      expect(sections(p.id).includes('Local search'), p.id).toBe(local.includes(p.id));
+    expect(sections('search')[0]).toBe('Filters, in the back layer');
+  });
+
+  it('lists a book’s other narrations next to its related books', () => {
+    const names = nav.pages.find((p) => p.id === 'book')!.structure.sections.map((s) => s.name);
+    expect(names.indexOf('Related')).toBe(names.indexOf('Other narrations') + 1);
+  });
+
+  it('keeps podcasts out of Requests, since subscribing is instant', () => {
+    expect(nav.pages.find((p) => p.id === 'requests')!.structure.links).not.toContain('show');
+  });
+
+  it('reaches Downloads from each library home and from Settings', () => {
+    const linkers = nav.pages.filter((p) => p.structure.links.includes('downloads'));
+    expect(linkers.map((p) => p.id).sort()).toEqual(['books', 'music', 'podcasts', 'settings']);
   });
 
   it('refuses a Sonora source that is neither a kit screen, a card nor none', () => {
@@ -149,9 +216,10 @@ describe('the web platform hook', () => {
     const tiny = parseNav({
       destinations: [],
       layouts: [
-        { minWidth: 0, nav: 'bottomBar' },
-        { minWidth: 600, nav: 'iconRail' },
+        { minWidth: 0, nav: 'bottomBar', order: [] },
+        { minWidth: 600, nav: 'iconRail', order: [] },
       ],
+      back,
       pages: [],
     });
     expect(generatePlatform(tiny)).toContain("const PHONE = '(max-width: 599px)';");

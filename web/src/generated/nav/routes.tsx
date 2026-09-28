@@ -34,22 +34,57 @@ export const destinations = [
 export const layouts = [
   {
     "minWidth": 0,
-    "nav": "bottomBar"
+    "nav": "bottomBar",
+    "order": [
+      "browse",
+      "music",
+      "books",
+      "podcasts",
+      "search"
+    ]
   },
   {
     "minWidth": 600,
-    "nav": "iconRail"
+    "nav": "iconRail",
+    "order": [
+      "search",
+      "browse",
+      "music",
+      "books",
+      "podcasts"
+    ]
   },
   {
     "minWidth": 1024,
-    "nav": "labelledRail"
+    "nav": "labelledRail",
+    "order": [
+      "search",
+      "browse",
+      "music",
+      "books",
+      "podcasts"
+    ]
   },
   {
     "minWidth": 1240,
     "nav": "labelledRail",
+    "order": [
+      "search",
+      "browse",
+      "music",
+      "books",
+      "podcasts"
+    ],
     "sidePanel": "nowPlaying"
   }
 ] as const;
+
+export const back = {
+  "close": "opener",
+  "stacks": "perDestination",
+  "android": "close",
+  "web": "previousView"
+} as const;
 
 export interface PageRoute {
   id: string;
@@ -57,36 +92,36 @@ export interface PageRoute {
   query: readonly string[];
   title: string;
   lights: string | null;
-  back: string;
+  close: 'opener' | 'sheet' | 'none';
   presentation: 'screen' | 'sheet';
 }
 
 export const pages: readonly PageRoute[] = [
-  { id: 'browse', path: '/', query: [], title: 'Browse', lights: 'browse', back: 'history', presentation: 'screen' },
-  { id: 'requests', path: '/requests', query: [], title: 'Requests', lights: 'browse', back: 'up:browse', presentation: 'screen' },
-  { id: 'shelf', path: '/shelves/:id', query: [], title: 'Shelf', lights: 'browse', back: 'up:browse', presentation: 'screen' },
-  { id: 'music', path: '/music', query: [], title: 'Music', lights: 'music', back: 'history', presentation: 'screen' },
-  { id: 'album', path: '/music/albums/:ref', query: [], title: 'Album', lights: 'music', back: 'up:music', presentation: 'screen' },
-  { id: 'artist', path: '/music/artists/:ref', query: [], title: 'Artist', lights: 'music', back: 'up:music', presentation: 'screen' },
-  { id: 'playlist', path: '/music/playlists/:ref', query: [], title: 'Playlist', lights: 'music', back: 'up:music', presentation: 'screen' },
-  { id: 'favourites', path: '/music/favourites', query: [], title: 'Favourites', lights: 'music', back: 'up:music', presentation: 'screen' },
-  { id: 'books', path: '/books', query: [], title: 'Books', lights: 'books', back: 'history', presentation: 'screen' },
-  { id: 'book', path: '/books/:ref', query: [], title: 'Book', lights: 'books', back: 'up:books', presentation: 'screen' },
-  { id: 'author', path: '/books/authors/:ref', query: [], title: 'Author', lights: 'books', back: 'up:books', presentation: 'screen' },
-  { id: 'series', path: '/books/series/:ref', query: [], title: 'Series', lights: 'books', back: 'up:books', presentation: 'screen' },
-  { id: 'podcasts', path: '/podcasts', query: [], title: 'Podcasts', lights: 'podcasts', back: 'history', presentation: 'screen' },
-  { id: 'show', path: '/podcasts/:ref', query: [], title: 'Show', lights: 'podcasts', back: 'up:podcasts', presentation: 'screen' },
-  { id: 'episode', path: '/podcasts/episodes/:ref', query: [], title: 'Episode', lights: 'podcasts', back: 'history', presentation: 'screen' },
-  { id: 'list', path: '/lists/:ref', query: [], title: 'List', lights: 'podcasts', back: 'history', presentation: 'screen' },
-  { id: 'search', path: '/search', query: ['q'], title: 'Search', lights: 'search', back: 'history', presentation: 'screen' },
-  { id: 'nowPlaying', path: '/playing', query: [], title: 'Now Playing', lights: null, back: 'history', presentation: 'sheet' },
-  { id: 'queue', path: '/playing/queue', query: [], title: 'Queue', lights: null, back: 'history', presentation: 'sheet' },
-  { id: 'lyrics', path: '/playing/lyrics', query: [], title: 'Lyrics', lights: null, back: 'history', presentation: 'sheet' },
-  { id: 'settings', path: '/settings', query: [], title: 'Settings', lights: null, back: 'history', presentation: 'screen' },
-  { id: 'setup', path: '/setup', query: [], title: 'Setup', lights: null, back: 'history', presentation: 'screen' },
-  { id: 'signIn', path: '/sign-in', query: [], title: 'Sign in', lights: null, back: 'history', presentation: 'screen' },
-  { id: 'shelfReview', path: '/admin/shelves', query: [], title: 'Shelf review', lights: null, back: 'up:settings', presentation: 'screen' },
-  { id: 'notFound', path: '*', query: [], title: 'Not found', lights: null, back: 'up:browse', presentation: 'screen' },
+  { id: 'browse', path: '/', query: [], title: 'Browse', lights: 'browse', close: 'none', presentation: 'screen' },
+  { id: 'requests', path: '/requests', query: [], title: 'Requests', lights: 'browse', close: 'opener', presentation: 'screen' },
+  { id: 'shelf', path: '/shelves/:id', query: [], title: 'Shelf', lights: 'browse', close: 'opener', presentation: 'screen' },
+  { id: 'music', path: '/music', query: [], title: 'Music', lights: 'music', close: 'none', presentation: 'screen' },
+  { id: 'album', path: '/music/albums/:ref', query: [], title: 'Album', lights: 'music', close: 'opener', presentation: 'screen' },
+  { id: 'artist', path: '/music/artists/:ref', query: [], title: 'Artist', lights: 'music', close: 'opener', presentation: 'screen' },
+  { id: 'playlist', path: '/music/playlists/:ref', query: [], title: 'Playlist', lights: 'music', close: 'opener', presentation: 'screen' },
+  { id: 'favourites', path: '/music/favourites', query: [], title: 'Favourites', lights: 'music', close: 'opener', presentation: 'screen' },
+  { id: 'books', path: '/books', query: [], title: 'Books', lights: 'books', close: 'none', presentation: 'screen' },
+  { id: 'book', path: '/books/:ref', query: [], title: 'Book', lights: 'books', close: 'opener', presentation: 'screen' },
+  { id: 'author', path: '/books/authors/:ref', query: [], title: 'Author', lights: 'books', close: 'opener', presentation: 'screen' },
+  { id: 'series', path: '/books/series/:ref', query: [], title: 'Series', lights: 'books', close: 'opener', presentation: 'screen' },
+  { id: 'podcasts', path: '/podcasts', query: [], title: 'Podcasts', lights: 'podcasts', close: 'none', presentation: 'screen' },
+  { id: 'show', path: '/podcasts/:ref', query: [], title: 'Show', lights: 'podcasts', close: 'opener', presentation: 'screen' },
+  { id: 'episode', path: '/podcasts/episodes/:ref', query: [], title: 'Episode', lights: 'podcasts', close: 'opener', presentation: 'screen' },
+  { id: 'list', path: '/lists/:ref', query: [], title: 'List', lights: 'podcasts', close: 'opener', presentation: 'screen' },
+  { id: 'search', path: '/search', query: ['q'], title: 'Search', lights: 'search', close: 'none', presentation: 'screen' },
+  { id: 'nowPlaying', path: '/playing', query: [], title: 'Now Playing', lights: null, close: 'sheet', presentation: 'sheet' },
+  { id: 'queue', path: '/playing/queue', query: [], title: 'Queue', lights: null, close: 'sheet', presentation: 'sheet' },
+  { id: 'lyrics', path: '/playing/lyrics', query: [], title: 'Lyrics', lights: null, close: 'sheet', presentation: 'sheet' },
+  { id: 'settings', path: '/settings', query: [], title: 'Settings', lights: null, close: 'opener', presentation: 'screen' },
+  { id: 'setup', path: '/setup', query: [], title: 'Setup', lights: null, close: 'none', presentation: 'screen' },
+  { id: 'signIn', path: '/sign-in', query: [], title: 'Sign in', lights: null, close: 'none', presentation: 'screen' },
+  { id: 'shelfReview', path: '/admin/shelves', query: [], title: 'Shelf review', lights: null, close: 'opener', presentation: 'screen' },
+  { id: 'notFound', path: '*', query: [], title: 'Not found', lights: null, close: 'opener', presentation: 'screen' },
 ];
 
 export const routes: RouteObject[] = [

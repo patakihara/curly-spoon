@@ -18,8 +18,8 @@ const OTHER_GROUPS = [
 ];
 
 /**
- * The pages by column: a destination's pages in the order its home page reaches them through
- * links, then any it doesn't reach, in nav.json's order.
+ * The pages by column, in the order links reach them: a destination's from its home page, any
+ * other column's from each page nothing in it links to, then whatever is left, in nav.json's order.
  */
 export function groupPages(nav: Nav): Group[] {
   const groups: Group[] = nav.destinations.map((d) => ({ id: d.id, label: d.label, pages: [] }));
@@ -31,17 +31,23 @@ export function groupPages(nav: Nav): Group[] {
         : groups.find((g) => g.id === page.lights)!;
     group.pages.push(page);
   }
-  for (const group of groups) {
+  for (const group of [...groups, ...others]) {
     const byId = new Map(group.pages.map((p) => [p.id, p]));
+    const linked = new Set(group.pages.flatMap((p) => p.structure.links));
+    const starts = byId.has(group.id)
+      ? [group.id]
+      : group.pages.filter((p) => !linked.has(p.id)).map((p) => p.id);
     const ordered: NavPage[] = [];
-    const queue = byId.has(group.id) ? [group.id] : [];
-    while (queue.length > 0) {
-      const page = byId.get(queue.shift()!)!;
-      if (ordered.includes(page)) continue;
-      ordered.push(page);
-      queue.push(...page.structure.links.filter((l) => byId.has(l)));
+    for (const start of [...starts, ...group.pages.map((p) => p.id)]) {
+      const queue = [start];
+      while (queue.length > 0) {
+        const page = byId.get(queue.shift()!)!;
+        if (ordered.includes(page)) continue;
+        ordered.push(page);
+        queue.push(...page.structure.links.filter((l) => byId.has(l)));
+      }
     }
-    group.pages = [...ordered, ...group.pages.filter((p) => !ordered.includes(p))];
+    group.pages = ordered;
   }
   return [...groups, ...others].filter((g) => g.pages.length > 0);
 }
@@ -56,21 +62,61 @@ const escapeText = (s: string) =>
 
 const titleOf = (nav: Nav, id: string) => nav.pages.find((p) => p.id === id)?.title ?? id;
 
-/** How a page goes back: up to its parent, or back through history. */
-function backOf(nav: Nav, page: NavPage): string {
-  return page.back.startsWith('up:')
-    ? `up to ${titleOf(nav, page.back.slice(3))}`
-    : 'back through history';
+/** The destinations' order on each kind of navigation, from nav.json's layouts. */
+export function navOrder(nav: Nav): string {
+  const label = (id: string) => nav.destinations.find((d) => d.id === id)?.label ?? id;
+  const names = {
+    bottomBar: 'the phone’s bottom bar',
+    iconRail: 'the rail',
+    labelledRail: 'the rail',
+  };
+  const seen = new Map<string, string>();
+  for (const l of nav.layouts) {
+    const order = l.order.map(label).join(', ');
+    const name = names[l.nav];
+    if (!seen.has(name)) seen.set(name, order);
+  }
+  return [...seen].map(([name, order]) => `On ${name}: ${order}.`).join(' ');
 }
 
-/** What sets a page apart: a sheet, one platform only, and whether it is drawn yet. */
-function marks(page: NavPage, drawn: Set<string>): string[] {
-  const out = [drawn.has(page.id) ? 'drawn' : 'structure only'];
+/**
+ * nav.json's back model in words, said once on each artboard rather than on every page. Each
+ * sentence is keyed by the model's value, so a new model fails to type-check until it is worded.
+ */
+export function backModel(nav: Nav): string[] {
+  const close: Record<Nav['back']['close'], string> = {
+    opener: '✕ (or up) returns to whatever opened the screen, and on to what opened that.',
+  };
+  const stacks: Record<Nav['back']['stacks'], string> = {
+    perDestination:
+      'Each destination keeps its own stack: leave Music on an album, come back, and ✕ goes from the album to the artist it was opened from.',
+  };
+  const android: Record<Nav['back']['android'], string> = {
+    close: "Android's back does what ✕ does.",
+  };
+  const web: Record<Nav['back']['web'], string> = {
+    previousView: "The browser's back goes to the previous view, wherever that was.",
+  };
+  return [
+    `${close[nav.back.close]} ${stacks[nav.back.stacks]}`,
+    `${android[nav.back.android]} ${web[nav.back.web]} A sheet closes to the page under it.`,
+  ];
+}
+
+/** What sets a page apart: a sheet, or one platform only. */
+function kind(page: NavPage): string[] {
+  const out: string[] = [];
   if (page.presentation === 'sheet') out.push('sheet');
   if (page.platforms.length === 1)
     out.push(`${page.platforms[0] === 'android' ? 'Android' : 'web'} only`);
   return out;
 }
+
+/** A page's kind, after whether it is drawn yet. */
+const marks = (page: NavPage, drawn: Set<string>) => [
+  drawn.has(page.id) ? 'drawn' : 'structure only',
+  ...kind(page),
+];
 
 /** An artboard's page around its fixed-size root; `head` loads Sonora's tokens. */
 function artboard(
@@ -150,7 +196,6 @@ function block(nav: Nav, page: NavPage, drawn: Set<string>): { html: string[]; h
     '</ol>',
     `<p style="${BODY}"><strong style="font-weight: var(--weight-strong)">Empty: </strong><span style="${MUTED}">${escapeText(structure.empty)}</span></p>`,
     `<p style="${BODY}"><strong style="font-weight: var(--weight-strong)">Links to: </strong><span style="${MUTED}">${escapeText(links)}</span></p>`,
-    `<p style="${BODY}"><strong style="font-weight: var(--weight-strong)">Back: </strong><span style="${MUTED}">${escapeText(backOf(nav, page))}</span></p>`,
     '</section>',
   ];
   const textLines =
@@ -158,9 +203,8 @@ function block(nav: Nav, page: NavPage, drawn: Set<string>): { html: string[]; h
     lines(structure.purpose, chars) +
     structure.sections.reduce((n, s) => n + 1 + lines(s.holds, chars), 0) +
     lines(`Empty: ${structure.empty}`, chars) +
-    lines(`Links to: ${links}`, chars) +
-    1;
-  const height = 80 + textLines * 20 + (structure.sections.length + 4) * 6;
+    lines(`Links to: ${links}`, chars);
+  const height = 80 + textLines * 20 + (structure.sections.length + 3) * 6;
   return { html, height };
 }
 
@@ -190,8 +234,10 @@ export function generateStructure(
   const header = [
     `<h1 style="margin: 0; font-family: var(--font-display); font-size: var(--h1-size); line-height: var(--h1-leading); font-weight: var(--heading-weight)">What each screen holds</h1>`,
     `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl); ${MUTED}">Every page of nav.json, grouped by the destination it lights up. Sections run top to bottom; a provisional one is not settled yet. Every screen also reaches the five destinations and Settings, and Now Playing through the mini-player.</p>`,
+    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl)"><strong style="font-weight: var(--weight-strong)">Back: </strong>${escapeText(backModel(nav).join(' '))}</p>`,
+    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl)"><strong style="font-weight: var(--weight-strong)">Navigation: </strong>${escapeText(navOrder(nav))}</p>`,
   ];
-  const height = pad * 2 + 140 + 56 + tallest;
+  const height = pad * 2 + 220 + 56 + tallest;
   const html = artboard(
     head,
     'Structure',
@@ -234,13 +280,14 @@ export interface Box {
   column: number;
   depth: number;
   root: boolean;
-  backLine: string;
+  /** The page's route, and whether it is a sheet or on one platform only. */
+  detail: string;
   /** Links that aren't tree children, by page id, and wrapped for the node. */
   links: string[];
   linkLines: string[];
 }
 
-/** A tree line from a page down to a page whose back goes up to it, as a polyline. */
+/** A tree line from a page down to a page it is first to link to in its column, as a polyline. */
 export interface TreeLine {
   from: Box;
   to: Box;
@@ -267,8 +314,8 @@ function wrapLinks(titles: string[], chars: number): string[] {
 
 /**
  * Every page's node on the flowchart. One column per group; within it each page sits under the
- * page its back goes up to, indented, so the column reads as a small tree. Every other link is
- * text on the node, and the node grows to fit it.
+ * first page of the column to link to it, indented, so the column reads as a small tree. Every
+ * other link is text on the node, and the node grows to fit it.
  */
 export function layoutFlows(nav: Nav): {
   boxes: Map<string, Box>;
@@ -286,10 +333,9 @@ export function layoutFlows(nav: Nav): {
   let x = pad;
   let bottom = top;
   groups.forEach((g, column) => {
-    const inGroup = new Set(g.pages.map((p) => p.id));
     const parentOf = (p: NavPage) => {
-      const up = p.back.startsWith('up:') ? p.back.slice(3) : null;
-      return up !== null && up !== p.id && inGroup.has(up) ? up : null;
+      const before = g.pages.slice(0, g.pages.indexOf(p));
+      return before.find((q) => q.structure.links.includes(p.id))?.id ?? null;
     };
     const childrenOf = (id: string) => g.pages.filter((p) => parentOf(p) === id);
     const order: { page: NavPage; depth: number }[] = [];
@@ -311,7 +357,7 @@ export function layoutFlows(nav: Nav): {
         links.map((l) => titleOf(nav, l)),
         Math.floor((node.w - 28) / charPx),
       );
-      const sheet = page.presentation === 'sheet' ? ' · sheet' : '';
+      const detail = [page.route, ...kind(page)].join(' · ');
       const box: Box = {
         page,
         x: x + depth * indent,
@@ -321,7 +367,7 @@ export function layoutFlows(nav: Nav): {
         column,
         depth,
         root: page.id === g.id,
-        backLine: `${page.back.startsWith('up:') ? '↑ ' : '← '}${backOf(nav, page)}${sheet}`,
+        detail,
         links,
         linkLines,
       };
@@ -368,7 +414,7 @@ export function generateFlows(
     '</marker>',
     '</defs>',
     `<text x="${pad}" y="${pad + 36}" style="font-family: var(--font-display); font-size: 36px; font-weight: 900; fill: var(--surface-fg)">How the screens link</text>`,
-    `<text x="${pad}" y="${pad + 72}" style="font-size: 18px; ${muted}">Each column is a destination drawn as a tree: a line runs from a screen to the screens that go back up to it. The → line on a screen lists its other links.</text>`,
+    `<text x="${pad}" y="${pad + 72}" style="font-size: 18px; ${muted}">Each column is a destination drawn as a tree: a line runs from a screen to the screens it is first to open. The → line on a screen lists its other links.</text>`,
     `<text x="${pad}" y="${pad + 100}" style="font-size: 18px; ${muted}">Not shown: every screen also reaches the destinations, Settings, and Now Playing through the mini-player.</text>`,
   ];
   groups.forEach((g) => {
@@ -389,7 +435,7 @@ export function generateFlows(
       `<g><title>${escapeText(box.page.structure.purpose)}</title>`,
       `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="10" style="fill: var(--surface-card); stroke: ${stroke}; stroke-width: ${box.root ? 2.5 : 1.25};${dashed}"></rect>`,
       `<text x="${box.x + 14}" y="${box.y + 24}" style="font-size: 16px; font-weight: 700; fill: var(--surface-fg)">${escapeText(box.page.title)}</text>`,
-      `<text x="${box.x + 14}" y="${box.y + 44}" style="font-size: 12px; ${muted}">${escapeText(box.backLine)}</text>`,
+      `<text x="${box.x + 14}" y="${box.y + 44}" style="font-size: 12px; ${muted}">${escapeText(box.detail)}</text>`,
       ...box.linkLines.map(
         (text, i) =>
           `<text x="${box.x + (i === 0 ? 14 : 28)}" y="${box.y + 64 + i * linkLine}" style="font-size: 12px; fill: var(--surface-fg)">${escapeText(text)}</text>`,
@@ -397,7 +443,7 @@ export function generateFlows(
       '</g>',
     );
   }
-  const legendY = height - 90;
+  const legendY = height - 110;
   const lx = pad;
   svg.push(
     `<rect x="${lx}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--accent); stroke-width: 2.5"></rect>`,
@@ -406,7 +452,11 @@ export function generateFlows(
     `<text x="${lx + 248}" y="${legendY + 16}" style="font-size: 14px; ${muted}">drawn on the canvas</text>`,
     `<rect x="${lx + 440}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--surface-fg-muted); stroke-width: 1.25; stroke-dasharray: 6 4"></rect>`,
     `<text x="${lx + 488}" y="${legendY + 16}" style="font-size: 14px; ${muted}">structure only, not drawn yet</text>`,
-    `<text x="${lx + 760}" y="${legendY + 16}" style="font-size: 14px; ${muted}">↑ up to its parent · ← back through history · → its other links</text>`,
+    `<text x="${lx + 760}" y="${legendY + 16}" style="font-size: 14px; ${muted}">→ its other links</text>`,
+    ...backModel(nav).map(
+      (line, i) =>
+        `<text x="${lx}" y="${legendY + 52 + i * 24}" style="font-size: 16px; fill: var(--surface-fg)">${i === 0 ? 'Back: ' : ''}${escapeText(line)}</text>`,
+    ),
   );
   svg.push('</svg>');
   const html = artboard(head, 'Flows', width, height, '', svg);

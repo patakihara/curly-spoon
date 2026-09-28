@@ -15,11 +15,6 @@ const placeholder = {
       "title": "Wi-Fi only",
       "sub": "Pause transfers on mobile data.",
       "checked": true
-    },
-    {
-      "title": "Gapless playback",
-      "sub": "No silence between album tracks.",
-      "checked": false
     }
   ]
 };

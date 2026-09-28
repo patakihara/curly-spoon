@@ -13,11 +13,29 @@ const Destination = z
   .object({ id: Id, label: z.string().min(1), icon: z.string().min(1) })
   .strict();
 
+/** One width band: its navigation, the destinations in the order it shows them, a side panel. */
 const Layout = z
   .object({
     minWidth: z.number().int().nonnegative(),
     nav: z.enum(['bottomBar', 'iconRail', 'labelledRail']),
+    order: z.array(Id),
     sidePanel: z.literal('nowPlaying').optional(),
+  })
+  .strict();
+
+/**
+ * What back does, the same on every page. The close control (✕ or up) returns to whatever opened
+ * the page, a stack of openers rather than a fixed parent, and each destination keeps its own
+ * stack, so leaving Music and coming back resumes it. A page opened with nothing under it closes
+ * to the home of the destination it lights, or Browse. Android's system back is the close
+ * control; the web browser's back goes to the previous view, wherever that was.
+ */
+const Back = z
+  .object({
+    close: z.literal('opener'),
+    stacks: z.literal('perDestination'),
+    android: z.literal('close'),
+    web: z.literal('previousView'),
   })
   .strict();
 
@@ -57,8 +75,13 @@ const Page = z
     id: Id,
     route: z.string().regex(/^(\*|\/[^?]*(\?[a-z][A-Za-z0-9]*(&[a-z][A-Za-z0-9]*)*)?)$/),
     params: z.record(z.string(), z.string().min(1)).default({}),
+    /** The destination lit when the page opens with nothing under it; from another, it joins that one's stack. */
     lights: Id.nullable(),
-    back: z.string().regex(/^(history|up:[a-z][A-Za-z0-9]*)$/),
+    /**
+     * What the page's close control does: `opener` pops back to what opened it, `sheet` closes the
+     * sheet to the page under it, `none` is the bottom of a stack, with nothing to close.
+     */
+    close: z.enum(['opener', 'sheet', 'none']),
     presentation: z.enum(['screen', 'sheet']),
     platforms: z
       .array(z.enum(['web', 'android']))
@@ -81,6 +104,7 @@ const NavFile = z
   .object({
     destinations: z.array(Destination),
     layouts: z.array(Layout),
+    back: Back,
     pages: z.array(Page),
   })
   .strict();
@@ -100,6 +124,14 @@ export function parseNav(json: unknown): Nav {
   const errors: string[] = [];
   const destinations = new Set(nav.destinations.map((d) => d.id));
   const ids = new Set<string>();
+  const all = [...destinations].sort().join();
+  for (const layout of nav.layouts) {
+    if ([...layout.order].sort().join() !== all) {
+      errors.push(
+        `${layout.nav} from ${layout.minWidth}: orders [${layout.order}], not each destination once`,
+      );
+    }
+  }
   for (const page of nav.pages) {
     if (ids.has(page.id)) errors.push(`${page.id}: declared twice`);
     ids.add(page.id);
@@ -108,8 +140,13 @@ export function parseNav(json: unknown): Nav {
     if (page.lights !== null && !destinations.has(page.lights)) {
       errors.push(`${page.id}: lights ${page.lights}, which is not a destination`);
     }
-    if (page.back.startsWith('up:') && !ids.has(page.back.slice(3))) {
-      errors.push(`${page.id}: goes up to ${page.back.slice(3)}, which is not a page`);
+    if (destinations.has(page.id) && page.close !== 'none') {
+      errors.push(
+        `${page.id}: a destination's home is the bottom of its stack, so its close is none`,
+      );
+    }
+    if ((page.presentation === 'sheet') !== (page.close === 'sheet')) {
+      errors.push(`${page.id}: a sheet, and only a sheet, closes as a sheet`);
     }
     const links = page.structure.links;
     if (new Set(links).size !== links.length) errors.push(`${page.id}: links to a page twice`);
@@ -149,7 +186,7 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
     const { path, query } = splitRoute(p.route);
     return (
       `  { id: ${literal(p.id)}, path: ${literal(path)}, query: ${literal(query)}, ` +
-      `title: ${literal(p.title)}, lights: ${literal(p.lights)}, back: ${literal(p.back)}, ` +
+      `title: ${literal(p.title)}, lights: ${literal(p.lights)}, close: ${literal(p.close)}, ` +
       `presentation: ${literal(p.presentation)} },`
     );
   });
@@ -167,13 +204,15 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
     '',
     `export const layouts = ${JSON.stringify(nav.layouts, null, 2)} as const;`,
     '',
+    `export const back = ${JSON.stringify(nav.back, null, 2)} as const;`,
+    '',
     'export interface PageRoute {',
     '  id: string;',
     '  path: string;',
     '  query: readonly string[];',
     '  title: string;',
     '  lights: string | null;',
-    '  back: string;',
+    "  close: 'opener' | 'sheet' | 'none';",
     "  presentation: 'screen' | 'sheet';",
     '}',
     '',

@@ -14,7 +14,7 @@ const page = (id: string, route: string, title: string) => ({
   id,
   route,
   lights: null,
-  back: 'history',
+  close: 'opener',
   presentation: 'screen',
   title,
   sources: { sonora: ['none'], spotify: [] },
@@ -28,7 +28,8 @@ const page = (id: string, route: string, title: string) => ({
 
 const nav = parseNav({
   destinations: [],
-  layouts: [{ minWidth: 0, nav: 'bottomBar' }],
+  layouts: [{ minWidth: 0, nav: 'bottomBar', order: [] }],
+  back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },
   pages: [
     page('book', '/book', 'Book'),
     page('settings', '/settings', 'Settings'),
