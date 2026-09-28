@@ -87,7 +87,7 @@ describe('the shell around each drawn page', () => {
     it(`[M0.canvas] ${id} under 1240 px is a full-screen sheet that covers the bottom bar and the rail`, async () => {
       for (const layout of ['w0', 'w600', 'w1024'] as const) {
         const html = await render(file, layout);
-        expect(html, layout).toMatch(/^<div aria-hidden="false" style="position:absolute;inset:0/);
+        expect(html, layout).toMatch(/^<div aria-hidden="false" style="position:absolute;inset:0;/);
         // The bar's two ends, Browse and Search; the queue's own switch says Music and Spoken.
         for (const label of ['Browse', 'Search']) expect(html, layout).not.toContain(`>${label}<`);
         expect(html, layout).not.toContain('Collapse rail');
@@ -102,6 +102,22 @@ describe('the shell around each drawn page', () => {
       expect(html).toMatch(new RegExp(`aria-selected="true"[^>]*>(?:<[^>]*>)*${tab}<`));
     });
   }
+
+  it("[M0.canvas] shows one Now Playing in every page's side panel from 1240 px, the about card included", async () => {
+    /** The CHROME entry's panel at 1240 px, as the page's source writes it. */
+    const panel = (file: string) =>
+      / {2}w1240: \{[\s\S]*?\n {4}sheet: \(\n([\s\S]*?)\n {4}\),/.exec(
+        readFileSync(new URL(file, dir), 'utf8'),
+      )?.[1];
+    const screens = pages.filter((f) => !sheets.has(idOf(f)));
+    const first = panel(screens[0]!);
+    expect(first).toContain('<AboutCard');
+    for (const file of screens) {
+      expect(panel(file), file).toBe(first);
+      expect((await render(file, 'w1240')).match(/About the artist/g), file).toHaveLength(1);
+    }
+    expect((await render('NowPlaying.tsx', 'w1240')).match(/About the artist/g)).toHaveLength(1);
+  });
 
   it('[M0.canvas] never repeats the transport on desktop: the player bar alone carries it, panel open or not', async () => {
     for (const file of pages) {

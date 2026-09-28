@@ -16,6 +16,18 @@ const app = readApp(appDir, props);
 const sheets = app.nav.pages.filter((p) => p.presentation === 'sheet');
 const files = generateCanvas(app, { title: 'Sonora', artifact: 'a', version: null }, new Date(0));
 const root = (id: string) => readPage(id).tree;
+const shellFile = app.shell;
+/** The side panel's tree in a desktop artboard: the NowPlaying element, whole. */
+const panelOf = (board: string) => {
+  const start = board.indexOf('{"kind":"element","component":"NowPlaying"');
+  expect(start).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = start; i < board.length; i++) {
+    if (board[i] === '{') depth++;
+    else if (board[i] === '}' && --depth === 0) return board.slice(start, i + 1);
+  }
+  throw new Error('unterminated panel');
+};
 const component = (id: string) => {
   const tree = root(id);
   return tree.kind === 'element' ? tree.component : tree.kind;
@@ -75,6 +87,34 @@ describe("the player's sheets: Now Playing, Queue and Lyrics", () => {
     expect((data.autoplay as { items: unknown[] }).items).not.toHaveLength(0);
   });
 
+  it('[M0.canvas] follows the hand-off with the spoken items that play, then marks the music as waiting', () => {
+    const items = readPage('queue').data.items as {
+      sub: string;
+      handoff?: string;
+      waiting?: string;
+      current?: boolean;
+    }[];
+    const handoff = items.findIndex((i) => i.handoff);
+    const waiting = items.findIndex((i) => i.waiting);
+    const music = (i: { sub: string }) => i.sub === shellFile.playing!.artist;
+    expect(items[waiting]!.waiting).toBe('Waiting in the music queue');
+    // Playback moves to the spoken queue at the episode and stays there: 04-play never says music resumes.
+    expect(waiting - handoff).toBeGreaterThan(1);
+    expect(items.slice(handoff, waiting).some(music)).toBe(false);
+    expect(items.slice(waiting).every(music)).toBe(true);
+  });
+
+  it("[M0.canvas] shows one Now Playing in every desktop page's side panel, its about card included", () => {
+    const screens = app.nav.pages.filter(
+      (p) => p.presentation === 'screen' && files.has(`${p.id}.desktop.dc.html`),
+    );
+    expect(screens.length).toBeGreaterThan(0);
+    const panels = screens.map((p) => panelOf(files.get(`${p.id}.desktop.dc.html`)!));
+    for (const panel of panels)
+      expect(panel).toBe(panelOf(files.get('nowPlaying.desktop.dc.html')!));
+    expect(panels[0]).toContain('"component":"AboutCard"');
+  });
+
   it('[M0.canvas] draws the lyrics with sync off, a dot on the current line', () => {
     const lyrics = elements(root('lyrics')).find((e) => e.component === 'LyricsPage')!;
     expect(lyrics.props.syncMode).toEqual({ kind: 'binding', path: ['data', 'syncMode'] });
@@ -99,6 +139,18 @@ describe('checking the player’s sheets', () => {
     );
     expect(() => readApp(dir, props)).toThrow(
       /lyrics.page.jsx: a player sheet is its tab's page alone/,
+    );
+  });
+
+  it("[M0.canvas] refuses a Now Playing that reads its own data, since every page's panel shows it", () => {
+    const dir = copy('now-data');
+    writeFileSync(
+      join(dir, 'pages/nowPlaying.page.jsx'),
+      'export default function NowPlaying({ data }) {\n  return <NowPlayingPage title={shell.playing.title} sleep={data.sleep} />;\n}\n',
+    );
+    writeFileSync(join(dir, 'placeholders/nowPlaying.json'), '{ "sleep": "Off" }\n');
+    expect(() => readApp(dir, props)).toThrow(
+      /nowPlaying.page.jsx: every page's side panel shows Now Playing, so it binds only shell/,
     );
   });
 

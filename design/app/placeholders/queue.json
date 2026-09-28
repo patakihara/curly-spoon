@@ -1,8 +1,14 @@
 {
   "context": "Music queue · 6 songs, 28 min",
   "queues": [
-    { "key": "music", "label": "Music" },
-    { "key": "spoken", "label": "Spoken" }
+    {
+      "key": "music",
+      "label": "Music"
+    },
+    {
+      "key": "spoken",
+      "label": "Spoken"
+    }
   ],
   "queue": "music",
   "played": [
@@ -32,11 +38,26 @@
       "handoff": "Then the spoken queue"
     },
     {
+      "id": "why-radios-hum",
+      "title": "Why Radios Hum",
+      "sub": "Signal & Noise",
+      "time": "36:00",
+      "image": "/art/signal-noise.jpg"
+    },
+    {
+      "id": "salt-in-the-ledger",
+      "title": "Salt in the Ledger",
+      "sub": "The Long Read",
+      "time": "47:00",
+      "image": "/art/the-long-read.jpg"
+    },
+    {
       "id": "glass-coast",
       "title": "Glass Coast",
       "sub": "Deep Inertia",
       "time": "3:51",
-      "image": "/art/tears-of-ice.jpg"
+      "image": "/art/tears-of-ice.jpg",
+      "waiting": "Waiting in the music queue"
     },
     {
       "id": "winter-signal",

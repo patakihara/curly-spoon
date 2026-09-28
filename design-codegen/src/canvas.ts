@@ -274,7 +274,7 @@ function artboard(
     tree === undefined ? undefined : { kind: 'slot', tree };
   const inShell = (shown: App['pages'][number], sheet?: PageTree): PageTree => {
     const at = app.nav.pages.find((p) => p.id === shown.id)!;
-    const parts = chrome(app.nav, app.shell, at, layout, app.components.platformed);
+    const parts = chrome(app.nav, app.shell, at, layout, app.components.platformed, app.now);
     return withPlatform(
       framed(framePage(relativeArt(shown.tree)), at.title, {
         rail: slot(parts.rail),

@@ -85,7 +85,15 @@ export function pageHash(appDir: string, sonoraDir: string, id: string): string 
     .update(readFileSync(join(appDir, 'shell.json')))
     .update('\0')
     .update(JSON.stringify({ destinations, layouts, page: drawnFrom }));
-  const names = [...drawn(parsePage(page, id), new Set()), ...SHELL_COMPONENTS];
+  // Every page's side panel shows Now Playing's page, so a change to it changes every render.
+  const now = join(appDir, 'pages', 'nowPlaying.page.jsx');
+  const panel = existsSync(now) ? readFileSync(now, 'utf8') : '';
+  hash.update('\0').update(panel);
+  const names = [
+    ...drawn(parsePage(page, id), new Set()),
+    ...(panel === '' ? [] : drawn(parsePage(panel, 'nowPlaying'), new Set())),
+    ...SHELL_COMPONENTS,
+  ];
   for (const name of usedComponents(sonoraDir, names)) {
     hash.update(`\0${name}\0`).update(readFileSync(componentFile(sonoraDir, name)!));
   }

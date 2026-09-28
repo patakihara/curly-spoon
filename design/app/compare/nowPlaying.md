@@ -1,6 +1,6 @@
 ---
 page: nowPlaying
-pageHash: 2def62d197b514b0b47fb7d9edbe59ca65a737c220fd37eea774834d71a7aaff
+pageHash: 45f6f7b782ed1c2c50dedec8ca1a0f5618d644a2dc27354daddddb663a684f25
 sonora: [kit:mobile/nowplaying, card:now-playing-page]
 spotify: [S33, S34, S38, S39, S40, S41, S42]
 ---
@@ -36,7 +36,11 @@ for speed, skip back 15, play, skip forward 15 and the sleep timer, never previo
 drops the Lyrics tab; the Now Playing card draws it. On desktop, from 1240 px, the same tab is the
 side panel beside the page it opened over, Music here, and the player bar under the window carries
 the seek bar and transport; the panel holds art, titles, what it plays from, the favourite, the
-sleep timer and the about card. Under 1240 px it is the full-screen sheet.
+sleep timer and the about card. Under 1240 px it is the full-screen sheet. Every page's side
+panel is this page, so it binds only what shell.json loads, its sleep timer and about card included.
+Speed and the sleep timer open their presets as a menu: on the phone a bottom sheet over the
+player, on desktop hanging from the button, as every menu does; the sleep timer's presets include End of
+chapter.
 
 ## Differences
 
@@ -52,7 +56,6 @@ sleep timer and the about card. Under 1240 px it is the full-screen sheet.
   S42), which a private library does not have.
 - Open: the kit's art is square-cornered to the sheet's measure and its title larger; the page
   keeps Sonora's current measure, `--now-playing-art-max`.
-- Open: a long spoken title such as an episode's wraps under the favourite at the phone's display
-  size (the Now Playing card shows it); a smaller title step for long titles is not drawn yet.
-- Open: every other page's panel builds its Now playing tab from what is loaded, without the about
-  card this page adds.
+- Changed on purpose: a title with a word too wide for the phone's display step, as an episode's
+  often is, takes the desktop's step, where the kit would run it under the favourite (the Now
+  Playing card shows it).

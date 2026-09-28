@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 277b4e9d09e3229edf4fe6e58ccb42c5b677c1676fa67cf414085cd98ba62d1e
+pageHash: cf69aa540ef7711e20179eea3b01f970e2a42996293520c1354cfad4cb3cdccd
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -81,6 +81,8 @@ stay put, the document never scrolls, and the front layer is the one scroller.
 - Changed on purpose: the desktop kit's player panel repeats the transport bar's seek bar and
   transport; the panel now draws neither, the full-width player bar carrying them once, and its
   three tabs are labels sharing its width, where the kit cut the third to "L…".
+- Changed on purpose: the panel is the Now Playing page itself, the same on every page, its About
+  the artist card included, where the kit builds a shorter one.
 - Changed on purpose: nav.json's icons and labels (Books with `book_2`, Music with `album`) replace
   the kits' (Audiobooks, headphones, speaker).
 - Changed on purpose: the filter reads All, Music, Podcasts, Books, the plan's order, where both

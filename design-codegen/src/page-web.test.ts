@@ -32,6 +32,7 @@ const shellOf = (id: string): WebShell => ({
       favourite: false,
       progress: 0.5,
       duration: 214,
+      sleep: 'Off',
     },
     railFoot: [{ page: 'settings', icon: 'settings' }],
   },
@@ -172,7 +173,7 @@ describe('a generated web page', () => {
       '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} />',
     );
     expect(homeOut).toContain(
-      '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} platform="desktop" />',
+      '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} sleep={shell.playing.sleep} platform="desktop" />',
     );
     expect(homeOut).toContain('const shell = {\n  "account": {');
   });

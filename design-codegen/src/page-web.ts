@@ -65,6 +65,8 @@ export interface WebShell {
   nav: Nav;
   shell: ShellFile;
   page: NavPage;
+  /** Now Playing's page, which the side panel shows on every page. */
+  now?: PageTree[];
 }
 
 /** A page is a still: a field it shows a value in gets a handler that ignores changes. */
@@ -187,7 +189,7 @@ export function generateWebPage(
   id: string,
   placeholder: unknown,
   webComponents: WebComponents,
-  { nav, shell, page }: WebShell,
+  { nav, shell, page, now = [] }: WebShell,
 ): string {
   const components: Ctx = {
     ...webComponents,
@@ -208,7 +210,7 @@ export function generateWebPage(
     ? []
     : nav.layouts.map(
         (layout) =>
-          [layoutId(layout), chrome(nav, shell, page, layout, components.platformed)] as const,
+          [layoutId(layout), chrome(nav, shell, page, layout, components.platformed, now)] as const,
       );
   const used = new Set<string>();
   drawn(root, used);

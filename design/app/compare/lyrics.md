@@ -1,6 +1,6 @@
 ---
 page: lyrics
-pageHash: 5d23f1cb61862e01fd06b046c185046cf108f7c478cce4a12c8b766137f07569
+pageHash: 9c32fba0075fd7905d3aab61c1d49187151949c449f0c8885ca0213c6e907b8c
 sonora: [kit:mobile/lyrics, kit:desktop/lyrics, card:now-playing-page]
 spotify: [S40, S43]
 ---
@@ -28,7 +28,8 @@ The page is the player's Lyrics tab, `LyricsPage`, which the shell puts in the p
 full-screen sheet on the phone and the side panel from 1240 px. The song, "Heartbeats in Silence ·
 Deep Inertia", heads it with the sync toggle always in its top corner. Drawn with sync off: every
 line at full opacity, a dot on the current line. Synced, the current line leads in rose and the
-list follows the song. The dot itself can be switched off from the player's menu; sync off then
+list follows the song; with sync off the lines never scroll by themselves, so the text stays
+under your finger. The dot itself can be switched off from the player's menu; sync off then
 marks nothing. A spoken item has no Lyrics tab. No lyrics found: the tab says so.
 
 ## Differences

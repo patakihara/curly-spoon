@@ -3,7 +3,7 @@ import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import type { ReactNode } from 'react';
 import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { BackLayer, BackdropShell, BottomNav, IconButton, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, PageBody, Section, ViewToggle } from '../ui/index.js';
+import { AboutCard, BackLayer, BackdropShell, BottomNav, IconButton, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "eyebrow": "More like",
@@ -69,7 +69,15 @@ const shell = {
     "variant": "music",
     "favourite": true,
     "progress": 0.05,
-    "duration": 262
+    "duration": 262,
+    "sleep": "Off",
+    "about": {
+      "title": "About the artist",
+      "heading": "Deep Inertia",
+      "meta": "9 releases · 2 in your library",
+      "image": "/art/deep-inertia.jpg",
+      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
+    }
   },
   "transport": {
     "playing": true,
@@ -214,7 +222,7 @@ const CHROME: Record<LayoutId, Chrome> = {
     ),
     player: (
       <>
-        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="mobile" />
+        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" />
         <BottomNav items={shell.nav.w0} active="browse" />
       </>
     ),
@@ -230,7 +238,7 @@ const CHROME: Record<LayoutId, Chrome> = {
       <IconButton icon="close" label="Close" />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" />
     ),
     sheetOpen: false,
   },
@@ -244,7 +252,7 @@ const CHROME: Record<LayoutId, Chrome> = {
       <IconButton icon="close" label="Close" />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" />
     ),
     sheetOpen: false,
   },
@@ -258,10 +266,14 @@ const CHROME: Record<LayoutId, Chrome> = {
       <IconButton icon="close" label="Close" />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" />
     ),
     sheet: (
-      <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} player={shell.transport} platform="desktop" />
+      <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} platform="desktop">
+        <NowPlayingPage variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={shell.playing.image} title={shell.playing.title} artist={shell.playing.artist} context={shell.playing.context} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} favourite={shell.playing.favourite} sleep={shell.playing.sleep} platform="desktop">
+          <AboutCard title={shell.playing.about.title} heading={shell.playing.about.heading} meta={shell.playing.about.meta} image={shell.playing.about.image} round={true} body={shell.playing.about.body} platform="desktop" />
+        </NowPlayingPage>
+      </NowPlaying>
     ),
     sheetOpen: true,
   },

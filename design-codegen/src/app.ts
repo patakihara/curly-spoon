@@ -18,6 +18,7 @@ import { generateWebPage, type WebComponents } from './page-web.js';
 import type { KType, PropsModel } from './props.js';
 import {
   framePage,
+  PLAYER_TABS,
   playerTab,
   readShell,
   shellData,
@@ -41,6 +42,32 @@ export interface App {
   pages: AppPage[];
   /** The components that take a `platform` prop, and those that take an `onChange` handler. */
   components: WebComponents;
+  /** Now Playing's page, which every page's side panel shows; empty until it is drawn. */
+  now: PageTree[];
+}
+
+/** Whether a tree reads anything from its page's own data, rather than only from the shell. */
+function readsData(tree: PageTree): boolean {
+  const data = (path: string[]) => path[0] === 'data';
+  if (tree.kind === 'text') return false;
+  if (tree.kind === 'binding') return data(tree.path);
+  if (tree.kind === 'each' && data(tree.of)) return true;
+  if (tree.kind === 'element') {
+    for (const value of Object.values(tree.props)) {
+      if (value.kind === 'binding' && data(value.path)) return true;
+      if (value.kind === 'slot' && readsData(value.tree)) return true;
+      if (value.kind === 'open' && typeof value.page !== 'string' && data(value.page.path)) {
+        return true;
+      }
+      if (
+        (value.kind === 'open' || value.kind === 'request' || value.kind === 'play') &&
+        Object.values(value.params).some(data)
+      ) {
+        return true;
+      }
+    }
+  }
+  return tree.children.some(readsData);
 }
 
 /** Each component's prop names, from its `<Name>Props` declaration. */
@@ -173,7 +200,11 @@ export function readApp(appDir: string, model: PropsModel): App {
       framePage(tree);
       const entry = nav.pages.find((p) => p.id === id)!;
       if (entry.presentation === 'sheet') {
-        playerTab(entry);
+        if (playerTab(entry) === 'now' && readsData(tree)) {
+          errors.push(
+            `pages/${id}.page.jsx: every page's side panel shows Now Playing, so it binds only shell.…, what is loaded, never its own data.…`,
+          );
+        }
         if (tree.kind === 'element' && tree.component === 'BackdropShell') {
           errors.push(
             `pages/${id}.page.jsx: a player sheet is its tab's page alone; the shell puts it in the player, never a backdrop`,
@@ -190,10 +221,15 @@ export function readApp(appDir: string, model: PropsModel): App {
   }
   const taking = (prop: string) =>
     new Set([...props].filter(([, names]) => names.has(prop)).map(([c]) => c));
+  const nowPage = pages.find(
+    ({ id }) =>
+      nav.pages.find((p) => p.id === id)?.presentation === 'sheet' && PLAYER_TABS[id] === 'now',
+  );
   return {
     nav,
     shell,
     pages,
+    now: nowPage === undefined ? [] : framePage(nowPage.tree).content,
     components: {
       platformed: taking('platform'),
       handled: taking('onChange'),
@@ -218,6 +254,7 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
             nav: app.nav,
             shell: app.shell,
             page: app.nav.pages.find((p) => p.id === id)!,
+            now: app.now,
           }),
         ]),
     ),

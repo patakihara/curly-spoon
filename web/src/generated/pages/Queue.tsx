@@ -44,11 +44,26 @@ const placeholder = {
       "handoff": "Then the spoken queue"
     },
     {
+      "id": "why-radios-hum",
+      "title": "Why Radios Hum",
+      "sub": "Signal & Noise",
+      "time": "36:00",
+      "image": "/art/signal-noise.jpg"
+    },
+    {
+      "id": "salt-in-the-ledger",
+      "title": "Salt in the Ledger",
+      "sub": "The Long Read",
+      "time": "47:00",
+      "image": "/art/the-long-read.jpg"
+    },
+    {
       "id": "glass-coast",
       "title": "Glass Coast",
       "sub": "Deep Inertia",
       "time": "3:51",
-      "image": "/art/tears-of-ice.jpg"
+      "image": "/art/tears-of-ice.jpg",
+      "waiting": "Waiting in the music queue"
     },
     {
       "id": "winter-signal",
@@ -120,7 +135,15 @@ const shell = {
     "variant": "music",
     "favourite": true,
     "progress": 0.05,
-    "duration": 262
+    "duration": 262,
+    "sleep": "Off",
+    "about": {
+      "title": "About the artist",
+      "heading": "Deep Inertia",
+      "meta": "9 releases · 2 in your library",
+      "image": "/art/deep-inertia.jpg",
+      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
+    }
   },
   "transport": {
     "playing": true,

@@ -1,6 +1,6 @@
 ---
 page: queue
-pageHash: bcb01f435e9041315d88aacf52b18527262c6cf824bce097c3b6cd823783e98e
+pageHash: e3d04dafdce9f70ae3b53db4c74341128752b993855865ba640aecf6af2beb84
 sonora: [kit:mobile/queue, kit:desktop/queue]
 spotify: [S36, S37]
 ---
@@ -27,8 +27,12 @@ sheet on the phone and the side panel from 1240 px. First the switch between the
 Music and Spoken, the music queue shown and playing; starting the other pauses this one. Then
 "Music queue · 6 songs, 28 min" beside the edit toggle. Then Played, what Back walks; Now playing;
 Up next with Clear, its first row an episode queued with Play next, marked "Then the spoken queue",
-where playback moves over to the spoken queue (the meta-queue), then the rest of the album, queued
-whole, YouTube Music style; then Autoplay, "Deep Inertia radio, mixed with similar music you own".
+where playback moves over to the spoken queue (the meta-queue), then the spoken items that play
+after it. The plan never has music resume on its own: starting one queue pauses the other, so the
+rest of the album, queued whole, YouTube Music style, sits under "Waiting in the music queue"; then
+Autoplay, "Deep Inertia radio, mixed with similar music you own", for when the music queue runs
+out. On desktop the player bar's queue and lyrics buttons open the panel on those tabs; there is
+no queue panel of its own.
 Edit mode (Sonora's `EditableList`) selects rows, reorders them by drag and removes them, with a
 remove bar; nothing leaves the queue unrecoverably, Clear and Remove offering an undo. Rows carry
 their cover art.
@@ -37,8 +41,8 @@ their cover art.
 
 - Changed on purpose: the queue is a tab of the player, with no close control of its own, where
   the kit opens it as a page with one.
-- Changed on purpose: the two queues, Played, the hand-off mark, Clear and Autoplay are new; the
-  kits and S36 show one queue from now playing on.
+- Changed on purpose: the two queues, Played, the hand-off mark, the waiting mark, Clear and
+  Autoplay are new; the kits and S36 show one queue from now playing on.
 - Changed on purpose: rows show cover art, where the kits draw a flat accent tile.
 - Changed on purpose: no timer and speed at the foot as in S36; they live on Now playing, speed
   with the spoken transport and music's in the menu.

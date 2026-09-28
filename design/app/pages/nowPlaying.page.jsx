@@ -1,4 +1,4 @@
-export default function NowPlaying({ data }) {
+export default function NowPlaying() {
   return (
     <NowPlayingPage
       variant={shell.playing.variant}
@@ -10,15 +10,15 @@ export default function NowPlaying({ data }) {
       progress={shell.playing.progress}
       duration={shell.playing.duration}
       favourite={shell.playing.favourite}
-      sleep={data.sleep}
+      sleep={shell.playing.sleep}
     >
       <AboutCard
-        title={data.about.title}
-        heading={data.about.heading}
-        meta={data.about.meta}
-        image={data.about.image}
+        title={shell.playing.about.title}
+        heading={shell.playing.about.heading}
+        meta={shell.playing.about.meta}
+        image={shell.playing.about.image}
         round
-        body={data.about.body}
+        body={shell.playing.about.body}
       />
     </NowPlayingPage>
   );

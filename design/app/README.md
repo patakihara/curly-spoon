@@ -19,6 +19,8 @@ page is its tab's content alone, never a backdrop, and the shell puts it in the 
 tab and showing what shell.json's `playing` loads. Under the side panel's width that is a
 full-screen sheet over everything, the bottom bar included; from it, the side panel beside
 shell.json's `sheetOver` page, the full-width player bar under the window carrying the transport.
+Every page's side panel shows the Now Playing page, the same on each, so that page binds only
+`shell.…`: what is loaded, its sleep timer and its about card are shell.json's `playing`.
 
 A handler prop may open another page: `onClick={<Open page="album" ref={release.ref} />}` names a
 page of `nav.json` that the page's structure `links` list, or its own page for another item of

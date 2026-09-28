@@ -75,6 +75,7 @@ const app: App = {
       favourite: false,
       progress: 0.5,
       duration: 214,
+      sleep: 'Off',
     },
     railFoot: [{ page: 'settings', icon: 'settings' }],
   },
@@ -94,6 +95,7 @@ const app: App = {
     platformed: new Set(['MediaHeader', 'BackLayer', 'BackdropShell', 'MiniPlayer']),
     handled: new Set(['Switch']),
   },
+  now: [],
 };
 
 const install: SonoraInstall = {

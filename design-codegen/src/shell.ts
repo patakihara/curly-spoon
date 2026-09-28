@@ -41,6 +41,19 @@ const Shell = z
         favourite: z.boolean(),
         progress: z.number().min(0).max(1),
         duration: z.number().positive(),
+        /** The sleep timer's state, "Off" or what is left of it. */
+        sleep: z.string().min(1),
+        /** The about card under the player: the artist, show or book of what is loaded. */
+        about: z
+          .object({
+            title: z.string().min(1),
+            heading: z.string().min(1),
+            meta: z.string().optional(),
+            image: z.string().optional(),
+            body: z.string().optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .nullable(),
@@ -175,7 +188,8 @@ export const holdsPanel = (layout: Layout) => layout.sidePanel === 'nowPlaying';
 
 /**
  * The player open on `tab`, what is loaded in shell.json: `content` is the tab's page, a player
- * sheet's own; with none, Sonora builds the tab from what is loaded, as every other page's panel.
+ * sheet's own, or Now Playing's in every page's panel; with none, as when Now Playing is not yet
+ * drawn, Sonora builds the tab from what is loaded.
  */
 export function playerTree(tab: string, content: PageTree[]): PageTree {
   return {
@@ -206,7 +220,8 @@ export function playerTab(page: NavPage): string {
 
 /**
  * The shell around `page` at `layout`. Each tree carries its platform as a literal wherever
- * `platformed` says the component takes one, so it reads the same wherever it is placed.
+ * `platformed` says the component takes one, so it reads the same wherever it is placed. `now` is
+ * Now Playing's page, which the side panel shows on every page, so every panel is the same.
  */
 export function chrome(
   nav: Nav,
@@ -214,6 +229,7 @@ export function chrome(
   page: NavPage,
   layout: Layout,
   platformed: Set<string>,
+  now: PageTree[] = [],
 ): Chrome {
   const platform = platformOf(layout);
   const id = layoutId(layout);
@@ -221,9 +237,10 @@ export function chrome(
   const destination = nav.destinations.some((d) => d.id === page.id);
   const active = page.lights ?? shell.railFoot.find((f) => f.page === page.id)?.page;
   const withPlatform = (tree: PageTree): PageTree => {
-    if (tree.kind === 'fragment') return { ...tree, children: tree.children.map(withPlatform) };
-    if (tree.kind !== 'element' || !platformed.has(tree.component)) return tree;
-    return { ...tree, props: { ...tree.props, platform: lit(platform) } };
+    if (tree.kind === 'text' || tree.kind === 'binding') return tree;
+    const children = tree.children.map(withPlatform);
+    if (tree.kind !== 'element' || !platformed.has(tree.component)) return { ...tree, children };
+    return { ...tree, props: { ...tree.props, platform: lit(platform) }, children };
   };
   const mini =
     shell.playing === null
@@ -236,6 +253,7 @@ export function chrome(
           progress: bind('shell.playing.progress'),
           duration: bind('shell.playing.duration'),
           variant: bind('shell.playing.variant'),
+          sleep: bind('shell.playing.sleep'),
         });
   const leading =
     page.close !== 'none'
@@ -260,7 +278,7 @@ export function chrome(
     });
     parts.player = mini;
     if (holdsPanel(layout) && shell.playing !== null) {
-      parts.sheet = playerTree('now', []);
+      parts.sheet = playerTree('now', now);
       parts.sheetOpen = true;
     }
   }

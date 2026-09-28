@@ -53,6 +53,7 @@ describe('checking a comparison', () => {
       'nav.json',
       'shell.json',
       'pages/settings.page.jsx',
+      'pages/nowPlaying.page.jsx',
       'placeholders/settings.json',
       'compare',
     ]) {
@@ -116,6 +117,15 @@ describe('checking a comparison', () => {
       ]);
     });
   }
+
+  it("[M0.canvas/e] fails once Now Playing's page has changed, since every page's side panel shows it", () => {
+    const app = copy();
+    const file = join(app, 'pages/nowPlaying.page.jsx');
+    writeFileSync(file, readFileSync(file, 'utf8').replace('round\n', ''));
+    expect(checkComparison(app, sonora(), settings)).toEqual([
+      'settings: the page changed since compare/settings.md was made; look again',
+    ]);
+  });
 
   it('[M0.canvas/e] fails when a render is missing or is not a PNG', () => {
     const app = copy();
