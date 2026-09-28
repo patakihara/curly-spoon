@@ -1,0 +1,87 @@
+{
+  "songs": [
+    {
+      "title": "Heartbeats in Silence",
+      "meta": "Deep Inertia · Heartbeats in Silence",
+      "image": "/art/deep-inertia.jpg",
+      "status": "Playing",
+      "menu": [
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "title": "Tears of Ice",
+      "meta": "Deep Inertia · Tears of Ice",
+      "image": "/art/tears-of-ice.jpg",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "title": "Signal & Noise",
+      "meta": "Soul Vertex · Signal & Noise",
+      "image": "/art/signal-noise.jpg",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "title": "Golden Scars",
+      "meta": "Fleeting Verses · Golden Scars",
+      "image": "/art/golden-scars.jpg",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "title": "Between Two Worlds",
+      "meta": "Deep Inertia · Between Two Worlds",
+      "image": "/art/between-two-worlds.jpg",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "title": "Paper Lanterns",
+      "meta": "Sonic Tales · Paper Lanterns",
+      "image": "/art/paper-lanterns.jpg",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    }
+  ]
+}

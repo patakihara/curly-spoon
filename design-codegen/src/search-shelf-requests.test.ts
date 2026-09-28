@@ -142,23 +142,16 @@ describe('Search', () => {
 describe('Shelf', () => {
   const { tree, data } = readPage('shelf');
 
-  it('[M0.canvas] binds only the shelf: its title, eyebrow, subject, subject art and items', () => {
-    expect(dataRoots(tree)).toEqual([
-      'eyebrow',
-      'items',
-      'round',
-      'subject',
-      'subjectArt',
-      'title',
-    ]);
+  it('[M0.canvas] binds only the shelf: its eyebrow, subject, subject art and items', () => {
+    expect(dataRoots(tree)).toEqual(['eyebrow', 'items', 'round', 'subject', 'subjectArt']);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
   });
 
-  it('[M0.canvas] is headed by the shelf\'s own title, its eyebrow and subject, not nav.json\'s "Shelf"', () => {
+  it('[M0.canvas] names the shelf once, in its header over the items, not again in the heading', () => {
     const slot = framed(framePage(tree), 'Shelf', {}) as Element;
     const back = slot.props.back?.kind === 'slot' ? (slot.props.back.tree as Element) : undefined;
-    expect(back?.props.title).toEqual({ kind: 'binding', path: ['data', 'title'] });
-    expect(data.title).toBe(`${data.eyebrow as string} ${data.subject as string}`);
+    expect(back?.props.title).toEqual({ kind: 'literal', value: 'Shelf' });
+    expect(Object.keys(data)).not.toContain('title');
   });
 
   it('[M0.canvas] never holds its own subject\'s work in a "More like" shelf', () => {

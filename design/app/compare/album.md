@@ -1,0 +1,63 @@
+---
+page: album
+pageHash: 10053319aeb24e9bf5b8c92547d9959c9d6cdc0c7710bfef68a6be9ac5b260bf
+sonora: [kit:mobile/album, kit:desktop/album]
+spotify: [S02, S35]
+---
+
+# Album
+
+Canvas renders: `album/canvas-phone.png` (390 px) and `album/canvas-desktop.png` (1440 px), both in
+the app shell. Sonora UI kit renders, the design this page is compared against:
+`sonora/kit-mobile-album.png` and `sonora/kit-desktop-album.png` (the phone capture now opens the
+first card, not the account avatar). Also looked at: the Media Header card, the new Overflow Menu
+card, and Spotify's S02 (a show's header, "Find in this show") and S35 (an item's own verbs beside
+its play button).
+
+## What the Sonora UI kit renders show
+
+- **Mobile kit.** A back arrow, a search glyph and a menu glyph in the app bar; the cover centred
+  at about 208 px, "ALBUM", the title in the display face, the artist as an accent link, "2023 · 5
+  tracks · 18 min", then Play (rose), Next and Last; then rows with each track's art and a play
+  overlay.
+- **Desktop kit.** Art at 232 px beside the text, the same kind line, title, artist link, meta and
+  the three buttons; rows with art, "In library" and "Requested · 64%" pills, and the playing row's
+  equalizer bars.
+- **S02, S35.** A search scoped to the item under the back arrow; the item's verbs beside its play
+  button, the rest behind a three-dot menu.
+
+## What the canvas page draws
+
+The back layer's heading is the album's name, bound from its data (`BackLayer title={data.title}`),
+led by the close control and ending in the local search's button ("Search this album"). The front
+layer, at the list width: a `MediaHeader` with the cover, "ALBUM", the artist and "2022 · 8 tracks
+· 36 min · Plays from YouTube Music", and no title of its own, since the heading names the album.
+Its buttons are Play and Add to queue only (an album's default is the end of the queue; play next
+is the long press), then an `OverflowMenu`, drawn open, holding Add to library ("A lossless copy,
+by torrent") and Go to artist. Then eight numbered `ResultRow`s, the second playing (its number in
+the play ink and the equalizer bars), each with its own `OverflowMenu`: Add to library and Add to
+playlist on a song you don't have, only Add to playlist on the one you kept. Then an `ExpanderRow`,
+"3 editions · Original, Deluxe, Japan", folding the editions under the one album, and "More by Deep
+Inertia" as a `Shelf` of `MediaCard`s.
+
+**Empty state**, per nav.json: not found, or no tracks resolved, keeps the header and says why in
+one line where the tracks would be.
+
+## Differences
+
+- Matches: cover, kind line, artist, meta and the rose Play; the playing row's equalizer bars; the
+  kit's search glyph, here the backdrop's local search.
+- Changed on purpose: the album's name is the page heading and the header has no title (Sonora's
+  `MediaHeader.title` is now optional), so it is said once, as on Shelf.
+- Changed on purpose: two buttons, Play and Add to queue, where the kit has Play, Next and Last:
+  04-play puts play next on the long press, and nav.json names only these two.
+- Changed on purpose: Add to library sits in the header's menu, never a button (06-get); the menu is
+  drawn open to show it, over the first rows.
+- Changed on purpose: rows lead with the track number, not the art every track shares (Sonora's
+  `ResultRow.number`), and end in a menu instead of a status pill; there is no "In library" pill
+  on a row.
+- Changed on purpose: an album you don't own says it plays from YouTube Music in its meta line; the
+  kit has no unowned album.
+- Missing: the artist in the header is not drawn as an accent link, since a page cannot pass the
+  handler that makes it one.
+- Provisional, per nav.json: the editions fold and "More by", drawn as a guess.

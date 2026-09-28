@@ -1,0 +1,56 @@
+{
+  "title": "Late walks",
+  "kind": "Playlist",
+  "meta": "8 songs · 32 min",
+  "image": "/art/deep-inertia.jpg",
+  "songs": [
+    {
+      "title": "Heartbeats in Silence",
+      "meta": "Deep Inertia · 4:22",
+      "image": "/art/deep-inertia.jpg",
+      "status": "Playing"
+    },
+    {
+      "title": "Salt and Static",
+      "meta": "Soul Vertex · 3:54",
+      "image": "/art/salt-and-static.jpg",
+      "status": null
+    },
+    {
+      "title": "Golden Scars",
+      "meta": "Fleeting Verses · 2:53",
+      "image": "/art/golden-scars.jpg",
+      "status": null
+    },
+    {
+      "title": "Low Sun",
+      "meta": "Deep Inertia · 3:39",
+      "image": "/art/shadows-and-sighs.jpg",
+      "status": null
+    },
+    {
+      "title": "Paper Lanterns",
+      "meta": "Sonic Tales · 4:08",
+      "image": "/art/paper-lanterns.jpg",
+      "status": null
+    },
+    {
+      "title": "Escapes and Moons",
+      "meta": "Soul Vertex · 3:33",
+      "image": "/art/escapes-and-moons.jpg",
+      "status": null
+    },
+    {
+      "title": "Fragments of the Wind",
+      "meta": "Fleeting Verses · 4:51",
+      "image": "/art/fragments-of-the-wind.jpg",
+      "status": null
+    },
+    {
+      "title": "Between Lines of Light",
+      "meta": "Sonic Tales · 3:50",
+      "image": "/art/between-lines-of-light.jpg",
+      "status": null
+    }
+  ]
+}

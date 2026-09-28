@@ -1,0 +1,184 @@
+{
+  "title": "Tears of Ice",
+  "kind": "Album",
+  "artist": "Deep Inertia",
+  "meta": "2022 · 8 tracks · 36 min · Plays from YouTube Music",
+  "image": "/art/tears-of-ice.jpg",
+  "menu": [
+    {
+      "key": "addToLibrary",
+      "label": "Add to library",
+      "icon": "library_add",
+      "sub": "A lossless copy, by torrent"
+    },
+    {
+      "key": "artist",
+      "label": "Go to artist",
+      "icon": "person"
+    }
+  ],
+  "tracks": [
+    {
+      "number": 1,
+      "title": "Tears of Ice",
+      "meta": "Deep Inertia · 4:02",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Heartbeats in Silence",
+      "meta": "Deep Inertia · 4:22",
+      "status": "Playing",
+      "menu": [
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Glass Coast",
+      "meta": "Deep Inertia · 3:51",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Winter Signal",
+      "meta": "Deep Inertia · 4:37",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Still Water",
+      "meta": "Deep Inertia · 5:10",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Frost Lines",
+      "meta": "Deep Inertia · 3:28",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "title": "Northern Hum",
+      "meta": "Deep Inertia · 4:44",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "title": "Thaw",
+      "meta": "Deep Inertia · 6:05",
+      "status": null,
+      "menu": [
+        {
+          "key": "addToLibrary",
+          "label": "Add to library",
+          "icon": "library_add"
+        },
+        {
+          "key": "addToPlaylist",
+          "label": "Add to playlist",
+          "icon": "playlist_add"
+        }
+      ]
+    }
+  ],
+  "editions": {
+    "label": "3 editions · Original, Deluxe, Japan"
+  },
+  "more": {
+    "title": "More by Deep Inertia",
+    "items": [
+      {
+        "title": "Shadows and Sighs",
+        "sub": "Album · 2020",
+        "image": "/art/shadows-and-sighs.jpg"
+      },
+      {
+        "title": "Between Two Worlds",
+        "sub": "Album · 2018",
+        "image": "/art/between-two-worlds.jpg"
+      },
+      {
+        "title": "Heartbeats in Silence",
+        "sub": "Single · 2024",
+        "image": "/art/deep-inertia.jpg"
+      }
+    ]
+  }
+}

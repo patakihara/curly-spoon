@@ -16,7 +16,8 @@ const nav =
   (glyph, which = 'last') =>
   (scope) =>
     scope.getByText(glyph, { exact: true })[which]().dispatchEvent('click');
-const firstCard = (scope) => scope.locator('img').first().click();
+/** The first card's art: the `n`th image, since on the phone the account avatar comes first. */
+const card = (n) => (scope) => scope.locator('img').nth(n).click();
 // The mini-player sits just above the bottom bar; its title also names a Browse card.
 const openPlayer = (scope) => scope.click({ position: { x: 150, y: 760 } });
 
@@ -28,7 +29,7 @@ const SCREENS = {
     books: [nav('headphones')],
     podcasts: [nav('mic')],
     search: [nav('search')],
-    album: [firstCard],
+    album: [card(1)],
     collection: [nav('arrow_forward', 'first')],
     settings: [click('Settings')],
     nowplaying: [openPlayer],
@@ -41,7 +42,7 @@ const SCREENS = {
     books: [nav('headphones', 'first')],
     podcasts: [nav('mic', 'first')],
     search: [nav('search', 'first')],
-    album: [firstCard],
+    album: [card(0)],
     collection: [nav('arrow_forward', 'first')],
     settings: [nav('settings', 'first')],
     queue: [click('Queue')],

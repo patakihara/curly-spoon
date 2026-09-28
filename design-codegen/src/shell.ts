@@ -11,7 +11,7 @@
  *   </BackdropShell>
  *
  * The shell fills in the rest: the heading (nav.json's title for the page, unless the page binds
- * its own from its data, `title={data.title}`, as a shelf does with its name), what leads it (the account avatar
+ * its own from its data, `title={data.title}`, as an album does with its name), what leads it (the account avatar
  * on a phone's destination home, a close control on a page that closes), the rail or bottom bar,
  * the player and the side panel. A page whose root is anything else is its front layer's content
  * alone. The account avatar is the shell's alone: a page never draws one, so it is never in a

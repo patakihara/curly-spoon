@@ -22,10 +22,6 @@ const nav = readNav(appDir);
  * done when it is empty and this list is gone.
  */
 const UNDRAWN = [
-  'album',
-  'artist',
-  'playlist',
-  'favourites',
   'book',
   'author',
   'series',

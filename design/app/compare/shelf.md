@@ -1,6 +1,6 @@
 ---
 page: shelf
-pageHash: e26ca8572cefa96d68a23f8d549b92a41ec1b4ae6263f1e802d68fdec066fbe7
+pageHash: 9d82a973ab6506752d3f2c3ed8c3ee688578c21f20fa1e0e29e8580329ad301c
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: [S12]
 ---
@@ -25,10 +25,9 @@ and Spotify's S12 for the shelf header.
 
 ## What the canvas page draws
 
-The back layer holds the heading, the shelf's own title "More like Deep Inertia", bound from its
-data (`BackLayer title={data.title}`) in place of nav.json's "Shelf", led by a close control (the shelf closes to Browse), and ends in
-the local search's button (`BackLayer search="Search this shelf"`, out as the front layer
-scrolls). The front layer, with no subheader, holds one `Section` whose header is the shelf as on
+The back layer holds the heading, nav.json's "Shelf", led by a close control (the shelf closes to
+Browse), and ends in the local search's button (`BackLayer search="Search this shelf"`, out as the
+front layer scrolls). The front layer, with no subheader, holds one `Section` whose header is the shelf as on
 Browse: the eyebrow "More like", the subject "Deep Inertia" and its round art (an artist), with
 the `ViewToggle` at its trailing edge (Sonora's new `Section.trailing`). Below it a `LayoutGrid`
 of seven `MediaCard`s, none of them the subject's own work, captions naming each item's type, one with a resume bar: 3 across on the
@@ -48,8 +47,6 @@ link, the page says the shelf has gone, with the way back to Browse.
   library homes.
 - Changed on purpose: no "Not in library" pill; where an in-library marker goes is still open in
   the plan.
-- Matches: the heading names the shelf, as the kit's "Recently added" does; the page binds it from
-  its data, and nav.json's "Shelf" stays the route's name and the fallback.
-- Open: the heading and the section header both read "More like Deep Inertia"; the header keeps the
-  subject's art and the toggle over the items.
+- Changed on purpose: the shelf is named once, by its header over the items (eyebrow, subject,
+  subject art); the heading is nav.json's "Shelf", where the kit's app bar says "Recently added".
 - Open: paging is not drawn; the placeholder holds one page of items.

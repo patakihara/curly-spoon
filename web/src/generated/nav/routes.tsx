@@ -4,6 +4,10 @@ import Browse from '../pages/Browse';
 import Requests from '../pages/Requests';
 import Shelf from '../pages/Shelf';
 import Music from '../pages/Music';
+import Album from '../pages/Album';
+import Artist from '../pages/Artist';
+import Playlist from '../pages/Playlist';
+import Favourites from '../pages/Favourites';
 import Books from '../pages/Books';
 import Podcasts from '../pages/Podcasts';
 import Search from '../pages/Search';
@@ -136,10 +140,10 @@ export const routes: RouteObject[] = [
   { id: 'requests', path: '/requests', element: <Requests /> },
   { id: 'shelf', path: '/shelves/:id', element: <Shelf /> },
   { id: 'music', path: '/music', element: <Music /> },
-  { id: 'album', path: '/music/albums/:ref' },
-  { id: 'artist', path: '/music/artists/:ref' },
-  { id: 'playlist', path: '/music/playlists/:ref' },
-  { id: 'favourites', path: '/music/favourites' },
+  { id: 'album', path: '/music/albums/:ref', element: <Album /> },
+  { id: 'artist', path: '/music/artists/:ref', element: <Artist /> },
+  { id: 'playlist', path: '/music/playlists/:ref', element: <Playlist /> },
+  { id: 'favourites', path: '/music/favourites', element: <Favourites /> },
   { id: 'books', path: '/books', element: <Books /> },
   { id: 'book', path: '/books/:ref' },
   { id: 'author', path: '/books/authors/:ref' },
