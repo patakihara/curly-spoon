@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 7089146e645fe60ea2638f89f8399e912c2663ed05a46d52f6703c8b848be35e
+pageHash: 1695f8dbd60d3ce289876c331a4e26e53c118c410141b77393ee02f21d896455
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -91,4 +91,4 @@ stay put, the document never scrolls, and the front layer is the one scroller.
 - Fixed earlier, still true: the page follows the mobile kit section for section, the feed's gaps
   come from untitled and titled `Section`s, the browser's body margin is reset, and `LayoutGrid`
   auto-fills wide items capped at `--grid-max-width-tiles` 10 px apart, as the desktop kit does.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.

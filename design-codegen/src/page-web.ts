@@ -85,6 +85,8 @@ function propLines(
     const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
     return [`${name}={() => navigate(${to})}`];
   }
+  // No request endpoint exists yet: the card answers a tap by saying Requested on its own.
+  if (value.kind === 'request') return [`${name}={ignore}`];
   if (value.kind === 'binding' && choice) {
     return [
       `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,
@@ -242,7 +244,14 @@ export function generateWebPage(
     ]),
     '};',
     '',
-    ...(some(root, (n) => ignored(n, components)) ? ['const ignore = () => {};', ''] : []),
+    ...(some(
+      root,
+      (n) =>
+        ignored(n, components) ||
+        (n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'request')),
+    )
+      ? ['const ignore = () => {};', '']
+      : []),
     `export type ${name}Data = typeof placeholder;`,
     '',
     `export interface ${name}Props {`,

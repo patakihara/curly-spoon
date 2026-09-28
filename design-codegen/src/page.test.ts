@@ -306,10 +306,10 @@ describe('checking a page', () => {
 
 describe('a page opening another', () => {
   const props = new Map([
-    ['MediaCard', new Set(['title', 'onClick', 'size'])],
+    ['MediaCard', new Set(['title', 'onClick', 'onRequest', 'size'])],
     ['EpisodeRow', new Set(['title'])],
   ]);
-  const handlers = new Map([['MediaCard', new Set(['onClick'])]]);
+  const handlers = new Map([['MediaCard', new Set(['onClick', 'onRequest'])]]);
   const opens = {
     pages: new Map([
       ['album', ['ref']],
@@ -404,6 +404,38 @@ describe('a page opening another', () => {
       'line 3: MediaCard.size takes no handler, so it cannot open a page',
     ]);
     expect(() => parsePage(page('<Open page="album" />'), 'book')).toThrow(/handler prop/);
+  });
+
+  it('[M0.canvas] reads <Request> in a handler prop as a request for the item its ref binds', () => {
+    const tree = parsePage(page('<MediaCard onRequest={<Request ref={data.ref} />} />'), 'book');
+    expect(tree.kind === 'element' && tree.props.onRequest).toEqual({
+      kind: 'request',
+      params: { ref: ['data', 'ref'] },
+    });
+  });
+
+  it("[M0.canvas] accepts a request for an item whose ref is bound, in a handler prop, beside the card's Open", () => {
+    expect(
+      check(
+        '<MediaCard onClick={<Open page="album" ref={album.ref} />} onRequest={<Request ref={album.ref} />} />',
+      ),
+    ).toEqual([]);
+  });
+
+  it('[M0.canvas] refuses a request anywhere but a handler prop, or for anything but a bound ref', () => {
+    expect(check('<MediaCard size={<Request ref={album.ref} />} />')).toEqual([
+      'line 3: MediaCard.size takes no handler, so it cannot request an item',
+    ]);
+    expect(check('<MediaCard onClick={<Request id={album.ref} />} />')).toEqual([
+      'line 3: MediaCard.onClick gives a request [id], and a request takes [ref]',
+    ]);
+    expect(check('<MediaCard onClick={<Request ref={data.count} />} />')).toEqual([
+      "line 3: MediaCard.onClick: the request's ref (data.count) is not a non-empty string",
+    ]);
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<Request ref="tears-of-ice" />} />'), 'book'),
+    ).toThrow(/Request's ref must be a data path/);
+    expect(() => parsePage(page('<Request ref={data.ref} />'), 'book')).toThrow(/handler prop/);
   });
 
   it('[M0.canvas] refuses an Open it has no navigation map to check against', () => {

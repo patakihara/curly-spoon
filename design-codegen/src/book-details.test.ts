@@ -53,13 +53,21 @@ function holdsToOwnership(book: Card) {
   }
 }
 
-/** Every requestable card a page draws greys what you don't own and carries a request's status. */
+/**
+ * Every book card a page draws greys what you don't own and carries a request's status, and a tap
+ * on one you don't own requests it, its page kept in the card's menu (docs/plan/06-get.md).
+ */
 function greysTheUnowned(tree: PageTree) {
   for (const card of cards(tree)) {
     const item = itemOf(card);
     expect(card.props.absent, `${item} at line ${card.line}`).toEqual(bound(item, 'absent'));
     expect(card.props.status).toEqual(bound(item, 'status'));
     expect(card.props.tone).toEqual(bound(item, 'tone'));
+    expect(card.props.onRequest, `${item} at line ${card.line}`).toEqual({
+      kind: 'request',
+      params: { ref: [item, 'ref'] },
+    });
+    expect(card.props.onClick).toEqual(opens('book', item, 'ref'));
   }
 }
 
@@ -167,11 +175,9 @@ describe('Book', () => {
     expect(more.author!.items.map((b) => b.title)).not.toContain(data.title);
   });
 
-  it('[M0.canvas] greys the books you do not own, and never makes one you own requestable', () => {
+  it('[M0.canvas] greys the books you do not own, a tap requesting one, and never makes one you own requestable', () => {
     greysTheUnowned(tree);
     for (const b of [...more.series!.items, ...more.author!.items]) holdsToOwnership(b);
-    for (const card of cards(tree).filter((c) => itemOf(c) !== 'narration'))
-      expect(card.props.onClick).toEqual(opens('book', itemOf(card), 'ref'));
   });
 });
 
@@ -207,10 +213,8 @@ describe('Author', () => {
     for (const title of inSeries) expect(books.map((b) => b.title)).toContain(title);
   });
 
-  it('[M0.canvas] greys every book you do not own and never makes one you own requestable, each opening its page', () => {
+  it('[M0.canvas] greys every book you do not own, a tap requesting it, and never makes one you own requestable', () => {
     greysTheUnowned(tree);
-    for (const card of cards(tree))
-      expect(card.props.onClick).toEqual(opens('book', itemOf(card), 'ref'));
     for (const b of [...books, ...series.flatMap((s) => s.books)]) holdsToOwnership(b);
     expect(books.some((b) => b.absent)).toBe(true);
     const owned = books.filter((b) => !b.absent && b.status === null).length;
@@ -248,12 +252,13 @@ describe('Series', () => {
     for (const b of books) expect(b.eyebrow).toBe(`Book ${b.number}`);
   });
 
-  it('[M0.canvas] shows progress on the books you own, greys the rest, and never makes one you own requestable', () => {
+  it('[M0.canvas] shows progress on the books you own, greys the rest, a tap requesting one, and never makes one you own requestable', () => {
     greysTheUnowned(tree);
     expect(one(tree, 'MediaCard').props.progress).toEqual(bound('book', 'progress'));
-    expect(one(tree, 'MediaCard').props.onClick).toEqual(opens('book', 'book', 'ref'));
     for (const b of books) holdsToOwnership(b);
     expect(books.some((b) => typeof b.progress === 'number')).toBe(true);
     expect(books.some((b) => b.absent)).toBe(true);
+    const owned = books.filter((b) => !b.absent && b.status === null).length;
+    expect(data.meta).toMatch(new RegExp(` · ${owned} in your library$`));
   });
 });

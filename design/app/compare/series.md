@@ -1,6 +1,6 @@
 ---
 page: series
-pageHash: 6c461f33284c50d539dc84d83de4df7f13e7f78c25c0565eaa50f8fecfb574c2
+pageHash: b27244bb51862a2ef7f7e97d0d569342e993112b6fd767b3bca0b0cc0af07111
 sonora: [none]
 spotify: []
 ---
@@ -26,7 +26,7 @@ with the first book's cover, "SERIES", the author as an accent link to their pag
 48 h 10 m · 2 in your library", no title and no buttons. Then the books in series order in a
 `LayoutGrid` of `MediaCard`s, each with "Book 1"… as its eyebrow and its length: the first
 finished, the second part-read with its progress, the third greyed "Not in library", the fourth
-"Downloading · 30%"; each card opens its book.
+"Downloading · 30%"; a tap on the third requests it, the others open their book.
 
 **Empty state**, per nav.json: a series you own none of shows every book greyed and requestable.
 
@@ -39,4 +39,5 @@ finished, the second part-read with its progress, the third greyed "Not in libra
   the name, count and length. The author link is added because nav.json links the series to its
   author.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Books' rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: a book you don't own is greyed, its cover without colour and its title muted, and a tap on it requests it: the card says Requested (`MediaCard onRequest`, `<Request ref>` in the page), and its page stays a verb, Open, in the card's corner menu. A book you own opens its page.

@@ -366,6 +366,8 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
 };
 
+const ignore = () => {};
+
 export type AuthorData = typeof placeholder;
 
 export interface AuthorProps {
@@ -401,7 +403,7 @@ export default function Author({ data = placeholder, state = 'full', layout: giv
               <Shelf platform={platform}>
                 {series.books.map((entry, i) => (
                   <Fragment key={i}>
-                    <MediaCard title={entry.title} sub={entry.sub} image={entry.image} progress={entry.progress} absent={entry.absent} status={entry.status} tone={entry.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: entry.ref }))} platform={platform} />
+                    <MediaCard title={entry.title} sub={entry.sub} image={entry.image} progress={entry.progress} absent={entry.absent} status={entry.status} tone={entry.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: entry.ref }))} onRequest={ignore} platform={platform} />
                   </Fragment>
                 ))}
               </Shelf>
@@ -412,7 +414,7 @@ export default function Author({ data = placeholder, state = 'full', layout: giv
           <LayoutGrid platform={platform}>
             {data.books.map((book, i) => (
               <Fragment key={i}>
-                <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
+                <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
               </Fragment>
             ))}
           </LayoutGrid>

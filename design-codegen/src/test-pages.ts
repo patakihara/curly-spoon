@@ -33,7 +33,8 @@ export function bindings(tree: PageTree, into: string[] = []): string[] {
   const prop = (v: PropValue) => {
     if (v.kind === 'binding') into.push(v.path.join('.'));
     if (v.kind === 'slot') bindings(v.tree, into);
-    if (v.kind === 'open') Object.values(v.params).forEach((path) => into.push(path.join('.')));
+    if (v.kind === 'open' || v.kind === 'request')
+      Object.values(v.params).forEach((path) => into.push(path.join('.')));
   };
   if (tree.kind === 'binding') into.push(tree.path.join('.'));
   if (tree.kind === 'each') into.push(tree.of.join('.'));

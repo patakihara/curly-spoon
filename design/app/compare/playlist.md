@@ -1,6 +1,6 @@
 ---
 page: playlist
-pageHash: 933c1c391aab51bea7a70802b341a751b8265964499656b6fb919217a6a10af0
+pageHash: 0304a933c085bec0daa07c99e3ebd391b7e372fae2a15d7d3dfd1532890b6050
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 
@@ -33,4 +33,4 @@ marked, each ending in a drag handle (`IconButton drag_handle`) for reordering.
   `IconButton`, and there is no edit mode or per-song menu yet.
 - Open: a playlist's cover is the first song's art here; a mosaic has no Sonora component.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.

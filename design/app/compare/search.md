@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: d91e339715ba5fbc2206d683c7509716dba94ac5f3649534328a189ffcf15e85
+pageHash: 6317c470688aaa14f7d75cd6355228665e40d9b8613b65a1e7d2c0e2f9cf26e1
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -88,4 +88,4 @@ results, one line says nothing matched, in your library or outside it.
 - Open: a result row has no play control a page can show; ResultRow draws its art action only
   when given a handler, which a canvas page cannot pass.
 - Changed on purpose: no library scope and no Lyrics chip: songs match on their lyrics anyway, a song found by a line showing it in its row, and the sections already split your library from outside it.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.

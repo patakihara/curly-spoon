@@ -1,6 +1,6 @@
 ---
 page: notFound
-pageHash: b9b4d9f549bc4b119e62625c2c065a25b7ddc843226e2b791a6c1b9e6cfff4ef
+pageHash: d1e819d6ddb69ea94d93e9ad63f74d289d96bc31c23e4bc1b44ccb816bbe0323
 sonora: [none]
 ---
 
@@ -29,4 +29,4 @@ library.", and "Go to Browse". It binds no data; its placeholder is empty.
 - Changed on purpose: the close control and "Go to Browse" both lead away; the close returns to
   the opener, as every closing page does, and the button is the way back nav.json names.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, no rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.

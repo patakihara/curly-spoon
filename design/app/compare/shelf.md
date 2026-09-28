@@ -1,6 +1,6 @@
 ---
 page: shelf
-pageHash: e7e81109772fd095b1ba76c3b2467160af9d53699522369017c380ca58b83c1c
+pageHash: 5662948ba69973ac277ff916a0c60ba6709491db6090856e0bae725c0083deec
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: [S12]
 ---
@@ -56,4 +56,4 @@ link, the page says the shelf has gone, with the way back to Browse.
   not nav.json's "Shelf".
 - Open: paging is not drawn; the placeholder holds one page of items.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control, the subject's art and the eyebrow over the subject's name, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Browse's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.

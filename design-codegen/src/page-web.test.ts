@@ -201,6 +201,28 @@ describe('a generated web page', () => {
   });
 });
 
+describe('a page requesting an item, on the web', () => {
+  const requesting = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <Each of={data.books} as="b"><MediaCard title={b.title} onRequest={<Request ref={b.ref} />} /></Each>;
+}
+`,
+      'book',
+    ),
+    'book',
+    { books: [{ title: 'Wind and Truth', ref: 'wind-and-truth' }] },
+    { platformed: new Set(), handled: new Set() },
+    shellOf('book'),
+  );
+
+  it('[M0.canvas] gives a request a handler that does nothing yet: the card itself says Requested', () => {
+    expect(requesting).toContain('onRequest={ignore}');
+    expect(requesting).toContain('const ignore = () => {};');
+    expect(requesting).not.toContain('useNavigate');
+  });
+});
+
 describe('a page opening another, on the web', () => {
   const linking = generateWebPage(
     parsePage(

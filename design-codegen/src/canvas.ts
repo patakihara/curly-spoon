@@ -146,8 +146,8 @@ function render(
     nodes.map((n) => render(n, placeholder, aside, inner)).join('');
   const attr = (name: string, value: PropValue): string => {
     if (value.kind === 'binding') return `${kebab(name)}="{{${value.path.join('.')}}}"`;
-    // An artboard is a still that goes nowhere: an Open is a handler that does nothing.
-    if (value.kind === 'open') return `${kebab(name)}="{{navigate}}"`;
+    // An artboard is a still that goes nowhere: an Open or a Request is a handler that does nothing.
+    if (value.kind === 'open' || value.kind === 'request') return `${kebab(name)}="{{navigate}}"`;
     if (value.kind === 'slot') {
       const slot = aside.slots.push(value.tree) - 1;
       if (each === undefined) {
@@ -212,7 +212,7 @@ const build = (n, scope, key) => {
   if (!C) return null;
   const props = { key };
   for (const [name, v] of Object.entries(n.props)) {
-    props[name] = v.kind === 'literal' ? v.value : v.kind === 'binding' ? at(scope, v.path) : v.kind === 'open' ? navigate : build(v.tree, scope);
+    props[name] = v.kind === 'literal' ? v.value : v.kind === 'binding' ? at(scope, v.path) : v.kind === 'open' || v.kind === 'request' ? navigate : build(v.tree, scope);
   }
   return R.createElement(C, props, ...kids(n.children, scope));
 };`;

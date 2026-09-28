@@ -1,6 +1,6 @@
 ---
 page: album
-pageHash: fa341635b5dbc425f6701aedaef12add90597029aea9bec57de036b0813b2ff6
+pageHash: 567da38e77d0bdc5d574ae91d388118e3cf817ed524bad8f69cb9edb4cee18f0
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S02, S35]
 ---
@@ -63,4 +63,4 @@ one line where the tracks would be.
   kit has no unowned album.
 - Provisional, per nav.json: the editions fold and "More by", drawn as a guess.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.

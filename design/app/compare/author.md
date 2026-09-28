@@ -1,6 +1,6 @@
 ---
 page: author
-pageHash: a335061512f67b3a365b115329cdf9975974eaca9d8d24c946d006f1d059d7ed
+pageHash: ce5541b727fecec8b7c53e4af675747926ab8b365f513ae72b20c0fe27495834
 sonora: [none]
 spotify: []
 ---
@@ -38,9 +38,8 @@ card opening its book.
   the catalogue with unowned titles greyed.
 - Changed on purpose: series come first, each in reading order, then every book in a grid, per
   nav.json; a book in a series shows in both.
-- Changed on purpose: a greyed card opens its book page, where Request sits; no card carries a
-  request button.
 - Changed on purpose: no bio or follow; nav.json's header is the photo and the name. The setting
   that hides unowned books is Settings' and not drawn here.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Books' rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: a book you don't own is greyed, its cover without colour and its title muted, and a tap on it requests it: the card says Requested (`MediaCard onRequest`, `<Request ref>` in the page), and its page stays a verb, Open, in the card's corner menu. A book you own opens its page.

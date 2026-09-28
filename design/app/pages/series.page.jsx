@@ -28,6 +28,7 @@ export default function Series({ data }) {
                 status={book.status}
                 tone={book.tone}
                 onClick={<Open page="book" ref={book.ref} />}
+                onRequest={<Request ref={book.ref} />}
               />
             </Each>
           </LayoutGrid>

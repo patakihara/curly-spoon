@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: be105e61515edf86caf4792ca2fa494713e65d16defd43826a772b9138b80a44
+pageHash: 0c2624336b3a33564cc414354f64fbee020002890ee209d7d63da223c4481254
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -63,4 +63,5 @@ from Search.
 - Open: the in-library marker is still open in the plan and is not drawn.
 - Open: the Downloaded filter is Android's alone and not drawn; the page format has no
   per-platform content yet.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.

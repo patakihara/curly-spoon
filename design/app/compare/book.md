@@ -1,6 +1,6 @@
 ---
 page: book
-pageHash: bb7df933d32164f9a737a1c6144d51f7f15258e760b1dead9f5fbea03d533d88
+pageHash: bf703da329df4f3d4512fd182af47208ab5e17084ba914f886dacea8a9d650c7
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S35]
 ---
@@ -40,8 +40,8 @@ left". "About": the description in `ExpandableText`, three lines and "see more".
 narrations": cards read by other narrators, each opening its own book page: Jonas Vale's full cast,
 which you own, and the author's own reading, greyed "Not in library". Then "More in The Harbour
 Quartet", its heading a link to the series, the rest of the series in order (the first finished,
-the third greyed, the fourth "Downloading · 30%"), and "More by Evelyn Harper", each card opening
-its book.
+the third greyed, the fourth "Downloading · 30%"), and "More by Evelyn Harper", a tap on a
+book you own opening it, on one you don't requesting it.
 
 **Empty state**, per nav.json: a book you don't own keeps the header and the about text, greyed art
 and Request in place of chapters, then Requested with its progress. Only the full state is drawn in
@@ -69,4 +69,5 @@ M0; the greyed and requested states are drawn on the cards.
   when you don't own it; a page may open another page of its own kind, which its links leave out.
 - Provisional, per nav.json: "More in" the series and "More by" the author, drawn as a guess.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Books' rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`).
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: a book you don't own is greyed, its cover without colour and its title muted, and a tap on it requests it: the card says Requested (`MediaCard onRequest`, `<Request ref>` in the page), and its page stays a verb, Open, in the card's corner menu. A book you own opens its page.

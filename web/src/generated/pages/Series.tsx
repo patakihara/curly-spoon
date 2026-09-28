@@ -272,6 +272,8 @@ const CHROME: Record<LayoutId, Chrome> = {
   },
 };
 
+const ignore = () => {};
+
 export type SeriesData = typeof placeholder;
 
 export interface SeriesProps {
@@ -305,7 +307,7 @@ export default function Series({ data = placeholder, state = 'full', layout: giv
           <LayoutGrid platform={platform}>
             {data.books.map((book, i) => (
               <Fragment key={i}>
-                <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
+                <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
               </Fragment>
             ))}
           </LayoutGrid>

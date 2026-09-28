@@ -1,6 +1,10 @@
+import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { App } from './app.js';
 import {
+  ART_DIR,
   CANVAS_BOARDS,
   CANVAS_CREATED_AT,
   DS_FOLDER,
@@ -386,6 +390,7 @@ describe('a page opening another, on the canvas', () => {
     <PageBody>
       <Each of={data.rows} as="row">
         <ResultRow title={row.title} onClick={<Open page="book" ref={row.ref} />} trailing={<Button>Go</Button>} />
+        <MediaCard title={row.title} onRequest={<Request ref={row.ref} />} />
       </Each>
     </PageBody>
   );
@@ -403,11 +408,27 @@ describe('a page opening another, on the canvas', () => {
   };
   const html = generateCanvas(linked, install, now).get('search.phone.dc.html') ?? '';
 
-  it('[M0.canvas] gives the handler a navigate that goes nowhere, since an artboard is a still', () => {
+  it('[M0.canvas] gives an Open or a Request a handler that goes nowhere, since an artboard is a still', () => {
     expect(html).toMatch(/title="\{\{row\.title\}\}" on-click="\{\{navigate\}\}"/);
     expect(html).toContain('const navigate = () => {};');
+    expect(html).toMatch(/title="\{\{row\.title\}\}" on-request="\{\{navigate\}\}"/);
     expect(html).toMatch(
       /return \{ data, shell, slots, lists, when: \{"full":true\}, navigate \};/,
     );
+  });
+});
+
+describe('the placeholder art', () => {
+  const dir = fileURLToPath(new URL(`../../${ART_DIR}/`, import.meta.url));
+
+  it('[M0.canvas] holds a different image in every file', () => {
+    const byImage = new Map<string, string[]>();
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.jpg'))) {
+      const hash = createHash('sha256')
+        .update(readFileSync(dir + file))
+        .digest('hex');
+      byImage.set(hash, [...(byImage.get(hash) ?? []), file]);
+    }
+    expect([...byImage.values()].filter((files) => files.length > 1)).toEqual([]);
   });
 });

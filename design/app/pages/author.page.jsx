@@ -30,6 +30,7 @@ export default function Author({ data }) {
                   status={entry.status}
                   tone={entry.tone}
                   onClick={<Open page="book" ref={entry.ref} />}
+                  onRequest={<Request ref={entry.ref} />}
                 />
               </Each>
             </Shelf>
@@ -48,6 +49,7 @@ export default function Author({ data }) {
                 status={book.status}
                 tone={book.tone}
                 onClick={<Open page="book" ref={book.ref} />}
+                onRequest={<Request ref={book.ref} />}
               />
             </Each>
           </LayoutGrid>

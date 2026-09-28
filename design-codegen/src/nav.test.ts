@@ -42,6 +42,7 @@ const structured = (structure: Record<string, unknown>) =>
   page({ structure: { ...page().structure, ...structure } });
 
 describe('nav.json', () => {
+  // Importing the table imports every generated page, which takes seconds under a full run.
   it('[M0.canvas/a] the generated web route table lists exactly the web pages of nav.json, with their paths', async () => {
     const routes = join(REPO_ROOT, OUTPUTS.webNav, 'routes.tsx');
     const mod = (await import(pathToFileURL(routes).href)) as {
@@ -51,7 +52,7 @@ describe('nav.json', () => {
       .filter((p) => p.platforms.includes('web'))
       .map((p) => ({ id: p.id, path: splitRoute(p.route).path }));
     expect(mod.pages.map((p) => ({ id: p.id, path: p.path }))).toEqual(expected);
-  });
+  }, 30_000);
 
   it('holds the whole screen map: 26 pages, five destinations', () => {
     expect(nav.pages).toHaveLength(26);

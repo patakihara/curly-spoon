@@ -46,6 +46,7 @@ export default function Book({ data }) {
                 status={narration.status}
                 tone={narration.tone}
                 onClick={<Open page="book" ref={narration.ref} />}
+                onRequest={<Request ref={narration.ref} />}
               />
             </Each>
           </Shelf>
@@ -66,6 +67,7 @@ export default function Book({ data }) {
                 status={book.status}
                 tone={book.tone}
                 onClick={<Open page="book" ref={book.ref} />}
+                onRequest={<Request ref={book.ref} />}
               />
             </Each>
           </Shelf>
@@ -82,6 +84,7 @@ export default function Book({ data }) {
                 status={other.status}
                 tone={other.tone}
                 onClick={<Open page="book" ref={other.ref} />}
+                onRequest={<Request ref={other.ref} />}
               />
             </Each>
           </Shelf>
