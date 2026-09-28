@@ -64,7 +64,7 @@ transport, seek and listening-progress fills, the in-library tone and the Browse
 State `--state-error|success|warning|info`, `--state-success-ink`; success is only for real success. Tones `--tone-library|request|progress|error` and their
 `-ink` pairs. Radius `--radius-xs|sm|md|lg|pill`. Spacing `--spacing-xs|sm|md|lg|xl|2xl`.
 Type `--text-xs|sm|md|lg|xl|2xl|3xl|4xl|5xl`, `--font-body|display|heading`, `--weight-body|strong`.
-Icons `--icon-xs|sm|md`. Motion `--duration-instant|fast|quick|medium|slow`, `--ease-standard`.
+Icons `--icon-2xs|xs|sm|md`, `2xs` only inside a pill. Motion `--duration-instant|fast|quick|medium|slow`, `--ease-standard`.
 
 Theme is driven by `data-theme="light"` / `"dark"` on an ancestor; never branch on theme in JS.
 

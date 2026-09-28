@@ -15,8 +15,11 @@ export function Badge({ children, tone = 'accent', size = 'sm', icon, square = f
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      gap: icon ? 4 : undefined,
-      minWidth: lg ? 24 : 18, height: lg ? 24 : 18, padding: lg ? '0 12px' : '0 5px',
+      gap: icon ? (lg ? 4 : 3) : undefined,
+      minWidth: lg ? 24 : 18, height: lg ? 24 : 18,
+      // A glyph leads with less room than the label trails, as Material's assist chips do, so the
+      // pill reads balanced around what it says rather than around its box.
+      padding: icon ? (lg ? '0 12px 0 8px' : '0 6px 0 4px') : lg ? '0 12px' : '0 5px',
       // square+plain are attribute markers ("E", "Verified") rather than counters, so they trade
       // the filled pill for an outline-free glyph+label pair that takes the tone colour as ink.
       borderRadius: square ? 'var(--radius-xs)' : 'var(--radius-pill)',
@@ -25,7 +28,7 @@ export function Badge({ children, tone = 'accent', size = 'sm', icon, square = f
       background: plain ? 'transparent' : bg, color: plain ? (tone === 'neutral' ? fg : bg) : fg, whiteSpace: 'nowrap',
       fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-strong)',
     }}>
-      {icon && <span aria-hidden="true" style={{ fontFamily: "'Material Symbols Rounded'", fontSize: 'var(--icon-xs)', lineHeight: 1, fontVariationSettings: "'FILL' 1,'wght' 500" }}>{icon}</span>}
+      {icon && <span aria-hidden="true" style={{ fontFamily: "'Material Symbols Rounded'", fontSize: 'var(--icon-2xs)', lineHeight: 1, fontVariationSettings: "'FILL' 1,'wght' 500" }}>{icon}</span>}
       {children}
     </span>
   );

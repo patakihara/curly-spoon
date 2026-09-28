@@ -20,6 +20,7 @@
 --grid-gap:12px;
 
 /* Icon sizes — Material Symbols glyph font-size */
+--icon-2xs:14px; /* a glyph inside a pill, set with --text-xs */
 --icon-xs:20px;
 --icon-sm:24px;
 --icon-md:28px;

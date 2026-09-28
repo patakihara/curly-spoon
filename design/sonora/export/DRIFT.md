@@ -35,6 +35,7 @@ accent, not a user-picked one.
   (hover actions, progress/queued/failed state, "not in library"), black in both themes.
 - **`--surface-hover`** — the wash under transparent controls; theme-aware. The old hardcoded
   `rgb(255 255 255 / 10%)` was invisible in light mode.
+- **`--icon-2xs` (14px)** — the glyph inside a pill, Badge's and MediaCard's, sized to `--text-xs`.
 - **`--icon-xs` (20px)** — the small glyph size used by ButtonGroup, TabBar and SearchField.
 - **Play** — `--play` (rose `#F44862`), `--play-contrast`, `--play-icon`, `--play-ink`: the second named colour, for
   what is about playback. `--state-success-ink` is the ink on a genuine success fill.

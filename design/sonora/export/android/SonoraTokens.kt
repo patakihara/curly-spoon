@@ -127,6 +127,7 @@ object SonoraDimens {
     val spacingXl = 20.dp
     val spacing2xl = 24.dp
     val gridGap = 12.dp
+    val icon2xs = 14.dp
     val iconXs = 20.dp
     val iconSm = 24.dp
     val iconMd = 28.dp

@@ -15,7 +15,7 @@ Small pill for counts, queue positions and status. Colors come from the status t
 | `children` *(required)* | `ReactNode` |  |
 | `tone` | `'accent' \| 'success' \| 'warning' \| 'error' \| 'neutral'` |  |
 | `size` | `'sm' \| 'md'` | md is the status-pill size used in list rows; sm is the count pill. |
-| `icon` | `string` | Leading Material Symbols Rounded glyph name — the verified check, the finished tick. |
+| `icon` | `string` | Leading Material Symbols Rounded glyph name — the verified check, the finished tick. Set at `--icon-2xs`, the size of the pill's text, with less padding before it than after the label. |
 | `square` | `boolean` | Square with --radius-xs instead of a pill: the explicit-content "E" marker. |
 | `plain` | `boolean` | No fill; glyph and label take the tone colour as ink instead of the tone's contrast ink. |
 
