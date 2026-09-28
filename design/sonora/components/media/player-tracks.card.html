@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x1300" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states and numbered tracks, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item, and a person's caption beside round art" -->
+<!-- @dsCard group="Components" viewport="1400x1900" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states and numbered tracks, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item, a person's caption beside round art, and a book in its series" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -54,6 +54,14 @@ function Demo(){
         nextLabel={null} lastLabel="Add to queue" onPlay={()=>{}} onPlayLast={()=>{}}
         menu={<OverflowMenu open items={[{ key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' }, { key: 'share', label: 'Share', icon: 'share' }]} />} />
     </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A book in its series: the series and its number a link under the author, and on a phone a download control after the buttons</div>
+    <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
+      <MediaHeader platform="mobile" kindLabel="Audiobook" subtitle="Evelyn Harper" onSubtitle={()=>{}} partOf="The Harbour Quartet · Book 2" onPartOf={()=>{}}
+        meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>The same book on a desktop, which keeps nothing offline: no download control</div>
+    <MediaHeader platform="desktop" kindLabel="Audiobook" subtitle="Evelyn Harper" onSubtitle={()=>{}} partOf="The Harbour Quartet · Book 2" onPartOf={()=>{}}
+      meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} />
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A person, round, every label null: no action row at all</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
       <MediaHeader round kindLabel="Artist" meta="3 albums · 2 EPs" playLabel={null} nextLabel={null} lastLabel={null} />

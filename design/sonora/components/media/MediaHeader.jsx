@@ -8,11 +8,12 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * Play/Next/Last cluster for a page whose verbs aren't a queue — a podcast show's Follow/notify/
  * settings/overflow, an episode's saved/downloaded/share/overflow. `progress` states how far into
  * a part-finished item the listener already is. A label given as null leaves its button out, and
- * `menu` follows the actions; with no title, the page's own heading names the item. With no title
+ * `menu` follows the actions; with no title, the page's own heading names the item. `partOf` names
+ * the whole an item belongs to, a book's series, and on a phone `download` keeps it offline. With no title
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
-export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, actions, menu, progress = null }) {
-  const Button = NS().Button, CoverArt = NS().CoverArt;
+export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress = null, download = null, onDownload }) {
+  const Button = NS().Button, CoverArt = NS().CoverArt, DownloadButton = NS().DownloadButton;
   const glyph = (name) => React.createElement('span', { style: sx("font-family:'Material Symbols Rounded';font-size:20px;line-height:1") }, name);
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
@@ -28,7 +29,9 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
   const mobile = platform ? platform === 'mobile' : narrow;
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const art = mobile ? 208 : 232;
-  const acts = actions != null || menu != null || playLabel !== null || nextLabel !== null || lastLabel !== null;
+  // Only a phone keeps an item offline, so only a phone draws its download control.
+  const offline = mobile && download != null && !!DownloadButton;
+  const acts = actions != null || menu != null || offline || playLabel !== null || nextLabel !== null || lastLabel !== null;
   // Beside the art, the text sits on the art's baseline under a title; with no title and no
   // action row (a person, named by the page's heading) it is a caption, centred on the art.
   const caption = title == null && !acts;
@@ -39,6 +42,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
         <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;color:' + muted + (mobile ? ';margin-top:6px' : ''))}>{kindLabel}</div>
         {title != null && <div style={sx('font-family:var(--font-display),Inter;font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;color:' + fg + ';font-size:var(--' + (mobile ? 'h4' : 'h2') + '-size)')}>{title}</div>}
         {subtitle != null && <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium);color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>}
+        {partOf != null && <div onClick={onPartOf} style={sx('font-size:var(--text-sm);font-weight:var(--weight-medium);color:' + (onPartOf ? 'var(--accent-ink);cursor:pointer' : fg))}>{partOf}</div>}
         <div style={sx(caption && !mobile ? 'font-size:var(--text-lg);color:' + fg : 'font-size:var(--text-sm);color:' + muted)}>{meta}</div>
         {/* Resume position for a part-finished item — "1h 21m left" lives in `meta` above; this is
             the bar that describes it. Gated the QuickPick/MediaCard way: null (the default) draws
@@ -58,6 +62,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
               {Button && lastLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('last_page')} onClick={onPlayLast}>{lastLabel}</Button>}
             </React.Fragment>
           )}
+          {offline && <DownloadButton state={download} onClick={onDownload} />}
           {menu}
         </div>}
       </div>

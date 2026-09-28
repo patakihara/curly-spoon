@@ -926,9 +926,13 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `onPlayNext` | `() => void` |  |
 | `onPlayLast` | `() => void` |  |
 | `onSubtitle` | `() => void` | Makes the subtitle an accent-ink link. |
+| `partOf` | `string` | What the item is one part of, under the subtitle: a book's series and its number. |
+| `onPartOf` | `() => void` | Makes `partOf` an accent-ink link to the whole it names. |
 | `actions` | `ReactNode` |  Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/ overflow). The default cluster renders exactly as it does today when this is absent.  |
 | `menu` | `ReactNode` | After the actions: an `OverflowMenu` with the verbs that get no button, such as Add to library. |
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. |
+| `download` | `'idle' \| 'downloading' \| 'done' \| null` |  On a phone, a DownloadButton after the buttons in this state, keeping the item offline. A desktop keeps nothing offline and never draws it. Omit or pass null for none.  |
+| `onDownload` | `() => void` | Starts, cancels or removes the download, depending on `download`. |
 
 ### MiniPlayer
 

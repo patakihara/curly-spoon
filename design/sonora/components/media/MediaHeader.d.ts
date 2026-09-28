@@ -41,6 +41,10 @@ export interface MediaHeaderProps {
   onPlayLast?: () => void;
   /** Makes the subtitle an accent-ink link. */
   onSubtitle?: () => void;
+  /** What the item is one part of, under the subtitle: a book's series and its number. */
+  partOf?: string;
+  /** Makes `partOf` an accent-ink link to the whole it names. */
+  onPartOf?: () => void;
   /**
    * Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a
    * queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/
@@ -51,5 +55,12 @@ export interface MediaHeaderProps {
   menu?: ReactNode;
   /** 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. */
   progress?: number | null;
+  /**
+   * On a phone, a DownloadButton after the buttons in this state, keeping the item offline. A
+   * desktop keeps nothing offline and never draws it. Omit or pass null for none.
+   */
+  download?: 'idle' | 'downloading' | 'done' | null;
+  /** Starts, cancels or removes the download, depending on `download`. */
+  onDownload?: () => void;
 }
 export declare function MediaHeader(props: MediaHeaderProps): JSX.Element;

@@ -44,6 +44,10 @@ data class MediaHeaderProps(
     val onPlayLast: (() -> Unit)? = null,
     /** Makes the subtitle an accent-ink link. */
     val onSubtitle: (() -> Unit)? = null,
+    /** What the item is one part of, under the subtitle: a book's series and its number. */
+    val partOf: String? = null,
+    /** Makes `partOf` an accent-ink link to the whole it names. */
+    val onPartOf: (() -> Unit)? = null,
     /**
      * Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a
      * queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/
@@ -54,4 +58,11 @@ data class MediaHeaderProps(
     val menu: (@Composable () -> Unit)? = null,
     /** 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. */
     val progress: Float? = null,
+    /**
+     * On a phone, a DownloadButton after the buttons in this state, keeping the item offline. A
+     * desktop keeps nothing offline and never draws it. Omit or pass null for none.
+     */
+    val download: Download? = null,
+    /** Starts, cancels or removes the download, depending on `download`. */
+    val onDownload: (() -> Unit)? = null,
 )
