@@ -1,8 +1,9 @@
 /**
  * The visual comparison of each canvas page, `design/app/compare/<id>.md` beside
- * `compare/<id>/canvas-{phone,desktop}.png`: the page's renders set against the Sonora screens and
- * cards it names (committed once under `compare/sonora/`) and its Spotify references, with the
- * differences listed and the hash of the page it was made from.
+ * `compare/<id>/canvas-{phone,desktop}.png`: the page's renders set against the Sonora UI kit
+ * renders it names (captured once under `compare/sonora/`), with the differences listed and the
+ * hash of the page it was made from. The kits are the design; a Spotify screen is only ever
+ * consulted for intent where a kit lacks something, and is never compared against.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -43,7 +44,8 @@ const FrontMatter = z
     page: z.string(),
     pageHash: z.string().regex(/^[0-9a-f]{64}$/),
     sonora: z.array(SonoraSource),
-    spotify: z.array(z.string()),
+    /** Spotify screens consulted for intent, where the kit lacks something. */
+    spotify: z.array(z.string()).optional(),
   })
   .strict();
 
@@ -78,13 +80,8 @@ export function checkComparison(appDir: string, page: NavPage, screensReadme: st
       `compare/${page.id}.md names Sonora sources [${meta.sonora}], nav.json [${page.sources.sonora}]`,
     );
   }
-  if (meta.spotify.join() !== page.sources.spotify.join()) {
-    say(
-      `compare/${page.id}.md names Spotify screens [${meta.spotify}], nav.json [${page.sources.spotify}]`,
-    );
-  }
   const known = readFileSync(screensReadme, 'utf8');
-  for (const id of meta.spotify) {
+  for (const id of meta.spotify ?? []) {
     if (!new RegExp(`\\b${id}\\b`).test(known)) say(`${id} is not a reference screen`);
   }
   const images = [

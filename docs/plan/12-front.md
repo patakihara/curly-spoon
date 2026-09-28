@@ -117,4 +117,4 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 ### How parity stays true
 
 - Both clients consume the same generated models and the same screen endpoints, so there's no logic to port by hand.
-- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set and produce screenshots. Each page's render sits beside its Sonora source in a committed comparison under `design/app/compare`, with the differences listed, and a test fails when a page changes without a fresh comparison. This is the visual check the old project never had.
+- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set and produce screenshots. Each page's render sits beside its Sonora UI kit render in a committed comparison under `design/app/compare`, with the differences listed, and a test fails when a page changes without a fresh comparison. This is the visual check the old project never had.

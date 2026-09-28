@@ -50,7 +50,7 @@ describe('the visual comparisons', () => {
   });
 
   for (const page of nav.pages.filter((p) => !UNDRAWN.includes(p.id))) {
-    it(`[M0.canvas/e] ${page.id} has a comparison made from its current page, with both renders and its Sonora sources`, () => {
+    it(`[M0.canvas/e] ${page.id} has a comparison made from its current page, with both renders beside its Sonora UI kit renders`, () => {
       expect(checkComparison(appDir, page, screensReadme)).toEqual([]);
     });
   }
@@ -104,7 +104,7 @@ describe('checking a comparison', () => {
     ]);
   });
 
-  it('names the committed image of each Sonora source', () => {
+  it('names the committed Sonora UI kit render or card image of each source', () => {
     expect(sonoraShot('kit:mobile/browse')).toBe('sonora/kit-mobile-browse.png');
     expect(sonoraShot('card:episode-rows')).toBe('sonora/card-episode-rows.png');
     expect(sonoraShot('none')).toBeUndefined();

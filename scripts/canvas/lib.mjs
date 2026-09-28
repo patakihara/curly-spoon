@@ -8,7 +8,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const REPO = fileURLToPath(new URL('../..', import.meta.url));
-/** The committed Sonora source images every comparison names. */
+/** The committed Sonora UI kit renders (and card renders) the comparisons name. */
 export const SONORA_SHOTS = join(REPO, 'design/app/compare/sonora');
 
 const TYPES = {

@@ -376,7 +376,7 @@
       "presentation": "screen",
       "title": "Settings",
       "sources": {
-        "sonora": ["card:inputs-switches-sliders", "kit:mobile/settings", "kit:desktop/settings"],
+        "sonora": ["kit:mobile/settings", "kit:desktop/settings"],
         "spotify": [],
         "kickoff": "settings"
       }

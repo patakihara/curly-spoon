@@ -1,22 +1,18 @@
 ---
 page: settings
 pageHash: dc38c656ba28b1973743c3467ef16015aa9f949822fe3d65138ac90d5fe9e2c0
-sonora: [card:inputs-switches-sliders, kit:mobile/settings, kit:desktop/settings]
-spotify: []
+sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
 # Settings
 
-Renders: `settings/canvas-phone.png` (390 px), `settings/canvas-desktop.png` (1440 px).
-Sonora: `sonora/card-inputs-switches-sliders.png`, `sonora/kit-mobile-settings.png`,
-`sonora/kit-desktop-settings.png`. No Spotify screen covers settings.
+Canvas renders: `settings/canvas-phone.png` (390 px), `settings/canvas-desktop.png` (1440 px).
+Sonora UI kit renders, the design this page is compared against: `sonora/kit-mobile-settings.png`
+(the mobile kit driven to its settings sheet) and `sonora/kit-desktop-settings.png` (the desktop
+kit's Settings destination). No Spotify screen was needed for intent.
 
-## What the sources show
+## What the Sonora UI kit renders show
 
-- **Sonora card, inputs, switches and sliders.** Dark and light side by side: search fields,
-  a labelled `FieldRow` ("Library folder", a pill input), a plain `Switch` row, two `Slider`s,
-  then `SettingRow` cards: a bold title, a muted line below, the switch on the right, each on
-  its own raised card with a small gap between them.
 - **Sonora mobile kit.** Settings opens as a sheet over Browse: a "Browse" back link, a
   "Settings" heading, the "Library folder" `FieldRow`, then three `SettingRow` cards
   (Auto-download requests, Wi-Fi only, Gapless playback), 10 px apart, 20 px below the field.
@@ -40,4 +36,3 @@ one-column `LayoutGrid` with a small gap, each in an untitled `Section` for the 
   folder on the device. Its value is a placeholder address, not a real host.
 - Shell, part 2: no "Settings" title, back link (mobile sheet) or app bar; the desktop kit's
   content also starts lower, under the front layer's header, which the shell brings.
-- Not drawn: the card's search fields and sliders, which belong to other pages.
