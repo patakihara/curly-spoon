@@ -41,3 +41,12 @@ describe("Sonora's adherence rules", () => {
     expect(choices.get('ResultRow')?.get('tone')?.nullable).toBe(true);
   });
 });
+
+describe("Sonora's components", () => {
+  it('[M0.canvas] name every font weight by its role token, never by its number', () => {
+    const numbered = discoverComponents(sonora).flatMap(({ name, jsx }) =>
+      /font-weight: ?\d|fontWeight: ?['"]?\d/.test(readFileSync(jsx, 'utf8')) ? [name] : [],
+    );
+    expect(numbered).toEqual([]);
+  });
+});

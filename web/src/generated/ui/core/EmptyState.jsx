@@ -12,7 +12,7 @@ export function EmptyState({ icon, title, body, action, platform = 'desktop' }) 
           <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-md);line-height:1;font-variation-settings:'FILL' 0,'wght' 400")}>{icon}</span>
         </div>
       )}
-      <div style={sx('font-family:var(--font-heading);font-weight:900;font-size:var(--' + (mobile ? 'text-2xl' : 'h4-size') + ');line-height:1.2;color:var(--surface-fg)')}>{title}</div>
+      <div style={sx('font-family:var(--font-heading);font-weight:var(--heading-weight);font-size:var(--' + (mobile ? 'text-2xl' : 'h4-size') + ');line-height:1.2;color:var(--surface-fg)')}>{title}</div>
       {body && <div style={sx('font-family:var(--font-body);font-size:var(--text-md);line-height:1.5;color:var(--surface-fg-muted)')}>{body}</div>}
       {action && <div style={sx('display:flex;justify-content:center;margin-top:var(--spacing-sm)')}>{action}</div>}
     </div>
