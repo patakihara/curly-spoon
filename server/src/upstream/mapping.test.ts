@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { foldName, pickUpstreamUser } from './mapping.js';
 
 const users = [
-  { id: 'u1', username: 'Kara' },
-  { id: 'u2', username: 'Élise' },
-  { id: 'u3', username: 'someone' },
+  { id: 'u1', username: 'Kara', admin: false },
+  { id: 'u2', username: 'Élise', admin: false },
+  { id: 'u3', username: 'someone', admin: false },
 ];
 
 describe('[M0.sso/c] finding a person on an upstream at first link', () => {
@@ -23,10 +23,29 @@ describe('[M0.sso/c] finding a person on an upstream at first link', () => {
       state: 'unlinked',
       detail: 'no_account',
     });
-    const twins = [...users, { id: 'u4', username: 'kará' }];
+    const twins = [...users, { id: 'u4', username: 'kará', admin: false }];
     expect(pickUpstreamUser(twins, 'kara')).toEqual({
       state: 'unlinked',
       detail: 'ambiguous',
     });
+  });
+
+  it('never links an upstream admin or root account, even on an exact name', () => {
+    const admins = [{ id: 'a1', username: 'Sofia', admin: true }, ...users];
+    expect(pickUpstreamUser(admins, 'sofia')).toEqual({ state: 'unlinked', detail: 'no_account' });
+  });
+
+  it("never links Auralis's own service accounts, auralis and auralis-admin", () => {
+    const service = [
+      { id: 's1', username: 'auralis', admin: false },
+      { id: 's2', username: 'Auralis-Admin', admin: false },
+    ];
+    expect(pickUpstreamUser(service, 'auralis').state).toBe('unlinked');
+    expect(pickUpstreamUser(service, 'auralis-admin').state).toBe('unlinked');
+  });
+
+  it('an admin sharing a folded name does not make an ordinary account ambiguous', () => {
+    const both = [{ id: 'a1', username: 'KARA', admin: true }, ...users];
+    expect(pickUpstreamUser(both, 'kara')).toEqual({ state: 'linked', id: 'u1' });
   });
 });
