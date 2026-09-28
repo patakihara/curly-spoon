@@ -28,4 +28,6 @@ data class SectionProps(
     val onSubject: (() -> Unit)? = null,
     /** Forwarded to SectionHeader — a text action ("Show all") in place of the glyph `action`. */
     val actionText: String? = null,
+    /** Forwarded to SectionHeader — a control of the section's own at the header's trailing edge, such as a `ViewToggle`. */
+    val trailing: (@Composable () -> Unit)? = null,
 )

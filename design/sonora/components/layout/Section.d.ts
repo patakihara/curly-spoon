@@ -23,5 +23,7 @@ export interface SectionProps {
   onSubject?: () => void;
   /** Forwarded to SectionHeader — a text action ("Show all") in place of the glyph `action`. */
   actionText?: string;
+  /** Forwarded to SectionHeader — a control of the section's own at the header's trailing edge, such as a `ViewToggle`. */
+  trailing?: React.ReactNode;
 }
 export declare function Section(props: SectionProps): JSX.Element;

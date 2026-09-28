@@ -2,7 +2,7 @@ import React from 'react';
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** Row heading above a carousel or grid, with an optional trailing action. */
-export function SectionHeader({ title, action, actionLabel = 'More', onAction, platform = 'mobile', eyebrow, image, round = false, onSubject, actionText }) {
+export function SectionHeader({ title, action, actionLabel = 'More', onAction, platform = 'mobile', eyebrow, image, round = false, onSubject, actionText, trailing }) {
   const isMobile = platform === 'mobile';
   const CoverArt = NS().CoverArt;
   const titleEl = (
@@ -35,7 +35,10 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-md)', gap: 'var(--spacing-md)' }}>
       {subject}
-      {actionText != null ? (
+      {trailing != null ? (
+        /* A control of the section's own, such as the ViewToggle over a collection. */
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{trailing}</div>
+      ) : actionText != null ? (
         <button onClick={onAction} style={{
           border: 'none', background: 'transparent', flexShrink: 0, cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-strong)',

@@ -192,6 +192,7 @@ Heading row above a carousel, grid or list, with an optional trailing icon actio
 | `round` | `boolean` | Circular thumbnail for an artist or a person; square (the default) for a show or a genre. |
 | `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. |
 | `actionText` | `string` | A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. |
+| `trailing` | `ReactNode` |  A control of the section's own at the trailing edge, such as the `ViewToggle` over the collection the section holds. Wins over `actionText` and `action` if more than one is set.  |
 
 ### SortFilterBar
 
@@ -627,6 +628,7 @@ One block of a feed — a SectionHeader plus its content — carrying the standa
 | `round` | `boolean` | Forwarded to SectionHeader — circular thumbnail for an artist or a person; square for a show or a genre. |
 | `onSubject` | `() => void` | Forwarded to SectionHeader — makes the eyebrow+title block a link to the subject. |
 | `actionText` | `string` | Forwarded to SectionHeader — a text action ("Show all") in place of the glyph `action`. |
+| `trailing` | `React.ReactNode` | Forwarded to SectionHeader — a control of the section's own at the header's trailing edge, such as a `ViewToggle`. |
 
 ### Shelf
 

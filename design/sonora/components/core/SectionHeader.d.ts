@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 /**
  * Heading row above a carousel, grid or list, with an optional trailing icon action.
  */
@@ -19,5 +21,10 @@ export interface SectionHeaderProps {
   onSubject?: () => void;
   /** A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. */
   actionText?: string;
+  /**
+   * A control of the section's own at the trailing edge, such as the `ViewToggle` over the
+   * collection the section holds. Wins over `actionText` and `action` if more than one is set.
+   */
+  trailing?: ReactNode;
 }
 export declare function SectionHeader(props: SectionHeaderProps): JSX.Element;

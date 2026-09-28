@@ -159,8 +159,8 @@
         "message": "<Rating> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|eyebrow|image|round|onSubject|actionText|key|ref|className|style|children)$/]",
-        "message": "<SectionHeader> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, eyebrow, image, round, onSubject, actionText."
+        "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|eyebrow|image|round|onSubject|actionText|trailing|key|ref|className|style|children)$/]",
+        "message": "<SectionHeader> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, eyebrow, image, round, onSubject, actionText, trailing."
       },
       {
         "selector": "JSXOpeningElement[name.name='SectionHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:mobile|desktop)$/]",
@@ -411,8 +411,8 @@
         "message": "<ScrollArea> axis must be one of 'y' | 'x'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|last|children|eyebrow|image|round|onSubject|actionText|key|ref|className|style|children)$/]",
-        "message": "<Section> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, last, children, eyebrow, image, round, onSubject, actionText."
+        "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|action|actionLabel|onAction|platform|last|children|eyebrow|image|round|onSubject|actionText|trailing|key|ref|className|style|children)$/]",
+        "message": "<Section> doesn't accept that prop. Declared props: title, action, actionLabel, onAction, platform, last, children, eyebrow, image, round, onSubject, actionText, trailing."
       },
       {
         "selector": "JSXOpeningElement[name.name='Section'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
