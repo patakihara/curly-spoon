@@ -288,15 +288,6 @@ describe('the props model read from Sonora .d.ts files', () => {
     expect(() => classOf(`  ${member}`, "import { RefObject } from 'react';\n")).toThrow(message);
   });
 
-  it("[M0.uikit/a] an input-like component's onChange carries the string value", () => {
-    const cls = classOf('  value?: string;\n  onChange?: (e: any) => void;');
-    expect(cls.props[1]!.type).toEqual(fn([S]));
-    // Without a string value, the any is just the web event.
-    expect(classOf('  checked?: boolean;\n  onChange?: (e: any) => void;').props[1]!.type).toEqual(
-      fn([]),
-    );
-  });
-
   it("[M0.uikit/a] LibraryShell's opaque detail item is Any?, the one known any", () => {
     const model = modelOf({
       'layout/LibraryShell.d.ts':

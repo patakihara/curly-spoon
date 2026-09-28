@@ -299,7 +299,7 @@ Labelled form field wrapping the system Input. On mobile it supplies the filled 
 
 ### Input
 
-
+The new text, on every keystroke.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -307,7 +307,7 @@ Labelled form field wrapping the system Input. On mobile it supplies the filled 
 | `icon` | `ReactNode` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `value` | `string` |  |
-| `onChange` | `(e: any) => void` |  |
+| `onChange` | `(next: string) => void` | The new text, on every keystroke. |
 
 ### SearchBar
 

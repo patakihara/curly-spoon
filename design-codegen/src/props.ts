@@ -232,8 +232,6 @@ interface Ctx {
   param?: string;
   /** The name an inline class, enum or sealed interface made here takes. */
   name: string;
-  /** Whether the class holds a string `value`, so its `onChange` carries that string. */
-  inputLike: boolean;
   typeParams: Set<string>;
   decls: Decl[];
 }
@@ -414,8 +412,7 @@ export function readProps(components: Component[]): PropsModel {
 
   /**
    * A function type. A web event parameter is dropped, and so is a handler's `any` one, which is
-   * its web event too; `onChange(e: any)` on a class with a string `value` carries that string,
-   * as Sonora's own `SearchBar` and `FieldRow` type it. A rest parameter is refused.
+   * its web event too. A rest parameter is refused.
    */
   function mapFn(node: ts.FunctionTypeNode, ctx: Ctx, composable = false): KType {
     const params: KType[] = [];
@@ -431,12 +428,8 @@ export function readProps(components: Component[]): PropsModel {
         isAnyOrUnknown(pType) &&
         !OPAQUE_ITEMS.has(`${ctx.owner}.${ctx.prop}(${param})`) &&
         isHandler(ctx.prop)
-      ) {
-        if (ctx.inputLike && ctx.prop === 'onChange' && node.parameters.length === 1) {
-          params.push({ kind: 'string' });
-        }
+      )
         continue;
-      }
       const type = mapType(p.type, { ...ctx, param, name: `${ctx.name}${pascal(param)}` });
       params.push(p.questionToken !== undefined ? nullable(type) : type);
     }
@@ -525,13 +518,6 @@ export function readProps(components: Component[]): PropsModel {
 
   /** Maps each property signature into `decl`, leaving WEB_ONLY_PROPS out as web only. */
   function fillClass(decl: ClassDecl, members: ts.NodeArray<ts.TypeElement>, ctx: Ctx) {
-    const inputLike = members.some(
-      (m) =>
-        ts.isPropertySignature(m) &&
-        m.name.getText() === 'value' &&
-        m.type !== undefined &&
-        unparen(m.type).kind === ts.SyntaxKind.StringKeyword,
-    );
     for (const member of members) {
       if (!ts.isPropertySignature(member)) {
         throw new Error(`${ctx.owner}: unsupported member ${member.getText()}`);
@@ -540,7 +526,7 @@ export function readProps(components: Component[]): PropsModel {
       if (!PROPERTY_NAME.test(prop) || KOTLIN_KEYWORDS.has(prop)) {
         throw new Error(`${ctx.owner}.${prop}: not a Kotlin property name`);
       }
-      const here: Ctx = { ...ctx, prop, name: `${ctx.owner}${pascal(prop)}`, inputLike };
+      const here: Ctx = { ...ctx, prop, name: `${ctx.owner}${pascal(prop)}` };
       delete here.param;
       if (WEB_ONLY_PROPS.has(prop)) {
         decl.webOnly.push(prop);
@@ -583,7 +569,6 @@ export function readProps(components: Component[]): PropsModel {
         owner,
         prop: '',
         name: owner,
-        inputLike: false,
         typeParams: new Set(typeParams),
         decls,
       });

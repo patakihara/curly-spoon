@@ -6,7 +6,8 @@ export interface InputProps {
   icon?: ReactNode;
   platform?: 'desktop' | 'mobile';
   value?: string;
-  onChange?: (e: any) => void;
+  /** The new text, on every keystroke. */
+  onChange?: (next: string) => void;
 }
 
 /** Declared by pnpm gen: Sonora declares only the props. */

@@ -8,5 +8,6 @@ data class InputProps(
     val icon: (@Composable () -> Unit)? = null,
     val platform: Platform? = null,
     val value: String? = null,
+    /** The new text, on every keystroke. */
     val onChange: ((String) -> Unit)? = null,
 )

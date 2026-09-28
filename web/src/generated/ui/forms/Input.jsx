@@ -11,7 +11,7 @@ export function Input({ placeholder = 'Search', icon, platform = 'desktop', valu
     }}>
       <span style={{ color: 'var(--surface-fg-muted)', display: 'flex' }}>{icon}</span>
       <input
-        value={value} onChange={onChange} placeholder={placeholder}
+        value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder}
         style={{
           flex: 1, border: 'none', outline: 'none', background: 'transparent',
           color: 'var(--surface-fg)', fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-body)', fontSize: 'var(--text-md)',
