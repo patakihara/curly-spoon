@@ -8,20 +8,33 @@ export function TabBar({ items = [], value, onChange, platform = 'desktop' }) {
   const opts = items.map((it) => (typeof it === 'string' ? { key: it, label: it } : it));
   const ref = React.useRef(null);
   // A tab that lands off-screen scrolls itself into the row, keeping a gutter so it never sits flush
-  // against the edge and reads as cut off.
+  // against the edge and reads as cut off. The row is placed again once the icon font has loaded:
+  // measured before it, each glyph is its ligature's full name, the tabs are far wider than they
+  // will be, and a tab that fits would otherwise stay scrolled half out of the row.
   React.useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    let i = -1;
-    for (let n = 0; n < opts.length; n++) if (opts[n].key === value) i = n;
-    const btn = i > -1 && el.children[i];
-    if (!btn) return;
-    const b = btn.getBoundingClientRect(), c = el.getBoundingClientRect(), pad = 24;
-    const delta = b.left < c.left + pad ? b.left - c.left - pad
-      : b.right > c.right - pad ? b.right - c.right + pad : 0;
-    if (!delta) return;
-    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollTo({ left: el.scrollLeft + delta, behavior: reduced ? 'auto' : 'smooth' });
+    if (!el) return undefined;
+    const place = (from, smooth) => {
+      let i = -1;
+      for (let n = 0; n < opts.length; n++) if (opts[n].key === value) i = n;
+      const btn = i > -1 && el.children[i];
+      if (!btn) return;
+      const b = btn.getBoundingClientRect(), c = el.getBoundingClientRect(), pad = 24;
+      // The tab's place along the whole row, then the least scroll from `from` that shows it.
+      const start = b.left - c.left + el.scrollLeft, end = start + b.width;
+      let left = from;
+      if (end - left > c.width - pad) left = end - c.width + pad;
+      if (start - left < pad) left = Math.max(0, start - pad);
+      if (left === el.scrollLeft) return;
+      const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollTo({ left, behavior: smooth && !reduced ? 'smooth' : 'auto' });
+    };
+    place(el.scrollLeft, true);
+    let live = true;
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (live) place(0, false); });
+    }
+    return () => { live = false; };
   }, [value]); // eslint-disable-line
   return (
     <div ref={ref} role="tablist" style={sx('display:flex;gap:var(--spacing-xs);max-width:100%;overflow-x:auto;scrollbar-width:none')}>
