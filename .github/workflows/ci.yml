@@ -45,10 +45,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm gen
-      # The paths are schema/codegen/outputs.ts's folders. Untracked output counts as a difference.
+      # The paths are the folders in schema/codegen/outputs.ts and design-codegen/src/outputs.ts.
+      # Untracked output counts as a difference.
       - name: No difference from what is committed
         run: |
-          paths="schema/generated web/src/generated/api android/app/src/main/java/net/develivarr/auralis/generated/api"
+          paths="schema/generated web/src/generated/api android/app/src/main/java/net/develivarr/auralis/generated/api web/src/generated/ui android/app/src/main/java/net/develivarr/auralis/generated/ui"
           git diff --exit-code -- $paths
           test -z "$(git status --porcelain -- $paths)" || { git status --porcelain -- $paths; exit 1; }
 

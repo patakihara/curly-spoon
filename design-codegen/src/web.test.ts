@@ -95,14 +95,36 @@ describe('the web UI package', () => {
     );
   });
 
-  it('[M0.uikit/a] refuses any other use of NS or the global namespace', () => {
-    const renamed = [
+  it('[M0.uikit/a] imports a lookup bound to another name under that name', () => {
+    const source = [
       "import React from 'react';",
       NS_LINE.trimEnd(),
-      'export function X() { const Y = NS().Button; return Y; }',
+      'export function Bar() {',
+      '  const DownloadButtonC = NS().DownloadButton;',
+      '  return DownloadButtonC;',
+      '}',
       '',
     ].join('\n');
-    expect(() => rewriteJsx(renamed, 'X.jsx', known({ Button: './Button.jsx' }))).toThrow(
+    expect(rewriteJsx(source, 'Bar.jsx', known({ DownloadButton: './DownloadButton.jsx' }))).toBe(
+      [
+        "import React from 'react';",
+        "import { DownloadButton as DownloadButtonC } from './DownloadButton.jsx';",
+        'export function Bar() {',
+        '  return DownloadButtonC;',
+        '}',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('[M0.uikit/a] refuses any other use of NS or the global namespace', () => {
+    const whole = [
+      "import React from 'react';",
+      NS_LINE.trimEnd(),
+      'export function X() { const all = NS(); return all.Button; }',
+      '',
+    ].join('\n');
+    expect(() => rewriteJsx(whole, 'X.jsx', known({ Button: './Button.jsx' }))).toThrow(
       /X\.jsx: unsupported NS\(\) use/,
     );
     const direct = [

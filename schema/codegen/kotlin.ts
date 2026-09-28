@@ -17,7 +17,7 @@ export interface OpenApiDocument {
   components?: { schemas?: Record<string, SchemaObject> };
 }
 
-const KOTLIN_KEYWORDS = new Set([
+export const KOTLIN_KEYWORDS = new Set([
   'as',
   'break',
   'class',
@@ -70,7 +70,7 @@ function nullableRef(schema: SchemaObject): SchemaObject | undefined {
 
 const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function enumConstant(value: string, where: string): string {
+export function enumConstant(value: string, where: string): string {
   const name = value
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/[^A-Za-z0-9]+/g, '_')

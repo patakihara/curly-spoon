@@ -23,20 +23,25 @@ const isNsCall = (node: ts.Node): node is ts.CallExpression =>
   node.expression.text === 'NS' &&
   node.arguments.length === 0;
 
-/** The names a declaration takes from NS(), or undefined when it is not an NS lookup. */
-function nsNames(decl: ts.VariableDeclaration): string[] | undefined {
+/** A component taken from NS(), and the local name it is bound to. */
+interface Lookup {
+  name: string;
+  local: string;
+}
+
+/** The lookups a declaration makes from NS(), or undefined when it is not an NS lookup. */
+function nsLookups(decl: ts.VariableDeclaration): Lookup[] | undefined {
   const init = decl.initializer;
   if (init === undefined) return undefined;
   if (
     ts.isPropertyAccessExpression(init) &&
     isNsCall(init.expression) &&
-    ts.isIdentifier(decl.name) &&
-    decl.name.text === init.name.text
+    ts.isIdentifier(decl.name)
   ) {
-    return [init.name.text];
+    return [{ name: init.name.text, local: decl.name.text }];
   }
   if (isNsCall(init) && ts.isObjectBindingPattern(decl.name)) {
-    const names: string[] = [];
+    const names: Lookup[] = [];
     for (const element of decl.name.elements) {
       if (
         element.propertyName !== undefined ||
@@ -46,7 +51,7 @@ function nsNames(decl: ts.VariableDeclaration): string[] | undefined {
       ) {
         return undefined;
       }
-      names.push(element.name.text);
+      names.push({ name: element.name.text, local: element.name.text });
     }
     return names;
   }
@@ -67,7 +72,7 @@ function lineSpan(source: string, node: ts.Node, sf: ts.SourceFile): Edit {
 
 /**
  * Rewrites one Sonora `.jsx`: deletes the `const NS=…` helper and every `X = NS().X` or
- * `{ A, B } = NS()` declaration, and imports each name after `import React`. `importPath` gives
+ * `{ A, B } = NS()` declaration (a renamed `Y = NS().X` imports `X as Y`), and imports each name after `import React`. `importPath` gives
  * the relative path to a component's `.jsx`, or undefined for a name no component exports.
  * Every other byte is Sonora's. Any other use of NS or the global namespace is refused.
  */
@@ -79,7 +84,7 @@ export function rewriteJsx(
   const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX);
   const edits: Edit[] = [];
   const removed = new Set<ts.Node>();
-  const names = new Set<string>();
+  const lookups = new Map<string, string>();
 
   for (const statement of sf.statements) {
     if (
@@ -99,14 +104,20 @@ export function rewriteJsx(
   const visit = (node: ts.Node): void => {
     if (ts.isVariableDeclarationList(node)) {
       const decls = node.declarations;
-      const lookups = decls.map(nsNames);
-      if (lookups.some((l) => l !== undefined)) {
-        for (const [i, lookup] of lookups.entries()) {
+      const found = decls.map(nsLookups);
+      if (found.some((l) => l !== undefined)) {
+        for (const [i, lookup] of found.entries()) {
           if (lookup === undefined) continue;
-          for (const name of lookup) names.add(name);
+          for (const { name, local } of lookup) {
+            const bound = lookups.get(local);
+            if (bound !== undefined && bound !== name) {
+              throw new Error(`${file}: ${local} is bound to both NS().${bound} and NS().${name}`);
+            }
+            lookups.set(local, name);
+          }
           removed.add(decls[i]!);
         }
-        const kept = decls.filter((_, i) => lookups[i] === undefined);
+        const kept = decls.filter((_, i) => found[i] === undefined);
         if (kept.length === 0) {
           if (!ts.isVariableStatement(node.parent))
             throw new Error(`${file}: unsupported NS() use`);
@@ -155,13 +166,14 @@ export function rewriteJsx(
       for (const element of bindings.elements) imported.add(element.name.text);
     }
   }
-  const lines = [...names]
-    .filter((name) => !imported.has(name))
-    .sort()
-    .map((name) => {
+  const lines = [...lookups]
+    .filter(([local]) => !imported.has(local))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([local, name]) => {
       const path = importPath(name);
       if (path === undefined) throw new Error(`${file}: NS().${name} names no Sonora component`);
-      return `\nimport { ${name} } from '${path}';`;
+      const binding = local === name ? name : `${name} as ${local}`;
+      return `\nimport { ${binding} } from '${path}';`;
     });
   if (lines.length > 0) {
     if (react === undefined) throw new Error(`${file}: no \`import React\` to import after`);
