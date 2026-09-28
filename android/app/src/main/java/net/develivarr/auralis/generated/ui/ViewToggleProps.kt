@@ -6,12 +6,7 @@ package net.develivarr.auralis.generated.ui
  * Sits at the top-right of the collection it controls.
  */
 data class ViewToggleProps(
-    val value: ViewToggleValue? = null,
-    val onChange: ((ViewToggleValue) -> Unit)? = null,
+    val value: Mode? = null,
+    val onChange: ((Mode) -> Unit)? = null,
     val platform: Platform? = null,
 )
-
-enum class ViewToggleValue(val value: String) {
-    LIST("list"),
-    GRID("grid"),
-}

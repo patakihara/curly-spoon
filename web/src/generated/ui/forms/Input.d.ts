@@ -8,3 +8,6 @@ export interface InputProps {
   value?: string;
   onChange?: (e: any) => void;
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function Input(props: InputProps): import('react').JSX.Element;

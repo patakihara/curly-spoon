@@ -40,8 +40,20 @@ describe('the props model read from Sonora .d.ts files', () => {
     ['() => void is a function to Unit', 'a: () => void;', fn([])],
     ['a callback maps its parameters', 'a: (from: number, to: number) => void;', fn([F, F])],
     ['DOMRect is a Rect', 'a: (origin: DOMRect | null) => void;', fn([opt({ kind: 'rect' })])],
-    ['any is Any?', 'a: any;', { kind: 'unknown' }],
-    ['an optional any parameter is dropped', 'a: (e?: any) => void;', fn([])],
+    [
+      "a handler's optional any parameter is its web event, dropped",
+      'onA?: (e?: any) => void;',
+      fn([]),
+    ],
+    ["a handler's any parameter is its web event, dropped", 'onA: (e: any) => void;', fn([])],
+    ['a web event parameter is dropped', 'onA?: (e: MouseEvent) => void;', fn([])],
+    [
+      'a web event parameter is dropped, whatever else the callback takes',
+      'onA?: (id: string, e?: React.MouseEvent<HTMLDivElement>) => void;',
+      fn([S]),
+    ],
+    ['JSX.Element is a slot', 'a: JSX.Element;', { kind: 'slot' }],
+    ['React.JSX.Element is a slot', 'a?: React.JSX.Element;', { kind: 'slot' }],
     [
       'a render prop is a composable function',
       'a: ((n: number) => ReactNode) | ReactNode;',
@@ -77,6 +89,71 @@ describe('the props model read from Sonora .d.ts files', () => {
     expect(model.shared).toEqual([
       { kind: 'enum', name: 'Platform', values: ['desktop', 'mobile'] },
     ]);
+  });
+
+  it('[M0.uikit/a] one value set is one enum, whatever the props are called', () => {
+    const model = modelOf({
+      'core/A.d.ts':
+        "export interface AView { defaultMode?: 'list' | 'grid'; }\nexport interface AProps { mode: 'list' | 'grid'; onMode?: (m: 'grid' | 'list') => void; }\n",
+      'core/B.d.ts':
+        "export interface BProps { value?: 'grid' | 'list'; mode?: 'list' | 'grid'; }\n",
+      'core/C.d.ts': "export interface CProps { download?: 'idle' | 'done'; }\n",
+      'core/D.d.ts': "export interface DProps { state: 'done' | 'idle'; }\n",
+    });
+    const types = (file: string) =>
+      model.files
+        .get(file)!
+        .filter((d): d is ClassDecl => d.kind === 'class')
+        .flatMap((d) => d.props.map((p) => p.type));
+    // The most used name wins; a tie goes to the longer, more specific name.
+    expect(types('A')).toEqual([named('Mode'), named('Mode'), fn([named('Mode')])]);
+    expect(types('B')).toEqual([named('Mode'), named('Mode')]);
+    expect(types('C')).toEqual([named('Download')]);
+    expect(types('D')).toEqual([named('Download')]);
+    expect(model.shared.map((e) => [e.name, e.values])).toEqual([
+      ['Download', ['idle', 'done']],
+      ['Mode', ['list', 'grid']],
+    ]);
+    expect(model.files.get('A')!.some((d) => d.kind === 'enum')).toBe(false);
+  });
+
+  it('[M0.uikit/a] one value set used twice in one component is one enum of that component', () => {
+    const decls = declsOf("  size?: 'sm' | 'md';\n  iconSize?: 'md' | 'sm';");
+    expect((decls[0] as ClassDecl).props.map((p) => p.type)).toEqual([
+      named('XSize'),
+      named('XSize'),
+    ]);
+    expect(decls.filter((d) => d.kind === 'enum')).toEqual([
+      { kind: 'enum', name: 'XSize', values: ['sm', 'md'] },
+    ]);
+  });
+
+  it('[M0.uikit/a] two value sets claiming one shared name each take their values as a suffix', () => {
+    const model = modelOf({
+      'core/A.d.ts': "export interface AProps { size?: 'sm' | 'md'; }\n",
+      'core/B.d.ts': "export interface BProps { size?: 'sm' | 'md'; }\n",
+      'core/C.d.ts': "export interface CProps { size?: 'sm' | 'md' | 'lg'; }\n",
+      'core/D.d.ts': "export interface DProps { size?: 'sm' | 'md' | 'lg'; }\n",
+    });
+    expect(model.shared.map((e) => e.name)).toEqual(['SizeSmMd', 'SizeSmMdLg']);
+  });
+
+  it('[M0.uikit/a] an enum named like a Kotlin or Compose type takes the Sonora prefix', () => {
+    const model = modelOf({
+      'core/A.d.ts': "export interface AProps { color?: 'red' | 'blue'; }\n",
+      'core/B.d.ts': "export interface BProps { color?: 'red' | 'blue'; }\n",
+    });
+    expect((model.files.get('A')![0] as ClassDecl).props[0]!.type).toEqual(named('SonoraColor'));
+    expect(model.shared.map((e) => e.name)).toEqual(['SonoraColor']);
+  });
+
+  it('[M0.uikit/a] refuses a class named like a Kotlin or Compose type', () => {
+    expect(() =>
+      modelOf({
+        'core/X.d.ts':
+          'export interface Text { a: string; }\nexport interface XProps { t: Text; }\n',
+      }),
+    ).toThrow('Text is a Kotlin or Compose type name');
   });
 
   it('[M0.uikit/a] a literal union in a callback parameter reuses the component enum with that value set', () => {
@@ -171,14 +248,62 @@ describe('the props model read from Sonora .d.ts files', () => {
     ]);
   });
 
-  it('[M0.uikit/a] a DOM-only prop is omitted and named as web only', () => {
+  it('[M0.uikit/a] only the web-only allowlist is omitted, and named as web only', () => {
     const cls = classOf(
-      '  children?: ReactNode;\n  style?: CSSProperties;\n  onScroll?: (event: UIEvent<HTMLDivElement>) => void;\n  scrollRef?: { current: HTMLDivElement | null } | ((el: HTMLDivElement | null) => void);\n  onOpen?: (item: any, event?: React.MouseEvent) => void;',
+      '  children?: ReactNode;\n  style?: CSSProperties;\n  className?: string;\n  onScroll?: (event: UIEvent<HTMLDivElement>) => void;\n  scrollRef?: { current: HTMLDivElement | null } | ((el: HTMLDivElement | null) => void);',
       "import { ReactNode, CSSProperties, UIEvent } from 'react';\n",
     );
-    expect(cls.props.map((p) => p.name)).toEqual(['children', 'onOpen']);
-    expect(cls.props[1]!.type).toEqual(fn([{ kind: 'unknown' }]));
-    expect(cls.webOnly).toEqual(['style', 'onScroll', 'scrollRef']);
+    expect(cls.props.map((p) => [p.name, p.type])).toEqual([
+      ['children', slot],
+      ['onScroll', fn([])],
+    ]);
+    expect(cls.webOnly).toEqual(['style', 'className', 'scrollRef']);
+  });
+
+  it.each<[string, string, string]>([
+    ['an element', 'el?: HTMLDivElement;', 'X.el: unsupported type HTMLDivElement'],
+    ['a DOM Element', 'el?: Element;', 'X.el: unsupported type Element'],
+    ['a ref', 'r?: RefObject<HTMLElement>;', 'X.r: unsupported type RefObject<HTMLElement>'],
+    [
+      'an element parameter',
+      'onEl?: (el: HTMLElement) => void;',
+      'X.onEl: unsupported type HTMLElement',
+    ],
+    ['an element result', 'at?: () => HTMLElement;', 'X.at: unsupported type HTMLElement'],
+    ['any', 'a: any;', 'X.a: unsupported type any'],
+    ['unknown', 'a?: unknown;', 'X.a: unsupported type unknown'],
+    ['any in a list', 'a?: any[];', 'X.a: unsupported type any'],
+    [
+      'an any parameter outside a handler',
+      'pick: (item: any) => void;',
+      'X.pick: unsupported type any',
+    ],
+    ['a web event outside a callback', 'e?: MouseEvent;', 'X.e: unsupported type MouseEvent'],
+    [
+      'a rest parameter',
+      'onMany?: (...ids: string[]) => void;',
+      'X.onMany: unsupported rest parameter ...ids: string[]',
+    ],
+  ])('[M0.uikit/a] refuses %s, naming the component and prop', (_title, member, message) => {
+    expect(() => classOf(`  ${member}`, "import { RefObject } from 'react';\n")).toThrow(message);
+  });
+
+  it("[M0.uikit/a] an input-like component's onChange carries the string value", () => {
+    const cls = classOf('  value?: string;\n  onChange?: (e: any) => void;');
+    expect(cls.props[1]!.type).toEqual(fn([S]));
+    // Without a string value, the any is just the web event.
+    expect(classOf('  checked?: boolean;\n  onChange?: (e: any) => void;').props[1]!.type).toEqual(
+      fn([]),
+    );
+  });
+
+  it("[M0.uikit/a] LibraryShell's opaque detail item is Any?, the one known any", () => {
+    const model = modelOf({
+      'layout/LibraryShell.d.ts':
+        'export interface LibraryShellContext { detail: any; openDetail: (item: any, event?: React.MouseEvent) => void; }\nexport interface LibraryShellProps { view: string; }\n',
+    });
+    const ctx = model.files.get('LibraryShell')![0] as ClassDecl;
+    expect(ctx.props.map((p) => p.type)).toEqual([{ kind: 'unknown' }, fn([{ kind: 'unknown' }])]);
   });
 
   it('[M0.uikit/a] refuses a type it cannot map, naming the component and prop', () => {

@@ -9,7 +9,7 @@ package net.develivarr.auralis.generated.ui
 data class BrowseCardProps(
     val title: String,
     /** One of the 17 accent hue names; defaults to a hue derived deterministically from `title`. */
-    val color: Color? = null,
+    val color: SonoraColor? = null,
     /** Tilted thumbnail anchored to the bottom-right corner. */
     val image: String? = null,
     val onClick: (() -> Unit)? = null,

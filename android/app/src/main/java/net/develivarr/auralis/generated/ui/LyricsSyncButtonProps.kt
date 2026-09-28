@@ -7,13 +7,7 @@ package net.develivarr.auralis.generated.ui
  * only, then no sync and no indication. The glyph turns over as the mode changes.
  */
 data class LyricsSyncButtonProps(
-    val mode: LyricsSyncButtonMode? = null,
+    val mode: SyncMode? = null,
     /** Receives the next mode in the cycle. */
-    val onChange: ((LyricsSyncButtonMode) -> Unit)? = null,
+    val onChange: ((SyncMode) -> Unit)? = null,
 )
-
-enum class LyricsSyncButtonMode(val value: String) {
-    SYNC("sync"),
-    DOT("dot"),
-    OFF("off"),
-}

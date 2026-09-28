@@ -9,3 +9,6 @@ export interface IconButtonProps {
   label: string;
   onClick?: () => void;
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function IconButton(props: IconButtonProps): import('react').JSX.Element;

@@ -20,3 +20,6 @@ export interface ButtonProps {
    */
   pressed?: boolean;
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function Button(props: ButtonProps): import('react').JSX.Element;

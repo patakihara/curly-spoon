@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 data class ChipProps(
     val children: (@Composable () -> Unit)?,
     /** One of the 17 accent hues (renders as a big colorful genre card like Symphony's Genres grid). Omit for a plain outlined tag. */
-    val color: Color? = null,
+    val color: SonoraColor? = null,
     val count: Float? = null,
     val selected: Boolean? = null,
     val platform: Platform? = null,

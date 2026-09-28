@@ -11,3 +11,6 @@ export interface BottomNavProps {
   active: string;
   onChange?: (key: string) => void;
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function BottomNav(props: BottomNavProps): import('react').JSX.Element;

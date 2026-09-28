@@ -1,7 +1,9 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 import { afterEach, describe, expect, it } from 'vitest';
 import { discoverComponents } from './sonora.js';
 import { generateWeb, HEADER, rewriteJsx } from './web.js';
@@ -194,12 +196,10 @@ describe('the web UI package', () => {
           '',
         ].join('\n'),
     );
-    // Button's .d.ts declares only its props, so the index declares the function beside them.
     expect(files.get('index.d.ts')).toBe(
       HEADER +
         [
-          "export type { ButtonProps } from './core/Button';",
-          "export declare function Button(props: import('./core/Button').ButtonProps): import('react').JSX.Element;",
+          "export { Button, type ButtonProps } from './core/Button';",
           "export { ContentPane, type ContentPaneProps } from './layout/ContentPane';",
           "export { EditableList, type EditableListProps, type EditableListRow } from './layout/EditableList';",
           "export { FollowButton, type FollowButtonProps } from './core/FollowButton';",
@@ -207,5 +207,53 @@ describe('the web UI package', () => {
           '',
         ].join('\n'),
     );
+  });
+});
+
+describe('a .d.ts that declares only the props', () => {
+  let tmp: string | undefined;
+  afterEach(() => {
+    if (tmp !== undefined) rmSync(tmp, { recursive: true, force: true });
+    tmp = undefined;
+  });
+
+  it('[M0.uikit/a] gets its function declared beside the props, so a direct .jsx import type-checks', () => {
+    const files = generateWeb(discoverComponents(fixtures));
+    expect(files.get('core/Button.d.ts')).toBe(
+      HEADER +
+        fixture('core/Button.d.ts') +
+        '\n/** Declared by pnpm gen: Sonora declares only the props. */\n' +
+        "export declare function Button(props: ButtonProps): import('react').JSX.Element;\n",
+    );
+
+    tmp = mkdtempSync(join(tmpdir(), 'auralis-uikit-direct-'));
+    for (const [rel, text] of files) {
+      mkdirSync(dirname(join(tmp, rel)), { recursive: true });
+      writeFileSync(join(tmp, rel), text);
+    }
+    const consumer = join(tmp, 'consumer.ts');
+    writeFileSync(
+      consumer,
+      "import { Button } from './core/Button.jsx';\nexport const node = Button({ children: 'Play' });\n",
+    );
+    const require = createRequire(import.meta.url);
+    const reactTypes = join(dirname(require.resolve('@types/react/package.json')), 'index.d.ts');
+    const program = ts.createProgram({
+      rootNames: [consumer],
+      options: {
+        noEmit: true,
+        strict: true,
+        skipLibCheck: true,
+        target: ts.ScriptTarget.ES2022,
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.Bundler,
+        paths: { react: [reactTypes] },
+        types: [],
+      },
+    });
+    const errors = ts
+      .getPreEmitDiagnostics(program, program.getSourceFile(consumer))
+      .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+    expect(errors).toEqual([]);
   });
 });

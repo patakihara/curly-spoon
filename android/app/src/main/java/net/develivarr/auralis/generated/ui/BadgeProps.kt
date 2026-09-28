@@ -8,7 +8,7 @@ data class BadgeProps(
     val children: (@Composable () -> Unit)?,
     val tone: BadgeTone? = null,
     /** md is the status-pill size used in list rows; sm is the count pill. */
-    val size: BadgeSize? = null,
+    val size: SizeSmMd? = null,
     /** Leading Material Symbols Rounded glyph name — the verified check, the finished tick. */
     val icon: String? = null,
     /** Square with --radius-xs instead of a pill: the explicit-content "E" marker. */
@@ -23,9 +23,4 @@ enum class BadgeTone(val value: String) {
     WARNING("warning"),
     ERROR("error"),
     NEUTRAL("neutral"),
-}
-
-enum class BadgeSize(val value: String) {
-    SM("sm"),
-    MD("md"),
 }

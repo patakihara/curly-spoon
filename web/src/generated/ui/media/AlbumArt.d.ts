@@ -4,3 +4,6 @@ export interface AlbumArtProps {
   size?: number;
   platform?: 'desktop' | 'mobile';
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function AlbumArt(props: AlbumArtProps): import('react').JSX.Element;

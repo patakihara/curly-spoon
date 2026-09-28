@@ -1,7 +1,8 @@
 /**
  * The web UI package: Sonora's `.jsx` sources with their global-namespace lookups
- * (`NS().CoverArt`) turned into ordinary imports, each beside its unchanged `.d.ts`, plus an
- * index of both. A source copy, not a compile: Vite compiles it with the rest of web/.
+ * (`NS().CoverArt`) turned into ordinary imports, each beside its `.d.ts` (unchanged, but for the
+ * function a props-only `.d.ts` lacks), plus an index of both. A source copy, not a compile: Vite
+ * compiles it with the rest of web/.
  */
 import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
@@ -226,25 +227,25 @@ export function generateWeb(components: Component[]): Map<string, string> {
       HEADER + rewriteJsx(jsx, `${folder}/${name}.jsx`, importPath),
     );
     const types = readFileSync(component.dts, 'utf8');
-    files.set(`${folder}/${name}.d.ts`, HEADER + types);
-
-    const from = `./${folder}/${name}`;
-    js.push(`export { ${name} } from '${from}.jsx';`);
     const declared = declarationsOf(component, types);
-    if (declared.hasFunction) {
-      dts.push(
-        `export { ${[name, ...declared.types.map((t) => `type ${t}`)].join(', ')} } from '${from}';`,
-      );
-    } else {
-      // A few .d.ts files declare only the props; the index declares the function beside them.
+    let dtsText = HEADER + types;
+    if (!declared.hasFunction) {
+      // A few .d.ts files declare only the props; the copy declares the function beside them, so
+      // the index and a direct `./X.jsx` import both see it.
       if (!declared.types.includes(`${name}Props`)) {
         throw new Error(`${folder}/${name}.d.ts declares neither ${name} nor ${name}Props`);
       }
-      dts.push(`export type { ${declared.types.join(', ')} } from '${from}';`);
-      dts.push(
-        `export declare function ${name}(props: import('${from}').${name}Props): import('react').JSX.Element;`,
-      );
+      dtsText +=
+        `${types.endsWith('\n') ? '' : '\n'}\n/** Declared by pnpm gen: Sonora declares only the props. */\n` +
+        `export declare function ${name}(props: ${name}Props): import('react').JSX.Element;\n`;
     }
+    files.set(`${folder}/${name}.d.ts`, dtsText);
+
+    const from = `./${folder}/${name}`;
+    js.push(`export { ${name} } from '${from}.jsx';`);
+    dts.push(
+      `export { ${[name, ...declared.types.map((t) => `type ${t}`)].join(', ')} } from '${from}';`,
+    );
   }
   files.set('index.js', `${HEADER}${js.join('\n')}\n`);
   files.set('index.d.ts', `${HEADER}${dts.join('\n')}\n`);

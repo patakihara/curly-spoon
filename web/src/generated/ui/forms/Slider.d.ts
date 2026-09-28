@@ -6,3 +6,6 @@ export interface SliderProps {
   /** Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). */
   platform?: 'desktop' | 'mobile';
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function Slider(props: SliderProps): import('react').JSX.Element;

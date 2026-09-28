@@ -6,7 +6,34 @@ enum class Align(val value: String) {
     CENTER("center"),
 }
 
-enum class Color(val value: String) {
+enum class Download(val value: String) {
+    IDLE("idle"),
+    DOWNLOADING("downloading"),
+    DONE("done"),
+}
+
+enum class Mode(val value: String) {
+    LIST("list"),
+    GRID("grid"),
+}
+
+enum class Platform(val value: String) {
+    DESKTOP("desktop"),
+    MOBILE("mobile"),
+}
+
+enum class SizeSmMd(val value: String) {
+    SM("sm"),
+    MD("md"),
+}
+
+enum class SizeSmMdLg(val value: String) {
+    SM("sm"),
+    MD("md"),
+    LG("lg"),
+}
+
+enum class SonoraColor(val value: String) {
     RED("red"),
     ORANGE("orange"),
     AMBER("amber"),
@@ -24,16 +51,6 @@ enum class Color(val value: String) {
     FUCHSIA("fuchsia"),
     PINK("pink"),
     ROSE("rose"),
-}
-
-enum class Mode(val value: String) {
-    LIST("list"),
-    GRID("grid"),
-}
-
-enum class Platform(val value: String) {
-    DESKTOP("desktop"),
-    MOBILE("mobile"),
 }
 
 enum class SyncMode(val value: String) {

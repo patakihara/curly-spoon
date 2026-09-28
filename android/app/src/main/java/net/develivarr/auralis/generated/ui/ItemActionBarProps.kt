@@ -10,7 +10,7 @@ data class ItemActionBarProps(
     val saved: Boolean? = null,
     /** Toggles the saved state. Given, renders the save control. */
     val onSave: (() -> Unit)? = null,
-    val download: ItemActionBarDownload? = null,
+    val download: Download? = null,
     /** 0–1; indeterminate when null and `download` is 'downloading'. */
     val downloadProgress: Float? = null,
     /** Given, renders the download control (a composed DownloadButton). */
@@ -26,9 +26,3 @@ data class ItemActionBarProps(
     val size: Float? = null,
     val platform: Platform? = null,
 )
-
-enum class ItemActionBarDownload(val value: String) {
-    IDLE("idle"),
-    DOWNLOADING("downloading"),
-    DONE("done"),
-}

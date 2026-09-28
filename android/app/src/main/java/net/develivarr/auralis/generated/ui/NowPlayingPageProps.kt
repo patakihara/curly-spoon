@@ -41,7 +41,7 @@ data class NowPlayingPageProps(
     /** Lyrics preview (mobile only) — the full sheet lives on LyricsPage. */
     val lyrics: List<String>? = null,
     val lyricsActiveIndex: Float? = null,
-    val lyricsSyncMode: NowPlayingPageLyricsSyncMode? = null,
+    val lyricsSyncMode: SyncMode? = null,
     /** Receives the preview row's rect, so the full page can expand out of it. */
     val onOpenLyrics: ((Rect?) -> Unit)? = null,
     /** Queue preview (mobile only) — the full list lives on QueuePage. */
@@ -61,9 +61,3 @@ data class NowPlayingPageProps(
     /** Force the app bar's hairline on — used while a sub-page sits against it. Otherwise scroll-driven. */
     val divider: Boolean? = null,
 )
-
-enum class NowPlayingPageLyricsSyncMode(val value: String) {
-    SYNC("sync"),
-    DOT("dot"),
-    OFF("off"),
-}

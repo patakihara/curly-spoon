@@ -7,7 +7,7 @@ data class ButtonProps(
     val children: (@Composable () -> Unit)?,
     /** Visual style. Primary = filled accent; secondary = outlined surface; ghost = text-only; danger = destructive red. */
     val variant: ButtonVariant? = null,
-    val size: ButtonSize? = null,
+    val size: SizeSmMdLg? = null,
     /** Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). */
     val platform: Platform? = null,
     val icon: (@Composable () -> Unit)? = null,
@@ -26,10 +26,4 @@ enum class ButtonVariant(val value: String) {
     SECONDARY("secondary"),
     GHOST("ghost"),
     DANGER("danger"),
-}
-
-enum class ButtonSize(val value: String) {
-    SM("sm"),
-    MD("md"),
-    LG("lg"),
 }

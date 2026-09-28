@@ -10,3 +10,6 @@ export interface ChipProps {
   platform?: 'desktop' | 'mobile';
   onClick?: () => void;
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function Chip(props: ChipProps): import('react').JSX.Element;

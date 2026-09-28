@@ -12,10 +12,11 @@ import androidx.compose.runtime.Composable
  * ContentPane and SideSheet use this internally; wrap your own scrollers in it when a screen
  * owns its scrolling (mobile pages under `AppShell scroll={false}`).
  *
- * Web only: onScroll, style, scrollRef.
+ * Web only: style, scrollRef.
  */
 data class ScrollAreaProps(
     val children: (@Composable () -> Unit)? = null,
+    val onScroll: (() -> Unit)? = null,
     val axis: ScrollAreaAxis? = null,
     /** Thumb thickness in px. Default 4. */
     val thumbWidth: Float? = null,

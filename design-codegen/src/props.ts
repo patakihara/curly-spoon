@@ -3,12 +3,21 @@
  * sealed interfaces and inline classes its props need, typed the way Kotlin will spell them.
  *
  * Types are walked syntactically, so `ReactNode` is recognised by name even inside a union; the
- * checker only resolves references (imported interfaces, `Pick` and `Omit`). Anything the table
- * below cannot map is refused as `<Component>.<prop>: unsupported type <text>`.
+ * checker only resolves references (imported interfaces, `Pick` and `Omit`). What is known maps;
+ * anything else is refused as `<Component>.<prop>: unsupported type <text>`, never dropped.
  *
  * Deliberately lossy, and fine for props classes: null and undefined collapse into one nullable
- * type, every `number` is a Float, `string | Obj` keeps only `Obj`, and a prop that only makes
- * sense in a browser (a style, a DOM ref, a DOM event handler) is left out and named as web only.
+ * type, every `number` is a Float, and `string | Obj` keeps only `Obj`. Only the props on
+ * WEB_ONLY_PROPS are left out, named as web only. A callback's web event parameter is dropped,
+ * since a Compose callback takes no event: `onClick: (e: MouseEvent) => void` is `() -> Unit`.
+ *
+ * One string literal value set is one enum, whatever the props holding it are called. Used by one
+ * component, it lives in that component's file, named `<Owner><Prop>` for its first property (or
+ * `<Owner><Prop>Arg` for a callback parameter when no property holds it). Used by two or more, it
+ * is shared, named for the property name most of its uses carry; a tie goes to the longer, more
+ * specific name, then the alphabetically first. A name two shared value sets both claim goes to
+ * neither: each appends its values (`SizeSmMd`, `SizeSmMdLg`). An enum name Kotlin or Compose
+ * already uses takes the `Sonora` prefix (`SonoraColor`).
  */
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -22,7 +31,7 @@ export type KType =
   | { kind: 'float' }
   /** A non-null value of any type: `string | number` keys and ids, compared by equality. */
   | { kind: 'any' }
-  /** TypeScript's `any`: Kotlin's `Any?`. */
+  /** One of OPAQUE_ITEMS, a caller's own item the kit only passes back: Kotlin's `Any?`. */
   | { kind: 'unknown' }
   /** `DOMRect`, as Compose's `Rect`. */
   | { kind: 'rect' }
@@ -31,7 +40,7 @@ export type KType =
   | { kind: 'typeParam'; name: string }
   | { kind: 'list'; item: KType }
   | { kind: 'map'; value: KType }
-  /** A composable slot, `@Composable () -> Unit`. `ReactNode` is a nullable one. */
+  /** A composable slot, `@Composable () -> Unit`: `JSX.Element`. `ReactNode` is a nullable one. */
   | { kind: 'slot' }
   | { kind: 'fn'; params: KType[]; returns: KType | 'unit'; composable: boolean }
   | { kind: 'nullable'; type: KType };
@@ -76,24 +85,93 @@ export interface PropsModel {
 }
 
 const PROPERTY_NAME = /^[a-z][A-Za-z0-9]*$/;
-/** Types only a browser has. A prop that needs one is web only. */
-const DOM_TYPES = new Set([
+/** The props only a browser can use: left out, and named as web only. */
+const WEB_ONLY_PROPS = new Set(['style', 'className', 'scrollRef']);
+/** A browser event. A callback's parameter of one is dropped; anywhere else it is refused. */
+const WEB_EVENTS = new Set([
+  'AnimationEvent',
   'ChangeEvent',
-  'CSSProperties',
+  'ClipboardEvent',
   'DragEvent',
-  'Element',
   'Event',
   'FocusEvent',
+  'FormEvent',
+  'InputEvent',
   'KeyboardEvent',
   'MouseEvent',
-  'MutableRefObject',
   'PointerEvent',
-  'Ref',
-  'RefCallback',
-  'RefObject',
   'SyntheticEvent',
+  'TouchEvent',
+  'TransitionEvent',
   'UIEvent',
+  'WheelEvent',
 ]);
+/**
+ * The `any`s known to hold a caller's own item, which the kit only hands back: `Any?`. Every other
+ * `any` or `unknown` is refused, bar a handler's parameter, which is its web event.
+ */
+const OPAQUE_ITEMS = new Set([
+  'LibraryShellContext.detail',
+  'LibraryShellContext.openDetail(item)',
+]);
+/**
+ * Names Kotlin's standard library or Compose already give a type. An enum named one takes the
+ * `Sonora` prefix; a class named one is refused.
+ */
+const RESERVED = new Set([
+  'Alignment',
+  'Any',
+  'Arrangement',
+  'Array',
+  'Boolean',
+  'Box',
+  'Brush',
+  'Button',
+  'Byte',
+  'Card',
+  'Char',
+  'Collection',
+  'Color',
+  'Column',
+  'Comparable',
+  'Composable',
+  'Double',
+  'Dp',
+  'Enum',
+  'Error',
+  'Exception',
+  'Float',
+  'Icon',
+  'Image',
+  'Int',
+  'Iterable',
+  'Lazy',
+  'List',
+  'Long',
+  'Map',
+  'Modifier',
+  'Nothing',
+  'Number',
+  'Offset',
+  'Pair',
+  'Rect',
+  'Result',
+  'Row',
+  'Sequence',
+  'Set',
+  'Shape',
+  'Short',
+  'Size',
+  'State',
+  'String',
+  'Surface',
+  'Text',
+  'TextStyle',
+  'Triple',
+  'Unit',
+]);
+/** An event handler: `onClick`, `onChange`. */
+const isHandler = (prop: string) => /^on[A-Z]/.test(prop);
 
 const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const singular = (name: string) => (name.endsWith('s') ? name.slice(0, -1) : `${name}Item`);
@@ -108,26 +186,15 @@ const isStringLiteral = (node: ts.TypeNode): node is ts.LiteralTypeNode =>
   ts.isLiteralTypeNode(node) && ts.isStringLiteral(node.literal);
 const isReactNode = (node: ts.TypeNode) =>
   ts.isTypeReferenceNode(node) && rightmost(node.typeName) === 'ReactNode';
+const isJsxElement = (node: ts.TypeNode) =>
+  ts.isTypeReferenceNode(node) &&
+  ['JSX.Element', 'React.JSX.Element'].includes(node.typeName.getText());
+const isWebEvent = (node: ts.TypeNode) =>
+  ts.isTypeReferenceNode(node) && WEB_EVENTS.has(rightmost(node.typeName));
+const isAnyOrUnknown = (node: ts.TypeNode) =>
+  node.kind === ts.SyntaxKind.AnyKeyword || node.kind === ts.SyntaxKind.UnknownKeyword;
 const nullable = (type: KType): KType =>
   type.kind === 'nullable' || type.kind === 'unknown' ? type : { kind: 'nullable', type };
-
-function containsDom(node: ts.Node): boolean {
-  if (ts.isTypeReferenceNode(node)) {
-    const name = rightmost(node.typeName);
-    if (DOM_TYPES.has(name) || /^HTML\w*Element$/.test(name)) return true;
-  }
-  return ts.forEachChild(node, (child) => containsDom(child) || undefined) ?? false;
-}
-
-/** A function type's parameters, less the optional DOM or `any` ones a callback can ignore. */
-const keptParams = (fn: ts.FunctionTypeNode) =>
-  fn.parameters.filter(
-    (p) =>
-      !(
-        p.questionToken !== undefined &&
-        (p.type === undefined || p.type.kind === ts.SyntaxKind.AnyKeyword || containsDom(p.type))
-      ),
-  );
 
 /** The string values of a pure string literal union (nulls aside), else undefined. */
 function literalValues(node: ts.TypeNode): string[] | undefined {
@@ -156,17 +223,29 @@ function docOf(node: ts.Node, sf: ts.SourceFile): string | undefined {
 }
 
 interface Ctx {
-  /** The interface whose props a callback's literal parameter is matched against. */
-  iface: string;
+  /** The component whose file this lands in. */
+  file: string;
   /** The class the prop belongs to, less any `Props` suffix: the prefix for what it spawns. */
   owner: string;
   prop: string;
+  /** The callback parameter being mapped, if any. */
+  param?: string;
   /** The name an inline class, enum or sealed interface made here takes. */
   name: string;
-  /** The enum name a literal union here takes, when it differs from `name`. */
-  enumName?: string;
+  /** Whether the class holds a string `value`, so its `onChange` carries that string. */
+  inputLike: boolean;
   typeParams: Set<string>;
   decls: Decl[];
+}
+
+/** One string literal value set, and every place it is used. */
+interface EnumGroup {
+  decl: EnumDecl;
+  /** The one type object every use returns, named once all uses are known. */
+  type: { kind: 'named'; name: string; args: KType[] };
+  uses: { local: string; prop: string; param: boolean; values: string[] }[];
+  /** Each component using it, with the declarations it was placed in. */
+  files: Map<string, Decl[]>;
 }
 
 export function readProps(components: Component[]): PropsModel {
@@ -201,80 +280,42 @@ export function readProps(components: Component[]): PropsModel {
     if (taken.has(name)) throw new Error(`${name} is declared twice`);
     taken.add(name);
   };
+  const declareClass = (name: string) => {
+    if (RESERVED.has(name)) throw new Error(`${name} is a Kotlin or Compose type name`);
+    declare(name);
+  };
   const interfaceNames = new Set<string>();
   for (const { interfaces } of sources) {
     for (const iface of interfaces) {
-      declare(iface.name.text);
+      declareClass(iface.name.text);
       interfaceNames.add(iface.name.text);
     }
   }
 
-  // A prop name with one value set in two or more interfaces shares one enum, named for the prop.
-  const valueSets = new Map<string, Map<string, { values: string[]; count: number }>>();
-  for (const { interfaces } of sources) {
-    for (const iface of interfaces) {
-      for (const member of iface.members) {
-        if (!ts.isPropertySignature(member) || member.type === undefined) continue;
-        const values = literalValues(member.type);
-        if (values === undefined) continue;
-        const prop = member.name.getText();
-        const sets = valueSets.get(prop) ?? new Map();
-        valueSets.set(prop, sets);
-        const set = sets.get(setKey(values)) ?? { values, count: 0 };
-        set.count++;
-        sets.set(setKey(values), set);
-      }
+  const groups = new Map<string, EnumGroup>();
+  /** The enum for a literal value set used here; named once every use is known. */
+  function useEnum(values: string[], ctx: Ctx): KType {
+    const key = setKey(values);
+    let group = groups.get(key);
+    if (group === undefined) {
+      group = {
+        decl: { kind: 'enum', name: '', values },
+        type: { kind: 'named', name: '', args: [] },
+        uses: [],
+        files: new Map(),
+      };
+      groups.set(key, group);
     }
-  }
-  const sharedValues = new Map<string, string[]>();
-  for (const [prop, sets] of valueSets) {
-    const qualifying = [...sets.values()].filter((s) => s.count >= 2);
-    // Two value sets both claiming the prop's name stay per component.
-    if (qualifying.length === 1) sharedValues.set(prop, qualifying[0]!.values);
-  }
-  const sharedName = (prop: string, values: string[]) => {
-    const shared = sharedValues.get(prop);
-    return shared !== undefined && setKey(shared) === setKey(values) ? pascal(prop) : undefined;
-  };
-  // Each interface's literal props, for its callbacks' literal parameters.
-  const interfaceEnums = new Map<
-    string,
-    { key: string; name: string; values: string[]; shared: boolean }[]
-  >();
-  for (const { interfaces } of sources) {
-    for (const iface of interfaces) {
-      const owner = iface.name.text.replace(/Props$/, '');
-      const enums = [];
-      for (const member of iface.members) {
-        if (!ts.isPropertySignature(member) || member.type === undefined) continue;
-        const values = literalValues(member.type);
-        if (values === undefined) continue;
-        const prop = member.name.getText();
-        const shared = sharedName(prop, values);
-        enums.push({
-          key: setKey(values),
-          name: shared ?? `${owner}${pascal(prop)}`,
-          values: shared !== undefined ? sharedValues.get(prop)! : values,
-          shared: shared !== undefined,
-        });
-      }
-      interfaceEnums.set(iface.name.text, enums);
+    group.uses.push(
+      ctx.param !== undefined
+        ? { local: `${ctx.owner}${pascal(ctx.prop)}Arg`, prop: ctx.param, param: true, values }
+        : { local: ctx.name, prop: ctx.prop, param: false, values },
+    );
+    if (!group.files.has(ctx.file)) {
+      group.files.set(ctx.file, ctx.decls);
+      ctx.decls.push(group.decl);
     }
-  }
-
-  const shared: EnumDecl[] = [];
-  const enums = new Map<string, string>();
-  /** The enum `name`, declared in `into` the first time it is asked for. */
-  function emitEnum(name: string, values: string[], into: Decl[]): KType {
-    const known = enums.get(name);
-    if (known === undefined) {
-      declare(name);
-      enums.set(name, setKey(values));
-      into.push({ kind: 'enum', name, values });
-    } else if (known !== setKey(values)) {
-      throw new Error(`${name} is declared twice, with different values`);
-    }
-    return { kind: 'named', name, args: [] };
+    return group.type;
   }
 
   const deferred: (() => void)[] = [];
@@ -295,16 +336,15 @@ export function readProps(components: Component[]): PropsModel {
         return { kind: 'boolean' };
       case ts.SyntaxKind.NumberKeyword:
         return { kind: 'float' };
-      case ts.SyntaxKind.AnyKeyword:
-        return { kind: 'unknown' };
+      case ts.SyntaxKind.AnyKeyword: {
+        const at = `${ctx.owner}.${ctx.prop}${ctx.param !== undefined ? `(${ctx.param})` : ''}`;
+        return OPAQUE_ITEMS.has(at) ? { kind: 'unknown' } : fail(node, ctx);
+      }
     }
     if (isStringLiteral(node) || ts.isUnionTypeNode(node)) {
       const values = literalValues(node);
       if (values !== undefined) {
-        const type =
-          ctx.enumName !== undefined
-            ? emitEnum(ctx.enumName, values, shared)
-            : emitEnum(ctx.name, values, ctx.decls);
+        const type = useEnum(values, ctx);
         return ts.isUnionTypeNode(node) && node.types.map(unparen).some(isNullish)
           ? nullable(type)
           : type;
@@ -320,10 +360,7 @@ export function readProps(components: Component[]): PropsModel {
     return fail(node, ctx);
   }
 
-  const itemCtx = (ctx: Ctx): Ctx => {
-    const { enumName: _, ...rest } = ctx;
-    return { ...rest, name: singular(ctx.name) };
-  };
+  const itemCtx = (ctx: Ctx): Ctx => ({ ...ctx, name: singular(ctx.name) });
 
   function mapUnion(node: ts.UnionTypeNode, ctx: Ctx): KType {
     const parts = node.types.map(unparen);
@@ -351,7 +388,7 @@ export function readProps(components: Component[]): PropsModel {
       ) {
         type = { kind: 'any' };
       } else {
-        declare(ctx.name);
+        declareClass(ctx.name);
         const members = rest.map((t) => mapType(t, ctx));
         ctx.decls.push({ kind: 'sealed', name: ctx.name, members });
         type = { kind: 'named', name: ctx.name, args: [] };
@@ -375,28 +412,41 @@ export function readProps(components: Component[]): PropsModel {
     return orNull ? nullable(type) : type;
   }
 
+  /**
+   * A function type. A web event parameter is dropped, and so is a handler's `any` one, which is
+   * its web event too; `onChange(e: any)` on a class with a string `value` carries that string,
+   * as Sonora's own `SearchBar` and `FieldRow` type it. A rest parameter is refused.
+   */
   function mapFn(node: ts.FunctionTypeNode, ctx: Ctx, composable = false): KType {
-    const params = keptParams(node).map((p) => {
-      if (p.type === undefined) return fail(node, ctx);
-      const values = literalValues(p.type);
-      let type: KType;
-      if (values !== undefined) {
-        const own = interfaceEnums.get(ctx.iface)?.find((e) => e.key === setKey(values));
-        type =
-          own !== undefined
-            ? emitEnum(own.name, own.values, own.shared ? shared : ctx.decls)
-            : emitEnum(`${ctx.owner}${pascal(ctx.prop)}Arg`, values, ctx.decls);
-      } else {
-        const { enumName: _, ...rest } = ctx;
-        type = mapType(p.type, { ...rest, name: `${ctx.name}${pascal(p.name.getText())}` });
+    const params: KType[] = [];
+    for (const p of node.parameters) {
+      if (p.dotDotDotToken !== undefined) {
+        throw new Error(`${ctx.owner}.${ctx.prop}: unsupported rest parameter ${p.getText()}`);
       }
-      return p.questionToken !== undefined ? nullable(type) : type;
-    });
+      if (p.type === undefined) return fail(node, ctx);
+      const param = p.name.getText();
+      const pType = unparen(p.type);
+      if (isWebEvent(pType)) continue;
+      if (
+        isAnyOrUnknown(pType) &&
+        !OPAQUE_ITEMS.has(`${ctx.owner}.${ctx.prop}(${param})`) &&
+        isHandler(ctx.prop)
+      ) {
+        if (ctx.inputLike && ctx.prop === 'onChange' && node.parameters.length === 1) {
+          params.push({ kind: 'string' });
+        }
+        continue;
+      }
+      const type = mapType(p.type, { ...ctx, param, name: `${ctx.name}${pascal(param)}` });
+      params.push(p.questionToken !== undefined ? nullable(type) : type);
+    }
     const ret = unparen(node.type);
     if (ret.kind === ts.SyntaxKind.VoidKeyword) {
       return { kind: 'fn', params, returns: 'unit', composable };
     }
-    if (isReactNode(ret)) return { kind: 'fn', params, returns: 'unit', composable: true };
+    if (isReactNode(ret) || isJsxElement(ret)) {
+      return { kind: 'fn', params, returns: 'unit', composable: true };
+    }
     return { kind: 'fn', params, returns: mapType(ret, ctx), composable };
   }
 
@@ -404,6 +454,7 @@ export function readProps(components: Component[]): PropsModel {
     const name = rightmost(node.typeName);
     const args = node.typeArguments ?? [];
     if (name === 'ReactNode') return nullable({ kind: 'slot' });
+    if (isJsxElement(node)) return { kind: 'slot' };
     if (name === 'DOMRect' && args.length === 0) return { kind: 'rect' };
     if (name === 'Array' && args.length === 1) {
       return { kind: 'list', item: mapType(args[0]!, itemCtx(ctx)) };
@@ -426,7 +477,7 @@ export function readProps(components: Component[]): PropsModel {
 
   function inlineClass(members: ts.NodeArray<ts.TypeElement>, ctx: Ctx): KType {
     const name = ctx.name;
-    declare(name);
+    declareClass(name);
     const decl: ClassDecl = {
       kind: 'class',
       name,
@@ -444,7 +495,7 @@ export function readProps(components: Component[]): PropsModel {
   /** A `Pick` or `Omit` becomes a class of the resolved properties, once every interface is read. */
   function pickClass(node: ts.TypeReferenceNode, ctx: Ctx): KType {
     const name = ctx.name;
-    declare(name);
+    declareClass(name);
     const decl: ClassDecl = {
       kind: 'class',
       name,
@@ -472,13 +523,15 @@ export function readProps(components: Component[]): PropsModel {
     return { kind: 'named', name, args: [] };
   }
 
-  /** Maps each property signature into `decl`, leaving browser-only ones as web only. */
-  function fillClass(
-    decl: ClassDecl,
-    members: ts.NodeArray<ts.TypeElement>,
-    ctx: Ctx,
-    top = false,
-  ) {
+  /** Maps each property signature into `decl`, leaving WEB_ONLY_PROPS out as web only. */
+  function fillClass(decl: ClassDecl, members: ts.NodeArray<ts.TypeElement>, ctx: Ctx) {
+    const inputLike = members.some(
+      (m) =>
+        ts.isPropertySignature(m) &&
+        m.name.getText() === 'value' &&
+        m.type !== undefined &&
+        unparen(m.type).kind === ts.SyntaxKind.StringKeyword,
+    );
     for (const member of members) {
       if (!ts.isPropertySignature(member)) {
         throw new Error(`${ctx.owner}: unsupported member ${member.getText()}`);
@@ -487,24 +540,14 @@ export function readProps(components: Component[]): PropsModel {
       if (!PROPERTY_NAME.test(prop) || KOTLIN_KEYWORDS.has(prop)) {
         throw new Error(`${ctx.owner}.${prop}: not a Kotlin property name`);
       }
-      const here: Ctx = { ...ctx, prop, name: `${ctx.owner}${pascal(prop)}` };
-      delete here.enumName;
-      if (member.type === undefined) return fail(member, here);
-      const type = unparen(member.type);
-      const webOnly = ts.isFunctionTypeNode(type)
-        ? keptParams(type).some((p) => p.type !== undefined && containsDom(p.type)) ||
-          containsDom(type.type)
-        : containsDom(type);
-      if (webOnly) {
+      const here: Ctx = { ...ctx, prop, name: `${ctx.owner}${pascal(prop)}`, inputLike };
+      delete here.param;
+      if (WEB_ONLY_PROPS.has(prop)) {
         decl.webOnly.push(prop);
         propMemo.set(member, 'web');
         continue;
       }
-      if (top) {
-        const values = literalValues(member.type);
-        const sharedAs = values === undefined ? undefined : sharedName(prop, values);
-        if (sharedAs !== undefined) here.enumName = sharedAs;
-      }
+      if (member.type === undefined) return fail(member, here);
       const mapped: Prop = {
         name: prop,
         doc: docOf(member, member.getSourceFile()),
@@ -535,19 +578,15 @@ export function readProps(components: Component[]): PropsModel {
       }
       const at = decls.length;
       const owner = name.replace(/Props$/, '');
-      fillClass(
-        decl,
-        iface.members,
-        {
-          iface: name,
-          owner,
-          prop: '',
-          name: owner,
-          typeParams: new Set(typeParams),
-          decls,
-        },
-        true,
-      );
+      fillClass(decl, iface.members, {
+        file: component.name,
+        owner,
+        prop: '',
+        name: owner,
+        inputLike: false,
+        typeParams: new Set(typeParams),
+        decls,
+      });
       decls.splice(at, 0, decl);
     }
     files.set(component.name, decls);
@@ -560,6 +599,61 @@ export function readProps(components: Component[]): PropsModel {
       }
     }
   }
-  shared.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const shared = nameEnums([...groups.values()], declare);
   return { files, shared };
+}
+
+const byName = (a: { name: string }, b: { name: string }) =>
+  a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+const pascalWords = (value: string) =>
+  value
+    .split(/[^A-Za-z0-9]+/)
+    .filter((w) => w !== '')
+    .map(pascal)
+    .join('');
+
+/**
+ * Names every enum group by the rule in this file's header, takes shared ones out of their
+ * components' files and returns them, sorted by name.
+ */
+function nameEnums(groups: EnumGroup[], declare: (name: string) => void): EnumDecl[] {
+  const unreserved = (name: string) => (RESERVED.has(name) ? `Sonora${name}` : name);
+  const setName = (group: EnumGroup, name: string) => {
+    group.decl.name = name;
+    group.type.name = name;
+    declare(name);
+  };
+  const shared: EnumGroup[] = [];
+  for (const group of groups) {
+    // The values as a property first spelled them, else as the first use did.
+    const first = group.uses.find((u) => !u.param) ?? group.uses[0]!;
+    group.decl.values = first.values;
+    if (group.files.size === 1) setName(group, unreserved(first.local));
+    else shared.push(group);
+  }
+
+  const claims = new Map<string, EnumGroup[]>();
+  for (const group of shared) {
+    const props = group.uses.filter((u) => !u.param);
+    const counts = new Map<string, number>();
+    for (const use of props.length > 0 ? props : group.uses) {
+      counts.set(use.prop, (counts.get(use.prop) ?? 0) + 1);
+    }
+    const [best] = [...counts].sort(
+      ([a, m], [b, n]) => n - m || b.length - a.length || (a < b ? -1 : a > b ? 1 : 0),
+    );
+    const name = pascal(best![0]);
+    claims.set(name, [...(claims.get(name) ?? []), group]);
+  }
+  for (const [name, claimants] of claims) {
+    for (const group of claimants) {
+      const suffix = claimants.length > 1 ? group.decl.values.map(pascalWords).join('') : '';
+      setName(group, unreserved(`${name}${suffix}`));
+    }
+  }
+
+  for (const group of shared) {
+    for (const decls of group.files.values()) decls.splice(decls.indexOf(group.decl), 1);
+  }
+  return shared.map((g) => g.decl).sort(byName);
 }

@@ -7,7 +7,7 @@ package net.develivarr.auralis.generated.ui
  * download. Composes ProgressRing for the downloading state rather than drawing a second ring.
  */
 data class DownloadButtonProps(
-    val state: DownloadButtonState? = null,
+    val state: Download? = null,
     /** 0–1. Indeterminate ring when null and `state` is 'downloading'. */
     val progress: Float? = null,
     /** Fires on press in every state: starts, cancels, or removes, depending on `state`. */
@@ -15,9 +15,3 @@ data class DownloadButtonProps(
     /** Control diameter in px. */
     val size: Float? = null,
 )
-
-enum class DownloadButtonState(val value: String) {
-    IDLE("idle"),
-    DOWNLOADING("downloading"),
-    DONE("done"),
-}

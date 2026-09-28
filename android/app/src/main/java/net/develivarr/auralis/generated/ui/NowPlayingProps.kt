@@ -80,7 +80,7 @@ data class NowPlayingPlayer(
     val onSpeed: (() -> Unit)? = null,
     val onSleep: (() -> Unit)? = null,
     val lyricsActiveIndex: Float? = null,
-    val lyricsSyncMode: NowPlayingPageLyricsSyncMode? = null,
+    val lyricsSyncMode: SyncMode? = null,
     /** Receives the preview row's rect, so the full page can expand out of it. */
     val onOpenLyrics: ((Rect?) -> Unit)? = null,
     /** Receives the preview row's rect, so the full page can expand out of it. */

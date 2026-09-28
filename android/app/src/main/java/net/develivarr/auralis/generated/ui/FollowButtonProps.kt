@@ -13,16 +13,10 @@ data class FollowButtonProps(
     /** Overrides either label; the unset half falls back to "Follow" / "Following". */
     val labels: FollowButtonLabels? = null,
     val platform: Platform? = null,
-    val size: FollowButtonSize? = null,
+    val size: SizeSmMdLg? = null,
 )
 
 data class FollowButtonLabels(
     val off: String? = null,
     val on: String? = null,
 )
-
-enum class FollowButtonSize(val value: String) {
-    SM("sm"),
-    MD("md"),
-    LG("lg"),
-}

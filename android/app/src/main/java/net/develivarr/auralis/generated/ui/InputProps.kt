@@ -8,5 +8,5 @@ data class InputProps(
     val icon: (@Composable () -> Unit)? = null,
     val platform: Platform? = null,
     val value: String? = null,
-    val onChange: ((Any?) -> Unit)? = null,
+    val onChange: ((String) -> Unit)? = null,
 )

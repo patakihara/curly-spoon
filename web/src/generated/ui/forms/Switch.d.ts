@@ -4,3 +4,6 @@ export interface SwitchProps {
   onChange?: (next: boolean) => void;
   label?: string;
 }
+
+/** Declared by pnpm gen: Sonora declares only the props. */
+export declare function Switch(props: SwitchProps): import('react').JSX.Element;

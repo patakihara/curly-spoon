@@ -17,7 +17,7 @@ data class MediaCardProps(
     /** Fixed track width; pass "100%" to fill a grid cell. */
     val width: String? = null,
     /** 'sm' is the compact carousel size — narrower track, smaller caption type. */
-    val size: MediaCardSize? = null,
+    val size: SizeSmMd? = null,
     /**
      * Queue handlers. Given any of them, a desktop card reveals a PlayActions group over its
      * artwork on hover (play next / play / play last). Mobile cards ignore them — no hover.
@@ -40,8 +40,3 @@ data class MediaCardProps(
     /** Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. */
     val markers: List<String>? = null,
 )
-
-enum class MediaCardSize(val value: String) {
-    MD("md"),
-    SM("sm"),
-}

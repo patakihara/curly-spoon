@@ -17,7 +17,7 @@ data class LibraryView(
     val subtabs: List<LibraryViewSubtab>? = null,
     val defaultSubtab: String? = null,
     /** 'list' or 'grid' when the view first opens; otherwise songs default to list. */
-    val defaultMode: LibraryViewDefaultMode? = null,
+    val defaultMode: Mode? = null,
     /** Second-row content for a view with no sub-tabs (a filter ButtonGroup). */
     val controls: (@Composable () -> Unit)? = null,
     val align: Align? = null,
@@ -28,11 +28,6 @@ data class LibraryViewSubtab(
     val label: String? = null,
     val icon: String? = null,
 )
-
-enum class LibraryViewDefaultMode(val value: String) {
-    LIST("list"),
-    GRID("grid"),
-}
 
 data class LibraryShellContext(
     val view: String,
