@@ -15,10 +15,7 @@ export const jellyfinUsersSchema = z.array(
   z.object({
     Id: z.string(),
     Name: z.string(),
-    Policy: z
-      .object({ IsAdministrator: z.boolean(), IsDisabled: z.boolean() })
-      .partial()
-      .optional(),
+    Policy: z.object({ IsDisabled: z.boolean() }).partial().optional(),
   }),
 );
 
@@ -67,10 +64,7 @@ export class JellyfinProvisioner {
     return { authorization: buildAuthorizationHeader(server, this.opts.apiKey) };
   }
 
-  /**
-   * Every account that is not disabled; an administrator, or an account whose policy is missing, is
-   * marked admin, so it is never linked.
-   */
+  /** Every account that is not disabled; one whose policy is missing is left out, to be safe. */
   async accounts(): Promise<UpstreamCandidate[]> {
     const users = await requestJson(
       this.opts.fetch,
@@ -79,8 +73,8 @@ export class JellyfinProvisioner {
       jellyfinUsersSchema,
     );
     return users
-      .filter((u) => u.Policy?.IsDisabled !== true)
-      .map((u) => ({ id: u.Id, username: u.Name, admin: u.Policy?.IsAdministrator !== false }));
+      .filter((u) => u.Policy !== undefined && u.Policy.IsDisabled !== true)
+      .map((u) => ({ id: u.Id, username: u.Name }));
   }
 
   async mint(upstreamUserId: string, auralisUserId: string): Promise<{ token: string }> {

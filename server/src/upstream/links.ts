@@ -98,7 +98,7 @@ export class Linker {
     let upstreamUserId = pinned;
     try {
       if (upstreamUserId === null) {
-        const pick = pickUpstreamUser(await provisioner.accounts(), user.username);
+        const pick = pickUpstreamUser(service, await provisioner.accounts(), user.username);
         if (pick.state === 'unlinked') {
           saveLink(
             db,

@@ -92,7 +92,7 @@ function fakeWorld(options: { failAuthenticate?: boolean } = {}) {
       if (u.pathname === '/System/Info/Public') return json({ Version: '10.11.11' });
       if (u.pathname === '/Users') {
         return json([
-          { Id: 'j1', Name: 'auralis' },
+          { Id: 'j1', Name: 'auralis', Policy: { IsDisabled: false } },
           { Id: 'j2', Name: 'Kara' },
         ]);
       }

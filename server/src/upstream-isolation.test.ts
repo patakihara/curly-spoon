@@ -132,7 +132,7 @@ describe('[M0.sso/c] upstream calls act as the person who made them', () => {
     const minted: string[] = [];
     const provisioner: Provisioner = {
       service: 'abs',
-      accounts: async () => [{ id: 'abs-kara', username: 'kara2', admin: false }],
+      accounts: async () => [{ id: 'abs-kara', username: 'kara2' }],
       mint: async (id) => {
         minted.push(id);
         return { token: 'never' };
@@ -152,7 +152,7 @@ describe('[M0.sso/c] linking at sign-in', () => {
     let fail = false;
     const p: Provisioner = {
       service,
-      accounts: async () => accounts.map((a) => ({ ...a, admin: false })),
+      accounts: async () => accounts,
       mint: async (id) => {
         if (fail) throw new Error('mint failed');
         await new Promise((resolve) => setTimeout(resolve, 5));

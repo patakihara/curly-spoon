@@ -47,7 +47,7 @@ export class AbsProvisioner {
     return { authorization: `Bearer ${this.opts.provisionKey}` };
   }
 
-  /** Every active account; root and admin accounts are marked admin, so they are never linked. */
+  /** Every active account; root is marked, because this key cannot mint a key for it. */
   async accounts(): Promise<UpstreamCandidate[]> {
     const { users } = await requestJson(
       this.opts.fetch,
@@ -57,7 +57,7 @@ export class AbsProvisioner {
     );
     return users
       .filter((u) => u.isActive)
-      .map((u) => ({ id: u.id, username: u.username, admin: u.type !== 'user' }));
+      .map((u) => ({ id: u.id, username: u.username, root: u.type === 'root' }));
   }
 
   /** A key that never expires, acting as `upstreamUserId`. */

@@ -11,7 +11,7 @@ const answer = (body: unknown) => async () =>
   new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
 
 describe('upstream accounts offered for linking', () => {
-  it('Audiobookshelf marks root and admin accounts as admin, and drops inactive ones', async () => {
+  it('Audiobookshelf marks root accounts, offers admins like anyone, and drops inactive ones', async () => {
     const abs = new AbsProvisioner({
       baseUrl: 'http://abs.invalid',
       provisionKey: 'k',
@@ -25,13 +25,13 @@ describe('upstream accounts offered for linking', () => {
       }),
     });
     expect(await abs.accounts()).toEqual([
-      { id: 'r', username: 'root', admin: true },
-      { id: 'a', username: 'Sofia', admin: true },
-      { id: 'u', username: 'Kara', admin: false },
+      { id: 'r', username: 'root', root: true },
+      { id: 'a', username: 'Sofia', root: false },
+      { id: 'u', username: 'Kara', root: false },
     ]);
   });
 
-  it('Jellyfin marks administrators as admin, and drops disabled accounts', async () => {
+  it('Jellyfin offers administrators like anyone, and drops disabled accounts', async () => {
     const jf = new JellyfinProvisioner({
       baseUrl: 'http://jf.invalid',
       apiKey: 'k',
@@ -42,18 +42,18 @@ describe('upstream accounts offered for linking', () => {
       ]),
     });
     expect(await jf.accounts()).toEqual([
-      { id: 'a', username: 'Sofia', admin: true },
-      { id: 'u', username: 'Kara', admin: false },
+      { id: 'a', username: 'Sofia' },
+      { id: 'u', username: 'Kara' },
     ]);
   });
 
-  it('Jellyfin counts an account with no policy as an administrator, to be safe', async () => {
+  it('Jellyfin never offers an account with no policy, to be safe', async () => {
     const jf = new JellyfinProvisioner({
       baseUrl: 'http://jf.invalid',
       apiKey: 'k',
       fetch: answer([{ Id: 'x', Name: 'Kara' }]),
     });
-    expect(await jf.accounts()).toEqual([{ id: 'x', username: 'Kara', admin: true }]);
+    expect(await jf.accounts()).toEqual([]);
   });
 });
 
