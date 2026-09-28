@@ -1,4 +1,4 @@
-/* The page itself, as Sonora's UI kits set it: no browser margin, the surface behind everything,
+/* The page itself, as Sonora's backdrop sets it: no browser margin, the surface behind everything,
    and the window's full height for the app shell, whose front layer alone scrolls. */
 html,
 body,

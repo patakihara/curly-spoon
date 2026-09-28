@@ -27,7 +27,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST = os.path.join(ROOT, "_ds_manifest.json")
 
 GROUP_DIRS = ["core", "forms", "layout", "media", "navigation"]
-GROUP_ORDER = ["App Screens", "Brand", "Colors", "Components", "Layout",
+GROUP_ORDER = ["Brand", "Colors", "Components", "Layout",
                "Spacing", "Type", "Reference"]
 
 MARKER = re.compile(r"<!--\s*@dsCard\s+(.*?)-->", re.S)

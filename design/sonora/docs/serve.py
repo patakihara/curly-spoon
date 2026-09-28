@@ -449,7 +449,7 @@ def token_usage_breadth(token):
     decl_needle = token.encode('utf-8') + b':'
     files = 0
     declarations = 0
-    for base in ('tokens', 'components', 'guidelines', 'reference', 'ui_kits'):
+    for base in ('tokens', 'components', 'guidelines', 'reference'):
         for dirpath, _dirnames, filenames in os.walk(os.path.join(ROOT, base)):
             for fn in filenames:
                 if not (fn.endswith('.css') or fn.endswith('.html') or fn.endswith('.jsx')):

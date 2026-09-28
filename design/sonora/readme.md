@@ -12,13 +12,11 @@ No unified logo exists (and none was invented) — see **Brand marks** below.
 
 ## Index
 
-- `ui_kits/desktop/` — desktop player click-through (Feishin-derived)
-- `ui_kits/mobile/` — mobile player click-through, light and dark
 - `styles.css` — root stylesheet, imports everything in `tokens/`
 - `tokens/` — colors, typography, spacing, radius, shadows, motion, fonts (CSS custom properties)
 - `guidelines/` — foundation specimen cards (colors, type, spacing, radius, shadows, brand marks)
 - `assets/logos/` — the three real product icons/wordmarks (Feishin, Booming Music, Symphony)
-- `assets/reference/` — real screenshots used as ground truth while building the UI kits
+- `assets/reference/` — real screenshots used as ground truth while building the system
 - `components/core/` — Button, ButtonGroup, IconButton, TonalIconButton, Badge, ProgressRing, QuickPick, SectionHeader, ValueRow, ViewToggle, ExpandableText, ExpanderRow, FollowButton, SortFilterBar, StatusBanner, EmptyState, OverflowMenu
 - `components/forms/` — Input, SearchField, Switch, Slider, FieldRow, SettingRow
 - `components/navigation/` — NavRail, RailItem (desktop rail), TabBar, SearchButton, BottomNav, AccountButton (mobile)
@@ -42,7 +40,7 @@ None of the three source apps ships a shared, importable web component library (
 - **NowPlaying (+ NowPlayingPage, LyricsPage, QueuePage, PlayerSheet, PlayerPanel, LyricsSyncButton)** — the Currently Playing surface as one canonical shape with two platform forms, taken from the Auralis reskin's player and componentized. `NowPlaying` takes one set of props (`track`, `player`, `lyrics`, `queue`) and renders either form: on mobile a `PlayerSheet` covering the app, expanding out of the now-playing bar's own rectangle, where lyrics and queue are *previews* that open full pages; on desktop a `PlayerPanel` (SideSheet) where lyrics and queue are sibling *tabs* rather than page sections. `LyricsPage` carries the tri-state `LyricsSyncButton` (synced → current line marked by an accent dot only → no sync, no indication — the last two ungrey every line), `QueuePage` carries the edit-mode toggle that turns on selection, drag handles and the remove bar.
 - **TransportBar / SeekBar / QueueRow / Lyrics / ValueRow** — the Now Playing surface, broken up: the five-control transport cluster, the seek slider with its elapsed/remaining readouts, a draggable queue row, the synced lyric list, and the label+value card (Speed, Sleep timer). All five were loose markup in the source screens; naming them is what stops each new player surface reinventing them.
 - **SearchField** — the filled, outline-free field with soft rectangular corners that a page's local search opens in its heading. Neither source app names it.
-- **IconButton** — none of the three apps names this as a discrete primitive, but all three use a circular icon-only control constantly (transport, toolbars); wrapping it made every UI kit's code consistent.
+- **IconButton** — none of the three apps names this as a discrete primitive, but all three use a circular icon-only control constantly (transport, toolbars); wrapping it keeps every surface's code consistent.
 - **Badge** — a small generic count pill; genuinely present (queue positions, "new" markers) but not a named component in any source.
 
 ## Motion

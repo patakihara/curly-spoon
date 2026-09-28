@@ -20,8 +20,7 @@
  *   docs/examples/<C>.snippet.jsx -> project/components/<C>/preview.html (per-component preview)
  *   components/<g>/*.card.html    -> project/components/<Name>Card/preview.html (showcase page)
  *   readme.md               -> project/README.md
- * Not carried: ui_kits/ (app screens belong to the Auralis app design, not the system),
- * reference/ + assets/reference (Spotify screenshots: research, not brand), guidelines/ cards
+ * Not carried: reference/ + assets/reference (Spotify screenshots: research, not brand), guidelines/ cards
  * (the artifact page renders tokens itself), extension/ (abandoned).
  */
 const fs = require('fs');

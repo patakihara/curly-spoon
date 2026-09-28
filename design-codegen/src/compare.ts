@@ -1,9 +1,9 @@
 /**
  * The visual comparison of each canvas page, `design/app/compare/<id>.md` beside
- * `compare/<id>/canvas-{phone,desktop}.png`: the page's renders set against the Sonora UI kit
- * renders it names (captured once under `compare/sonora/`), with the differences listed and the
- * hash of the page it was made from. The kits are the design; a Spotify screen is only ever
- * consulted for intent where a kit lacks something, and is never compared against.
+ * `compare/<id>/canvas-{phone,desktop}.png`: the page's renders set against the Sonora renders it
+ * names, committed images under `compare/sonora/` (the UI kit screens and showcase cards), with
+ * the differences listed and the hash of the page it was made from. A Spotify screen is only ever
+ * consulted for intent where Sonora lacks something, and is never compared against.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
