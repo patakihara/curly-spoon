@@ -24,5 +24,16 @@ data class BackLayerProps(
     val trailing: (@Composable () -> Unit)? = null,
     /** Contextual controls that reconfigure the front layer, on a band below the heading. */
     val controls: (@Composable () -> Unit)? = null,
+    /**
+     * A local search, scoped to this page: its placeholder ("Search your books and requests").
+     * The heading ends in a search button; the field comes out of it over the heading, without
+     * focus once the front layer has scrolled, with focus when the button is tapped, and goes back
+     * at the top unless it was tapped out. Not the global Search destination.
+     */
+    val search: String? = null,
+    /** Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. */
+    val searchOpen: Boolean? = null,
+    /** 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. */
+    val progress: Float? = null,
     val platform: Platform? = null,
 )

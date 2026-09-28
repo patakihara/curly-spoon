@@ -372,7 +372,7 @@ The app frame as a real Material backdrop. Two surfaces, and only two. The **bac
 
 | prop | type | notes |
 | --- | --- | --- |
-| `back` | `ReactNode` | Back-layer content — a `BackLayer` with the heading row and any contextual controls. |
+| `back` | `ReactNode` | Back-layer content — a `BackLayer` with the heading row and any contextual controls. It receives the front layer's scroll `progress`, which brings out its local search. |
 | `rail` | `ReactNode` | A `NavRail`. Sits at back-layer level, continuous with it. Omit on mobile. |
 | `children` | `ReactNode` | The screen itself — scrolls inside the front layer. |
 | `subheader` | `ReactNode` | A `FrontLayerHeader`. Fixed to the front layer; receives `progress` and `platform` from it. |
@@ -397,6 +397,9 @@ The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevati
 | `leading` | `ReactNode` | Before the title — a back link, or on mobile the account avatar (never in a filter row). |
 | `trailing` | `ReactNode` | After the title — a search button, an overflow menu. |
 | `controls` | `ReactNode` | Contextual controls that reconfigure the front layer, on a band below the heading. |
+| `search` | `string` |  A local search, scoped to this page: its placeholder ("Search your books and requests"). The heading ends in a search button; the field comes out of it over the heading, without focus once the front layer has scrolled, with focus when the button is tapped, and goes back at the top unless it was tapped out. Not the global Search destination.  |
+| `searchOpen` | `boolean` | Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. |
+| `progress` | `number` | 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### BackToTop
@@ -865,6 +868,8 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. |
 | `savedBadge` | `boolean` | Bookmark tab on the artwork's bottom-left, for an item the user has explicitly saved. |
 | `markers` | `string[]` | Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. |
+| `status` | `string` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed": the art is greyed, since the item cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
+| `tone` | `'progress' \| 'request' \| 'error'` | The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). |
 
 ### MediaHeader
 

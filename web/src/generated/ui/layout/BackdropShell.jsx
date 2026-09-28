@@ -5,6 +5,15 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 
 /** A Material backdrop frame: a 0dp back layer filling the whole background — rail and heading together — with the 1dp front layer and its subheader sitting on top of it, an optional side panel in front of or behind that layer, and the player docked across the bottom. */
 export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', player, contentMinWidth, scroll = true, scrollKey, onProgress, theme, platform = 'desktop' }) {
+  /* The back layer's local search comes out as the front layer scrolls, so the shell hands the
+     front layer's progress up to it, as FrontLayer hands it down to the subheader. An explicit
+     `progress` on the back layer (a still) is left alone. */
+  const [progress, setProgress] = React.useState(0);
+  const report = React.useRef(onProgress); report.current = onProgress;
+  const track = React.useCallback((p) => { setProgress(p); if (report.current) report.current(p); }, []);
+  const backLayer = React.isValidElement(back) && back.props.progress === undefined
+    ? React.cloneElement(back, { progress })
+    : back;
   const behind = sheetLayer === 'behind';
   const ease = 'var(--duration-medium) var(--ease-standard)';
   /* Two panel treatments, and the difference is which surface owns the edges between them.
@@ -41,9 +50,9 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
         {/* Raised above the panel so a `behind` panel receives the front layer's shadow instead of
             painting over it. A `front` panel outranks this again with its own z-index. */}
         <div style={sx('position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-width:0;min-height:0' + (contentMinWidth ? ';min-width:' + contentMinWidth : ''))}>
-          {back && <div style={sx('flex-shrink:0')}>{back}</div>}
+          {back && <div style={sx('flex-shrink:0')}>{backLayer}</div>}
           {FrontLayer && (
-            <FrontLayer subheader={subheader} scroll={scroll} scrollKey={scrollKey} onProgress={onProgress} platform={platform}
+            <FrontLayer subheader={subheader} scroll={scroll} scrollKey={scrollKey} onProgress={track} platform={platform}
               squareRight={!behind && sheetOpen && !!sheet}>{children}</FrontLayer>
           )}
         </div>

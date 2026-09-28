@@ -18,7 +18,7 @@ import { ReactNode } from 'react';
  * On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
  */
 export interface BackdropShellProps {
-  /** Back-layer content — a `BackLayer` with the heading row and any contextual controls. */
+  /** Back-layer content — a `BackLayer` with the heading row and any contextual controls. It receives the front layer's scroll `progress`, which brings out its local search. */
   back?: ReactNode;
   /** A `NavRail`. Sits at back-layer level, continuous with it. Omit on mobile. */
   rail?: ReactNode;

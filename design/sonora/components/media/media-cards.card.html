@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x860" name="Media & Artist Cards" subtitle="Shelf cards with resume progress and not-in-library state, circular people cards, and the hover play-next / play / play-last actions" -->
+<!-- @dsCard group="Components" viewport="1400x860" name="Media & Artist Cards" subtitle="Shelf cards with resume progress, not-in-library state and a request's status tone, circular people cards, and the hover play-next / play / play-last actions" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -21,6 +21,15 @@ function Demo(){
       <MediaCard title="Sonic Tales" sub="Podcast · 148 episodes" image={cover("Sonic Tales")} />
       <MediaCard title="Ink Heart" sub="Book · Cornelia Funke" absent />
       <MediaCard platform="mobile" title="Golden Scars" sub="Album · Fleeting Verses" image={cover("Golden Scars")} onMore={()=>{}} />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Requests — status in the request's tone; narrow cards keep the percentage or the word</div>
+    <div style={{display:'flex',gap:20,flexWrap:'wrap',alignItems:'flex-start'}}>
+      <MediaCard title="Tidal Lines" sub="Book · Rosa Elin" image={cover("Tidal Lines")} status="Downloading · 42%" tone="progress" />
+      <MediaCard title="Low Orbit" sub="Album · Echo Fields" image={cover("Low Orbit")} status="Needs choice" tone="request" />
+      <MediaCard title="Every Harbour Twice" sub="Book · Rosa Elin" image={cover("Every Harbour Twice")} status="Failed" tone="error" />
+      <MediaCard platform="mobile" width="112px" title="Tidal Lines" sub="Rosa Elin" image={cover("Tidal Lines")} status="Downloading · 42%" tone="progress" />
+      <MediaCard platform="mobile" width="112px" title="Low Orbit" sub="Echo Fields" image={cover("Low Orbit")} status="Needs choice" tone="request" />
+      <MediaCard platform="mobile" width="112px" title="Every Harbour Twice" sub="Rosa Elin" image={cover("Every Harbour Twice")} status="Failed" tone="error" />
     </div>
     <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
       <ArtistCard title="Natasha Beller" sub="Artist" image={cover("Natasha Beller", 320)} />

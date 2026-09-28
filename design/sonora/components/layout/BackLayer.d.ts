@@ -21,6 +21,17 @@ export interface BackLayerProps {
   trailing?: ReactNode;
   /** Contextual controls that reconfigure the front layer, on a band below the heading. */
   controls?: ReactNode;
+  /**
+   * A local search, scoped to this page: its placeholder ("Search your books and requests").
+   * The heading ends in a search button; the field comes out of it over the heading, without
+   * focus once the front layer has scrolled, with focus when the button is tapped, and goes back
+   * at the top unless it was tapped out. Not the global Search destination.
+   */
+  search?: string;
+  /** Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. */
+  searchOpen?: boolean;
+  /** 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. */
+  progress?: number;
   platform?: 'desktop' | 'mobile';
 }
 export declare function BackLayer(props: BackLayerProps): JSX.Element;

@@ -20,7 +20,7 @@ import androidx.compose.runtime.Composable
  * On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
  */
 data class BackdropShellProps(
-    /** Back-layer content — a `BackLayer` with the heading row and any contextual controls. */
+    /** Back-layer content — a `BackLayer` with the heading row and any contextual controls. It receives the front layer's scroll `progress`, which brings out its local search. */
     val back: (@Composable () -> Unit)? = null,
     /** A `NavRail`. Sits at back-layer level, continuous with it. Omit on mobile. */
     val rail: (@Composable () -> Unit)? = null,
