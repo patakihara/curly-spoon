@@ -211,17 +211,29 @@ describe('the web route table', () => {
   });
 });
 
-describe('the web platform hook', () => {
-  it('draws at phone density while the layout is the bottom bar, below the first rail width', () => {
-    const tiny = parseNav({
-      destinations: [],
-      layouts: [
-        { minWidth: 0, nav: 'bottomBar', order: [] },
-        { minWidth: 600, nav: 'iconRail', order: [] },
-      ],
-      back,
-      pages: [],
-    });
-    expect(generatePlatform(tiny)).toContain("const PHONE = '(max-width: 599px)';");
+describe('the web layout hook', () => {
+  const tiny = parseNav({
+    destinations: [],
+    layouts: [
+      { minWidth: 0, nav: 'bottomBar', order: [] },
+      { minWidth: 600, nav: 'iconRail', order: [] },
+      { minWidth: 1240, nav: 'labelledRail', order: [], sidePanel: 'nowPlaying' },
+    ],
+    back,
+    pages: [],
+  });
+  const out = generatePlatform(tiny);
+
+  it('names each layout by its minimum width', () => {
+    expect(out).toContain("export type LayoutId = 'w0' | 'w600' | 'w1240';");
+  });
+
+  it('reaches each wider layout by its minimum width, starting from the first', () => {
+    expect(out).toContain("  ['w600', '(min-width: 600px)'],\n  ['w1240', '(min-width: 1240px)'],");
+    expect(out).toContain("  let layout: LayoutId = 'w0';");
+  });
+
+  it('draws the widest layout when there is no window', () => {
+    expect(out).toContain("return useSyncExternalStore(subscribe, current, () => 'w1240');");
   });
 });

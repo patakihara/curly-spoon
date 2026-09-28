@@ -135,7 +135,7 @@ describe('pnpm gen, from design/sonora', () => {
         join(app, 'nav.json'),
         JSON.stringify({
           destinations: [],
-          layouts: [],
+          layouts: [{ minWidth: 0, nav: 'bottomBar', order: [] }],
           back: {
             close: 'opener',
             stacks: 'perDestination',
@@ -144,6 +144,10 @@ describe('pnpm gen, from design/sonora', () => {
           },
           pages: [],
         }),
+      );
+      writeFileSync(
+        join(app, 'shell.json'),
+        JSON.stringify({ account: { label: 'Account' }, playing: null, railFoot: [] }),
       );
       const out = join(tmp, 'out');
       gen(['--sonora', sonora, '--app', app, '--out', out]);

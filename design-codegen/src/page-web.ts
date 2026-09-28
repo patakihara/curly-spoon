@@ -1,27 +1,41 @@
 /**
  * A page tree as a web page: `web/src/generated/pages/<Id>.tsx`, a React component calling the web
- * UI package's Sonora components, with the page's placeholder as its default data.
+ * UI package's Sonora components inside the app shell, with the page's placeholder as its default
+ * data. The shell's parts for every layout are constants of the page; the window's width picks one.
  */
-import { componentName } from './nav.js';
+import { componentName, type Nav, type NavPage } from './nav.js';
 import { APP_NOTE } from './outputs.js';
 import type { PageTree, PropValue } from './page.js';
+import {
+  chrome,
+  framePage,
+  framed,
+  layoutId,
+  shellData,
+  type Chrome,
+  type ShellFile,
+} from './shell.js';
 
-function drawn(tree: PageTree, into: Set<string>): Set<string> {
-  if (tree.kind === 'element') into.add(tree.component);
+function drawn(tree: PageTree | undefined, into: Set<string>): Set<string> {
+  if (tree === undefined) return into;
+  if (tree.kind === 'element') {
+    into.add(tree.component);
+    for (const value of Object.values(tree.props))
+      if (value.kind === 'slot') drawn(value.tree, into);
+  }
   if ('children' in tree) tree.children.forEach((child) => drawn(child, into));
   return into;
 }
 
-function uses(tree: PageTree, kind: PageTree['kind']): boolean {
-  return tree.kind === kind || ('children' in tree && tree.children.some((c) => uses(c, kind)));
+function some(tree: PageTree, test: (node: PageTree) => boolean): boolean {
+  if (test(tree)) return true;
+  if (tree.kind === 'element') {
+    for (const value of Object.values(tree.props)) {
+      if (value.kind === 'slot' && some(value.tree, test)) return true;
+    }
+  }
+  return 'children' in tree && tree.children.some((c) => some(c, test));
 }
-
-const prop = (name: string, value: PropValue) =>
-  value.kind === 'binding'
-    ? `${name}={${value.path.join('.')}}`
-    : typeof value.value === 'string'
-      ? `${name}=${JSON.stringify(value.value)}`
-      : `${name}={${JSON.stringify(value.value)}}`;
 
 /** What the generator needs to know of the Sonora components a page uses. */
 export interface WebComponents {
@@ -31,6 +45,13 @@ export interface WebComponents {
   handled: Set<string>;
 }
 
+/** The shell a page is generated into: the navigation map, shell.json and the page's own entry. */
+export interface WebShell {
+  nav: Nav;
+  shell: ShellFile;
+  page: NavPage;
+}
+
 /** A page is a still: a field it shows a value in gets a handler that ignores changes. */
 const ignored = (tree: PageTree, components: WebComponents) =>
   tree.kind === 'element' &&
@@ -38,11 +59,23 @@ const ignored = (tree: PageTree, components: WebComponents) =>
   ('value' in tree.props || 'checked' in tree.props) &&
   !('onChange' in tree.props);
 
-function ignores(tree: PageTree, components: WebComponents): boolean {
-  return (
-    ignored(tree, components) ||
-    ('children' in tree && tree.children.some((c) => ignores(c, components)))
-  );
+function propLines(
+  name: string,
+  value: PropValue,
+  at: string,
+  components: WebComponents,
+): string[] {
+  if (value.kind === 'binding') return [`${name}={${value.path.join('.')}}`];
+  if (value.kind === 'literal') {
+    return [
+      typeof value.value === 'string'
+        ? `${name}=${JSON.stringify(value.value)}`
+        : `${name}={${JSON.stringify(value.value)}}`,
+    ];
+  }
+  const lines = render(value.tree, at + '  ', components);
+  if (lines.length === 1) return [`${name}={${lines[0]!.trim()}}`];
+  return [`${name}={`, ...lines.map((l) => l.slice(at.length)), '}'];
 }
 
 function render(tree: PageTree, indent: string, components: WebComponents): string[] {
@@ -53,6 +86,8 @@ function render(tree: PageTree, indent: string, components: WebComponents): stri
       return [`${indent}{${JSON.stringify(tree.value)}}`];
     case 'binding':
       return [`${indent}{${tree.path.join('.')}}`];
+    case 'fragment':
+      return [`${indent}<>`, ...kids(tree.children, inner), `${indent}</>`];
     case 'each':
       return [
         `${indent}{${tree.of.join('.')}.map((${tree.as}, i) => (`,
@@ -70,51 +105,109 @@ function render(tree: PageTree, indent: string, components: WebComponents): stri
         `${indent})}`,
       ];
     case 'element': {
-      const props = Object.entries(tree.props).map(([name, value]) => ' ' + prop(name, value));
-      if (ignored(tree, components)) props.push(' onChange={ignore}');
+      const props = Object.entries(tree.props).map(([name, value]) =>
+        propLines(name, value, inner, components),
+      );
+      if (ignored(tree, components)) props.push(['onChange={ignore}']);
       if (components.platformed.has(tree.component) && !('platform' in tree.props)) {
-        props.push(' platform={platform}');
+        props.push(['platform={platform}']);
       }
-      const open = `<${tree.component}${props.join('')}`;
-      if (tree.children.length === 0) return [`${indent}${open} />`];
-      return [`${indent}${open}>`, ...kids(tree.children, inner), `${indent}</${tree.component}>`];
+      const close = (open: string[]) =>
+        tree.children.length === 0
+          ? [...open.slice(0, -1), `${open.at(-1)} />`]
+          : [
+              ...open.slice(0, -1),
+              `${open.at(-1)}>`,
+              ...kids(tree.children, inner),
+              `${indent}</${tree.component}>`,
+            ];
+      const slotted = Object.values(tree.props).some((v) => v.kind === 'slot');
+      if (!slotted && props.every((p) => p.length === 1)) {
+        return close([`${indent}<${tree.component}${props.map((p) => ' ' + p[0]).join('')}`]);
+      }
+      const lines = [`${indent}<${tree.component}`, ...props.flat().map((l) => inner + l)];
+      return tree.children.length === 0
+        ? [...lines, `${indent}/>`]
+        : [...lines, `${indent}>`, ...kids(tree.children, inner), `${indent}</${tree.component}>`];
     }
   }
 }
+
+function chromeEntry(parts: Chrome, components: WebComponents): string[] {
+  const out = [`    platform: '${parts.platform}',`];
+  for (const key of ['rail', 'leading', 'player', 'sheet'] as const) {
+    const tree = parts[key];
+    if (tree === undefined) continue;
+    out.push(`    ${key}: (`, ...render(tree, '      ', components), '    ),');
+  }
+  out.push(`    sheetOpen: ${parts.sheetOpen},`);
+  return out;
+}
+
+const binding = (path: string): PropValue => ({ kind: 'binding', path: path.split('.') });
 
 export function generateWebPage(
   tree: PageTree,
   id: string,
   placeholder: unknown,
   components: WebComponents,
+  { nav, shell, page }: WebShell,
 ): string {
   const name = componentName(id);
-  const used = [...drawn(tree, new Set())].sort();
-  const react = uses(tree, 'each') ? ["import { Fragment } from 'react';"] : [];
+  const root = framed(framePage(tree), page.title, {
+    rail: binding('chrome.rail'),
+    leading: binding('chrome.leading'),
+    player: binding('chrome.player'),
+    sheet: binding('chrome.sheet'),
+    sheetOpen: binding('chrome.sheetOpen'),
+  });
+  const chromes = nav.layouts.map(
+    (layout) =>
+      [layoutId(layout), chrome(nav, shell, page, layout, components.platformed)] as const,
+  );
+  const used = new Set<string>();
+  drawn(root, used);
+  for (const [, parts] of chromes) {
+    for (const key of ['rail', 'leading', 'player', 'sheet'] as const) drawn(parts[key], used);
+  }
+  const react = some(root, (n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
   return [
     `// ${APP_NOTE}`,
     ...react,
-    "import { usePlatform, type Platform } from '../nav/platform';",
-    `import { ${used.join(', ')} } from '../ui/index.js';`,
+    "import { useLayout, type Chrome, type LayoutId } from '../nav/platform';",
+    `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
     '',
-    ...(ignores(tree, components) ? ['const ignore = () => {};', ''] : []),
+    '/** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */',
+    `const shell = ${JSON.stringify(shellData(nav, shell), null, 2)};`,
+    '',
+    '/** The shell’s parts at each layout, from nav.json. */',
+    'const CHROME: Record<LayoutId, Chrome> = {',
+    ...chromes.flatMap(([layout, parts]) => [
+      `  ${layout}: {`,
+      ...chromeEntry(parts, components),
+      '  },',
+    ]),
+    '};',
+    '',
+    ...(some(root, (n) => ignored(n, components)) ? ['const ignore = () => {};', ''] : []),
     `export type ${name}Data = typeof placeholder;`,
     '',
     `export interface ${name}Props {`,
     `  data?: ${name}Data;`,
     '  /** Which of the placeholder states to show: M0 draws only `full`. */',
     '  state?: string;',
-    '  /** The density to draw at; by default, the one the window width calls for. */',
-    '  platform?: Platform;',
+    '  /** The layout to draw in; by default, the one the window width calls for. */',
+    '  layout?: LayoutId;',
     '}',
     '',
-    `export default function ${name}({ data = placeholder, state = 'full', platform: given }: ${name}Props) {`,
-    '  const detected = usePlatform();',
-    '  const platform = given ?? detected;',
+    `export default function ${name}({ data = placeholder, state = 'full', layout: given }: ${name}Props) {`,
+    '  const detected = useLayout();',
+    '  const chrome = CHROME[given ?? detected];',
+    '  const platform = chrome.platform;',
     '  return (',
-    ...render(tree, '    ', components),
+    ...render(root, '    ', components),
     '  );',
     '}',
     '',

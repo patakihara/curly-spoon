@@ -27,8 +27,11 @@ const page = (id: string, route: string, title: string) => ({
 });
 
 const nav = parseNav({
-  destinations: [],
-  layouts: [{ minWidth: 0, nav: 'bottomBar', order: [] }],
+  destinations: [{ id: 'books', label: 'Books', icon: 'book_2' }],
+  layouts: [
+    { minWidth: 0, nav: 'bottomBar', order: ['books'] },
+    { minWidth: 1240, nav: 'labelledRail', order: ['books'], sidePanel: 'nowPlaying' },
+  ],
   back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },
   pages: [
     page('book', '/book', 'Book'),
@@ -39,6 +42,7 @@ const nav = parseNav({
 
 const book = `export default function Book({ data }) {
   return (
+    <BackdropShell back={<BackLayer controls={<ButtonGroup items={data.filters} />} />}>
     <DetailPage kindLabel="Book & more" overlay count={2}>
       <MediaHeader title={data.title} />
       <Each of={data.chapters} as="chapter">
@@ -46,6 +50,7 @@ const book = `export default function Book({ data }) {
       </Each>
       <When state="full"><Button>Play "it" & go</Button></When>
     </DetailPage>
+    </BackdropShell>
   );
 }
 `;
@@ -56,15 +61,27 @@ const settings = `export default function Settings({ data }) {
 
 const app: App = {
   nav,
+  shell: {
+    account: { label: 'Account' },
+    playing: { title: 'Tidal Lines', artist: 'Halcyon Bloom', progress: 0.5, duration: 214 },
+    railFoot: [{ page: 'settings', icon: 'settings' }],
+  },
   pages: [
     {
       id: 'book',
       tree: parsePage(book, 'book'),
-      placeholder: { title: 'Wind </script> Truth', chapters: [{ title: 'Prologue' }] },
+      placeholder: {
+        title: 'Wind </script> Truth',
+        chapters: [{ title: 'Prologue' }],
+        filters: ['All', 'Books'],
+      },
     },
     { id: 'settings', tree: parsePage(settings, 'settings'), placeholder: {} },
   ],
-  components: { platformed: new Set(['MediaHeader']), handled: new Set(['Switch']) },
+  components: {
+    platformed: new Set(['MediaHeader', 'BackLayer', 'BackdropShell', 'MiniPlayer']),
+    handled: new Set(['Switch']),
+  },
 };
 
 const install: SonoraInstall = {
@@ -207,5 +224,53 @@ describe('the canvas generated from design/app', () => {
       '<div data-theme="dark" style="width: 1440px; height: 900px;',
     );
     expect(board('settings.desktop.dc.html')).toContain('<title>Settings · desktop</title>');
+  });
+  it('draws each page inside the app shell at the layout its width gets', () => {
+    const phone = board('book.phone.dc.html');
+    expect(phone).toContain(
+      `<x-import component-from-global-scope="SonoraDesignSystem_6c1435.BackdropShell" back="{{slots.s0}}" player="{{slots.s1}}" sheet-open="{{ false }}" platform="mobile">`,
+    );
+    expect(phone).not.toContain('rail=');
+    const desktop = board('book.desktop.dc.html');
+    expect(desktop).toContain('rail="{{slots.s0}}"');
+    expect(desktop).toContain('sheet-open="{{ true }}" platform="desktop">');
+    expect(phone).toContain('overflow: hidden');
+  });
+
+  it('builds the elements given to props in renderVals, from the same Sonora components', () => {
+    const script = board('book.phone.dc.html').split('data-dc-script')[1]!;
+    const body = script.slice(
+      script.indexOf('renderVals() {') + 'renderVals() {'.length,
+      script.lastIndexOf('}\n}'),
+    );
+    type Node = { c: unknown; p: Record<string, unknown>; k: unknown[] };
+    const window = {
+      React: {
+        Fragment: 'Fragment',
+        createElement: (c: unknown, p: Record<string, unknown>, ...k: unknown[]): Node => ({
+          c,
+          p,
+          k,
+        }),
+      },
+      SonoraDesignSystem_6c1435: Object.fromEntries(
+        ['BackLayer', 'ButtonGroup', 'BottomNav', 'MiniPlayer', 'AccountButton', 'IconButton'].map(
+          (n) => [n, n],
+        ),
+      ),
+    };
+    const vals = new Function('window', body)(window) as { slots: Record<string, Node> };
+    const back = vals.slots.s0!;
+    expect(back.c).toBe('BackLayer');
+    expect(back.p).toMatchObject({ title: 'Book', platform: 'mobile' });
+    expect((back.p.leading as Node).c).toBe('IconButton');
+    expect((back.p.controls as Node).p.items).toEqual(['All', 'Books']);
+    const player = vals.slots.s1!;
+    expect(player.c).toBe('Fragment');
+    expect((player.k as Node[]).map((n) => n.c)).toEqual(['MiniPlayer', 'BottomNav']);
+    expect((player.k[0] as Node).p).toMatchObject({ title: 'Tidal Lines', platform: 'mobile' });
+    expect((player.k[1] as Node).p.items).toEqual([
+      { key: 'books', label: 'Books', icon: 'book_2' },
+    ]);
   });
 });

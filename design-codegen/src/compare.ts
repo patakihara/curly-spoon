@@ -10,8 +10,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
-import { SonoraSource, type NavPage } from './nav.js';
+import { readNav, SonoraSource, type NavPage } from './nav.js';
 import { parsePage, type PageTree } from './page.js';
+import { SHELL_COMPONENTS } from './shell.js';
 
 /** A Sonora component's source file, `components/<folder>/<Name>.jsx`; undefined if none. */
 export function componentFile(sonoraDir: string, name: string): string | undefined {
@@ -51,22 +52,33 @@ export function usedComponents(sonoraDir: string, names: string[]): string[] {
 }
 
 function drawn(tree: PageTree, into: Set<string>): Set<string> {
-  if (tree.kind === 'element') into.add(tree.component);
+  if (tree.kind === 'element') {
+    into.add(tree.component);
+    for (const value of Object.values(tree.props))
+      if (value.kind === 'slot') drawn(value.tree, into);
+  }
   if ('children' in tree) tree.children.forEach((child) => drawn(child, into));
   return into;
 }
 
 /**
- * sha256 of the page file, its placeholder and the source of every Sonora component it draws
- * with, directly or through their lookups, so a change to any of them asks for a fresh look.
+ * sha256 of the page file, its placeholder, the shell it sits in (shell.json, nav.json's
+ * destinations and layouts) and the source of every Sonora component it and the shell draw with,
+ * directly or through their lookups, so a change to any of them asks for a fresh look.
  */
 export function pageHash(appDir: string, sonoraDir: string, id: string): string {
   const page = readFileSync(join(appDir, 'pages', `${id}.page.jsx`), 'utf8');
+  const { destinations, layouts } = readNav(appDir);
   const hash = createHash('sha256')
     .update(page)
     .update('\0')
-    .update(readFileSync(join(appDir, 'placeholders', `${id}.json`)));
-  for (const name of usedComponents(sonoraDir, [...drawn(parsePage(page, id), new Set())])) {
+    .update(readFileSync(join(appDir, 'placeholders', `${id}.json`)))
+    .update('\0')
+    .update(readFileSync(join(appDir, 'shell.json')))
+    .update('\0')
+    .update(JSON.stringify({ destinations, layouts }));
+  const names = [...drawn(parsePage(page, id), new Set()), ...SHELL_COMPONENTS];
+  for (const name of usedComponents(sonoraDir, names)) {
     hash.update(`\0${name}\0`).update(readFileSync(componentFile(sonoraDir, name)!));
   }
   return hash.digest('hex');

@@ -1,7 +1,8 @@
 /**
  * A canvas page, `design/app/pages/<id>.page.jsx`: one default-exported function returning Sonora
- * components with literal props and `data` paths, plus `<Each of as>` and `<When state>`. It is
- * read into a page tree, never run, so both platforms can generate from the same file.
+ * components with literal props, `data` paths and, for a prop that takes an element, one Sonora
+ * element (a slot, `back={<BackLayer …/>}`), plus `<Each of as>` and `<When state>`. It is read
+ * into a page tree, never run, so both platforms can generate from the same file.
  */
 import { parse } from '@babel/parser';
 import type * as t from '@babel/types';
@@ -9,7 +10,9 @@ import { componentName } from './nav.js';
 
 export type PropValue =
   | { kind: 'literal'; value: string | number | boolean | null }
-  | { kind: 'binding'; path: string[] };
+  | { kind: 'binding'; path: string[] }
+  /** One Sonora element given to a prop that takes an element: `back={<BackLayer />}`. */
+  | { kind: 'slot'; tree: PageTree };
 
 export type PageTree =
   | {
@@ -22,7 +25,9 @@ export type PageTree =
   | { kind: 'each'; line: number; of: string[]; as: string; children: PageTree[] }
   | { kind: 'when'; line: number; state: string; children: PageTree[] }
   | { kind: 'text'; value: string }
-  | { kind: 'binding'; line: number; path: string[] };
+  | { kind: 'binding'; line: number; path: string[] }
+  /** Several elements given as one: never in a page file, only in the shell's own trees. */
+  | { kind: 'fragment'; children: PageTree[] };
 
 const lineOf = (node: t.Node) => node.loc?.start.line ?? 0;
 const fail = (node: t.Node, message: string): never => {
@@ -50,6 +55,14 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
   }
   if (e.type === 'NullLiteral') return { kind: 'literal', value: null };
   if (e.type === 'JSXEmptyExpression') return fail(value, 'an empty expression is not allowed');
+  if (e.type === 'JSXElement') {
+    const tree = element(e);
+    if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
+    return { kind: 'slot', tree };
+  }
+  if (e.type === 'JSXFragment') {
+    return fail(e, 'a fragment is not allowed: only literals, data paths and one Sonora element');
+  }
   return { kind: 'binding', path: memberPath(e) };
 }
 
@@ -155,12 +168,14 @@ function resolve(value: Json, path: string[]): Json {
 /**
  * The problems in a page tree, empty when there are none: every binding must resolve in the
  * placeholder (inside `<Each>`, in each item), and every component and prop must be Sonora's.
- * `props` maps each component to the prop names its `.d.ts` declares.
+ * `props` maps each component to the prop names its `.d.ts` declares, `slots` to those of them
+ * that take an element; without `slots`, any declared prop may take one.
  */
 export function checkPage(
   tree: PageTree,
   placeholder: Json,
   props: Map<string, Set<string>>,
+  slots?: Map<string, Set<string>>,
 ): string[] {
   const errors: string[] = [];
   const walk = (node: PageTree, scope: Map<string, Json[]>) => {
@@ -185,6 +200,7 @@ export function checkPage(
         check(node.line, node.path);
         return;
       case 'when':
+      case 'fragment':
         node.children.forEach((child) => walk(child, scope));
         return;
       case 'each': {
@@ -211,8 +227,14 @@ export function checkPage(
             errors.push(`line ${node.line}: ${node.component} takes no children`);
           }
         }
-        for (const value of Object.values(node.props)) {
+        for (const [prop, value] of Object.entries(node.props)) {
           if (value.kind === 'binding') check(node.line, value.path);
+          if (value.kind !== 'slot') continue;
+          const takes = slots?.get(node.component);
+          if (declared?.has(prop) && takes !== undefined && !takes.has(prop)) {
+            errors.push(`line ${node.line}: ${node.component}.${prop} takes no element`);
+          }
+          walk(value.tree, scope);
         }
         node.children.forEach((child) => walk(child, scope));
         return;

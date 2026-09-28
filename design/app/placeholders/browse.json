@@ -1,5 +1,12 @@
 {
   "filters": ["All", "Music", "Audiobooks", "Podcasts"],
+  "sections": [
+    "Jump back in",
+    "Recently added",
+    "Artists & authors",
+    "Picked for you",
+    "Recently played"
+  ],
   "jumpBackIn": [
     {
       "title": "The Silent Patient",
@@ -73,11 +80,31 @@
     }
   ],
   "people": [
-    { "title": "Sonic Tales", "sub": "Artist", "image": "/art/sonic-tales.jpg" },
-    { "title": "Evelyn Harper", "sub": "Author", "image": "/art/evelyn-harper.jpg" },
-    { "title": "Adam Rivers", "sub": "Author", "image": "/art/adam-rivers.jpg" },
-    { "title": "Deep Inertia", "sub": "Artist", "image": "/art/deep-inertia.jpg" },
-    { "title": "Fleeting Verses", "sub": "Artist", "image": "/art/fleeting-verses.jpg" }
+    {
+      "title": "Sonic Tales",
+      "sub": "Artist",
+      "image": "/art/sonic-tales.jpg"
+    },
+    {
+      "title": "Evelyn Harper",
+      "sub": "Author",
+      "image": "/art/evelyn-harper.jpg"
+    },
+    {
+      "title": "Adam Rivers",
+      "sub": "Author",
+      "image": "/art/adam-rivers.jpg"
+    },
+    {
+      "title": "Deep Inertia",
+      "sub": "Artist",
+      "image": "/art/deep-inertia.jpg"
+    },
+    {
+      "title": "Fleeting Verses",
+      "sub": "Artist",
+      "image": "/art/fleeting-verses.jpg"
+    }
   ],
   "pickedForYou": [
     {
@@ -122,12 +149,20 @@
       "meta": "Soul Vertex · 3:33",
       "image": "/art/escapes-and-moons.jpg"
     },
-    { "title": "Foggy Trails", "meta": "Adam Rivers · 4:12", "image": "/art/foggy-trails.jpg" },
+    {
+      "title": "Foggy Trails",
+      "meta": "Adam Rivers · 4:12",
+      "image": "/art/foggy-trails.jpg"
+    },
     {
       "title": "Fragments of the Wind",
       "meta": "Evelyn Harper · 2:58",
       "image": "/art/fragments-of-the-wind.jpg"
     },
-    { "title": "Golden Scars", "meta": "Fleeting Verses · 2:53", "image": "/art/golden-scars.jpg" }
+    {
+      "title": "Golden Scars",
+      "meta": "Fleeting Verses · 2:53",
+      "image": "/art/golden-scars.jpg"
+    }
   ]
 }

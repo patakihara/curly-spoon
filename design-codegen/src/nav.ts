@@ -228,33 +228,54 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
 }
 
 /**
- * `platform.ts`: which density the window width calls for. Phone density holds while the layout
- * is the bottom bar, below the first width with a rail.
+ * `platform.ts`: which of nav.json's layouts the window width calls for, as a hook, and the shape
+ * of the shell's parts at a layout, which each generated page fills for itself. The phone's
+ * density holds in the bottom bar's layout; every rail draws at desktop density.
  */
 export function generatePlatform(nav: Nav): string {
-  const rails = nav.layouts.filter((l) => l.nav !== 'bottomBar').map((l) => l.minWidth);
-  const phoneMax = rails.length > 0 ? Math.min(...rails) - 1 : Number.MAX_SAFE_INTEGER;
+  const [first, ...rest] = nav.layouts;
+  if (first === undefined) throw new Error('nav.json has no layouts');
+  const id = (l: { minWidth: number }) => `'w${l.minWidth}'`;
+  const widest = nav.layouts[nav.layouts.length - 1]!;
   return [
     `// ${APP_NOTE}`,
-    "import { useSyncExternalStore } from 'react';",
+    "import { useSyncExternalStore, type ReactNode } from 'react';",
     '',
     "export type Platform = 'mobile' | 'desktop';",
     '',
-    `const PHONE = '(max-width: ${phoneMax}px)';`,
+    '/** A layout of nav.json, named by its minimum width. */',
+    `export type LayoutId = ${nav.layouts.map(id).join(' | ')};`,
     '',
-    'function subscribe(onChange: () => void): () => void {',
-    '  const query = window.matchMedia(PHONE);',
-    "  query.addEventListener('change', onChange);",
-    "  return () => query.removeEventListener('change', onChange);",
+    "/** The shell's parts at one layout: its density, its rail, what leads the heading, the player and the side panel. */",
+    'export interface Chrome {',
+    '  platform: Platform;',
+    '  rail?: ReactNode;',
+    '  leading?: ReactNode;',
+    '  player?: ReactNode;',
+    '  sheet?: ReactNode;',
+    '  sheetOpen: boolean;',
     '}',
     '',
-    '/** The density the window width calls for; desktop when there is no window. */',
-    'export function usePlatform(): Platform {',
-    '  return useSyncExternalStore(',
-    '    subscribe,',
-    "    () => (window.matchMedia(PHONE).matches ? 'mobile' : 'desktop'),",
-    "    () => 'desktop',",
-    '  );',
+    '/** Each layout past the first, with the media query that reaches it, narrowest first. */',
+    'const WIDER: readonly (readonly [LayoutId, string])[] = [',
+    ...rest.map((l) => `  [${id(l)}, '(min-width: ${l.minWidth}px)'],`),
+    '];',
+    '',
+    'function current(): LayoutId {',
+    `  let layout: LayoutId = ${id(first)};`,
+    '  for (const [wider, query] of WIDER) if (window.matchMedia(query).matches) layout = wider;',
+    '  return layout;',
+    '}',
+    '',
+    'function subscribe(onChange: () => void): () => void {',
+    '  const queries = WIDER.map(([, query]) => window.matchMedia(query));',
+    "  for (const query of queries) query.addEventListener('change', onChange);",
+    "  return () => queries.forEach((query) => query.removeEventListener('change', onChange));",
+    '}',
+    '',
+    '/** The layout the window width calls for; the widest when there is no window. */',
+    'export function useLayout(): LayoutId {',
+    `  return useSyncExternalStore(subscribe, current, () => ${id(widest)});`,
     '}',
     '',
   ].join('\n');

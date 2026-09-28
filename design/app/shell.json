@@ -1,0 +1,12 @@
+{
+  "account": { "label": "Account" },
+  "playing": {
+    "title": "Heartbeats in Silence",
+    "artist": "Deep Inertia",
+    "image": "/art/deep-inertia.jpg",
+    "context": "Playing from Deep Inertia",
+    "progress": 0.05,
+    "duration": 262
+  },
+  "railFoot": [{ "page": "settings", "icon": "settings" }]
+}

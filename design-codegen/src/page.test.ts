@@ -79,6 +79,48 @@ describe('a page file', () => {
     expect(() => parsePage(page(body), 'book')).toThrow(error);
   });
 
+  it('reads an element given to a prop as a slot, a tree of its own', () => {
+    const tree = parsePage(
+      page(`<BackdropShell back={<BackLayer controls={<ButtonGroup items={data.filters} />} />}>
+  <PageBody />
+</BackdropShell>`),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.back).toEqual({
+      kind: 'slot',
+      tree: {
+        kind: 'element',
+        component: 'BackLayer',
+        line: 3,
+        props: {
+          controls: {
+            kind: 'slot',
+            tree: {
+              kind: 'element',
+              component: 'ButtonGroup',
+              line: 3,
+              props: { items: { kind: 'binding', path: ['data', 'filters'] } },
+              children: [],
+            },
+          },
+        },
+        children: [],
+      },
+    });
+  });
+
+  it('refuses a fragment or an Each given to a prop', () => {
+    expect(() => parsePage(page('<BackLayer controls={<><Button /></>} />'), 'book')).toThrow(
+      /line 3: .*only literals, data paths and one Sonora element/,
+    );
+    expect(() =>
+      parsePage(
+        page('<BackLayer controls={<Each of={data.a} as="a"><Button /></Each>} />'),
+        'book',
+      ),
+    ).toThrow(/line 3: Each and When go in children, not in a prop/);
+  });
+
   it('refuses an import', () => {
     expect(() => parsePage(`import x from 'y';\n${page('<Button />')}`, 'book')).toThrow(
       /line 1: imports are not allowed/,
@@ -126,6 +168,22 @@ describe('checking a page', () => {
     expect(checkPage(tree('<DetailPage colour="red"><Frob /></DetailPage>'), data, props)).toEqual([
       'line 3: DetailPage has no prop colour',
       'line 3: Frob is not a Sonora component',
+    ]);
+  });
+
+  it('checks an element given to a prop like any other, and only where the prop takes one', () => {
+    const slots = new Map([['DetailPage', new Set(['children'])]]);
+    const withSlots = new Map([...props, ['DetailPage', new Set(['kindLabel', 'children'])]]);
+    expect(
+      checkPage(
+        tree('<DetailPage kindLabel={<EpisodeRow title={data.subtitle} />} />'),
+        data,
+        withSlots,
+        slots,
+      ),
+    ).toEqual([
+      'line 3: DetailPage.kindLabel takes no element',
+      'line 3: data.subtitle is not in the placeholder',
     ]);
   });
 

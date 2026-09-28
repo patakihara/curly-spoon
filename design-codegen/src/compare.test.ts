@@ -74,7 +74,13 @@ describe('checking a comparison', () => {
   /** A copy of the canvas holding settings' page, placeholder and comparison, and of Sonora. */
   function copy(): string {
     tmp = mkdtempSync(join(tmpdir(), 'auralis-compare-'));
-    for (const rel of ['pages/settings.page.jsx', 'placeholders/settings.json', 'compare']) {
+    for (const rel of [
+      'nav.json',
+      'shell.json',
+      'pages/settings.page.jsx',
+      'placeholders/settings.json',
+      'compare',
+    ]) {
       cpSync(join(appDir, rel), join(tmp, 'app', rel), { recursive: true });
     }
     for (const rel of ['components', 'docs/screens/README.md']) {
@@ -93,9 +99,19 @@ describe('checking a comparison', () => {
     ]);
   });
 
+  it('[M0.canvas/e] fails once the shell the page sits in has changed since its comparison was made', () => {
+    const app = copy();
+    const file = join(app, 'shell.json');
+    writeFileSync(file, readFileSync(file, 'utf8').replace('"Account"', '"You"'));
+    expect(checkComparison(app, sonora(), settings)).toEqual([
+      'settings: the page changed since compare/settings.md was made; look again',
+    ]);
+  });
+
   for (const [component, why] of [
     ['PageBody', 'a component the page draws'],
     ['SectionHeader', 'a component one the page draws looks up'],
+    ['NavRail', 'a component the shell draws'],
   ] as const) {
     it(`[M0.canvas/e] fails once ${why} has changed since the comparison was made`, () => {
       const app = copy();

@@ -1,12 +1,15 @@
 ---
 page: browse
-pageHash: ced725d84439ea7bca11192e607be15041a9f4b7fd63ee313358b4c411618f70
+pageHash: 317e0f1ce92c586dc3f2b230051af8d9f559987cf7fa86f463c5c703a0da6b11
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
 # Browse
 
-Canvas renders: `browse/canvas-phone.png` (390 px), `browse/canvas-desktop.png` (1440 px).
+Canvas renders: `browse/canvas-phone.png` (390 px, the bottom bar's layout) and
+`browse/canvas-desktop.png` (1440 px, the labelled rail with the Now Playing panel), both in the
+app shell. Also compared: Sonora's Backdrop cards (`backdrop-anatomy`, `backdrop-spy-subheader`,
+`backdrop-subheader`, `backdrop-side-panel`), the latest mockups of the shell itself.
 Sonora UI kit renders, the design this page is compared against: `sonora/kit-mobile-browse.png`
 (the mobile kit on its first screen, All filter) and `sonora/kit-desktop-browse.png` (the desktop
 kit's Browse destination). No Spotify screen was needed for intent: the kits cover the feed.
@@ -27,43 +30,58 @@ kit's Browse destination). No Spotify screen was needed for intent: the kits cov
 
 ## What the canvas page draws
 
-`PageBody`, the filter `ButtonGroup`, "Jump back in" as an auto-filled grid of wide
-`QuickPick`s, then the "Recently added", "Artists & authors" and "Picked for you" shelves and
-the "Recently played" rows, in the mobile kit's order and with its titles and art.
+The page in the app shell, Sonora's backdrop. The back layer holds the heading "Browse", led on the
+phone by the account avatar, and the filter `ButtonGroup` as its controls: the filter reconfigures
+what the front layer shows, so it sits on the back layer, as in the Backdrop Anatomy card. The front
+layer has a scroll-spy `FrontLayerHeader` (blank at rest, then the title of the section that last
+passed under it) over `PageBody`: "Jump back in" as an auto-filled grid of wide `QuickPick`s, then
+the "Recently added", "Artists & authors" and "Picked for you" shelves and the "Recently played"
+rows, in the mobile kit's order and with its titles and art. Around it: the bottom bar and the
+mini-player on the phone; on desktop the labelled rail (Search first, Settings at its foot), the
+docked transport bar and the Now Playing panel.
 
 Measured in the browser (`getBoundingClientRect`), kit against page: page margin 16 px against
-16 px on the phone and 28 px against 28 px on desktop; the phone's "Recently added" shelf runs
-to the right edge in both (0 px short); desktop quick picks 300 px wide against 300 px, 10 px
-apart across and down against 10 px; phone quick picks 2-up, 8 px apart in both (186 px wide
-in the 412 px kit phone, 175 px at 390 px).
+16 px on the phone and 28 px against 28 px on desktop; desktop quick picks 300 px wide against
+300 px, 10 px apart against 10 px, now two across in the pane between the rail and the panel, as in
+the kit; the labelled rail 268 px wide in both, the panel at `--side-sheet-width` in both.
+Scrolled by 600 px at 390, 800, 1100 and 1440 px: the heading, the filters, the rail and the players
+stay put, the document never scrolls, and the front layer is the one scroller.
 
 ## Differences
 
 - Matches, after the one-accent change: the filter's selected segment is the play rose with
   black ink, and the resume bars on "Recently added" cards are rose, in both kits and on the
-  page (`ButtonGroup tone="play"`). The desktop kit's player panel keeps its "Now playing" tab
-  in the violet accent, since tabs are not play-related; that panel is part 2's.
-- Fixed: the first draw added a wide episode `FeatureCard` and a "More like" shelf taken from
-  Spotify's Home screens, and left out the kit's "Picked for you" and "Recently played". The
-  kits are the design, so the feed now follows the mobile kit, section for section.
-- Fixed: the filter row sat flush against "Jump back in". It is now an untitled `Section`,
-  which carries the feed's gap, as the kit's subheader spacing does.
-- Fixed: the page sat 8 px further in on every side (24 px on the phone, 36 px on desktop),
-  the browser's own body margin, and the phone's shelves stopped 8 px short of the right
-  edge. The web app's base styles now reset it, as the kits' pages do.
-- Fixed: on desktop the quick picks were 490 px wide and 20 px apart, from a fixed
-  `columns={2}`. The page now lets `LayoutGrid` auto-fill wide items as both kits do, capped at
-  `--grid-max-width-tiles`, and Sonora's `LayoutGrid` now spaces wide items half a gutter apart
-  on desktop by default (10 px), the gap the desktop kit passes by hand.
-- Open: with no shell, the desktop page fills the whole 1440 px window, so three quick picks
-  fit across where the kit's narrower pane, between the rail and the player panel, fits two.
-  The tiles themselves match; the shell (part 2) brings the pane.
-- Fixed, by adding to Sonora: the kits pad each screen with a hand-styled `div`, which a page
-  may not do. Sonora gained `PageBody` (page margin, feed top gap, reading width), which the
-  `Shelf` bleed already assumes.
+  page (`ButtonGroup tone="play"`). The Now Playing panel keeps its "Now playing" tab in the violet
+  accent, as the desktop kit does, since tabs are not play-related.
+- Changed on purpose, from the Backdrop cards: the kits draw the old `AppShell`; the page now sits
+  in the backdrop Sonora's latest mockups draw. The front layer is a rounded 1dp surface under the
+  heading and the filters, with its corners kept at every scroll position.
+- Changed on purpose: the filters moved out of the feed to the back layer's controls, as the
+  Backdrop Anatomy card places a library-scope switch. On the phone they sit where the mobile kit
+  has them, under the heading; on desktop they sit on the back layer, where the desktop kit had them
+  at the top of the content.
+- Changed on purpose: a scroll-spy subheader tops the front layer, since Sonora requires one on a
+  front layer that scrolls. Blank at rest, it puts "Jump back in" lower than the kits: its text
+  204 px from the top against about 145 px on the phone, 240 px against about 192 px on desktop,
+  as the Scroll-Spy Subheader card spaces it.
+- Changed on purpose: Search is a destination, first on the rails and last on the bottom bar, as
+  nav.json orders them; the desktop kit's rail has no Search and the mobile kit's bar ends with it.
+- Changed on purpose: Settings is a row at the foot of the rail (NavRail `footerItems`, added to
+  Sonora for it) and, on the phone, behind the account avatar. The desktop kit's rail lists Settings
+  among the destinations and ends in a theme switch and library name, and the mobile kit also draws
+  a settings button at the heading's end; the page has neither.
+- Changed on purpose: the rail has no expand toggle; its width follows the window, an icon rail
+  from 600 px and a labelled rail from 1024 px, where the kit and the Anatomy card draw a hamburger.
+- Changed on purpose: nav.json's icons and labels (Books with `book_2`, Music with `album`) replace
+  the kits' (Audiobooks, headphones, speaker).
+- Open: the account avatar is a person glyph, since the placeholder names no picture; the mobile
+  kit shows a photo. `AccountButton` takes one.
+- Open: the front layer shows the browser's own scroll bar while it scrolls (the phone render,
+  scrolled); the kits' page scroll hides it on the phone.
 - Open: one page serves both kits, so desktop shows "Artists & authors" before "Picked for
   you" and keeps "Recently played", where the desktop kit swaps the two and ends there.
 - Open: every "Recently played" row draws its divider; the kit drops the last one, which the
   page format cannot express yet.
-- Shell, part 2: no account avatar, "Browse" title, app bar, nav rail or bottom nav, mini-player or Now Playing
-  panel, which both kits draw around the feed.
+- Fixed earlier, still true: the page follows the mobile kit section for section, the feed's gaps
+  come from untitled and titled `Section`s, the browser's body margin is reset, and `LayoutGrid`
+  auto-fills wide items capped at `--grid-max-width-tiles` 10 px apart, as the desktop kit does.
