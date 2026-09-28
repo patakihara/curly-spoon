@@ -62,6 +62,12 @@ export interface BackdropShellProps {
    * nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.
    */
   appBar?: boolean;
+  /**
+   * A page with no navigation beside it, such as signing in: its heading and its content in one
+   * centred column of this reading width (`PageBody`'s widths), the heading starting at the page
+   * margin as the content does. Pass no `rail`, and give the page's `PageBody` the same `width`.
+   */
+  column?: 'tiles' | 'list' | 'form';
   platform?: 'desktop' | 'mobile';
 }
 export declare function BackdropShell(props: BackdropShellProps): JSX.Element;

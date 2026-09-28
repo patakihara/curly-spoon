@@ -414,6 +414,7 @@ The app frame as a real Material backdrop. Two surfaces, and only two. The **bac
 | `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the front layer. |
 | `theme` | `string` | Sets `data-theme` on the frame. |
 | `appBar` | `boolean` |  A page that is not a destination, on a phone: no backdrop. The back layer becomes a top app bar on the page surface (`BackLayer`'s `appBar`) and the front layer goes flat under it, so nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.  |
+| `column` | `'tiles' \| 'list' \| 'form'` |  A page with no navigation beside it, such as signing in: its heading and its content in one centred column of this reading width (`PageBody`'s widths), the heading starting at the page margin as the content does. Pass no `rail`, and give the page's `PageBody` the same `width`.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### BackLayer
@@ -433,6 +434,7 @@ The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevati
 | `searchOpen` | `boolean` | Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. |
 | `progress` | `number` | 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. |
 | `appBar` | `boolean` |  The heading as a top app bar on the page surface, for a page that is not a destination on a phone: `--surface-bg` instead of the back layer's colour, and the title set as a mobile `SectionHeader`'s, in the body face, rather than as a display heading. `BackdropShell`'s `appBar` passes it down.  |
+| `atMargin` | `boolean` |  Starts the heading at the page margin (`--grid-margin`, or `--grid-margin-mobile`), where `PageBody` starts the content under it, rather than at the heading strip's own inset. `BackdropShell`'s `column` passes it down.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### BackToTop

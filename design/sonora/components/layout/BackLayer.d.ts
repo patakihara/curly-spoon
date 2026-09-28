@@ -50,6 +50,12 @@ export interface BackLayerProps {
    * `appBar` passes it down.
    */
   appBar?: boolean;
+  /**
+   * Starts the heading at the page margin (`--grid-margin`, or `--grid-margin-mobile`), where
+   * `PageBody` starts the content under it, rather than at the heading strip's own inset.
+   * `BackdropShell`'s `column` passes it down.
+   */
+  atMargin?: boolean;
   platform?: 'desktop' | 'mobile';
 }
 export declare function BackLayer(props: BackLayerProps): JSX.Element;

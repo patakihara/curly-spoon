@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x900" name="Backdrop — App Bar" subtitle="A page that is not a destination: a top app bar on the page surface on a phone, no backdrop, its heading in SectionHeader's context form when the page is named by its subject" -->
+<!-- @dsCard group="Components" viewport="1400x900" name="Backdrop — App Bar" subtitle="A page that is not a destination: a top app bar on the page surface on a phone, no backdrop, its heading in SectionHeader's context form when the page is named by its subject; a page with nothing beside it in one centred column" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { BackdropShell, BackLayer, NavRail, Section, LayoutGrid, MediaCard, ResultRow, IconButton, BottomNav, ViewToggle } = window.SonoraDesignSystem_6c1435;
+const { BackdropShell, BackLayer, NavRail, Section, LayoutGrid, MediaCard, ResultRow, IconButton, BottomNav, ViewToggle, PageBody, EmptyState, Button } = window.SonoraDesignSystem_6c1435;
 
 const art = (hue) => 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">' +
@@ -43,6 +43,9 @@ function Tracks(){
     {TRACKS.map((t, i) => <ResultRow key={t} platform="mobile" title={t} meta="Halcyon Bloom · 3:41" divider />)}
   </div>;
 }
+
+const Alone = ({platform}) => <EmptyState platform={platform} icon="group" title="Sign in with your household account"
+  body="One account for every server you run." action={<Button variant="primary" platform={platform}>Sign in</Button>} />;
 
 /* A phone's detail page: the heading is a top app bar on --surface-bg, the front layer flat under
    it, nothing of the backdrop behind. The bottom bar stays. */
@@ -82,7 +85,26 @@ function Demo(){
         </BackdropShell>
       </div>
     </div>
+    <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-lg)',alignItems:'flex-start'}}>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',width:300}}>
+        <Caption>Phone · a page with nothing beside it, signing in: no close, no bar below, the title at the page margin</Caption>
+        <div style={{height:380,display:'flex',flexDirection:'column',borderRadius:'var(--radius-md)',overflow:'hidden',border:'1px solid var(--surface-border)'}}>
+          <BackdropShell platform="mobile" appBar column="form" back={<BackLayer platform="mobile" title="Sign in" />}>
+            <PageBody platform="mobile" width="form"><Alone platform="mobile" /></PageBody>
+          </BackdropShell>
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',width:620}}>
+        <Caption>Desktop, at half size · the same page, no rail: its heading and content in one centred column, the heading starting where the content does</Caption>
+        <div style={{zoom:0.5,width:1240,height:420,borderRadius:'var(--radius-lg)',overflow:'hidden',border:'2px solid var(--surface-border)'}}>
+          <BackdropShell platform="desktop" column="form" back={<BackLayer title="Sign in" />}>
+            <PageBody width="form"><Alone platform="desktop" /></PageBody>
+          </BackdropShell>
+        </div>
+      </div>
+    </div>
     <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-sm)'}}>
+      <Tag>column · centred, heading at the page margin</Tag>
       <Tag>appBar · --surface-bg, front layer flat</Tag>
       <Tag>Hairline · fades in as the content scrolls</Tag>
       <Tag>Context form · 40px art, --text-xs eyebrow</Tag>

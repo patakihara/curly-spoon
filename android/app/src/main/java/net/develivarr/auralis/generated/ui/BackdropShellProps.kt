@@ -64,10 +64,22 @@ data class BackdropShellProps(
      * nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.
      */
     val appBar: Boolean? = null,
+    /**
+     * A page with no navigation beside it, such as signing in: its heading and its content in one
+     * centred column of this reading width (`PageBody`'s widths), the heading starting at the page
+     * margin as the content does. Pass no `rail`, and give the page's `PageBody` the same `width`.
+     */
+    val column: BackdropShellColumn? = null,
     val platform: Platform? = null,
 )
 
 enum class BackdropShellSheetLayer(val value: String) {
     FRONT("front"),
     BEHIND("behind"),
+}
+
+enum class BackdropShellColumn(val value: String) {
+    TILES("tiles"),
+    LIST("list"),
+    FORM("form"),
 }

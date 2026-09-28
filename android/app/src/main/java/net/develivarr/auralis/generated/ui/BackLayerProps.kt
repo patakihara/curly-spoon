@@ -53,5 +53,11 @@ data class BackLayerProps(
      * `appBar` passes it down.
      */
     val appBar: Boolean? = null,
+    /**
+     * Starts the heading at the page margin (`--grid-margin`, or `--grid-margin-mobile`), where
+     * `PageBody` starts the content under it, rather than at the heading strip's own inset.
+     * `BackdropShell`'s `column` passes it down.
+     */
+    val atMargin: Boolean? = null,
     val platform: Platform? = null,
 )

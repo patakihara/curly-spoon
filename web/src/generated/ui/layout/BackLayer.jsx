@@ -7,9 +7,10 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 
 
 /** The backdrop's back layer: the 0dp --surface-bg-alt surface carrying the page heading and any contextual controls that reconfigure what the front layer is showing. No rounding, no elevation. Given `search`, its heading carries a local search that comes out as the front layer scrolls. Given `eyebrow` or `image`, the heading names a page by its subject, as SectionHeader's context form does. */
-export function BackLayer({ title, eyebrow, image, round = false, leading, trailing, controls, search, searchOpen, progress = 0, appBar = false, platform = 'desktop' }) {
+export function BackLayer({ title, eyebrow, image, round = false, leading, trailing, controls, search, searchOpen, progress = 0, appBar = false, atMargin = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
-  const pad = 'var(--spacing-' + (mobile ? 'md' : 'xl') + ')';
+  /* At the page margin the heading starts where PageBody starts the content under it. */
+  const pad = atMargin ? 'var(--grid-margin' + (mobile ? '-mobile' : '') + ')' : 'var(--spacing-' + (mobile ? 'md' : 'xl') + ')';
   /* The local search is TopAppBar's search morph, moved to the backdrop's heading: the title fades
      out to the left while the field grows from the search button. Scrolling the front layer pulls
      the field out without focus; tapping the button pulls it out with focus and keeps it out at
