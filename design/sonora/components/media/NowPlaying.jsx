@@ -1,103 +1,57 @@
 import React from 'react';
+const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
-if (typeof document !== 'undefined' && !document.getElementById('sonora-nowplaying-css')) {
-  const el = document.createElement('style');
-  el.id = 'sonora-nowplaying-css';
-  el.textContent = '@keyframes np-bar-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'
-    + '@media (prefers-reduced-motion:reduce){.np-bar{animation:none!important}}';
-  document.head.appendChild(el);
-}
+const TABS = [
+  { key: 'now', label: 'Now playing' },
+  { key: 'queue', label: 'Queue' },
+  { key: 'lyrics', label: 'Lyrics' },
+];
 
 /**
- * The player, whole: what is playing, its lyrics and its queue, in the shape each platform wants.
- * Mobile covers everything as a sheet expanding out of the now-playing bar, with lyrics and queue as
- * previews that open full pages (and as buttons on the bottom app bar). Desktop is a side panel where
- * the two are tabs instead. One set of props, both shapes.
+ * The player, whole, with Now playing, Queue and Lyrics as its tabs; spoken content has no Lyrics
+ * tab. Mobile is a full-screen sheet over everything, the bottom bar included, that expands out
+ * of the mini-player: an app bar (collapse, what it plays from, the menu), the tabs, then the
+ * active tab's page. Desktop is the side panel. `children` is the active tab's page; left out,
+ * the player builds it from `track`, `player`, `queue` and `lyrics`.
  */
 export function NowPlaying({
-  platform = 'mobile', open = false, from, onClose,
-  page, onPageChange, tab, onTabChange,
+  platform = 'mobile', open = false, from, onClose, onMore,
+  tab, onTabChange, variant = 'music',
   track = {}, player = {}, lyrics = {}, queue = {},
-  actions, zIndex = 30,
+  zIndex = 30, children,
 }) {
-  const { PlayerSheet, PlayerPanel, NowPlayingPage, LyricsPage, QueuePage, BottomAppBar } = NS();
-  const [ownPage, setOwnPage] = React.useState('now');
-  const active = page === undefined ? ownPage : page;
-  const setPage = (k) => { if (page === undefined) setOwnPage(k); if (onPageChange) onPageChange(k); };
-  // Coming back to the bar always returns to the player itself, never to a sub-page.
-  React.useEffect(() => { if (!open) setPage('now'); }, [open]); // eslint-disable-line
-  // The bottom bar waits for the expansion to land: a docked strip caught inside the growing
-  // rectangle reads as a glitch, so it arrives once the sheet is full-size.
-  const [settled, setSettled] = React.useState(false);
-  React.useEffect(() => {
-    if (!open) { setSettled(false); return; }
-    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) { setSettled(true); return; }
-    const t = setTimeout(() => setSettled(true), 300);
-    return () => clearTimeout(t);
-  }, [open]);
+  const { PlayerSheet, PlayerPanel, NowPlayingPage, LyricsPage, QueuePage, TabBar, IconButton } = NS();
+  const mobile = platform === 'mobile';
+  const tabs = variant === 'spoken' ? TABS.filter((t) => t.key !== 'lyrics') : TABS;
+  const [ownTab, setOwnTab] = React.useState('now');
+  const active = tab === undefined ? ownTab : tab;
+  const setTab = (k) => { if (tab === undefined) setOwnTab(k); if (onTabChange) onTabChange(k); };
+  const page = children !== undefined ? children
+    : active === 'queue' ? QueuePage && <QueuePage platform={platform} heading={null} context={track.context} {...queue} />
+    : active === 'lyrics' ? LyricsPage && <LyricsPage platform={platform} heading={null} title={track.title} artist={track.artist} {...lyrics} />
+    : NowPlayingPage && <NowPlayingPage platform={platform} variant={variant} image={track.image} title={track.title}
+        artist={track.artist} context={track.context} {...player} />;
 
-  // Which sub-page is on screen, including the one still animating back out, and the rectangle it
-  // grows from: the bottom-bar button that opened it, or the preview row whose expand button did.
-  const [shown, setShown] = React.useState(null);
-  const [origin, setOrigin] = React.useState(null);
-  React.useEffect(() => {
-    if (active !== 'now') { setShown(active); return; }
-    if (!shown) return;
-    const t = setTimeout(() => setShown(null), 340);
-    return () => clearTimeout(t);
-  }, [active]); // eslint-disable-line
-
-  if (platform !== 'mobile') {
+  if (!mobile) {
     if (!PlayerPanel) return null;
-    return <PlayerPanel open={open} tab={tab} onTabChange={onTabChange} onClose={onClose}
-      track={track} player={player} lyrics={lyrics} queue={queue} />;
+    return <PlayerPanel open={open} tab={active} onTabChange={setTab} onClose={onClose} tabs={tabs}>{page}</PlayerPanel>;
   }
-
-  const openSub = (k, rect) => { setOrigin(rect || null); setPage(k); };
-  // From the bottom bar there is nothing to expand out of, so the page just slides up from the edge
-  // it was summoned from — and back down when dismissed.
-  const go = (k) => () => (active === k ? setPage('now') : openSub(k, null));
-  const actionBar = BottomAppBar && (
-    <BottomAppBar spread={false} align="end" actions={actions || [
-      { key: 'output', icon: 'speaker', label: 'Play on another device' },
-      { key: 'lyrics', icon: 'lyrics', label: 'Lyrics', active: active === 'lyrics', onClick: go('lyrics'), disabled: !(lyrics.lines || []).length },
-      { key: 'queue', icon: 'queue_music', label: 'Queue', active: active === 'queue', onClick: go('queue') },
-      { key: 'more', icon: 'more_vert', label: 'More options', onClick: player.onMore },
-    ]} />
-  );
-  // Its height is held from the start, so nothing reflows when it lands.
-  const bar = settled
-    ? <div className="np-bar" style={{ flexShrink: 0, animation: 'np-bar-in var(--duration-quick) var(--ease-standard)' }}>{actionBar}</div>
-    : <div aria-hidden="true" style={{ flexShrink: 0, height: 'var(--bottom-app-bar-height)' }} />;
-  // The sub-page starts below the player's own app bar and stops above the bottom bar, so both
-  // stay put while it expands out of whatever was pressed.
-  const sub = (kids) => (
-    <div style={{ position: 'absolute', top: 'var(--appbar-height-mobile)', left: 0, right: 0, bottom: 0, zIndex: 1, overflow: 'hidden' }}>
-      <PlayerSheet open={active !== 'now'} from={origin} radius="var(--radius-md)" zIndex={1}>{kids}</PlayerSheet>
-    </div>
-  );
   if (!PlayerSheet) return null;
+  const icon = (name, size) => <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: size || 'var(--icon-sm)', lineHeight: 1 }}>{name}</span>;
   return (
     <PlayerSheet open={open} from={from} onClose={onClose} zIndex={zIndex} background="var(--surface-bg-alt)">
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        {NowPlayingPage && (
-          <NowPlayingPage platform="mobile" onClose={onClose} divider={!!shown}
-            image={track.image} title={track.title} artist={track.artist} context={track.context}
-            lyrics={lyrics.lines} lyricsActiveIndex={lyrics.activeIndex} lyricsSyncMode={lyrics.syncMode}
-            onOpenLyrics={(rect) => openSub('lyrics', rect)}
-            queue={queue.items} onOpenQueue={(rect) => openSub('queue', rect)} onPlayQueueItem={queue.onPlay}
-            {...player} />
-        )}
-        {shown === 'lyrics' && LyricsPage && sub(
-          <LyricsPage platform="mobile" onClose={() => setPage('now')} title={track.title} artist={track.artist} {...lyrics} />
-        )}
-        {shown === 'queue' && QueuePage && sub(
-          <QueuePage platform="mobile" onClose={() => setPage('now')} context={track.context} {...queue} />
-        )}
+      <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);flex-shrink:0;box-sizing:border-box;height:var(--appbar-height-mobile);padding:0 var(--spacing-lg)')}>
+        {IconButton && <IconButton label="Collapse player" muted onClick={onClose}>{icon('keyboard_arrow_down', 'var(--icon-md)')}</IconButton>}
+        <div style={sx('flex:1;min-width:0;text-align:center;font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;font-weight:var(--weight-strong);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{track.context}</div>
+        {IconButton && <IconButton label="More options" muted onClick={onMore}>{icon('more_vert')}</IconButton>}
       </div>
-      {bar}
+      {TabBar && (
+        <div style={sx('flex-shrink:0;padding:0 var(--spacing-lg);border-bottom:1px solid var(--surface-border)')}>
+          <TabBar platform="mobile" fill items={tabs} value={active} onChange={setTab} />
+        </div>
+      )}
+      <div style={sx('position:relative;display:flex;flex-direction:column;flex:1;min-height:0')}>{page}</div>
     </PlayerSheet>
   );
 }

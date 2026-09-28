@@ -19,13 +19,26 @@ const playBtn = { ...iconBtn('var(--play-icon)', 44), background: 'var(--play)',
 /**
  * The persistent now-playing surface. One component, two platform variants:
  * mobile is the tinted pill docked above the bottom nav; desktop is the
- * full-width three-column transport bar docked to the bottom of the window.
+ * full-width three-column transport bar docked to the bottom of the window, the
+ * one place desktop draws the transport. `variant="spoken"` gives that bar
+ * speed, skip back and forward and the sleep timer in place of shuffle, previous,
+ * next and repeat, and drops the lyrics button: spoken content has none.
  */
 export function MiniPlayer({
   title, artist, image, playing, onTogglePlay, onOpen,
   platform = 'mobile', progress = 0, onSeek, duration = 258,
   onPrev, onNext, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics,
+  variant = 'music', onSkipBack, onSkipForward, skipSeconds = 15, speed = 1, onSpeed, sleep = 'Off', onSleep,
 }) {
+  const spoken = variant === 'spoken';
+  // The interval is drawn as a number over a plain circular arrow, as TransportBar's spoken skip is:
+  // Material Symbols ships only fixed 5/10/30 glyphs. The arrow alone is mirrored for forward.
+  const skip = (dir) => (
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span aria-hidden="true" style={{ display: 'inline-block', transform: dir === 'forward' ? 'scaleX(-1)' : 'none' }}>replay</span>
+      <span aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 9 }}>{skipSeconds}</span>
+    </span>
+  );
   if (platform === 'desktop') {
     const fg = 'var(--surface-now-playing-fg)';
     const muted = 'var(--surface-now-playing-fg-muted)';
@@ -49,12 +62,31 @@ export function MiniPlayer({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-sm)', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
-            <button aria-label="Shuffle" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>shuffle</button>
-            <button aria-label="Previous" onClick={onPrev} style={iconBtn(fg)}>skip_previous</button>
+            {spoken ? (
+              <>
+                <button aria-label={'Playback speed, ' + speed + ' times'} onClick={onSpeed}
+                  style={{ ...iconBtn(speed === 1 ? muted : 'var(--play-ink)'), fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-sm)' }}>{speed}×</button>
+                <button aria-label={'Skip back ' + skipSeconds + ' seconds'} onClick={onSkipBack} style={iconBtn(fg)}>{skip('back')}</button>
+              </>
+            ) : (
+              <>
+                <button aria-label="Shuffle" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>shuffle</button>
+                <button aria-label="Previous" onClick={onPrev} style={iconBtn(fg)}>skip_previous</button>
+              </>
+            )}
             <button aria-label={playing ? 'Pause' : 'Play'} onClick={onTogglePlay}
               style={playBtn}>{playing ? 'pause' : 'play_arrow'}</button>
-            <button aria-label="Next" onClick={onNext} style={iconBtn(fg)}>skip_next</button>
-            <button aria-label="Repeat" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>repeat</button>
+            {spoken ? (
+              <>
+                <button aria-label={'Skip forward ' + skipSeconds + ' seconds'} onClick={onSkipForward} style={iconBtn(fg)}>{skip('forward')}</button>
+                <button aria-label={'Sleep timer, ' + sleep} onClick={onSleep} style={iconBtn(sleep === 'Off' ? fg : 'var(--play-ink)', 36, 'var(--icon-sm)', sleep === 'Off')}>bedtime</button>
+              </>
+            ) : (
+              <>
+                <button aria-label="Next" onClick={onNext} style={iconBtn(fg)}>skip_next</button>
+                <button aria-label="Repeat" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>repeat</button>
+              </>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', width: '100%', maxWidth: 480 }}>
             <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(progress * duration)}</span>
@@ -66,7 +98,7 @@ export function MiniPlayer({
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--spacing-lg)' }}>
-          <button aria-label="Lyrics" onClick={onToggleLyrics} style={{ ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }}>lyrics</button>
+          {!spoken && <button aria-label="Lyrics" onClick={onToggleLyrics} style={{ ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }}>lyrics</button>}
           <button aria-label="Queue" onClick={onToggleQueue} style={{ ...iconBtn(fg), color: queueOpen ? 'var(--play-ink)' : fg }}>queue_music</button>
           <button aria-label="Volume" style={iconBtn(fg)}>volume_up</button>
         </div>

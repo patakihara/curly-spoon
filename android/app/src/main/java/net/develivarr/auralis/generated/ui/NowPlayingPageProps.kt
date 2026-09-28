@@ -2,19 +2,22 @@
 package net.develivarr.auralis.generated.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.geometry.Rect
 
 /**
- * The Currently Playing page: cover, song, seek, transport and the playback readouts — the shape
- * both platforms share. On mobile it also carries previews of the lyrics and the queue, each opening
- * its full page; on desktop those are the player panel's own tabs, so the previews are left out.
+ * The player's first tab: cover, titles, then the controls matched to what plays. `music` gets
+ * shuffle, previous, next and repeat, its speed left to the menu, and a sleep timer row; `spoken`
+ * (a podcast, a book, a YouTube episode) gets speed, skip back and forward and the sleep timer,
+ * never previous or next. On desktop the player bar carries the seek bar and the transport, so the
+ * tab leaves them out. Sits inside `NowPlaying`, which owns the app bar and the tabs.
  */
 data class NowPlayingPageProps(
     val platform: Platform? = null,
+    /** Which transport: `music` (the default) or `spoken`. */
+    val variant: Variant? = null,
     val image: String? = null,
     val title: String? = null,
     val artist: String? = null,
-    /** "Playing from Driftwave" — the uppercase line in the mobile bar, meta on desktop. */
+    /** "Playing from Driftwave": shown under the titles on desktop; the mobile app bar carries it. */
     val context: String? = null,
     val playing: Boolean? = null,
     /** 0–1. */
@@ -22,42 +25,32 @@ data class NowPlayingPageProps(
     /** Seconds, for the seek readouts. */
     val duration: Float? = null,
     val onTogglePlay: (() -> Unit)? = null,
+    /** `music` only. */
     val onPrev: (() -> Unit)? = null,
+    /** `music` only. */
     val onNext: (() -> Unit)? = null,
+    /** `music` only. */
     val onShuffle: (() -> Unit)? = null,
+    /** `music` only. */
     val onRepeat: (() -> Unit)? = null,
     val onSeek: ((Float) -> Unit)? = null,
-    /** Collapses the sheet back to the bar (mobile). */
-    val onClose: (() -> Unit)? = null,
-    val closeGlyph: String? = null,
-    val onMore: (() -> Unit)? = null,
+    /** `spoken` only. */
+    val onSkipBack: (() -> Unit)? = null,
+    /** `spoken` only. */
+    val onSkipForward: (() -> Unit)? = null,
+    /** `spoken` only: the interval skipped, in seconds. Default 15. */
+    val skipSeconds: Float? = null,
+    /** Whether it is a favourite; the favourite control shows when this or `onFavourite` is set. */
     val favourite: Boolean? = null,
-    /** Renders the favourite control when set. */
     val onFavourite: (() -> Unit)? = null,
-    val speed: String? = null,
-    val sleep: String? = null,
+    /** `spoken` only: the rate on the transport's SpeedControl, 1, 1.25, 1.5 … Music's is in the menu. */
+    val speed: Float? = null,
     val onSpeed: (() -> Unit)? = null,
+    /** The sleep timer's state, "Off", "23 min", "End of chapter". */
+    val sleep: String? = null,
     val onSleep: (() -> Unit)? = null,
-    /** Lyrics preview (mobile only) — the full sheet lives on LyricsPage. */
-    val lyrics: List<String>? = null,
-    val lyricsActiveIndex: Float? = null,
-    val lyricsSyncMode: SyncMode? = null,
-    /** Receives the preview row's rect, so the full page can expand out of it. */
-    val onOpenLyrics: ((Rect?) -> Unit)? = null,
-    /** Queue preview (mobile only) — the full list lives on QueuePage. */
-    val queue: List<QueueItem>? = null,
-    /** Receives the preview row's rect, so the full page can expand out of it. */
-    val onOpenQueue: ((Rect?) -> Unit)? = null,
-    val onPlayQueueItem: ((QueueItem, Float) -> Unit)? = null,
-    val queuePreviewCount: Float? = null,
-    /** Replaces the top row. `null` removes it — the desktop default, where the panel has its own. */
-    val header: (@Composable () -> Unit)? = null,
-    /** Docked below the page — the BottomAppBar on mobile. */
-    val footer: (@Composable () -> Unit)? = null,
     /** Own the scrolling (mobile default). Off inside the desktop panel, which scrolls itself. */
     val scroll: Boolean? = null,
-    /** Page surface. Defaults to `--surface-bg-alt`, a step off the library behind it. */
-    val background: String? = null,
-    /** Force the app bar's hairline on — used while a sub-page sits against it. Otherwise scroll-driven. */
-    val divider: Boolean? = null,
+    /** Stacked below the controls: the about cards. */
+    val children: (@Composable () -> Unit)? = null,
 )

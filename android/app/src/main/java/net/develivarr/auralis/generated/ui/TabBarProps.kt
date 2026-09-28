@@ -19,4 +19,6 @@ data class TabBarProps(
     val value: String? = null,
     val onChange: ((String) -> Unit)? = null,
     val platform: Platform? = null,
+    /** Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. */
+    val fill: Boolean? = null,
 )

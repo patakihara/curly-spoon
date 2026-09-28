@@ -6,6 +6,8 @@ data class QueueRowProps(
     val title: String,
     val sub: String? = null,
     val time: String? = null,
+    /** Cover art; the accent tile without one. */
+    val image: String? = null,
     /** Highlights the row as the one now playing. */
     val current: Boolean? = null,
     val platform: Platform? = null,

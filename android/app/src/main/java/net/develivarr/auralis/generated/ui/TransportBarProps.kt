@@ -22,7 +22,7 @@ data class TransportBarProps(
     /** Ignored in `spoken`. */
     val onRepeat: (() -> Unit)? = null,
     /** 'music' (default) is today's shuffle/prev/play/next/repeat row, unchanged. */
-    val variant: TransportBarVariant? = null,
+    val variant: Variant? = null,
     /** `spoken` only: replaces "Previous". */
     val onSkipBack: (() -> Unit)? = null,
     /** `spoken` only: replaces "Next". */
@@ -34,8 +34,3 @@ data class TransportBarProps(
     /** `spoken` only: replaces the repeat end — a sleep-timer control. Nothing when omitted. */
     val trailing: (@Composable () -> Unit)? = null,
 )
-
-enum class TransportBarVariant(val value: String) {
-    MUSIC("music"),
-    SPOKEN("spoken"),
-}

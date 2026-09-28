@@ -2,24 +2,17 @@
 import React from 'react';
 import { TonalIconButton } from '../core/TonalIconButton.jsx';
 
-// One control, three states, in the order the button cycles them.
-const MODES = ['sync', 'dot', 'off'];
-const GLYPH = { sync: 'sync_lock', dot: 'adjust', off: 'sync_disabled' };
-const TITLE = {
-  sync: 'Lyrics follow the song',
-  dot: 'Current line marked only',
-  off: 'Lyrics not synced',
-};
-
 /**
- * Cycles the lyric sheet between synced, dot-marked and unsynced, on the same tonal pill the
- * list/grid toggle uses — the glyph turns over as the mode changes.
+ * Turns the lyric sheet's sync on and off, on the same tonal pill the list/grid toggle uses. Off,
+ * the sheet marks the current line with a dot (`dot`), unless the dot is switched off from the
+ * player's menu, and then nothing marks it.
  */
-export function LyricsSyncButton({ mode = 'sync', onChange }) {
+export function LyricsSyncButton({ mode = 'sync', dot = true, onChange }) {
   if (!TonalIconButton) return null;
-  const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+  const synced = mode === 'sync';
   return (
-    <TonalIconButton glyph={GLYPH[mode]} label={TITLE[mode]}
-      onClick={() => onChange && onChange(next)} />
+    <TonalIconButton glyph={synced ? 'sync_lock' : 'sync_disabled'} active={synced}
+      label={synced ? 'Lyrics follow the song: turn sync off' : 'Lyrics not synced: turn sync on'}
+      onClick={() => onChange && onChange(synced ? (dot ? 'dot' : 'off') : 'sync')} />
   );
 }

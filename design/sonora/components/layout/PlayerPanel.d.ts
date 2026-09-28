@@ -1,30 +1,22 @@
-import { QueuePageProps } from '../media/QueuePage';
-import { LyricsPageProps } from '../media/LyricsPage';
-import { NowPlayingPageProps } from '../media/NowPlayingPage';
+import { ReactNode } from 'react';
 
 /**
- * The desktop player: the Currently Playing page as a SideSheet beside the content column, with the
- * queue and the lyrics as sibling tabs rather than sections of the page. Leave `tab` unset and the
- * panel keeps its own.
+ * The desktop player's frame: a SideSheet beside the content column, its tabs sharing the panel's
+ * width so none is cut off, over the active tab's page. `NowPlaying` fills it.
  */
 export interface PlayerPanelProps {
   open?: boolean;
-  tab?: 'now' | 'queue' | 'lyrics' | string;
+  /** The active tab's key. */
+  tab?: string;
   onTabChange?: (tab: string) => void;
   onClose?: () => void;
-  /** Override the three tabs (key/label/icon), e.g. to drop lyrics for a podcast. */
-  tabs?: Array<{ key: string; label: string; icon?: string }>;
-  /** Panel heading above the tabs. Defaults to "Player" — the tabs name the view. */
+  /** The tabs, label only; one tab draws no row. */
+  tabs?: Array<{ key: string; label: string }>;
+  /** Panel heading above the tabs. Defaults to "Player": the tabs name the view. */
   title?: string;
-  /** What is playing: cover, title, artist and the "Playing from …" line. */
-  track?: { image?: string; title?: string; artist?: string; context?: string };
-  /** Playback state and handlers, forwarded to NowPlayingPage. */
-  player?: Omit<NowPlayingPageProps, 'platform' | 'image' | 'title' | 'artist' | 'context' | 'scroll' | 'header'>;
-  /** Forwarded to LyricsPage. */
-  lyrics?: Omit<LyricsPageProps, 'platform' | 'scroll' | 'heading'>;
-  /** Forwarded to QueuePage. */
-  queue?: Omit<QueuePageProps, 'platform' | 'scroll' | 'heading'>;
   /** Panel width. Defaults to `--side-sheet-width`. */
   width?: string;
+  /** The active tab's page. */
+  children?: ReactNode;
 }
 export declare function PlayerPanel(props: PlayerPanelProps): JSX.Element;

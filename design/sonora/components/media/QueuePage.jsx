@@ -3,17 +3,20 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /**
- * The full queue page: the player's sub-page shell, with what it is playing from on the meta row
- * beside the edit toggle, over the queue itself — an EditableList, so selection, drag reorder and the
- * remove bar are the same behaviour any other editable list gets. `editing` is optional; left off,
- * the page owns the mode.
+ * The player's Queue tab. `queues` switches between the music and spoken queues, starting one
+ * pausing the other; then what the queue is on the meta row beside the edit toggle; what already
+ * played, which Back walks; now playing; up next, which Clear empties and an item from the other
+ * queue marks where playback moves over to it; and what autoplay plays once the queue runs out.
+ * Up next is an EditableList, so selection, drag reorder and the remove bar behave as in any
+ * editable list. Leave `editing` off and the page owns the mode.
  */
 export function QueuePage({
   platform = 'mobile', heading = 'Queue', context, items = [],
+  queues, queue, onQueueChange, played = [], autoplay, onClear,
   editing, onEditingChange, onPlay, onRemove, onReorder, onRemoveSelected,
-  footer, scroll = true, onClose,
+  footer, scroll, onClose,
 }) {
-  const { PlayerSubPage, EditableList, TonalIconButton, SectionHeader, QueueRow } = NS();
+  const { PlayerSubPage, EditableList, TonalIconButton, SectionHeader, QueueRow, ButtonGroup } = NS();
   const [ownEditing, setOwnEditing] = React.useState(false);
   const edit = editing === undefined ? ownEditing : editing;
   const setEdit = (v) => { if (editing === undefined) setOwnEditing(v); if (onEditingChange) onEditingChange(v); };
@@ -22,6 +25,11 @@ export function QueuePage({
   const next = items.filter((it) => !it.current);
   // The list works on the up-next rows; reorder is reported against the full queue.
   const at = (i) => items.indexOf(next[i]);
+  const still = (item, key) => QueueRow && (
+    <QueueRow key={key} platform={platform} title={item.title} sub={item.sub} time={item.time} image={item.image}
+      handle={false} draggable={false} onClick={() => onPlay && onPlay(item, -1)} />
+  );
+  const header = (title, extra) => SectionHeader && <SectionHeader platform={platform} title={title} {...extra} />;
 
   if (!PlayerSubPage || !EditableList) return null;
   return (
@@ -30,23 +38,47 @@ export function QueuePage({
         <TonalIconButton glyph={edit ? 'edit_off' : 'edit'} active={edit}
           label={edit ? 'Done editing queue' : 'Edit queue'} onClick={() => setEdit(!edit)} />
       ) : null}>
+      {queues && queues.length > 1 && ButtonGroup && (
+        <div style={sx('order:-1')}>
+          <ButtonGroup platform={platform} items={queues} value={queue} onChange={onQueueChange} />
+        </div>
+      )}
       <div style={sx('display:flex;flex-direction:column;gap:var(--spacing-xs)')}>
-        {current && SectionHeader && <SectionHeader platform={platform} title="Now playing" />}
+        {played.length > 0 && header('Played')}
+        {played.map((item, i) => still(item, 'played-' + i))}
+        {current && header('Now playing')}
         {current && QueueRow && (
-          <QueueRow platform={platform} title={current.title} sub={current.sub} time={current.time} current
+          <QueueRow platform={platform} title={current.title} sub={current.sub} time={current.time} image={current.image} current
             handle={false} draggable={false} onClick={() => onPlay && onPlay(current, items.indexOf(current))} />
         )}
-        {next.length > 0 && SectionHeader && <SectionHeader platform={platform} title="Up next" />}
+        {next.length > 0 && header('Up next', { action: 'clear_all', actionLabel: 'Clear queue', onAction: onClear })}
         <EditableList platform={platform} items={next} editing={edit}
           onReorder={(f, t) => onReorder && onReorder(at(f), at(t))}
           onRemoveSelected={onRemoveSelected}
           renderRow={({ item, index, key, selected, editing: on, toggle, drag }) => (
-            <QueueRow key={key} platform={platform} title={item.title} sub={item.sub} time={item.time}
-              handle={false} editing={on} selected={selected} onSelectToggle={toggle}
-              onClick={() => (on ? toggle() : onPlay && onPlay(item, at(index)))}
-              onRemove={on && onRemove ? () => onRemove(item, at(index)) : undefined}
-              {...drag} />
+            <div key={key} style={sx('display:flex;flex-direction:column')}>
+              {item.handoff && (
+                <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm) 0;font-size:var(--text-sm);font-weight:var(--weight-strong);color:var(--accent-ink)')}>
+                  <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>swap_horiz</span>
+                  {item.handoff}
+                </div>
+              )}
+              {QueueRow && (
+                <QueueRow platform={platform} title={item.title} sub={item.sub} time={item.time} image={item.image}
+                  handle={false} editing={on} selected={selected} onSelectToggle={toggle}
+                  onClick={() => (on ? toggle() : onPlay && onPlay(item, at(index)))}
+                  onRemove={on && onRemove ? () => onRemove(item, at(index)) : undefined}
+                  {...drag} />
+              )}
+            </div>
           )} />
+        {autoplay && autoplay.items && autoplay.items.length > 0 && (
+          <div style={sx('display:flex;flex-direction:column;gap:var(--spacing-xs);margin-top:var(--spacing-sm)')}>
+            {header('Autoplay')}
+            {autoplay.title && <div style={sx('padding:0 var(--spacing-sm) var(--spacing-xs);font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{autoplay.title}</div>}
+            {autoplay.items.map((item, i) => still(item, 'autoplay-' + i))}
+          </div>
+        )}
       </div>
     </PlayerSubPage>
   );

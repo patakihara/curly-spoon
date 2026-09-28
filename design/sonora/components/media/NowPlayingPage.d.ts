@@ -1,17 +1,20 @@
 import { ReactNode } from 'react';
-import { QueueItem } from './QueuePage';
 
 /**
- * The Currently Playing page: cover, song, seek, transport and the playback readouts — the shape
- * both platforms share. On mobile it also carries previews of the lyrics and the queue, each opening
- * its full page; on desktop those are the player panel's own tabs, so the previews are left out.
+ * The player's first tab: cover, titles, then the controls matched to what plays. `music` gets
+ * shuffle, previous, next and repeat, its speed left to the menu, and a sleep timer row; `spoken`
+ * (a podcast, a book, a YouTube episode) gets speed, skip back and forward and the sleep timer,
+ * never previous or next. On desktop the player bar carries the seek bar and the transport, so the
+ * tab leaves them out. Sits inside `NowPlaying`, which owns the app bar and the tabs.
  */
 export interface NowPlayingPageProps {
   platform?: 'desktop' | 'mobile';
+  /** Which transport: `music` (the default) or `spoken`. */
+  variant?: 'music' | 'spoken';
   image?: string;
   title?: string;
   artist?: string;
-  /** "Playing from Driftwave" — the uppercase line in the mobile bar, meta on desktop. */
+  /** "Playing from Driftwave": shown under the titles on desktop; the mobile app bar carries it. */
   context?: string;
   playing?: boolean;
   /** 0–1. */
@@ -19,43 +22,33 @@ export interface NowPlayingPageProps {
   /** Seconds, for the seek readouts. */
   duration?: number;
   onTogglePlay?: () => void;
+  /** `music` only. */
   onPrev?: () => void;
+  /** `music` only. */
   onNext?: () => void;
+  /** `music` only. */
   onShuffle?: () => void;
+  /** `music` only. */
   onRepeat?: () => void;
   onSeek?: (value: number) => void;
-  /** Collapses the sheet back to the bar (mobile). */
-  onClose?: () => void;
-  closeGlyph?: string;
-  onMore?: () => void;
+  /** `spoken` only. */
+  onSkipBack?: () => void;
+  /** `spoken` only. */
+  onSkipForward?: () => void;
+  /** `spoken` only: the interval skipped, in seconds. Default 15. */
+  skipSeconds?: number;
+  /** Whether it is a favourite; the favourite control shows when this or `onFavourite` is set. */
   favourite?: boolean;
-  /** Renders the favourite control when set. */
   onFavourite?: () => void;
-  speed?: string;
-  sleep?: string;
+  /** `spoken` only: the rate on the transport's SpeedControl, 1, 1.25, 1.5 … Music's is in the menu. */
+  speed?: number;
   onSpeed?: () => void;
+  /** The sleep timer's state, "Off", "23 min", "End of chapter". */
+  sleep?: string;
   onSleep?: () => void;
-  /** Lyrics preview (mobile only) — the full sheet lives on LyricsPage. */
-  lyrics?: string[];
-  lyricsActiveIndex?: number;
-  lyricsSyncMode?: 'sync' | 'dot' | 'off';
-  /** Receives the preview row's rect, so the full page can expand out of it. */
-  onOpenLyrics?: (origin: DOMRect | null) => void;
-  /** Queue preview (mobile only) — the full list lives on QueuePage. */
-  queue?: QueueItem[];
-  /** Receives the preview row's rect, so the full page can expand out of it. */
-  onOpenQueue?: (origin: DOMRect | null) => void;
-  onPlayQueueItem?: (item: QueueItem, index: number) => void;
-  queuePreviewCount?: number;
-  /** Replaces the top row. `null` removes it — the desktop default, where the panel has its own. */
-  header?: ReactNode;
-  /** Docked below the page — the BottomAppBar on mobile. */
-  footer?: ReactNode;
   /** Own the scrolling (mobile default). Off inside the desktop panel, which scrolls itself. */
   scroll?: boolean;
-  /** Page surface. Defaults to `--surface-bg-alt`, a step off the library behind it. */
-  background?: string;
-  /** Force the app bar's hairline on — used while a sub-page sits against it. Otherwise scroll-driven. */
-  divider?: boolean;
+  /** Stacked below the controls: the about cards. */
+  children?: ReactNode;
 }
 export declare function NowPlayingPage(props: NowPlayingPageProps): JSX.Element;

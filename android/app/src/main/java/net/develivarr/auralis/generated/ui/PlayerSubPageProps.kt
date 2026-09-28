@@ -4,13 +4,13 @@ package net.develivarr.auralis.generated.ui
 import androidx.compose.runtime.Composable
 
 /**
- * The shell shared by every page the player opens (LyricsPage, QueuePage): an app bar naming the page,
- * then a scrolling body whose first row pairs what the page is about with its controls. The bar's
- * close button collapses the page back into whatever expanded it.
+ * The shell the player's Queue and Lyrics tabs share (QueuePage, LyricsPage): a scrolling body whose
+ * first row pairs what the page is about with its controls, under an app bar naming the page when
+ * it has a heading or a close button.
  */
 data class PlayerSubPageProps(
     val platform: Platform? = null,
-    /** Page name in the app bar. `null` inside the desktop player panel, whose tab already names it. */
+    /** Page name in the app bar. `null` as a tab of the player, whose tab names it: with no close button either, there is no app bar. */
     val heading: String? = null,
     /** What the page is about — "Playing from Driftwave", "Song · Artist". */
     val meta: String? = null,
@@ -18,7 +18,7 @@ data class PlayerSubPageProps(
     val controls: (@Composable () -> Unit)? = null,
     /** Docked below the body — an edit action bar, a BottomAppBar. */
     val footer: (@Composable () -> Unit)? = null,
-    /** Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. */
+    /** Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. */
     val scroll: Boolean? = null,
     /** Renders the app bar's close button when set. */
     val onClose: (() -> Unit)? = null,

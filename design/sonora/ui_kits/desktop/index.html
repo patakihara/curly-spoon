@@ -311,7 +311,7 @@ function App() {
         footer={<RailFooter theme={theme} setTheme={setTheme} expanded={expanded} />} />}
       sheet={<NowPlaying platform="desktop" open={panelOpen} tab={panel} onTabChange={setPanel} onClose={() => setPanelOpen(false)}
         track={{ title: 'weathergirl', artist: 'weathergirl · FLAVOR FOLEY', context: 'Playing from FLAVOR FOLEY', image: cover('weathergirl', 640) }}
-        player={{ playing, progress, duration: 258, onTogglePlay: () => setPlaying(!playing), onSeek: setProgress, speed: '1.0x', sleep: 'Off', onSpeed: () => {}, onSleep: () => {} }}
+        player={{ playing, progress, duration: 258, onTogglePlay: () => setPlaying(!playing), onSeek: setProgress, speed: 1, sleep: 'Off', onSpeed: () => {}, onSleep: () => {} }}
         lyrics={{ lines: LYRICS, activeIndex: Math.min(LYRICS.length - 1, Math.floor(progress * LYRICS.length)), syncMode: sync, onSyncModeChange: setSync }}
         queue={{ items: queue,
           onPlay: () => setPlaying(true),

@@ -4,14 +4,13 @@ package net.develivarr.auralis.generated.ui
 import androidx.compose.runtime.Composable
 
 /**
- * Full lyrics page — an app bar naming the page, then the song and the LyricsSyncButton on one row
- * above a scrolling lyric sheet. Reached from the Now Playing lyrics preview or the bottom app bar on
- * mobile; the player panel's Lyrics tab on desktop. Dismissed by the surface that opened it — it
- * carries no back affordance of its own.
+ * The player's Lyrics tab: the song and the LyricsSyncButton on one row, the toggle in its top
+ * corner, above the lyric sheet. Dismissed by the player that holds it; it carries no back
+ * affordance of its own.
  */
 data class LyricsPageProps(
     val platform: Platform? = null,
-    /** Page heading. Pass `null` inside the desktop player panel, whose tab already names it. */
+    /** Page heading. `null` as a tab of the player, whose tab names it. */
     val heading: String? = null,
     /** Song the lyrics belong to, shown under the heading. */
     val title: String? = null,
@@ -19,10 +18,12 @@ data class LyricsPageProps(
     val lines: List<String>? = null,
     val activeIndex: Float? = null,
     val syncMode: SyncMode? = null,
+    /** Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. */
+    val dot: Boolean? = null,
     val onSyncModeChange: ((SyncMode) -> Unit)? = null,
-    /** Docked below the sheet — a BottomAppBar, for instance. */
+    /** Docked below the sheet. */
     val footer: (@Composable () -> Unit)? = null,
-    /** Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. */
+    /** Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. */
     val scroll: Boolean? = null,
     /** Renders the app bar's close button, which collapses the page back into what opened it. */
     val onClose: (() -> Unit)? = null,

@@ -3,7 +3,8 @@ package net.develivarr.auralis.generated.ui
 
 /**
  * The persistent now-playing surface, in both platform variants: the tinted pill
- * docked above the mobile bottom nav, or the desktop three-column transport bar.
+ * docked above the mobile bottom nav, or the desktop three-column transport bar, the one
+ * place desktop draws the transport.
  */
 data class MiniPlayerProps(
     val title: String,
@@ -28,4 +29,18 @@ data class MiniPlayerProps(
     /** Desktop only — same for the lyrics button, which opens the player panel's Lyrics tab. */
     val lyricsOpen: Boolean? = null,
     val onToggleLyrics: (() -> Unit)? = null,
+    /** Desktop only: `spoken` swaps shuffle, previous, next and repeat for speed, skip back and forward and the sleep timer, and drops the lyrics button. */
+    val variant: Variant? = null,
+    /** `spoken` only. */
+    val onSkipBack: (() -> Unit)? = null,
+    /** `spoken` only. */
+    val onSkipForward: (() -> Unit)? = null,
+    /** `spoken` only: the interval skipped, in seconds. Default 15. */
+    val skipSeconds: Float? = null,
+    /** `spoken` only: the playback rate, 1, 1.25, 1.5 … */
+    val speed: Float? = null,
+    val onSpeed: (() -> Unit)? = null,
+    /** `spoken` only: the sleep timer's state, "Off", "23 min". */
+    val sleep: String? = null,
+    val onSleep: (() -> Unit)? = null,
 )

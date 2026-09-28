@@ -580,21 +580,18 @@ The body of a page inside the shell: the page margin on both sides (`--grid-marg
 
 ### PlayerPanel
 
-The desktop player: the Currently Playing page as a SideSheet beside the content column, with the queue and the lyrics as sibling tabs rather than sections of the page. Leave `tab` unset and the panel keeps its own.
+The desktop player's frame: a SideSheet beside the content column, its tabs sharing the panel's width so none is cut off, over the active tab's page. `NowPlaying` fills it.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `open` | `boolean` |  |
-| `tab` | `'now' \| 'queue' \| 'lyrics' \| string` |  |
+| `tab` | `string` | The active tab's key. |
 | `onTabChange` | `(tab: string) => void` |  |
 | `onClose` | `() => void` |  |
-| `tabs` | `Array<{ key: string; label: string; icon?: string }>` | Override the three tabs (key/label/icon), e.g. to drop lyrics for a podcast. |
-| `title` | `string` | Panel heading above the tabs. Defaults to "Player" — the tabs name the view. |
-| `track` | `{ image?: string; title?: string; artist?: string; context?: string }` | What is playing: cover, title, artist and the "Playing from …" line. |
-| `player` | `Omit<NowPlayingPageProps, 'platform' \| 'image' \| 'title' \| 'artist' \| 'context' \| 'scroll' \| 'header'>` | Playback state and handlers, forwarded to NowPlayingPage. |
-| `lyrics` | `Omit<LyricsPageProps, 'platform' \| 'scroll' \| 'heading'>` | Forwarded to LyricsPage. |
-| `queue` | `Omit<QueuePageProps, 'platform' \| 'scroll' \| 'heading'>` | Forwarded to QueuePage. |
+| `tabs` | `Array<{ key: string; label: string }>` | The tabs, label only; one tab draws no row. |
+| `title` | `string` | Panel heading above the tabs. Defaults to "Player": the tabs name the view. |
 | `width` | `string` | Panel width. Defaults to `--side-sheet-width`. |
+| `children` | `ReactNode` | The active tab's page. |
 
 ### PlayerSheet
 
@@ -612,16 +609,16 @@ The mobile player surface — covers the whole app frame and opens as an expansi
 
 ### PlayerSubPage
 
-The shell shared by every page the player opens (LyricsPage, QueuePage): an app bar naming the page, then a scrolling body whose first row pairs what the page is about with its controls. The bar's close button collapses the page back into whatever expanded it.
+The shell the player's Queue and Lyrics tabs share (QueuePage, LyricsPage): a scrolling body whose first row pairs what the page is about with its controls, under an app bar naming the page when it has a heading or a close button.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `heading` | `string \| null` | Page name in the app bar. `null` inside the desktop player panel, whose tab already names it. |
+| `heading` | `string \| null` | Page name in the app bar. `null` as a tab of the player, whose tab names it: with no close button either, there is no app bar. |
 | `meta` | `string` | What the page is about — "Playing from Driftwave", "Song · Artist". |
 | `controls` | `ReactNode` | The page's own controls, on the meta row: the sync group, the edit toggle. |
 | `footer` | `ReactNode` | Docked below the body — an edit action bar, a BottomAppBar. |
-| `scroll` | `boolean` | Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. |
+| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
 | `onClose` | `() => void` | Renders the app bar's close button when set. |
 | `closeGlyph` | `string` |  |
 | `children` | `ReactNode` |  |
@@ -856,30 +853,32 @@ The lyric list in the three states the sync control cycles through. Only `sync` 
 
 ### LyricsPage
 
-Full lyrics page — an app bar naming the page, then the song and the LyricsSyncButton on one row above a scrolling lyric sheet. Reached from the Now Playing lyrics preview or the bottom app bar on mobile; the player panel's Lyrics tab on desktop. Dismissed by the surface that opened it — it carries no back affordance of its own.
+The player's Lyrics tab: the song and the LyricsSyncButton on one row, the toggle in its top corner, above the lyric sheet. Dismissed by the player that holds it; it carries no back affordance of its own.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `heading` | `string \| null` | Page heading. Pass `null` inside the desktop player panel, whose tab already names it. |
+| `heading` | `string \| null` | Page heading. `null` as a tab of the player, whose tab names it. |
 | `title` | `string` | Song the lyrics belong to, shown under the heading. |
 | `artist` | `string` |  |
 | `lines` | `string[]` |  |
 | `activeIndex` | `number` |  |
 | `syncMode` | `'sync' \| 'dot' \| 'off'` |  |
+| `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
 | `onSyncModeChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` |  |
-| `footer` | `ReactNode` | Docked below the sheet — a BottomAppBar, for instance. |
-| `scroll` | `boolean` | Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. |
+| `footer` | `ReactNode` | Docked below the sheet. |
+| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
 | `onClose` | `() => void` | Renders the app bar's close button, which collapses the page back into what opened it. |
 
 ### LyricsSyncButton
 
-The lyric sheet's sync control — a TonalIconButton (same shape as the list/grid toggle) cycling `sync` → `dot` → `off`: synced (current line in accent ink), current line marked by an accent dot only, then no sync and no indication. The glyph turns over as the mode changes.
+The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape). Synced (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the player's menu.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `mode` | `'sync' \| 'dot' \| 'off'` |  |
-| `onChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` | Receives the next mode in the cycle. |
+| `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
+| `onChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` | Receives the mode the toggle turns to. |
 
 ### MediaCard
 
@@ -944,7 +943,7 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 
 ### MiniPlayer
 
-The persistent now-playing surface, in both platform variants: the tinted pill docked above the mobile bottom nav, or the desktop three-column transport bar.
+The persistent now-playing surface, in both platform variants: the tinted pill docked above the mobile bottom nav, or the desktop three-column transport bar, the one place desktop draws the transport.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -964,70 +963,68 @@ The persistent now-playing surface, in both platform variants: the tinted pill d
 | `onToggleQueue` | `() => void` |  |
 | `lyricsOpen` | `boolean` | Desktop only — same for the lyrics button, which opens the player panel's Lyrics tab. |
 | `onToggleLyrics` | `() => void` |  |
+| `variant` | `'music' \| 'spoken'` | Desktop only: `spoken` swaps shuffle, previous, next and repeat for speed, skip back and forward and the sleep timer, and drops the lyrics button. |
+| `onSkipBack` | `() => void` | `spoken` only. |
+| `onSkipForward` | `() => void` | `spoken` only. |
+| `skipSeconds` | `number` | `spoken` only: the interval skipped, in seconds. Default 15. |
+| `speed` | `number` | `spoken` only: the playback rate, 1, 1.25, 1.5 … |
+| `onSpeed` | `() => void` |  |
+| `sleep` | `string` | `spoken` only: the sleep timer's state, "Off", "23 min". |
+| `onSleep` | `() => void` |  |
 
 ### NowPlaying
 
-The player, whole — the canonical Currently Playing shape for both platforms from one set of props. Mobile: a sheet that covers the app and expands out of the now-playing bar (`from` = the bar's rect). Lyrics and queue appear as previews on the page and as buttons on the bottom app bar; both open as full pages over it. Desktop: a side panel where lyrics and queue are tabs beside Now playing rather than page sections.
+The player, whole, with Now playing, Queue and Lyrics as its tabs (spoken content has no Lyrics tab), in the shape each platform wants. Mobile: a full-screen sheet over everything, the bottom bar included, expanding out of the mini-player (`from` = the bar's rect): an app bar with collapse, what it plays from and the menu, the tabs, then the active tab's page. Desktop: the side panel, `PlayerPanel`; the player bar beneath the window carries the transport.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `open` | `boolean` |  |
 | `from` | `{ top: number; left: number; width: number; height: number } \| null` | Mobile only: the mini player's viewport rect, so the sheet grows out of it. |
-| `onClose` | `() => void` |  |
-| `page` | `'now' \| 'lyrics' \| 'queue'` | Mobile sub-page. Omit to let the component own it. |
-| `onPageChange` | `(page: 'now' \| 'lyrics' \| 'queue') => void` |  |
-| `tab` | `'now' \| 'queue' \| 'lyrics' \| string` | Desktop tab. Omit to let the panel own it. |
+| `onClose` | `() => void` | Collapses the sheet back to the bar, or closes the panel. |
+| `onMore` | `() => void` | Mobile only: the app bar's menu. |
+| `tab` | `'now' \| 'queue' \| 'lyrics' \| string` | The active tab: 'now', 'queue' or 'lyrics'. Omit to let the player own it. |
 | `onTabChange` | `(tab: string) => void` |  |
+| `variant` | `'music' \| 'spoken'` | `spoken` drops the Lyrics tab and gives Now playing the spoken transport. |
 | `track` | `{ image?: string; title?: string; artist?: string; context?: string }` |  |
-| `player` | `Omit<NowPlayingPageProps, 'platform' \| 'image' \| 'title' \| 'artist' \| 'context' \| 'lyrics' \| 'queue' \| 'footer' \| 'header' \| 'scroll'>` | Playback state and handlers (playing, progress, duration, onTogglePlay, onSeek, speed, sleep …). |
-| `lyrics` | `Pick<LyricsPageProps, 'lines' \| 'activeIndex' \| 'syncMode' \| 'onSyncModeChange'>` | Lyric sheet: lines, the line being sung, and the sync mode the LyricsSyncButton cycles. |
-| `queue` | `Pick<QueuePageProps, 'items' \| 'editing' \| 'onEditingChange' \| 'onPlay' \| 'onRemove' \| 'onReorder' \| 'onRemoveSelected'>` | Queue: items plus the edit-mode handlers. |
-| `actions` | `BottomAppBarAction[]` | Replaces the mobile bottom app bar's four default actions. |
+| `player` | `Omit<NowPlayingPageProps, 'platform' \| 'variant' \| 'image' \| 'title' \| 'artist' \| 'context' \| 'scroll' \| 'children'>` | Playback state and handlers for the built Now playing tab. |
+| `lyrics` | `Pick<LyricsPageProps, 'lines' \| 'activeIndex' \| 'syncMode' \| 'onSyncModeChange' \| 'dot'>` | The built Lyrics tab: lines, the line being sung, and the sync mode. |
+| `queue` | `Omit<QueuePageProps, 'platform' \| 'heading' \| 'scroll' \| 'footer' \| 'onClose'>` | The built Queue tab. |
 | `zIndex` | `number` |  |
+| `children` | `ReactNode` | The active tab's page, in place of the one the player builds. |
 
 ### NowPlayingPage
 
-The Currently Playing page: cover, song, seek, transport and the playback readouts — the shape both platforms share. On mobile it also carries previews of the lyrics and the queue, each opening its full page; on desktop those are the player panel's own tabs, so the previews are left out.
+The player's first tab: cover, titles, then the controls matched to what plays. `music` gets shuffle, previous, next and repeat, its speed left to the menu, and a sleep timer row; `spoken` (a podcast, a book, a YouTube episode) gets speed, skip back and forward and the sleep timer, never previous or next. On desktop the player bar carries the seek bar and the transport, so the tab leaves them out. Sits inside `NowPlaying`, which owns the app bar and the tabs.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `platform` | `'desktop' \| 'mobile'` |  |
+| `variant` | `'music' \| 'spoken'` | Which transport: `music` (the default) or `spoken`. |
 | `image` | `string` |  |
 | `title` | `string` |  |
 | `artist` | `string` |  |
-| `context` | `string` | "Playing from Driftwave" — the uppercase line in the mobile bar, meta on desktop. |
+| `context` | `string` | "Playing from Driftwave": shown under the titles on desktop; the mobile app bar carries it. |
 | `playing` | `boolean` |  |
 | `progress` | `number` | 0–1. |
 | `duration` | `number` | Seconds, for the seek readouts. |
 | `onTogglePlay` | `() => void` |  |
-| `onPrev` | `() => void` |  |
-| `onNext` | `() => void` |  |
-| `onShuffle` | `() => void` |  |
-| `onRepeat` | `() => void` |  |
+| `onPrev` | `() => void` | `music` only. |
+| `onNext` | `() => void` | `music` only. |
+| `onShuffle` | `() => void` | `music` only. |
+| `onRepeat` | `() => void` | `music` only. |
 | `onSeek` | `(value: number) => void` |  |
-| `onClose` | `() => void` | Collapses the sheet back to the bar (mobile). |
-| `closeGlyph` | `string` |  |
-| `onMore` | `() => void` |  |
-| `favourite` | `boolean` |  |
-| `onFavourite` | `() => void` | Renders the favourite control when set. |
-| `speed` | `string` |  |
-| `sleep` | `string` |  |
+| `onSkipBack` | `() => void` | `spoken` only. |
+| `onSkipForward` | `() => void` | `spoken` only. |
+| `skipSeconds` | `number` | `spoken` only: the interval skipped, in seconds. Default 15. |
+| `favourite` | `boolean` | Whether it is a favourite; the favourite control shows when this or `onFavourite` is set. |
+| `onFavourite` | `() => void` |  |
+| `speed` | `number` | `spoken` only: the rate on the transport's SpeedControl, 1, 1.25, 1.5 … Music's is in the menu. |
 | `onSpeed` | `() => void` |  |
+| `sleep` | `string` | The sleep timer's state, "Off", "23 min", "End of chapter". |
 | `onSleep` | `() => void` |  |
-| `lyrics` | `string[]` | Lyrics preview (mobile only) — the full sheet lives on LyricsPage. |
-| `lyricsActiveIndex` | `number` |  |
-| `lyricsSyncMode` | `'sync' \| 'dot' \| 'off'` |  |
-| `onOpenLyrics` | `(origin: DOMRect \| null) => void` | Receives the preview row's rect, so the full page can expand out of it. |
-| `queue` | `QueueItem[]` | Queue preview (mobile only) — the full list lives on QueuePage. |
-| `onOpenQueue` | `(origin: DOMRect \| null) => void` | Receives the preview row's rect, so the full page can expand out of it. |
-| `onPlayQueueItem` | `(item: QueueItem, index: number) => void` |  |
-| `queuePreviewCount` | `number` |  |
-| `header` | `ReactNode` | Replaces the top row. `null` removes it — the desktop default, where the panel has its own. |
-| `footer` | `ReactNode` | Docked below the page — the BottomAppBar on mobile. |
 | `scroll` | `boolean` | Own the scrolling (mobile default). Off inside the desktop panel, which scrolls itself. |
-| `background` | `string` | Page surface. Defaults to `--surface-bg-alt`, a step off the library behind it. |
-| `divider` | `boolean` | Force the app bar's hairline on — used while a sub-page sits against it. Otherwise scroll-driven. |
+| `children` | `ReactNode` | Stacked below the controls: the about cards. |
 
 ### OutputDeviceButton
 
@@ -1062,17 +1059,23 @@ Stable key. Falls back to `title`.
 | prop | type | notes |
 | --- | --- | --- |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `heading` | `string \| null` | Page heading. Pass `null` inside the desktop player panel, whose tab already names it. |
-| `context` | `string` | Line under the heading — "Playing from Driftwave". |
-| `items` | `QueueItem[]` |  |
+| `heading` | `string \| null` | Page heading. `null` as a tab of the player, whose tab names it. |
+| `context` | `string` | What the queue is, on the meta row: "Music queue · 3 songs". |
+| `items` | `QueueItem[]` | Now playing and up next. |
+| `queues` | `Array<{ key: string; label: string }>` | The queues to switch between, `{ key, label }`: the music queue and the spoken queue. One draws no switch. |
+| `queue` | `string` | The queue shown. |
+| `onQueueChange` | `(key: string) => void` |  |
+| `played` | `QueueItem[]` | What already played, oldest first: Back walks it. |
+| `autoplay` | `{ title?: string; items: QueueItem[] }` | What autoplay plays once the queue runs out, and what it continues from. |
+| `onClear` | `() => void` | Up next's Clear action, which empties it; an undo brings it back. |
 | `editing` | `boolean` | Controlled edit mode. Omit to let the page keep its own. |
 | `onEditingChange` | `(editing: boolean) => void` |  |
 | `onPlay` | `(item: QueueItem, index: number) => void` |  |
 | `onRemove` | `(item: QueueItem, index: number) => void` |  |
 | `onReorder` | `(from: number, to: number) => void` | Drag reorder, by index into `items`. |
 | `onRemoveSelected` | `(keys: Array<string \| number>) => void` | The edit bar's Remove, with the selected rows' keys. |
-| `footer` | `ReactNode` | Docked below the list — a BottomAppBar, for instance. |
-| `scroll` | `boolean` | Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. |
+| `footer` | `ReactNode` | Docked below the list. |
+| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
 | `onClose` | `() => void` | Renders the app bar's close button, which collapses the page back into what opened it. |
 
 ### QueueRow
@@ -1084,6 +1087,7 @@ One row of the play queue — drag handle, art, title/sub, duration, remove. The
 | `title` *(required)* | `string` |  |
 | `sub` | `string` |  |
 | `time` | `string` |  |
+| `image` | `string` | Cover art; the accent tile without one. |
 | `current` | `boolean` | Highlights the row as the one now playing. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `onClick` | `() => void` |  |
@@ -1278,6 +1282,7 @@ Icon + label tabs for the second row of a TopAppBar — the sub-sections of a li
 | `value` | `string` |  |
 | `onChange` | `(key: string) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
+| `fill` | `boolean` | Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. |
 
 ### TopAppBar
 

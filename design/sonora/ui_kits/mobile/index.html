@@ -320,7 +320,7 @@ function App() {
     <NowPlaying platform="mobile" open={open} from={from} onClose={() => setOpen(false)}
       track={{ title: 'Heartbeats in Silence', artist: 'Deep Inertia', context: 'Playing from Ink Heart', image: cover('Heartbeats in Silence', 640) }}
       player={{ playing, progress, duration: 243, onTogglePlay: () => setPlaying(!playing), onSeek: setProgress,
-        favourite: true, onFavourite: () => {}, speed: '1.0x', sleep: 'Off', onSpeed: () => {}, onSleep: () => {} }}
+        favourite: true, onFavourite: () => {}, speed: 1, sleep: 'Off', onSpeed: () => {}, onSleep: () => {} }}
       lyrics={{ lines: LYRICS, activeIndex: Math.min(LYRICS.length - 1, Math.floor(progress * LYRICS.length)), syncMode: sync, onSyncModeChange: setSync }}
       queue={{ items: queue,
         onPlay: () => {},

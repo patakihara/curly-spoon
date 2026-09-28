@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1200x560" name="Spoken Transport & Routing" subtitle="TransportBar's music and spoken variants, SpeedControl, and output routing with a quality badge" -->
+<!-- @dsCard group="Components" viewport="1200x900" name="Spoken Transport & Routing" subtitle="TransportBar's music and spoken variants, SpeedControl, and output routing with a quality badge" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { TransportBar, SpeedControl, OutputDeviceButton, IconButton } = window.SonoraDesignSystem_6c1435;
+const { TransportBar, SpeedControl, OutputDeviceButton, IconButton, MiniPlayer } = window.SonoraDesignSystem_6c1435;
 
 function Caption({ children }) {
   return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:960}}>{children}</div>;
@@ -30,6 +30,13 @@ function Demo(){
           leading={<SpeedControl value={1.5} onClick={() => {}} />}
           trailing={<IconButton label="Sleep timer" onClick={() => {}}>{glyph('bedtime')}</IconButton>}
         />
+      </div>
+    </div>
+    <div>
+      <Caption>The desktop player bar, the one place desktop draws the transport, in the same two variants: music keeps shuffle / previous / next / repeat and the lyrics button; spoken has speed, skip back and forward and the sleep timer, and no lyrics. Media controls never go to the next or previous item on spoken content, except at an episode or chapter boundary.</Caption>
+      <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-md)'}}>
+        <MiniPlayer platform="desktop" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} />
+        <MiniPlayer platform="desktop" variant="spoken" title="Aftershocks: the second call" artist="Static &amp; Signal" playing progress={0.3} duration={3130} speed={1.5} sleep="23 min" />
       </div>
     </div>
     <div>

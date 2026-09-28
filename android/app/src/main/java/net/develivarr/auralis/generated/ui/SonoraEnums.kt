@@ -48,3 +48,8 @@ enum class Tone(val value: String) {
     ACCENT("accent"),
     PLAY("play"),
 }
+
+enum class Variant(val value: String) {
+    MUSIC("music"),
+    SPOKEN("spoken"),
+}

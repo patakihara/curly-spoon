@@ -9,23 +9,38 @@ data class QueueItem(
     val title: String,
     val sub: String? = null,
     val time: String? = null,
-    /** The row now playing — pulled out above the "Up next" list and never editable. */
+    val image: String? = null,
+    /** The row now playing: pulled out above "Up next" and never editable. */
     val current: Boolean? = null,
+    /** Where playback moves over to the other queue at this row, "Then the spoken queue". */
+    val handoff: String? = null,
 )
 
 /**
- * The full queue page — the player's sub-page shell: what it is playing from on the meta row beside
- * the edit toggle, then now playing and up next. Edit mode turns on selection, drag handles and the
- * remove bar. Leave `editing` unset and the page owns the mode itself. No back affordance — the
- * surface that expanded it collapses it again.
+ * The player's Queue tab: the switch between the music and spoken queues, what the queue is on the
+ * meta row beside the edit toggle, then what already played, now playing, up next (with Clear) and
+ * what autoplay plays once the queue runs out. Edit mode turns on selection, drag handles and the
+ * remove bar. Leave `editing` unset and the page owns the mode itself.
  */
 data class QueuePageProps(
     val platform: Platform? = null,
-    /** Page heading. Pass `null` inside the desktop player panel, whose tab already names it. */
+    /** Page heading. `null` as a tab of the player, whose tab names it. */
     val heading: String? = null,
-    /** Line under the heading — "Playing from Driftwave". */
+    /** What the queue is, on the meta row: "Music queue · 3 songs". */
     val context: String? = null,
+    /** Now playing and up next. */
     val items: List<QueueItem>? = null,
+    /** The queues to switch between, `{ key, label }`: the music queue and the spoken queue. One draws no switch. */
+    val queues: List<QueuePageQueue>? = null,
+    /** The queue shown. */
+    val queue: String? = null,
+    val onQueueChange: ((String) -> Unit)? = null,
+    /** What already played, oldest first: Back walks it. */
+    val played: List<QueueItem>? = null,
+    /** What autoplay plays once the queue runs out, and what it continues from. */
+    val autoplay: QueuePageAutoplay? = null,
+    /** Up next's Clear action, which empties it; an undo brings it back. */
+    val onClear: (() -> Unit)? = null,
     /** Controlled edit mode. Omit to let the page keep its own. */
     val editing: Boolean? = null,
     val onEditingChange: ((Boolean) -> Unit)? = null,
@@ -35,10 +50,20 @@ data class QueuePageProps(
     val onReorder: ((Float, Float) -> Unit)? = null,
     /** The edit bar's Remove, with the selected rows' keys. */
     val onRemoveSelected: ((List<Any>) -> Unit)? = null,
-    /** Docked below the list — a BottomAppBar, for instance. */
+    /** Docked below the list. */
     val footer: (@Composable () -> Unit)? = null,
-    /** Own the scrolling (the default). Off inside the desktop player panel, which scrolls itself. */
+    /** Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. */
     val scroll: Boolean? = null,
     /** Renders the app bar's close button, which collapses the page back into what opened it. */
     val onClose: (() -> Unit)? = null,
+)
+
+data class QueuePageQueue(
+    val key: String,
+    val label: String,
+)
+
+data class QueuePageAutoplay(
+    val title: String? = null,
+    val items: List<QueueItem>,
 )

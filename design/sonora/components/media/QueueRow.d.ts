@@ -3,6 +3,8 @@ export interface QueueRowProps {
   title: string;
   sub?: string;
   time?: string;
+  /** Cover art; the accent tile without one. */
+  image?: string;
   /** Highlights the row as the one now playing. */
   current?: boolean;
   platform?: 'desktop' | 'mobile';

@@ -11,9 +11,9 @@ hardcodes a value, siblings are reached through `NS()`, every component gets a `
 
 Sonora's player is already thorough. `NowPlaying`, `NowPlayingPage`, `PlayerSheet`,
 `PlayerPanel`, `PlayerSubPage`, `SeekBar`, `QueuePage`, `QueueRow`, `Lyrics`, `LyricsPage`,
-`LyricsSyncButton`, `MiniPlayer` and `BottomAppBar` already carry: the sheet that expands out
-of the mini player, the queue with edit mode and drag reorder, the three-state lyric sync, the
-lyrics and queue previews, the full-page lyric sheet, and a `footer` slot on every sub-page.
+`LyricsSyncButton` and `MiniPlayer` already carry: the sheet that expands out of the mini
+player with Now playing, Queue and Lyrics as its tabs, the queue with edit mode and drag
+reorder, the lyric sync toggle, and a `footer` slot on every sub-page.
 
 So this wave is small on purpose. Four new components and two extensions. Everything else in
 those screenshots either already exists or is deliberately out of scope — see the bottom.
@@ -155,7 +155,7 @@ literally, `@dsCard` first line, pinned CDN scripts with integrity unchanged, da
 
 | File | group | name | viewport | Covers |
 | --- | --- | --- | --- | --- |
-| `components/media/spoken-transport.card.html` | Components | Spoken Transport & Routing | 1200x560 | `TransportBar` in both variants side by side, `SpeedControl` at 1× and 1.5×, `OutputDeviceButton` local / routed / with a quality badge |
+| `components/media/spoken-transport.card.html` | Components | Spoken Transport & Routing | 1200x900 | `TransportBar` and the desktop `MiniPlayer` bar in both variants, `SpeedControl` at 1× and 1.5×, `OutputDeviceButton` local / routed / with a quality badge |
 | `components/media/about-cards.card.html` | Components | About Cards & Long Text | 1200x820 | `AboutCard` for an episode, a show (with a `FollowButton` action) and a person (`round`), `ExpandableText` collapsed and expanded, `MediaHeader` with a custom `actions` cluster and `progress` |
 
 ---
@@ -177,6 +177,6 @@ literally, `@dsCard` first line, pinned CDN scripts with integrity unchanged, da
 - **Queue sheet, lyrics page, sync modes, edit mode, drag reorder.** `QueuePage`, `QueueRow`,
   `LyricsPage`, `Lyrics` and `LyricsSyncButton` already carry all of it, including the `footer`
   slot the timer/speed row sits in and the `editing` handlers behind the Edit button.
-- **Artwork-derived surface tint.** Real, and already parameterised: `NowPlayingPage` takes
+- **Artwork-derived surface tint.** Real, and already parameterised: `PlayerSheet` takes
   `background`, and `--surface-now-playing` is a token. Deriving the value from cover art at
   runtime is app work, not a component.

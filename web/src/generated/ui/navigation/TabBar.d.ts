@@ -16,5 +16,7 @@ export interface TabBarProps {
   value?: string;
   onChange?: (key: string) => void;
   platform?: 'desktop' | 'mobile';
+  /** Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. */
+  fill?: boolean;
 }
 export declare function TabBar(props: TabBarProps): JSX.Element;

@@ -1,4 +1,5 @@
 import React from 'react';
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
 /**
@@ -7,10 +8,11 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * are what changes rather than its shape.
  */
 export function QueueRow({
-  title, sub, time, current = false, platform = 'desktop', onClick, onRemove,
+  title, sub, time, image, current = false, platform = 'desktop', onClick, onRemove,
   handle = true, editing = false, selected = false, onSelectToggle,
   draggable = true, onDragStart, onDragOver, onDrop, onDragEnd,
 }) {
+  const { CoverArt } = NS();
   const mobile = platform === 'mobile';
   const art = mobile ? 44 : 40;
   const stop = (fn) => (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (fn) fn(e); };
@@ -27,7 +29,9 @@ export function QueueRow({
         </span>
       )}
       {(handle || editing) && glyph('drag_handle', undefined, 'Drag to reorder', true)}
-      <div onClick={onClick} style={sx('position:relative;overflow:hidden;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;border-radius:' + (mobile ? '8px' : '6px') + ';cursor:pointer;background:var(--accent)')} />
+      <div onClick={onClick} style={sx('position:relative;overflow:hidden;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;border-radius:' + (mobile ? '8px' : '6px') + ';cursor:pointer;background:var(--accent)')}>
+        {image && CoverArt && <CoverArt src={image} alt="" />}
+      </div>
       <div onClick={onClick} style={sx('min-width:0;flex:1;cursor:pointer')}>
         <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);color:' + (current ? 'var(--play-ink)' : 'var(--surface-fg)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
         <div style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{sub}</div>

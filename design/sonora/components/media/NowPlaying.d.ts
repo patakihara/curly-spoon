@@ -1,38 +1,41 @@
+import { ReactNode } from 'react';
 import { NowPlayingPageProps } from './NowPlayingPage';
 import { LyricsPageProps } from './LyricsPage';
-import { QueuePageProps, QueueItem } from './QueuePage';
-import { BottomAppBarAction } from '../navigation/BottomAppBar';
+import { QueuePageProps } from './QueuePage';
 
 /**
- * The player, whole — the canonical Currently Playing shape for both platforms from one set of props.
+ * The player, whole, with Now playing, Queue and Lyrics as its tabs (spoken content has no Lyrics
+ * tab), in the shape each platform wants.
  *
- * Mobile: a sheet that covers the app and expands out of the now-playing bar (`from` = the bar's
- * rect). Lyrics and queue appear as previews on the page and as buttons on the bottom app bar; both
- * open as full pages over it.
+ * Mobile: a full-screen sheet over everything, the bottom bar included, expanding out of the
+ * mini-player (`from` = the bar's rect): an app bar with collapse, what it plays from and the menu,
+ * the tabs, then the active tab's page.
  *
- * Desktop: a side panel where lyrics and queue are tabs beside Now playing rather than page sections.
+ * Desktop: the side panel, `PlayerPanel`; the player bar beneath the window carries the transport.
  */
 export interface NowPlayingProps {
   platform?: 'desktop' | 'mobile';
   open?: boolean;
   /** Mobile only: the mini player's viewport rect, so the sheet grows out of it. */
   from?: { top: number; left: number; width: number; height: number } | null;
+  /** Collapses the sheet back to the bar, or closes the panel. */
   onClose?: () => void;
-  /** Mobile sub-page. Omit to let the component own it. */
-  page?: 'now' | 'lyrics' | 'queue';
-  onPageChange?: (page: 'now' | 'lyrics' | 'queue') => void;
-  /** Desktop tab. Omit to let the panel own it. */
+  /** Mobile only: the app bar's menu. */
+  onMore?: () => void;
+  /** The active tab: 'now', 'queue' or 'lyrics'. Omit to let the player own it. */
   tab?: 'now' | 'queue' | 'lyrics' | string;
   onTabChange?: (tab: string) => void;
+  /** `spoken` drops the Lyrics tab and gives Now playing the spoken transport. */
+  variant?: 'music' | 'spoken';
   track?: { image?: string; title?: string; artist?: string; context?: string };
-  /** Playback state and handlers (playing, progress, duration, onTogglePlay, onSeek, speed, sleep …). */
-  player?: Omit<NowPlayingPageProps, 'platform' | 'image' | 'title' | 'artist' | 'context' | 'lyrics' | 'queue' | 'footer' | 'header' | 'scroll'>;
-  /** Lyric sheet: lines, the line being sung, and the sync mode the LyricsSyncButton cycles. */
-  lyrics?: Pick<LyricsPageProps, 'lines' | 'activeIndex' | 'syncMode' | 'onSyncModeChange'>;
-  /** Queue: items plus the edit-mode handlers. */
-  queue?: Pick<QueuePageProps, 'items' | 'editing' | 'onEditingChange' | 'onPlay' | 'onRemove' | 'onReorder' | 'onRemoveSelected'>;
-  /** Replaces the mobile bottom app bar's four default actions. */
-  actions?: BottomAppBarAction[];
+  /** Playback state and handlers for the built Now playing tab. */
+  player?: Omit<NowPlayingPageProps, 'platform' | 'variant' | 'image' | 'title' | 'artist' | 'context' | 'scroll' | 'children'>;
+  /** The built Lyrics tab: lines, the line being sung, and the sync mode. */
+  lyrics?: Pick<LyricsPageProps, 'lines' | 'activeIndex' | 'syncMode' | 'onSyncModeChange' | 'dot'>;
+  /** The built Queue tab. */
+  queue?: Omit<QueuePageProps, 'platform' | 'heading' | 'scroll' | 'footer' | 'onClose'>;
   zIndex?: number;
+  /** The active tab's page, in place of the one the player builds. */
+  children?: ReactNode;
 }
 export declare function NowPlaying(props: NowPlayingProps): JSX.Element;

@@ -2,12 +2,15 @@
 package net.develivarr.auralis.generated.ui
 
 /**
- * The lyric sheet's sync control — a TonalIconButton (same shape as the list/grid toggle) cycling
- * `sync` → `dot` → `off`: synced (current line in accent ink), current line marked by an accent dot
- * only, then no sync and no indication. The glyph turns over as the mode changes.
+ * The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape). Synced
+ * (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot
+ * marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the
+ * player's menu.
  */
 data class LyricsSyncButtonProps(
     val mode: SyncMode? = null,
-    /** Receives the next mode in the cycle. */
+    /** Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. */
+    val dot: Boolean? = null,
+    /** Receives the mode the toggle turns to. */
     val onChange: ((SyncMode) -> Unit)? = null,
 )
