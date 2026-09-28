@@ -73,15 +73,40 @@ function inAuralisPackage(kotlin: string): string {
   return `// ${GENERATED_NOTE}\n${kotlin.replace(placeholder, `package ${KOTLIN_THEME_PACKAGE}`)}`;
 }
 
+/**
+ * The export carries custom properties only, so the `color-scheme` Sonora sets per theme in
+ * `tokens/colors.css` (what native controls and scrollbars follow) is carried over from there,
+ * leading each theme block.
+ */
+function withColorSchemes(themeCss: string, colorsCss: string): string {
+  let out = themeCss;
+  for (const theme of ['dark', 'light'] as const) {
+    const scope = new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]*)\\}`).exec(colorsCss);
+    const scheme = scope === null ? null : /color-scheme\s*:\s*([^;]+);/.exec(scope[1]!);
+    if (scheme === null) throw new Error(`tokens/colors.css sets no color-scheme for ${theme}`);
+    const head = `[data-theme="${theme}"] {\n`;
+    if (!out.includes(head))
+      throw new Error(`sonora-theme.css has no [data-theme="${theme}"] block`);
+    out = out.replace(head, `${head}  color-scheme: ${scheme[1]!.trim()};\n`);
+  }
+  return out;
+}
+
 const css = (text: string) => `/* ${GENERATED_NOTE} */\n${text}`;
 
 export async function generateTokens(sonoraDir: string): Promise<TokenOutputs> {
   const files = await runExporter(sonoraDir);
+  const colors = readFileSync(join(sonoraDir, 'tokens', 'colors.css'), 'utf8');
   return {
     exported: files,
     web: new Map([
       ['sonora-tokens.css', css(exported(files, 'export/web/sonora-tokens.css'))],
-      ['sonora-theme.css', css(darkByDefault(exported(files, 'export/web/sonora-theme.css')))],
+      [
+        'sonora-theme.css',
+        css(
+          darkByDefault(withColorSchemes(exported(files, 'export/web/sonora-theme.css'), colors)),
+        ),
+      ],
     ]),
     kotlin: new Map([
       ['SonoraTokens.kt', inAuralisPackage(exported(files, 'export/android/SonoraTokens.kt'))],

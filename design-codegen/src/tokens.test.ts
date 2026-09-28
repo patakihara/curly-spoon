@@ -47,6 +47,19 @@ function cascade(css: string, theme?: 'dark' | 'light'): Map<string, string> {
   return seen;
 }
 
+/** The `color-scheme` the root element gets, with `data-theme` unset or set to `theme`. */
+function colorScheme(css: string, theme?: 'dark' | 'light'): string | undefined {
+  const text = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const matches = (s: string) => s === ':root' || s === `[data-theme="${theme}"]`;
+  let scheme: string | undefined;
+  for (const m of text.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!m[1]!.split(',').some((s) => matches(s.trim()))) continue;
+    const decl = /(?:^|;)\s*color-scheme\s*:\s*([^;]+)/.exec(m[2]!);
+    if (decl !== null) scheme = decl[1]!.trim();
+  }
+  return scheme;
+}
+
 function resolved(scope: Map<string, string>, value: string): string {
   let v = value;
   for (let depth = 0; depth < 10; depth++) {
@@ -271,5 +284,15 @@ describe('Sonora tokens, generated for web and Android', () => {
       expect(unthemed.get(name), `${name} unthemed`).toBe(sourceRoot.get(name));
       expect(light.get(name), `${name} light`).toBe(sourceLight.get(name));
     }
+  });
+
+  it('[M0.tokens/a] the web CSS sets the browser colour scheme Sonora gives each theme, dark when unthemed', () => {
+    const css = webCss();
+    const source = readFileSync(join(sonoraDir, 'tokens', 'colors.css'), 'utf8');
+    for (const theme of [undefined, 'dark', 'light'] as const) {
+      expect(colorScheme(css, theme), `data-theme=${theme}`).toBe(colorScheme(source, theme));
+    }
+    expect(colorScheme(css)).toBe('dark');
+    expect(colorScheme(css, 'light')).toBe('light');
   });
 });
