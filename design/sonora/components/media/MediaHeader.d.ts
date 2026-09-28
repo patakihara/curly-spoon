@@ -17,7 +17,11 @@ export interface MediaHeaderProps {
   compactAt?: number;
   /** Uppercase kind line above the title, e.g. "Album", "Audiobook". */
   kindLabel?: string;
-  /** The item's name. Omit it when the page's own heading already names the item. */
+  /**
+   * The item's name. Omit it when the page's own heading already names the item. With no title
+   * and no action row (a person), the kind and meta are a caption: beside the art in a wide pane,
+   * centred on it, the meta at the subtitle's size.
+   */
   title?: string;
   subtitle?: string;
   meta?: string;

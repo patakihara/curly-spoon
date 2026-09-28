@@ -8,7 +8,8 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * Play/Next/Last cluster for a page whose verbs aren't a queue — a podcast show's Follow/notify/
  * settings/overflow, an episode's saved/downloaded/share/overflow. `progress` states how far into
  * a part-finished item the listener already is. A label given as null leaves its button out, and
- * `menu` follows the actions; with no title, the page's own heading names the item.
+ * `menu` follows the actions; with no title, the page's own heading names the item. With no title
+ * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
 export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, actions, menu, progress = null }) {
   const Button = NS().Button, CoverArt = NS().CoverArt;
@@ -27,14 +28,18 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
   const mobile = platform ? platform === 'mobile' : narrow;
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const art = mobile ? 208 : 232;
+  const acts = actions != null || menu != null || playLabel !== null || nextLabel !== null || lastLabel !== null;
+  // Beside the art, the text sits on the art's baseline under a title; with no title and no
+  // action row (a person, named by the page's heading) it is a caption, centred on the art.
+  const caption = title == null && !acts;
   return (
-    <div ref={ref} style={sx(mobile ? 'display:flex;flex-direction:column;align-items:center;gap:var(--spacing-md);text-align:center;padding-top:4px;padding-bottom:12px' : 'display:flex;gap:var(--spacing-2xl);align-items:flex-end')}>
+    <div ref={ref} style={sx(mobile ? 'display:flex;flex-direction:column;align-items:center;gap:var(--spacing-md);text-align:center;padding-top:4px;padding-bottom:12px' : 'display:flex;gap:var(--spacing-2xl);align-items:' + (caption ? 'center' : 'flex-end'))}>
       <div style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;overflow:hidden;border-radius:' + (round ? '50%' : 'var(--radius-lg)'))}>{CoverArt && <CoverArt src={image} />}</div>
       <div style={sx(mobile ? 'width:100%;display:flex;flex-direction:column;align-items:center;gap:var(--spacing-sm)' : 'flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-sm)')}>
         <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;color:' + muted + (mobile ? ';margin-top:6px' : ''))}>{kindLabel}</div>
         {title != null && <div style={sx('font-family:var(--font-display),Inter;font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;color:' + fg + ';font-size:var(--' + (mobile ? 'h4' : 'h2') + '-size)')}>{title}</div>}
-        <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium);color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>
-        <div style={sx('font-size:var(--text-sm);color:' + muted)}>{meta}</div>
+        {subtitle != null && <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium);color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>}
+        <div style={sx(caption && !mobile ? 'font-size:var(--text-lg);color:' + fg : 'font-size:var(--text-sm);color:' + muted)}>{meta}</div>
         {/* Resume position for a part-finished item — "1h 21m left" lives in `meta` above; this is
             the bar that describes it. Gated the QuickPick/MediaCard way: null (the default) draws
             nothing, not a zero-width rule. */}
@@ -43,7 +48,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
             <div style={sx('height:100%;background:var(--play);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
           </div>
         )}
-        {(actions != null || menu != null || playLabel !== null || nextLabel !== null || lastLabel !== null) && <div style={sx('display:flex;flex-wrap:wrap;align-items:center;justify-content:' + (mobile ? 'center' : 'flex-start') + ';gap:' + (mobile ? '10px' : '12px') + ';margin-top:' + (mobile ? '8px' : '10px'))}>
+        {acts && <div style={sx('display:flex;flex-wrap:wrap;align-items:center;justify-content:' + (mobile ? 'center' : 'flex-start') + ';gap:' + (mobile ? '10px' : '12px') + ';margin-top:' + (mobile ? '8px' : '10px'))}>
           {actions != null ? actions : (
             <React.Fragment>
               {/* Same three queue actions as PlayActions, but labelled: on a detail page there is room

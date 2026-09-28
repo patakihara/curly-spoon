@@ -909,7 +909,7 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `compactAt` | `number` | Width in px below which the compact layout takes over. Default 600. |
 | `kindLabel` | `string` | Uppercase kind line above the title, e.g. "Album", "Audiobook". |
-| `title` | `string` | The item's name. Omit it when the page's own heading already names the item. |
+| `title` | `string` |  The item's name. Omit it when the page's own heading already names the item. With no title and no action row (a person), the kind and meta are a caption: beside the art in a wide pane, centred on it, the meta at the subtitle's size.  |
 | `subtitle` | `string` |  |
 | `meta` | `string` |  |
 | `playLabel` | `string \| null` | Label on the play button. Default "Play"; null leaves the button out. |
