@@ -8,11 +8,14 @@ import { ReactNode } from 'react';
 export interface ResultRowProps {
   title: string;
   meta?: string;
-  /** e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed". "Playing" renders animated equalizer bars instead of a pill. */
-  status?: string;
+  /**
+   * e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with
+   * no status. "Playing" renders animated equalizer bars instead of a pill.
+   */
+  status?: string | null;
   progress?: number | null;
-  /** Colour family for the pill and ring. */
-  tone?: 'library' | 'request' | 'progress' | 'error';
+  /** Colour family for the pill and ring; null for a row with no status. */
+  tone?: 'library' | 'request' | 'progress' | 'error' | null;
   /** Glyph for the art overlay action; "downloading" renders a pause control. */
   actionGlyph?: string;
   /** Cover art URL. Falls back to the generated gradient when omitted. */

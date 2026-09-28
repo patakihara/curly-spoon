@@ -623,10 +623,6 @@
         "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, status, progress, tone, actionGlyph, image, platform, onClick, onAction, divider, trailing."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:library|request|progress|error)$/]",
-        "message": "<ResultRow> tone must be one of 'library' | 'request' | 'progress' | 'error'."
-      },
-      {
         "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<ResultRow> platform must be one of 'desktop' | 'mobile'."
       },

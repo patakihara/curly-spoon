@@ -1059,9 +1059,9 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | --- | --- | --- |
 | `title` *(required)* | `string` |  |
 | `meta` | `string` |  |
-| `status` | `string` | e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed". "Playing" renders animated equalizer bars instead of a pill. |
+| `status` | `string \| null` |  e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with no status. "Playing" renders animated equalizer bars instead of a pill.  |
 | `progress` | `number \| null` |  |
-| `tone` | `'library' \| 'request' \| 'progress' \| 'error'` | Colour family for the pill and ring. |
+| `tone` | `'library' \| 'request' \| 'progress' \| 'error' \| null` | Colour family for the pill and ring; null for a row with no status. |
 | `actionGlyph` | `string` | Glyph for the art overlay action; "downloading" renders a pause control. |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `platform` | `'desktop' \| 'mobile'` |  |

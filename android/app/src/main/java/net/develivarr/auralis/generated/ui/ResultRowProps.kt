@@ -11,10 +11,13 @@ import androidx.compose.runtime.Composable
 data class ResultRowProps(
     val title: String,
     val meta: String? = null,
-    /** e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed". "Playing" renders animated equalizer bars instead of a pill. */
+    /**
+     * e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with
+     * no status. "Playing" renders animated equalizer bars instead of a pill.
+     */
     val status: String? = null,
     val progress: Float? = null,
-    /** Colour family for the pill and ring. */
+    /** Colour family for the pill and ring; null for a row with no status. */
     val tone: ResultRowTone? = null,
     /** Glyph for the art overlay action; "downloading" renders a pause control. */
     val actionGlyph: String? = null,
