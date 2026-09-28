@@ -14,7 +14,8 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 export function TransportBar({ playing = false, platform = 'mobile', onTogglePlay, onPrev, onNext, onShuffle, onRepeat, variant = 'music', onSkipBack, onSkipForward, skipSeconds = 15, leading, trailing }) {
   const mobile = platform === 'mobile';
   const side = mobile ? 48 : 40, step = mobile ? 56 : 48, main = mobile ? 72 : 56;
-  const g = (name, size) => <span style={sx("font-family:'Material Symbols Rounded';font-size:" + size + 'px;line-height:1')}>{name}</span>;
+  // Play and pause are drawn filled, as on every play button; the other glyphs keep their outline.
+  const g = (name, size) => <span style={sx("font-family:'Material Symbols Rounded';font-size:" + size + 'px;line-height:1' + (name === 'pause' || name === 'play_arrow' ? ";font-variation-settings:'FILL' 1,'wght' 500" : ''))}>{name}</span>;
   if (!IconButton) return null;
   if (variant === 'spoken') {
     // There is no "replay_<n>"-style glyph for an arbitrary interval — Material Symbols only

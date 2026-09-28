@@ -20,7 +20,7 @@ const BTN = (primary, size, height) => sx(
   "font-family:'Material Symbols Rounded';font-size:" + Math.round(size * 0.5) + 'px;' +
   'box-shadow:var(--shadow-md);transition:filter var(--duration-fast) ease;' +
   (primary
-    ? 'background:var(--play);color:var(--play-icon)'
+    ? "background:var(--play);color:var(--play-icon);font-variation-settings:'FILL' 1,'wght' 500"
     : 'background:color-mix(in srgb, var(--accent) 82%, transparent);color:var(--accent-contrast);backdrop-filter:blur(6px)')
 );
 

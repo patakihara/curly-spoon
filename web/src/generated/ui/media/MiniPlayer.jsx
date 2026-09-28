@@ -13,6 +13,10 @@ const iconBtn = (color, size = 36, glyph = 'var(--icon-sm)', dim = false) => ({
   fontFamily: 'Material Symbols Rounded', fontSize: glyph,
 });
 
+// The play or pause glyph is filled, white on the rose: the font's default outline would leave a
+// hairline ring around a rose middle, which reads as a dark glyph at 1x.
+const playBtn = { ...iconBtn('var(--play-icon)', 44), background: 'var(--play)', fontVariationSettings: "'FILL' 1,'wght' 500" };
+
 /**
  * The persistent now-playing surface. One component, two platform variants:
  * mobile is the tinted pill docked above the bottom nav; desktop is the
@@ -49,7 +53,7 @@ export function MiniPlayer({
             <button aria-label="Shuffle" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>shuffle</button>
             <button aria-label="Previous" onClick={onPrev} style={iconBtn(fg)}>skip_previous</button>
             <button aria-label={playing ? 'Pause' : 'Play'} onClick={onTogglePlay}
-              style={{ ...iconBtn('var(--play-icon)', 44, 'var(--icon-sm)'), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
+              style={playBtn}>{playing ? 'pause' : 'play_arrow'}</button>
             <button aria-label="Next" onClick={onNext} style={iconBtn(fg)}>skip_next</button>
             <button aria-label="Repeat" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>repeat</button>
           </div>
@@ -90,7 +94,7 @@ export function MiniPlayer({
         <div style={{ color: 'var(--surface-now-playing-fg-muted)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist}</div>
       </div>
       <button aria-label={playing ? 'Pause' : 'Play'} onClick={(e) => { e.stopPropagation(); onTogglePlay && onTogglePlay(); }}
-        style={{ ...iconBtn('var(--play-icon)', 44), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
+        style={playBtn}>{playing ? 'pause' : 'play_arrow'}</button>
     </div>
   );
 }
