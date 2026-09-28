@@ -8,7 +8,7 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 if (typeof document !== 'undefined' && !document.getElementById('sonora-resultrow-css')) {
   const el = document.createElement('style');
   el.id = 'sonora-resultrow-css';
-  el.textContent = '.rr-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.rr-art:hover .rr-act,.rr-art[data-always="true"] .rr-act{opacity:1}@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--accent-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}';
+  el.textContent = '.rr-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.rr-art:hover .rr-act,.rr-art[data-always="true"] .rr-act{opacity:1}@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--play-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}';
   document.head.appendChild(el);
 }
 

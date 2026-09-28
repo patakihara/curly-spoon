@@ -57,7 +57,7 @@ function Demo({start}){
         trailing={<Tag>Back layer · 0dp · --surface-bg-alt · rail included</Tag>}
         /* A library-scope switch reconfigures WHAT the front layer shows, so it stays on the
            back layer. The section tabs below name a part of the content and go to the subheader. */
-        controls={<ButtonGroup items={['All','Music','Audiobooks','Podcasts']} value={scope} onChange={setScope} />} />}
+        controls={<ButtonGroup tone="play" items={['All','Music','Audiobooks','Podcasts']} value={scope} onChange={setScope} />} />}
       subheader={<FrontLayerHeader tabs>
         <div style={{display:'flex',alignItems:'center',gap:'var(--spacing-lg)'}}>
           <Tabs items={['Recent','Artists','Albums']} value={tab} onChange={setTab} />

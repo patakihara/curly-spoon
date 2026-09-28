@@ -5,7 +5,6 @@
   "namespace": "SonoraDesignSystem_6c1435",
   "components": [
     "AboutCard",
-    "AccentSwatch",
     "AlbumArt",
     "AppShell",
     "ArtistCard",

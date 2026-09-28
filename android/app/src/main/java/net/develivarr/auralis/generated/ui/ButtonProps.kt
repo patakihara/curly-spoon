@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 
 data class ButtonProps(
     val children: (@Composable () -> Unit)?,
-    /** Visual style. Primary = filled accent; secondary = outlined surface; ghost = text-only; danger = destructive red. */
+    /** Visual style. Primary = filled accent; play = filled play rose, for a Play action; secondary = outlined surface; ghost = text-only; danger = destructive red. */
     val variant: ButtonVariant? = null,
     val size: SizeSmMdLg? = null,
     /** Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). */
@@ -23,6 +23,7 @@ data class ButtonProps(
 
 enum class ButtonVariant(val value: String) {
     PRIMARY("primary"),
+    PLAY("play"),
     SECONDARY("secondary"),
     GHOST("ghost"),
     DANGER("danger"),

@@ -298,7 +298,7 @@ function App() {
   // list/grid mode, scroll memory, the search morph).
   const VIEWS = [
     { key: 'search', title: 'Search', searchScope: 'library', searchPlaceholder: 'What do you want to listen to?', searchOpen: true },
-    { key: 'home', title: 'Browse', controls: ButtonGroup ? <ButtonGroup items={FILTERS} value={filter} onChange={setFilter} /> : null },
+    { key: 'home', title: 'Browse', controls: ButtonGroup ? <ButtonGroup tone="play" items={FILTERS} value={filter} onChange={setFilter} /> : null },
     { key: 'tracks', title: 'Music', searchScope: 'Music', subtabs: SUBTABS.tracks, defaultSubtab: 'songs' },
     { key: 'albums', title: 'Audiobooks', searchScope: 'Audiobooks', subtabs: SUBTABS.albums, defaultSubtab: 'books' },
     { key: 'artists', title: 'Podcasts', searchScope: 'Podcasts' },

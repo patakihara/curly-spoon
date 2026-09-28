@@ -3,13 +3,11 @@ package net.develivarr.auralis.generated.ui
 
 /**
  * Navigates into a category whose content you can't name yet — distinct from Chip, which filters
- * an existing result set. Colour-coded, with its artwork tilted out of the bottom-right corner so
+ * an existing result set. Filled with a shade of the accent, with its artwork tilted out of the bottom-right corner so
  * the card reads as a stack of content rather than a label.
  */
 data class BrowseCardProps(
     val title: String,
-    /** One of the 17 accent hue names; defaults to a hue derived deterministically from `title`. */
-    val color: SonoraColor? = null,
     /** Tilted thumbnail anchored to the bottom-right corner. */
     val image: String? = null,
     val onClick: (() -> Unit)? = null,

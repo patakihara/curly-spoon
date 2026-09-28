@@ -6,18 +6,6 @@ Every prop each component accepts, with its type and the note from its declarati
 
 ## core
 
-### AccentSwatch
-
-A single accent-colour choice from the accent preset palette; lay several out in a row for the picker.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `color` *(required)* | `string` | Any CSS colour — pass an --accent-* token value. |
-| `name` | `string` | Accessible name / tooltip, e.g. "Lilac". |
-| `selected` | `boolean` |  |
-| `size` | `'sm' \| 'lg'` | lg is the settings picker, sm the inline row. |
-| `onClick` | `() => void` |  |
-
 ### Badge
 
 Small pill for counts, queue positions and status. Colors come from the status tone tokens; ink is always plain black or white.
@@ -33,12 +21,11 @@ Small pill for counts, queue positions and status. Colors come from the status t
 
 ### BrowseCard
 
-Navigates into a category whose content you can't name yet — distinct from Chip, which filters an existing result set. Colour-coded, with its artwork tilted out of the bottom-right corner so the card reads as a stack of content rather than a label.
+Navigates into a category whose content you can't name yet — distinct from Chip, which filters an existing result set. Filled with a shade of the accent, with its artwork tilted out of the bottom-right corner so the card reads as a stack of content rather than a label.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `title` *(required)* | `string` |  |
-| `color` | `'red' \| 'orange' \| 'amber' \| 'yellow' \| 'lime' \| 'green' \| 'emerald' \| 'teal' \| 'cyan' \| 'sky' \| 'blue' \| 'indigo' \| 'violet' \| 'purple' \| 'fuchsia' \| 'pink' \| 'rose'` | One of the 17 accent hue names; defaults to a hue derived deterministically from `title`. |
 | `image` | `string` | Tilted thumbnail anchored to the bottom-right corner. |
 | `onClick` | `() => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
@@ -50,7 +37,7 @@ Navigates into a category whose content you can't name yet — distinct from Chi
 | prop | type | notes |
 | --- | --- | --- |
 | `children` *(required)* | `ReactNode` |  |
-| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger'` | Visual style. Primary = filled accent; secondary = outlined surface; ghost = text-only; danger = destructive red. |
+| `variant` | `'primary' \| 'play' \| 'secondary' \| 'ghost' \| 'danger'` | Visual style. Primary = filled accent; play = filled play rose, for a Play action; secondary = outlined surface; ghost = text-only; danger = destructive red. |
 | `size` | `'sm' \| 'md' \| 'lg'` |  |
 | `platform` | `'desktop' \| 'mobile'` | Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). |
 | `icon` | `ReactNode` |  |
@@ -69,16 +56,15 @@ M3 connected button group — a row of segments that read as one control: outer 
 | `onChange` | `(next: string) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `scroll` | `boolean` | @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. |
-| `leading` | `ReactNode` | A pinned, non-scrolling slot before the first segment — an account avatar, in every Spotify filter row. |
+| `tone` | `'accent' \| 'play'` | The selected segment's fill: `accent` (default), or `play` for the Browse media filter (All, Music, Podcasts, Books). |
 
 ### Chip
 
-One of the 17 accent hues (renders as a big colorful genre card like Symphony's Genres grid). Omit for a plain outlined tag.
+A tag/genre pill for filter tags: outlined at rest, filled with the accent when selected, with an optional song count.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `children` *(required)* | `ReactNode` |  |
-| `color` | `'red'\|'orange'\|'amber'\|'yellow'\|'lime'\|'green'\|'emerald'\|'teal'\|'cyan'\|'sky'\|'blue'\|'indigo'\|'violet'\|'purple'\|'fuchsia'\|'pink'\|'rose'` | One of the 17 accent hues (renders as a big colorful genre card like Symphony's Genres grid). Omit for a plain outlined tag. |
 | `count` | `number` |  |
 | `selected` | `boolean` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
@@ -124,13 +110,14 @@ Subscription toggle whose label states the current state, not the action to take
 
 ### IconButton
 
-
+A round, transparent glyph button: surface ink, muted ink, or the active colour.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `children` *(required)* | `ReactNode` |  |
 | `size` | `number` |  |
 | `active` | `boolean` |  |
+| `tone` | `'accent' \| 'play'` | The colour `active` takes: `accent` (default), or `play` for the transport's play/pause. |
 | `muted` | `boolean` |  |
 | `label` *(required)* | `string` |  |
 | `onClick` | `() => void` |  |
@@ -344,6 +331,7 @@ Settings list row: title, explanatory line, and a Switch on a filled card.
 | `value` | `number` | 0–1 |
 | `onChange` | `(next: number) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` | Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). |
+| `tone` | `'accent' \| 'play'` | The fill: `accent` (default), or `play` for playback position (SeekBar passes it). |
 
 ### Switch
 
@@ -405,8 +393,8 @@ The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevati
 | prop | type | notes |
 | --- | --- | --- |
 | `title` | `string` | The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). |
-| `leading` | `ReactNode` | Before the title — a back link, a menu button. |
-| `trailing` | `ReactNode` | After the title — a search button, an avatar, an overflow menu. |
+| `leading` | `ReactNode` | Before the title — a back link, or on mobile the account avatar (never in a filter row). |
+| `trailing` | `ReactNode` | After the title — a search button, an overflow menu. |
 | `controls` | `ReactNode` | Contextual controls that reconfigure the front layer, on a band below the heading. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
@@ -713,7 +701,7 @@ The artwork layer used inside every art container in the system. Absolutely fill
 | prop | type | notes |
 | --- | --- | --- |
 | `src` | `string` | Image URL. Omitted or still loading, the fallback shows instead. |
-| `fallback` | `string` | CSS background for the placeholder. Defaults to the accent→violet gradient. |
+| `fallback` | `string` | CSS background for the placeholder. Defaults to a flat `--accent`. |
 | `alt` | `string` |  |
 
 ### DetailPage
@@ -1002,7 +990,7 @@ Where the audio is going, and at what quality — a listener needs both without 
 
 ### PlayActions
 
-The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --accent-rose) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
+The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --play) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -1234,7 +1222,7 @@ Top app bar — a `--surface-bg-alt` strip above the page content. The first row
 | `children` | `ReactNode` | Second-row content: a ButtonGroup, a SearchField, whatever the screen needs. |
 | `align` | `'start' \| 'center'` | center caps the second row at 560px and centres it (the library search treatment). |
 | `occlude` | `boolean` | Sits the leading/trailing controls on their own bg-alt layer so scrolling second-row content fades under them. |
-| `leading` | `ReactNode` |  |
+| `leading` | `ReactNode` | Before the title. On mobile, the account avatar lives here, never in the filter row below. |
 | `trailing` | `ReactNode` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `squareLeft` | `boolean` | Square the top corners of the controls row — right when a side sheet abuts it. |

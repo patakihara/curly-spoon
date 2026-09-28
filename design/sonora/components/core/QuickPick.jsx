@@ -21,7 +21,7 @@ export function QuickPick({ title, sub, platform = 'desktop', icon, image, onCli
         {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--accent)')} />}
         {hasProgress && (
           <div style={sx('position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--scrim)')}>
-            <div style={sx('position:absolute;height:100%;background:var(--accent);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
+            <div style={sx('position:absolute;height:100%;background:var(--play);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
           </div>
         )}
       </div>;

@@ -10,7 +10,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { AppShell, LayoutGrid, Shelf, TopAppBar, SearchField, BottomNav, ButtonGroup, MediaCard, ArtistCard, MediaHeader, ResultRow, QuickPick, BackLink, FieldRow, SettingRow, IconButton, Slider, SectionHeader, Section, TabBar, ViewToggle, LibraryShell, DetailPage, CollectionPage, MiniPlayer, NowPlaying } = window.SonoraDesignSystem_6c1435;
+const { AppShell, LayoutGrid, Shelf, TopAppBar, SearchField, BottomNav, ButtonGroup, MediaCard, ArtistCard, MediaHeader, ResultRow, QuickPick, BackLink, FieldRow, SettingRow, IconButton, Slider, SectionHeader, Section, TabBar, ViewToggle, LibraryShell, DetailPage, CollectionPage, MiniPlayer, NowPlaying, CoverArt } = window.SonoraDesignSystem_6c1435;
 
 // Demo cover art. Deterministic per title, so a card keeps the same cover across renders.
 const cover = (t, s) => 'https://picsum.photos/seed/sonora-' + encodeURIComponent(String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '/' + (s || 400);
@@ -269,7 +269,7 @@ function App() {
   // Each view declares its own chrome; LibraryShell owns how they behave (detail memory, sub-tabs,
   // list/grid mode, scroll memory, the search morph).
   const VIEWS = [
-    { key: 'for-you', title: 'Browse', controls: ButtonGroup ? <ButtonGroup platform="mobile" items={FILTERS} value={filter} onChange={setFilter} /> : null },
+    { key: 'for-you', title: 'Browse', controls: ButtonGroup ? <ButtonGroup platform="mobile" tone="play" items={FILTERS} value={filter} onChange={setFilter} /> : null },
     { key: 'songs', title: 'Music', searchScope: 'Music', subtabs: SUBTABS.songs, defaultSubtab: 'songs' },
     { key: 'albums', title: 'Audiobooks', searchScope: 'Audiobooks', subtabs: SUBTABS.albums, defaultSubtab: 'books' },
     { key: 'artists', title: 'Podcasts', searchScope: 'Podcasts' },
@@ -279,7 +279,7 @@ function App() {
   return (
     <React.Fragment>
     <LibraryShell platform="mobile" views={VIEWS} view={tab} scroll={false} flatDetail searchHeight="32px"
-      leading={<IconButton label="Menu" muted onClick={() => setSettings(true)}>{glyph('menu')}</IconButton>}
+      leading={<button aria-label="Account" onClick={() => setSettings(true)} style={{ position: 'relative', overflow: 'hidden', width: 32, height: 32, padding: 0, border: 'none', borderRadius: '50%', cursor: 'pointer', flexShrink: 0 }}>{CoverArt && <CoverArt src={cover('Account', 64)} alt="" />}</button>}
       trailing={<IconButton label="Settings" muted onClick={() => setSettings(true)}>{glyph('settings')}</IconButton>}
       detailTrailing={<IconButton label="More" muted>{glyph('more_vert')}</IconButton>}
       player={<React.Fragment>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function Slider({ value = 0.3, onChange, platform = 'desktop' }) {
+export function Slider({ value = 0.3, onChange, platform = 'desktop', tone = 'accent' }) {
   const ref = React.useRef(null);
   const seek = (e) => {
     if (!ref.current || !onChange) return;
@@ -15,7 +15,7 @@ export function Slider({ value = 0.3, onChange, platform = 'desktop' }) {
     }}>
       <div style={{
         position: 'absolute', top: 0, left: 0, height: '100%', width: `${value * 100}%`,
-        borderRadius: 999, background: 'var(--accent)',
+        borderRadius: 999, background: tone === 'play' ? 'var(--play)' : 'var(--accent)',
       }} />
       {isMobile && (
         <div style={{

@@ -12,7 +12,7 @@ export function CoverArt({ src, fallback, alt = '' }) {
     <React.Fragment>
       {/* Dropped once the image is up: an antialiased rounded corner blends whatever sits behind
           the image, so any leftover gradient shows as a coloured fringe no bleed can hide. */}
-      {showFallback && <span aria-hidden="true" style={sx('position:absolute;inset:0;background:' + (fallback || 'linear-gradient(135deg,var(--accent),var(--accent-violet))'))} />}
+      {showFallback && <span aria-hidden="true" style={sx('position:absolute;inset:0;background:' + (fallback || 'var(--accent)'))} />}
       {src && <img ref={ref} src={src} alt={alt} loading="lazy" onLoad={() => setLoaded(true)}
         style={sx('position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:' + (loaded ? '1' : '0') + ';transition:opacity var(--duration-fast) ease')} />}
     </React.Fragment>

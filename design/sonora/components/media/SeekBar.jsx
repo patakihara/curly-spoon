@@ -10,7 +10,7 @@ export function SeekBar({ value = 0, duration = 0, platform = 'mobile', onChange
   const secs = Math.max(0, Math.min(1, value)) * duration;
   return (
     <div style={sx('display:flex;flex-direction:column;gap:var(--spacing-sm);width:100%')}>
-      {Slider && <Slider value={value} onChange={onChange} platform={platform} />}
+      {Slider && <Slider value={value} onChange={onChange} platform={platform} tone="play" />}
       <div style={sx('display:flex;justify-content:space-between;font-size:var(--text-sm);color:var(--surface-fg-muted)')}>
         <span>{mmss(secs)}</span>
         <span>{(remainingAsCountdown ? '-' : '') + mmss(remainingAsCountdown ? duration - secs : duration)}</span>

@@ -4,8 +4,8 @@ import { ReactNode } from 'react';
  */
 export interface ButtonProps {
   children: ReactNode;
-  /** Visual style. Primary = filled accent; secondary = outlined surface; ghost = text-only; danger = destructive red. */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  /** Visual style. Primary = filled accent; play = filled play rose, for a Play action; secondary = outlined surface; ghost = text-only; danger = destructive red. */
+  variant?: 'primary' | 'play' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   /** Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). */
   platform?: 'desktop' | 'mobile';

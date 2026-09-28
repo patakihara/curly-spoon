@@ -25,25 +25,11 @@ object SonoraPalette {
     val OnScrim = Color(0xFFFFFFFF)
     val Accent = Color(0xFF8B5CF6)
     val AccentContrast = Color(0xFFFFFFFF)
-    val AccentRed = Color(0xFFEF4444)
-    val AccentOrange = Color(0xFFF97316)
-    val AccentAmber = Color(0xFFF59E0B)
-    val AccentYellow = Color(0xFFEAB308)
-    val AccentLime = Color(0xFF84CC16)
-    val AccentGreen = Color(0xFF22C55E)
-    val AccentEmerald = Color(0xFF10B981)
-    val AccentTeal = Color(0xFF14B8A6)
-    val AccentCyan = Color(0xFF06B6D4)
-    val AccentSky = Color(0xFF0EA5E9)
-    val AccentBlue = Color(0xFF3B82F6)
-    val AccentIndigo = Color(0xFF6366F1)
-    val AccentViolet = Color(0xFF8B5CF6)
-    val AccentPurple = Color(0xFFA855F7)
-    val AccentFuchsia = Color(0xFFD946EF)
-    val AccentPink = Color(0xFFEC4899)
-    val AccentRose = Color(0xFFF44862)
+    val Play = Color(0xFFF44862)
+    val PlayContrast = Color(0xFF000000)
     val StateError = Color(0xFFE12F43)
     val StateSuccess = Color(0xFF42E477)
+    val StateSuccessInk = Color(0xFF000000)
     val StateWarning = Color(0xFFFFCC8B)
     val StateInfo = Color(0xFF9B66E9)
 }
@@ -51,6 +37,7 @@ object SonoraPalette {
 /** Theme-dependent colors: build one and pass it down; never read the other theme's. */
 data class SonoraColors(
     val accentInk: Color,
+    val playInk: Color,
     val toneProgress: Color,
     val toneLibrary: Color,
     val toneRequest: Color,
@@ -77,8 +64,9 @@ data class SonoraColors(
 
 val SonoraDarkColors = SonoraColors(
     accentInk = Color(0xFFA78BFA),
+    playInk = Color(0xFFFF7A8D),
     toneProgress = Color(0xFF8B5CF6),
-    toneLibrary = Color(0xFF42E477),
+    toneLibrary = Color(0xFFF44862),
     toneRequest = Color(0xFFFFCC8B),
     toneError = Color(0xFFE12F43),
     toneLibraryInk = Color(0xFF000000),
@@ -103,8 +91,9 @@ val SonoraDarkColors = SonoraColors(
 
 val SonoraLightColors = SonoraColors(
     accentInk = Color(0xFF6D28D9),
+    playInk = Color(0xFFA8182F),
     toneProgress = Color(0xFF8B5CF6),
-    toneLibrary = Color(0xFF42E477),
+    toneLibrary = Color(0xFFF44862),
     toneRequest = Color(0xFFFFCC8B),
     toneError = Color(0xFFE12F43),
     toneLibraryInk = Color(0xFF000000),

@@ -18,9 +18,9 @@ import androidx.compose.runtime.Composable
 data class BackLayerProps(
     /** The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). */
     val title: String? = null,
-    /** Before the title — a back link, a menu button. */
+    /** Before the title — a back link, or on mobile the account avatar (never in a filter row). */
     val leading: (@Composable () -> Unit)? = null,
-    /** After the title — a search button, an avatar, an overflow menu. */
+    /** After the title — a search button, an overflow menu. */
     val trailing: (@Composable () -> Unit)? = null,
     /** Contextual controls that reconfigure the front layer, on a band below the heading. */
     val controls: (@Composable () -> Unit)? = null,

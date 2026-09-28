@@ -18,6 +18,7 @@ data class TopAppBarProps(
     val align: Align? = null,
     /** Sits the leading/trailing controls on their own bg-alt layer so scrolling second-row content fades under them. */
     val occlude: Boolean? = null,
+    /** Before the title. On mobile, the account avatar lives here, never in the filter row below. */
     val leading: (@Composable () -> Unit)? = null,
     val trailing: (@Composable () -> Unit)? = null,
     val platform: Platform? = null,

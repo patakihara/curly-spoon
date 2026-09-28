@@ -12,9 +12,9 @@ const scrollerOf = (el) => {
 
 /**
  * The lyric list, in the three states the sync control cycles through:
- * `sync` — the line being sung takes accent ink a step larger, lines already sung stay at full
+ * `sync` — the line being sung takes play ink a step larger, lines already sung stay at full
  *          strength and lines still to come sit muted;
- * `dot`  — every line reads at full strength, the current one marked by an accent dot that slides
+ * `dot`  — every line reads at full strength, the current one marked by a play-ink dot that slides
  *          between lines;
  * `off`  — no sync, no indication: a plain lyric sheet.
  * The dot's gutter is held in every mode, so switching modes never moves the text.
@@ -51,13 +51,13 @@ export function Lyrics({
 
   const size = textSize || 'var(--text-lg)';
   const ink = (i) => synced
-    ? (i === activeIndex ? 'var(--accent-ink)' : i > activeIndex ? 'var(--surface-fg-muted)' : 'var(--surface-fg)')
+    ? (i === activeIndex ? 'var(--play-ink)' : i > activeIndex ? 'var(--surface-fg-muted)' : 'var(--surface-fg)')
     : 'var(--surface-fg)';
   return (
     <div ref={ref} style={sx('position:relative;box-sizing:border-box;padding:var(--spacing-sm) calc(var(--spacing-2xl) + var(--spacing-sm))' +
       (card ? ';background:var(--surface-card);border-radius:var(--radius-sm)' : ''))}>
       {dotted && dotY !== null && (
-        <span aria-hidden="true" style={sx('position:absolute;left:calc((var(--spacing-2xl) + var(--spacing-sm) - 8px) / 2);top:0;width:8px;height:8px;border-radius:var(--radius-pill);background:var(--accent-ink);' +
+        <span aria-hidden="true" style={sx('position:absolute;left:calc((var(--spacing-2xl) + var(--spacing-sm) - 8px) / 2);top:0;width:8px;height:8px;border-radius:var(--radius-pill);background:var(--play-ink);' +
           'transform:translateY(' + dotY + 'px);transition:transform var(--duration-medium) var(--ease-standard),opacity var(--duration-quick) linear')} />
       )}
       <div ref={linesRef} data-sn-lyric-lines="" style={sx('display:flex;flex-direction:column;gap:' + (mobile ? '22px' : '16px'))}>

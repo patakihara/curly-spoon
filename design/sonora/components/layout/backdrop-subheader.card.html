@@ -49,7 +49,7 @@ function Cell({caption, head, offset}) {
 
 function Demo(){
   const tabs = <Tabs items={['Recent','Artists','Albums']} value="Recent" />;
-  const group = <ButtonGroup items={['All','Music','Audiobooks','Podcasts']} value="All" />;
+  const group = <ButtonGroup tone="play" items={['All','Music','Audiobooks','Podcasts']} value="All" />;
   return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--spacing-2xl)'}}>
     <Cell caption="Tabs — at rest" offset={0}
       head={<FrontLayerHeader tabs progress={0}>{tabs}</FrontLayerHeader>} />

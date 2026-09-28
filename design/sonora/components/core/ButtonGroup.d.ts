@@ -1,5 +1,3 @@
-import { ReactNode } from 'react';
-
 /**
  * M3 connected button group — a row of segments that read as one control:
  * outer ends fully rounded, 8px inner corners, and the selected segment morphs
@@ -23,7 +21,7 @@ export interface ButtonGroupProps {
   platform?: 'desktop' | 'mobile';
   /** @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. */
   scroll?: boolean;
-  /** A pinned, non-scrolling slot before the first segment — an account avatar, in every Spotify filter row. */
-  leading?: ReactNode;
+  /** The selected segment's fill: `accent` (default), or `play` for the Browse media filter (All, Music, Podcasts, Books). */
+  tone?: 'accent' | 'play';
 }
 export declare function ButtonGroup(props: ButtonGroupProps): JSX.Element;

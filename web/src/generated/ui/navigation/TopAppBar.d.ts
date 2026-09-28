@@ -16,6 +16,7 @@ export interface TopAppBarProps {
   align?: 'start' | 'center';
   /** Sits the leading/trailing controls on their own bg-alt layer so scrolling second-row content fades under them. */
   occlude?: boolean;
+  /** Before the title. On mobile, the account avatar lives here, never in the filter row below. */
   leading?: ReactNode;
   trailing?: ReactNode;
   platform?: 'desktop' | 'mobile';

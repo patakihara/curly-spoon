@@ -57,9 +57,10 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 
 Surfaces `--surface-bg` `--surface-bg-alt` `--surface-card` `--surface-fg` `--surface-fg-muted`
 `--surface-border` `--surface-hover`. Scrims over artwork `--scrim-soft` `--scrim` `--scrim-strong`
-`--on-scrim`. Accent `--accent` `--accent-contrast` `--accent-ink`, plus the 17 hues
-`--accent-red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose`.
-State `--state-error|success|warning|info`. Tones `--tone-library|request|progress|error` and their
+`--on-scrim`. Accent `--accent` `--accent-contrast` `--accent-ink`: the one app accent, violet.
+Play `--play` `--play-contrast` `--play-ink`: rose, only for Now Playing, the mini player, the
+transport, seek and listening-progress fills, the in-library tone and the Browse media filter.
+State `--state-error|success|warning|info`, `--state-success-ink`; success is only for real success. Tones `--tone-library|request|progress|error` and their
 `-ink` pairs. Radius `--radius-xs|sm|md|lg|pill`. Spacing `--spacing-xs|sm|md|lg|xl|2xl`.
 Type `--text-xs|sm|md|lg|xl|2xl|3xl|4xl|5xl`, `--font-body|display|heading`, `--weight-body|strong`.
 Icons `--icon-xs|sm|md`. Motion `--duration-instant|fast|quick|medium|slow`, `--ease-standard`.
@@ -112,13 +113,12 @@ Full width, so `trailing` sits hard right.
 ## `core/BrowseCard.jsx`
 
 **Affordance: enter a category whose content you can't name yet.** Distinct from `Chip`, which
-*filters an existing result set*; this *navigates into* one. Wide tile, colour-coded, with the
+*filters an existing result set*; this *navigates into* one. Wide tile in a shade of the accent, with the
 artwork tilted out of the bottom-right corner so the card reads as a stack of content rather than a
 label.
 
 ```ts
 title: string
-color?: '<one of the 17 accent hue names>'   // defaults to a deterministic hue from the title
 image?: string                                // tilted thumbnail, bottom-right
 onClick?: () => void
 platform?: 'desktop' | 'mobile'

@@ -41,7 +41,7 @@ export function ItemActionBar({ saved = false, onSave, download = 'idle', downlo
       {onPlay && (
         // Pushed to the far edge, away from the toggle cluster, so it reads as the primary action.
         <button onClick={onPlay} aria-label={playLabel} title={playLabel}
-          style={sx('display:flex;align-items:center;justify-content:center;margin-left:auto;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;border-radius:50%;border:none;background:var(--accent);color:var(--accent-contrast);padding:0;cursor:pointer')}>
+          style={sx('display:flex;align-items:center;justify-content:center;margin-left:auto;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;border-radius:50%;border:none;background:var(--play);color:var(--play-contrast);padding:0;cursor:pointer')}>
           <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:" + iconSize + ';line-height:1')}>{playing ? 'pause' : 'play_arrow'}</span>
         </button>
       )}

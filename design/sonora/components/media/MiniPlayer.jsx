@@ -34,7 +34,7 @@ export function MiniPlayer({
         <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, cursor: onOpen ? 'pointer' : 'default' }}>
           <div style={{
             width: 52, height: 52, flexShrink: 0, borderRadius: 'var(--radius-xs)', overflow: 'hidden',
-            background: image ? undefined : 'linear-gradient(135deg,var(--accent),var(--accent-violet))',
+            background: image ? undefined : 'var(--accent)',
           }}>
             {image && <img src={image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
           </div>
@@ -48,7 +48,7 @@ export function MiniPlayer({
             <button aria-label="Shuffle" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>shuffle</button>
             <button aria-label="Previous" onClick={onPrev} style={iconBtn(fg)}>skip_previous</button>
             <button aria-label={playing ? 'Pause' : 'Play'} onClick={onTogglePlay}
-              style={{ ...iconBtn('var(--accent-contrast)', 44, 'var(--icon-sm)'), background: 'var(--accent-rose)' }}>{playing ? 'pause' : 'play_arrow'}</button>
+              style={{ ...iconBtn('var(--play-contrast)', 44, 'var(--icon-sm)'), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
             <button aria-label="Next" onClick={onNext} style={iconBtn(fg)}>skip_next</button>
             <button aria-label="Repeat" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>repeat</button>
           </div>
@@ -56,14 +56,14 @@ export function MiniPlayer({
             <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(progress * duration)}</span>
             <div style={{ flex: 1, height: 4, borderRadius: 'var(--radius-pill)', background: 'color-mix(in srgb, var(--surface-now-playing-fg) 28%, transparent)', cursor: 'pointer' }}
               onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onSeek && onSeek((e.clientX - r.left) / r.width); }}>
-              <div style={{ width: `${progress * 100}%`, height: '100%', borderRadius: 'var(--radius-pill)', background: 'var(--accent-rose)' }} />
+              <div style={{ width: `${progress * 100}%`, height: '100%', borderRadius: 'var(--radius-pill)', background: 'var(--play)' }} />
             </div>
             <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(duration)}</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--spacing-lg)' }}>
-          <button aria-label="Lyrics" onClick={onToggleLyrics} style={{ ...iconBtn(fg), color: lyricsOpen ? 'var(--accent-rose)' : fg }}>lyrics</button>
-          <button aria-label="Queue" onClick={onToggleQueue} style={{ ...iconBtn(fg), color: queueOpen ? 'var(--accent-rose)' : fg }}>queue_music</button>
+          <button aria-label="Lyrics" onClick={onToggleLyrics} style={{ ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }}>lyrics</button>
+          <button aria-label="Queue" onClick={onToggleQueue} style={{ ...iconBtn(fg), color: queueOpen ? 'var(--play-ink)' : fg }}>queue_music</button>
           <button aria-label="Volume" style={iconBtn(fg)}>volume_up</button>
         </div>
       </div>
@@ -89,7 +89,7 @@ export function MiniPlayer({
         <div style={{ color: 'var(--surface-now-playing-fg-muted)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist}</div>
       </div>
       <button aria-label={playing ? 'Pause' : 'Play'} onClick={(e) => { e.stopPropagation(); onTogglePlay && onTogglePlay(); }}
-        style={{ ...iconBtn('var(--accent-contrast)', 44), background: 'var(--accent-rose)' }}>{playing ? 'pause' : 'play_arrow'}</button>
+        style={{ ...iconBtn('var(--play-contrast)', 44), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
     </div>
   );
 }

@@ -8,7 +8,6 @@ the comparison; other files in that repo may reference tokens not checked here.
 
 | token | vendored | current |
 | --- | --- | --- |
-| `--accent-rose` | `#f43f5e` | `#F44862` |
 | `--state-info` | `var(--accent)` | `#9B66E9` |
 | `--surface-bg` (light) | `rgb(235,235,235)` | `#F9F6F6` |
 | `--surface-bg-alt` (light) | `rgb(240,240,240)` | `#FFFFFF` |
@@ -17,15 +16,16 @@ the comparison; other files in that repo may reference tokens not checked here.
 | `--surface-card` (dark) | `var(--neutral-850)` `#141414` | `#1C1B1D` |
 | `--accent-ink` (dark) | `var(--accent)` | `#A78BFA` |
 | `--accent-ink` (light) | `color-mix(in oklch, var(--accent) 58%, black)` | `#6D28D9` |
-| `--tone-library` (dark) | `var(--accent)` | `var(--state-success)` |
+| `--tone-library` (dark) | `var(--accent)` | `var(--play)` |
 | `--tone-progress` (dark) | `var(--state-warning)` | `var(--accent)` |
 | `--tone-request` (dark) | `#ffb7db` | `var(--state-warning)` |
 | `--grid-columns-mobile` | — | `4` → `3` (mobile grids are three across) |
 | `--grid-gutter-mobile` | — | `12px` → `8px` |
 | `--grid-item-min-mobile` | — | `150px` → `100px` |
 
-`--surface-bg-alt` (dark) is unchanged at `#080808`, as are the neutral scale, the 17 accent presets
-apart from rose, the state colours apart from info, radius, shadows, and the type scale.
+`--surface-bg-alt` (dark) is unchanged at `#080808`, as are the neutral scale, the state colours apart
+from info, radius, shadows, and the type scale. The 17 `--accent-*` presets are gone: Sonora has one
+accent, not a user-picked one.
 
 ## Families the vendored copy does not have
 
@@ -36,6 +36,8 @@ apart from rose, the state colours apart from info, radius, shadows, and the typ
 - **`--surface-hover`** — the wash under transparent controls; theme-aware. The old hardcoded
   `rgb(255 255 255 / 10%)` was invisible in light mode.
 - **`--icon-xs` (20px)** — the small glyph size used by ButtonGroup, TabBar and SearchField.
+- **Play** — `--play` (rose `#F44862`), `--play-contrast`, `--play-ink`: the second named colour, for
+  what is about playback. `--state-success-ink` is the ink on a genuine success fill.
 - **Tone inks** — `--tone-library-ink`, `--tone-request-ink`, `--tone-progress-ink`, `--tone-error-ink`.
 - **Frame + grid measurements** — `--rail-width-expanded|collapsed`, `--rail-row-height`,
   `--appbar-height`, `--appbar-height-mobile`, `--side-sheet-width`, `--content-min-width`,

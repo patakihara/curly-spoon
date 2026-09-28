@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 5d043dd9fbe76d3776ec93ed55232c8193048d3fd6336be0d2d216db5f490029
+pageHash: 055cb3b839d245b36557a3706d2f13eec9efa0c9be05d7b1b8d370b6ae52e0c0
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -32,6 +32,9 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 
 ## Differences
 
+- Matches, after the one-accent change: the switches stay in the violet accent in both kits
+  and on the page; settings are not play-related, so nothing here turned rose. Re-shot, the
+  renders are otherwise unchanged.
 - Fixed: the first draw split the rows under "Playback" and "Downloads" headings. At desktop
   density `SectionHeader` is the feed's display heading, far heavier than either kit, which
   shows one unheaded list. The rows are now one list, as both kits draw them.

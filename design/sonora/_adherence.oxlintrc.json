@@ -43,14 +43,6 @@
         "message": "Font not provided by the design system. Available: Inter, Archivo, Archivo Black, Material Symbols Rounded."
       },
       {
-        "selector": "JSXOpeningElement[name.name='AccentSwatch'] > JSXAttribute > JSXIdentifier[name!=/^(?:color|name|selected|size|onClick|key|ref|className|style|children)$/]",
-        "message": "<AccentSwatch> doesn't accept that prop. Declared props: color, name, selected, size, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='AccentSwatch'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|lg)$/]",
-        "message": "<AccentSwatch> size must be one of 'sm' | 'lg'."
-      },
-      {
         "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|tone|size|icon|square|plain|key|ref|className|style|children)$/]",
         "message": "<Badge> doesn't accept that prop. Declared props: children, tone, size, icon, square, plain."
       },
@@ -63,12 +55,8 @@
         "message": "<Badge> size must be one of 'sm' | 'md'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|color|image|onClick|platform|key|ref|className|style|children)$/]",
-        "message": "<BrowseCard> doesn't accept that prop. Declared props: title, color, image, onClick, platform."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute[name.name='color'] > Literal[value!=/^(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)$/]",
-        "message": "<BrowseCard> color must be one of 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose'."
+        "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|image|onClick|platform|key|ref|className|style|children)$/]",
+        "message": "<BrowseCard> doesn't accept that prop. Declared props: title, image, onClick, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='BrowseCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -79,8 +67,8 @@
         "message": "<Button> doesn't accept that prop. Declared props: children, variant, size, platform, icon, disabled, onClick, pressed."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|ghost|danger)$/]",
-        "message": "<Button> variant must be one of 'primary' | 'secondary' | 'ghost' | 'danger'."
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|play|secondary|ghost|danger)$/]",
+        "message": "<Button> variant must be one of 'primary' | 'play' | 'secondary' | 'ghost' | 'danger'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md|lg)$/]",
@@ -91,20 +79,20 @@
         "message": "<Button> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|value|onChange|platform|scroll|leading|key|ref|className|style|children)$/]",
-        "message": "<ButtonGroup> doesn't accept that prop. Declared props: items, value, onChange, platform, scroll, leading."
+        "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|value|onChange|platform|scroll|tone|key|ref|className|style|children)$/]",
+        "message": "<ButtonGroup> doesn't accept that prop. Declared props: items, value, onChange, platform, scroll, tone."
       },
       {
         "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<ButtonGroup> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|color|count|selected|platform|onClick|key|ref|className|style|children)$/]",
-        "message": "<Chip> doesn't accept that prop. Declared props: children, color, count, selected, platform, onClick."
+        "selector": "JSXOpeningElement[name.name='ButtonGroup'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|play)$/]",
+        "message": "<ButtonGroup> tone must be one of 'accent' | 'play'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute[name.name='color'] > Literal[value!=/^(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)$/]",
-        "message": "<Chip> color must be one of 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose'."
+        "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|count|selected|platform|onClick|key|ref|className|style|children)$/]",
+        "message": "<Chip> doesn't accept that prop. Declared props: children, count, selected, platform, onClick."
       },
       {
         "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -131,8 +119,12 @@
         "message": "<FollowButton> size must be one of 'sm' | 'md' | 'lg'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|size|active|muted|label|onClick|key|ref|className|style|children)$/]",
-        "message": "<IconButton> doesn't accept that prop. Declared props: children, size, active, muted, label, onClick."
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|size|active|tone|muted|label|onClick|key|ref|className|style|children)$/]",
+        "message": "<IconButton> doesn't accept that prop. Declared props: children, size, active, tone, muted, label, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|play)$/]",
+        "message": "<IconButton> tone must be one of 'accent' | 'play'."
       },
       {
         "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:kind|label|playing|muted|disabled|onClick|platform|key|ref|className|style|children)$/]",
@@ -255,12 +247,16 @@
         "message": "<SettingRow> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|key|ref|className|style|children)$/]",
-        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform."
+        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|tone|key|ref|className|style|children)$/]",
+        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform, tone."
       },
       {
         "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<Slider> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|play)$/]",
+        "message": "<Slider> tone must be one of 'accent' | 'play'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Switch'] > JSXAttribute > JSXIdentifier[name!=/^(?:checked|onChange|label|key|ref|className|style|children)$/]",
@@ -377,6 +373,18 @@
       {
         "selector": "JSXOpeningElement[name.name='LibraryShell'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<LibraryShell> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PageBody'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|platform|width|key|ref|className|style|children)$/]",
+        "message": "<PageBody> doesn't accept that prop. Declared props: children, platform, width."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PageBody'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<PageBody> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PageBody'] > JSXAttribute[name.name='width'] > Literal[value!=/^(?:full|tiles|list|form)$/]",
+        "message": "<PageBody> width must be one of 'full' | 'tiles' | 'list' | 'form'."
       },
       {
         "selector": "JSXOpeningElement[name.name='PlayerPanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|tab|onTabChange|onClose|tabs|title|track|player|lyrics|queue|width|key|ref|className|style|children)$/]",
@@ -735,9 +743,6 @@
       "AboutCard": {
         "replaces": []
       },
-      "AccentSwatch": {
-        "replaces": []
-      },
       "AlbumArt": {
         "replaces": []
       },
@@ -885,6 +890,9 @@
       "OutputDeviceButton": {
         "replaces": []
       },
+      "PageBody": {
+        "replaces": []
+      },
       "PlayActions": {
         "replaces": []
       },
@@ -996,25 +1004,8 @@
     },
     "tokens": [
       "--accent",
-      "--accent-amber",
-      "--accent-blue",
       "--accent-contrast",
-      "--accent-cyan",
-      "--accent-emerald",
-      "--accent-fuchsia",
-      "--accent-green",
-      "--accent-indigo",
       "--accent-ink",
-      "--accent-lime",
-      "--accent-orange",
-      "--accent-pink",
-      "--accent-purple",
-      "--accent-red",
-      "--accent-rose",
-      "--accent-sky",
-      "--accent-teal",
-      "--accent-violet",
-      "--accent-yellow",
       "--appbar-controls-height",
       "--appbar-height",
       "--appbar-height-mobile",
@@ -1081,6 +1072,9 @@
       "--now-playing-art-max",
       "--now-playing-preview-height",
       "--on-scrim",
+      "--play",
+      "--play-contrast",
+      "--play-ink",
       "--radius-lg",
       "--radius-md",
       "--radius-pill",
@@ -1117,6 +1111,7 @@
       "--state-error",
       "--state-info",
       "--state-success",
+      "--state-success-ink",
       "--state-warning",
       "--surface-bg",
       "--surface-bg-alt",
@@ -1173,24 +1168,10 @@
       "--surface-hover": "color",
       "--accent": "color",
       "--accent-contrast": "color",
-      "--accent-red": "color",
-      "--accent-orange": "color",
-      "--accent-amber": "color",
-      "--accent-yellow": "color",
-      "--accent-lime": "color",
-      "--accent-green": "color",
-      "--accent-emerald": "color",
-      "--accent-teal": "color",
-      "--accent-cyan": "color",
-      "--accent-sky": "color",
-      "--accent-blue": "color",
-      "--accent-indigo": "color",
-      "--accent-violet": "color",
-      "--accent-purple": "color",
-      "--accent-fuchsia": "color",
-      "--accent-pink": "color",
-      "--accent-rose": "color",
       "--accent-ink": "color",
+      "--play": "color",
+      "--play-contrast": "color",
+      "--play-ink": "color",
       "--tone-library": "color",
       "--tone-request": "color",
       "--tone-progress": "color",
@@ -1201,6 +1182,7 @@
       "--tone-error-ink": "color",
       "--state-error": "color",
       "--state-success": "color",
+      "--state-success-ink": "color",
       "--state-warning": "color",
       "--state-info": "color",
       "--surface-now-playing": "color",

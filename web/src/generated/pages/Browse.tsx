@@ -188,7 +188,7 @@ export default function Browse({ data = placeholder, state = 'full', platform: g
   return (
     <PageBody platform={platform}>
       <Section platform={platform}>
-        <ButtonGroup items={data.filters} value="All" onChange={ignore} platform={platform} />
+        <ButtonGroup tone="play" items={data.filters} value="All" onChange={ignore} platform={platform} />
       </Section>
       <Section title="Jump back in" platform={platform}>
         <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>

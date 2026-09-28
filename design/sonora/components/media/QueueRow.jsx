@@ -27,9 +27,9 @@ export function QueueRow({
         </span>
       )}
       {(handle || editing) && glyph('drag_handle', undefined, 'Drag to reorder', true)}
-      <div onClick={onClick} style={sx('position:relative;overflow:hidden;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;border-radius:' + (mobile ? '8px' : '6px') + ';cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent-violet))')} />
+      <div onClick={onClick} style={sx('position:relative;overflow:hidden;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;border-radius:' + (mobile ? '8px' : '6px') + ';cursor:pointer;background:var(--accent)')} />
       <div onClick={onClick} style={sx('min-width:0;flex:1;cursor:pointer')}>
-        <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);color:' + (current ? 'var(--accent-ink)' : 'var(--surface-fg)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
+        <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);color:' + (current ? 'var(--play-ink)' : 'var(--surface-fg)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
         <div style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{sub}</div>
       </div>
       {time && !editing && <span style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{time}</span>}

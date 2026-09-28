@@ -37,39 +37,28 @@ color-scheme:dark;
    light glow instead. */
 --scroll-edge:rgb(255 255 255 / 22%);
 
-/* ---- Accent (customizable primary — apps let the user pick this) ---- */
---accent:#8B5CF6; /* violet — picked from the accent-preset family */
+/* ---- Accent: the one app accent. Not user-picked; every app surface uses this violet ---- */
+--accent:#8B5CF6;
 --accent-contrast:#fff;
-
-/* Accent preset palette — offer as swatches, not fixed brand colors */
---accent-red:#EF4444;
---accent-orange:#F97316;
---accent-amber:#F59E0B;
---accent-yellow:#EAB308;
---accent-lime:#84CC16;
---accent-green:#22C55E;
---accent-emerald:#10B981;
---accent-teal:#14B8A6;
---accent-cyan:#06B6D4;
---accent-sky:#0EA5E9;
---accent-blue:#3B82F6;
---accent-indigo:#6366F1;
---accent-violet:#8B5CF6;
---accent-purple:#A855F7;
---accent-fuchsia:#D946EF;
---accent-pink:#EC4899;
---accent-rose:#F44862;
 
 /* ---- Accent as readable text/icon ink (accent itself is a fill, not always legible as type) ---- */
 --accent-ink:#A78BFA;
 
+/* ---- Play: the second named colour, rose. Now Playing, the mini player, the transport, seek and
+   listening-progress fills, the in-library tone, and the Browse media filter. Nothing else. ---- */
+--play:#F44862;
+/* Ink on a play fill: black, 5.95:1 (white is 3.53:1, too low for a label) */
+--play-contrast:#000;
+/* Play as readable text/icon ink: at least 5:1 on every dark surface, the now-playing one included */
+--play-ink:#FF7A8D;
+
 /* ---- Status tones for request/progress pills and rings ---- */
---tone-library:var(--state-success);
+--tone-library:var(--play);
 --tone-request:var(--state-warning);
 --tone-progress:var(--accent);
 --tone-error:var(--state-error);
 /* Ink on a solid tone fill — always plain black or white, picked per tone for contrast */
---tone-library-ink:#000;
+--tone-library-ink:var(--play-contrast);
 --tone-request-ink:#000;
 --tone-progress-ink:var(--accent-contrast);
 --tone-error-ink:#fff;
@@ -77,6 +66,7 @@ color-scheme:dark;
 /* ---- Semantic state colors ---- */
 --state-error:#E12F43;
 --state-success:#42E477;
+--state-success-ink:#000;
 --state-warning:#FFCC8B;
 --state-info:#9B66E9;
 
@@ -94,11 +84,12 @@ color-scheme:dark;
 [data-theme="light"]{
 color-scheme:light;
 --accent-ink:#6D28D9;
+--play-ink:#A8182F; /* at least 4.8:1 on every light surface, the now-playing one included */
 --tone-progress:var(--accent);
---tone-library:var(--state-success);
+--tone-library:var(--play);
 --tone-request:var(--state-warning);
 --tone-error:var(--state-error);
---tone-library-ink:#000;
+--tone-library-ink:var(--play-contrast);
 --tone-request-ink:#000;
 --tone-progress-ink:var(--accent-contrast);
 --tone-error-ink:#fff;
@@ -122,11 +113,12 @@ color-scheme:light;
 [data-theme="dark"]{
 color-scheme:dark;
 --accent-ink:#A78BFA;
+--play-ink:#FF7A8D;
 --tone-progress:var(--accent);
---tone-library:var(--state-success);
+--tone-library:var(--play);
 --tone-request:var(--state-warning);
 --tone-error:var(--state-error);
---tone-library-ink:#000;
+--tone-library-ink:var(--play-contrast);
 --tone-request-ink:#000;
 --tone-progress-ink:var(--accent-contrast);
 --tone-error-ink:#fff;

@@ -1,9 +1,8 @@
 import { ReactNode } from 'react';
 
+/** A tag/genre pill for filter tags: outlined at rest, filled with the accent when selected, with an optional song count. */
 export interface ChipProps {
   children: ReactNode;
-  /** One of the 17 accent hues (renders as a big colorful genre card like Symphony's Genres grid). Omit for a plain outlined tag. */
-  color?: 'red'|'orange'|'amber'|'yellow'|'lime'|'green'|'emerald'|'teal'|'cyan'|'sky'|'blue'|'indigo'|'violet'|'purple'|'fuchsia'|'pink'|'rose';
   count?: number;
   selected?: boolean;
   platform?: 'desktop' | 'mobile';

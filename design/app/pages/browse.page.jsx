@@ -2,7 +2,7 @@ export default function Browse({ data }) {
   return (
     <PageBody>
       <Section>
-        <ButtonGroup items={data.filters} value="All" />
+        <ButtonGroup tone="play" items={data.filters} value="All" />
       </Section>
       <Section title="Jump back in">
         <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)">

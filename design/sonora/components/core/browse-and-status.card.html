@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1200x760" name="Browse, Status & Disclosure" subtitle="BrowseCard hues, StatusBanner's four tones, ExpanderRow collapsed/expanded, and BackToTop" -->
+<!-- @dsCard group="Components" viewport="1200x760" name="Browse, Status & Disclosure" subtitle="BrowseCard shades, StatusBanner's four tones, ExpanderRow collapsed/expanded, and BackToTop" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -16,14 +16,14 @@ function Caption({ children }) {
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
     <div>
-      <Caption>BrowseCard navigates into a category whose content you can't name yet — several hues across a grid, some given an explicit colour, some left to the deterministic fallback.</Caption>
+      <Caption>BrowseCard navigates into a category whose content you can't name yet — each in one of three shades of the accent, picked from its title.</Caption>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'var(--spacing-md)',maxWidth:640}}>
-        <BrowseCard title="Audiobooks" color="violet" onClick={() => {}} />
-        <BrowseCard title="True crime" color="rose" onClick={() => {}} />
+        <BrowseCard title="Audiobooks" onClick={() => {}} />
+        <BrowseCard title="True crime" onClick={() => {}} />
         <BrowseCard title="Cooking & baking" onClick={() => {}} />
-        <BrowseCard title="Sleep & calm" color="teal" onClick={() => {}} />
+        <BrowseCard title="Sleep & calm" onClick={() => {}} />
         <BrowseCard title="Kids' shows" onClick={() => {}} />
-        <BrowseCard title="Live recordings" color="amber" onClick={() => {}} />
+        <BrowseCard title="Live recordings" onClick={() => {}} />
       </div>
     </div>
     <div>

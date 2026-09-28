@@ -3,7 +3,7 @@ package net.develivarr.auralis.generated.ui
 
 /**
  * The three queue actions a music item offers: **play next** (arrow_top_right), **play**
- * (play_arrow / pause, emphasised in --accent-rose) and **play last** (last_page).
+ * (play_arrow / pause, emphasised in --play) and **play last** (last_page).
  *
  * Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these
  * one-shot actions from ButtonGroup's connected segments, which express a persistent selection.

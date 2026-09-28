@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 06896eceb5dc1a9d3b98025a5bab4ddba9950d2778fe23c003bc7b23567b1648
+pageHash: ced725d84439ea7bca11192e607be15041a9f4b7fd63ee313358b4c411618f70
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -13,8 +13,8 @@ kit's Browse destination). No Spotify screen was needed for intent: the kits cov
 
 ## What the Sonora UI kit renders show
 
-- **Mobile kit.** Title "Browse" in the app bar, then a connected `ButtonGroup` of filters
-  (All, Music, Audiobooks, Podcasts), All in the accent. "Jump back in": a 2-up grid of
+- **Mobile kit.** The account avatar, then the title "Browse", in the app bar, then a connected
+  `ButtonGroup` of filters (All, Music, Audiobooks, Podcasts), All in the play rose with black ink. "Jump back in": a 2-up grid of
   `QuickPick` tiles, art on the left, title and a "Book · 6 h 12 m left" line. "Recently
   added": a `Shelf` of large `MediaCard`s, one with a progress bar, bleeding off the right edge,
   with an arrow action. "Artists & authors": a shelf of round `ArtistCard`s. Below the fold,
@@ -39,6 +39,10 @@ in the 412 px kit phone, 175 px at 390 px).
 
 ## Differences
 
+- Matches, after the one-accent change: the filter's selected segment is the play rose with
+  black ink, and the resume bars on "Recently added" cards are rose, in both kits and on the
+  page (`ButtonGroup tone="play"`). The desktop kit's player panel keeps its "Now playing" tab
+  in the violet accent, since tabs are not play-related; that panel is part 2's.
 - Fixed: the first draw added a wide episode `FeatureCard` and a "More like" shelf taken from
   Spotify's Home screens, and left out the kit's "Picked for you" and "Recently played". The
   kits are the design, so the feed now follows the mobile kit, section for section.
@@ -61,5 +65,5 @@ in the 412 px kit phone, 175 px at 390 px).
   you" and keeps "Recently played", where the desktop kit swaps the two and ends there.
 - Open: every "Recently played" row draws its divider; the kit drops the last one, which the
   page format cannot express yet.
-- Shell, part 2: no "Browse" title, app bar, nav rail or bottom nav, mini-player or Now Playing
+- Shell, part 2: no account avatar, "Browse" title, app bar, nav rail or bottom nav, mini-player or Now Playing
   panel, which both kits draw around the feed.

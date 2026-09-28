@@ -54,7 +54,7 @@ Sonora has 80 components today, filed by kind (core, forms, layout, media, navig
 ::: card
 #### From Sonora
 
-- **About 80 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (AppShell, NavRail, BottomNav, TopAppBar, LibraryShell), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader, DetailPage, CollectionPage), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes, OutputDeviceButton), status (StatusBanner, DownloadButton, ProgressRing, Badge).
+- **About 80 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader, DetailPage, CollectionPage), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes, OutputDeviceButton), status (StatusBanner, DownloadButton, ProgressRing, Badge).
 - **A token exporter**: `export/web/sonora-tokens.css`, `sonora-theme.css` and `export/android/SonoraTokens.kt`, all generated. Motion, scrim, tone and layout families included.
 - **43 Spotify reference screens**, each mapped to the components it motivated. They stay as reference pictures, not components.
 :::
@@ -83,14 +83,15 @@ Your rule: pages and navigation are added to the design first, then ported to th
 5. **The frontend build starts with navigation.** The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
 
 - **Mantine** is optional: used only inside a component that needs a behaviour primitive (menus, focus traps), never as the visual layer.
-- **The app frame** is Sonora's backdrop shell (`BackdropShell`, `BackLayer`, `FrontLayer`, per `SPEC-backdrop.md`), a real Material backdrop, which also settles the old scroll bug.
+- **The app frame** is Sonora's backdrop shell (`BackdropShell`, `BackLayer`, `FrontLayer`, `FrontLayerHeader`, per `SPEC-backdrop.md`), a real Material 2 backdrop as the latest Sonora mockups draw it, which also settles the old scroll bug.
 
 ### Shell and navigation
 
-Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px, icon rail from 600, labelled rail from 1024, and from 1240 a Now Playing panel next to the content. Settings sits at the foot of the rail, or in a header button on phones. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded.
+Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px, icon rail from 600, labelled rail from 1024, and from 1240 a Now Playing panel next to the content. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed and only the content scrolls; that was the scroll bug you reported. The mini-player is always present once something is loaded.
 
 ### Rules from your notes that the components must follow
 
+- **One accent, one play colour:** violet everywhere, rose (`--play`) only for Now Playing, the mini-player, transport, seek and progress fills, and Browse's media filter.
 - **Shapes never change meaning:** artists, authors and hosts are circles; all content is rounded squares. Don't copy Spotify's podcast-versus-album split.
 - **Now Playing matches the content:** podcasts and books get speed and skip (Sonora's `TransportBar` _spoken_ variant); music gets shuffle and repeat, with music speed buried elsewhere, not removed.
 - **Lyrics:** a sync toggle always in the top corner. With sync off, every line is at full opacity and a dot marks the current line; the dot can be switched off from the three-dot menu. Sonora already specifies this.
@@ -108,7 +109,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Now Playing · mini-player · queue · lyrics | `POST /play`, `GET /queues`, `GET /lyrics/{ref}` | plan (with transport variant and direct or transcoded quality), per-type queues, synced lyrics, about cards | <span class="pill t-lib">Sonora</span> S33–S43 |
 | Requests | `GET /requests` | status, %, source, size, retry | <span class="pill t-req">mock only</span> |
 | Downloads (Android) | local, plus `GET /items/{ref}` | what's on the device, size, remove | <span class="pill t-req">parts</span> DownloadButton, no screen |
-| Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme and accent, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
+| Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
 
 ::: callout warn
 **Still to design on the Auralis canvas, before their milestone:** artist, author and series pages (with the greyed unowned catalogue), the Requests view, the Downloads screen, playlists, the music _Add to library_ menu item and album request, the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection in Settings, and loading and empty states per screen. Everything else has a Sonora component and a reference screen. Nobody invents UI in code.

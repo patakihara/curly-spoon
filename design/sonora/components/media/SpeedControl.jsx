@@ -6,12 +6,12 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * spoken-word listening is rate-shifted by default, so the rate has to be visible and one tap
  * away while playing. Distinct from the existing ValueRow ("Speed · 1.0x"), which is a filled
  * settings row on a settings page, not a compact control that lives in the transport itself.
- * Takes on --accent-ink whenever the rate isn't 1x — a non-default rate has to look non-default,
+ * Takes on --play-ink whenever the rate isn't 1x — a non-default rate has to look non-default,
  * because forgetting the rate was left at 2x is exactly the failure this control exists to catch.
  */
 export function SpeedControl({ value = 1, onClick, label, size = 40 }) {
   const nonDefault = value !== 1;
-  const ink = nonDefault ? 'var(--accent-ink)' : 'var(--surface-fg-muted)';
+  const ink = nonDefault ? 'var(--play-ink)' : 'var(--surface-fg-muted)';
   const text = String(value);
   const aria = label || 'Playback speed, ' + text + ' times';
   return (

@@ -33,28 +33,13 @@ enum class SizeSmMdLg(val value: String) {
     LG("lg"),
 }
 
-enum class SonoraColor(val value: String) {
-    RED("red"),
-    ORANGE("orange"),
-    AMBER("amber"),
-    YELLOW("yellow"),
-    LIME("lime"),
-    GREEN("green"),
-    EMERALD("emerald"),
-    TEAL("teal"),
-    CYAN("cyan"),
-    SKY("sky"),
-    BLUE("blue"),
-    INDIGO("indigo"),
-    VIOLET("violet"),
-    PURPLE("purple"),
-    FUCHSIA("fuchsia"),
-    PINK("pink"),
-    ROSE("rose"),
-}
-
 enum class SyncMode(val value: String) {
     SYNC("sync"),
     DOT("dot"),
     OFF("off"),
+}
+
+enum class Tone(val value: String) {
+    ACCENT("accent"),
+    PLAY("play"),
 }

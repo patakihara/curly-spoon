@@ -34,7 +34,7 @@ function Demo(){
       contentMinWidth="var(--content-min-width)"
       rail={<NavRail items={ITEMS} active={active} onChange={setActive} expanded={expanded} onToggleExpanded={()=>setExpanded(!expanded)} />}
       bar={<TopAppBar title="Browse" trailing={<IconButton label="Queue" muted onClick={()=>setSheet(!sheet)}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>queue_music</span></IconButton>}>
-        <ButtonGroup value={scope} onChange={setScope} options={['All','Music','Audiobooks','Podcasts']} />
+        <ButtonGroup tone="play" value={scope} onChange={setScope} options={['All','Music','Audiobooks','Podcasts']} />
       </TopAppBar>}
       sheet={<SideSheet open={sheet} title="Queue" onClose={()=>setSheet(false)}>
         <ResultRow title="Heartbeats in Silence" meta="Deep Inertia · 4:03" status="Playing" tone="progress" actionGlyph="pause" />

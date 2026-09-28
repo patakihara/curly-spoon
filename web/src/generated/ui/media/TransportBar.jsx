@@ -31,7 +31,7 @@ export function TransportBar({ playing = false, platform = 'mobile', onTogglePla
       <div style={sx('display:flex;align-items:center;justify-content:space-between;width:100%')}>
         <div style={sx('display:flex;align-items:center;justify-content:flex-start;width:' + side + 'px;flex-shrink:0')}>{leading}</div>
         <IconButton label={'Skip back ' + skipSeconds + ' seconds'} size={step} onClick={onSkipBack}>{skip('back', mobile ? 32 : 26)}</IconButton>
-        <IconButton label={playing ? 'Pause' : 'Play'} size={main} active onClick={onTogglePlay}>{g(playing ? 'pause' : 'play_arrow', mobile ? 40 : 32)}</IconButton>
+        <IconButton label={playing ? 'Pause' : 'Play'} size={main} active tone="play" onClick={onTogglePlay}>{g(playing ? 'pause' : 'play_arrow', mobile ? 40 : 32)}</IconButton>
         <IconButton label={'Skip forward ' + skipSeconds + ' seconds'} size={step} onClick={onSkipForward}>{skip('forward', mobile ? 32 : 26)}</IconButton>
         <div style={sx('display:flex;align-items:center;justify-content:flex-end;width:' + side + 'px;flex-shrink:0')}>{trailing}</div>
       </div>
@@ -41,7 +41,7 @@ export function TransportBar({ playing = false, platform = 'mobile', onTogglePla
     <div style={sx('display:flex;align-items:center;justify-content:space-between;width:100%')}>
       <IconButton label="Shuffle" muted size={side} onClick={onShuffle}>{g('shuffle', 24)}</IconButton>
       <IconButton label="Previous" size={step} onClick={onPrev}>{g('skip_previous', mobile ? 32 : 26)}</IconButton>
-      <IconButton label={playing ? 'Pause' : 'Play'} size={main} active onClick={onTogglePlay}>{g(playing ? 'pause' : 'play_arrow', mobile ? 40 : 32)}</IconButton>
+      <IconButton label={playing ? 'Pause' : 'Play'} size={main} active tone="play" onClick={onTogglePlay}>{g(playing ? 'pause' : 'play_arrow', mobile ? 40 : 32)}</IconButton>
       <IconButton label="Next" size={step} onClick={onNext}>{g('skip_next', mobile ? 32 : 26)}</IconButton>
       <IconButton label="Repeat" muted size={side} onClick={onRepeat}>{g('repeat', 24)}</IconButton>
     </div>

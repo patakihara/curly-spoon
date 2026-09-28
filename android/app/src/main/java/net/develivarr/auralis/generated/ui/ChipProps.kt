@@ -3,10 +3,9 @@ package net.develivarr.auralis.generated.ui
 
 import androidx.compose.runtime.Composable
 
+/** A tag/genre pill for filter tags: outlined at rest, filled with the accent when selected, with an optional song count. */
 data class ChipProps(
     val children: (@Composable () -> Unit)?,
-    /** One of the 17 accent hues (renders as a big colorful genre card like Symphony's Genres grid). Omit for a plain outlined tag. */
-    val color: SonoraColor? = null,
     val count: Float? = null,
     val selected: Boolean? = null,
     val platform: Platform? = null,

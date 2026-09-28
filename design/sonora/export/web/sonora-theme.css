@@ -6,11 +6,12 @@
 
 [data-theme="dark"] {
   --accent-ink: #A78BFA;
+  --play-ink: #FF7A8D;
   --tone-progress: var(--accent);
-  --tone-library: var(--state-success);
+  --tone-library: var(--play);
   --tone-request: var(--state-warning);
   --tone-error: var(--state-error);
-  --tone-library-ink: #000;
+  --tone-library-ink: var(--play-contrast);
   --tone-request-ink: #000;
   --tone-progress-ink: var(--accent-contrast);
   --tone-error-ink: #fff;
@@ -32,11 +33,12 @@
 
 [data-theme="light"] {
   --accent-ink: #6D28D9;
+  --play-ink: #A8182F;
   --tone-progress: var(--accent);
-  --tone-library: var(--state-success);
+  --tone-library: var(--play);
   --tone-request: var(--state-warning);
   --tone-error: var(--state-error);
-  --tone-library-ink: #000;
+  --tone-library-ink: var(--play-contrast);
   --tone-request-ink: #000;
   --tone-progress-ink: var(--accent-contrast);
   --tone-error-ink: #fff;

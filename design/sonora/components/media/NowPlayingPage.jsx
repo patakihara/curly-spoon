@@ -67,7 +67,7 @@ export function NowPlayingPage({
   const body = (
     <div style={sx('display:flex;flex-direction:column;gap:' + gap + ';box-sizing:border-box;padding:' + (scrolls ? pad + ' ' + pad + ' var(--spacing-2xl)' : '0px'))}>
       <div style={sx('position:relative;overflow:hidden;align-self:center;aspect-ratio:1;flex-shrink:0;width:' + artWidth +
-        ';border-radius:var(--radius-' + (mobile ? 'lg' : 'md') + ');background:linear-gradient(135deg,var(--accent),var(--accent-violet))')}>
+        ';border-radius:var(--radius-' + (mobile ? 'lg' : 'md') + ');background:var(--accent)')}>
         {CoverArt && <CoverArt src={image} alt={title ? title + ' cover' : ''} />}
       </div>
       <div style={sx('display:flex;align-items:flex-start;gap:var(--spacing-md);align-self:center;box-sizing:border-box;width:' + artWidth)}>

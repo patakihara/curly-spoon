@@ -7,7 +7,7 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 // legible on --state-warning, which is a pale peach that inherited light text disappears into.
 const TONES = {
   info: ['var(--state-info)', 'var(--accent-contrast)'],
-  success: ['var(--tone-library)', 'var(--tone-library-ink)'],
+  success: ['var(--state-success)', 'var(--state-success-ink)'],
   warning: ['var(--tone-request)', 'var(--tone-request-ink)'],
   error: ['var(--tone-error)', 'var(--tone-error-ink)'],
 };

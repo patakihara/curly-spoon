@@ -16,9 +16,9 @@ import { ReactNode } from 'react';
 export interface BackLayerProps {
   /** The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). */
   title?: string;
-  /** Before the title — a back link, a menu button. */
+  /** Before the title — a back link, or on mobile the account avatar (never in a filter row). */
   leading?: ReactNode;
-  /** After the title — a search button, an avatar, an overflow menu. */
+  /** After the title — a search button, an overflow menu. */
   trailing?: ReactNode;
   /** Contextual controls that reconfigure the front layer, on a band below the heading. */
   controls?: ReactNode;

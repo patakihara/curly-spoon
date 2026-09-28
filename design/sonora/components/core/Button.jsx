@@ -9,6 +9,7 @@ const sizes = {
 const variantStyle = (variant, platform) => {
   const radius = 'var(--radius-pill)';
   if (variant === 'primary') return { background: 'var(--accent)', color: 'var(--accent-contrast)', border: '1px solid transparent', borderRadius: radius };
+  if (variant === 'play') return { background: 'var(--play)', color: 'var(--play-contrast)', border: '1px solid transparent', borderRadius: radius };
   if (variant === 'secondary') return { background: 'var(--surface-card)', color: 'var(--surface-fg)', border: '1px solid var(--surface-border)', borderRadius: radius };
   if (variant === 'ghost') return { background: 'transparent', color: 'var(--surface-fg)', border: '1px solid transparent', borderRadius: radius };
   if (variant === 'danger') return { background: 'var(--state-error)', color: '#fff', border: '1px solid transparent', borderRadius: radius };

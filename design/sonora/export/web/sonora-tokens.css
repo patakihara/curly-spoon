@@ -20,25 +20,11 @@
   --on-scrim: #fff;
   --accent: #8B5CF6;
   --accent-contrast: #fff;
-  --accent-red: #EF4444;
-  --accent-orange: #F97316;
-  --accent-amber: #F59E0B;
-  --accent-yellow: #EAB308;
-  --accent-lime: #84CC16;
-  --accent-green: #22C55E;
-  --accent-emerald: #10B981;
-  --accent-teal: #14B8A6;
-  --accent-cyan: #06B6D4;
-  --accent-sky: #0EA5E9;
-  --accent-blue: #3B82F6;
-  --accent-indigo: #6366F1;
-  --accent-violet: #8B5CF6;
-  --accent-purple: #A855F7;
-  --accent-fuchsia: #D946EF;
-  --accent-pink: #EC4899;
-  --accent-rose: #F44862;
+  --play: #F44862;
+  --play-contrast: #000;
   --state-error: #E12F43;
   --state-success: #42E477;
+  --state-success-ink: #000;
   --state-warning: #FFCC8B;
   --state-info: #9B66E9;
 

@@ -13,7 +13,7 @@ package net.develivarr.auralis.generated.ui
 data class CoverArtProps(
     /** Image URL. Omitted or still loading, the fallback shows instead. */
     val src: String? = null,
-    /** CSS background for the placeholder. Defaults to the accent→violet gradient. */
+    /** CSS background for the placeholder. Defaults to a flat `--accent`. */
     val fallback: String? = null,
     val alt: String? = null,
 )

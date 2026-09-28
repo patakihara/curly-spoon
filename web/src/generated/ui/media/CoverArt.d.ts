@@ -11,7 +11,7 @@
 export interface CoverArtProps {
   /** Image URL. Omitted or still loading, the fallback shows instead. */
   src?: string;
-  /** CSS background for the placeholder. Defaults to the accent→violet gradient. */
+  /** CSS background for the placeholder. Defaults to a flat `--accent`. */
   fallback?: string;
   alt?: string;
 }

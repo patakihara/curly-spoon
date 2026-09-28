@@ -39,15 +39,15 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
             nothing, not a zero-width rule. */}
         {typeof progress === 'number' && (
           <div style={sx('width:100%;max-width:260px;height:3px;border-radius:var(--radius-pill);overflow:hidden;background:var(--surface-border)' + (mobile ? ';margin-left:auto;margin-right:auto' : ''))}>
-            <div style={sx('height:100%;background:var(--accent);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
+            <div style={sx('height:100%;background:var(--play);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
           </div>
         )}
         <div style={sx('display:flex;flex-wrap:wrap;justify-content:' + (mobile ? 'center' : 'flex-start') + ';gap:' + (mobile ? '10px' : '12px') + ';margin-top:' + (mobile ? '8px' : '10px'))}>
           {actions != null ? actions : (
             <React.Fragment>
               {/* Same three queue actions as PlayActions, but labelled: on a detail page there is room
-                  for words, and only Play carries the accent fill. */}
-              {Button && <Button variant="primary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('play_arrow')} onClick={onPlay}>{playLabel}</Button>}
+                  for words, and only Play carries a fill, the play rose. */}
+              {Button && <Button variant="play" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('play_arrow')} onClick={onPlay}>{playLabel}</Button>}
               {Button && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('arrow_top_right')} onClick={onPlayNext}>{nextLabel}</Button>}
               {Button && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('last_page')} onClick={onPlayLast}>{lastLabel}</Button>}
             </React.Fragment>

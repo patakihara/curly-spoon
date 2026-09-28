@@ -45,7 +45,7 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) a test asserts one progress update reaches Audiobookshelf's and Jellyfin's recorded progress calls, with wall-clock listening time; (b) a test creates, lists and deletes a bookmark and sees each Audiobookshelf call; (c) a Playwright test asserts speed changes the playback rate, the sleep timer pauses playback, and Media Session metadata and actions are set; (d) an Android test asserts the same speed and sleep behaviour and the notification's play, pause and skip actions.
 - **[M1.sessions]** Per-device listening sessions, stored on the server and never mixing by default. Their queues: music plus the shared spoken queue, the meta-queue switch, YouTube Music style with Spotify style as an option, history-based Back, default button actions, and autoplay (next episode, next in series, album then radio).
   _Done when:_ (a) a test asserts two devices of one user keep separate sessions and queues on the server; (b) a test asserts the music and spoken queues advance independently and the meta-queue switch changes which one the controls drive; (c) a test asserts YouTube Music style and Spotify style insert "play next" items in their documented orders; (d) a test asserts Back returns to the previously played item across both queues; (e) a test asserts autoplay continues with the next episode, the next book in the series, and the rest of the album followed by radio.
-- **[M1.shell]** Sonora shell, mini-player, Now Playing (stacked), queue, synced lyrics (Jellyfin's own for now); basic Books, Podcasts and Music lists to start playback from.
+- **[M1.shell]** Sonora's backdrop shell, mini-player, Now Playing (stacked), queue, synced lyrics (Jellyfin's own for now); basic Books, Podcasts and Music lists to start playback from.
   _Done when:_ (a) Playwright screenshot tests of the shell, mini-player, Now Playing, queue and lyrics match their canvas renders in each recorded state; (b) Paparazzi tests of the same screens match the same canvas renders; (c) a test asserts synced lyrics highlight the current line from Jellyfin's recorded lyrics; (d) web and Android tests each start playback from the Books, Podcasts and Music lists.
 - **[M1.android]** Android: background playback, and Android Auto browse for all three media (continue, books, shows, albums).
   _Done when:_ (a) an emulator test asserts playback continues for 60 seconds with the app in the background and the screen off; (b) a Robolectric test asserts the Auto browse roots are continue, books, shows and albums, each listing recorded items.
@@ -67,8 +67,8 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) a test creates a listening list and a podcast playlist through the API and plays each in order; (b) a test asserts The Digest holds the new unplayed episodes of subscribed shows by its rule in "Lists that aren't queues"; (c) a test creates a custom digest from chosen shows and asserts its episodes.
 - **[M2.grid]** Library grid/list with Random sort; Up next and second-most-recent on Browse (from owned content).
   _Done when:_ (a) a Playwright test in `web/` and an emulator test in `android/` each switch a fixture library from grid to list and back, assert both layouts show the same items, and assert Random sort with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent shelves hold only owned items from the user's history.
-- **[M2.settings]** Settings, including accent picker, theme, queue style and autoplay switches.
-  _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`; (b) web and Android tests change accent, theme, queue style and autoplay and assert each takes effect.
+- **[M2.settings]** Settings, including theme, queue style and autoplay switches.
+  _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`; (b) web and Android tests change theme, queue style and autoplay and assert each takes effect.
 
 **[M2.exit] Done when** you can find and play anything you own faster than in Spotify, Audiobookshelf or Jellyfin's own apps.
 _Done when:_ (a) Sofia's sign-off.
@@ -125,8 +125,8 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) an emulator test plays offline, changes the queue, reconnects and asserts the server has the new progress and queue; (b) a test asserts conflicting progress resolves to the most recent listen.
 - **[M5.perf]** Performance budget on this box (RAM ceiling for the container, Lighthouse on phone).
   _Done when:_ (a) a test runs the container under a recorded load and asserts its memory stays under the ceiling set in the test; (b) a Lighthouse test on the mobile profile meets the budget for Browse and Now Playing.
-- **[M5.contrast]** Contrast fixes for the accent presets that fail WCAG.
-  _Done when:_ (a) a test computes every accent preset's text and UI contrast pairs in both web tokens and `SonoraTokens.kt` and asserts WCAG AA.
+- **[M5.contrast]** Contrast fixes wherever the accent or the play rose fails WCAG.
+  _Done when:_ (a) a test computes the accent's and the play rose's text and UI contrast pairs on every surface, in both web tokens and `SonoraTokens.kt`, and asserts WCAG AA.
 - **[M5.handoff]** "Continue here" and "Play on…" between a user's devices.
   _Done when:_ (a) a test moves playback from one device to another with Continue here and asserts position and queue carry over; (b) a test asserts Play on reaches the user's own other device and never another user's.
 - **[M5.streaming]** A streaming-only account for people without a media server.

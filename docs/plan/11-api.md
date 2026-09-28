@@ -85,7 +85,7 @@ Grouped by what they serve. Every response shape lives in the one schema; route 
 ::: card
 #### Settings
 
-`GET/PUT /settings` (theme, accent, autoplay rules, artist-page catalogue toggle on by default, show everyone's library off by default)\
+`GET/PUT /settings` (theme, autoplay rules, artist-page catalogue toggle on by default, show everyone's library off by default)\
 `PUT/DELETE /settings/youtube-account` (connect or disconnect watched-state and position sync for YouTube shows) · `GET /settings/youtube-account` (status, last sync, expired)\
 `GET/PUT /shows/{ref}/youtube` (SponsorBlock categories, Shorts and livestreams)
 :::

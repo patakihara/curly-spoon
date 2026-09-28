@@ -14,17 +14,17 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-browseca
   document.head.appendChild(el);
 }
 
-const HUES = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
+// Sonora has one accent, so a grid of categories varies in depth, not in hue: three shades of it.
+const SHADES = ['var(--accent)', 'color-mix(in oklch, var(--accent) 82%, black)', 'color-mix(in oklch, var(--accent) 66%, black)'];
 
 /** Enters a category whose content you can't name yet — distinct from Chip, which filters an existing result set rather than navigating into one. */
-export function BrowseCard({ title, color, image, onClick, platform = 'desktop' }) {
-  // No two adjacent categories without an explicit color should land on the same hue by coincidence
-  // more than chance allows, so the fallback is derived from the title rather than fixed.
+export function BrowseCard({ title, image, onClick, platform = 'desktop' }) {
+  // The shade is derived from the title, so a category keeps its shade wherever it appears.
   const seed = String(title || '').split('').reduce((a, ch) => a + ch.charCodeAt(0), 0);
-  const hue = color || HUES[seed % HUES.length];
+  const shade = SHADES[seed % SHADES.length];
   return (
     <div className="sn-browsecard" onClick={onClick} role="button" tabIndex={0} aria-label={title}
-      style={sx('position:relative;aspect-ratio:2.6;overflow:visible;border-radius:var(--radius-sm);cursor:pointer;background:var(--accent-' + hue + ')')}>
+      style={sx('position:relative;aspect-ratio:2.6;overflow:visible;border-radius:var(--radius-sm);cursor:pointer;background:' + shade)}>
       {/* The title only has to dodge the thumbnail when there is one — reserving that gutter
           unconditionally pushed a three-word category onto a third line, which a fixed
           aspect-ratio card has no room for. Clamped at two lines as a backstop. */}

@@ -64,7 +64,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
         )}
         {hasProgress && (
           <div style={sx('width:100%;max-width:280px;height:2px;background:var(--surface-border);overflow:hidden')}>
-            <div style={sx('height:100%;background:var(--accent);width:' + Math.round(pct * 100) + '%')} />
+            <div style={sx('height:100%;background:var(--play);width:' + Math.round(pct * 100) + '%')} />
           </div>
         )}
         {description && (
