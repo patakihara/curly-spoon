@@ -1,4 +1,5 @@
-# Only what the image needs goes into the build context: the workspace manifests, server/ and web/.
+# Only what the image needs goes into the build context: the workspace manifests, server/, web/
+# and Sonora's stylesheet.
 .git
 .gitignore
 .github
@@ -6,6 +7,8 @@
 .claude
 android
 design
+!design/sonora/styles.css
+!design/sonora/tokens
 docs
 metadata
 scripts
