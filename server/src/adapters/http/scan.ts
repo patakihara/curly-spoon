@@ -16,6 +16,7 @@ import {
   isAllowedIp,
   isBlurHash,
   isPlaceholderHost,
+  isUsersRoute,
   KNOWN_HOST_WORD,
   PLACEHOLDER,
   PLACEHOLDER_EMAIL,
@@ -66,6 +67,8 @@ const FILE_EXTENSIONS = new Set(
     'rar gz xz tar md yml yaml ini conf cfg invalid'
   ).split(' '),
 );
+/** Dotted words that are not hosts either: a sign-on's JWT response modes, like `query.jwt`. */
+const NOT_TLDS = new Set(['jwt']);
 /** A query value that looks like an opaque credential: long, mixed case and digits, or padded. */
 function isOpaque(value: string): boolean {
   if (value === PLACEHOLDER || !/^[A-Za-z0-9+/_-]{12,}={0,2}$/.test(value)) return false;
@@ -78,7 +81,8 @@ function hosts(value: string): string[] {
   const rest = value.replace(URL_HOST, ' ');
   found.push(...[...rest.matchAll(LISTED_TLD_HOST)].map((m) => m[0]));
   for (const m of rest.matchAll(LOWERCASE_HOST)) {
-    if (!FILE_EXTENSIONS.has(m[0].slice(m[0].lastIndexOf('.') + 1))) found.push(m[0]);
+    const suffix = m[0].slice(m[0].lastIndexOf('.') + 1);
+    if (!FILE_EXTENSIONS.has(suffix) && !NOT_TLDS.has(suffix)) found.push(m[0]);
   }
   found.push(...[...value.matchAll(KNOWN_HOST_WORD)].map((m) => m[0]));
   return found.map((h) => h.toLowerCase()).filter((h) => !isPlaceholderHost(h));
@@ -108,6 +112,7 @@ function scanString(
   fields: boolean,
   add: (k: FindingKind) => void,
   names: readonly string[],
+  route = false,
 ) {
   if ([...value.matchAll(JWT)].some((m) => !isTestSignedJwt(m[0]))) add('jwt');
   if (names.some((name) => name.length > 1 && containsName(value, name))) add('name');
@@ -124,7 +129,10 @@ function scanString(
     add('host');
   }
   if ([...value.matchAll(EMAIL)].some((m) => m[0] !== PLACEHOLDER_EMAIL)) add('email');
-  if ([...value.matchAll(HOME_PATH)].some((m) => m[4] !== PLACEHOLDER_HOME_USER)) add('home-path');
+  const homes = [...value.matchAll(HOME_PATH)].filter(
+    (m) => !isUsersRoute(route, m.index, m[1] ?? '', m[2] ?? ''),
+  );
+  if (homes.some((m) => m[4] !== PLACEHOLDER_HOME_USER)) add('home-path');
   for (const [, , name = '', v = ''] of value.matchAll(QUERY_PARAM)) {
     if ((SECRET_QUERY_KEY.test(name) && v !== '' && v !== PLACEHOLDER) || isOpaque(v)) {
       add('query-secret');
@@ -174,7 +182,7 @@ export function scanRecording(recording: Recording, options: ScanOptions = {}): 
   ] as const) {
     walk(value, name, `$.${name}`, true);
   }
-  walk(request.path, undefined, '$.request.path', false);
+  scanString(request.path, undefined, false, (k) => add(k, '$.request.path'), names, true);
 
   for (const [k, v] of Object.entries(request.query)) {
     const path = `$.request.query.${k}`;

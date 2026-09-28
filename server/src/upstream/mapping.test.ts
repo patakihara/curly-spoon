@@ -66,6 +66,26 @@ describe('[M0.sso/c] finding a person on an upstream at first link', () => {
     });
   });
 
+  it('links the service identity auralis, signing in as the service, to its own accounts only', () => {
+    const service = [
+      { id: 's1', username: 'auralis' },
+      { id: 's2', username: 'Auralis-Admin' },
+    ];
+    const asService = { serviceIdentity: true };
+    expect(pickUpstreamUser('abs', service, 'auralis', asService)).toEqual({
+      state: 'linked',
+      id: 's1',
+    });
+    expect(pickUpstreamUser('jellyfin', service, 'auralis', asService)).toEqual({
+      state: 'linked',
+      id: 's1',
+    });
+    expect(pickUpstreamUser('abs', service, 'auralis-admin', asService)).toEqual({
+      state: 'unlinked',
+      detail: 'service_account',
+    });
+  });
+
   it('never links a disabled account, and says so, but links the one active twin', () => {
     const disabled = [{ id: 'd1', username: 'Kara', disabled: true }, ...users.slice(1)];
     expect(pickUpstreamUser('abs', disabled, 'kara')).toEqual({

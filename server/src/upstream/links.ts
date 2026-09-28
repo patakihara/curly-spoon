@@ -36,6 +36,8 @@ export interface Provisioner {
 export interface LinkOptions {
   /** The sign-in carries the `household` group; only then is a missing account created. */
   household?: boolean;
+  /** The sign-in carries the `auralis_service` group: the service identity links to its own. */
+  serviceIdentity?: boolean;
 }
 
 /** What a failure says on the link: the call and status, never a header or a body. */
@@ -74,9 +76,10 @@ export class Linker {
       }
       const link = getLink(this.opts.db, user.id, provisioner.service);
       if (link?.state === 'linked' && link.hasToken) continue;
-      const started = this.link(user, provisioner, link?.upstreamUserId ?? null, mayCreate).finally(
-        () => this.linking.delete(flight),
-      );
+      const started = this.link(user, provisioner, link?.upstreamUserId ?? null, {
+        mayCreate,
+        serviceIdentity: options.serviceIdentity === true,
+      }).finally(() => this.linking.delete(flight));
       this.linking.set(flight, started);
       await started;
     }
@@ -118,7 +121,7 @@ export class Linker {
     user: User,
     provisioner: Provisioner,
     pinned: string | null,
-    mayCreate = false,
+    { mayCreate = false, serviceIdentity = false } = {},
   ) {
     const { db, key } = this.opts;
     const { service } = provisioner;
@@ -127,7 +130,9 @@ export class Linker {
       pinned !== null && getLink(db, user.id, service)?.createdByAuralis === true;
     try {
       if (upstreamUserId === null) {
-        const pick = pickUpstreamUser(service, await provisioner.accounts(), user.username);
+        const pick = pickUpstreamUser(service, await provisioner.accounts(), user.username, {
+          serviceIdentity,
+        });
         if (pick.state === 'linked') {
           upstreamUserId = pick.id;
         } else if (pick.detail === 'no_account' && mayCreate && provisioner.create) {

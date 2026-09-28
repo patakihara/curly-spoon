@@ -1,0 +1,139 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "quick-connect-authenticate",
+  "request": {
+    "method": "POST",
+    "path": "/Users/AuthenticateWithQuickConnect",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\"",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "Secret": "<token>"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "User": {
+          "Name": "auralis",
+          "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+          "Id": "08eb105c75f24f19a431602c3c8c50d3",
+          "HasPassword": true,
+          "HasConfiguredPassword": true,
+          "HasConfiguredEasyPassword": false,
+          "EnableAutoLogin": false,
+          "LastActivityDate": "2026-09-28T07:31:40.8499814Z",
+          "Configuration": {
+            "PlayDefaultAudioTrack": true,
+            "SubtitleLanguagePreference": "",
+            "DisplayMissingEpisodes": false,
+            "GroupedFolders": [],
+            "SubtitleMode": "Default",
+            "DisplayCollectionsView": false,
+            "EnableLocalPassword": false,
+            "OrderedViews": [],
+            "LatestItemsExcludes": [],
+            "MyMediaExcludes": [],
+            "HidePlayedInLatest": true,
+            "RememberAudioSelections": true,
+            "RememberSubtitleSelections": true,
+            "EnableNextEpisodeAutoPlay": true,
+            "CastReceiverId": "F007D354"
+          },
+          "Policy": {
+            "IsAdministrator": false,
+            "IsHidden": true,
+            "EnableCollectionManagement": false,
+            "EnableSubtitleManagement": false,
+            "EnableLyricManagement": false,
+            "IsDisabled": false,
+            "BlockedTags": [],
+            "AllowedTags": [],
+            "EnableUserPreferenceAccess": true,
+            "AccessSchedules": [],
+            "BlockUnratedItems": [],
+            "EnableRemoteControlOfOtherUsers": false,
+            "EnableSharedDeviceControl": false,
+            "EnableRemoteAccess": true,
+            "EnableLiveTvManagement": false,
+            "EnableLiveTvAccess": false,
+            "EnableMediaPlayback": true,
+            "EnableAudioPlaybackTranscoding": true,
+            "EnableVideoPlaybackTranscoding": true,
+            "EnablePlaybackRemuxing": true,
+            "ForceRemoteSourceTranscoding": false,
+            "EnableContentDeletion": false,
+            "EnableContentDeletionFromFolders": [],
+            "EnableContentDownloading": false,
+            "EnableSyncTranscoding": false,
+            "EnableMediaConversion": false,
+            "EnabledDevices": [],
+            "EnableAllDevices": true,
+            "EnabledChannels": [],
+            "EnableAllChannels": true,
+            "EnabledFolders": [
+              "7e64e319657a9516ec78490da03edccb"
+            ],
+            "EnableAllFolders": false,
+            "InvalidLoginAttemptCount": 0,
+            "LoginAttemptsBeforeLockout": -1,
+            "MaxActiveSessions": 0,
+            "EnablePublicSharing": false,
+            "BlockedMediaFolders": [],
+            "BlockedChannels": [],
+            "RemoteClientBitrateLimit": 0,
+            "AuthenticationProviderId": "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
+            "PasswordResetProviderId": "<token>",
+            "SyncPlayAccess": "CreateAndJoinGroups"
+          }
+        },
+        "SessionInfo": {
+          "PlayState": {
+            "CanSeek": false,
+            "IsPaused": false,
+            "IsMuted": false,
+            "RepeatMode": "RepeatNone",
+            "PlaybackOrder": "Default"
+          },
+          "AdditionalUsers": [],
+          "Capabilities": {
+            "PlayableMediaTypes": [],
+            "SupportedCommands": [],
+            "SupportsMediaControl": false,
+            "SupportsPersistentIdentifier": true
+          },
+          "PlayableMediaTypes": [],
+          "Id": "2ae10d83043baaf9ecc22a5b9c4dc1d7",
+          "UserId": "08eb105c75f24f19a431602c3c8c50d3",
+          "UserName": "auralis",
+          "Client": "Auralis",
+          "LastActivityDate": "2026-09-28T07:31:40.8499814Z",
+          "LastPlaybackCheckIn": "0001-01-01T00:00:00.0000000Z",
+          "DeviceName": "Auralis",
+          "DeviceId": "auralis-recorder",
+          "ApplicationVersion": "0.0.0",
+          "IsActive": true,
+          "SupportsMediaControl": false,
+          "SupportsRemoteControl": false,
+          "NowPlayingQueue": [],
+          "NowPlayingQueueFullItems": [],
+          "HasCustomDeviceName": false,
+          "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+          "SupportedCommands": []
+        },
+        "AccessToken": "<token>",
+        "ServerId": "96bcbb8daf9c48859172e3625e4877dd"
+      }
+    }
+  }
+}

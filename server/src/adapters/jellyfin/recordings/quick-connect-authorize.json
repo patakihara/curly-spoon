@@ -1,0 +1,27 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "quick-connect-authorize",
+  "request": {
+    "method": "POST",
+    "path": "/QuickConnect/Authorize",
+    "query": {
+      "code": "651748",
+      "userId": "08eb105c75f24f19a431602c3c8c50d3"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": true
+    }
+  }
+}

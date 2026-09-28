@@ -1,0 +1,185 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.36.1",
+  "call": "users-list",
+  "request": {
+    "method": "GET",
+    "path": "/api/users",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "users": [
+          {
+            "id": "user-1",
+            "username": "user-1",
+            "email": null,
+            "type": "root",
+            "token": "",
+            "seriesHideFromContinueListening": [],
+            "isActive": true,
+            "isLocked": false,
+            "lastSeen": 1785879497321,
+            "createdAt": 1777733857285,
+            "permissions": {
+              "download": true,
+              "update": true,
+              "delete": true,
+              "upload": true,
+              "createEreader": true,
+              "accessAllLibraries": true,
+              "accessAllTags": true,
+              "accessExplicitContent": true,
+              "selectedTagsNotAccessible": false
+            },
+            "librariesAccessible": [],
+            "itemTagsSelected": [],
+            "hasOpenIDLink": false
+          },
+          {
+            "id": "user-2",
+            "username": "user-2",
+            "email": null,
+            "type": "admin",
+            "token": "<token>",
+            "seriesHideFromContinueListening": [],
+            "isActive": true,
+            "isLocked": false,
+            "lastSeen": 1790548309570,
+            "createdAt": 1777733919011,
+            "permissions": {
+              "download": true,
+              "update": true,
+              "delete": true,
+              "upload": true,
+              "createEreader": true,
+              "accessAllLibraries": true,
+              "accessAllTags": true,
+              "accessExplicitContent": true,
+              "selectedTagsNotAccessible": false
+            },
+            "librariesAccessible": [],
+            "itemTagsSelected": [],
+            "hasOpenIDLink": true
+          },
+          {
+            "id": "user-3",
+            "username": "user-3",
+            "email": null,
+            "type": "user",
+            "token": "<token>",
+            "seriesHideFromContinueListening": [],
+            "isActive": true,
+            "isLocked": false,
+            "lastSeen": 1778360737006,
+            "createdAt": 1778360283510,
+            "permissions": {
+              "download": true,
+              "update": false,
+              "delete": false,
+              "upload": false,
+              "createEreader": false,
+              "accessAllLibraries": false,
+              "accessAllTags": true,
+              "accessExplicitContent": true,
+              "selectedTagsNotAccessible": false
+            },
+            "librariesAccessible": [
+              "e8aa253f-82d0-44ff-b87a-74671278ce9d"
+            ],
+            "itemTagsSelected": [],
+            "hasOpenIDLink": false
+          },
+          {
+            "id": "user-4",
+            "username": "user-4",
+            "email": null,
+            "type": "user",
+            "token": "<token>",
+            "seriesHideFromContinueListening": [],
+            "isActive": true,
+            "isLocked": false,
+            "lastSeen": null,
+            "createdAt": 1780506797708,
+            "permissions": {
+              "download": true,
+              "update": false,
+              "delete": false,
+              "upload": false,
+              "createEreader": false,
+              "accessAllLibraries": true,
+              "accessAllTags": true,
+              "accessExplicitContent": true,
+              "selectedTagsNotAccessible": false
+            },
+            "librariesAccessible": [],
+            "itemTagsSelected": [],
+            "hasOpenIDLink": false
+          },
+          {
+            "id": "169161f6-18a9-4b97-804e-4870fe980143",
+            "username": "auralis",
+            "email": null,
+            "type": "user",
+            "token": "<token>",
+            "seriesHideFromContinueListening": [],
+            "isActive": true,
+            "isLocked": false,
+            "lastSeen": null,
+            "createdAt": 1790548724381,
+            "permissions": {
+              "download": false,
+              "update": false,
+              "delete": false,
+              "upload": false,
+              "createEreader": false,
+              "accessAllLibraries": true,
+              "accessAllTags": true,
+              "accessExplicitContent": true,
+              "selectedTagsNotAccessible": false
+            },
+            "librariesAccessible": [],
+            "itemTagsSelected": [],
+            "hasOpenIDLink": false
+          },
+          {
+            "id": "user-5",
+            "username": "user-5",
+            "email": null,
+            "type": "admin",
+            "token": "<token>",
+            "seriesHideFromContinueListening": [],
+            "isActive": true,
+            "isLocked": false,
+            "lastSeen": null,
+            "createdAt": 1790558357714,
+            "permissions": {
+              "download": false,
+              "update": false,
+              "delete": false,
+              "upload": false,
+              "createEreader": false,
+              "accessAllLibraries": false,
+              "accessAllTags": false,
+              "accessExplicitContent": false,
+              "selectedTagsNotAccessible": false
+            },
+            "librariesAccessible": [],
+            "itemTagsSelected": [],
+            "hasOpenIDLink": false
+          }
+        ]
+      }
+    }
+  }
+}

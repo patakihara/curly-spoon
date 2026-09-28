@@ -1,0 +1,35 @@
+{
+  "upstream": "authelia",
+  "upstreamVersion": "4.39.28",
+  "call": "userinfo",
+  "request": {
+    "method": "GET",
+    "path": "/api/oidc/userinfo",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "email": "user@upstream.invalid",
+        "email_verified": true,
+        "groups": [
+          "auralis_service"
+        ],
+        "name": "user",
+        "preferred_username": "auralis",
+        "rat": 1790580699,
+        "sub": "eafdf704-d75b-4847-92a6-55790f172a17",
+        "updated_at": 1790580700
+      }
+    }
+  }
+}

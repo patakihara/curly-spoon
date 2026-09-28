@@ -1,0 +1,48 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.36.1",
+  "call": "api-key-create",
+  "request": {
+    "method": "POST",
+    "path": "/api/api-keys",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "name": "Auralis",
+        "userId": "169161f6-18a9-4b97-804e-4870fe980143",
+        "isActive": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "apiKey": {
+          "apiKey": "<token>",
+          "id": "672d744f-6616-49ed-9341-939fa8f2d835",
+          "name": "Auralis",
+          "expiresAt": null,
+          "userId": "169161f6-18a9-4b97-804e-4870fe980143",
+          "isActive": true,
+          "createdByUserId": "bbd25a37-a3f0-4c17-9303-bc519649c4d5",
+          "updatedAt": "2026-09-28T07:31:40.618Z",
+          "createdAt": "2026-09-28T07:31:40.618Z",
+          "user": {
+            "id": "169161f6-18a9-4b97-804e-4870fe980143",
+            "username": "auralis",
+            "type": "user"
+          }
+        }
+      }
+    }
+  }
+}

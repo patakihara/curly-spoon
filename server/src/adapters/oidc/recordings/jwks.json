@@ -1,0 +1,34 @@
+{
+  "upstream": "authelia",
+  "upstreamVersion": "4.39.28",
+  "call": "jwks",
+  "request": {
+    "method": "GET",
+    "path": "/jwks.json",
+    "query": {},
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "keys": [
+          {
+            "use": "sig",
+            "kty": "RSA",
+            "kid": "main",
+            "alg": "RS256",
+            "n": "351wyupmXWRKkFWndbEoiEyMXwjYj6EikZ8sxlnmYV_SUl7Ci3hDILEE8BLogNaE4OId9X88yAdrwnkD_tTLd7eT7KDupS6uSCl-d_rteNFHDsS98ws5VtaFg9yOYIkupdnDwsdr03_aw5SGCTTFXlZ3g3e0X7rAPm1ThXjOZQ-Z0oAP5QUPRrKBAOXqJAfZyqres4jSCjVcSHx0RL3dxq5vVj1G7jGuv6u8Q0FggpP7Iwr3OcSrfPuna27PZm7hwy7i6pNZuTuMDc0ANdkfGsXxskfKV7RjH6Ah-F-LnJQT3bVZ03DgXwzkalqvHR9VI_NYKZbYiH6W05q9ZB-OGw",
+            "e": "AQAB"
+          }
+        ]
+      }
+    }
+  }
+}

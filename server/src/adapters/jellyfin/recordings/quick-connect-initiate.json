@@ -1,0 +1,33 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "quick-connect-initiate",
+  "request": {
+    "method": "POST",
+    "path": "/QuickConnect/Initiate",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Authenticated": false,
+        "Secret": "<token>",
+        "Code": "651748",
+        "DeviceId": "auralis-recorder",
+        "DeviceName": "Auralis",
+        "AppName": "Auralis",
+        "AppVersion": "0.0.0",
+        "DateAdded": "2026-09-28T07:31:40.8283664Z"
+      }
+    }
+  }
+}

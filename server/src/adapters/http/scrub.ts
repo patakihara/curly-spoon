@@ -22,11 +22,14 @@ export const PLACEHOLDER_HOME_USER = 'user';
 export const KEPT_HEADERS = ['accept', 'content-type', 'authorization'] as const;
 /** A query parameter or header name that carries a credential. `auth` spares `author`. */
 export const SECRET_QUERY_KEY = /token|key|secret|pass|pash|auth(?!or)|cookie|signature/i;
-/** A JSON field that carries a credential, by substring or by exact name. */
+/** A JSON field that carries a credential, by substring or by exact name. A field that only
+ * describes one, such as a sign-on's `token_endpoint`, `token_type` or
+ * `token_endpoint_auth_methods_supported`, is not. */
 export const SECRET_BODY_KEY =
-  /token|api_?key|password|passwd|pash|secret|cookie|authorization|^key$|^pass$/i;
-/** A JSON field whose value is a host or an address. */
-export const HOST_FIELD = /host|address|^addr$|servername|domain|origin|endpoint|url$/i;
+  /^(?!.*(?:_endpoint|_type|_supported)$)(?:.*(?:token|api_?key|password|passwd|pash|secret|cookie|authorization)|key$|pass$)/i;
+/** A JSON field whose value is a host or an address. An endpoint's own name, not a field that
+ * only mentions one (`token_endpoint_auth_methods_supported`). */
+export const HOST_FIELD = /host|address|^addr$|servername|domain|origin|endpoint$|url$/i;
 /** Four octets only, so versions such as 2.36.1 or 10.11.11 never match. */
 export const IPV4 = /(?<!\d|\d\.)(?:\d{1,3}\.){3}\d{1,3}(?!\.?\d)/g;
 /**
@@ -193,8 +196,19 @@ function isPrivateUrlHost(host: string): boolean {
   return !host.includes('.') || PRIVATE_SUFFIX.test(host) || /^[\d.]+$/.test(host);
 }
 
-/** Scrubs one string wherever it sits: query secrets, hosts, addresses, emails, home folders. */
-export function scrubString(value: string): string {
+/**
+ * Whether a home-path match is a request path's own first segment, Jellyfin's `/Users/...`
+ * route, rather than a folder: only at the very start, spelt out, in a route.
+ */
+export function isUsersRoute(route: boolean, offset: number, s1: string, dir: string): boolean {
+  return route && offset === 0 && s1 === '/' && dir === 'Users';
+}
+
+/**
+ * Scrubs one string wherever it sits: query secrets, hosts, addresses, emails, home folders.
+ * `route` marks a request path, whose leading `/Users/...` is Jellyfin's API, not a folder.
+ */
+export function scrubString(value: string, route = false): string {
   return value
     .replace(QUERY_PARAM, (all, sep: string, name: string) =>
       SECRET_QUERY_KEY.test(name) ? `${sep}${name}=${PLACEHOLDER}` : all,
@@ -209,7 +223,8 @@ export function scrubString(value: string): string {
     .replace(IPV6_CANDIDATE, (c) => (ipv6Leaks(c).length > 0 ? PLACEHOLDER_IPV6 : c))
     .replace(
       HOME_PATH,
-      (_all, s1: string, dir: string, s2: string) => `${s1}${dir}${s2}${PLACEHOLDER_HOME_USER}`,
+      (all: string, s1: string, dir: string, s2: string, _user: string, offset: number) =>
+        isUsersRoute(route, offset, s1, dir) ? all : `${s1}${dir}${s2}${PLACEHOLDER_HOME_USER}`,
     );
 }
 
@@ -283,7 +298,7 @@ export function scrub(raw: RawExchange, options: ScrubOptions): Recording {
     ...literal,
     request: {
       ...literal.request,
-      path: scrubString(literal.request.path),
+      path: scrubString(literal.request.path, true),
       query: walk(literal.request.query, undefined, false),
       headers: walk(literal.request.headers, undefined, false),
       body: scrubBody(literal.request.body),

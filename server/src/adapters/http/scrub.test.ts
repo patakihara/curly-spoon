@@ -118,6 +118,61 @@ describe('[M0.record/c] scrubbing a recording', () => {
     });
   });
 
+  it("[M0.record/c] a sign-on's endpoints, token type and supported methods are described, not secret", () => {
+    const r = scrub(
+      exchange({
+        response: {
+          status: 200,
+          headers: {},
+          body: {
+            json: {
+              token_endpoint: `${baseUrl}/api/oidc/token`,
+              authorization_endpoint: `${baseUrl}/api/oidc/authorization`,
+              token_endpoint_auth_methods_supported: ['client_secret_basic', 'none'],
+              token_endpoint_auth_signing_alg_values_supported: ['RS256', 'none'],
+              token_type: 'bearer',
+              access_token: 'at-0123456789',
+              client_secret: 's3cret',
+            },
+          },
+        },
+      }),
+      opts,
+    );
+    expect(r.response.body).toEqual({
+      json: {
+        token_endpoint: 'http://upstream.invalid/api/oidc/token',
+        authorization_endpoint: 'http://upstream.invalid/api/oidc/authorization',
+        token_endpoint_auth_methods_supported: ['client_secret_basic', 'none'],
+        token_endpoint_auth_signing_alg_values_supported: ['RS256', 'none'],
+        token_type: 'bearer',
+        access_token: '<token>',
+        client_secret: '<token>',
+      },
+    });
+  });
+
+  it("[M0.record/c] a Jellyfin route under /Users is an API path, not someone's home folder", () => {
+    const r = scrub(
+      exchange({
+        request: {
+          method: 'POST',
+          url: `${baseUrl}/Users/AuthenticateWithQuickConnect`,
+          headers: {},
+          body: null,
+        },
+        response: {
+          status: 200,
+          headers: {},
+          body: { json: { Path: '/Users/someone/Music', Home: '/home/someone/x' } },
+        },
+      }),
+      opts,
+    );
+    expect(r.request.path).toBe('/Users/AuthenticateWithQuickConnect');
+    expect(r.response.body).toEqual({ json: { Path: '/Users/user/Music', Home: '/home/user/x' } });
+  });
+
   it('[M0.record/c] IPv4 addresses outside loopback and the documentation ranges become 192.0.2.1', () => {
     const r = scrub(
       exchange({

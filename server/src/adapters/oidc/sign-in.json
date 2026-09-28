@@ -1,0 +1,8 @@
+{
+  "state": "vTv_VPe-A43mEt5THYBRH2uwnT1S_aleWZ_x9WEHIXY",
+  "nonce": "dA_W2foxwySaPprL9apqf83YURMi2gSsgkXpDOKK7d0",
+  "verifier": "Mnr7dOjYuowN5fjjdPv6ZoC9z6g_OCKfDpoleibSYCk",
+  "now": 1790580697723,
+  "clientId": "auralis",
+  "redirectUri": "http://127.0.0.1:8787/auth/callback"
+}

@@ -10,6 +10,10 @@ import { PLACEHOLDER, PLACEHOLDER_EMAIL, type RawExchange } from './scrub.js';
 /** Per-person history a user object may carry; nobody but the test identity keeps it. */
 const HISTORY_FIELDS = ['mediaProgress', 'bookmarks', 'seriesHideFromContinueListening'];
 
+/** Account names that name a role, not a person: still replaced, but the upstream uses the same
+ * words for its own account types, so the scan must not hunt for them. */
+const ROLE_WORDS = new Set(['root', 'admin', 'administrator', 'user', 'guest']);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -79,7 +83,7 @@ export function anonymizeAccounts(raw: RawExchange, keep: readonly string[]): An
     if (isRecord(account.extraData) && typeof account.extraData.authOpenIDSub === 'string') {
       out.extraData = { ...account.extraData, authOpenIDSub: PLACEHOLDER };
     }
-    if (typeof name === 'string') names.push(name);
+    if (typeof name === 'string' && !ROLE_WORDS.has(name.toLowerCase())) names.push(name);
     return out;
   });
   return {

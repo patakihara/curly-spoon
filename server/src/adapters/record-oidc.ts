@@ -85,7 +85,8 @@ async function authorizationCode(
     redirect: 'manual',
   });
   const location = authorize.headers.get('location');
-  if (authorize.status !== 302 || location === null) {
+  // Authelia answers 303 See Other; any redirect will do, since its target is checked next.
+  if (authorize.status < 300 || authorize.status > 399 || location === null) {
     throw new Error(`the authorization request answered ${authorize.status}, not a redirect`);
   }
   const back = new URL(location, base);
@@ -152,8 +153,9 @@ export async function recordOidc(
     client.verifyIdToken(tokens.id_token, fixture.nonce, discovery),
   );
   await oidcRec.capture('userinfo', () => client.userinfo(tokens.access_token, discovery));
-  await mkdir(oidcDir, { recursive: true });
-  const fixtureFile = join(oidcDir, 'sign-in.json');
+  // Beside the recordings, not among them: it is what the test replays, not an exchange.
+  const fixtureFile = join(input.root, 'oidc', 'sign-in.json');
+  await mkdir(join(input.root, 'oidc'), { recursive: true });
   await writeFile(fixtureFile, `${JSON.stringify(fixture, null, 2)}\n`);
   written.push(
     ...['discovery', 'token', 'jwks', 'userinfo'].map((c) => join(oidcDir, `${c}.json`)),

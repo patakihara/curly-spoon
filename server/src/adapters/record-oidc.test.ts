@@ -19,7 +19,7 @@ const STDIN = [
   'JELLYFIN_API_KEY=jellyfin-key-0000',
 ].join('\n');
 
-function fakeWorld(options: { failAuthenticate?: boolean } = {}) {
+function fakeWorld(options: { failAuthenticate?: boolean; authorizeStatus?: number } = {}) {
   const asked: string[] = [];
   let nonce = '';
   const json = (body: unknown, status = 200) =>
@@ -49,7 +49,10 @@ function fakeWorld(options: { failAuthenticate?: boolean } = {}) {
       if (u.pathname === '/api/oidc/authorization') {
         nonce = u.searchParams.get('nonce') ?? '';
         const back = `${u.searchParams.get('redirect_uri')}?code=the-code&state=${u.searchParams.get('state')}`;
-        return new Response(null, { status: 302, headers: { location: back } });
+        return new Response(null, {
+          status: options.authorizeStatus ?? 302,
+          headers: { location: back },
+        });
       }
       if (u.pathname === '/api/oidc/token') {
         const idToken = await new SignJWT({ nonce, azp: 'auralis', preferred_username: 'auralis' })
@@ -147,7 +150,7 @@ describe('record mode for a sign-in', () => {
 
     const written = out.filter((l) => l.startsWith('wrote ')).map((l) => l.slice(6));
     const byName = (name: string) => written.find((f) => f.endsWith(name)) as string;
-    const fixture = JSON.parse(readFileSync(byName('sign-in.json'), 'utf8'));
+    const fixture = JSON.parse(readFileSync(byName('oidc/sign-in.json'), 'utf8'));
     expect(fixture).toEqual({
       state: Buffer.alloc(32, 1).toString('base64url'),
       nonce: Buffer.alloc(32, 2).toString('base64url'),
@@ -163,6 +166,13 @@ describe('record mode for a sign-in', () => {
     expect(users).not.toContain('Kara');
     expect(world.asked).toContain('DELETE 13378/api/api-keys/key-1');
     expect(world.asked).toContain('POST 8096/Sessions/Logout');
+  });
+
+  it('reads the code off a 303, the redirect Authelia answers with', async () => {
+    const world = fakeWorld({ authorizeStatus: 303 });
+    const { code, err } = run(world.fetch);
+    expect(await code).toBe(0);
+    expect(err).toEqual([]);
   });
 
   it('deletes the minted Audiobookshelf key even when the Jellyfin link fails', async () => {

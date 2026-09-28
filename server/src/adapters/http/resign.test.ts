@@ -172,6 +172,23 @@ describe('keeping other people out of a recorded user list', () => {
     expect(names).toEqual(['e@example-household.test', 'Élise', 'Kara']);
   });
 
+  it('replaces a role-named account too, but never hands its role word to the scan', () => {
+    const raw = exchange('/api/users', {
+      users: [
+        { id: 'id-a', username: 'admin', type: 'admin' },
+        { id: 'id-b', username: 'Kara', type: 'admin' },
+      ],
+    });
+    const { raw: out, names } = anonymizeAccounts(raw, ['auralis']);
+    expect((out.response.body as { json: unknown }).json).toEqual({
+      users: [
+        { id: 'user-1', username: 'user-1', type: 'admin' },
+        { id: 'user-2', username: 'user-2', type: 'admin' },
+      ],
+    });
+    expect(names).toEqual(['Kara']);
+  });
+
   it("replaces other people's sign-on subject, and keeps the test identity's", () => {
     const raw = exchange('/api/users', {
       users: [

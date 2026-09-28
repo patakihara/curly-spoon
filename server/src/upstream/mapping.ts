@@ -3,7 +3,8 @@
  * directory login id is compared with each one folded: NFKD, marks dropped, lower-cased. Exactly
  * one active hit links; none or two leave the service unlinked. The id found is then pinned by the
  * caller, so a later rename never re-matches. A person links to their own account, admin or not;
- * Auralis's own service accounts are never matched, an Audiobookshelf root match stays unlinked,
+ * Auralis's own service accounts are never matched, except the service identity `auralis`
+ * signing in as the service itself, to its own account. An Audiobookshelf root match stays unlinked,
  * because an admin key cannot mint a key for root, and a disabled match stays unlinked. Only
  * `no_account` lets the caller create an account.
  */
@@ -25,6 +26,14 @@ export const SERVICE_ACCOUNTS: Readonly<Record<Service, readonly string[]>> = {
   jellyfin: ['auralis'],
 };
 
+/** The recording service identity: the one service account that may link, and only to itself. */
+export const SERVICE_IDENTITY = 'auralis';
+
+export interface PickOptions {
+  /** The sign-in is the service identity's own (its `auralis_service` group). */
+  serviceIdentity?: boolean;
+}
+
 export type Pick =
   | { state: 'linked'; id: string }
   | {
@@ -40,9 +49,11 @@ export function pickUpstreamUser(
   service: Service,
   candidates: readonly UpstreamCandidate[],
   loginId: string,
+  options: PickOptions = {},
 ): Pick {
   const want = foldName(loginId);
-  if (SERVICE_ACCOUNTS[service].includes(want)) {
+  const ownService = options.serviceIdentity === true && want === SERVICE_IDENTITY;
+  if (SERVICE_ACCOUNTS[service].includes(want) && !ownService) {
     return { state: 'unlinked', detail: 'service_account' };
   }
   const named = candidates.filter((c) => foldName(c.username) === want);

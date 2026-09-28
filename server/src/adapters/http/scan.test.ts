@@ -304,6 +304,32 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
     expect(scanRecording(lookalike).map((f) => f.kind)).toContain('host');
   });
 
+  it('[M0.record/c] a Jellyfin route under /Users is not a home folder, but one in a body is', () => {
+    const route = leak((r) => {
+      r.request.path = '/Users/AuthenticateWithQuickConnect';
+    });
+    expect(scanRecording(route)).toEqual([]);
+    const folder = leak((r) => {
+      body(r).Path = '/Users/someone/Music';
+    });
+    expect(scanRecording(folder)).toEqual([
+      { kind: 'home-path', path: '$.response.body.json.Path' },
+    ]);
+  });
+
+  it("[M0.record/c] a sign-on's JWT response modes are not hosts, but a host beside them is", () => {
+    const modes = leak((r) => {
+      body(r).response_modes_supported = ['query', 'form_post.jwt', 'query.jwt', 'fragment.jwt'];
+    });
+    expect(scanRecording(modes)).toEqual([]);
+    const host = leak((r) => {
+      body(r).response_modes_supported = ['query.jwt', 'auth.example.fi'];
+    });
+    expect(scanRecording(host)).toEqual([
+      { kind: 'host', path: '$.response.body.json.response_modes_supported[1]' },
+    ]);
+  });
+
   it("[M0.record/c] an image's blur hash is not a finding, but an address beside it is", () => {
     const hash = 'WA9s|ab@cd.ef:jk@lm.io:j[0JWB?bt7oLRkn}aeWYbIoyjsRjs';
     const hashed = leak((r) => {
