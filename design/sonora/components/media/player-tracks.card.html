@@ -40,6 +40,11 @@ function Demo(){
       <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed>Requested</Button>} />
       <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile">Request</Button>} />
     </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows with a detail line — why each row is there, wrapping to two lines</div>
+    <div style={{maxWidth:380}}>
+      <ResultRow platform="mobile" title="Salt and Static" meta="Album · Soul Vertex · ListenBrainz" detail="Listeners of Deep Inertia play Soul Vertex most weeks." divider />
+      <ResultRow platform="mobile" title="The Glass Archivist" meta="Book · Rosa Elin · Audible" detail="Listeners who finished The Salt Cartographer went on to this one, the next in its world." status="In library" tone="library" />
+    </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Media header — wide pane (≥600px): art beside the text</div>
     <MediaHeader kindLabel="Audiobook" title="Ink Heart" subtitle="Cornelia Funke" onSubtitle={()=>{}}
       meta="2023 · 18 chapters · 14 h 42 m" onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} />

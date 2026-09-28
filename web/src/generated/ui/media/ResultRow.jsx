@@ -13,7 +13,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-resultro
 }
 
 /** One row of a track / search / request list. Replaces the old TrackRow. */
-export function ResultRow({ title, meta, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
+export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const pctMatch = /(\d+)\s*%/.exec(status || '');
@@ -72,6 +72,7 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
           {mobile && trailing}
         </div>
         <div style={sx('font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{meta}</div>
+        {detail && <div style={sx('font-size:var(--text-sm);line-height:var(--leading-sm);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:' + fg)}>{detail}</div>}
       </div>
       {!mobile && statusPill}
       {!mobile && trailing}

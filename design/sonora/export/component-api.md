@@ -1110,6 +1110,7 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | --- | --- | --- |
 | `title` *(required)* | `string` |  |
 | `meta` | `string` |  |
+| `detail` | `string` |  A line under the meta that wraps rather than cuts, up to two lines: why the row is there, such as a recommendation's reason. Omit for a row that needs no reason.  |
 | `status` | `string \| null` |  e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with no status. "Playing" renders animated equalizer bars instead of a pill. On mobile a status with a percentage shows only the percentage ("42%"), beside the ring over the art.  |
 | `progress` | `number \| null` |  |
 | `tone` | `'library' \| 'request' \| 'progress' \| 'error' \| null` | Colour family for the pill and ring; null for a row with no status. |

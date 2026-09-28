@@ -9,6 +9,11 @@ export interface ResultRowProps {
   title: string;
   meta?: string;
   /**
+   * A line under the meta that wraps rather than cuts, up to two lines: why the row is there, such
+   * as a recommendation's reason. Omit for a row that needs no reason.
+   */
+  detail?: string;
+  /**
    * e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with
    * no status. "Playing" renders animated equalizer bars instead of a pill. On mobile a status
    * with a percentage shows only the percentage ("42%"), beside the ring over the art.
