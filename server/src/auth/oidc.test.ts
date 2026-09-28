@@ -37,10 +37,13 @@ const client = new OidcClient({
 
 async function idToken(
   claims: Record<string, unknown>,
-  { iss = ISSUER, aud = 'auralis' }: { iss?: string; aud?: string } = {},
+  {
+    iss = ISSUER,
+    aud = 'auralis',
+    iat = Math.floor(NOW / 1000) - 10,
+  }: { iss?: string; aud?: string; iat?: number } = {},
 ) {
   const key = await importJWK(privateJwk as JWK, 'RS256');
-  const iat = Math.floor(NOW / 1000) - 10;
   return new SignJWT({ nonce: 'n-1', azp: 'auralis', ...claims })
     .setProtectedHeader({ alg: 'RS256', kid: KID })
     .setIssuer(iss)
@@ -86,5 +89,21 @@ describe('[M0.sso/b] the ID token check', () => {
     const none = Buffer.from(JSON.stringify({ alg: 'none', kid: KID })).toString('base64url');
     await refused(client.verifyIdToken(`${none}.${payload}.`, 'n-1', discovery));
     expect(header).toBeDefined();
+  });
+
+  it('refuses a token issued more than a minute in the future, and allows a little clock skew', async () => {
+    const at = Math.floor(NOW / 1000);
+    await refused(client.verifyIdToken(await idToken({}, { iat: at + 120 }), 'n-1', discovery));
+    const skewed = await client.verifyIdToken(
+      await idToken({}, { iat: at + 30 }),
+      'n-1',
+      discovery,
+    );
+    expect(skewed.sub).toBe('sub-kara');
+  });
+
+  it('refuses a token issued long before this sign-in, even if it has not expired', async () => {
+    const old = Math.floor(NOW / 1000) - 30 * 60;
+    await refused(client.verifyIdToken(await idToken({}, { iat: old }), 'n-1', discovery));
   });
 });

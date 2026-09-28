@@ -11,6 +11,10 @@ import { AdapterError, type FetchLike, requestJson } from '../adapters/http/fetc
 import { s256 } from '../store/signIn.js';
 
 export const SCOPES = 'openid profile email groups';
+/** How old an ID token may be when its sign-in finishes. */
+export const ID_TOKEN_MAX_AGE_S = 10 * 60;
+/** How far the sign-on's clock may run ahead of or behind this one. */
+export const CLOCK_SKEW_S = 60;
 
 /** Who the sign-on says signed in. */
 export interface Identity {
@@ -194,7 +198,10 @@ export class OidcClient implements SignOn {
     );
   }
 
-  /** RS256 only, against the sign-on's published keys, at the injected time. */
+  /**
+   * RS256 only, against the sign-on's published keys, at the injected time, issued within the last
+   * ten minutes and no more than a minute ahead of this clock.
+   */
   async verifyIdToken(idToken: string, nonce: string, discovery?: Discovery) {
     const { jwks_uri } = discovery ?? (await this.discover());
     const jwks = await upstream('the signing keys', () =>
@@ -208,6 +215,10 @@ export class OidcClient implements SignOn {
         audience: this.opts.clientId,
         currentDate: new Date(this.opts.now()),
         requiredClaims: ['exp', 'iat', 'sub', 'nonce'],
+        // The token is minted moments before this check: an `iat` older than that, or more than
+        // the clock skew ahead, is not this sign-in's.
+        maxTokenAge: ID_TOKEN_MAX_AGE_S,
+        clockTolerance: CLOCK_SKEW_S,
       }));
     } catch (cause) {
       throw new SignOnError('bad_token', 'the ID token does not verify', { cause });
