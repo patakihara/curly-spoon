@@ -44,6 +44,25 @@ describe('the Jellyfin client', () => {
     expect(query).toEqual({ IncludeItemTypes: 'MusicAlbum', Recursive: 'true', Limit: '1' });
   });
 
+  it('an item asked for with the API key names a user, since the key has none of its own', async () => {
+    const { fetch, sent } = fake(album);
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    await jf.getItem('a1', 'u1');
+    await jf.getItem('a1');
+    expect(sent.map((s) => new URL(s.url).search)).toEqual(['?userId=u1', '']);
+  });
+
+  it('the administrator found is the first user whose policy says administrator', async () => {
+    const { fetch, sent } = fake([
+      { Id: 'u1', Name: 'x', Policy: { IsAdministrator: false } },
+      { Id: 'u2', Name: 'y', Policy: { IsAdministrator: true } },
+      { Id: 'u3', Name: 'z', Policy: { IsAdministrator: true } },
+    ]);
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    expect(await jf.findAdministratorId()).toBe('u2');
+    expect(new URL(sent[0]?.url ?? '').pathname).toBe('/Users');
+  });
+
   it('the server version is read without the key', async () => {
     const { fetch, sent } = fake({ Version: '10.11.11', ServerName: 'x' });
     const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'the-key', fetch });

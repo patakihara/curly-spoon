@@ -26,3 +26,10 @@ export const baseItemDtoSchema = z
 export const baseItemQueryResultSchema = z
   .object({ Items: z.array(baseItemDtoSchema), TotalRecordCount: z.number().optional() })
   .passthrough();
+
+/** `GET /Users`: only what finding an administrator reads. */
+export const userListSchema = z.array(
+  z
+    .object({ Id: z.string(), Policy: z.object({ IsAdministrator: z.boolean() }).passthrough() })
+    .passthrough(),
+);

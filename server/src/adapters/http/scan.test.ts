@@ -290,6 +290,34 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
     expect(scanRecording(clean())).toEqual([]);
   });
 
+  it('[M0.record/c] the public metadata sites an album links to are not findings, but a lookalike host is', () => {
+    const linked = leak((r) => {
+      body(r).ExternalUrls = [
+        { Name: 'MusicBrainz Album', Url: 'https://musicbrainz.org/release/7ec0' },
+        { Name: 'TheAudioDb Album', Url: 'https://www.theaudiodb.com/album/2110249' },
+      ];
+    });
+    expect(scanRecording(linked)).toEqual([]);
+    const lookalike = leak((r) => {
+      body(r).Link = 'https://musicbrainz.org.home.example.net/x';
+    });
+    expect(scanRecording(lookalike).map((f) => f.kind)).toContain('host');
+  });
+
+  it("[M0.record/c] an image's blur hash is not a finding, but an address beside it is", () => {
+    const hash = 'WA9s|ab@cd.ef:jk@lm.io:j[0JWB?bt7oLRkn}aeWYbIoyjsRjs';
+    const hashed = leak((r) => {
+      body(r).ImageBlurHashes = { Primary: { '3d8e': hash } };
+    });
+    expect(scanRecording(hashed)).toEqual([]);
+    const email = leak((r) => {
+      body(r).ImageBlurHashes = { Primary: { '3d8e': hash, '9ae9': 'someone@example.org' } };
+    });
+    expect(scanRecording(email)).toEqual([
+      { kind: 'email', path: '$.response.body.json.ImageBlurHashes.Primary.9ae9' },
+    ]);
+  });
+
   it('[M0.record/c] the scrubbed placeholders pass the scan', () => {
     expect(
       scanRecording(

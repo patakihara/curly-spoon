@@ -73,3 +73,66 @@ describe('record mode against Audiobookshelf', () => {
     expect(abs.asked.filter((a) => a.endsWith('/close'))).toEqual([]);
   });
 });
+
+/** A fake Jellyfin with one album and one administrator; it keeps every URL asked. */
+function fakeJellyfin() {
+  const asked: string[] = [];
+  const fetch: FetchLike = async (url) => {
+    const { pathname, search } = new URL(url);
+    asked.push(`${pathname}${search}`);
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    if (pathname === '/System/Info/Public') return json({ Version: '10.11.11' });
+    if (pathname === '/Library/MediaFolders') {
+      return json({ Items: [{ Id: 'm1', Name: 'Music', CollectionType: 'music' }] });
+    }
+    if (pathname === '/Users') {
+      return json([
+        { Id: 'u1', Policy: { IsAdministrator: false } },
+        { Id: 'u2', Policy: { IsAdministrator: true } },
+      ]);
+    }
+    if (pathname === '/Items') return json({ Items: [{ Id: 'a1', Type: 'MusicAlbum' }] });
+    if (pathname.startsWith('/Items/')) {
+      return json({ Id: pathname.slice('/Items/'.length), Type: 'MusicAlbum' });
+    }
+    return new Response('not found', { status: 404 });
+  };
+  return { fetch, asked };
+}
+
+function jellyfinIo(fetch: FetchLike) {
+  const err: string[] = [];
+  return {
+    io: {
+      argv: ['--jellyfin', 'http://upstream.invalid:8096', '--only', 'jellyfin', '--dry-run'],
+      stdin: 'JELLYFIN_API_KEY=test-jellyfin-key-0000\n',
+      fetch,
+      out: () => undefined,
+      err: (line: string) => err.push(line),
+    },
+    err,
+  };
+}
+
+describe('record mode against Jellyfin', () => {
+  it('records the first album as an administrator, since the API key has no user', async () => {
+    const jf = fakeJellyfin();
+    const { io: recordIo, err } = jellyfinIo(jf.fetch);
+    expect(await runRecord(recordIo)).toBe(0);
+    expect(err).toEqual([]);
+    expect(jf.asked).toContain('/Items/a1?userId=u2');
+  });
+
+  it('records the album named with --jellyfin-item instead of the first one', async () => {
+    const jf = fakeJellyfin();
+    const { io: recordIo } = jellyfinIo(jf.fetch);
+    recordIo.argv.push('--jellyfin-item', 'b7');
+    expect(await runRecord(recordIo)).toBe(0);
+    expect(jf.asked).toContain('/Items/b7?userId=u2');
+    expect(jf.asked.some((a) => a.startsWith('/Items?'))).toBe(false);
+  });
+});

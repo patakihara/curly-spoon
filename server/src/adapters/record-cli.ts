@@ -35,6 +35,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
 
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
+  --jellyfin-item <id> the Jellyfin item to record, instead of the first album
   --only <name>      record only abs or jellyfin; or oidc, a sign-in and its links
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
@@ -149,6 +150,7 @@ async function recordJellyfin(
   token: string,
   dir: string,
   secrets: string[],
+  itemId: string | undefined,
 ) {
   const upstreamVersion = await new JellyfinClient({
     baseUrl,
@@ -166,9 +168,12 @@ async function recordJellyfin(
   const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });
 
   await rec.capture('library-list', () => jf.getLibraries());
-  const [album] = await jf.findAlbums(1);
-  if (!album) throw new Error('Jellyfin has no music album');
-  await rec.capture('item-detail', () => jf.getItem(album.Id));
+  // The API key has no user of its own, so the item is asked for as an administrator.
+  const userId = await jf.findAdministratorId();
+  if (!userId) throw new Error('Jellyfin has no administrator');
+  const albumId = itemId ?? (await jf.findAlbums(1))[0]?.Id;
+  if (!albumId) throw new Error('Jellyfin has no music album');
+  await rec.capture('item-detail', () => jf.getItem(albumId, userId));
   return ['library-list', 'item-detail'].map((c) => join(dir, `${c}.json`));
 }
 
@@ -179,6 +184,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
     options: {
       abs: { type: 'string' },
       jellyfin: { type: 'string' },
+      'jellyfin-item': { type: 'string' },
       only: { type: 'string' },
       oidc: { type: 'string' },
       'oidc-version': { type: 'string' },
@@ -234,6 +240,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
         jellyfinKey as string,
         join(root, 'jellyfin', 'recordings'),
         secrets,
+        values['jellyfin-item'],
       )),
     );
   }

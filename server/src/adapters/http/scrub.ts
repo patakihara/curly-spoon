@@ -39,6 +39,22 @@ export const IPV6_CANDIDATE =
 const IPV4_MAPPED = /^::ffff:((?:\d{1,3}\.){3}\d{1,3})$/i;
 /** Any address, dotted domain or not (`someone@box` too). */
 export const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*/g;
+/** A key under which image blur hashes sit: Jellyfin's `ImageBlurHashes`. */
+export const BLUR_HASH_KEY = /blurhash/i;
+const BASE83 =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~';
+
+/**
+ * A BlurHash (blurha.sh): base83, its first character giving the component grid, and so its
+ * exact length. Its alphabet holds `@`, `.` and `:`, so emails and hosts turn up in it by chance.
+ */
+export function isBlurHash(value: string): boolean {
+  if (![...value].every((c) => BASE83.includes(c))) return false;
+  const flag = BASE83.indexOf(value[0] ?? '');
+  if (flag < 0) return false;
+  return value.length === 4 + 2 * ((flag % 9) + 1) * (Math.floor(flag / 9) + 1);
+}
+
 /** `/home/<user>` and `/Users/<user>`, raw or URL-encoded. */
 export const HOME_PATH = /(\/|%2F)(home|Users)(\/|%2F)([^/%\s"'?#&<>]+)/gi;
 /** A query parameter inside any string: its separator, name and value. */
@@ -197,13 +213,22 @@ export function scrubString(value: string): string {
     );
 }
 
-/** Walks a JSON value: every string is scrubbed; with `fields`, token-like and host keys too. */
-function walk(value: unknown, key: string | undefined, fields: boolean): unknown {
+/**
+ * Walks a JSON value: every string is scrubbed; with `fields`, token-like and host keys too.
+ * Under a blur-hash key (`blurHashes`), a string shaped like a blur hash is kept whole.
+ */
+function walk(
+  value: unknown,
+  key: string | undefined,
+  fields: boolean,
+  blurHashes = false,
+): unknown {
   const secretKey = fields && key !== undefined && SECRET_BODY_KEY.test(key);
   if (typeof value === 'number' && secretKey) return PLACEHOLDER;
   if (typeof value === 'string') {
     // A re-signed ID token is kept whole: its claims were scrubbed before it was signed.
     if (isTestSignedJwt(value)) return value;
+    if (blurHashes && isBlurHash(value)) return value;
     if (secretKey && value.length > 0) return PLACEHOLDER;
     const out = scrubString(value);
     if (fields && key !== undefined && HOST_FIELD.test(key) && HOSTNAME_VALUE.test(out)) {
@@ -212,9 +237,14 @@ function walk(value: unknown, key: string | undefined, fields: boolean): unknown
     }
     return out;
   }
-  if (Array.isArray(value)) return value.map((v) => walk(v, key, fields));
+  if (Array.isArray(value)) return value.map((v) => walk(v, key, fields, blurHashes));
   if (value !== null && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v, k, fields)]));
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [
+        k,
+        walk(v, k, fields, blurHashes || BLUR_HASH_KEY.test(k)),
+      ]),
+    );
   }
   return value;
 }

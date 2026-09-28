@@ -182,6 +182,31 @@ describe('[M0.record/c] scrubbing a recording', () => {
     expect(r.response.body).toEqual({ json: { email: 'user@upstream.invalid' } });
   });
 
+  it("[M0.record/c] an image's blur hash is kept whole, though its alphabet holds @ and dots", () => {
+    const hash = 'WA9s|ab@cd.ef:jk@lm.io:j[0JWB?bt7oLRkn}aeWYbIoyjsRjs';
+    const r = scrub(
+      exchange({
+        response: {
+          status: 200,
+          headers: {},
+          body: {
+            json: {
+              ImageBlurHashes: { Primary: { '3d8e': hash, '9ae9': 'someone@example.org' } },
+              Name: hash,
+            },
+          },
+        },
+      }),
+      opts,
+    );
+    expect(r.response.body).toEqual({
+      json: {
+        ImageBlurHashes: { Primary: { '3d8e': hash, '9ae9': 'user@upstream.invalid' } },
+        Name: 'WA9s|user@upstream.invalid:user@upstream.invalid:j[0JWB?bt7oLRkn}aeWYbIoyjsRjs',
+      },
+    });
+  });
+
   it('[M0.record/c] only accept, content-type and authorization headers are kept', () => {
     const r = scrub(
       exchange({

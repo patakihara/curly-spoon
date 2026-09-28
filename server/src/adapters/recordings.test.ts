@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { AbsClient } from './audiobookshelf/client.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { replayFetch } from './http/replay.js';
+import { JellyfinClient } from './jellyfin/client.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
 
@@ -96,5 +97,44 @@ describe("[M0.record/b] Audiobookshelf's recordings from mediaserver", () => {
     const item = json(abs['item-detail'].response.body) as { libraryId: string };
     const library = libraries.find((l) => l.id === item.libraryId);
     expect(library?.mediaType).toBe('book');
+  });
+});
+
+const JELLYFIN_CALLS = {
+  'library-list': { method: 'GET', path: /^\/Library\/MediaFolders$/ },
+  'item-detail': { method: 'GET', path: /^\/Items\/[^/]+$/ },
+} as const;
+
+const jellyfin = Object.fromEntries(
+  Object.keys(JELLYFIN_CALLS).map((call) => [call, recording('jellyfin', call)]),
+) as Record<keyof typeof JELLYFIN_CALLS, Recording>;
+
+describe("[M0.record/b] Jellyfin's recordings from mediaserver", () => {
+  it("[M0.record/b] recordings from mediaserver exist for Jellyfin's library list and item detail", () => {
+    for (const [call, { method, path }] of Object.entries(JELLYFIN_CALLS)) {
+      const r = jellyfin[call as keyof typeof JELLYFIN_CALLS];
+      expect(r.upstream, call).toBe('jellyfin');
+      expect(r.call, call).toBe(call);
+      expect(r.upstreamVersion, call).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(r.request.method, call).toBe(method);
+      expect(r.request.path, call).toMatch(path);
+      expect(r.response.status, call).toBe(200);
+    }
+  });
+
+  it('[M0.record/b] each recorded Jellyfin call parses through the client', async () => {
+    const client = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch(Object.values(jellyfin)),
+    });
+    const libraries = await client.getLibraries();
+    expect(libraries.map((l) => l.CollectionType)).toContain('music');
+
+    const detail = jellyfin['item-detail'].request;
+    const albumId = detail.path.split('/')[2] ?? '';
+    const album = await client.getItem(albumId, detail.query.userId);
+    expect(album.Id).toBe(albumId);
+    expect(album.Type).toBe('MusicAlbum');
   });
 });

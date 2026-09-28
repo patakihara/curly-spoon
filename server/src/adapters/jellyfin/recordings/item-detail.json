@@ -1,0 +1,143 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "item-detail",
+  "request": {
+    "method": "GET",
+    "path": "/Items/b9bdc5d1ae184251eabeeaf15bb5c4d6",
+    "query": {
+      "userId": "6a5f1d66bf9a4eea96c314fd6d0c005b"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Name": "Rumours",
+        "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+        "Id": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+        "Etag": "d90ab2105da8ec6e248afd3d14fdf539",
+        "DateCreated": "2026-04-22T06:32:15.0000000Z",
+        "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+        "CanDelete": true,
+        "CanDownload": false,
+        "SortName": "rumours",
+        "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+        "ExternalUrls": [
+          {
+            "Name": "MusicBrainz Album",
+            "Url": "https://musicbrainz.org/release/7ec069c0-4424-3169-8ed0-d5e2473e0e84"
+          },
+          {
+            "Name": "MusicBrainz Album Artist",
+            "Url": "https://musicbrainz.org/artist/bd13909f-1c29-4c27-a874-d4aaf27c5b1a"
+          },
+          {
+            "Name": "MusicBrainz Release Group",
+            "Url": "https://musicbrainz.org/release-group/416bb5e5-c7d1-3977-8fd7-7c9daf6c2be6"
+          },
+          {
+            "Name": "TheAudioDb Album",
+            "Url": "https://www.theaudiodb.com/album/2110249"
+          }
+        ],
+        "Path": "/data/media/Music/Fleetwood Mac/1977 - Rumours",
+        "EnableMediaSourceDisplay": true,
+        "ChannelId": null,
+        "Overview": "",
+        "Taglines": [],
+        "Genres": [
+          "Rock"
+        ],
+        "CumulativeRunTimeTicks": 23795333319,
+        "RunTimeTicks": 23795333319,
+        "PlayAccess": "Full",
+        "ProductionYear": 1977,
+        "RemoteTrailers": [],
+        "ProviderIds": {
+          "AudioDbAlbum": "2110249",
+          "AudioDbArtist": "111280",
+          "MusicBrainzAlbum": "7ec069c0-4424-3169-8ed0-d5e2473e0e84",
+          "MusicBrainzAlbumArtist": "bd13909f-1c29-4c27-a874-d4aaf27c5b1a",
+          "MusicBrainzReleaseGroup": "416bb5e5-c7d1-3977-8fd7-7c9daf6c2be6"
+        },
+        "IsFolder": true,
+        "ParentId": "aa0cc2edfb53c73036b2da94640ea11d",
+        "Type": "MusicAlbum",
+        "People": [],
+        "Studios": [],
+        "GenreItems": [
+          {
+            "Name": "Rock",
+            "Id": "e000ec236f37232ba518ce3c69930f01"
+          }
+        ],
+        "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+        "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+        "ParentBackdropImageTags": [
+          "e915c33987ab7b9c747531cb6f10c217"
+        ],
+        "LocalTrailerCount": 0,
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "<token>",
+          "ItemId": "b9bdc5d1ae184251eabeeaf15bb5c4d6"
+        },
+        "RecursiveItemCount": 11,
+        "ChildCount": 11,
+        "SpecialFeatureCount": 0,
+        "DisplayPreferencesId": "f13d7f51d4f1f8b6fcd620855eb88c1e",
+        "Tags": [],
+        "PrimaryImageAspectRatio": 1,
+        "Artists": [
+          "Fleetwood Mac"
+        ],
+        "ArtistItems": [
+          {
+            "Name": "Fleetwood Mac",
+            "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+          }
+        ],
+        "AlbumArtist": "Fleetwood Mac",
+        "AlbumArtists": [
+          {
+            "Name": "Fleetwood Mac",
+            "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+          }
+        ],
+        "ImageTags": {
+          "Primary": "6c89030066601ffa4e5f4fcc63a38456"
+        },
+        "BackdropImageTags": [],
+        "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+        "ImageBlurHashes": {
+          "Primary": {
+            "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+          },
+          "Logo": {
+            "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+          },
+          "Backdrop": {
+            "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "LockedFields": [],
+        "LockData": false,
+        "NormalizationGain": 2.7999992
+      }
+    }
+  }
+}

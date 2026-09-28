@@ -1,0 +1,237 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "library-list",
+  "request": {
+    "method": "GET",
+    "path": "/Library/MediaFolders",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Books",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "4e985111ed7f570b595204d82adb02f3",
+            "Etag": "9320b1bd593276dce2b9bf4e33941bd3",
+            "DateCreated": "2026-02-27T09:40:55.5159015Z",
+            "CanDelete": false,
+            "CanDownload": false,
+            "SortName": "books",
+            "ExternalUrls": [],
+            "Path": "/var/lib/jellyfin/root/default/Books",
+            "EnableMediaSourceDisplay": true,
+            "ChannelId": null,
+            "Taglines": [],
+            "Genres": [],
+            "RemoteTrailers": [],
+            "ProviderIds": {},
+            "IsFolder": true,
+            "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+            "Type": "CollectionFolder",
+            "People": [],
+            "Studios": [],
+            "GenreItems": [],
+            "LocalTrailerCount": 0,
+            "SpecialFeatureCount": 0,
+            "DisplayPreferencesId": "4e985111ed7f570b595204d82adb02f3",
+            "Tags": [],
+            "PrimaryImageAspectRatio": 1.7777777777777777,
+            "CollectionType": "books",
+            "ImageTags": {
+              "Primary": "3d8e9da289c7c256929a16c641255ed1"
+            },
+            "BackdropImageTags": [],
+            "ImageBlurHashes": {
+              "Primary": {
+                "3d8e9da289c7c256929a16c641255ed1": "WD97U_oe00R*Rkofo~j]aKWBWBa}9GWB-;t7RjWBRPj[ozayj[js"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "LockedFields": [],
+            "LockData": false
+          },
+          {
+            "Name": "Movies",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f137a2dd21bbc1b99aa5c0f6bf02a805",
+            "Etag": "8486b4cfebe0fa179b7b2904388b67d8",
+            "DateCreated": "2026-02-27T09:37:52.7078613Z",
+            "CanDelete": false,
+            "CanDownload": false,
+            "SortName": "movies",
+            "ExternalUrls": [],
+            "Path": "/var/lib/jellyfin/root/default/Movies",
+            "EnableMediaSourceDisplay": true,
+            "ChannelId": null,
+            "Taglines": [],
+            "Genres": [],
+            "RemoteTrailers": [],
+            "ProviderIds": {},
+            "IsFolder": true,
+            "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+            "Type": "CollectionFolder",
+            "People": [],
+            "Studios": [],
+            "GenreItems": [],
+            "LocalTrailerCount": 0,
+            "SpecialFeatureCount": 0,
+            "DisplayPreferencesId": "f137a2dd21bbc1b99aa5c0f6bf02a805",
+            "Tags": [],
+            "PrimaryImageAspectRatio": 1.7777777777777777,
+            "CollectionType": "movies",
+            "ImageTags": {
+              "Primary": "dac01e10c1103ccb1e307df5f7ea6ec6"
+            },
+            "BackdropImageTags": [],
+            "ImageBlurHashes": {
+              "Primary": {
+                "dac01e10c1103ccb1e307df5f7ea6ec6": "WA9s|-NI0KRjj@xaEMs:f5j@s:j[0JWB?bt7oLRkn}aeWYbIoyjs"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "LockedFields": [],
+            "LockData": false
+          },
+          {
+            "Name": "Music",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7e64e319657a9516ec78490da03edccb",
+            "Etag": "d2299ce720b541f5e8f4eef97dde70c5",
+            "DateCreated": "2026-03-04T13:17:06.5072912Z",
+            "CanDelete": false,
+            "CanDownload": false,
+            "SortName": "music",
+            "ExternalUrls": [],
+            "Path": "/var/lib/jellyfin/root/default/Music",
+            "EnableMediaSourceDisplay": true,
+            "ChannelId": null,
+            "Taglines": [],
+            "Genres": [],
+            "RemoteTrailers": [],
+            "ProviderIds": {},
+            "IsFolder": true,
+            "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+            "Type": "CollectionFolder",
+            "People": [],
+            "Studios": [],
+            "GenreItems": [],
+            "LocalTrailerCount": 0,
+            "SpecialFeatureCount": 0,
+            "DisplayPreferencesId": "7e64e319657a9516ec78490da03edccb",
+            "Tags": [],
+            "PrimaryImageAspectRatio": 1.7777777777777777,
+            "CollectionType": "music",
+            "ImageTags": {
+              "Primary": "9ae97c6b1fafb91e09a432af6994f9ab"
+            },
+            "BackdropImageTags": [],
+            "ImageBlurHashes": {
+              "Primary": {
+                "9ae97c6b1fafb91e09a432af6994f9ab": "WA9aN$MxIpkCnhjZ_4f+WWogWBWAD*og?bt7M{WBt8WBt7j@aykC"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "LockedFields": [],
+            "LockData": false
+          },
+          {
+            "Name": "Playlists",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "1071671e7bffa0532e930debee501d2e",
+            "Etag": "fb44c7db28d4acc69798f64920c4ac19",
+            "DateCreated": "2026-02-27T09:25:34.903417Z",
+            "CanDelete": false,
+            "CanDownload": false,
+            "SortName": "playlists",
+            "ExternalUrls": [],
+            "Path": "/var/lib/jellyfin/data/playlists",
+            "EnableMediaSourceDisplay": true,
+            "ChannelId": null,
+            "Taglines": [],
+            "Genres": [],
+            "RemoteTrailers": [],
+            "ProviderIds": {},
+            "IsFolder": true,
+            "ParentId": "f27caa37e5142225cceded48f6553502",
+            "Type": "ManualPlaylistsFolder",
+            "People": [],
+            "Studios": [],
+            "GenreItems": [],
+            "LocalTrailerCount": 0,
+            "SpecialFeatureCount": 0,
+            "DisplayPreferencesId": "acd905fc82f256d4facbd049e05d1b45",
+            "Tags": [],
+            "CollectionType": "playlists",
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ImageBlurHashes": {},
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "LockedFields": [],
+            "LockData": false
+          },
+          {
+            "Name": "Shows",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a656b907eb3a73532e40e44b968d0225",
+            "Etag": "a964160bac86957eb406bd7e09beb630",
+            "DateCreated": "2026-02-27T09:40:17.8827507Z",
+            "CanDelete": false,
+            "CanDownload": false,
+            "SortName": "shows",
+            "ExternalUrls": [],
+            "Path": "/var/lib/jellyfin/root/default/Shows",
+            "EnableMediaSourceDisplay": true,
+            "ChannelId": null,
+            "Taglines": [],
+            "Genres": [],
+            "RemoteTrailers": [],
+            "ProviderIds": {},
+            "IsFolder": true,
+            "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+            "Type": "CollectionFolder",
+            "People": [],
+            "Studios": [],
+            "GenreItems": [],
+            "LocalTrailerCount": 0,
+            "SpecialFeatureCount": 0,
+            "DisplayPreferencesId": "a656b907eb3a73532e40e44b968d0225",
+            "Tags": [],
+            "PrimaryImageAspectRatio": 1.7777777777777777,
+            "CollectionType": "tvshows",
+            "ImageTags": {
+              "Primary": "962235cf26b6fe108eb8257dcdfa5ea2"
+            },
+            "BackdropImageTags": [],
+            "ImageBlurHashes": {
+              "Primary": {
+                "962235cf26b6fe108eb8257dcdfa5ea2": "W99H64bH00MxxutR?bkCM{RjWBt700Rj?bt7M{j[D*j[s:t7t7Rj"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "LockedFields": [],
+            "LockData": false
+          }
+        ],
+        "TotalRecordCount": 5,
+        "StartIndex": 0
+      }
+    }
+  }
+}

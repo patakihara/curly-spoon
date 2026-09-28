@@ -1,12 +1,17 @@
 /**
- * The Jellyfin client: the two calls M0.record records. Every request carries the
+ * The Jellyfin client: the two calls M0.record records, and the lookups that find their ids. Every request carries the
  * `MediaBrowser` authorization header (see `auth.ts`) with the API key as `Token`, and never
  * reads the environment: `new JellyfinClient({ baseUrl, token, fetch })`.
  */
 import { type z, type ZodType } from 'zod';
 import { type FetchLike, requestJson } from '../http/fetch.js';
 import { buildAuthorizationHeader, type JellyfinDeviceInfo } from './auth.js';
-import { baseItemDtoSchema, baseItemQueryResultSchema, publicSystemInfoSchema } from './schemas.js';
+import {
+  baseItemDtoSchema,
+  baseItemQueryResultSchema,
+  publicSystemInfoSchema,
+  userListSchema,
+} from './schemas.js';
 
 export interface JellyfinClientOptions {
   baseUrl: string;
@@ -67,7 +72,18 @@ export class JellyfinClient {
     return (await this.get('Items', baseItemQueryResultSchema, query)).Items;
   }
 
-  getItem(itemId: string): Promise<BaseItemDto> {
-    return this.get(`Items/${encodeURIComponent(itemId)}`, baseItemDtoSchema);
+  /** The first administrator's id: `GET /Users`, which only an admin token may call. */
+  async findAdministratorId(): Promise<string | undefined> {
+    const users = await this.get('Users', userListSchema);
+    return users.find((u) => u.Policy.IsAdministrator)?.Id;
+  }
+
+  /**
+   * One item: `GET /Items/{id}`. A person's token carries its user; an API key has none, and
+   * Jellyfin 10.11 answers 400 unless `userId` names one (checked live).
+   */
+  getItem(itemId: string, userId?: string): Promise<BaseItemDto> {
+    const query = userId === undefined ? undefined : { userId };
+    return this.get(`Items/${encodeURIComponent(itemId)}`, baseItemDtoSchema, query);
   }
 }

@@ -6,6 +6,7 @@
  */
 import { type Recording } from './recording.js';
 import {
+  BLUR_HASH_KEY,
   EMAIL,
   HOME_PATH,
   HOST_FIELD,
@@ -13,6 +14,7 @@ import {
   IPV4,
   ipv6Leaks,
   isAllowedIp,
+  isBlurHash,
   isPlaceholderHost,
   KNOWN_HOST_WORD,
   PLACEHOLDER,
@@ -46,8 +48,8 @@ export interface Finding {
   path: string;
 }
 
-/** Public hosts that published book or album metadata may carry. Empty until one turns up. */
-export const PUBLIC_HOSTS: readonly string[] = [];
+/** Public hosts that published book or album metadata carries: Jellyfin's `ExternalUrls`. */
+export const PUBLIC_HOSTS: readonly string[] = ['musicbrainz.org', 'www.theaudiodb.com'];
 const ALLOWED_HOSTS = new Set(PUBLIC_HOSTS);
 
 const JWT = /eyJ[\w-]+\.[\w-]+\.[\w-]+/g;
@@ -145,6 +147,7 @@ export function scanRecording(recording: Recording, options: ScanOptions = {}): 
     const secretKey = fields && key !== undefined && SECRET_BODY_KEY.test(key);
     if (typeof value === 'number' && secretKey) add('secret-field', path);
     if (typeof value === 'string') {
+      if (BLUR_HASH_KEY.test(path) && isBlurHash(value)) return;
       const testSigned = isTestSignedJwt(value);
       if (secretKey && value.length > 0 && value !== PLACEHOLDER && !testSigned) {
         add('secret-field', path);
