@@ -6,137 +6,181 @@
     "Picked for you",
     "Recently played"
   ],
-  "jumpBackIn": [
-    {
-      "title": "The Silent Patient",
-      "sub": "Book · 6 h 12 m left",
-      "image": "/art/the-silent-patient.jpg"
-    },
-    {
-      "title": "Deep Inertia Radio",
-      "sub": "Podcast · 24 min left",
-      "image": "/art/deep-inertia-radio.jpg"
-    },
-    {
-      "title": "Between Lines of Light",
-      "sub": "Album · 3 tracks left",
-      "image": "/art/between-lines-of-light.jpg"
-    },
-    {
-      "title": "Wind and Truth",
-      "sub": "Book · 21 h 40 m left",
-      "image": "/art/wind-and-truth.jpg"
-    }
-  ],
-  "recentlyAdded": [
-    {
-      "title": "Between Lines of Light",
-      "sub": "Album · Sonic Tales",
-      "image": "/art/between-lines-of-light.jpg",
-      "progress": null
-    },
-    {
-      "title": "Shadows and Sighs",
-      "sub": "Book · Evelyn Harper",
-      "image": "/art/shadows-and-sighs.jpg",
-      "progress": 0.42
-    },
-    {
-      "title": "Tears of Ice",
-      "sub": "Podcast · 88 episodes",
-      "image": "/art/tears-of-ice.jpg",
-      "progress": null
-    },
-    {
-      "title": "Golden Scars",
-      "sub": "Album · Fleeting Verses",
-      "image": "/art/golden-scars.jpg",
-      "progress": null
-    },
-    {
-      "title": "The Silent Patient",
-      "sub": "Book · Alex Michaelides",
-      "image": "/art/the-silent-patient.jpg",
-      "progress": 0.55
-    },
-    {
-      "title": "Signal & Noise",
-      "sub": "Podcast · 64 episodes",
-      "image": "/art/signal-noise.jpg",
-      "progress": null
-    },
-    {
-      "title": "Escapes and Moons",
-      "sub": "Album · Soul Vertex",
-      "image": "/art/escapes-and-moons.jpg",
-      "progress": null
-    },
-    {
-      "title": "Ink Heart",
-      "sub": "Book · Cornelia Funke",
-      "image": "/art/ink-heart.jpg",
-      "progress": null
-    }
-  ],
-  "people": [
-    {
-      "title": "Sonic Tales",
-      "sub": "Artist",
-      "image": "/art/sonic-tales.jpg"
-    },
-    {
-      "title": "Evelyn Harper",
-      "sub": "Author",
-      "image": "/art/evelyn-harper.jpg"
-    },
-    {
-      "title": "Adam Rivers",
-      "sub": "Author",
-      "image": "/art/adam-rivers.jpg"
-    },
-    {
-      "title": "Deep Inertia",
-      "sub": "Artist",
-      "image": "/art/deep-inertia.jpg"
-    },
-    {
-      "title": "Fleeting Verses",
-      "sub": "Artist",
-      "image": "/art/fleeting-verses.jpg"
-    }
-  ],
-  "pickedForYou": [
-    {
-      "title": "Wind and Truth",
-      "sub": "Book · Brandon Sanderson",
-      "image": "/art/wind-and-truth.jpg",
-      "progress": 0.12
-    },
-    {
-      "title": "Deep Inertia Radio",
-      "sub": "Podcast · 212 episodes",
-      "image": "/art/deep-inertia-radio.jpg",
-      "progress": null
-    },
-    {
-      "title": "Fragments of the Wind",
-      "sub": "Album · Evelyn Harper",
-      "image": "/art/fragments-of-the-wind.jpg",
-      "progress": null
-    },
-    {
-      "title": "The Long Read",
-      "sub": "Podcast · 212 episodes",
-      "image": "/art/the-long-read.jpg",
-      "progress": null
-    },
-    {
-      "title": "Foggy Trails",
-      "sub": "Book · Adam Rivers",
-      "image": "/art/foggy-trails.jpg",
-      "progress": 0.7
-    }
-  ],
+  "jumpBackIn": {
+    "books": [
+      {
+        "title": "The Silent Patient",
+        "ref": "the-silent-patient",
+        "sub": "Book · 6 h 12 m left",
+        "image": "/art/the-silent-patient.jpg"
+      },
+      {
+        "title": "Wind and Truth",
+        "ref": "wind-and-truth",
+        "sub": "Book · 21 h 40 m left",
+        "image": "/art/wind-and-truth.jpg"
+      }
+    ],
+    "shows": [
+      {
+        "title": "Deep Inertia Radio",
+        "ref": "deep-inertia-radio",
+        "sub": "Podcast · 24 min left",
+        "image": "/art/deep-inertia-radio.jpg"
+      }
+    ],
+    "albums": [
+      {
+        "title": "Between Lines of Light",
+        "ref": "between-lines-of-light",
+        "sub": "Album · 3 tracks left",
+        "image": "/art/between-lines-of-light.jpg"
+      }
+    ]
+  },
+  "recentlyAdded": {
+    "albums": [
+      {
+        "title": "Between Lines of Light",
+        "ref": "between-lines-of-light",
+        "sub": "Album · Sonic Tales",
+        "image": "/art/between-lines-of-light.jpg",
+        "progress": null
+      },
+      {
+        "title": "Golden Scars",
+        "ref": "golden-scars",
+        "sub": "Album · Fleeting Verses",
+        "image": "/art/golden-scars.jpg",
+        "progress": null
+      },
+      {
+        "title": "Escapes and Moons",
+        "ref": "escapes-and-moons",
+        "sub": "Album · Soul Vertex",
+        "image": "/art/escapes-and-moons.jpg",
+        "progress": null
+      }
+    ],
+    "books": [
+      {
+        "title": "Shadows and Sighs",
+        "ref": "shadows-and-sighs",
+        "sub": "Book · Evelyn Harper",
+        "image": "/art/shadows-and-sighs.jpg",
+        "progress": 0.42
+      },
+      {
+        "title": "The Silent Patient",
+        "ref": "the-silent-patient",
+        "sub": "Book · Alex Michaelides",
+        "image": "/art/the-silent-patient.jpg",
+        "progress": 0.55
+      },
+      {
+        "title": "Ink Heart",
+        "ref": "ink-heart",
+        "sub": "Book · Cornelia Funke",
+        "image": "/art/ink-heart.jpg",
+        "progress": null
+      }
+    ],
+    "shows": [
+      {
+        "title": "Tears of Ice",
+        "ref": "tears-of-ice",
+        "sub": "Podcast · 88 episodes",
+        "image": "/art/tears-of-ice.jpg",
+        "progress": null
+      },
+      {
+        "title": "Signal & Noise",
+        "ref": "signal-noise",
+        "sub": "Podcast · 64 episodes",
+        "image": "/art/signal-noise.jpg",
+        "progress": null
+      }
+    ]
+  },
+  "people": {
+    "artists": [
+      {
+        "title": "Sonic Tales",
+        "ref": "sonic-tales",
+        "sub": "Artist",
+        "image": "/art/sonic-tales.jpg"
+      },
+      {
+        "title": "Deep Inertia",
+        "ref": "deep-inertia",
+        "sub": "Artist",
+        "image": "/art/deep-inertia.jpg"
+      },
+      {
+        "title": "Fleeting Verses",
+        "ref": "fleeting-verses",
+        "sub": "Artist",
+        "image": "/art/fleeting-verses.jpg"
+      }
+    ],
+    "authors": [
+      {
+        "title": "Evelyn Harper",
+        "ref": "evelyn-harper",
+        "sub": "Author",
+        "image": "/art/evelyn-harper.jpg"
+      },
+      {
+        "title": "Adam Rivers",
+        "ref": "adam-rivers",
+        "sub": "Author",
+        "image": "/art/adam-rivers.jpg"
+      }
+    ]
+  },
+  "pickedForYou": {
+    "books": [
+      {
+        "title": "Wind and Truth",
+        "ref": "wind-and-truth",
+        "sub": "Book · Brandon Sanderson",
+        "image": "/art/wind-and-truth.jpg",
+        "progress": 0.12
+      },
+      {
+        "title": "Foggy Trails",
+        "ref": "foggy-trails",
+        "sub": "Book · Adam Rivers",
+        "image": "/art/foggy-trails.jpg",
+        "progress": 0.7
+      }
+    ],
+    "shows": [
+      {
+        "title": "Deep Inertia Radio",
+        "ref": "deep-inertia-radio",
+        "sub": "Podcast · 212 episodes",
+        "image": "/art/deep-inertia-radio.jpg",
+        "progress": null
+      },
+      {
+        "title": "The Long Read",
+        "ref": "the-long-read",
+        "sub": "Podcast · 212 episodes",
+        "image": "/art/the-long-read.jpg",
+        "progress": null
+      }
+    ],
+    "albums": [
+      {
+        "title": "Fragments of the Wind",
+        "ref": "fragments-of-the-wind",
+        "sub": "Album · Evelyn Harper",
+        "image": "/art/fragments-of-the-wind.jpg",
+        "progress": null
+      }
+    ]
+  },
   "recentlyPlayed": [
     {
       "title": "Between Lines of Light",

@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 3a7dbdd3dc17019387605d491bc0481624d40da1816941ef996915528fef625c
+pageHash: e16e6513b52422cf0dbc4f51299c813439cc890caa97f7e3fd7996826b10b7cc
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -46,6 +46,8 @@ desktop cards 184 px wide, 20 px apart, from x = 296 to the front layer's margin
 **Empty state**, per nav.json (not drawn as an artboard; the canvas has no variant form): the
 heading, the tabs and the sort row stay; the grid gives way to one line saying there is no music
 yet and pointing to Search to find, play and add music.
+
+Each album card opens its Album page; the Artists tab, not drawn, holds the artist cards.
 
 ## Differences
 

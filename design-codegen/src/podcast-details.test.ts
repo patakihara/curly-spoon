@@ -30,6 +30,7 @@ const plays = (next: boolean, ...path: string[]) => ({
   kind: 'play',
   queue: 'spoken',
   next,
+  source: false,
   params: { ref: path },
 });
 const sectionTitles = (tree: PageTree) =>
@@ -99,6 +100,16 @@ describe('Show', () => {
     const row = one(tree, 'EpisodeRow');
     expect(row.props.absent).toEqual(bound('episode', 'absent'));
     for (const e of episodes) expect(e.absent, e.title).toBe(data.following !== true);
+  });
+
+  it('[M0.canvas] plays a greyed episode with the same Play as any other: playing one is how you subscribe', () => {
+    const withinWhen = (tree: PageTree, inside = false): boolean =>
+      tree.kind === 'element' && tree.component === 'EpisodeRow'
+        ? inside
+        : 'children' in tree &&
+          tree.children.some((c) => withinWhen(c, inside || c.kind === 'when'));
+    expect(withinWhen(tree)).toBe(false);
+    expect(one(tree, 'EpisodeRow').props.onPlay).toEqual(plays(false, 'episode', 'ref'));
   });
 
   it('[M0.canvas] sorts its episodes newest or oldest first, and lists them in that order', () => {
@@ -196,8 +207,9 @@ describe('List', () => {
   const header = one(tree, 'MediaHeader');
   const items = data.items as Episode[];
 
-  it('[M0.canvas] binds only the list: name, ref, kind, meta, menu, shows, order and items', () => {
+  it("[M0.canvas] binds only the list: name, ref, kind, its items' covers, meta, menu, shows, order and items", () => {
     expect(dataRoots(tree)).toEqual([
+      'covers',
       'items',
       'kind',
       'menu',
@@ -235,9 +247,32 @@ describe('List', () => {
     expect(dates).toEqual(data.order === 'Oldest first' ? oldest : oldest.reverse());
   });
 
-  it('[M0.canvas] plays on the spoken queue and never offers to replace your queue', () => {
-    expect(header.props.onPlay).toEqual(plays(false, 'data', 'ref'));
+  it("[M0.canvas] has no art of its own, so its header shows its items' covers", () => {
+    expect(Object.keys(header.props)).not.toContain('image');
+    expect(header.props.covers).toEqual(bound('data', 'covers'));
+    expect(data.covers).toEqual(items.map((e) => (e as Episode & { image: string }).image));
+    expect(new Set(data.covers as string[]).size).toBeGreaterThanOrEqual(4);
+  });
+
+  it('[M0.canvas] holds no played episode, and marks the one part-way through with the time left', () => {
+    expect(one(tree, 'EpisodeRow').props).not.toHaveProperty('finished');
+    for (const e of items) expect(e.finished, e.title).not.toBe(true);
+    const started = items.filter((e) => typeof e.progress === 'number');
+    expect(started.length).toBeGreaterThan(0);
+    for (const e of items) {
+      expect(e.meta.at(-1)?.endsWith(' left'), e.title).toBe(started.includes(e));
+    }
+  });
+
+  it('[M0.canvas] plays on its own, leaving your queue as it is, and never offers to replace it', () => {
+    expect(header.props.onPlay).toEqual({ ...plays(false, 'data', 'ref'), source: true });
     expect(header.props.onPlayNext).toEqual(plays(true, 'data', 'ref'));
+    // Played now, the list itself is always its own source: it never takes over the queue.
+    for (const p of playsOf(tree)) {
+      if (p.kind === 'play' && p.params.ref?.join('.') === 'data.ref') {
+        expect(p.next || p.source).toBe(true);
+      }
+    }
     expect(playsOf(tree).every((p) => p.kind === 'play' && p.queue === 'spoken')).toBe(true);
     const said = shown(tree, data).flatMap(({ element, values, text }) => [
       ...Object.keys(element.props).flatMap(values),

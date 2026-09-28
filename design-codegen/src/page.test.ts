@@ -447,6 +447,7 @@ describe('a page opening another', () => {
       kind: 'play',
       queue: 'spoken',
       next: true,
+      source: false,
       params: { ref: ['data', 'ref'] },
     });
     const now = parsePage(
@@ -457,6 +458,30 @@ describe('a page opening another', () => {
       queue: 'music',
       next: false,
     });
+  });
+
+  it('[M0.canvas] reads <Play source> as playing a list on its own, never both next and on its own', () => {
+    const tree = parsePage(
+      page('<MediaCard onClick={<Play ref={data.ref} queue="spoken" source />} />'),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.onClick).toMatchObject({
+      kind: 'play',
+      next: false,
+      source: true,
+    });
+    expect(() =>
+      parsePage(
+        page('<MediaCard onClick={<Play ref={data.ref} queue="spoken" source next />} />'),
+        'book',
+      ),
+    ).toThrow(/Play is next or source, not both/);
+    expect(() =>
+      parsePage(
+        page('<MediaCard onClick={<Play ref={data.ref} queue="spoken" source={data.s} />} />'),
+        'book',
+      ),
+    ).toThrow(/Play's source is a bare flag/);
   });
 
   it('[M0.canvas] accepts playing an item whose ref is bound, in a handler prop', () => {
@@ -478,7 +503,7 @@ describe('a page opening another', () => {
     ).toThrow(/Play needs queue="spoken" or queue="music"/);
     expect(() =>
       parsePage(page('<MediaCard onClick={<Play ref={data.ref} queue="music" last />} />'), 'book'),
-    ).toThrow(/Play takes ref, queue and next, not last/);
+    ).toThrow(/Play takes ref, queue, next and source, not last/);
     expect(() => parsePage(page('<Play ref={data.ref} queue="music" />'), 'book')).toThrow(
       /handler prop/,
     );

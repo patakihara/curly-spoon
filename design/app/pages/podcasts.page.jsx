@@ -21,6 +21,7 @@ export default function Podcasts({ data }) {
                 sub={show.sub}
                 image={show.image}
                 unplayed={show.unplayed}
+                onClick={<Open page="show" ref={show.ref} />}
               />
             </Each>
           </LayoutGrid>
@@ -28,7 +29,13 @@ export default function Podcasts({ data }) {
         <Section title="Lists">
           <LayoutGrid>
             <Each of={data.lists} as="list">
-              <MediaCard width="100%" title={list.title} sub={list.sub} />
+              <MediaCard
+                width="100%"
+                title={list.title}
+                sub={list.sub}
+                covers={list.covers}
+                onClick={<Open page="list" ref={list.ref} />}
+              />
             </Each>
           </LayoutGrid>
         </Section>

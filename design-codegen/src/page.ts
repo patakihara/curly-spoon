@@ -5,7 +5,7 @@
  * prop may open another page, `onClick={<Open page="album" ref={release.ref} />}`: the page's id
  * in nav.json and each of its route's parameters bound to a data path; or request an item,
  * `onRequest={<Request ref={book.ref} />}`, its ref bound the same way; or play one on the queue it
- * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next. It is read into a page
+ * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next, `source` for a list played on its own. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
  */
@@ -22,8 +22,17 @@ export type PropValue =
   | { kind: 'open'; page: string; params: Record<string, string[]> }
   /** A handler that requests the item its `ref` binds, such as a book you don't own. */
   | { kind: 'request'; params: Record<string, string[]> }
-  /** A handler that plays the item its `ref` binds, now or next, on the spoken or the music queue. */
-  | { kind: 'play'; queue: Queue; next: boolean; params: Record<string, string[]> };
+  /**
+   * A handler that plays the item its `ref` binds, now or next, on the spoken or the music queue;
+   * `source` plays a list as its own source, leaving the queue as it is (docs/plan/04-play.md).
+   */
+  | {
+      kind: 'play';
+      queue: Queue;
+      next: boolean;
+      source: boolean;
+      params: Record<string, string[]>;
+    };
 
 /** The queues an item plays on: spoken word (books and episodes) or music (docs/plan/04-play.md). */
 export const QUEUES = ['spoken', 'music'] as const;
@@ -120,14 +129,15 @@ function handlerAttrs(node: t.JSXElement, what: string) {
   let page: string | undefined;
   let queue: string | undefined;
   let next = false;
+  let source = false;
   const params: Record<string, string[]> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
     if (attr.name.type !== 'JSXIdentifier') return fail(attr, 'namespaced props are not allowed');
     const name = attr.name.name;
     const value = attr.value;
-    if (what === 'Play' && name !== 'ref' && name !== 'queue' && name !== 'next') {
-      return fail(attr, `Play takes ref, queue and next, not ${name}`);
+    if (what === 'Play' && !['ref', 'queue', 'next', 'source'].includes(name)) {
+      return fail(attr, `Play takes ref, queue, next and source, not ${name}`);
     }
     if (what === 'Play' && name === 'queue') {
       if (value?.type !== 'StringLiteral')
@@ -138,6 +148,11 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     if (what === 'Play' && name === 'next') {
       if (value !== null && value !== undefined) return fail(attr, "Play's next is a bare flag");
       next = true;
+      continue;
+    }
+    if (what === 'Play' && name === 'source') {
+      if (value !== null && value !== undefined) return fail(attr, "Play's source is a bare flag");
+      source = true;
       continue;
     }
     if (name === 'page' && what === 'Open') {
@@ -152,7 +167,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     }
     params[name] = memberPath(e as t.Expression);
   }
-  return { page, queue, next, params };
+  return { page, queue, next, source, params };
 }
 
 /** `<Open page="album" ref={release.ref} />`: the page it opens, and its parameters' bindings. */
@@ -167,13 +182,17 @@ function request(node: t.JSXElement): PropValue {
   return { kind: 'request', params: handlerAttrs(node, 'Request').params };
 }
 
-/** `<Play ref={episode.ref} queue="spoken" next />`: playing the item its ref binds. */
+/**
+ * `<Play ref={episode.ref} queue="spoken" next />`: playing the item its ref binds. `source` plays
+ * a list on its own, so it never takes over the queue; played next, a list joins the queue instead.
+ */
 function play(node: t.JSXElement): PropValue {
-  const { queue, next, params } = handlerAttrs(node, 'Play');
+  const { queue, next, source, params } = handlerAttrs(node, 'Play');
   if (!QUEUES.includes(queue as Queue)) {
     return fail(node, 'Play needs queue="spoken" or queue="music"');
   }
-  return { kind: 'play', queue: queue as Queue, next, params };
+  if (next && source) return fail(node, 'Play is next or source, not both');
+  return { kind: 'play', queue: queue as Queue, next, source, params };
 }
 
 function literalString(props: Record<string, PropValue>, name: string, node: t.Node): string {

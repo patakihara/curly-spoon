@@ -8,7 +8,15 @@ const placeholder = {
   "title": "Morning",
   "ref": "morning",
   "kind": "Digest",
-  "meta": "3 shows · 5 episodes · oldest first",
+  "covers": [
+    "/art/the-long-read.jpg",
+    "/art/signal-noise.jpg",
+    "/art/deep-inertia-radio.jpg",
+    "/art/deep-inertia-radio.jpg",
+    "/art/sonic-tales.jpg",
+    "/art/signal-noise.jpg"
+  ],
+  "meta": "4 shows · 6 episodes · oldest first",
   "menu": [
     {
       "key": "order",
@@ -49,6 +57,12 @@ const placeholder = {
       "sub": "Weekly",
       "image": "/art/the-long-read.jpg",
       "ref": "the-long-read"
+    },
+    {
+      "title": "Sonic Tales",
+      "sub": "Monthly",
+      "image": "/art/sonic-tales.jpg",
+      "ref": "sonic-tales"
     }
   ],
   "order": "Oldest first",
@@ -60,7 +74,8 @@ const placeholder = {
       "meta": [
         "The Long Read",
         "12 Aug 2026",
-        "52 min"
+        "52 min",
+        "31 min left"
       ],
       "image": "/art/the-long-read.jpg",
       "progress": 0.4
@@ -99,6 +114,18 @@ const placeholder = {
         "1 h 5 min"
       ],
       "image": "/art/deep-inertia-radio.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Tape Nobody Played",
+      "ref": "the-tape-nobody-played",
+      "description": "A reel found in a studio wall, labelled in a hand nobody recognises, and the song on it that was never released.",
+      "meta": [
+        "Sonic Tales",
+        "17 Aug 2026",
+        "48 min"
+      ],
+      "image": "/art/sonic-tales.jpg",
       "progress": null
     },
     {
@@ -356,6 +383,7 @@ export default function List({ data = placeholder, state = 'full', layout: given
           <MediaHeader
             kindLabel={data.kind}
             meta={data.meta}
+            covers={data.covers}
             playLabel="Play"
             onPlay={ignore}
             nextLabel="Play next"

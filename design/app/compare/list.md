@@ -1,6 +1,6 @@
 ---
 page: list
-pageHash: 6f08bc2fe02a57198e02ea9681c450ae3e7f8ad7ef46a3d707f3fd87001ae59f
+pageHash: b2710969086f176d0ba6ab74cf9276c4e2d27ef126f8885b6fff5ef64401d553
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: []
 ---
@@ -22,11 +22,12 @@ Rows card and the drawn Show page.
 ## What the canvas page draws
 
 One kind, a digest. The heading is its name, "Morning", led by the close control. A `MediaHeader`
-with "DIGEST" and "3 shows · 5 episodes · oldest first", Play and Play next on the spoken queue, and
+over a 2×2 mosaic of its episodes' covers, with "DIGEST" and "4 shows · 6 episodes · oldest first",
+Play, which plays the digest on its own, and Play next, which puts it after what is playing, and
 the menu (Play newest first, Choose shows, Rename, Delete digest). Then "Shows", a shelf of its
-three shows, each opening its page, then "Episodes": a `SortFilterBar` "Oldest first" and five
-`EpisodeRow`s in date order, each naming its show, one part-played, each opening its page and
-playing on the spoken queue.
+four shows, each opening its page, then "Episodes": a `SortFilterBar` "Oldest first" and six
+`EpisodeRow`s in date order, each naming its show, one part-played with the time left, each
+opening its page and playing on the spoken queue.
 
 **The other kinds**, in data only, the same page: a **podcast playlist** has no Shows section and
 lists its episodes in your order, dropping each once played; a **listening list** holds books and
@@ -38,10 +39,11 @@ recommendations to add, filterable by type. No list ever replaces your queue.
 
 - Changed on purpose: rows, not the kit's grid of covers; a list is read in order, and each episode
   needs its synopsis and show.
-- Changed on purpose: a `MediaHeader` heads it with Play and Play next, which play the list on the
-  spoken queue without replacing what is queued; the kit's collection has no header.
-- Changed on purpose: a digest has no art of its own, so the header shows Sonora's flat accent
-  placeholder.
+- Changed on purpose: a `MediaHeader` heads it with Play and Play next; the kit's collection has no
+  header. Play plays the list as its own source (`<Play … source>`), leaving the spoken queue as it
+  is, and Play next puts it after what is playing: a list never takes over your queue.
+- Changed on purpose: a digest has no art of its own, so the header shows its items' covers
+  (`covers`), four different ones as a 2×2 mosaic, as Sonora's Media Header card draws it.
 - Changed on purpose: the play order is the list's sort row, and the header's meta says it too.
 - Changed on purpose: on the phone the page sits under a top app bar, with no back layer, the
   bottom bar and mini-player kept; on desktop it keeps the Podcasts backdrop, its rail item lit.

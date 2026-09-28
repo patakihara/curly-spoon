@@ -23,6 +23,7 @@
   "library": [
     {
       "title": "Between Lines of Light",
+      "ref": "between-lines-of-light",
       "sub": "Sonic Tales",
       "image": "/art/between-lines-of-light.jpg",
       "status": null,
@@ -30,6 +31,7 @@
     },
     {
       "title": "Escapes and Moons",
+      "ref": "escapes-and-moons",
       "sub": "Soul Vertex",
       "image": "/art/escapes-and-moons.jpg",
       "status": null,
@@ -37,6 +39,7 @@
     },
     {
       "title": "Golden Scars",
+      "ref": "golden-scars",
       "sub": "Fleeting Verses",
       "image": "/art/golden-scars.jpg",
       "status": null,
@@ -44,6 +47,7 @@
     },
     {
       "title": "Heartbeats in Silence",
+      "ref": "heartbeats-in-silence",
       "sub": "Deep Inertia",
       "image": "/art/deep-inertia.jpg",
       "status": null,
@@ -51,6 +55,7 @@
     },
     {
       "title": "Paper Lanterns",
+      "ref": "paper-lanterns",
       "sub": "Sonic Tales",
       "image": "/art/paper-lanterns.jpg",
       "status": "Needs choice",
@@ -58,6 +63,7 @@
     },
     {
       "title": "Salt and Static",
+      "ref": "salt-and-static",
       "sub": "Soul Vertex",
       "image": "/art/salt-and-static.jpg",
       "status": "Downloading · 64%",

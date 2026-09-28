@@ -18,7 +18,8 @@ A handler prop may open another page: `onClick={<Open page="album" ref={release.
 page of `nav.json` that the page's structure `links` list, or its own page for another item of
 its kind, and binds each of its route's parameters
 to a data path; the check refuses anything else. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
-plays the item its ref binds on the queue it names, spoken or music, and `next` makes it Play next;
+plays the item its ref binds on the queue it names, spoken or music, `next` makes it Play next,
+and `source` plays a list on its own, leaving the queue as it is;
 until the player exists, the web gives it a handler that does nothing. The web page navigates to the route through the
 router; the Android generator reads the same node as a navigation to the nav graph's destination.
 

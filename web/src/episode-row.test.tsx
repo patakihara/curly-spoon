@@ -15,6 +15,12 @@ describe("Sonora's EpisodeRow for a show you don't follow", () => {
     expect(html).toMatch(/color:var\(--surface-fg-muted\)">The Night Ferry</);
   });
 
+  it('[M0.canvas] still offers to play it: playing one is how you subscribe', () => {
+    const play = () => {};
+    expect(row({ absent: true, onPlay: play })).toContain('sn-ep-act');
+    expect(row({ absent: true })).not.toContain('sn-ep-act');
+  });
+
   it('[M0.canvas] keeps an episode of a show you follow in full colour', () => {
     const html = row({});
     expect(html).not.toContain('grayscale');

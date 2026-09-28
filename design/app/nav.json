@@ -132,7 +132,7 @@
           }
         ],
         "empty": "A new account with no listening yet: the filter and one \"Are you feeling lucky?\" pick per type. Shelves appear once there is history to seed them. Open: the wording.",
-        "links": ["shelf", "requests", "album", "artist", "book", "show", "episode"]
+        "links": ["shelf", "requests", "album", "artist", "book", "author", "show", "episode"]
       },
       "filter": {
         "all": "All",

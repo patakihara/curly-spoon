@@ -7,36 +7,42 @@
   "library": [
     {
       "title": "Deep Inertia Radio",
+      "ref": "deep-inertia-radio",
       "sub": "3 unplayed",
       "image": "/art/deep-inertia-radio.jpg",
       "unplayed": true
     },
     {
       "title": "Fleeting Verses",
+      "ref": "fleeting-verses",
       "sub": "YouTube · 2 unplayed",
       "image": "/art/fleeting-verses.jpg",
       "unplayed": true
     },
     {
       "title": "Signal & Noise",
+      "ref": "signal-noise",
       "sub": "All played",
       "image": "/art/signal-noise.jpg",
       "unplayed": false
     },
     {
       "title": "Sonic Tales",
+      "ref": "sonic-tales",
       "sub": "1 unplayed",
       "image": "/art/sonic-tales.jpg",
       "unplayed": true
     },
     {
       "title": "Tears of Ice",
+      "ref": "tears-of-ice",
       "sub": "All played",
       "image": "/art/tears-of-ice.jpg",
       "unplayed": false
     },
     {
       "title": "The Long Read",
+      "ref": "the-long-read",
       "sub": "5 unplayed",
       "image": "/art/the-long-read.jpg",
       "unplayed": true
@@ -45,15 +51,38 @@
   "lists": [
     {
       "title": "The Digest",
-      "sub": "Digest · 8 episodes"
+      "ref": "the-digest",
+      "sub": "Digest · 8 episodes",
+      "covers": [
+        "/art/deep-inertia-radio.jpg",
+        "/art/fleeting-verses.jpg",
+        "/art/signal-noise.jpg",
+        "/art/sonic-tales.jpg",
+        "/art/the-long-read.jpg"
+      ]
     },
     {
       "title": "Commute",
-      "sub": "List · 12 episodes"
+      "ref": "commute",
+      "sub": "List · 12 episodes",
+      "covers": [
+        "/art/the-long-read.jpg",
+        "/art/signal-noise.jpg",
+        "/art/tears-of-ice.jpg",
+        "/art/the-long-read.jpg",
+        "/art/sonic-tales.jpg"
+      ]
     },
     {
       "title": "Saved for later",
-      "sub": "List · 4 episodes"
+      "ref": "saved-for-later",
+      "sub": "List · 4 episodes",
+      "covers": [
+        "/art/the-long-read.jpg",
+        "/art/the-long-read.jpg",
+        "/art/the-long-read.jpg",
+        "/art/the-long-read.jpg"
+      ]
     }
   ]
 }

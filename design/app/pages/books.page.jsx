@@ -27,6 +27,8 @@ export default function Books({ data }) {
                 progress={book.progress}
                 status={book.status}
                 tone={book.tone}
+                onClick={<Open page="book" ref={book.ref} />}
+                onRequest={<Request ref={book.ref} />}
               />
             </Each>
           </LayoutGrid>

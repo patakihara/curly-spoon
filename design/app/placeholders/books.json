@@ -28,6 +28,7 @@
   "library": [
     {
       "title": "Between Two Worlds",
+      "ref": "between-two-worlds",
       "sub": "Maya Lind",
       "image": "/art/between-two-worlds.jpg",
       "progress": null,
@@ -36,6 +37,7 @@
     },
     {
       "title": "Foggy Trails",
+      "ref": "foggy-trails",
       "sub": "Adam Rivers",
       "image": "/art/foggy-trails.jpg",
       "progress": 0.35,
@@ -44,6 +46,7 @@
     },
     {
       "title": "Ink Heart",
+      "ref": "ink-heart",
       "sub": "Cornelia Funke",
       "image": "/art/ink-heart.jpg",
       "progress": null,
@@ -52,6 +55,7 @@
     },
     {
       "title": "Shadows and Sighs",
+      "ref": "shadows-and-sighs",
       "sub": "Evelyn Harper",
       "image": "/art/shadows-and-sighs.jpg",
       "progress": null,
@@ -60,6 +64,7 @@
     },
     {
       "title": "The Salt Cartographer",
+      "ref": "the-salt-cartographer",
       "sub": "Rosa Elin",
       "image": "/art/the-salt-cartographer.jpg",
       "progress": null,
@@ -68,6 +73,7 @@
     },
     {
       "title": "The Silent Patient",
+      "ref": "the-silent-patient",
       "sub": "Alex Michaelides",
       "image": "/art/the-silent-patient.jpg",
       "progress": 0.55,
@@ -76,6 +82,7 @@
     },
     {
       "title": "Wind and Truth",
+      "ref": "wind-and-truth",
       "sub": "Brandon Sanderson",
       "image": "/art/wind-and-truth.jpg",
       "progress": 0.1,

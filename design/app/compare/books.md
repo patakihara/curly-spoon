@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: 0c2624336b3a33564cc414354f64fbee020002890ee209d7d63da223c4481254
+pageHash: 97c69f835a51d3fab45a17dcdcad725f53d75e6524805ccc1082fd1238d91af9
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -43,6 +43,9 @@ apart, and runs to the front layer's margin at x = 1091, 4 cards of 184 px acros
 **Empty state**, per nav.json (not drawn as an artboard): the heading, tabs and sort row
 stay; the grid gives way to one line saying there are no books yet, and that books are requested
 from Search.
+
+Each book card opens its Book page, and a greyed book not yet requested requests it with a tap, as on
+Series; the Authors and Series tabs, not drawn, hold those cards.
 
 ## Differences
 

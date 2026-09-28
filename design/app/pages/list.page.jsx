@@ -6,8 +6,9 @@ export default function List({ data }) {
           <MediaHeader
             kindLabel={data.kind}
             meta={data.meta}
+            covers={data.covers}
             playLabel="Play"
-            onPlay={<Play ref={data.ref} queue="spoken" />}
+            onPlay={<Play ref={data.ref} queue="spoken" source />}
             nextLabel="Play next"
             onPlayNext={<Play ref={data.ref} queue="spoken" next />}
             lastLabel={null}

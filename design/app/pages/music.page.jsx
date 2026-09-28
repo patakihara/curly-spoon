@@ -26,6 +26,7 @@ export default function Music({ data }) {
                 image={item.image}
                 status={item.status}
                 tone={item.tone}
+                onClick={<Open page="album" ref={item.ref} />}
               />
             </Each>
           </LayoutGrid>

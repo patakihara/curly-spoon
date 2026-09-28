@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: 4a38e69ed271d18d1d59015b9e9083af96fd31c8680c64ee856e196f55d501e0
+pageHash: f0344e08a3396bc2938aed79054d303c990bcadd22b9043176cc8055811fe24e
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -28,8 +28,8 @@ rest, then the section title that last passed ("Shows" in the scrolled look). Th
 `SortFilterBar` "Title" with the `ViewToggle` opposite (the picker holds Title, Host, Random), then
 "Shows", every subscribed show in title order as a `MediaCard` with its unplayed count as the
 caption and, when there are unplayed episodes, Sonora's accent dot on the art, as S20 marks them.
-"Fleeting Verses" is a YouTube channel, captioned "YouTube · 2 unplayed". Then "Lists" (The Digest
-first, Commute, Saved for later), and "Add a YouTube channel": an `Input` for the link and a
+"Fleeting Verses" is a YouTube channel, captioned "YouTube · 2 unplayed". Each show opens its Show
+page. Then "Lists" (The Digest first, Commute, Saved for later), each opening its List page, and "Add a YouTube channel": an `Input` for the link and a
 secondary `Button` "Add as a show".
 
 **Empty state**, per nav.json (not drawn as an artboard): the heading and sort row stay; the Shows
@@ -49,7 +49,9 @@ or to pasting a YouTube channel link, with the Add a YouTube channel row kept.
 - Changed on purpose: the kit's app-bar search is the back layer's local search, out on scroll.
 - Changed on purpose: a sort row leads the grid, as in S31.
 - Changed on purpose: Lists and Add a YouTube channel follow the shows (both provisional in
-  nav.json); the kit has neither. Lists have no art, so they take `MediaCard`'s generated tint.
+  nav.json); the kit has neither. Lists have no art of their own, so each shows its items' covers
+  (`covers`): The Digest and Commute a 2×2 mosaic, Saved for later, all from one show, that cover
+  alone, as Sonora's Media Cards card draws them.
 - Changed on purpose: no "Not in library" show; a home shows only your subscriptions.
 - Open: the `Input` draws no visible field on the dark front layer, so the link box reads as bare
   placeholder text; `Input` is due its fix when Sonora is pruned.

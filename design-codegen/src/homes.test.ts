@@ -3,6 +3,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { APP_DIR, REPO_ROOT } from './outputs.js';
 import { framePage } from './shell.js';
+import type { PageTree } from './page.js';
 import { bindings, elements, readPage as read, type Element } from './test-pages.js';
 
 /**
@@ -138,5 +139,69 @@ describe('a tab row', () => {
       }
     }
     expect(rows).toBeGreaterThan(0);
+  });
+});
+
+/** Every card a page draws, with the data path of the Each list it is drawn for. */
+function cards(tree: PageTree, of: string[] = [], into: { card: Element; of: string[] }[] = []) {
+  if (
+    tree.kind === 'element' &&
+    ['MediaCard', 'ArtistCard', 'QuickPick'].includes(tree.component)
+  ) {
+    into.push({ card: tree, of });
+  }
+  if ('children' in tree) {
+    for (const c of tree.children) cards(c, c.kind === 'each' ? c.of : of, into);
+  }
+  return into;
+}
+
+describe('a card on a library home', () => {
+  /** The page each home's cards open, read off the kind its item says it is. */
+  const KIND: Record<string, string> = {
+    Album: 'album',
+    Book: 'book',
+    Podcast: 'show',
+    Artist: 'artist',
+    Author: 'author',
+  };
+  const OPENS: Record<string, (item: { sub: string }, of: string[]) => string> = {
+    music: () => 'album',
+    books: () => 'book',
+    podcasts: (_, of) => (of.at(-1) === 'lists' ? 'list' : 'show'),
+    browse: (item) => KIND[item.sub.split(' · ')[0]!]!,
+  };
+
+  for (const [id, opens] of Object.entries(OPENS)) {
+    it(`[M0.canvas] on ${id}, opens its own item's page, every one`, () => {
+      const { tree, data } = read(id);
+      const found = cards(tree);
+      expect(found.length).toBeGreaterThan(0);
+      for (const { card, of } of found) {
+        const title = card.props.title;
+        const item = title?.kind === 'binding' ? title.path[0]! : '';
+        const list = of
+          .slice(1)
+          .reduce<unknown>((at, k) => (at as Record<string, unknown>)[k], data) as {
+          sub: string;
+          ref: string;
+        }[];
+        expect(list.length, of.join('.')).toBeGreaterThan(0);
+        const pages = new Set(list.map((entry) => opens(entry, of)));
+        expect(pages.size, of.join('.')).toBe(1);
+        expect(card.props.onClick, `${card.component} over ${of.join('.')}`).toEqual({
+          kind: 'open',
+          page: [...pages][0],
+          params: { ref: [item, 'ref'] },
+        });
+      }
+    });
+  }
+
+  it('[M0.canvas] on books, requests a greyed book with a tap, as a series does', () => {
+    const { tree } = read('books');
+    for (const { card } of cards(tree)) {
+      expect(card.props.onRequest).toEqual({ kind: 'request', params: { ref: ['book', 'ref'] } });
+    }
   });
 });
