@@ -13,6 +13,9 @@ import Book from '../pages/Book';
 import Author from '../pages/Author';
 import Series from '../pages/Series';
 import Podcasts from '../pages/Podcasts';
+import Show from '../pages/Show';
+import Episode from '../pages/Episode';
+import List from '../pages/List';
 import Search from '../pages/Search';
 import Settings from '../pages/Settings';
 import NotFound from '../pages/NotFound';
@@ -152,9 +155,9 @@ export const routes: RouteObject[] = [
   { id: 'author', path: '/books/authors/:ref', element: <Author /> },
   { id: 'series', path: '/books/series/:ref', element: <Series /> },
   { id: 'podcasts', path: '/podcasts', element: <Podcasts /> },
-  { id: 'show', path: '/podcasts/:ref' },
-  { id: 'episode', path: '/podcasts/episodes/:ref' },
-  { id: 'list', path: '/lists/:ref' },
+  { id: 'show', path: '/podcasts/:ref', element: <Show /> },
+  { id: 'episode', path: '/podcasts/episodes/:ref', element: <Episode /> },
+  { id: 'list', path: '/lists/:ref', element: <List /> },
   { id: 'search', path: '/search', element: <Search /> },
   { id: 'nowPlaying', path: '/playing' },
   { id: 'queue', path: '/playing/queue' },

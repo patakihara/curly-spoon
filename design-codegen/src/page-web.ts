@@ -87,6 +87,8 @@ function propLines(
   }
   // No request endpoint exists yet: the card answers a tap by saying Requested on its own.
   if (value.kind === 'request') return [`${name}={ignore}`];
+  // No player exists yet either: a play does nothing until the player is built.
+  if (value.kind === 'play') return [`${name}={ignore}`];
   if (value.kind === 'binding' && choice) {
     return [
       `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,
@@ -248,7 +250,8 @@ export function generateWebPage(
       root,
       (n) =>
         ignored(n, components) ||
-        (n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'request')),
+        (n.kind === 'element' &&
+          Object.values(n.props).some((v) => v.kind === 'request' || v.kind === 'play')),
     )
       ? ['const ignore = () => {};', '']
       : []),

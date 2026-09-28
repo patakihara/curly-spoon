@@ -223,6 +223,27 @@ describe('a page requesting an item, on the web', () => {
   });
 });
 
+describe('a page playing an item, on the web', () => {
+  const playing = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <Each of={data.books} as="b"><MediaCard title={b.title} onClick={<Play ref={b.ref} queue="spoken" />} /></Each>;
+}
+`,
+      'book',
+    ),
+    'book',
+    { books: [{ title: 'Wind and Truth', ref: 'wind-and-truth' }] },
+    { platformed: new Set(), handled: new Set() },
+    shellOf('book'),
+  );
+
+  it('[M0.canvas] gives a play a handler that does nothing yet: no player exists', () => {
+    expect(playing).toContain('onClick={ignore}');
+    expect(playing).toContain('const ignore = () => {};');
+  });
+});
+
 describe('a page opening another, on the web', () => {
   const linking = generateWebPage(
     parsePage(

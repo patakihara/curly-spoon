@@ -4,7 +4,8 @@
  * element (a slot, `back={<BackLayer …/>}`), plus `<Each of as>` and `<When state>`. A handler
  * prop may open another page, `onClick={<Open page="album" ref={release.ref} />}`: the page's id
  * in nav.json and each of its route's parameters bound to a data path; or request an item,
- * `onRequest={<Request ref={book.ref} />}`, its ref bound the same way. It is read into a page
+ * `onRequest={<Request ref={book.ref} />}`, its ref bound the same way; or play one on the queue it
+ * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
  */
@@ -20,7 +21,13 @@ export type PropValue =
   /** A handler that opens a page of nav.json, each route parameter bound to a data path. */
   | { kind: 'open'; page: string; params: Record<string, string[]> }
   /** A handler that requests the item its `ref` binds, such as a book you don't own. */
-  | { kind: 'request'; params: Record<string, string[]> };
+  | { kind: 'request'; params: Record<string, string[]> }
+  /** A handler that plays the item its `ref` binds, now or next, on the spoken or the music queue. */
+  | { kind: 'play'; queue: Queue; next: boolean; params: Record<string, string[]> };
+
+/** The queues an item plays on: spoken word (books and episodes) or music (docs/plan/04-play.md). */
+export const QUEUES = ['spoken', 'music'] as const;
+export type Queue = (typeof QUEUES)[number];
 
 export type PageTree =
   | {
@@ -93,6 +100,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     const name = e.openingElement.name;
     if (name.type === 'JSXIdentifier' && name.name === 'Open') return open(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Request') return request(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Play') return play(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -103,16 +111,35 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
   return { kind: 'binding', path: memberPath(e) };
 }
 
-/** A handler's attributes: `page`, a string literal only an Open takes, and bound parameters. */
+/**
+ * A handler's attributes: `page`, a string literal only an Open takes; a Play's `queue`, a string
+ * literal, and `next`, a bare flag; and bound parameters.
+ */
 function handlerAttrs(node: t.JSXElement, what: string) {
   if (node.children.length > 0) return fail(node, `${what} takes no children`);
   let page: string | undefined;
+  let queue: string | undefined;
+  let next = false;
   const params: Record<string, string[]> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
     if (attr.name.type !== 'JSXIdentifier') return fail(attr, 'namespaced props are not allowed');
     const name = attr.name.name;
     const value = attr.value;
+    if (what === 'Play' && name !== 'ref' && name !== 'queue' && name !== 'next') {
+      return fail(attr, `Play takes ref, queue and next, not ${name}`);
+    }
+    if (what === 'Play' && name === 'queue') {
+      if (value?.type !== 'StringLiteral')
+        return fail(attr, "Play's queue must be a string literal");
+      queue = value.value;
+      continue;
+    }
+    if (what === 'Play' && name === 'next') {
+      if (value !== null && value !== undefined) return fail(attr, "Play's next is a bare flag");
+      next = true;
+      continue;
+    }
     if (name === 'page' && what === 'Open') {
       if (value?.type !== 'StringLiteral')
         return fail(attr, "Open's page must be a string literal");
@@ -125,7 +152,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     }
     params[name] = memberPath(e as t.Expression);
   }
-  return { page, params };
+  return { page, queue, next, params };
 }
 
 /** `<Open page="album" ref={release.ref} />`: the page it opens, and its parameters' bindings. */
@@ -138,6 +165,15 @@ function open(node: t.JSXElement): PropValue {
 /** `<Request ref={book.ref} />`: a request for the item its ref binds. */
 function request(node: t.JSXElement): PropValue {
   return { kind: 'request', params: handlerAttrs(node, 'Request').params };
+}
+
+/** `<Play ref={episode.ref} queue="spoken" next />`: playing the item its ref binds. */
+function play(node: t.JSXElement): PropValue {
+  const { queue, next, params } = handlerAttrs(node, 'Play');
+  if (!QUEUES.includes(queue as Queue)) {
+    return fail(node, 'Play needs queue="spoken" or queue="music"');
+  }
+  return { kind: 'play', queue: queue as Queue, next, params };
 }
 
 function literalString(props: Record<string, PropValue>, name: string, node: t.Node): string {
@@ -174,6 +210,7 @@ function element(node: t.JSXElement): PageTree {
   if (name.name === 'Request') {
     return fail(node, 'Request goes in a handler prop, onRequest={<Request … />}');
   }
+  if (name.name === 'Play') return fail(node, 'Play goes in a handler prop, onPlay={<Play … />}');
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -327,27 +364,29 @@ export function checkPage(
       }
     }
   };
-  const checkRequest = (
+  /** A Request or a Play: a handler prop, its one parameter a bound ref. */
+  const checkItem = (
     line: number,
     component: string,
     prop: string,
-    value: Extract<PropValue, { kind: 'request' }>,
+    value: Extract<PropValue, { kind: 'request' | 'play' }>,
     check: (line: number, path: string[]) => Json[],
   ) => {
     const at = `line ${line}: ${component}.${prop}`;
+    const [noun, verb] = value.kind === 'play' ? ['play', 'play'] : ['request', 'request'];
     const handlers = opens?.handlers.get(component);
     if (handlers !== undefined && !handlers.has(prop)) {
-      errors.push(`${at} takes no handler, so it cannot request an item`);
+      errors.push(`${at} takes no handler, so it cannot ${verb} an item`);
     }
     const given = Object.keys(value.params);
     if (given.join() !== 'ref') {
-      errors.push(`${at} gives a request [${given}], and a request takes [ref]`);
+      errors.push(`${at} gives a ${noun} [${given}], and a ${noun} takes [ref]`);
       return;
     }
     const path = value.params.ref!;
     for (const v of check(line, path)) {
       if (typeof v !== 'string' || v === '') {
-        errors.push(`${at}: the request's ref (${path.join('.')}) is not a non-empty string`);
+        errors.push(`${at}: the ${noun}'s ref (${path.join('.')}) is not a non-empty string`);
       }
     }
   };
@@ -416,8 +455,8 @@ export function checkPage(
             checkOpen(node.line, node.component, prop, value, check);
             continue;
           }
-          if (value.kind === 'request') {
-            checkRequest(node.line, node.component, prop, value, check);
+          if (value.kind === 'request' || value.kind === 'play') {
+            checkItem(node.line, node.component, prop, value, check);
             continue;
           }
           if (choice !== undefined && value.kind !== 'slot') {

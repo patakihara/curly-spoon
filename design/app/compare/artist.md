@@ -1,6 +1,6 @@
 ---
 page: artist
-pageHash: 3ac098d311fcbe06bd15f86cf2a69f9407ba13d4fd42980f5d1707ebb93e5457
+pageHash: 72d10684b42a9e2eae51b8b38e9bbde19f763fed39aa46979f6c900c4a523ab3
 sonora: [none]
 spotify: [S41]
 ---

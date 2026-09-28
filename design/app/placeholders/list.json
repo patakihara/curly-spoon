@@ -1,0 +1,91 @@
+{
+  "title": "Morning",
+  "ref": "morning",
+  "kind": "Digest",
+  "meta": "3 shows · 5 episodes · oldest first",
+  "menu": [
+    {
+      "key": "order",
+      "label": "Play newest first",
+      "icon": "swap_vert"
+    },
+    {
+      "key": "shows",
+      "label": "Choose shows",
+      "icon": "podcasts"
+    },
+    {
+      "key": "rename",
+      "label": "Rename",
+      "icon": "edit"
+    },
+    {
+      "key": "delete",
+      "label": "Delete digest",
+      "icon": "delete"
+    }
+  ],
+  "shows": [
+    {
+      "title": "Deep Inertia Radio",
+      "sub": "Daily",
+      "image": "/art/deep-inertia-radio.jpg",
+      "ref": "deep-inertia-radio"
+    },
+    {
+      "title": "Signal & Noise",
+      "sub": "Weekly",
+      "image": "/art/signal-noise.jpg",
+      "ref": "signal-and-noise"
+    },
+    {
+      "title": "The Long Read",
+      "sub": "Weekly",
+      "image": "/art/the-long-read.jpg",
+      "ref": "the-long-read"
+    }
+  ],
+  "order": "Oldest first",
+  "items": [
+    {
+      "title": "The Night Ferry",
+      "ref": "the-night-ferry",
+      "description": "A crossing that should take forty minutes is logged at six hours, and nobody aboard remembers the wait.",
+      "meta": ["The Long Read", "12 Aug 2026", "52 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": 0.4
+    },
+    {
+      "title": "Why Radios Hum",
+      "ref": "why-radios-hum",
+      "description": "Mains hum, ground loops and the one fix every engineer learns twice.",
+      "meta": ["Signal & Noise", "13 Aug 2026", "36 min"],
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    },
+    {
+      "title": "Wednesday, 14 August",
+      "ref": "deep-inertia-radio-2026-08-14",
+      "description": "New releases from the harbour scene, and an hour of slow electronics for the late shift.",
+      "meta": ["Deep Inertia Radio", "14 Aug 2026", "1 h"],
+      "image": "/art/deep-inertia-radio.jpg",
+      "progress": null
+    },
+    {
+      "title": "Thursday, 15 August",
+      "ref": "deep-inertia-radio-2026-08-15",
+      "description": "A live set from the pier, recorded as the tide came in.",
+      "meta": ["Deep Inertia Radio", "15 Aug 2026", "1 h 5 min"],
+      "image": "/art/deep-inertia-radio.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Quiet Band",
+      "ref": "the-quiet-band",
+      "description": "The one stretch of spectrum nobody is allowed to use, and the telescope that needs it that way.",
+      "meta": ["Signal & Noise", "20 Aug 2026", "41 min"],
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "title": "The Long Read",
+  "kind": "Podcast",
+  "host": "Nadia Berg",
+  "meta": "Weekly · 212 episodes · 5 unplayed",
+  "image": "/art/the-long-read.jpg",
+  "following": true,
+  "subscribe": { "on": "Subscribed", "off": "Subscribe" },
+  "menu": [
+    { "key": "played", "label": "Mark all as played", "icon": "done_all" },
+    { "key": "digest", "label": "Add to a digest", "icon": "playlist_add" }
+  ],
+  "sort": "Newest first",
+  "episodes": [
+    {
+      "title": "The Night Ferry",
+      "ref": "the-night-ferry",
+      "description": "A crossing that should take forty minutes is logged at six hours, and nobody aboard remembers the wait. We follow the paper trail back to one harbour office.",
+      "meta": ["12 Aug 2026", "52 min", "31 min left"],
+      "image": "/art/the-long-read.jpg",
+      "progress": 0.4,
+      "finished": false,
+      "absent": false
+    },
+    {
+      "title": "Salt in the Ledger",
+      "ref": "salt-in-the-ledger",
+      "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
+      "meta": ["5 Aug 2026", "47 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": false,
+      "absent": false
+    },
+    {
+      "title": "The Lighthouse Letters",
+      "ref": "the-lighthouse-letters",
+      "description": "Forty years of letters from keepers who never met, passed along the coast one relief boat at a time.",
+      "meta": ["29 Jul 2026", "1 h 4 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": true,
+      "absent": false
+    },
+    {
+      "title": "A Map With No Roads",
+      "ref": "a-map-with-no-roads",
+      "description": "An atlas printed in 1911 shows a valley that was never surveyed. Someone walked it anyway, and left notes in the margins.",
+      "meta": ["22 Jul 2026", "58 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": true,
+      "absent": false
+    },
+    {
+      "title": "Weather for Ships",
+      "ref": "weather-for-ships",
+      "description": "The shipping forecast, read four times a day for a century, and the people who still set their evenings by it.",
+      "meta": ["15 Jul 2026", "44 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": false,
+      "absent": false
+    }
+  ],
+  "about": "One story a week, told slowly. The Long Read takes a single object, place or document and follows it as far as it goes: ledgers, logbooks, maps and letters, and the people who kept them. Each episode is reported over months and runs about an hour, with no ads and no rush.",
+  "related": [
+    {
+      "title": "Signal & Noise",
+      "sub": "Weekly",
+      "image": "/art/signal-noise.jpg",
+      "ref": "signal-and-noise"
+    },
+    {
+      "title": "Sonic Tales",
+      "sub": "Fortnightly",
+      "image": "/art/sonic-tales.jpg",
+      "ref": "sonic-tales"
+    },
+    {
+      "title": "Tears of Ice",
+      "sub": "Weekly",
+      "image": "/art/tears-of-ice.jpg",
+      "ref": "tears-of-ice"
+    },
+    {
+      "title": "Deep Inertia Radio",
+      "sub": "Daily",
+      "image": "/art/deep-inertia-radio.jpg",
+      "ref": "deep-inertia-radio"
+    }
+  ]
+}

@@ -438,6 +438,52 @@ describe('a page opening another', () => {
     expect(() => parsePage(page('<Request ref={data.ref} />'), 'book')).toThrow(/handler prop/);
   });
 
+  it('[M0.canvas] reads <Play> in a handler prop as playing the item its ref binds, on the queue it names', () => {
+    const tree = parsePage(
+      page('<MediaCard onClick={<Play ref={data.ref} queue="spoken" next />} />'),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.onClick).toEqual({
+      kind: 'play',
+      queue: 'spoken',
+      next: true,
+      params: { ref: ['data', 'ref'] },
+    });
+    const now = parsePage(
+      page('<MediaCard onClick={<Play ref={data.ref} queue="music" />} />'),
+      'book',
+    );
+    expect(now.kind === 'element' && now.props.onClick).toMatchObject({
+      queue: 'music',
+      next: false,
+    });
+  });
+
+  it('[M0.canvas] accepts playing an item whose ref is bound, in a handler prop', () => {
+    expect(check('<MediaCard onClick={<Play ref={album.ref} queue="music" />} />')).toEqual([]);
+  });
+
+  it('[M0.canvas] refuses a play anywhere but a handler prop, for anything but a bound ref, or on no queue', () => {
+    expect(check('<MediaCard size={<Play ref={album.ref} queue="music" />} />')).toEqual([
+      'line 3: MediaCard.size takes no handler, so it cannot play an item',
+    ]);
+    expect(check('<MediaCard onClick={<Play ref={data.count} queue="music" />} />')).toEqual([
+      "line 3: MediaCard.onClick: the play's ref (data.count) is not a non-empty string",
+    ]);
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<Play ref={data.ref} />} />'), 'book'),
+    ).toThrow(/Play needs queue="spoken" or queue="music"/);
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<Play ref={data.ref} queue="books" />} />'), 'book'),
+    ).toThrow(/Play needs queue="spoken" or queue="music"/);
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<Play ref={data.ref} queue="music" last />} />'), 'book'),
+    ).toThrow(/Play takes ref, queue and next, not last/);
+    expect(() => parsePage(page('<Play ref={data.ref} queue="music" />'), 'book')).toThrow(
+      /handler prop/,
+    );
+  });
+
   it('[M0.canvas] refuses an Open it has no navigation map to check against', () => {
     const tree = parsePage(page('<MediaCard onClick={<Open page="settings" />} />'), 'book');
     expect(checkPage(tree, data, props)).toEqual([

@@ -1,0 +1,45 @@
+{
+  "title": "The Night Ferry",
+  "ref": "the-night-ferry",
+  "kind": "Episode",
+  "show": "The Long Read",
+  "showRef": "the-long-read",
+  "meta": "12 Aug 2026 · 52 min · 31 min left",
+  "progress": 0.4,
+  "image": "/art/the-long-read.jpg",
+  "download": "idle",
+  "menu": [
+    { "key": "played", "label": "Mark as played", "icon": "check_circle" },
+    { "key": "show", "label": "Go to show", "icon": "podcasts" }
+  ],
+  "notes": "A crossing that should take forty minutes is logged at six hours, and nobody aboard remembers the wait. This week we follow the paper trail from a single line in a harbour-master's logbook to the office that issued the ferry's licence, the crew who signed off that night, and the passenger who kept the ticket. With readings from the logbook itself, and a walk along the old pier at low tide. Music by Deep Inertia. The Long Read is reported and produced by Nadia Berg; episodes arrive every Wednesday.",
+  "more": [
+    {
+      "title": "Salt in the Ledger",
+      "ref": "salt-in-the-ledger",
+      "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
+      "meta": ["5 Aug 2026", "47 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": false
+    },
+    {
+      "title": "The Lighthouse Letters",
+      "ref": "the-lighthouse-letters",
+      "description": "Forty years of letters from keepers who never met, passed along the coast one relief boat at a time.",
+      "meta": ["29 Jul 2026", "1 h 4 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": true
+    },
+    {
+      "title": "A Map With No Roads",
+      "ref": "a-map-with-no-roads",
+      "description": "An atlas printed in 1911 shows a valley that was never surveyed. Someone walked it anyway, and left notes in the margins.",
+      "meta": ["22 Jul 2026", "58 min"],
+      "image": "/art/the-long-read.jpg",
+      "progress": null,
+      "finished": true
+    }
+  ]
+}
