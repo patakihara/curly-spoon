@@ -31,6 +31,11 @@ data class MediaCardProps(
     val playing: Boolean? = null,
     /** Cover art URL. Falls back to the generated gradient when omitted. */
     val image: String? = null,
+    /**
+     * A collection with no `image` of its own, a list or a digest: its items' covers, four different
+     * ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).
+     */
+    val covers: List<String>? = null,
     val onClick: (() -> Unit)? = null,
     /**
      * Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling

@@ -13,10 +13,10 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * a part-finished item the listener already is. A label given as null leaves its button out, and
  * `menu` follows the actions; with no title, the page's own heading names the item. `partOf` names
  * the whole an item belongs to, a book's series, and on a phone `download` keeps it offline; `addLabel`
- * adds a round button that saves the item into a list. With no title
+ * adds a round button that saves the item into a list; a list with no art of its own shows its items' `covers`. With no title
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
-export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
+export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, covers, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
   const glyph = (name) => React.createElement('span', { style: sx("font-family:'Material Symbols Rounded';font-size:20px;line-height:1") }, name);
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
@@ -41,7 +41,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
   const caption = title == null && !acts;
   return (
     <div ref={ref} style={sx(mobile ? 'display:flex;flex-direction:column;align-items:center;gap:var(--spacing-md);text-align:center;padding-top:4px;padding-bottom:12px' : 'display:flex;gap:var(--spacing-2xl);align-items:' + (caption ? 'center' : 'flex-end'))}>
-      <div style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;overflow:hidden;border-radius:' + (round ? '50%' : 'var(--radius-lg)'))}>{CoverArt && <CoverArt src={image} />}</div>
+      <div style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;overflow:hidden;border-radius:' + (round ? '50%' : 'var(--radius-lg)'))}>{CoverArt && <CoverArt src={image} covers={covers} />}</div>
       <div style={sx(mobile ? 'width:100%;display:flex;flex-direction:column;align-items:center;gap:var(--spacing-sm)' : 'flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-sm)')}>
         <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;color:' + muted + (mobile ? ';margin-top:6px' : ''))}>{kindLabel}</div>
         {title != null && <div style={sx('font-family:var(--font-display),Inter;font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;color:' + fg + ';font-size:var(--' + (mobile ? 'h4' : 'h2') + '-size)')}>{title}</div>}

@@ -13,6 +13,11 @@ package net.develivarr.auralis.generated.ui
 data class CoverArtProps(
     /** Image URL. Omitted or still loading, the fallback shows instead. */
     val src: String? = null,
+    /**
+     * A collection's item covers, drawn when it has no `src` of its own: four different ones make a
+     * 2×2 mosaic of the first four, one to three the first alone, none the flat placeholder.
+     */
+    val covers: List<String>? = null,
     /** CSS background for the placeholder. Defaults to a flat `--accent`. */
     val fallback: String? = null,
     val alt: String? = null,

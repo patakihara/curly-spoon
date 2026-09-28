@@ -10,6 +10,11 @@
 export interface CoverArtProps {
   /** Image URL. Omitted or still loading, the fallback shows instead. */
   src?: string;
+  /**
+   * A collection's item covers, drawn when it has no `src` of its own: four different ones make a
+   * 2×2 mosaic of the first four, one to three the first alone, none the flat placeholder.
+   */
+  covers?: string[];
   /** CSS background for the placeholder. Defaults to a flat `--accent`. */
   fallback?: string;
   alt?: string;

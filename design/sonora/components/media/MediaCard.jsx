@@ -13,7 +13,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-mediacar
 }
 
 /** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
-export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
+export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, covers, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
   const Badge = NS().Badge;
   const mobile = platform === 'mobile';
   const small = size === 'sm';
@@ -60,8 +60,8 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads
             as out of reach beside the ones you own even where its cover is already dark. */}
         {CoverArt && (greyed
-          ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} fallback={coverArt} /></div>
-          : <CoverArt src={image} fallback={coverArt} />)}
+          ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} covers={covers} fallback={coverArt} /></div>
+          : <CoverArt src={image} covers={covers} fallback={coverArt} />)}
         {showMore && (
           <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
             className={mobile ? undefined : 'sn-more'}

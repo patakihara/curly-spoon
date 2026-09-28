@@ -740,6 +740,7 @@ The artwork layer used inside every art container in the system. Absolutely fill
 | prop | type | notes |
 | --- | --- | --- |
 | `src` | `string` | Image URL. Omitted or still loading, the fallback shows instead. |
+| `covers` | `string[]` |  A collection's item covers, drawn when it has no `src` of its own: four different ones make a 2×2 mosaic of the first four, one to three the first alone, none the flat placeholder.  |
 | `fallback` | `string` | CSS background for the placeholder. Defaults to a flat `--accent`. |
 | `alt` | `string` |  |
 
@@ -898,6 +899,7 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `onPlayLast` | `() => void` |  |
 | `playing` | `boolean` |  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
+| `covers` | `string[]` |  A collection with no `image` of its own, a list or a digest: its items' covers, four different ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).  |
 | `onClick` | `() => void` |  |
 | `onRequest` | `() => void` |  Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling `onClick`, and the card shows "Requested" until `status` carries the request's live status. Opening the item stays a verb, Open, in a corner menu over the art.  |
 | `onMore` | `(e?: any) => void` | Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. |
@@ -916,6 +918,7 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | --- | --- | --- |
 | `platform` | `'desktop' \| 'mobile'` |  Layout override. Omit it and the header measures itself, going compact (art on top, centred, smaller type) below `compactAt` — a real breakpoint on its own width, so the same header adapts inside a phone frame or a narrow desktop pane without being told.  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
+| `covers` | `string[]` |  A collection with no `image` of its own, a list or a digest: its items' covers, four different ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).  |
 | `compactAt` | `number` | Width in px below which the compact layout takes over. Default 600. |
 | `kindLabel` | `string` | Uppercase kind line above the title, e.g. "Album", "Audiobook". |
 | `title` | `string` |  The item's name. Omit it when the page's own heading already names the item. With no title and no action row (a person), the kind and meta are a caption: beside the art in a wide pane, centred on it, the meta at the subtitle's size.  |

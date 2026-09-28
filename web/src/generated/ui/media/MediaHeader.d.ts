@@ -14,6 +14,11 @@ export interface MediaHeaderProps {
   platform?: 'desktop' | 'mobile';
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
+  /**
+   * A collection with no `image` of its own, a list or a digest: its items' covers, four different
+   * ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).
+   */
+  covers?: string[];
   /** Width in px below which the compact layout takes over. Default 600. */
   compactAt?: number;
   /** Uppercase kind line above the title, e.g. "Album", "Audiobook". */
