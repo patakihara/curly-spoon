@@ -16,8 +16,9 @@ by CI. Run it again to refresh them.
 | `material-symbols-rounded.woff2` | Material Symbols Rounded | all icons | 3,116,888 | Google Fonts, `css2?family=Material+Symbols+Rounded:opsz,wght,FILL@20..48,100..700,0..1` |
 
 The queries are the ones Sonora's own `tokens/fonts.css` and `styles.css` use. Each file is a
-variable font: Inter carries weight 400 to 900, Archivo weight 100 to 900 and width 62.5 to
-125%, and the icon font weight 100 to 700, optical size 20 to 48 and FILL 0 to 1.
+variable font: Inter carries weight 100 to 900, of which `fonts.css` declares Sonora's 400 to
+900, Archivo weight 100 to 900 and width 62.5 to 125%, and the icon font weight 100 to 700,
+optical size 20 to 48 and FILL 0 to 1.
 
 ## Why the icon font is whole
 
