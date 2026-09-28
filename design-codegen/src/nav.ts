@@ -70,6 +70,12 @@ const Structure = z
   })
   .strict();
 
+/**
+ * A page's filter, a single choice on its back layer: `all`, then the destinations it narrows to,
+ * in its order, each labelled as its destination is, so the filter cannot drift from them.
+ */
+const Filter = z.object({ all: z.string().min(1), narrows: z.array(Id).min(1) }).strict();
+
 const Page = z
   .object({
     id: Id,
@@ -97,6 +103,7 @@ const Page = z
       })
       .strict(),
     structure: Structure,
+    filter: Filter.optional(),
   })
   .strict();
 
@@ -147,6 +154,13 @@ export function parseNav(json: unknown): Nav {
     }
     if ((page.presentation === 'sheet') !== (page.close === 'sheet')) {
       errors.push(`${page.id}: a sheet, and only a sheet, closes as a sheet`);
+    }
+    const narrows = page.filter?.narrows ?? [];
+    if (new Set(narrows).size !== narrows.length)
+      errors.push(`${page.id}: its filter narrows to a destination twice`);
+    for (const id of narrows) {
+      if (!destinations.has(id))
+        errors.push(`${page.id}: its filter narrows to ${id}, which is not a destination`);
     }
     const links = page.structure.links;
     if (new Set(links).size !== links.length) errors.push(`${page.id}: links to a page twice`);

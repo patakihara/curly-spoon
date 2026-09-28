@@ -62,9 +62,34 @@ test('[M0.canvas/f] the canvas build draws the structure and flowchart from nav.
       assert.ok(existsSync(join(out, DS, file)), `${file} is installed`);
     assert.equal(index.designSystems[0].namespace, 'sonoradesignsystem_6c1435');
     const stamp = JSON.parse(readFileSync(join(out, 'stamp.json'), 'utf8'));
-    assert.equal(stamp.tree, sourcesTree(REPO_ROOT, ['design/app']));
+    assert.equal(stamp.tree, sourcesTree(REPO_ROOT, ['design/app', 'web/public/art']));
     assert.equal(stamp.draft, true);
     assert.ok('sonora' in stamp, 'the stamp names the Sonora it installs');
+  } finally {
+    removeTree(sonora);
+    removeTree(out);
+  }
+});
+
+test('[M0.canvas] every image an artboard references is in the built project, and only those', () => {
+  const sonora = sonoraBuild(null);
+  const out = mkdtempSync(join(tmpdir(), 'canvas-build-'));
+  try {
+    const run = build('--sonora', sonora, '--out', out, '--draft');
+    assert.equal(run.status, 0, run.stderr);
+    const project = join(out, 'project');
+    const referenced = new Set();
+    for (const board of readdirSync(project).filter((f) => f.endsWith('.dc.html'))) {
+      const html = readFileSync(join(project, board), 'utf8');
+      assert.doesNotMatch(html, /"\/art\//, `${board} points at no art outside the project`);
+      for (const [, path] of html.matchAll(/"([^"]+\.(?:jpe?g|png|webp|avif|gif|svg))"/g)) {
+        assert.ok(existsSync(join(project, path)), `${board}: ${path} is in the project`);
+        referenced.add(path);
+      }
+    }
+    assert.ok(referenced.size > 0, 'the artboards show art');
+    const shipped = readdirSync(join(project, 'art')).map((f) => `art/${f}`);
+    assert.deepEqual(shipped.sort(), [...referenced].sort(), 'only the art referenced ships');
   } finally {
     removeTree(sonora);
     removeTree(out);

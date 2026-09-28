@@ -108,6 +108,25 @@ describe('checking a comparison', () => {
     ]);
   });
 
+  for (const [what, change] of [
+    ['its title', (page: Record<string, unknown>) => ({ ...page, title: 'Preferences' })],
+    [
+      'its filter',
+      (page: Record<string, unknown>) => ({ ...page, filter: { all: 'All', narrows: ['music'] } }),
+    ],
+  ] as const) {
+    it(`[M0.canvas/e] fails once ${what} in nav.json, which the shell draws, has changed since its comparison was made`, () => {
+      const app = copy();
+      const file = join(app, 'nav.json');
+      const json = JSON.parse(readFileSync(file, 'utf8')) as { pages: Record<string, unknown>[] };
+      json.pages = json.pages.map((p) => (p.id === 'settings' ? change(p) : p));
+      writeFileSync(file, JSON.stringify(json));
+      expect(checkComparison(app, sonora(), settings)).toEqual([
+        'settings: the page changed since compare/settings.md was made; look again',
+      ]);
+    });
+  }
+
   for (const [component, why] of [
     ['PageBody', 'a component the page draws'],
     ['SectionHeader', 'a component one the page draws looks up'],

@@ -9,7 +9,7 @@ import { componentName, generatePlatform, generateRoutes, readNav, type Nav } fr
 import { checkPage, parsePage, type PageTree } from './page.js';
 import { generateWebPage, type WebComponents } from './page-web.js';
 import type { KType, PropsModel } from './props.js';
-import { framePage, readShell, type ShellFile } from './shell.js';
+import { framePage, readShell, shellData, type ShellData, type ShellFile } from './shell.js';
 
 const Placeholder = z.record(z.string(), z.unknown());
 
@@ -70,6 +70,16 @@ export function readApp(appDir: string, model: PropsModel): App {
     const id = /^([a-z][A-Za-z0-9]*)\.page\.jsx$/.exec(file)?.[1];
     if (id === undefined || !ids.has(id)) errors.push(`pages/${file}: not a page in nav.json`);
   }
+  let shell: ShellFile | undefined;
+  let shown: ShellData | undefined;
+  try {
+    shell = readShell(appDir);
+    const strays = shell.railFoot.filter(({ page }) => !ids.has(page));
+    for (const { page } of strays) errors.push(`shell.json: railFoot names ${page}, not a page`);
+    if (strays.length === 0) shown = shellData(nav, shell);
+  } catch (e) {
+    errors.push(`shell.json: ${(e as Error).message}`);
+  }
   const pages: AppPage[] = [];
   for (const { id } of nav.pages) {
     const file = join(pagesDir, `${id}.page.jsx`);
@@ -80,22 +90,15 @@ export function readApp(appDir: string, model: PropsModel): App {
         JSON.parse(readFileSync(join(appDir, 'placeholders', `${id}.json`), 'utf8')),
       );
       errors.push(
-        ...checkPage(tree, placeholder, props, slots).map((e) => `pages/${id}.page.jsx ${e}`),
+        ...checkPage(tree, placeholder, props, slots, shown).map(
+          (e) => `pages/${id}.page.jsx ${e}`,
+        ),
       );
       framePage(tree);
       pages.push({ id, tree, placeholder });
     } catch (e) {
       errors.push(`pages/${id}.page.jsx: ${(e as Error).message}`);
     }
-  }
-  let shell: ShellFile | undefined;
-  try {
-    shell = readShell(appDir);
-    for (const { page } of shell.railFoot) {
-      if (!ids.has(page)) errors.push(`shell.json: railFoot names ${page}, not a page`);
-    }
-  } catch (e) {
-    errors.push(`shell.json: ${(e as Error).message}`);
   }
   if (errors.length > 0 || shell === undefined) {
     throw new Error(`design/app:\n  ${errors.join('\n  ')}`);

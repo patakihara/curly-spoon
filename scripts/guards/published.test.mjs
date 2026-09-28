@@ -98,9 +98,23 @@ test('[M0.uikit/c] a checked source with no recorded publish fails as never publ
     commitAll(root, 'Drop the canvas record');
     const drift = publishedDrift({ root });
     assert.deepEqual(brief(drift), [
-      { artifact: 'canvas', sources: ['design/app'], reason: 'never published' },
+      { artifact: 'canvas', sources: ['design/app', 'web/public/art'], reason: 'never published' },
     ]);
     assert.equal(drift[0].recorded, null);
+  });
+});
+
+test('the merge check fails when the art the canvas ships changed after its publish', () => {
+  withRepo(['canvas'], (root) => {
+    write(root, 'web/public/art/cover.jpg', 'not really a jpeg\n');
+    commitAll(root, 'Change the placeholder art');
+    assert.deepEqual(brief(publishedDrift({ root })), [
+      {
+        artifact: 'canvas',
+        sources: ['design/app', 'web/public/art'],
+        reason: 'changed since the publish',
+      },
+    ]);
   });
 });
 
@@ -119,13 +133,13 @@ test('the merge check fails when the canvas installs a Sonora other than the pub
     assert.deepEqual(brief(publishedDrift({ root })), [
       {
         artifact: 'canvas',
-        sources: ['design/app'],
+        sources: ['design/app', 'web/public/art'],
         reason: 'installs sonora 1-sonora, but sonora is published at 2-sonora',
       },
     ]);
     const run = cli(root);
     assert.equal(run.status, 1);
-    assert.match(run.stderr, /design\/app \(canvas\): installs sonora 1-sonora/);
+    assert.match(run.stderr, /design\/app, web\/public\/art \(canvas\): installs sonora 1-sonora/);
   });
 });
 

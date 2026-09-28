@@ -1,7 +1,11 @@
 export default function Browse({ data }) {
   return (
     <BackdropShell
-      back={<BackLayer controls={<ButtonGroup tone="play" items={data.filters} value="All" />} />}
+      back={
+        <BackLayer
+          controls={<ButtonGroup tone="play" items={shell.filters.browse} value="All" />}
+        />
+      }
       subheader={<FrontLayerHeader spy sections={data.sections} />}
     >
       <PageBody>

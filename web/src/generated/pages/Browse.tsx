@@ -4,12 +4,6 @@ import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
 import { AccountButton, ArtistCard, BackLayer, BackdropShell, BottomNav, ButtonGroup, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, PlayerPanel, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
-  "filters": [
-    "All",
-    "Music",
-    "Audiobooks",
-    "Podcasts"
-  ],
   "sections": [
     "Jump back in",
     "Recently added",
@@ -311,6 +305,14 @@ const shell = {
         "icon": "podcasts"
       }
     ]
+  },
+  "filters": {
+    "browse": [
+      "All",
+      "Music",
+      "Podcasts",
+      "Books"
+    ]
   }
 };
 
@@ -387,7 +389,7 @@ export default function Browse({ data = placeholder, state = 'full', layout: giv
         <BackLayer
           title="Browse"
           leading={chrome.leading}
-          controls={<ButtonGroup tone="play" items={data.filters} value="All" onChange={ignore} platform={platform} />}
+          controls={<ButtonGroup tone="play" items={shell.filters.browse} value="All" onChange={ignore} platform={platform} />}
           platform={platform}
         />
       }

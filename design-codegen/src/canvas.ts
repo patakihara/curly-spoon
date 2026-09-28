@@ -8,7 +8,8 @@
  * Each artboard is the page in the app shell at the layout its width gets. The page's content is
  * markup, mounted element by element. A prop that takes an element (the shell's rail, back layer,
  * player and panel, a page's filter row and subheader) has no markup form in the format, so those
- * trees travel as data and `renderVals()` builds them from the same Sonora components.
+ * trees travel as data and `renderVals()` builds them from the same Sonora components. The art
+ * they show ships beside them under `project/art/` (`canvasArt`), referenced by relative path.
  */
 import type { App } from './app.js';
 import type { PageTree, PropValue } from './page.js';
@@ -44,6 +45,30 @@ export interface SonoraInstall {
   title: string;
   artifact: string;
   version: string | null;
+}
+
+/**
+ * Placeholder art: served from the web app's root as `/art/<file>`, and shipped beside the
+ * artboards as `project/art/<file>`, so the published canvas shows it too. `web/public/art` holds it.
+ */
+export const ART_DIR = 'web/public/art';
+const ART = /^\/art\/([^/]+)$/;
+
+/** `value` with every `/art/<file>` in it made relative to the project, `art/<file>`. */
+const relativeArt = <T>(value: T): T =>
+  JSON.parse(JSON.stringify(value), (_key, v: unknown) =>
+    typeof v === 'string' && ART.test(v) ? v.slice(1) : v,
+  ) as T;
+
+/** The art files the drawn pages' artboards show, from their pages, placeholders and the shell. */
+export function canvasArt(app: App): string[] {
+  const files = new Set<string>();
+  JSON.stringify([shellData(app.nav, app.shell), app.pages], (_key, v: unknown) => {
+    const file = typeof v === 'string' ? ART.exec(v)?.[1] : undefined;
+    if (file !== undefined) files.add(file);
+    return v;
+  });
+  return [...files].sort();
 }
 
 const escapeAttr = (s: string) =>
@@ -160,7 +185,7 @@ function artboard(
   const slot = (tree: PageTree | undefined): PropValue | undefined =>
     tree === undefined ? undefined : { kind: 'slot', tree };
   const tree = withPlatform(
-    framed(framePage(page.tree), entry.title, {
+    framed(framePage(relativeArt(page.tree)), entry.title, {
       rail: slot(parts.rail),
       leading: slot(parts.leading),
       player: slot(parts.player),
@@ -197,8 +222,8 @@ function artboard(
     `<script type="text/x-dc" data-dc-script data-props='${preview}'>`,
     'class Component extends DCLogic {',
     'renderVals() {',
-    `const data = ${json(page.placeholder)};`,
-    `const shell = ${json(shellData(app.nav, app.shell))};`,
+    `const data = ${json(relativeArt(page.placeholder))};`,
+    `const shell = ${json(relativeArt(shellData(app.nav, app.shell)))};`,
     `const trees = ${json(slots.map(bare))};`,
     BUILD,
     'const scope = { data, shell };',

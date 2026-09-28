@@ -89,7 +89,7 @@ test('other artifacts are kept, keys stay sorted, and a design publish records i
     recordPublish({ root, artifact: 'canvas', url: URL_, version: '2', stamp: canvasStamp });
     const published = JSON.parse(read(root, 'design/published.json'));
     assert.deepEqual(Object.keys(published), ['canvas', 'plan', 'sonora']);
-    assert.deepEqual(published.canvas.sources, ['design/app']);
+    assert.deepEqual(published.canvas.sources, ['design/app', 'web/public/art']);
     assert.equal(published.sonora.url, 'u');
   }));
 

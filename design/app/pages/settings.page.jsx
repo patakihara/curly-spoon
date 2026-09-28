@@ -1,6 +1,6 @@
 export default function Settings({ data }) {
   return (
-    <BackdropShell subheader={<FrontLayerHeader spy />}>
+    <BackdropShell>
       <PageBody width="form">
         <Section>
           <FieldRow label="Server" value={data.server} />

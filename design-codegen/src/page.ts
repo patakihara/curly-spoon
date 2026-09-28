@@ -167,28 +167,36 @@ function resolve(value: Json, path: string[]): Json {
 
 /**
  * The problems in a page tree, empty when there are none: every binding must resolve in the
- * placeholder (inside `<Each>`, in each item), and every component and prop must be Sonora's.
- * `props` maps each component to the prop names its `.d.ts` declares, `slots` to those of them
- * that take an element; without `slots`, any declared prop may take one.
+ * placeholder (inside `<Each>`, in each item) or, as `shell.…`, in what the shell shows, and every
+ * component and prop must be Sonora's. `props` maps each component to the prop names its `.d.ts`
+ * declares, `slots` to those of them that take an element; without `slots`, any declared prop may
+ * take one.
  */
 export function checkPage(
   tree: PageTree,
   placeholder: Json,
   props: Map<string, Set<string>>,
   slots?: Map<string, Set<string>>,
+  shell?: Json,
 ): string[] {
   const errors: string[] = [];
   const walk = (node: PageTree, scope: Map<string, Json[]>) => {
     const check = (line: number, path: string[]): Json[] => {
       const [root, ...rest] = path;
-      const values = root === 'data' ? [placeholder] : scope.get(root ?? '');
+      const values =
+        root === 'data'
+          ? [placeholder]
+          : root === 'shell' && shell !== undefined
+            ? [shell]
+            : scope.get(root ?? '');
       if (values === undefined) {
-        errors.push(`line ${line}: ${root} is neither data nor an Each item`);
+        errors.push(`line ${line}: ${root} is neither data, the shell nor an Each item`);
         return [];
       }
       const found = values.map((v) => resolve(v, rest));
       if (found.some((v) => v === undefined)) {
-        errors.push(`line ${line}: ${path.join('.')} is not in the placeholder`);
+        const where = root === 'shell' ? 'the shell' : 'the placeholder';
+        errors.push(`line ${line}: ${path.join('.')} is not in ${where}`);
         return [];
       }
       return found;

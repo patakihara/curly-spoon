@@ -4,6 +4,7 @@ import {
   CANVAS_BOARDS,
   CANVAS_CREATED_AT,
   DS_FOLDER,
+  canvasArt,
   generateCanvas,
   type SonoraInstall,
 } from './canvas.js';
@@ -176,6 +177,24 @@ describe('the canvas generated from design/app', () => {
         },
       ],
     });
+  });
+
+  it('points every artboard at the art it ships beside itself, by relative path', () => {
+    const [first, ...rest] = app.pages;
+    const withArt: App = {
+      ...app,
+      shell: { ...app.shell, playing: { ...app.shell.playing!, image: '/art/tidal-lines.jpg' } },
+      pages: [
+        { ...first!, placeholder: { ...first!.placeholder, cover: '/art/wind-and-truth.jpg' } },
+        ...rest,
+      ],
+    };
+    const html = generateCanvas(withArt, install, now).get('book.phone.dc.html') ?? '';
+    expect(html).toContain('"cover":"art/wind-and-truth.jpg"');
+    expect(html).toContain('"image":"art/tidal-lines.jpg"');
+    expect(html).not.toContain('"/art/');
+    expect(canvasArt(withArt)).toEqual(['tidal-lines.jpg', 'wind-and-truth.jpg']);
+    expect(canvasArt(app)).toEqual([]);
   });
 
   it('loads the installed Sonora copy right after the support line', () => {

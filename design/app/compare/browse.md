@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 317e0f1ce92c586dc3f2b230051af8d9f559987cf7fa86f463c5c703a0da6b11
+pageHash: aa8b30bc93516bc3188068b4e08c33bb957b09883dd2984948269f9831009200
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -17,7 +17,8 @@ kit's Browse destination). No Spotify screen was needed for intent: the kits cov
 ## What the Sonora UI kit renders show
 
 - **Mobile kit.** The account avatar, then the title "Browse", in the app bar, then a connected
-  `ButtonGroup` of filters (All, Music, Audiobooks, Podcasts), All in the play rose with black ink. "Jump back in": a 2-up grid of
+  `ButtonGroup` of filters (All, Music, Audiobooks, Podcasts), All in the play rose with black
+  ink. "Jump back in": a 2-up grid of
   `QuickPick` tiles, art on the left, title and a "Book · 6 h 12 m left" line. "Recently
   added": a `Shelf` of large `MediaCard`s, one with a progress bar, bleeding off the right edge,
   with an arrow action. "Artists & authors": a shelf of round `ArtistCard`s. Below the fold,
@@ -32,9 +33,11 @@ kit's Browse destination). No Spotify screen was needed for intent: the kits cov
 
 The page in the app shell, Sonora's backdrop. The back layer holds the heading "Browse", led on the
 phone by the account avatar, and the filter `ButtonGroup` as its controls: the filter reconfigures
-what the front layer shows, so it sits on the back layer, as in the Backdrop Anatomy card. The front
-layer has a scroll-spy `FrontLayerHeader` (blank at rest, then the title of the section that last
-passed under it) over `PageBody`: "Jump back in" as an auto-filled grid of wide `QuickPick`s, then
+what the front layer shows, so it sits on the back layer, as in the Backdrop Anatomy card. Its
+choices are All, Music, Podcasts, Books: nav.json's filter for Browse, labelled by the destinations
+(`shell.filters.browse`), so they cannot drift from them. The front layer has a scroll-spy
+`FrontLayerHeader`, which shows only once a section title has scrolled under it and then carries
+the title that last passed; at rest there is no band. Under it, `PageBody`: "Jump back in" as an auto-filled grid of wide `QuickPick`s, then
 the "Recently added", "Artists & authors" and "Picked for you" shelves and the "Recently played"
 rows, in the mobile kit's order and with its titles and art. Around it: the bottom bar and the
 mini-player on the phone; on desktop the labelled rail (Search first, Settings at its foot), the
@@ -60,10 +63,11 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   Backdrop Anatomy card places a library-scope switch. On the phone they sit where the mobile kit
   has them, under the heading; on desktop they sit on the back layer, where the desktop kit had them
   at the top of the content.
-- Changed on purpose: a scroll-spy subheader tops the front layer, since Sonora requires one on a
-  front layer that scrolls. Blank at rest, it puts "Jump back in" lower than the kits: its text
-  204 px from the top against about 145 px on the phone, 240 px against about 192 px on desktop,
-  as the Scroll-Spy Subheader card spaces it.
+- Changed on purpose: a scroll-spy subheader tops the front layer once content scrolls under it,
+  as the Scroll-Spy Subheader card shows. At rest there is no band, so "Jump back in" sits where
+  the kits put it: its text 144 px from the top against about 145 px on the phone, 180 px against
+  about 192 px on desktop. Scrolled, the band lies over the content's top, so the feed never moves
+  when it arrives.
 - Changed on purpose: Search is a destination, first on the rails and last on the bottom bar, as
   nav.json orders them; the desktop kit's rail has no Search and the mobile kit's bar ends with it.
 - Changed on purpose: Settings is a row at the foot of the rail (NavRail `footerItems`, added to
@@ -74,6 +78,8 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   from 600 px and a labelled rail from 1024 px, where the kit and the Anatomy card draw a hamburger.
 - Changed on purpose: nav.json's icons and labels (Books with `book_2`, Music with `album`) replace
   the kits' (Audiobooks, headphones, speaker).
+- Changed on purpose: the filter reads All, Music, Podcasts, Books, the plan's order, where both
+  kits draw All, Music, Audiobooks, Podcasts.
 - Open: the account avatar is a person glyph, since the placeholder names no picture; the mobile
   kit shows a photo. `AccountButton` takes one.
 - Open: the front layer shows the browser's own scroll bar while it scrolls (the phone render,

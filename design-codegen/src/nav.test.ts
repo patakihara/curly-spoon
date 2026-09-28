@@ -74,6 +74,13 @@ describe('nav.json', () => {
     expect(() => parseNav(small([page({ lights: 'books' })]))).toThrow(/album.*books/);
   });
 
+  it('refuses a filter that narrows to something not a destination, or to one twice', () => {
+    const filtered = (narrows: string[]) => page({ filter: { all: 'All', narrows } });
+    expect(() => parseNav(small([filtered(['books'])]))).toThrow(/album.*filter.*books/);
+    expect(() => parseNav(small([filtered(['music', 'music'])]))).toThrow(/album.*filter.*twice/);
+    expect(parseNav(small([filtered(['music'])])).pages[0]!.filter?.narrows).toEqual(['music']);
+  });
+
   it('refuses two pages with one id', () => {
     expect(() => parseNav(small([page(), page()]))).toThrow(/album.*twice/);
   });

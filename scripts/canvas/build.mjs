@@ -1,7 +1,7 @@
 /**
  * `pnpm canvas:build`: the Auralis canvas artifact (claude.ai Design type) built from design/app
  * into build/canvas. `project/**` is what the orchestrator publishes: one phone and one desktop
- * artboard per drawn page, `canvas.json`, and Sonora installed under `project/ds/<folder>/` from
+ * artboard per drawn page, `canvas.json`, the art they show under `art/`, and Sonora installed under `project/ds/<folder>/` from
  * build/sonora, which must be Sonora's recorded publish. `stamp.json` carries that publish's
  * version for record-publish.mjs. Refuses uncommitted changes to design/app unless --draft.
  *
@@ -12,7 +12,13 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { readApp } from '../../design-codegen/src/app.ts';
-import { DS_FILES, DS_FOLDER, generateCanvas } from '../../design-codegen/src/canvas.ts';
+import {
+  ART_DIR,
+  DS_FILES,
+  DS_FOLDER,
+  canvasArt,
+  generateCanvas,
+} from '../../design-codegen/src/canvas.ts';
 import { readProps } from '../../design-codegen/src/props.ts';
 import { discoverComponents } from '../../design-codegen/src/sonora.ts';
 import { buildStamp } from '../plan/record-publish.mjs';
@@ -34,7 +40,7 @@ const out = resolve(root, values.out);
 const sonoraDir = resolve(root, values.sonora);
 const readJson = (path) => (existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null);
 
-let stamp, files;
+let stamp, files, art;
 try {
   const now = new Date();
   const install = sonoraInstall({
@@ -47,7 +53,11 @@ try {
     sonora: { version: install.version, tree: install.tree },
   };
   const props = readProps(discoverComponents(join(root, 'design/sonora')));
-  files = generateCanvas(readApp(join(root, 'design/app'), props), install, now);
+  const app = readApp(join(root, 'design/app'), props);
+  files = generateCanvas(app, install, now);
+  art = canvasArt(app);
+  const missing = art.filter((file) => !existsSync(join(root, ART_DIR, file)));
+  if (missing.length > 0) throw new Error(`no ${missing.join(', ')} in ${ART_DIR}`);
 } catch (error) {
   console.error(`canvas:build: ${error.message}`);
   process.exit(1);
@@ -66,6 +76,7 @@ for (const rel of DS_FILES) {
     put(join('project/ds', DS_FOLDER, rel)),
   );
 }
+for (const file of art) copyFileSync(join(root, ART_DIR, file), put(join('project/art', file)));
 writeFileSync(join(out, 'stamp.json'), `${JSON.stringify(stamp, null, 2)}\n`);
-console.log(`${relative(root, out)}/project: ${files.size + DS_FILES.length} files`);
+console.log(`${relative(root, out)}/project: ${files.size + DS_FILES.length + art.length} files`);
 console.log(`${relative(root, join(out, 'stamp.json'))}: ${JSON.stringify(stamp)}`);

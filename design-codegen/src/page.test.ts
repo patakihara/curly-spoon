@@ -187,6 +187,15 @@ describe('checking a page', () => {
     ]);
   });
 
+  it('resolves a shell binding in what the shell shows, and names one it does not hold', () => {
+    const shell = { filters: { book: ['All', 'Books'] } };
+    const row = (path: string) => tree(`<EpisodeRow title={${path}} />`);
+    expect(checkPage(row('shell.filters.book'), data, props, undefined, shell)).toEqual([]);
+    expect(checkPage(row('shell.filters.album'), data, props, undefined, shell)).toEqual([
+      'line 3: shell.filters.album is not in the shell',
+    ]);
+  });
+
   it('names children given to a component that takes none', () => {
     expect(checkPage(tree('<EpisodeRow>Hi</EpisodeRow>'), data, props)).toEqual([
       'line 3: EpisodeRow takes no children',

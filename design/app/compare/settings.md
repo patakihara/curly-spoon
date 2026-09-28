@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 01cb7e45c0d3b4a68e2ce95d9fb5322182926969a173ce5834592357f27e2d39
+pageHash: a29b04914c268ea7a882eae113bc990f9305780d7cdd3ca8f2e13a3adf538c6d
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -25,8 +25,8 @@ kit's Settings destination). No Spotify screen was needed for intent.
 ## What the canvas page draws
 
 The page in the app shell, Sonora's backdrop. The back layer holds the heading "Settings", led by
-a close control, since Settings closes to whatever opened it. The front layer has a blank
-scroll-spy `FrontLayerHeader` over `PageBody` at the form width: a "Server" `FieldRow`, then the
+a close control, since Settings closes to whatever opened it. The front layer has no subheader,
+since Settings has no section titles to spy, just `PageBody` at the form width: a "Server" `FieldRow`, then the
 mobile kit's first two `SettingRow` cards with its descriptions, in a one-column `LayoutGrid` 10 px
 apart, the field and the rows each in an untitled `Section` for the gap between. Around it: the
 bottom bar (nothing lit) and the mini-player on the phone; on desktop the labelled rail with
@@ -34,8 +34,8 @@ Settings lit at its foot, the docked transport bar and the Now Playing panel.
 
 Measured in the browser (`getBoundingClientRect`), kit against page: page margin 16 px against
 16 px on the phone, 28 px against 28 px on desktop; desktop column 640 px against 640 px; rows
-10 px apart against 10 px on both; on desktop the field's label 180 px from the top against about
-184 px in the kit, whose content also starts under the front layer's header.
+10 px apart against 10 px on both; on desktop the field's label 120 px from the top against about
+184 px in the kit, whose content starts under a header band the page no longer has.
 
 ## Differences
 
@@ -49,9 +49,10 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
   kit's sheet also keeps Browse's filters above it; the page has none.
 - Changed on purpose: on desktop Settings is lit at the rail's foot (NavRail `footerItems`) and
   closes with a ✕ before its heading; the desktop kit lists it among the destinations with no close.
-- Open: on the phone the field's label sits 144 px from the top, under the heading and the blank
-  subheader, where the kit's sheet puts it at about 215 px under Browse's heading, filters and
-  back link.
+- Changed on purpose: no subheader on the front layer, so no empty band above the field. Settings
+  has no section titles for a scroll spy to show. The field's label sits 84 px from the top on the
+  phone, right under the heading, where the kit's sheet puts it at about 215 px under Browse's
+  heading, filters and back link, and 120 px on desktop against about 184 px.
 - Open: the field sits 24 px above the rows on the phone, where the mobile kit leaves 16 px;
   `Section`'s phone gap is 24 px, and a page cannot set a gap between two sections. Desktop
   matches, 20 px against 20 px.

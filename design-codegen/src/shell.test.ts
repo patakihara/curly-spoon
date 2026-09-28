@@ -11,6 +11,7 @@ import {
   shellData,
   type ShellFile,
 } from './shell.js';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const appDir = join(REPO_ROOT, APP_DIR);
@@ -126,6 +127,23 @@ describe('the app shell', () => {
       kind: 'literal',
       value: 'desktop',
     });
+  });
+});
+
+describe('a filter', () => {
+  it('[M0.canvas] gives Browse the choice All, Music, Podcasts, Books, labelled by the destinations', () => {
+    expect(data.filters.browse).toEqual(['All', 'Music', 'Podcasts', 'Books']);
+    const labels = new Map(nav.destinations.map((d) => [d.id, d.label]));
+    expect(data.filters.browse!.slice(1)).toEqual(
+      pageOf('browse').filter!.narrows.map((id) => labels.get(id)),
+    );
+  });
+
+  it('[M0.canvas] is drawn on Browse from the destinations, never from the page’s own data', () => {
+    const source = readFileSync(join(appDir, 'pages', 'browse.page.jsx'), 'utf8');
+    const controls = el(framePage(parsePage(source, 'browse')).controls, 'ButtonGroup');
+    expect(pathOf(controls.props.items)).toBe('shell.filters.browse');
+    expect(controls.props.value).toEqual({ kind: 'literal', value: pageOf('browse').filter!.all });
   });
 });
 

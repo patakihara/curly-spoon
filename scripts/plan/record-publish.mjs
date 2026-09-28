@@ -14,12 +14,13 @@ import { parseArgs } from 'node:util';
 
 /**
  * The folders each artifact is generated from. The plan page shows the outbox, so an outbox
- * change needs a republish too. The merge check compares `sourcesTree` to the recorded `tree`.
+ * change needs a republish too, and the canvas ships the placeholder art its artboards show. The
+ * merge check compares `sourcesTree` to the recorded `tree`.
  */
 export const SOURCES = {
   plan: ['docs/plan', 'docs/outbox'],
   sonora: ['design/sonora'],
-  canvas: ['design/app'],
+  canvas: ['design/app', 'web/public/art'],
 };
 
 /**

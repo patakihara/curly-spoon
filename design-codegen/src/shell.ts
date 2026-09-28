@@ -70,7 +70,10 @@ interface NavItem {
   icon: string;
 }
 
-/** What the shell's trees bind to as `shell.…`: shell.json plus each layout's destinations, in its order. */
+/**
+ * What the shell's trees bind to as `shell.…`: shell.json plus each layout's destinations, in its
+ * order, and each page's filter. A page may bind it too, for what it shows from nav.json.
+ */
 export interface ShellData {
   account: ShellFile['account'];
   playing: ShellFile['playing'];
@@ -80,6 +83,8 @@ export interface ShellData {
   footer: NavItem[];
   /** Each layout's destinations, by layout id. */
   nav: Record<string, NavItem[]>;
+  /** Each filtered page's choices, by page id: its `all`, then its destinations' labels. */
+  filters: Record<string, string[]>;
 }
 
 export function shellData(nav: Nav, shell: ShellFile): ShellData {
@@ -101,6 +106,13 @@ export function shellData(nav: Nav, shell: ShellFile): ShellData {
       return { key: p.id, label: p.title, icon };
     }),
     nav: Object.fromEntries(nav.layouts.map((l) => [layoutId(l), l.order.map(item)])),
+    filters: Object.fromEntries(
+      nav.pages.flatMap(({ id, filter }) =>
+        filter === undefined
+          ? []
+          : [[id, [filter.all, ...filter.narrows.map((d) => item(d).label)]]],
+      ),
+    ),
   };
 }
 
