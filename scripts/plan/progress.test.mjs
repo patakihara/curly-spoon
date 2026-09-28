@@ -237,6 +237,7 @@ test('the outbox lists each item, and more than five is over-asking', () => {
     title: 'Screenshots in the public repo?',
     kind: 'published',
     default: 'They stay out of git.',
+    body: 'Say "publish them" if you want them in git. To see what is there, run:\n\n    ls docs/screenshots/*.png',
   });
   assert.equal(progress.overAsking, true);
   assert.match(

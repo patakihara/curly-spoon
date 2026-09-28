@@ -181,7 +181,13 @@ function renderNow(progress) {
     ? `<div class="callout warn"><b>Waiting on you</b><ul>${progress.outbox
         .map(
           (o) =>
-            `<li><b>${esc(o.title)}</b> <span class="pill t-req">${esc(o.kind)}</span> Default: ${inline(o.default)}</li>`,
+            `<li><b>${esc(o.title)}</b> <span class="pill t-req">${esc(o.kind)}</span> Default: ${inline(o.default)}${
+              o.body
+                ? `<div class="ob">${blocks(o.body)
+                    .map((b) => b.html)
+                    .join('')}</div>`
+                : ''
+            }</li>`,
         )
         .join(
           '',

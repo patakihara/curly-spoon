@@ -108,3 +108,8 @@ header p.muted{margin-top:10px}
 .dw .c-open{font-weight:700}
 footer.stamp{margin-top:48px;padding-top:16px;border-top:1px solid var(--surface-border);font-size:12px;color:var(--surface-fg-muted)}
 li>p{margin:0}
+/* Waiting-on-you items: each outbox body, with commands that scroll on their own */
+.callout .ob{margin:6px 0 10px}
+.callout .ob p{margin:0 0 8px}
+.callout pre{margin:0 0 8px;padding:10px 12px;max-width:100%;overflow-x:auto;background:var(--surface-bg-alt);border:1px solid var(--surface-border);border-radius:var(--radius-xs)}
+.callout pre code{padding:0;background:none;color:var(--surface-fg);white-space:pre}

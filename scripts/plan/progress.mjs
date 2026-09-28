@@ -79,6 +79,11 @@ function readOutbox(root) {
         title: (lines[0] ?? '').replace(/^# /, ''),
         kind: field('kind'),
         default: field('default'),
+        body: lines
+          .slice(1)
+          .filter((l, i) => !(i < 5 && /^(kind|default): /.test(l)))
+          .join('\n')
+          .trim(),
       };
     });
 }

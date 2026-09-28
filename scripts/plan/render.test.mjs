@@ -64,7 +64,7 @@ const itemHtml = (html, id) => {
   return html.slice(start, html.indexOf('</li>', start) + 5);
 };
 
-test('[M0.plan/b] the page shows done, in-progress and next badges, waiting-on-you, decisions and the footer commit', () => {
+test('[M0.plan/b] the page shows done, in-progress and next badges, waiting-on-you with each item body and its commands, decisions and the footer commit', () => {
   const { html, commits } = rendered();
   assert.match(
     itemHtml(html, 'M0.bb'),
@@ -78,7 +78,7 @@ test('[M0.plan/b] the page shows done, in-progress and next badges, waiting-on-y
   assert.match(itemHtml(html, 'M0.dd'), /<span class="pill t-err">failing<\/span>/);
   assert.match(
     html,
-    /<li><b>Screenshots in the public repo\?<\/b> <span class="pill t-req">published<\/span> Default: They stay out of git\.<\/li>/,
+    /<li><b>Screenshots in the public repo\?<\/b> <span class="pill t-req">published<\/span> Default: They stay out of git\.<div class="ob"><p>Say &quot;publish them&quot; if you want them in git\. To see what is there, run:<\/p>\n<pre><code>ls docs\/screenshots\/\*\.png\n<\/code><\/pre>\n<\/div><\/li>/,
   );
   assert.match(
     html,
