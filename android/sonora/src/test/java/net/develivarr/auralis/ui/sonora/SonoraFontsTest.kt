@@ -34,11 +34,21 @@ class SonoraFontsTest {
 
     @Test
     fun `an icon family sets the icon font's FILL and weight axes`() {
-        val filled = fonts(SonoraSymbols.family(fill = true, weight = 500)).single()
+        val filled = fonts(SonoraSymbols.family(fill = true, weight = 500, size = 24f)).single()
         assertEquals(R.font.material_symbols_rounded, filled.resId)
         assertEquals(FontWeight(500), filled.weight)
         assertEquals(1f, axis(filled, "FILL"))
         assertEquals(500f, axis(filled, "wght"))
-        assertEquals(0f, axis(fonts(SonoraSymbols.family(fill = false, weight = 400)).single(), "FILL"))
+        val outlined = fonts(SonoraSymbols.family(fill = false, weight = 400, size = 24f)).single()
+        assertEquals(0f, axis(outlined, "FILL"))
+    }
+
+    @Test
+    fun `an icon's optical size follows its size within the font's 20 to 48 range, as the browser's does`() {
+        fun opsz(size: Float) =
+            axis(fonts(SonoraSymbols.family(fill = false, weight = 400, size = size)).single(), "opsz")
+        assertEquals(20f, opsz(16f))
+        assertEquals(32f, opsz(32f))
+        assertEquals(48f, opsz(64f))
     }
 }

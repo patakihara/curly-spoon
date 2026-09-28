@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.sp
  * One Material Symbols Rounded icon, named as Sonora names it: the Compose twin of Sonora's
  * `<span style="font-family:'Material Symbols Rounded'">play_arrow</span>`. The name is a
  * ligature, so it draws as one glyph. [fill] and [weight] are the font's FILL and wght axes, as
- * Sonora's `font-variation-settings: 'FILL' 1, 'wght' 500`.
+ * Sonora's `font-variation-settings: 'FILL' 1, 'wght' 500`. The opsz axis follows [size], as the
+ * browser's `font-optical-sizing: auto` does.
  */
 @Composable
 fun SonoraIcon(
@@ -31,7 +32,7 @@ fun SonoraIcon(
     fill: Boolean = false,
     weight: Int = 400,
 ) {
-    val family = remember(fill, weight) { SonoraSymbols.family(fill, weight) }
+    val family = remember(fill, weight, size) { SonoraSymbols.family(fill, weight, size.value) }
     BasicText(
         text = name,
         modifier = modifier,
@@ -45,16 +46,17 @@ fun SonoraIcon(
     )
 }
 
-/** The icon font, one family per FILL and weight setting. */
+/** The icon font, one family per FILL, weight and optical size setting. */
 @OptIn(ExperimentalTextApi::class)
 object SonoraSymbols {
-    fun family(fill: Boolean, weight: Int): FontFamily = FontFamily(
+    fun family(fill: Boolean, weight: Int, size: Float): FontFamily = FontFamily(
         Font(
             R.font.material_symbols_rounded,
             weight = FontWeight(weight),
             variationSettings = FontVariation.Settings(
                 FontVariation.weight(weight),
                 FontVariation.Setting("FILL", if (fill) 1f else 0f),
+                FontVariation.Setting("opsz", size.coerceIn(20f, 48f)),
             ),
         ),
     )
