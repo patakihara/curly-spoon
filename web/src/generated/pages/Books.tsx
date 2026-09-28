@@ -83,8 +83,8 @@ const placeholder = {
       "sub": "Rosa Elin",
       "image": "/art/the-salt-cartographer.jpg",
       "progress": null,
-      "status": "Needs choice",
-      "tone": "request"
+      "status": "Downloading · 18%",
+      "tone": "progress"
     },
     {
       "title": "The Silent Patient",

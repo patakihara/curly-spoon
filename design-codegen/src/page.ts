@@ -34,13 +34,38 @@ const fail = (node: t.Node, message: string): never => {
   throw new Error(`line ${lineOf(node)}: ${message}`);
 };
 
+/** A name the canvas keeps for itself: an element built per item, `$s3`, or a list, `$l1`. */
+const own = (node: t.Node, name: string) =>
+  name.startsWith('$') ? fail(node, `${name}: a name starting with $ is the canvas's own`) : name;
+
 /** `data.a.b` as `['data', 'a', 'b']`; anything else is refused. */
 function memberPath(node: t.Node): string[] {
-  if (node.type === 'Identifier') return [node.name];
+  if (node.type === 'Identifier') return [own(node, node.name)];
   if (node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier') {
-    return [...memberPath(node.object), node.property.name];
+    return [...memberPath(node.object), own(node, node.property.name)];
   }
   return fail(node, `${node.type} is not allowed: only literals and data paths`);
+}
+
+/**
+ * The names a page's scope already holds, on the canvas board and in the generated web page, so
+ * an Each item or a When state never takes one.
+ */
+const TAKEN = new Set(['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state']);
+TAKEN.add('placeholder').add('i').add('ignore').add('layout').add('detected').add('given');
+
+/** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
+function plainName(value: string, what: string, node: t.Node): string {
+  let reserved = false;
+  try {
+    new Function(value, '');
+  } catch {
+    reserved = true;
+  }
+  if (!/^[a-z][A-Za-z0-9]*$/.test(value) || reserved || TAKEN.has(value)) {
+    return fail(node, `${what} must be a plain name, not ${JSON.stringify(value)}`);
+  }
+  return value;
 }
 
 function propValue(value: t.JSXAttribute['value']): PropValue {
@@ -115,12 +140,13 @@ function element(node: t.JSXElement): PageTree {
       kind: 'each',
       line,
       of: of.path,
-      as: literalString(props, 'as', node),
+      as: plainName(literalString(props, 'as', node), "Each's as", node),
       children: kids,
     };
   }
   if (name.name === 'When') {
-    return { kind: 'when', line, state: literalString(props, 'state', node), children: kids };
+    const state = plainName(literalString(props, 'state', node), "When's state", node);
+    return { kind: 'when', line, state, children: kids };
   }
   return { kind: 'element', component: name.name, line, props, children: kids };
 }
@@ -170,7 +196,7 @@ const listed = (words: string[]) =>
 function resolve(value: Json, path: string[]): Json {
   let at = value;
   for (const key of path) {
-    if (at === null || typeof at !== 'object' || Array.isArray(at) || !(key in at))
+    if (at === null || typeof at !== 'object' || Array.isArray(at) || !Object.hasOwn(at, key))
       return undefined;
     at = (at as Record<string, Json>)[key];
   }
@@ -231,6 +257,9 @@ export function checkPage(
         if (!lists.every((l) => Array.isArray(l) && l.length > 0)) {
           errors.push(`line ${node.line}: ${node.of.join('.')} is not a non-empty list`);
           return;
+        }
+        if (scope.has(node.as)) {
+          errors.push(`line ${node.line}: Each item ${node.as} hides the outer one of that name`);
         }
         const inner = new Map(scope).set(node.as, (lists as Json[][]).flat());
         node.children.forEach((child) => walk(child, inner));

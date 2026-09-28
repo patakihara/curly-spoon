@@ -179,6 +179,29 @@ describe('a page in the shell', () => {
     expect(back.props.search).toEqual({ kind: 'literal', value: 'Search your books and requests' });
   });
 
+  it('[M0.canvas] takes its heading from nav.json, unless the page binds one from its data', () => {
+    const plain = framePage(page('<BackdropShell><PageBody /></BackdropShell>'));
+    const bound = framePage(
+      page('<BackdropShell back={<BackLayer title={data.title} />}><PageBody /></BackdropShell>'),
+    );
+    const heading = (frame: ReturnType<typeof framePage>) => {
+      const slot = el(framed(frame, 'Shelf', {}), 'BackdropShell').props.back;
+      return el(slot?.kind === 'slot' ? slot.tree : undefined, 'BackLayer').props.title;
+    };
+    expect(heading(plain)).toEqual({ kind: 'literal', value: 'Shelf' });
+    expect(heading(bound)).toEqual({ kind: 'binding', path: ['data', 'title'] });
+  });
+
+  it('[M0.canvas] refuses a heading written in the page, or bound to anything but its data', () => {
+    for (const title of ['"Mine"', '{"Mine"}', '{shell.account.label}', '{<Badge />}', '{null}']) {
+      expect(() =>
+        framePage(
+          page(`<BackdropShell back={<BackLayer title=${title} />}><PageBody /></BackdropShell>`),
+        ),
+      ).toThrow(/BackLayer.title is nav.json's page title; a page may only bind its own data.…/);
+    }
+  });
+
   it('[M0.canvas] refuses a local search given as anything but its placeholder text', () => {
     for (const search of ['{<SearchField />}', '{data.search}', '{42}', '{null}', '']) {
       expect(() =>
@@ -200,11 +223,6 @@ describe('a page in the shell', () => {
       'the rail',
       '<BackdropShell rail={<NavRail />}><PageBody /></BackdropShell>',
       /BackdropShell.rail is the shell's/,
-    ],
-    [
-      'the title',
-      '<BackdropShell back={<BackLayer title="Mine" />}><PageBody /></BackdropShell>',
-      /BackLayer.title is the shell's/,
     ],
     [
       'the leading control',

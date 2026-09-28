@@ -132,6 +132,23 @@ describe('a page file', () => {
     expect(() => parsePage(source, 'book')).toThrow(/line 2: .*only return/);
   });
 
+  it('[M0.canvas] refuses an Each item or a When state that is not a plain name, so neither can write markup or code', () => {
+    for (const as of ['a" onclick="x', 'a, i) => (x', 'class', 'data', 'shell', 'i', 'chrome']) {
+      expect(() =>
+        parsePage(page(`<Each of={data.a} as='${as}'><Button /></Each>`), 'book'),
+      ).toThrow(/line 3: Each's as must be a plain name/);
+    }
+    expect(() => parsePage(page('<When state="full}} {{shell"><Button /></When>'), 'book')).toThrow(
+      /line 3: When's state must be a plain name/,
+    );
+  });
+
+  it('[M0.canvas] refuses a path through a name starting with $, which the canvas keeps for its own', () => {
+    expect(() =>
+      parsePage(page('<Each of={data.a} as="row"><Button label={row.$s0} /></Each>'), 'book'),
+    ).toThrow(/line 3: \$s0: a name starting with \$ is the canvas's own/);
+  });
+
   it('refuses a function not named for its page', () => {
     expect(() => parsePage(page('<Button />', 'Album'), 'book')).toThrow(/must be named Book/);
   });
@@ -156,6 +173,33 @@ describe('checking a page', () => {
     expect(checkPage(tree('<EpisodeRow title={data.subtitle} />'), data, props)).toEqual([
       'line 3: data.subtitle is not in the placeholder',
     ]);
+  });
+
+  it('[M0.canvas] names a binding the placeholder holds only through its prototype, never as its own key', () => {
+    expect(
+      checkPage(
+        tree(`<DetailPage kindLabel={data.constructor}>
+  <Each of={data.chapters} as="chapter"><EpisodeRow title={chapter.toString} /></Each>
+</DetailPage>`),
+        data,
+        props,
+      ),
+    ).toEqual([
+      'line 3: data.constructor is not in the placeholder',
+      'line 4: chapter.toString is not in the placeholder',
+    ]);
+  });
+
+  it('[M0.canvas] names an Each item that hides an outer one', () => {
+    expect(
+      checkPage(
+        tree(`<Each of={data.chapters} as="chapter">
+  <Each of={data.chapters} as="chapter"><EpisodeRow title={chapter.title} /></Each>
+</Each>`),
+        data,
+        props,
+      ),
+    ).toEqual(['line 4: Each item chapter hides the outer one of that name']);
   });
 
   it('names a loop over something that is not a list', () => {

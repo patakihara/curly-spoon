@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: b797b7e5650d4ab2d9fb84891011f505a29ee55993c6d9a19dae0b4af6290c97
+pageHash: 7e4d658c264012f5d9a39434ed8ae7c32dd1fbacc51c19b1d705f558fd030c86
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -31,9 +31,10 @@ the library under their own filter, as the plan says. The subheader is the `TabB
 active. The body: the `SortFilterBar` "Title" with the `ViewToggle` opposite, then a `LayoutGrid`
 of `MediaCard`s in title order: 3 across on the phone, filling the front layer on desktop. Owned books carry
 their rose resume bar (Foggy Trails, The Silent Patient, Wind and Truth). Three are requests, their
-art greyed and a pill in their tone: "Downloading · 64%" in the accent (the download progress the
-structure asks for; on a phone card it keeps "64%" with its glyph), "Needs choice" in the request
-tone and "Failed" in the error tone.
+art greyed and a pill in their tone: "Downloading · 64%" and "Downloading · 18%" in the accent
+(the download progress the structure asks for; on a phone card it keeps "64%" with its glyph) and
+"Failed" in the error tone. No book shows "Needs choice": the plan keeps that for album torrents,
+and a book's release is picked automatically.
 
 Measured in the browser: the desktop grid starts where the kit's does, at x = 296 with cards 20 px
 apart, and runs to the front layer's margin at x = 1091, 4 cards of 184 px across; the phone's first tab now starts at the page margin as the kit's does, after Sonora's

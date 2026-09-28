@@ -10,7 +10,8 @@
  *     …the front layer's content…
  *   </BackdropShell>
  *
- * The shell fills in the rest: the heading (the page's title), what leads it (the account avatar
+ * The shell fills in the rest: the heading (nav.json's title for the page, unless the page binds
+ * its own from its data, `title={data.title}`, as a shelf does with its name), what leads it (the account avatar
  * on a phone's destination home, a close control on a page that closes), the rail or bottom bar,
  * the player and the side panel. A page whose root is anything else is its front layer's content
  * alone. The account avatar is the shell's alone: a page never draws one, so it is never in a
@@ -219,6 +220,8 @@ export function chrome(
 
 /** What a page gives the shell: its back layer's controls, trailing and local search, its subheader, and its content. */
 export interface PageFrame {
+  /** The heading bound to the page's data, `title={data.title}`, in place of nav.json's title. */
+  title?: Extract<PropValue, { kind: 'binding' }>;
   controls?: PageTree;
   /** The back layer's local search: its placeholder, which names what it searches. */
   search?: string;
@@ -266,7 +269,12 @@ export function framePage(tree: PageTree): PageFrame {
       ) {
         for (const [p, v] of Object.entries(value.tree.props)) {
           if ((p === 'controls' || p === 'trailing') && v.kind === 'slot') frame[p] = v.tree;
-          else if (p === 'search' && v.kind === 'literal' && typeof v.value === 'string') {
+          else if (p === 'title' && v.kind === 'binding' && v.path[0] === 'data') frame.title = v;
+          else if (p === 'title') {
+            errors.push(
+              `line ${value.tree.line}: BackLayer.title is nav.json's page title; a page may only bind its own data.… in its place`,
+            );
+          } else if (p === 'search' && v.kind === 'literal' && typeof v.value === 'string') {
             frame.search = v.value;
           } else if (p === 'search') {
             errors.push(
@@ -274,7 +282,7 @@ export function framePage(tree: PageTree): PageFrame {
             );
           } else {
             errors.push(
-              `line ${value.tree.line}: BackLayer.${p} is the shell's; a page gives only controls and trailing, each one element, and search`,
+              `line ${value.tree.line}: BackLayer.${p} is the shell's; a page gives only controls and trailing, each one element, search and a bound title`,
             );
           }
         }
@@ -292,7 +300,7 @@ export function framePage(tree: PageTree): PageFrame {
 /**
  * The page's whole tree inside the shell: `BackdropShell` with the page's content as its
  * children and the shell's parts given as `parts` says, bindings in the web page or the chrome's
- * own trees on the canvas.
+ * own trees on the canvas. The heading is the page's bound one, or else `title`, nav.json's.
  */
 export function framed(
   frame: PageFrame,
@@ -304,7 +312,7 @@ export function framed(
   const given = (name: keyof typeof parts) =>
     parts[name] === undefined ? {} : { [name]: parts[name]! };
   const back = el('BackLayer', {
-    title: lit(title),
+    title: frame.title ?? lit(title),
     ...(parts.leading === undefined ? {} : { leading: parts.leading }),
     ...named('controls', frame.controls),
     ...named('trailing', frame.trailing),

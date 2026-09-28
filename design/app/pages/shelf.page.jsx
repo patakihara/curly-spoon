@@ -1,6 +1,6 @@
 export default function Shelf({ data }) {
   return (
-    <BackdropShell back={<BackLayer search="Search this shelf" />}>
+    <BackdropShell back={<BackLayer title={data.title} search="Search this shelf" />}>
       <PageBody>
         <Section
           eyebrow={data.eyebrow}

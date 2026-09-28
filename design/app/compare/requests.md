@@ -1,6 +1,6 @@
 ---
 page: requests
-pageHash: 218f54bebb49da9a5430d2938454bb245d4f961fb628a2f40f6cbe432440b81b
+pageHash: d31d805c2725181f52789b423e2b2486a01a58ab5a26e44acbb4326f65f64863
 sonora: [none]
 ---
 
@@ -26,12 +26,12 @@ the list width:
 
 - **In flight**: every album and book on its way, one `ResultRow` each, its meta naming type,
   creator, source and size ("Album · Soul Vertex · Prowlarr · 412 MB"), its status in the plan's
-  vocabulary and tone (Downloading · 64%, Importing, Searching…, Failed), and at its end an
+  vocabulary and tone (Downloading at 38%, 64% and 18%, Importing, Searching…, Failed), and at its end an
   `IconButton`: ✕ Cancel, or ↻ Retry on the failed one.
-- **Needs choice**: each request where no release clearly wins, with its status pill and ✕, then
+- **Needs choice**: each album torrent where no release clearly wins, with its status pill and ✕, then
   its candidates as rows naming format, track fit, size and seeders ("FLAC · 12 of 12 tracks ·
-  1.1 GB · 41 seeders"), each with a "Choose" button: one tap picks it. An album with three
-  candidates, then a book with two.
+  1.1 GB · 41 seeders"), each with a "Choose" button: one tap picks it. One album with three
+  candidates; a book never waits here, since its release is picked automatically.
 
 No podcasts: subscribing is instant.
 
@@ -42,11 +42,8 @@ is where things are requested, as Sonora's `EmptyState`.
 
 - Changed on purpose: a row ends in its action (Cancel or Retry) as an `IconButton`, where the
   card's rows act only through the art's hover overlay, which a phone does not have.
-- Changed on purpose: the statuses follow the plan's vocabulary: "Downloading · 64%" rather than
+- Changed on purpose: the statuses follow the plan's vocabulary: "Downloading · 38%" rather than
   the card's "Requested · 87%", and "Importing", which the card lacks.
-- Open: nav.json says Needs choice holds album torrents, but the Books home marks The Salt
-  Cartographer "Needs choice" and the plan's request diagram gives books a pick step too, so the
-  section holds a book as well as an album.
 - Open: the candidates repeat the request's art, since a release has none of its own; they are not
   indented under their request, as Sonora has no nested row.
 - Open: the phone truncates longer metas ("AudiobookBay · 286 …"); ResultRow keeps one line.

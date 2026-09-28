@@ -10,7 +10,7 @@ const placeholder = {
       "title": "Salt and Static",
       "meta": "Album · Soul Vertex · Prowlarr · 412 MB",
       "image": "/art/salt-and-static.jpg",
-      "status": "Downloading · 64%",
+      "status": "Downloading · 38%",
       "tone": "progress",
       "action": "Cancel",
       "actionIcon": "close"
@@ -20,6 +20,15 @@ const placeholder = {
       "meta": "Book · Cornelia Funke · AudiobookBay · 286 MB",
       "image": "/art/ink-heart.jpg",
       "status": "Downloading · 64%",
+      "tone": "progress",
+      "action": "Cancel",
+      "actionIcon": "close"
+    },
+    {
+      "title": "The Salt Cartographer",
+      "meta": "Book · Rosa Elin · AudiobookBay · 612 MB",
+      "image": "/art/the-salt-cartographer.jpg",
+      "status": "Downloading · 18%",
       "tone": "progress",
       "action": "Cancel",
       "actionIcon": "close"
@@ -71,23 +80,6 @@ const placeholder = {
         {
           "title": "Paper Lanterns [MP3 320]",
           "meta": "MP3 320 · 12 of 12 tracks · 136 MB · 96 seeders"
-        }
-      ]
-    },
-    {
-      "title": "The Salt Cartographer",
-      "meta": "Book · Rosa Elin · 2 releases, none clearly best",
-      "image": "/art/the-salt-cartographer.jpg",
-      "status": "Needs choice",
-      "tone": "request",
-      "candidates": [
-        {
-          "title": "The Salt Cartographer (Unabridged) [M4B]",
-          "meta": "M4B · unabridged · 612 MB · 12 seeders"
-        },
-        {
-          "title": "The Salt Cartographer [MP3 64k]",
-          "meta": "MP3 · unabridged · 48 files · 540 MB · 30 seeders"
         }
       ]
     }

@@ -1,6 +1,6 @@
 ---
 page: shelf
-pageHash: 1d6f9b1dfdacd4bf608f478b9640583fff21a52f28ae8bd23138f004e9807bd8
+pageHash: e26ca8572cefa96d68a23f8d549b92a41ec1b4ae6263f1e802d68fdec066fbe7
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: [S12]
 ---
@@ -25,12 +25,13 @@ and Spotify's S12 for the shelf header.
 
 ## What the canvas page draws
 
-The back layer holds the heading, led by a close control (the shelf closes to Browse), and ends in
+The back layer holds the heading, the shelf's own title "More like Deep Inertia", bound from its
+data (`BackLayer title={data.title}`) in place of nav.json's "Shelf", led by a close control (the shelf closes to Browse), and ends in
 the local search's button (`BackLayer search="Search this shelf"`, out as the front layer
 scrolls). The front layer, with no subheader, holds one `Section` whose header is the shelf as on
 Browse: the eyebrow "More like", the subject "Deep Inertia" and its round art (an artist), with
 the `ViewToggle` at its trailing edge (Sonora's new `Section.trailing`). Below it a `LayoutGrid`
-of eight `MediaCard`s, captions naming each item's type, one with a resume bar: 3 across on the
+of seven `MediaCard`s, none of them the subject's own work, captions naming each item's type, one with a resume bar: 3 across on the
 phone, 4 across beside the panel on desktop, filling the front layer as the library homes do.
 
 **Empty state**, per nav.json: a shelf with no items is never offered on Browse; reached by an old
@@ -47,7 +48,8 @@ link, the page says the shelf has gone, with the way back to Browse.
   library homes.
 - Changed on purpose: no "Not in library" pill; where an in-library marker goes is still open in
   the plan.
-- Open: the back layer's heading reads "Shelf", nav.json's title, not the shelf's name as the kit's
-  "Recently added" does: the shell takes every heading from nav.json, and a page cannot give its
-  own. Detail pages (part 3) meet the same question.
+- Matches: the heading names the shelf, as the kit's "Recently added" does; the page binds it from
+  its data, and nav.json's "Shelf" stays the route's name and the fallback.
+- Open: the heading and the section header both read "More like Deep Inertia"; the header keeps the
+  subject's art and the toggle over the items.
 - Open: paging is not drawn; the placeholder holds one page of items.

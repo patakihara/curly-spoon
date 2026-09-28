@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { PageTree } from './page.js';
-import { framePage } from './shell.js';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { APP_DIR, REPO_ROOT } from './outputs.js';
+import { framePage, framed } from './shell.js';
 import { bindings, dataRoots, elements, readPage, type Element } from './test-pages.js';
 
 type Row = Record<string, unknown>;
@@ -137,11 +140,31 @@ describe('Search', () => {
 });
 
 describe('Shelf', () => {
-  const { tree } = readPage('shelf');
+  const { tree, data } = readPage('shelf');
 
-  it('[M0.canvas] binds only the shelf: its eyebrow, subject, subject art and items', () => {
-    expect(dataRoots(tree)).toEqual(['eyebrow', 'items', 'round', 'subject', 'subjectArt']);
+  it('[M0.canvas] binds only the shelf: its title, eyebrow, subject, subject art and items', () => {
+    expect(dataRoots(tree)).toEqual([
+      'eyebrow',
+      'items',
+      'round',
+      'subject',
+      'subjectArt',
+      'title',
+    ]);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
+  });
+
+  it('[M0.canvas] is headed by the shelf\'s own title, its eyebrow and subject, not nav.json\'s "Shelf"', () => {
+    const slot = framed(framePage(tree), 'Shelf', {}) as Element;
+    const back = slot.props.back?.kind === 'slot' ? (slot.props.back.tree as Element) : undefined;
+    expect(back?.props.title).toEqual({ kind: 'binding', path: ['data', 'title'] });
+    expect(data.title).toBe(`${data.eyebrow as string} ${data.subject as string}`);
+  });
+
+  it('[M0.canvas] never holds its own subject\'s work in a "More like" shelf', () => {
+    for (const item of data.items as Row[]) {
+      expect(item.sub).not.toMatch(new RegExp(` · ${data.subject as string}$`));
+    }
   });
 
   it('[M0.canvas] heads its items with the shelf, as on Browse, and the grid or list toggle', () => {
@@ -184,6 +207,12 @@ describe('Requests', () => {
     }
   });
 
+  it('[M0.canvas] shows each download in flight at its own percentage', () => {
+    const shown = inFlight.map((r) => /(\d+)%$/.exec(r.status as string)?.[1]).filter(Boolean);
+    expect(shown.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(shown).size).toBe(shown.length);
+  });
+
   it('[M0.canvas] retries a failed request and cancels any other', () => {
     for (const request of inFlight) {
       const failed = request.status === 'Failed';
@@ -218,5 +247,30 @@ describe('Not found', () => {
     expect(action?.children).toEqual([{ kind: 'text', value: 'Go to Browse' }]);
     expect(bindings(tree)).toEqual([]);
     expect(data).toEqual({});
+  });
+});
+
+describe('every placeholder', () => {
+  const dir = join(REPO_ROOT, APP_DIR, 'placeholders');
+  const ids = readdirSync(dir).map((f) => f.replace(/\.json$/, ''));
+
+  /** Every object in `value` with a `status`, with the placeholder it is in. */
+  const statused = (value: unknown, into: Row[] = []): Row[] => {
+    if (Array.isArray(value)) value.forEach((v) => statused(v, into));
+    else if (value !== null && typeof value === 'object') {
+      if ('status' in value) into.push(value as Row);
+      Object.values(value).forEach((v) => statused(v, into));
+    }
+    return into;
+  };
+
+  it('[M0.canvas] gives no book request Needs choice: that is for album torrents, and books pick automatically', () => {
+    const books = ids.flatMap((id) =>
+      statused(readPage(id).data).filter(
+        (item) => id === 'books' || /^Book · /.test(String(item.meta ?? item.sub ?? '')),
+      ),
+    );
+    expect(books.length).toBeGreaterThan(0);
+    expect(books.filter((b) => b.status === 'Needs choice')).toEqual([]);
   });
 });
