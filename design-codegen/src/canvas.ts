@@ -146,6 +146,8 @@ function render(
     nodes.map((n) => render(n, placeholder, aside, inner)).join('');
   const attr = (name: string, value: PropValue): string => {
     if (value.kind === 'binding') return `${kebab(name)}="{{${value.path.join('.')}}}"`;
+    // An artboard is a still that goes nowhere: an Open is a handler that does nothing.
+    if (value.kind === 'open') return `${kebab(name)}="{{navigate}}"`;
     if (value.kind === 'slot') {
       const slot = aside.slots.push(value.tree) - 1;
       if (each === undefined) {
@@ -194,6 +196,7 @@ function render(
  */
 const BUILD = `const S = window.${SONORA_NAMESPACE} || {};
 const R = window.React;
+const navigate = () => {};
 const at = (scope, path) => path.slice(1).reduce((v, k) => (v == null ? v : v[k]), scope[path[0]]);
 const build = (n, scope, key) => {
   const kids = (list, sc) => list.map((c, i) => build(c, sc, i));
@@ -209,7 +212,7 @@ const build = (n, scope, key) => {
   if (!C) return null;
   const props = { key };
   for (const [name, v] of Object.entries(n.props)) {
-    props[name] = v.kind === 'literal' ? v.value : v.kind === 'binding' ? at(scope, v.path) : build(v.tree, scope);
+    props[name] = v.kind === 'literal' ? v.value : v.kind === 'binding' ? at(scope, v.path) : v.kind === 'open' ? navigate : build(v.tree, scope);
   }
   return R.createElement(C, props, ...kids(n.children, scope));
 };`;
@@ -288,7 +291,7 @@ function artboard(
           'const lists = {};',
           `${json(aside.roots)}.forEach((i) => { lists["l" + i] = items(itemLists[i], scope); });`,
         ]),
-    `return { data, shell, slots, ${aside.lists.length === 0 ? '' : 'lists, '}when: {"full":true} };`,
+    `return { data, shell, slots, ${aside.lists.length === 0 ? '' : 'lists, '}when: {"full":true}, navigate };`,
     '}',
     '}',
     '</script>',

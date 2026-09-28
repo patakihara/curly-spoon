@@ -1,8 +1,11 @@
 /**
  * A canvas page, `design/app/pages/<id>.page.jsx`: one default-exported function returning Sonora
  * components with literal props, `data` paths and, for a prop that takes an element, one Sonora
- * element (a slot, `back={<BackLayer …/>}`), plus `<Each of as>` and `<When state>`. It is read
- * into a page tree, never run, so both platforms can generate from the same file.
+ * element (a slot, `back={<BackLayer …/>}`), plus `<Each of as>` and `<When state>`. A handler
+ * prop may open another page, `onClick={<Open page="album" ref={release.ref} />}`: the page's id
+ * in nav.json and each of its route's parameters bound to a data path. It is read into a page
+ * tree, never run, so both platforms can generate from the same file: the web as a navigation to
+ * the route, Android as one to the nav graph's destination with the same arguments.
  */
 import { parse } from '@babel/parser';
 import type * as t from '@babel/types';
@@ -12,7 +15,9 @@ export type PropValue =
   | { kind: 'literal'; value: string | number | boolean | null }
   | { kind: 'binding'; path: string[] }
   /** One Sonora element given to a prop that takes an element: `back={<BackLayer />}`. */
-  | { kind: 'slot'; tree: PageTree };
+  | { kind: 'slot'; tree: PageTree }
+  /** A handler that opens a page of nav.json, each route parameter bound to a data path. */
+  | { kind: 'open'; page: string; params: Record<string, string[]> };
 
 export type PageTree =
   | {
@@ -53,6 +58,7 @@ function memberPath(node: t.Node): string[] {
  */
 const TAKEN = new Set(['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state']);
 TAKEN.add('placeholder').add('i').add('ignore').add('layout').add('detected').add('given');
+TAKEN.add('navigate');
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
 function plainName(value: string, what: string, node: t.Node): string {
@@ -81,6 +87,8 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
   if (e.type === 'NullLiteral') return { kind: 'literal', value: null };
   if (e.type === 'JSXEmptyExpression') return fail(value, 'an empty expression is not allowed');
   if (e.type === 'JSXElement') {
+    const name = e.openingElement.name;
+    if (name.type === 'JSXIdentifier' && name.name === 'Open') return open(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -89,6 +97,32 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     return fail(e, 'a fragment is not allowed: only literals, data paths and one Sonora element');
   }
   return { kind: 'binding', path: memberPath(e) };
+}
+
+/** `<Open page="album" ref={release.ref} />`: the page it opens, and its parameters' bindings. */
+function open(node: t.JSXElement): PropValue {
+  if (node.children.length > 0) return fail(node, 'Open takes no children');
+  let page: string | undefined;
+  const params: Record<string, string[]> = {};
+  for (const attr of node.openingElement.attributes) {
+    if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
+    if (attr.name.type !== 'JSXIdentifier') return fail(attr, 'namespaced props are not allowed');
+    const name = attr.name.name;
+    const value = attr.value;
+    if (name === 'page') {
+      if (value?.type !== 'StringLiteral')
+        return fail(attr, "Open's page must be a string literal");
+      page = value.value;
+      continue;
+    }
+    const e = value?.type === 'JSXExpressionContainer' ? value.expression : undefined;
+    if (e === undefined || e.type === 'JSXEmptyExpression' || e.type.endsWith('Literal')) {
+      return fail(attr, `Open's ${name} must be a data path: a parameter is always bound`);
+    }
+    params[name] = memberPath(e as t.Expression);
+  }
+  if (page === undefined) return fail(node, 'Open needs page="<page id>"');
+  return { kind: 'open', page, params };
 }
 
 function literalString(props: Record<string, PropValue>, name: string, node: t.Node): string {
@@ -121,6 +155,7 @@ function element(node: t.JSXElement): PageTree {
   const name = node.openingElement.name;
   if (name.type !== 'JSXIdentifier') return fail(node, 'only plain component names are allowed');
   if (!/^[A-Z]/.test(name.name)) return fail(node, `<${name.name}> is not a Sonora component`);
+  if (name.name === 'Open') return fail(node, 'Open goes in a handler prop, onClick={<Open … />}');
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -189,6 +224,16 @@ export interface Choice {
 /** Each component's props that take one of a fixed set of words. */
 export type Choices = Map<string, Map<string, Choice>>;
 
+/** What an `<Open>` is checked against: the pages, the page's own links and the handler props. */
+export interface Opens {
+  /** Each page of nav.json by id, with its route's parameter names. */
+  pages: Map<string, string[]>;
+  /** The page's structure `links`: the only pages it may open. */
+  links: string[];
+  /** Each component's props that take a handler, `() => void`. */
+  handlers: Map<string, Set<string>>;
+}
+
 const listed = (words: string[]) =>
   words.length === 1 ? words[0]! : `${words.slice(0, -1).join(', ')} or ${words.at(-1)!}`;
 
@@ -218,8 +263,47 @@ export function checkPage(
   slots?: Map<string, Set<string>>,
   shell?: Json,
   choices?: Choices,
+  opens?: Opens,
 ): string[] {
   const errors: string[] = [];
+  const checkOpen = (
+    line: number,
+    component: string,
+    prop: string,
+    value: Extract<PropValue, { kind: 'open' }>,
+    check: (line: number, path: string[]) => Json[],
+  ) => {
+    const at = `line ${line}: ${component}.${prop}`;
+    if (opens === undefined) {
+      errors.push(`${at} opens ${value.page}, and no navigation map was given to check it`);
+      return;
+    }
+    const handlers = opens.handlers.get(component);
+    if (handlers !== undefined && !handlers.has(prop)) {
+      errors.push(`${at} takes no handler, so it cannot open a page`);
+    }
+    const params = opens.pages.get(value.page);
+    if (params === undefined) {
+      errors.push(`${at} opens ${value.page}, which is not a page in nav.json`);
+      return;
+    }
+    if (!opens.links.includes(value.page)) {
+      errors.push(`${at} opens ${value.page}, which is not in this page's structure links`);
+    }
+    const given = Object.keys(value.params);
+    if ([...given].sort().join() !== [...params].sort().join()) {
+      errors.push(`${at} gives ${value.page} [${given}], and its route takes [${params}]`);
+    }
+    for (const [name, path] of Object.entries(value.params)) {
+      for (const v of check(line, path)) {
+        if (typeof v !== 'string' || v === '') {
+          errors.push(
+            `${at}: ${value.page}'s ${name} (${path.join('.')}) is not a non-empty string`,
+          );
+        }
+      }
+    }
+  };
   const walk = (node: PageTree, scope: Map<string, Json[]>) => {
     const check = (line: number, path: string[]): Json[] => {
       const [root, ...rest] = path;
@@ -281,6 +365,10 @@ export function checkPage(
         for (const [prop, value] of Object.entries(node.props)) {
           const found = value.kind === 'binding' ? check(node.line, value.path) : [];
           const choice = choices?.get(node.component)?.get(prop);
+          if (value.kind === 'open') {
+            checkOpen(node.line, node.component, prop, value, check);
+            continue;
+          }
           if (choice !== undefined && value.kind !== 'slot') {
             const given = value.kind === 'literal' ? [value.value] : found;
             const from = value.kind === 'binding' ? ` (${value.path.join('.')})` : '';

@@ -16,7 +16,12 @@ export default function Artist({ data }) {
         <Section title="In your library">
           <Shelf>
             <Each of={data.library} as="item">
-              <MediaCard title={item.title} sub={item.sub} image={item.image} />
+              <MediaCard
+                title={item.title}
+                sub={item.sub}
+                image={item.image}
+                onClick={<Open page="album" ref={item.ref} />}
+              />
             </Each>
           </Shelf>
         </Section>
@@ -32,6 +37,7 @@ export default function Artist({ data }) {
                   absent={release.absent}
                   status={release.status}
                   tone={release.tone}
+                  onClick={<Open page="album" ref={release.ref} />}
                 />
               </Each>
             </Shelf>

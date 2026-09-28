@@ -379,3 +379,35 @@ describe('an element given to a prop inside Each', () => {
     expect([choose.c, choose.p.size, choose.k]).toEqual(['Button', 'sm', ['Choose']]);
   });
 });
+
+describe('a page opening another, on the canvas', () => {
+  const opening = `export default function Search({ data }) {
+  return (
+    <PageBody>
+      <Each of={data.rows} as="row">
+        <ResultRow title={row.title} onClick={<Open page="book" ref={row.ref} />} trailing={<Button>Go</Button>} />
+      </Each>
+    </PageBody>
+  );
+}
+`;
+  const linked: App = {
+    ...app,
+    pages: [
+      {
+        id: 'search',
+        tree: parsePage(opening, 'search'),
+        placeholder: { rows: [{ title: 'Ink Heart', ref: 'ink-heart' }] },
+      },
+    ],
+  };
+  const html = generateCanvas(linked, install, now).get('search.phone.dc.html') ?? '';
+
+  it('[M0.canvas] gives the handler a navigate that goes nowhere, since an artboard is a still', () => {
+    expect(html).toMatch(/title="\{\{row\.title\}\}" on-click="\{\{navigate\}\}"/);
+    expect(html).toContain('const navigate = () => {};');
+    expect(html).toMatch(
+      /return \{ data, shell, slots, lists, when: \{"full":true\}, navigate \};/,
+    );
+  });
+});

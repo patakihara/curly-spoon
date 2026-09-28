@@ -1,6 +1,6 @@
 ---
 page: album
-pageHash: 10053319aeb24e9bf5b8c92547d9959c9d6cdc0c7710bfef68a6be9ac5b260bf
+pageHash: 6233f987df4b2b39fa88ed2d26363cf215c84ddecf575c7e5fa333ca243ed5a0
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S02, S35]
 ---
@@ -30,7 +30,8 @@ its play button).
 
 The back layer's heading is the album's name, bound from its data (`BackLayer title={data.title}`),
 led by the close control and ending in the local search's button ("Search this album"). The front
-layer, at the list width: a `MediaHeader` with the cover, "ALBUM", the artist and "2022 · 8 tracks
+layer, at the list width: a `MediaHeader` with the cover, "ALBUM", the artist as an accent link
+that opens the artist's page (`onSubtitle={<Open page="artist" ref={data.artistRef} />}`) and "2022 · 8 tracks
 · 36 min · Plays from YouTube Music", and no title of its own, since the heading names the album.
 Its buttons are Play and Add to queue only (an album's default is the end of the queue; play next
 is the long press), then an `OverflowMenu`, drawn open, holding Add to library ("A lossless copy,
@@ -45,7 +46,7 @@ one line where the tracks would be.
 
 ## Differences
 
-- Matches: cover, kind line, artist, meta and the rose Play; the playing row's equalizer bars; the
+- Matches: cover, kind line, the artist as an accent link to their page, meta and the rose Play; the playing row's equalizer bars; the
   kit's search glyph, here the backdrop's local search.
 - Changed on purpose: the album's name is the page heading and the header has no title (Sonora's
   `MediaHeader.title` is now optional), so it is said once, as on Shelf.
@@ -58,6 +59,4 @@ one line where the tracks would be.
   on a row.
 - Changed on purpose: an album you don't own says it plays from YouTube Music in its meta line; the
   kit has no unowned album.
-- Missing: the artist in the header is not drawn as an accent link, since a page cannot pass the
-  handler that makes it one.
 - Provisional, per nav.json: the editions fold and "More by", drawn as a guess.

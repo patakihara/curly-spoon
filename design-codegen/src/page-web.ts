@@ -3,7 +3,7 @@
  * UI package's Sonora components inside the app shell, with the page's placeholder as its default
  * data. The shell's parts for every layout are constants of the page; the window's width picks one.
  */
-import { componentName, type Nav, type NavPage } from './nav.js';
+import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
 import { APP_NOTE } from './outputs.js';
 import type { Choices, PageTree, PropValue } from './page.js';
 import {
@@ -51,6 +51,9 @@ export interface WebComponents {
   choices?: Choices;
 }
 
+/** What rendering needs beyond the components: each page's route path, for an `<Open>`. */
+type Ctx = WebComponents & { paths: Map<string, string> };
+
 const chosen = (tree: PageTree, name: string, components: WebComponents) =>
   tree.kind === 'element' && components.choices?.get(tree.component)?.has(name) === true;
 
@@ -72,10 +75,16 @@ function propLines(
   name: string,
   value: PropValue,
   at: string,
-  components: WebComponents,
+  components: Ctx,
   owner: string,
   choice: boolean,
 ): string[] {
+  if (value.kind === 'open') {
+    const params = Object.entries(value.params).map(([k, path]) => `${k}: ${path.join('.')}`);
+    const path = `'${components.paths.get(value.page)!}'`;
+    const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
+    return [`${name}={() => navigate(${to})}`];
+  }
   if (value.kind === 'binding' && choice) {
     return [
       `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,
@@ -94,7 +103,7 @@ function propLines(
   return [`${name}={`, ...lines.map((l) => l.slice(at.length)), '}'];
 }
 
-function render(tree: PageTree, indent: string, components: WebComponents): string[] {
+function render(tree: PageTree, indent: string, components: Ctx): string[] {
   const inner = indent + '  ';
   const kids = (nodes: PageTree[], at: string) => nodes.flatMap((n) => render(n, at, components));
   switch (tree.kind) {
@@ -149,7 +158,7 @@ function render(tree: PageTree, indent: string, components: WebComponents): stri
   }
 }
 
-function chromeEntry(parts: Chrome, components: WebComponents): string[] {
+function chromeEntry(parts: Chrome, components: Ctx): string[] {
   const out = [`    platform: '${parts.platform}',`];
   for (const key of ['rail', 'leading', 'player', 'sheet'] as const) {
     const tree = parts[key];
@@ -166,9 +175,13 @@ export function generateWebPage(
   tree: PageTree,
   id: string,
   placeholder: unknown,
-  components: WebComponents,
+  webComponents: WebComponents,
   { nav, shell, page }: WebShell,
 ): string {
+  const components: Ctx = {
+    ...webComponents,
+    paths: new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path])),
+  };
   const name = componentName(id);
   const root = framed(framePage(tree), page.title, {
     rail: binding('chrome.rail'),
@@ -194,6 +207,20 @@ export function generateWebPage(
       Object.entries(n.props).some(([p, v]) => v.kind === 'binding' && chosen(n, p, components)),
   );
   if (typed) react.push("import type { ComponentProps } from 'react';");
+  const opens = some(
+    root,
+    (n) => n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'open'),
+  );
+  const bound = some(
+    root,
+    (n) =>
+      n.kind === 'element' &&
+      Object.values(n.props).some((v) => v.kind === 'open' && Object.keys(v.params).length > 0),
+  );
+  if (opens) {
+    const names = bound ? 'generatePath, useNavigate' : 'useNavigate';
+    react.push(`import { ${names} } from 'react-router';`);
+  }
   return [
     `// ${APP_NOTE}`,
     ...react,
@@ -229,6 +256,7 @@ export function generateWebPage(
     '  const detected = useLayout();',
     '  const chrome = CHROME[given ?? detected];',
     '  const platform = chrome.platform;',
+    ...(opens ? ['  const navigate = useNavigate();'] : []),
     '  return (',
     ...render(root, '    ', components),
     '  );',

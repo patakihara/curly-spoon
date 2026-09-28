@@ -200,3 +200,26 @@ describe('a generated web page', () => {
     expect(out).not.toContain('ignore');
   });
 });
+
+describe('a page opening another, on the web', () => {
+  const linking = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <Each of={data.books} as="b"><MediaCard title={b.title} onClick={<Open page="settings" />} /></Each>;
+}
+`,
+      'book',
+    ),
+    'book',
+    { books: [{ title: 'Wind and Truth' }] },
+    { platformed: new Set(), handled: new Set() },
+    shellOf('book'),
+  );
+
+  it("[M0.canvas] navigates to the page's route through the router, its parameters from the data", () => {
+    expect(linking).toContain("import { useNavigate } from 'react-router';");
+    expect(linking).toContain('  const navigate = useNavigate();');
+    expect(linking).toContain("onClick={() => navigate('/settings')}");
+    expect(out).not.toContain('useNavigate');
+  });
+});

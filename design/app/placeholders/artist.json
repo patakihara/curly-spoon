@@ -6,11 +6,13 @@
   "library": [
     {
       "title": "Shadows and Sighs",
+      "ref": "shadows-and-sighs",
       "sub": "Album · 2020",
       "image": "/art/shadows-and-sighs.jpg"
     },
     {
       "title": "Heartbeats in Silence",
+      "ref": "heartbeats-in-silence",
       "sub": "Single · 2024",
       "image": "/art/deep-inertia.jpg"
     }
@@ -21,6 +23,7 @@
       "items": [
         {
           "title": "Tears of Ice",
+          "ref": "tears-of-ice",
           "sub": "2022",
           "image": "/art/tears-of-ice.jpg",
           "absent": true,
@@ -29,6 +32,7 @@
         },
         {
           "title": "Shadows and Sighs",
+          "ref": "shadows-and-sighs",
           "sub": "2020",
           "image": "/art/shadows-and-sighs.jpg",
           "absent": false,
@@ -37,6 +41,7 @@
         },
         {
           "title": "Between Two Worlds",
+          "ref": "between-two-worlds",
           "sub": "2018",
           "image": "/art/between-two-worlds.jpg",
           "absent": false,
@@ -45,6 +50,7 @@
         },
         {
           "title": "Early Light",
+          "ref": "early-light",
           "sub": "2015",
           "image": "/art/the-silent-patient.jpg",
           "absent": true,
@@ -59,6 +65,7 @@
       "items": [
         {
           "title": "Silent Rooms",
+          "ref": "silent-rooms",
           "sub": "2019",
           "image": "/art/deep-inertia-radio.jpg",
           "absent": true,
@@ -73,6 +80,7 @@
       "items": [
         {
           "title": "Heartbeats in Silence",
+          "ref": "heartbeats-in-silence",
           "sub": "2024",
           "image": "/art/deep-inertia.jpg",
           "absent": false,
@@ -81,6 +89,7 @@
         },
         {
           "title": "Cold Front",
+          "ref": "cold-front",
           "sub": "2021",
           "image": "/art/foggy-trails.jpg",
           "absent": true,
@@ -95,6 +104,7 @@
       "items": [
         {
           "title": "Rarities 2015–2020",
+          "ref": "rarities-2015-2020",
           "sub": "2021",
           "image": "/art/fragments-of-the-wind.jpg",
           "absent": true,
@@ -109,6 +119,7 @@
       "items": [
         {
           "title": "Live at the Harbour",
+          "ref": "live-at-the-harbour",
           "sub": "2023",
           "image": "/art/escapes-and-moons.jpg",
           "absent": true,

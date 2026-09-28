@@ -303,3 +303,94 @@ describe('checking a page', () => {
     ]);
   });
 });
+
+describe('a page opening another', () => {
+  const props = new Map([
+    ['MediaCard', new Set(['title', 'onClick', 'size'])],
+    ['EpisodeRow', new Set(['title'])],
+  ]);
+  const handlers = new Map([['MediaCard', new Set(['onClick'])]]);
+  const opens = {
+    pages: new Map([
+      ['album', ['ref']],
+      ['artist', ['ref']],
+      ['settings', []],
+    ]),
+    links: ['album', 'settings'],
+    handlers,
+  };
+  const data = { albums: [{ title: 'Tears of Ice', ref: 'tears-of-ice' }], count: 3 };
+  const check = (card: string) =>
+    checkPage(
+      parsePage(page(`<Each of={data.albums} as="album">${card}</Each>`), 'book'),
+      data,
+      props,
+      undefined,
+      undefined,
+      undefined,
+      opens,
+    );
+
+  it('[M0.canvas] reads <Open> in a handler prop as the page it opens and its bound parameters', () => {
+    const tree = parsePage(
+      page('<MediaCard onClick={<Open page="album" ref={data.ref} />} />'),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.onClick).toEqual({
+      kind: 'open',
+      page: 'album',
+      params: { ref: ['data', 'ref'] },
+    });
+  });
+
+  it('[M0.canvas] accepts a link to a page in its structure links, each parameter bound', () => {
+    expect(check('<MediaCard onClick={<Open page="album" ref={album.ref} />} />')).toEqual([]);
+  });
+
+  it("[M0.canvas] refuses a link to a page missing from the page's structure links", () => {
+    expect(check('<MediaCard onClick={<Open page="artist" ref={album.ref} />} />')).toEqual([
+      "line 3: MediaCard.onClick opens artist, which is not in this page's structure links",
+    ]);
+  });
+
+  it('[M0.canvas] refuses a link to a page that is not in nav.json', () => {
+    expect(check('<MediaCard onClick={<Open page="albums" ref={album.ref} />} />')).toEqual([
+      'line 3: MediaCard.onClick opens albums, which is not a page in nav.json',
+    ]);
+  });
+
+  it("[M0.canvas] refuses parameters that are not the route's, or not a string in the placeholder", () => {
+    expect(check('<MediaCard onClick={<Open page="album" id={album.ref} />} />')).toEqual([
+      'line 3: MediaCard.onClick gives album [id], and its route takes [ref]',
+    ]);
+    expect(check('<MediaCard onClick={<Open page="album" ref={data.count} />} />')).toEqual([
+      "line 3: MediaCard.onClick: album's ref (data.count) is not a non-empty string",
+    ]);
+    expect(check('<MediaCard onClick={<Open page="album" ref={album.id} />} />')).toEqual([
+      'line 3: album.id is not in the placeholder',
+    ]);
+  });
+
+  it('[M0.canvas] refuses a parameter given as a literal: a parameter is always bound', () => {
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<Open page="album" ref="tears-of-ice" />} />'), 'book'),
+    ).toThrow(/Open's ref must be a data path/);
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<Open page={data.page} />} />'), 'book'),
+    ).toThrow(/page must be a string literal/);
+  });
+
+  it('[M0.canvas] refuses an Open anywhere but a handler prop', () => {
+    expect(check('<MediaCard size={<Open page="settings" />} />')).toEqual([
+      'line 3: MediaCard.size takes no handler, so it cannot open a page',
+    ]);
+    expect(() => parsePage(page('<Open page="album" />'), 'book')).toThrow(/handler prop/);
+  });
+
+  it('[M0.canvas] refuses an Open it has no navigation map to check against', () => {
+    const tree = parsePage(page('<MediaCard onClick={<Open page="settings" />} />'), 'book');
+    expect(checkPage(tree, data, props)).toEqual([
+      'line 3: MediaCard.onClick opens settings, and no navigation map was given to check it',
+    ]);
+  });
+});

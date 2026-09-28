@@ -6,6 +6,7 @@ export default function Album({ data }) {
           <MediaHeader
             kindLabel={data.kind}
             subtitle={data.artist}
+            onSubtitle={<Open page="artist" ref={data.artistRef} />}
             meta={data.meta}
             image={data.image}
             nextLabel={null}

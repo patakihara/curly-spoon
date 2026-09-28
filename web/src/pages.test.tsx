@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { createElement, type ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
+import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LayoutId } from './generated/nav/platform';
 
@@ -31,7 +32,10 @@ describe('every drawn canvas page', () => {
             default: ComponentType<{ layout?: LayoutId }>;
           }
         ).default;
-        const html = renderToString(createElement(page, { layout }));
+        // A page opens others through the router, as it does in the app.
+        const html = renderToString(
+          createElement(MemoryRouter, null, createElement(page, { layout })),
+        );
         expect(html.length).toBeGreaterThan(0);
         expect(said).toEqual([]);
       });

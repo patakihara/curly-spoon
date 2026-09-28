@@ -1,10 +1,10 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_DIR, REPO_ROOT } from './outputs.js';
 import type { PageTree } from './page.js';
 import { framePage } from './shell.js';
-import { bindings, dataRoots, elements, readPage, type Element } from './test-pages.js';
+import { bindings, dataRoots, elements, readPage, shown, type Element } from './test-pages.js';
 
 type Row = Record<string, unknown>;
 type Verb = { key: string; label: string; sub?: string };
@@ -24,7 +24,6 @@ const sectionTitles = (tree: PageTree) =>
   elements(tree)
     .filter((e) => e.component === 'Section' && e.props.title !== undefined)
     .map((e) => e.props.title);
-const text = (e: Element) => e.children.map((c) => (c.kind === 'text' ? c.value : '')).join(' ');
 
 /** A song you own is never offered Add to library; one you don't may be. */
 const offersAdd = (menu: Verb[]) => menu.some((v) => v.key === 'addToLibrary');
@@ -34,9 +33,22 @@ describe('Album', () => {
   const header = one(tree, 'MediaHeader');
   const tracks = data.tracks as (Row & { menu: Verb[] })[];
 
+  it("[M0.canvas] opens the artist's page from its artist line, on the web through the router", () => {
+    expect(header.props.onSubtitle).toEqual({
+      kind: 'open',
+      page: 'artist',
+      params: { ref: ['data', 'artistRef'] },
+    });
+    const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Album.tsx'), 'utf8');
+    expect(web).toContain(
+      "onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}",
+    );
+  });
+
   it('[M0.canvas] binds only the album: its name, kind, artist, meta, art, menu, tracks, editions and more by the artist', () => {
     expect(dataRoots(tree)).toEqual([
       'artist',
+      'artistRef',
       'editions',
       'image',
       'kind',
@@ -133,6 +145,21 @@ describe('Artist', () => {
     expect(groups.map((g) => g.name)).toEqual(['Albums', 'EPs', 'Singles', 'Compilations', 'Live']);
   });
 
+  it('[M0.canvas] opens the album from every card of its library carousel and its discography', () => {
+    const cards = elements(tree).filter((e) => e.component === 'MediaCard');
+    expect(cards).toHaveLength(2);
+    for (const card of cards) {
+      const item = card.props.title?.kind === 'binding' ? card.props.title.path[0]! : '';
+      expect(card.props.onClick).toEqual({
+        kind: 'open',
+        page: 'album',
+        params: { ref: [item, 'ref'] },
+      });
+    }
+    for (const r of [...(data.library as Row[]), ...releases])
+      expect(r.ref).toMatch(/^[a-z0-9-]+$/);
+  });
+
   it('[M0.canvas] lists each album once in its discography, never an edition beside it', () => {
     const titles = releases.map((r) => r.title);
     expect(new Set(titles).size).toBe(titles.length);
@@ -201,16 +228,32 @@ describe('Favourites', () => {
 });
 
 describe('Add to library', () => {
-  const pages = readdirSync(join(REPO_ROOT, APP_DIR, 'pages')).map((f) =>
-    readPage(f.replace('.page.jsx', '')),
-  );
+  const pages = readdirSync(join(REPO_ROOT, APP_DIR, 'pages')).map((f) => ({
+    id: f.replace('.page.jsx', ''),
+    ...readPage(f.replace('.page.jsx', '')),
+  }));
 
-  it('[M0.canvas] is never a button on a card, a row or a header, on any page', () => {
-    for (const { tree } of pages) {
-      for (const e of elements(tree)) {
-        if (e.component === 'Button') expect(text(e)).not.toMatch(/Add to library/);
-        for (const v of Object.values(e.props))
-          if (v.kind === 'literal') expect(v.value).not.toBe('Add to library');
+  it('[M0.canvas] is never a button on a card, a row or a header, on any page, given or bound', () => {
+    for (const { id, tree, data } of pages) {
+      for (const { element, values, text } of shown(tree, data)) {
+        if (element.component === 'OverflowMenu') continue;
+        const said = [...Object.keys(element.props).flatMap(values), ...text];
+        const offered = said.filter((v) => typeof v === 'string' && /add to library/i.test(v));
+        expect(offered, `${id}: ${element.component} at line ${element.line}`).toEqual([]);
+      }
+    }
+  });
+});
+
+describe('What you own', () => {
+  const { tree, data } = readPage('artist');
+
+  it('[M0.canvas] is never requestable: a card of your library carries no request, bound or given', () => {
+    const cards = shown(tree, data).filter((s) => s.within.includes('data.library'));
+    expect(cards.length).toBeGreaterThan(0);
+    for (const { values } of cards) {
+      for (const prop of ['status', 'tone', 'absent']) {
+        for (const v of values(prop)) expect([null, false, undefined]).toContain(v);
       }
     }
   });

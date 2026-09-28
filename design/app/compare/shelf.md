@@ -1,6 +1,6 @@
 ---
 page: shelf
-pageHash: 9d82a973ab6506752d3f2c3ed8c3ee688578c21f20fa1e0e29e8580329ad301c
+pageHash: e26ca8572cefa96d68a23f8d549b92a41ec1b4ae6263f1e802d68fdec066fbe7
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: [S12]
 ---
@@ -25,7 +25,8 @@ and Spotify's S12 for the shelf header.
 
 ## What the canvas page draws
 
-The back layer holds the heading, nav.json's "Shelf", led by a close control (the shelf closes to
+The back layer holds the heading, the shelf's own title "More like Deep Inertia", bound from its
+data (`BackLayer title={data.title}`), led by a close control (the shelf closes to
 Browse), and ends in the local search's button (`BackLayer search="Search this shelf"`, out as the
 front layer scrolls). The front layer, with no subheader, holds one `Section` whose header is the shelf as on
 Browse: the eyebrow "More like", the subject "Deep Inertia" and its round art (an artist), with
@@ -47,6 +48,7 @@ link, the page says the shelf has gone, with the way back to Browse.
   library homes.
 - Changed on purpose: no "Not in library" pill; where an in-library marker goes is still open in
   the plan.
-- Changed on purpose: the shelf is named once, by its header over the items (eyebrow, subject,
-  subject art); the heading is nav.json's "Shelf", where the kit's app bar says "Recently added".
+- Changed on purpose: the heading is the shelf's own title, as the kit's app bar says "Recently
+  added", not nav.json's "Shelf"; the header over the items keeps the eyebrow and the subject's art
+  with only the subject's name, "Deep Inertia", so no line says the whole title twice.
 - Open: paging is not drawn; the placeholder holds one page of items.
