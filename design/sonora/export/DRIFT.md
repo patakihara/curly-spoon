@@ -36,7 +36,7 @@ accent, not a user-picked one.
 - **`--surface-hover`** — the wash under transparent controls; theme-aware. The old hardcoded
   `rgb(255 255 255 / 10%)` was invisible in light mode.
 - **`--icon-xs` (20px)** — the small glyph size used by ButtonGroup, TabBar and SearchField.
-- **Play** — `--play` (rose `#F44862`), `--play-contrast`, `--play-ink`: the second named colour, for
+- **Play** — `--play` (rose `#F44862`), `--play-contrast`, `--play-icon`, `--play-ink`: the second named colour, for
   what is about playback. `--state-success-ink` is the ink on a genuine success fill.
 - **Tone inks** — `--tone-library-ink`, `--tone-request-ink`, `--tone-progress-ink`, `--tone-error-ink`.
 - **Frame + grid measurements** — `--rail-width-expanded|collapsed`, `--rail-row-height`,

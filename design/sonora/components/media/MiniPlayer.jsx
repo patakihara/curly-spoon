@@ -48,7 +48,7 @@ export function MiniPlayer({
             <button aria-label="Shuffle" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>shuffle</button>
             <button aria-label="Previous" onClick={onPrev} style={iconBtn(fg)}>skip_previous</button>
             <button aria-label={playing ? 'Pause' : 'Play'} onClick={onTogglePlay}
-              style={{ ...iconBtn('var(--play-contrast)', 44, 'var(--icon-sm)'), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
+              style={{ ...iconBtn('var(--play-icon)', 44, 'var(--icon-sm)'), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
             <button aria-label="Next" onClick={onNext} style={iconBtn(fg)}>skip_next</button>
             <button aria-label="Repeat" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>repeat</button>
           </div>
@@ -89,7 +89,7 @@ export function MiniPlayer({
         <div style={{ color: 'var(--surface-now-playing-fg-muted)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist}</div>
       </div>
       <button aria-label={playing ? 'Pause' : 'Play'} onClick={(e) => { e.stopPropagation(); onTogglePlay && onTogglePlay(); }}
-        style={{ ...iconBtn('var(--play-contrast)', 44), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
+        style={{ ...iconBtn('var(--play-icon)', 44), background: 'var(--play)' }}>{playing ? 'pause' : 'play_arrow'}</button>
     </div>
   );
 }

@@ -28,6 +28,7 @@ object SonoraPalette {
     val AccentContrast = Color(0xFFFFFFFF)
     val Play = Color(0xFFF44862)
     val PlayContrast = Color(0xFF000000)
+    val PlayIcon = Color(0xFFFFFFFF)
     val StateError = Color(0xFFE12F43)
     val StateSuccess = Color(0xFF42E477)
     val StateSuccessInk = Color(0xFF000000)
