@@ -1,0 +1,59 @@
+<!-- @dsCard group="Basic" viewport="1200x560" name="Overflow Menu" subtitle="OverflowMenu: the three-dot button and the verbs it holds, shut on a row, open as a menu on desktop and as a bottom sheet on a phone" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { OverflowMenu, ResultRow } = window.SonoraDesignSystem_6c1435;
+
+const VERBS = [
+  { key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' },
+  { key: 'artist', label: 'Go to artist', icon: 'person' },
+  { key: 'share', label: 'Share', icon: 'share' },
+];
+
+function Caption({ children }) {
+  return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:640}}>{children}</div>;
+}
+
+function Desktop(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div>
+      <Caption>Shut, at a row's trailing edge: the verbs a row offers beyond playing it.</Caption>
+      <ResultRow platform="desktop" title="Tidal Lines" meta="Harbour Lights · 3:41" trailing={<OverflowMenu platform="desktop" items={VERBS} />} />
+    </div>
+    <div style={{display:'flex',justifyContent:'flex-end',paddingBottom:200}}>
+      <div>
+        <Caption>Open on desktop: each verb with its glyph, and a line saying what it does where the label alone would not.</Caption>
+        <div style={{display:'flex',justifyContent:'flex-end'}}><OverflowMenu platform="desktop" items={VERBS} open /></div>
+      </div>
+    </div>
+  </div>;
+}
+/* The sheet is fixed to the window; the frame's transform makes it the window here, as a phone's
+   screen would be, so the sheet covers the frame's rows and bar rather than the whole card. */
+function Phone(){
+  return <div>
+    <Caption>Open on a phone: a modal bottom sheet over a scrim, covering the bottom bar and mini-player too.</Caption>
+    <div style={{position:'relative',transform:'translateZ(0)',overflow:'hidden',width:360,height:440,borderRadius:'var(--radius-md)',border:'1px solid var(--surface-border)',background:'var(--surface-bg)'}}>
+      <div style={{padding:'var(--spacing-md)'}}>
+        {['Tidal Lines','Salt Water','Low Tide'].map((t, i) => (
+          <ResultRow key={t} platform="mobile" title={t} meta="Harbour Lights · 3:41" divider
+            trailing={<OverflowMenu platform="mobile" items={VERBS} open={i === 0} />} />
+        ))}
+      </div>
+      <div style={{position:'absolute',left:0,right:0,bottom:0,height:64,background:'var(--surface-bg-alt)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--surface-fg-muted)',fontSize:'var(--text-sm)'}}>Bottom bar</div>
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Desktop/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Phone/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

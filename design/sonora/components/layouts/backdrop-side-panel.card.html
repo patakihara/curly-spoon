@@ -1,0 +1,90 @@
+<!-- @dsCard group="Layouts" viewport="1400x900" name="Backdrop — Side Panel Placement" subtitle="The desktop side panel in front of the front layer versus behind it, and which surface owns each edge" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BackdropShell, BackLayer, SideSheet, SectionHeader, ResultRow } = window.SonoraDesignSystem_6c1435;
+
+const PLAYED = [
+  {title:'Tidal Lines', meta:'Halcyon Bloom · 3:34'},
+  {title:'The Glass Archivist', meta:'Rosa Elin · Ch. 12'},
+];
+const QUEUED = [
+  {title:'Empty Rooms', meta:'Echo Fields · 5:01'},
+  {title:'Static & Signal', meta:'Ep. 214 · 48 min'},
+];
+
+const Tag = ({children}) => <span style={{flexShrink:0,padding:'3px 10px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap'}}>{children}</span>;
+const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',minHeight:18}}>{children}</div>;
+
+const Queue = () => <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
+  {QUEUED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} />)}
+</div>;
+
+/* `behind` is handed plain panel content rather than a SideSheet: a panel at the lower elevation
+   must not be outlined, so the shell draws both rules and the panel draws none. The title row is
+   measured with the same --appbar-height token as the back layer's heading strip, which is what
+   lets the shell's horizontal rule land exactly under it and the two titles share a baseline. */
+function PanelBody(){
+  return <div style={{display:'flex',flexDirection:'column',flex:1,minHeight:0}}>
+    <div style={{display:'flex',alignItems:'center',flexShrink:0,boxSizing:'border-box',height:'var(--appbar-height)',padding:'0 var(--spacing-xl)',fontFamily:'var(--font-heading)',fontWeight:'var(--heading-weight)',fontSize:'var(--h3-size)',color:'var(--surface-fg)'}}>Queue</div>
+    <div style={{flex:1,minHeight:0,overflow:'hidden',padding:'var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl)'}}><Queue/></div>
+  </div>;
+}
+
+/* Both cases are the same screen with the same panel open — only `sheetLayer` differs — so any
+   edge that changes between them is the treatment talking and nothing else. The rail is left off
+   here to keep the front layer wide enough to read; Backdrop Anatomy is where it is shown.
+   `scroll={false}` for the same reason: a scrollbar would ride the exact edge this card is about. */
+function Frame({mode}){
+  const behind = mode === 'behind';
+  return <div style={{height:312}}>
+    <BackdropShell platform="desktop" scroll={false} sheetOpen sheetLayer={mode}
+      back={<BackLayer title="Browse" trailing={<Tag>Back layer · 0dp</Tag>} />}
+      sheet={behind ? <PanelBody/> : <SideSheet open title="Queue"><Queue/></SideSheet>}>
+      <div style={{padding:'var(--spacing-sm) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
+        <SectionHeader title="Recently played" platform="desktop" />
+        {PLAYED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} />)}
+      </div>
+    </BackdropShell>
+  </div>;
+}
+
+function Case({mode, caption, notes}){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',minWidth:0}}>
+    <Caption>{caption}</Caption>
+    <Frame mode={mode} />
+    <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-xs)'}}>{notes.map((n) => <Tag key={n}>{n}</Tag>)}</div>
+  </div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <Case mode="front" caption={'sheetLayer="front" — the panel is the higher layer, so the panel owns the edges'} notes={[
+      'Panel · higher layer · --surface-bg-alt',
+      'Draws its own border-left · --surface-border',
+      'One rule against the heading strip, one against the front layer',
+      'Rule under the panel title · spans the panel',
+      'Front layer · 1dp · abutting right corner squared to 0',
+    ]} />
+    <Case mode="behind" caption={'sheetLayer="behind" — the panel is the lower layer, so the front layer owns them'} notes={[
+      'Panel · lower layer · --surface-bg-alt · no border of its own',
+      'Front layer · both top corners stay --radius-lg',
+      'Front layer casts --shadow-sm onto the panel',
+      'Vertical rule · heading band only · inset --spacing-lg',
+      'Horizontal rule · inset --grid-margin · no longer spans the gutter',
+    ]} />
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

@@ -26,9 +26,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST = os.path.join(ROOT, "_ds_manifest.json")
 
-GROUP_DIRS = ["core", "forms", "layout", "media", "navigation"]
-GROUP_ORDER = ["Brand", "Colors", "Components", "Layout",
-               "Spacing", "Type", "Reference"]
+GROUP_DIRS = ["basic", "components", "layouts"]
+GROUP_ORDER = ["Brand", "Colors", "Spacing", "Type", "Basic", "Components", "Layouts",
+               "Reference"]
 
 MARKER = re.compile(r"<!--\s*@dsCard\s+(.*?)-->", re.S)
 

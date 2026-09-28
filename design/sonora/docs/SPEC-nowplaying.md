@@ -149,14 +149,14 @@ When `actions` is absent the default three buttons render exactly as they do tod
 
 # Cards
 
-Same rules as `docs/SPEC.md`'s Cards section — copy `components/core/buttons.card.html`
+Same rules as `docs/SPEC.md`'s Cards section — copy `components/basic/buttons.card.html`
 literally, `@dsCard` first line, pinned CDN scripts with integrity unchanged, dark+light
 `Themed()` wrapper, realistic self-hosted-library content, no Spotify catalogue.
 
 | File | group | name | viewport | Covers |
 | --- | --- | --- | --- | --- |
-| `components/media/spoken-transport.card.html` | Components | Spoken Transport & Routing | 1200x900 | `TransportBar` and the desktop `MiniPlayer` bar in both variants, `SpeedControl` at 1× and 1.5×, `OutputDeviceButton` local / routed / with a quality badge |
-| `components/media/about-cards.card.html` | Components | About Cards & Long Text | 1200x820 | `AboutCard` for an episode, a show (with a `FollowButton` action) and a person (`round`), `ExpandableText` collapsed and expanded, `MediaHeader` with a custom `actions` cluster and `progress` |
+| `components/components/spoken-transport.card.html` | Components | Spoken Transport & Routing | 1200x900 | `TransportBar` and the desktop `MiniPlayer` bar in both variants, `SpeedControl` at 1× and 1.5×, `OutputDeviceButton` local / routed / with a quality badge |
+| `components/components/about-cards.card.html` | Components | About Cards & Long Text | 1200x820 | `AboutCard` for an episode, a show (with a `FollowButton` action) and a person (`round`), `ExpandableText` collapsed and expanded, `MediaHeader` with a custom `actions` cluster and `progress` |
 
 ---
 

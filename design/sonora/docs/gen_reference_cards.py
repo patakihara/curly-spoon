@@ -43,7 +43,7 @@ EX_HEAD = 57      # section border-top + padding-top + the h2 and its margin
 EX_PAD = 24       # section padding-bottom
 INDEX_VIEWPORT = "1180x820"
 
-# Copied character for character from components/media/discovery-cards.card.html — the
+# Copied character for character from components/basic/buttons.card.html — the
 # pinned versions and their SRI hashes are what the render harness serves from its local
 # vendor cache. Only the bundle tag differs: reference/ is one directory deep, not two.
 CDN = """<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>

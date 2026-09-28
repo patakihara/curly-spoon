@@ -1,0 +1,96 @@
+<!-- @dsCard group="Layouts" viewport="1400x900" name="Backdrop — Local Search" subtitle="A page-scoped search in the back layer's heading: a search button at rest, a field that comes out as the front layer scrolls or when the button is tapped" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BackdropShell, BackLayer, FrontLayer, FrontLayerHeader, NavRail, Section, LayoutGrid, MediaCard, TabBar, AccountButton } = window.SonoraDesignSystem_6c1435;
+
+const NAV = [{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'album'},{key:'books',label:'Books',icon:'book_2'}];
+const TABS = [{key:'books',label:'Books',icon:'menu_book'},{key:'authors',label:'Authors',icon:'person'},{key:'series',label:'Series',icon:'auto_stories'}];
+const BOOKS = [
+  {title:'The Glass Archivist', sub:'Rosa Elin', progress:0.42},
+  {title:'Every Harbour Twice', sub:'Rosa Elin'},
+  {title:'Tidal Lines', sub:'Halcyon Bloom', status:'Downloading · 42%', tone:'progress'},
+  {title:'Static & Signal', sub:'Echo Fields', progress:0.8},
+  {title:'Lantern Season', sub:'Rosa Elin'},
+  {title:'Nightglass', sub:'Echo Fields', status:'Needs choice', tone:'request'},
+  {title:'Driftwave', sub:'Halcyon Bloom'},
+  {title:'Low Orbit', sub:'Echo Fields'},
+  {title:'Field Notes', sub:'Rosa Elin'},
+];
+
+const Tag = ({children}) => <span style={{flexShrink:0,padding:'3px 10px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap'}}>{children}</span>;
+const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',minHeight:30,lineHeight:1.35}}>{children}</div>;
+
+function Grid({platform}){
+  return <div style={{padding:'var(--spacing-xl) var(--grid-margin' + (platform === 'mobile' ? '-mobile' : '') + ')'}}>
+    <Section platform={platform} last>
+      <LayoutGrid platform={platform}>
+        {BOOKS.map((b) => <MediaCard key={b.title} platform={platform} width="100%" {...b} />)}
+      </LayoutGrid>
+    </Section>
+  </div>;
+}
+
+/* The live one: scroll the front layer and the heading turns into the field, without focus;
+   back at the top it goes away again. Tap the search button and it comes out with focus and
+   stays out at the top until closed. */
+function Live(){
+  return <div style={{height:460}}>
+    <BackdropShell platform="desktop" scrollKey="books"
+      rail={<NavRail items={NAV} active="books" expanded={false} />}
+      back={<BackLayer title="Books" search="Search your books and requests" />}
+      subheader={<FrontLayerHeader tabs><TabBar items={TABS} value="books" /></FrontLayerHeader>}>
+      <Grid platform="desktop" />
+    </BackdropShell>
+  </div>;
+}
+
+/* Stills: `searchOpen` fixes the state, so both read without scrolling. */
+function Still({caption, open, platform}){
+  const mobile = platform === 'mobile';
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',minWidth:0}}>
+    <Caption>{caption}</Caption>
+    <div style={{height:230,display:'flex',flexDirection:'column'}}>
+      <BackdropShell platform={platform}
+        back={<BackLayer platform={platform} title="Books" search="Search your books and requests" searchOpen={open}
+          leading={mobile ? <AccountButton /> : undefined} />}
+        subheader={<FrontLayerHeader tabs progress={open ? 1 : 0}><TabBar platform={platform} items={TABS} value="books" /></FrontLayerHeader>}>
+        <Grid platform={platform} />
+      </BackdropShell>
+    </div>
+  </div>;
+}
+
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
+    <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+      <Caption>Live — scroll the front layer: the heading becomes the page's own search. Tap the search button to open it with focus.</Caption>
+      <Live />
+    </div>
+    <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-sm)'}}>
+      <Tag>Back layer · heading row</Tag>
+      <Tag>Searches this page only</Tag>
+      <Tag>Morph · --duration-medium / --ease-standard</Tag>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--spacing-lg)'}}>
+      <Still caption="At rest — the search button ends the heading" open={false} platform="desktop" />
+      <Still caption="Scrolled — the field over the heading, its cross closes it" open platform="desktop" />
+      <Still caption="Phone, at rest" open={false} platform="mobile" />
+      <Still caption="Phone, scrolled" open platform="mobile" />
+    </div>
+  </div>;
+}
+
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

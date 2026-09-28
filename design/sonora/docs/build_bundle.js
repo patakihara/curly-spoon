@@ -35,11 +35,10 @@ const failed = [];
 for (const { name, file, rel } of files) {
   let src = fs.readFileSync(file, 'utf8');
 
-  // A few components (AppShell, ContentPane, SideSheet, NavRail) reach siblings with a real
-  // relative `import` rather than the NS() idiom. Stripping those leaves the name undefined, so
-  // each becomes a thin forwarder that resolves off the namespace at RENDER time — the module
-  // bodies run in alphabetical order, so AppShell's IIFE executes before ContentPane is
-  // registered and anything resolved eagerly would capture undefined.
+  // SideSheet reaches ScrollArea with a real relative `import` rather than the NS() idiom.
+  // Stripping it leaves the name undefined, so it becomes a thin forwarder that resolves off the
+  // namespace at RENDER time: the module bodies run in alphabetical order, so anything resolved
+  // eagerly could capture undefined.
   const shims = [];
   src = src.replace(/^\s*import\s*\{([^}]+)\}\s*from\s*['"]\.[^'"]*['"];?\s*$/gm, (_, names) => {
     for (const raw of names.split(',')) {

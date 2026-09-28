@@ -4,7 +4,18 @@
 
 Every prop each component accepts, with its type and the note from its declaration.
 
-## core
+## basic
+
+### AccountButton
+
+The account avatar that leads the phone's top bar: a `BackLayer`'s `leading` on a destination's home, opening Settings. A round button holding the account's picture through `CoverArt`, or, with no picture, a filled person glyph on `--surface-card`. It belongs to the heading row only, never to a filter row: a filter reconfigures the content, and the account is not a filter. On desktop, Settings sits at the foot of the rail instead.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `image` | `string` | The account's picture. Without it, a person glyph. |
+| `label` | `string` | Accessible name and tooltip. Default "Account". |
+| `size` | `number` | Diameter in px. Default 32, the mobile app bar's avatar. |
+| `onClick` | `() => void` |  |
 
 ### Badge
 
@@ -47,17 +58,27 @@ M3 connected button group — a row of segments that read as one control: outer 
 | `scroll` | `boolean` | @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. |
 | `tone` | `'accent' \| 'play'` | The selected segment's fill: `accent` (default), or `play` for the Browse media filter (All, Music, Podcasts, Books). |
 
-### EmptyState
+### CoverArt
 
-What a page shows when it has nothing to show: a link that leads nowhere, a library with no books yet, a search that matched nothing. A glyph, the fact as a heading and one plain line, then the one way on, centred in the content column at the form width. States facts, never reassurance.
+The artwork layer used inside every art container in the system. Absolutely fills its parent (which must be `position: relative` and `overflow: hidden`) and owns one detail that is easy to get wrong: the gradient fallback is *removed* once the image loads, rather than left behind it. A rounded corner is antialiased, so semi-transparent edge pixels blend with whatever is behind the image — a gradient left underneath shows up as a coloured fringe around the art, which no amount of image bleed can hide.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `icon` | `string` | Material Symbols Rounded glyph naming what is missing, drawn muted in a card-tone circle. |
-| `title` *(required)* | `string` | The fact, e.g. "This page doesn't exist". |
-| `body` | `string` | One line more, e.g. where the thing is found instead. |
-| `action` | `ReactNode` | The one way on: a `Button`, secondary unless it plays. |
-| `platform` | `'desktop' \| 'mobile'` |  |
+| `src` | `string` | Image URL. Omitted or still loading, the fallback shows instead. |
+| `covers` | `string[]` |  A collection's item covers, drawn when it has no `src` of its own: four different ones make a 2×2 mosaic of the first four, one to three the first alone, none the flat placeholder.  |
+| `fallback` | `string` | CSS background for the placeholder. Defaults to a flat `--accent`. |
+| `alt` | `string` |  |
+
+### DownloadButton
+
+Offline availability as a three-state control: idle -> downloading (determinate or indeterminate, cancellable mid-flight) -> done, and pressing a done button removes the download. Composes ProgressRing for the downloading state rather than drawing a second ring.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `state` | `'idle' \| 'downloading' \| 'done'` |  |
+| `progress` | `number \| null` | 0–1. Indeterminate ring when null and `state` is 'downloading'. |
+| `onClick` | `() => void` | Fires on press in every state: starts, cancels, or removes, depending on `state`. |
+| `size` | `number` | Control diameter in px. |
 
 ### ExpandableText
 
@@ -72,18 +93,6 @@ Long prose that neither dominates nor hides — a paragraph clamped with -webkit
 | `lessLabel` | `string` |  |
 | `expanded` | `boolean` | Controlled expanded state. Omit to let the component keep its own. |
 | `onToggle` | `(next: boolean) => void` |  |
-
-### ExpanderRow
-
-Collapses a homogeneous group inside an otherwise heterogeneous list — seven versions of one song folded behind "More releases · Show all" so the other result types stay reachable.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `label` *(required)* | `string` | What is being folded, e.g. "More releases". |
-| `actionLabel` | `string` | The disclosure verb. |
-| `expanded` | `boolean` |  |
-| `onToggle` | `(next: boolean) => void` | Called with the next expanded state on click. |
-| `image` | `string` | Optional stacked-art hint, leading the row. |
 
 ### FollowButton
 
@@ -111,6 +120,28 @@ A round, transparent glyph button: surface ink, muted ink, or the active colour.
 | `muted` | `boolean` |  |
 | `label` *(required)* | `string` |  |
 | `onClick` | `() => void` |  |
+
+### Input
+
+The new text, on every keystroke.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `placeholder` | `string` |  |
+| `icon` | `ReactNode` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `value` | `string` |  |
+| `onChange` | `(next: string) => void` | The new text, on every keystroke. |
+
+### LyricsSyncButton
+
+The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape). Synced (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the player's menu.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `mode` | `'sync' \| 'dot' \| 'off'` |  |
+| `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
+| `onChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` | Receives the mode the toggle turns to. |
 
 ### OverflowMenu
 
@@ -140,126 +171,32 @@ Circular progress indicator. Pass `value` (0–1) for a determinate ring that an
 | `track` | `string` | Unfilled track colour. |
 | `label` | `string` | Accessible label; defaults to the percentage, or "Loading". |
 
-### QuickPick
+### RailItem
 
-Continue-listening / jump-back-in tile: small square art plus title and a meta line. Lay several out in a grid at the top of a home screen.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `sub` | `string` | e.g. "Book · 6 h 12 m left". |
-| `icon` | `string` |  Material Symbols Rounded glyph name. Given one, the tile renders the glyph on a flat accent tint instead of the gradient artwork square — the variant for destinations with no cover art of their own (Shuffle all, Downloads, Liked, a genre).  |
-| `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
-| `progress` | `number \| null` | 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. |
-| `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. Ignored on the `icon` variant. |
-
-### SectionHeader
-
-Heading row above a carousel, grid or list, with an optional trailing icon action.
+Navigation rail row, following the M3 rail spec. One highlight element morphs from a 56×32 icon pill (collapsed) to a pill that hugs the icon and label (expanded), so the selection never jumps; two label copies cross-fade rather than travelling. The highlight is always the width of the item's own content, never of the rail. Rows are 56px tall and stack with no gap in either state. Collapsed: 80px rail, 12px side padding. Expanded: 220–360px rail, 16px side padding. Hovering shows a faint highlight.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `action` | `string` | Material Symbols Rounded glyph name for the trailing action, e.g. "arrow_forward". Omit for no action. |
-| `actionLabel` | `string` |  |
-| `onAction` | `() => void` |  |
-| `platform` | `'mobile' \| 'desktop'` | mobile = body font at text-xl; desktop = display font at h3, 900 weight. |
-| `eyebrow` | `string` | Relationship line above the title — "More like", "Popular with listeners of" — that explains why this shelf exists. |
-| `image` | `string` | Subject artwork, leading the header. Falls back to the sibling CoverArt's own placeholder. |
-| `round` | `boolean` | Circular thumbnail for an artist or a person; square (the default) for a show or a genre. |
-| `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. |
-| `actionText` | `string` | A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. |
-| `trailing` | `ReactNode` |  A control of the section's own at the trailing edge, such as the `ViewToggle` over the collection the section holds. Wins over `actionText` and `action` if more than one is set.  |
-
-### SortFilterBar
-
-Reports the active sort/filter state and opens its picker in one control — the label is data ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `icon` | `string` | Leading glyph. |
-| `label` *(required)* | `string` | The current state, rendered as the control's own label — e.g. "All episodes • Newest". |
-| `onClick` | `() => void` | Opens the sort/filter picker. |
-| `trailing` | `ReactNode` | Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### StatusBanner
-
-Persistent, non-blocking statement of system state — Spotify's "You're offline" bar. Unlike a toast it never times out; the message stands until the condition it describes changes.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` *(required)* | `ReactNode` | The message. |
-| `tone` | `'info' \| 'warning' \| 'error' \| 'success'` | Selects the background/ink pair from the state tokens. |
-| `icon` | `string` | Leading glyph. |
-| `actionLabel` | `string` | Label for the inline text action, e.g. "Retry". |
-| `onAction` | `() => void` |  |
-| `onDismiss` | `() => void` | Renders a close control when set; the banner has no other way to dismiss. |
-
-### TonalIconButton
-
-Icon button on a tonal (card) fill — a squat pill rather than a circle, for controls sitting on the page instead of in a bar (the list/grid switch above a collection). Changing `glyph` turns the icon over rather than cutting to it; instant under prefers-reduced-motion.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `glyph` *(required)* | `string` | Material Symbols glyph name. Change it and the icon animates over. |
-| `label` | `string` | Accessible name and tooltip. |
-| `onClick` | `() => void` |  |
-| `width` | `number` | Default 40×32 with a 16px radius — a pill wider than it is tall. |
-| `height` | `number` |  |
-| `radius` | `string` |  |
-| `iconSize` | `string` | Glyph size. Default `--icon-xs` (20px). |
-| `active` | `boolean` | Accent ink and a filled glyph. |
-| `background` | `string` |  |
-
-### ValueRow
-
-Label + value on a filled card (Speed · 1.0x, Sleep timer · Off). Read-only unless you pass onClick.
-
-| prop | type | notes |
-| --- | --- | --- |
+| `icon` *(required)* | `string` | Material Symbols Rounded glyph name. |
 | `label` *(required)* | `string` |  |
-| `value` *(required)* | `string` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
+| `active` | `boolean` |  |
+| `expanded` | `boolean` | false collapses to the 56×32 icon pill with a 12px stacked label. |
+| `rowHeight` | `number` | Row height — 56 in a rail, 48 in the bottom tab bar. |
+| `tabs` | `boolean` | Mobile tab-bar behaviour: inactive tabs hide their label and centre the icon; the active tab keeps its label and gets a wider pill. |
+| `wideActive` | `boolean` | Whether the active pill widens to 72px. Defaults to `tabs` — set false in a rail. |
+| `centerIcon` | `boolean` |  Centre the icon against the row's midpoint. Defaults to `tabs`. Must be false wherever the row's width animates (a rail), or the icon slides out and back during the transition.  |
 | `onClick` | `() => void` |  |
 
-### ViewToggle
+### SearchButton
 
-The list ⇄ grid switch for a library page — one icon button showing the view it switches to. Sits at the top-right of the collection it controls.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `value` | `'list' \| 'grid'` |  |
-| `onChange` | `(value: 'list' \| 'grid') => void` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-## forms
-
-### FieldRow
-
-Labelled form field wrapping the system Input. On mobile it supplies the filled pill container the chromeless mobile Input expects to sit on.
+The app bar's search control: a search icon button that swaps to a close icon while the search field is open. BackLayer renders one for a page's local search; use it directly only for a bar you are composing by hand.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `label` *(required)* | `string` |  |
-| `placeholder` | `string` |  |
-| `value` | `string` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: string) => void` |  |
-
-### Input
-
-The new text, on every keystroke.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `placeholder` | `string` |  |
-| `icon` | `ReactNode` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `value` | `string` |  |
-| `onChange` | `(next: string) => void` | The new text, on every keystroke. |
+| `open` | `boolean` |  |
+| `onToggle` | `(next: boolean) => void` |  |
+| `muted` | `boolean` | Muted icon colour (the default in an app bar). |
+| `label` | `string` | Overrides the accessible label, which is otherwise "Search" / "Close search". |
 
 ### SearchField
 
@@ -278,17 +215,17 @@ Filled search field with no outline and soft rectangular corners (radius-xs) —
 | `onClose` | `() => void` | Renders the field's own trailing close control — the app bar's search morph puts its cross here. |
 | `closeGlyph` | `string` |  |
 
-### SettingRow
+### SeekBar
 
-Settings list row: title, explanatory line, and a Switch on a filled card.
+Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; value is 0–1.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `sub` | `string` |  |
-| `checked` | `boolean` |  |
+| `value` | `number` |  |
+| `duration` | `number` | Track length in seconds. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: boolean) => void` |  |
+| `onChange` | `(next: number) => void` |  |
+| `remainingAsCountdown` | `boolean` | false shows total length on the right instead of a countdown. |
 
 ### Slider
 
@@ -301,6 +238,29 @@ Settings list row: title, explanatory line, and a Switch on a filled card.
 | `platform` | `'desktop' \| 'mobile'` | Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). |
 | `tone` | `'accent' \| 'play'` | The fill: `accent` (default), or `play` for playback position (SeekBar passes it). |
 
+### SortFilterBar
+
+Reports the active sort/filter state and opens its picker in one control — the label is data ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `icon` | `string` | Leading glyph. |
+| `label` *(required)* | `string` | The current state, rendered as the control's own label — e.g. "All episodes • Newest". |
+| `onClick` | `() => void` | Opens the sort/filter picker. |
+| `trailing` | `ReactNode` | Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### SpeedControl
+
+Playback rate as a first-class transport control: the current multiplier plus a small "x", living inline in a transport row rather than on a settings page. Colour states default vs non-default rate — the point is that forgetting a rate change stays visible.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `value` | `number` | 1, 1.25, 1.5 … |
+| `onClick` | `() => void` | Opens the rate picker. |
+| `label` | `string` | Accessible name. Defaults to "Playback speed, <value> times". |
+| `size` | `number` | Control diameter in px. |
+
 ### Switch
 
 
@@ -311,226 +271,33 @@ Settings list row: title, explanatory line, and a Switch on a filled card.
 | `onChange` | `(next: boolean) => void` |  |
 | `label` | `string` |  |
 
-## layout
+### TonalIconButton
 
-### BackdropShell
-
-The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking the step; `subheader` is fixed to it and `children` scroll underneath. The front layer's shape is not scroll-linked: it flattens only for a page shown with `appBar`. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
+Icon button on a tonal (card) fill — a squat pill rather than a circle, for controls sitting on the page instead of in a bar (the list/grid switch above a collection). Changing `glyph` turns the icon over rather than cutting to it; instant under prefers-reduced-motion.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `back` | `ReactNode` | Back-layer content — a `BackLayer` with the heading row and any contextual controls. It receives the front layer's scroll `progress`, which brings out its local search. |
-| `rail` | `ReactNode` | A `NavRail`. Sits at back-layer level, continuous with it. Omit on mobile. |
-| `children` | `ReactNode` | The screen itself — scrolls inside the front layer. |
-| `subheader` | `ReactNode` | A `FrontLayerHeader`. Fixed to the front layer; receives `progress` and `platform` from it. |
-| `sheet` | `ReactNode` |  The desktop side panel. With `sheetLayer="front"` pass a `SideSheet` — it draws its own dividers and animates its own width. With `sheetLayer="behind"` pass plain panel content (a title row of `--appbar-height`, then the list): the shell supplies the surface, the open/close width transition and both dividers, because a panel at the lower elevation must not be outlined.  |
-| `sheetOpen` | `boolean` | Whether that panel is open. Squares the front layer's abutting corner in `front` mode only. |
-| `sheetLayer` | `'front' \| 'behind'` |  Which layer the side panel belongs to. `'front'` (default) puts it above the front layer, full height, with a divider down its whole edge and the front layer squared where they meet. `'behind'` puts it below: both front-layer corners stay rounded, the front layer's shadow falls onto the panel, and the panel's rules shrink to a short one in the heading band and an inset one under it.  |
-| `player` | `ReactNode` | MiniPlayer, BottomNav, or a fragment of both. Docked across the full width beneath everything. |
-| `contentMinWidth` | `string` | Floor for the front-layer column, e.g. `var(--content-min-width)`. |
-| `scroll` | `boolean` | false when the screen owns its own scrolling (mobile) — the front layer still tracks it. |
-| `scrollKey` | `string \| number` | Identifier of the current view — gives each one its own remembered scroll position. |
-| `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the front layer. |
-| `theme` | `string` | Sets `data-theme` on the frame. |
-| `appBar` | `boolean` |  A page that is not a destination, on a phone: no backdrop. The back layer becomes a top app bar on the page surface (`BackLayer`'s `appBar`) and the front layer goes flat under it, so nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.  |
-| `column` | `'tiles' \| 'list' \| 'form'` |  A page with no navigation beside it, such as signing in: its heading and its content in one centred column of this reading width (`PageBody`'s widths), the heading starting at the page margin as the content does. Pass no `rail`, and give the page's `PageBody` the same `width`.  |
+| `glyph` *(required)* | `string` | Material Symbols glyph name. Change it and the icon animates over. |
+| `label` | `string` | Accessible name and tooltip. |
+| `onClick` | `() => void` |  |
+| `width` | `number` | Default 40×32 with a 16px radius — a pill wider than it is tall. |
+| `height` | `number` |  |
+| `radius` | `string` |  |
+| `iconSize` | `string` | Glyph size. Default `--icon-xs` (20px). |
+| `active` | `boolean` | Accent ink and a filled glyph. |
+| `background` | `string` |  |
+
+### ViewToggle
+
+The list ⇄ grid switch for a library page — one icon button showing the view it switches to. Sits at the top-right of the collection it controls.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `value` | `'list' \| 'grid'` |  |
+| `onChange` | `(value: 'list' \| 'grid') => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
-### BackLayer
-
-The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevation, carrying the page heading and the controls that inform the front layer. `BackdropShell` places it above the front layer and lets the rail run continuous with it. **Which controls belong here.** M2 puts "navigation, steppers, text fields, selection controls" on the back layer, and a filter group arguably qualifies — but a screen's secondary header belongs to the front layer. The line Sonora draws: *anything that scrolls away with the content or names a section of it goes in the front layer's `FrontLayerHeader`; anything that reconfigures what the front layer is showing may sit here in `controls`.* Sub-tabs and "Artists / Albums / Songs" are subheader; a library-scope switch or a sort mode is `controls`.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` | `string` | The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). |
-| `eyebrow` | `string` |  What the page is to its subject, "More like", small and muted over the title: with it the heading is SectionHeader's context form, naming a page by its subject, so the page needs no header of its own saying it again. In the display face on the backdrop, the body face in a phone's app bar.  |
-| `image` | `string` | The subject's art beside the title, 40px (48px on desktop), squared unless `round`. |
-| `round` | `boolean` | Round art, for a person. |
-| `leading` | `ReactNode` | Before the title — a back link, or on mobile the account avatar (never in a filter row). |
-| `trailing` | `ReactNode` | After the title — a search button, an overflow menu. |
-| `controls` | `ReactNode` | Contextual controls that reconfigure the front layer, on a band below the heading. |
-| `search` | `string` |  A local search, scoped to this page: its placeholder ("Search your books and requests"). The heading ends in a search button; the field comes out of it over the heading, without focus once the front layer has scrolled, with focus when the button is tapped, and goes back at the top unless it was tapped out. Not the global Search destination.  |
-| `searchOpen` | `boolean` | Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. |
-| `progress` | `number` | 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. |
-| `appBar` | `boolean` |  The heading as a top app bar on the page surface, for a page that is not a destination on a phone: `--surface-bg` instead of the back layer's colour, and the title set as a mobile `SectionHeader`'s, in the body face, rather than as a display heading. `BackdropShell`'s `appBar` passes it down.  |
-| `atMargin` | `boolean` |  Starts the heading at the page margin (`--grid-margin`, or `--grid-margin-mobile`), where `PageBody` starts the content under it, rather than at the heading strip's own inset. `BackdropShell`'s `column` passes it down.  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### EditableList
-
-Stable key for the row — pass it through as React's `key`.
-
-| prop | type | notes |
-| --- | --- | --- |
-
-### FrontLayer
-
-The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content and its fixed subheader. `BackdropShell` builds one for you; use it directly only when composing a frame by hand. Its top corners are `--radius-lg` at **every** scroll position: a backdrop's front layer is a persistent surface, not a sheet that docks. The 1dp step is expressed by a 1px light edge along the layer's own top, over a `--shadow-sm` lift onto whatever is behind it, and the scroll-linked hairline moves to the subheader, where it is inset to the content measure. That edge is not configurable and it is themed, because `--shadow-sm` is `0 1px 3px` cast *downward*, away from the top edge — the only place this layer meets the back layer. Measured off a render, the darkening it puts on the back layer above that boundary is **one value out of 255** in dark and at most three in light: what separates the two surfaces is the tonal step, `#080808` → `#141414` or `#FFFFFF` → `#F9F6F6`, and near black a display's black floor flattens that pair. Dark therefore draws an inner highlight (`color-mix` of `--surface-fg` at 16%, the only mark that survives on near-black); light draws a hairline in `--surface-border`, because mixing `--surface-fg` there inverts into an inner *shadow*. Light is the base rule and dark the `[data-theme="dark"]` override, so an unthemed context gets the treatment that cannot invert. The layer owns the scrolling and remembers a scroll offset per `scrollKey`, so switching views and coming back lands where you left. With `scroll={false}` a descendant owns the scroller and the layer tracks it by capture instead.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` |  |
-| `subheader` | `ReactNode` | A `FrontLayerHeader`, fixed above the scrolling content. Cloned with `progress`/`platform`. |
-| `scroll` | `boolean` | false when a descendant owns the scrolling (mobile screens) — the layer still tracks it. |
-| `scrollKey` | `string \| number` |  Identifier for the view currently rendered inside. Changing it saves the outgoing view's scroll offset, restores the incoming one's (0 for a view not seen yet), and recomputes the subheader's divider state to match — without it, a fresh view inherits the previous scroll position and stays visually "scrolled".  |
-| `onProgress` | `(progress: number) => void` | Fires with 0–1 scroll progress. |
-| `threshold` | `number` | Scroll distance in px over which the subheader's divider fades in. Default 24. |
-| `squareLeft` | `boolean` | Square the abutting corner where a `sheetLayer="front"` panel meets the layer. |
-| `squareRight` | `boolean` |  |
-| `flat` | `boolean` |  No backdrop: square corners, no lift and no light edge, so the layer and the heading above it read as one surface under a top app bar. A hairline along the top fades in as the content scrolls. `BackdropShell`'s `appBar` sets it.  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### FrontLayerHeader
-
-The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — a hairline is always shown, static rather than scroll-linked, and the tabs are pinned flush to the band's bottom edge (instead of centered) so the tab bar's own underline indicator sits right on it, reading as one line instead of two. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half. ### The scroll-spy subheader (`spy`) The band is what the content scrolls under. When the screen has no control to put in it, the band is not therefore an empty strip: with `spy` it shows the title of the section that has most recently scrolled up past it, and it shows **only once a title has scrolled under it**. At the top, before any section has passed, there is no band at all. A spy band with nothing else in it lies over the top of the content rather than in flow, so it fades in and out without moving the content. With `children` beside it, the band is always there, in flow, and the title leads it once one has passed. A screen with no section titles to spy has no subheader. Two ways to say what the titles are, neither of which requires rewriting page content: - **The caller supplies them** — `sections={['Jump back in', 'Recently added', …]}`, the same strings already passed to the `Section`s in the feed, in document order. They are matched positionally against the elements found by `spySelector`, whose default already matches the `<section>` that `Section` renders. Used only when the count matches exactly: a mismatch would label each section with its neighbour's name, so it falls back to no title instead. - **The content carries them** — any element in the scroll container with a `data-spy-title` attribute. Per-element, so it always wins over the positional list, and it is the way in when the feed is not built from `Section`. The band finds the scroller itself, by looking inside the front layer for the vertical scroller that contains sections, and watches it with a capture listener. It never writes `scrollTop`, so `FrontLayer`'s per-view scroll memory is untouched. Horizontal shelves are ignored. A title change cross-fades over `--duration-fast` on `--ease-standard`, and is instant under `prefers-reduced-motion`.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` | A `TabBar`, a `ButtonGroup`, a `SearchField` — whatever the screen's secondary header is. |
-| `tabs` | `boolean` | The content is a tab bar: shows a static (non-scroll-linked) hairline and pins children to the band's bottom edge, so the tab bar's own indicator sits on that hairline. |
-| `progress` | `number` | 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. |
-| `spy` | `boolean` |  Turn the band into a scroll spy: it reports the section title that last passed under it. Alone, the band is hidden until one does. Leading in the band, so `children` may still sit beside it — but the case this exists for is the subheader that has no control of its own and would otherwise be an empty strip.  |
-| `sections` | `Array<string \| { title?: string }>` |  The section titles, in document order — plain strings, or objects with a `title`. Matched positionally against the elements `spySelector` finds, and only when the counts agree. Ignored entirely without `spy`.  |
-| `spySelector` | `string` |  Which elements count as sections. Default `'[data-spy-title],section'` — the `<section>` that `Section` already renders, plus anything explicitly tagged. Narrow it when a feed nests sections it does not want spied.  |
-| `spyTitle` | `string` |  Controlled form: the title to show, `''` for none, which hides a band with nothing else in it. Supplying it switches the DOM watching off entirely, which is how a card shows a given state without being scrolled. Requires `spy` — the row is not rendered at all without it, so `spyTitle` alone does nothing.  |
-| `onSpyChange` | `(title: string) => void` | Fires with the new title each time it changes, `''` when no title has passed any more. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### LayoutGrid
-
-Responsive card grid — the vertical half of the grid system (Shelf is the horizontal half). By default it auto-fills columns no narrower than `--grid-item-min`, so a shelf of media cards reflows without breakpoints. A standard grid fills its row: the columns share what the minimum leaves, so a wider pane adds a column instead of an empty end, and a narrow pane shrinks its cards to a third of the row rather than dropping below three across. Pass `columns` when the count is part of the design (mobile "Jump back in" is always 2-up).
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` |  |
-| `columns` | `number` |  Fixed column count. Rarely needed — prefer letting the item minimums decide, so the same grid reflows in a narrow pane as well as it does on a phone.  |
-| `item` | `'standard' \| 'wide'` |  Item shape, which selects the minimum-width token: 'standard' for square media cards (`--grid-item-min`), 'wide' for horizontal tiles like QuickPick (`--grid-item-min-wide`). The standard mobile token is tuned to auto-fill to three columns on a phone; wide tiles are capped at `--grid-item-max-wide` instead of filling the row.  |
-| `min` | `string` | Explicit minimum width, overriding the `item` token. |
-| `gap` | `string` |  Gap override. Defaults to `--grid-gutter` (`--grid-gutter-mobile` on mobile), and to half of `--grid-gutter` for wide items on desktop.  |
-| `maxWidth` | `string` | Measure cap, e.g. `var(--grid-max-width)`. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-
-### PageBody
-
-The body of a page inside the shell: the page margin on both sides (`--grid-margin`, or `--grid-margin-mobile`), the feed's top gap and an optional reading width. Wrap every page's content in it rather than padding a page by hand; Shelf bleeds back out through this margin.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `width` | `'full' \| 'tiles' \| 'list' \| 'form'` |  The widest the content runs, not counting the margin: a tile grid, a list, a form (640 px), or the whole pane (default).  |
-
-### PlayerPanel
-
-The desktop player's frame: a SideSheet beside the content column, its tabs sharing the panel's width so none is cut off, over the active tab's page. `NowPlaying` fills it.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `open` | `boolean` |  |
-| `tab` | `string` | The active tab's key. |
-| `onTabChange` | `(tab: string) => void` |  |
-| `onClose` | `() => void` |  |
-| `tabs` | `Array<{ key: string; label: string }>` | The tabs, label only; one tab draws no row. |
-| `title` | `string` | Panel heading above the tabs. Defaults to "Player": the tabs name the view. |
-| `width` | `string` | Panel width. Defaults to `--side-sheet-width`. |
-| `children` | `ReactNode` | The active tab's page. |
-
-### PlayerSheet
-
-The mobile player surface — covers the whole app frame and opens as an expansion of the now-playing bar. Pass the bar's `getBoundingClientRect()` as `from` and the sheet grows out of that exact rectangle; without one it slides up from the bottom edge. Instant under prefers-reduced-motion.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `open` | `boolean` |  |
-| `from` | `{ top: number; left: number; width: number; height: number } \| null` | The mini player's viewport rect — a DOMRect, or `{ top, left, width, height }`. |
-| `onClose` | `() => void` |  |
-| `zIndex` | `number` | Stacking order over the app frame. |
-| `radius` | `string` | Corner radius of the collapsed rectangle, matched to the bar it grows from. |
-| `background` | `string` | Sheet surface, so the expansion never flashes a different colour than the page inside it. |
-| `children` | `ReactNode` |  |
-
-### PlayerSubPage
-
-The shell the player's Queue and Lyrics tabs share (QueuePage, LyricsPage): a scrolling body whose first row pairs what the page is about with its controls, under an app bar naming the page when it has a heading or a close button.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `heading` | `string \| null` | Page name in the app bar. `null` as a tab of the player, whose tab names it: with no close button either, there is no app bar. |
-| `meta` | `string` | What the page is about — "Playing from Driftwave", "Song · Artist". |
-| `controls` | `ReactNode` | The page's own controls, on the meta row: the sync group, the edit toggle. |
-| `footer` | `ReactNode` | Docked below the body — such as an edit action bar. |
-| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
-| `onClose` | `() => void` | Renders the app bar's close button when set. |
-| `closeGlyph` | `string` |  |
-| `children` | `ReactNode` |  |
-
-### ScrollArea
-
-Scroll container with an Android-style overlay scrollbar — the thumb appears while the user scrolls and fades out `hideAfter` ms after they stop, on every platform including desktop. Native scrollbars are suppressed, and the thumb is an overlay, so content never reflows when it appears. SideSheet uses this internally; wrap your own scrollers in it when a screen owns its scrolling.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` |  |
-| `onScroll` | `(event: UIEvent<HTMLDivElement>) => void` |  |
-| `style` | `CSSProperties` | Applied to the inner scrolling element — padding, background, etc. |
-| `scrollRef` | `{ current: HTMLDivElement \| null } \| ((el: HTMLDivElement \| null) => void)` | Ref to the scrolling element itself — for saving and restoring scroll position. |
-| `axis` | `'y' \| 'x'` |  |
-| `thumbWidth` | `number` | Thumb thickness in px. Default 4. |
-| `hideAfter` | `number` | Idle delay before the thumb starts fading, in ms. Default 900. |
-| `fade` | `number` | Fade-out duration in ms. Default 500. |
-| `minThumb` | `number` | Minimum thumb length in px. Default 32. |
-| `edgeFade` | `boolean \| number` |  Fade the top and bottom edges to mark content running past them — the top fade only appears once scrolled off the start, the bottom fade disappears at the end. `true` for the default 28px, or a pixel depth.  |
-
-### Section
-
-One block of a feed — a SectionHeader plus its content — carrying the standard spacing to the next block. Prefer this over placing SectionHeader and a Shelf/LayoutGrid loose in a page.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` | `string` | Heading text. Omit for an untitled block that still takes part in the rhythm. |
-| `action` | `string` | Material Symbols glyph for the header's trailing action, e.g. 'arrow_forward'. |
-| `actionLabel` | `string` |  |
-| `onAction` | `() => void` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `last` | `boolean` | Drops the trailing margin — set on the final section of a scroll view. |
-| `children` | `React.ReactNode` |  |
-| `eyebrow` | `string` | Forwarded to SectionHeader — relationship line above the title, e.g. "More like". |
-| `image` | `string` | Forwarded to SectionHeader — subject artwork, leading the header. |
-| `round` | `boolean` | Forwarded to SectionHeader — circular thumbnail for an artist or a person; square for a show or a genre. |
-| `onSubject` | `() => void` | Forwarded to SectionHeader — makes the eyebrow+title block a link to the subject. |
-| `actionText` | `string` | Forwarded to SectionHeader — a text action ("Show all") in place of the glyph `action`. |
-| `trailing` | `React.ReactNode` | Forwarded to SectionHeader — a control of the section's own at the header's trailing edge, such as a `ViewToggle`. |
-
-### Shelf
-
-Horizontal carousel row. Negative side margins pull it out to the page edge while matching padding keeps the first item aligned to the gutter — so cards scroll off-screen rather than stopping at the content padding. `margin` must match the page's own padding. Affordances differ by platform, matching the input: desktop gets circular arrows that fade in on hover or keyboard focus and page by `step` whole items (measured from the first child, not a guessed pixel amount), disabling themselves at each end. Mobile gets a fading overlay thumb instead, since a touch surface has no hover state to reveal arrows.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `children` | `ReactNode` |  |
-| `gap` | `string` | Gap between items. Defaults to `--grid-gutter`. |
-| `margin` | `string` | The page padding to bleed past. Defaults to `--grid-margin`. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `step` | `number` | How many items an arrow press advances. Default 2. |
-| `arrows` | `boolean` | Force the paging arrows on or off. Defaults to on for desktop, off for mobile. |
-| `scrollbar` | `boolean` | Force the fading overlay thumb on or off. Defaults to on for mobile, off for desktop. |
-
-### SideSheet
-
-Side sheet — a full-height panel beside the bar+content column, so it and its divider run up alongside the app bar and its own title row (`--appbar-height`) lines up with the bar's title. Animates from zero width and holds its inner content at full width so nothing reflows mid-transition.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `open` | `boolean` |  |
-| `title` | `string` | Heading in the sheet's own header row. |
-| `onClose` | `() => void` | Shows a close button in the header when provided. |
-| `children` | `ReactNode` |  |
-| `width` | `string` | Open width. Defaults to `--side-sheet-width` (320px). |
-| `side` | `'left' \| 'right'` |  |
-| `closeGlyph` | `string` | Material Symbols glyph for the close button. Default 'close'. |
-
-## media
+## components
 
 ### AboutCard
 
@@ -562,27 +329,34 @@ Circular artist/author/narrator card for a people shelf.
 | `width` | `string` |  |
 | `onClick` | `() => void` |  |
 
-### CoverArt
+### BottomNav
 
-The artwork layer used inside every art container in the system. Absolutely fills its parent (which must be `position: relative` and `overflow: hidden`) and owns one detail that is easy to get wrong: the gradient fallback is *removed* once the image loads, rather than left behind it. A rounded corner is antialiased, so semi-transparent edge pixels blend with whatever is behind the image — a gradient left underneath shows up as a coloured fringe around the art, which no amount of image bleed can hide.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `src` | `string` | Image URL. Omitted or still loading, the fallback shows instead. |
-| `covers` | `string[]` |  A collection's item covers, drawn when it has no `src` of its own: four different ones make a 2×2 mosaic of the first four, one to three the first alone, none the flat placeholder.  |
-| `fallback` | `string` | CSS background for the placeholder. Defaults to a flat `--accent`. |
-| `alt` | `string` |  |
-
-### DownloadButton
-
-Offline availability as a three-state control: idle -> downloading (determinate or indeterminate, cancellable mid-flight) -> done, and pressing a done button removes the download. Composes ProgressRing for the downloading state rather than drawing a second ring.
+Mobile bottom tab bar. Each destination is a collapsed RailItem — same pill indicator, same always-visible stacked label, same transition as the desktop rail.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `state` | `'idle' \| 'downloading' \| 'done'` |  |
-| `progress` | `number \| null` | 0–1. Indeterminate ring when null and `state` is 'downloading'. |
-| `onClick` | `() => void` | Fires on press in every state: starts, cancels, or removes, depending on `state`. |
-| `size` | `number` | Control diameter in px. |
+| `items` *(required)* | `BottomNavItem[]` |  |
+| `active` *(required)* | `string` |  |
+| `onChange` | `(key: string) => void` |  |
+
+### EditableList
+
+Stable key for the row — pass it through as React's `key`.
+
+| prop | type | notes |
+| --- | --- | --- |
+
+### EmptyState
+
+What a page shows when it has nothing to show: a link that leads nowhere, a library with no books yet, a search that matched nothing. A glyph, the fact as a heading and one plain line, then the one way on, centred in the content column at the form width. States facts, never reassurance.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `icon` | `string` | Material Symbols Rounded glyph naming what is missing, drawn muted in a card-tone circle. |
+| `title` *(required)* | `string` | The fact, e.g. "This page doesn't exist". |
+| `body` | `string` | One line more, e.g. where the thing is found instead. |
+| `action` | `ReactNode` | The one way on: a `Button`, secondary unless it plays. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### EpisodeRow
 
@@ -604,6 +378,30 @@ List row for serial spoken-word content — an episode, not a track. Carries a s
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
+### ExpanderRow
+
+Collapses a homogeneous group inside an otherwise heterogeneous list — seven versions of one song folded behind "More releases · Show all" so the other result types stay reachable.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `label` *(required)* | `string` | What is being folded, e.g. "More releases". |
+| `actionLabel` | `string` | The disclosure verb. |
+| `expanded` | `boolean` |  |
+| `onToggle` | `(next: boolean) => void` | Called with the next expanded state on click. |
+| `image` | `string` | Optional stacked-art hint, leading the row. |
+
+### FieldRow
+
+Labelled form field wrapping the system Input. On mobile it supplies the filled pill container the chromeless mobile Input expects to sit on.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `label` *(required)* | `string` |  |
+| `placeholder` | `string` |  |
+| `value` | `string` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onChange` | `(next: string) => void` |  |
+
 ### Lyrics
 
 The lyric list in the three states the sync control cycles through. Only `sync` scrolls to follow the song; `dot` and `off` are static sheets.
@@ -618,35 +416,6 @@ The lyric list in the three states the sync control cycles through. Only `sync` 
 | `textSize` | `string` | Line size — any CSS length or type token. Defaults to `--text-lg`. |
 | `autoScroll` | `boolean` | Follow the song by scrolling the nearest scrolling ancestor. Only applies in `sync`. |
 | `onLineClick` | `(index: number) => void` |  |
-
-### LyricsPage
-
-The player's Lyrics tab: the song and the LyricsSyncButton on one row, the toggle in its top corner, above the lyric sheet. Dismissed by the player that holds it; it carries no back affordance of its own.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `heading` | `string \| null` | Page heading. `null` as a tab of the player, whose tab names it. |
-| `title` | `string` | Song the lyrics belong to, shown under the heading. |
-| `artist` | `string` |  |
-| `lines` | `string[]` |  |
-| `activeIndex` | `number` |  |
-| `syncMode` | `'sync' \| 'dot' \| 'off'` |  |
-| `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
-| `onSyncModeChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` |  |
-| `footer` | `ReactNode` | Docked below the sheet. |
-| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
-| `onClose` | `() => void` | Renders the app bar's close button, which collapses the page back into what opened it. |
-
-### LyricsSyncButton
-
-The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape). Synced (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the player's menu.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `mode` | `'sync' \| 'dot' \| 'off'` |  |
-| `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
-| `onChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` | Receives the mode the toggle turns to. |
 
 ### MediaCard
 
@@ -740,6 +509,293 @@ The persistent now-playing surface, in both platform variants: the tinted pill d
 | `sleep` | `string` | `spoken` only: the sleep timer's state, "Off", "23 min". |
 | `onSleep` | `() => void` |  |
 
+### NavRail
+
+Material Symbols Rounded glyph name.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `items` | `NavRailItem[]` |  |
+| `footerItems` | `NavRailItem[]` |  Destinations pinned to the rail's foot, below the items and above `footer` — Settings. Drawn as the same rows, so they light, collapse and click exactly as `items` do.  |
+| `active` | `string` | Key of the active item, in `items` or `footerItems`. |
+| `onChange` | `(key: string) => void` |  |
+| `expanded` | `boolean` |  |
+| `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided, leaving `expanded` to the caller. |
+| `toggle` | `boolean` |  Shows the menu toggle with no handler: the rail holds its own expanded state, starting from `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while expanded) collapses the labelled rail to the icon rail and back.  |
+| `footer` | `ReactNode` | Pinned to the bottom — an account row, theme switch, storage meter. |
+| `header` | `ReactNode` | Sits between the toggle and the items — a logo or brand mark. |
+
+### PlayActions
+
+The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --play) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `onNext` | `() => void` | Insert directly after the current track. |
+| `onPlay` | `() => void` |  |
+| `onLast` | `() => void` | Append to the end of the queue. |
+| `playing` | `boolean` | Swaps the centre glyph to pause. |
+| `size` | `number` | Diameter of the centre button in px; the outer two are 6px smaller. Default 40. |
+| `always` | `boolean` | Skip the hover gate and stay visible — for touch, or a permanently exposed row. |
+| `gap` | `string` |  |
+
+### QueueRow
+
+One row of the play queue — drag handle, art, title/sub, duration, remove. The current row sits on a filled card.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` |  |
+| `sub` | `string` |  |
+| `time` | `string` |  |
+| `image` | `string` | Cover art; the accent tile without one. |
+| `current` | `boolean` | Highlights the row as the one now playing. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onClick` | `() => void` |  |
+| `onRemove` | `(e?: any) => void` |  |
+| `handle` | `boolean` | Show the drag handle. Off for a read-only queue that reorders only in edit mode. |
+| `editing` | `boolean` | Edit mode: adds the leading select control and drops the duration. |
+| `selected` | `boolean` |  |
+| `onSelectToggle` | `(e?: any) => void` |  |
+| `draggable` | `boolean` |  |
+| `onDragStart` | `(e?: any) => void` |  |
+| `onDragOver` | `(e?: any) => void` |  |
+| `onDrop` | `(e?: any) => void` |  |
+| `onDragEnd` | `(e?: any) => void` |  |
+
+### QuickPick
+
+Continue-listening / jump-back-in tile: small square art plus title and a meta line. Lay several out in a grid at the top of a home screen.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` |  |
+| `sub` | `string` | e.g. "Book · 6 h 12 m left". |
+| `icon` | `string` |  Material Symbols Rounded glyph name. Given one, the tile renders the glyph on a flat accent tint instead of the gradient artwork square — the variant for destinations with no cover art of their own (Shuffle all, Downloads, Liked, a genre).  |
+| `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onClick` | `() => void` |  |
+| `progress` | `number \| null` | 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. |
+| `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. Ignored on the `icon` variant. |
+
+### ResultRow
+
+One row of a track, search-result or request list: art with a hover play/cancel action, title + meta, and a status pill. A percentage in `status` (or an explicit `progress`) draws a circular progress ring over the art; "queued", "searching" and "failed" get their own states.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` |  |
+| `meta` | `string` |  |
+| `detail` | `string` |  A line under the meta that wraps rather than cuts, up to two lines: why the row is there, such as a recommendation's reason. Omit for a row that needs no reason.  |
+| `status` | `string \| null` |  e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with no status. "Playing" renders animated equalizer bars instead of a pill. On mobile a status with a percentage shows only the percentage ("42%"), beside the ring over the art.  |
+| `progress` | `number \| null` |  |
+| `tone` | `'library' \| 'request' \| 'progress' \| 'error' \| null` | Colour family for the pill and ring; null for a row with no status. |
+| `actionGlyph` | `string` | Glyph for the art overlay action; "downloading" renders a pause control. |
+| `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onClick` | `() => void` |  |
+| `onAction` | `() => void` |  |
+| `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
+| `number` | `number \| null` | A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. |
+| `trailing` | `ReactNode` | Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. |
+
+### SectionHeader
+
+Heading row above a carousel, grid or list, with an optional trailing icon action.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` |  |
+| `action` | `string` | Material Symbols Rounded glyph name for the trailing action, e.g. "arrow_forward". Omit for no action. |
+| `actionLabel` | `string` |  |
+| `onAction` | `() => void` |  |
+| `platform` | `'mobile' \| 'desktop'` | mobile = body font at text-xl; desktop = display font at h3, 900 weight. |
+| `eyebrow` | `string` | Relationship line above the title — "More like", "Popular with listeners of" — that explains why this shelf exists. |
+| `image` | `string` | Subject artwork, leading the header. Falls back to the sibling CoverArt's own placeholder. |
+| `round` | `boolean` | Circular thumbnail for an artist or a person; square (the default) for a show or a genre. |
+| `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. |
+| `actionText` | `string` | A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. |
+| `trailing` | `ReactNode` |  A control of the section's own at the trailing edge, such as the `ViewToggle` over the collection the section holds. Wins over `actionText` and `action` if more than one is set.  |
+
+### SettingRow
+
+Settings list row: title, explanatory line, and a Switch on a filled card.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` *(required)* | `string` |  |
+| `sub` | `string` |  |
+| `checked` | `boolean` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onChange` | `(next: boolean) => void` |  |
+
+### StatusBanner
+
+Persistent, non-blocking statement of system state — Spotify's "You're offline" bar. Unlike a toast it never times out; the message stands until the condition it describes changes.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` *(required)* | `ReactNode` | The message. |
+| `tone` | `'info' \| 'warning' \| 'error' \| 'success'` | Selects the background/ink pair from the state tokens. |
+| `icon` | `string` | Leading glyph. |
+| `actionLabel` | `string` | Label for the inline text action, e.g. "Retry". |
+| `onAction` | `() => void` |  |
+| `onDismiss` | `() => void` | Renders a close control when set; the banner has no other way to dismiss. |
+
+### TabBar
+
+Icon + label tabs for a page's subheader — the sub-sections of a library page (Artists / Albums / Songs, Authors / Books / Series / Narrators). Scrolls sideways when the labels outrun the width; the active tab is accent-coloured with an underline indicator. For a filter row of mutually exclusive pills use ButtonGroup instead.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `items` *(required)* | `(TabBarItem \| string)[]` |  |
+| `value` | `string` |  |
+| `onChange` | `(key: string) => void` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `fill` | `boolean` | Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. |
+
+### TransportBar
+
+Now Playing control cluster: shuffle, previous, play/pause (the large accent control), next, repeat. `variant="spoken"` swaps previous/next for skip-back/skip-forward-by-interval and replaces the shuffle/repeat ends with `leading`/`trailing` — different verbs for spoken-word content, where "previous track" across a two-hour episode is close to useless.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `playing` | `boolean` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onTogglePlay` | `() => void` |  |
+| `onPrev` | `() => void` | Ignored in `spoken`. |
+| `onNext` | `() => void` | Ignored in `spoken`. |
+| `onShuffle` | `() => void` | Ignored in `spoken`. |
+| `onRepeat` | `() => void` | Ignored in `spoken`. |
+| `variant` | `'music' \| 'spoken'` | 'music' (default) is today's shuffle/prev/play/next/repeat row, unchanged. |
+| `onSkipBack` | `() => void` | `spoken` only: replaces "Previous". |
+| `onSkipForward` | `() => void` | `spoken` only: replaces "Next". |
+| `skipSeconds` | `number` | Interval skipped, drawn into the skip glyph's overlaid number and its label. Default 15. |
+| `leading` | `ReactNode` | `spoken` only: replaces the shuffle end — a SpeedControl, typically. Nothing when omitted. |
+| `trailing` | `ReactNode` | `spoken` only: replaces the repeat end — a sleep-timer control. Nothing when omitted. |
+
+### ValueRow
+
+Label + value on a filled card (Speed · 1.0x, Sleep timer · Off). Read-only unless you pass onClick.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `label` *(required)* | `string` |  |
+| `value` *(required)* | `string` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `onClick` | `() => void` |  |
+
+## layouts
+
+### BackdropShell
+
+The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking the step; `subheader` is fixed to it and `children` scroll underneath. The front layer's shape is not scroll-linked: it flattens only for a page shown with `appBar`. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `back` | `ReactNode` | Back-layer content — a `BackLayer` with the heading row and any contextual controls. It receives the front layer's scroll `progress`, which brings out its local search. |
+| `rail` | `ReactNode` | A `NavRail`. Sits at back-layer level, continuous with it. Omit on mobile. |
+| `children` | `ReactNode` | The screen itself — scrolls inside the front layer. |
+| `subheader` | `ReactNode` | A `FrontLayerHeader`. Fixed to the front layer; receives `progress` and `platform` from it. |
+| `sheet` | `ReactNode` |  The desktop side panel. With `sheetLayer="front"` pass a `SideSheet` — it draws its own dividers and animates its own width. With `sheetLayer="behind"` pass plain panel content (a title row of `--appbar-height`, then the list): the shell supplies the surface, the open/close width transition and both dividers, because a panel at the lower elevation must not be outlined.  |
+| `sheetOpen` | `boolean` | Whether that panel is open. Squares the front layer's abutting corner in `front` mode only. |
+| `sheetLayer` | `'front' \| 'behind'` |  Which layer the side panel belongs to. `'front'` (default) puts it above the front layer, full height, with a divider down its whole edge and the front layer squared where they meet. `'behind'` puts it below: both front-layer corners stay rounded, the front layer's shadow falls onto the panel, and the panel's rules shrink to a short one in the heading band and an inset one under it.  |
+| `player` | `ReactNode` | MiniPlayer, BottomNav, or a fragment of both. Docked across the full width beneath everything. |
+| `contentMinWidth` | `string` | Floor for the front-layer column, e.g. `var(--content-min-width)`. |
+| `scroll` | `boolean` | false when the screen owns its own scrolling (mobile) — the front layer still tracks it. |
+| `scrollKey` | `string \| number` | Identifier of the current view — gives each one its own remembered scroll position. |
+| `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the front layer. |
+| `theme` | `string` | Sets `data-theme` on the frame. |
+| `appBar` | `boolean` |  A page that is not a destination, on a phone: no backdrop. The back layer becomes a top app bar on the page surface (`BackLayer`'s `appBar`) and the front layer goes flat under it, so nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.  |
+| `column` | `'tiles' \| 'list' \| 'form'` |  A page with no navigation beside it, such as signing in: its heading and its content in one centred column of this reading width (`PageBody`'s widths), the heading starting at the page margin as the content does. Pass no `rail`, and give the page's `PageBody` the same `width`.  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### BackLayer
+
+The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevation, carrying the page heading and the controls that inform the front layer. `BackdropShell` places it above the front layer and lets the rail run continuous with it. **Which controls belong here.** M2 puts "navigation, steppers, text fields, selection controls" on the back layer, and a filter group arguably qualifies — but a screen's secondary header belongs to the front layer. The line Sonora draws: *anything that scrolls away with the content or names a section of it goes in the front layer's `FrontLayerHeader`; anything that reconfigures what the front layer is showing may sit here in `controls`.* Sub-tabs and "Artists / Albums / Songs" are subheader; a library-scope switch or a sort mode is `controls`.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` | `string` | The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). |
+| `eyebrow` | `string` |  What the page is to its subject, "More like", small and muted over the title: with it the heading is SectionHeader's context form, naming a page by its subject, so the page needs no header of its own saying it again. In the display face on the backdrop, the body face in a phone's app bar.  |
+| `image` | `string` | The subject's art beside the title, 40px (48px on desktop), squared unless `round`. |
+| `round` | `boolean` | Round art, for a person. |
+| `leading` | `ReactNode` | Before the title — a back link, or on mobile the account avatar (never in a filter row). |
+| `trailing` | `ReactNode` | After the title — a search button, an overflow menu. |
+| `controls` | `ReactNode` | Contextual controls that reconfigure the front layer, on a band below the heading. |
+| `search` | `string` |  A local search, scoped to this page: its placeholder ("Search your books and requests"). The heading ends in a search button; the field comes out of it over the heading, without focus once the front layer has scrolled, with focus when the button is tapped, and goes back at the top unless it was tapped out. Not the global Search destination.  |
+| `searchOpen` | `boolean` | Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. |
+| `progress` | `number` | 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. |
+| `appBar` | `boolean` |  The heading as a top app bar on the page surface, for a page that is not a destination on a phone: `--surface-bg` instead of the back layer's colour, and the title set as a mobile `SectionHeader`'s, in the body face, rather than as a display heading. `BackdropShell`'s `appBar` passes it down.  |
+| `atMargin` | `boolean` |  Starts the heading at the page margin (`--grid-margin`, or `--grid-margin-mobile`), where `PageBody` starts the content under it, rather than at the heading strip's own inset. `BackdropShell`'s `column` passes it down.  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### FrontLayer
+
+The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content and its fixed subheader. `BackdropShell` builds one for you; use it directly only when composing a frame by hand. Its top corners are `--radius-lg` at **every** scroll position: a backdrop's front layer is a persistent surface, not a sheet that docks. The 1dp step is expressed by a 1px light edge along the layer's own top, over a `--shadow-sm` lift onto whatever is behind it, and the scroll-linked hairline moves to the subheader, where it is inset to the content measure. That edge is not configurable and it is themed, because `--shadow-sm` is `0 1px 3px` cast *downward*, away from the top edge — the only place this layer meets the back layer. Measured off a render, the darkening it puts on the back layer above that boundary is **one value out of 255** in dark and at most three in light: what separates the two surfaces is the tonal step, `#080808` → `#141414` or `#FFFFFF` → `#F9F6F6`, and near black a display's black floor flattens that pair. Dark therefore draws an inner highlight (`color-mix` of `--surface-fg` at 16%, the only mark that survives on near-black); light draws a hairline in `--surface-border`, because mixing `--surface-fg` there inverts into an inner *shadow*. Light is the base rule and dark the `[data-theme="dark"]` override, so an unthemed context gets the treatment that cannot invert. The layer owns the scrolling and remembers a scroll offset per `scrollKey`, so switching views and coming back lands where you left. With `scroll={false}` a descendant owns the scroller and the layer tracks it by capture instead.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` |  |
+| `subheader` | `ReactNode` | A `FrontLayerHeader`, fixed above the scrolling content. Cloned with `progress`/`platform`. |
+| `scroll` | `boolean` | false when a descendant owns the scrolling (mobile screens) — the layer still tracks it. |
+| `scrollKey` | `string \| number` |  Identifier for the view currently rendered inside. Changing it saves the outgoing view's scroll offset, restores the incoming one's (0 for a view not seen yet), and recomputes the subheader's divider state to match — without it, a fresh view inherits the previous scroll position and stays visually "scrolled".  |
+| `onProgress` | `(progress: number) => void` | Fires with 0–1 scroll progress. |
+| `threshold` | `number` | Scroll distance in px over which the subheader's divider fades in. Default 24. |
+| `squareLeft` | `boolean` | Square the abutting corner where a `sheetLayer="front"` panel meets the layer. |
+| `squareRight` | `boolean` |  |
+| `flat` | `boolean` |  No backdrop: square corners, no lift and no light edge, so the layer and the heading above it read as one surface under a top app bar. A hairline along the top fades in as the content scrolls. `BackdropShell`'s `appBar` sets it.  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### FrontLayerHeader
+
+The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — a hairline is always shown, static rather than scroll-linked, and the tabs are pinned flush to the band's bottom edge (instead of centered) so the tab bar's own underline indicator sits right on it, reading as one line instead of two. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half. ### The scroll-spy subheader (`spy`) The band is what the content scrolls under. When the screen has no control to put in it, the band is not therefore an empty strip: with `spy` it shows the title of the section that has most recently scrolled up past it, and it shows **only once a title has scrolled under it**. At the top, before any section has passed, there is no band at all. A spy band with nothing else in it lies over the top of the content rather than in flow, so it fades in and out without moving the content. With `children` beside it, the band is always there, in flow, and the title leads it once one has passed. A screen with no section titles to spy has no subheader. Two ways to say what the titles are, neither of which requires rewriting page content: - **The caller supplies them** — `sections={['Jump back in', 'Recently added', …]}`, the same strings already passed to the `Section`s in the feed, in document order. They are matched positionally against the elements found by `spySelector`, whose default already matches the `<section>` that `Section` renders. Used only when the count matches exactly: a mismatch would label each section with its neighbour's name, so it falls back to no title instead. - **The content carries them** — any element in the scroll container with a `data-spy-title` attribute. Per-element, so it always wins over the positional list, and it is the way in when the feed is not built from `Section`. The band finds the scroller itself, by looking inside the front layer for the vertical scroller that contains sections, and watches it with a capture listener. It never writes `scrollTop`, so `FrontLayer`'s per-view scroll memory is untouched. Horizontal shelves are ignored. A title change cross-fades over `--duration-fast` on `--ease-standard`, and is instant under `prefers-reduced-motion`.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` | A `TabBar`, a `ButtonGroup`, a `SearchField` — whatever the screen's secondary header is. |
+| `tabs` | `boolean` | The content is a tab bar: shows a static (non-scroll-linked) hairline and pins children to the band's bottom edge, so the tab bar's own indicator sits on that hairline. |
+| `progress` | `number` | 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. |
+| `spy` | `boolean` |  Turn the band into a scroll spy: it reports the section title that last passed under it. Alone, the band is hidden until one does. Leading in the band, so `children` may still sit beside it — but the case this exists for is the subheader that has no control of its own and would otherwise be an empty strip.  |
+| `sections` | `Array<string \| { title?: string }>` |  The section titles, in document order — plain strings, or objects with a `title`. Matched positionally against the elements `spySelector` finds, and only when the counts agree. Ignored entirely without `spy`.  |
+| `spySelector` | `string` |  Which elements count as sections. Default `'[data-spy-title],section'` — the `<section>` that `Section` already renders, plus anything explicitly tagged. Narrow it when a feed nests sections it does not want spied.  |
+| `spyTitle` | `string` |  Controlled form: the title to show, `''` for none, which hides a band with nothing else in it. Supplying it switches the DOM watching off entirely, which is how a card shows a given state without being scrolled. Requires `spy` — the row is not rendered at all without it, so `spyTitle` alone does nothing.  |
+| `onSpyChange` | `(title: string) => void` | Fires with the new title each time it changes, `''` when no title has passed any more. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### LayoutGrid
+
+Responsive card grid — the vertical half of the grid system (Shelf is the horizontal half). By default it auto-fills columns no narrower than `--grid-item-min`, so a shelf of media cards reflows without breakpoints. A standard grid fills its row: the columns share what the minimum leaves, so a wider pane adds a column instead of an empty end, and a narrow pane shrinks its cards to a third of the row rather than dropping below three across. Pass `columns` when the count is part of the design (mobile "Jump back in" is always 2-up).
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` |  |
+| `columns` | `number` |  Fixed column count. Rarely needed — prefer letting the item minimums decide, so the same grid reflows in a narrow pane as well as it does on a phone.  |
+| `item` | `'standard' \| 'wide'` |  Item shape, which selects the minimum-width token: 'standard' for square media cards (`--grid-item-min`), 'wide' for horizontal tiles like QuickPick (`--grid-item-min-wide`). The standard mobile token is tuned to auto-fill to three columns on a phone; wide tiles are capped at `--grid-item-max-wide` instead of filling the row.  |
+| `min` | `string` | Explicit minimum width, overriding the `item` token. |
+| `gap` | `string` |  Gap override. Defaults to `--grid-gutter` (`--grid-gutter-mobile` on mobile), and to half of `--grid-gutter` for wide items on desktop.  |
+| `maxWidth` | `string` | Measure cap, e.g. `var(--grid-max-width)`. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
+### LyricsPage
+
+The player's Lyrics tab: the song and the LyricsSyncButton on one row, the toggle in its top corner, above the lyric sheet. Dismissed by the player that holds it; it carries no back affordance of its own.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `heading` | `string \| null` | Page heading. `null` as a tab of the player, whose tab names it. |
+| `title` | `string` | Song the lyrics belong to, shown under the heading. |
+| `artist` | `string` |  |
+| `lines` | `string[]` |  |
+| `activeIndex` | `number` |  |
+| `syncMode` | `'sync' \| 'dot' \| 'off'` |  |
+| `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
+| `onSyncModeChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` |  |
+| `footer` | `ReactNode` | Docked below the sheet. |
+| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
+| `onClose` | `() => void` | Renders the app bar's close button, which collapses the page back into what opened it. |
+
 ### NowPlaying
 
 The player, whole, with Now playing, Queue and Lyrics as its tabs (spoken content has no Lyrics tab), in the shape each platform wants. Mobile: a full-screen sheet over everything, the bottom bar included, expanding out of the mini-player (`from` = the bar's rect): an app bar with collapse, what it plays from and the menu, the tabs, then the active tab's page. Desktop: the side panel, `PlayerPanel`; the player bar beneath the window carries the transport.
@@ -794,19 +850,60 @@ The player's first tab: cover, titles, then the controls matched to what plays. 
 | `scroll` | `boolean` | Own the scrolling (mobile default). Off inside the desktop panel, which scrolls itself. |
 | `children` | `ReactNode` | Stacked below the controls: the about cards. |
 
-### PlayActions
+### PageBody
 
-The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --play) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
+The body of a page inside the shell: the page margin on both sides (`--grid-margin`, or `--grid-margin-mobile`), the feed's top gap and an optional reading width. Wrap every page's content in it rather than padding a page by hand; Shelf bleeds back out through this margin.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `onNext` | `() => void` | Insert directly after the current track. |
-| `onPlay` | `() => void` |  |
-| `onLast` | `() => void` | Append to the end of the queue. |
-| `playing` | `boolean` | Swaps the centre glyph to pause. |
-| `size` | `number` | Diameter of the centre button in px; the outer two are 6px smaller. Default 40. |
-| `always` | `boolean` | Skip the hover gate and stay visible — for touch, or a permanently exposed row. |
-| `gap` | `string` |  |
+| `children` | `ReactNode` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `width` | `'full' \| 'tiles' \| 'list' \| 'form'` |  The widest the content runs, not counting the margin: a tile grid, a list, a form (640 px), or the whole pane (default).  |
+
+### PlayerPanel
+
+The desktop player's frame: a SideSheet beside the content column, its tabs sharing the panel's width so none is cut off, over the active tab's page. `NowPlaying` fills it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `open` | `boolean` |  |
+| `tab` | `string` | The active tab's key. |
+| `onTabChange` | `(tab: string) => void` |  |
+| `onClose` | `() => void` |  |
+| `tabs` | `Array<{ key: string; label: string }>` | The tabs, label only; one tab draws no row. |
+| `title` | `string` | Panel heading above the tabs. Defaults to "Player": the tabs name the view. |
+| `width` | `string` | Panel width. Defaults to `--side-sheet-width`. |
+| `children` | `ReactNode` | The active tab's page. |
+
+### PlayerSheet
+
+The mobile player surface — covers the whole app frame and opens as an expansion of the now-playing bar. Pass the bar's `getBoundingClientRect()` as `from` and the sheet grows out of that exact rectangle; without one it slides up from the bottom edge. Instant under prefers-reduced-motion.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `open` | `boolean` |  |
+| `from` | `{ top: number; left: number; width: number; height: number } \| null` | The mini player's viewport rect — a DOMRect, or `{ top, left, width, height }`. |
+| `onClose` | `() => void` |  |
+| `zIndex` | `number` | Stacking order over the app frame. |
+| `radius` | `string` | Corner radius of the collapsed rectangle, matched to the bar it grows from. |
+| `background` | `string` | Sheet surface, so the expansion never flashes a different colour than the page inside it. |
+| `children` | `ReactNode` |  |
+
+### PlayerSubPage
+
+The shell the player's Queue and Lyrics tabs share (QueuePage, LyricsPage): a scrolling body whose first row pairs what the page is about with its controls, under an app bar naming the page when it has a heading or a close button.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `heading` | `string \| null` | Page name in the app bar. `null` as a tab of the player, whose tab names it: with no close button either, there is no app bar. |
+| `meta` | `string` | What the page is about — "Playing from Driftwave", "Song · Artist". |
+| `controls` | `ReactNode` | The page's own controls, on the meta row: the sync group, the edit toggle. |
+| `footer` | `ReactNode` | Docked below the body — such as an edit action bar. |
+| `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
+| `onClose` | `() => void` | Renders the app bar's close button when set. |
+| `closeGlyph` | `string` |  |
+| `children` | `ReactNode` |  |
 
 ### QueuePage
 
@@ -834,168 +931,67 @@ Stable key. Falls back to `title`.
 | `scroll` | `boolean` | Own the scrolling. Defaults to on for mobile, off for desktop, whose player panel scrolls itself. |
 | `onClose` | `() => void` | Renders the app bar's close button, which collapses the page back into what opened it. |
 
-### QueueRow
+### ScrollArea
 
-One row of the play queue — drag handle, art, title/sub, duration, remove. The current row sits on a filled card.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `sub` | `string` |  |
-| `time` | `string` |  |
-| `image` | `string` | Cover art; the accent tile without one. |
-| `current` | `boolean` | Highlights the row as the one now playing. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
-| `onRemove` | `(e?: any) => void` |  |
-| `handle` | `boolean` | Show the drag handle. Off for a read-only queue that reorders only in edit mode. |
-| `editing` | `boolean` | Edit mode: adds the leading select control and drops the duration. |
-| `selected` | `boolean` |  |
-| `onSelectToggle` | `(e?: any) => void` |  |
-| `draggable` | `boolean` |  |
-| `onDragStart` | `(e?: any) => void` |  |
-| `onDragOver` | `(e?: any) => void` |  |
-| `onDrop` | `(e?: any) => void` |  |
-| `onDragEnd` | `(e?: any) => void` |  |
-
-### ResultRow
-
-One row of a track, search-result or request list: art with a hover play/cancel action, title + meta, and a status pill. A percentage in `status` (or an explicit `progress`) draws a circular progress ring over the art; "queued", "searching" and "failed" get their own states.
+Scroll container with an Android-style overlay scrollbar — the thumb appears while the user scrolls and fades out `hideAfter` ms after they stop, on every platform including desktop. Native scrollbars are suppressed, and the thumb is an overlay, so content never reflows when it appears. SideSheet uses this internally; wrap your own scrollers in it when a screen owns its scrolling.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `meta` | `string` |  |
-| `detail` | `string` |  A line under the meta that wraps rather than cuts, up to two lines: why the row is there, such as a recommendation's reason. Omit for a row that needs no reason.  |
-| `status` | `string \| null` |  e.g. "In library", "Requested · 87%", "Queued", "Searching…", "Failed"; null for a row with no status. "Playing" renders animated equalizer bars instead of a pill. On mobile a status with a percentage shows only the percentage ("42%"), beside the ring over the art.  |
-| `progress` | `number \| null` |  |
-| `tone` | `'library' \| 'request' \| 'progress' \| 'error' \| null` | Colour family for the pill and ring; null for a row with no status. |
-| `actionGlyph` | `string` | Glyph for the art overlay action; "downloading" renders a pause control. |
-| `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
+| `children` | `ReactNode` |  |
+| `onScroll` | `(event: UIEvent<HTMLDivElement>) => void` |  |
+| `style` | `CSSProperties` | Applied to the inner scrolling element — padding, background, etc. |
+| `scrollRef` | `{ current: HTMLDivElement \| null } \| ((el: HTMLDivElement \| null) => void)` | Ref to the scrolling element itself — for saving and restoring scroll position. |
+| `axis` | `'y' \| 'x'` |  |
+| `thumbWidth` | `number` | Thumb thickness in px. Default 4. |
+| `hideAfter` | `number` | Idle delay before the thumb starts fading, in ms. Default 900. |
+| `fade` | `number` | Fade-out duration in ms. Default 500. |
+| `minThumb` | `number` | Minimum thumb length in px. Default 32. |
+| `edgeFade` | `boolean \| number` |  Fade the top and bottom edges to mark content running past them — the top fade only appears once scrolled off the start, the bottom fade disappears at the end. `true` for the default 28px, or a pixel depth.  |
+
+### Section
+
+One block of a feed — a SectionHeader plus its content — carrying the standard spacing to the next block. Prefer this over placing SectionHeader and a Shelf/LayoutGrid loose in a page.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` | `string` | Heading text. Omit for an untitled block that still takes part in the rhythm. |
+| `action` | `string` | Material Symbols glyph for the header's trailing action, e.g. 'arrow_forward'. |
+| `actionLabel` | `string` |  |
 | `onAction` | `() => void` |  |
-| `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
-| `number` | `number \| null` | A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. |
-| `trailing` | `ReactNode` | Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. |
-
-### SeekBar
-
-Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; value is 0–1.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `value` | `number` |  |
-| `duration` | `number` | Track length in seconds. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: number) => void` |  |
-| `remainingAsCountdown` | `boolean` | false shows total length on the right instead of a countdown. |
+| `last` | `boolean` | Drops the trailing margin — set on the final section of a scroll view. |
+| `children` | `React.ReactNode` |  |
+| `eyebrow` | `string` | Forwarded to SectionHeader — relationship line above the title, e.g. "More like". |
+| `image` | `string` | Forwarded to SectionHeader — subject artwork, leading the header. |
+| `round` | `boolean` | Forwarded to SectionHeader — circular thumbnail for an artist or a person; square for a show or a genre. |
+| `onSubject` | `() => void` | Forwarded to SectionHeader — makes the eyebrow+title block a link to the subject. |
+| `actionText` | `string` | Forwarded to SectionHeader — a text action ("Show all") in place of the glyph `action`. |
+| `trailing` | `React.ReactNode` | Forwarded to SectionHeader — a control of the section's own at the header's trailing edge, such as a `ViewToggle`. |
 
-### SpeedControl
+### Shelf
 
-Playback rate as a first-class transport control: the current multiplier plus a small "x", living inline in a transport row rather than on a settings page. Colour states default vs non-default rate — the point is that forgetting a rate change stays visible.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `value` | `number` | 1, 1.25, 1.5 … |
-| `onClick` | `() => void` | Opens the rate picker. |
-| `label` | `string` | Accessible name. Defaults to "Playback speed, <value> times". |
-| `size` | `number` | Control diameter in px. |
-
-### TransportBar
-
-Now Playing control cluster: shuffle, previous, play/pause (the large accent control), next, repeat. `variant="spoken"` swaps previous/next for skip-back/skip-forward-by-interval and replaces the shuffle/repeat ends with `leading`/`trailing` — different verbs for spoken-word content, where "previous track" across a two-hour episode is close to useless.
+Horizontal carousel row. Negative side margins pull it out to the page edge while matching padding keeps the first item aligned to the gutter — so cards scroll off-screen rather than stopping at the content padding. `margin` must match the page's own padding. Affordances differ by platform, matching the input: desktop gets circular arrows that fade in on hover or keyboard focus and page by `step` whole items (measured from the first child, not a guessed pixel amount), disabling themselves at each end. Mobile gets a fading overlay thumb instead, since a touch surface has no hover state to reveal arrows.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `playing` | `boolean` |  |
+| `children` | `ReactNode` |  |
+| `gap` | `string` | Gap between items. Defaults to `--grid-gutter`. |
+| `margin` | `string` | The page padding to bleed past. Defaults to `--grid-margin`. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onTogglePlay` | `() => void` |  |
-| `onPrev` | `() => void` | Ignored in `spoken`. |
-| `onNext` | `() => void` | Ignored in `spoken`. |
-| `onShuffle` | `() => void` | Ignored in `spoken`. |
-| `onRepeat` | `() => void` | Ignored in `spoken`. |
-| `variant` | `'music' \| 'spoken'` | 'music' (default) is today's shuffle/prev/play/next/repeat row, unchanged. |
-| `onSkipBack` | `() => void` | `spoken` only: replaces "Previous". |
-| `onSkipForward` | `() => void` | `spoken` only: replaces "Next". |
-| `skipSeconds` | `number` | Interval skipped, drawn into the skip glyph's overlaid number and its label. Default 15. |
-| `leading` | `ReactNode` | `spoken` only: replaces the shuffle end — a SpeedControl, typically. Nothing when omitted. |
-| `trailing` | `ReactNode` | `spoken` only: replaces the repeat end — a sleep-timer control. Nothing when omitted. |
+| `step` | `number` | How many items an arrow press advances. Default 2. |
+| `arrows` | `boolean` | Force the paging arrows on or off. Defaults to on for desktop, off for mobile. |
+| `scrollbar` | `boolean` | Force the fading overlay thumb on or off. Defaults to on for mobile, off for desktop. |
 
-## navigation
+### SideSheet
 
-### AccountButton
-
-The account avatar that leads the phone's top bar: a `BackLayer`'s `leading` on a destination's home, opening Settings. A round button holding the account's picture through `CoverArt`, or, with no picture, a filled person glyph on `--surface-card`. It belongs to the heading row only, never to a filter row: a filter reconfigures the content, and the account is not a filter. On desktop, Settings sits at the foot of the rail instead.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `image` | `string` | The account's picture. Without it, a person glyph. |
-| `label` | `string` | Accessible name and tooltip. Default "Account". |
-| `size` | `number` | Diameter in px. Default 32, the mobile app bar's avatar. |
-| `onClick` | `() => void` |  |
-
-### BottomNav
-
-Mobile bottom tab bar. Each destination is a collapsed RailItem — same pill indicator, same always-visible stacked label, same transition as the desktop rail.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `items` *(required)* | `BottomNavItem[]` |  |
-| `active` *(required)* | `string` |  |
-| `onChange` | `(key: string) => void` |  |
-
-### NavRail
-
-Material Symbols Rounded glyph name.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `items` | `NavRailItem[]` |  |
-| `footerItems` | `NavRailItem[]` |  Destinations pinned to the rail's foot, below the items and above `footer` — Settings. Drawn as the same rows, so they light, collapse and click exactly as `items` do.  |
-| `active` | `string` | Key of the active item, in `items` or `footerItems`. |
-| `onChange` | `(key: string) => void` |  |
-| `expanded` | `boolean` |  |
-| `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided, leaving `expanded` to the caller. |
-| `toggle` | `boolean` |  Shows the menu toggle with no handler: the rail holds its own expanded state, starting from `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while expanded) collapses the labelled rail to the icon rail and back.  |
-| `footer` | `ReactNode` | Pinned to the bottom — an account row, theme switch, storage meter. |
-| `header` | `ReactNode` | Sits between the toggle and the items — a logo or brand mark. |
-
-### RailItem
-
-Navigation rail row, following the M3 rail spec. One highlight element morphs from a 56×32 icon pill (collapsed) to a pill that hugs the icon and label (expanded), so the selection never jumps; two label copies cross-fade rather than travelling. The highlight is always the width of the item's own content, never of the rail. Rows are 56px tall and stack with no gap in either state. Collapsed: 80px rail, 12px side padding. Expanded: 220–360px rail, 16px side padding. Hovering shows a faint highlight.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `icon` *(required)* | `string` | Material Symbols Rounded glyph name. |
-| `label` *(required)* | `string` |  |
-| `active` | `boolean` |  |
-| `expanded` | `boolean` | false collapses to the 56×32 icon pill with a 12px stacked label. |
-| `rowHeight` | `number` | Row height — 56 in a rail, 48 in the bottom tab bar. |
-| `tabs` | `boolean` | Mobile tab-bar behaviour: inactive tabs hide their label and centre the icon; the active tab keeps its label and gets a wider pill. |
-| `wideActive` | `boolean` | Whether the active pill widens to 72px. Defaults to `tabs` — set false in a rail. |
-| `centerIcon` | `boolean` |  Centre the icon against the row's midpoint. Defaults to `tabs`. Must be false wherever the row's width animates (a rail), or the icon slides out and back during the transition.  |
-| `onClick` | `() => void` |  |
-
-### SearchButton
-
-The app bar's search control: a search icon button that swaps to a close icon while the search field is open. BackLayer renders one for a page's local search; use it directly only for a bar you are composing by hand.
+Side sheet — a full-height panel beside the bar+content column, so it and its divider run up alongside the app bar and its own title row (`--appbar-height`) lines up with the bar's title. Animates from zero width and holds its inner content at full width so nothing reflows mid-transition.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `open` | `boolean` |  |
-| `onToggle` | `(next: boolean) => void` |  |
-| `muted` | `boolean` | Muted icon colour (the default in an app bar). |
-| `label` | `string` | Overrides the accessible label, which is otherwise "Search" / "Close search". |
-
-### TabBar
-
-Icon + label tabs for a page's subheader — the sub-sections of a library page (Artists / Albums / Songs, Authors / Books / Series / Narrators). Scrolls sideways when the labels outrun the width; the active tab is accent-coloured with an underline indicator. For a filter row of mutually exclusive pills use ButtonGroup instead.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `items` *(required)* | `(TabBarItem \| string)[]` |  |
-| `value` | `string` |  |
-| `onChange` | `(key: string) => void` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `fill` | `boolean` | Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. |
+| `title` | `string` | Heading in the sheet's own header row. |
+| `onClose` | `() => void` | Shows a close button in the header when provided. |
+| `children` | `ReactNode` |  |
+| `width` | `string` | Open width. Defaults to `--side-sheet-width` (320px). |
+| `side` | `'left' \| 'right'` |  |
+| `closeGlyph` | `string` | Material Symbols glyph for the close button. Default 'close'. |

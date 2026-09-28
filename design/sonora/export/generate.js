@@ -144,7 +144,7 @@ const kt = '// GENERATED — Sonora tokens as Compose values.\n'
 await saveFile('export/android/SonoraTokens.kt', kt);
 
 /* ---- component API ---- */
-const DIRS = ['core', 'forms', 'layout', 'media', 'navigation'];
+const DIRS = ['basic', 'components', 'layouts'];
 const dts = [];
 const listings = await Promise.all(DIRS.map(async (dir) => {
   try { return [dir, await ls('components/' + dir)]; } catch (e) { return [dir, []]; }

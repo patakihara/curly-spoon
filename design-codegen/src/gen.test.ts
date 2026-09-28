@@ -100,7 +100,7 @@ describe('pnpm gen, from design/sonora', () => {
         recursive: true,
       });
       withTokens(sonora);
-      const dts = join(sonora, 'components', 'core', 'Button.d.ts');
+      const dts = join(sonora, 'components', 'basic', 'Button.d.ts');
       const original = readFileSync(dts, 'utf8');
       const probed = original.replace(
         'export interface ButtonProps {\n',
@@ -111,7 +111,7 @@ describe('pnpm gen, from design/sonora', () => {
 
       const out = join(tmp, 'out');
       gen(['--sonora', sonora, '--out', out]);
-      expect(readFileSync(join(out, OUTPUTS.web, 'core', 'Button.d.ts'), 'utf8')).toContain(
+      expect(readFileSync(join(out, OUTPUTS.web, 'basic', 'Button.d.ts'), 'utf8')).toContain(
         '  uikitProbe?: string;\n',
       );
       expect(readFileSync(join(out, OUTPUTS.kotlin, 'ButtonProps.kt'), 'utf8')).toContain(

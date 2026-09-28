@@ -1,0 +1,252 @@
+<!-- @dsCard group="Layouts" viewport="1400x900" name="Backdrop — Front Layer Edge" subtitle="One themed 1dp edge, not a choice: a --surface-border hairline in light, a 16% --surface-fg inner highlight in dark, both over --shadow-sm — with the measurements that settled it" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<!-- The rejected treatments were selected by a `lift` prop that no longer exists, so the component
+     cannot draw them any more. They are redrawn here in the card's own CSS, from the same token
+     expressions each one used. Deliberately not `sn-`-prefixed: that prefix means component output
+     in this repo, and `.sn-front-edge` in particular is themed by `sonora-frontlayer-css`, which
+     would make an "illustration" secretly live. -->
+<style id="__card-swatch-css">
+.rej-fig{position:relative;width:244px;height:76px;overflow:hidden;border-radius:var(--radius-xs);background:var(--surface-bg-alt)}
+.rej-fig>span{position:absolute;left:0;right:0;top:26px;bottom:0;background:var(--surface-bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.rej-drop>span{box-shadow:var(--shadow-sm)}
+.rej-ambient>span{box-shadow:var(--shadow-xxl)}
+.rej-wash>span{box-shadow:var(--shadow-sm);background:linear-gradient(color-mix(in srgb, var(--surface-fg) 9%, transparent), transparent 6px),var(--surface-bg)}
+.rej-hairline>span{box-shadow:var(--shadow-sm),inset 0 1px 0 var(--surface-border)}
+.rej-mix>span{box-shadow:var(--shadow-sm),inset 0 1px 0 color-mix(in srgb, var(--surface-fg) 16%, transparent)}
+.rej-frame{border:1px dashed var(--surface-fg-muted);border-radius:var(--radius-sm);padding:7px}
+</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BackLayer, BackdropShell, FrontLayer, FrontLayerHeader } = window.SonoraDesignSystem_6c1435;
+
+const TRACKS = [
+  {title:'Tidal Lines', meta:'Halcyon Bloom'},
+  {title:'Empty Rooms', meta:'Echo Fields'},
+];
+
+/* What the component actually draws now, per theme. `rule` is the literal declaration in
+   `sonora-frontlayer-css`; `measured` is what `docs/lift_probe.mjs` reads back out of a render of
+   this very card, not a value anyone typed. */
+const SHIPPED = {
+  dark: {
+    label:'Dark', rule:'inset 0 1px 0 color-mix(in srgb, var(--surface-fg) 16%, transparent)',
+    selector:'[data-theme="dark"] .sn-front-edge', tokens:'--shadow-sm + color-mix(--surface-fg 16%)',
+    measured:'#343434 on #141414', surfaces:'back #080808 · front #141414',
+  },
+  light: {
+    label:'Light', rule:'inset 0 1px 0 var(--surface-border)',
+    selector:'.sn-front-edge', tokens:'--shadow-sm + --surface-border',
+    measured:'#E5E2E2 on #F9F6F6', surfaces:'back #FFFFFF · front #F9F6F6',
+  },
+};
+
+/* The four that were measured and not taken. Numbering is the original comparison's, kept so the
+   readings below stay traceable to it; the shipped pair were 2 and 3 in that set. */
+const REJECTED = [
+  {cls:'rej-drop', n:'1', name:'Drop shadow alone', tokens:'--shadow-sm',
+   dark:'#080808→#070707 · 1 value', light:'#FFFFFF→#FCFCFC · 3 values',
+   why:'Today’s default, and the reason for all of this: --shadow-sm is 0 1px 3px cast downward, away from the top edge. On the back layer just above the boundary it lands ONE value out of 255 in dark, three in light. What separates the surfaces is the tonal step, not the shadow.'},
+  {cls:'rej-ambient', n:'4', name:'Ambient shadow', tokens:'--shadow-xxl',
+   dark:'#070707 · ~25px · 1 value', light:'#F6F6F6 wash · ~25px',
+   why:'Proof that a bigger shadow is not the answer. The largest, softest, highest-opacity step the scale has still only reaches #070707 — the same single value, spread over ~25px instead of 2. Darkening near-black cannot separate near-black.'},
+  {cls:'rej-wash', n:'5', name:'Edge wash', tokens:'--shadow-sm + color-mix(--surface-fg 9%)',
+   dark:'#262626\u2192#232323 wash', light:'#E5E3E3\u2192#E9E6E6 wash',
+   why:'The highlight unruled \u2014 a gradient instead of a hard line, at 9%. It inverts in light exactly as 3 does, and unlike 3 there is nothing gating it would buy: without a ruled edge it reads as a smudge at the boundary rather than as a lit edge, in either theme.'},
+  {cls:'rej-hairline', n:'2', name:'Hairline, ungated', tokens:'--shadow-sm + --surface-border',
+   dark:'#262626 on #141414', light:'#E5E2E2 on #F9F6F6',
+   why:'Not rejected — this is what ships in LIGHT. Shown here in dark to say why dark does not take it too: --surface-border is 8%, and at #262626 on #141414 it is about half the mark the 16% mix makes on the one surface that needs the larger one.'},
+  {cls:'rej-mix', n:'3', name:'Inner highlight, ungated', tokens:'--shadow-sm + color-mix(--surface-fg 16%)',
+   dark:'#343434 on #141414', light:'#D5D2D2 on #F9F6F6',
+   why:'Not rejected — this is what ships in DARK, and it ships there ONLY because it is theme-gated. --surface-fg is a light grey in dark and near-black in light, so ungated the highlight inverts into an inner shadow: #D5D2D2 under #F9F6F6, a groove where a lit edge should be.'},
+];
+
+const Tag = ({children}) => <span style={{display:'inline-block',padding:'2px 8px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%'}}>{children}</span>;
+
+/* Two visually distinct flags, because the card now mixes live component output with card-drawn
+   imitations of something the component can no longer produce, and mistaking one for the other
+   would undo the whole record. */
+const Flag = ({kind, children}) => (
+  <span style={{display:'inline-block',padding:'2px 8px',borderRadius:'var(--radius-pill)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',whiteSpace:'nowrap',
+    border:kind === 'live' ? '1px solid var(--accent-ink)' : '1px dashed var(--surface-fg-muted)',
+    color:kind === 'live' ? 'var(--accent-ink)' : 'var(--surface-fg-muted)'}}>{children}</span>
+);
+
+/* A real BackLayer with a real FrontLayer on it, at mobile metrics so the whole boundary fits in a
+   narrow column. Nothing here holds artwork, so there is no CoverArt containing-block to get
+   wrong — the corner is the subject. `data-probe` marks this as the specimen `docs/lift_probe.mjs`
+   reads its pixels from; the magnified copy below deliberately does not carry it. */
+function Specimen({probe}) {
+  return (
+    <div data-probe={probe} style={{display:'flex',flexDirection:'column',height:168,width:260,overflow:'hidden',borderRadius:'var(--radius-xs)',background:'var(--surface-bg-alt)'}}>
+      <BackLayer platform="mobile" title="Library" />
+      <FrontLayer platform="mobile" scroll={false}
+        subheader={<FrontLayerHeader platform="mobile" progress={0}>
+          <span style={{fontFamily:'var(--font-body)',fontSize:'var(--text-sm)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)'}}>Albums · Newest</span>
+        </FrontLayerHeader>}>
+        <div style={{padding:'0 var(--grid-margin-mobile)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
+          {TRACKS.map((t) => (
+            <div key={t.title} style={{display:'flex',alignItems:'baseline',gap:'var(--spacing-sm)',fontFamily:'var(--font-body)'}}>
+              <span style={{fontSize:'var(--text-sm)',color:'var(--surface-fg)'}}>{t.title}</span>
+              <span style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)'}}>{t.meta}</span>
+            </div>
+          ))}
+        </div>
+      </FrontLayer>
+    </div>
+  );
+}
+
+/* The same specimen again, scaled 4× and clipped to the top-left corner. A 1px line at 16% cannot
+   be settled by looking at a 1× screenshot, so the magnified strip sits beside the real size
+   rather than replacing it: 1× answers "is it visible", 4× answers "what is it doing". */
+function Detail() {
+  return (
+    <div style={{position:'relative',width:260,height:84,overflow:'hidden',borderRadius:'var(--radius-xs)',background:'var(--surface-bg-alt)'}}>
+      <div style={{position:'absolute',left:0,top:0,transformOrigin:'top left',transform:'scale(4) translate(0px, calc(var(--appbar-height-mobile) * -1 + 8px))'}}>
+        <Specimen />
+      </div>
+    </div>
+  );
+}
+
+/* The edge in place, at the size it is actually met: a full BackdropShell, which sets its own
+   data-theme and builds its own FrontLayer. Nothing about the edge is passed in — there is no
+   longer anything to pass. */
+function InSitu({theme}) {
+  return (
+    <div style={{width:520,height:300,overflow:'hidden',borderRadius:'var(--radius-xs)'}}>
+      <BackdropShell theme={theme} back={<BackLayer title="Albums" />}
+        subheader={<FrontLayerHeader>
+          <span style={{fontFamily:'var(--font-body)',fontSize:'var(--text-sm)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)'}}>Newest first</span>
+        </FrontLayerHeader>}>
+        <div style={{padding:'var(--spacing-md) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+          {TRACKS.map((t) => (
+            <div key={t.title} style={{display:'flex',alignItems:'baseline',gap:'var(--spacing-sm)',fontFamily:'var(--font-body)'}}>
+              <span style={{fontSize:'var(--text-sm)',color:'var(--surface-fg)'}}>{t.title}</span>
+              <span style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)'}}>{t.meta}</span>
+            </div>
+          ))}
+        </div>
+      </BackdropShell>
+    </div>
+  );
+}
+
+function Ships({theme}) {
+  const s = SHIPPED[theme];
+  return (
+    <div style={{padding:'var(--spacing-md) var(--spacing-xl) var(--spacing-lg)',background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)'}}>
+      <div style={{display:'flex',alignItems:'baseline',gap:'var(--spacing-md)',marginBottom:'var(--spacing-md)'}}>
+        <div style={{fontFamily:'var(--font-display)',fontWeight:'var(--display-weight)',fontStretch:'var(--display-stretch)',fontSize:'var(--h3-size)'}}>{s.label}</div>
+        <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>{s.surfaces} — real size, then the 4× top-left corner</div>
+      </div>
+      <div style={{display:'flex',gap:'var(--spacing-lg)',alignItems:'flex-start'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',width:260}}>
+          <Flag kind="live">live · FrontLayer</Flag>
+          <Specimen probe={theme} />
+          <Detail />
+        </div>
+        <div style={{width:300,display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+          <div style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)'}}>{s.selector}</div>
+          <div style={{fontSize:'var(--text-sm)',lineHeight:1.45,color:'var(--surface-fg)',wordBreak:'break-word'}}>box-shadow: {s.rule}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+            <Tag>{s.tokens}</Tag>
+            <Tag>measured · {s.measured}</Tag>
+          </div>
+          <div style={{fontSize:'var(--text-xs)',lineHeight:1.5,color:'var(--surface-fg-muted)'}}>
+            The drop shadow stays underneath in both themes; only the inset edge is themed. There is no prop —
+            light is the base rule and dark the override, so an unthemed context gets the treatment that cannot invert.
+          </div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+          <Flag kind="live">live · BackdropShell</Flag>
+          <InSitu theme={theme} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Card-drawn, in a dashed frame, under a dashed flag. Every one of these renders the token
+   expression its treatment actually used, so the swatch is the rejected CSS rather than an
+   approximation of it — but it is still this card's CSS, not the component's. */
+function Rejected({theme}) {
+  return (
+    <div style={{padding:'var(--spacing-md) var(--spacing-xl) var(--spacing-lg)',background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)'}}>
+      <div style={{display:'flex',alignItems:'baseline',gap:'var(--spacing-md)',marginBottom:'var(--spacing-sm)'}}>
+        <div style={{fontFamily:'var(--font-display)',fontWeight:'var(--display-weight)',fontStretch:'var(--display-stretch)',fontSize:'var(--h3-size)'}}>Measured against it — {theme}</div>
+        <Flag kind="ill">illustration · card CSS, not component output</Flag>
+      </div>
+      <div style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:1140,lineHeight:1.5}}>
+        All five treatments from the original comparison. 1, 4 and 5 were rejected outright; 2 and 3 are the shipped pair, shown
+        here ungated in <i>both</i> themes — which is the whole argument for the gate. The prop that selected any of them is gone,
+        so the component can no longer produce these: each swatch is drawn by this card in <code>__card-swatch-css</code> from the
+        same token expression its treatment used. Readings are from that comparison, at 1× off a render.
+      </div>
+      <div style={{display:'flex',gap:'var(--spacing-md)',alignItems:'flex-start'}}>
+        {REJECTED.map((r) => (
+          <div key={r.n} style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',width:258}}>
+            <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)'}}>{r.n} · {r.name}</div>
+            <div className="rej-frame">
+              <div className={'rej-fig ' + r.cls}><span /></div>
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+              <Tag>{r.tokens}</Tag>
+              <Tag>measured · {r[theme]}</Tag>
+            </div>
+            <div style={{fontSize:'var(--text-xs)',lineHeight:1.5,color:'var(--surface-fg-muted)'}}>{r.why}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Intro() {
+  return (
+    <div style={{padding:'var(--spacing-xl) var(--spacing-xl) 0',background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)'}}>
+      <div style={{fontFamily:'var(--font-display)',fontWeight:'var(--display-weight)',fontStretch:'var(--display-stretch)',fontSize:'var(--h2-size)',lineHeight:1.1}}>Front layer edge</div>
+      <div style={{marginTop:'var(--spacing-sm)',maxWidth:1140,fontSize:'var(--text-sm)',lineHeight:1.5,color:'var(--surface-fg-muted)'}}>
+        The front layer sits 1dp above the back layer and the only edge where they meet is its <b style={{color:'var(--surface-fg)'}}>top</b> one —
+        while <b style={{color:'var(--surface-fg)'}}>--shadow-sm is 0 1px 3px, cast downward</b>, away from it. Read off the rendered pixels, what that
+        shadow puts on the back layer just above the boundary is <b style={{color:'var(--surface-fg)'}}>one value out of 255 in dark and at most three
+        in light</b>: in both themes the step you are seeing is the tonal one, #FFFFFF→#F9F6F6 or #080808→#141414. Light gets away with it — that pair
+        differs in hue as well as level. Near black it does not: a display's black floor and whatever light is in the room flatten #080808 and #141414
+        into the same thing, which is what "no shadow on black" is. Enlarging the shadow cannot help — --shadow-xxl still only reaches #070707, just
+        over ~25px instead of 2. Only a <i>light</i> mark survives there.
+        <br /><br />
+        <b style={{color:'var(--surface-fg)'}}>What ships is a themed 1px inset edge over that unchanged drop shadow, and it is not configurable.</b>
+        Light draws a hairline in --surface-border; dark draws the 16% --surface-fg inner highlight, which is roughly twice the mark and the only one
+        that reads on #080808. <b style={{color:'var(--surface-fg)'}}>The highlight ships in dark ONLY because it is theme-gated</b> — --surface-fg is
+        near-black in light theme, so ungated the color-mix inverts into an inner <i>shadow</i> (#D5D2D2 under #F9F6F6). Gating it to dark is what makes
+        it shippable; the same inversion is why the 9% edge wash was dropped rather than gated as well. Two rules in <code>sonora-frontlayer-css</code>,
+        light as the base and dark as the <code>[data-theme="dark"]</code> override, so an unthemed context gets the safe one.
+      </div>
+    </div>
+  );
+}
+
+function Themed(){
+  return <div>
+    <div data-theme="dark" style={{background:'var(--surface-bg)'}}>
+      <Intro/>
+      <Ships theme="dark" />
+    </div>
+    <div data-theme="light" style={{background:'var(--surface-bg)'}}>
+      <Ships theme="light" />
+    </div>
+    <div data-theme="dark" style={{background:'var(--surface-bg)'}}>
+      <Rejected theme="dark" />
+    </div>
+    <div data-theme="light" style={{background:'var(--surface-bg)'}}>
+      <Rejected theme="light" />
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

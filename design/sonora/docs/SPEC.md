@@ -33,7 +33,7 @@ language**, reading Sonora's tokens, not Spotify's greens and blacks.
 
 ## House idiom — match it exactly
 
-Read `components/media/MediaCard.jsx` and `components/media/ResultRow.jsx` before writing anything.
+Read `components/components/MediaCard.jsx` and `components/components/ResultRow.jsx` before writing anything.
 The conventions, none of which are optional:
 
 ```js
@@ -409,7 +409,7 @@ When `trailing` is absent nothing changes.
 # Cards
 
 One `.card.html` per group. **Never touch an existing card.** Copy the exact shape of
-`components/core/buttons.card.html`: the `@dsCard` marker must be the literal first line, then the
+`components/basic/buttons.card.html`: the `@dsCard` marker must be the literal first line, then the
 stylesheet link, the three pinned CDN scripts *with their integrity attributes unchanged*,
 `_ds_bundle.js`, the `__card-page-css` style block, `<div id="root">`, and a `text/babel` script.
 
@@ -428,11 +428,11 @@ marker. Use realistic self-hosted-library content, never Spotify's catalogue.
 | File | group | name | Covers |
 | --- | --- | --- | --- |
 | `components/media/discovery-cards.card.html` | Components | Discovery & Feature Cards | `FeatureCard` in all three kinds, tinted, explicit marker, disabled preview, audiobook (no play) |
-| `components/media/episode-rows.card.html` | Components | Episode Rows & Item Actions | `EpisodeRow` with finished / part-played / unplayed, `ItemActionBar`, `DownloadButton` all three states |
-| `components/core/context-headers.card.html` | Components | Contextual Headers & Controls | extended `SectionHeader` (eyebrow/image/round/actionText), `SortFilterBar`, `Rating`, `FollowButton`, `PreviewButton` |
+| `components/components/episode-rows.card.html` | Components | Episode Rows & Item Actions | `EpisodeRow` with finished / part-played / unplayed, `ItemActionBar`, `DownloadButton` all three states |
+| `components/components/context-headers.card.html` | Components | Contextual Headers & Controls | extended `SectionHeader` (eyebrow/image/round/actionText), `SortFilterBar`, `Rating`, `FollowButton`, `PreviewButton` |
 | `components/core/browse-and-status.card.html` | Components | Browse, Status & Disclosure | `BrowseCard` grid, `StatusBanner` tones, `ExpanderRow`, `BackToTop` |
-| `components/media/card-states.card.html` | Components | Card & Tile States | extended `MediaCard` (eyebrow/unplayed/savedBadge/markers), extended `QuickPick` (progress/unplayed), extended `Badge` |
-| `components/navigation/filter-rows.card.html` | Components | Overflowing Filter Rows | extended `ButtonGroup` (scroll + leading avatar) in the home, library and search-results configurations |
+| `components/components/card-states.card.html` | Components | Card & Tile States | extended `MediaCard` (eyebrow/unplayed/savedBadge/markers), extended `QuickPick` (progress/unplayed), extended `Badge` |
+| `components/basic/filter-rows.card.html` | Components | Overflowing Filter Rows | extended `ButtonGroup` (scroll + leading avatar) in the home, library and search-results configurations |
 
 ---
 

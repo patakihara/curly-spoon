@@ -1,5 +1,5 @@
 /**
- * Ground truth for `components/layout/backdrop-lift.card.html`.
+ * Ground truth for `components/layouts/backdrop-lift.card.html`.
  *
  * A 1px inset edge cannot be settled by looking at a PNG: the shipped dark mix, 16% of a light
  * grey over #141414, composites to roughly #343434 — a delta of about 30, not much more than the
@@ -59,7 +59,7 @@ await page.route('https://unpkg.com/**', (route) => {
   const f = path.join(ROOT, '.vendor', route.request().url().split('/').pop());
   return existsSync(f) ? route.fulfill({ status: 200, contentType: 'application/javascript', body: readFileSync(f) }) : route.continue();
 });
-await page.goto(`http://127.0.0.1:${PORT}/components/layout/backdrop-lift.card.html`, { waitUntil: 'networkidle' });
+await page.goto(`http://127.0.0.1:${PORT}/components/layouts/backdrop-lift.card.html`, { waitUntil: 'networkidle' });
 await page.waitForFunction(() => (document.getElementById('root') || {}).childElementCount > 0, { timeout: 8000 });
 await page.waitForTimeout(400);
 
@@ -125,7 +125,7 @@ await hi.route('https://unpkg.com/**', (route) => {
   const f = path.join(ROOT, '.vendor', route.request().url().split('/').pop());
   return existsSync(f) ? route.fulfill({ status: 200, contentType: 'application/javascript', body: readFileSync(f) }) : route.continue();
 });
-await hi.goto(`http://127.0.0.1:${PORT}/components/layout/backdrop-lift.card.html`, { waitUntil: 'networkidle' });
+await hi.goto(`http://127.0.0.1:${PORT}/components/layouts/backdrop-lift.card.html`, { waitUntil: 'networkidle' });
 await hi.waitForFunction(() => (document.getElementById('root') || {}).childElementCount > 0, { timeout: 8000 });
 await hi.waitForTimeout(400);
 for (const theme of ['dark', 'light']) {

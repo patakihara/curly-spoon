@@ -195,7 +195,7 @@ layer. The front layer squares its right corner where the panel abuts it.
 ## Cards
 
 Three new cards, in `components/layout/`. Same rules as `docs/SPEC.md`'s Cards section: copy
-`components/core/buttons.card.html` literally, `@dsCard` first line, pinned CDN scripts with
+`components/basic/buttons.card.html` literally, `@dsCard` first line, pinned CDN scripts with
 integrity unchanged, dark + light `Themed()` wrapper, realistic self-hosted-library content
 (reuse Driftwave / Halcyon Bloom / Static & Signal / The Glass Archivist / Rosa Elin).
 

@@ -1,0 +1,71 @@
+<!-- @dsCard group="Layouts" viewport="1500x760" name="Front Layer Subheader" subtitle="Tabs draw their own indicator and take no hairline; a connected ButtonGroup takes one that fades in with scroll, inset from the gutters rather than spanning them" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { FrontLayer, FrontLayerHeader, ButtonGroup, ResultRow, SectionHeader } = window.SonoraDesignSystem_6c1435;
+
+const TRACKS = [
+  {title:'Tidal Lines', meta:'Halcyon Bloom · 3:34'},
+  {title:'Empty Rooms', meta:'Echo Fields · 5:01'},
+  {title:'Lantern Season', meta:'Rosa Elin · 4:12'},
+];
+
+const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',minHeight:32}}>{children}</div>;
+
+// TabBar is not part of this mirror's bundle, so the tab case is stood up locally — the point of
+// the demo is that `tabs` suppresses the hairline next to a control that has no indicator of its own.
+function Tabs({items, value}) {
+  return <div style={{display:'flex',gap:'var(--spacing-2xl)',height:'var(--appbar-controls-height)'}}>
+    {items.map((t) => (
+      <span key={t} style={{position:'relative',display:'inline-flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:'var(--text-sm)',fontWeight:'var(--weight-strong)',color:t===value?'var(--accent)':'var(--surface-fg-muted)'}}>
+        {t}
+        <span aria-hidden="true" style={{position:'absolute',left:0,right:0,bottom:0,height:3,borderRadius:'var(--radius-pill)',background:t===value?'var(--accent)':'transparent'}} />
+      </span>
+    ))}
+  </div>;
+}
+
+/* Each cell is a front layer sitting on a strip of back layer, so the subheader is read in the
+   place it actually occupies. `progress` is passed straight through, which is what makes the
+   scrolled state a static demo. */
+function Cell({caption, head, offset}) {
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-sm)',minWidth:0}}>
+    <Caption>{caption}</Caption>
+    <div style={{height:238,display:'flex',background:'var(--surface-bg-alt)',paddingTop:'var(--spacing-lg)'}}>
+      <FrontLayer scroll={false} subheader={head}>
+        <div style={{padding:'var(--spacing-lg) var(--grid-margin) 0',marginTop:offset,display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
+          <SectionHeader title="Recently played" platform="desktop" />
+          {TRACKS.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} />)}
+        </div>
+      </FrontLayer>
+    </div>
+  </div>;
+}
+
+function Demo(){
+  const tabs = <Tabs items={['Recent','Artists','Albums']} value="Recent" />;
+  const group = <ButtonGroup tone="play" items={['All','Music','Audiobooks','Podcasts']} value="All" />;
+  return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--spacing-2xl)'}}>
+    <Cell caption="Tabs — at rest" offset={0}
+      head={<FrontLayerHeader tabs progress={0}>{tabs}</FrontLayerHeader>} />
+    <Cell caption="Tabs — scrolled: still no hairline, the indicator already rules the band" offset={-18}
+      head={<FrontLayerHeader tabs progress={1}>{tabs}</FrontLayerHeader>} />
+    <Cell caption="ButtonGroup — at rest: no hairline" offset={0}
+      head={<FrontLayerHeader progress={0}>{group}</FrontLayerHeader>} />
+    <Cell caption="ButtonGroup — scrolled: hairline faded in, inset by the page margin at both ends" offset={-18}
+      head={<FrontLayerHeader progress={1}>{group}</FrontLayerHeader>} />
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

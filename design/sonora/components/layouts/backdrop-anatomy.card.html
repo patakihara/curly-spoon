@@ -1,0 +1,87 @@
+<!-- @dsCard group="Layouts" viewport="1700x860" name="Backdrop Anatomy" subtitle="Back layer at 0dp filling the frame, front layer at 1dp with permanently rounded top corners and its fixed subheader, rail continuous with the back layer" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { BackdropShell, BackLayer, FrontLayerHeader, NavRail, ButtonGroup, MediaCard, Shelf, SectionHeader } = window.SonoraDesignSystem_6c1435;
+
+const NAV = [{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'speaker'},{key:'books',label:'Audiobooks',icon:'headphones'},{key:'shows',label:'Podcasts',icon:'podcasts'}];
+const CARDS = [
+  {title:'Driftwave', sub:'Album · Halcyon Bloom'},
+  {title:'Static & Signal', sub:'Podcast · 214 episodes'},
+  {title:'The Glass Archivist', sub:'Book · Rosa Elin', progress:0.42},
+  {title:'Nightglass', sub:'Album · Echo Fields'},
+  {title:'Lantern Season', sub:'Podcast · 61 episodes'},
+];
+
+const Tag = ({children}) => <span style={{flexShrink:0,padding:'3px 10px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap'}}>{children}</span>;
+
+// TabBar is not part of this mirror's bundle, so the subheader's tab case is stood up locally —
+// what matters here is that `tabs` suppresses the hairline, not which component draws the labels.
+function Tabs({items, value, onChange}) {
+  return <div style={{display:'flex',gap:'var(--spacing-2xl)',height:'var(--appbar-controls-height)'}}>
+    {items.map((t) => (
+      <button key={t} onClick={() => onChange && onChange(t)} style={{position:'relative',border:'none',background:'transparent',cursor:'pointer',padding:'0 var(--spacing-xs)',fontFamily:'var(--font-body)',fontSize:'var(--text-sm)',fontWeight:'var(--weight-strong)',color:t===value?'var(--accent)':'var(--surface-fg-muted)'}}>
+        {t}
+        <span aria-hidden="true" style={{position:'absolute',left:0,right:0,bottom:0,height:3,borderRadius:'var(--radius-pill)',background:t===value?'var(--accent)':'transparent'}} />
+      </button>
+    ))}
+  </div>;
+}
+
+/* The rail is a live NavRail, not a decoration: `onToggleExpanded` is what makes it render its
+   toggle at all, and that toggle's band is `--appbar-height` — the same token BackLayer's heading
+   strip uses. Supplying it is therefore what puts the hamburger on the heading's own line and
+   makes the rail read as a region of the back layer rather than a stripe beside it. The glyph
+   carries the state: `menu` collapsed, `menu_open` — the hamburger with its caret — expanded. */
+function Demo({start}){
+  const [scope, setScope] = React.useState('All');
+  const [tab, setTab] = React.useState('Recent');
+  const [view, setView] = React.useState('browse');
+  const [expanded, setExpanded] = React.useState(true);
+  return <div style={{height:760}}>
+    <BackdropShell platform="desktop" scrollKey={view} theme={start}
+      rail={<NavRail items={NAV} footerItems={[{key:'settings',label:'Settings',icon:'settings'}]} active={view} onChange={setView}
+        expanded={expanded} onToggleExpanded={() => setExpanded(!expanded)}
+        footer={expanded && <div style={{padding:'0 var(--spacing-md) var(--spacing-md)'}}><Tag>Rail · back layer · 0dp</Tag></div>} />}
+      back={<BackLayer title="Browse"
+        trailing={<Tag>Back layer · 0dp · --surface-bg-alt · rail included</Tag>}
+        /* A library-scope switch reconfigures WHAT the front layer shows, so it stays on the
+           back layer. The section tabs below name a part of the content and go to the subheader. */
+        controls={<ButtonGroup tone="play" items={['All','Music','Audiobooks','Podcasts']} value={scope} onChange={setScope} />} />}
+      subheader={<FrontLayerHeader tabs>
+        <div style={{display:'flex',alignItems:'center',gap:'var(--spacing-lg)'}}>
+          <Tabs items={['Recent','Artists','Albums']} value={tab} onChange={setTab} />
+          <span style={{flex:1}} />
+          <Tag>Subheader · fixed · 1dp</Tag>
+        </div>
+      </FrontLayerHeader>}>
+      <div style={{padding:'var(--spacing-2xl) var(--grid-margin) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-2xl)'}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:'var(--spacing-xs)'}}>
+          <Tag>Front layer · 1dp · --surface-bg</Tag>
+          <Tag>Corners stay --radius-lg at every scroll position</Tag>
+        </div>
+        <div>
+          <SectionHeader title="Recently added" platform="desktop" action="arrow_forward" />
+          <Shelf>{CARDS.map((c) => <MediaCard key={c.title} {...c} />)}</Shelf>
+        </div>
+        <div>
+          <SectionHeader title="Picked for you" platform="desktop" />
+          <Shelf>{CARDS.slice().reverse().map((c) => <MediaCard key={c.title} {...c} />)}</Shelf>
+        </div>
+      </div>
+    </BackdropShell>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo start="dark"/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo start="light"/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

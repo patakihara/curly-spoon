@@ -26,7 +26,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG = os.path.join(ROOT, "_adherence.oxlintrc.json")
-GROUP_DIRS = ["core", "forms", "layout", "media", "navigation"]
+GROUP_DIRS = ["basic", "components", "layouts"]
 ALWAYS = ["key", "ref", "className", "style", "children"]
 
 BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
