@@ -7,10 +7,10 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { BackdropShell, BackLayer, FrontLayer, FrontLayerHeader, NavRail, Section, LayoutGrid, MediaCard, TabBar, ButtonGroup, AccountButton } = window.SonoraDesignSystem_6c1435;
+const { BackdropShell, BackLayer, FrontLayer, FrontLayerHeader, NavRail, Section, LayoutGrid, MediaCard, TabBar, AccountButton } = window.SonoraDesignSystem_6c1435;
 
 const NAV = [{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'album'},{key:'books',label:'Books',icon:'book_2'}];
-const TABS = [{key:'authors',label:'Authors',icon:'person'},{key:'books',label:'Books',icon:'menu_book'},{key:'series',label:'Series',icon:'auto_stories'}];
+const TABS = [{key:'books',label:'Books',icon:'menu_book'},{key:'authors',label:'Authors',icon:'person'},{key:'series',label:'Series',icon:'auto_stories'}];
 const BOOKS = [
   {title:'The Glass Archivist', sub:'Rosa Elin', progress:0.42},
   {title:'Every Harbour Twice', sub:'Rosa Elin'},
@@ -43,7 +43,7 @@ function Live(){
   return <div style={{height:460}}>
     <BackdropShell platform="desktop" scrollKey="books"
       rail={<NavRail items={NAV} active="books" expanded={false} />}
-      back={<BackLayer title="Books" search="Search your books and requests" controls={<ButtonGroup items={['All','Requested']} value="All" />} />}
+      back={<BackLayer title="Books" search="Search your books and requests" />}
       subheader={<FrontLayerHeader tabs><TabBar items={TABS} value="books" /></FrontLayerHeader>}>
       <Grid platform="desktop" />
     </BackdropShell>

@@ -3,11 +3,11 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
-/** The backdrop's back layer: the 0dp --surface-bg-alt surface carrying the page heading and any contextual controls that reconfigure what the front layer is showing. No rounding, no elevation. Given `search`, its heading carries a local search that comes out as the front layer scrolls. */
-export function BackLayer({ title, leading, trailing, controls, search, searchOpen, progress = 0, appBar = false, platform = 'desktop' }) {
+/** The backdrop's back layer: the 0dp --surface-bg-alt surface carrying the page heading and any contextual controls that reconfigure what the front layer is showing. No rounding, no elevation. Given `search`, its heading carries a local search that comes out as the front layer scrolls. Given `eyebrow` or `image`, the heading names a page by its subject, as SectionHeader's context form does. */
+export function BackLayer({ title, eyebrow, image, round = false, leading, trailing, controls, search, searchOpen, progress = 0, appBar = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const pad = 'var(--spacing-' + (mobile ? 'md' : 'xl') + ')';
-  const { SearchField, SearchButton } = NS();
+  const { SearchField, SearchButton, CoverArt } = NS();
   /* The local search is TopAppBar's search morph, moved to the backdrop's heading: the title fades
      out to the left while the field grows from the search button. Scrolling the front layer pulls
      the field out without focus; tapping the button pulls it out with focus and keeps it out at
@@ -31,7 +31,22 @@ export function BackLayer({ title, leading, trailing, controls, search, searchOp
       <div style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:100%;box-sizing:border-box;padding:0 ' + pad + ';height:var(--appbar-height' + (mobile ? '-mobile' : '') + ')')}>
         {leading}
         <div style={sx('position:relative;align-self:stretch;flex:1;min-width:0;display:flex;align-items:center')}>
-          <div style={sx('flex:1;min-width:0;' + (appBar ? 'font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-xl);line-height:1.2;' : 'font-family:var(--font-display);font-weight:var(--display-weight);font-stretch:var(--display-stretch);letter-spacing:-.02em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;') + 'color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:' + (sOpen ? '0' : '1') + ';transform:translateX(' + (sOpen ? '-12px' : '0') + ');transition:opacity var(--duration-fast) ease,transform' + ease)}>{title}</div>
+          <div style={sx('flex:1;min-width:0;display:flex;align-items:center;gap:var(--spacing-md);opacity:' + (sOpen ? '0' : '1') + ';transform:translateX(' + (sOpen ? '-12px' : '0') + ');transition:opacity var(--duration-fast) ease,transform' + ease)}>
+            {/* A page named by its subject ("More like" Deep Inertia) carries SectionHeader's
+                context form in its heading, the subject's art beside an eyebrow over the title,
+                so no header below has to say it again. */}
+            {image && (
+              <div style={sx('position:relative;flex-shrink:0;overflow:hidden;width:' + (mobile ? 40 : 48) + 'px;height:' + (mobile ? 40 : 48) + 'px;border-radius:' + (round ? '50%' : 'var(--radius-xs)'))}>
+                {CoverArt && <CoverArt src={image} />}
+              </div>
+            )}
+            <div style={sx('flex:1;min-width:0')}>
+              {eyebrow && (
+                <div style={sx('font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-xs);line-height:1.3;margin-bottom:2px;color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{eyebrow}</div>
+              )}
+              <div style={sx((appBar ? 'font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-xl);line-height:1.2;' : 'font-family:var(--font-display);font-weight:var(--display-weight);font-stretch:var(--display-stretch);letter-spacing:-.02em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;') + 'color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
+            </div>
+          </div>
           {searchable && (
             <div style={sx('position:absolute;top:0;bottom:0;right:0;display:flex;align-items:center;overflow:hidden;width:' + (sOpen ? '100%' : '0') + ';opacity:' + (sOpen ? '1' : '0') + ';transition:width' + ease + ',opacity var(--duration-fast) ease')}>
               <SearchField platform={platform} placeholder={search} value={query} onChange={setQuery} autoFocus={sOpen && focus} onClose={() => toggle(false)} />

@@ -18,6 +18,17 @@ import androidx.compose.runtime.Composable
 data class BackLayerProps(
     /** The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). */
     val title: String? = null,
+    /**
+     * What the page is to its subject, "More like", small and muted over the title: with it the
+     * heading is SectionHeader's context form, naming a page by its subject, so the page needs no
+     * header of its own saying it again. In the display face on the backdrop, the body face in a
+     * phone's app bar.
+     */
+    val eyebrow: String? = null,
+    /** The subject's art beside the title, 40px (48px on desktop), squared unless `round`. */
+    val image: String? = null,
+    /** Round art, for a person. */
+    val round: Boolean? = null,
     /** Before the title — a back link, or on mobile the account avatar (never in a filter row). */
     val leading: (@Composable () -> Unit)? = null,
     /** After the title — a search button, an overflow menu. */

@@ -16,6 +16,17 @@ import { ReactNode } from 'react';
 export interface BackLayerProps {
   /** The page heading, in the display face at `--h2-size` (`--h3-size` on mobile). */
   title?: string;
+  /**
+   * What the page is to its subject, "More like", small and muted over the title: with it the
+   * heading is SectionHeader's context form, naming a page by its subject, so the page needs no
+   * header of its own saying it again. In the display face on the backdrop, the body face in a
+   * phone's app bar.
+   */
+  eyebrow?: string;
+  /** The subject's art beside the title, 40px (48px on desktop), squared unless `round`. */
+  image?: string;
+  /** Round art, for a person. */
+  round?: boolean;
   /** Before the title — a back link, or on mobile the account avatar (never in a filter row). */
   leading?: ReactNode;
   /** After the title — a search button, an overflow menu. */

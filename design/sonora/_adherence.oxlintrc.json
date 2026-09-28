@@ -291,8 +291,8 @@
         "message": "<AppShell> doesn't accept that prop. Declared props: children, rail, bar, sheet, sheetOpen, player, contentMinWidth, scrollKey, scroll, onProgress, theme, flat, square."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BackLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|leading|trailing|controls|search|searchOpen|progress|appBar|platform|key|ref|className|style|children)$/]",
-        "message": "<BackLayer> doesn't accept that prop. Declared props: title, leading, trailing, controls, search, searchOpen, progress, appBar, platform."
+        "selector": "JSXOpeningElement[name.name='BackLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|eyebrow|image|round|leading|trailing|controls|search|searchOpen|progress|appBar|platform|key|ref|className|style|children)$/]",
+        "message": "<BackLayer> doesn't accept that prop. Declared props: title, eyebrow, image, round, leading, trailing, controls, search, searchOpen, progress, appBar, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='BackLayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
