@@ -8,7 +8,7 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * button's end (or start) edge, and lies over what follows rather than pushing it down. On a phone
  * it is a modal bottom sheet over the whole window.
  */
-export function OverflowMenu({ items = [], label = 'More options', open, onOpenChange, onSelect, align = 'end', platform = 'desktop' }) {
+export function OverflowMenu({ items = [], label = 'More options', open, onOpenChange, onSelect, align = 'end', tone = 'surface', platform = 'desktop' }) {
   const IconButton = NS().IconButton;
   const mobile = platform === 'mobile';
   const [own, setOwn] = React.useState(false);
@@ -47,7 +47,14 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
   );
   return (
     <div style={sx('position:relative;display:inline-flex;flex-shrink:0')}>
-      {IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={() => set(!shown)} />}
+      {/* Over artwork the button sits on a scrim in on-scrim ink, as a card's corner button does:
+          surface ink would vanish on a dark or a light cover. */}
+      {tone === 'scrim'
+        ? <button aria-label={label} title={label} aria-expanded={shown} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }}
+            style={sx('width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)')}>
+            {glyph('more_vert')}
+          </button>
+        : IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={() => set(!shown)} />}
       {mobile ? sheet : menu}
     </div>
   );

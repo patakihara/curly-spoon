@@ -139,12 +139,16 @@
         "message": "<OverflowMenuItem> doesn't accept that prop. Declared props: key, label, icon, sub."
       },
       {
-        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|label|open|onOpenChange|onSelect|align|platform|key|ref|className|style|children)$/]",
-        "message": "<OverflowMenu> doesn't accept that prop. Declared props: items, label, open, onOpenChange, onSelect, align, platform."
+        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|label|open|onOpenChange|onSelect|align|tone|platform|key|ref|className|style|children)$/]",
+        "message": "<OverflowMenu> doesn't accept that prop. Declared props: items, label, open, onOpenChange, onSelect, align, tone, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:start|end)$/]",
         "message": "<OverflowMenu> align must be one of 'start' | 'end'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:surface|scrim)$/]",
+        "message": "<OverflowMenu> tone must be one of 'surface' | 'scrim'."
       },
       {
         "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -563,8 +567,8 @@
         "message": "<LyricsSyncButton> mode must be one of 'sync' | 'dot' | 'off'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|progress|absent|width|size|onPlay|onPlayNext|onPlayLast|playing|image|onClick|onMore|eyebrow|unplayed|savedBadge|markers|status|tone|key|ref|className|style|children)$/]",
-        "message": "<MediaCard> doesn't accept that prop. Declared props: title, sub, platform, progress, absent, width, size, onPlay, onPlayNext, onPlayLast, playing, image, onClick, onMore, eyebrow, unplayed, savedBadge, markers, status, tone."
+        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|progress|absent|width|size|onPlay|onPlayNext|onPlayLast|playing|image|onClick|onRequest|onMore|eyebrow|unplayed|savedBadge|markers|status|tone|key|ref|className|style|children)$/]",
+        "message": "<MediaCard> doesn't accept that prop. Declared props: title, sub, platform, progress, absent, width, size, onPlay, onPlayNext, onPlayLast, playing, image, onClick, onRequest, onMore, eyebrow, unplayed, savedBadge, markers, status, tone."
       },
       {
         "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",

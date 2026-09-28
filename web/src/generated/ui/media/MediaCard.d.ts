@@ -10,7 +10,10 @@ export interface MediaCardProps {
   platform?: 'desktop' | 'mobile';
   /** 0–1 resume position; draws a progress bar across the bottom of the art. */
   progress?: number | null;
-  /** Not-in-library state: dashed outline plus a "Not in library" pill anchored to the bottom of the art. */
+  /**
+   * Not-in-library state: the art greyed (no colour, darkened), the title in muted ink, and a
+   * "Not in library" pill anchored to the bottom of the art.
+   */
   absent?: boolean;
   /** Fixed track width; pass "100%" to fill a grid cell. */
   width?: string;
@@ -27,6 +30,12 @@ export interface MediaCardProps {
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
   onClick?: () => void;
+  /**
+   * Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling
+   * `onClick`, and the card shows "Requested" until `status` carries the request's live status.
+   * Opening the item stays a verb, Open, in a corner menu over the art.
+   */
+  onRequest?: () => void;
   /** Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. */
   onMore?: (e?: any) => void;
   /** Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. */
@@ -39,7 +48,7 @@ export interface MediaCardProps {
   markers?: string[];
   /**
    * A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an
-   * item that is no request. The art is greyed, since the item cannot play yet, and the status
+   * item that is no request. The art is greyed as an absent item's is, since it cannot play yet, and the status
    * sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the
    * percentage (with its glyph) or the word.
    */

@@ -29,6 +29,11 @@ export interface OverflowMenuProps {
   onSelect?: (key: string) => void;
   /** Which edge of the button the menu lines up with. Default 'end'. */
   align?: 'start' | 'end';
+  /**
+   * The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is
+   * a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.
+   */
+  tone?: 'surface' | 'scrim';
   platform?: 'desktop' | 'mobile';
 }
 export declare function OverflowMenu(props: OverflowMenuProps): JSX.Element;

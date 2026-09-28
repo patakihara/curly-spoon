@@ -13,7 +13,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-mediacar
 }
 
 /** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
-export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
+export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
   const Badge = NS().Badge;
   const mobile = platform === 'mobile';
   const small = size === 'sm';
@@ -28,11 +28,21 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
     ['color-mix(in oklch, var(--accent) 82%, black)', 'color-mix(in oklch, var(--accent) 52%, white)'],
   ][seed % 5];
   const coverArt = 'linear-gradient(' + (120 + (seed % 4) * 30) + 'deg,' + STOPS[0] + ',' + STOPS[1] + ')';
+  // A tap on an item you can request asks for it at once, and the card says Requested until
+  // `status` brings the request's live status; its page is then a verb in the corner menu.
+  const [asked, setAsked] = React.useState(false);
+  const shownStatus = status || (asked ? 'Requested' : null);
+  const shownTone = status ? tone : 'progress';
+  const requestable = absent && !shownStatus && !!onRequest;
+  const notInLibrary = absent && !shownStatus;
+  const greyed = absent || !!shownStatus;
+  const OverflowMenu = NS().OverflowMenu;
+  const tap = requestable ? () => { setAsked(true); onRequest(); } : onClick;
   const hasProgress = typeof progress === 'number';
   const PlayActions = NS().PlayActions, CoverArt = NS().CoverArt;
   // Desktop only: these are revealed by hover, which a touch surface has no equivalent for.
   const showActions = !mobile && !absent && PlayActions && (onPlay || onPlayNext || onPlayLast);
-  const showMore = !!onMore;
+  const showMore = !!onMore && !requestable;
   const hostClasses = [showActions && 'sn-acts-host', showMore && !mobile && 'sn-more-host'].filter(Boolean).join(' ') || undefined;
   // Below ~132px the pill's label crowds the art, so the badge drops to its glyph alone.
   const artRef = React.useRef(null);
@@ -45,9 +55,13 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
     return () => ro.disconnect();
   }, []);
   return (
-    <div onClick={onClick} style={sx('display:flex;flex-direction:column;cursor:pointer;min-width:0;width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
+    <div onClick={tap} style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
       <div ref={artRef} className={hostClasses} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ')')}>
-        {CoverArt && <CoverArt src={image} fallback={coverArt} />}
+        {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads
+            as out of reach beside the ones you own even where its cover is already dark. */}
+        {CoverArt && (greyed
+          ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} fallback={coverArt} /></div>
+          : <CoverArt src={image} fallback={coverArt} />)}
         {showMore && (
           <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
             className={mobile ? undefined : 'sn-more'}
@@ -67,19 +81,19 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         )}
         {/* Not in library: the real artwork, darkened — the item exists, you just don't have it yet.
             Sits at the bottom, clear of the corner menu and any progress the item might otherwise show. */}
-        {absent && <div style={sx('position:absolute;inset:0;background:var(--scrim-strong)')} />}
-        {absent && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-2xs);line-height:1;font-variation-settings:'FILL' 0,'wght' 500")}>cloud_off</span>{!tight && 'Not in library'}</div>}
+        {notInLibrary && <div style={sx('position:absolute;inset:0;background:var(--scrim-strong)')} />}
+        {notInLibrary && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-2xs);line-height:1;font-variation-settings:'FILL' 0,'wght' 500")}>cloud_off</span>{!tight && 'Not in library'}</div>}
         {/* A request, not yet playable: the art greyed the way a not-playable item is, and its status
             pill in the request's tone where the "Not in library" pill would sit. A narrow card keeps
             the pill to what still reads: the percentage for a download, the word otherwise. */}
-        {status && <div style={sx('position:absolute;inset:0;background:var(--scrim)')} />}
-        {status && Badge && (() => {
-          const pct = /(\d+)\s*%/.exec(status);
-          const glyph = { progress: 'downloading', request: 'checklist', error: 'error' }[tone] || 'downloading';
-          const badgeTone = { progress: 'accent', request: 'warning', error: 'error' }[tone] || 'accent';
+        {shownStatus && <div style={sx('position:absolute;inset:0;background:var(--scrim)')} />}
+        {shownStatus && Badge && (() => {
+          const pct = /(\d+)\s*%/.exec(shownStatus);
+          const glyph = { progress: 'downloading', request: 'checklist', error: 'error' }[shownTone] || 'downloading';
+          const badgeTone = { progress: 'accent', request: 'warning', error: 'error' }[shownTone] || 'accent';
           return (
-            <div title={status} style={sx('position:absolute;left:8px;right:8px;bottom:8px;display:flex')}>
-              <Badge tone={badgeTone} size={tight ? 'sm' : 'md'} icon={tight && !pct ? undefined : glyph}>{tight && pct ? pct[1] + '%' : status}</Badge>
+            <div title={shownStatus} style={sx('position:absolute;left:8px;right:8px;bottom:8px;display:flex')}>
+              <Badge tone={badgeTone} size={tight ? 'sm' : 'md'} icon={tight && !pct ? undefined : glyph}>{tight && pct ? pct[1] + '%' : shownStatus}</Badge>
             </div>
           );
         })()}
@@ -98,11 +112,17 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           </React.Fragment>
         )}
       </div>
+      {/* Outside the art, whose overflow would clip the menu it opens; its clicks stay its own. */}
+      {requestable && onClick && OverflowMenu && (
+        <div onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); }} style={sx('position:absolute;top:6px;right:6px')}>
+          <OverflowMenu tone="scrim" platform={platform} items={[{ key: 'open', label: 'Open', icon: 'open_in_new' }]} onSelect={() => onClick()} />
+        </div>
+      )}
       {/* Type-before-name: in a mixed shelf the kind of thing is scanned for first, so it leads
           rather than trailing in `sub` — kept as its own line rather than folded into the title
           so the title's own two-line clamp is untouched. */}
       {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
-      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + fg)}>{title}</div>
+      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + (greyed ? muted : fg))}>{title}</div>
       {markers && markers.length > 0 ? (
         <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0')}>
           <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>

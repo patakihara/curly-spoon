@@ -147,6 +147,7 @@ One verb in an OverflowMenu.
 | `onOpenChange` | `(next: boolean) => void` | Called with the next open state when the button is pressed or a verb is chosen. |
 | `onSelect` | `(key: string) => void` | Called with the chosen item's key. |
 | `align` | `'start' \| 'end'` | Which edge of the button the menu lines up with. Default 'end'. |
+| `tone` | `'surface' \| 'scrim'` |  The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### PreviewButton
@@ -888,7 +889,7 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `sub` | `string` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `progress` | `number \| null` | 0–1 resume position; draws a progress bar across the bottom of the art. |
-| `absent` | `boolean` | Not-in-library state: dashed outline plus a "Not in library" pill anchored to the bottom of the art. |
+| `absent` | `boolean` |  Not-in-library state: the art greyed (no colour, darkened), the title in muted ink, and a "Not in library" pill anchored to the bottom of the art.  |
 | `width` | `string` | Fixed track width; pass "100%" to fill a grid cell. |
 | `size` | `'md' \| 'sm'` | 'sm' is the compact carousel size — narrower track, smaller caption type. |
 | `onPlay` | `() => void` |  Queue handlers. Given any of them, a desktop card reveals a PlayActions group over its artwork on hover (play next / play / play last). Mobile cards ignore them — no hover.  |
@@ -897,12 +898,13 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `playing` | `boolean` |  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `onClick` | `() => void` |  |
+| `onRequest` | `() => void` |  Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling `onClick`, and the card shows "Requested" until `status` carries the request's live status. Opening the item stays a verb, Open, in a corner menu over the art.  |
 | `onMore` | `(e?: any) => void` | Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. |
 | `eyebrow` | `string` | Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. |
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. |
 | `savedBadge` | `boolean` | Bookmark tab on the artwork's bottom-left, for an item the user has explicitly saved. |
 | `markers` | `string[]` | Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. |
-| `status` | `string \| null` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an item that is no request. The art is greyed, since the item cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
+| `status` | `string \| null` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an item that is no request. The art is greyed as an absent item's is, since it cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
 | `tone` | `'progress' \| 'request' \| 'error' \| null` | The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). |
 
 ### MediaHeader
