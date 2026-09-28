@@ -26,6 +26,8 @@ export interface ResultRowProps {
   onAction?: () => void;
   /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */
   divider?: boolean;
+  /** A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. */
+  number?: number | null;
   /** Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. */
   trailing?: ReactNode;
 }

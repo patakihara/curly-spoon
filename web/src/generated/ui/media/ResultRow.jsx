@@ -13,7 +13,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-resultro
 }
 
 /** One row of a track / search / request list. Replaces the old TrackRow. */
-export function ResultRow({ title, meta, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing }) {
+export function ResultRow({ title, meta, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const pctMatch = /(\d+)\s*%/.exec(status || '');
@@ -35,8 +35,14 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
   const statusPill = nowPlaying
     ? <div className="rr-bars" role="img" aria-label="Now playing"><i /><i /><i /></div>
     : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{label}</Badge></div> : null);
+  // A track number leads an album's rows in place of the art, which would only repeat the cover.
+  const numbered = typeof number === 'number';
+  const lead = numbered ? (mobile ? 28 : 32) : 52;
   return (
     <div onClick={onClick} style={sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
+      {numbered ? (
+        <div style={sx('width:' + lead + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
+      ) : (
       <div className="rr-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:52px;height:52px;border-radius:' + (mobile ? '8px' : '6px'))}>
           {CoverArt && <CoverArt src={image} />}
@@ -58,6 +64,7 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
           </div>
         )}
       </div>
+      )}
       <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:3px')}>
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-md)')}>
           <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
@@ -69,7 +76,7 @@ export function ResultRow({ title, meta, status, progress = null, tone = 'librar
       {!mobile && statusPill}
       {!mobile && trailing}
       {/* Inset to the text column, so the artwork column reads as one continuous edge. */}
-      {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + (mobile ? '68px' : '80px') + ';height:1px;background:var(--surface-border)')} />}
+      {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + ((mobile ? 16 : 28) + lead) + 'px' + ';height:1px;background:var(--surface-border)')} />}
     </div>
   );
 }

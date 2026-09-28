@@ -1097,6 +1097,7 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | `onClick` | `() => void` |  |
 | `onAction` | `() => void` |  |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
+| `number` | `number \| null` | A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. |
 | `trailing` | `ReactNode` | Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. |
 
 ### SeekBar
