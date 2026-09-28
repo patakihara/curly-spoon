@@ -76,12 +76,21 @@ describe('[M0.sso/b] who a sign-on identity is', () => {
     expect(renamed.username).toBe('kara2');
   });
 
-  it('adopts the setup admin of the same username, and never demotes them', () => {
+  it('adopts the setup admin of the same username for a directory admin, and never demotes them', () => {
     const db = openDatabase(':memory:');
     const admin = upsertUser(db, { username: 'kara', role: 'admin' });
-    const signedIn = signInUser(db, kara);
+    const signedIn = signInUser(db, { ...kara, directoryAdmin: true });
     expect(signedIn.id).toBe(admin.id);
     expect(signedIn).toMatchObject({ role: 'admin', roleSource: 'setup' });
+    expect(signInUser(db, kara)).toMatchObject({ id: admin.id, role: 'admin' });
+  });
+
+  it('refuses to hand the setup admin to someone outside the directory admin group', () => {
+    const db = openDatabase(':memory:');
+    const admin = upsertUser(db, { username: 'kara', role: 'admin' });
+    expect(() => signInUser(db, kara)).toThrow(UsernameTaken);
+    expect(getUserById(db, admin.id)).toMatchObject({ role: 'admin', roleSource: 'setup' });
+    expect(listUsers(db)).toHaveLength(1);
   });
 
   it('gives admin to the directory admin group, and takes it back on leaving', () => {

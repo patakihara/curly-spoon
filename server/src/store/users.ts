@@ -99,7 +99,8 @@ function directoryRole(user: User | null, directoryAdmin: boolean) {
 
 /**
  * The user this sign-on identity is: by (issuer, subject), else the setup user with this username
- * and no subject yet, else a new member. The username follows the directory's login id.
+ * and no subject yet (a setup admin only for a member of the directory's admin group), else a new
+ * member. The username follows the directory's login id.
  */
 export function signInUser(db: Db, who: SignOnIdentity, now: number = Date.now()): User {
   return db.transaction(() => {
@@ -111,7 +112,13 @@ export function signInUser(db: Db, who: SignOnIdentity, now: number = Date.now()
     const nameOwnerSub = (byName as { oidc_sub: string | null } | undefined)?.oidc_sub ?? null;
 
     let user = bySub === undefined ? null : UserRow.parse(bySub);
-    if (user === null && nameOwner !== null && nameOwnerSub === null) user = nameOwner;
+    // A setup admin row with no subject yet is only handed to someone the directory also calls
+    // an admin; anyone else whose login id happens to match it is refused.
+    const adoptable =
+      nameOwner !== null &&
+      nameOwnerSub === null &&
+      (nameOwner.role !== 'admin' || who.directoryAdmin);
+    if (user === null && adoptable) user = nameOwner;
     if (nameOwner !== null && nameOwner.id !== user?.id) throw new UsernameTaken(who.username);
 
     const { role, source } = directoryRole(user, who.directoryAdmin);
