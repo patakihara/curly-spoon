@@ -21,9 +21,9 @@
   "sonora": {
     "url": "https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB",
     "sources": ["design/sonora"],
-    "commit": "4f731b03e05740ef5ec86fe98ac716323e11a893",
-    "tree": "4b8826044440fe1ce6abcdd623945417a89aadb0",
-    "version": "1790625644-9987",
-    "publishedAt": "2026-09-28T20:00:50.931Z"
+    "commit": "0da38e83944ad9de61368d369d1f3a71f32ad750",
+    "tree": "7284be1d9f4c933bd2f6cd8c0aa91d401162d681",
+    "version": "1790629916-4a4d",
+    "publishedAt": "2026-09-28T21:12:02.984Z"
   }
 }
