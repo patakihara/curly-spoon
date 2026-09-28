@@ -1,12 +1,22 @@
 {
-  "account": { "label": "Account" },
+  "account": {
+    "label": "Account"
+  },
   "playing": {
     "title": "Heartbeats in Silence",
     "artist": "Deep Inertia",
     "image": "/art/deep-inertia.jpg",
     "context": "Playing from Deep Inertia",
+    "variant": "music",
+    "favourite": true,
     "progress": 0.05,
     "duration": 262
   },
-  "railFoot": [{ "page": "settings", "icon": "settings" }]
+  "railFoot": [
+    {
+      "page": "settings",
+      "icon": "settings"
+    }
+  ],
+  "sheetOver": "music"
 }

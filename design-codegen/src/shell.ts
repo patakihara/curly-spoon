@@ -36,6 +36,9 @@ const Shell = z
         artist: z.string().min(1),
         image: z.string().optional(),
         context: z.string().optional(),
+        /** Which transport it takes: music's, or spoken content's skip and speed. */
+        variant: z.enum(['music', 'spoken']),
+        favourite: z.boolean(),
         progress: z.number().min(0).max(1),
         duration: z.number().positive(),
       })
@@ -43,6 +46,8 @@ const Shell = z
       .nullable(),
     /** Pages pinned to the foot of the rail, drawn as rows like the destinations. */
     railFoot: z.array(z.object({ page: z.string(), icon: z.string().min(1) }).strict()),
+    /** The page the player's sheets are drawn over where the side panel holds them; needed once one is drawn. */
+    sheetOver: z.string().optional(),
   })
   .strict();
 
@@ -80,8 +85,8 @@ interface NavItem {
 export interface ShellData {
   account: ShellFile['account'];
   playing: ShellFile['playing'];
-  /** The panel's playback state, from what is loaded: playing, how far and how long. */
-  transport: { playing: boolean; progress: number; duration: number } | null;
+  /** The panel's playback state, from what is loaded: playing, how far and how long, and whether a favourite. */
+  transport: { playing: boolean; progress: number; duration: number; favourite: boolean } | null;
   /** The rail's foot. */
   footer: NavItem[];
   /** Each layout's destinations, by layout id. */
@@ -102,7 +107,12 @@ export function shellData(nav: Nav, shell: ShellFile): ShellData {
     transport:
       shell.playing === null
         ? null
-        : { playing: true, progress: shell.playing.progress, duration: shell.playing.duration },
+        : {
+            playing: true,
+            progress: shell.playing.progress,
+            duration: shell.playing.duration,
+            favourite: shell.playing.favourite,
+          },
     footer: shell.railFoot.map(({ page, icon }) => {
       const p = nav.pages.find((x) => x.id === page);
       if (p === undefined) throw new Error(`shell.json: railFoot names ${page}, not a page`);
@@ -131,18 +141,6 @@ export interface Chrome {
   sheetOpen: boolean;
 }
 
-/** The components the shell draws with, around any page. */
-export const SHELL_COMPONENTS = [
-  'AccountButton',
-  'BackLayer',
-  'BackdropShell',
-  'BottomNav',
-  'IconButton',
-  'MiniPlayer',
-  'NavRail',
-  'PlayerPanel',
-];
-
 const lit = (value: string | number | boolean): PropValue => ({ kind: 'literal', value });
 const bind = (path: string): PropValue => ({ kind: 'binding', path: path.split('.') });
 const el = (component: string, props: Record<string, PropValue>): PageTree => ({
@@ -152,6 +150,59 @@ const el = (component: string, props: Record<string, PropValue>): PageTree => ({
   props,
   children: [],
 });
+
+/** The components the shell draws with, around any page. */
+export const SHELL_COMPONENTS = [
+  'AccountButton',
+  'BackLayer',
+  'BackdropShell',
+  'BottomNav',
+  'IconButton',
+  'MiniPlayer',
+  'NavRail',
+  'NowPlaying',
+];
+
+/** Each of the player's sheets in nav.json, as the tab of Sonora's NowPlaying it is. */
+export const PLAYER_TABS: Readonly<Record<string, string>> = {
+  nowPlaying: 'now',
+  queue: 'queue',
+  lyrics: 'lyrics',
+};
+
+/** Whether a layout holds the player in the side panel, rather than as a full-screen sheet. */
+export const holdsPanel = (layout: Layout) => layout.sidePanel === 'nowPlaying';
+
+/**
+ * The player open on `tab`, what is loaded in shell.json: `content` is the tab's page, a player
+ * sheet's own; with none, Sonora builds the tab from what is loaded, as every other page's panel.
+ */
+export function playerTree(tab: string, content: PageTree[]): PageTree {
+  return {
+    kind: 'element',
+    component: 'NowPlaying',
+    line: 0,
+    props: {
+      open: lit(true),
+      tab: lit(tab),
+      variant: bind('shell.playing.variant'),
+      track: bind('shell.playing'),
+      ...(content.length === 0 ? { player: bind('shell.transport') } : {}),
+    },
+    children: content,
+  };
+}
+
+/** A player sheet's tab, from nav.json's page; throws for a page that is not one of them. */
+export function playerTab(page: NavPage): string {
+  const tab = PLAYER_TABS[page.id];
+  if (page.presentation !== 'sheet' || tab === undefined) {
+    throw new Error(
+      `${page.id} is not one of the player's sheets (${Object.keys(PLAYER_TABS).join(', ')})`,
+    );
+  }
+  return tab;
+}
 
 /**
  * The shell around `page` at `layout`. Each tree carries its platform as a literal wherever
@@ -184,6 +235,7 @@ export function chrome(
           playing: lit(true),
           progress: bind('shell.playing.progress'),
           duration: bind('shell.playing.duration'),
+          variant: bind('shell.playing.variant'),
         });
   const leading =
     page.close !== 'none'
@@ -207,12 +259,8 @@ export function chrome(
       toggle: lit(true),
     });
     parts.player = mini;
-    if (layout.sidePanel === 'nowPlaying' && shell.playing !== null) {
-      parts.sheet = el('PlayerPanel', {
-        open: lit(true),
-        track: bind('shell.playing'),
-        player: bind('shell.transport'),
-      });
+    if (holdsPanel(layout) && shell.playing !== null) {
+      parts.sheet = playerTree('now', []);
       parts.sheetOpen = true;
     }
   }

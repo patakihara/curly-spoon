@@ -1,0 +1,96 @@
+{
+  "context": "Music queue · 6 songs, 28 min",
+  "queues": [
+    { "key": "music", "label": "Music" },
+    { "key": "spoken", "label": "Spoken" }
+  ],
+  "queue": "music",
+  "played": [
+    {
+      "id": "tears-of-ice",
+      "title": "Tears of Ice",
+      "sub": "Deep Inertia",
+      "time": "4:02",
+      "image": "/art/tears-of-ice.jpg"
+    }
+  ],
+  "items": [
+    {
+      "id": "heartbeats-in-silence",
+      "title": "Heartbeats in Silence",
+      "sub": "Deep Inertia",
+      "time": "4:22",
+      "image": "/art/tears-of-ice.jpg",
+      "current": true
+    },
+    {
+      "id": "the-night-ferry",
+      "title": "The Night Ferry",
+      "sub": "The Long Read · 31 min left",
+      "time": "52:00",
+      "image": "/art/the-long-read.jpg",
+      "handoff": "Then the spoken queue"
+    },
+    {
+      "id": "glass-coast",
+      "title": "Glass Coast",
+      "sub": "Deep Inertia",
+      "time": "3:51",
+      "image": "/art/tears-of-ice.jpg"
+    },
+    {
+      "id": "winter-signal",
+      "title": "Winter Signal",
+      "sub": "Deep Inertia",
+      "time": "4:37",
+      "image": "/art/tears-of-ice.jpg"
+    },
+    {
+      "id": "still-water",
+      "title": "Still Water",
+      "sub": "Deep Inertia",
+      "time": "5:10",
+      "image": "/art/tears-of-ice.jpg"
+    },
+    {
+      "id": "frost-lines",
+      "title": "Frost Lines",
+      "sub": "Deep Inertia",
+      "time": "3:28",
+      "image": "/art/tears-of-ice.jpg"
+    },
+    {
+      "id": "northern-hum",
+      "title": "Northern Hum",
+      "sub": "Deep Inertia",
+      "time": "4:44",
+      "image": "/art/tears-of-ice.jpg"
+    },
+    {
+      "id": "thaw",
+      "title": "Thaw",
+      "sub": "Deep Inertia",
+      "time": "6:05",
+      "image": "/art/tears-of-ice.jpg"
+    }
+  ],
+  "autoplay": {
+    "title": "Deep Inertia radio, mixed with similar music you own",
+    "items": [
+      {
+        "id": "salt-and-static",
+        "title": "Salt and Static",
+        "sub": "Signal Noise",
+        "time": "3:47",
+        "image": "/art/salt-and-static.jpg"
+      },
+      {
+        "id": "paper-lanterns",
+        "title": "Paper Lanterns",
+        "sub": "Fleeting Verses",
+        "time": "4:15",
+        "image": "/art/paper-lanterns.jpg"
+      }
+    ]
+  }
+}

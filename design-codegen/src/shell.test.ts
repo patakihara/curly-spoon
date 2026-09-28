@@ -73,7 +73,8 @@ describe('the app shell', () => {
     expect(el(at(800).rail, 'NavRail').props.expanded).toEqual({ kind: 'literal', value: false });
     expect(el(at(1100).rail, 'NavRail').props.expanded).toEqual({ kind: 'literal', value: true });
     expect(at(1100).sheet).toBeUndefined();
-    expect(el(at(1440).sheet, 'PlayerPanel').props.open).toEqual({ kind: 'literal', value: true });
+    expect(el(at(1440).sheet, 'NowPlaying').props.open).toEqual({ kind: 'literal', value: true });
+    expect(el(at(1440).sheet, 'NowPlaying').props.tab).toEqual({ kind: 'literal', value: 'now' });
     expect(at(1440).sheetOpen).toBe(true);
   });
 

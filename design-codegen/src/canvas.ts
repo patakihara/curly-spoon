@@ -13,7 +13,16 @@
  */
 import type { App } from './app.js';
 import type { PageTree, PropValue } from './page.js';
-import { chrome, framePage, framed, layoutAt, shellData } from './shell.js';
+import {
+  chrome,
+  framePage,
+  framed,
+  holdsPanel,
+  layoutAt,
+  playerTab,
+  playerTree,
+  shellData,
+} from './shell.js';
 import { generateFlows, generateStructure } from './structure.js';
 
 /** Sonora's bundle global; its components mount as `<Ns>.<Name>`. */
@@ -94,6 +103,37 @@ function withPlatform(tree: PageTree, platform: string, platformed: Set<string>)
     props.platform = { kind: 'literal', value: platform };
   }
   return { ...tree, props, children };
+}
+
+/** `tree` with every binding that starts at `from` starting at `to` instead, lists included. */
+function rebind(tree: PageTree, from: string, to: string): PageTree {
+  const path = (p: string[]) => (p[0] === from ? [to, ...p.slice(1)] : p);
+  const value = (v: PropValue): PropValue => {
+    if (v.kind === 'binding') return { ...v, path: path(v.path) };
+    if (v.kind === 'slot') return { ...v, tree: rebind(v.tree, from, to) };
+    // A handler does nothing on an artboard, so what it binds is never read.
+    return v;
+  };
+  switch (tree.kind) {
+    case 'text':
+      return tree;
+    case 'binding':
+      return { ...tree, path: path(tree.path) };
+    case 'element':
+      return {
+        ...tree,
+        props: Object.fromEntries(Object.entries(tree.props).map(([k, v]) => [k, value(v)])),
+        children: tree.children.map((c) => rebind(c, from, to)),
+      };
+    case 'each':
+      return {
+        ...tree,
+        of: path(tree.of),
+        children: tree.children.map((c) => rebind(c, from, to)),
+      };
+    default:
+      return { ...tree, children: tree.children.map((c) => rebind(c, from, to)) };
+  }
 }
 
 function count(placeholder: unknown, path: string[]): number {
@@ -230,23 +270,46 @@ function artboard(
   const entry = app.nav.pages.find((p) => p.id === page.id);
   if (entry === undefined) throw new Error(`${page.id} is not a page in nav.json`);
   const layout = layoutAt(app.nav, board.width);
-  const parts = chrome(app.nav, app.shell, entry, layout, app.components.platformed);
   const slot = (tree: PageTree | undefined): PropValue | undefined =>
     tree === undefined ? undefined : { kind: 'slot', tree };
-  const tree = withPlatform(
-    framed(framePage(relativeArt(page.tree)), entry.title, {
-      rail: slot(parts.rail),
-      leading: slot(parts.leading),
-      player: slot(parts.player),
-      sheet: slot(parts.sheet),
-      sheetOpen: { kind: 'literal', value: parts.sheetOpen },
-      appBar: { kind: 'literal', value: parts.appBar },
-    }),
-    parts.platform,
-    app.components.platformed,
-  );
+  const inShell = (shown: App['pages'][number], sheet?: PageTree): PageTree => {
+    const at = app.nav.pages.find((p) => p.id === shown.id)!;
+    const parts = chrome(app.nav, app.shell, at, layout, app.components.platformed);
+    return withPlatform(
+      framed(framePage(relativeArt(shown.tree)), at.title, {
+        rail: slot(parts.rail),
+        leading: slot(parts.leading),
+        player: slot(parts.player),
+        sheet: slot(sheet ?? parts.sheet),
+        sheetOpen: { kind: 'literal', value: parts.sheetOpen },
+        appBar: { kind: 'literal', value: parts.appBar },
+      }),
+      parts.platform,
+      app.components.platformed,
+    );
+  };
+  // A player sheet is the player alone, full screen; where the side panel holds it, it is drawn
+  // over shell.json's `sheetOver` page, its own data read as `sheet.…` beside that page's.
+  let tree: PageTree;
+  let data = page.placeholder;
+  let sheetData: unknown;
+  if (entry.presentation !== 'sheet') tree = inShell(page);
+  else {
+    const player = playerTree(playerTab(entry), framePage(relativeArt(page.tree)).content);
+    if (!holdsPanel(layout)) tree = withPlatform(player, 'mobile', app.components.platformed);
+    else {
+      const over = app.pages.find((p) => p.id === app.shell.sheetOver);
+      if (over === undefined)
+        throw new Error(
+          `shell.json: sheetOver ${app.shell.sheetOver ?? 'is unset'}, not a drawn page`,
+        );
+      tree = inShell(over, rebind(player, 'data', 'sheet'));
+      data = over.placeholder;
+      sheetData = page.placeholder;
+    }
+  }
   const aside: Aside = { slots: [], board: [], lists: [], roots: [] };
-  const markup = render(tree, page.placeholder, aside).trimEnd();
+  const markup = render(tree, data, aside).trimEnd();
   const json = (value: unknown) => JSON.stringify(value).replace(/<\/script/gi, '<\\/script');
   const preview = JSON.stringify({ $preview: { width: board.width, height: board.height } });
   return [
@@ -272,12 +335,15 @@ function artboard(
     `<script type="text/x-dc" data-dc-script data-props='${preview}'>`,
     'class Component extends DCLogic {',
     'renderVals() {',
-    `const data = ${json(relativeArt(page.placeholder))};`,
+    `const data = ${json(relativeArt(data))};`,
     `const shell = ${json(relativeArt(shellData(app.nav, app.shell)))};`,
+    ...(sheetData === undefined ? [] : [`const sheet = ${json(relativeArt(sheetData))};`]),
     `const trees = ${json(aside.slots.map(bare))};`,
     ...(aside.lists.length === 0 ? [] : [`const itemLists = ${json(aside.lists)};`]),
     BUILD,
-    'const scope = { data, shell };',
+    sheetData === undefined
+      ? 'const scope = { data, shell };'
+      : 'const scope = { data, shell, sheet };',
     'const slots = {};',
     ...(aside.lists.length === 0
       ? ['trees.forEach((t, i) => { slots["s" + i] = build(t, scope); });']

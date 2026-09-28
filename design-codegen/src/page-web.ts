@@ -10,7 +10,10 @@ import {
   chrome,
   framePage,
   framed,
+  holdsPanel,
   layoutId,
+  playerTab,
+  playerTree,
   shellData,
   type Chrome,
   type ShellFile,
@@ -190,30 +193,46 @@ export function generateWebPage(
     ...webComponents,
     paths: new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path])),
   };
-  const name = componentName(id);
-  const root = framed(framePage(tree), page.title, {
-    rail: binding('chrome.rail'),
-    leading: binding('chrome.leading'),
-    player: binding('chrome.player'),
-    sheet: binding('chrome.sheet'),
-    sheetOpen: binding('chrome.sheetOpen'),
-    appBar: binding('chrome.appBar'),
-  });
-  const chromes = nav.layouts.map(
-    (layout) =>
-      [layoutId(layout), chrome(nav, shell, page, layout, components.platformed)] as const,
-  );
+  const sheet = page.presentation === 'sheet';
+  const root = sheet
+    ? playerTree(playerTab(page), framePage(tree).content)
+    : framed(framePage(tree), page.title, {
+        rail: binding('chrome.rail'),
+        leading: binding('chrome.leading'),
+        player: binding('chrome.player'),
+        sheet: binding('panel'),
+        sheetOpen: binding('chrome.sheetOpen'),
+        appBar: binding('chrome.appBar'),
+      });
+  const chromes = sheet
+    ? []
+    : nav.layouts.map(
+        (layout) =>
+          [layoutId(layout), chrome(nav, shell, page, layout, components.platformed)] as const,
+      );
   const used = new Set<string>();
   drawn(root, used);
   for (const [, parts] of chromes) {
     for (const key of ['rail', 'leading', 'player', 'sheet'] as const) drawn(parts[key], used);
   }
+  // A page named as a component it draws with, Now Playing's NowPlaying, takes a suffix.
+  const name = used.has(componentName(id)) ? `${componentName(id)}Screen` : componentName(id);
+  const over = sheet ? componentName(shell.sheetOver!) : undefined;
   const react = some(root, (n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
-  const typed = some(
+  const typed = [
     root,
-    (n) =>
-      n.kind === 'element' &&
-      Object.entries(n.props).some(([p, v]) => v.kind === 'binding' && chosen(n, p, components)),
+    ...chromes.flatMap(([, parts]) => [parts.rail, parts.leading, parts.player, parts.sheet]),
+  ].some(
+    (tree) =>
+      tree !== undefined &&
+      some(
+        tree,
+        (n) =>
+          n.kind === 'element' &&
+          Object.entries(n.props).some(
+            ([p, v]) => v.kind === 'binding' && chosen(n, p, components),
+          ),
+      ),
   );
   if (typed) react.push("import type { ComponentProps } from 'react';");
   const opens = some(
@@ -236,11 +255,15 @@ export function generateWebPage(
     const names = bound ? 'generatePath, useNavigate' : 'useNavigate';
     react.push(`import { ${names} } from 'react-router';`);
   }
+  if (!sheet) react.push("import type { ReactNode } from 'react';");
   return [
     `// ${APP_NOTE}`,
     ...react,
-    "import { useLayout, type Chrome, type LayoutId } from '../nav/platform';",
+    sheet
+      ? "import { useLayout, type LayoutId, type Platform } from '../nav/platform';"
+      : "import { useLayout, type Chrome, type LayoutId } from '../nav/platform';",
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
+    ...(over === undefined ? [] : [`import ${over} from './${over}';`]),
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
     '',
@@ -262,14 +285,23 @@ export function generateWebPage(
     '/** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */',
     `const shell = ${JSON.stringify(shellData(nav, shell), null, 2)};`,
     '',
-    '/** The shell’s parts at each layout, from nav.json. */',
-    'const CHROME: Record<LayoutId, Chrome> = {',
-    ...chromes.flatMap(([layout, parts]) => [
-      `  ${layout}: {`,
-      ...chromeEntry(parts, components),
-      '  },',
-    ]),
-    '};',
+    ...(sheet
+      ? [
+          '/** Whether each layout holds the player in the side panel, beside the page it is drawn over, or as a full-screen sheet. */',
+          'const PANEL: Record<LayoutId, boolean> = {',
+          ...nav.layouts.map((layout) => `  ${layoutId(layout)}: ${holdsPanel(layout)},`),
+          '};',
+        ]
+      : [
+          '/** The shell’s parts at each layout, from nav.json. */',
+          'const CHROME: Record<LayoutId, Chrome> = {',
+          ...chromes.flatMap(([layout, parts]) => [
+            `  ${layout}: {`,
+            ...chromeEntry(parts, components),
+            '  },',
+          ]),
+          '};',
+        ]),
     '',
     ...(some(
       root,
@@ -288,17 +320,39 @@ export function generateWebPage(
     '  state?: string;',
     '  /** The layout to draw in; by default, the one the window width calls for. */',
     '  layout?: LayoutId;',
+    ...(sheet
+      ? []
+      : [
+          '  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */',
+          '  sheet?: ReactNode;',
+        ]),
     '}',
     '',
-    `export default function ${name}({ data = placeholder, state = 'full', layout: given }: ${name}Props) {`,
-    '  const detected = useLayout();',
-    '  const chrome = CHROME[given ?? detected];',
-    '  const platform = chrome.platform;',
-    ...(opens ? ['  const navigate = useNavigate();'] : []),
-    '  return (',
-    ...render(root, '    ', components),
-    '  );',
-    '}',
+    ...(sheet
+      ? [
+          `export default function ${name}({ data = placeholder, state = 'full', layout: given }: ${name}Props) {`,
+          '  const detected = useLayout();',
+          '  const layout = given ?? detected;',
+          "  const platform: Platform = PANEL[layout] ? 'desktop' : 'mobile';",
+          ...(opens ? ['  const navigate = useNavigate();'] : []),
+          '  const player = (',
+          ...render(root, '    ', components),
+          '  );',
+          `  return PANEL[layout] ? <${over} layout={layout} sheet={player} /> : player;`,
+          '}',
+        ]
+      : [
+          `export default function ${name}({ data = placeholder, state = 'full', layout: given, sheet }: ${name}Props) {`,
+          '  const detected = useLayout();',
+          '  const chrome = CHROME[given ?? detected];',
+          '  const platform = chrome.platform;',
+          '  const panel = sheet ?? chrome.sheet;',
+          ...(opens ? ['  const navigate = useNavigate();'] : []),
+          '  return (',
+          ...render(root, '    ', components),
+          '  );',
+          '}',
+        ]),
     '',
   ].join('\n');
 }

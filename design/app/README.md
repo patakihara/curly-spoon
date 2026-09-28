@@ -14,6 +14,12 @@ own), what leads it (the account avatar on a phone's destination home, a
 close control on a page that closes), the bottom bar or rail per layout, the mini-player and the
 Now Playing panel.
 
+The player's sheets, Now Playing, Queue and Lyrics, are the tabs of Sonora's `NowPlaying`: each
+page is its tab's content alone, never a backdrop, and the shell puts it in the player, open on its
+tab and showing what shell.json's `playing` loads. Under the side panel's width that is a
+full-screen sheet over everything, the bottom bar included; from it, the side panel beside
+shell.json's `sheetOver` page, the full-width player bar under the window carrying the transport.
+
 A handler prop may open another page: `onClick={<Open page="album" ref={release.ref} />}` names a
 page of `nav.json` that the page's structure `links` list, or its own page for another item of
 its kind, and binds each of its route's parameters

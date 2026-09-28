@@ -68,7 +68,14 @@ const app: App = {
   nav,
   shell: {
     account: { label: 'Account' },
-    playing: { title: 'Tidal Lines', artist: 'Halcyon Bloom', progress: 0.5, duration: 214 },
+    playing: {
+      title: 'Tidal Lines',
+      artist: 'Halcyon Bloom',
+      variant: 'music',
+      favourite: false,
+      progress: 0.5,
+      duration: 214,
+    },
     railFoot: [{ page: 'settings', icon: 'settings' }],
   },
   pages: [

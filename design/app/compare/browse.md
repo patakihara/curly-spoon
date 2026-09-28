@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 12ee289e4be7cd2075ec0a130aa28998f44a4beca4492a485b3a721114f5f703
+pageHash: 277b4e9d09e3229edf4fe6e58ccb42c5b677c1676fa67cf414085cd98ba62d1e
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -78,6 +78,9 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   a settings button at the heading's end; the page has neither.
 - Changed on purpose: the rail has no expand toggle; its width follows the window, an icon rail
   from 600 px and a labelled rail from 1024 px, where the kit and the Anatomy card draw a hamburger.
+- Changed on purpose: the desktop kit's player panel repeats the transport bar's seek bar and
+  transport; the panel now draws neither, the full-width player bar carrying them once, and its
+  three tabs are labels sharing its width, where the kit cut the third to "L…".
 - Changed on purpose: nav.json's icons and labels (Books with `book_2`, Music with `album`) replace
   the kits' (Audiobooks, headphones, speaker).
 - Changed on purpose: the filter reads All, Music, Podcasts, Books, the plan's order, where both

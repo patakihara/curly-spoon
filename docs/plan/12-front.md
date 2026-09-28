@@ -64,7 +64,7 @@ Sonora has 80 components today, filed by kind (core, forms, layout, media, navig
 
 - **Web uses Sonora's components directly, not ports.** They're real React with typed props. `pnpm gen` turns Sonora's global-namespace lookups (`NS().CoverArt`) into normal imports and writes them to `web/src/generated/ui`, the app's UI package. The `.d.ts` files are the props, unchanged.
 - **Android**: `SonoraTokens.kt` as the theme, plus one Compose component per Sonora component with the same name. Its props class is **generated from the same `.d.ts`**, so a prop added in Sonora appears in Android's props at once, and a required one breaks the Android build until it is passed. Layout bodies are hand-written, as `export/README.md` spells out.
-- Sonora's `QUESTIONS.md` (Now Playing shape, speed and sleep sheets, queue edit scope) is answered on the Auralis canvas before the player screens are built.
+- Sonora's Now Playing questions (shape, speed and sleep sheets, queue edit scope) are answered by the canvas's player pages.
 :::
 :::
 

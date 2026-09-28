@@ -17,6 +17,9 @@ import Show from '../pages/Show';
 import Episode from '../pages/Episode';
 import List from '../pages/List';
 import Search from '../pages/Search';
+import NowPlaying from '../pages/NowPlaying';
+import Queue from '../pages/Queue';
+import Lyrics from '../pages/Lyrics';
 import Settings from '../pages/Settings';
 import NotFound from '../pages/NotFound';
 
@@ -159,9 +162,9 @@ export const routes: RouteObject[] = [
   { id: 'episode', path: '/podcasts/episodes/:ref', element: <Episode /> },
   { id: 'list', path: '/lists/:ref', element: <List /> },
   { id: 'search', path: '/search', element: <Search /> },
-  { id: 'nowPlaying', path: '/playing' },
-  { id: 'queue', path: '/playing/queue' },
-  { id: 'lyrics', path: '/playing/lyrics' },
+  { id: 'nowPlaying', path: '/playing', element: <NowPlaying /> },
+  { id: 'queue', path: '/playing/queue', element: <Queue /> },
+  { id: 'lyrics', path: '/playing/lyrics', element: <Lyrics /> },
   { id: 'settings', path: '/settings', element: <Settings /> },
   { id: 'setup', path: '/setup' },
   { id: 'signIn', path: '/sign-in' },

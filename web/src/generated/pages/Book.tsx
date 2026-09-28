@@ -2,8 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
+import type { ReactNode } from 'react';
 import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { BackLayer, BackdropShell, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, PlayerPanel, ResultRow, Section, Shelf } from '../ui/index.js';
+import { BackLayer, BackdropShell, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "title": "Shadows and Sighs",
@@ -221,13 +222,16 @@ const shell = {
     "artist": "Deep Inertia",
     "image": "/art/deep-inertia.jpg",
     "context": "Playing from Deep Inertia",
+    "variant": "music",
+    "favourite": true,
     "progress": 0.05,
     "duration": 262
   },
   "transport": {
     "playing": true,
     "progress": 0.05,
-    "duration": 262
+    "duration": 262,
+    "favourite": true
   },
   "footer": [
     {
@@ -366,7 +370,7 @@ const CHROME: Record<LayoutId, Chrome> = {
     ),
     player: (
       <>
-        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="mobile" />
+        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="mobile" />
         <BottomNav items={shell.nav.w0} active="books" />
       </>
     ),
@@ -382,7 +386,7 @@ const CHROME: Record<LayoutId, Chrome> = {
       <IconButton icon="close" label="Close" />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="desktop" />
     ),
     sheetOpen: false,
   },
@@ -396,7 +400,7 @@ const CHROME: Record<LayoutId, Chrome> = {
       <IconButton icon="close" label="Close" />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="desktop" />
     ),
     sheetOpen: false,
   },
@@ -410,10 +414,10 @@ const CHROME: Record<LayoutId, Chrome> = {
       <IconButton icon="close" label="Close" />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} platform="desktop" />
     ),
     sheet: (
-      <PlayerPanel open={true} track={shell.playing} player={shell.transport} />
+      <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} player={shell.transport} platform="desktop" />
     ),
     sheetOpen: true,
   },
@@ -429,19 +433,22 @@ export interface BookProps {
   state?: string;
   /** The layout to draw in; by default, the one the window width calls for. */
   layout?: LayoutId;
+  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
+  sheet?: ReactNode;
 }
 
-export default function Book({ data = placeholder, state = 'full', layout: given }: BookProps) {
+export default function Book({ data = placeholder, state = 'full', layout: given, sheet }: BookProps) {
   const detected = useLayout();
   const chrome = CHROME[given ?? detected];
   const platform = chrome.platform;
+  const panel = sheet ?? chrome.sheet;
   const navigate = useNavigate();
   return (
     <BackdropShell
       rail={chrome.rail}
       back={<BackLayer title={data.title} leading={chrome.leading} search="Search this book's chapters" platform={platform} />}
       player={chrome.player}
-      sheet={chrome.sheet}
+      sheet={panel}
       sheetOpen={chrome.sheetOpen}
       appBar={chrome.appBar}
       platform={platform}

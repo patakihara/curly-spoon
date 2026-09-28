@@ -21,7 +21,7 @@ const nav = readNav(appDir);
  * The pages not drawn yet, which parts 2 to 4 of the canvas draw. It only shrinks; the canvas is
  * done when it is empty and this list is gone.
  */
-const UNDRAWN = ['nowPlaying', 'queue', 'lyrics', 'downloads', 'setup', 'signIn', 'shelfReview'];
+const UNDRAWN = ['downloads', 'setup', 'signIn', 'shelfReview'];
 
 describe('the visual comparisons', () => {
   it('[M0.canvas/e] leave undrawn exactly the pages that have no page file yet', () => {

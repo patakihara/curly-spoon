@@ -16,7 +16,14 @@ import {
 } from './page.js';
 import { generateWebPage, type WebComponents } from './page-web.js';
 import type { KType, PropsModel } from './props.js';
-import { framePage, readShell, shellData, type ShellData, type ShellFile } from './shell.js';
+import {
+  framePage,
+  playerTab,
+  readShell,
+  shellData,
+  type ShellData,
+  type ShellFile,
+} from './shell.js';
 
 const Placeholder = z.record(z.string(), z.unknown());
 
@@ -126,6 +133,19 @@ export function readApp(appDir: string, model: PropsModel): App {
     shell = readShell(appDir);
     const strays = shell.railFoot.filter(({ page }) => !ids.has(page));
     for (const { page } of strays) errors.push(`shell.json: railFoot names ${page}, not a page`);
+    const sheets = nav.pages.filter(
+      (p) => p.presentation === 'sheet' && files.includes(`${p.id}.page.jsx`),
+    );
+    const over = nav.pages.find((p) => p.id === shell!.sheetOver);
+    if (sheets.length === 0) {
+      // Nothing is drawn over a page yet.
+    } else if (over?.presentation !== 'screen' || !over.platforms.includes('web')) {
+      errors.push(
+        `shell.json: sheetOver names ${shell.sheetOver ?? 'nothing'}, not a web page drawn as a screen, for the player's sheets to be drawn over`,
+      );
+    } else if (!files.includes(`${over.id}.page.jsx`)) {
+      errors.push(`shell.json: sheetOver names ${over.id}, which has no page file`);
+    }
     if (strays.length === 0) shown = shellData(nav, shell);
   } catch (e) {
     errors.push(`shell.json: ${(e as Error).message}`);
@@ -151,6 +171,15 @@ export function readApp(appDir: string, model: PropsModel): App {
         ),
       );
       framePage(tree);
+      const entry = nav.pages.find((p) => p.id === id)!;
+      if (entry.presentation === 'sheet') {
+        playerTab(entry);
+        if (tree.kind === 'element' && tree.component === 'BackdropShell') {
+          errors.push(
+            `pages/${id}.page.jsx: a player sheet is its tab's page alone; the shell puts it in the player, never a backdrop`,
+          );
+        }
+      }
       pages.push({ id, tree, placeholder });
     } catch (e) {
       errors.push(`pages/${id}.page.jsx: ${(e as Error).message}`);

@@ -25,7 +25,14 @@ const shellOf = (id: string): WebShell => ({
   nav,
   shell: {
     account: { label: 'Account' },
-    playing: { title: 'Tidal Lines', artist: 'Halcyon Bloom', progress: 0.5, duration: 214 },
+    playing: {
+      title: 'Tidal Lines',
+      artist: 'Halcyon Bloom',
+      variant: 'music',
+      favourite: false,
+      progress: 0.5,
+      duration: 214,
+    },
     railFoot: [{ page: 'settings', icon: 'settings' }],
   },
   page: nav.pages.find((p) => p.id === id)!,
@@ -134,7 +141,7 @@ describe('a generated web page', () => {
   it('takes its data, state and layout, with the placeholder, full and the width as defaults', () => {
     expect(out).toContain('const placeholder = {\n  "title": "Wind and Truth",');
     expect(out).toContain(
-      "export default function Book({ data = placeholder, state = 'full', layout: given }: BookProps) {",
+      "export default function Book({ data = placeholder, state = 'full', layout: given, sheet }: BookProps) {",
     );
     expect(out).toContain('  const chrome = CHROME[given ?? detected];');
     expect(out).toContain('  const platform = chrome.platform;');
@@ -165,7 +172,7 @@ describe('a generated web page', () => {
       '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} />',
     );
     expect(homeOut).toContain(
-      '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} platform="desktop" />',
+      '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} platform="desktop" />',
     );
     expect(homeOut).toContain('const shell = {\n  "account": {');
   });
