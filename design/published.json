@@ -2,13 +2,13 @@
   "canvas": {
     "url": "https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq",
     "sources": ["design/app", "web/public/art"],
-    "commit": "d879a2849599a0cd1fdb582970f5697984e6ffd6",
-    "tree": "70f1049f0b46048fe3ed690aaf7701990769bc82",
-    "version": "1790604360-b12a",
+    "commit": "c054f0dd00811510d485162b3444c156447a8a7d",
+    "tree": "8ab773ff98c906418e28ed98aeb862d4e11f9077",
+    "version": "1790607620-2cd1",
     "installs": {
-      "sonora": "1790604331-c315"
+      "sonora": "1790607591-0f97"
     },
-    "publishedAt": "2026-09-28T14:06:11.556Z"
+    "publishedAt": "2026-09-28T15:00:27.062Z"
   },
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
