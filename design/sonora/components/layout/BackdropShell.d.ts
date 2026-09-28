@@ -11,8 +11,8 @@ import { ReactNode } from 'react';
  *
  * Prop names mirror `AppShell`'s wherever the meaning is the same, so a screen ports by swapping
  * the component and moving its secondary header out of the bar into `subheader`. Unlike
- * `AppShell` there is no `flat`/`square`: the front layer's shape is not scroll-linked and does
- * not flatten for a sub-page.
+ * `AppShell` there is no `square`, and the front layer's shape is not scroll-linked: it flattens
+ * only for a page shown with `appBar`.
  *
  * On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
  */
@@ -55,6 +55,12 @@ export interface BackdropShellProps {
   onProgress?: (progress: number) => void;
   /** Sets `data-theme` on the frame. */
   theme?: string;
+  /**
+   * A page that is not a destination, on a phone: no backdrop. The back layer becomes a top app
+   * bar on the page surface (`BackLayer`'s `appBar`) and the front layer goes flat under it, so
+   * nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.
+   */
+  appBar?: boolean;
   platform?: 'desktop' | 'mobile';
 }
 export declare function BackdropShell(props: BackdropShellProps): JSX.Element;

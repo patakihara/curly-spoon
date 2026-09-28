@@ -395,7 +395,7 @@ The app frame — the one component that ties the layout parts together, so a sc
 
 ### BackdropShell
 
-The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking the step; `subheader` is fixed to it and `children` scroll underneath. Prop names mirror `AppShell`'s wherever the meaning is the same, so a screen ports by swapping the component and moving its secondary header out of the bar into `subheader`. Unlike `AppShell` there is no `flat`/`square`: the front layer's shape is not scroll-linked and does not flatten for a sub-page. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
+The app frame as a real Material backdrop. Two surfaces, and only two. The **back layer** is `--surface-bg-alt` at 0dp and fills the entire background: the `rail` is a region of it, not a column beside it, and `back` (a `BackLayer`) is its heading and contextual controls. The **front layer** is `--surface-bg` at 1dp, full width, with permanently rounded top corners and a 1px light edge along the top marking the step; `subheader` is fixed to it and `children` scroll underneath. Prop names mirror `AppShell`'s wherever the meaning is the same, so a screen ports by swapping the component and moving its secondary header out of the bar into `subheader`. Unlike `AppShell` there is no `square`, and the front layer's shape is not scroll-linked: it flattens only for a page shown with `appBar`. On mobile pass no `rail`, set `platform="mobile"`, and put the bottom nav in `player`.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -412,6 +412,7 @@ The app frame as a real Material backdrop. Two surfaces, and only two. The **bac
 | `scrollKey` | `string \| number` | Identifier of the current view — gives each one its own remembered scroll position. |
 | `onProgress` | `(progress: number) => void` | 0–1 scroll progress from the front layer. |
 | `theme` | `string` | Sets `data-theme` on the frame. |
+| `appBar` | `boolean` |  A page that is not a destination, on a phone: no backdrop. The back layer becomes a top app bar on the page surface (`BackLayer`'s `appBar`) and the front layer goes flat under it, so nothing of the layer behind shows. The bottom bar and the mini-player stay in `player`.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### BackLayer
@@ -427,6 +428,7 @@ The backdrop's back layer: `--surface-bg-alt` at 0dp, no rounding and no elevati
 | `search` | `string` |  A local search, scoped to this page: its placeholder ("Search your books and requests"). The heading ends in a search button; the field comes out of it over the heading, without focus once the front layer has scrolled, with focus when the button is tapped, and goes back at the top unless it was tapped out. Not the global Search destination.  |
 | `searchOpen` | `boolean` | Fixes the local search out (true) or away (false), for a still. Otherwise scroll and the button decide. |
 | `progress` | `number` | 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. |
+| `appBar` | `boolean` |  The heading as a top app bar on the page surface, for a page that is not a destination on a phone: `--surface-bg` instead of the back layer's colour, and the title set as a mobile `SectionHeader`'s, in the body face, rather than as a display heading. `BackdropShell`'s `appBar` passes it down.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### BackToTop
@@ -504,6 +506,7 @@ The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content a
 | `threshold` | `number` | Scroll distance in px over which the subheader's divider fades in. Default 24. |
 | `squareLeft` | `boolean` | Square the abutting corner where a `sheetLayer="front"` panel meets the layer. |
 | `squareRight` | `boolean` |  |
+| `flat` | `boolean` |  No backdrop: square corners, no lift and no light edge, so the layer and the heading above it read as one surface under a top app bar. A hairline along the top fades in as the content scrolls. `BackdropShell`'s `appBar` sets it.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### FrontLayerHeader

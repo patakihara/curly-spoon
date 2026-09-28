@@ -15,7 +15,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-frontlay
 }
 
 /** The backdrop's front layer: the 1dp --surface-bg surface holding primary content, with a fixed subheader above it and permanently rounded top corners. Owns the scrolling and the per-view scroll memory. */
-export function FrontLayer({ children, subheader, scroll = true, scrollKey, onProgress, threshold = 24, squareLeft = false, squareRight = false, platform = 'desktop' }) {
+export function FrontLayer({ children, subheader, scroll = true, scrollKey, onProgress, threshold = 24, squareLeft = false, squareRight = false, flat = false, platform = 'desktop' }) {
   const [p, setP] = React.useState(0);
   const scroller = React.useRef(null);
   const root = React.useRef(null);
@@ -82,18 +82,22 @@ export function FrontLayer({ children, subheader, scroll = true, scrollKey, onPr
      light: #343434 on #141414 in dark, but inverting into an inner *shadow* in light (#D5D2D2 on
      #F9F6F6). So dark takes the mix and light takes `--surface-border`, which reads on either
      surface — the two rules are in `sonora-frontlayer-css` above. */
+  /* `flat` is no backdrop at all: the layer is square, casts nothing, and meets the app bar above
+     it on the same surface, marked only by a hairline once the content scrolls under the bar. */
   const surface = sx(
     'position:relative;flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;' +
-    'background:var(--surface-bg);overflow:hidden;box-shadow:var(--shadow-sm);' +
-    'border-radius:' + r(squareLeft) + ' ' + r(squareRight) + ' 0 0'
+    'background:var(--surface-bg);overflow:hidden;' + (flat ? '' : 'box-shadow:var(--shadow-sm);') +
+    'border-radius:' + (flat ? '0' : r(squareLeft) + ' ' + r(squareRight) + ' 0 0')
   );
   /* Drawn as an overlay rather than an inset shadow on the surface itself: the subheader is an
      opaque `--surface-bg` child sitting exactly on the top edge, and it would paint over an inset
      shadow belonging to its parent. `border-radius:inherit` makes the edge follow the layer's own
      corners, including a squared one where a panel abuts — so it reads as the layer's edge rather
      than as a rule laid across it. */
-  const edge = <span aria-hidden="true" className="sn-front-edge"
-    style={sx('position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit')} />;
+  const edge = flat
+    ? <span aria-hidden="true" style={sx('position:absolute;left:0;right:0;top:0;height:1px;z-index:3;pointer-events:none;background:var(--surface-border);opacity:' + p)} />
+    : <span aria-hidden="true" className="sn-front-edge"
+      style={sx('position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit')} />;
   // The subheader's divider is scroll-linked, and only the layer that owns the scroller knows how
   // far it has gone — so progress is handed down rather than asked for. An explicit `progress`
   // (a card showing the scrolled state statically) is left alone.

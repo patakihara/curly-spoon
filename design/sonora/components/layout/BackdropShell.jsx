@@ -3,7 +3,7 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** A Material backdrop frame: a 0dp back layer filling the whole background — rail and heading together — with the 1dp front layer and its subheader sitting on top of it, an optional side panel in front of or behind that layer, and the player docked across the bottom. */
-export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', player, contentMinWidth, scroll = true, scrollKey, onProgress, theme, platform = 'desktop' }) {
+export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', player, contentMinWidth, scroll = true, scrollKey, onProgress, theme, appBar = false, platform = 'desktop' }) {
   const { FrontLayer } = NS();
   /* The back layer's local search comes out as the front layer scrolls, so the shell hands the
      front layer's progress up to it, as FrontLayer hands it down to the subheader. An explicit
@@ -11,8 +11,12 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
   const [progress, setProgress] = React.useState(0);
   const report = React.useRef(onProgress); report.current = onProgress;
   const track = React.useCallback((p) => { setProgress(p); if (report.current) report.current(p); }, []);
-  const backLayer = React.isValidElement(back) && back.props.progress === undefined
-    ? React.cloneElement(back, { progress })
+  /* `appBar` hands the back layer its app-bar treatment too, so a page need not know which it is. */
+  const backLayer = React.isValidElement(back)
+    ? React.cloneElement(back, Object.assign(
+        back.props.progress === undefined ? { progress } : {},
+        appBar && back.props.appBar === undefined ? { appBar: true } : {}
+      ))
     : back;
   const behind = sheetLayer === 'behind';
   const ease = 'var(--duration-medium) var(--ease-standard)';
@@ -42,7 +46,7 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
     </div>
   );
   return (
-    <div data-theme={theme} style={sx('display:flex;flex-direction:column;height:100%;background:var(--surface-bg-alt)')}>
+    <div data-theme={theme} style={sx('display:flex;flex-direction:column;height:100%;background:var(--surface-' + (appBar ? 'bg' : 'bg-alt') + ')')}>
       {/* The back layer is the frame itself, so the rail is a region of it rather than a column
           beside it — nothing between the two changes colour or elevation. */}
       <div style={sx('display:flex;flex:1;min-height:0')}>
@@ -53,7 +57,7 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
           {back && <div style={sx('flex-shrink:0')}>{backLayer}</div>}
           {FrontLayer && (
             <FrontLayer subheader={subheader} scroll={scroll} scrollKey={scrollKey} onProgress={track} platform={platform}
-              squareRight={!behind && sheetOpen && !!sheet}>{children}</FrontLayer>
+              squareRight={!behind && sheetOpen && !!sheet} flat={appBar}>{children}</FrontLayer>
           )}
         </div>
         {sheet && (behind ? panelBehind : panelFront)}

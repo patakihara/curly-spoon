@@ -35,5 +35,12 @@ data class BackLayerProps(
     val searchOpen: Boolean? = null,
     /** 0–1 scroll progress of the front layer; `BackdropShell` supplies it. At 1 the local search comes out. */
     val progress: Float? = null,
+    /**
+     * The heading as a top app bar on the page surface, for a page that is not a destination on a
+     * phone: `--surface-bg` instead of the back layer's colour, and the title set as a mobile
+     * `SectionHeader`'s, in the body face, rather than as a display heading. `BackdropShell`'s
+     * `appBar` passes it down.
+     */
+    val appBar: Boolean? = null,
     val platform: Platform? = null,
 )

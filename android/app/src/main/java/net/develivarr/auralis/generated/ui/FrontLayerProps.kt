@@ -48,5 +48,11 @@ data class FrontLayerProps(
     /** Square the abutting corner where a `sheetLayer="front"` panel meets the layer. */
     val squareLeft: Boolean? = null,
     val squareRight: Boolean? = null,
+    /**
+     * No backdrop: square corners, no lift and no light edge, so the layer and the heading above it
+     * read as one surface under a top app bar. A hairline along the top fades in as the content
+     * scrolls. `BackdropShell`'s `appBar` sets it.
+     */
+    val flat: Boolean? = null,
     val platform: Platform? = null,
 )

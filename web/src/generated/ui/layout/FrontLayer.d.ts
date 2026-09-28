@@ -46,6 +46,12 @@ export interface FrontLayerProps {
   /** Square the abutting corner where a `sheetLayer="front"` panel meets the layer. */
   squareLeft?: boolean;
   squareRight?: boolean;
+  /**
+   * No backdrop: square corners, no lift and no light edge, so the layer and the heading above it
+   * read as one surface under a top app bar. A hairline along the top fades in as the content
+   * scrolls. `BackdropShell`'s `appBar` sets it.
+   */
+  flat?: boolean;
   platform?: 'desktop' | 'mobile';
 }
 export declare function FrontLayer(props: FrontLayerProps): JSX.Element;

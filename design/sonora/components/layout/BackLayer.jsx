@@ -4,7 +4,7 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** The backdrop's back layer: the 0dp --surface-bg-alt surface carrying the page heading and any contextual controls that reconfigure what the front layer is showing. No rounding, no elevation. Given `search`, its heading carries a local search that comes out as the front layer scrolls. */
-export function BackLayer({ title, leading, trailing, controls, search, searchOpen, progress = 0, platform = 'desktop' }) {
+export function BackLayer({ title, leading, trailing, controls, search, searchOpen, progress = 0, appBar = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const pad = 'var(--spacing-' + (mobile ? 'md' : 'xl') + ')';
   const { SearchField, SearchButton } = NS();
@@ -25,13 +25,13 @@ export function BackLayer({ title, leading, trailing, controls, search, searchOp
   const toggle = (next) => { setOpen(next); setFocus(next); if (!next) setQuery(''); };
   const ease = ' var(--duration-medium) var(--ease-standard)';
   return (
-    <div style={sx('display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box;width:100%;background:var(--surface-bg-alt)')}>
+    <div style={sx('display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box;width:100%;background:var(--surface-' + (appBar ? 'bg' : 'bg-alt') + ')')}>
       {/* The heading strip keeps the app bar's height so a side panel's own title row, which is
           measured against the same token, still lines up with it. */}
       <div style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:100%;box-sizing:border-box;padding:0 ' + pad + ';height:var(--appbar-height' + (mobile ? '-mobile' : '') + ')')}>
         {leading}
         <div style={sx('position:relative;align-self:stretch;flex:1;min-width:0;display:flex;align-items:center')}>
-          <div style={sx('flex:1;min-width:0;font-family:var(--font-display);font-weight:var(--display-weight);font-stretch:var(--display-stretch);letter-spacing:-.02em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:' + (sOpen ? '0' : '1') + ';transform:translateX(' + (sOpen ? '-12px' : '0') + ');transition:opacity var(--duration-fast) ease,transform' + ease)}>{title}</div>
+          <div style={sx('flex:1;min-width:0;' + (appBar ? 'font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-xl);line-height:1.2;' : 'font-family:var(--font-display);font-weight:var(--display-weight);font-stretch:var(--display-stretch);letter-spacing:-.02em;font-size:var(--' + (mobile ? 'h3' : 'h2') + '-size);line-height:1.1;') + 'color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:' + (sOpen ? '0' : '1') + ';transform:translateX(' + (sOpen ? '-12px' : '0') + ');transition:opacity var(--duration-fast) ease,transform' + ease)}>{title}</div>
           {searchable && (
             <div style={sx('position:absolute;top:0;bottom:0;right:0;display:flex;align-items:center;overflow:hidden;width:' + (sOpen ? '100%' : '0') + ';opacity:' + (sOpen ? '1' : '0') + ';transition:width' + ease + ',opacity var(--duration-fast) ease')}>
               <SearchField platform={platform} placeholder={search} value={query} onChange={setQuery} autoFocus={sOpen && focus} onClose={() => toggle(false)} />
