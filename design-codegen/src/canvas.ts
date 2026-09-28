@@ -103,19 +103,57 @@ function count(placeholder: unknown, path: string[]): number {
 }
 
 /**
- * The board's markup for `tree`, whose platform is already given. Each element given to a prop is
- * set aside in `slots` and named by a hole, `back="{{slots.s0}}"`, for `renderVals()` to build.
+ * An `<Each>` whose items hold elements given to props: `renderVals()` copies each item of `of`
+ * with those elements built for it under `$s<slot>`, and each nested list likewise under
+ * `$l<list>`, since a board's template reads values and cannot build an element per item.
  */
-function render(tree: PageTree, placeholder: unknown, slots: PageTree[], inEach = false): string {
-  const kids = (nodes: PageTree[], each = inEach) =>
-    nodes.map((n) => render(n, placeholder, slots, each)).join('');
+interface ItemList {
+  of: string[];
+  as: string;
+  slots: number[];
+  lists: number[];
+}
+
+/** What rendering a board sets aside for `renderVals()`: the slot trees and the item lists. */
+interface Aside {
+  slots: PageTree[];
+  /** The slots built once for the board, not per item. */
+  board: number[];
+  lists: ItemList[];
+  /** The top-level lists, built from the board's own scope. */
+  roots: number[];
+}
+
+/** Whether an element given to a prop sits anywhere in `tree`. */
+function holdsSlot(tree: PageTree): boolean {
+  if (tree.kind === 'element' && Object.values(tree.props).some((v) => v.kind === 'slot'))
+    return true;
+  return 'children' in tree && tree.children.some(holdsSlot);
+}
+
+/**
+ * The board's markup for `tree`, whose platform is already given. Each element given to a prop is
+ * set aside in `aside.slots` and named by a hole, `back="{{slots.s0}}"`, for `renderVals()` to
+ * build; inside an `<Each>` the hole reads the item's own copy, `trailing="{{book.$s3}}"`.
+ */
+function render(
+  tree: PageTree,
+  placeholder: unknown,
+  aside: Aside,
+  each?: { as: string; list: number },
+): string {
+  const kids = (nodes: PageTree[], inner = each) =>
+    nodes.map((n) => render(n, placeholder, aside, inner)).join('');
   const attr = (name: string, value: PropValue): string => {
     if (value.kind === 'binding') return `${kebab(name)}="{{${value.path.join('.')}}}"`;
     if (value.kind === 'slot') {
-      if (inEach)
-        throw new Error(`${name}: an element given to a prop inside Each cannot be drawn`);
-      slots.push(value.tree);
-      return `${kebab(name)}="{{slots.s${slots.length - 1}}}"`;
+      const slot = aside.slots.push(value.tree) - 1;
+      if (each === undefined) {
+        aside.board.push(slot);
+        return `${kebab(name)}="{{slots.s${slot}}}"`;
+      }
+      aside.lists[each.list]!.slots.push(slot);
+      return `${kebab(name)}="{{${each.as}.$s${slot}}}"`;
     }
     if (typeof value.value === 'string') return `${kebab(name)}="${escapeAttr(value.value)}"`;
     return `${kebab(name)}="{{ ${JSON.stringify(value.value)} }}"`;
@@ -129,7 +167,14 @@ function render(tree: PageTree, placeholder: unknown, slots: PageTree[], inEach 
       return kids(tree.children);
     case 'each': {
       const n = tree.of[0] === 'data' ? count(placeholder, tree.of) : 1;
-      return `<sc-for list="{{${tree.of.join('.')}}}" as="${tree.as}" hint-placeholder-count="${n}">\n${kids(tree.children, true)}</sc-for>\n`;
+      const open = (list: string) =>
+        `<sc-for list="{{${list}}}" as="${tree.as}" hint-placeholder-count="${n}">\n`;
+      if (!holdsSlot(tree)) return `${open(tree.of.join('.'))}${kids(tree.children)}</sc-for>\n`;
+      const list = aside.lists.push({ of: tree.of, as: tree.as, slots: [], lists: [] }) - 1;
+      if (each === undefined) aside.roots.push(list);
+      else aside.lists[each.list]!.lists.push(list);
+      const source = each === undefined ? `lists.l${list}` : `${each.as}.$l${list}`;
+      return `${open(source)}${kids(tree.children, { as: tree.as, list })}</sc-for>\n`;
     }
     case 'when':
       return `<sc-if value="{{when.${tree.state}}}" hint-placeholder-val="{{ true }}">\n${kids(tree.children)}</sc-if>\n`;
@@ -195,8 +240,8 @@ function artboard(
     parts.platform,
     app.components.platformed,
   );
-  const slots: PageTree[] = [];
-  const markup = render(tree, page.placeholder, slots).trimEnd();
+  const aside: Aside = { slots: [], board: [], lists: [], roots: [] };
+  const markup = render(tree, page.placeholder, aside).trimEnd();
   const json = (value: unknown) => JSON.stringify(value).replace(/<\/script/gi, '<\\/script');
   const preview = JSON.stringify({ $preview: { width: board.width, height: board.height } });
   return [
@@ -224,12 +269,26 @@ function artboard(
     'renderVals() {',
     `const data = ${json(relativeArt(page.placeholder))};`,
     `const shell = ${json(relativeArt(shellData(app.nav, app.shell)))};`,
-    `const trees = ${json(slots.map(bare))};`,
+    `const trees = ${json(aside.slots.map(bare))};`,
+    ...(aside.lists.length === 0 ? [] : [`const itemLists = ${json(aside.lists)};`]),
     BUILD,
     'const scope = { data, shell };',
     'const slots = {};',
-    'trees.forEach((t, i) => { slots["s" + i] = build(t, scope); });',
-    'return { data, shell, slots, when: {"full":true} };',
+    ...(aside.lists.length === 0
+      ? ['trees.forEach((t, i) => { slots["s" + i] = build(t, scope); });']
+      : [
+          `${json(aside.board)}.forEach((i) => { slots["s" + i] = build(trees[i], scope); });`,
+          'const items = (l, sc) => (at(sc, l.of) || []).map((item) => {',
+          '  const inner = Object.assign({}, sc, { [l.as]: item });',
+          '  const copy = Object.assign({}, item);',
+          '  l.slots.forEach((i) => { copy["$s" + i] = build(trees[i], inner); });',
+          '  l.lists.forEach((i) => { copy["$l" + i] = items(itemLists[i], inner); });',
+          '  return copy;',
+          '});',
+          'const lists = {};',
+          `${json(aside.roots)}.forEach((i) => { lists["l" + i] = items(itemLists[i], scope); });`,
+        ]),
+    `return { data, shell, slots, ${aside.lists.length === 0 ? '' : 'lists, '}when: {"full":true} };`,
     '}',
     '}',
     '</script>',

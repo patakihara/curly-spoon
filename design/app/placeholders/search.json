@@ -1,0 +1,121 @@
+{
+  "query": "salt",
+  "placeholder": "What do you want to listen to?",
+  "kinds": [
+    {
+      "key": "all",
+      "label": "All"
+    },
+    {
+      "key": "songs",
+      "label": "Songs"
+    },
+    {
+      "key": "albums",
+      "label": "Albums"
+    },
+    {
+      "key": "artists",
+      "label": "Artists"
+    },
+    {
+      "key": "books",
+      "label": "Books"
+    },
+    {
+      "key": "authors",
+      "label": "Authors"
+    },
+    {
+      "key": "series",
+      "label": "Series"
+    },
+    {
+      "key": "podcasts",
+      "label": "Podcasts"
+    },
+    {
+      "key": "episodes",
+      "label": "Episodes"
+    },
+    {
+      "key": "lyrics",
+      "label": "Lyrics"
+    }
+  ],
+  "scopes": [
+    {
+      "key": "everywhere",
+      "label": "Everywhere"
+    },
+    {
+      "key": "library",
+      "label": "In your library"
+    },
+    {
+      "key": "outside",
+      "label": "Outside"
+    }
+  ],
+  "activeFilters": "All kinds · Everywhere",
+  "top": {
+    "title": "Salt and Static",
+    "meta": "Album · Soul Vertex · 11 tracks",
+    "image": "/art/salt-and-static.jpg"
+  },
+  "library": [
+    {
+      "title": "Salt Water",
+      "meta": "Song · Deep Inertia · Heartbeats in Silence",
+      "image": "/art/deep-inertia.jpg"
+    },
+    {
+      "title": "The Saltwater Diaries",
+      "meta": "Book · Adam Rivers · 8 h 20 m",
+      "image": "/art/foggy-trails.jpg"
+    },
+    {
+      "title": "Tears of Ice",
+      "meta": "Lyrics · \"salt on my tongue, ice in my hands\" · Deep Inertia",
+      "image": "/art/tears-of-ice.jpg"
+    }
+  ],
+  "outside": {
+    "music": [
+      {
+        "title": "Salt",
+        "meta": "Song · Fleeting Verses · YouTube Music",
+        "image": "/art/fragments-of-the-wind.jpg"
+      }
+    ],
+    "moreReleases": "More releases of Salt",
+    "books": [
+      {
+        "title": "Salt and Stone",
+        "meta": "Book · Maya Lind · AudiobookBay",
+        "image": "/art/between-two-worlds.jpg",
+        "status": "Downloading · 42%",
+        "tone": "progress",
+        "requested": true,
+        "action": "Requested"
+      },
+      {
+        "title": "A Grain of Salt",
+        "meta": "Book · Evelyn Harper · Prowlarr",
+        "image": "/art/shadows-and-sighs.jpg",
+        "status": null,
+        "tone": null,
+        "requested": false,
+        "action": "Request"
+      }
+    ],
+    "podcasts": [
+      {
+        "title": "Salt & Signal",
+        "meta": "Podcast · 212 episodes · PodcastIndex",
+        "image": "/art/the-long-read.jpg",
+        "action": "Subscribe"
+      }
+    ]
+  }
+}

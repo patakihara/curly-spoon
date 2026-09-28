@@ -1,0 +1,56 @@
+{
+  "eyebrow": "More like",
+  "subject": "Deep Inertia",
+  "subjectArt": "/art/deep-inertia.jpg",
+  "round": true,
+  "items": [
+    {
+      "title": "Salt and Static",
+      "sub": "Album · Soul Vertex",
+      "image": "/art/salt-and-static.jpg",
+      "progress": null
+    },
+    {
+      "title": "Escapes and Moons",
+      "sub": "Album · Soul Vertex",
+      "image": "/art/escapes-and-moons.jpg",
+      "progress": null
+    },
+    {
+      "title": "Golden Scars",
+      "sub": "Album · Fleeting Verses",
+      "image": "/art/golden-scars.jpg",
+      "progress": null
+    },
+    {
+      "title": "Between Lines of Light",
+      "sub": "Album · Sonic Tales",
+      "image": "/art/between-lines-of-light.jpg",
+      "progress": 0.3
+    },
+    {
+      "title": "Fragments of the Wind",
+      "sub": "Album · Fleeting Verses",
+      "image": "/art/fragments-of-the-wind.jpg",
+      "progress": null
+    },
+    {
+      "title": "Paper Lanterns",
+      "sub": "Album · Sonic Tales",
+      "image": "/art/paper-lanterns.jpg",
+      "progress": null
+    },
+    {
+      "title": "Tears of Ice",
+      "sub": "Album · Deep Inertia",
+      "image": "/art/tears-of-ice.jpg",
+      "progress": null
+    },
+    {
+      "title": "Signal & Noise",
+      "sub": "Album · Soul Vertex",
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    }
+  ]
+}

@@ -22,8 +22,6 @@ const nav = readNav(appDir);
  * done when it is empty and this list is gone.
  */
 const UNDRAWN = [
-  'requests',
-  'shelf',
   'album',
   'artist',
   'playlist',
@@ -34,7 +32,6 @@ const UNDRAWN = [
   'show',
   'episode',
   'list',
-  'search',
   'nowPlaying',
   'queue',
   'lyrics',
@@ -42,7 +39,6 @@ const UNDRAWN = [
   'setup',
   'signIn',
   'shelfReview',
-  'notFound',
 ];
 
 describe('the visual comparisons', () => {

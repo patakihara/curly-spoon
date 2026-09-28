@@ -293,3 +293,89 @@ describe('the canvas generated from design/app', () => {
     ]);
   });
 });
+
+describe('an element given to a prop inside Each', () => {
+  const search = `export default function Search({ data }) {
+  return (
+    <PageBody>
+      <Each of={data.requests} as="request">
+        <ResultRow title={request.title} trailing={<Button>{request.action}</Button>} />
+        <Each of={request.candidates} as="candidate">
+          <ResultRow title={candidate.title} trailing={<Button size="sm">Choose</Button>} />
+        </Each>
+      </Each>
+      <Each of={data.plain} as="row">
+        <ResultRow title={row.title} />
+      </Each>
+    </PageBody>
+  );
+}
+`;
+  const listed: App = {
+    ...app,
+    pages: [
+      {
+        id: 'search',
+        tree: parsePage(search, 'search'),
+        placeholder: {
+          requests: [
+            {
+              title: 'Paper Lanterns',
+              action: 'Cancel',
+              candidates: [{ title: 'FLAC' }, { title: 'MP3' }],
+            },
+            { title: 'Ink Heart', action: 'Retry', candidates: [] },
+          ],
+          plain: [{ title: 'Salt' }],
+        },
+      },
+    ],
+  };
+  const html = generateCanvas(listed, install, now).get('search.phone.dc.html') ?? '';
+
+  it("[M0.canvas] reads each item's own copy of the element, from lists renderVals builds", () => {
+    expect(html).toContain('<sc-for list="{{lists.l0}}" as="request" hint-placeholder-count="2">');
+    expect(html).toMatch(/title="\{\{request\.title\}\}" trailing="\{\{request\.\$s\d+\}\}"/);
+    expect(html).toContain(
+      '<sc-for list="{{request.$l1}}" as="candidate" hint-placeholder-count="1">',
+    );
+    expect(html).toMatch(/title="\{\{candidate\.title\}\}" trailing="\{\{candidate\.\$s\d+\}\}"/);
+    // A list holding no element given to a prop is walked as it is.
+    expect(html).toContain('<sc-for list="{{data.plain}}" as="row" hint-placeholder-count="1">');
+  });
+
+  it('[M0.canvas] builds the element for each item, from that item', () => {
+    const script = html.split('data-dc-script')[1]!;
+    const body = script.slice(
+      script.indexOf('renderVals() {') + 'renderVals() {'.length,
+      script.lastIndexOf('}\n}'),
+    );
+    type Node = { c: unknown; p: Record<string, unknown>; k: unknown[] };
+    const window = {
+      React: {
+        Fragment: 'Fragment',
+        createElement: (c: unknown, p: Record<string, unknown>, ...k: unknown[]): Node => ({
+          c,
+          p,
+          k,
+        }),
+      },
+      SonoraDesignSystem_6c1435: Object.fromEntries(
+        ['BackLayer', 'BottomNav', 'MiniPlayer', 'AccountButton', 'IconButton', 'Button'].map(
+          (n) => [n, n],
+        ),
+      ),
+    };
+    type Item = Record<string, unknown> & { title: string };
+    const vals = new Function('window', body)(window) as { lists: Record<string, Item[]> };
+    const slot = (item: Item) =>
+      Object.entries(item).find(([k]) => /^\$s\d+$/.test(k))?.[1] as Node;
+    const requests = vals.lists.l0!;
+    expect(requests.map((r) => r.title)).toEqual(['Paper Lanterns', 'Ink Heart']);
+    expect(requests.map((r) => slot(r).k)).toEqual([['Cancel'], ['Retry']]);
+    const candidates = requests.map((r) => (r.$l1 as Item[]).map((c) => c.title));
+    expect(candidates).toEqual([['FLAC', 'MP3'], []]);
+    const choose = slot((requests[0]!.$l1 as Item[])[0]!);
+    expect([choose.c, choose.p.size, choose.k]).toEqual(['Button', 'sm', ['Choose']]);
+  });
+});

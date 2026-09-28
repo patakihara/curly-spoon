@@ -1,11 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { APP_DIR, REPO_ROOT } from './outputs.js';
-import { parsePage, type PageTree, type PropValue } from './page.js';
 import { framePage } from './shell.js';
-
-const appDir = join(REPO_ROOT, APP_DIR);
+import { bindings, elements, readPage as read, type Element } from './test-pages.js';
 
 /**
  * Each library home, the person its second sort names, what its local search names, and the
@@ -32,39 +27,6 @@ const HOMES = [
     binds: ['library', 'lists', 'sections', 'sort'],
   },
 ] as const;
-
-type Element = Extract<PageTree, { kind: 'element' }>;
-
-const read = (id: string) => ({
-  tree: parsePage(readFileSync(join(appDir, 'pages', `${id}.page.jsx`), 'utf8'), id),
-  data: JSON.parse(readFileSync(join(appDir, 'placeholders', `${id}.json`), 'utf8')) as Record<
-    string,
-    unknown
-  >,
-});
-
-function elements(tree: PageTree | undefined, into: Element[] = []): Element[] {
-  if (tree === undefined) return into;
-  if (tree.kind === 'element') {
-    into.push(tree);
-    for (const v of Object.values(tree.props)) if (v.kind === 'slot') elements(v.tree, into);
-  }
-  if ('children' in tree) tree.children.forEach((c) => elements(c, into));
-  return into;
-}
-
-/** Every `data.` / `shell.` path the page binds, in props, children and Each lists. */
-function bindings(tree: PageTree, into: string[] = []): string[] {
-  const prop = (v: PropValue) => {
-    if (v.kind === 'binding') into.push(v.path.join('.'));
-    if (v.kind === 'slot') bindings(v.tree, into);
-  };
-  if (tree.kind === 'binding') into.push(tree.path.join('.'));
-  if (tree.kind === 'each') into.push(tree.of.join('.'));
-  if (tree.kind === 'element') Object.values(tree.props).forEach(prop);
-  if ('children' in tree) tree.children.forEach((c) => bindings(c, into));
-  return into;
-}
 
 const browse = read('browse').data;
 
