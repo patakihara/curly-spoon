@@ -132,7 +132,7 @@ describe('[M0.sso/c] upstream calls act as the person who made them', () => {
     const minted: string[] = [];
     const provisioner: Provisioner = {
       service: 'abs',
-      accounts: async () => [{ id: 'abs-kara', username: 'kara2' }],
+      accounts: async () => [{ id: 'abs-kara', username: 'kara2', admin: false }],
       mint: async (id) => {
         minted.push(id);
         return { token: 'never' };
