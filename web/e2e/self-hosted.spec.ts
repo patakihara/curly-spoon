@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
@@ -6,7 +7,20 @@ import { expect, test, type Page } from '@playwright/test';
  * woff2 response.
  */
 
-const PAGES = ['/', '/settings'];
+/**
+ * Every route in the navigation map, so a page drawn later is covered the day it lands. A
+ * parameter becomes a sample value, a query is dropped and the catch-all becomes an unknown path.
+ */
+const nav = JSON.parse(
+  readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
+) as { pages: { route: string }[] };
+const PAGES = [
+  ...new Set(
+    nav.pages.map(({ route }) =>
+      route === '*' ? '/no-such-page' : route.replace(/\?.*$/, '').replace(/:\w+/g, 'sample'),
+    ),
+  ),
+];
 const FAMILIES = [
   { family: 'Inter', load: '16px Inter', file: /\/inter-latin[^/]*\.woff2$/ },
   { family: 'Archivo', load: '600 16px Archivo', file: /\/archivo-latin[^/]*\.woff2$/ },
