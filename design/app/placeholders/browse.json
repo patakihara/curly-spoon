@@ -1,0 +1,111 @@
+{
+  "filters": ["All", "Music", "Audiobooks", "Podcasts"],
+  "jumpBackIn": [
+    {
+      "title": "The Silent Patient",
+      "sub": "Book · 6 h 12 m left",
+      "image": "/art/the-silent-patient.jpg",
+      "progress": 0.55
+    },
+    {
+      "title": "Deep Inertia Radio",
+      "sub": "Podcast · 24 min left",
+      "image": "/art/deep-inertia-radio.jpg",
+      "progress": 0.7
+    },
+    {
+      "title": "Between Lines of Light",
+      "sub": "Album · 3 tracks left",
+      "image": "/art/between-lines-of-light.jpg",
+      "progress": 0.4
+    },
+    {
+      "title": "Wind and Truth",
+      "sub": "Book · 21 h 40 m left",
+      "image": "/art/wind-and-truth.jpg",
+      "progress": 0.12
+    }
+  ],
+  "recentlyAdded": [
+    {
+      "title": "Between Lines of Light",
+      "sub": "Album · Sonic Tales",
+      "image": "/art/between-lines-of-light.jpg",
+      "progress": null
+    },
+    {
+      "title": "Shadows and Sighs",
+      "sub": "Book · Evelyn Harper",
+      "image": "/art/shadows-and-sighs.jpg",
+      "progress": 0.42
+    },
+    {
+      "title": "Tears of Ice",
+      "sub": "Podcast · 88 episodes",
+      "image": "/art/tears-of-ice.jpg",
+      "progress": null
+    },
+    {
+      "title": "Golden Scars",
+      "sub": "Album · Fleeting Verses",
+      "image": "/art/golden-scars.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Silent Patient",
+      "sub": "Book · Alex Michaelides",
+      "image": "/art/the-silent-patient.jpg",
+      "progress": 0.55
+    },
+    {
+      "title": "Signal & Noise",
+      "sub": "Podcast · 64 episodes",
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    }
+  ],
+  "feature": {
+    "kind": "Episode",
+    "title": "The quiet hours",
+    "meta": "The Long Read · 1 day ago · 56 min",
+    "description": "Why the night shift hears a different city, and what the recordings from its empty streets tell us about the day.",
+    "image": "/art/the-long-read.jpg"
+  },
+  "moreLike": {
+    "subject": "Deep Inertia Radio",
+    "image": "/art/deep-inertia-radio.jpg",
+    "items": [
+      {
+        "eyebrow": "Podcast",
+        "title": "Signal & Noise",
+        "sub": "64 episodes",
+        "image": "/art/signal-noise.jpg"
+      },
+      {
+        "eyebrow": "Podcast",
+        "title": "Tears of Ice",
+        "sub": "88 episodes",
+        "image": "/art/tears-of-ice.jpg"
+      },
+      {
+        "eyebrow": "Album",
+        "title": "Escapes and Moons",
+        "sub": "Soul Vertex",
+        "image": "/art/escapes-and-moons.jpg"
+      },
+      {
+        "eyebrow": "Book",
+        "title": "Ink Heart",
+        "sub": "Cornelia Funke",
+        "image": "/art/ink-heart.jpg"
+      }
+    ]
+  },
+  "people": [
+    { "title": "Sonic Tales", "sub": "Artist", "image": "/art/sonic-tales.jpg" },
+    { "title": "Evelyn Harper", "sub": "Author", "image": "/art/evelyn-harper.jpg" },
+    { "title": "Adam Rivers", "sub": "Author", "image": "/art/adam-rivers.jpg" },
+    { "title": "Deep Inertia", "sub": "Artist", "image": "/art/deep-inertia.jpg" },
+    { "title": "Fleeting Verses", "sub": "Artist", "image": "/art/fleeting-verses.jpg" }
+  ]
+}
