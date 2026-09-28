@@ -29,6 +29,29 @@ export const SonoraSource = z
     'kit:<platform>/<screen>, card:<stem> or none',
   );
 
+/**
+ * What a page is for, read before any render: its purpose, its sections in order (a provisional
+ * one is not settled yet), what it shows with nothing to show, and the pages it links to.
+ */
+const Structure = z
+  .object({
+    purpose: z.string().min(1),
+    sections: z
+      .array(
+        z
+          .object({
+            name: z.string().min(1),
+            holds: z.string().min(1),
+            provisional: z.literal(true).optional(),
+          })
+          .strict(),
+      )
+      .min(1),
+    empty: z.string().min(1),
+    links: z.array(Id),
+  })
+  .strict();
+
 const Page = z
   .object({
     id: Id,
@@ -50,6 +73,7 @@ const Page = z
         kickoff: z.string().optional(),
       })
       .strict(),
+    structure: Structure,
   })
   .strict();
 
@@ -86,6 +110,12 @@ export function parseNav(json: unknown): Nav {
     }
     if (page.back.startsWith('up:') && !ids.has(page.back.slice(3))) {
       errors.push(`${page.id}: goes up to ${page.back.slice(3)}, which is not a page`);
+    }
+    const links = page.structure.links;
+    if (new Set(links).size !== links.length) errors.push(`${page.id}: links to a page twice`);
+    for (const link of links) {
+      if (link === page.id) errors.push(`${page.id}: links to itself`);
+      else if (!ids.has(link)) errors.push(`${page.id}: links to ${link}, which is not a page`);
     }
     const inRoute = [...splitRoute(page.route).path.matchAll(/:([A-Za-z0-9]+)/g)].map((m) => m[1]);
     const declared = Object.keys(page.params);

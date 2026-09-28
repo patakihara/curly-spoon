@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { computeProgress, criterionStatus, formatSummary, itemStatus } from './progress.mjs';
+import { collectResults } from './results.mjs';
 import { fakeExec, fixtureRepo, git, removeTree, tag, write } from './testing.mjs';
 
 const check = (item, criterion, status) => ({
@@ -109,12 +110,14 @@ test('the progress CLI prints a summary without results, straight from a repo', 
   }
 });
 
-test('a criterion fails on any failed test, passes on a pass with none failed, else is missing', () => {
+test('a criterion fails on any failed test, passes only when its tests all ran and one passed, else is missing', () => {
   const pass = { status: 'passed' };
   const fail = { status: 'failed' };
   const skip = { status: 'skipped' };
   assert.equal(criterionStatus([pass, fail], null), 'failed');
-  assert.equal(criterionStatus([pass, skip], null), 'passed');
+  assert.equal(criterionStatus([pass], null), 'passed');
+  assert.equal(criterionStatus([pass, skip], null), 'missing');
+  assert.equal(criterionStatus([fail, skip], null), 'failed');
   assert.equal(criterionStatus([skip], null), 'missing');
   assert.equal(criterionStatus([], null), 'missing');
   assert.equal(criterionStatus([pass], 'offline'), 'unknown');
@@ -260,4 +263,33 @@ test('an empty plan still summarises, with no milestones yet', () => {
   });
   assert.deepEqual([progress.milestones, progress.current, progress.next], [[], null, null]);
   assert.match(formatSummary(progress), /^Auralis plan · no milestones yet/);
+});
+
+/** Vitest's JUnit report for one `it.todo` and one passing test, both tagged, as vitest 2 writes it. */
+const VITEST_TODO_XML = `<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.332">
+    <testsuite name="x.test.ts" timestamp="2026-09-28T09:56:38.028Z" hostname="host" tests="2" failures="0" errors="0" skipped="1" time="0.00193494">
+        <testcase classname="x.test.ts" name="[M0.canvas/f] gives every page a page file (undrawn: a, b)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="x.test.ts" name="[M0.canvas/f] other" time="0.000860853">
+        </testcase>
+    </testsuite>
+</testsuites>
+`;
+
+test("a vitest todo keeps its criterion open even when the criterion's other tests pass", () => {
+  const { tests } = collectResults({
+    workflow: 'ci',
+    job: 'unit',
+    commit: 'c',
+    xmls: [VITEST_TODO_XML],
+  });
+  assert.deepEqual(
+    tests.map((t) => t.status),
+    ['skipped', 'passed'],
+  );
+  const status = criterionStatus(tests, null);
+  assert.equal(status, 'missing');
+  assert.equal(itemStatus([{ status: 'passed' }, { status }]), 'open');
 });

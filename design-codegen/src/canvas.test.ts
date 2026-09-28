@@ -18,6 +18,12 @@ const page = (id: string, route: string, title: string) => ({
   presentation: 'screen',
   title,
   sources: { sonora: ['none'], spotify: [] },
+  structure: {
+    purpose: `What ${title} is for.`,
+    sections: [{ name: 'Body', holds: `${title}'s content.` }],
+    empty: 'Says so.',
+    links: [],
+  },
 });
 
 const nav = parseNav({
@@ -71,38 +77,69 @@ const index = JSON.parse(files.get('canvas.json') ?? '{}');
 const board = (name: string) => files.get(name) ?? '';
 
 describe('the canvas generated from design/app', () => {
-  it('draws every drawn page as a phone and a desktop artboard, one row per page', () => {
+  it('draws every drawn page as a phone and a desktop artboard, one row per page below the structure row', () => {
     expect([...files.keys()].sort()).toEqual([
       'book.desktop.dc.html',
       'book.phone.dc.html',
       'canvas.json',
+      'flows.dc.html',
       'settings.desktop.dc.html',
       'settings.phone.dc.html',
+      'structure.dc.html',
     ]);
     const { phone, desktop } = CANVAS_BOARDS;
     expect(index.order).toEqual([
+      'structure.dc.html',
+      'flows.dc.html',
       'book.phone.dc.html',
       'book.desktop.dc.html',
       'settings.phone.dc.html',
       'settings.desktop.dc.html',
     ]);
+    const structureRow = Math.max(
+      index.boards['structure.dc.html'].h,
+      index.boards['flows.dc.html'].h,
+    );
     expect(index.boards['book.phone.dc.html']).toEqual({
       x: 0,
-      y: 0,
+      y: structureRow + 120,
       w: phone.width,
       h: phone.height,
       title: 'Book · phone',
     });
     expect(index.boards['book.desktop.dc.html']).toMatchObject({
       x: phone.width + 80,
-      y: 0,
+      y: structureRow + 120,
       w: desktop.width,
       h: desktop.height,
     });
     expect(index.boards['settings.phone.dc.html']).toMatchObject({
       x: 0,
-      y: Math.max(phone.height, desktop.height) + 120,
+      y: structureRow + 120 + Math.max(phone.height, desktop.height) + 120,
     });
+  });
+
+  it('[M0.canvas/f] puts the structure and the flowchart first, in one row named by a title note', () => {
+    const structure = index.boards['structure.dc.html'];
+    const flows = index.boards['flows.dc.html'];
+    expect(structure).toMatchObject({ x: 0, y: 0, title: 'Structure' });
+    expect(flows).toMatchObject({ x: structure.w + 80, y: 0, title: 'Flows' });
+    expect(index.notes).toEqual({
+      structure: {
+        x: 0,
+        y: -300,
+        text: 'Structure',
+        kind: 'title1',
+        maxW: structure.w + 80 + flows.w,
+      },
+    });
+    for (const name of ['structure.dc.html', 'flows.dc.html']) {
+      const { w, h } = index.boards[name];
+      expect(board(name)).toContain(`<div data-theme="dark" style="width: ${w}px; height: ${h}px;`);
+      expect(board(name)).toContain(`{"$preview":{"width":${w},"height":${h}}}`);
+      expect(board(name)).toContain(`<link rel="stylesheet" href="ds/${DS_FOLDER}/tokens.css">`);
+      expect(board(name)).not.toContain('x-import');
+    }
   });
 
   it("keeps the artifact's creation date and records the Sonora publish it installs", () => {

@@ -81,8 +81,8 @@ _Done when:_ (a) Sofia's sign-off.
 - **Sign-off criterion**: an annotated tag `signoff/<ID>` (for example `signoff/M0.exit`),
   created only when Sofia says so, with her words as the message, and pushed.
 
-A criterion is `passed` (a tagged test passed, none failed), `failed`, `missing` (no tagged
-test) or `unknown` (no results could be read). An item is `done` when every criterion passed,
+A criterion is `passed` (a tagged test passed, none failed or skipped), `failed`, `missing` (no
+tagged test ran, or one was skipped, as a todo is) or `unknown` (no results could be read). An item is `done` when every criterion passed,
 `failing` when any failed, otherwise `open`. It is in progress while a branch `plan/<ID>` or
 `plan/<ID>-<anything>` exists, locally or on origin; the branch description
 (`git branch --edit-description`) is its where-I-stopped note. The current milestone is the

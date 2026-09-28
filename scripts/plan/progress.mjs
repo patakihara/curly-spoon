@@ -21,10 +21,14 @@ const tryGit = (exec, root, ...args) => {
   }
 };
 
-/** `failed` if any tagged test failed, `passed` if one passed, else `missing`; `unknown` without results. */
+/**
+ * `failed` if any tagged test failed; `passed` if one passed and none was skipped, since a todo or
+ * skipped test is a check not yet made; else `missing`. `unknown` without results.
+ */
 export function criterionStatus(tests, resultsError) {
   if (resultsError) return 'unknown';
   if (tests.some((t) => t.status === 'failed')) return 'failed';
+  if (tests.some((t) => t.status === 'skipped')) return 'missing';
   if (tests.some((t) => t.status === 'passed')) return 'passed';
   return 'missing';
 }

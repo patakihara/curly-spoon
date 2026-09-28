@@ -1,11 +1,13 @@
 /**
- * The Auralis canvas artifact (claude.ai Design type), drawn from design/app: every drawn page as a
+ * The Auralis canvas artifact (claude.ai Design type), drawn from design/app: first the structure
+ * row (`structure.dc.html` and `flows.dc.html`, from nav.json), then every drawn page as a
  * phone and a desktop `.dc.html` artboard mounting Sonora's real components from the installed
  * copy under `project/ds/<folder>/`, and `canvas.json`, the index that records which Sonora publish
  * is installed. Build output only (`pnpm canvas:build`), never committed.
  */
 import type { App } from './app.js';
 import type { PageTree, PropValue } from './page.js';
+import { generateFlows, generateStructure } from './structure.js';
 
 /** Sonora's bundle global; its components mount as `<Ns>.<Name>`. */
 export const SONORA_NAMESPACE = 'SonoraDesignSystem_6c1435';
@@ -28,6 +30,8 @@ export const CANVAS_BOARDS = {
 } as const;
 const GAP_X = 80;
 const GAP_Y = 120;
+/** Where the structure row's `title1` note sits, above the row's top edge. */
+const NOTE_Y = -300;
 
 /** The Sonora publish the canvas installs; `version` null only in a draft build. */
 export interface SonoraInstall {
@@ -131,6 +135,25 @@ function artboard(
 export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<string, string> {
   const files = new Map<string, string>();
   const boards: Record<string, Record<string, unknown>> = {};
+  const drawn = new Set(app.pages.map((p) => p.id));
+  const head = [
+    `<link rel="stylesheet" href="ds/${DS_FOLDER}/tokens.css">`,
+    `<link rel="stylesheet" href="ds/${DS_FOLDER}/components/bundle.css">`,
+  ];
+  let across = 0;
+  let top = 0;
+  for (const [name, title, board] of [
+    ['structure.dc.html', 'Structure', generateStructure(app.nav, drawn, head)],
+    ['flows.dc.html', 'Flows', generateFlows(app.nav, drawn, head)],
+  ] as const) {
+    files.set(name, board.html);
+    boards[name] = { x: across, y: 0, w: board.width, h: board.height, title };
+    across += board.width + GAP_X;
+    top = Math.max(top, board.height + GAP_Y);
+  }
+  const notes = {
+    structure: { x: 0, y: NOTE_Y, text: 'Structure', kind: 'title1', maxW: across - GAP_X },
+  };
   const { phone, desktop } = CANVAS_BOARDS;
   const rowHeight = Math.max(phone.height, desktop.height) + GAP_Y;
   app.pages.forEach((page, row) => {
@@ -141,7 +164,7 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
       files.set(name, artboard(app, page, board));
       boards[name] = {
         x,
-        y: row * rowHeight,
+        y: top + row * rowHeight,
         w: board.width,
         h: board.height,
         title: `${title} · ${board.label}`,
@@ -158,7 +181,7 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
     pages: [],
     boards,
     order: Object.keys(boards),
-    notes: {},
+    notes,
     designSystems: [
       {
         title: sonora.title,

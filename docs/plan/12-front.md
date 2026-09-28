@@ -70,10 +70,11 @@ Sonora has 80 components today, filed by kind (core, forms, layout, media, navig
 
 Your rule: nothing frontend reaches code before it is in the published design, in the order Sonora artifact, then the Auralis canvas artifact, then code. Pages and navigation are added to the design first, then ported to the apps mechanically:
 
-1. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph, so both apps get **the same flows from the same file**.
-2. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a small page tree. From that tree the web page is generated as React and the Android page as Compose, both calling the same component names.
-3. **Generated code is off-limits.** Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
-4. **CI enforces it**:
+1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas shows it as a text artboard beside a navigation flowchart, both generated, so you settle the hierarchy by commenting before any mockup distracts you with detail. A page is drawn only once it has a structure.
+2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph, so both apps get **the same flows from the same file**.
+3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a small page tree. From that tree the web page is generated as React and the Android page as Compose, both calling the same component names.
+4. **Generated code is off-limits.** Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
+5. **CI enforces it**:
    - the app's routes must equal `nav.json` exactly;
    - every page must match its generated layout;
    - web and Android must build the same route set;
@@ -82,7 +83,7 @@ Your rule: nothing frontend reaches code before it is in the published design, i
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
 
    Adding a screen in code alone fails the build.
-5. **The frontend build starts with navigation.** The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
+6. **The frontend build starts with navigation.** The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
 
 - **Mantine** is optional: used only inside a component that needs a behaviour primitive (menus, focus traps), never as the visual layer.
 - **The app frame** is Sonora's backdrop shell (`BackdropShell`, `BackLayer`, `FrontLayer`, `FrontLayerHeader`, per `SPEC-backdrop.md`), a real Material 2 backdrop as the latest Sonora mockups draw it, which also settles the old scroll bug.

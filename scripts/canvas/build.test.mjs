@@ -28,7 +28,7 @@ function sonoraBuild(stamp) {
 const build = (...args) =>
   spawnSync(TSX, [join(REPO_ROOT, 'scripts/canvas/build.mjs'), ...args], { encoding: 'utf8' });
 
-test('the canvas build draws every page of design/app and installs Sonora beside them', () => {
+test('[M0.canvas/f] the canvas build draws the structure and flowchart from nav.json, every drawn page, and installs Sonora beside them', () => {
   const sonora = sonoraBuild(null);
   const out = mkdtempSync(join(tmpdir(), 'canvas-build-'));
   try {
@@ -43,6 +43,16 @@ test('the canvas build draws every page of design/app and installs Sonora beside
         assert.ok(index.boards[name], `${name} is on the canvas`);
       }
     }
+    const nav = JSON.parse(readFileSync(join(REPO_ROOT, 'design/app/nav.json'), 'utf8'));
+    const structure = readFileSync(join(out, 'project/structure.dc.html'), 'utf8');
+    const flows = readFileSync(join(out, 'project/flows.dc.html'), 'utf8');
+    for (const page of nav.pages) {
+      assert.ok(structure.includes(`>${page.title}</h3>`), `${page.id} is in the structure`);
+      assert.ok(flows.includes(`>${page.title}</text>`), `${page.id} is on the flowchart`);
+    }
+    assert.equal(index.order[0], 'structure.dc.html');
+    assert.equal(index.order[1], 'flows.dc.html');
+    assert.equal(index.notes.structure.kind, 'title1');
     for (const file of [
       'tokens.json',
       'tokens.css',

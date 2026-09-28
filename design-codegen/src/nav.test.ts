@@ -27,8 +27,16 @@ const page = (over: Record<string, unknown> = {}) => ({
   presentation: 'screen',
   title: 'Album',
   sources: { sonora: ['kit:mobile/album'], spotify: [] },
+  structure: {
+    purpose: 'One album.',
+    sections: [{ name: 'Tracks', holds: 'Its tracks.' }],
+    empty: 'Says so.',
+    links: [],
+  },
   ...over,
 });
+const structured = (structure: Record<string, unknown>) =>
+  page({ structure: { ...page().structure, ...structure } });
 
 describe('nav.json', () => {
   it('[M0.canvas/a] the generated web route table lists exactly the web pages of nav.json, with their paths', async () => {
@@ -79,6 +87,34 @@ describe('nav.json', () => {
     expect(() => parseNav(small([page({ sources: { sonora: ['album'], spotify: [] } })]))).toThrow(
       /sonora/,
     );
+  });
+
+  it('[M0.canvas/f] gives every page a complete structure block whose links name existing pages', () => {
+    const ids = new Set(nav.pages.map((p) => p.id));
+    for (const { id, structure } of nav.pages) {
+      expect(structure.purpose.length, id).toBeGreaterThan(20);
+      expect(structure.empty.length, id).toBeGreaterThan(10);
+      expect(structure.sections.length, id).toBeGreaterThan(0);
+      for (const link of structure.links) expect(ids.has(link), `${id} -> ${link}`).toBe(true);
+    }
+  });
+
+  it('[M0.canvas/f] refuses a page without a structure block, so no page is drawn without one', () => {
+    const { structure: _, ...bare } = page();
+    expect(() => parseNav(small([bare]))).toThrow(/structure/);
+  });
+
+  it('[M0.canvas/f] refuses a structure block missing its purpose, sections or empty state', () => {
+    expect(() => parseNav(small([structured({ purpose: '' })]))).toThrow(/purpose/);
+    expect(() => parseNav(small([structured({ sections: [] })]))).toThrow(/sections/);
+    expect(() => parseNav(small([structured({ empty: undefined })]))).toThrow(/empty/);
+  });
+
+  it('[M0.canvas/f] refuses a link to a page that does not exist, or to the page itself', () => {
+    expect(() => parseNav(small([structured({ links: ['artist'] })]))).toThrow(
+      /album: links to artist/,
+    );
+    expect(() => parseNav(small([structured({ links: ['album'] })]))).toThrow(/itself/);
   });
 
   it('splits a route into its path and its query names', () => {

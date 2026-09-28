@@ -84,6 +84,45 @@
           "S30"
         ],
         "kickoff": "forYou"
+      },
+      "structure": {
+        "purpose": "Your front page: pick up what you were playing, then find what to play next, owned or not. No search bar.",
+        "sections": [
+          {
+            "name": "Filter",
+            "holds": "A single choice: All, Music, Podcasts, Books. Each single type gets its own tailored page."
+          },
+          {
+            "name": "Quick picks",
+            "holds": "Six in All: last played music, last played podcast content as you left it, last played audiobook, and one \"Are you feeling lucky?\" pick per type."
+          },
+          {
+            "name": "Up next",
+            "holds": "The next episode or chapter, like Jellyfin's Next Up, with your second most recent book or show kept visible."
+          },
+          {
+            "name": "Context shelves",
+            "holds": "\"More like\", \"Popular with listeners of\", \"Based on your interest in\": each names its subject, with the subject's art. External cards carry a reason line and play, request or add.",
+            "provisional": true
+          },
+          {
+            "name": "Feature cards",
+            "holds": "One item argued for at length, with a blurb and a Preview.",
+            "provisional": true
+          },
+          {
+            "name": "Most played",
+            "holds": "Orphaned songs only, never the tracks of an album you played whole.",
+            "provisional": true
+          },
+          {
+            "name": "The UI kit's shelves",
+            "holds": "Recently added, Artists & authors, Picked for you, Recently played: drawn from the Sonora kit, not yet checked against your carousel rules.",
+            "provisional": true
+          }
+        ],
+        "empty": "A new account with no listening yet: the filter and one \"Are you feeling lucky?\" pick per type. Shelves appear once there is history to seed them. Open: the wording.",
+        "links": ["shelf", "requests", "album", "artist", "book", "show", "episode"]
       }
     },
     {
@@ -96,6 +135,26 @@
       "sources": {
         "sonora": ["none"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "Everything you asked for that is still on its way: albums, books and shows.",
+        "sections": [
+          {
+            "name": "In flight",
+            "holds": "One row per request: source, size, percentage and its status pill, from Requested to In library."
+          },
+          {
+            "name": "Needs choice",
+            "holds": "Album torrents where no release clearly wins: the candidates with format, track fit, size and seeders, picked in one tap.",
+            "provisional": true
+          },
+          {
+            "name": "Actions",
+            "holds": "Retry or cancel on each row."
+          }
+        ],
+        "empty": "Nothing requested: says so, and that Search is where things are requested.",
+        "links": ["album", "book", "show", "search"]
       }
     },
     {
@@ -112,6 +171,21 @@
         "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
         "spotify": ["S12"],
         "kickoff": "shelf"
+      },
+      "structure": {
+        "purpose": "One Browse carousel opened in full (\"See all\").",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "The shelf's eyebrow, subject and subject art, as on Browse."
+          },
+          {
+            "name": "Items",
+            "holds": "Every item of the shelf, paged, as a list or a grid."
+          }
+        ],
+        "empty": "A shelf with no items is never offered on Browse. Reached by an old link, it says the shelf has gone.",
+        "links": ["album", "artist", "book", "author", "show", "episode"]
       }
     },
     {
@@ -125,6 +199,31 @@
         "sonora": ["kit:mobile/music", "kit:desktop/music"],
         "spotify": ["S19", "S31"],
         "kickoff": "music"
+      },
+      "structure": {
+        "purpose": "Your music library: only what is yours, plus your requests. Outside music lives on Browse and Search.",
+        "sections": [
+          {
+            "name": "Tabs",
+            "holds": "Artists, Albums, Songs, as the Sonora kit has them."
+          },
+          {
+            "name": "Sort and view",
+            "holds": "Sort by title, artist or Random (tap again to reshuffle); a grid or list toggle."
+          },
+          {
+            "name": "Library",
+            "holds": "A 3-across grid on phones, bigger on desktop. Not-playable items greyed; streamable ones marked, where the marker goes is still open.",
+            "provisional": true
+          },
+          {
+            "name": "Playlists and favourites",
+            "holds": "Where your playlists and favourites sit in the library is not drawn yet.",
+            "provisional": true
+          }
+        ],
+        "empty": "No music yet: says so, and points to Search to find, play and add music.",
+        "links": ["album", "artist", "playlist", "favourites"]
       }
     },
     {
@@ -141,6 +240,30 @@
         "sonora": ["kit:mobile/album", "kit:desktop/album"],
         "spotify": [],
         "kickoff": "album"
+      },
+      "structure": {
+        "purpose": "One album, yours or not: play it, queue it, or add it to your library.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "Cover, title, artist, year, track count and length."
+          },
+          {
+            "name": "Actions",
+            "holds": "Play; Add to queue (an album's default goes to the end of the queue); the menu's Add to library, a lossless torrent request."
+          },
+          {
+            "name": "Tracks",
+            "holds": "Numbered rows, the playing one marked. An album you don't own streams from YouTube Music until it arrives."
+          },
+          {
+            "name": "Editions and related",
+            "holds": "Editions folded under the one album; more by the artist.",
+            "provisional": true
+          }
+        ],
+        "empty": "Not found, or no tracks resolved: the header, and a line saying why.",
+        "links": ["artist"]
       }
     },
     {
@@ -157,6 +280,30 @@
         "sonora": ["none"],
         "spotify": ["S41"],
         "kickoff": "artist"
+      },
+      "structure": {
+        "purpose": "An artist's whole catalogue, owned or not: what Spotify's artist page does, plus a bit more.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "A round image and the name."
+          },
+          {
+            "name": "In your library",
+            "holds": "A carousel of what you own by them."
+          },
+          {
+            "name": "Discography",
+            "holds": "One entry per album; EPs, singles, compilations and live albums in their own groups. Unowned titles greyed and requestable; a setting hides them."
+          },
+          {
+            "name": "Popular and similar",
+            "holds": "Popular songs, and similar artists from ListenBrainz and Deezer.",
+            "provisional": true
+          }
+        ],
+        "empty": "Nothing owned by them: the catalogue, all greyed and requestable, without the \"In your library\" carousel.",
+        "links": ["album"]
       }
     },
     {
@@ -172,6 +319,23 @@
       "sources": {
         "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "A music playlist you made, in your order. Still to design.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "Name, song count and length.",
+            "provisional": true
+          },
+          {
+            "name": "Songs",
+            "holds": "Song rows, reorderable.",
+            "provisional": true
+          }
+        ],
+        "empty": "An empty playlist says how to add songs: from any song's menu.",
+        "links": ["album", "artist"]
       }
     },
     {
@@ -184,6 +348,18 @@
       "sources": {
         "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "The songs you favourited, the same on every device.",
+        "sections": [
+          {
+            "name": "Songs",
+            "holds": "Song rows, most recently favourited first.",
+            "provisional": true
+          }
+        ],
+        "empty": "No favourites yet: says the heart in Now Playing adds one.",
+        "links": ["album", "artist"]
       }
     },
     {
@@ -197,6 +373,25 @@
         "sonora": ["kit:desktop/books", "kit:mobile/books"],
         "spotify": ["S25", "S31"],
         "kickoff": "books"
+      },
+      "structure": {
+        "purpose": "Your audiobook library: the books you own and the ones you requested.",
+        "sections": [
+          {
+            "name": "Tabs",
+            "holds": "Authors, Books, Series, Narrators, as the Sonora kit has them."
+          },
+          {
+            "name": "Sort, filter and view",
+            "holds": "Sort by title, author or Random; a grid or list toggle; Requested and Downloaded (on the phone) filters."
+          },
+          {
+            "name": "Library",
+            "holds": "Covers with progress; a requested book shows its download progress."
+          }
+        ],
+        "empty": "No books yet: says so, and that books are requested from Search.",
+        "links": ["book", "author", "series"]
       }
     },
     {
@@ -213,6 +408,34 @@
         "sonora": ["kit:mobile/album", "kit:desktop/album"],
         "spotify": ["S35"],
         "kickoff": "book"
+      },
+      "structure": {
+        "purpose": "One audiobook: resume it, see its chapters, or request it if you don't own it.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "Cover, title, author, narrator, series and number, progress and rating."
+          },
+          {
+            "name": "Actions",
+            "holds": "Play or resume, Play next, download on the phone. Unowned: Request, then Requested with its progress."
+          },
+          {
+            "name": "Chapters",
+            "holds": "Chapter rows on one timeline, the current one marked."
+          },
+          {
+            "name": "About",
+            "holds": "The description, expandable."
+          },
+          {
+            "name": "Related",
+            "holds": "The rest of the series and more by the author.",
+            "provisional": true
+          }
+        ],
+        "empty": "A book you don't own: the header, the about text and Request in place of chapters.",
+        "links": ["author", "series"]
       }
     },
     {
@@ -229,6 +452,25 @@
         "sonora": ["none"],
         "spotify": [],
         "kickoff": "author"
+      },
+      "structure": {
+        "purpose": "An author's whole catalogue: your books in full colour, the rest greyed and requestable.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "A round photo and the name."
+          },
+          {
+            "name": "Series",
+            "holds": "Their series, each in order."
+          },
+          {
+            "name": "Books",
+            "holds": "Every book, unowned ones greyed and requestable; a setting hides them."
+          }
+        ],
+        "empty": "Nothing owned by them: every book greyed and requestable.",
+        "links": ["book", "series"]
       }
     },
     {
@@ -244,6 +486,21 @@
       "sources": {
         "sonora": ["none"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "One series in reading order, with what you own and what is missing.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "The series name, book count and total length."
+          },
+          {
+            "name": "Books",
+            "holds": "In series order with their number; owned ones with progress, the rest greyed and requestable."
+          }
+        ],
+        "empty": "A series you own none of: every book greyed and requestable.",
+        "links": ["book", "author"]
       }
     },
     {
@@ -257,6 +514,31 @@
         "sonora": ["kit:desktop/podcasts", "kit:mobile/podcasts"],
         "spotify": ["S20", "S21", "S22", "S23", "S24", "S31"],
         "kickoff": "podcasts"
+      },
+      "structure": {
+        "purpose": "The shows you subscribe to, YouTube channels among them, and your lists.",
+        "sections": [
+          {
+            "name": "Sort and view",
+            "holds": "Sort, filter, and a grid or list toggle."
+          },
+          {
+            "name": "Shows",
+            "holds": "Every subscribed show, with its unplayed count."
+          },
+          {
+            "name": "Lists",
+            "holds": "Listening lists, podcast playlists and digests, The Digest first.",
+            "provisional": true
+          },
+          {
+            "name": "Add a YouTube channel",
+            "holds": "Paste a channel link to add it as a show.",
+            "provisional": true
+          }
+        ],
+        "empty": "No subscriptions: says so, and points to Search's podcast results or pasting a YouTube channel link.",
+        "links": ["show", "list"]
       }
     },
     {
@@ -273,6 +555,35 @@
         "sonora": ["card:episode-rows"],
         "spotify": ["S01", "S02"],
         "kickoff": "show"
+      },
+      "structure": {
+        "purpose": "One podcast show: its episodes, and whether you follow it. You subscribe to listen.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "Art, title, host and the subscribe state."
+          },
+          {
+            "name": "Episodes",
+            "holds": "Newest or oldest first (serial shows oldest first); greyed while you don't follow the show."
+          },
+          {
+            "name": "About",
+            "holds": "The show's description."
+          },
+          {
+            "name": "YouTube settings",
+            "holds": "For a YouTube show only: which SponsorBlock segments are cut, and whether Shorts and livestreams come in.",
+            "provisional": true
+          },
+          {
+            "name": "Related shows",
+            "holds": "Apple Podcasts' \"You might also like\".",
+            "provisional": true
+          }
+        ],
+        "empty": "Just subscribed: says the episodes arrive within the hour.",
+        "links": ["episode"]
       }
     },
     {
@@ -289,6 +600,30 @@
         "sonora": ["card:episode-rows"],
         "spotify": ["S35"],
         "kickoff": "episode"
+      },
+      "structure": {
+        "purpose": "One episode: its notes, and playing or queueing it on the spoken queue.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "Show art, title, the show, date, length and progress."
+          },
+          {
+            "name": "Actions",
+            "holds": "Play, Play next, add to a list, download on the phone."
+          },
+          {
+            "name": "Show notes",
+            "holds": "The episode's description."
+          },
+          {
+            "name": "More from the show",
+            "holds": "Other episodes of the same show.",
+            "provisional": true
+          }
+        ],
+        "empty": "An episode of a show you don't follow: greyed, and playing it subscribes you.",
+        "links": ["show", "list"]
       }
     },
     {
@@ -304,6 +639,26 @@
       "sources": {
         "sonora": ["kit:mobile/collection", "kit:desktop/collection"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "A list that isn't a queue: a listening list, a podcast playlist or a digest. It never takes over your queue.",
+        "sections": [
+          {
+            "name": "Header",
+            "holds": "Its name and kind; for a digest, its shows and whether it plays oldest or newest first."
+          },
+          {
+            "name": "Items",
+            "holds": "A listening list crosses off finished items; a playlist or digest drops an episode once played."
+          },
+          {
+            "name": "Add next",
+            "holds": "For a listening list: recommendations to add, filterable by type.",
+            "provisional": true
+          }
+        ],
+        "empty": "An empty list says what fills it: a book's or episode's menu, or the digest's shows.",
+        "links": ["book", "show", "episode"]
       }
     },
     {
@@ -317,6 +672,33 @@
         "sonora": ["kit:desktop/search", "kit:mobile/search"],
         "spotify": ["S03", "S04", "S32"],
         "kickoff": "search"
+      },
+      "structure": {
+        "purpose": "Find anything, in your library or outside it. One tap opens it with the keyboard up.",
+        "sections": [
+          {
+            "name": "Suggestions",
+            "holds": "As you type: titles, creators and series you have, plus recent searches, each naming its kind."
+          },
+          {
+            "name": "Top result",
+            "holds": "The single most relevant result, whatever its type."
+          },
+          {
+            "name": "Chips",
+            "holds": "Filter by kind, Lyrics among them (match a remembered line)."
+          },
+          {
+            "name": "Your library",
+            "holds": "Ranked by relevance; plays straight away, no request action."
+          },
+          {
+            "name": "Outside your library",
+            "holds": "Music plays from YouTube Music; books and podcasts get Request or Subscribe with live status; more releases fold away."
+          }
+        ],
+        "empty": "No query: recent searches. No results: says nothing matched, in your library or outside it.",
+        "links": ["album", "artist", "book", "author", "series", "show", "episode", "requests"]
       }
     },
     {
@@ -329,6 +711,34 @@
       "sources": {
         "sonora": ["kit:mobile/nowplaying", "card:now-playing-page"],
         "spotify": ["S33", "S34", "S38", "S39", "S40", "S41", "S42"]
+      },
+      "structure": {
+        "purpose": "The full player for what is playing, its controls matched to the content.",
+        "sections": [
+          {
+            "name": "Art and titles",
+            "holds": "Cover, title and creator; the source it plays from."
+          },
+          {
+            "name": "Seek",
+            "holds": "The seek bar with elapsed and remaining time."
+          },
+          {
+            "name": "Transport",
+            "holds": "Music: shuffle and repeat. Podcasts and books: the spoken variant, with speed and skip back and forward."
+          },
+          {
+            "name": "Actions",
+            "holds": "Favourite, sleep timer (end of chapter included); music's speed buried in the menu."
+          },
+          {
+            "name": "About cards",
+            "holds": "The artist, show or book below the player.",
+            "provisional": true
+          }
+        ],
+        "empty": "Nothing loaded: Now Playing has nothing to open, and the mini-player is hidden.",
+        "links": ["queue", "lyrics", "album", "artist", "book", "show"]
       }
     },
     {
@@ -341,6 +751,35 @@
       "sources": {
         "sonora": ["kit:mobile/queue", "kit:desktop/queue"],
         "spotify": ["S36", "S37"]
+      },
+      "structure": {
+        "purpose": "What plays next, on the music queue or the spoken queue, with Back walking your history.",
+        "sections": [
+          {
+            "name": "Now playing",
+            "holds": "The current item."
+          },
+          {
+            "name": "Next up",
+            "holds": "Your queue; nothing leaves it unrecoverably."
+          },
+          {
+            "name": "Autoplay",
+            "holds": "What follows once the queue runs out."
+          },
+          {
+            "name": "Switching queues",
+            "holds": "Moving between the music and spoken queues.",
+            "provisional": true
+          },
+          {
+            "name": "Edit mode",
+            "holds": "Reorder, remove, select several.",
+            "provisional": true
+          }
+        ],
+        "empty": "An empty queue says autoplay continues from the last queue that played.",
+        "links": ["nowPlaying"]
       }
     },
     {
@@ -353,6 +792,21 @@
       "sources": {
         "sonora": ["kit:mobile/lyrics", "kit:desktop/lyrics", "card:now-playing-page"],
         "spotify": ["S40", "S43"]
+      },
+      "structure": {
+        "purpose": "The playing song's lyrics, synced where they can be.",
+        "sections": [
+          {
+            "name": "Sync toggle",
+            "holds": "Always in the top corner."
+          },
+          {
+            "name": "Lines",
+            "holds": "Synced: the current line leads. Sync off: every line at full opacity, a dot on the current line (switched off from the menu)."
+          }
+        ],
+        "empty": "No lyrics found: says so.",
+        "links": ["nowPlaying"]
       }
     },
     {
@@ -366,6 +820,23 @@
       "sources": {
         "sonora": ["none"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "What is on this phone for offline play. Android only; still to design.",
+        "sections": [
+          {
+            "name": "Downloaded",
+            "holds": "Each item with its size and a remove action.",
+            "provisional": true
+          },
+          {
+            "name": "In progress",
+            "holds": "Downloads still running.",
+            "provisional": true
+          }
+        ],
+        "empty": "Nothing downloaded: says a book, episode or album downloads from its page.",
+        "links": ["book", "episode", "album"]
       }
     },
     {
@@ -379,6 +850,35 @@
         "sonora": ["kit:mobile/settings", "kit:desktop/settings"],
         "spotify": [],
         "kickoff": "settings"
+      },
+      "structure": {
+        "purpose": "Your preferences and the connections Auralis uses.",
+        "sections": [
+          {
+            "name": "Look",
+            "holds": "Theme."
+          },
+          {
+            "name": "Playback",
+            "holds": "Autoplay rules, the music queue style (YouTube Music or Spotify), gapless."
+          },
+          {
+            "name": "Library",
+            "holds": "Show everyone's library (off by default); hide unowned titles on artist and author pages."
+          },
+          {
+            "name": "YouTube account",
+            "holds": "Connect your account for watched state and position; the \"YouTube sign-in expired\" warning.",
+            "provisional": true
+          },
+          {
+            "name": "Services, providers and requests",
+            "holds": "What the server connects to; admins only for providers, paths and approvals.",
+            "provisional": true
+          }
+        ],
+        "empty": "Settings always holds its defaults.",
+        "links": ["downloads", "shelfReview"]
       }
     },
     {
@@ -392,6 +892,18 @@
         "sonora": ["none"],
         "spotify": [],
         "kickoff": "onboarding"
+      },
+      "structure": {
+        "purpose": "First run: what Auralis needs from you before Browse makes sense.",
+        "sections": [
+          {
+            "name": "Steps",
+            "holds": "Onboarding's steps, from the kickoff project's screen list.",
+            "provisional": true
+          }
+        ],
+        "empty": "Setup done: it goes straight to Browse.",
+        "links": ["browse"]
       }
     },
     {
@@ -404,6 +916,22 @@
       "sources": {
         "sonora": ["none"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "Sign in through the household's single sign-on.",
+        "sections": [
+          {
+            "name": "Sign in",
+            "holds": "One button that goes to the household sign-in."
+          },
+          {
+            "name": "Error",
+            "holds": "Why signing in failed, and try again.",
+            "provisional": true
+          }
+        ],
+        "empty": "Already signed in: it goes straight on.",
+        "links": ["setup", "browse"]
       }
     },
     {
@@ -416,6 +944,18 @@
       "sources": {
         "sonora": ["none"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "For admins: each Browse shelf with its reasons, so bad picks are easy to spot.",
+        "sections": [
+          {
+            "name": "Shelves",
+            "holds": "Each shelf with its items, every item's reason and source.",
+            "provisional": true
+          }
+        ],
+        "empty": "No shelves computed yet: says so.",
+        "links": ["shelf"]
       }
     },
     {
@@ -428,6 +968,17 @@
       "sources": {
         "sonora": ["none"],
         "spotify": []
+      },
+      "structure": {
+        "purpose": "Where a link to something that doesn't exist lands.",
+        "sections": [
+          {
+            "name": "Message",
+            "holds": "Says the page doesn't exist, with the way back to Browse."
+          }
+        ],
+        "empty": "It is itself the empty state.",
+        "links": ["browse"]
       }
     }
   ]
