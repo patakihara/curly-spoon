@@ -40,9 +40,10 @@ data class MediaCardProps(
     /** Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. */
     val markers: List<String>? = null,
     /**
-     * A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed": the art is
-     * greyed, since the item cannot play yet, and the status sits on it as a pill in `tone`. On a
-     * card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.
+     * A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an
+     * item that is no request. The art is greyed, since the item cannot play yet, and the status
+     * sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the
+     * percentage (with its glyph) or the word.
      */
     val status: String? = null,
     /** The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). */

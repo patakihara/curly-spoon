@@ -868,8 +868,8 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. |
 | `savedBadge` | `boolean` | Bookmark tab on the artwork's bottom-left, for an item the user has explicitly saved. |
 | `markers` | `string[]` | Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. |
-| `status` | `string` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed": the art is greyed, since the item cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
-| `tone` | `'progress' \| 'request' \| 'error'` | The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). |
+| `status` | `string \| null` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an item that is no request. The art is greyed, since the item cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
+| `tone` | `'progress' \| 'request' \| 'error' \| null` | The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). |
 
 ### MediaHeader
 
