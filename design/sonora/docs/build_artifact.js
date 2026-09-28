@@ -272,10 +272,10 @@ html,body{margin:0;background:var(--surface-bg)}
 const readme = rd('readme.md');
 wr('README.md', readme + `\n\n## How this artifact is made\n\nGenerated from the Sonora git repo by \`docs/build_artifact.js\`; the repo is the source of truth. Change tokens or components there, rebuild, republish. Motion, gradients, the type scale variables and anything built from other variables live in \`components/bundle.css\` exactly as in the repo, because the token editor cannot hold them.\n`);
 wr('design-system.json', JSON.stringify({
-  v: 3, layout: 'files', createdOnFiles: { v: 1, at: new Date().toISOString() }, title: 'Sonora', namespace: NS,
+  v: 3, layout: 'files', createdOnFiles: { v: 1, at: '2026-09-27T14:23:58.935Z' }, title: 'Sonora', namespace: NS,
   libraries: [{ name: 'react', version: '18' }, { name: 'react-dom', version: '18' }],
   sections: {}, groups: [], assetGroups: {}, blobs: {}, docs: { readme: 'project/README.md', sections: [] },
-  lastChange: { by: 'Kihara Sofia', at: new Date().toISOString(), via: 'Claude Code · docs/build_artifact.js', note: 'Ported from the Sonora repo' },
+  lastChange: { by: 'Auralis', at: new Date().toISOString(), via: 'Claude Code · docs/build_artifact.js', note: 'Built from design/sonora in the Auralis repo' },
 }, null, 2));
 
 console.log(`tokens: ${colorTokens.length} colours, ${Object.entries(other).map(([k, v]) => v.length + ' ' + k).join(', ')}`);
