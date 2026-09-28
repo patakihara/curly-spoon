@@ -401,4 +401,114 @@ test('an unknown command is refused with the usage', async () => {
   const w = world();
   assert.equal(await run(['frobnicate'], w.deps), 2);
   assert.match(w.err.join('\n'), /create \| check \| revoke/);
+  assert.match(w.err.join('\n'), /provision \| check-provision \| revoke-provision/);
+});
+
+const ADMIN = userJson({ id: 'auralis-admin-id', username: 'auralis-admin', type: 'admin' });
+
+test('[M0.sso/c] provision makes an admin, not root, that may touch no library', async () => {
+  const w = world();
+  assert.equal(await run(['provision'], w.deps), 0);
+  const post = w.requests.find((r) => r.method === 'POST' && r.url.endsWith('/api/users'));
+  const { password, ...rest } = post.body;
+  assert.equal(typeof password, 'string');
+  assert.ok(password.length >= 32);
+  assert.deepEqual(rest, {
+    username: 'auralis-admin',
+    type: 'admin',
+    isActive: true,
+    permissions: {
+      download: false,
+      update: false,
+      delete: false,
+      upload: false,
+      createEreader: false,
+      accessAllLibraries: false,
+      accessAllTags: false,
+      accessExplicitContent: false,
+      selectedTagsNotAccessible: false,
+    },
+  });
+  const made = w.userList.find((u) => u.username === 'auralis-admin');
+  assert.equal(made.type, 'admin');
+});
+
+test('[M0.sso/c] provision mints the Auralis provisioning key and writes ABS_PROVISION_KEY 0600, beside the other keys', async () => {
+  const w = world({ keyFile: `ABS_API_KEY=listen\nJELLYFIN_API_KEY=jf\n` });
+  assert.equal(await run(['provision'], w.deps), 0);
+  const post = w.requests.find((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys'));
+  assert.deepEqual(post.body, {
+    name: 'Auralis provisioning',
+    userId: 'auralis-id',
+    isActive: true,
+  });
+  assert.match(post.headers.authorization, /^Bearer eyJ/);
+  assert.equal(w.keyList.at(-1).expiresAt, null);
+  assert.equal(
+    w.files.get(KEY_FILE),
+    `ABS_API_KEY=listen\nJELLYFIN_API_KEY=jf\nABS_PROVISION_KEY=${NEW_KEY}\n`,
+  );
+  assert.equal(w.modes.get(KEY_FILE), 0o600);
+  assert.ok(![...w.out, ...w.err].join('\n').includes(NEW_KEY), 'the key is never printed');
+});
+
+test('[M0.sso/c] provision reuses an existing admin auralis-admin, and refuses a root or user one', async () => {
+  const reuse = world({ users: [ROOT, ADMIN] });
+  assert.equal(await run(['provision'], reuse.deps), 0);
+  assert.ok(!reuse.requests.some((r) => r.method === 'POST' && r.url.endsWith('/api/users')));
+  const post = reuse.requests.find((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys'));
+  assert.equal(post.body.userId, 'auralis-admin-id');
+
+  for (const type of ['root', 'user']) {
+    const other = userJson({ id: 'x', username: 'auralis-admin', type });
+    const w = world({ users: [ROOT, other] });
+    assert.equal(await run(['provision'], w.deps), 1);
+    assert.match(w.err.join('\n'), new RegExp(`auralis-admin exists but is of type ${type}`));
+    assert.ok(!w.requests.some((r) => r.method === 'POST' && r.url.endsWith('/api/api-keys')));
+  }
+});
+
+test('[M0.sso/c] provision refuses when the key file or ABS already holds a provisioning key', async () => {
+  const inFile = world({ keyFile: 'ABS_PROVISION_KEY=old\n' });
+  assert.equal(await run(['provision'], inFile.deps), 1);
+  assert.match(inFile.err.join('\n'), /already has ABS_PROVISION_KEY/);
+  const onServer = world({
+    apiKeys: [{ id: 'k0', name: 'Auralis provisioning', isActive: true }],
+  });
+  assert.equal(await run(['provision'], onServer.deps), 1);
+  assert.match(onServer.err.join('\n'), /active key named Auralis provisioning/);
+});
+
+test('[M0.sso/c] check-provision confirms the key is auralis-admin, an admin that can list users', async () => {
+  const w = world({ keyFile: `ABS_PROVISION_KEY=${NEW_KEY}\n`, users: [ROOT, ADMIN] });
+  w.keyList.push({ id: 'k1', name: 'Auralis provisioning', userId: 'auralis-admin-id' });
+  assert.equal(await run(['check-provision'], w.deps), 0);
+  assert.deepEqual(
+    w.requests.map((r) => [r.url, r.headers.authorization]),
+    [
+      ['http://127.0.0.1:13378/api/me', `Bearer ${NEW_KEY}`],
+      ['http://127.0.0.1:13378/api/users', `Bearer ${NEW_KEY}`],
+    ],
+  );
+
+  const wrong = world({ keyFile: `ABS_PROVISION_KEY=${NEW_KEY}\n`, users: [ROOT, AURALIS] });
+  wrong.keyList.push({ id: 'k1', name: 'Auralis provisioning', userId: 'auralis-id' });
+  assert.equal(await run(['check-provision'], wrong.deps), 1);
+  assert.match(wrong.err.join('\n'), /not as the admin auralis-admin/);
+});
+
+test('[M0.sso/c] revoke-provision deletes only the provisioning key and its line', async () => {
+  const w = world({
+    keyFile: `ABS_API_KEY=listen\nABS_PROVISION_KEY=${NEW_KEY}\n`,
+    apiKeys: [
+      { id: 'k0', name: 'Auralis', isActive: true },
+      { id: 'k9', name: 'Auralis provisioning', isActive: true },
+    ],
+  });
+  assert.equal(await run(['revoke-provision'], w.deps), 0);
+  assert.deepEqual(
+    w.keyList.map((k) => k.id),
+    ['k0'],
+  );
+  assert.equal(w.files.get(KEY_FILE), 'ABS_API_KEY=listen\n');
 });

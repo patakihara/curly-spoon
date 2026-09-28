@@ -1,8 +1,8 @@
 /**
- * Creates, checks or revokes Auralis's own Audiobookshelf API key, on mediaserver, through
+ * Creates, checks or revokes Auralis's two Audiobookshelf API keys, on mediaserver, through
  * ABS's own API. Node 20, no dependencies, holds no secret. From the repo on the laptop:
  *
- *   ssh mediaserver node --input-type=module - [create|check|revoke|--help] < scripts/mediaserver/abs-api-key.mjs
+ *   ssh mediaserver node --input-type=module - [command|--help] < scripts/mediaserver/abs-api-key.mjs
  *
  * The key belongs to a dedicated ABS user, `auralis`: type `user`, all libraries, no update,
  * delete, upload or download permission. Its password is random and never stored; nobody logs in
@@ -17,6 +17,12 @@
  * nothing restarts. The key goes to the key file (0600, in a 0700 folder); only ids are printed.
  * The secret, the admin token and the password are never printed, stored or sent anywhere but
  * 127.0.0.1.
+ *
+ * `provision`, `check-provision` and `revoke-provision` do the same for the provisioning key:
+ * `Auralis provisioning`, on a dedicated ABS account `auralis-admin` of type admin (never root,
+ * so it can never mint a root user's key) that may touch no library. Auralis uses it only to list
+ * users and mint each person's own key at their first sign-in. It goes to the same key file as
+ * `ABS_PROVISION_KEY`.
  */
 import { execFileSync } from 'node:child_process';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
@@ -26,18 +32,25 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ABS = 'http://127.0.0.1:13378';
-const NAME = 'Auralis';
-const USERNAME = 'auralis';
-const LINE = 'ABS_API_KEY';
 const TOKEN_SECONDS = 300;
-const USAGE = 'usage: abs-api-key.mjs [create | check | revoke | --help]';
+const USAGE =
+  'usage: abs-api-key.mjs [create | check | revoke | provision | check-provision | revoke-provision | --help]';
 const HELP = `${USAGE}
 
-  create   make or reuse the ABS user ${USERNAME} (not an admin; it can only listen), create
-           the API key ${NAME} for it with no expiry, and write ${LINE} to the key file
-  check    confirm the stored key authenticates as ${USERNAME}, not an admin, and reads Books
-  revoke   delete the key ${NAME} and its ${LINE} line; it leaves the ${USERNAME} user in
-           place (delete it in ABS, Settings, Users, if it is no longer wanted)`;
+  create             make or reuse the ABS user auralis (not an admin; it can only listen),
+                     create the API key Auralis for it with no expiry, and write ABS_API_KEY
+                     to the key file
+  check              confirm the stored key authenticates as auralis, not an admin, and reads
+                     Books
+  revoke             delete the key Auralis and its ABS_API_KEY line; it leaves the auralis user
+                     in place (delete it in ABS, Settings, Users, if it is no longer wanted)
+  provision          make or reuse the ABS admin auralis-admin (not root; no library), create the
+                     API key Auralis provisioning for it with no expiry, and write
+                     ABS_PROVISION_KEY to the key file
+  check-provision    confirm the stored provisioning key is auralis-admin, an admin that can list
+                     users
+  revoke-provision   delete the key Auralis provisioning and its ABS_PROVISION_KEY line; it
+                     leaves the auralis-admin user in place`;
 
 /**
  * The `auralis` user's permissions, as `POST /api/users` takes them (ABS 2.36.1,
@@ -54,6 +67,58 @@ export const AURALIS_PERMISSIONS = {
   accessAllTags: true,
   accessExplicitContent: true,
   selectedTagsNotAccessible: false,
+};
+
+/**
+ * The provisioning account's permissions: an admin by type, which is all minting needs, with
+ * nothing on any library.
+ */
+export const PROVISIONING_PERMISSIONS = {
+  download: false,
+  update: false,
+  delete: false,
+  upload: false,
+  createEreader: false,
+  accessAllLibraries: false,
+  accessAllTags: false,
+  accessExplicitContent: false,
+  selectedTagsNotAccessible: false,
+};
+
+/** Why an existing `auralis` user cannot hold the listening key, or undefined when it can. */
+function unfitListener(user) {
+  if (user.type !== 'user') return `is of type ${user.type}, not user`;
+  if (!user.isActive) return 'is not active';
+  const p = user.permissions ?? {};
+  const extra = ['update', 'delete', 'upload', 'download'].filter((k) => p[k] !== false);
+  if (extra.length > 0) return `may ${extra.join(', ')}`;
+  if (p.accessAllLibraries !== true) return 'cannot reach every library';
+  return undefined;
+}
+
+/** Why an existing `auralis-admin` cannot hold the provisioning key, or undefined when it can. */
+function unfitProvisioner(user) {
+  if (user.type !== 'admin') return `is of type ${user.type}, not admin`;
+  if (!user.isActive) return 'is not active';
+  return undefined;
+}
+
+/** The two keys: which account holds each, what it may do, and its line in the key file. */
+const LISTEN = {
+  name: 'Auralis',
+  username: 'auralis',
+  type: 'user',
+  line: 'ABS_API_KEY',
+  permissions: AURALIS_PERMISSIONS,
+  unfit: unfitListener,
+};
+const PROVISION = {
+  name: 'Auralis provisioning',
+  username: 'auralis-admin',
+  type: 'admin',
+  line: 'ABS_PROVISION_KEY',
+  permissions: PROVISIONING_PERMISSIONS,
+  unfit: unfitProvisioner,
 };
 
 const b64url = (value) => Buffer.from(value).toString('base64url');
@@ -105,9 +170,9 @@ function writeKeyFile(deps, file, text) {
   deps.fs.chmodSync(file, 0o600);
 }
 
-function storedKey(text) {
-  const line = text.split('\n').find((l) => l.startsWith(`${LINE}=`));
-  return line?.slice(LINE.length + 1).trim() || undefined;
+function storedKey(text, lineName) {
+  const line = text.split('\n').find((l) => l.startsWith(`${lineName}=`));
+  return line?.slice(lineName.length + 1).trim() || undefined;
 }
 
 /**
@@ -171,59 +236,52 @@ function apiKeys(response) {
   return response.apiKeys;
 }
 
-/** Why an existing `auralis` user cannot hold the key, or undefined when it can. */
-function unfit(user) {
-  if (user.type !== 'user') return `is of type ${user.type}, not user`;
-  if (!user.isActive) return 'is not active';
-  const p = user.permissions ?? {};
-  const extra = ['update', 'delete', 'upload', 'download'].filter((k) => p[k] !== false);
-  if (extra.length > 0) return `may ${extra.join(', ')}`;
-  if (p.accessAllLibraries !== true) return 'cannot reach every library';
-  return undefined;
-}
-
-async function auralisUser(deps, token) {
+async function accountFor(deps, token, spec) {
   const { users } = (await asAdmin(deps, 'GET', '/api/users', token)) ?? {};
   if (!Array.isArray(users)) throw new Refusal('GET /api/users gave no users list');
-  const existing = users.find((u) => u?.username === USERNAME);
+  const existing = users.find((u) => u?.username === spec.username);
   if (existing) {
-    const why = unfit(existing);
+    const why = spec.unfit(existing);
     if (why) {
       throw new Refusal(
-        `the Audiobookshelf user ${USERNAME} exists but ${why}; fix or delete it in ABS first`,
+        `the Audiobookshelf user ${spec.username} exists but ${why}; fix or delete it in ABS first`,
       );
     }
-    deps.out(`using the existing Audiobookshelf user ${USERNAME}, id ${existing.id}`);
+    deps.out(`using the existing Audiobookshelf user ${spec.username}, id ${existing.id}`);
     return existing;
   }
   const created = await asAdmin(deps, 'POST', '/api/users', token, {
-    username: USERNAME,
+    username: spec.username,
     password: randomBytes(32).toString('base64url'),
-    type: 'user',
+    type: spec.type,
     isActive: true,
-    permissions: AURALIS_PERMISSIONS,
+    permissions: spec.permissions,
   });
   const user = created?.user;
-  if (typeof user?.id !== 'string' || user.type !== 'user') {
+  if (typeof user?.id !== 'string' || user.type !== spec.type) {
     throw new Refusal('POST /api/users gave no user');
   }
-  deps.out(`created Audiobookshelf user ${USERNAME}, id ${user.id}`);
+  deps.out(`created Audiobookshelf user ${spec.username}, id ${user.id}`);
   return user;
 }
 
-async function create(deps) {
+async function create(deps, spec) {
   const { db, keyFile } = paths(deps.home);
   const existing = readKeyFile(deps, keyFile);
-  if (storedKey(existing)) throw new Refusal(`the key file already has ${LINE}; run revoke first`);
+  if (storedKey(existing, spec.line)) {
+    throw new Refusal(`the key file already has ${spec.line}; run revoke first`);
+  }
   const token = adminToken(deps, db);
   const keys = apiKeys(await asAdmin(deps, 'GET', '/api/api-keys', token));
-  if (keys.some((k) => k?.name === NAME && k?.isActive)) {
-    throw new Refusal(`Audiobookshelf already has an active key named ${NAME}; run revoke first`);
+  if (keys.some((k) => k?.name === spec.name && k?.isActive)) {
+    throw new Refusal(
+      `Audiobookshelf already has an active key named ${spec.name}; run revoke first`,
+    );
   }
-  const user = await auralisUser(deps, token);
+  const user = await accountFor(deps, token, spec);
   // No expiresIn: the key never expires.
   const created = await asAdmin(deps, 'POST', '/api/api-keys', token, {
-    name: NAME,
+    name: spec.name,
     userId: user.id,
     isActive: true,
   });
@@ -232,18 +290,23 @@ async function create(deps) {
     throw new Refusal('POST /api/api-keys gave no key');
   }
   const prefix = existing && !existing.endsWith('\n') ? `${existing}\n` : existing;
-  writeKeyFile(deps, keyFile, `${prefix}${LINE}=${key.apiKey}\n`);
-  deps.out(`created Audiobookshelf API key ${NAME} for ${USERNAME}, id ${key.id}`);
+  writeKeyFile(deps, keyFile, `${prefix}${spec.line}=${key.apiKey}\n`);
+  deps.out(`created Audiobookshelf API key ${spec.name} for ${spec.username}, id ${key.id}`);
+}
+
+function stored(deps, spec) {
+  const { keyFile } = paths(deps.home);
+  const key = storedKey(readKeyFile(deps, keyFile), spec.line);
+  if (!key) throw new Refusal(`the key file has no ${spec.line}`);
+  return key;
 }
 
 async function check(deps) {
-  const { keyFile } = paths(deps.home);
-  const key = storedKey(readKeyFile(deps, keyFile));
-  if (!key) throw new Refusal(`the key file has no ${LINE}`);
+  const key = stored(deps, LISTEN);
   const me = await abs(deps, 'GET', '/api/me', key);
-  if (me?.username !== USERNAME || me?.type !== 'user') {
+  if (me?.username !== LISTEN.username || me?.type !== 'user') {
     throw new Refusal(
-      `the key authenticates as ${me?.username ?? 'nobody'} (${me?.type ?? 'no type'}), not as the user ${USERNAME}`,
+      `the key authenticates as ${me?.username ?? 'nobody'} (${me?.type ?? 'no type'}), not as the user ${LISTEN.username}`,
     );
   }
   const { libraries } = (await abs(deps, 'GET', '/api/libraries', key)) ?? {};
@@ -251,28 +314,50 @@ async function check(deps) {
     throw new Refusal('the libraries answered without Books');
   }
   deps.out(
-    `the ${NAME} key authenticates as ${USERNAME}, a user that is not an admin, and reads Books`,
+    `the ${LISTEN.name} key authenticates as ${LISTEN.username}, a user that is not an admin, and reads Books`,
   );
 }
 
-async function revoke(deps) {
+async function checkProvision(deps) {
+  const key = stored(deps, PROVISION);
+  const me = await abs(deps, 'GET', '/api/me', key);
+  if (me?.username !== PROVISION.username || me?.type !== 'admin') {
+    throw new Refusal(
+      `the key authenticates as ${me?.username ?? 'nobody'} (${me?.type ?? 'no type'}), not as the admin ${PROVISION.username}`,
+    );
+  }
+  const { users } = (await abs(deps, 'GET', '/api/users', key)) ?? {};
+  if (!Array.isArray(users)) throw new Refusal('the key cannot list users');
+  deps.out(
+    `the ${PROVISION.name} key authenticates as ${PROVISION.username}, an admin that is not root, and lists users`,
+  );
+}
+
+async function revoke(deps, spec) {
   const { db, keyFile } = paths(deps.home);
   const token = adminToken(deps, db);
   const ours = apiKeys(await asAdmin(deps, 'GET', '/api/api-keys', token)).filter(
-    (k) => k?.name === NAME,
+    (k) => k?.name === spec.name,
   );
   for (const k of ours) {
     await asAdmin(deps, 'DELETE', `/api/api-keys/${encodeURIComponent(k.id)}`, token);
-    deps.out(`deleted Audiobookshelf API key ${NAME}, id ${k.id}`);
+    deps.out(`deleted Audiobookshelf API key ${spec.name}, id ${k.id}`);
   }
   const text = readKeyFile(deps, keyFile);
-  if (storedKey(text)) {
-    const kept = text.split('\n').filter((l) => !l.startsWith(`${LINE}=`));
+  if (storedKey(text, spec.line)) {
+    const kept = text.split('\n').filter((l) => !l.startsWith(`${spec.line}=`));
     writeKeyFile(deps, keyFile, kept.join('\n'));
   }
 }
 
-const COMMANDS = { create, check, revoke };
+const COMMANDS = {
+  create: (deps) => create(deps, LISTEN),
+  check,
+  revoke: (deps) => revoke(deps, LISTEN),
+  provision: (deps) => create(deps, PROVISION),
+  'check-provision': checkProvision,
+  'revoke-provision': (deps) => revoke(deps, PROVISION),
+};
 
 /** Runs one command; resolves to the exit code. */
 export async function run(args, deps) {
@@ -281,7 +366,7 @@ export async function run(args, deps) {
     deps.out(HELP);
     return 0;
   }
-  const command = COMMANDS[name];
+  const command = Object.hasOwn(COMMANDS, name) ? COMMANDS[name] : undefined;
   if (!command || args.length > 1) {
     deps.err(USAGE);
     return 2;
