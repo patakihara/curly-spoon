@@ -46,8 +46,18 @@ export function edit(root, path, fn) {
   write(root, path, fn(read(root, path)));
 }
 
-const GIT_ENV = {
+/**
+ * Git for fixture repos. Auto-maintenance is off: a commit otherwise forks a detached
+ * `git maintenance run --auto --detach` that can still be writing .git when removeTree runs,
+ * failing the cleanup with ENOTEMPTY.
+ */
+export const GIT_ENV = {
   ...process.env,
+  GIT_CONFIG_COUNT: '2',
+  GIT_CONFIG_KEY_0: 'maintenance.auto',
+  GIT_CONFIG_VALUE_0: 'false',
+  GIT_CONFIG_KEY_1: 'gc.auto',
+  GIT_CONFIG_VALUE_1: '0',
   GIT_AUTHOR_NAME: 'Fixture',
   GIT_AUTHOR_EMAIL: 'fixture@example.invalid',
   GIT_COMMITTER_NAME: 'Fixture',
