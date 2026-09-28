@@ -1,4 +1,15 @@
 {
+  "canvas": {
+    "url": "https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq",
+    "sources": ["design/app"],
+    "commit": "20c5bba8c68b349d10eb5c371d7f9d09ec66b39f",
+    "tree": "f9f965ddc7db036f6d3c11554046a43f48a9452f",
+    "version": "1790587614-0b2a",
+    "installs": {
+      "sonora": "1790587513-7af1"
+    },
+    "publishedAt": "2026-09-28T09:27:00.209Z"
+  },
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
     "sources": ["docs/plan", "docs/outbox"],
