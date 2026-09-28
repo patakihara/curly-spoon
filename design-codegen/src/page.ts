@@ -228,8 +228,13 @@ export type Choices = Map<string, Map<string, Choice>>;
 export interface Opens {
   /** Each page of nav.json by id, with its route's parameter names. */
   pages: Map<string, string[]>;
-  /** The page's structure `links`: the only pages it may open. */
+  /** The page's structure `links`: the only other pages it may open. */
   links: string[];
+  /**
+   * The page's own id: it may open another item of its own kind, a book's other narration, which
+   * its links leave out since a page never links to itself.
+   */
+  self?: string;
   /** Each component's props that take a handler, `() => void`. */
   handlers: Map<string, Set<string>>;
 }
@@ -287,7 +292,7 @@ export function checkPage(
       errors.push(`${at} opens ${value.page}, which is not a page in nav.json`);
       return;
     }
-    if (!opens.links.includes(value.page)) {
+    if (!opens.links.includes(value.page) && value.page !== opens.self) {
       errors.push(`${at} opens ${value.page}, which is not in this page's structure links`);
     }
     const given = Object.keys(value.params);

@@ -15,7 +15,8 @@ close control on a page that closes), the bottom bar or rail per layout, the min
 Now Playing panel.
 
 A handler prop may open another page: `onClick={<Open page="album" ref={release.ref} />}` names a
-page of `nav.json` that the page's structure `links` list, and binds each of its route's parameters
+page of `nav.json` that the page's structure `links` list, or its own page for another item of
+its kind, and binds each of its route's parameters
 to a data path; the check refuses anything else. The web page navigates to the route through the
 router; the Android generator reads the same node as a navigation to the nav graph's destination.
 

@@ -1,0 +1,205 @@
+{
+  "title": "Shadows and Sighs",
+  "kind": "Audiobook",
+  "author": "Evelyn Harper",
+  "authorRef": "evelyn-harper",
+  "series": {
+    "label": "The Harbour Quartet · Book 2",
+    "ref": "the-harbour-quartet"
+  },
+  "meta": "Read by Ada Quill · 11 h 40 m · 4 h 12 m left · 4.6 ★",
+  "progress": 0.64,
+  "image": "/art/shadows-and-sighs.jpg",
+  "download": "idle",
+  "menu": [
+    {
+      "key": "finished",
+      "label": "Mark as finished",
+      "icon": "check_circle"
+    },
+    {
+      "key": "author",
+      "label": "Go to author",
+      "icon": "person"
+    }
+  ],
+  "chapters": [
+    {
+      "number": 1,
+      "title": "Prologue",
+      "meta": "0:00 · 18 min",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 2,
+      "title": "The Harbour at Dusk",
+      "meta": "0:18 · 1 h 2 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 3,
+      "title": "A Letter Unsent",
+      "meta": "1:20 · 58 min",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 4,
+      "title": "Low Tide",
+      "meta": "2:18 · 1 h 4 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 5,
+      "title": "The Keeper's Daughter",
+      "meta": "3:22 · 1 h 11 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 6,
+      "title": "Salt in the Wound",
+      "meta": "4:33 · 1 h 6 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 7,
+      "title": "The Lighthouse Stair",
+      "meta": "5:39 · 1 h 9 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 8,
+      "title": "Fog Over the Quay",
+      "meta": "6:48 · 1 h 3 m",
+      "status": "23 min left",
+      "tone": "library"
+    },
+    {
+      "number": 9,
+      "title": "What the Gulls Knew",
+      "meta": "7:51 · 1 h 1 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 10,
+      "title": "The Long Crossing",
+      "meta": "8:52 · 1 h 10 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 11,
+      "title": "Anchors",
+      "meta": "10:02 · 1 h 6 m",
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 12,
+      "title": "Epilogue",
+      "meta": "11:08 · 32 min",
+      "status": null,
+      "tone": null
+    }
+  ],
+  "about": "Two winters after the storm that took her father's boat, Maren Holt comes back to the harbour town she swore she had left for good. The lighthouse is dark, the keeper's logbook is missing, and every letter her father never sent seems to be turning up at once. The second Harbour Quartet novel follows Maren through one long season of fog, salt and old debts, as the town decides whether she is still one of its own.",
+  "narrations": [
+    {
+      "narrator": "Jonas Vale",
+      "sub": "Full cast · 12 h 5 m",
+      "image": "/art/shadows-and-sighs.jpg",
+      "ref": "shadows-and-sighs-full-cast",
+      "absent": false,
+      "status": null,
+      "tone": null
+    },
+    {
+      "narrator": "Evelyn Harper",
+      "sub": "10 h 52 m",
+      "image": "/art/shadows-and-sighs.jpg",
+      "ref": "shadows-and-sighs-author",
+      "absent": true,
+      "status": null,
+      "tone": null
+    }
+  ],
+  "more": {
+    "series": {
+      "title": "The Harbour Quartet",
+      "items": [
+        {
+          "title": "The Salt Road",
+          "sub": "Book 1",
+          "image": "/art/salt-and-static.jpg",
+          "ref": "the-salt-road",
+          "progress": 1,
+          "absent": false,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "A Grain of Salt",
+          "sub": "Book 3",
+          "image": "/art/fragments-of-the-wind.jpg",
+          "ref": "a-grain-of-salt",
+          "progress": null,
+          "absent": true,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "The Lantern Keeper",
+          "sub": "Book 4",
+          "image": "/art/paper-lanterns.jpg",
+          "ref": "the-lantern-keeper",
+          "progress": null,
+          "absent": false,
+          "status": "Downloading · 30%",
+          "tone": "progress"
+        }
+      ]
+    },
+    "author": {
+      "title": "More by Evelyn Harper",
+      "items": [
+        {
+          "title": "The Quiet Hours",
+          "sub": "8 h 30 m",
+          "image": "/art/the-long-read.jpg",
+          "ref": "the-quiet-hours",
+          "progress": null,
+          "absent": false,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Low Water",
+          "sub": "9 h 45 m",
+          "image": "/art/escapes-and-moons.jpg",
+          "ref": "low-water",
+          "progress": null,
+          "absent": true,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "High Water",
+          "sub": "10 h 20 m",
+          "image": "/art/signal-noise.jpg",
+          "ref": "high-water",
+          "progress": null,
+          "absent": true,
+          "status": null,
+          "tone": null
+        }
+      ]
+    }
+  }
+}

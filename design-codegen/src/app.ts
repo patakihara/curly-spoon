@@ -142,6 +142,7 @@ export function readApp(appDir: string, model: PropsModel): App {
       const opens: Opens = {
         pages: routes,
         links: nav.pages.find((p) => p.id === id)!.structure.links,
+        self: id,
         handlers,
       };
       errors.push(

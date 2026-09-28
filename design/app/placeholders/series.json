@@ -1,0 +1,58 @@
+{
+  "title": "The Harbour Quartet",
+  "kind": "Series",
+  "author": "Evelyn Harper",
+  "authorRef": "evelyn-harper",
+  "meta": "4 books · 48 h 10 m · 2 in your library",
+  "image": "/art/salt-and-static.jpg",
+  "books": [
+    {
+      "number": 1,
+      "eyebrow": "Book 1",
+      "title": "The Salt Road",
+      "sub": "11 h 2 m",
+      "image": "/art/salt-and-static.jpg",
+      "ref": "the-salt-road",
+      "progress": 1,
+      "absent": false,
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 2,
+      "eyebrow": "Book 2",
+      "title": "Shadows and Sighs",
+      "sub": "11 h 40 m",
+      "image": "/art/shadows-and-sighs.jpg",
+      "ref": "shadows-and-sighs",
+      "progress": 0.64,
+      "absent": false,
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 3,
+      "eyebrow": "Book 3",
+      "title": "A Grain of Salt",
+      "sub": "12 h 18 m",
+      "image": "/art/fragments-of-the-wind.jpg",
+      "ref": "a-grain-of-salt",
+      "progress": null,
+      "absent": true,
+      "status": null,
+      "tone": null
+    },
+    {
+      "number": 4,
+      "eyebrow": "Book 4",
+      "title": "The Lantern Keeper",
+      "sub": "13 h 10 m",
+      "image": "/art/paper-lanterns.jpg",
+      "ref": "the-lantern-keeper",
+      "progress": null,
+      "absent": false,
+      "status": "Downloading · 30%",
+      "tone": "progress"
+    }
+  ]
+}

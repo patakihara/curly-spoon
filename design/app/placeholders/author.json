@@ -1,0 +1,152 @@
+{
+  "title": "Evelyn Harper",
+  "kind": "Author",
+  "meta": "7 books · 3 in your library",
+  "image": "/art/evelyn-harper.jpg",
+  "series": [
+    {
+      "title": "The Harbour Quartet",
+      "ref": "the-harbour-quartet",
+      "books": [
+        {
+          "title": "The Salt Road",
+          "sub": "Book 1",
+          "image": "/art/salt-and-static.jpg",
+          "ref": "the-salt-road",
+          "progress": 1,
+          "absent": false,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "Shadows and Sighs",
+          "sub": "Book 2",
+          "image": "/art/shadows-and-sighs.jpg",
+          "ref": "shadows-and-sighs",
+          "progress": 0.64,
+          "absent": false,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "A Grain of Salt",
+          "sub": "Book 3",
+          "image": "/art/fragments-of-the-wind.jpg",
+          "ref": "a-grain-of-salt",
+          "progress": null,
+          "absent": true,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "The Lantern Keeper",
+          "sub": "Book 4",
+          "image": "/art/paper-lanterns.jpg",
+          "ref": "the-lantern-keeper",
+          "progress": null,
+          "absent": false,
+          "status": "Downloading · 30%",
+          "tone": "progress"
+        }
+      ]
+    },
+    {
+      "title": "Tidewater",
+      "ref": "tidewater",
+      "books": [
+        {
+          "title": "Low Water",
+          "sub": "Book 1",
+          "image": "/art/escapes-and-moons.jpg",
+          "ref": "low-water",
+          "progress": null,
+          "absent": true,
+          "status": null,
+          "tone": null
+        },
+        {
+          "title": "High Water",
+          "sub": "Book 2",
+          "image": "/art/signal-noise.jpg",
+          "ref": "high-water",
+          "progress": null,
+          "absent": true,
+          "status": null,
+          "tone": null
+        }
+      ]
+    }
+  ],
+  "books": [
+    {
+      "title": "A Grain of Salt",
+      "sub": "12 h 18 m",
+      "image": "/art/fragments-of-the-wind.jpg",
+      "ref": "a-grain-of-salt",
+      "progress": null,
+      "absent": true,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "High Water",
+      "sub": "10 h 20 m",
+      "image": "/art/signal-noise.jpg",
+      "ref": "high-water",
+      "progress": null,
+      "absent": true,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Low Water",
+      "sub": "9 h 45 m",
+      "image": "/art/escapes-and-moons.jpg",
+      "ref": "low-water",
+      "progress": null,
+      "absent": true,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Shadows and Sighs",
+      "sub": "11 h 40 m",
+      "image": "/art/shadows-and-sighs.jpg",
+      "ref": "shadows-and-sighs",
+      "progress": 0.64,
+      "absent": false,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "The Lantern Keeper",
+      "sub": "13 h 10 m",
+      "image": "/art/paper-lanterns.jpg",
+      "ref": "the-lantern-keeper",
+      "progress": null,
+      "absent": false,
+      "status": "Downloading · 30%",
+      "tone": "progress"
+    },
+    {
+      "title": "The Quiet Hours",
+      "sub": "8 h 30 m",
+      "image": "/art/the-long-read.jpg",
+      "ref": "the-quiet-hours",
+      "progress": null,
+      "absent": false,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "The Salt Road",
+      "sub": "11 h 2 m",
+      "image": "/art/salt-and-static.jpg",
+      "ref": "the-salt-road",
+      "progress": 1,
+      "absent": false,
+      "status": null,
+      "tone": null
+    }
+  ]
+}

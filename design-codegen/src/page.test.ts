@@ -353,6 +353,25 @@ describe('a page opening another', () => {
     ]);
   });
 
+  it('[M0.canvas] opens another item of its own kind, a page its links leave out as itself', () => {
+    const self = (card: string, id: string) =>
+      checkPage(
+        parsePage(page(`<Each of={data.albums} as="album">${card}</Each>`), 'book'),
+        data,
+        props,
+        undefined,
+        undefined,
+        undefined,
+        { ...opens, self: id },
+      );
+    expect(
+      self('<MediaCard onClick={<Open page="artist" ref={album.ref} />} />', 'artist'),
+    ).toEqual([]);
+    expect(self('<MediaCard onClick={<Open page="artist" ref={album.ref} />} />', 'album')).toEqual(
+      ["line 3: MediaCard.onClick opens artist, which is not in this page's structure links"],
+    );
+  });
+
   it('[M0.canvas] refuses a link to a page that is not in nav.json', () => {
     expect(check('<MediaCard onClick={<Open page="albums" ref={album.ref} />} />')).toEqual([
       'line 3: MediaCard.onClick opens albums, which is not a page in nav.json',

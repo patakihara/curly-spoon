@@ -9,6 +9,9 @@ import Artist from '../pages/Artist';
 import Playlist from '../pages/Playlist';
 import Favourites from '../pages/Favourites';
 import Books from '../pages/Books';
+import Book from '../pages/Book';
+import Author from '../pages/Author';
+import Series from '../pages/Series';
 import Podcasts from '../pages/Podcasts';
 import Search from '../pages/Search';
 import Settings from '../pages/Settings';
@@ -145,9 +148,9 @@ export const routes: RouteObject[] = [
   { id: 'playlist', path: '/music/playlists/:ref', element: <Playlist /> },
   { id: 'favourites', path: '/music/favourites', element: <Favourites /> },
   { id: 'books', path: '/books', element: <Books /> },
-  { id: 'book', path: '/books/:ref' },
-  { id: 'author', path: '/books/authors/:ref' },
-  { id: 'series', path: '/books/series/:ref' },
+  { id: 'book', path: '/books/:ref', element: <Book /> },
+  { id: 'author', path: '/books/authors/:ref', element: <Author /> },
+  { id: 'series', path: '/books/series/:ref', element: <Series /> },
   { id: 'podcasts', path: '/podcasts', element: <Podcasts /> },
   { id: 'show', path: '/podcasts/:ref' },
   { id: 'episode', path: '/podcasts/episodes/:ref' },
