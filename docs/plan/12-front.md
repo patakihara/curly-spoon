@@ -38,7 +38,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 :::
 :::
 
-**Where the screens come from.** Your "Auralis redesign kickoff" project in Claude Design only partly uses the design system (26 Sonora components, against 110 hand-built boxes and 137 inline styles). Other screens you drew in Sonora itself: its desktop and mobile UI kits and the 43 Spotify reference screens. The screen map is the union of both, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. The UI kits move out of Sonora onto the canvas, since screens don't belong in the design system. The Claude Design projects stay as read-only references.
+**Where the screens come from.** Sonora is the most complete design: its desktop and mobile UI kits, its showcase cards and the 43 Spotify reference screens. The "Auralis redesign kickoff" project, which old Auralis vendored (tag `legacy`, `docs/design/sonora`), adds only its screen list (artist, author, shelf, onboarding); its 9 components are all in Sonora now. The screen map is the union, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. The UI kits move out of Sonora onto the canvas, since screens don't belong in the design system. The Claude Design projects stay as read-only references.
 
 ### Sonora, pruned and ordered
 
@@ -46,6 +46,7 @@ Sonora has 80 components today, filed by kind (core, forms, layout, media, navig
 
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (shell, backdrop, shelf, detail and collection pages). The artifact is organised the same way. Pages live only on the canvas.
 - **Pruned against the screens.** Once the canvas has the full screen map, in the foundations milestone, each component lists the pages that use it. Anything no page uses is removed, whichever pass it came from. Candidates to look at first: OutputDeviceButton (only needed for "Play on…", which comes late), FollowButton, Rating, BrowseCard and BackToTop.
+- **Input hands its handler the text.** `Input`'s `onChange` gets the new string, as every other form component does, so `FieldRow`'s `(next: string)` handler no longer receives a DOM event.
 
 ### From design to both apps
 
@@ -116,4 +117,4 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 ### How parity stays true
 
 - Both clients consume the same generated models and the same screen endpoints, so there's no logic to port by hand.
-- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set and produce screenshots. Those get reviewed side by side against Sonora's own card for that component or screen. This is the visual check the old project never had.
+- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set and produce screenshots. Each page's render sits beside its Sonora source in a committed comparison under `design/app/compare`, with the differences listed, and a test fails when a page changes without a fresh comparison. This is the visual check the old project never had.
