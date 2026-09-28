@@ -160,6 +160,10 @@ export function readApp(appDir: string, model: PropsModel): App {
     shell = readShell(appDir);
     const strays = shell.railFoot.filter(({ page }) => !ids.has(page));
     for (const { page } of strays) errors.push(`shell.json: railFoot names ${page}, not a page`);
+    for (const { page } of shell.railFoot) {
+      if (nav.pages.find((p) => p.id === page)?.presentation === 'bare')
+        errors.push(`shell.json: railFoot names ${page}, a bare page with no rail`);
+    }
     const sheets = nav.pages.filter(
       (p) => p.presentation === 'sheet' && files.includes(`${p.id}.page.jsx`),
     );

@@ -1,6 +1,6 @@
 ---
 page: signIn
-pageHash: 3426a49b67b53870fd9e4e35870f29f0a1a69521857737b922650ec5d84252d1
+pageHash: ebb4ba8f3a2e4466acb88a353d68a3e5315dddee44fd4b1e43f5f88f8986994f
 sonora: [none]
 ---
 
@@ -14,15 +14,16 @@ and the Browse, Status & Disclosure card (`StatusBanner`'s error tone with a tex
 ## What the canvas page draws
 
 A bare page, as Setup is: the heading "Sign in" as a top app bar on the phone and over the front
-layer on desktop, no navigation, player or account, no close control. In `PageBody` at the form
-width:
+layer on desktop, no navigation, player or account, no close control. Heading and content share
+one centred column (`BackdropShell column`), the heading starting at the page margin as the
+content does. In `PageBody` at the form width, in the structure's order:
 
-- **Error**: an error `StatusBanner`, "That account isn't one of the household's, so Auralis can't
-  let it in. Whoever runs the server can add it.", with "Try again". The render shows the page as
-  it comes back from a refused sign-in; a first visit has no banner.
 - **Sign in**: an `EmptyState` with the people glyph, "Sign in with your household account", the
   line "Auralis has no accounts or passwords of its own: you sign in where you sign in to
   Audiobookshelf and Jellyfin.", and one primary "Sign in" button, to the household sign-on.
+- **Error**: an error `StatusBanner`, "That account isn't one of the household's, so Auralis can't
+  let it in. Whoever runs the server can add it.", with "Try again". The render shows the page as
+  it comes back from a refused sign-in; a first visit has no banner.
 
 **Empty state**, per nav.json (not drawn): someone already signed in goes straight on.
 
@@ -34,6 +35,8 @@ width:
   full width of their panel; Sonora's banner now keeps to the column it is given.
 - Open: the error and the first visit are one render until the placeholders gain states in
   M2.screens.
-- Open: on the phone the app bar's title sits 12 px from the edge with nothing leading it, where
-  the content keeps the 16 px margin.
-- Open: on desktop the column sits at the left of a wide empty front layer.
+- Changed on purpose: with nothing beside it, the page sits in one centred column on desktop,
+  Sonora's `BackdropShell column`, and its heading starts at the page margin on both platforms,
+  16 px on the phone, level with the content.
+- Changed on purpose: the banner follows the button, as the structure orders Sign in before
+  Error, where the card puts a banner at the top of its panel.

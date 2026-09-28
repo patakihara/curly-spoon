@@ -17,7 +17,9 @@ Connect or Skip, then Jellyfin's URL.
 
 A bare page: no rail, bottom bar, mini-player, player panel or account avatar, since nobody is
 signed in to the app yet; the heading "Setup" as a top app bar on the phone and over the front
-layer on desktop, with no close control. In `PageBody` at the form width:
+layer on desktop, with no close control. Heading and content share one centred column
+(`BackdropShell column`), the heading starting at the page margin as the content does. In
+`PageBody` at the form width:
 
 - An info `StatusBanner`: "Nobody signs up in Auralis: everyone signs in with their household
   account. Setup makes you its admin and connects the servers you already run."
@@ -40,9 +42,8 @@ layer on desktop, with no close control. In `PageBody` at the form width:
 - Changed on purpose: no "Skip for now". Browse makes no sense before the servers are connected.
 - Changed on purpose: the page is bare (nav.json's `presentation: bare`), with nothing of the app
   around it; the kickoff screen sat inside the app's navigation.
-- Open: on the phone the app bar's title sits 12 px from the edge with nothing leading it, where
-  the content keeps the 16 px margin; `BackLayer`'s app bar pads for a leading control.
-- Open: on desktop the form column starts at the left of a wide empty front layer; `PageBody`
-  does not centre a form.
+- Changed on purpose: with nothing beside it, the page sits in one centred column on desktop,
+  Sonora's `BackdropShell column`, and its heading starts at the page margin on both platforms,
+  16 px on the phone, level with the content.
 - Open: the providers listed are the plan's search and recommendation sources as placeholder copy;
   which ones Setup offers is settled with the admin endpoints.

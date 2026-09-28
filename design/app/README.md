@@ -14,6 +14,17 @@ own), what leads it (the account avatar on a phone's destination home, a
 close control on a page that closes), the bottom bar or rail per layout, the mini-player and the
 Now Playing panel.
 
+On desktop the rail lights, for a page that is not a destination, the destination its `lights`
+names; with none, Settings for the page at the rail's foot, or else what lights the page that opens
+it, the first in `nav.json` whose structure `links` name it, as Shelf review lights Settings. A
+page nothing opens lights Browse, where it closes to.
+
+A `bare` page is a screen before the app is yours: signing in, and first-run setup. It lights and
+closes to nothing, is no destination and never at the rail's foot, and the shell gives it only its
+heading: no rail, bottom bar, player, panel or account. It sits in `BackdropShell`'s `column`, one
+centred column at the form's reading width, its heading starting at the page margin as its content
+does, so its `PageBody` is `width="form"`. The checks refuse any other use of it.
+
 The player's sheets, Now Playing, Queue and Lyrics, are the tabs of Sonora's `NowPlaying`: each
 page is its tab's content alone, never a backdrop, and the shell puts it in the player, open on its
 tab and showing what shell.json's `playing` loads. Under the side panel's width that is a

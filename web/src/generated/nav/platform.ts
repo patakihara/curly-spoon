@@ -16,6 +16,8 @@ export interface Chrome {
   player?: ReactNode;
   sheet?: ReactNode;
   sheetOpen: boolean;
+  /** A bare page's one centred column, its reading width. */
+  column?: 'form';
 }
 
 /** Each layout past the first, with the media query that reaches it, narrowest first. */

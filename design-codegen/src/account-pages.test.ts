@@ -1,13 +1,20 @@
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
+import { readApp } from './app.js';
 import { readNav } from './nav.js';
-import { APP_DIR, REPO_ROOT } from './outputs.js';
+import { APP_DIR, REPO_ROOT, SONORA_DIR } from './outputs.js';
 import type { PageTree } from './page.js';
+import { readProps } from './props.js';
+import { chrome, layoutAt, readShell } from './shell.js';
+import { discoverComponents } from './sonora.js';
 import { bindings, dataRoots, elements, readPage, shown, type Element } from './test-pages.js';
 
 type Row = Record<string, unknown>;
 
-const nav = readNav(join(REPO_ROOT, APP_DIR));
+const appDir = join(REPO_ROOT, APP_DIR);
+const nav = readNav(appDir);
 const structureOf = (id: string) => nav.pages.find((p) => p.id === id)!.structure;
 
 const literal = (e: Element, prop: string) => {
@@ -134,6 +141,14 @@ describe('Sign in', () => {
     expect(data.error).toMatch(/isn't one of the household's/);
   });
 
+  it('[M0.canvas] draws its structure in order: the sign-in button, then why signing in failed', () => {
+    expect(structureOf('signIn').sections.map((s) => s.name)).toEqual(['Sign in', 'Error']);
+    const order = elements(tree)
+      .map((e) => e.component)
+      .filter((c) => c === 'EmptyState' || c === 'StatusBanner');
+    expect(order).toEqual(['EmptyState', 'StatusBanner']);
+  });
+
   it('[M0.canvas] binds only its error', () => {
     expect(dataRoots(tree)).toEqual(['error']);
   });
@@ -164,5 +179,32 @@ describe('Shelf review', () => {
       expect(String(item.reason).length).toBeGreaterThan(0);
       expect(item.meta).toMatch(/^(Album|Book|Podcast|Episode) · .+ · [^·]+$|^Podcast · [^·]+$/);
     }
+  });
+});
+
+describe('the bare pages, Setup and Sign in', () => {
+  const bare = nav.pages.filter((p) => p.presentation === 'bare');
+  const tmp = mkdtempSync(join(tmpdir(), 'auralis-bare-'));
+  afterAll(() => rmSync(tmp, { recursive: true, force: true }));
+
+  it('[M0.canvas] set their content in the form width the shell centres them in', () => {
+    const shell = readShell(appDir);
+    for (const page of bare) {
+      const body = elements(readPage(page.id).tree).find((e) => e.component === 'PageBody')!;
+      const column = chrome(nav, shell, page, layoutAt(nav, 1440), new Set()).column;
+      expect(literal(body, 'width'), page.id).toBe(column);
+    }
+  });
+
+  it('[M0.canvas] refuses a bare page at the foot of the rail, since it shows no rail', () => {
+    const dir = join(tmp, 'foot');
+    cpSync(appDir, dir, { recursive: true });
+    const shell = readShell(appDir);
+    writeFileSync(
+      join(dir, 'shell.json'),
+      JSON.stringify({ ...shell, railFoot: [...shell.railFoot, { page: 'setup', icon: 'build' }] }),
+    );
+    const props = readProps(discoverComponents(join(REPO_ROOT, SONORA_DIR)));
+    expect(() => readApp(dir, props)).toThrow(/railFoot names setup, a bare page with no rail/);
   });
 });

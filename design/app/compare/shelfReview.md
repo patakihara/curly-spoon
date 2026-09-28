@@ -33,6 +33,6 @@ you finished The Salt Cartographer, Popular with listeners of The Long Read.
   form, rather than the arrow, since the row already reads as a list of shelves to open.
 - Changed on purpose: the placeholder keeps one bad pick visible, Deep Inertia's own album in
   "More like Deep Inertia", which is what the page is for spotting.
-- Open: nothing is lit on desktop, though Shelf review opens from Settings; only Settings itself
-  lights the rail's foot.
-- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`): the close control and the title on the page surface, no back layer. The bottom bar and mini-player stay. On desktop it keeps the backdrop, no rail item lit.
+- Changed on purpose: on desktop Settings at the rail's foot stays lit, since Shelf review opens
+  from Settings alone and lights nothing of its own.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`): the close control and the title on the page surface, no back layer. The bottom bar and mini-player stay. On desktop it keeps the backdrop.

@@ -24,7 +24,8 @@ No Spotify screen covers it.
 
 ## What the canvas page draws
 
-The heading "Downloads" led by a close control; nothing lit. In `PageBody` at the list width:
+The heading "Downloads" led by a close control; on desktop the rail lights Music, the first page
+that opens it; nothing is lit in the bottom bar. In `PageBody` at the list width:
 
 - **Downloaded**: first a `ValueRow`, "On this phone · 2.1 GB · 38 GB free", the total the
   downloads take; then one `ResultRow` per item, its meta naming kind, creator and size ("Book ·
@@ -46,4 +47,4 @@ that a book, episode or album downloads from its page.
   handler shows a play overlay over its art, which would say the tap plays; no drawn page gives a
   `ResultRow` a tap yet.
 - Open: the total is a `ValueRow` at the top of Downloaded, not a storage bar; Sonora has none.
-- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`): the close control and the title on the page surface, no back layer. The bottom bar and mini-player stay. On desktop it keeps the backdrop, no rail item lit, since nothing opens it from a destination.
+- Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`): the close control and the title on the page surface, no back layer. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music lit on the rail.

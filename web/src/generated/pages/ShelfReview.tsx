@@ -286,7 +286,7 @@ const CHROME: Record<LayoutId, Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} expanded={false} toggle={true} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="settings" expanded={false} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -300,7 +300,7 @@ const CHROME: Record<LayoutId, Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} expanded={true} toggle={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="settings" expanded={true} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />
@@ -314,7 +314,7 @@ const CHROME: Record<LayoutId, Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} expanded={true} toggle={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="settings" expanded={true} toggle={true} />
     ),
     leading: (
       <IconButton icon="close" label="Close" />

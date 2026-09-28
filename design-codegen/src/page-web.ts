@@ -179,6 +179,7 @@ function chromeEntry(parts: Chrome, components: Ctx): string[] {
     out.push(`    ${key}: (`, ...render(tree, '      ', components), '    ),');
   }
   out.push(`    sheetOpen: ${parts.sheetOpen},`);
+  if (parts.column !== undefined) out.push(`    column: '${parts.column}',`);
   return out;
 }
 
@@ -205,6 +206,7 @@ export function generateWebPage(
         sheet: binding('panel'),
         sheetOpen: binding('chrome.sheetOpen'),
         appBar: binding('chrome.appBar'),
+        ...(page.presentation === 'bare' ? { column: binding('chrome.column') } : {}),
       });
   const chromes = sheet
     ? []

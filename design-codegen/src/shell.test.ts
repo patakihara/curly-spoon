@@ -61,6 +61,47 @@ describe('the app shell', () => {
     }
   });
 
+  it('[M0.canvas] holds a bare page in one centred form column, its heading at the page margin, and no other page', () => {
+    for (const page of nav.pages.filter((p) => p.presentation !== 'sheet')) {
+      for (const layout of nav.layouts) {
+        const parts = chrome(nav, shell, page, layout, platformed);
+        expect(parts.column, `${page.id} ${layout.nav}`).toBe(
+          page.presentation === 'bare' ? 'form' : undefined,
+        );
+      }
+    }
+    const frame = framePage(
+      parsePage(
+        'export default function SignIn() {\n  return <BackdropShell>text</BackdropShell>;\n}\n',
+        'signIn',
+      ),
+    );
+    const root = framed(frame, 'Sign in', { column: { kind: 'literal', value: 'form' } });
+    expect(root.kind === 'element' && root.props.column).toEqual({
+      kind: 'literal',
+      value: 'form',
+    });
+  });
+
+  it('[M0.canvas] lights on desktop, for every page that is not a destination, the rail item of the page that opens it', () => {
+    const active = (id: string) =>
+      el(chrome(nav, shell, pageOf(id), layoutAt(nav, 1440), platformed).rail, 'NavRail').props
+        .active;
+    // Shelf review is opened from Settings alone, so Settings, at the rail's foot, stays lit.
+    expect(active('shelfReview')).toEqual({ kind: 'literal', value: 'settings' });
+    // Downloads is opened first from Music; a page nothing opens lights Browse, where it closes to.
+    expect(active('downloads')).toEqual({ kind: 'literal', value: 'music' });
+    expect(active('notFound')).toEqual({ kind: 'literal', value: 'browse' });
+    const lit = new Set([
+      ...nav.destinations.map((d) => d.id),
+      ...shell.railFoot.map((f) => f.page),
+    ]);
+    for (const page of nav.pages.filter((p) => p.presentation === 'screen')) {
+      const value = active(page.id);
+      expect(value?.kind === 'literal' && lit.has(String(value.value)), page.id).toBe(true);
+    }
+  });
+
   it('[M0.canvas] orders each layout’s destinations as nav.json does: Search last on the bottom bar, first on the rails', () => {
     for (const layout of nav.layouts) {
       const parts = chrome(nav, shell, pageOf('browse'), layout, platformed);

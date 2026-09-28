@@ -17,7 +17,7 @@
  * destination has no backdrop: its heading is a top app bar on the page surface. On desktop it
  * stays in the backdrop of the destination it lights. A bare page, signing in or first-run setup,
  * is its heading and its content alone, with no navigation, player or account: a top app bar on
- * the phone, the backdrop with no rail on desktop. A page whose root is anything else is its front layer's content
+ * the phone, the backdrop with no rail on desktop, heading and content in one centred column. A page whose root is anything else is its front layer's content
  * alone. The account avatar is the shell's alone: a page never draws one, so it is never in a
  * filter row.
  */
@@ -154,6 +154,8 @@ export interface Chrome {
   player?: PageTree;
   sheet?: PageTree;
   sheetOpen: boolean;
+  /** A bare page's one centred column, heading and content, at the form's reading width. */
+  column?: 'form';
 }
 
 const lit = (value: string | number | boolean): PropValue => ({ kind: 'literal', value });
@@ -221,6 +223,26 @@ export function playerTab(page: NavPage): string {
 }
 
 /**
+ * What the rail lights for `page`: the destination it lights, or itself at the rail's foot, or
+ * else, as nav.json's `lights` says, what lights the page that opens it, the first in nav.json
+ * whose links name it; a page nothing opens lights Browse, where it closes to.
+ */
+export function railLit(
+  nav: Nav,
+  shell: ShellFile,
+  page: NavPage,
+  seen = new Set<string>(),
+): string {
+  if (page.lights !== null) return page.lights;
+  if (shell.railFoot.some((f) => f.page === page.id)) return page.id;
+  seen.add(page.id);
+  const opener = nav.pages.find(
+    (p) => p.presentation === 'screen' && !seen.has(p.id) && p.structure.links.includes(page.id),
+  );
+  return opener === undefined ? 'browse' : railLit(nav, shell, opener, seen);
+}
+
+/**
  * The shell around `page` at `layout`. Each tree carries its platform as a literal wherever
  * `platformed` says the component takes one, so it reads the same wherever it is placed. `now` is
  * Now Playing's page, which the side panel shows on every page, so every panel is the same.
@@ -237,7 +259,7 @@ export function chrome(
   const id = layoutId(layout);
   const phone = layout.nav === 'bottomBar';
   const destination = nav.destinations.some((d) => d.id === page.id);
-  const active = page.lights ?? shell.railFoot.find((f) => f.page === page.id)?.page;
+  const active = railLit(nav, shell, page);
   const withPlatform = (tree: PageTree): PageTree => {
     if (tree.kind === 'text' || tree.kind === 'binding') return tree;
     const children = tree.children.map(withPlatform);
@@ -266,9 +288,10 @@ export function chrome(
             ...(shell.account.image === undefined ? {} : { image: bind('shell.account.image') }),
           })
         : undefined;
-  // A bare page is its heading and its content alone: a top app bar on the phone, the back
-  // layer's heading over the front layer on desktop, with no rail beside them.
-  if (page.presentation === 'bare') return { platform, appBar: phone, sheetOpen: false };
+  // A bare page is its heading and its content alone, in one centred column: a top app bar on the
+  // phone, the back layer's heading over the front layer on desktop, with no rail beside them.
+  if (page.presentation === 'bare')
+    return { platform, appBar: phone, sheetOpen: false, column: 'form' };
   const parts: Chrome = { platform, appBar: phone && !destination, leading, sheetOpen: false };
   if (phone) {
     const bar = el('BottomNav', { items: bind(`shell.nav.${id}`), active: lit(page.lights ?? '') });
@@ -396,7 +419,7 @@ export function framed(
   frame: PageFrame,
   title: string,
   parts: Partial<
-    Record<'rail' | 'leading' | 'player' | 'sheet' | 'sheetOpen' | 'appBar', PropValue>
+    Record<'rail' | 'leading' | 'player' | 'sheet' | 'sheetOpen' | 'appBar' | 'column', PropValue>
   >,
 ): PageTree {
   const named = (name: string, tree: PageTree | undefined): Record<string, PropValue> =>
@@ -423,6 +446,7 @@ export function framed(
       ...given('sheet'),
       ...given('sheetOpen'),
       ...given('appBar'),
+      ...given('column'),
     },
     children: frame.content,
   };

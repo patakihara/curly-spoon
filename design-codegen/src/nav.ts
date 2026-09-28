@@ -166,6 +166,9 @@ export function parseNav(json: unknown): Nav {
     if (page.presentation === 'bare' && page.lights !== null) {
       errors.push(`${page.id}: a bare page lights no destination, since it shows none`);
     }
+    if (page.presentation === 'bare' && destinations.has(page.id)) {
+      errors.push(`${page.id}: a bare page is no destination, since it shows no navigation`);
+    }
     const narrows = page.filter?.narrows ?? [];
     if (new Set(narrows).size !== narrows.length)
       errors.push(`${page.id}: its filter narrows to a destination twice`);
@@ -281,6 +284,8 @@ export function generatePlatform(nav: Nav): string {
     '  player?: ReactNode;',
     '  sheet?: ReactNode;',
     '  sheetOpen: boolean;',
+    "  /** A bare page's one centred column, its reading width. */",
+    "  column?: 'form';",
     '}',
     '',
     '/** Each layout past the first, with the media query that reaches it, narrowest first. */',

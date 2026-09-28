@@ -283,6 +283,7 @@ function artboard(
         sheet: slot(sheet ?? parts.sheet),
         sheetOpen: { kind: 'literal', value: parts.sheetOpen },
         appBar: { kind: 'literal', value: parts.appBar },
+        ...(parts.column === undefined ? {} : { column: { kind: 'literal', value: parts.column } }),
       }),
       parts.platform,
       app.components.platformed,

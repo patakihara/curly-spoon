@@ -132,6 +132,9 @@ describe('nav.json', () => {
     expect(() => parseNav(small([bare({ lights: 'music' })]))).toThrow(
       /album: a bare page lights no destination/,
     );
+    expect(() => parseNav(small([bare({ id: 'music', route: '/music', params: {} })]))).toThrow(
+      /music: a bare page is no destination/,
+    );
   });
 
   it('puts Search last on the phone’s bottom bar and first on the desktop rails', () => {
