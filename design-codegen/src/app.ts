@@ -5,7 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { componentName, generateRoutes, readNav, type Nav } from './nav.js';
+import { componentName, generatePlatform, generateRoutes, readNav, type Nav } from './nav.js';
 import { checkPage, parsePage, type PageTree } from './page.js';
 import { generateWebPage } from './page-web.js';
 import type { PropsModel } from './props.js';
@@ -22,6 +22,8 @@ export interface App {
   nav: Nav;
   /** The pages drawn so far, in nav.json's order. */
   pages: AppPage[];
+  /** The components that take a `platform` prop. */
+  platformed: Set<string>;
 }
 
 /** Each component's prop names, from its `<Name>Props` declaration. */
@@ -63,19 +65,25 @@ export function readApp(appDir: string, model: PropsModel): App {
     }
   }
   if (errors.length > 0) throw new Error(`design/app:\n  ${errors.join('\n  ')}`);
-  return { nav, pages };
+  const platformed = new Set(
+    [...props].filter(([, names]) => names.has('platform')).map(([c]) => c),
+  );
+  return { nav, pages, platformed };
 }
 
 export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map<string, string> } {
   const drawn = new Set(app.pages.map((p) => p.id));
   return {
-    nav: new Map([['routes.tsx', generateRoutes(app.nav, drawn)]]),
+    nav: new Map([
+      ['routes.tsx', generateRoutes(app.nav, drawn)],
+      ['platform.ts', generatePlatform(app.nav)],
+    ]),
     pages: new Map(
       app.pages
         .filter(({ id }) => app.nav.pages.find((p) => p.id === id)?.platforms.includes('web'))
         .map(({ id, tree, placeholder }) => [
           `${componentName(id)}.tsx`,
-          generateWebPage(tree, id, placeholder),
+          generateWebPage(tree, id, placeholder, app.platformed),
         ]),
     ),
   };

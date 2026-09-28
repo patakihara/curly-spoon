@@ -45,6 +45,7 @@ export { NavRail, type NavRailItem, type NavRailProps } from './navigation/NavRa
 export { NowPlaying, type NowPlayingProps } from './media/NowPlaying';
 export { NowPlayingPage, type NowPlayingPageProps } from './media/NowPlayingPage';
 export { OutputDeviceButton, type OutputDeviceButtonProps } from './media/OutputDeviceButton';
+export { PageBody, type PageBodyProps } from './layout/PageBody';
 export { PlayActions, type PlayActionsProps } from './media/PlayActions';
 export { PlayerPanel, type PlayerPanelProps } from './layout/PlayerPanel';
 export { PlayerSheet, type PlayerSheetProps } from './layout/PlayerSheet';

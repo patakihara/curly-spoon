@@ -1,7 +1,14 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { generateRoutes, parseNav, readNav, splitRoute, type Nav } from './nav.js';
+import {
+  generatePlatform,
+  generateRoutes,
+  parseNav,
+  readNav,
+  splitRoute,
+  type Nav,
+} from './nav.js';
 import { APP_DIR, OUTPUTS, REPO_ROOT } from './outputs.js';
 
 const nav = readNav(join(REPO_ROOT, APP_DIR));
@@ -98,5 +105,19 @@ describe('the web route table', () => {
 
   it('leaves out Android-only pages', () => {
     expect(out).not.toContain('downloads');
+  });
+});
+
+describe('the web platform hook', () => {
+  it('draws at phone density while the layout is the bottom bar, below the first rail width', () => {
+    const tiny = parseNav({
+      destinations: [],
+      layouts: [
+        { minWidth: 0, nav: 'bottomBar' },
+        { minWidth: 600, nav: 'iconRail' },
+      ],
+      pages: [],
+    });
+    expect(generatePlatform(tiny)).toContain("const PHONE = '(max-width: 599px)';");
   });
 });

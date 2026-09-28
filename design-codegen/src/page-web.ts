@@ -23,9 +23,10 @@ const prop = (name: string, value: PropValue) =>
       ? `${name}=${JSON.stringify(value.value)}`
       : `${name}={${JSON.stringify(value.value)}}`;
 
-function render(tree: PageTree, indent: string): string[] {
+/** `platformed` names the components that take a `platform` prop; each gets the page's own. */
+function render(tree: PageTree, indent: string, platformed: Set<string>): string[] {
   const inner = indent + '  ';
-  const kids = (nodes: PageTree[], at: string) => nodes.flatMap((n) => render(n, at));
+  const kids = (nodes: PageTree[], at: string) => nodes.flatMap((n) => render(n, at, platformed));
   switch (tree.kind) {
     case 'text':
       return [`${indent}{${JSON.stringify(tree.value)}}`];
@@ -49,6 +50,9 @@ function render(tree: PageTree, indent: string): string[] {
       ];
     case 'element': {
       const props = Object.entries(tree.props).map(([name, value]) => ' ' + prop(name, value));
+      if (platformed.has(tree.component) && !('platform' in tree.props)) {
+        props.push(' platform={platform}');
+      }
       const open = `<${tree.component}${props.join('')}`;
       if (tree.children.length === 0) return [`${indent}${open} />`];
       return [`${indent}${open}>`, ...kids(tree.children, inner), `${indent}</${tree.component}>`];
@@ -56,26 +60,38 @@ function render(tree: PageTree, indent: string): string[] {
   }
 }
 
-export function generateWebPage(tree: PageTree, id: string, placeholder: unknown): string {
+export function generateWebPage(
+  tree: PageTree,
+  id: string,
+  placeholder: unknown,
+  platformed: Set<string>,
+): string {
   const name = componentName(id);
   const used = [...components(tree, new Set())].sort();
   const react = uses(tree, 'each') ? ["import { Fragment } from 'react';"] : [];
-  const state = uses(tree, 'when');
-  const params = state
-    ? `{ data = placeholder, state = 'full' }: { data?: ${name}Data; state?: string }`
-    : `{ data = placeholder }: { data?: ${name}Data }`;
   return [
     `// ${APP_NOTE}`,
     ...react,
+    "import { usePlatform, type Platform } from '../nav/platform';",
     `import { ${used.join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
     '',
     `export type ${name}Data = typeof placeholder;`,
     '',
-    `export default function ${name}(${params}) {`,
+    `export interface ${name}Props {`,
+    `  data?: ${name}Data;`,
+    '  /** Which of the placeholder states to show: M0 draws only `full`. */',
+    '  state?: string;',
+    '  /** The density to draw at; by default, the one the window width calls for. */',
+    '  platform?: Platform;',
+    '}',
+    '',
+    `export default function ${name}({ data = placeholder, state = 'full', platform: given }: ${name}Props) {`,
+    '  const detected = usePlatform();',
+    '  const platform = given ?? detected;',
     '  return (',
-    ...render(tree, '    '),
+    ...render(tree, '    ', platformed),
     '  );',
     '}',
     '',

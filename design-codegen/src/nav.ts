@@ -157,3 +157,36 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
     '',
   ].join('\n');
 }
+
+/**
+ * `platform.ts`: which density the window width calls for. Phone density holds while the layout
+ * is the bottom bar, below the first width with a rail.
+ */
+export function generatePlatform(nav: Nav): string {
+  const rails = nav.layouts.filter((l) => l.nav !== 'bottomBar').map((l) => l.minWidth);
+  const phoneMax = rails.length > 0 ? Math.min(...rails) - 1 : Number.MAX_SAFE_INTEGER;
+  return [
+    `// ${APP_NOTE}`,
+    "import { useSyncExternalStore } from 'react';",
+    '',
+    "export type Platform = 'mobile' | 'desktop';",
+    '',
+    `const PHONE = '(max-width: ${phoneMax}px)';`,
+    '',
+    'function subscribe(onChange: () => void): () => void {',
+    '  const query = window.matchMedia(PHONE);',
+    "  query.addEventListener('change', onChange);",
+    "  return () => query.removeEventListener('change', onChange);",
+    '}',
+    '',
+    '/** The density the window width calls for; desktop when there is no window. */',
+    'export function usePlatform(): Platform {',
+    '  return useSyncExternalStore(',
+    '    subscribe,',
+    "    () => (window.matchMedia(PHONE).matches ? 'mobile' : 'desktop'),",
+    "    () => 'desktop',",
+    '  );',
+    '}',
+    '',
+  ].join('\n');
+}

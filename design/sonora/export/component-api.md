@@ -60,7 +60,7 @@ Navigates into a category whose content you can't name yet — distinct from Chi
 
 ### ButtonGroup
 
-M3 connected button group — a row of segments that read as one control: outer ends fully rounded, 8px inner corners, and the selected segment morphs to fully rounded on both sides. Use for library filters and mode switches, not for navigation.
+M3 connected button group — a row of segments that read as one control: outer ends fully rounded, 8px inner corners, and the selected segment morphs to fully rounded on both sides. Use for library filters and mode switches, not for navigation. Never shows a native scrollbar. When the row overflows, a soft edge fade (a shadow in light theme, a glow in dark) appears only on the side(s) where content is actually clipped right now — gone the instant scrolling reaches that end, absent entirely when nothing overflows.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ M3 connected button group — a row of segments that read as one control: outer 
 | `value` | `string` | Key of the selected segment. |
 | `onChange` | `(next: string) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `scroll` | `boolean` | Adds momentum scrolling and a soft edge fade so an overflowing row reads as scrollable, not clipped. |
+| `scroll` | `boolean` | @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. |
 | `leading` | `ReactNode` | A pinned, non-scrolling slot before the first segment — an account avatar, in every Spotify filter row. |
 
 ### Chip
@@ -489,12 +489,12 @@ The backdrop's front layer: `--surface-bg` at 1dp, holding the primary content a
 
 ### FrontLayerHeader
 
-The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — no hairline at all; a tab bar draws its own underline indicator and two stacked rules are noise. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half. ### The scroll-spy subheader (`spy`) A front layer that scrolls vertically **requires** a subheader — the band is what the content scrolls under. When the screen has no control to put in it, the band is not therefore empty: with `spy` it shows the title of the section that has most recently scrolled up past it. At the top, before any section has passed, it is blank, and that blank is a real state — the row keeps its height so nothing jumps when the first title arrives. Two ways to say what the titles are, neither of which requires rewriting page content: - **The caller supplies them** — `sections={['Jump back in', 'Recently added', …]}`, the same strings already passed to the `Section`s in the feed, in document order. They are matched positionally against the elements found by `spySelector`, whose default already matches the `<section>` that `Section` renders. Used only when the count matches exactly: a mismatch would label each section with its neighbour's name, so it falls back to blank instead. - **The content carries them** — any element in the scroll container with a `data-spy-title` attribute. Per-element, so it always wins over the positional list, and it is the way in when the feed is not built from `Section`. The band finds the scroller itself, by looking inside the front layer for the vertical scroller that contains sections, and watches it with a capture listener. It never writes `scrollTop`, so `FrontLayer`'s per-view scroll memory is untouched. Horizontal shelves are ignored. A title change cross-fades over `--duration-fast` on `--ease-standard`, and is instant under `prefers-reduced-motion`.
+The front layer's subheader — a fixed area on the front layer, at the same 1dp as the content scrolling below it. This is where a screen's secondary header lives in a backdrop: tabs, a connected `ButtonGroup`, a scoped `SearchField`. It is *not* part of the app bar, and it does not carry the layer's rounding; the front layer does. Its horizontal padding is `--grid-margin`, the page measure, so tabs line up with the section headings beneath them. The divider rule: - `tabs={false}` — a hairline fades in along the bottom edge with scroll progress. - `tabs={true}` — a hairline is always shown, static rather than scroll-linked, and the tabs are pinned flush to the band's bottom edge (instead of centered) so the tab bar's own underline indicator sits right on it, reading as one line instead of two. - Either way the hairline is **inset** by the page margin rather than spanning the gutters, so it reads as the top of the content column instead of cutting the surface in half. ### The scroll-spy subheader (`spy`) A front layer that scrolls vertically **requires** a subheader — the band is what the content scrolls under. When the screen has no control to put in it, the band is not therefore empty: with `spy` it shows the title of the section that has most recently scrolled up past it. At the top, before any section has passed, it is blank, and that blank is a real state — the row keeps its height so nothing jumps when the first title arrives. Two ways to say what the titles are, neither of which requires rewriting page content: - **The caller supplies them** — `sections={['Jump back in', 'Recently added', …]}`, the same strings already passed to the `Section`s in the feed, in document order. They are matched positionally against the elements found by `spySelector`, whose default already matches the `<section>` that `Section` renders. Used only when the count matches exactly: a mismatch would label each section with its neighbour's name, so it falls back to blank instead. - **The content carries them** — any element in the scroll container with a `data-spy-title` attribute. Per-element, so it always wins over the positional list, and it is the way in when the feed is not built from `Section`. The band finds the scroller itself, by looking inside the front layer for the vertical scroller that contains sections, and watches it with a capture listener. It never writes `scrollTop`, so `FrontLayer`'s per-view scroll memory is untouched. Horizontal shelves are ignored. A title change cross-fades over `--duration-fast` on `--ease-standard`, and is instant under `prefers-reduced-motion`.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `children` | `ReactNode` | A `TabBar`, a `ButtonGroup`, a `SearchField` — whatever the screen's secondary header is. |
-| `tabs` | `boolean` | The content is a tab bar, which draws its own indicator — suppresses the hairline. |
+| `tabs` | `boolean` | The content is a tab bar: shows a static (non-scroll-linked) hairline and pins children to the band's bottom edge, so the tab bar's own indicator sits on that hairline. |
 | `progress` | `number` | 0–1 scroll progress; `FrontLayer` supplies it. Pass it explicitly to show a scrolled state statically. |
 | `spy` | `boolean` |  Turn the band into a scroll spy: it reports the section title that last passed under it, and is blank until one does. Leading in the band, so `children` may still sit beside it — but the case this exists for is the subheader that has no control of its own and would otherwise be an empty strip.  |
 | `sections` | `Array<string \| { title?: string }>` |  The section titles, in document order — plain strings, or objects with a `title`. Matched positionally against the elements `spySelector` finds, and only when the counts agree. Ignored entirely without `spy`.  |
@@ -541,6 +541,16 @@ App bar title for this view.
 | `searchHeight` | `string` |  |
 | `detailSearchPlaceholder` | `string` |  |
 | `children` | `((ctx: LibraryShellContext) => ReactNode) \| ReactNode` |  |
+
+### PageBody
+
+The body of a page inside the shell: the page margin on both sides (`--grid-margin`, or `--grid-margin-mobile`), the feed's top gap and an optional reading width. Wrap every page's content in it rather than padding a page by hand; Shelf bleeds back out through this margin.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `width` | `'full' \| 'tiles' \| 'list' \| 'form'` | The widest the content runs: a tile grid, a list, a form, or the whole pane (default). |
 
 ### PlayerPanel
 

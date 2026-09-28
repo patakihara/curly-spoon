@@ -68,7 +68,9 @@ data class SonoraColors(
     val surfaceFg: Color,
     val surfaceFgMuted: Color,
     val surfaceBorder: Color,
+    val divider: Color,
     val surfaceHover: Color,
+    val scrollEdge: Color,
     val artGradientStart: Color,
     val artGradientEnd: Color
 )
@@ -92,7 +94,9 @@ val SonoraDarkColors = SonoraColors(
     surfaceFg = Color(0xFFE1E1E1),
     surfaceFgMuted = Color(0xFF969696),
     surfaceBorder = Color(0x14FFFFFF),
+    divider = Color(0x33FFFFFF),
     surfaceHover = Color(0x1AFFFFFF),
+    scrollEdge = Color(0x38FFFFFF),
     artGradientStart = Color(0xFFB6C4FF),
     artGradientEnd = Color(0xFFFFB7DB)
 )
@@ -116,7 +120,9 @@ val SonoraLightColors = SonoraColors(
     surfaceFg = Color(0xFF191919),
     surfaceFgMuted = Color(0xFF505050),
     surfaceBorder = Color(0x14000000),
+    divider = Color(0x2E000000),
     surfaceHover = Color(0x0F000000),
+    scrollEdge = Color(0x2E000000),
     artGradientStart = Color(0xFF4D5C92),
     artGradientEnd = Color(0xFF75546F)
 )

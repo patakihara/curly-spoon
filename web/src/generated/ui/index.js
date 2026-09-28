@@ -45,6 +45,7 @@ export { NavRail } from './navigation/NavRail.jsx';
 export { NowPlaying } from './media/NowPlaying.jsx';
 export { NowPlayingPage } from './media/NowPlayingPage.jsx';
 export { OutputDeviceButton } from './media/OutputDeviceButton.jsx';
+export { PageBody } from './layout/PageBody.jsx';
 export { PlayActions } from './media/PlayActions.jsx';
 export { PlayerPanel } from './layout/PlayerPanel.jsx';
 export { PlayerSheet } from './layout/PlayerSheet.jsx';
