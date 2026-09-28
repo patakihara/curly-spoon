@@ -1200,7 +1200,8 @@ Material Symbols Rounded glyph name.
 | `active` | `string` | Key of the active item, in `items` or `footerItems`. |
 | `onChange` | `(key: string) => void` |  |
 | `expanded` | `boolean` |  |
-| `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided. |
+| `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided, leaving `expanded` to the caller. |
+| `toggle` | `boolean` |  Shows the menu toggle with no handler: the rail holds its own expanded state, starting from `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while expanded) collapses the labelled rail to the icon rail and back.  |
 | `footer` | `ReactNode` | Pinned to the bottom — an account row, theme switch, storage meter. |
 | `header` | `ReactNode` | Sits between the toggle and the items — a logo or brand mark. |
 

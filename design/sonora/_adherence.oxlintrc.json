@@ -719,8 +719,8 @@
         "message": "<NavRailItem> doesn't accept that prop. Declared props: key, label, icon."
       },
       {
-        "selector": "JSXOpeningElement[name.name='NavRail'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|footerItems|active|onChange|expanded|onToggleExpanded|footer|header|key|ref|className|style|children)$/]",
-        "message": "<NavRail> doesn't accept that prop. Declared props: items, footerItems, active, onChange, expanded, onToggleExpanded, footer, header."
+        "selector": "JSXOpeningElement[name.name='NavRail'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|footerItems|active|onChange|expanded|onToggleExpanded|toggle|footer|header|key|ref|className|style|children)$/]",
+        "message": "<NavRail> doesn't accept that prop. Declared props: items, footerItems, active, onChange, expanded, onToggleExpanded, toggle, footer, header."
       },
       {
         "selector": "JSXOpeningElement[name.name='RailFooter'] > JSXAttribute > JSXIdentifier[name!=/^(?:expanded|theme|themes|themeIcons|onThemeChange|title|sub|image|avatarSize|onIdentityClick|children|key|ref|className|style|children)$/]",

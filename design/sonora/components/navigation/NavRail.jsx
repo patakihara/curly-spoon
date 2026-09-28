@@ -4,7 +4,14 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 import { RailItem } from './RailItem.jsx';
 
 /** The desktop navigation rail: a bg-alt column of RailItems that widens between collapsed and expanded, with a menu toggle above, destinations pinned to its foot, and an optional footer below. */
-export function NavRail({ items = [], footerItems = [], active, onChange, expanded = true, onToggleExpanded, footer, header }) {
+export function NavRail({ items = [], footerItems = [], active, onChange, expanded: given = true, onToggleExpanded, toggle = false, footer, header }) {
+  /* With `toggle` and no handler the rail holds its own state: it starts from `expanded`, follows
+     it when the window changes layout, and the hamburger flips it in between. */
+  const [own, setOwn] = React.useState(given);
+  React.useEffect(() => setOwn(given), [given]);
+  const held = toggle && !onToggleExpanded;
+  const expanded = held ? own : given;
+  const onToggle = onToggleExpanded || (toggle ? () => setOwn((v) => !v) : undefined);
   const pad = 'padding-right:' + (expanded ? 'var(--spacing-xl)' : 'calc(var(--spacing-xl) + 6px)') + ';padding-left:calc(var(--spacing-xl) + 6px)';
   /* One row for the items and the pinned ones alike, so a destination at the foot is the same
      control as one at the top: same pill, same collapsed tab-bar treatment. */
@@ -22,9 +29,9 @@ export function NavRail({ items = [], footerItems = [], active, onChange, expand
       'width:var(--rail-width-' + (expanded ? 'expanded' : 'collapsed') + ');' +
       'transition:width var(--duration-slow) var(--ease-standard)'
     )}>
-      {onToggleExpanded && (
+      {onToggle && (
         <div style={sx('display:flex;align-items:center;flex-shrink:0;box-sizing:border-box;height:var(--appbar-height);padding-top:0px;padding-bottom:0px;padding-right:var(--spacing-xl);padding-left:calc(var(--spacing-xl) + 6px)')}>
-          <button onClick={onToggleExpanded} aria-label={expanded ? 'Collapse rail' : 'Expand rail'}
+          <button onClick={onToggle} aria-label={expanded ? 'Collapse rail' : 'Expand rail'}
             style={sx("width:56px;height:40px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--surface-fg-muted);cursor:pointer;border-radius:var(--radius-pill);font-family:'Material Symbols Rounded';font-size:var(--icon-sm)")}>
             {expanded ? 'menu_open' : 'menu'}
           </button>

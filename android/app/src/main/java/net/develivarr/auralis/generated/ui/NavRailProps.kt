@@ -29,8 +29,14 @@ data class NavRailProps(
     val active: String? = null,
     val onChange: ((String) -> Unit)? = null,
     val expanded: Boolean? = null,
-    /** Shows the menu toggle above the items when provided. */
+    /** Shows the menu toggle above the items when provided, leaving `expanded` to the caller. */
     val onToggleExpanded: (() -> Unit)? = null,
+    /**
+     * Shows the menu toggle with no handler: the rail holds its own expanded state, starting from
+     * `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while
+     * expanded) collapses the labelled rail to the icon rail and back.
+     */
+    val toggle: Boolean? = null,
     /** Pinned to the bottom — an account row, theme switch, storage meter. */
     val footer: (@Composable () -> Unit)? = null,
     /** Sits between the toggle and the items — a logo or brand mark. */

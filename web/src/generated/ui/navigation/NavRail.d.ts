@@ -27,8 +27,14 @@ export interface NavRailProps {
   active?: string;
   onChange?: (key: string) => void;
   expanded?: boolean;
-  /** Shows the menu toggle above the items when provided. */
+  /** Shows the menu toggle above the items when provided, leaving `expanded` to the caller. */
   onToggleExpanded?: () => void;
+  /**
+   * Shows the menu toggle with no handler: the rail holds its own expanded state, starting from
+   * `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while
+   * expanded) collapses the labelled rail to the icon rail and back.
+   */
+  toggle?: boolean;
   /** Pinned to the bottom — an account row, theme switch, storage meter. */
   footer?: ReactNode;
   /** Sits between the toggle and the items — a logo or brand mark. */
