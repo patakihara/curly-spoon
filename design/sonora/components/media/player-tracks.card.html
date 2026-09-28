@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x800" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states, and the media header at both sides of its breakpoint" -->
+<!-- @dsCard group="Components" viewport="1400x1300" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -9,7 +9,7 @@
 </head><body>
 <div id="root"></div>
 <script type="text/babel">
-const { MiniPlayer, ResultRow, MediaHeader, Button } = window.SonoraDesignSystem_6c1435;
+const { MiniPlayer, ResultRow, MediaHeader, Button, OverflowMenu } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   const [playing,setPlaying]=React.useState(true);
   return <div style={{display:'flex',flexDirection:'column',gap:24}}>
@@ -37,6 +37,16 @@ function Demo(){
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
       <MediaHeader kindLabel="Audiobook" title="Ink Heart" subtitle="Cornelia Funke" onSubtitle={()=>{}}
         meta="2023 · 18 chapters · 14 h 42 m" onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Under a page heading that already names the item: no title, one queue button (nextLabel null) and the menu after it, open</div>
+    <div style={{paddingBottom:150}}>
+      <MediaHeader kindLabel="Album" subtitle="Harbour Lights" onSubtitle={()=>{}} meta="2021 · 10 tracks · 41 min"
+        nextLabel={null} lastLabel="Add to queue" onPlay={()=>{}} onPlayLast={()=>{}}
+        menu={<OverflowMenu open align="start" items={[{ key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' }, { key: 'share', label: 'Share', icon: 'share' }]} />} />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A person, round, every label null: no action row at all</div>
+    <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
+      <MediaHeader round kindLabel="Artist" meta="3 albums · 2 EPs" playLabel={null} nextLabel={null} lastLabel={null} />
     </div>
   </div>;
 }

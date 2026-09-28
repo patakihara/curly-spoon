@@ -17,14 +17,19 @@ export interface MediaHeaderProps {
   compactAt?: number;
   /** Uppercase kind line above the title, e.g. "Album", "Audiobook". */
   kindLabel?: string;
-  title: string;
+  /** The item's name. Omit it when the page's own heading already names the item. */
+  title?: string;
   subtitle?: string;
   meta?: string;
-  playLabel?: string;
-  /** Label on the play-next button. Default "Next". */
-  nextLabel?: string;
-  /** Label on the play-last button. Default "Last". */
-  lastLabel?: string;
+  /** Label on the play button. Default "Play"; null leaves the button out. */
+  playLabel?: string | null;
+  /**
+   * Label on the play-next button. Default "Next"; null leaves the button out, for an item whose
+   * one queue button goes to the end of the queue and plays next on a long press.
+   */
+  nextLabel?: string | null;
+  /** Label on the play-last button. Default "Last"; null leaves the button out. */
+  lastLabel?: string | null;
   /** Circular art, for artist/author pages. */
   round?: boolean;
   onPlay?: () => void;
@@ -38,6 +43,8 @@ export interface MediaHeaderProps {
    * overflow). The default cluster renders exactly as it does today when this is absent.
    */
   actions?: ReactNode;
+  /** After the actions: an `OverflowMenu` with the verbs that get no button, such as Add to library. */
+  menu?: ReactNode;
   /** 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. */
   progress?: number | null;
 }

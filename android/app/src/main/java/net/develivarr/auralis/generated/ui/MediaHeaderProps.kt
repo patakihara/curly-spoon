@@ -20,13 +20,18 @@ data class MediaHeaderProps(
     val compactAt: Float? = null,
     /** Uppercase kind line above the title, e.g. "Album", "Audiobook". */
     val kindLabel: String? = null,
-    val title: String,
+    /** The item's name. Omit it when the page's own heading already names the item. */
+    val title: String? = null,
     val subtitle: String? = null,
     val meta: String? = null,
+    /** Label on the play button. Default "Play"; null leaves the button out. */
     val playLabel: String? = null,
-    /** Label on the play-next button. Default "Next". */
+    /**
+     * Label on the play-next button. Default "Next"; null leaves the button out, for an item whose
+     * one queue button goes to the end of the queue and plays next on a long press.
+     */
     val nextLabel: String? = null,
-    /** Label on the play-last button. Default "Last". */
+    /** Label on the play-last button. Default "Last"; null leaves the button out. */
     val lastLabel: String? = null,
     /** Circular art, for artist/author pages. */
     val round: Boolean? = null,
@@ -41,6 +46,8 @@ data class MediaHeaderProps(
      * overflow). The default cluster renders exactly as it does today when this is absent.
      */
     val actions: (@Composable () -> Unit)? = null,
+    /** After the actions: an `OverflowMenu` with the verbs that get no button, such as Add to library. */
+    val menu: (@Composable () -> Unit)? = null,
     /** 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. */
     val progress: Float? = null,
 )

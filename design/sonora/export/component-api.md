@@ -909,18 +909,19 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `compactAt` | `number` | Width in px below which the compact layout takes over. Default 600. |
 | `kindLabel` | `string` | Uppercase kind line above the title, e.g. "Album", "Audiobook". |
-| `title` *(required)* | `string` |  |
+| `title` | `string` | The item's name. Omit it when the page's own heading already names the item. |
 | `subtitle` | `string` |  |
 | `meta` | `string` |  |
-| `playLabel` | `string` |  |
-| `nextLabel` | `string` | Label on the play-next button. Default "Next". |
-| `lastLabel` | `string` | Label on the play-last button. Default "Last". |
+| `playLabel` | `string \| null` | Label on the play button. Default "Play"; null leaves the button out. |
+| `nextLabel` | `string \| null` |  Label on the play-next button. Default "Next"; null leaves the button out, for an item whose one queue button goes to the end of the queue and plays next on a long press.  |
+| `lastLabel` | `string \| null` | Label on the play-last button. Default "Last"; null leaves the button out. |
 | `round` | `boolean` | Circular art, for artist/author pages. |
 | `onPlay` | `() => void` |  |
 | `onPlayNext` | `() => void` |  |
 | `onPlayLast` | `() => void` |  |
 | `onSubtitle` | `() => void` | Makes the subtitle an accent-ink link. |
 | `actions` | `ReactNode` |  Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/ overflow). The default cluster renders exactly as it does today when this is absent.  |
+| `menu` | `ReactNode` | After the actions: an `OverflowMenu` with the verbs that get no button, such as Add to library. |
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. |
 
 ### MiniPlayer
