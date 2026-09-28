@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x1900" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states and numbered tracks, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item, a person's caption beside round art, and a book in its series" -->
+<!-- @dsCard group="Components" viewport="1400x1900" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states and numbered tracks, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item, a person's caption beside round art, a book in its series, and an episode with its add-to-a-list button" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -62,6 +62,12 @@ function Demo(){
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>The same book on a desktop, which keeps nothing offline: no download control</div>
     <MediaHeader platform="desktop" kindLabel="Audiobook" subtitle="Evelyn Harper" onSubtitle={()=>{}} partOf="The Harbour Quartet · Book 2" onPartOf={()=>{}}
       meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} />
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>An episode: resume, play next, a round add-to-a-list button (addLabel), and on a phone the download control</div>
+    <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
+      <MediaHeader platform="mobile" kindLabel="Episode" subtitle="Harbour Lights Radio" onSubtitle={()=>{}}
+        meta="12 Aug 2026 · 52 min · 31 min left" progress={0.4} playLabel="Resume" nextLabel="Play next" lastLabel={null}
+        addLabel="Add to a list" onAdd={()=>{}} download="idle" onDownload={()=>{}} />
+    </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A person, round, every label null: no action row at all</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
       <MediaHeader round kindLabel="Artist" meta="3 albums · 2 EPs" playLabel={null} nextLabel={null} lastLabel={null} />

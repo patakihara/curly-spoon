@@ -20,6 +20,11 @@ data class EpisodeRowProps(
     val finished: Boolean? = null,
     /** 0–1 part-listened position; draws a thin rule under the meta line. */
     val progress: Float? = null,
+    /**
+     * An episode of a show you don't follow: the art greyed to no colour and the title in muted ink,
+     * as MediaCard greys an item you don't own. It still plays.
+     */
+    val absent: Boolean? = null,
     /** Renders the "E" marker before the title. */
     val explicit: Boolean? = null,
     /** An ItemActionBar, rendered below the synopsis. */

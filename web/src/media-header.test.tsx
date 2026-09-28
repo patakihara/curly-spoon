@@ -39,3 +39,27 @@ describe("Sonora's MediaHeader beside its art", () => {
     );
   });
 });
+
+describe("Sonora's MediaHeader add-to-a-list control", () => {
+  const item = { kindLabel: 'Episode', meta: '52 min', playLabel: null, nextLabel: null };
+
+  it('[M0.canvas] draws a round add-to-a-list button named by its label, on both platforms', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = header({ ...item, lastLabel: null, addLabel: 'Add to a list', platform });
+      expect(html).toContain('aria-label="Add to a list"');
+      expect(html).toContain('playlist_add');
+    }
+  });
+
+  it('[M0.canvas] keeps it beside the menu, so a narrow row wraps the round controls as one', () => {
+    const menu = createElement('span', { id: 'menu' });
+    const html = header({ ...item, platform: 'mobile', lastLabel: null, addLabel: 'Add', menu });
+    expect(html).toMatch(
+      /<div style="display:flex;align-items:center;gap:10px"><button[^>]*aria-label="Add"[\s\S]*?<\/button><span id="menu"><\/span><\/div>/,
+    );
+  });
+
+  it('[M0.canvas] leaves it out unless given a label', () => {
+    expect(header({ ...item, lastLabel: 'Last' })).not.toContain('playlist_add');
+  });
+});

@@ -65,4 +65,11 @@ data class MediaHeaderProps(
     val download: Download? = null,
     /** Starts, cancels or removes the download, depending on `download`. */
     val onDownload: (() -> Unit)? = null,
+    /**
+     * The accessible name of a round add-to-a-list button after the queue buttons, such as "Add to a
+     * list". Null (the default) leaves it out.
+     */
+    val addLabel: String? = null,
+    /** Opens the choice of list to add the item to. */
+    val onAdd: (() -> Unit)? = null,
 )

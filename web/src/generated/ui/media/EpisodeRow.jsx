@@ -17,9 +17,9 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-episoder
  * List row for serial spoken-word content — an episode is not a track: it carries a synopsis you
  * need in order to choose, a publication date, a listened/finished state, and its own download.
  * A sibling of ResultRow rather than an extension of it, so the track and request lists ResultRow
- * already serves stay untouched.
+ * already serves stay untouched. `absent` greys an episode of a show you don't follow.
  */
-export function EpisodeRow({ image, title, description, meta, finished = false, progress = null, explicit = false, actions, onPlay, onClick, divider = false, platform = 'desktop' }) {
+export function EpisodeRow({ image, title, description, meta, finished = false, progress = null, explicit = false, absent = false, actions, onPlay, onClick, divider = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const art = mobile ? 56 : 64;
@@ -30,7 +30,10 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
     <div onClick={onClick} style={sx('position:relative;display:flex;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '10px 4px' : '12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
       <div className="sn-ep-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:var(--radius-xs)')}>
-          {CoverArt && <CoverArt src={image} />}
+          {/* Greyed the way MediaCard greys an item you don't own: no colour, so a dark cover reads greyed too. */}
+          {CoverArt && (absent
+            ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} /></div>
+            : <CoverArt src={image} />)}
         </div>
         {onPlay && (
           <div className="sn-ep-act" onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
@@ -48,7 +51,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
               <Badge tone="neutral" square>E</Badge>
             </span>
           )}
-          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
+          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (absent ? muted : fg))}>{title}</div>
         </div>
         {metaLine && (
           <div style={sx('display:flex;align-items:center;gap:6px;font-size:var(--text-sm);color:' + muted + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>

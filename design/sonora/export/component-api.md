@@ -792,6 +792,7 @@ List row for serial spoken-word content — an episode, not a track. Carries a s
 | `meta` | `string[]` | Parts joined with " • ", e.g. ["200K+ plays", "29 Dec 2025", "50min"]. |
 | `finished` | `boolean` | Appends a "Finished" marker with a filled check in --tone-library. |
 | `progress` | `number \| null` | 0–1 part-listened position; draws a thin rule under the meta line. |
+| `absent` | `boolean` |  An episode of a show you don't follow: the art greyed to no colour and the title in muted ink, as MediaCard greys an item you don't own. It still plays.  |
 | `explicit` | `boolean` | Renders the "E" marker before the title. |
 | `actions` | `ReactNode` | An ItemActionBar, rendered below the synopsis. |
 | `onPlay` | `() => void` | Given, reveals a play control over the artwork (hover on desktop, always on mobile). |
@@ -935,6 +936,8 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. |
 | `download` | `'idle' \| 'downloading' \| 'done' \| null` |  On a phone, a DownloadButton after the buttons in this state, keeping the item offline. A desktop keeps nothing offline and never draws it. Omit or pass null for none.  |
 | `onDownload` | `() => void` | Starts, cancels or removes the download, depending on `download`. |
+| `addLabel` | `string \| null` |  The accessible name of a round add-to-a-list button after the queue buttons, such as "Add to a list". Null (the default) leaves it out.  |
+| `onAdd` | `() => void` | Opens the choice of list to add the item to. |
 
 ### MiniPlayer
 

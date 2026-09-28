@@ -9,10 +9,11 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * settings/overflow, an episode's saved/downloaded/share/overflow. `progress` states how far into
  * a part-finished item the listener already is. A label given as null leaves its button out, and
  * `menu` follows the actions; with no title, the page's own heading names the item. `partOf` names
- * the whole an item belongs to, a book's series, and on a phone `download` keeps it offline. With no title
+ * the whole an item belongs to, a book's series, and on a phone `download` keeps it offline; `addLabel`
+ * adds a round button that saves the item into a list. With no title
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
-export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress = null, download = null, onDownload }) {
+export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
   const Button = NS().Button, CoverArt = NS().CoverArt, DownloadButton = NS().DownloadButton;
   const glyph = (name) => React.createElement('span', { style: sx("font-family:'Material Symbols Rounded';font-size:20px;line-height:1") }, name);
   const ref = React.useRef(null);
@@ -31,7 +32,8 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
   const art = mobile ? 208 : 232;
   // Only a phone keeps an item offline, so only a phone draws its download control.
   const offline = mobile && download != null && !!DownloadButton;
-  const acts = actions != null || menu != null || offline || playLabel !== null || nextLabel !== null || lastLabel !== null;
+  const add = addLabel != null;
+  const acts = actions != null || menu != null || offline || add || playLabel !== null || nextLabel !== null || lastLabel !== null;
   // Beside the art, the text sits on the art's baseline under a title; with no title and no
   // action row (a person, named by the page's heading) it is a caption, centred on the art.
   const caption = title == null && !acts;
@@ -62,8 +64,20 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
               {Button && lastLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('last_page')} onClick={onPlayLast}>{lastLabel}</Button>}
             </React.Fragment>
           )}
+          {/* The round controls stay together, so a phone's row too narrow for them all wraps them to a
+              line of their own rather than leaving the menu alone under the rest. */}
+          {(add || offline || menu != null) && <div style={sx('display:flex;align-items:center;gap:' + (mobile ? '10px' : '12px'))}>
+          {/* Saving the item into a list, drawn here rather than borrowed, as round and as quiet as the
+              download control beside it: a verb, not a queue button, so it takes no label of its own. */}
+          {add && (
+            <button onClick={onAdd} aria-label={addLabel} title={addLabel}
+              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid var(--surface-border);background:transparent;padding:0;cursor:pointer;color:var(--surface-fg-muted)')}>
+              <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 500;font-size:var(--icon-sm);line-height:1")}>playlist_add</span>
+            </button>
+          )}
           {offline && <DownloadButton state={download} onClick={onDownload} />}
           {menu}
+          </div>}
         </div>}
       </div>
     </div>

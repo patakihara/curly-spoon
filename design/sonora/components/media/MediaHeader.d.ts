@@ -62,5 +62,12 @@ export interface MediaHeaderProps {
   download?: 'idle' | 'downloading' | 'done' | null;
   /** Starts, cancels or removes the download, depending on `download`. */
   onDownload?: () => void;
+  /**
+   * The accessible name of a round add-to-a-list button after the queue buttons, such as "Add to a
+   * list". Null (the default) leaves it out.
+   */
+  addLabel?: string | null;
+  /** Opens the choice of list to add the item to. */
+  onAdd?: () => void;
 }
 export declare function MediaHeader(props: MediaHeaderProps): JSX.Element;

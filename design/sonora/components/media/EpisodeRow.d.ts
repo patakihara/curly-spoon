@@ -17,6 +17,11 @@ export interface EpisodeRowProps {
   finished?: boolean;
   /** 0–1 part-listened position; draws a thin rule under the meta line. */
   progress?: number | null;
+  /**
+   * An episode of a show you don't follow: the art greyed to no colour and the title in muted ink,
+   * as MediaCard greys an item you don't own. It still plays.
+   */
+  absent?: boolean;
   /** Renders the "E" marker before the title. */
   explicit?: boolean;
   /** An ItemActionBar, rendered below the synopsis. */
