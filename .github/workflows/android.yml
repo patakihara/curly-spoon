@@ -1,12 +1,5 @@
-# For now this is the ONLY place Android gets compiled: the development machine has no JDK,
-# no Android SDK and no Gradle installed, so `android` was written blind and a red run
-# here is the first real signal. Treat it as such.
-#
-# Note the reason is "not installed", not "cannot be installed". An earlier version of this
-# comment claimed dl.google.com was unreachable from that machine; that was inherited from
-# the ephemeral cloud container phases 1-4 were built in and is false there — dl.google.com,
-# maven.google.com and services.gradle.org all respond fine (measured 2026-08-02). Installing
-# a JDK and the SDK would make local builds work and demote this workflow to a second opinion.
+# Android compiles only here and in the release workflows: the development machine has no JDK,
+# Android SDK or Gradle, so a red run here is the first real signal. Treat it as such.
 name: Android
 
 on:
@@ -36,7 +29,7 @@ jobs:
 
       # The repo does ship a wrapper, so the Gradle version is pinned by
       # gradle/wrapper/gradle-wrapper.properties (8.11.1) rather than by this file — one
-      # source of truth, and the reproducibility phase 11 will want. Because that wrapper is
+      # source of truth, which reproducible release builds need. Because that wrapper is
       # a committed binary in a public repo, validate it on every run: this action checks
       # gradle-wrapper.jar against Gradle's published checksums, so a tampered or
       # unrecognised jar fails CI instead of silently executing.

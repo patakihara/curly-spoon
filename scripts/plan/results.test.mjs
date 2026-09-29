@@ -15,14 +15,14 @@ import { fakeExec, fixtureRepo, read, removeTree, tag, write } from './testing.m
 const VITEST_XML = `<?xml version="1.0" encoding="UTF-8" ?>
 <testsuites name="vitest tests" tests="3" failures="1" errors="0" time="1.117">
     <testsuite name="server/src/app.test.ts" timestamp="2026-09-27T20:20:19.252Z" hostname="host" tests="3" failures="1" errors="0" skipped="1" time="0.277">
-        <testcase classname="server/src/app.test.ts" name="GET /health &gt; answers ok" time="0.228">
+        <testcase classname="server/src/app.test.ts" name="GET /api/health &gt; answers ok" time="0.228">
         </testcase>
-        <testcase classname="server/src/app.test.ts" name="GET /health &gt; ${tag('M0.aa', 'a')} reports the commit" time="0.02">
+        <testcase classname="server/src/app.test.ts" name="GET /api/health &gt; ${tag('M0.aa', 'a')} reports the commit" time="0.02">
             <failure message="expected &apos;abc&apos; to be &apos;def&apos;" type="AssertionError">
 AssertionError: expected 'abc' to be 'def'
             </failure>
         </testcase>
-        <testcase classname="server/src/app.test.ts" name="GET /health &gt; later" time="0">
+        <testcase classname="server/src/app.test.ts" name="GET /api/health &gt; later" time="0">
             <skipped/>
         </testcase>
     </testsuite>
@@ -66,9 +66,9 @@ const GRADLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 test('parseJUnit reads vitest output: full names, failures and skips', () => {
   assert.deepEqual(parseJUnit(VITEST_XML), [
-    { name: 'GET /health > answers ok', status: 'passed' },
-    { name: `GET /health > ${tag('M0.aa', 'a')} reports the commit`, status: 'failed' },
-    { name: 'GET /health > later', status: 'skipped' },
+    { name: 'GET /api/health > answers ok', status: 'passed' },
+    { name: `GET /api/health > ${tag('M0.aa', 'a')} reports the commit`, status: 'failed' },
+    { name: 'GET /api/health > later', status: 'skipped' },
   ]);
 });
 
@@ -130,7 +130,7 @@ test('collectResults keeps only tagged tests, with their item, criterion and sta
       {
         item: 'M0.aa',
         criterion: 'a',
-        name: `GET /health > ${tag('M0.aa', 'a')} reports the commit`,
+        name: `GET /api/health > ${tag('M0.aa', 'a')} reports the commit`,
         status: 'failed',
       },
       {

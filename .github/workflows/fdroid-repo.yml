@@ -94,7 +94,7 @@ jobs:
           echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
 
   # Fails loudly, before any build or checkout of significant work, if the repo signing key
-  # the user must generate and store by hand (docs/FDROID_REPO.md, step 1) is missing. A
+  # the user must generate and store by hand (docs/FDROID_REPO.md, step 3) is missing. A
   # silent skip here would be worse than a hard failure: a pushed release tag would look
   # successful (release.yml still runs) while the F-Droid repo silently stops updating,
   # and Droid-ify would keep serving a stale index with no error visible anywhere.
@@ -118,7 +118,7 @@ jobs:
           fi
 
       # A separate, additive check for the *app* signing secrets (`release.yml`'s
-      # `ANDROID_KEYSTORE_*` — see docs/FDROID_REPO.md). This job now also gates the APK build
+      # `ANDROID_KEYSTORE_*` — see docs/FDROID_REPO.md). This job also gates the APK build
       # below, which signs with that key rather than debug: the F-Droid repo indexes the same
       # release-signed artifact `release.yml` publishes, so it needs the same secrets. Kept as
       # its own step rather than folded into the check above so the two failure messages never

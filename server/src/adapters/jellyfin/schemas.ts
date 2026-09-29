@@ -1,6 +1,5 @@
 /**
- * Zod schemas for the Jellyfin calls Auralis makes, cut from the legacy client's `schemas/raw.ts`
- * to what these calls parse. Field names are PascalCase: requests send a bare
+ * Zod schemas for the Jellyfin calls Auralis makes, cut to what these calls parse. Field names are PascalCase: requests send a bare
  * `Accept: application/json`, whose serializer (`Jellyfin.Extensions/Json/JsonDefaults.cs`) sets
  * no naming policy; camelCase comes only with `profile="CamelCase"`.
  *

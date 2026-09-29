@@ -1,14 +1,14 @@
-# Tag-driven release automation — additive to `ci.yml`'s `publish` job, not a replacement
-# for it. `ci.yml` keeps writing `:latest` on every green push to `main`, and mediaserver's
-# Watchtower keeps auto-updating from that tag exactly as it does today; nothing here changes
-# what `:latest` means or how it gets written. This workflow is a second, slower channel for
+# Tag-driven release automation — additive to `publish.yml`, not a replacement for it.
+# `publish.yml` keeps writing `:latest` on every green push to `main`, and the staging
+# container keeps following that tag; nothing here changes what `:latest` means or how it
+# gets written. This workflow is a second, slower channel for
 # anyone who wants to pin a specific, named version instead of riding continuous deployment —
 # see README.md for how to run the image.
 name: Release
 
 # Tags only, never a branch push and never a pull_request — a `v*` tag is a deliberate act
 # ("I am cutting a release"), unlike a push to `main`, which happens on every merge. Building
-# on every push here would duplicate `ci.yml`'s job for no reason; building on a `pull_request`
+# on every push here would duplicate `publish.yml` for no reason; building on a `pull_request`
 # would mean a fork's PR could trigger a job with `packages: write`/`contents: write` scopes.
 on:
   push:
@@ -16,7 +16,7 @@ on:
       - 'v*'
 
 # Deliberately no `cancel-in-progress: true`, and deliberately no `cancel-in-progress` key at
-# all — same reasoning as `ci.yml`'s `publish` job (see that file's `concurrency` comment): a
+# all — unlike `publish.yml`, whose runs all push the same tags and so may replace each other: a
 # release is coupled to an artifact someone will actually download and a GitHub Release page
 # someone will actually read. Cancelling one mid-run would leave it half-published — maybe the
 # image pushed, maybe not; maybe the GitHub Release exists with no APK attached — with nothing
@@ -88,7 +88,7 @@ jobs:
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Mirrors `ci.yml`'s `publish` job deliberately — same mechanics, same reasoning, different
+  # Mirrors `publish.yml`'s `publish` job deliberately — same mechanics, same reasoning, different
   # tags. Read that job's comments for the full explanation of each step; this one only notes
   # where it differs.
   publish-image:
@@ -100,7 +100,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      # QEMU before buildx, same ordering requirement as `ci.yml`: buildx enumerates the
+      # QEMU before buildx, same ordering requirement as `publish.yml`: buildx enumerates the
       # platforms it can emulate when it starts, so registering the binfmt handlers after
       # buildx has already started would leave it advertising amd64 only and the arm64 build
       # would fail with "no match for platform".
@@ -111,15 +111,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # `:<version>` and `:stable` — never `:latest`. `:latest` is `ci.yml`'s `publish` job's
-      # tag alone, and mediaserver's Watchtower auto-updates from it; writing it here too would
-      # mean an unrelated tag push could silently redeploy that live box outside the continuous
-      # path it currently follows. `:stable` exists as the moving pointer for someone who wants
+      # `:<version>` and `:stable` — never `:latest`. `:latest` is `publish.yml`'s tag alone,
+      # and the staging container redeploys from it; writing it here too would mean an
+      # unrelated tag push could silently redeploy staging outside the continuous path it
+      # follows. `:stable` exists as the moving pointer for someone who wants
       # "the newest tagged release" without hardcoding a version string in their own compose
       # file — the tagged-release equivalent of what `:latest` is to `main`, just on the slower
       # channel.
       #
-      # Same hardcoded lowercase `ghcr.io/patakihara/auralis` path as `ci.yml`, for the same
+      # Same hardcoded lowercase `ghcr.io/patakihara/auralis` path as `publish.yml`, for the same
       # reason: GHCR rejects uppercase image paths, and interpolating `github.repository_owner`
       # is not guaranteed to stay lowercase.
       - uses: docker/build-push-action@v6
@@ -135,10 +135,10 @@ jobs:
           cache-to: type=gha,mode=max
 
   # Fails loudly, before any build, if the app signing key the user must generate and store by
-  # hand (docs/FDROID_REPO.md, "the app signing key" step) is missing. Same idiom as
+  # hand (docs/FDROID_REPO.md, step 1) is missing. Same idiom as
   # `fdroid-repo.yml`'s `check-secrets` job for the (separate, repo-index) `FDROID_REPO_*`
   # secrets — a silent fallback to debug signing here would publish an un-updatable APK to a
-  # public Releases page, which is the exact failure this whole wave exists to prevent.
+  # public Releases page, which is the exact failure this job prevents.
   check-secrets:
     name: Verify the app signing secrets are configured
     runs-on: ubuntu-latest
@@ -275,7 +275,7 @@ jobs:
             ## Android APK
 
             The attached APK is **release-signed** with this project's app signing key — see
-            `docs/FDROID_REPO.md` for the key's storage and rotation notes. Installs update
+            `docs/FDROID_REPO.md` for how the key is kept. Installs update
             in place over any previous release-signed install of this app.
 
             ## Changelog
