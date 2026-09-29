@@ -588,6 +588,9 @@ describe('a page opening another', () => {
     expect(() =>
       parsePage(page('<MediaCard onClick={<SignIn returnTo={data.ref} />} />'), 'book'),
     ).toThrow(/SignIn takes nothing, not returnTo/);
+    expect(() => parsePage(page('<MediaCard onClick={<SignIn {...data} />} />'), 'book')).toThrow(
+      /SignIn takes nothing, not a spread/,
+    );
     expect(() => parsePage(page('<MediaCard onClick={<SignIn>Go</SignIn>} />'), 'book')).toThrow(
       /SignIn takes no children/,
     );
