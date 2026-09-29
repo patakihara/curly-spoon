@@ -16,6 +16,7 @@ import {
   UserList,
 } from './auth.js';
 import { HealthResponse } from './health.js';
+import { AbsStreamParams, AudioBytes, PlaybackPlan, PlayBody } from './play.js';
 import { type z } from './zod.js';
 
 /**
@@ -45,6 +46,11 @@ export interface Route<Response extends z.ZodTypeAny = z.ZodTypeAny> {
   redirect?: true;
   /** May answer 429 with `Retry-After`. */
   rateLimited?: true;
+  /**
+   * Streams audio instead of JSON: the whole file with 200, or with `Range` 206 and that range,
+   * or 416 for a range past the end. `response` describes the bytes.
+   */
+  stream?: true;
 }
 
 export const health = {
@@ -179,6 +185,29 @@ export const listUsers = {
   access: 'admin',
 } as const satisfies Route;
 
+export const play = {
+  method: 'POST',
+  path: '/api/play',
+  operationId: 'play',
+  summary: 'Plan how to play an item, as the signed-in person',
+  responseDescription: 'The tracks to play, streamed through this server, and where to start.',
+  response: PlaybackPlan,
+  access: 'member',
+  body: PlayBody,
+} as const satisfies Route;
+
+export const streamAbs = {
+  method: 'GET',
+  path: '/api/stream/abs/{itemId}/{ino}',
+  operationId: 'streamAbs',
+  summary: "Stream an Audiobookshelf file with the signed-in person's own access, ranges and all",
+  responseDescription: 'The whole file.',
+  response: AudioBytes,
+  access: 'member',
+  params: AbsStreamParams,
+  stream: true,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -193,4 +222,6 @@ export const routes: readonly Route[] = [
   renameDevice,
   deleteDevice,
   listUsers,
+  play,
+  streamAbs,
 ];

@@ -1,6 +1,6 @@
 {
   "upstream": "audiobookshelf",
-  "upstreamVersion": "2.36.1",
+  "upstreamVersion": "2.37.0",
   "call": "item-play",
   "request": {
     "method": "POST",
@@ -38,7 +38,7 @@
     },
     "body": {
       "json": {
-        "id": "69636cb5-1478-457d-ba4f-3378aaca1571",
+        "id": "1c3d49b4-8966-4e20-98ab-c8500b0b832b",
         "userId": "169161f6-18a9-4b97-804e-4870fe980143",
         "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
         "libraryItemId": "6d9c389e-cc45-4e17-9bcb-6bc33ee88b06",
@@ -161,14 +161,14 @@
           "clientName": "Auralis",
           "deviceName": ""
         },
-        "serverVersion": "2.36.1",
-        "date": "2026-09-28",
-        "dayOfWeek": "Monday",
+        "serverVersion": "2.37.0",
+        "date": "2026-09-29",
+        "dayOfWeek": "Tuesday",
         "timeListening": 0,
         "startTime": 0,
         "currentTime": 0,
-        "startedAt": 1790548888167,
-        "updatedAt": 1790548888167,
+        "startedAt": 1790647071784,
+        "updatedAt": 1790647071784,
         "audioTracks": [
           {
             "index": 1,

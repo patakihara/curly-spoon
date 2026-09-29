@@ -60,6 +60,9 @@ export const audioTrackSchema = z
   .object({
     contentUrl: z.string(),
     mimeType: z.string().optional(),
+    /** Seconds; `startOffset` is where the track starts within the whole item. */
+    duration: z.number().optional(),
+    startOffset: z.number().optional(),
     metadata: z.object({}).passthrough().nullable().optional(),
   })
   .passthrough();
@@ -69,8 +72,39 @@ export const audioTrackSchema = z
  * recording shows for the direct-play body.
  */
 export const playSessionSchema = z
-  .object({ id: z.string(), playMethod: z.number(), audioTracks: z.array(audioTrackSchema) })
+  .object({
+    id: z.string(),
+    playMethod: z.number(),
+    audioTracks: z.array(audioTrackSchema),
+    /** Seconds into the item where this person left off. */
+    currentTime: z.number().optional(),
+  })
   .passthrough();
+
+/** An item id or a file's inode number, as they sit in a path: nothing that could change it. */
+export const itemIdSchema = z.string().regex(/^[\w-]{1,64}$/);
+export const inoSchema = z.string().regex(/^\d{1,20}$/);
+
+/** One audio file of an item: what `GET /api/items/:id/file/:ino` serves. */
+export interface FileRef {
+  itemId: string;
+  ino: string;
+}
+
+/**
+ * The headers of `GET /api/items/:id/file/:ino`, recorded as a 206 to `Range: bytes=0-1`:
+ * ABS sets the audio type from the file's extension and serves ranges.
+ */
+export const fileHeadersSchema = z.object({
+  'content-type': z.string().regex(/^audio\//i, 'an audio type'),
+  'content-length': z.string().regex(/^\d+$/).optional(),
+  'content-range': z
+    .string()
+    .regex(/^bytes (?:\d+-\d+|\*)\/(?:\d+|\*)$/)
+    .optional(),
+  'accept-ranges': z.string().optional(),
+});
+export type FileHeaders = z.infer<typeof fileHeadersSchema>;
 
 /** `POST /api/session/:id/close` answers a bare 200 (`OK` as text); nothing in it is read. */
 export const closeSessionSchema = z.unknown();

@@ -344,6 +344,17 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
     ]);
   });
 
+  it("[M0.record/c] a stand-in body's file name and description are scanned like any text", () => {
+    const standIn = (synthesized: string) =>
+      leak((r) => {
+        r.response.body = { bytes: 'item-file.m4a', synthesized };
+      });
+    expect(scanRecording(standIn('a 20 s tone standing in for the real file'))).toEqual([]);
+    expect(scanRecording(standIn('copied from files.example.fi'))).toEqual([
+      { kind: 'host', path: '$.response.body.synthesized' },
+    ]);
+  });
+
   it('[M0.record/c] the scrubbed placeholders pass the scan', () => {
     expect(
       scanRecording(

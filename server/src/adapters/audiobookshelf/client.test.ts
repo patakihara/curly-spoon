@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AdapterError, type FetchLike } from '../http/fetch.js';
-import { AbsClient } from './client.js';
+import { AbsClient, contentUrlParts } from './client.js';
 
 interface Sent {
   url: string;
@@ -96,5 +96,81 @@ describe('the Audiobookshelf client', () => {
     const failure = (await abs.getLibraries().catch((e: unknown) => e)) as AdapterError;
     expect(failure.kind).toBe('status');
     expect(failure.status).toBe(401);
+  });
+
+  it('openFile asks for the file with the range and the key, and hands back its audio stream', async () => {
+    const sent: Sent[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      sent.push({
+        url,
+        method: init?.method ?? 'GET',
+        headers: new Headers(init?.headers),
+        body: undefined,
+      });
+      return new Response(new Uint8Array([1, 2]), {
+        status: 206,
+        headers: {
+          'content-type': 'audio/mp4',
+          'accept-ranges': 'bytes',
+          'content-range': 'bytes 0-1/100',
+          'content-length': '2',
+        },
+      });
+    };
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'the-key', fetch });
+    const file = await abs.openFile({ itemId: 'li_1', ino: '7' }, 'bytes=0-1');
+    expect(sent[0]?.url).toBe('http://upstream.invalid/api/items/li_1/file/7');
+    expect(sent[0]?.headers.get('range')).toBe('bytes=0-1');
+    expect(sent[0]?.headers.get('authorization')).toBe('Bearer the-key');
+    expect(file.status).toBe(206);
+    expect(file.headers).toEqual({
+      'content-type': 'audio/mp4',
+      'accept-ranges': 'bytes',
+      'content-range': 'bytes 0-1/100',
+      'content-length': '2',
+    });
+    expect(new Uint8Array(await new Response(file.body).arrayBuffer())).toEqual(
+      new Uint8Array([1, 2]),
+    );
+  });
+
+  it('openFile without a range sends none', async () => {
+    let range: string | null = 'unset';
+    const fetch: FetchLike = async (_url, init) => {
+      range = new Headers(init?.headers).get('range');
+      return new Response('x', { status: 200, headers: { 'content-type': 'audio/mpeg' } });
+    };
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    expect((await abs.openFile({ itemId: 'li_1', ino: '7' })).status).toBe(200);
+    expect(range).toBeNull();
+  });
+
+  it('openFile refuses an answer that is not audio, as a parse error naming the call', async () => {
+    const fetch: FetchLike = async () =>
+      new Response('<html>', { status: 200, headers: { 'content-type': 'text/html' } });
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    const failure = (await abs
+      .openFile({ itemId: 'li_1', ino: '7' })
+      .catch((e: unknown) => e)) as AdapterError;
+    expect(failure).toBeInstanceOf(AdapterError);
+    expect(failure.kind).toBe('parse');
+    expect(failure.message).toContain('GET /api/items/li_1/file/7');
+  });
+
+  it('openFile fails on a refused range as a status error carrying the status', async () => {
+    const fetch: FetchLike = async () =>
+      new Response(null, { status: 416, headers: { 'content-range': 'bytes */100' } });
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    const failure = (await abs
+      .openFile({ itemId: 'li_1', ino: '7' }, 'bytes=500-')
+      .catch((e: unknown) => e)) as AdapterError;
+    expect(failure.kind).toBe('status');
+    expect(failure.status).toBe(416);
+  });
+
+  it("a direct-play track's content URL names its item and file, and nothing else does", () => {
+    expect(contentUrlParts('/api/items/li_1/file/45152')).toEqual({ itemId: 'li_1', ino: '45152' });
+    expect(contentUrlParts('/hls/play_1/output.m3u8')).toBeNull();
+    expect(contentUrlParts('/api/items/li_1/file/7/download')).toBeNull();
   });
 });

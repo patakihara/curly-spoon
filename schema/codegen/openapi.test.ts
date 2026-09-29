@@ -76,4 +76,24 @@ describe('the OpenAPI document', () => {
       headers: { Location: { schema: { type: 'string' } } },
     });
   });
+
+  it("describes a streamed route's audio answer, whole or a range, and a range past its end", () => {
+    const listen = {
+      method: 'GET',
+      path: '/listen/{id}',
+      operationId: 'listen',
+      summary: 'Streams a file',
+      responseDescription: 'The file.',
+      response: z.string().openapi({ format: 'binary' }),
+      access: 'member',
+      params: z.object({ id: z.string() }),
+      stream: true,
+    } as const satisfies Route;
+    const get = buildOpenApiDocument([listen], ErrorResponse).paths?.['/listen/{id}']?.get;
+    expect(Object.keys(get?.responses ?? {})).toEqual(['200', '206', '400', '401', '403', '416']);
+    const audio = { 'audio/*': { schema: { type: 'string', format: 'binary' } } };
+    expect(get?.responses?.['200']).toEqual({ description: 'The file.', content: audio });
+    expect(get?.responses?.['206']).toMatchObject({ content: audio });
+    expect(get?.responses?.['416']).toMatchObject({ description: expect.any(String) as unknown });
+  });
 });

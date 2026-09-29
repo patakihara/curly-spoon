@@ -26,6 +26,15 @@ export {
 } from './auth.js';
 export { HealthResponse } from './health.js';
 export {
+  AbsStreamParams,
+  AudioBytes,
+  MediaRef,
+  MediaSource,
+  PlaybackPlan,
+  PlaybackTrack,
+  PlayBody,
+} from './play.js';
+export {
   appToken,
   deleteDevice,
   getMe,
@@ -36,9 +45,11 @@ export {
   login,
   loginCallback,
   logout,
+  play,
   postSetup,
   renameDevice,
   routes,
+  streamAbs,
   type Access,
   type Route,
 } from './routes.js';

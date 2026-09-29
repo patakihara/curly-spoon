@@ -20,7 +20,7 @@ import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { AbsClient } from './audiobookshelf/client.js';
+import { AbsClient, contentUrlParts } from './audiobookshelf/client.js';
 import { type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { recordingSchema } from './http/recording.js';
@@ -47,6 +47,17 @@ OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
 const CLIENT_VERSION = '0.0.0';
+
+/**
+ * The file call's body is never kept: it is a household audio file. Its recording names a
+ * committed tone in the same codec and container instead, made by `scripts/fixtures/tone.sh`.
+ */
+export const ITEM_FILE_STAND_IN = {
+  bytes: 'item-file.m4a',
+  synthesized:
+    'A 20 s 440 Hz sine tone, AAC mono 22.05 kHz in MP4, made by scripts/fixtures/tone.sh. ' +
+    'Status and headers are the real answer to Range: bytes=0-1; the body is not.',
+} as const;
 const here = fileURLToPath(new URL('.', import.meta.url));
 
 export interface RecordIo {
@@ -131,6 +142,14 @@ async function recordAbs(
     const session = await rec.capture('item-play', () =>
       abs.play(first.id, { deviceId: 'auralis-recorder', clientVersion: CLIENT_VERSION }),
     );
+    // Two bytes of the first track's file: its real status and headers, and a stand-in body.
+    const [track] = session.audioTracks;
+    const file = track && contentUrlParts(track.contentUrl);
+    if (!file) throw new Error('the play answer has no direct-play track to record');
+    const opened = await rec.capture('item-file', () => abs.openFile(file, 'bytes=0-1'), {
+      standIn: ITEM_FILE_STAND_IN,
+    });
+    await opened.body.cancel();
     await rec.capture('session-close', () => abs.closeSession(session.id));
     closed = true;
   } finally {
@@ -139,7 +158,7 @@ async function recordAbs(
       await abs.closeSession(sessionId).catch(() => undefined);
     }
   }
-  return ['library-list', 'item-detail', 'item-play', 'session-close'].map((c) =>
+  return ['library-list', 'item-detail', 'item-play', 'item-file', 'session-close'].map((c) =>
     join(dir, `${c}.json`),
   );
 }

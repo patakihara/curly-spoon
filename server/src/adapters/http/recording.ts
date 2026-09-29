@@ -5,11 +5,27 @@
  */
 import { z } from 'zod';
 
-/** `null` for no body, `{json}` for a JSON body, `{text}` for anything else (an HLS playlist). */
+/**
+ * A file committed beside the recording that stands in for a binary body: the real body (a
+ * household audio file) is never kept. `synthesized` says what the file is instead.
+ */
+export const bytesBodySchema = z
+  .object({
+    bytes: z.string().regex(/^[\w-]+\.[a-z0-9]+$/, 'a plain file name beside the recording'),
+    synthesized: z.string().min(1),
+  })
+  .strict();
+export type BytesBody = z.infer<typeof bytesBodySchema>;
+
+/**
+ * `null` for no body, `{json}` for a JSON body, `{text}` for anything else textual (an HLS
+ * playlist), `{bytes}` for an audio file's body, served from a committed stand-in.
+ */
 export const recordedBodySchema = z.union([
   z.null(),
   z.object({ json: z.unknown() }).strict(),
   z.object({ text: z.string() }).strict(),
+  bytesBodySchema,
 ]);
 export type RecordedBody = z.infer<typeof recordedBodySchema>;
 

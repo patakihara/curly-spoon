@@ -210,7 +210,10 @@ export function scanRecording(recording: Recording, options: ScanOptions = {}): 
     ['response', response.body],
   ] as const) {
     if (body === null) continue;
-    if ('text' in body) walk(body.text, undefined, `$.${side}.body.text`, false);
+    if ('bytes' in body) {
+      walk(body.bytes, undefined, `$.${side}.body.bytes`, false);
+      walk(body.synthesized, undefined, `$.${side}.body.synthesized`, false);
+    } else if ('text' in body) walk(body.text, undefined, `$.${side}.body.text`, false);
     else walk(body.json, undefined, `$.${side}.body.json`, true);
   }
   return findings;

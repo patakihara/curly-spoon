@@ -67,6 +67,12 @@ const app = await buildApp({
   setupCodeFile,
   signOn,
   linker,
+  upstreams: {
+    key: secretKey,
+    config: { absUrl: config.abs?.url, jellyfinUrl: config.jellyfin?.url },
+    fetch,
+    linker,
+  },
   logger: true,
 });
 

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { type FetchLike } from './http/fetch.js';
 import { runRecord } from './record-cli.js';
@@ -24,24 +25,44 @@ function fakeAbs(play: unknown) {
     if (pathname === '/api/items/li1') return json({ id: 'li1', mediaType: 'book', media: {} });
     if (pathname === '/api/items/li1/play') return json(play);
     if (pathname.startsWith('/api/session/')) return new Response('OK', { status: 200 });
+    if (pathname === '/api/items/li1/file/1') {
+      ranges.push(new Headers(init?.headers).get('range'));
+      return new Response('Zq', {
+        status: 206,
+        headers: {
+          'content-type': 'audio/mp4',
+          'accept-ranges': 'bytes',
+          'content-range': 'bytes 0-1/158919642',
+        },
+      });
+    }
     return new Response('not found', { status: 404 });
   };
-  return { fetch, asked };
+  const ranges: (string | null)[] = [];
+  return { fetch, asked, ranges };
 }
 
 function io(fetch: FetchLike) {
   const err: string[] = [];
+  const out: string[] = [];
   return {
     io: {
       argv: ['--abs', BASE, '--only', 'abs', '--dry-run'],
       stdin: 'ABS_API_KEY=test-abs-key-0000\n',
       fetch,
-      out: () => undefined,
+      out: (line: string) => out.push(line),
       err: (line: string) => err.push(line),
     },
     err,
+    out,
   };
 }
+
+const directPlay = {
+  id: 'play_8',
+  playMethod: 0,
+  audioTracks: [{ contentUrl: '/api/items/li1/file/1', mimeType: 'audio/mp4' }],
+};
 
 describe('record mode against Audiobookshelf', () => {
   it('closes the playback session even when the play answer fails its schema', async () => {
@@ -52,11 +73,7 @@ describe('record mode against Audiobookshelf', () => {
   });
 
   it('closes the session it recorded, exactly once, when everything parses', async () => {
-    const abs = fakeAbs({
-      id: 'play_8',
-      playMethod: 0,
-      audioTracks: [{ contentUrl: '/api/items/li1/file/1', mimeType: 'audio/mp4' }],
-    });
+    const abs = fakeAbs(directPlay);
     const { io: recordIo, err } = io(abs.fetch);
     const code = await runRecord(recordIo);
     expect(err).toEqual([]);
@@ -64,6 +81,35 @@ describe('record mode against Audiobookshelf', () => {
     expect(abs.asked.filter((a) => a.endsWith('/close'))).toEqual([
       'POST /api/session/play_8/close',
     ]);
+  });
+
+  it("records the first track's file as two bytes' headers, before the session closes", async () => {
+    const abs = fakeAbs(directPlay);
+    const { io: recordIo, out } = io(abs.fetch);
+    expect(await runRecord(recordIo)).toBe(0);
+    expect(abs.ranges).toEqual(['bytes=0-1']);
+    const [file, close] = ['GET /api/items/li1/file/1', 'POST /api/session/play_8/close'];
+    expect(abs.asked.indexOf(file)).toBeLessThan(abs.asked.indexOf(close));
+
+    const written = out.find((l) => l.endsWith('item-file.json'))?.replace(/^wrote /, '') ?? '';
+    const recording = JSON.parse(readFileSync(written, 'utf8')) as {
+      response: { status: number; body: unknown };
+    };
+    expect(recording.response.status).toBe(206);
+    expect(recording.response.body).toEqual({
+      bytes: 'item-file.m4a',
+      synthesized: expect.stringContaining('tone.sh') as unknown,
+    });
+  });
+
+  it('refuses to record a file when the play answer is not direct play', async () => {
+    const abs = fakeAbs({
+      ...directPlay,
+      audioTracks: [{ contentUrl: '/hls/play_8/output.m3u8' }],
+    });
+    const { io: recordIo } = io(abs.fetch);
+    await expect(runRecord(recordIo)).rejects.toThrow(/direct-play/);
+    expect(abs.asked).toContain('POST /api/session/play_8/close');
   });
 
   it('closes nothing when the play answer carries no session id', async () => {

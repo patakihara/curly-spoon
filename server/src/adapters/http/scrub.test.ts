@@ -262,27 +262,32 @@ describe('[M0.record/c] scrubbing a recording', () => {
     });
   });
 
-  it('[M0.record/c] only accept, content-type and authorization headers are kept', () => {
+  it("[M0.record/c] only accept, content-type, authorization and a range's headers are kept", () => {
     const r = scrub(
       exchange({
         request: {
           method: 'GET',
-          url: `${baseUrl}/api/libraries`,
+          url: `${baseUrl}/api/items/li_1/file/7`,
           headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${KEY}`,
             Cookie: 'connect.sid=abc',
             'X-Emby-Token': KEY,
+            Range: 'bytes=0-1',
           },
           body: null,
         },
         response: {
-          status: 200,
+          status: 206,
           headers: {
-            'content-type': 'application/json',
+            'content-type': 'audio/mp4',
             'set-cookie': 'connect.sid=abc',
             etag: 'W/"1"',
             'x-powered-by': 'Express',
+            'accept-ranges': 'bytes',
+            'content-range': 'bytes 0-1/158919642',
+            'content-length': '2',
+            'last-modified': 'Sat, 02 May 2026 18:28:57 GMT',
           },
           body: null,
         },
@@ -292,8 +297,30 @@ describe('[M0.record/c] scrubbing a recording', () => {
     expect(r.request.headers).toEqual({
       accept: 'application/json',
       authorization: 'Bearer <token>',
+      range: 'bytes=0-1',
     });
-    expect(r.response.headers).toEqual({ 'content-type': 'application/json' });
+    expect(r.response.headers).toEqual({
+      'accept-ranges': 'bytes',
+      'content-range': 'bytes 0-1/158919642',
+      'content-type': 'audio/mp4',
+    });
+  });
+
+  it('[M0.record/c] a body served from a committed stand-in file passes through as it is', () => {
+    const bytes = { bytes: 'item-file.m4a', synthesized: 'a 20 s tone, not the real file' };
+    const r = scrub(
+      exchange({
+        request: {
+          method: 'GET',
+          url: `${baseUrl}/api/items/li_1/file/7`,
+          headers: {},
+          body: null,
+        },
+        response: { status: 206, headers: {}, body: bytes },
+      }),
+      opts,
+    );
+    expect(r.response.body).toEqual(bytes);
   });
 
   it('[M0.record/c] a MediaBrowser authorization header keeps its fields but not its token', () => {

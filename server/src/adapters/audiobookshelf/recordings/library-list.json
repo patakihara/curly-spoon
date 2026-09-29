@@ -1,6 +1,6 @@
 {
   "upstream": "audiobookshelf",
-  "upstreamVersion": "2.36.1",
+  "upstreamVersion": "2.37.0",
   "call": "library-list",
   "request": {
     "method": "GET",

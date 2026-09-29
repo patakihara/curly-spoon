@@ -12,6 +12,7 @@ import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { deviceRoutes } from './routes/devices.js';
+import { playRoutes, type UpstreamAccess } from './routes/play.js';
 import { setupRoutes } from './routes/setup.js';
 import { signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
@@ -33,6 +34,8 @@ export interface BuildAppOptions {
   signOn?: SignOn | null;
   /** Links each person's upstream accounts at sign-in. */
   linker?: Linker | null;
+  /** Acts upstream as each person; without it, playing answers 409. */
+  upstreams?: UpstreamAccess | null;
   random?: Random;
   now?: () => number;
   /** Off by default; `true` logs to stdout, a stream to it (for a test). */
@@ -92,6 +95,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   authRoutes(app, { db, cookieSecure });
   deviceRoutes(app, { db, cookieSecure });
   adminRoutes(app, { db });
+  playRoutes(app, { db, upstreams: options.upstreams ?? null });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

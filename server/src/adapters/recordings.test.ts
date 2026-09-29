@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { AbsClient } from './audiobookshelf/client.js';
 import { type Recording, recordingSchema } from './http/recording.js';
-import { replayFetch } from './http/replay.js';
+import { replayFetch, standInsBeside } from './http/replay.js';
 import { JellyfinClient } from './jellyfin/client.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
@@ -15,10 +15,11 @@ function recording(upstream: string, call: string): Recording {
 }
 
 const ABS_CALLS = {
-  'library-list': { method: 'GET', path: /^\/api\/libraries$/ },
-  'item-detail': { method: 'GET', path: /^\/api\/items\/[^/]+$/ },
-  'item-play': { method: 'POST', path: /^\/api\/items\/[^/]+\/play$/ },
-  'session-close': { method: 'POST', path: /^\/api\/session\/[^/]+\/close$/ },
+  'library-list': { method: 'GET', path: /^\/api\/libraries$/, status: 200 },
+  'item-detail': { method: 'GET', path: /^\/api\/items\/[^/]+$/, status: 200 },
+  'item-play': { method: 'POST', path: /^\/api\/items\/[^/]+\/play$/, status: 200 },
+  'item-file': { method: 'GET', path: /^\/api\/items\/[^/]+\/file\/\d+$/, status: 206 },
+  'session-close': { method: 'POST', path: /^\/api\/session\/[^/]+\/close$/, status: 200 },
 } as const;
 
 const abs = Object.fromEntries(
@@ -36,19 +37,19 @@ const absClient = () =>
   new AbsClient({
     baseUrl: 'http://upstream.invalid',
     token: '<token>',
-    fetch: replayFetch(Object.values(abs)),
+    fetch: replayFetch(Object.values(abs), { readBytes: standInsBeside(adapters) }),
   });
 
 describe("[M0.record/b] Audiobookshelf's recordings from mediaserver", () => {
   it("[M0.record/b] recordings from mediaserver exist for Audiobookshelf's library list, item detail and play", () => {
-    for (const [call, { method, path }] of Object.entries(ABS_CALLS)) {
+    for (const [call, { method, path, status }] of Object.entries(ABS_CALLS)) {
       const r = abs[call as keyof typeof ABS_CALLS];
       expect(r.upstream, call).toBe('audiobookshelf');
       expect(r.call, call).toBe(call);
       expect(r.upstreamVersion, call).toMatch(/^\d+\.\d+\.\d+$/);
       expect(r.request.method, call).toBe(method);
       expect(r.request.path, call).toMatch(path);
-      expect(r.response.status, call).toBe(200);
+      expect(r.response.status, call).toBe(status);
     }
   });
 
@@ -97,6 +98,47 @@ describe("[M0.record/b] Audiobookshelf's recordings from mediaserver", () => {
     const item = json(abs['item-detail'].response.body) as { libraryId: string };
     const library = libraries.find((l) => l.id === item.libraryId);
     expect(library?.mediaType).toBe('book');
+  });
+});
+
+describe("Audiobookshelf's file call, recorded with a synthesized body", () => {
+  const file = abs['item-file'];
+  const standIn = () => {
+    const body = file.response.body;
+    if (body === null || !('bytes' in body)) throw new Error('expected a stand-in body');
+    return body;
+  };
+
+  it("is the play answer's first track, asked for as a two-byte range", () => {
+    const tracks = json(abs['item-play'].response.body).audioTracks as { contentUrl: string }[];
+    expect(file.request.path).toBe(tracks[0]?.contentUrl);
+    expect(file.request.headers.range).toBe('bytes=0-1');
+  });
+
+  it("keeps the real answer's range headers and audio type, the type the play answer names", () => {
+    const tracks = json(abs['item-play'].response.body).audioTracks as { mimeType: string }[];
+    expect(file.response.headers['content-type']).toBe(tracks[0]?.mimeType);
+    expect(file.response.headers['accept-ranges']).toBe('bytes');
+    expect(file.response.headers['content-range']).toMatch(/^bytes 0-1\/\d+$/);
+  });
+
+  it('says its body is synthesized, and names a committed MP4 file far smaller than the real one', () => {
+    const body = standIn();
+    expect(body.synthesized).toMatch(/synthesized|tone/i);
+    const bytes = readFileSync(join(adapters, 'audiobookshelf', 'recordings', body.bytes));
+    expect(bytes.subarray(4, 8).toString('latin1')).toBe('ftyp');
+    expect(bytes.byteLength).toBeLessThan(200_000);
+    const realSize = Number(file.response.headers['content-range']?.split('/')[1]);
+    expect(realSize).toBeGreaterThan(bytes.byteLength * 100);
+  });
+
+  it('replays through the client as a 206 of the stand-in, with the range recomputed', async () => {
+    const parts = { itemId: itemId(file), ino: file.request.path.split('/')[5] ?? '' };
+    const opened = await absClient().openFile(parts, 'bytes=0-99');
+    expect(opened.status).toBe(206);
+    expect(opened.headers['content-type']).toBe('audio/mp4');
+    expect(opened.headers['content-range']).toMatch(/^bytes 0-99\/\d+$/);
+    expect((await new Response(opened.body).arrayBuffer()).byteLength).toBe(100);
   });
 });
 

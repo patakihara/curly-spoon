@@ -18,8 +18,18 @@ export const PLACEHOLDER_IPV6 = '2001:db8::1';
 export const PLACEHOLDER_EMAIL = 'user@upstream.invalid';
 export const PLACEHOLDER_HOME_USER = 'user';
 
-/** The only headers a recording keeps, in either direction. */
-export const KEPT_HEADERS = ['accept', 'content-type', 'authorization'] as const;
+/**
+ * The only headers a recording keeps, in either direction: a range request's and its answer's
+ * among them. `content-length` is not kept: a scrubbed or stand-in body has another length.
+ */
+export const KEPT_HEADERS = [
+  'accept',
+  'content-type',
+  'authorization',
+  'range',
+  'accept-ranges',
+  'content-range',
+] as const;
 /** A query parameter or header name that carries a credential. `auth` spares `author`. */
 export const SECRET_QUERY_KEY = /token|key|secret|pass|pash|auth(?!or)|cookie|signature/i;
 /** A JSON field that carries a credential, by substring or by exact name. A field that only
@@ -265,7 +275,7 @@ function walk(
 }
 
 function scrubBody(body: RecordedBody): RecordedBody {
-  if (body === null) return null;
+  if (body === null || 'bytes' in body) return body;
   if ('text' in body) return { text: scrubString(body.text) };
   return { json: walk(body.json, undefined, true) };
 }

@@ -2,7 +2,7 @@ import { health, Me, Redirect, SetupBody, type Route } from '@auralis/schema';
 import { z } from 'zod';
 import Fastify from 'fastify';
 import { describe, expect, it } from 'vitest';
-import { Refusal, serve } from './route.js';
+import { Refusal, serve, serveStream } from './route.js';
 
 const echo = {
   method: 'POST',
@@ -113,6 +113,39 @@ describe('serving a declared route', () => {
     const res = await app.inject({ method: 'GET', url: '/go' });
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('/there');
+    await app.close();
+  });
+
+  it('streams what a streamed route opens, with its status and headers', async () => {
+    const listen = {
+      method: 'GET',
+      path: '/listen/{id}',
+      operationId: 'listen',
+      summary: 'Streams',
+      responseDescription: 'The file.',
+      response: z.string(),
+      access: 'public',
+      params: z.object({ id: z.string().max(3) }),
+      stream: true,
+    } as const satisfies Route;
+    const app = Fastify();
+    serveStream(app, listen, async (_request, input) => {
+      if (input.params.id === 'no') throw new Refusal(404, 'not_found');
+      return {
+        status: 206,
+        headers: { 'content-type': 'audio/mp4', 'content-range': 'bytes 0-2/9' },
+        body: new Response(input.params.id).body as ReadableStream<Uint8Array>,
+      };
+    });
+    const res = await app.inject({ method: 'GET', url: '/listen/abc' });
+    expect(res.statusCode).toBe(206);
+    expect(res.headers['content-type']).toBe('audio/mp4');
+    expect(res.headers['content-range']).toBe('bytes 0-2/9');
+    expect(res.body).toBe('abc');
+    const refused = await app.inject({ method: 'GET', url: '/listen/no' });
+    expect(refused.statusCode).toBe(404);
+    expect(refused.json()).toEqual({ error: 'not_found' });
+    expect((await app.inject({ method: 'GET', url: '/listen/abcd' })).statusCode).toBe(400);
     await app.close();
   });
 });

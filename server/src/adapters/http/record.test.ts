@@ -9,6 +9,8 @@ import { createRecorder } from './record.js';
 import { recordingSchema } from './recording.js';
 
 const KEY = 'test-key-5e1f0c2a';
+/** Two bytes of a household file: they must never reach a recording. */
+const REAL_BYTES = Buffer.from('Zq');
 const LIBRARY = { id: 'lib1', name: 'Books', mediaType: 'book', displayOrder: 1 };
 
 let server: Server;
@@ -27,6 +29,16 @@ beforeEach(async () => {
         'x-powered-by': 'Express',
       });
       res.end(JSON.stringify({ libraries: [LIBRARY], token: KEY }));
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/api/items/li_1/file/7') {
+      res.writeHead(206, {
+        'content-type': 'audio/mp4',
+        'accept-ranges': 'bytes',
+        'content-range': 'bytes 0-1/158919642',
+        'content-length': '2',
+      });
+      res.end(REAL_BYTES);
       return;
     }
     res.writeHead(404).end();
@@ -134,5 +146,29 @@ describe('[M0.record/a] recording an adapter call', () => {
     await abs.getLibraries();
     expect(seen).toHaveLength(1);
     expect(readdirSync(dir)).toEqual([]);
+  });
+
+  it('[M0.record/a] a file call records its real status and headers, with a stand-in named as its body', async () => {
+    const rec = recorder();
+    const abs = new AbsClient({ baseUrl, token: KEY, fetch: rec.fetch });
+    const standIn = { bytes: 'item-file.m4a', synthesized: 'a 20 s tone, not the real file' };
+    const file = await rec.capture(
+      'item-file',
+      () => abs.openFile({ itemId: 'li_1', ino: '7' }, 'bytes=0-1'),
+      { standIn },
+    );
+    await file.body.cancel();
+
+    const text = readFileSync(join(dir, 'item-file.json'), 'utf8');
+    const recording = recordingSchema.parse(JSON.parse(text));
+    expect(recording.request.headers.range).toBe('bytes=0-1');
+    expect(recording.response.status).toBe(206);
+    expect(recording.response.headers).toEqual({
+      'accept-ranges': 'bytes',
+      'content-range': 'bytes 0-1/158919642',
+      'content-type': 'audio/mp4',
+    });
+    expect(recording.response.body).toEqual(standIn);
+    expect(text).not.toContain(REAL_BYTES.toString());
   });
 });

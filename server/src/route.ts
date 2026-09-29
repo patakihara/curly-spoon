@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+import { type ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { type Route } from '@auralis/schema';
 import { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { type z } from 'zod';
@@ -5,7 +7,7 @@ import { type z } from 'zod';
 /** Thrown from a handler to answer `{ error }` with a status instead of the route's response. */
 export class Refusal extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 429 | 502,
+    readonly status: 400 | 401 | 403 | 404 | 409 | 416 | 429 | 502,
     readonly error: string,
   ) {
     super(`${status} ${error}`);
@@ -75,6 +77,52 @@ export function serve<R extends Route>(
         if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
         throw err;
       }
+    },
+  });
+}
+
+/** What a streamed route's handler opens: a status, the headers to pass on, and the body. */
+export interface StreamAnswer {
+  status: 200 | 206;
+  headers: Record<string, string>;
+  body: ReadableStream<Uint8Array>;
+}
+
+/**
+ * Serves one declared streamed route: path parameters and query parsed as `serve` does, then
+ * the handler's stream sent on as it arrives, never buffered. A refusal answers `{ error }`.
+ */
+export function serveStream<R extends Route & { stream: true }>(
+  app: FastifyInstance,
+  route: R,
+  handler: (request: FastifyRequest, input: InputOf<R>) => Promise<StreamAnswer>,
+): void {
+  app.route({
+    method: route.method,
+    url: fastifyPath(route.path),
+    config: { access: route.access },
+    handler: async (request, reply) => {
+      const parsed: Record<string, unknown> = {};
+      for (const [name, schema, value] of [
+        ['params', route.params, request.params],
+        ['query', route.query, request.query],
+      ] as const) {
+        if (schema === undefined) continue;
+        const result = schema.safeParse(value);
+        if (!result.success) return reply.code(400).send({ error: 'bad_request' });
+        parsed[name] = result.data;
+      }
+      let answer: StreamAnswer;
+      try {
+        answer = await handler(request, parsed as unknown as InputOf<R>);
+      } catch (err) {
+        if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
+        throw err;
+      }
+      return reply
+        .code(answer.status)
+        .headers(answer.headers)
+        .send(Readable.fromWeb(answer.body as NodeReadableStream<Uint8Array>));
     },
   });
 }

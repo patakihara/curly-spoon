@@ -84,8 +84,39 @@ data class Me(
 )
 
 @Serializable
+data class MediaRef(
+    val source: MediaSource,
+    val id: String,
+)
+
+@Serializable
+enum class MediaSource {
+    @SerialName("abs")
+    ABS,
+}
+
+@Serializable
 data class Ok(
     val ok: Boolean,
+)
+
+@Serializable
+data class PlayBody(
+    val ref: MediaRef,
+)
+
+@Serializable
+data class PlaybackPlan(
+    val tracks: List<PlaybackTrack>,
+    val startAt: Double,
+)
+
+@Serializable
+data class PlaybackTrack(
+    val url: String,
+    val mime: String,
+    val duration: Double,
+    val offset: Double,
 )
 
 @Serializable

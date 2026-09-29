@@ -7,7 +7,12 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type FetchLike } from './fetch.js';
-import { type RecordedBody, type Recording, serializeRecording } from './recording.js';
+import {
+  type BytesBody,
+  type RecordedBody,
+  type Recording,
+  serializeRecording,
+} from './recording.js';
 import { type RawExchange, scrub } from './scrub.js';
 
 export interface RecorderOptions {
@@ -24,8 +29,16 @@ export interface RecorderOptions {
 
 export interface Recorder {
   fetch: FetchLike;
-  /** Runs `fn`, requires exactly one request inside it, writes its recording, returns fn's result. */
-  capture<T>(call: string, fn: () => Promise<T>): Promise<T>;
+  /**
+   * Runs `fn`, requires exactly one request inside it, writes its recording, returns fn's result.
+   * With `standIn`, the response body is never read: the recording names the stand-in instead.
+   */
+  capture<T>(call: string, fn: () => Promise<T>, options?: CaptureOptions): Promise<T>;
+}
+
+export interface CaptureOptions {
+  /** A committed file that stands in for a body that must not be kept (household audio). */
+  standIn?: BytesBody;
 }
 
 type Captured = Pick<RawExchange, 'request' | 'response'>;
@@ -47,14 +60,15 @@ function toBody(text: string, contentType: string | null): RecordedBody {
 }
 
 export function createRecorder(opts: RecorderOptions): Recorder {
-  let active: Captured[] | undefined;
+  let active: { captured: Captured[]; standIn: BytesBody | undefined } | undefined;
 
   const fetch: FetchLike = async (url, init) => {
     const response = await opts.fetch(url, init);
     if (active) {
       const requestHeaders = headerRecord(init?.headers);
       const requestText = typeof init?.body === 'string' ? init.body : '';
-      active.push({
+      const { standIn } = active;
+      active.captured.push({
         request: {
           method: init?.method ?? 'GET',
           url,
@@ -64,17 +78,22 @@ export function createRecorder(opts: RecorderOptions): Recorder {
         response: {
           status: response.status,
           headers: headerRecord(response.headers),
-          body: toBody(await response.clone().text(), response.headers.get('content-type')),
+          body:
+            standIn ?? toBody(await response.clone().text(), response.headers.get('content-type')),
         },
       });
     }
     return response;
   };
 
-  async function capture<T>(call: string, fn: () => Promise<T>): Promise<T> {
+  async function capture<T>(
+    call: string,
+    fn: () => Promise<T>,
+    options: CaptureOptions = {},
+  ): Promise<T> {
     if (active) throw new Error(`capture ${call}: another capture is already running`);
     const captured: Captured[] = [];
-    active = captured;
+    active = { captured, standIn: options.standIn };
     let result: T;
     try {
       result = await fn();
