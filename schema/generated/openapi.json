@@ -313,24 +313,36 @@
           "offset"
         ]
       },
-      "PlaybackPlan": {
+      "PlaybackChapter": {
         "type": "object",
         "properties": {
-          "tracks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PlaybackTrack"
-            },
-            "minItems": 1
+          "title": {
+            "type": "string"
           },
-          "startAt": {
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end": {
             "type": "number",
             "minimum": 0
           }
         },
         "required": [
-          "tracks",
-          "startAt"
+          "title",
+          "start",
+          "end"
+        ]
+      },
+      "ProgressTarget": {
+        "type": "object",
+        "properties": {
+          "playId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "playId"
         ]
       },
       "MediaSource": {
@@ -355,6 +367,39 @@
           "id"
         ]
       },
+      "PlaybackPlan": {
+        "type": "object",
+        "properties": {
+          "tracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaybackTrack"
+            },
+            "minItems": 1
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaybackChapter"
+            }
+          },
+          "startAt": {
+            "type": "number",
+            "minimum": 0
+          },
+          "progressTarget": {
+            "$ref": "#/components/schemas/ProgressTarget"
+          },
+          "next": {
+            "$ref": "#/components/schemas/MediaRef"
+          }
+        },
+        "required": [
+          "tracks",
+          "chapters",
+          "startAt"
+        ]
+      },
       "PlayBody": {
         "type": "object",
         "properties": {
@@ -372,8 +417,8 @@
   "paths": {
     "/api/health": {
       "get": {
-        "operationId": "getHealth",
         "summary": "Whether the server is up",
+        "operationId": "getHealth",
         "responses": {
           "200": {
             "description": "The server is up.",
@@ -390,8 +435,8 @@
     },
     "/api/setup": {
       "get": {
-        "operationId": "getSetup",
         "summary": "Whether an admin has been claimed",
+        "operationId": "getSetup",
         "responses": {
           "200": {
             "description": "Whether setup has run.",
@@ -406,7 +451,6 @@
         }
       },
       "post": {
-        "operationId": "postSetup",
         "summary": "Claim admin with the one-time code, or, as an admin, make another username admin",
         "security": [
           {
@@ -416,6 +460,7 @@
             "bearer": []
           }
         ],
+        "operationId": "postSetup",
         "requestBody": {
           "content": {
             "application/json": {
@@ -471,8 +516,8 @@
     },
     "/api/auth/login": {
       "get": {
-        "operationId": "login",
         "summary": "Start signing in through the household sign-on",
+        "operationId": "login",
         "parameters": [
           {
             "schema": {
@@ -548,8 +593,8 @@
     },
     "/api/auth/callback": {
       "get": {
-        "operationId": "loginCallback",
         "summary": "Finish signing in: the sign-on sends the browser back here",
+        "operationId": "loginCallback",
         "parameters": [
           {
             "schema": {
@@ -615,8 +660,8 @@
     },
     "/api/auth/token": {
       "post": {
-        "operationId": "appToken",
         "summary": "Swap the Android app's one-time code for its bearer token",
+        "operationId": "appToken",
         "requestBody": {
           "content": {
             "application/json": {
@@ -662,7 +707,6 @@
     },
     "/api/auth/me": {
       "get": {
-        "operationId": "getMe",
         "summary": "Who is signed in, on which device, and their upstream links",
         "security": [
           {
@@ -672,6 +716,7 @@
             "bearer": []
           }
         ],
+        "operationId": "getMe",
         "responses": {
           "200": {
             "description": "The signed-in user.",
@@ -708,7 +753,6 @@
     },
     "/api/auth/logout": {
       "post": {
-        "operationId": "logout",
         "summary": "Sign out of this session",
         "security": [
           {
@@ -718,6 +762,7 @@
             "bearer": []
           }
         ],
+        "operationId": "logout",
         "responses": {
           "200": {
             "description": "Signed out.",
@@ -754,7 +799,6 @@
     },
     "/api/devices": {
       "get": {
-        "operationId": "listDevices",
         "summary": "The signed-in user's own devices",
         "security": [
           {
@@ -764,6 +808,7 @@
             "bearer": []
           }
         ],
+        "operationId": "listDevices",
         "responses": {
           "200": {
             "description": "Every device this user has signed in from.",
@@ -800,7 +845,6 @@
     },
     "/api/devices/{id}": {
       "patch": {
-        "operationId": "renameDevice",
         "summary": "Rename one of your own devices",
         "security": [
           {
@@ -810,6 +854,7 @@
             "bearer": []
           }
         ],
+        "operationId": "renameDevice",
         "parameters": [
           {
             "schema": {
@@ -875,7 +920,6 @@
         }
       },
       "delete": {
-        "operationId": "deleteDevice",
         "summary": "Remove one of your own devices, signing it out",
         "security": [
           {
@@ -885,6 +929,7 @@
             "bearer": []
           }
         ],
+        "operationId": "deleteDevice",
         "parameters": [
           {
             "schema": {
@@ -943,7 +988,6 @@
     },
     "/api/admin/users": {
       "get": {
-        "operationId": "listUsers",
         "summary": "Who can sign in, and their role",
         "security": [
           {
@@ -953,6 +997,7 @@
             "bearer": []
           }
         ],
+        "operationId": "listUsers",
         "responses": {
           "200": {
             "description": "Every user.",
@@ -989,7 +1034,6 @@
     },
     "/api/play": {
       "post": {
-        "operationId": "play",
         "summary": "Plan how to play an item, as the signed-in person",
         "security": [
           {
@@ -999,6 +1043,7 @@
             "bearer": []
           }
         ],
+        "operationId": "play",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1052,10 +1097,9 @@
         }
       }
     },
-    "/api/stream/abs/{itemId}/{ino}": {
+    "/api/media/{ref}/tracks/{n}": {
       "get": {
-        "operationId": "streamAbs",
-        "summary": "Stream an Audiobookshelf file with the signed-in person's own access, ranges and all",
+        "summary": "One track of an item, with the signed-in person's own access, ranges and all",
         "security": [
           {
             "session": []
@@ -1064,29 +1108,30 @@
             "bearer": []
           }
         ],
+        "operationId": "getMediaTrack",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "pattern": "^[\\w-]{1,64}$"
+              "pattern": "^abs:[\\w-]{1,64}$"
             },
             "required": true,
-            "name": "itemId",
+            "name": "ref",
             "in": "path"
           },
           {
             "schema": {
               "type": "string",
-              "pattern": "^\\d{1,20}$"
+              "pattern": "^(?:0|[1-9]\\d{0,3})$"
             },
             "required": true,
-            "name": "ino",
+            "name": "n",
             "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "The whole file.",
+            "description": "The whole track.",
             "content": {
               "audio/*": {
                 "schema": {
@@ -1136,6 +1181,58 @@
                 }
               }
             }
+          },
+          "416": {
+            "description": "The range starts past the end of the file."
+          }
+        }
+      },
+      "head": {
+        "summary": "One track of an item, with the signed-in person's own access, ranges and all",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getMediaTrackHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^abs:[\\w-]{1,64}$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:0|[1-9]\\d{0,3})$"
+            },
+            "required": true,
+            "name": "n",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole track."
+          },
+          "206": {
+            "description": "The range the request asked for."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
           },
           "416": {
             "description": "The range starts past the end of the file."

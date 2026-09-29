@@ -148,4 +148,51 @@ describe('serving a declared route', () => {
     expect((await app.inject({ method: 'GET', url: '/listen/abcd' })).statusCode).toBe(400);
     await app.close();
   });
+
+  it('answers HEAD on a streamed route with the same status and headers, and cancels the body unread', async () => {
+    const listen = {
+      method: 'GET',
+      path: '/listen/{id}',
+      operationId: 'listen',
+      summary: 'Streams',
+      responseDescription: 'The file.',
+      response: z.string(),
+      access: 'public',
+      params: z.object({ id: z.string().max(3) }),
+      stream: true,
+    } as const satisfies Route;
+    let pulled = 0;
+    let cancelled = false;
+    const app = Fastify();
+    serveStream(app, listen, async () => ({
+      status: 206,
+      headers: {
+        'content-type': 'audio/mp4',
+        'content-range': 'bytes 0-2/9',
+        'content-length': '3',
+      },
+      body: new ReadableStream<Uint8Array>(
+        {
+          pull(controller) {
+            pulled += 1;
+            controller.enqueue(new Uint8Array([1, 2, 3]));
+            controller.close();
+          },
+          cancel() {
+            cancelled = true;
+          },
+        },
+        { highWaterMark: 0 },
+      ),
+    }));
+    const res = await app.inject({ method: 'HEAD', url: '/listen/abc' });
+    expect(res.statusCode).toBe(206);
+    expect(res.headers['content-type']).toBe('audio/mp4');
+    expect(res.headers['content-range']).toBe('bytes 0-2/9');
+    expect(res.headers['content-length']).toBe('3');
+    expect(res.rawPayload.byteLength).toBe(0);
+    expect(cancelled).toBe(true);
+    expect(pulled).toBe(0);
+    await app.close();
+  });
 });

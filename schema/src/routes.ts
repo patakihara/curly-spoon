@@ -16,7 +16,7 @@ import {
   UserList,
 } from './auth.js';
 import { HealthResponse } from './health.js';
-import { AbsStreamParams, AudioBytes, PlaybackPlan, PlayBody } from './play.js';
+import { AudioBytes, MediaTrackParams, PlaybackPlan, PlayBody } from './play.js';
 import { type z } from './zod.js';
 
 /**
@@ -48,7 +48,8 @@ export interface Route<Response extends z.ZodTypeAny = z.ZodTypeAny> {
   rateLimited?: true;
   /**
    * Streams audio instead of JSON: the whole file with 200, or with `Range` 206 and that range,
-   * or 416 for a range past the end. `response` describes the bytes.
+   * or 416 for a range past the end. `response` describes the bytes. HEAD answers the same
+   * status and headers with no body.
    */
   stream?: true;
 }
@@ -196,15 +197,15 @@ export const play = {
   body: PlayBody,
 } as const satisfies Route;
 
-export const streamAbs = {
+export const mediaTrack = {
   method: 'GET',
-  path: '/api/stream/abs/{itemId}/{ino}',
-  operationId: 'streamAbs',
-  summary: "Stream an Audiobookshelf file with the signed-in person's own access, ranges and all",
-  responseDescription: 'The whole file.',
+  path: '/api/media/{ref}/tracks/{n}',
+  operationId: 'getMediaTrack',
+  summary: "One track of an item, with the signed-in person's own access, ranges and all",
+  responseDescription: 'The whole track.',
   response: AudioBytes,
   access: 'member',
-  params: AbsStreamParams,
+  params: MediaTrackParams,
   stream: true,
 } as const satisfies Route;
 
@@ -223,5 +224,5 @@ export const routes: readonly Route[] = [
   deleteDevice,
   listUsers,
   play,
-  streamAbs,
+  mediaTrack,
 ];

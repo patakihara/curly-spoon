@@ -106,9 +106,19 @@ data class PlayBody(
 )
 
 @Serializable
+data class PlaybackChapter(
+    val title: String,
+    val start: Double,
+    val end: Double,
+)
+
+@Serializable
 data class PlaybackPlan(
     val tracks: List<PlaybackTrack>,
+    val chapters: List<PlaybackChapter>,
     val startAt: Double,
+    val progressTarget: ProgressTarget? = null,
+    val next: MediaRef? = null,
 )
 
 @Serializable
@@ -117,6 +127,11 @@ data class PlaybackTrack(
     val mime: String,
     val duration: Double,
     val offset: Double,
+)
+
+@Serializable
+data class ProgressTarget(
+    val playId: String,
 )
 
 @Serializable

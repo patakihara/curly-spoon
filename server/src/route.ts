@@ -88,18 +88,27 @@ export interface StreamAnswer {
   body: ReadableStream<Uint8Array>;
 }
 
+/** One plain `bytes=first-last` range, either end optional but not both: all a player sends. */
+const BYTES_RANGE = /^bytes=(?:\d{1,15}-\d{0,15}|-\d{1,15})$/;
+
 /**
- * Serves one declared streamed route: path parameters and query parsed as `serve` does, then
- * the handler's stream sent on as it arrives, never buffered. A refusal answers `{ error }`.
+ * Serves one declared streamed route at GET and HEAD: path parameters and query parsed as
+ * `serve` does, and `Range` checked to be one plain bytes range (400 `bad_range` if not) before
+ * the handler sees it. GET sends the handler's stream on as it arrives, never buffered; HEAD
+ * sends the same status and headers and cancels the stream unread. A refusal answers `{ error }`.
  */
-export function serveStream<R extends Route & { stream: true }>(
+export function serveStream<R extends Route & { stream: true; method: 'GET' }>(
   app: FastifyInstance,
   route: R,
-  handler: (request: FastifyRequest, input: InputOf<R>) => Promise<StreamAnswer>,
+  handler: (
+    request: FastifyRequest,
+    input: InputOf<R> & { range: string | undefined },
+  ) => Promise<StreamAnswer>,
 ): void {
   app.route({
-    method: route.method,
+    method: ['GET', 'HEAD'],
     url: fastifyPath(route.path),
+    exposeHeadRoute: false,
     config: { access: route.access },
     handler: async (request, reply) => {
       const parsed: Record<string, unknown> = {};
@@ -112,17 +121,23 @@ export function serveStream<R extends Route & { stream: true }>(
         if (!result.success) return reply.code(400).send({ error: 'bad_request' });
         parsed[name] = result.data;
       }
+      const range = request.headers.range;
+      if (range !== undefined && !BYTES_RANGE.test(range)) {
+        return reply.code(400).send({ error: 'bad_range' });
+      }
       let answer: StreamAnswer;
       try {
-        answer = await handler(request, parsed as unknown as InputOf<R>);
+        answer = await handler(request, { ...(parsed as unknown as InputOf<R>), range });
       } catch (err) {
         if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
         throw err;
       }
-      return reply
-        .code(answer.status)
-        .headers(answer.headers)
-        .send(Readable.fromWeb(answer.body as NodeReadableStream<Uint8Array>));
+      reply.code(answer.status).headers(answer.headers);
+      if (request.method === 'HEAD') {
+        await answer.body.cancel();
+        return reply.send();
+      }
+      return reply.send(Readable.fromWeb(answer.body as NodeReadableStream<Uint8Array>));
     },
   });
 }

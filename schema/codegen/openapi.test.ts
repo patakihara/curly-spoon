@@ -96,4 +96,24 @@ describe('the OpenAPI document', () => {
     expect(get?.responses?.['206']).toMatchObject({ content: audio });
     expect(get?.responses?.['416']).toMatchObject({ description: expect.any(String) as unknown });
   });
+
+  it('describes HEAD on a streamed route: the same answers, with no body', () => {
+    const listen = {
+      method: 'GET',
+      path: '/listen/{id}',
+      operationId: 'listen',
+      summary: 'Streams a file',
+      responseDescription: 'The file.',
+      response: z.string().openapi({ format: 'binary' }),
+      access: 'member',
+      params: z.object({ id: z.string() }),
+      stream: true,
+    } as const satisfies Route;
+    const path = buildOpenApiDocument([listen], ErrorResponse).paths?.['/listen/{id}'];
+    expect(path?.head?.operationId).toBe('listenHead');
+    expect(Object.keys(path?.head?.responses ?? {})).toEqual(
+      Object.keys(path?.get?.responses ?? {}),
+    );
+    expect(path?.head?.responses?.['206']).toEqual({ description: expect.any(String) as unknown });
+  });
 });

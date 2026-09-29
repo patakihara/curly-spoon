@@ -190,20 +190,21 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/stream/abs/{itemId}/{ino}": {
+    "/api/media/{ref}/tracks/{n}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Stream an Audiobookshelf file with the signed-in person's own access, ranges and all */
-        get: operations["streamAbs"];
+        /** One track of an item, with the signed-in person's own access, ranges and all */
+        get: operations["getMediaTrack"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
-        head?: never;
+        /** One track of an item, with the signed-in person's own access, ranges and all */
+        head: operations["getMediaTrackHead"];
         patch?: never;
         trace?: never;
     };
@@ -286,15 +287,26 @@ export interface components {
             duration: number;
             offset: number;
         };
-        PlaybackPlan: {
-            tracks: components["schemas"]["PlaybackTrack"][];
-            startAt: number;
+        PlaybackChapter: {
+            title: string;
+            start: number;
+            end: number;
+        };
+        ProgressTarget: {
+            playId: string;
         };
         /** @enum {string} */
         MediaSource: "abs";
         MediaRef: {
             source: components["schemas"]["MediaSource"];
             id: string;
+        };
+        PlaybackPlan: {
+            tracks: components["schemas"]["PlaybackTrack"][];
+            chapters: components["schemas"]["PlaybackChapter"][];
+            startAt: number;
+            progressTarget?: components["schemas"]["ProgressTarget"];
+            next?: components["schemas"]["MediaRef"];
         };
         PlayBody: {
             ref: components["schemas"]["MediaRef"];
@@ -829,19 +841,19 @@ export interface operations {
             };
         };
     };
-    streamAbs: {
+    getMediaTrack: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                itemId: string;
-                ino: string;
+                ref: string;
+                n: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description The whole file. */
+            /** @description The whole track. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -885,6 +897,62 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
+            };
+            /** @description The range starts past the end of the file. */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getMediaTrackHead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+                n: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The whole track. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The range the request asked for. */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description The range starts past the end of the file. */
             416: {

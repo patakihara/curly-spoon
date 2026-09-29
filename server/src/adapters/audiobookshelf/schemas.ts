@@ -23,11 +23,6 @@ export const libraryItemsSchema = z
   .object({ results: z.array(z.object({ id: z.string() }).passthrough()) })
   .passthrough();
 
-/** `GET /api/items/:id?expanded=1`. */
-export const itemSchema = z
-  .object({ id: z.string(), mediaType: mediaTypeSchema, media: z.object({}).passthrough() })
-  .passthrough();
-
 /**
  * What Auralis can play in a browser. ABS direct-plays only when every audio file's mime type is
  * in the request's `supportedMimeTypes` (or `forceDirectPlay` is set):
@@ -64,6 +59,18 @@ export const audioTrackSchema = z
     duration: z.number().optional(),
     startOffset: z.number().optional(),
     metadata: z.object({}).passthrough().nullable().optional(),
+  })
+  .passthrough();
+
+/**
+ * `GET /api/items/:id?expanded=1`. A book's `media.tracks` are its audio files in play order,
+ * the same tracks a direct-play session lists (recorded).
+ */
+export const itemSchema = z
+  .object({
+    id: z.string(),
+    mediaType: mediaTypeSchema,
+    media: z.object({ tracks: z.array(audioTrackSchema).optional() }).passthrough(),
   })
   .passthrough();
 

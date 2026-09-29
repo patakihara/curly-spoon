@@ -1,11 +1,18 @@
 /**
  * Direct play of one Audiobookshelf item, as the signed-in person. `POST /api/play` opens an
  * Audiobookshelf session only to read the item's tracks, closes it, and answers a plan whose
- * track URLs are this server's stream route; the stream route passes `Range` through to the file
- * with the person's own token and sends the bytes on as they come, never transcoded. M1.play
- * grows this in place: HLS, multi-file, Jellyfin; M1.progress keeps the session open for progress.
+ * track URLs are `/api/media/{ref}/tracks/{n}`. That route maps the ref and index to the item's
+ * file through its detail, passes a checked `Range` through with the person's own token, and
+ * sends the bytes on as they come, never transcoded. M1.play grows this in place: HLS,
+ * multi-file, Jellyfin; M1.progress keeps the session open for progress.
  */
-import { play, type PlaybackTrack, streamAbs } from '@auralis/schema';
+import {
+  mediaRefKey,
+  mediaTrack,
+  parseMediaRefKey,
+  play,
+  type PlaybackTrack,
+} from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { type AbsClient, contentUrlParts } from '../adapters/audiobookshelf/client.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
@@ -53,33 +60,43 @@ export function playRoutes(
       .play(body.ref.id, { deviceId, clientVersion: CLIENT_VERSION })
       .catch(refusalFor);
     try {
-      const tracks = session.audioTracks.map((track): PlaybackTrack => {
-        const file = contentUrlParts(track.contentUrl);
-        if (file === null || track.mimeType === undefined || track.duration === undefined) {
+      const ref = mediaRefKey(body.ref);
+      const tracks = session.audioTracks.map((track, n): PlaybackTrack => {
+        if (
+          contentUrlParts(track.contentUrl) === null ||
+          track.mimeType === undefined ||
+          track.duration === undefined
+        ) {
           throw new Refusal(502, 'not_direct_play');
         }
         return {
-          url: `/api/stream/abs/${file.itemId}/${file.ino}`,
+          url: `/api/media/${ref}/tracks/${n}`,
           mime: track.mimeType,
           duration: track.duration,
           offset: track.startOffset ?? 0,
         };
       });
-      return { tracks, startAt: session.currentTime ?? 0 };
+      return { tracks, chapters: [], startAt: session.currentTime ?? 0 };
     } finally {
       // Nothing reports progress yet, so the session is not kept; a failed close loses nothing.
       await abs.closeSession(session.id).catch(() => undefined);
     }
   });
 
-  serveStream(app, streamAbs, async (request, { params }) => {
+  serveStream(app, mediaTrack, async (request, { params, range }) => {
+    const ref = parseMediaRefKey(params.ref);
+    if (ref === null) throw new Refusal(400, 'bad_request');
     const { abs } = absFor(request);
-    const file = await abs.openFile(params, request.headers.range).catch(refusalFor);
+    const item = await abs.getItem(ref.id).catch(refusalFor);
+    const track = item.media.tracks?.[Number(params.n)];
+    const file = track === undefined ? null : contentUrlParts(track.contentUrl);
+    if (file === null) throw new Refusal(404, 'not_found');
+    const opened = await abs.openFile(file, range).catch(refusalFor);
     const headers = Object.fromEntries(
-      Object.entries(file.headers).filter(
+      Object.entries(opened.headers).filter(
         (entry): entry is [string, string] => entry[1] !== undefined,
       ),
     );
-    return { status: file.status, headers, body: file.body };
+    return { status: opened.status, headers, body: opened.body };
   });
 }
