@@ -284,7 +284,7 @@ export const gallery = [
   {
     name: 'ProgressRing',
     card: 'basic/progress-ring.card.html',
-    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',padding:12,borderRadius:'var(--radius-md)',background:'var(--scrim)'}}><ProgressRing size={40} value={0.4}/></div>),
+    render: () => (<div style={{display:'flex',width:'fit-content',gap:16,alignItems:'center',padding:12,borderRadius:'var(--radius-md)',background:'var(--scrim)'}}><ProgressRing size={40} value={0.4}/></div>),
   },
   {
     name: 'QueuePage',
