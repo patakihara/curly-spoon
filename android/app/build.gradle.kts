@@ -12,6 +12,16 @@ plugins {
 val releaseVersionCode = (project.findProperty("auralisVersionCode") as String?)?.toIntOrNull() ?: 1
 val releaseVersionName = (project.findProperty("auralisVersionName") as String?) ?: "0.1.0"
 
+// The canvas files CanvasNavTest reads, copied as the instrumented test APK's `canvas/` assets.
+val canvasAssets = layout.buildDirectory.dir("canvas-assets")
+val copyCanvasAssets = tasks.register<Copy>("copyCanvasAssets") {
+    from(rootProject.file("../design/app")) { include("nav.json", "pages/**", "placeholders/**") }
+    into(canvasAssets.map { it.dir("canvas") })
+}
+tasks.configureEach {
+    if (name.startsWith("merge") && name.endsWith("AndroidTestAssets")) dependsOn(copyCanvasAssets)
+}
+
 android {
     namespace = "net.develivarr.auralis"
     compileSdk = 35
@@ -78,6 +88,11 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    sourceSets {
+        // CanvasNavTest reads each page's title from the canvas, as web/e2e/canvas.spec.ts does.
+        getByName("androidTest").assets.srcDir(canvasAssets.get().asFile)
     }
 
     testOptions {

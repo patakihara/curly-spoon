@@ -1,7 +1,8 @@
 package net.develivarr.auralis
 
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -12,14 +13,13 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class AuralisAppTest {
+class MainActivityTest {
 
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun showsTheAppName() {
-        composeRule.setContent { AuralisApp() }
-        composeRule.onNodeWithText("Auralis").assertExists()
+    fun theAppOpensOnBrowse() {
+        composeRule.onNode(hasText("Browse") and isHeading()).assertExists()
     }
 }

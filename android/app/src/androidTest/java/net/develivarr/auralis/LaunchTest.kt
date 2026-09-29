@@ -2,7 +2,9 @@ package net.develivarr.auralis
 
 import android.media.MediaCodecList
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -10,7 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Probes the emulator itself: the installed app launches, and the system image can decode the
+ * Probes the emulator itself: the installed app launches onto Browse, and the system image can decode the
  * AAC audio the recorded Audiobookshelf book carries (`audio/mp4a-latm`), which M0.emulator's
  * smoke test plays.
  */
@@ -21,8 +23,8 @@ class LaunchTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun launchingTheAppShowsItsName() {
-        composeRule.onNodeWithText("Auralis").assertExists()
+    fun launchingTheAppOpensBrowse() {
+        composeRule.onNode(hasText("Browse") and isHeading()).assertIsDisplayed()
     }
 
     @Test

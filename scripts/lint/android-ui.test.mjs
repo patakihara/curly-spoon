@@ -41,7 +41,7 @@ test('composables may live only in generated packages and the Sonora component p
   assert.equal(at('generated/ui/ButtonProps.kt'), true);
   assert.equal(at('generated/pages/BrowsePage.kt'), true);
   assert.equal(at('ui/sonora/Button.kt'), true);
-  assert.equal(at('AuralisApp.kt'), true, 'allowlisted: the root mount');
+  assert.equal(at('MainActivity.kt'), false);
   assert.equal(at('feature/Screen.kt'), false);
   assert.equal(at('ui/Theme.kt'), false);
 });

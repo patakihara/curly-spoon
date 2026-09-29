@@ -10,11 +10,11 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-/** The whole allowlist: repo-relative files, each with the reason it may declare a composable. */
-export const ANDROID_UI_ALLOWED = {
-  // The root that setContent mounts; it hosts the generated nav graph once M0.canvas generates it.
-  'android/app/src/main/java/net/develivarr/auralis/AuralisApp.kt': 'the root mount',
-};
+/**
+ * The whole allowlist: repo-relative files, each with the reason it may declare a composable.
+ * Empty: MainActivity's setContent mounts the generated nav graph without a composable of its own.
+ */
+export const ANDROID_UI_ALLOWED = {};
 
 const ANNOTATION = String.raw`@[\w.]+(?:\([^)]*\))?`;
 const DECLARATION = new RegExp(
