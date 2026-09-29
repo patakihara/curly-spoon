@@ -128,26 +128,22 @@ export const closeSessionSchema = z.unknown();
 const optionalString = z.string().nullable().optional();
 
 /** A book's metadata as the item answer carries it: people and series come with their ids. */
-const bookMetadataSchema = z
-  .object({
-    title: z.string(),
-    subtitle: optionalString,
-    authors: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
-    narrators: z.array(z.string()),
-    series: z.array(
-      z.object({ id: z.string(), name: z.string(), sequence: optionalString }).passthrough(),
-    ),
-    genres: z.array(z.string()),
-    publishedYear: optionalString,
-    isbn: optionalString,
-    asin: optionalString,
-  })
-  .passthrough();
+const bookMetadataSchema = z.object({
+  title: z.string(),
+  authors: z.array(z.object({ id: z.string(), name: z.string() })),
+  narrators: z.array(z.string()),
+  series: z.array(z.object({ id: z.string(), name: z.string(), sequence: optionalString })),
+  genres: z.array(z.string()),
+  publishedYear: optionalString,
+  isbn: optionalString,
+  asin: optionalString,
+});
 
 /** One audio file of an item; a book's length is the sum of the files it plays. */
-const audioFileSchema = z
-  .object({ duration: z.number().nullable().optional(), exclude: z.boolean().optional() })
-  .passthrough();
+const audioFileSchema = z.object({
+  duration: z.number().nullable().optional(),
+  exclude: z.boolean().optional(),
+});
 
 /**
  * An episode as a show's item answer lists it. Each carries its own `updatedAt`, which moves
@@ -155,57 +151,45 @@ const audioFileSchema = z
  * edited in September inside a show last updated in August). `guid` is null for episodes ABS
  * matched without one.
  */
-const episodeSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    season: optionalString,
-    episode: optionalString,
-    guid: optionalString,
-    enclosure: z.object({ url: z.string() }).passthrough().nullable().optional(),
-    publishedAt: z.number().nullable().optional(),
-    updatedAt: z.number(),
-    audioFile: audioFileSchema.nullable().optional(),
-  })
-  .passthrough();
+const episodeSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  season: optionalString,
+  episode: optionalString,
+  guid: optionalString,
+  enclosure: z.object({ url: z.string() }).nullable().optional(),
+  publishedAt: z.number().nullable().optional(),
+  updatedAt: z.number(),
+  audioFile: audioFileSchema.nullable().optional(),
+});
 
 const itemBase = { id: z.string(), libraryId: z.string(), updatedAt: z.number() };
 
 /**
- * `GET /api/items/:id`, not expanded: what the index reads of a book or a show. The shapes
- * follow the index recordings (`index-book-*`, `index-show-*`).
+ * `GET /api/items/:id`, not expanded: what the index reads of a book or a show, and nothing else.
+ * zod strips every other field, so a 2,000-episode show parses to little more than its rows.
+ * The shapes follow the index recordings (`index-book-*`, `index-show-*`).
  */
 export const itemSummarySchema = z.discriminatedUnion('mediaType', [
-  z
-    .object({
-      ...itemBase,
-      mediaType: z.literal('book'),
-      media: z
-        .object({ metadata: bookMetadataSchema, audioFiles: z.array(audioFileSchema) })
-        .passthrough(),
-    })
-    .passthrough(),
-  z
-    .object({
-      ...itemBase,
-      mediaType: z.literal('podcast'),
-      media: z
-        .object({
-          metadata: z
-            .object({
-              title: z.string(),
-              author: optionalString,
-              genres: z.array(z.string()),
-              feedUrl: optionalString,
-              itunesId: optionalString,
-              releaseDate: optionalString,
-            })
-            .passthrough(),
-          episodes: z.array(episodeSchema),
-        })
-        .passthrough(),
-    })
-    .passthrough(),
+  z.object({
+    ...itemBase,
+    mediaType: z.literal('book'),
+    media: z.object({ metadata: bookMetadataSchema, audioFiles: z.array(audioFileSchema) }),
+  }),
+  z.object({
+    ...itemBase,
+    mediaType: z.literal('podcast'),
+    media: z.object({
+      metadata: z.object({
+        title: z.string(),
+        author: optionalString,
+        genres: z.array(z.string()),
+        feedUrl: optionalString,
+        itunesId: optionalString,
+      }),
+      episodes: z.array(episodeSchema),
+    }),
+  }),
 ]);
 export type ItemSummary = z.infer<typeof itemSummarySchema>;
 export type BookSummary = Extract<ItemSummary, { mediaType: 'book' }>;

@@ -89,6 +89,20 @@ export class JellyfinClient {
     });
   }
 
+  /**
+   * One album by id, or undefined when Jellyfin no longer has it: `GET /Items?Ids=` answers an
+   * empty list for an unknown id (recorded), and needs no user, unlike `GET /Items/{id}`.
+   */
+  async findAlbum(albumId: string): Promise<IndexItem | undefined> {
+    const query = {
+      Ids: albumId,
+      IncludeItemTypes: 'MusicAlbum',
+      Recursive: 'true',
+      Fields: INDEX_FIELDS,
+    };
+    return (await this.get('Items', indexQueryResultSchema, query)).Items[0];
+  }
+
   /** Every track of one album, in disc and track order. */
   async getAlbumTracks(albumId: string): Promise<IndexItem[]> {
     const query = {

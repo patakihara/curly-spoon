@@ -1,0 +1,24 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "index-item-gone",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/00000000-0000-4000-8000-000000000000",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8"
+    },
+    "body": {
+      "text": "Not Found"
+    }
+  }
+}

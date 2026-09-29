@@ -161,7 +161,7 @@ export function absTree(item: ItemSummary): IndexTree {
 }
 
 /** `MusicBrainzReleaseGroup` becomes `musicbrainz_release_group`, `AudioDbAlbum` `audiodb_album`. */
-export function providerScheme(key: string): string {
+function providerScheme(key: string): string {
   return key
     .replace(/^MusicBrainz/, 'Musicbrainz')
     .replace(/^AudioDb/, 'Audiodb')

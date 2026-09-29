@@ -36,6 +36,9 @@ import { recordOidc } from './record-oidc.js';
  */
 export const INDEX_PAGE = 4;
 export const INDEX_PAGE_SIZE = 2;
+/** Ids no upstream holds, for the lookups that confirm an item is gone. */
+export const MISSING_ABS_ID = '00000000-0000-4000-8000-000000000000';
+export const MISSING_JELLYFIN_ID = '00000000000000000000000000000000';
 
 const USAGE = `Usage: <keys on stdin> | pnpm --filter @auralis/server record -- [options]
 
@@ -273,6 +276,8 @@ async function recordIndexAbs(
       calls.push(call);
     }
   }
+  await rec.capture('index-item-gone', () => abs.findItemSummary(MISSING_ABS_ID));
+  calls.push('index-item-gone');
   return calls.map((c) => join(dir, `${c}.json`));
 }
 
@@ -308,6 +313,13 @@ async function recordIndexJellyfin(
     await rec.capture(call, () => jf.getAlbumTracks(album.Id));
     calls.push(call);
   }
+  const [first] = albums.Items;
+  if (first) {
+    await rec.capture('index-album-lookup', () => jf.findAlbum(first.Id));
+    calls.push('index-album-lookup');
+  }
+  await rec.capture('index-album-gone', () => jf.findAlbum(MISSING_JELLYFIN_ID));
+  calls.push('index-album-gone');
   return calls.map((c) => join(dir, `${c}.json`));
 }
 

@@ -48,7 +48,7 @@ interface RawRow {
 }
 
 /** Every field that makes a row what it is, in a fixed order, ids sorted by scheme. */
-export function contentHash(row: IndexRow): string {
+function contentHash(row: IndexRow): string {
   const ids = Object.entries(row.ids).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const content = [
     row.source,
@@ -157,32 +157,35 @@ export function applyRow(db: Db, row: IndexRow, now: number, counts: IndexCounts
 }
 
 /**
- * Removes the top-level items of one source, and of one library when named, that a complete
- * pass did not see; their children go with them.
+ * The top-level items of one source, and of one library when named, that a complete pass did not
+ * see. A pass pages by offset, so an item can go unseen when another is deleted mid-pass: these
+ * are candidates, to be confirmed gone upstream before `removeItem`.
  */
-export function removeUnseen(
+export function unseenItems(
   db: Db,
   source: IndexSource,
   libraryId: string | null,
   seen: ReadonlySet<string>,
-  counts: IndexCounts,
-): void {
+): string[] {
+  const stored = db
+    .prepare(
+      `SELECT upstream_id FROM index_items
+       WHERE source = ? AND parent_id IS NULL AND library_id IS ?`,
+    )
+    .all(source, libraryId) as { upstream_id: string }[];
+  return stored.map((row) => row.upstream_id).filter((id) => !seen.has(id));
+}
+
+/** Removes one item; its children, external ids and sync state go with it. */
+export function removeItem(db: Db, source: IndexSource, id: string, counts: IndexCounts): void {
   db.transaction(() => {
-    const stored = db
-      .prepare(
-        `SELECT upstream_id FROM index_items
-         WHERE source = ? AND parent_id IS NULL AND library_id IS ?`,
-      )
-      .all(source, libraryId) as { upstream_id: string }[];
-    const remove = db.prepare('DELETE FROM index_items WHERE source = ? AND upstream_id = ?');
-    for (const { upstream_id: id } of stored) {
-      if (!seen.has(id)) {
-        const children = db
-          .prepare('SELECT COUNT(*) AS n FROM index_items WHERE source = ? AND parent_id = ?')
-          .get(source, id) as { n: number };
-        counts.removed += remove.run(source, id).changes + children.n;
-      }
-    }
+    const children = db
+      .prepare('SELECT COUNT(*) AS n FROM index_items WHERE source = ? AND parent_id = ?')
+      .get(source, id) as { n: number };
+    const removed = db
+      .prepare('DELETE FROM index_items WHERE source = ? AND upstream_id = ?')
+      .run(source, id).changes;
+    counts.removed += removed === 0 ? 0 : removed + children.n;
   })();
 }
 

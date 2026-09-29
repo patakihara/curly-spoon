@@ -1,0 +1,102 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "index-album-lookup",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "Ids": "65de8562c54b89ceef199f91bacd8709",
+      "IncludeItemTypes": "MusicAlbum",
+      "Recursive": "true"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "The Rise and Fall of a Midwest Princess",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "65de8562c54b89ceef199f91bacd8709",
+            "Etag": "582d8655b92bfa99213dc4abc1591c82",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop"
+            ],
+            "RunTimeTicks": 29484592509,
+            "ProductionYear": 2023,
+            "ProviderIds": {
+              "AudioDbAlbum": "2430737",
+              "AudioDbArtist": "179579",
+              "MusicBrainzAlbum": "99b69971-5030-4ab2-bd2a-ba102ed6312d",
+              "MusicBrainzAlbumArtist": "56a55378-f155-48de-80a5-d80104221267",
+              "MusicBrainzReleaseGroup": "eda0f5d3-44eb-42cf-bcfd-5c9f93e05c7a"
+            },
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "aff9ba9d3c57fbf1ac8074b7fc289d22"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -9.9
+          }
+        ],
+        "TotalRecordCount": 1,
+        "StartIndex": 0
+      }
+    }
+  }
+}

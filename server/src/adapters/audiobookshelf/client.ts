@@ -105,6 +105,16 @@ export class AbsClient {
     return this.call(`api/items/${encodeURIComponent(itemId)}`, itemSummarySchema);
   }
 
+  /** The same answer, or null when ABS answers 404: the item is gone (recorded). */
+  async findItemSummary(itemId: string): Promise<z.infer<typeof itemSummarySchema> | null> {
+    try {
+      return await this.getItemSummary(itemId);
+    } catch (error) {
+      if (error instanceof AdapterError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {
     return this.call(`api/items/${encodeURIComponent(itemId)}`, itemSchema, {}, { expanded: '1' });
   }

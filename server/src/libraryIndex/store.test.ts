@@ -6,7 +6,7 @@ import { itemSummarySchema } from '../adapters/audiobookshelf/schemas.js';
 import { recordingSchema } from '../adapters/http/recording.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { absTree } from './rows.js';
-import { applyTree, emptyCounts, listIndexed, removeUnseen } from './store.js';
+import { applyTree, emptyCounts, listIndexed, removeItem, unseenItems } from './store.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
 
@@ -24,12 +24,21 @@ beforeEach(() => {
 afterEach(() => db.close());
 
 describe('the index store', () => {
-  it('after a complete pass, removes the shows it did not see, with their episodes', () => {
+  it('names the shows a pass did not see, only in the library it paged', () => {
+    const [kept, unseen] = [recordedShow('index-show-1'), recordedShow('index-show-2')];
+    const counts = emptyCounts();
+    for (const show of [kept, unseen]) applyTree(db, absTree(show), 1, counts);
+
+    expect(unseenItems(db, 'abs', kept.libraryId, new Set([kept.id]))).toEqual([unseen.id]);
+    expect(unseenItems(db, 'abs', 'another-library', new Set())).toEqual([]);
+  });
+
+  it('removes a show with its episodes and external ids, and nothing else', () => {
     const [kept, gone] = [recordedShow('index-show-1'), recordedShow('index-show-2')];
     const counts = emptyCounts();
     for (const show of [kept, gone]) applyTree(db, absTree(show), 1, counts);
 
-    removeUnseen(db, 'abs', kept.libraryId, new Set([kept.id]), counts);
+    removeItem(db, 'abs', gone.id, counts);
 
     const left = listIndexed(db);
     expect(left.every((row) => row.id === kept.id || row.parentId === kept.id)).toBe(true);
@@ -39,14 +48,5 @@ describe('the index store', () => {
       .prepare('SELECT COUNT(*) AS n FROM index_ids WHERE upstream_id = ?')
       .get(gone.id);
     expect(ids).toEqual({ n: 0 });
-  });
-
-  it('never removes items of another library', () => {
-    const show = recordedShow('index-show-1');
-    const counts = emptyCounts();
-    applyTree(db, absTree(show), 1, counts);
-    removeUnseen(db, 'abs', 'another-library', new Set(), counts);
-    expect(counts.removed).toBe(0);
-    expect(listIndexed(db)).toHaveLength(1 + absTree(show).children.length);
   });
 });

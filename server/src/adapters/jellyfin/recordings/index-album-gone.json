@@ -1,0 +1,33 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "index-album-gone",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "Ids": "00000000000000000000000000000000",
+      "IncludeItemTypes": "MusicAlbum",
+      "Recursive": "true"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [],
+        "TotalRecordCount": 0,
+        "StartIndex": 0
+      }
+    }
+  }
+}

@@ -274,15 +274,18 @@ describe("record mode for the index's calls", () => {
     expect(asked.some((a) => a.includes('/file/') || a.endsWith('/play'))).toBe(false);
   });
 
-  it('records a page of each library, each listed item, and each listed album with its tracks', async () => {
+  it('records a page of each library, each listed item, each listed album with its tracks, and the lookups that confirm an item is gone', async () => {
     const { written } = await run();
     expect(written.map((w) => w.split('/').slice(-3).join('/'))).toEqual([
       'audiobookshelf/recordings/index-books-page.json',
       'audiobookshelf/recordings/index-book-1.json',
       'audiobookshelf/recordings/index-shows-page.json',
       'audiobookshelf/recordings/index-show-1.json',
+      'audiobookshelf/recordings/index-item-gone.json',
       'jellyfin/recordings/index-albums-page.json',
       'jellyfin/recordings/index-album-tracks-1.json',
+      'jellyfin/recordings/index-album-lookup.json',
+      'jellyfin/recordings/index-album-gone.json',
     ]);
   });
 
