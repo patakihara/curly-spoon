@@ -9,7 +9,7 @@
 <script type="text/babel">
 const { PlayerSheet, NowPlayingPage } = window.SonoraDesignSystem_6c1435;
 function Demo(){
-  return <div style={{position:'relative',width:360,height:640,overflow:'hidden',borderRadius:32}}>
+  return <div style={{position:'relative',width:360,height:640,overflow:'hidden',borderRadius:32,outline:'1px solid var(--surface-border)'}}>
     <PlayerSheet open background="var(--surface-bg)">
       <NowPlayingPage platform="mobile" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off"/>
     </PlayerSheet>

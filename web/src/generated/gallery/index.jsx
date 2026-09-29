@@ -264,7 +264,7 @@ export const gallery = [
   {
     name: 'PlayerSheet',
     card: 'layouts/player-sheet.card.html',
-    render: () => (<div style={{position:'relative',width:360,height:640,overflow:'hidden',borderRadius:32}}><PlayerSheet open background="var(--surface-bg)">
+    render: () => (<div style={{position:'relative',width:360,height:640,overflow:'hidden',borderRadius:32,outline:'1px solid var(--surface-border)'}}><PlayerSheet open background="var(--surface-bg)">
       <NowPlayingPage platform="mobile" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off"/>
     </PlayerSheet></div>),
   },
@@ -284,7 +284,7 @@ export const gallery = [
   {
     name: 'ProgressRing',
     card: 'basic/progress-ring.card.html',
-    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}><ProgressRing size={40} value={0.4}/></div>),
+    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',padding:12,borderRadius:'var(--radius-md)',background:'var(--scrim)'}}><ProgressRing size={40} value={0.4}/></div>),
   },
   {
     name: 'QueuePage',
