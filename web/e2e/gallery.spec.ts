@@ -102,3 +102,38 @@ test('[M0.tokens/c] the gallery calls no API and reads no stored user data', asy
     'no cookie, storage or IndexedDB read',
   ).toEqual([]);
 });
+
+test("[M0.tokens/c] RailItem's active pill reads as the accent's violet in both themes", async ({
+  page,
+}) => {
+  await page.goto('/gallery.html', { waitUntil: 'networkidle' });
+  for (const theme of ['dark', 'light']) {
+    const pane = page.locator(`section[data-component="RailItem"] > [data-theme="${theme}"]`);
+    const hues = await pane.evaluate((el) => {
+      /** A CSS colour as painted, then its OKLCH hue in degrees and chroma. */
+      const paint = (css: string) => {
+        const ctx = document.createElement('canvas').getContext('2d')!;
+        ctx.fillStyle = css;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = [...ctx.getImageData(0, 0, 1, 1).data].map((v) => {
+          const c = v / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        const l = Math.cbrt(0.4122214708 * r! + 0.5363325363 * g! + 0.0514459929 * b!);
+        const m = Math.cbrt(0.2119034982 * r! + 0.6806995451 * g! + 0.1073969566 * b!);
+        const s = Math.cbrt(0.0883024619 * r! + 0.2817188376 * g! + 0.6299787005 * b!);
+        const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+        const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+        return { hue: (Math.atan2(B, A) * 180) / Math.PI, chroma: Math.hypot(A, B) };
+      };
+      const pill = [...el.querySelectorAll('span')]
+        .map((s) => getComputedStyle(s).backgroundColor)
+        .find((c) => c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent');
+      const accent = getComputedStyle(el).getPropertyValue('--accent').trim();
+      return { pill: pill === undefined ? null : paint(pill), accent: paint(accent) };
+    });
+    expect(hues.pill, `${theme}: the active pill has a colour`).not.toBeNull();
+    const apart = Math.abs(((hues.pill!.hue - hues.accent.hue + 540) % 360) - 180);
+    expect(apart, `${theme}: the pill's hue is within 20° of the accent's`).toBeLessThan(20);
+  }
+});

@@ -11,7 +11,7 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
   React.useLayoutEffect(() => {
     if (labelRef.current) setLabelW(Math.ceil(labelRef.current.scrollWidth));
   }, [label]);
-  const pill = 'color-mix(in oklch, var(--surface-bg-alt) 90%, var(--accent))';
+  const pill = 'color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent))';
   const hoverBg = 'color-mix(in oklch, transparent 92%, var(--surface-fg))';
   const ease = ' var(--duration-slow) var(--ease-standard)';
   // Tab-bar mode: inactive tabs are icon-only with the pill centred; the active tab keeps its label and gets a wider pill.
