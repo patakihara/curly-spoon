@@ -22,6 +22,7 @@ android {
         targetSdk = 35
         versionCode = releaseVersionCode
         versionName = releaseVersionName
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -103,6 +104,13 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core.ktx)
+    // Instrumented tests, run on the emulator by the `emulator` job in android.yml.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.intents)
     // Must be debugImplementation, not testImplementation: it contributes the manifest entry for
     // the activity createComposeRule() hosts in, and unit tests read the debug variant's merged
     // manifest. That is also why the Compose test lives in src/testDebug.
