@@ -9,7 +9,9 @@
  * Reports per card: page errors, console errors, #root child count, rendered text length,
  * and which names it destructured off the namespace that do not exist.
  *
- *   node docs/build_bundle.js && node docs/render_cards.mjs
+ *   node docs/build_bundle.js && node docs/render_cards.mjs [card path ...]
+ *
+ * Card paths (relative to design/sonora) limit the run to those cards.
  */
 import { createRequire } from 'node:module';
 import { readFileSync, readdirSync, mkdirSync, statSync, existsSync, writeFileSync } from 'node:fs';
@@ -18,7 +20,6 @@ import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-const PORT = 8931;
 
 function loadPlaywright() {
   const candidates = [
@@ -50,23 +51,38 @@ const cards = [];
   }
 })(ROOT, '');
 cards.sort();
+const only = process.argv.slice(2);
+if (only.length) cards.splice(0, cards.length, ...cards.filter((c) => only.includes(c)));
 
 // Served over HTTP, not file://: the pinned CDN scripts carry integrity + crossorigin,
 // and a file:// origin makes those subresource-integrity checks fail for the wrong reason.
 // Not `python3 -m http.server`: it serves .html as `text/html` with no charset, so a browser
 // falls back to Latin-1 and every em dash and bullet in the cards renders as mojibake. That looks
 // exactly like a bad card and is entirely the harness's fault, so the harness declares UTF-8.
+// The server binds port 0 and prints the port the OS gave it. A fixed port hung this harness: when
+// another process already held it, the server died silently and every card was fetched from that
+// other server instead, 404ing into an empty #root that the settle loop below waited out, card
+// after card.
 const server = spawn('python3', ['-c', `
-import http.server, functools
+import http.server, sys
 class H(http.server.SimpleHTTPRequestHandler):
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map,
                       '.html': 'text/html; charset=utf-8',
                       '.css': 'text/css; charset=utf-8',
                       '.js': 'application/javascript; charset=utf-8'}
     def log_message(self, *a): pass
-http.server.HTTPServer(('127.0.0.1', ${PORT}), H).serve_forever()
-`], { cwd: ROOT, stdio: 'ignore' });
-await new Promise((r) => setTimeout(r, 900));
+s = http.server.HTTPServer(('127.0.0.1', 0), H)
+print(s.server_address[1], flush=True)
+s.serve_forever()
+`], { cwd: ROOT, stdio: ['ignore', 'pipe', 'inherit'] });
+const PORT = await new Promise((resolve, reject) => {
+  server.stdout.once('data', (d) => resolve(Number(String(d).trim())));
+  server.once('exit', (code) => reject(new Error('card server exited before listening (code ' + code + ')')));
+});
+// Neither the server nor its pipe may keep this process alive: a card that throws must end the run.
+server.stdout.destroy();
+server.unref();
+process.on('exit', () => server.kill());
 
 const { chromium } = loadPlaywright();
 const browser = await chromium.launch();
