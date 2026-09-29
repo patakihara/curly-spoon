@@ -15,7 +15,7 @@ object MergedManifest {
     /** The `<application>` element's `android:` attribute [name], or null when it is not set. */
     fun applicationAttribute(name: String): String? {
         val config = Properties().apply {
-            val stream = javaClass.classLoader!!.getResourceAsStream("com/android/tools/test_config.properties")
+            val stream = MergedManifest::class.java.classLoader!!.getResourceAsStream("com/android/tools/test_config.properties")
                 ?: error("no AGP unit test config: is includeAndroidResources on?")
             stream.use { load(it) }
         }
