@@ -1,21 +1,32 @@
 # Sonora — working notes
 
+## Where things live
+
+One hierarchy, as the plan's front-end chapter sets it: `tokens/`, then `components/basic/` (the
+pieces built only on tokens), `components/components/` (cards, rows, transport and headers built
+from them) and `components/layouts/` (the backdrop shell, sections, shelves and the player's
+containers and pages). A component reaches only its own level or an earlier one. Each folder
+keeps its components' showcase cards (`*.card.html`) beside them.
+
+Every component is drawn by at least one page of the Auralis canvas (`design/app/pages`),
+directly or through another's `NS()` lookup; `design-codegen/src/prune.test.ts` holds that. A
+component no page uses is deleted everywhere, not kept for later.
+
 ## Keep the export in step with the sources
 
-`export/` holds generated views of this system for the consuming codebase
-(`patakihara/curly-spoon`: web `packages/ui`, Android `apps/android`).
+`export/` holds generated views of this system, and `pnpm gen` in the Auralis root runs
+`export/generate.js` to build the web and Android tokens and the generated component props.
 
-**After changing any `tokens/*.css` file or any component `.d.ts`, regenerate the export in the same
-turn**, with a `run_script` call:
+**After changing any `tokens/*.css` file or any component `.d.ts`, regenerate in the same change:**
 
-```js
-const src = await readFile('export/generate.js');
-await new Function(src + '; return generateExport;')()({ readFile, saveFile, ls, log });
+```
+node docs/run_generate.mjs   # from design/sonora: export/web, export/android, export/component-api.md
+pnpm gen                     # from the Auralis root: web/src/generated, the Android props
 ```
 
 Never hand-edit `export/web/*`, `export/android/*` or `export/component-api.md` — they are overwritten.
-`export/DRIFT.md` is hand-written; update it when the values that repo vendored change, or when a
-component gains behaviour the token layer cannot carry.
+`_ds_manifest.json` comes from `python3 docs/update_manifest.py` and `_adherence.oxlintrc.json` from
+`python3 docs/gen_adherence.py`; rerun both when a component or card is added, moved or deleted.
 
 ## Conventions
 
@@ -37,4 +48,5 @@ pnpm sonora:build    # from the Auralis root: build/sonora/project/**, canvas/to
 
 then the Auralis orchestrator publishes `build/sonora/project/**` to that url with the Artifact tool
 (`.d.ts` files as `text/plain`), records it with `record-publish.mjs --artifact sonora`, and rebuilds
-the canvas (`pnpm canvas:build`), which installs this publish. Do this in the same turn as any change to `tokens/`, a component or its `.d.ts`.
+the canvas (`pnpm canvas:build`), which installs this publish. Do this in the same turn as any change
+to `tokens/`, a component or its `.d.ts`.

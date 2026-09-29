@@ -32,11 +32,6 @@ gallery.html
 claude-design.html
 claude-design_files/
 
-# Feedback queue + `claude -p` run logs from the gallery Feedback button (docs/serve.py).
-# Local workflow state, not part of the design system. The runs themselves edit tracked files;
-# only this bookkeeping is ignored.
-.feedback/
-
 # Queue owner worktrees: the runner cuts one per claimed item at
 # .agents/<item-id>-<session8> when this repo is a served queue instance
 # (queue item 428f0e0). Working state of an agent, never part of the

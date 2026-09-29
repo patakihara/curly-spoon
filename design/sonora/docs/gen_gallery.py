@@ -13,18 +13,12 @@ Two content pieces the real panel has no local equivalent for are dropped entire
 publish-settings card (live workspace/account state, no manifest field) and the h1's thumbnail-
 upload button (an uploaded image with no local backend to serve one).
 
-The Feedback and Edit buttons are live, and do locally what their originals do in the real app
-(hand the card to Claude to regenerate; open its source in the editor), plus the one piece of that
-app's in-preview editing model a local mirror can reproduce — clicking an element inside a preview
-to scope the feedback to it. That behaviour lives entirely in docs/gallery.js and docs/gallery.css,
-which the page links but does not depend on: with JS off it is still the static, pixel-faithful
+The Edit button is live: it opens the visual property editor (docs/gallery.js and docs/gallery.css,
+which the page links but does not depend on — with JS off it is still the static, pixel-faithful
 panel every measurement in this docstring was taken against, and the markup emitted below is still
-the captured markup (the script attaches by om-ds-* hook classes and a data-open attribute rather
-than rewriting any captured class). docs/gallery.js's header comment documents what the real app
-does, how that was established, and which of its editing modes are deliberately not reproduced.
-Still inert, for want of anything local to connect them to: the image-attach button, "Add usage
-notes", and group-header expand/collapse. See docs/../QUESTIONS.md or the implementation plan for
-the full set of documented gaps.
+the captured markup; the script attaches by om-ds-* hook classes rather than rewriting any captured
+class). Still inert, for want of anything local to connect them to: "Add usage notes", and
+group-header expand/collapse.
 
 Card previews are live `<iframe src="...">`s onto the card's own file (see preview_mount()), not
 screenshots — matching what the real capture turned out to actually be (an iframe at native card
@@ -245,53 +239,14 @@ def review_card(card):
                 <div class="text-xs leading-[1.4] text-om-text-tertiary mt-0.5">{subtitle}</div>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <!-- Feedback and Edit are live (docs/gallery.js) and do what their originals do:
-                     Feedback toggles the collapse below and Submit hands the card to a headless
-                     `claude -p`; Edit opens the file in this VS Code window. See the header comment
-                     in docs/gallery.js for how each was read out of the real app, and docs/serve.py
-                     for the endpoints they call. Everything about them at rest is still the captured
-                     markup — the only changes are dropping the aria-disabled/tabindex="-1" pair that
-                     marked them inert, and adding om-ds-* hooks for the script.
-                     Still deliberately inert: the image-attach button (there is no attachment channel
-                     to a headless run) and "Add usage notes" (nothing in the manifest to write to).
-                     Those keep aria-disabled+tabindex="-1" rather than `disabled`, which would trip
-                     this stylesheet's own .disabled\\:opacity-50:disabled rule and dim them against a
-                     full-opacity real app. -->
-                <span style="display:contents">
-                  <button type="button" title="Leave feedback" class="om-ds-feedback-btn relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
-                    <span class="inline-flex items-center gap-[inherit]">Feedback</span>
-                  </button>
-                </span>
-                <button type="button" title="Open {path} in VS Code" class="om-ds-edit-btn relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
+                <!-- Edit is live (docs/gallery.js): it opens the visual property editor, which
+                     writes through the endpoints in docs/serve.py. At rest it is still the captured
+                     markup, bar the dropped aria-disabled/tabindex="-1" pair that marked it inert
+                     and an om-ds-* hook for the script. -->
+                <button type="button" title="Edit {path}'s properties" class="om-ds-edit-btn relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">
                   <span class="inline-flex items-center gap-[inherit]"><i class="ai-ArrowUpRight leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:11px"></i>Edit</span>
                 </button>
               </div>
-            </div>
-
-            <!-- Feedback-collapse box, at rest (grid-rows-[0fr], 0 visible height) — matches the real
-                 default-closed state exactly, and still renders that way with JS off. docs/gallery.js
-                 opens it by setting data-open="1" (docs/gallery.css wins on specificity over the
-                 grid-rows-[0fr] utility) rather than by swapping class strings, so the captured class
-                 list stays verbatim. The textarea keeps its `disabled` attribute here — a focusable
-                 control inside a zero-height box is a real bug, not fidelity theatre — and the script
-                 clears it on open and restores it on close. Submit keeps `disabled` for the same
-                 reason the real app does: nothing to send yet. -->
-            <div class="om-collapse grid [transition:grid-template-rows_var(--ms)_cubic-bezier(0.2,0,0,1)] grid-rows-[0fr] [&amp;&gt;div]:overflow-hidden [&amp;&gt;div]:[transition:opacity_var(--ms)_ease-out_var(--fade-delay),visibility_0s_linear_var(--vis-delay)] [&amp;&gt;div]:opacity-0 [&amp;&gt;div]:invisible" style="--ms:250ms;--fade-delay:0ms;--vis-delay:250ms">
-              <div><div class="pb-3.5">
-                <div class="om-ds-feedback-box mt-1.5 pt-2.5 px-2.5 pb-1 border border-om-border-subtle rounded-[10px] bg-om-bg-surface">
-                  <!-- The picker hint and element chip have no counterpart in the captured markup
-                       because the real app only ever renders them while its own JS is running; both
-                       are hidden until the script fills them in (see docs/gallery.css). -->
-                  <p class="om-ds-pick-hint"></p>
-                  <span class="om-ds-element-chip"><code></code><button type="button" title="Clear the attached element" aria-label="Clear the attached element">×</button></span>
-                  <textarea disabled placeholder="Describe what you'd prefer..." rows="2" class="w-full p-0 text-[13px] bg-transparent text-om-text-primary outline-none resize-none leading-normal overflow-y-hidden placeholder:text-om-text-tertiary om-max-700:text-base"></textarea>
-                  <div class="om-actions flex gap-1" style="margin-top:6px;margin-bottom:6px;justify-content:flex-end">
-                    <button aria-disabled="true" tabindex="-1" title="Attach image (no attachment channel to a headless run — inert)" class="flex cursor-default select-none items-center justify-center rounded-md p-0 text-om-text-secondary outline-none disabled:cursor-not-allowed disabled:opacity-30 bg-transparent border border-transparent" style="width:22px;height:22px;margin-right:auto"><i class="ai-Image leading-none not-italic w-[1em] h-[1em] inline-flex items-center justify-center shrink-0" style="font-size:13px"></i></button>
-                    <button type="button" class="om-ds-cancel relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-bg-surface hover:bg-om-bg-hover active:bg-om-bg-active border-om-border-default text-om-text-primary shadow-om-xs">Cancel</button>
-                    <button type="button" disabled class="om-ds-submit relative inline-flex min-w-0 shrink cursor-default select-none items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap border font-medium outline-none disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-[11px] gap-1 rounded-md bg-om-accent-primary hover:bg-om-accent-primary-hover active:bg-om-accent-primary-active border-transparent text-om-text-inverse">Submit</button>
-                  </div>
-                </div>
-              </div></div>
             </div>
 
             {preview_mount(card, png)}
@@ -367,8 +322,8 @@ def main():
   <link rel="stylesheet" href=".claude-design-vendor/PromptMdEditor-DTc_sH_1.css">
   <link rel="stylesheet" href=".claude-design-vendor/ProjectPage-D36IL5mP.css">
   <!-- Ours, last so it can win ties against the vendored files: the states the captured DOM has no
-       markup for because they only exist while the real app's JS runs (open feedback box, picker,
-       element chip, run status). Nothing in it restyles a captured class at rest. -->
+       markup for because they only exist while docs/gallery.js runs (the picker, the toast and the
+       property editor). Nothing in it restyles a captured class at rest. -->
   <link rel="stylesheet" href="docs/gallery.css">
   <style>/* plumbing only, not app chrome: */
     html,body{{height:100%;margin:0}}

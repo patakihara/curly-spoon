@@ -23,8 +23,7 @@ data/
 
 .DS_Store
 .idea/
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 
 # android
 android/.gradle/

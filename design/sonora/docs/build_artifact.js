@@ -22,7 +22,7 @@
  *   Previews and showcase pages alike are grouped by level: Basic, Components, Layouts.
  *   readme.md               -> project/README.md
  * Not carried: reference/ + assets/reference (Spotify screenshots: research, not brand), guidelines/ cards
- * (the artifact page renders tokens itself), extension/ (abandoned).
+ * (the artifact page renders tokens itself).
  */
 const fs = require('fs');
 const path = require('path');

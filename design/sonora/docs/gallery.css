@@ -1,36 +1,19 @@
 /* Styles for the parts of gallery.html that the real captured DOM has no markup for, because
-   in the real app they only exist while its own JS is running: the open state of a feedback
-   collapse, the element-picker affordances, and the attached-element chip.
+   they only exist while docs/gallery.js is running: the element-picker affordance, the toast and
+   the visual property editor.
 
    Kept out of gen_gallery.py's page <style> block on purpose — that block is inside an f-string,
    so every `{` and `}` in it has to be doubled, which is a miserable place to keep real CSS. This
    file and docs/gallery.js are plain files linked normally.
 
-   Everything here is scoped under .om-ds-* / .om-collapse classes the generated page already
-   carries, and nothing here restyles a real app class — the pixel-fidelity work in
-   docs/gen_gallery.py stays untouched at rest. Colours are the app's own --om-* custom
-   properties (from .claude-design-vendor/index-CrWB6CHH.css), never literals, so all of this
-   follows the panel's light/dark theming for free. */
-
-/* ---- collapse, open ---------------------------------------------------------------------
-   The generated markup hardcodes the closed state as Tailwind utilities (grid-rows-[0fr],
-   [&>div]:opacity-0, [&>div]:invisible), matching the real default-closed DOM exactly. Rather
-   than swapping class strings from JS, docs/gallery.js just sets data-open="1" and these rules
-   win on specificity: (0,2,0) and (0,2,1) against the utilities' (0,1,0) and (0,1,1). The
-   transition itself is already declared on the element, so opening animates with the real
-   app's own curve and duration with no help from here. */
-.om-collapse[data-open="1"] { grid-template-rows: 1fr; }
-.om-collapse[data-open="1"] > div { opacity: 1; visibility: visible; }
-
-/* The textarea is `disabled` in the generated markup (fidelity to the real closed state, where
-   an enabled control would be a focus target inside a zero-height box). gallery.js removes that
-   attribute on open; this only handles the growth, which the real app does in JS. */
-.om-ds-feedback-box textarea { min-height: 2.6em; }
+   Nothing here restyles a real app class — the pixel-fidelity work in docs/gen_gallery.py stays
+   untouched at rest. Colours are the app's own --om-* custom properties (from
+   .claude-design-vendor/index-CrWB6CHH.css), never literals, so all of this follows the panel's
+   light/dark theming for free. */
 
 /* ---- picker affordances -----------------------------------------------------------------
-   Only while a card's feedback box is open. The real app calls this "comment mode" and gates it
-   on window.__commentModeActive inside the preview document; ours is the same idea driven from
-   the parent, which same-origin iframes make possible (see docs/gallery.js). */
+   Only while the property editor is picking on a card. Driven from the parent, which
+   same-origin iframes make possible (see docs/gallery.js). */
 .om-review-card[data-picking="1"] .om-ds-preview-mount {
   /* Blue, not the panel's orange: the hover outline gallery.js draws inside the preview is the
      app's own picker blue (its helper defaults to #3B82F6 literally), and the two are read as one
@@ -45,79 +28,6 @@
    pointer. That is exactly the behaviour we want for picking too — but the cursor should say so
    before the click, and `cursor` on the wrapper cannot reach inside a cross-document iframe, so
    gallery.js sets it on the iframe's own documentElement instead. Nothing needed here. */
-
-.om-ds-pick-hint {
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--om-text-tertiary);
-  margin: 0 0 6px;
-}
-.om-ds-pick-hint b { font-weight: 550; color: var(--om-text-secondary); }
-
-/* ---- attached-element chip --------------------------------------------------------------
-   The real app renders the equivalent as an accent Badge above the composer (size xxs, variant
-   accent) holding the element's description, with a clear affordance. Approximated with the
-   same tokens rather than reusing its Badge classes, since a Badge is a component we never
-   captured the full markup of. */
-.om-ds-element-chip {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  margin-bottom: 6px;
-  padding: 2px 4px 2px 7px;
-  border-radius: 5px;
-  background: var(--om-bg-muted);
-  color: var(--om-text-secondary);
-  font-size: 11px;
-  line-height: 1.5;
-}
-.om-review-card[data-has-element="1"] .om-ds-element-chip { display: inline-flex; }
-.om-ds-element-chip code {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 10.5px;
-  color: var(--om-text-primary);
-}
-.om-ds-element-chip button {
-  flex: 0 0 auto;
-  width: 15px;
-  height: 15px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--om-text-tertiary);
-  font-size: 12px;
-  line-height: 1;
-  cursor: default;
-}
-.om-ds-element-chip button:hover { background: var(--om-bg-hover); color: var(--om-text-primary); }
-
-/* ---- run status -------------------------------------------------------------------------
-   The real app's Feedback button turns accent-blue and reads "Feedback sent" for 5s, and that is
-   the whole of its feedback UI — it has a chat pane to show the rest in. Ours has nowhere else to
-   put it, and unlike the real app's message our submission is a `claude -p` that actually runs,
-   so the button doubles as that run's status. Same accent treatment, more states. */
-/* accent-blue is the app's actual choice, not an approximation of it: ProjectPage's review card
-   sets style={{color: q.accent.blue}} on this button while it reads "Feedback sent", and its
-   theme map resolves that to var(--om-accent-blue). --om-accent-primary is the panel's orange,
-   which is what Submit and the nav selection use. */
-.om-ds-feedback-btn[data-state] { color: var(--om-accent-blue); }
-/* No var() fallback here on purpose. The rule this replaces named --om-accent-danger, which does
-   not exist in the vendored token set, and the fallback swallowed that silently: a failed run
-   computed to exactly the resting text colour, leaving the one state a user most needs to notice
-   as the state that looked like nothing had happened. */
-.om-ds-feedback-btn[data-state="failed"] { color: var(--om-accent-error); }
-.om-ds-feedback-btn[data-state="running"] { animation: om-ds-pulse 1.4s ease-in-out infinite; }
-@keyframes om-ds-pulse { 50% { opacity: 0.55; } }
-@media (prefers-reduced-motion: reduce) {
-  .om-ds-feedback-btn[data-state="running"] { animation: none; }
-}
 
 /* ---- toast ------------------------------------------------------------------------------
    For failures that have no card to attach to (the server being down is the main one). The real
@@ -154,9 +64,6 @@
    CLAUDE.md (.probe/pro-panel-spec.md) but with this project's own token set throughout, never a
    literal color/size copied from that capture. */
 
-/* .om-ds-props-btn itself needs no rule here — gallery.js builds it by cloning the markup of an
-   existing button (Feedback's), so it inherits that button family's classes verbatim. */
-
 #om-edit-panel {
   position: fixed;
   top: 0;
@@ -177,10 +84,9 @@
 #om-edit-panel[data-open="1"] { transform: translateX(0); }
 
 /* The panel is `position:fixed`, so at rest it would simply overlay whatever sits underneath it
-   — and on this page that includes each card's own Feedback/Edit buttons, which live near the
-   card's right edge. An overlaid-but-still-"visible" button a real click can't reach is worse
-   than an obviously hidden one (found by running the interaction, not by inspection: Playwright's
-   own actionability check reported "…subtree intercepts pointer events" on this exact pair).
+   — and on this page that includes each card's own Edit button, which lives near the card's
+   right edge. An overlaid-but-still-"visible" button a real click can't reach is worse than an
+   obviously hidden one.
    Docking — shrinking the page's own content box by the same width the panel itself uses —
    keeps every card's controls reachable instead, matching how a real docked side panel behaves
    (it pushes the canvas, it doesn't sit on top of it). On `body` rather than `.om-gallery-mount`

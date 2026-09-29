@@ -1,93 +1,25 @@
-/* Makes gallery.html's Feedback and Edit buttons do what their originals do in Claude Design,
- * and adds the one part of that app's editing model that a local mirror can actually reproduce:
- * clicking an element inside a card preview to scope the feedback to it.
+/* Makes gallery.html's Edit button open the visual property editor: click an element inside a
+ * card preview, change one of six properties, and Save writes a literal-authored value back into
+ * the card's own source through docs/serve.py's /_api/edit/ endpoints.
  *
- * WHAT THE REAL APP DOES (read out of its own ProjectPage chunk, which docs/gen_gallery.py
- * vendors alongside the CSS — the buttons live in its `eJ` review-card component):
+ * The picker: hovering outlines an element, clicking selects it. Our previews are same-origin
+ * iframes (both sides served by docs/serve.py), so the parent can reach into contentDocument and
+ * add listeners with no injected script. That is also the one hard requirement here: opened as
+ * file://, every preview is a foreign origin and picking silently degrades (see enterPickMode).
  *
- *   Edit      onOpenFile: () => openFile(card.editPath ?? card.path)   — opens the card's
- *             source in the app's own editor pane. Locally, "the editor" is the VS Code window
- *             this repo is already open in; docs/serve.py reaches it with the Remote-WSL `code`
- *             CLI. (Why via the server rather than a `vscode://file/...` href on the button:
- *             see open_file() there — the browser is Windows-side and would resolve the path
- *             against the wrong filesystem.)
- *
- *   Feedback  onClick: () => open ? close() : open()  — toggles a collapse holding a textarea,
- *             Cancel and Submit. Submit calls onSendFeedback(name, path, text, files), which is
- *             one line at the top of the page component:
- *                 `Regenerate "${name}"${text ? `: ${text}` : `.`}` + a ds-feedback attachment
- *             posted to the project's Claude session. Locally that is a headless `claude -p` in
- *             this repo — see build_prompt() in docs/serve.py, which reproduces both that
- *             sentence and the File/Element/Feedback attachment body verbatim.
- *             The button then reads "Feedback sent" in accent blue for 5s. Ours keeps using it
- *             as the run's status readout, because unlike the real app's chat message our
- *             submission is a process that finishes (or fails) and we have nowhere else to say so.
- *
- *   The picker  The app injects an agent script into the preview and runs a "comment mode":
- *             hovering outlines an element, clicking selects it, and the selection travels back
- *             as {selector, descriptor, rect} which becomes an attachment reading
- *                 File: <path> / Element: <descriptor> / Feedback: <text>
- *             Its descriptor is an ancestor breadcrumb ("→ leaf", then indented "↑ parent" lines,
- *             up to 5 deep); describeElement()/descriptorOf() below rebuild that shape. We need
- *             no injected script and no postMessage protocol, because our previews are same-origin
- *             iframes (both sides served by docs/serve.py) — the parent can just reach into
- *             contentDocument and add listeners. That is also the one hard requirement here:
- *             opened as file://, every preview is a foreign origin and picking silently degrades
- *             (see enterPickMode).
- *
- * WHAT IT DELIBERATELY DOES NOT REPRODUCE: the app's other in-preview editing modes — direct
- * text editing (it tags DOM nodes with data-om-text and traps input), the drawing/annotation
- * tools (rect/oval/arrow/line/freehand over the preview), stock-photo image-slot picking and
- * reframing, and drag-drop repositioning. All of those depend on its build-time JSX source
- * instrumentation: it stamps every element with data-om-id="jsx:<file>:<line>:<col>" so an edit
- * can be written back to the exact source expression. Our cards are hand-written HTML with an
- * in-page Babel transform and carry no such map, so an edit made in the preview has no defined
- * place to land. Feedback-with-an-element-attached is the honest local equivalent: it hands
- * Claude the same selector and breadcrumb and lets it find the source itself.
+ * What cannot be written directly is reported, never guessed: a token-authored value, or an
+ * element whose source position is unknown, is named in the panel's status for a person to
+ * change in the source.
  *
  * No part of this runs, or is needed, for the page to render correctly — the panel is fully
- * styled and readable with JS off, which is how it was built and how the pixel-fidelity checks
- * in docs/gen_gallery.py still measure it.
+ * styled and readable with JS off, which is how the pixel-fidelity checks in docs/gen_gallery.py
+ * still measure it.
  */
 (function () {
   'use strict';
 
-  var POLL_MS = 2500;
-  var SENT_LINGER_MS = 5000; // the real app's own window.setTimeout(..., 5e3) on "Feedback sent"
-  var MAX_ANCESTORS = 5;     // the real descriptor walks at most 5 levels up before stopping
-
-  /* --------------------------------------------------------------------- framed (VS Code) mode
-   *
-   * docs/EXTENSION-PLAN.md §2 "Bridge protocol": when this page is served through the Sonora
-   * extension's webview, it sits in an <iframe> whose parent document is media/webview.js — a
-   * pure relay that forwards every 'sonora:'-prefixed postMessage in both directions. Plain
-   * browser use (window.parent === window) is untouched below: it keeps talking to docs/serve.py
-   * over /_api/*, exactly as before this order.
-   */
-  var FRAMED = window.parent !== window;
-
-  /* targetOrigin '*' is acceptable here ONLY because docs/serve.py binds this page to
-   * 127.0.0.1 — every parent that could ever be framing it is a process on this same machine
-   * (the Sonora extension's webview), never a remote origin worth restricting a postMessage to. */
-  function postToHost(msg) {
-    if (FRAMED) window.parent.postMessage(msg, '*');
-  }
-
-  /* FIFO of cards awaiting a sonora:feedback-filed reply. The reply itself carries only
-   * {id, held?} — no path (EXTENSION-PLAN.md §2's bridge-protocol table) — so this file, not the
-   * host, is what remembers which card a given reply belongs to. Safe because the host processes
-   * one postMessage at a time and replies in the order it received them, the same ordering
-   * guarantee postMessage itself already gives this array's push/shift pair. */
-  var pendingFeedback = [];
 
   /* ------------------------------------------------------------------ tiny helpers */
-
-  function cardByPath(path) {
-    // No CSS.escape: the value sits inside quotes in the attribute selector, where a
-    // repo-relative path needs no escaping — CSS.escape would actively break it by
-    // backslash-escaping every `/`.
-    return document.querySelector('.om-review-card[data-card-path="' + path + '"]');
-  }
 
   function toast(msg) {
     var el = document.getElementById('om-ds-toast');
@@ -100,7 +32,6 @@
     el.setAttribute('data-show', '1');
     clearTimeout(el._t);
     el._t = setTimeout(function () { el.removeAttribute('data-show'); }, 6000);
-    postToHost({ type: 'sonora:toast', text: msg });
   }
 
   function postJSON(url, body) {
@@ -116,12 +47,11 @@
     });
   }
 
-  /* --------------------------------------------------- element description (the app's shape) */
+  /* ------------------------------------------------------------------ element description */
 
-  /* One line of the breadcrumb. The real app's own leaf/ancestor formatter is minified past
-     useful reading, but its output shape is visible in what it feeds the model: a tag with its
-     distinguishing attributes and, for the leaf, its text. Classes are capped at 3 because these
-     cards are Tailwind-ish and a full class list is pages of noise that tells Claude nothing. */
+  /* A short label for an element, shown as the panel's subtitle: a tag with its distinguishing
+     attributes and, for the leaf, its text. Classes are capped at 3 because these cards are
+     Tailwind-ish and a full class list is pages of noise that tells a reader nothing. */
   function describeElement(el, isLeaf) {
     var out = el.tagName.toLowerCase();
     if (el.id) out += '#' + el.id;
@@ -138,46 +68,6 @@
       out += ' "' + (text.length > 60 ? text.slice(0, 60) + '…' : text) + '"';
     }
     return out;
-  }
-
-  function descriptorOf(el) {
-    var lines = ['→ ' + describeElement(el, true)];
-    var p = el.parentElement, i = 0;
-    var body = el.ownerDocument.body;
-    while (p && p !== body && i < MAX_ANCESTORS) {
-      lines.push(new Array(i + 2).join('  ') + '↑ ' + describeElement(p, false));
-      p = p.parentElement;
-      i++;
-    }
-    return lines.join('\n');
-  }
-
-  /* A selector that still resolves after the file is edited, as far as that is possible without
-     the app's data-om-id source stamps: prefer a unique id anywhere up the chain, else a
-     :nth-of-type path. Sent along with the descriptor so Claude has both a machine-checkable
-     handle and a human one — the descriptor is what actually survives a rewrite. */
-  function selectorOf(el) {
-    var doc = el.ownerDocument;
-    if (el === doc.body) return 'body';
-    var parts = [];
-    var node = el;
-    while (node && node.nodeType === 1 && node !== doc.documentElement) {
-      if (node.id && doc.querySelectorAll('#' + CSS.escape(node.id)).length === 1) {
-        parts.unshift('#' + CSS.escape(node.id));
-        break;
-      }
-      var part = node.tagName.toLowerCase();
-      var parent = node.parentElement;
-      if (parent) {
-        var sibs = Array.prototype.filter.call(parent.children, function (c) {
-          return c.tagName === node.tagName;
-        });
-        if (sibs.length > 1) part += ':nth-of-type(' + (sibs.indexOf(node) + 1) + ')';
-      }
-      parts.unshift(part);
-      node = parent;
-    }
-    return parts.join(' > ');
   }
 
   /* ------------------------------------------------------------------------ the picker */
@@ -219,8 +109,8 @@
       // Two ordinary reasons, worth telling apart: a lazy iframe that simply hasn't loaded yet
       // (it will, and reopening the box then works), versus file:// where it never will.
       if (location.protocol === 'file:') {
-        setHint(card, 'Element picking needs the page served over HTTP — open ' +
-                      'http://127.0.0.1:8888/gallery.html (docs/serve.py).');
+        toast('Element picking needs the page served over HTTP — open ' +
+              'http://127.0.0.1:8888/gallery.html (docs/serve.py).');
       }
       return;
     }
@@ -244,24 +134,12 @@
         if (!el || el.nodeType !== 1) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        if (onPick) {
-          // The edit panel's picker (see openEditPanel): unlike feedback-attach, picking again
-          // just retargets the panel at the newly clicked element — it does not exit pick mode,
-          // because "click something else to edit it instead" is the whole interaction model.
-          onPick(el);
-          return;
-        }
-        attachElement(card, {
-          selector: selectorOf(el),
-          descriptor: descriptorOf(el),
-          label: describeElement(el, true)
-        });
+        // Picking again retargets the panel at the newly clicked element rather than exiting pick
+        // mode: "click something else to edit it instead" is the whole interaction model.
+        onPick(el);
       },
-      // Escape means the same thing on both sides of the iframe boundary: dismiss the composer.
-      // Disarming the picker alone left no way back — the box stayed open over a preview that no
-      // longer responded to hover, and the only re-arm path (the chip's Clear button) is hidden
-      // while nothing is attached, so the user had to close and reopen the box to pick anything.
-      key: function (e) { if (e.key === 'Escape') (onEscape || function () { closeBox(card); })(); }
+      // Escape means the same thing on both sides of the iframe boundary: close the editor.
+      key: function (e) { if (e.key === 'Escape') onEscape(); }
     };
     doc.addEventListener('mousemove', state.move, true);
     doc.addEventListener('mouseleave', state.leave, true);
@@ -286,224 +164,6 @@
     doc.documentElement.style.cursor = '';
     if (doc._omDsOverlay) doc._omDsOverlay.style.display = 'none';
     doc._omDsPick = null;
-  }
-
-  function setHint(card, text) {
-    var hint = card.querySelector('.om-ds-pick-hint');
-    if (hint) hint.innerHTML = text;
-  }
-
-  function attachElement(card, sel) {
-    card._element = sel;
-    card.setAttribute('data-has-element', '1');
-    var chip = card.querySelector('.om-ds-element-chip code');
-    if (chip) {
-      chip.textContent = sel.label;
-      chip.title = sel.descriptor;
-    }
-    exitPickMode(card);
-    setHint(card, 'Element attached. <b>Clear</b> it to pick another.');
-    syncSubmit(card);
-    var ta = card.querySelector('.om-ds-feedback-box textarea');
-    if (ta) ta.focus();
-  }
-
-  function clearElement(card) {
-    card._element = null;
-    card.removeAttribute('data-has-element');
-    syncSubmit(card);
-    if (isOpen(card)) {
-      enterPickMode(card);
-      setHint(card, 'Click an element in the preview below to attach it, or just describe the change.');
-    }
-  }
-
-  /* ------------------------------------------------------------------- the feedback box */
-
-  function isOpen(card) {
-    var c = card.querySelector('.om-collapse');
-    return !!(c && c.getAttribute('data-open') === '1');
-  }
-
-  function syncSubmit(card) {
-    var ta = card.querySelector('.om-ds-feedback-box textarea');
-    var submit = card.querySelector('.om-ds-submit');
-    if (!ta || !submit) return;
-    // Matches the real app's own gate: Submit is disabled until there is something to send.
-    submit.disabled = !ta.value.trim() && !card._element;
-  }
-
-  function autosize(ta) {
-    ta.style.height = 'auto';
-    ta.style.height = ta.scrollHeight + 'px';
-  }
-
-  function openBox(card) {
-    var c = card.querySelector('.om-collapse');
-    if (!c) return;
-    // Mutual exclusion with the edit panel: both arm the same one-picker-per-doc machinery
-    // (see enterPickMode), so only one may be armed on this card's preview at a time.
-    if (typeof closeEditPanel === 'function' && activeEditCard === card) closeEditPanel(true);
-    c.setAttribute('data-open', '1');
-    // The inline delays are the closed-state ones baked into the markup; opening uses the real
-    // app's open-state values for this collapse (it passes fadeDelayMs={0} here specifically).
-    c.style.setProperty('--fade-delay', '0ms');
-    c.style.setProperty('--vis-delay', '0ms');
-    var ta = card.querySelector('.om-ds-feedback-box textarea');
-    if (ta) {
-      ta.disabled = false;
-      autosize(ta);
-      ta.focus();
-    }
-    setHint(card, 'Click an element in the preview below to attach it, or just describe the change.');
-    enterPickMode(card);
-    syncSubmit(card);
-  }
-
-  function closeBox(card) {
-    var c = card.querySelector('.om-collapse');
-    if (!c) return;
-    c.removeAttribute('data-open');
-    c.style.setProperty('--fade-delay', '0ms');
-    c.style.setProperty('--vis-delay', '250ms');
-    var ta = card.querySelector('.om-ds-feedback-box textarea');
-    if (ta) ta.disabled = true;   // back to the real closed-state DOM: no focus target in a 0fr box
-    exitPickMode(card);
-    var btn = card.querySelector('.om-ds-feedback-btn');
-    if (btn) btn.focus();
-  }
-
-  function submitFeedback(card) {
-    var ta = card.querySelector('.om-ds-feedback-box textarea');
-    var text = ta ? ta.value.trim() : '';
-    if (!text && !card._element) return;
-    var btn = card.querySelector('.om-ds-feedback-btn');
-    var path = card.getAttribute('data-card-path');
-    var name = card.getAttribute('data-card-name');
-    var element = card._element ? card._element.descriptor : null;
-
-    if (FRAMED) {
-      // Framed mode: the extension host files this through the queue (or its own
-      // sonora.regenerate fallback) instead of the /_api/feedback POST below, which
-      // stays exactly as it was for plain-browser use. The host replies with
-      // sonora:feedback-filed (see the bottom of this file); pendingFeedback is the
-      // FIFO that reply is matched back to a card through, since the reply itself
-      // carries no path (EXTENSION-PLAN.md §2's bridge-protocol table).
-      if (ta) { ta.value = ''; autosize(ta); }
-      clearElement(card);
-      closeBox(card);
-      pendingFeedback.push(card);
-      setState(btn, 'queued');
-      postToHost({ type: 'sonora:feedback', name: name, path: path, text: text, element: element });
-      return;
-    }
-
-    postJSON('/_api/feedback', {
-      path: path,
-      name: name,
-      text: text,
-      element: element,
-      selector: card._element ? card._element.selector : null
-    }).then(function (res) {
-      if (ta) { ta.value = ''; autosize(ta); }
-      clearElement(card);
-      closeBox(card);
-      card._entryId = res.entry.id;
-      setState(btn, res.entry.status === 'held' ? 'sent' : res.entry.status);
-      startPolling();
-    }).catch(function (err) {
-      toast('Feedback failed: ' + err.message + ' — is docs/serve.py running?');
-    });
-  }
-
-  /* --------------------------------------------------------------------- run status readout */
-
-  var LABEL = {
-    queued: 'Queued…',
-    running: 'Regenerating…',
-    done: 'Regenerated',
-    failed: 'Run failed',
-    sent: 'Feedback sent',   // SONORA_FEEDBACK_CLAUDE=0: recorded, not run
-    held: 'Feedback sent',
-    filed: 'Filed'           // framed mode: overridden with 'Filed #<id>' below, never shown bare
-  };
-
-  // Terminal states: shown briefly, then the button reverts to plain "Feedback" the same way the
-  // real app's own "Feedback sent" does. 'filed'/'held' are the framed-mode equivalents of
-  // 'sent'/'held' above (docs/EXTENSION-PLAN.md §4 "1.4" deliverable 1) — the queue takes over
-  // tracking the actual run from here (the extension's own withProgress notification, not this
-  // button), so there is nothing further for this button to poll toward.
-  var TERMINAL_STATES = { done: 1, failed: 1, sent: 1, held: 1, filed: 1 };
-
-  /* `text`, when given, overrides LABEL[state] verbatim — the framed-mode reply carries its own
-     id/held-until wording (handleFeedbackFiled below) that no static LABEL entry can hold. */
-  function setState(btn, state, text) {
-    if (!btn) return;
-    var label = btn.querySelector('span');
-    clearTimeout(btn._revert);
-    if (!state) {
-      btn.removeAttribute('data-state');
-      if (label) label.textContent = 'Feedback';
-      return;
-    }
-    btn.setAttribute('data-state', state);
-    if (label) label.textContent = text || LABEL[state] || 'Feedback';
-    if (TERMINAL_STATES[state]) {
-      btn._revert = setTimeout(function () { setState(btn, null); }, SENT_LINGER_MS);
-    }
-  }
-
-  var pollTimer = null;
-  var pollFailures = 0;
-  // Roughly 12s of blips tolerated before giving up. Restarting docs/serve.py mid-run is routine
-  // here (it happens on every folder-open), and a run's terminal transition is only ever announced
-  // once: miss it and the button reads "Regenerating…" forever and the preview keeps showing the
-  // pre-edit render, so a single dropped request must not be what ends the watch.
-  var MAX_POLL_FAILURES = 5;
-
-  function startPolling() {
-    if (pollTimer) return;
-    pollFailures = 0;
-    pollTimer = setInterval(poll, POLL_MS);
-    poll();
-  }
-
-  function stopPolling() {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-
-  function poll() {
-    fetch('/_api/feedback', { cache: 'no-store' }).then(function (r) { return r.json(); })
-      .then(function (data) {
-        var byId = {};
-        (data.entries || []).forEach(function (e) { byId[e.id] = e; });
-        var live = 0;
-        document.querySelectorAll('.om-review-card').forEach(function (card) {
-          if (!card._entryId) return;
-          var e = byId[card._entryId];
-          if (!e) return;
-          var btn = card.querySelector('.om-ds-feedback-btn');
-          if (card._lastStatus !== e.status) {
-            card._lastStatus = e.status;
-            setState(btn, e.status);
-            // A finished run has edited the card file on disk; reload the preview so the page
-            // shows the result rather than the pre-edit render.
-            if (e.status === 'done') reloadPreview(card);
-            if (e.status === 'failed') {
-              toast('Regenerating "' + e.name + '" failed — see ' + (e.log || '.feedback/') + '.');
-            }
-          }
-          if (e.status === 'queued' || e.status === 'running') live++;
-        });
-        pollFailures = 0;
-        if (!live) stopPolling();
-      }).catch(function () {
-        if (++pollFailures < MAX_POLL_FAILURES) return;  // the next tick retries
-        stopPolling();
-        toast('Lost track of the running feedback job — is docs/serve.py still running? ' +
-              'Reload once it is back to pick the status up again.');
-      });
   }
 
   function reloadPreview(card) {
@@ -534,17 +194,12 @@
    * getComputedStyle is what resolves it — read straight off the live DOM node, no server call
    * needed just to populate the panel).
    *
-   * ADDRESSABILITY POLICY — the part the adversarial re-check (see CLAUDE.md) forced a real
-   * decision on: an om-id is only trusted when it sits on the EXACT clicked element, never a
-   * bubbled ancestor's. Measured own-id rates range from 84% (hand-written cards) down to 0.8%
-   * (ui_kits/mobile) precisely because most of a card's surface is drawn by _ds_bundle.js
-   * components that never forward the id to their rendered DOM node — bubbling to "the nearest
-   * ancestor that has one" would silently report a different element's edit as this one's, which
-   * is exactly the `<template id="__doc">`/dangerouslySetInnerHTML collapse defect #2 flagged.
-   * Requiring an OWN id sidesteps both failure modes with one rule: no id on the clicked element
-   * -> straight to the agentic fallback (the existing Feedback pipeline, given a precise
-   * description of the requested change plus the element's selector/breadcrumb) rather than a
-   * guess. See applySave() below.
+   * ADDRESSABILITY POLICY: an om-id is only trusted when it sits on the EXACT clicked element,
+   * never a bubbled ancestor's. Most of a card's surface is drawn by _ds_bundle.js components
+   * that never forward the id to their rendered DOM node, and bubbling to "the nearest ancestor
+   * that has one" would silently report a different element's edit as this one's. No id on the
+   * clicked element means the change cannot be written back, and the panel says so. See
+   * applySave() below.
    */
 
   var PROPS = [
@@ -575,12 +230,6 @@
     var i = WEIGHT_NAMES.indexOf(name);
     return i === -1 ? 400 : WEIGHT_VALUES[i];
   }
-
-  // A session-scoped id, not a per-edit one: docs/serve.py's /_api/edit/token uses it purely to
-  // notice "the same token pushed the same way on several elements in this session" (the writeback
-  // policy's own repetition signal) — see build_token_prompt. One id for the whole tab's lifetime
-  // is exactly the granularity that signal needs.
-  var EDIT_SESSION_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
   /* An om-id is only ever trusted on the EXACT element clicked (see the policy note above) — no
      ancestor walk. Format: jsx:/Inline Babel script:<charOffset>:<line>:<col>. */
@@ -912,7 +561,7 @@
   /* ----------------------------------------------------------------------------------- save */
 
   /* Classify + write one property, or report why it can't be written directly. Returns a Promise
-     resolving to { done:true } | { tokenEdit:{...} } | { agentic:string }. */
+     resolving to { done:true } | { skipped:string }. */
   function saveOneProperty(prop, omId, path) {
     var newRaw = panelState.current[prop.key] || '';
     var wasUnset = !newRaw;
@@ -920,27 +569,18 @@
       return postJSON('/_api/edit/apply', {
         path: path, charOffset: omId.charOffset, property: prop.key, allowUnset: true
       }).then(function (r) {
-        if (r.ok) {
-          notifyEditApplied(path, omId.charOffset, prop.key);
-          return { done: true };
-        }
-        // Deleting a token-authored declaration is still an edit whose intent isn't ours to
-        // guess (does removing the USE also mean the token itself is wrong?) — same "ask,
-        // don't choose" rule as a value change, just phrased as a removal.
-        return { agentic: prop.label + ': remove the ' + prop.key + ' declaration (was ' +
-          (panelState.orig[prop.key] || 'unset') + ').' };
+        if (r.ok) return { done: true };
+        // Deleting a token-authored declaration is an edit whose intent isn't ours to guess.
+        return { skipped: prop.label + ' (removing ' + (panelState.orig[prop.key] || 'it') + ')' };
       });
     }
     return postJSON('/_api/edit/resolve', { path: path, charOffset: omId.charOffset, property: prop.key })
       .then(function (r) {
         if (!r.ok || !r.elementFound) {
-          return { agentic: prop.label + ': set to ' + newRaw + ' (element not resolvable in source).' };
+          return { skipped: prop.label + ' (element not found in the source)' };
         }
         if (r.property === 'present' && r.authoredKind === 'token') {
-          return { tokenEdit: {
-            property: prop.key, token: r.authoredToken,
-            oldResolvedValue: r.resolvedValue, newResolvedValue: newRaw
-          } };
+          return { skipped: prop.label + ' (set by ' + r.authoredToken + ')' };
         }
         if (r.property === 'present' && r.authoredKind === 'literal') {
           return applyWrite({ path: path, charOffset: omId.charOffset, property: prop.key, newValue: writeValue(prop, newRaw) });
@@ -948,25 +588,15 @@
         if (r.property === 'missing') {
           return applyWrite({ path: path, charOffset: omId.charOffset, property: prop.key, newValue: writeValue(prop, newRaw), allowMissing: true });
         }
-        return { agentic: prop.label + ': set to ' + newRaw + ' (' + (r.reason || r.property || 'unsupported shape') + ').' };
+        return { skipped: prop.label + ' (' + (r.reason || r.property || 'unsupported shape') + ')' };
       });
   }
 
   function applyWrite(payload) {
     return postJSON('/_api/edit/apply', payload).then(function (r) {
-      if (r.ok) {
-        notifyEditApplied(payload.path, payload.charOffset, payload.property);
-        return { done: true };
-      }
-      return { agentic: payload.property + ': write refused (' + (r.reason || 'unknown') + ').' };
+      if (r.ok) return { done: true };
+      return { skipped: payload.property + ' (write refused: ' + (r.reason || 'unknown') + ')' };
     });
-  }
-
-  /* Told the extension host a literal write actually landed on disk, so it can reveal the
-     changed line if that file happens to be open in an editor (§2 bridge-protocol table). No-op
-     in plain-browser use. */
-  function notifyEditApplied(path, offset, property) {
-    postToHost({ type: 'sonora:edit-applied', path: path, offset: offset, property: property });
   }
 
   function writeValue(prop, raw) {
@@ -985,94 +615,37 @@
     panelEl.querySelector('.om-ep-save').disabled = true;
     setStatus('Saving…', null);
 
-    var descriptor = descriptorOf(el);
-    var agenticNotes = [];
-    var tokenEdits = [];
+    var skipped = [];
     var chain = Promise.resolve();
 
     if (!omId) {
-      // No own id on the exact clicked element -- per the addressability policy above, every
-      // change on this element goes through the agentic route, not just the ones that would.
-      dirtyProps.forEach(function (p) {
-        agenticNotes.push(p.label + ': set to ' + (panelState.current[p.key] || '(unset)') + '.');
-      });
+      // No own id on the exact clicked element: per the addressability policy above, nothing on
+      // it can be written back.
+      dirtyProps.forEach(function (p) { skipped.push(p.label + ' (element not addressable)'); });
     } else {
       dirtyProps.forEach(function (prop) {
         // Sequential, not Promise.all: each write re-resolves the file fresh from disk, and two
         // edits to the SAME style object literal can shift each other's character offsets, so
         // the next resolve must only ever start after the previous write has landed.
         chain = chain.then(function () { return saveOneProperty(prop, omId, path); }).then(function (res) {
-          if (res.tokenEdit) tokenEdits.push(res.tokenEdit);
-          if (res.agentic) agenticNotes.push(res.agentic);
+          if (res.skipped) skipped.push(res.skipped);
         });
       });
     }
 
     chain.then(function () {
-      var jobs = [];
-      tokenEdits.forEach(function (te) {
-        jobs.push(postJSON('/_api/edit/token', {
-          path: path, name: card.getAttribute('data-card-name'), property: te.property, token: te.token,
-          oldResolvedValue: te.oldResolvedValue, newResolvedValue: te.newResolvedValue,
-          element: descriptor, session: EDIT_SESSION_ID
-        }).then(function (r) { return r.entry && r.entry.id; }));
-      });
-      if (agenticNotes.length) {
-        jobs.push(postJSON('/_api/feedback', {
-          path: path, name: card.getAttribute('data-card-name'),
-          text: 'Property edit requested via the visual editor:\n' + agenticNotes.join('\n') +
-            '\n(one or more of these could not be located precisely in this card\'s own inline ' +
-            'script — locate the element from the description below and apply the same change.)',
-          element: descriptor, selector: selectorOf(el)
-        }).then(function (r) { return r.entry && r.entry.id; }));
-      }
-
-      var wroteLiteral = dirtyProps.length > (tokenEdits.length + agenticNotes.length);
-      if (wroteLiteral) reloadPreview(card);
-      // Whatever got written directly is no longer "dirty" against the file; token/agentic jobs
-      // stay pending until they land, but the panel's own diff is against the live DOM, which
-      // already shows the requested value either way.
+      if (dirtyProps.length > skipped.length) reloadPreview(card);
       dirtyProps.forEach(function (p) { panelState.orig[p.key] = panelState.current[p.key]; });
       updateFootButtons();
-
-      if (!jobs.length) {
+      if (!skipped.length) {
         setStatus('Saved.', 'ok');
         return;
       }
-      setStatus(jobs.length + ' change' + (jobs.length > 1 ? 's' : '') + ' sent to Claude to apply…', null);
-      Promise.all(jobs).then(function (ids) {
-        pollPanelJobs(card, ids.filter(Boolean));
-      });
+      setStatus('Not written, change in the source: ' + skipped.join(', ') + '.', 'error');
     }).catch(function (err) {
       setStatus('Save failed: ' + err.message, 'error');
       panelEl.querySelector('.om-ep-save').disabled = false;
     });
-  }
-
-  var panelPollTimer = null;
-  function pollPanelJobs(card, ids) {
-    if (!ids.length) return;
-    clearInterval(panelPollTimer);
-    panelPollTimer = setInterval(function () {
-      fetch('/_api/feedback', { cache: 'no-store' }).then(function (r) { return r.json(); })
-        .then(function (data) {
-          var byId = {};
-          (data.entries || []).forEach(function (e) { byId[e.id] = e; });
-          var pending = ids.filter(function (id) {
-            var e = byId[id];
-            return e && (e.status === 'queued' || e.status === 'running');
-          });
-          if (pending.length < ids.length) {
-            var anyFailed = ids.some(function (id) { return byId[id] && byId[id].status === 'failed'; });
-            if (!pending.length) {
-              clearInterval(panelPollTimer);
-              setStatus(anyFailed ? 'Claude could not apply one or more changes — see .feedback/.' : 'Applied.',
-                anyFailed ? 'error' : 'ok');
-              if (panelState && panelState.card === card) reloadPreview(card);
-            }
-          }
-        }).catch(function () { /* next tick retries */ });
-    }, 2500);
   }
 
   /* ------------------------------------------------------------------------------ open/close */
@@ -1086,7 +659,6 @@
 
   function openEditPanel(card) {
     ensurePanel();
-    if (isOpen(card)) closeBox(card); // mutual exclusion with the feedback composer
     var iframe = card.querySelector('.om-ds-preview-mount iframe');
     if (!iframe) return;
     activeEditCard = card;
@@ -1105,12 +677,8 @@
       enterPickMode(card, function (el) { selectElement(card, el); }, function () { closeEditPanel(true); });
     }, { once: true });
     card.setAttribute('data-editing', '1');
-    // Docks the panel (docs/gallery.css) rather than letting it overlay the page: found by
-    // actually driving this in a browser, not by inspection — a fixed fixed-position panel over
-    // a card whose own Feedback/Edit buttons sit near the right edge makes those buttons
-    // physically unclickable (verified: Playwright's actionability check reports the panel's own
-    // subtree "intercepts pointer events" on exactly that pair) without shrinking the content
-    // that sits under it.
+    // Docks the panel (docs/gallery.css) rather than letting it overlay the page: a fixed panel
+    // over a card whose Edit button sits near the right edge makes that button unclickable.
     document.body.classList.add('om-edit-panel-open');
     panelEl.setAttribute('data-open', '1');
     panelEl.querySelector('.om-ep-subtitle').textContent = card.getAttribute('data-card-name') || '';
@@ -1138,156 +706,12 @@
     }
     activeEditCard = null;
     panelState = null;
-    clearInterval(panelPollTimer);
   }
 
   /* ------------------------------------------------------------------------------ wiring */
 
-  function wire(card) {
-    var fb = card.querySelector('.om-ds-feedback-btn');
-    if (fb) {
-      fb.addEventListener('click', function () {
-        if (isOpen(card)) closeBox(card); else openBox(card);
-      });
-    }
-
+  document.querySelectorAll('.om-review-card').forEach(function (card) {
     var edit = card.querySelector('.om-ds-edit-btn');
-    if (edit) {
-      edit.addEventListener('click', function () {
-        if (FRAMED) {
-          // Framed mode: the extension host opens the file natively (showTextDocument),
-          // replacing the /_api/open -> Remote-WSL `code` CLI hop below, which stays exactly as
-          // it was for plain-browser use.
-          postToHost({ type: 'sonora:open', path: card.getAttribute('data-card-path') });
-          return;
-        }
-        postJSON('/_api/open', { path: card.getAttribute('data-card-path') })
-          .catch(function (err) {
-            toast('Could not open the file: ' + err.message);
-          });
-      });
-
-      // The visual property editor's own trigger — built here at runtime, never emitted by
-      // gen_gallery.py (see CLAUDE.md: "pixel fidelity at rest" / "New UI is additive and
-      // hidden until invoked"), cloned off the Edit button so it inherits the same button-family
-      // classes verbatim rather than a second copy of that long Tailwind-utility string living
-      // in this file too. `edit` itself keeps opening VS Code — see .probe/gallery-interactive.mjs,
-      // which still asserts exactly that — this is a new, separate affordance next to it.
-      var props = edit.cloneNode(true);
-      props.className = props.className.replace('om-ds-edit-btn', 'om-ds-props-btn');
-      props.title = 'Edit ' + (card.getAttribute('data-card-name') || 'this card') + ' visually';
-      var propsLabel = props.querySelector('span');
-      if (propsLabel) propsLabel.innerHTML =
-        '<i class="ai-Sliders leading-none not-italic w-[1em] h-[1em] inline-flex items-center ' +
-        'justify-center shrink-0" style="font-size:11px"></i>Edit properties';
-      edit.insertAdjacentElement('afterend', props);
-      props.addEventListener('click', function () { openEditPanel(card); });
-    }
-
-    var cancel = card.querySelector('.om-ds-cancel');
-    if (cancel) cancel.addEventListener('click', function () { closeBox(card); });
-
-    var submit = card.querySelector('.om-ds-submit');
-    if (submit) submit.addEventListener('click', function () { submitFeedback(card); });
-
-    var clear = card.querySelector('.om-ds-element-chip button');
-    if (clear) clear.addEventListener('click', function () { clearElement(card); });
-
-    var ta = card.querySelector('.om-ds-feedback-box textarea');
-    if (ta) {
-      ta.addEventListener('input', function () { autosize(ta); syncSubmit(card); });
-      ta.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { e.preventDefault(); closeBox(card); }
-        // ⌘/Ctrl+Enter submits — the usual composer shortcut, and the only way to submit without
-        // leaving the textarea.
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitFeedback(card); }
-      });
-    }
-
-    // A lazy iframe usually isn't loaded when the box is first opened; re-arm on load so picking
-    // starts working the moment it is, without the user having to close and reopen.
-    var iframe = card.querySelector('.om-ds-preview-mount iframe');
-    if (iframe) {
-      iframe.addEventListener('load', function () {
-        if (isOpen(card) && !card._element) enterPickMode(card);
-      });
-    }
-  }
-
-  document.querySelectorAll('.om-review-card').forEach(wire);
-
-  /* --------------------------------------------------------------- host -> gallery (framed) */
-
-  function flashCard(card) {
-    // Built purely in JS, the same way the picker's own hover outline is (overlayFor above) —
-    // gen_gallery.py's emitted markup and docs/gallery.css never gain a class for this.
-    var prevTransition = card.style.transition;
-    var prevShadow = card.style.boxShadow;
-    card.style.transition = 'box-shadow 150ms ease-out';
-    card.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.9)';
-    setTimeout(function () {
-      card.style.boxShadow = prevShadow;
-      setTimeout(function () { card.style.transition = prevTransition; }, 200);
-    }, 700);
-  }
-
-  function handleReveal(path) {
-    var card = cardByPath(path);
-    if (!card) return;
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    flashCard(card);
-  }
-
-  function handleReload(path) {
-    if (path) {
-      var card = cardByPath(path);
-      if (card) reloadPreview(card);
-      return;
-    }
-    location.reload();
-  }
-
-  /* Reply to a sonora:feedback this page sent (submitFeedback's FRAMED branch above).
-   * `held`, when present, is either the "HH:MM" quiet-hours release time the queue's own soft-
-   * hold reported (extension/lib/queue.js's add()) — rendered verbatim — or a bare `true` from
-   * the sonora.regenerate "hold"/"claude" fallbacks, which falls back to LABEL.held's default
-   * "Feedback sent" text via setState's own `text || LABEL[state]`. */
-  function handleFeedbackFiled(data) {
-    var card = pendingFeedback.shift();
-    if (!card) return;
-    var btn = card.querySelector('.om-ds-feedback-btn');
-    if (data.held) {
-      var text = (typeof data.held === 'string') ? ('Held until ' + data.held) : undefined;
-      setState(btn, 'held', text);
-    } else {
-      setState(btn, 'filed', 'Filed #' + data.id);
-    }
-  }
-
-  if (FRAMED) {
-    window.addEventListener('message', function (event) {
-      // Only the immediate parent frame (media/webview.js's relay) is ever a legitimate sender
-      // here — mirrors webview.js's own event.source check on the other side of this bridge.
-      if (event.source !== window.parent) return;
-      var data = event.data;
-      if (!data || typeof data.type !== 'string') return;
-      if (data.type === 'sonora:reveal') handleReveal(data.path);
-      else if (data.type === 'sonora:reload') handleReload(data.path);
-      else if (data.type === 'sonora:feedback-filed') handleFeedbackFiled(data);
-    });
-  }
-
-  // Any run still in flight from a previous page load keeps its own status on the server; this
-  // page just doesn't know which card it belongs to until it polls once.
-  fetch('/_api/feedback', { cache: 'no-store' }).then(function (r) { return r.json(); })
-    .then(function (data) {
-      var live = (data.entries || []).filter(function (e) {
-        return e.status === 'queued' || e.status === 'running';
-      });
-      live.forEach(function (e) {
-        var card = cardByPath(e.path);
-        if (card && !card._entryId) { card._entryId = e.id; card._lastStatus = null; }
-      });
-      if (live.length) startPolling();
-    }).catch(function () { /* server not up: buttons will report it on first click */ });
+    if (edit) edit.addEventListener('click', function () { openEditPanel(card); });
+  });
 })();
