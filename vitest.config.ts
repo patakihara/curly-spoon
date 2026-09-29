@@ -8,6 +8,7 @@ export default defineConfig({
       'design-codegen/src/**/*.test.ts',
       'schema/**/*.test.ts',
       'server/src/**/*.test.ts',
+      'server/e2e/**/*.test.ts',
       'web/src/**/*.test.{ts,tsx}',
     ],
     environment: 'node',

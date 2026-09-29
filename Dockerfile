@@ -33,6 +33,8 @@ COPY --from=prod-deps --chown=auralis:auralis /app/schema/node_modules ./schema/
 COPY --chown=auralis:auralis schema/package.json ./schema/package.json
 COPY --chown=auralis:auralis schema/src ./schema/src
 COPY --chown=auralis:auralis server/package.json ./server/package.json
+# server/src arrives as main.ts and what it imports: .dockerignore keeps out its tests, the
+# recordings and the recorder (scripts/guards/image.test.mjs).
 COPY --chown=auralis:auralis server/src ./server/src
 COPY --from=build --chown=auralis:auralis /app/web/dist ./web/dist
 

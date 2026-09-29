@@ -22,3 +22,14 @@ node_modules
 !.env.example
 .DS_Store
 *.log
+
+# The image runs server/src/main.ts and what it imports, nothing else: no tests, no recordings
+# or the recorder, and never the recorded-upstreams harness. scripts/guards/image.test.mjs holds
+# the context to exactly that, and CI's container job checks the built image.
+server/e2e
+server/src/**/*.test.ts
+server/src/adapters/*/recordings
+server/src/adapters/oidc
+server/src/adapters/record-*.ts
+server/src/adapters/http/*
+!server/src/adapters/http/fetch.ts

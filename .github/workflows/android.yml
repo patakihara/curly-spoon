@@ -70,9 +70,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - uses: android-actions/setup-android@v3
         with:
@@ -111,6 +114,25 @@ jobs:
           disable-animations: false
           script: echo "AVD snapshot saved"
 
+      - run: pnpm install --frozen-lockfile
+
+      # The real server on the committed recordings, on the runner's loopback, where the emulator
+      # reaches it as 10.0.2.2. It prints the app, the sign-on, the user and the playable item,
+      # then `ready`; its request log is uploaded with the results.
+      - name: Start the server on recorded upstreams
+        env:
+          AURALIS_E2E_ADDRESS: 10.0.2.2
+        run: |
+          mkdir -p reports
+          nohup pnpm --filter @auralis/server e2e:serve > reports/recorded-server.out 2> reports/recorded-server.log &
+          for _ in $(seq 1 60); do
+            grep -qx ready reports/recorded-server.out && break
+            sleep 1
+          done
+          cat reports/recorded-server.out
+          grep -qx ready reports/recorded-server.out
+          curl -fsS http://127.0.0.1:8787/api/health
+
       - name: Instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -136,3 +158,8 @@ jobs:
             path: reports/plan-results.json,
             if-no-files-found: warn,
           }
+
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          { name: recorded-server-log, path: 'reports/recorded-server.*', if-no-files-found: warn }
