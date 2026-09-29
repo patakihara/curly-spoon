@@ -5,10 +5,9 @@ FROM node:${NODE_VERSION} AS base
 RUN corepack enable
 WORKDIR /app
 
-# Every workspace dependency, dev ones included, to build web. The compilers are for
-# better-sqlite3 when no prebuilt binary matches; the final stage has none.
+# Every workspace dependency, dev ones included, to build web. No compiler: better-sqlite3
+# ships a prebuilt musl binary (scripts/repo/install.test.mjs).
 FROM base AS deps
-RUN apk add --no-cache python3 make g++
 COPY . .
 RUN --mount=type=cache,id=auralis-pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
@@ -18,7 +17,6 @@ RUN pnpm --filter @auralis/web build
 
 # Only what the server needs at runtime.
 FROM base AS prod-deps
-RUN apk add --no-cache python3 make g++
 COPY . .
 RUN --mount=type=cache,id=auralis-pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --filter "@auralis/server..."

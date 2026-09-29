@@ -14,7 +14,6 @@ data/
 *.sqlite-shm
 .env
 .env.*
-!.env.example
 
 # Claude Code worktrees live inside the repo and git does not auto-ignore a nested worktree.
 .claude/worktrees/
