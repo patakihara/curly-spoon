@@ -6,7 +6,7 @@ The persistent now-playing surface. One component, two platform variants — use
   playing={playing} onTogglePlay={() => setPlaying(!playing)} onOpen={openNowPlaying} />
 
 // desktop: full-width transport bar at the bottom of the window
-<MiniPlayer platform="desktop" title="weathergirl" artist="weathergirl · FLAVOR FOLEY"
+<MiniPlayer platform="desktop" title="Glass Weather" artist="Glass Weather · HALCYON BLOOM"
   playing={playing} onTogglePlay={() => setPlaying(!playing)}
   progress={progress} onSeek={setProgress} duration={258} />
 ```

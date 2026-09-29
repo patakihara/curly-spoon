@@ -201,7 +201,7 @@ export const gallery = [
   {
     name: 'MediaHeader',
     card: 'components/player-tracks.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:24}}><MediaHeader kindLabel="Audiobook" title="Ink Heart" subtitle="Cornelia Funke" onSubtitle={() => {}}
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:24}}><MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Evelyn Harper" onSubtitle={() => {}}
       meta="2023 · 18 chapters · 14 h 42 m" onPlay={() => {}} onPlayNext={() => {}} onPlayLast={() => {}} /></div>),
   },
   {
