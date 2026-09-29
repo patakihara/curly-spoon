@@ -68,8 +68,9 @@ function loggerOptions(logger: BuildAppOptions['logger']) {
 
 const INDEX_FILE = 'index.html';
 
-function isIndexHtml(path: string): boolean {
-  return path === INDEX_FILE || path.endsWith(`/${INDEX_FILE}`) || path.endsWith(`\\${INDEX_FILE}`);
+/** A page (index.html, gallery.html): it names hashed assets, so it is never cached. */
+function isPage(path: string): boolean {
+  return path.endsWith('.html');
 }
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
@@ -106,12 +107,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       serve: false,
       index: false,
       cacheControl: false,
-      // Built assets carry content hashes, so they can be cached forever; index.html names
-      // them and must always be revalidated.
+      // Built assets carry content hashes, so they can be cached forever; a page names them
+      // and must always be revalidated.
       setHeaders(res, path) {
         res.setHeader(
           'Cache-Control',
-          isIndexHtml(path) ? 'no-cache' : 'public, max-age=31536000, immutable',
+          isPage(path) ? 'no-cache' : 'public, max-age=31536000, immutable',
         );
       },
     });

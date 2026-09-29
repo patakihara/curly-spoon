@@ -12,6 +12,7 @@ export const OUTPUTS = {
   webNav: 'web/src/generated/nav',
   webPages: 'web/src/generated/pages',
   webTokens: 'web/src/generated/tokens',
+  webGallery: 'web/src/generated/gallery',
   kotlinTheme: 'android/sonora/src/main/java/net/develivarr/auralis/generated/theme',
   kotlinNav: 'android/app/src/main/java/net/develivarr/auralis/generated/nav',
   kotlinPages: 'android/app/src/main/java/net/develivarr/auralis/generated/pages',

@@ -20,6 +20,8 @@ const PAGES = [
       route === '*' ? '/no-such-page' : route.replace(/\?.*$/, '').replace(/:\w+/g, 'sample'),
     ),
   ),
+  // The Sonora gallery (web/e2e/gallery.spec.ts): every component, so every glyph and face.
+  '/gallery.html',
 ];
 const FAMILIES = [
   { family: 'Inter', load: '16px Inter', file: /\/inter-latin[^/]*\.woff2$/ },

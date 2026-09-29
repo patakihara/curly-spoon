@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { routes } from '@auralis/schema';
@@ -52,6 +52,20 @@ describe('serving the web app', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toContain('<title>Auralis</title>');
     expect(res.headers['cache-control']).toBe('no-cache');
+    await app.close();
+  });
+
+  it('serves the Sonora gallery page, never cached, and a hashed asset for good', async () => {
+    const app = await appWithDist();
+    writeFileSync(join(dist!, 'gallery.html'), '<!doctype html><title>Sonora gallery</title>');
+    mkdirSync(join(dist!, 'assets'));
+    writeFileSync(join(dist!, 'assets', 'gallery-abc123.js'), '');
+    const page = await app.inject({ method: 'GET', url: '/gallery.html' });
+    expect(page.statusCode).toBe(200);
+    expect(page.body).toContain('<title>Sonora gallery</title>');
+    expect(page.headers['cache-control']).toBe('no-cache');
+    const asset = await app.inject({ method: 'GET', url: '/assets/gallery-abc123.js' });
+    expect(asset.headers['cache-control']).toBe('public, max-age=31536000, immutable');
     await app.close();
   });
 

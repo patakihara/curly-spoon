@@ -1,5 +1,6 @@
 /**
  * `pnpm gen`: the web UI package and the Android props classes, from Sonora's components; the
+ * web gallery, from Sonora's cards; the
  * web CSS tokens and `SonoraTokens.kt`, from Sonora's token export; the web route table and
  * pages and the Android nav graph and pages, from the canvas. It fails when Sonora's committed
  * token export is out of date.
@@ -10,6 +11,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { generateAppKotlin, generateAppWeb, readApp } from './app.js';
+import { generateGallery } from './gallery.js';
 import { generateKotlin } from './kotlin.js';
 import { APP_DIR, KOTLIN_PACKAGE, OUTPUTS, REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { readProps } from './props.js';
@@ -48,6 +50,7 @@ const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
   webNav: app.nav,
   webPages: app.pages,
   webTokens: tokens.web,
+  webGallery: generateGallery(sonora, components),
   kotlinTheme: tokens.kotlin,
   kotlinNav: android.nav,
   kotlinPages: android.pages,
