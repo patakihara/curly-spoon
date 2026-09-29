@@ -61,19 +61,38 @@ class Playback(
             .build()
     }
 
-    /** Fetches [ref]'s plan and plays it; a plan the server refuses plays nothing. */
+    /**
+     * Plays the item a page's `<Play>` key names (`abs:<id>`). A key that names nothing playable,
+     * such as a canvas placeholder, plays nothing and says so in the log; the result is then null.
+     */
+    fun play(key: String): Job? {
+        val ref = refOf(key)
+        if (ref == null) Log.w(TAG, "not a playable ref: $key")
+        return ref?.let { play(it) }
+    }
+
+    /** Fetches [ref]'s plan and plays it; a plan the server refuses plays nothing, and says so. */
     fun play(ref: MediaRef): Job = background.launch {
         val plan = try {
             api.post("api/play", PlayBody(ref), PlayBody.serializer(), PlaybackPlan.serializer())
         } catch (e: IOException) {
-            Log.w(TAG, "no plan for ${ref.source}:${ref.id}", e)
+            Log.w(TAG, "no plan for ${keyOf(ref)}", e)
+            return@launch
+        }
+        if (plan.tracks.isEmpty()) {
+            Log.w(TAG, "nothing to play for ${keyOf(ref)}")
             return@launch
         }
         withContext(main) { start(plan) }
     }
 
-    /** Plays [plan] from its `startAt`: the track that time falls in, at that time within it. */
+    /**
+     * Plays [plan], which holds at least one track, from its `startAt`: the track that time falls
+     * in, at that time within it. A track in a video container plays its soundtrack; the player
+     * has nowhere to send its video.
+     */
     fun start(plan: PlaybackPlan) {
+        require(plan.tracks.isNotEmpty()) { "a plan with no tracks" }
         val items = plan.tracks.map { track ->
             MediaItem.Builder()
                 .setUri(api.resolve(track.url).toString())
@@ -94,6 +113,8 @@ class Playback(
         /** The ref a page's `<Play>` key names, `abs:<id>` (schema's `MediaRefKey`), or null. */
         fun refOf(key: String): MediaRef? =
             KEY.matchEntire(key)?.let { MediaRef(MediaSource.ABS, it.groupValues[1]) }
+
+        private fun keyOf(ref: MediaRef) = "${ref.source.name.lowercase()}:${ref.id}"
     }
 }
 

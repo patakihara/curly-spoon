@@ -17,15 +17,14 @@ import net.develivarr.auralis.auth.SignInResult
 import net.develivarr.auralis.generated.nav.AuralisNavGraph
 import net.develivarr.auralis.generated.nav.PageActions
 import net.develivarr.auralis.generated.nav.Route
-import net.develivarr.auralis.play.Playback
 
 /**
  * The app: the canvas's generated navigation map behind a sign-in gate. Without a token it opens
  * Sign in, whose button opens the server's login page in the browser; the server sends the
  * browser back to `auralis://auth/callback`, which lands here and signs the app in. With a token
- * it opens Browse. A page's play control plays its ref through the app's [Playback]; the canvas's
- * placeholder refs name nothing the server knows, so they play nothing until M1.shell binds real
- * items.
+ * it opens Browse. A page's play control plays its key through the app's `Playback`; the canvas's
+ * placeholder keys name nothing the server knows, so they play nothing, and say so in the log,
+ * until M1.shell binds real items.
  */
 class MainActivity : ComponentActivity() {
     private val graph get() = (application as AuralisApp).graph
@@ -33,7 +32,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) takeCallback(intent)
-        val actions = PageActions(onPlay = { ref, _, _ -> play(ref) }, onRequest = {}, onSignIn = ::openLogin)
+        val actions = PageActions(
+            onPlay = { key, _, _ -> graph.playback.play(key) },
+            onRequest = {},
+            onSignIn = ::openLogin,
+        )
         val session = graph.session
         // The gate: Sign in without a token, Browse with one; losing it (a 401) returns to Sign in.
         setContent {
@@ -48,11 +51,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         takeCallback(intent)
-    }
-
-    private fun play(key: String) {
-        val ref = Playback.refOf(key)
-        if (ref == null) Log.w(TAG, "not a playable ref: $key") else graph.playback.play(ref)
     }
 
     private fun openLogin() {

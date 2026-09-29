@@ -144,8 +144,10 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: android
-          # SmokeTest signs in to that server and plays the item it printed.
-          script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.auralisServer=http://10.0.2.2:8787 -Pandroid.testInstrumentationRunnerArguments.auralisPlayable=${{ env.AURALIS_PLAYABLE }}
+          # SmokeTest signs in to that server and plays the item it printed. Pass or fail, the
+          # position it reached is kept from the device's log (one line: each line of a script
+          # runs in its own shell, and the first to fail ends it).
+          script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.auralisServer=http://10.0.2.2:8787 -Pandroid.testInstrumentationRunnerArguments.auralisPlayable=${{ env.AURALIS_PLAYABLE }}; tests=$?; adb logcat -d -s SmokeTest:I > ../reports/smoke-test.txt; cat ../reports/smoke-test.txt; exit $tests
 
       - if: ${{ !cancelled() }}
         # The runner names each XML after the device ("TEST-emulator-5554 - 14-_app-.xml"), spaces
@@ -165,3 +167,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           { name: recorded-server-log, path: 'reports/recorded-server.*', if-no-files-found: warn }
+
+      # The instrumented tests' own output: the JUnit XML, the per-test logcat, and the position
+      # SmokeTest reached.
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-emulator-test-output
+          path: |
+            reports/smoke-test.txt
+            android/app/build/outputs/androidTest-results/connected
+          if-no-files-found: warn

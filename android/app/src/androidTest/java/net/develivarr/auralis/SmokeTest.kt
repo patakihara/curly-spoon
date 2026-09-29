@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.performClick
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -25,7 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,23 +76,41 @@ class SmokeTest {
         }
 
         app.graph.playback.play(ref)
-        var position = 0L
-        var error: Exception? = null
+        var reached = Reached()
         try {
-            // The player belongs to the main thread; read it there, assert here.
+            // The player belongs to the main thread; read it there, judge here.
             composeRule.waitUntil(TIMEOUT_MS) {
-                instrumentation.runOnMainSync {
-                    val player = app.graph.playback.player
-                    error = player.playerError
-                    position = player.currentPosition
-                }
-                assertNull("the player failed", error)
-                position > FIVE_SECONDS_MS
+                instrumentation.runOnMainSync { reached = Reached.from(app.graph.playback.player) }
+                reached.error?.let { throw AssertionError(said("the player failed at ${reached.position} ms"), it) }
+                reached.playing && reached.position > FIVE_SECONDS_MS
             }
         } catch (e: ComposeTimeoutException) {
-            throw AssertionError("playback reached only $position ms", e)
+            throw AssertionError(said("playback reached only ${reached.position} ms (playing: ${reached.playing})"), e)
         }
-        Log.i("SmokeTest", "playback passed five seconds: $position ms")
+        // The bytes came from the server the test signed in to: the track is one of its own URLs.
+        val server = ServerConfig.from(arguments).baseUrl.toString()
+        assertTrue("${reached.uri} is not on $server", reached.uri.orEmpty().startsWith(server + "api/media/"))
+        said("playback passed five seconds while playing: ${reached.position} ms of ${reached.uri}")
+    }
+
+    /** Logs [outcome] where the emulator job keeps it with the test results (reports/smoke-test.txt). */
+    private fun said(outcome: String): String = outcome.also { Log.i(TAG, it) }
+
+    /** What the player showed at one look: its position, whether it was playing, its track, any error. */
+    private data class Reached(
+        val position: Long = 0,
+        val playing: Boolean = false,
+        val uri: String? = null,
+        val error: Exception? = null,
+    ) {
+        companion object {
+            fun from(player: ExoPlayer) = Reached(
+                position = player.currentPosition,
+                playing = player.isPlaying,
+                uri = player.currentMediaItem?.localConfiguration?.uri?.toString(),
+                error = player.playerError,
+            )
+        }
     }
 
     /** Runs [tap], which opens the browser, and gives back the page it would have opened. */
@@ -135,6 +154,7 @@ class SmokeTest {
     }
 
     private companion object {
+        const val TAG = "SmokeTest"
         const val PLAYABLE = "auralisPlayable"
         const val TIMEOUT_MS = 30_000L
         const val FIVE_SECONDS_MS = 5_000L

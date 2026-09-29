@@ -139,11 +139,12 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core.ktx)
+    // Media3's fake media sources and Robolectric codecs, for PlaybackTest's audio-only player.
+    testImplementation(libs.androidx.media3.test.utils.robolectric)
     // Instrumented tests, run on the emulator by the `emulator` job in android.yml.
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.intents)
     // Must be debugImplementation, not testImplementation: it contributes the manifest entry for

@@ -29,11 +29,12 @@ class ApiClient(
     private val http: OkHttpClient,
 ) {
     /**
-     * OkHttp with the bearer on every call and a 401 signing the app out, for whatever else reads
-     * from the server with the same session: the player's track requests.
+     * OkHttp with the bearer on every call to the server and a 401 from it signing the app out,
+     * for whatever else reads from the server with the same session: the player's track requests.
+     * A request anywhere else goes out without the bearer, and its 401 signs nobody out.
      */
     val authorized: OkHttpClient = http.newBuilder()
-        .apply { interceptors().add(0, Bearer(session)) }
+        .apply { interceptors().add(0, Bearer(session, server.baseUrl)) }
         .build()
 
     /** A path the server names, such as a plan's track URL (`/api/media/...`), made absolute. */
@@ -81,9 +82,16 @@ class ApiClient(
     }
 }
 
-/** Adds the bearer the app holds; a 401 for it signs the app out, unless a newer one replaced it. */
-private class Bearer(private val session: Session) : Interceptor {
+/**
+ * Adds the bearer the app holds to a request for [server] (same scheme, host and port); a 401 for
+ * it signs the app out, unless a newer one replaced it. Any other request passes untouched.
+ */
+private class Bearer(private val session: Session, private val server: HttpUrl) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
+        val url = chain.request().url
+        if (url.scheme != server.scheme || url.host != server.host || url.port != server.port) {
+            return chain.proceed(chain.request())
+        }
         val token = session.token.value
         val request = chain.request().let {
             if (token == null) it else it.newBuilder().header("Authorization", "Bearer $token").build()

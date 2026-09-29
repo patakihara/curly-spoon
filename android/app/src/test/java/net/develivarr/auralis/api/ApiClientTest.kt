@@ -79,6 +79,20 @@ class ApiClientTest {
         assertNull(session.token.value)
     }
 
+    @Test
+    fun `a request to anywhere but the server carries no bearer, and its 401 signs nobody out`() {
+        server.answer = { 401 to "" }
+        val elsewhere = listOf(
+            "http://media.example/api/media/abs:item-1/tracks/0",
+            "https://127.0.0.1:8787/api/media/abs:item-1/tracks/0",
+            "http://127.0.0.1:8788/api/media/abs:item-1/tracks/0",
+            api.resolve("//media.example/api/media/abs:item-1/tracks/0").toString(),
+        )
+        for (url in elsewhere) api.authorized.newCall(Request.Builder().url(url).build()).execute().close()
+        assertEquals(listOf<String?>(null, null, null, null), server.seen.map { it.request.header("Authorization") })
+        assertEquals("bearer-1", session.token.value)
+    }
+
     private companion object {
         const val ME =
             """{"username":"kara","role":"member","deviceId":"device-1","links":[],"later":true}"""

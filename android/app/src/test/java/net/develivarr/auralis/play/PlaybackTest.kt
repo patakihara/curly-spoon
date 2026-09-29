@@ -2,9 +2,14 @@ package net.develivarr.auralis.play
 
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
+import androidx.media3.test.utils.FakeMediaSource
+import androidx.media3.test.utils.FakeTimeline
+import androidx.media3.test.utils.robolectric.RobolectricUtil
+import androidx.media3.test.utils.robolectric.ShadowMediaCodecConfig
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
@@ -23,16 +28,23 @@ import net.develivarr.auralis.generated.api.PlaybackTrack
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 
 @OptIn(UnstableApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class PlaybackTest {
+    // Robolectric has no codecs of its own; this gives the audio renderer one per audio format.
+    @get:Rule
+    val codecs: ShadowMediaCodecConfig = ShadowMediaCodecConfig.forAllSupportedMimeTypes()
+
     private val server = FakeServer()
     private val api = ApiClient(
         ServerConfig("http://127.0.0.1:8787/".toHttpUrl()),
@@ -114,10 +126,53 @@ class PlaybackTest {
     }
 
     @Test
-    fun `a failed plan leaves the player empty`() {
+    fun `a track in a video container is queued like any other, for its soundtrack`() {
+        playback.start(
+            PlaybackPlan(
+                tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(mime = MimeTypes.VIDEO_MP4)),
+                chapters = emptyList(),
+                startAt = 0.0,
+            ),
+        )
+        assertEquals(1, playback.player.mediaItemCount)
+        assertEquals(MimeTypes.VIDEO_MP4, playback.player.getMediaItemAt(0).localConfiguration!!.mimeType)
+    }
+
+    @Test
+    fun `a stream carrying video and audio plays the audio, and its video goes nowhere`() {
+        val player = playback.player
+        player.setMediaSource(FakeMediaSource(FakeTimeline(), VIDEO, AUDIO))
+        player.prepare()
+        RobolectricUtil.runMainLooperUntil { !player.currentTracks.isEmpty || player.playerError != null }
+        assertNull(player.playerError)
+        val tracks = player.currentTracks
+        assertTrue(tracks.containsType(C.TRACK_TYPE_VIDEO))
+        assertTrue(tracks.isTypeSelected(C.TRACK_TYPE_AUDIO))
+        assertFalse(tracks.isTypeSelected(C.TRACK_TYPE_VIDEO))
+    }
+
+    @Test
+    fun `a key that names nothing playable plays nothing, and says so`() {
+        assertNull(playback.play("salt-in-the-ledger"))
+        assertEquals(emptyList<FakeServer.Seen>(), server.seen)
+        assertEquals(0, playback.player.mediaItemCount)
+        assertTrue(said("not a playable ref: salt-in-the-ledger"))
+    }
+
+    @Test
+    fun `a plan with no tracks plays nothing, and says so`() {
+        server.answer = { 200 to """{"tracks":[],"chapters":[],"startAt":0}""" }
+        playback.play("abs:item-1")
+        assertEquals(0, playback.player.mediaItemCount)
+        assertTrue(said("nothing to play for abs:item-1"))
+    }
+
+    @Test
+    fun `a plan the server refuses plays nothing, and says so`() {
         server.answer = { 404 to """{"error":"not_found"}""" }
         playback.play(REF)
         assertEquals(0, playback.player.mediaItemCount)
+        assertTrue(said("no plan for abs:item-1"))
     }
 
     @Test
@@ -128,6 +183,8 @@ class PlaybackTest {
         assertEquals(emptyList<String>(), present)
     }
 
+    private fun said(message: String) = ShadowLog.getLogsForTag("Auralis").any { it.msg == message }
+
     private fun track(n: Int, duration: Double, offset: Double) =
         PlaybackTrack(url = "/api/media/abs:item-1/tracks/$n", mime = "audio/mp4", duration = duration, offset = offset)
 
@@ -135,6 +192,10 @@ class PlaybackTest {
         val REF = MediaRef(MediaSource.ABS, "item-1")
         const val PLAN_JSON =
             """{"tracks":[{"url":"/api/media/abs:item-1/tracks/0","mime":"audio/mp4","duration":20,"offset":0}],"chapters":[],"startAt":0}"""
+
+        val VIDEO: Format = Format.Builder().setSampleMimeType(MimeTypes.VIDEO_H264).setWidth(64).setHeight(64).build()
+        val AUDIO: Format =
+            Format.Builder().setSampleMimeType(MimeTypes.AUDIO_AAC).setChannelCount(2).setSampleRate(44_100).build()
 
         /** One class from each Media3 module that adds video decoding or showing video. */
         val VIDEO_CLASSES = listOf(
