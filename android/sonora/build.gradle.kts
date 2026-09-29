@@ -1,6 +1,6 @@
-// Sonora for Compose: the generated tokens under `generated/theme`, and the fonts, icons and
-// components written against them. A library of its own so that Paparazzi, which cannot share
-// a module with Robolectric, can screenshot it apart from `:app`.
+// Sonora for Compose: the generated tokens under `generated/theme` and props under `generated/ui`,
+// and the fonts, icons and `ui/sonora` components written against them. A library of its own so
+// that Paparazzi, which cannot share a module with Robolectric, can screenshot it apart from `:app`.
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)

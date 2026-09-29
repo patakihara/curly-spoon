@@ -45,17 +45,17 @@ export interface KotlinShell {
 }
 
 /** Kotlin as a small tree, printed on one line where it fits and broken where it does not. */
-type Expr =
+export type Expr =
   | { t: 'raw'; text: string }
   | { t: 'call'; fn: string; args: [string | null, Expr][] }
   | { t: 'lambda'; params: string; body: Expr[] };
 
-const raw = (text: string): Expr => ({ t: 'raw', text });
-const call = (fn: string, args: [string | null, Expr][]): Expr => ({ t: 'call', fn, args });
-const lambda = (body: Expr[], params = ''): Expr => ({ t: 'lambda', params, body });
+export const raw = (text: string): Expr => ({ t: 'raw', text });
+export const call = (fn: string, args: [string | null, Expr][]): Expr => ({ t: 'call', fn, args });
+export const lambda = (body: Expr[], params = ''): Expr => ({ t: 'lambda', params, body });
 
 const WIDTH = 100;
-const STEP = '    ';
+export const STEP = '    ';
 
 function flat(e: Expr): string | undefined {
   if (e.t === 'raw') return e.text;
@@ -74,7 +74,7 @@ function flat(e: Expr): string | undefined {
 }
 
 /** `e` starting at column `col`, its later lines indented from `indent`. */
-function print(e: Expr, indent: string, col: number): string {
+export function print(e: Expr, indent: string, col: number): string {
   const line = flat(e);
   if (line !== undefined && col + line.length <= WIDTH) return line;
   const inner = indent + STEP;
@@ -92,13 +92,13 @@ function print(e: Expr, indent: string, col: number): string {
 }
 
 /** The props model's declarations by name: data classes, enums and sealed interfaces. */
-interface Decls {
+export interface Decls {
   classes: Map<string, ClassDecl>;
   enums: Map<string, EnumDecl>;
   sealed: Map<string, SealedDecl>;
 }
 
-function declsOf(model: PropsModel): Decls {
+export function declsOf(model: PropsModel): Decls {
   const decls: Decls = { classes: new Map(), enums: new Map(), sealed: new Map() };
   for (const e of model.shared) decls.enums.set(e.name, e);
   for (const list of model.files.values()) {
@@ -113,10 +113,10 @@ function declsOf(model: PropsModel): Decls {
 
 const described = (v: unknown) => JSON.stringify(v) ?? String(v);
 
-const isSlot = (type: KType): boolean =>
+export const isSlot = (type: KType): boolean =>
   type.kind === 'slot' || (type.kind === 'nullable' && isSlot(type.type));
 
-function handlerArity(type: KType): number | undefined {
+export function handlerArity(type: KType): number | undefined {
   if (type.kind === 'nullable') return handlerArity(type.type);
   return type.kind === 'fn' && !type.composable ? type.params.length : undefined;
 }
@@ -128,35 +128,21 @@ const SHORTHAND = ['key', 'label', 'title'];
 const isString = (type: KType): boolean =>
   type.kind === 'string' || (type.kind === 'nullable' && isString(type.type));
 
-class PageWriter {
-  readonly composables = new Set<string>();
+/**
+ * Placeholder values as Kotlin literals, typed by the props model: the data classes, enums and
+ * sealed interfaces they build, and whether a slot drew plain text, are kept for the imports.
+ */
+export class KotlinValues {
   readonly types = new Set<string>();
-  readonly nav = new Set<string>();
   text = false;
 
   constructor(
-    private readonly id: string,
-    private readonly decls: Decls,
-    private readonly pages: Map<string, NavPage>,
-    /** Kotlin handlers the shell's own controls take on Android, by the element they belong to. */
-    private readonly shellHandlers: Map<PageTree, Record<string, Expr>>,
+    protected readonly id: string,
+    protected readonly decls: Decls,
   ) {}
 
   fail(message: string): never {
     throw new Error(`${this.id}: ${message}`);
-  }
-
-  resolve(path: string[], scope: Scope): unknown {
-    const [root = '', ...rest] = path;
-    if (!scope.has(root))
-      return this.fail(`${path.join('.')} binds ${root}, which is not in scope`);
-    let at = scope.get(root);
-    for (const key of rest) {
-      if (at === null || typeof at !== 'object' || !Object.hasOwn(at, key))
-        return this.fail(`${path.join('.')} is not in the placeholder`);
-      at = (at as Record<string, unknown>)[key];
-    }
-    return at;
   }
 
   /** The Kotlin literal of `value` as `type`, refusing anything the type cannot hold. */
@@ -266,6 +252,34 @@ class PageWriter {
       }
     }
     return call(c.name, args);
+  }
+}
+
+class PageWriter extends KotlinValues {
+  readonly composables = new Set<string>();
+  readonly nav = new Set<string>();
+
+  constructor(
+    id: string,
+    decls: Decls,
+    private readonly pages: Map<string, NavPage>,
+    /** Kotlin handlers the shell's own controls take on Android, by the element they belong to. */
+    private readonly shellHandlers: Map<PageTree, Record<string, Expr>>,
+  ) {
+    super(id, decls);
+  }
+
+  resolve(path: string[], scope: Scope): unknown {
+    const [root = '', ...rest] = path;
+    if (!scope.has(root))
+      return this.fail(`${path.join('.')} binds ${root}, which is not in scope`);
+    let at = scope.get(root);
+    for (const key of rest) {
+      if (at === null || typeof at !== 'object' || !Object.hasOwn(at, key))
+        return this.fail(`${path.join('.')} is not in the placeholder`);
+      at = (at as Record<string, unknown>)[key];
+    }
+    return at;
   }
 
   /** A handler node as the lambda a Kotlin handler prop takes. */

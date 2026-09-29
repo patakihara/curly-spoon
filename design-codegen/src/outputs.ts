@@ -8,12 +8,13 @@ export const APP_DIR = 'design/app';
 
 export const OUTPUTS = {
   web: 'web/src/generated/ui',
-  kotlin: 'android/app/src/main/java/net/develivarr/auralis/generated/ui',
+  kotlin: 'android/sonora/src/main/java/net/develivarr/auralis/generated/ui',
   webNav: 'web/src/generated/nav',
   webPages: 'web/src/generated/pages',
   webTokens: 'web/src/generated/tokens',
   webGallery: 'web/src/generated/gallery',
   kotlinTheme: 'android/sonora/src/main/java/net/develivarr/auralis/generated/theme',
+  kotlinGallery: 'android/sonora/src/test/java/net/develivarr/auralis/generated/gallery',
   kotlinNav: 'android/app/src/main/java/net/develivarr/auralis/generated/nav',
   kotlinPages: 'android/app/src/main/java/net/develivarr/auralis/generated/pages',
 } as const;
@@ -22,7 +23,7 @@ export const KOTLIN_PACKAGE = 'net.develivarr.auralis.generated.ui';
 export const KOTLIN_THEME_PACKAGE = 'net.develivarr.auralis.generated.theme';
 export const KOTLIN_NAV_PACKAGE = 'net.develivarr.auralis.generated.nav';
 export const KOTLIN_PAGES_PACKAGE = 'net.develivarr.auralis.generated.pages';
-/** Where the Android app's hand-written Sonora composables live, one per component a page calls. */
+/** Where the :sonora module's hand-written Sonora composables live, one per component a page calls. */
 export const KOTLIN_SONORA_PACKAGE = 'net.develivarr.auralis.ui.sonora';
 
 /** The first line of every generated file. */

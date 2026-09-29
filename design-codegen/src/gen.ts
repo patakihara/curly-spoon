@@ -1,6 +1,6 @@
 /**
  * `pnpm gen`: the web UI package and the Android props classes, from Sonora's components; the
- * web gallery, from Sonora's cards; the
+ * web gallery, from Sonora's cards, and the Android gallery, from the web gallery's usages; the
  * web CSS tokens and `SonoraTokens.kt`, from Sonora's token export; the web route table and
  * pages and the Android nav graph and pages, from the canvas. It fails when Sonora's committed
  * token export is out of date.
@@ -11,7 +11,9 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { generateAppKotlin, generateAppWeb, readApp } from './app.js';
-import { generateGallery } from './gallery.js';
+import { androidComponents, androidSonoraDir } from './android-sonora.js';
+import { galleryEntries, generateGallery, readCards } from './gallery.js';
+import { generateKotlinGallery } from './gallery-kotlin.js';
 import { generateKotlin } from './kotlin.js';
 import { APP_DIR, KOTLIN_PACKAGE, OUTPUTS, REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { readProps } from './props.js';
@@ -44,6 +46,9 @@ const props = readProps(components);
 const canvas = readApp(resolve(values.app), props);
 const app = generateAppWeb(canvas);
 const android = generateAppKotlin(canvas, props);
+const { entries } = galleryEntries(components, readCards(sonora));
+// The Android gallery draws the Sonora composables :sonora has; a test names any it leaves out.
+const androidSonora = new Set(androidComponents(androidSonoraDir(REPO_ROOT)).keys());
 const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
   web: generateWeb(components),
   kotlin: generateKotlin(props, KOTLIN_PACKAGE),
@@ -52,6 +57,7 @@ const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
   webTokens: tokens.web,
   webGallery: generateGallery(sonora, components),
   kotlinTheme: tokens.kotlin,
+  kotlinGallery: generateKotlinGallery(entries, props, androidSonora),
   kotlinNav: android.nav,
   kotlinPages: android.pages,
 };

@@ -56,15 +56,32 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-      - if: ${{ !cancelled() }}
-        run: find android/sonora/build -name '*.png' -path '*paparazzi*' | sort
+      # One PNG per gallery entry: the screenshot test has one case per entry, so the debug
+      # variant's JUnit XML gives the registry's size.
+      - name: One screenshot per gallery entry
+        if: ${{ !cancelled() }}
+        run: |
+          xml=android/sonora/build/test-results/testDebugUnitTest/TEST-net.develivarr.auralis.ui.sonora.SonoraGalleryScreenshotTest.xml
+          entries=$(grep -c '<testcase ' "$xml")
+          pngs=$(find android/sonora/build/reports/paparazzi/debug/images -name '*.png' | wc -l)
+          echo "gallery entries: $entries, screenshots: $pngs"
+          test "$entries" -gt 40
+          test "$pngs" -eq "$entries"
 
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: paparazzi-screenshots
-          path: android/sonora/build/reports/paparazzi/**
+          path: android/sonora/build/reports/paparazzi/debug/**
           if-no-files-found: warn
+
+      - if: ${{ !cancelled() }}
+        run: find android -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 | xargs -0 node scripts/plan/collect-results.mjs --workflow android --job build --out reports/plan-results.json
+
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          { name: plan-results-android, path: reports/plan-results.json, if-no-files-found: warn }
 
   # Runs androidTest on an API 34 x86_64 emulator. Hosted Linux runners expose /dev/kvm as
   # root:kvm 0660; the udev rule opens it to the runner user. The AVD's booted snapshot is

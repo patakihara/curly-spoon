@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { androidComponents, androidSonoraDir } from './android-sonora.js';
 import { KOTLIN_SONORA_PACKAGE, OUTPUTS, REPO_ROOT } from './outputs.js';
 
 /**
@@ -8,11 +9,7 @@ import { KOTLIN_SONORA_PACKAGE, OUTPUTS, REPO_ROOT } from './outputs.js';
  * component that joins a page on the canvas has no composable until someone writes one; these
  * tests name it, rather than leaving the Android build to fail on an unresolved import.
  */
-const SONORA_DIR = join(
-  REPO_ROOT,
-  'android/app/src/main/java',
-  ...KOTLIN_SONORA_PACKAGE.split('.'),
-);
+const SONORA_DIR = androidSonoraDir(REPO_ROOT);
 const STUB_TEST = join(
   REPO_ROOT,
   'android/app/src/testDebug/java',
@@ -37,14 +34,8 @@ function calledByPages(): Set<string> {
   return called;
 }
 
-/** Every public composable in the app's Sonora package, with the props type it takes. */
-function composables(): Map<string, string> {
-  const found = new Map<string, string>();
-  for (const source of kotlinFiles(SONORA_DIR))
-    for (const m of source.matchAll(/^@Composable\s+fun (\w+)\(([^)]*)\)/gm))
-      found.set(m[1]!, m[2]!.trim());
-  return found;
-}
+/** Every Sonora component composable in the :sonora module, with the props type it takes. */
+const composables = () => androidComponents(SONORA_DIR);
 
 const sorted = (s: Iterable<string>) => [...s].sort();
 
