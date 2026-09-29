@@ -7,7 +7,11 @@ export default function SignIn({ data }) {
             icon="group"
             title="Sign in with your household account"
             body="Auralis has no accounts or passwords of its own: you sign in where you sign in to Audiobookshelf and Jellyfin."
-            action={<Button variant="primary">Sign in</Button>}
+            action={
+              <Button variant="primary" onClick={<SignIn />}>
+                Sign in
+              </Button>
+            }
           />
         </Section>
         <Section last>

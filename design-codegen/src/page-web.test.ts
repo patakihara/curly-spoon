@@ -252,6 +252,30 @@ describe('a page playing an item, on the web', () => {
   });
 });
 
+describe('a page starting sign-in, on the web', () => {
+  const signingIn = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <Button variant="primary" onClick={<SignIn />}>Sign in</Button>;
+}
+`,
+      'book',
+    ),
+    'book',
+    {},
+    { platformed: new Set(), handled: new Set() },
+    shellOf('book'),
+  );
+
+  it("sends the browser to the server's web sign-in, coming back to the app's start", () => {
+    expect(signingIn).toContain(
+      `onClick={() => window.location.assign("/api/auth/login?client=web&return_to=%2F")}`,
+    );
+    expect(signingIn).not.toContain('useNavigate');
+    expect(signingIn).not.toContain('ignore');
+  });
+});
+
 describe('a page opening another, on the web', () => {
   const linking = generateWebPage(
     parsePage(

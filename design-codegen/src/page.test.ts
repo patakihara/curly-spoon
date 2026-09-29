@@ -572,6 +572,30 @@ describe('a page opening another', () => {
     );
   });
 
+  it('reads <SignIn /> in a handler prop as starting sign-in', () => {
+    const tree = parsePage(page('<MediaCard onClick={<SignIn />} />'), 'book');
+    expect(tree.kind === 'element' && tree.props.onClick).toEqual({ kind: 'signIn' });
+  });
+
+  it('accepts starting sign-in from a handler prop', () => {
+    expect(check('<MediaCard onClick={<SignIn />} />')).toEqual([]);
+  });
+
+  it('refuses a sign-in anywhere but a handler prop, or given anything', () => {
+    expect(check('<MediaCard size={<SignIn />} />')).toEqual([
+      'line 3: MediaCard.size takes no handler, so it cannot start sign-in',
+    ]);
+    expect(() =>
+      parsePage(page('<MediaCard onClick={<SignIn returnTo={data.ref} />} />'), 'book'),
+    ).toThrow(/SignIn takes nothing, not returnTo/);
+    expect(() => parsePage(page('<MediaCard onClick={<SignIn>Go</SignIn>} />'), 'book')).toThrow(
+      /SignIn takes no children/,
+    );
+    expect(() => parsePage(page('<SignIn />'), 'book')).toThrow(
+      /SignIn goes in a handler prop, onClick=\{<SignIn \/>\}/,
+    );
+  });
+
   it('[M0.canvas] refuses an Open it has no navigation map to check against', () => {
     const tree = parsePage(page('<MediaCard onClick={<Open page="settings" />} />'), 'book');
     expect(checkPage(tree, data, props)).toEqual([

@@ -3,6 +3,7 @@
  * UI package's Sonora components inside the app shell, with the page's placeholder as its default
  * data. The shell's parts for every layout are constants of the page; the window's width picks one.
  */
+import { LoginQuery, login } from '@auralis/schema';
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
 import { APP_NOTE } from './outputs.js';
 import type { Choices, PageTree, PropValue } from './page.js';
@@ -76,6 +77,14 @@ const ignored = (tree: PageTree, components: WebComponents) =>
   ('value' in tree.props || 'checked' in tree.props) &&
   !('onChange' in tree.props);
 
+/**
+ * Where the web starts signing in: the server's login route, as the web client, coming back to
+ * the app's start. The query is parsed with the route's own schema, so it names only what it takes.
+ */
+const SIGN_IN = `${login.path}?${new URLSearchParams(
+  LoginQuery.parse({ client: 'web', return_to: '/' }) as Record<string, string>,
+)}`;
+
 function propLines(
   name: string,
   value: PropValue,
@@ -98,6 +107,9 @@ function propLines(
   if (value.kind === 'request') return [`${name}={ignore}`];
   // No player exists yet either: a play does nothing until the player is built.
   if (value.kind === 'play') return [`${name}={ignore}`];
+  // Sign-in leaves the app for the server's route, which sends the browser on to the sign-on.
+  if (value.kind === 'signIn')
+    return [`${name}={() => window.location.assign(${JSON.stringify(SIGN_IN)})}`];
   if (value.kind === 'binding' && choice) {
     return [
       `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,

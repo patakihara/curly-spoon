@@ -427,6 +427,36 @@ describe('a page opening another, on the canvas', () => {
   });
 });
 
+describe('a page starting sign-in, on the canvas', () => {
+  const html =
+    generateCanvas(
+      {
+        ...app,
+        pages: [
+          {
+            id: 'search',
+            tree: parsePage(
+              `export default function Search() {
+  return <PageBody><Button onClick={<SignIn />}>Sign in</Button></PageBody>;
+}
+`,
+              'search',
+            ),
+            placeholder: {},
+          },
+        ],
+      },
+      install,
+      now,
+    ).get('search.phone.dc.html') ?? '';
+
+  it('draws a plain button that goes nowhere, since an artboard is a still', () => {
+    expect(html).toMatch(/on-click="\{\{navigate\}\}"/);
+    expect(html).toContain('const navigate = () => {};');
+    expect(html).not.toContain('auth/login');
+  });
+});
+
 describe('a page with a local search, on the canvas', () => {
   const searchable = `export default function Book({ data }) {
   return (

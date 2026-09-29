@@ -6,7 +6,8 @@
  * item naming its own): the page's id
  * in nav.json and each of its route's parameters bound to a data path; or request an item,
  * `onRequest={<Request ref={book.ref} />}`, its ref bound the same way; or play one on the queue it
- * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next, `source` for a list played on its own. It is read into a page
+ * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next, `source` for a list played on its own; or
+ * start signing in, `onClick={<SignIn />}`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
  */
@@ -36,7 +37,9 @@ export type PropValue =
       next: boolean;
       source: boolean;
       params: Record<string, string[]>;
-    };
+    }
+  /** A handler that starts signing in through the household sign-on: the app's own sign-in. */
+  | { kind: 'signIn' };
 
 /** The queues an item plays on: spoken word (books and episodes) or music (docs/plan/04-play.md). */
 export const QUEUES = ['spoken', 'music'] as const;
@@ -114,6 +117,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Open') return open(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Request') return request(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Play') return play(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'SignIn') return signIn(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -206,6 +210,17 @@ function play(node: t.JSXElement): PropValue {
   return { kind: 'play', queue: queue as Queue, next, source, params };
 }
 
+/** `<SignIn />`: starting sign-in. Each app knows its own way in, so it takes nothing. */
+function signIn(node: t.JSXElement): PropValue {
+  if (node.children.length > 0) return fail(node, 'SignIn takes no children');
+  const [attr] = node.openingElement.attributes;
+  if (attr !== undefined) {
+    const name = attr.type === 'JSXAttribute' ? String(attr.name.name) : 'a spread';
+    return fail(attr, `SignIn takes nothing, not ${name}`);
+  }
+  return { kind: 'signIn' };
+}
+
 function literalString(props: Record<string, PropValue>, name: string, node: t.Node): string {
   const value = props[name];
   if (value?.kind !== 'literal' || typeof value.value !== 'string') {
@@ -241,6 +256,8 @@ function element(node: t.JSXElement): PageTree {
     return fail(node, 'Request goes in a handler prop, onRequest={<Request … />}');
   }
   if (name.name === 'Play') return fail(node, 'Play goes in a handler prop, onPlay={<Play … />}');
+  if (name.name === 'SignIn')
+    return fail(node, 'SignIn goes in a handler prop, onClick={<SignIn />}');
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -499,6 +516,14 @@ export function checkPage(
           }
           if (value.kind === 'request' || value.kind === 'play') {
             checkItem(node.line, node.component, prop, value, check);
+            continue;
+          }
+          if (value.kind === 'signIn') {
+            if (!(opens?.handlers.get(node.component)?.has(prop) ?? true)) {
+              errors.push(
+                `line ${node.line}: ${node.component}.${prop} takes no handler, so it cannot start sign-in`,
+              );
+            }
             continue;
           }
           if (choice !== undefined && value.kind !== 'slot') {

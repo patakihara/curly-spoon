@@ -227,7 +227,7 @@ export default function SignIn({ data = placeholder, state = 'full', layout: giv
             title="Sign in with your household account"
             body="Auralis has no accounts or passwords of its own: you sign in where you sign in to Audiobookshelf and Jellyfin."
             action={
-              <Button variant="primary" platform={platform}>
+              <Button variant="primary" onClick={() => window.location.assign("/api/auth/login?client=web&return_to=%2F")} platform={platform}>
                 {"Sign in"}
               </Button>
             }

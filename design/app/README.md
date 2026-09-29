@@ -44,6 +44,10 @@ and `source` plays a list on its own, leaving the queue as it is;
 until the player exists, the web gives it a handler that does nothing. The web page navigates to the route through the
 router; the Android generator reads the same node as a navigation to the nav graph's destination.
 
+`onClick={<SignIn />}` starts signing in through the household sign-on and takes nothing: the web
+goes to the server's login route as the web client, coming back to the app's start, and Android
+calls the `onSignIn()` it is given, the app's own sign-in. On the canvas every handler does nothing.
+
 A page binds `data.…`, its placeholder, and may bind `shell.…` for what it shows from `nav.json`:
 a page's `filter` there, its `all` choice and then the destinations it narrows to, labelled as the
 destinations are, is `shell.filters.<page id>`, so the filter cannot drift from them.
