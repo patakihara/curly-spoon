@@ -506,6 +506,12 @@ export function checkPage(
           if (node.children.length > 0 && !declared.has('children')) {
             errors.push(`line ${node.line}: ${node.component} takes no children`);
           }
+          const open = node.props['open'];
+          if (declared.has('onOpenChange') && open?.kind === 'literal' && open.value === true) {
+            errors.push(
+              `line ${node.line}: ${node.component} is drawn open; a page starts with its menus closed, and the canvas shows the first open on the page's phone-menu artboard`,
+            );
+          }
         }
         for (const [prop, value] of Object.entries(node.props)) {
           const found = value.kind === 'binding' ? check(node.line, value.path) : [];

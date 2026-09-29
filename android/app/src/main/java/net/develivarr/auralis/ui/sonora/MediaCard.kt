@@ -10,6 +10,7 @@ fun MediaCard(props: MediaCardProps) {
         "MediaCard",
         texts = listOf(props.eyebrow, props.title, props.sub, props.status),
         onClick = props.onClick,
+        label = props.title,
         taps = listOf("Request" to props.onRequest),
     )
 }

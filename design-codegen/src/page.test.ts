@@ -215,6 +215,14 @@ describe('checking a page', () => {
     ]);
   });
 
+  it('[M0.canvas] refuses a menu drawn open, since a page starts with its menus closed', () => {
+    const menus = new Map([...props, ['OverflowMenu', new Set(['items', 'open', 'onOpenChange'])]]);
+    expect(checkPage(tree('<OverflowMenu open />'), data, menus)).toEqual([
+      "line 3: OverflowMenu is drawn open; a page starts with its menus closed, and the canvas shows the first open on the page's phone-menu artboard",
+    ]);
+    expect(checkPage(tree('<OverflowMenu open={false} />'), data, menus)).toEqual([]);
+  });
+
   it('checks an element given to a prop like any other, and only where the prop takes one', () => {
     const slots = new Map([['DetailPage', new Set(['children'])]]);
     const withSlots = new Map([...props, ['DetailPage', new Set(['kindLabel', 'children'])]]);

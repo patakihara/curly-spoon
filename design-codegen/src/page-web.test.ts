@@ -172,7 +172,7 @@ describe('a generated web page', () => {
       '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
     );
     expect(homeOut).toContain(
-      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} onChange={(key) => go.destination(key)} />',
+      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />',
     );
     expect(homeOut).toContain(
       '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} sleep={shell.playing.sleep} platform="desktop" />',
@@ -288,30 +288,18 @@ describe("the shell's controls on a web page", () => {
     expect(out).toContain(
       '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
     );
-    expect(out).toMatch(/<NavRail [^>]*onChange=\{\(key\) => go.destination\(key\)\} \/>/);
+    expect(out).toMatch(/<NavRail [^>]*onChange=\{\(key\) => go.destination\(key\)\}/);
   });
-});
 
-describe('a menu the canvas draws open, on the web', () => {
-  const album = generateWebPage(
-    parsePage(
-      'export default function Book({ data }) {\n  return <MediaHeader title={data.title} menu={<OverflowMenu items={data.menu} open />} />;\n}\n',
-      'book',
-    ),
-    'book',
-    { title: 'Tears of Ice', menu: [] },
-    { platformed: new Set(), handled: new Set(), opened: new Set(['OverflowMenu']) },
-    shellOf('book'),
-  );
-
-  it('[M0.canvas] starts open in the app, as drawn, and closes when dismissed, so it never covers the page for good', () => {
-    expect(album).toContain("import { useState } from 'react';");
-    expect(album).toContain(
-      '  const [opened, setOpened] = useState<Record<number, boolean>>({ 0: true });',
-    );
-    expect(album).toContain(
-      'menu={<OverflowMenu items={data.menu} open={opened[0]} onOpenChange={(open) => setOpened((all) => ({ ...all, 0: open }))} />}',
-    );
+  it("[M0.canvas] has the shell hold the rail's collapse, so it stays so from page to page", () => {
+    const rails = [...out.matchAll(/<NavRail [^\n]*\/>/g)].map((m) => m[0]);
+    expect(rails.length).toBeGreaterThan(0);
+    for (const rail of rails) {
+      const given = /expanded=\{go\.rail\((true|false)\)\}/.exec(rail)?.[1];
+      expect(given, rail).toBeDefined();
+      expect(rail).toContain(`onToggleExpanded={() => go.toggleRail(${given})}`);
+      expect(rail).not.toMatch(/expanded=\{(true|false)\}/);
+    }
   });
 });
 

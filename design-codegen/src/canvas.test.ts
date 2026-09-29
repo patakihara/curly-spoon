@@ -95,6 +95,7 @@ const app: App = {
     platformed: new Set(['MediaHeader', 'BackLayer', 'BackdropShell', 'MiniPlayer']),
     handled: new Set(['Switch']),
   },
+  menus: new Set(['OverflowMenu']),
   now: [],
 };
 
@@ -503,6 +504,74 @@ describe('a page with a local search, on the canvas', () => {
     expect(out.get('book.phone-search.dc.html')).toContain(searchOut);
     expect(out.get('book.phone.dc.html')).not.toContain('searchOpen');
     expect(out.get('book.desktop.dc.html')).not.toContain('searchOpen');
+  });
+});
+
+describe('a page with a menu, on the canvas', () => {
+  const withMenu = `export default function Book({ data }) {
+  return (
+    <BackdropShell>
+      <PageBody>
+        <MediaHeader title={data.title} menu={<OverflowMenu items={data.menu} />} />
+        <Each of={data.chapters} as="chapter">
+          <ResultRow title={chapter.title} trailing={<OverflowMenu items={chapter.menu} />} />
+        </Each>
+      </PageBody>
+    </BackdropShell>
+  );
+}
+`;
+  const drawn: App = {
+    ...app,
+    pages: [
+      {
+        id: 'book',
+        tree: parsePage(withMenu, 'book'),
+        placeholder: {
+          title: 'Wind and Truth',
+          menu: [{ key: 'a', label: 'Add to library' }],
+          chapters: [{ title: 'Prologue', menu: [{ key: 'b', label: 'Add to playlist' }] }],
+        },
+      },
+      app.pages[1]!,
+    ],
+  };
+  const out = generateCanvas(drawn, install, now);
+  const order = JSON.parse(out.get('canvas.json') ?? '{}');
+
+  it('[M0.canvas] shows its first menu open on a third artboard, a phone, after the page’s desktop one', () => {
+    const { phone, desktop } = CANVAS_BOARDS;
+    expect(order.order).toEqual([
+      'structure.dc.html',
+      'flows.dc.html',
+      'book.phone.dc.html',
+      'book.desktop.dc.html',
+      'book.phone-menu.dc.html',
+      'settings.phone.dc.html',
+      'settings.desktop.dc.html',
+    ]);
+    expect(order.boards['book.phone-menu.dc.html']).toMatchObject({
+      x: phone.width + 80 + desktop.width + 80,
+      y: order.boards['book.phone.dc.html'].y,
+      w: phone.width,
+      h: phone.height,
+      title: 'Book · phone, menu open',
+    });
+  });
+
+  it('[M0.canvas] opens that one menu on that artboard alone, leaving the page as the apps draw it, every menu closed', () => {
+    /** Each OverflowMenu the artboard draws, by what its items bind, and whether it is open. */
+    const menus = (html: string) =>
+      [
+        ...html.matchAll(
+          /"component":"OverflowMenu","props":(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/g,
+        ),
+      ]
+        .map((m) => JSON.parse(m[1]!) as Record<string, { path?: string[] }>)
+        .map((props) => `${props['items']!.path!.join('.')}${props['open'] ? ' open' : ''}`);
+    expect(menus(out.get('book.phone-menu.dc.html')!)).toEqual(['data.menu open', 'chapter.menu']);
+    expect(menus(out.get('book.phone.dc.html')!)).toEqual(['data.menu', 'chapter.menu']);
+    expect(menus(out.get('book.desktop.dc.html')!)).toEqual(['data.menu', 'chapter.menu']);
   });
 });
 

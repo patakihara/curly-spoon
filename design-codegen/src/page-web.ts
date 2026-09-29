@@ -49,12 +49,6 @@ export interface WebComponents {
   /** The components that take an `onChange` handler. */
   handled: Set<string>;
   /**
-   * The components that open over the page and say when they close (`onOpenChange`). The canvas
-   * may draw one `open`, to show it; the app starts it so and lets it close, holding whether it is
-   * open, so it never covers the page for good.
-   */
-  opened?: Set<string>;
-  /**
    * Each component's props that take one of a fixed set of words (`tone`, `size`). A placeholder's
    * JSON reads as a plain string, so a bound value for one is read as the prop's own type; the
    * canvas check has already refused any value that is not one of its words.
@@ -69,21 +63,27 @@ export interface WebComponents {
 type Ctx = WebComponents & {
   paths: Map<string, string>;
   wired: Map<PageTree, Record<string, string>>;
-  /** Whether each menu the page draws with `open` starts open, by its number in the page. */
-  menus: boolean[];
 };
 
-/** Each of the shell's actions, as the web handler that does it through `useShellNav`'s `go`. */
-function spell(action: ShellAction, paths: Map<string, string>): string {
+/**
+ * Each of the shell's actions on the handler prop `prop`, as the web code doing it through
+ * `useShellNav`'s `go`, by prop: the rail's toggle also has the shell hold its `expanded`.
+ */
+function spell(prop: string, action: ShellAction, paths: Map<string, string>) {
   switch (action.kind) {
     case 'close':
-      return `() => go.close('${action.home}')`;
+      return { [prop]: `() => go.close('${action.home}')` };
     case 'destination':
-      return '(key) => go.destination(key)';
+      return { [prop]: '(key) => go.destination(key)' };
     case 'open':
-      return `() => go.open('${paths.get(action.page)!}')`;
+      return { [prop]: `() => go.open('${paths.get(action.page)!}')` };
     case 'tab':
-      return '(tab) => go.tab(tab)';
+      return { [prop]: '(tab) => go.tab(tab)' };
+    case 'rail':
+      return {
+        expanded: `go.rail(${action.expanded})`,
+        [prop]: `() => go.toggleRail(${action.expanded})`,
+      };
   }
 }
 
@@ -184,31 +184,21 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
         `${indent})}`,
       ];
     case 'element': {
-      const props = Object.entries(tree.props)
-        .map(([name, value]) => {
-          if (
-            name === 'open' &&
-            value.kind === 'literal' &&
-            components.opened?.has(tree.component)
-          ) {
-            const n = components.menus.push(value.value === true) - 1;
-            return [
-              `open={opened[${n}]}`,
-              `onOpenChange={(open) => setOpened((all) => ({ ...all, ${n}: open }))}`,
-            ].join(' ');
-          }
-          return propLines(
-            name,
-            value,
-            inner,
-            components,
-            tree.component,
-            chosen(tree, name, components),
-          );
-        })
-        .map((p) => (typeof p === 'string' ? [p] : p));
-      for (const [name, code] of Object.entries(components.wired.get(tree) ?? {}))
-        props.push([`${name}={${code}}`]);
+      const wired = components.wired.get(tree) ?? {};
+      const props = Object.entries(tree.props).map(([name, value]) =>
+        name in wired
+          ? [`${name}={${wired[name]}}`]
+          : propLines(
+              name,
+              value,
+              inner,
+              components,
+              tree.component,
+              chosen(tree, name, components),
+            ),
+      );
+      for (const [name, code] of Object.entries(wired))
+        if (!(name in tree.props)) props.push([`${name}={${code}}`]);
       if (ignored(tree, components)) props.push(['onChange={ignore}']);
       if (components.platformed.has(tree.component) && !('platform' in tree.props)) {
         props.push(['platform={platform}']);
@@ -248,16 +238,6 @@ function chromeEntry(parts: Chrome, components: Ctx): string[] {
 
 const binding = (path: string): PropValue => ({ kind: 'binding', path: path.split('.') });
 
-/** The state holding whether each menu the page draws `open` is open, each starting as drawn. */
-const opener = (menus: boolean[]) =>
-  menus.length === 0
-    ? []
-    : [
-        `  const [opened, setOpened] = useState<Record<number, boolean>>({ ${menus
-          .map((open, n) => `${n}: ${open}`)
-          .join(', ')} });`,
-      ];
-
 export function generateWebPage(
   tree: PageTree,
   id: string,
@@ -266,13 +246,13 @@ export function generateWebPage(
   { nav, shell, page, now = [] }: WebShell,
 ): string {
   const paths = new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path]));
-  const components: Ctx = { ...webComponents, paths, wired: new Map(), menus: [] };
+  const components: Ctx = { ...webComponents, paths, wired: new Map() };
   /** Wires the shell's handlers, `handlers`, into the page; whether it wired any. */
   const wire = (handlers: ShellHandlers) => {
     for (const [tree, props] of handlers) {
       components.wired.set(
         tree,
-        Object.fromEntries(Object.entries(props).map(([p, a]) => [p, spell(a, paths)])),
+        Object.assign({}, ...Object.entries(props).map(([p, a]) => spell(p, a, paths))),
       );
     }
     return handlers.size > 0;
@@ -302,7 +282,6 @@ export function generateWebPage(
   if (sheet) wire(shellHandlers(nav, page, { player: root }));
   const goes = components.wired.size > 0;
   const body = render(root, '    ', components);
-  const menus = components.menus;
   const used = new Set<string>();
   drawn(root, used);
   for (const [, parts] of chromes) {
@@ -311,11 +290,7 @@ export function generateWebPage(
   // A page named as a component it draws with, Now Playing's NowPlaying, takes a suffix.
   const name = used.has(componentName(id)) ? `${componentName(id)}Screen` : componentName(id);
   const over = sheet ? componentName(shell.sheetOver!) : undefined;
-  const fromReact = [
-    ...(some(root, (n) => n.kind === 'each') ? ['Fragment'] : []),
-    ...(menus.length > 0 ? ['useState'] : []),
-  ];
-  const react = fromReact.length > 0 ? [`import { ${fromReact.join(', ')} } from 'react';`] : [];
+  const react = some(root, (n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
   const typed = [
     root,
     ...chromes.flatMap(([, parts]) => [parts.rail, parts.leading, parts.player, parts.sheet]),
@@ -440,7 +415,6 @@ export function generateWebPage(
           "  const platform: Platform = PANEL[layout] ? 'desktop' : 'mobile';",
           ...(opens ? ['  const navigate = useNavigate();'] : []),
           ...(goes ? ['  const go = useShellNav();'] : []),
-          ...opener(menus),
           '  const player = (',
           ...body,
           '  );',
@@ -455,7 +429,6 @@ export function generateWebPage(
           '  const platform = chrome.platform;',
           '  const panel = sheet ?? chrome.sheet;',
           ...(opens ? ['  const navigate = useNavigate();'] : []),
-          ...opener(menus),
           '  return (',
           ...body,
           '  );',

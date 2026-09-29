@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseNav, type Nav } from './nav.js';
 import type { PageTree } from './page.js';
 import { chrome, playerTab, playerTree, type ShellFile } from './shell.js';
-import { shellHandlers, type ShellAction } from './shell-handlers.js';
+import { closeAction, shellHandlers, type ShellAction } from './shell-handlers.js';
 
 const structure = (links: string[] = []) => ({
   purpose: 'P.',
@@ -92,6 +92,17 @@ describe("the shell's controls, wired alike on both apps", () => {
   it('[M0.canvas] opens Now Playing from the mini-player, on the phone and on desktop', () => {
     expect(at('album', 0)['MiniPlayer.onOpen']).toEqual({ kind: 'open', page: 'nowPlaying' });
     expect(at('album', 1)['MiniPlayer.onOpen']).toEqual({ kind: 'open', page: 'nowPlaying' });
+  });
+
+  it("[M0.canvas] lets the rail's hamburger collapse and expand it, from the width's own default", () => {
+    expect(at('album', 1)['NavRail.onToggleExpanded']).toEqual({ kind: 'rail', expanded: true });
+    expect(at('album', 0)['NavRail.onToggleExpanded']).toBeUndefined();
+  });
+
+  it("[M0.canvas] gives Android's back what the close control does, and nothing on a page that does not close", () => {
+    expect(closeAction(nav, page('album'))).toEqual({ kind: 'close', home: 'music' });
+    expect(closeAction(nav, page('queue'))).toEqual({ kind: 'close', home: 'browse' });
+    expect(closeAction(nav, page('music'))).toBeUndefined();
   });
 
   it("[M0.canvas] switches the side panel's tabs to that sheet", () => {

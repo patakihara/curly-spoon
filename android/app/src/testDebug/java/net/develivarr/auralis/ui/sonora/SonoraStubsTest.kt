@@ -1,11 +1,19 @@
 package net.develivarr.auralis.ui.sonora
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import net.develivarr.auralis.generated.ui.AboutCardProps
 import net.develivarr.auralis.generated.ui.AccountButtonProps
@@ -52,6 +60,7 @@ import net.develivarr.auralis.generated.ui.TabBarItem
 import net.develivarr.auralis.generated.ui.TabBarProps
 import net.develivarr.auralis.generated.ui.ValueRowProps
 import net.develivarr.auralis.generated.ui.ViewToggleProps
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -124,5 +133,31 @@ class SonoraStubsTest {
             index = i
             composeRule.onNodeWithText(name, useUnmergedTree = true).assertExists("$name shows no label")
         }
+    }
+
+    private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
+
+    @Test
+    fun eachTapIsAButtonOrATabByItsNameAndNothingWithoutAHandlerIsTappable() {
+        val tapped = mutableListOf<String>()
+        composeRule.setContent {
+            Column {
+                IconButton(IconButtonProps(label = "Close", onClick = { tapped += "close" }))
+                BottomNav(
+                    BottomNavProps(
+                        items = listOf(BottomNavItem(key = "music", label = "Music", icon = "album")),
+                        active = "music",
+                        onChange = { tapped += it },
+                    ),
+                )
+                MiniPlayer(MiniPlayerProps(title = "Track", artist = "Artist"))
+            }
+        }
+        composeRule.onNode(role(Role.Button) and hasContentDescription("Close") and hasClickAction())
+            .performClick()
+        composeRule.onNode(role(Role.Tab) and hasText("Music") and hasClickAction()).performClick()
+        composeRule.onNode(hasContentDescription("Track") or hasClickAction().and(hasText("Track")))
+            .assertDoesNotExist()
+        assertEquals(listOf("close", "music"), tapped)
     }
 }

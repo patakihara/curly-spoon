@@ -1,12 +1,15 @@
 package net.develivarr.auralis
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.navigation.NavHostController
@@ -26,6 +29,7 @@ import org.junit.runner.RunWith
  * controls and pressing Android's back, never by navigating in code: ✕ returns to whatever opened
  * a page, each destination keeps its own stack, Android's back does what ✕ does, the mini-player
  * opens Now Playing, the player's tabs switch sheets, and a sheet closes to the page under it.
+ * Every control is found as a screen reader finds it, by its role, a button or a tab, and its name.
  * web/e2e/shell-nav.spec.ts walks the same journey in the browser.
  */
 @RunWith(AndroidJUnit4::class)
@@ -49,17 +53,23 @@ class ShellNavTest {
         composeRule.waitForIdle()
     }
 
-    /** The first tappable thing showing `text`: a card, a row, a link or a control. */
-    private fun tap(text: String) =
-        tap(composeRule.onAllNodes(hasText(text) and hasClickAction()).onFirst())
+    private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
 
-    /** A destination on the bottom bar, which the shell draws after the page. */
-    private fun destination(label: String) =
-        tap(composeRule.onAllNodes(hasText(label) and hasClickAction()).onLast())
+    /** The first button named `name`: a card, a row, a link or a control. */
+    private fun tap(name: String) = tap(
+        composeRule.onAllNodes(
+            role(Role.Button) and (hasContentDescription(name) or hasText(name)) and
+                hasClickAction(),
+        ).onFirst(),
+    )
 
-    /** The mini-player, docked above the bottom bar. */
-    private fun miniPlayer() =
-        tap(composeRule.onAllNodes(hasText("MiniPlayer") and hasClickAction()).onLast())
+    /** A tab named `label`: a destination on the bottom bar, or one of the player's tabs. */
+    private fun tab(label: String) = tap(
+        composeRule.onAllNodes(role(Role.Tab) and hasText(label) and hasClickAction()).onFirst(),
+    )
+
+    /** The mini-player, a button named by the track shell.json's `playing` loads. */
+    private fun miniPlayer() = tap(PLAYING)
 
     private fun systemBack() {
         composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
@@ -81,7 +91,7 @@ class ShellNavTest {
     /** Music from the bottom bar, an album, its artist, then one of the artist's albums. */
     private fun openAnAlbumFromItsArtist() {
         start()
-        destination("Music")
+        tab("Music")
         assertEquals("Music", showing())
         tap("Between Lines of Light")
         assertEquals("Album between-lines-of-light", showing())
@@ -101,9 +111,9 @@ class ShellNavTest {
     @Test
     fun M0_canvas_d_eachDestinationKeepsItsStackAndAndroidBackDoesWhatCloseDoes() {
         openAnAlbumFromItsArtist()
-        destination("Books")
+        tab("Books")
         assertEquals("Books", showing())
-        destination("Music")
+        tab("Music")
         assertEquals("Album shadows-and-sighs", showing())
         systemBack()
         assertEquals("Artist deep-inertia", showing())
@@ -114,7 +124,7 @@ class ShellNavTest {
         openAnAlbumFromItsArtist()
         miniPlayer()
         assertEquals("NowPlaying", showing())
-        tap("Queue")
+        tab("Queue")
         assertEquals("Queue", showing())
         tap("Collapse player")
         assertEquals("Album shadows-and-sighs", showing())
@@ -124,9 +134,14 @@ class ShellNavTest {
     fun M0_canvas_d_androidBackClosesASheetToThePageUnderIt() {
         openAnAlbumFromItsArtist()
         miniPlayer()
-        tap("Lyrics")
+        tab("Lyrics")
         assertEquals("Lyrics", showing())
         systemBack()
         assertEquals("Album shadows-and-sighs", showing())
+    }
+
+    private companion object {
+        /** The track the shell's mini-player shows, shell.json's `playing`. */
+        const val PLAYING = "Heartbeats in Silence"
     }
 }

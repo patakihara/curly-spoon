@@ -8,7 +8,7 @@ import net.develivarr.auralis.generated.ui.BottomNavProps
 fun BottomNav(props: BottomNavProps) {
     SonoraStub(
         "BottomNav",
-        taps = props.items.map { item ->
+        tabs = props.items.map { item ->
             item.label to props.onChange?.let { change -> { change(item.key) } }
         },
     )

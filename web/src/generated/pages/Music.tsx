@@ -261,7 +261,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={false} toggle={true} onChange={(key) => go.destination(key)} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
@@ -272,7 +272,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={true} toggle={true} onChange={(key) => go.destination(key)} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
@@ -283,7 +283,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={true} toggle={true} onChange={(key) => go.destination(key)} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />

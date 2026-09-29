@@ -11,5 +11,6 @@ fun IconButton(props: IconButtonProps) {
         texts = listOf(props.label),
         slots = listOf(props.children),
         onClick = props.onClick,
+        label = props.label,
     )
 }

@@ -6,5 +6,10 @@ import net.develivarr.auralis.generated.ui.QuickPickProps
 /** Sonora's QuickPick, as a stub: M1 and M2 replace its body in place with the real layout. */
 @Composable
 fun QuickPick(props: QuickPickProps) {
-    SonoraStub("QuickPick", texts = listOf(props.title, props.sub), onClick = props.onClick)
+    SonoraStub(
+        "QuickPick",
+        texts = listOf(props.title, props.sub),
+        onClick = props.onClick,
+        label = props.title,
+    )
 }

@@ -198,7 +198,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="settings" expanded={false} toggle={true} onChange={(key) => go.destination(key)} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="settings" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
     ),
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('browse')} />
@@ -212,7 +212,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="settings" expanded={true} toggle={true} onChange={(key) => go.destination(key)} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="settings" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('browse')} />
@@ -226,7 +226,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="settings" expanded={true} toggle={true} onChange={(key) => go.destination(key)} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="settings" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('browse')} />

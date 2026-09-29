@@ -113,6 +113,22 @@ describe('the Android Sonora composables', () => {
     expect(unreachable).toEqual([]);
   });
 
+  it('[M0.canvas] give every tappable element a role, a button or a tab, and a name a screen reader reads', () => {
+    const stub = readFileSync(join(SONORA_DIR, 'SonoraStub.kt'), 'utf8');
+    const clickables = [...stub.matchAll(/\.clickable\(([^)]*)\)/g)].map((m) => m[1]!);
+    expect(clickables.length).toBeGreaterThan(0);
+    for (const c of clickables) expect(c).toMatch(/\brole = (role|Role\.(Button|Tab))\b/);
+    expect(stub).toMatch(/contentDescription = label/);
+    // A whole box is named by its `label`; Button alone by its children's own text.
+    const unnamed = readdirSync(SONORA_DIR)
+      .filter((f) => f.endsWith('.kt') && f !== 'SonoraStub.kt')
+      .filter((f) => {
+        const source = readFileSync(join(SONORA_DIR, f), 'utf8');
+        return /onClick = props\.\w+/.test(source) && !/\blabel = props\.\w+/.test(source);
+      });
+    expect(unnamed).toEqual(['Button.kt']);
+  });
+
   it('finds a handler passed inside another call, and a stub that ignores it', () => {
     expect(tappable('SonoraStub("X", onClick = props.onClick)', 'onClick')).toBe(true);
     expect(tappable('taps = listOf(props.subtitle to props.onSubtitle)', 'onSubtitle')).toBe(true);

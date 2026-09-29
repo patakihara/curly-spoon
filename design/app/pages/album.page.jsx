@@ -11,7 +11,7 @@ export default function Album({ data }) {
             image={data.image}
             nextLabel={null}
             lastLabel="Add to queue"
-            menu={<OverflowMenu items={data.menu} open />}
+            menu={<OverflowMenu items={data.menu} />}
           />
         </Section>
         <Section>

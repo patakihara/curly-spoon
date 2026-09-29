@@ -119,48 +119,56 @@ describe('the web router and the Android graph, generated from one nav.json', ()
 });
 
 /**
- * The shell's controls each page wires on the phone, as a set of actions: `close:<home>`,
- * `destination`, `open:<page>` and `tab`. The web's are its w0 chrome's (or a sheet's player's),
- * through `go`; Android's are its page's, the back handler left out.
+ * The shell's controls each page wires on the phone, as a set of each handler prop and what it
+ * does: `onClick:close:<home>`, `onChange:destination`, `onOpen:open:<page>`, `onTabChange:tab`.
+ * The web's are its w0 chrome's (or a sheet's player's), through `go`; Android's are its page's,
+ * the back handler left out, and only the mini-player's `onOpen` counted as the shell's own open,
+ * since a page's own links navigate the same way.
  */
 function webWiring(source: string, ids: Map<string, string>): string[] {
   const phone = / {2}w0: \(\w*\) => \(\{\n([\s\S]*?)\n {2}\}\),/.exec(source)?.[1] ?? source;
   return [
     ...new Set(
-      [...phone.matchAll(/go\.(\w+)\(([^)]*)\)/g)].map(([, verb, arg]) => {
-        const value = arg!.replace(/'/g, '');
-        if (verb === 'close') return `close:${value}`;
-        if (verb === 'open') return `open:${ids.get(value) ?? value}`;
-        return verb!;
-      }),
+      [...phone.matchAll(/(\w+)=\{\(?\w*\)? => go\.(\w+)\(([^)]*)\)\}/g)].map(
+        ([, prop, verb, arg]) => {
+          const value = arg!.replace(/'/g, '');
+          if (verb === 'close') return `${prop}:close:${value}`;
+          if (verb === 'open') return `${prop}:open:${ids.get(value) ?? value}`;
+          return `${prop}:${verb}`;
+        },
+      ),
     ),
   ].sort();
 }
 
 function androidWiring(source: string): string[] {
   const body = source.replace(/^ {4}BackHandler .*$/m, '');
+  const handler = (call: string) => new RegExp(`(\\w+) = \\{\\s*(?:\\w+ ->\\s*)?${call}`, 'g');
   return [
     ...new Set([
-      ...[...body.matchAll(/closePage\(navController, Route\.(\w+)\)/g)].map(
-        (m) => `close:${lower(m[1]!)}`,
+      ...[...body.matchAll(handler('closePage\\(navController, Route\\.(\\w+)\\)'))].map(
+        (m) => `${m[1]}:close:${lower(m[2]!)}`,
       ),
-      ...(body.includes('openDestination(navController, key)') ? ['destination'] : []),
-      ...[...body.matchAll(/onOpen = \{\s*navController\.navigate\(Route\.(\w+)\)/g)].map(
-        (m) => `open:${lower(m[1]!)}`,
+      ...[...body.matchAll(handler('openDestination\\(navController, key\\)'))].map(
+        (m) => `${m[1]}:destination`,
       ),
-      ...(body.includes('openTab(navController, tab)') ? ['tab'] : []),
+      ...[...body.matchAll(handler('navController\\.navigate\\(Route\\.(\\w+)\\)'))]
+        .filter((m) => m[1] === 'onOpen')
+        .map((m) => `${m[1]}:open:${lower(m[2]!)}`),
+      ...[...body.matchAll(handler('openTab\\(navController, tab\\)'))].map((m) => `${m[1]}:tab`),
     ]),
   ].sort();
 }
 
 describe("the shell's controls, on the web and on Android", () => {
-  it('[M0.canvas] are wired alike on every page both apps have, on the phone', () => {
+  it('[M0.canvas] are wired alike, each on the same handler prop, on every page both apps have, on the phone', () => {
     const routes = read(OUTPUTS.webNav, 'routes.tsx');
     const ids = new Map(
       [...routes.matchAll(/\{ id: '(\w+)', path: '([^']*)', query/g)].map((m) => [m[2]!, m[1]!]),
     );
     const android = kotlinPages();
     const differ: string[] = [];
+    const kinds = new Set<string>();
     let wired = 0;
     for (const file of readdirSync(join(REPO_ROOT, OUTPUTS.webPages))) {
       const kotlin = android.get(file.replace('.tsx', 'Page.kt'));
@@ -168,10 +176,18 @@ describe("the shell's controls, on the web and on Android", () => {
       const web = webWiring(read(OUTPUTS.webPages, file), ids);
       const mobile = androidWiring(kotlin);
       if (web.length > 0) wired++;
+      for (const w of web) kinds.add(w.split(':').slice(0, 2).join(':'));
       if (JSON.stringify(web) !== JSON.stringify(mobile))
         differ.push(`${file}: web ${web.join(' ')}, Android ${mobile.join(' ')}`);
     }
     expect(wired).toBeGreaterThan(20);
+    expect([...kinds].sort()).toEqual([
+      'onChange:destination',
+      'onClick:close',
+      'onClose:close',
+      'onOpen:open',
+      'onTabChange:tab',
+    ]);
     expect(differ).toEqual([]);
   });
 
@@ -183,7 +199,19 @@ describe("the shell's controls, on the web and on Android", () => {
     const android = androidWiring(
       '    BackHandler { closePage(navController, Route.Music) }\n    IconButton(IconButtonProps(onClick = {}))',
     );
-    expect(web).toEqual(['close:music']);
+    expect(web).toEqual(['onClick:close:music']);
     expect(android).toEqual([]);
+  });
+
+  it('names a control whose handler is on a different prop on the two', () => {
+    const web = webWiring(
+      '  w0: (go) => ({\n    player: <BottomNav onChange={(key) => go.destination(key)} />,\n  }),',
+      new Map(),
+    );
+    const android = androidWiring(
+      '    BottomNav(BottomNavProps(onSelect = { key -> openDestination(navController, key) }))',
+    );
+    expect(web).toEqual(['onChange:destination']);
+    expect(android).toEqual(['onSelect:destination']);
   });
 });

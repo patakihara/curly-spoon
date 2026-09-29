@@ -18,7 +18,12 @@ import {
   KOTLIN_SONORA_PACKAGE,
 } from './outputs.js';
 import type { PageTree, PropValue } from './page.js';
-import { shellHandlers, type ShellAction, type ShellHandlers } from './shell-handlers.js';
+import {
+  closeAction,
+  shellHandlers,
+  type ShellAction,
+  type ShellHandlers,
+} from './shell-handlers.js';
 import type { ClassDecl, EnumDecl, KType, PropsModel, SealedDecl } from './props.js';
 import {
   chrome,
@@ -397,18 +402,8 @@ export function generateKotlinPage(
   const pages = new Map(
     nav.pages.filter((p) => p.platforms.includes('android')).map((p) => [p.id, p]),
   );
-  const homeId = page.lights ?? nav.destinations[0]?.id;
-  const home = homeId === undefined ? undefined : pages.get(homeId);
-  const closes = page.close !== 'none';
-  if (closes && home === undefined) {
-    throw new Error(
-      `${id}: closes to the home of ${homeId ?? 'no destination'}, not an Android page`,
-    );
-  }
-  const close = closes ? raw(`closePage(navController, ${routeCall(home!)})`) : undefined;
   /** What the page uses from the generated nav graph. */
   const fromNav = new Set(['PageActions']);
-  if (close !== undefined) fromNav.add('Route').add('closePage');
   /** Each of the shell's actions, as Kotlin: the lambda its handler prop takes. */
   const spell = (action: ShellAction): Expr => {
     switch (action.kind) {
@@ -428,8 +423,13 @@ export function generateKotlinPage(
       case 'tab':
         fromNav.add('openTab');
         return lambda([raw('openTab(navController, tab)')], 'tab');
+      case 'rail':
+        throw new Error(`${id}: Android's phone has no rail to collapse`);
     }
   };
+  /** Android's back does what the page's close control does, on a page that closes. */
+  const closing = closeAction(nav, page);
+  const back = closing === undefined ? undefined : spell(closing);
   let root: PageTree;
   let wired: ShellHandlers;
   if (page.presentation === 'sheet') {
@@ -475,7 +475,7 @@ export function generateKotlinPage(
   const name = `${componentName(id)}Page`;
   for (const n of writer.nav) fromNav.add(n);
   const imports = [
-    ...(close !== undefined ? ['androidx.activity.compose.BackHandler'] : []),
+    ...(back !== undefined ? ['androidx.activity.compose.BackHandler'] : []),
     ...(writer.text ? ['androidx.compose.foundation.text.BasicText'] : []),
     'androidx.compose.runtime.Composable',
     'androidx.navigation.NavController',
@@ -498,9 +498,7 @@ export function generateKotlinPage(
         ? { ...e, body: e.body.map(rename) }
         : e;
   const statements = [
-    ...(close !== undefined
-      ? [lambda([close])].map((l) => `BackHandler ${print(l, STEP, 16)}`)
-      : []),
+    ...(back !== undefined ? [`BackHandler ${print(back, STEP, 16)}`] : []),
     ...body.map((s) => print(rename(s), STEP, STEP.length)),
   ];
   return [

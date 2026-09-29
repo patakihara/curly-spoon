@@ -13,7 +13,10 @@ there with `eyebrow`, `image` and `round`, the heading's context form, and has n
 own), what leads it (the account avatar on a phone's destination home, a
 close control on a page that closes), the bottom bar or rail per layout, the mini-player and the
 Now Playing panel. A local search comes out as the front layer scrolls, so on the canvas a page
-with one gets a third artboard, a phone with it out.
+with one gets a third artboard, a phone with it out (`phone-search`). A page's menus start closed
+in the apps, opening from their button and closing on the scrim or an item; a page never draws
+one `open`, and the check refuses it. On the canvas a page with a menu gets another phone
+artboard with its first menu open (`phone-menu`).
 
 On desktop the rail lights, for a page that is not a destination, the destination its `lights`
 names; with none, Settings for the page at the rail's foot, or else what lights the page that opens

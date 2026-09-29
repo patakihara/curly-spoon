@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-router';
 import { NAV_MAP } from './generated/nav/stacks';
 
@@ -7,8 +7,48 @@ import { NAV_MAP } from './generated/nav/stacks';
  * graph's `closePage`, `openDestination` and `openTab` do: ✕ returns to whatever opened a page, or
  * with nothing under it to its destination's home; each destination keeps its own stack; a sheet
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.
- * The generated pages wire the shell's controls to it, as design-codegen's shell-handlers say.
+ * The rail's hamburger collapses the rail and back, and it stays so from page to page. The stacks
+ * and the rail are kept in the tab's session storage, so a reload carries on where it was. The
+ * generated pages wire the shell's controls to it, as design-codegen's shell-handlers say.
  */
+
+/** Somewhere to keep a value across a reload: the tab's session storage, in the app. */
+export interface Store {
+  read(): string | null;
+  write(value: string): void;
+}
+
+/** The tab's session storage under `key`; nothing kept where the browser refuses it. */
+function session(key: string): Store {
+  return {
+    read: () => {
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    write: (value) => {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {
+        // Private windows and full storage keep nothing; the app still works for this load.
+      }
+    },
+  };
+}
+
+/** A stored value, or undefined if nothing readable is stored. */
+function stored(store: Store | undefined): unknown {
+  try {
+    return JSON.parse(store?.read() ?? 'null') ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const isPaths = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.every((v) => typeof v === 'string');
 
 /** What the stacks need of nav.json, generated into `generated/nav/stacks.ts`. */
 export interface NavMap {
@@ -30,11 +70,32 @@ export class Stacks {
   private readonly stacks = new Map<string, string[]>();
   private current: string;
   private last: string | undefined;
+  /** The location showing, as last seen. */
+  private showing: string | undefined;
 
-  constructor(private readonly map: NavMap) {
+  /** Stacks for `map`, carried on from what `store` holds of an earlier load of this tab. */
+  constructor(
+    private readonly map: NavMap,
+    private readonly store?: Store,
+  ) {
     const first = Object.keys(map.homes)[0];
     if (first === undefined) throw new Error('nav.json has no destinations');
     this.current = first;
+    const kept = stored(store) as { current?: unknown; stacks?: unknown } | undefined;
+    const stacks = kept?.stacks;
+    if (typeof kept?.current !== 'string' || map.homes[kept.current] === undefined) return;
+    if (typeof stacks !== 'object' || stacks === null) return;
+    const entries = Object.entries(stacks).filter(
+      ([d, stack]) => map.homes[d] !== undefined && isPaths(stack),
+    );
+    this.current = kept.current;
+    for (const [d, stack] of entries) this.stacks.set(d, [...(stack as string[])]);
+  }
+
+  private save(): void {
+    this.store?.write(
+      JSON.stringify({ current: this.current, stacks: Object.fromEntries(this.stacks) }),
+    );
   }
 
   private stack(destination: string): string[] {
@@ -57,6 +118,12 @@ export class Stacks {
   seen(location: string, arrival: Arrival, key: string): void {
     if (key === this.last) return;
     this.last = key;
+    this.showing = location;
+    this.record(location, arrival);
+    this.save();
+  }
+
+  private record(location: string, arrival: Arrival): void {
     const stack = this.stack(this.current);
     if (stack.at(-1) === location) return;
     if (arrival === 'PUSH') {
@@ -90,20 +157,27 @@ export class Stacks {
     const stack = this.stack(this.current);
     if (stack.length > 1) {
       stack.pop();
-      return stack.at(-1)!;
+    } else {
+      this.current = home;
+      this.stacks.set(home, [this.map.homes[home]!]);
     }
-    this.current = home;
-    this.stacks.set(home, [this.map.homes[home]!]);
-    return this.map.homes[home]!;
+    this.save();
+    return this.stack(this.current).at(-1)!;
   }
 
-  /** The destination tapped, as it was left; a page at the rail's foot opens over this one. */
-  destination(key: string): string {
-    const foot = this.map.foot[key];
-    if (foot !== undefined) return foot;
-    if (this.map.homes[key] === undefined) throw new Error(`${key} is not a destination`);
-    this.current = key;
-    return this.stack(key).at(-1)!;
+  /**
+   * The destination tapped, as it was left; a page at the rail's foot opens over this one. None
+   * when that is the location showing, so tapping it again adds nothing to the browser's history.
+   */
+  destination(key: string): string | undefined {
+    let to = this.map.foot[key];
+    if (to === undefined) {
+      if (this.map.homes[key] === undefined) throw new Error(`${key} is not a destination`);
+      this.current = key;
+      this.save();
+      to = this.stack(key).at(-1)!;
+    }
+    return to === this.showing ? undefined : to;
   }
 
   /** A tab of the player: its sheet in place of the sheet showing, or else over the page. */
@@ -113,11 +187,50 @@ export class Stacks {
     const stack = this.stack(this.current);
     if (this.page(stack.at(-1)!)?.sheet !== true) return { to, replace: false };
     stack[stack.length - 1] = to;
+    this.save();
     return { to, replace: true };
   }
 }
 
-const stacks = new Stacks(NAV_MAP);
+/**
+ * Whether the rail is expanded: each width's own default, the labelled rail's expanded and the
+ * icon rail's not, until its hamburger is tapped; from then what that tap made it, on every page.
+ */
+export class Rail {
+  private held: boolean | undefined;
+  private readonly heard = new Set<() => void>();
+
+  constructor(private readonly store?: Store) {
+    const kept = stored(store);
+    if (typeof kept === 'boolean') this.held = kept;
+  }
+
+  /** Whether the rail is expanded, at a width whose default is `given`. */
+  expanded(given: boolean): boolean {
+    return this.held ?? given;
+  }
+
+  /** The hamburger tapped, at a width whose default is `given`. */
+  toggle(given: boolean): void {
+    this.held = !this.expanded(given);
+    this.store?.write(JSON.stringify(this.held));
+    for (const listener of this.heard) listener();
+  }
+
+  /** Calls `listener` whenever the hamburger is tapped; returns what stops it. */
+  subscribe(listener: () => void): () => void {
+    this.heard.add(listener);
+    return () => void this.heard.delete(listener);
+  }
+
+  /** What the rail's state is now, for React to tell when it has changed. */
+  snapshot(): boolean | undefined {
+    return this.held;
+  }
+}
+
+const stacks = new Stacks(NAV_MAP, session('auralis.shell.stacks'));
+const rail = new Rail(session('auralis.shell.rail'));
 
 /** What the shell's controls do, for a page to wire them to. */
 export interface ShellNav {
@@ -129,6 +242,10 @@ export interface ShellNav {
   open(path: string): void;
   /** The player's tab `tab`. */
   tab(tab: string): void;
+  /** Whether the rail is expanded, at a width whose own default is `given`. */
+  rail(given: boolean): boolean;
+  /** The rail's hamburger, at a width whose own default is `given`. */
+  toggleRail(given: boolean): void;
 }
 
 /** The shell's navigation, recording each location the page is shown at into the stacks. */
@@ -136,19 +253,29 @@ export function useShellNav(): ShellNav {
   const navigate = useNavigate();
   const location = useLocation();
   const arrival = useNavigationType();
+  const held = useSyncExternalStore(
+    (listener) => rail.subscribe(listener),
+    () => rail.snapshot(),
+    () => undefined,
+  );
   useEffect(() => {
     stacks.seen(location.pathname + location.search, arrival, location.key);
   }, [location, arrival]);
   return useMemo(
     () => ({
       close: (home) => void navigate(stacks.close(home)),
-      destination: (key) => void navigate(stacks.destination(key)),
+      destination: (key) => {
+        const to = stacks.destination(key);
+        if (to !== undefined) void navigate(to);
+      },
       open: (path) => void navigate(path),
       tab: (tab) => {
         const { to, replace } = stacks.tab(tab);
         void navigate(to, { replace });
       },
+      rail: (given) => held ?? given,
+      toggleRail: (given) => rail.toggle(given),
     }),
-    [navigate],
+    [navigate, held],
   );
 }

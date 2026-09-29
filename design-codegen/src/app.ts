@@ -52,6 +52,11 @@ export interface App {
   pages: AppPage[];
   /** The components that take a `platform` prop, and those that take an `onChange` handler. */
   components: WebComponents;
+  /**
+   * The components that open over the page and close themselves (`onOpenChange`), a menu. A page
+   * starts with each closed; the canvas shows a page's first open on its phone-menu artboard.
+   */
+  menus: Set<string>;
   /** Now Playing's page, which every page's side panel shows; empty until it is drawn. */
   now: PageTree[];
 }
@@ -247,9 +252,9 @@ export function readApp(appDir: string, model: PropsModel): App {
     components: {
       platformed: taking('platform'),
       handled: taking('onChange'),
-      opened: taking('onOpenChange'),
       choices,
     },
+    menus: taking('onOpenChange'),
   };
 }
 

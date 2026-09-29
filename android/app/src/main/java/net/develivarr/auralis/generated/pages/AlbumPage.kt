@@ -134,7 +134,6 @@ fun AlbumPage(navController: NavController, actions: PageActions) {
                                                                     icon = "person",
                                                                 ),
                                                             ),
-                                                            open = true,
                                                             platform = Platform.MOBILE,
                                                         ),
                                                     )

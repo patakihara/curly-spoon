@@ -4,8 +4,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * 12-front.md's "Shell and navigation", walked by tapping the shell's own controls, never by
  * going to a URL in between: ✕ returns to whatever opened a page, each destination keeps its own
  * stack, the mini-player opens Now Playing, the player's tabs switch sheets, a sheet closes to the
- * page under it, and the browser's back goes to the previous view. The same journey runs on the
- * phone's bottom bar and on the desktop's rail.
+ * page under it, and the browser's back goes to the previous view. A reload carries on where it
+ * was. The same journey runs on the phone's bottom bar and on the desktop's rail, whose hamburger
+ * collapses it and back. A page's menu starts closed, opens from its button and closes on the
+ * phone's scrim, back to the page under it, or on an item.
  */
 const SIZES = [
   { name: 'phone, through the bottom bar', width: 390, height: 844, phone: true },
@@ -36,14 +38,22 @@ const artistLink = (page: Page, name: string) =>
   page.locator('div[style*="cursor: pointer"]', { hasText: new RegExp(`^${name}$`) }).first();
 
 /**
- * On the phone, an album opens with its menu up as the canvas draws it, a sheet over a scrim that
- * covers the page: tapping the scrim closes it, as it would for anyone using the app.
+ * The album header's menu: closed as the album opens, it opens from its button; on the phone a
+ * sheet over a scrim, which a tap closes back to the album, and anywhere an item closes it.
  */
-async function dismissAlbumMenu(page: Page, phone: boolean) {
-  if (!phone) return;
+async function useAlbumMenu(page: Page, phone: boolean) {
   const menu = page.getByRole('menu');
+  const button = page.getByRole('button', { name: 'More options', exact: true }).first();
+  await expect(menu).toBeHidden();
+  if (phone) {
+    await button.click();
+    await expect(menu).toBeVisible();
+    await page.mouse.click(page.viewportSize()!.width / 2, 40);
+    await expect(menu).toBeHidden();
+  }
+  await button.click();
   await expect(menu).toBeVisible();
-  await page.mouse.click(page.viewportSize()!.width / 2, 40);
+  await menu.getByRole('menuitem', { name: /Add to library/ }).click();
   await expect(menu).toBeHidden();
 }
 
@@ -67,26 +77,25 @@ for (const size of SIZES) {
     await expect(page).toHaveURL('/music');
     await item(page, 'Between Lines of Light').click();
     await expect(page).toHaveURL('/music/albums/between-lines-of-light');
-    await dismissAlbumMenu(page, size.phone);
+    await useAlbumMenu(page, size.phone);
+    await expect(page).toHaveURL('/music/albums/between-lines-of-light');
     await artistLink(page, 'Deep Inertia').click();
     await expect(page).toHaveURL('/music/artists/deep-inertia');
     await item(page, 'Shadows and Sighs').click();
     await expect(page).toHaveURL('/music/albums/shadows-and-sighs');
-    await dismissAlbumMenu(page, size.phone);
 
-    // ✕ returns to whatever opened the album: the artist.
+    // A reload carries on where it was: ✕ still returns to whatever opened the album, the artist.
+    await page.reload({ waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(page).toHaveURL('/music/artists/deep-inertia');
     await heading(page, 'Deep Inertia');
 
     // Music keeps its stack while Books is open: back on the album, whose ✕ goes to the artist.
     await item(page, 'Shadows and Sighs').click();
-    await dismissAlbumMenu(page, size.phone);
     await destination(page, 'Books').click();
     await expect(page).toHaveURL('/books');
     await destination(page, 'Music').click();
     await expect(page).toHaveURL('/music/albums/shadows-and-sighs');
-    await dismissAlbumMenu(page, size.phone);
 
     // The mini-player opens Now Playing; its tabs switch sheets; closing returns to the album.
     await miniPlayer(page, size.phone).click();
@@ -104,8 +113,44 @@ for (const size of SIZES) {
     await expect(page).toHaveURL('/playing/queue');
     await page.goBack();
     await expect(page).toHaveURL('/music/albums/shadows-and-sighs');
-    await dismissAlbumMenu(page, size.phone);
     await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(page).toHaveURL('/music/artists/deep-inertia');
+
+    // Tapping the destination showing adds no history: the browser's back leaves it.
+    await destination(page, 'Books').click();
+    await destination(page, 'Books').click();
+    await page.goBack();
     await expect(page).toHaveURL('/music/artists/deep-inertia');
   });
 }
+
+test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon rail and back, staying so from page to page", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/music', { waitUntil: 'networkidle' });
+  const collapse = page.getByRole('button', { name: 'Collapse rail', exact: true });
+  const expand = page.getByRole('button', { name: 'Expand rail', exact: true });
+  const rail = collapse.locator('xpath=ancestor::*[contains(@style, "rail-width")][1]');
+  const wide = (await rail.boundingBox())!.width;
+
+  await collapse.click();
+  await expect(expand).toBeVisible();
+  const narrow = (await expand
+    .locator('xpath=ancestor::*[contains(@style, "rail-width")][1]')
+    .boundingBox())!.width;
+  expect(narrow).toBeLessThan(wide);
+
+  await destination(page, 'Books').click();
+  await expect(page).toHaveURL('/books');
+  await expect(expand).toBeVisible();
+  await destination(page, 'Settings').click();
+  await expect(page).toHaveURL('/settings');
+  await expect(expand).toBeVisible();
+
+  await expand.click();
+  await expect(collapse).toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/books');
+  await expect(collapse).toBeVisible();
+});

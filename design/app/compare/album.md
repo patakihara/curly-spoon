@@ -1,6 +1,6 @@
 ---
 page: album
-pageHash: 273f7a041714bf9c4bdeaa069875bf188f84eba17ae828a9a9a5adf19031d81a
+pageHash: 4c29b589ceed41e8c607ddc48aa603b6fa4465a1fe983c5e924d9ac3d4eafc12
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S02, S35]
 ---
@@ -34,7 +34,7 @@ layer, at the list width: a `MediaHeader` with the cover, "ALBUM", the artist as
 that opens the artist's page (`onSubtitle={<Open page="artist" ref={data.artistRef} />}`) and "2022 · 8 tracks
 · 36 min · Plays from YouTube Music", and no title of its own, since the heading names the album.
 Its buttons are Play and Add to queue only (an album's default is the end of the queue; play next
-is the long press), then an `OverflowMenu`, drawn open, holding Add to library ("A lossless copy,
+is the long press), then an `OverflowMenu`, closed as every menu starts, holding Add to library ("A lossless copy,
 by torrent") and Go to artist. Then eight numbered `ResultRow`s, the second playing (its number in
 the play ink and the equalizer bars), each with its own `OverflowMenu`: Add to library and Add to
 playlist on a song you don't have, only Add to playlist on the one you kept. Then an `ExpanderRow`,
@@ -52,10 +52,10 @@ one line where the tracks would be.
   `MediaHeader.title` is now optional), so it is said once, as on Shelf.
 - Changed on purpose: two buttons, Play and Add to queue, where the kit has Play, Next and Last:
   04-play puts play next on the long press, and nav.json names only these two.
-- Changed on purpose: Add to library sits in the header's menu, never a button (06-get); the menu is
-  drawn open to show it: on desktop hanging from its button over the first rows, on the phone as a
+- Changed on purpose: Add to library sits in the header's menu, never a button (06-get). The page
+  draws the menu closed, as the apps start it; the canvas's `phone-menu` artboard shows it open, a
   modal bottom sheet (Sonora's `OverflowMenu` on mobile) over a scrim that covers the page, the
-  bottom bar and the mini-player.
+  bottom bar and the mini-player. On desktop it hangs from its button.
 - Changed on purpose: rows lead with the track number, not the art every track shares (Sonora's
   `ResultRow.number`), and end in a menu instead of a status pill; there is no "In library" pill
   on a row.

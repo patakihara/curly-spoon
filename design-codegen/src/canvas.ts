@@ -267,15 +267,55 @@ const build = (n, scope, key) => {
 const bare = (tree: PageTree): unknown =>
   JSON.parse(JSON.stringify(tree, (key, value) => (key === 'line' ? undefined : value)));
 
+/** The first menu `tree` draws, slots included, in document order: what `menus` names. */
+function firstMenu(tree: PageTree, menus: Set<string>): PageTree | undefined {
+  if (tree.kind === 'element') {
+    if (menus.has(tree.component)) return tree;
+    for (const value of Object.values(tree.props)) {
+      const found = value.kind === 'slot' ? firstMenu(value.tree, menus) : undefined;
+      if (found !== undefined) return found;
+    }
+  }
+  if (!('children' in tree)) return undefined;
+  for (const child of tree.children) {
+    const found = firstMenu(child, menus);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+/** `tree` with `menu`, one of its elements, drawn open. */
+function opening(tree: PageTree, menu: PageTree): PageTree {
+  if (tree === menu && tree.kind === 'element')
+    return { ...tree, props: { ...tree.props, open: { kind: 'literal', value: true } } };
+  if (tree.kind !== 'element') {
+    return 'children' in tree
+      ? ({ ...tree, children: tree.children.map((c) => opening(c, menu)) } as PageTree)
+      : tree;
+  }
+  return {
+    ...tree,
+    props: Object.fromEntries(
+      Object.entries(tree.props).map(([name, value]) => [
+        name,
+        value.kind === 'slot' ? { ...value, tree: opening(value.tree, menu) } : value,
+      ]),
+    ),
+    children: tree.children.map((c) => opening(c, menu)),
+  };
+}
+
 /**
  * A page's artboard at a board's width. `searching` fixes the page's local search out, a still of
- * what scrolling brings; the apps leave it to the scroll.
+ * what scrolling brings; the apps leave it to the scroll. `menu` draws that menu of the page open,
+ * a still of what tapping its button brings; the apps start every menu closed.
  */
 function artboard(
   app: App,
   page: App['pages'][number],
   board: (typeof CANVAS_BOARDS)[keyof typeof CANVAS_BOARDS],
   searching = false,
+  menu?: PageTree,
 ): string {
   const entry = app.nav.pages.find((p) => p.id === page.id);
   if (entry === undefined) throw new Error(`${page.id} is not a page in nav.json`);
@@ -305,7 +345,8 @@ function artboard(
   let tree: PageTree;
   let data = page.placeholder;
   let sheetData: unknown;
-  if (entry.presentation !== 'sheet') tree = inShell(page);
+  if (entry.presentation !== 'sheet')
+    tree = inShell(menu === undefined ? page : { ...page, tree: opening(page.tree, menu) });
   else {
     const player = playerTree(playerTab(entry), framePage(relativeArt(page.tree)).content);
     if (!holdsPanel(layout)) tree = withPlatform(player, 'mobile', app.components.platformed);
@@ -409,18 +450,24 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
   app.pages.forEach((page, row) => {
     const title = app.nav.pages.find((p) => p.id === page.id)?.title ?? page.id;
     let x = 0;
-    // A page with a local search also gets a phone with it out, since only scrolling shows it.
+    // A page with a local search also gets a phone with it out, since only scrolling shows it,
+    // and a page with a menu a phone with its first menu open, since only a tap shows it.
     const searchable = framePage(page.tree).search !== undefined;
+    const sheet = app.nav.pages.find((p) => p.id === page.id)?.presentation === 'sheet';
+    const menu = sheet ? undefined : firstMenu(page.tree, app.menus);
     const drawn = [
       { board: phone, searching: false, name: phone.label, label: phone.label },
       { board: desktop, searching: false, name: desktop.label, label: desktop.label },
       ...(searchable
         ? [{ board: phone, searching: true, name: 'phone-search', label: 'phone, searching' }]
         : []),
+      ...(menu !== undefined
+        ? [{ board: phone, searching: false, menu, name: 'phone-menu', label: 'phone, menu open' }]
+        : []),
     ];
-    for (const { board, searching, name: kind, label } of drawn) {
+    for (const { board, searching, menu: open, name: kind, label } of drawn) {
       const name = `${page.id}.${kind}.dc.html`;
-      files.set(name, artboard(app, page, board, searching));
+      files.set(name, artboard(app, page, board, searching, open));
       boards[name] = {
         x,
         y: top + row * rowHeight,

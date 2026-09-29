@@ -14,6 +14,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
@@ -31,9 +33,10 @@ import net.develivarr.auralis.generated.theme.SonoraType
  * text props, its [taps] and its slots, top to bottom. A [root] box fills the screen and scrolls.
  * On Sonora's light scheme, so a page's plain `BasicText` children read on it.
  *
- * A stub does nothing but hand a tap to the handler it is given: [onClick] makes the whole box
- * tappable, and each of [taps] is a label, tappable when its handler is given, so the app can be
- * walked by tapping before the real layouts land.
+ * A stub does nothing but hand a tap to the handler it is given: [onClick] makes the whole box a
+ * button, named [label] or else by its text, and each of [taps] a label, a button when its handler
+ * is given, and each of [tabs] a tab, so the app can be walked by tapping, and read by a screen
+ * reader, before the real layouts land. Nothing without a handler is tappable.
  */
 @Composable
 internal fun SonoraStub(
@@ -43,7 +46,9 @@ internal fun SonoraStub(
     slots: List<(@Composable () -> Unit)?> = emptyList(),
     root: Boolean = false,
     onClick: (() -> Unit)? = null,
+    label: String? = null,
     taps: List<Pair<String?, (() -> Unit)?>> = emptyList(),
+    tabs: List<Pair<String?, (() -> Unit)?>> = emptyList(),
 ) {
     val colors = SonoraLightColors
     val frame = if (root) {
@@ -51,7 +56,13 @@ internal fun SonoraStub(
     } else {
         Modifier.fillMaxWidth()
     }
-    val tapped = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    val tapped = if (onClick == null) {
+        Modifier
+    } else {
+        Modifier
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { if (label != null) contentDescription = label }
+    }
     Column(
         modifier = frame
             .then(tapped)
@@ -70,18 +81,25 @@ internal fun SonoraStub(
         texts.filterNotNull().forEach {
             BasicText(it, style = text(colors.surfaceFg, SonoraType.textMd))
         }
-        taps.forEach { (label, onTap) ->
-            if (label != null && onTap != null) {
-                BasicText(
-                    label,
-                    modifier = Modifier.clickable(onClick = onTap),
-                    style = text(colors.accentInk, SonoraType.textMd),
-                )
-            } else if (label != null) {
-                BasicText(label, style = text(colors.surfaceFg, SonoraType.textMd))
-            }
-        }
+        taps.forEach { (tap, onTap) -> Tap(tap, onTap, Role.Button) }
+        tabs.forEach { (tab, onTap) -> Tap(tab, onTap, Role.Tab) }
         slots.filterNotNull().forEach { slot -> slot() }
+    }
+}
+
+/** [words], tappable in [role] when [onTap] is given, in the accent ink that marks it so. */
+@Composable
+private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role) {
+    if (words == null) return
+    val colors = SonoraLightColors
+    if (onTap == null) {
+        BasicText(words, style = text(colors.surfaceFg, SonoraType.textMd))
+    } else {
+        BasicText(
+            words,
+            modifier = Modifier.clickable(role = role, onClick = onTap),
+            style = text(colors.accentInk, SonoraType.textMd),
+        )
     }
 }
 
