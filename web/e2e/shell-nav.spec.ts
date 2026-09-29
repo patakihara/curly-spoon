@@ -131,15 +131,13 @@ test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon r
   await page.goto('/music', { waitUntil: 'networkidle' });
   const collapse = page.getByRole('button', { name: 'Collapse rail', exact: true });
   const expand = page.getByRole('button', { name: 'Expand rail', exact: true });
-  const rail = collapse.locator('xpath=ancestor::*[contains(@style, "rail-width")][1]');
-  const wide = (await rail.boundingBox())!.width;
+  const rail = (toggle: Locator) =>
+    toggle.locator('xpath=ancestor::*[contains(@style, "rail-width")][1]');
+  const wide = await settledWidth(rail(collapse));
 
   await collapse.click();
   await expect(expand).toBeVisible();
-  const narrow = (await expand
-    .locator('xpath=ancestor::*[contains(@style, "rail-width")][1]')
-    .boundingBox())!.width;
-  expect(narrow).toBeLessThan(wide);
+  expect(await settledWidth(rail(expand))).toBeLessThan(wide);
 
   await destination(page, 'Books').click();
   await expect(page).toHaveURL('/books');
@@ -154,3 +152,11 @@ test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon r
   await expect(page).toHaveURL('/books');
   await expect(collapse).toBeVisible();
 });
+
+/** The element's width once its running transitions (the rail's width animation) have ended. */
+async function settledWidth(element: Locator): Promise<number> {
+  return element.evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
+    return el.getBoundingClientRect().width;
+  });
+}
