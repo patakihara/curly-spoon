@@ -167,6 +167,15 @@ jobs:
         env:
           AURALIS_URL: http://127.0.0.1:8787
         run: pnpm --filter @auralis/web exec playwright test
+      # docker stop's SIGTERM reaches main.ts, which closes the database and exits 0 well inside
+      # docker's 10 s grace, rather than a SIGKILL (137) or the tsx CLI's relay killing it (143).
+      - name: docker stop closes the database and exits 0
+        run: |
+          docker stop auralis-ci
+          code="$(docker inspect -f '{{.State.ExitCode}}' auralis-ci)"
+          echo "exit code: $code"
+          docker logs auralis-ci 2>&1 | grep 'Database closed'
+          [ "$code" = 0 ]
       - if: always()
         run: node scripts/plan/collect-results.mjs --workflow ci --job container --out reports/plan-results.json web/reports/junit/e2e.xml
       - if: always()

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "start": "tsx src/main.ts",
+    "start": "node --import tsx src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "record": "tsx src/adapters/record-cli.ts",
     "e2e:serve": "tsx e2e/serve.ts"

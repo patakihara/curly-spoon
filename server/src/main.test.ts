@@ -1,10 +1,12 @@
 /**
- * `main.ts` as a process of its own: a child on its environment, on loopback, with no
+ * `main.ts` as a process of its own, started by the container image's own start command (the
+ * Dockerfile's CMD, run from its final WORKDIR): a child on its environment, on loopback, with no
  * upstream configured, so nothing leaves the machine. It starts, answers its health check, leaves
- * the setup code, and stops on SIGTERM; a malformed environment stops it before it listens.
+ * the setup code, and on SIGTERM, as `docker stop` sends it, closes its database and exits 0; a
+ * malformed environment stops it before it listens.
  */
 import { type ChildProcess, spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -12,6 +14,20 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const SERVER_DIR = fileURLToPath(new URL('..', import.meta.url));
+const DOCKERFILE = fileURLToPath(new URL('../../Dockerfile', import.meta.url));
+
+/** The image's start command: the Dockerfile's CMD in its exec form, and its final WORKDIR. */
+function imageStartCommand(): { argv: string[]; workdir: string } {
+  const lines = readFileSync(DOCKERFILE, 'utf8').split(/\r?\n/);
+  const cmd = lines.findLast((line) => /^CMD\s/.test(line));
+  const workdir = lines.findLast((line) => /^WORKDIR\s/.test(line));
+  if (cmd === undefined || workdir === undefined)
+    throw new Error('Dockerfile has no CMD or WORKDIR');
+  return {
+    argv: JSON.parse(cmd.replace(/^CMD\s+/, '')) as string[],
+    workdir: workdir.replace(/^WORKDIR\s+/, '').trim(),
+  };
+}
 
 let dirs: string[] = [];
 let children: ChildProcess[] = [];
@@ -40,10 +56,12 @@ interface Run {
   exited: Promise<number | null>;
 }
 
+/** Runs the image's start command here: its WORKDIR, /app/server, is this repo's server/. */
 function start(env: Record<string, string>): Run {
-  // Node itself runs main.ts, with tsx as its loader, so SIGTERM reaches main.ts's own handler
-  // rather than the tsx CLI's relay, which gives the child 30 ms to answer before killing it.
-  const child = spawn(process.execPath, ['--import', 'tsx', 'src/main.ts'], {
+  const { argv, workdir } = imageStartCommand();
+  expect(workdir).toBe('/app/server');
+  const [command = '', ...args] = argv;
+  const child = spawn(command === 'node' ? process.execPath : command, args, {
     cwd: SERVER_DIR,
     env: { PATH: process.env.PATH ?? '', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -81,7 +99,13 @@ function dataDir(): string {
 }
 
 describe('main.ts', () => {
-  it('starts on its environment, answers its health check, leaves the setup code and stops on SIGTERM', async () => {
+  it('is started by node itself, so SIGTERM reaches main.ts and not the tsx CLI, which kills it after 30 ms', () => {
+    const [command, ...args] = imageStartCommand().argv;
+    expect(command).toBe('node');
+    expect(args).toEqual(['--import', 'tsx', 'src/main.ts']);
+  });
+
+  it('starts on its environment, answers its health check, leaves the setup code, and on SIGTERM closes its database and exits 0', async () => {
     const port = await freePort();
     const dir = dataDir();
     const run = start({
@@ -100,7 +124,8 @@ describe('main.ts', () => {
     expect(run.output()).toContain('No admin yet');
 
     run.child.kill('SIGTERM');
-    expect(await run.exited).toBe(0);
+    expect(await run.exited, run.output()).toBe(0);
+    expect(run.output()).toContain('Database closed');
   }, 30_000);
 
   it('refuses to start on a malformed environment, naming what is missing', async () => {

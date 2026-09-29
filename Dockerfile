@@ -52,5 +52,7 @@ EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
+# Node itself is PID 1, with tsx as its loader, so docker stop's SIGTERM reaches main.ts, which
+# closes the database before it exits. The tsx CLI would relay it and SIGKILL a slow child.
 WORKDIR /app/server
-CMD ["node_modules/.bin/tsx", "src/main.ts"]
+CMD ["node", "--import", "tsx", "src/main.ts"]

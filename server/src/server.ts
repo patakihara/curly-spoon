@@ -105,6 +105,7 @@ export async function assembleServer(
       await app.close();
       stopSessionSweep();
       db.close();
+      app.log.info('Database closed');
     },
   };
 }
