@@ -2,19 +2,21 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { createApiClient, fetchHealth } from './client';
 
 const json = { 'content-type': 'application/json' };
+const COMMIT = '0123456789abcdef0123456789abcdef01234567';
 
 describe('the API client', () => {
   it('reads the health answer through the generated client', async () => {
     const calls: string[] = [];
     const fetch = async (req: Request) => {
       calls.push(req.url);
-      return new Response('{"status":"ok"}', { headers: json });
+      return new Response(`{"status":"ok","commit":"${COMMIT}"}`, { headers: json });
     };
     const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
     const health = await fetchHealth(client);
-    expect(health).toEqual({ status: 'ok' });
+    expect(health).toEqual({ status: 'ok', commit: COMMIT });
     expect(calls).toEqual(['http://auralis.test/api/health']);
     expectTypeOf(health.status).toEqualTypeOf<'ok'>();
+    expectTypeOf(health.commit).toEqualTypeOf<string | null>();
   });
 
   it('fails when the server does not answer ok', async () => {

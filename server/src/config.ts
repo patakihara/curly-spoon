@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CommitId } from '@auralis/schema';
 import { z } from 'zod';
 import { isProxyEntry } from './auth/proxy.js';
 
@@ -49,6 +50,12 @@ const envSchema = z.object({
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
   SECRET_KEY: z.string().min(1).optional(),
   SECRET_KEY_FILE: z.string().min(1).optional(),
+  // The commit the image was built from, set by its build; empty or unset outside an image.
+  AURALIS_COMMIT: z
+    .string()
+    .optional()
+    .transform((value) => (value === '' ? undefined : value))
+    .pipe(CommitId.optional()),
 });
 
 export type CookieSecure = 'auto' | boolean;
@@ -66,6 +73,7 @@ export interface AppConfig {
   jellyfin: UpstreamConfig | null;
   secretKey: string | undefined;
   secretKeyFile: string;
+  commit: string | null;
 }
 
 export interface OidcConfig {
@@ -133,5 +141,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     ),
     secretKey: parsed.SECRET_KEY,
     secretKeyFile: parsed.SECRET_KEY_FILE ?? join(parsed.DATA_DIR, 'secret.key'),
+    commit: parsed.AURALIS_COMMIT ?? null,
   };
 }

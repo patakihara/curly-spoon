@@ -29,6 +29,8 @@ function imageStartCommand(): { argv: string[]; workdir: string } {
   };
 }
 
+const COMMIT = '0123456789abcdef0123456789abcdef01234567';
+
 let dirs: string[] = [];
 let children: ChildProcess[] = [];
 afterEach(() => {
@@ -105,7 +107,7 @@ describe('main.ts', () => {
     expect(args).toEqual(['--import', 'tsx', 'src/main.ts']);
   });
 
-  it('starts on its environment, answers its health check, leaves the setup code, and on SIGTERM closes its database and exits 0', async () => {
+  it('starts on its environment, answers its health check with the commit it was built from, leaves the setup code, and on SIGTERM closes its database and exits 0', async () => {
     const port = await freePort();
     const dir = dataDir();
     const run = start({
@@ -113,12 +115,13 @@ describe('main.ts', () => {
       HOST: '127.0.0.1',
       DATA_DIR: dir,
       WEB_DIST_DIR: dir,
+      AURALIS_COMMIT: COMMIT,
     });
     expect(await run.waitFor(/Server listening at/), run.output()).toBe(true);
 
     const health = await fetch(`http://127.0.0.1:${port}/api/health`);
     expect(health.status).toBe(200);
-    expect(await health.json()).toEqual({ status: 'ok' });
+    expect(await health.json()).toEqual({ status: 'ok', commit: COMMIT });
     expect(existsSync(join(dir, 'setup-code'))).toBe(true);
     expect(existsSync(join(dir, 'auralis.sqlite'))).toBe(true);
     expect(run.output()).toContain('No admin yet');

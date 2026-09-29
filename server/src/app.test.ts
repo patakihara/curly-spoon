@@ -7,12 +7,21 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { openDatabase } from './store/connection.js';
 
+const COMMIT = '0123456789abcdef0123456789abcdef01234567';
+
 describe('GET /api/health', () => {
-  it('answers ok', async () => {
+  it('answers ok, with no commit when the server was not built from one', async () => {
     const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok' });
+    expect(res.json()).toEqual({ status: 'ok', commit: null });
+    await app.close();
+  });
+
+  it('reports the commit the server was built from', async () => {
+    const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:'), commit: COMMIT });
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
+    expect(res.json()).toEqual({ status: 'ok', commit: COMMIT });
     await app.close();
   });
 });
@@ -184,6 +193,14 @@ describe('loadConfig', () => {
     );
     expect(() => loadConfig({ PUBLIC_ORIGIN: 'https://audio.example.org/app' })).toThrow();
     expect(() => loadConfig({ PUBLIC_ORIGIN: 'audio.example.org' })).toThrow();
+  });
+
+  it('reads AURALIS_COMMIT as the full commit the image was built from, empty as none', () => {
+    expect(loadConfig({}).commit).toBeNull();
+    expect(loadConfig({ AURALIS_COMMIT: '' }).commit).toBeNull();
+    expect(loadConfig({ AURALIS_COMMIT: COMMIT }).commit).toBe(COMMIT);
+    expect(() => loadConfig({ AURALIS_COMMIT: 'main' })).toThrow();
+    expect(() => loadConfig({ AURALIS_COMMIT: COMMIT.slice(0, 7) })).toThrow();
   });
 
   it('refuses a port that is not a number', () => {

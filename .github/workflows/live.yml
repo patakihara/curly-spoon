@@ -15,6 +15,8 @@ concurrency:
 
 permissions:
   contents: read
+  # [M0.staging/a] reads which commit Publish last published.
+  actions: read
 
 jobs:
   live:
@@ -25,7 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: mkdir -p reports/junit && LIVE=1 node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/live.xml scripts/repo/live.test.mjs
+      # AURALIS_STAGING_URL is a repository secret: the repo names no host.
+      - env:
+          AURALIS_STAGING_URL: ${{ secrets.AURALIS_STAGING_URL }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mkdir -p reports/junit && LIVE=1 node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/live.xml scripts/repo/live.test.mjs
       - if: always()
         run: node scripts/plan/collect-results.mjs --workflow live --job live --out reports/plan-results.json reports/junit/*.xml
       - if: always()

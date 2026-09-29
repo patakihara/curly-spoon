@@ -38,6 +38,8 @@ export interface BuildAppOptions {
   upstreams?: UpstreamAccess | null;
   random?: Random;
   now?: () => number;
+  /** The commit the image was built from, reported by the health check; none by default. */
+  commit?: string | null;
   /** Off by default; `true` logs to stdout, a stream to it (for a test). */
   logger?: boolean | { stream: { write(line: string): void } };
 }
@@ -82,7 +84,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(fastifyCookie);
   registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
 
-  serve(app, health, () => ({ status: 'ok' as const }));
+  const commit = options.commit ?? null;
+  serve(app, health, () => ({ status: 'ok' as const, commit }));
   setupRoutes(app, { db, cookieSecure, setupCodeFile: options.setupCodeFile ?? null });
   signOnRoutes(app, {
     db,

@@ -215,6 +215,7 @@ export interface components {
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
+            commit: string | null;
         };
         SetupStatus: {
             configured: boolean;

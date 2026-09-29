@@ -25,10 +25,18 @@
             "enum": [
               "ok"
             ]
+          },
+          "commit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{40}$"
           }
         },
         "required": [
-          "status"
+          "status",
+          "commit"
         ]
       },
       "SetupStatus": {

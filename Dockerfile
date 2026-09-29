@@ -38,7 +38,11 @@ COPY --chown=auralis:auralis server/package.json ./server/package.json
 COPY --chown=auralis:auralis server/src ./server/src
 COPY --from=build --chown=auralis:auralis /app/web/dist ./web/dist
 
-ENV NODE_ENV=production \
+# The commit this image is built from, which /api/health reports. Declared here, last, so a new
+# commit rebuilds only the layers below it. CI, Publish and Release pass it.
+ARG AURALIS_COMMIT
+ENV AURALIS_COMMIT=${AURALIS_COMMIT} \
+    NODE_ENV=production \
     PORT=8787 \
     DATA_DIR=/data \
     WEB_DIST_DIR=/app/web/dist

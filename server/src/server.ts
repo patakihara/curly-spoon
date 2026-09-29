@@ -82,6 +82,7 @@ export async function assembleServer(
     proxy,
     cookieSecure: config.cookieSecure,
     publicOrigin: config.publicOrigin,
+    commit: config.commit,
     setupCodeFile,
     signOn,
     linker,

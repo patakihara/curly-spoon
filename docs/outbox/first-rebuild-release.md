@@ -3,7 +3,6 @@
 kind: published
 default: hold. No release is tagged until you answer; everything else carries on.
 
-
 Option A: say "release it" and the session tags `v0.3.0`. The release workflow then builds the
 signed APK, attaches it to a GitHub Release and adds it to the F-Droid repository, so Droid-ify
 offers it as an update over 0.2.0.

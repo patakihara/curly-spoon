@@ -130,6 +130,7 @@ jobs:
           tags: |
             ghcr.io/patakihara/auralis:${{ needs.validate-version.outputs.version }}
             ghcr.io/patakihara/auralis:stable
+          build-args: AURALIS_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

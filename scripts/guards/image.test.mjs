@@ -84,3 +84,31 @@ test('a later `!` pattern lets a file back in, and the last match wins', () => {
   assert.equal(ignored('http/fetch.ts'), false);
   assert.equal(dockerignore('!a.ts\n*.ts\n')('a.ts'), true);
 });
+
+test("the image's last stage takes AURALIS_COMMIT as a build argument and hands it to the server", () => {
+  const dockerfile = readFileSync(join(REPO_ROOT, 'Dockerfile'), 'utf8');
+  const final = dockerfile.slice(dockerfile.lastIndexOf('\nFROM '));
+  assert.match(final, /^ARG AURALIS_COMMIT$/m);
+  assert.match(final, /^(?:ENV)?\s+AURALIS_COMMIT=\$\{AURALIS_COMMIT\}/m);
+});
+
+test('every workflow that builds the image passes the commit it builds as AURALIS_COMMIT', () => {
+  const expected = {
+    'ci.yml': '${{ github.sha }}',
+    'publish.yml': '${{ github.event.workflow_run.head_sha }}',
+    'release.yml': '${{ github.sha }}',
+  };
+  for (const [file, commit] of Object.entries(expected)) {
+    const text = readFileSync(join(REPO_ROOT, '.github/workflows', file), 'utf8');
+    const builds =
+      text.match(/^\s*(?:run: docker build |- uses: docker\/build-push-action)/gm) ?? [];
+    const passes = text.split(`AURALIS_COMMIT=${commit}`).length - 1;
+    assert.ok(builds.length > 0, `${file} builds the image`);
+    assert.equal(passes, builds.length, `${file} passes AURALIS_COMMIT=${commit} to every build`);
+  }
+});
+
+test('Publish names each run after the commit it publishes, which the live staging check reads', () => {
+  const text = readFileSync(join(REPO_ROOT, '.github/workflows/publish.yml'), 'utf8');
+  assert.match(text, /^run-name: Publish \$\{\{ github\.event\.workflow_run\.head_sha \}\}$/m);
+});

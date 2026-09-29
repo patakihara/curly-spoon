@@ -71,7 +71,7 @@ jobs:
       # test globs must match package.json's `test` script; scripts/repo/live.test.mjs runs in live.yml.
       - run: pnpm exec vitest run --reporter=default --reporter=junit --outputFile.junit=reports/junit/vitest.xml
       - if: always()
-        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs
+        run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs scripts/repo/staging.test.mjs
       - if: always()
         run: node scripts/plan/collect-results.mjs --workflow ci --job unit --out reports/plan-results.json reports/junit/*.xml
       - if: always()
@@ -128,7 +128,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: docker build -t auralis:ci .
+        run: docker build --build-arg AURALIS_COMMIT=${{ github.sha }} -t auralis:ci .
       # The repo files in the image are exactly what server/src/main.ts runs and the manifests:
       # no test, recording, test key, recorder or recorded-upstreams harness. scripts/guards/image.mjs
       # prints that list from the source, not from .dockerignore, so a file let in fails here too.
@@ -149,11 +149,11 @@ jobs:
           done
           echo "health: $status"
           [ "$status" = healthy ]
-      - name: /api/health answers ok and / serves the web app
+      - name: /api/health answers ok with the commit the image was built from, and / serves the web app
         run: |
           body="$(curl -fsS http://127.0.0.1:8787/api/health)"
           echo "$body"
-          [ "$body" = '{"status":"ok"}' ]
+          [ "$body" = "{\"status\":\"ok\",\"commit\":\"$GITHUB_SHA\"}" ]
           curl -fsS http://127.0.0.1:8787/ | grep -q '<title>Auralis</title>'
       # The browser tests run against the booted image: every font and icon comes from it.
       - uses: pnpm/action-setup@v4

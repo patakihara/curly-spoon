@@ -50,6 +50,7 @@ data class ErrorResponse(
 @Serializable
 data class HealthResponse(
     val status: HealthResponseStatus,
+    val commit: String?,
 )
 
 @Serializable

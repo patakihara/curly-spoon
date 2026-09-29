@@ -24,7 +24,7 @@ export {
   UserList,
   Username,
 } from './auth.js';
-export { HealthResponse } from './health.js';
+export { CommitId, HealthResponse } from './health.js';
 export {
   AudioBytes,
   MediaRef,

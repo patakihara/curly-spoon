@@ -63,7 +63,7 @@ describe('the recorded-upstreams server', () => {
   it('boots and answers its health check', async () => {
     const server = await boot();
     const res = await server.app.inject({ url: '/api/health' });
-    expect(res.json()).toEqual({ status: 'ok' });
+    expect(res.json()).toEqual({ status: 'ok', commit: null });
   });
 
   it('sends an Android sign-in to the stand-in sign-on, which returns it to the app with a code and the same state', async () => {
