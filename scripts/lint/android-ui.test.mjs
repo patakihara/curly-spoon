@@ -37,13 +37,26 @@ test('every @Composable function declaration is found, and a composable type is 
 });
 
 test('composables may live only in generated packages and the Sonora component package', () => {
-  const at = (rel) => isAllowedPath(`android/app/src/main/java/net/develivarr/auralis/${rel}`);
-  assert.equal(at('generated/ui/ButtonProps.kt'), true);
-  assert.equal(at('generated/pages/BrowsePage.kt'), true);
-  assert.equal(at('ui/sonora/Button.kt'), true);
-  assert.equal(at('MainActivity.kt'), false);
-  assert.equal(at('feature/Screen.kt'), false);
-  assert.equal(at('ui/Theme.kt'), false);
+  const pkg = 'src/main/java/net/develivarr/auralis';
+  const sonora = (rel) => isAllowedPath(`android/sonora/${pkg}/${rel}`);
+  const app = (rel) => isAllowedPath(`android/app/${pkg}/${rel}`);
+  assert.equal(sonora('generated/ui/ButtonProps.kt'), true);
+  assert.equal(sonora('ui/sonora/Button.kt'), true);
+  assert.equal(
+    isAllowedPath('android/sonora/src/test/java/net/develivarr/auralis/ui/sonora/Gallery.kt'),
+    true,
+  );
+  assert.equal(
+    isAllowedPath(
+      'android/sonora/src/test/java/net/develivarr/auralis/generated/gallery/SonoraGallery.kt',
+    ),
+    true,
+  );
+  assert.equal(app('generated/pages/BrowsePage.kt'), true);
+  assert.equal(app('MainActivity.kt'), false);
+  assert.equal(app('feature/Screen.kt'), false);
+  assert.equal(sonora('ui/Theme.kt'), false);
+  assert.equal(sonora('SonoraIcon.kt'), false);
 });
 
 test('the Android app as it stands draws nothing by hand', () => {

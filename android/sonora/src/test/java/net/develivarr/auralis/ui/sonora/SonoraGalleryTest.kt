@@ -6,6 +6,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+private val SPECIMENS = listOf("PaletteDark", "PaletteLight", "TypeScale", "Icons")
+
 class SonoraGalleryTest {
     private val names = sonoraGallery.map { it.name }
 
@@ -33,8 +35,14 @@ class SonoraGalleryTest {
     }
 
     @Test
+    fun `M0_tokens_c each gallery entry past the specimens is a composable in ui sonora`() {
+        val components = names.drop(SPECIMENS.size).toSet()
+        assertEquals("no composable in ui/sonora", emptySet<String>(), components - composables())
+    }
+
+    @Test
     fun `M0_tokens_c the gallery opens with the token specimens`() {
-        assertEquals(listOf("PaletteDark", "PaletteLight", "TypeScale", "Icons"), names.take(4))
+        assertEquals(SPECIMENS, names.take(SPECIMENS.size))
     }
 
     @Test
