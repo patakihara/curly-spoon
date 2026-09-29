@@ -32,7 +32,8 @@ class AppGraph(
     /** Where network work runs, outliving any one activity. */
     val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private companion object {
+    companion object {
+        /** The preferences file a sign-in in flight keeps its verifier and state in. */
         const val SIGN_IN_PREFS = "auralis_sign_in"
     }
 }

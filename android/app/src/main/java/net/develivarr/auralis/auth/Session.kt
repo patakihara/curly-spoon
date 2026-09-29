@@ -27,14 +27,22 @@ class Session(private val store: TokenStore) {
 
     val deviceId: String? get() = store.loadDeviceId()
 
+    @Synchronized
     fun signedIn(token: AppToken) {
         store.saveDeviceId(token.deviceId)
         store.saveToken(token.token)
         current.value = token.token
     }
 
+    @Synchronized
     fun signedOut() {
         store.saveToken(null)
         current.value = null
+    }
+
+    /** The server refused [token]: signs out, unless the app holds a newer one by now. */
+    @Synchronized
+    fun expired(token: String) {
+        if (current.value == token) signedOut()
     }
 }

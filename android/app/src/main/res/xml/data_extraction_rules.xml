@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and later move app data to a new device even with allowBackup off; the sealed token
+     cannot decrypt there, and the verifier and state of a sign-in in flight must stay here. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="auralis_auth.xml" />
+        <exclude domain="sharedpref" path="auralis_sign_in.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="auralis_auth.xml" />
+        <exclude domain="sharedpref" path="auralis_sign_in.xml" />
+    </device-transfer>
+</data-extraction-rules>

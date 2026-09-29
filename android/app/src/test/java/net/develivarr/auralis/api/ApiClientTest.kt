@@ -58,6 +58,16 @@ class ApiClientTest {
         assertEquals("device-1", session.deviceId)
     }
 
+    @Test
+    fun `a 401 for a token the app has since replaced keeps the new one`() {
+        server.answer = {
+            session.signedIn(AppToken("bearer-2", "device-1", 1))
+            401 to """{"error":"unauthenticated"}"""
+        }
+        assertThrows(ApiException::class.java) { api.get("api/auth/me", Account.serializer()) }
+        assertEquals("bearer-2", session.token.value)
+    }
+
     private companion object {
         const val ME =
             """{"username":"kara","role":"member","deviceId":"device-1","links":[],"later":true}"""

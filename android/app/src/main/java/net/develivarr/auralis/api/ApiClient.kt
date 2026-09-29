@@ -18,7 +18,7 @@ class ApiException(val status: Int, val error: String?) : IOException("HTTP $sta
 /**
  * The Auralis server's API over OkHttp, read and written with the generated models. Every call
  * carries the app's bearer token, added per call from [session]; a 401 signs the app out, which
- * sends it back to Sign in. Calls block: run them off the main thread.
+ * sends it back to Sign in, unless the app has signed in afresh since the call set out. Calls block: run them off the main thread.
  */
 class ApiClient(
     private val server: ServerConfig,
@@ -47,7 +47,7 @@ class ApiClient(
         http.newCall(builder.build()).execute().use { reply ->
             val text = reply.body?.string().orEmpty()
             if (!reply.isSuccessful) {
-                if (reply.code == 401 && token != null) session.signedOut()
+                if (reply.code == 401 && token != null) session.expired(token)
                 throw ApiException(reply.code, errorOf(text))
             }
             return try {
