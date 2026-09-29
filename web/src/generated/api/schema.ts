@@ -417,6 +417,7 @@ export interface operations {
                 client?: components["schemas"]["ClientKind"];
                 return_to?: string;
                 code_challenge?: string;
+                app_state?: string;
                 device_id?: string;
             };
             header?: never;

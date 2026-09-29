@@ -321,6 +321,30 @@ describe('[M0.sso/b] signing in', () => {
     expect(wrong.json()).toEqual({ error: 'bad_code' });
   });
 
+  it("hands the app's own state back with its code, and none when it sent none", async () => {
+    const app = await server();
+    const state = 'z'.repeat(43);
+    const login = await app.inject({
+      url: `/api/auth/login?client=android&code_challenge=${s256(VERIFIER)}&app_state=${state}`,
+    });
+    const back = await app.inject({ url: `/api/auth/callback?code=kara&state=${stateOf(login)}` });
+    expect(new URL(String(back.headers.location)).searchParams.get('state')).toBe(state);
+
+    const bare = await app.inject({
+      url: `/api/auth/login?client=android&code_challenge=${s256(VERIFIER)}`,
+    });
+    const plain = await app.inject({ url: `/api/auth/callback?code=kara&state=${stateOf(bare)}` });
+    expect(new URL(String(plain.headers.location)).searchParams.has('state')).toBe(false);
+  });
+
+  it('refuses an app state that is not a short base64url string', async () => {
+    const app = await server();
+    const res = await app.inject({
+      url: `/api/auth/login?client=android&code_challenge=${s256(VERIFIER)}&app_state=a%26b`,
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
   it('refuses a request carrying both a cookie and a bearer token', async () => {
     const app = await server();
     const web = await webSignIn(app, 'kara');

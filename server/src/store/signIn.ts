@@ -31,6 +31,8 @@ export interface LoginRequest {
   client: DeviceKind;
   returnTo: string;
   appChallenge: string | null;
+  /** The app's own state, handed back to it with the code; `null` for the web. */
+  appState: string | null;
   deviceId: string | null;
   /** The web browser's binding cookie value; `null` for the app. */
   binding: string | null;
@@ -42,7 +44,7 @@ export interface LoginRequest {
  */
 export function startLogin(
   db: Db,
-  params: Pick<LoginRequest, 'client' | 'returnTo' | 'appChallenge' | 'deviceId'>,
+  params: Pick<LoginRequest, 'client' | 'returnTo' | 'appChallenge' | 'appState' | 'deviceId'>,
   random: Random,
   now: number,
 ): LoginRequest {
@@ -53,7 +55,7 @@ export function startLogin(
   const request: LoginRequest = { state, nonce, verifier, ...params, binding };
   db.prepare(
     `INSERT INTO login_requests (state_hash, binding_hash, nonce, verifier, client, return_to,
-       app_challenge, device_id, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       app_challenge, app_state, device_id, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     sha256(request.state),
     binding === null ? null : sha256(binding),
@@ -62,6 +64,7 @@ export function startLogin(
     request.client,
     request.returnTo,
     request.appChallenge,
+    request.appState,
     request.deviceId,
     now + LOGIN_TTL_MS,
   );
@@ -75,6 +78,7 @@ const LoginRow = z.object({
   client: DeviceKind,
   return_to: z.string(),
   app_challenge: z.string().nullable(),
+  app_state: z.string().nullable(),
   device_id: z.string().nullable(),
   expires_at: z.number(),
 });
@@ -109,6 +113,7 @@ export function takeLogin(
       client: row.client,
       returnTo: row.return_to,
       appChallenge: row.app_challenge,
+      appState: row.app_state,
       deviceId: row.device_id,
       binding: row.binding_hash === null ? null : (binding ?? null),
     };

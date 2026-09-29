@@ -73,11 +73,20 @@ const Pkce = z
   .max(128)
   .regex(/^[A-Za-z0-9_-]+$/);
 
-/** Where sign-in starts. The app sends its own PKCE challenge and, signing in again, its device. */
+/**
+ * Where sign-in starts. The app sends its own PKCE challenge, its own state (handed back with the
+ * code, so it only accepts the sign-in it started) and, signing in again, its device.
+ */
 export const LoginQuery = z.object({
   client: ClientKind.default('web'),
   return_to: z.string().max(2048).optional(),
   code_challenge: Pkce.optional(),
+  app_state: z
+    .string()
+    .min(16)
+    .max(128)
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .optional(),
   device_id: z.string().max(64).optional(),
 });
 

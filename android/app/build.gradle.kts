@@ -12,6 +12,11 @@ plugins {
 val releaseVersionCode = (project.findProperty("auralisVersionCode") as String?)?.toIntOrNull() ?: 1
 val releaseVersionName = (project.findProperty("auralisVersionName") as String?) ?: "0.1.0"
 
+// The Auralis server the app signs in to when nothing else names one: `-PauralisServer=<url>`, or
+// the local server a debug build reaches over `adb reverse`. An instrumented test names its own
+// with the `auralisServer` instrumentation argument (ServerConfig.from).
+val defaultServer = (project.findProperty("auralisServer") as String?) ?: "http://127.0.0.1:8787"
+
 // What CanvasNavTest reads, copied as the instrumented test APK's `canvas/` assets: nav.json, and
 // the headings pnpm gen writes from the canvas for web/e2e/canvas.spec.ts and it alike.
 val canvasAssets = layout.buildDirectory.dir("canvas-assets")
@@ -35,6 +40,7 @@ android {
         versionCode = releaseVersionCode
         versionName = releaseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "AURALIS_SERVER", "\"$defaultServer\"")
     }
 
     signingConfigs {
@@ -90,6 +96,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     sourceSets {
@@ -118,6 +125,9 @@ dependencies {
     // The generated nav graph's typed routes (generated/nav/AuralisNavGraph.kt).
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
+    // The server's API, the bearer added per call (api/ApiClient.kt).
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(platform(libs.androidx.compose.bom))

@@ -134,6 +134,16 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 4,
+    name: 'app_state',
+    up: (db) => {
+      db.exec(`
+        -- The app's own state for its sign-in, handed back to it with the one-time code.
+        ALTER TABLE login_requests ADD COLUMN app_state TEXT;
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

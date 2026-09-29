@@ -16,7 +16,13 @@ import { upsertUser } from './users.js';
 const T0 = 1_800_000_000_000;
 let counter = 0;
 const random = (n: number) => Buffer.alloc(n, ++counter);
-const web = { client: 'web' as const, returnTo: '/', appChallenge: null, deviceId: null };
+const web = {
+  client: 'web' as const,
+  returnTo: '/',
+  appChallenge: null,
+  appState: null,
+  deviceId: null,
+};
 
 describe('[M0.sso/b] a sign-in in flight', () => {
   it('makes distinct state, nonce and verifier, and hands the request back once', () => {
@@ -38,10 +44,29 @@ describe('[M0.sso/b] a sign-in in flight', () => {
 
   it('binds an app sign-in by its PKCE challenge, with no browser binding', () => {
     const db = openDatabase(':memory:');
-    const app = { client: 'android' as const, returnTo: '/', appChallenge: 'c', deviceId: null };
+    const app = {
+      client: 'android' as const,
+      returnTo: '/',
+      appChallenge: 'c',
+      appState: null,
+      deviceId: null,
+    };
     const started = startLogin(db, app, random, T0);
     expect(started.binding).toBeNull();
     expect(takeLogin(db, started.state, undefined, T0 + 1)).toEqual(started);
+  });
+
+  it("keeps the app's own state, to hand back to the app with its code", () => {
+    const db = openDatabase(':memory:');
+    const app = {
+      client: 'android' as const,
+      returnTo: '/',
+      appChallenge: 'c',
+      appState: 'the-apps-own-state',
+      deviceId: null,
+    };
+    const started = startLogin(db, app, random, T0);
+    expect(takeLogin(db, started.state, undefined, T0 + 1)?.appState).toBe('the-apps-own-state');
   });
 
   it('stores only a hash of the state and of the binding', () => {

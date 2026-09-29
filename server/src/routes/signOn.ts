@@ -1,7 +1,8 @@
 /**
  * Signing in through the household sign-on. `/api/auth/login` starts it, `/api/auth/callback` finishes it
  * for the browser (a session cookie) or for the Android app (a one-time code for
- * `auralis://auth/callback`, swapped at `/api/auth/token` for a bearer token). All three are public
+ * `auralis://auth/callback`, with the app's own state, swapped at `/api/auth/token` for a bearer
+ * token). All three are public
  * and rate-limited per client address.
  */
 
@@ -116,6 +117,7 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
         client: query.client,
         returnTo: query.client === 'web' ? sameSitePath(query.return_to, publicOrigin) : '/',
         appChallenge: query.client === 'android' ? (query.code_challenge ?? null) : null,
+        appState: query.client === 'android' ? (query.app_state ?? null) : null,
         deviceId: query.client === 'android' ? (query.device_id ?? null) : null,
       },
       random,
@@ -186,7 +188,9 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
         random,
         now(),
       );
-      return { location: `${APP_REDIRECT}?code=${encodeURIComponent(code)}` };
+      const back = new URLSearchParams({ code });
+      if (started.appState !== null) back.set('state', started.appState);
+      return { location: `${APP_REDIRECT}?${back.toString()}` };
     }
 
     const device = reuseOrCreateDevice(
