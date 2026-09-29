@@ -12,10 +12,12 @@ plugins {
 val releaseVersionCode = (project.findProperty("auralisVersionCode") as String?)?.toIntOrNull() ?: 1
 val releaseVersionName = (project.findProperty("auralisVersionName") as String?) ?: "0.1.0"
 
-// The canvas files CanvasNavTest reads, copied as the instrumented test APK's `canvas/` assets.
+// What CanvasNavTest reads, copied as the instrumented test APK's `canvas/` assets: nav.json, and
+// the headings pnpm gen writes from the canvas for web/e2e/canvas.spec.ts and it alike.
 val canvasAssets = layout.buildDirectory.dir("canvas-assets")
 val copyCanvasAssets = tasks.register<Copy>("copyCanvasAssets") {
-    from(rootProject.file("../design/app")) { include("nav.json", "pages/**", "placeholders/**") }
+    from(rootProject.file("../design/app")) { include("nav.json") }
+    from(rootProject.file("../web/src/generated/nav")) { include("headings.json") }
     into(canvasAssets.map { it.dir("canvas") })
 }
 tasks.configureEach {
@@ -91,7 +93,7 @@ android {
     }
 
     sourceSets {
-        // CanvasNavTest reads each page's title from the canvas, as web/e2e/canvas.spec.ts does.
+        // CanvasNavTest reads each page's heading from the canvas, as web/e2e/canvas.spec.ts does.
         getByName("androidTest").assets.srcDir(canvasAssets.get().asFile)
     }
 

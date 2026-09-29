@@ -31,20 +31,12 @@ const pathOf = (route: string) =>
   route === '*' ? '/no-such-page' : route.replace(/\?.*$/, '').replace(/:\w+/g, 'sample');
 
 /**
- * The heading the page shows: nav.json's title, unless the page binds its own from its data on
- * its BackLayer, as an album does, when it is that placeholder value.
+ * The heading each page shows with its placeholder data, generated from the canvas into the file
+ * the emulator's CanvasNavTest reads too, so the two apps are held to the same headings.
  */
-function titleOf(p: NavPage): string {
-  const source = readFileSync(new URL(`pages/${p.id}.page.jsx`, design), 'utf8');
-  const bound = /<BackLayer\b(?:[^>]|=>)*?\btitle=\{data\.([\w.]+)\}/.exec(source)?.[1];
-  if (bound === undefined) return p.title;
-  let value: unknown = JSON.parse(
-    readFileSync(new URL(`placeholders/${p.id}.json`, design), 'utf8'),
-  ) as unknown;
-  for (const key of bound.split('.')) value = (value as Record<string, unknown>)[key];
-  if (typeof value !== 'string') throw new Error(`${p.id}: data.${bound} is not a string`);
-  return value;
-}
+const headings = JSON.parse(
+  readFileSync(new URL('../src/generated/nav/headings.json', import.meta.url), 'utf8'),
+) as Record<string, string>;
 
 const exactly = (text: string) =>
   new RegExp(`^\\s*${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i');
@@ -72,10 +64,7 @@ for (const p of nav.pages.filter(onWeb)) {
       await page.setViewportSize({ width: size.width, height: size.height });
       await page.goto(pathOf(p.route), { waitUntil: 'networkidle' });
       await expect(
-        page
-          .getByText(exactly(titleOf(p)))
-          .locator('visible=true')
-          .first(),
+        page.getByText(exactly(headings[p.id]!)).locator('visible=true').first(),
       ).toBeVisible();
       await expect(page.getByText(ERROR_BOUNDARY)).toHaveCount(0);
       if (p.id !== 'notFound') await expect(page.getByText(NOT_FOUND)).toHaveCount(0);

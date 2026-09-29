@@ -245,12 +245,60 @@ export function readApp(appDir: string, model: PropsModel): App {
   };
 }
 
+/** The first BackLayer in a tree, slots included, in document order. */
+function backLayer(tree: PageTree): Extract<PageTree, { kind: 'element' }> | undefined {
+  if (tree.kind === 'element') {
+    if (tree.component === 'BackLayer') return tree;
+    for (const value of Object.values(tree.props)) {
+      const found = value.kind === 'slot' ? backLayer(value.tree) : undefined;
+      if (found !== undefined) return found;
+    }
+  }
+  if (!('children' in tree)) return undefined;
+  for (const child of tree.children) {
+    const found = backLayer(child);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+/**
+ * The heading a page shows with its placeholder data: nav.json's `title`, unless its BackLayer
+ * binds the title from its data, as an album does, when it is that placeholder value. Both apps'
+ * navigation tests look for it, through the generated `headings.json`.
+ */
+export function pageHeading(
+  title: string,
+  tree: PageTree | undefined,
+  placeholder: Record<string, unknown>,
+  id: string,
+): string {
+  const bound = tree === undefined ? undefined : backLayer(tree)?.props['title'];
+  if (bound?.kind !== 'binding' || bound.path[0] !== 'data') return title;
+  let value: unknown = placeholder;
+  for (const key of bound.path.slice(1)) value = (value as Record<string, unknown>)[key];
+  if (typeof value !== 'string') throw new Error(`${id}: ${bound.path.join('.')} is not a string`);
+  return value;
+}
+
+/** `headings.json`: each page of nav.json, both platforms', by id to the heading it shows. */
+function generateHeadings(app: App): string {
+  const headings = Object.fromEntries(
+    app.nav.pages.map((p) => {
+      const drawn = app.pages.find(({ id }) => id === p.id);
+      return [p.id, pageHeading(p.title, drawn?.tree, drawn?.placeholder ?? {}, p.id)];
+    }),
+  );
+  return `${JSON.stringify(headings, null, 2)}\n`;
+}
+
 export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map<string, string> } {
   const drawn = new Set(app.pages.map((p) => p.id));
   return {
     nav: new Map([
       ['routes.tsx', generateRoutes(app.nav, drawn)],
       ['platform.ts', generatePlatform(app.nav)],
+      ['headings.json', generateHeadings(app)],
     ]),
     pages: new Map(
       app.pages
