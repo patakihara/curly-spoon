@@ -112,13 +112,20 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       },
     });
 
+    // Each handler sends and returns nothing: a returned reply is awaited, and every await adds
+    // close listeners to the response, which a deep link (a missed file, then the not-found
+    // handler) piles past Node's warning limit.
     const publicRoute = { config: { access: 'public' as const } };
-    app.get('/', publicRoute, (_request, reply) => reply.sendFile(INDEX_FILE));
+    app.get('/', publicRoute, (_request, reply) => {
+      void reply.sendFile(INDEX_FILE);
+    });
     app.route({
       ...publicRoute,
       method: ['GET', 'HEAD'],
       url: '/*',
-      handler: (request, reply) => reply.sendFile((request.params as { '*': string })['*']),
+      handler: (request, reply) => {
+        void reply.sendFile((request.params as { '*': string })['*']);
+      },
     });
 
     // Client-side routes: a browser navigating to a path the server does not know gets the
@@ -131,9 +138,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         request.method === 'GET' &&
         (request.headers.accept ?? '').includes('text/html')
       ) {
-        return reply.sendFile(INDEX_FILE);
+        void reply.sendFile(INDEX_FILE);
+        return;
       }
-      return reply.code(404).send({ error: 'not_found' });
+      void reply.code(404).send({ error: 'not_found' });
     });
   } else {
     app.log.warn(`No web build at ${String(distDir)}; serving the API only.`);

@@ -13,6 +13,6 @@ export function createApiClient(
 
 export async function fetchHealth(client: ApiClient): Promise<HealthResponse> {
   const { data, response } = await client.GET('/api/health');
-  if (data === undefined) throw new Error(`GET /health answered ${response.status}`);
+  if (data === undefined) throw new Error(`GET /api/health answered ${response.status}`);
   return data;
 }

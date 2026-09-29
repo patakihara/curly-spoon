@@ -67,6 +67,26 @@ describe('serving the web app', () => {
     await app.close();
   });
 
+  it('hands a browser a deep link without piling listeners on the response', async () => {
+    const warnings: string[] = [];
+    const onWarning = (w: Error) => warnings.push(w.name);
+    process.on('warning', onWarning);
+    const app = await appWithDist();
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    try {
+      const { port } = app.server.address() as { port: number };
+      const res = await fetch(`http://127.0.0.1:${port}/music/albums/x`, {
+        headers: { accept: 'text/html' },
+      });
+      expect(await res.text()).toContain('<title>Auralis</title>');
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(warnings).not.toContain('MaxListenersExceededWarning');
+    } finally {
+      process.off('warning', onWarning);
+      await app.close();
+    }
+  });
+
   it('hands a browser the app at every page of nav.json, /setup included', async () => {
     const nav = JSON.parse(
       readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
