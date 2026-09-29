@@ -12,6 +12,10 @@ fun NowPlaying(props: NowPlayingProps) {
         texts = listOf(props.track?.title, props.track?.artist, props.track?.context),
         slots = listOf(props.children),
         root = true,
+        taps = listOf("Collapse player" to props.onClose) +
+            PLAYER_TABS.map { (key, label) ->
+                label to props.onTabChange?.let { change -> { change(key) } }
+            },
     )
 }
 

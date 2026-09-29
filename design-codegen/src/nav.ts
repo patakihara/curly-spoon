@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { APP_NOTE } from './outputs.js';
+import { PLAYER_TABS } from './shell.js';
 
 const Id = z.string().regex(/^[a-z][A-Za-z0-9]*$/, 'a camelCase id');
 
@@ -251,6 +252,45 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
     'export const routes: RouteObject[] = [',
     ...routes,
     '];',
+    '',
+  ].join('\n');
+}
+
+/**
+ * `stacks.ts`: what the web's navigation stacks (`web/src/shell-nav.ts`) need of nav.json: each
+ * destination's home, the pages at the rail's foot (`foot`, from shell.json), each player tab's
+ * sheet, and each web page's path, the destination it lights and whether it is a sheet.
+ */
+export function generateNavMap(nav: Nav, foot: string[]): string {
+  const pages = nav.pages.filter((p) => p.platforms.includes('web'));
+  const path = (id: string) => {
+    const page = pages.find((p) => p.id === id);
+    if (page === undefined) throw new Error(`${id} is not a web page`);
+    return splitRoute(page.route).path;
+  };
+  const table = (ids: [string, string][]) =>
+    JSON.stringify(Object.fromEntries(ids.map(([key, id]) => [key, path(id)])), null, 2)
+      .split('\n')
+      .join('\n  ');
+  const tabs = Object.entries(PLAYER_TABS)
+    .filter(([id]) => pages.some((p) => p.id === id))
+    .map(([id, tab]): [string, string] => [tab, id]);
+  return [
+    `// ${APP_NOTE}`,
+    "import type { NavMap } from '../../shell-nav';",
+    '',
+    'export const NAV_MAP: NavMap = {',
+    `  homes: ${table(nav.destinations.map((d) => [d.id, d.id]))},`,
+    `  foot: ${table(foot.map((id) => [id, id]))},`,
+    `  tabs: ${table(tabs)},`,
+    '  pages: [',
+    ...pages.map(
+      (p) =>
+        `    { path: ${literal(splitRoute(p.route).path)}, lights: ${literal(p.lights)}, ` +
+        `sheet: ${p.presentation === 'sheet'} },`,
+    ),
+    '  ],',
+    '};',
     '',
   ].join('\n');
 }

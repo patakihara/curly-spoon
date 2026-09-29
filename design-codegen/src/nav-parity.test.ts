@@ -117,3 +117,73 @@ describe('the web router and the Android graph, generated from one nav.json', ()
     ]);
   });
 });
+
+/**
+ * The shell's controls each page wires on the phone, as a set of actions: `close:<home>`,
+ * `destination`, `open:<page>` and `tab`. The web's are its w0 chrome's (or a sheet's player's),
+ * through `go`; Android's are its page's, the back handler left out.
+ */
+function webWiring(source: string, ids: Map<string, string>): string[] {
+  const phone = / {2}w0: \(\w*\) => \(\{\n([\s\S]*?)\n {2}\}\),/.exec(source)?.[1] ?? source;
+  return [
+    ...new Set(
+      [...phone.matchAll(/go\.(\w+)\(([^)]*)\)/g)].map(([, verb, arg]) => {
+        const value = arg!.replace(/'/g, '');
+        if (verb === 'close') return `close:${value}`;
+        if (verb === 'open') return `open:${ids.get(value) ?? value}`;
+        return verb!;
+      }),
+    ),
+  ].sort();
+}
+
+function androidWiring(source: string): string[] {
+  const body = source.replace(/^ {4}BackHandler .*$/m, '');
+  return [
+    ...new Set([
+      ...[...body.matchAll(/closePage\(navController, Route\.(\w+)\)/g)].map(
+        (m) => `close:${lower(m[1]!)}`,
+      ),
+      ...(body.includes('openDestination(navController, key)') ? ['destination'] : []),
+      ...[...body.matchAll(/onOpen = \{\s*navController\.navigate\(Route\.(\w+)\)/g)].map(
+        (m) => `open:${lower(m[1]!)}`,
+      ),
+      ...(body.includes('openTab(navController, tab)') ? ['tab'] : []),
+    ]),
+  ].sort();
+}
+
+describe("the shell's controls, on the web and on Android", () => {
+  it('[M0.canvas] are wired alike on every page both apps have, on the phone', () => {
+    const routes = read(OUTPUTS.webNav, 'routes.tsx');
+    const ids = new Map(
+      [...routes.matchAll(/\{ id: '(\w+)', path: '([^']*)', query/g)].map((m) => [m[2]!, m[1]!]),
+    );
+    const android = kotlinPages();
+    const differ: string[] = [];
+    let wired = 0;
+    for (const file of readdirSync(join(REPO_ROOT, OUTPUTS.webPages))) {
+      const kotlin = android.get(file.replace('.tsx', 'Page.kt'));
+      if (kotlin === undefined) continue;
+      const web = webWiring(read(OUTPUTS.webPages, file), ids);
+      const mobile = androidWiring(kotlin);
+      if (web.length > 0) wired++;
+      if (JSON.stringify(web) !== JSON.stringify(mobile))
+        differ.push(`${file}: web ${web.join(' ')}, Android ${mobile.join(' ')}`);
+    }
+    expect(wired).toBeGreaterThan(20);
+    expect(differ).toEqual([]);
+  });
+
+  it('names a page whose controls are wired differently on the two', () => {
+    const web = webWiring(
+      "  w0: (go) => ({\n    leading: <IconButton onClick={() => go.close('music')} />,\n  }),",
+      new Map(),
+    );
+    const android = androidWiring(
+      '    BackHandler { closePage(navController, Route.Music) }\n    IconButton(IconButtonProps(onClick = {}))',
+    );
+    expect(web).toEqual(['close:music']);
+    expect(android).toEqual([]);
+  });
+});

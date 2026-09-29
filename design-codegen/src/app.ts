@@ -6,7 +6,14 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { componentName, generatePlatform, generateRoutes, readNav, type Nav } from './nav.js';
+import {
+  componentName,
+  generateNavMap,
+  generatePlatform,
+  generateRoutes,
+  readNav,
+  type Nav,
+} from './nav.js';
 import {
   checkPage,
   parsePage,
@@ -240,6 +247,7 @@ export function readApp(appDir: string, model: PropsModel): App {
     components: {
       platformed: taking('platform'),
       handled: taking('onChange'),
+      opened: taking('onOpenChange'),
       choices,
     },
   };
@@ -298,6 +306,13 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
     nav: new Map([
       ['routes.tsx', generateRoutes(app.nav, drawn)],
       ['platform.ts', generatePlatform(app.nav)],
+      [
+        'stacks.ts',
+        generateNavMap(
+          app.nav,
+          app.shell.railFoot.map((f) => f.page),
+        ),
+      ],
       ['headings.json', generateHeadings(app)],
     ]),
     pages: new Map(

@@ -8,7 +8,11 @@ import net.develivarr.auralis.generated.ui.SectionProps
 fun Section(props: SectionProps) {
     SonoraStub(
         "Section",
-        texts = listOf(props.eyebrow, props.title, props.actionText ?: props.actionLabel),
+        texts = listOf(props.eyebrow),
         slots = listOf(props.trailing, props.children),
+        taps = listOf(
+            props.title to props.onSubject,
+            (props.actionText ?: props.actionLabel) to props.onAction,
+        ),
     )
 }

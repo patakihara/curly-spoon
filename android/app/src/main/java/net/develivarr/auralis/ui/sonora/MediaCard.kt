@@ -6,5 +6,10 @@ import net.develivarr.auralis.generated.ui.MediaCardProps
 /** Sonora's MediaCard, as a stub: M1 and M2 replace its body in place with the real layout. */
 @Composable
 fun MediaCard(props: MediaCardProps) {
-    SonoraStub("MediaCard", texts = listOf(props.eyebrow, props.title, props.sub, props.status))
+    SonoraStub(
+        "MediaCard",
+        texts = listOf(props.eyebrow, props.title, props.sub, props.status),
+        onClick = props.onClick,
+        taps = listOf("Request" to props.onRequest),
+    )
 }

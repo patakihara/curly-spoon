@@ -208,32 +208,32 @@ const shell = {
   }
 };
 
-/** The shell’s parts at each layout, from nav.json. */
-const CHROME: Record<LayoutId, Chrome> = {
-  w0: {
+/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */
+const CHROME: Record<LayoutId, () => Chrome> = {
+  w0: () => ({
     platform: 'mobile',
     appBar: true,
     sheetOpen: false,
     column: 'form',
-  },
-  w600: {
+  }),
+  w600: () => ({
     platform: 'desktop',
     appBar: false,
     sheetOpen: false,
     column: 'form',
-  },
-  w1024: {
+  }),
+  w1024: () => ({
     platform: 'desktop',
     appBar: false,
     sheetOpen: false,
     column: 'form',
-  },
-  w1240: {
+  }),
+  w1240: () => ({
     platform: 'desktop',
     appBar: false,
     sheetOpen: false,
     column: 'form',
-  },
+  }),
 };
 
 const ignore = () => {};
@@ -252,7 +252,7 @@ export interface SetupProps {
 
 export default function Setup({ data = placeholder, state = 'full', layout: given, sheet }: SetupProps) {
   const detected = useLayout();
-  const chrome = CHROME[given ?? detected];
+  const chrome = CHROME[given ?? detected]();
   const platform = chrome.platform;
   const panel = sheet ?? chrome.sheet;
   const navigate = useNavigate();

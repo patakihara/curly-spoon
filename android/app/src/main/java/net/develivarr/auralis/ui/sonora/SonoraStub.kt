@@ -2,6 +2,7 @@ package net.develivarr.auralis.ui.sonora
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,8 +28,12 @@ import net.develivarr.auralis.generated.theme.SonoraType
 /**
  * The stand-in body every Android Sonora composable draws until M1 and M2 write its layout in
  * place: a bordered box labelled with the component's name, then its title as a heading, its
- * text props and its slots, top to bottom. A [root] box fills the screen and scrolls. On
- * Sonora's light scheme, so a page's plain `BasicText` children read on it.
+ * text props, its [taps] and its slots, top to bottom. A [root] box fills the screen and scrolls.
+ * On Sonora's light scheme, so a page's plain `BasicText` children read on it.
+ *
+ * A stub does nothing but hand a tap to the handler it is given: [onClick] makes the whole box
+ * tappable, and each of [taps] is a label, tappable when its handler is given, so the app can be
+ * walked by tapping before the real layouts land.
  */
 @Composable
 internal fun SonoraStub(
@@ -37,6 +42,8 @@ internal fun SonoraStub(
     texts: List<String?> = emptyList(),
     slots: List<(@Composable () -> Unit)?> = emptyList(),
     root: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    taps: List<Pair<String?, (() -> Unit)?>> = emptyList(),
 ) {
     val colors = SonoraLightColors
     val frame = if (root) {
@@ -44,8 +51,10 @@ internal fun SonoraStub(
     } else {
         Modifier.fillMaxWidth()
     }
+    val tapped = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     Column(
         modifier = frame
+            .then(tapped)
             .border(HAIRLINE, colors.surfaceBorder, RoundedCornerShape(SonoraDimens.radiusXs))
             .padding(SonoraDimens.spacingSm),
         verticalArrangement = Arrangement.spacedBy(SonoraDimens.spacingXs),
@@ -60,6 +69,17 @@ internal fun SonoraStub(
         }
         texts.filterNotNull().forEach {
             BasicText(it, style = text(colors.surfaceFg, SonoraType.textMd))
+        }
+        taps.forEach { (label, onTap) ->
+            if (label != null && onTap != null) {
+                BasicText(
+                    label,
+                    modifier = Modifier.clickable(onClick = onTap),
+                    style = text(colors.accentInk, SonoraType.textMd),
+                )
+            } else if (label != null) {
+                BasicText(label, style = text(colors.surfaceFg, SonoraType.textMd))
+            }
         }
         slots.filterNotNull().forEach { slot -> slot() }
     }

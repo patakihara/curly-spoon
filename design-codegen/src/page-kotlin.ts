@@ -18,6 +18,7 @@ import {
   KOTLIN_SONORA_PACKAGE,
 } from './outputs.js';
 import type { PageTree, PropValue } from './page.js';
+import { shellHandlers, type ShellAction, type ShellHandlers } from './shell-handlers.js';
 import type { ClassDecl, EnumDecl, KType, PropsModel, SealedDecl } from './props.js';
 import {
   chrome,
@@ -385,17 +386,6 @@ class PageWriter {
 const slot = (tree: PageTree | undefined): PropValue | undefined =>
   tree === undefined ? undefined : { kind: 'slot', tree };
 
-function find(tree: PageTree | undefined, component: string): PageTree | undefined {
-  if (tree === undefined) return undefined;
-  if (tree.kind === 'element' && tree.component === component) return tree;
-  if (!('children' in tree)) return undefined;
-  for (const child of tree.children) {
-    const found = find(child, component);
-    if (found !== undefined) return found;
-  }
-  return undefined;
-}
-
 export function generateKotlinPage(
   tree: PageTree,
   id: string,
@@ -416,18 +406,35 @@ export function generateKotlinPage(
     );
   }
   const close = closes ? raw(`closePage(navController, ${routeCall(home!)})`) : undefined;
-  const handlers = new Map<PageTree, Record<string, Expr>>();
   /** What the page uses from the generated nav graph. */
   const fromNav = new Set(['PageActions']);
   if (close !== undefined) fromNav.add('Route').add('closePage');
+  /** Each of the shell's actions, as Kotlin: the lambda its handler prop takes. */
+  const spell = (action: ShellAction): Expr => {
+    switch (action.kind) {
+      case 'close': {
+        const to = pages.get(action.home);
+        if (to === undefined)
+          throw new Error(`${id}: closes to ${action.home}, not an Android page`);
+        fromNav.add('Route').add('closePage');
+        return lambda([raw(`closePage(navController, ${routeCall(to)})`)]);
+      }
+      case 'destination':
+        fromNav.add('openDestination');
+        return lambda([raw('openDestination(navController, key)')], 'key');
+      case 'open':
+        fromNav.add('Route');
+        return lambda([raw(`navController.navigate(${routeCall(pages.get(action.page)!)})`)]);
+      case 'tab':
+        fromNav.add('openTab');
+        return lambda([raw('openTab(navController, tab)')], 'tab');
+    }
+  };
   let root: PageTree;
+  let wired: ShellHandlers;
   if (page.presentation === 'sheet') {
     root = playerTree(playerTab(page), framePage(tree).content);
-    handlers.set(root, {
-      onClose: lambda([close!]),
-      onTabChange: lambda([raw('openTab(navController, tab)')], 'tab'),
-    });
-    fromNav.add('openTab');
+    wired = shellHandlers(nav, page, { player: root }, 'android');
   } else {
     const layout = nav.layouts[0];
     if (layout === undefined) throw new Error('nav.json has no layouts');
@@ -451,23 +458,14 @@ export function generateKotlinPage(
         parts.column === undefined ? undefined : { kind: 'literal', value: parts.column },
       ),
     });
-    if (close !== undefined && parts.leading !== undefined) {
-      handlers.set(parts.leading, { onClick: lambda([close]) });
-    }
-    const bar = find(parts.player, 'BottomNav');
-    if (bar !== undefined) {
-      handlers.set(bar, { onChange: lambda([raw('openDestination(navController, key)')], 'key') });
-      fromNav.add('openDestination');
-    }
-    const mini = find(parts.player, 'MiniPlayer');
-    const playing = pages.get('nowPlaying');
-    if (mini !== undefined && playing !== undefined) {
-      handlers.set(mini, {
-        onOpen: lambda([raw(`navController.navigate(${routeCall(playing)})`)]),
-      });
-      fromNav.add('Route');
-    }
+    wired = shellHandlers(nav, page, { chrome: parts }, 'android');
   }
+  const handlers = new Map(
+    [...wired].map(([element, props]) => [
+      element,
+      Object.fromEntries(Object.entries(props).map(([prop, action]) => [prop, spell(action)])),
+    ]),
+  );
   const writer = new PageWriter(id, decls, pages, handlers);
   const scope: Scope = new Map<string, unknown>([
     ['data', placeholder],

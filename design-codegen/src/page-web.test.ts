@@ -144,7 +144,7 @@ describe('a generated web page', () => {
     expect(out).toContain(
       "export default function Book({ data = placeholder, state = 'full', layout: given, sheet }: BookProps) {",
     );
-    expect(out).toContain('  const chrome = CHROME[given ?? detected];');
+    expect(out).toContain('  const chrome = CHROME[given ?? detected](go);');
     expect(out).toContain('  const platform = chrome.platform;');
   });
 
@@ -166,11 +166,13 @@ describe('a generated web page', () => {
 
   it('holds the shell’s parts for every layout: the avatar and bottom bar on the phone, the rail wider', () => {
     expect(homeOut).toContain(
-      "  w0: {\n    platform: 'mobile',\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} />",
+      "  w0: (go) => ({\n    platform: 'mobile',\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} />",
     );
-    expect(homeOut).toContain('<BottomNav items={shell.nav.w0} active="books" />');
     expect(homeOut).toContain(
-      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} />',
+      '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
+    );
+    expect(homeOut).toContain(
+      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={false} toggle={true} onChange={(key) => go.destination(key)} />',
     );
     expect(homeOut).toContain(
       '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} sleep={shell.playing.sleep} platform="desktop" />',
@@ -206,6 +208,110 @@ describe('a generated web page', () => {
     expect(formOut).toContain('<Switch checked={true} onChange="kept" />');
     expect(formOut).toContain('<Chip label="All" />');
     expect(out).not.toContain('ignore');
+  });
+});
+
+describe("the shell's controls on a web page", () => {
+  it('[M0.canvas] wires them to the shell’s navigation, through useShellNav', () => {
+    expect(out).toContain("import { useShellNav, type ShellNav } from '../../shell-nav';");
+    expect(out).toContain('const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {');
+    expect(out).toContain(
+      '  const go = useShellNav();\n  const chrome = CHROME[given ?? detected](go);',
+    );
+  });
+
+  it('[M0.canvas] closes a page to its opener, or else to the home of the destination it lights', () => {
+    expect(out).toContain(
+      '<IconButton icon="close" label="Close" onClick={() => go.close(\'books\')} />',
+    );
+  });
+
+  it("[M0.canvas] gives a destination's home no close control, the account avatar leading it", () => {
+    expect(homeOut).not.toContain('go.close');
+  });
+
+  const withPlayer = parseNav({
+    ...nav,
+    pages: [
+      ...nav.pages,
+      ...[
+        ['nowPlaying', '/playing'],
+        ['queue', '/playing/queue'],
+      ].map(([id, route]) => ({
+        ...nav.pages[1]!,
+        id,
+        route,
+        params: {},
+        lights: null,
+        close: 'sheet',
+        presentation: 'sheet',
+      })),
+    ],
+  });
+  const inPlayer = (id: string): WebShell => ({
+    ...shellOf('book'),
+    nav: withPlayer,
+    shell: { ...shellOf('book').shell, sheetOver: 'books' },
+    page: withPlayer.pages.find((p) => p.id === id)!,
+  });
+  const components = { platformed: new Set<string>(), handled: new Set<string>() };
+
+  it('[M0.canvas] opens Now Playing from the mini-player', () => {
+    const book = generateWebPage(
+      parsePage(source, 'book'),
+      'book',
+      {},
+      components,
+      inPlayer('book'),
+    );
+    expect(book).toMatch(/<MiniPlayer [^>]*onOpen=\{\(\) => go.open\('\/playing'\)\} \/>/);
+  });
+
+  it("[M0.canvas] closes a player sheet to the page under it, and switches the player's tabs between sheets", () => {
+    const queue = generateWebPage(
+      parsePage(
+        'export default function Queue() {\n  return <QueuePage heading={null} />;\n}\n',
+        'queue',
+      ),
+      'queue',
+      {},
+      components,
+      inPlayer('queue'),
+    );
+    expect(queue).toContain("import { useShellNav } from '../../shell-nav';");
+    expect(queue).toContain('  const go = useShellNav();');
+    expect(queue).toContain("onClose={() => go.close('books')}");
+    expect(queue).toContain('onTabChange={(tab) => go.tab(tab)}');
+  });
+
+  it('[M0.canvas] opens each destination as it was left from the bottom bar and the rail', () => {
+    expect(out).toContain(
+      '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
+    );
+    expect(out).toMatch(/<NavRail [^>]*onChange=\{\(key\) => go.destination\(key\)\} \/>/);
+  });
+});
+
+describe('a menu the canvas draws open, on the web', () => {
+  const album = generateWebPage(
+    parsePage(
+      'export default function Book({ data }) {\n  return <MediaHeader title={data.title} menu={<OverflowMenu items={data.menu} open />} />;\n}\n',
+      'book',
+    ),
+    'book',
+    { title: 'Tears of Ice', menu: [] },
+    { platformed: new Set(), handled: new Set(), opened: new Set(['OverflowMenu']) },
+    shellOf('book'),
+  );
+
+  it('[M0.canvas] starts open in the app, as drawn, and closes when dismissed, so it never covers the page for good', () => {
+    expect(album).toContain("import { useState } from 'react';");
+    expect(album).toContain(
+      '  const [opened, setOpened] = useState<Record<number, boolean>>({ 0: true });',
+    );
+    expect(album).toContain(
+      'menu={<OverflowMenu items={data.menu} open={opened[0]} onOpenChange={(open) => setOpened((all) => ({ ...all, 0: open }))} />}',
+    );
   });
 });
 

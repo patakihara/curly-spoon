@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import type { ReactNode } from 'react';
 import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
+import { useShellNav, type ShellNav } from '../../shell-nav';
 import { AboutCard, AccountButton, ArtistCard, BackLayer, BackdropShell, BottomNav, ButtonGroup, FeatureCard, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, PreviewButton, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
@@ -395,9 +396,9 @@ const shell = {
   }
 };
 
-/** The shell’s parts at each layout, from nav.json. */
-const CHROME: Record<LayoutId, Chrome> = {
-  w0: {
+/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */
+const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
+  w0: (go) => ({
     platform: 'mobile',
     appBar: false,
     leading: (
@@ -405,52 +406,52 @@ const CHROME: Record<LayoutId, Chrome> = {
     ),
     player: (
       <>
-        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" />
-        <BottomNav items={shell.nav.w0} active="browse" />
+        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} />
+        <BottomNav items={shell.nav.w0} active="browse" onChange={(key) => go.destination(key)} />
       </>
     ),
     sheetOpen: false,
-  },
-  w600: {
+  }),
+  w600: (go) => ({
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={false} toggle={true} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={false} toggle={true} onChange={(key) => go.destination(key)} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
     ),
     sheetOpen: false,
-  },
-  w1024: {
+  }),
+  w1024: (go) => ({
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={true} toggle={true} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={true} toggle={true} onChange={(key) => go.destination(key)} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
     ),
     sheetOpen: false,
-  },
-  w1240: {
+  }),
+  w1240: (go) => ({
     platform: 'desktop',
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={true} toggle={true} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={true} toggle={true} onChange={(key) => go.destination(key)} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
     ),
     sheet: (
-      <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} platform="desktop">
+      <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} platform="desktop" onTabChange={(tab) => go.tab(tab)}>
         <NowPlayingPage variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={shell.playing.image} title={shell.playing.title} artist={shell.playing.artist} context={shell.playing.context} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} favourite={shell.playing.favourite} sleep={shell.playing.sleep} platform="desktop">
           <AboutCard title={shell.playing.about.title} heading={shell.playing.about.heading} meta={shell.playing.about.meta} image={shell.playing.about.image} round={true} body={shell.playing.about.body} platform="desktop" />
         </NowPlayingPage>
       </NowPlaying>
     ),
     sheetOpen: true,
-  },
+  }),
 };
 
 const ignore = () => {};
@@ -469,7 +470,8 @@ export interface BrowseProps {
 
 export default function Browse({ data = placeholder, state = 'full', layout: given, sheet }: BrowseProps) {
   const detected = useLayout();
-  const chrome = CHROME[given ?? detected];
+  const go = useShellNav();
+  const chrome = CHROME[given ?? detected](go);
   const platform = chrome.platform;
   const panel = sheet ?? chrome.sheet;
   const navigate = useNavigate();

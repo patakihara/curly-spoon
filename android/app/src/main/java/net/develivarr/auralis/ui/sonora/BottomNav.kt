@@ -6,5 +6,10 @@ import net.develivarr.auralis.generated.ui.BottomNavProps
 /** Sonora's BottomNav, as a stub: M1 and M2 replace its body in place with the real layout. */
 @Composable
 fun BottomNav(props: BottomNavProps) {
-    SonoraStub("BottomNav", texts = listOf(props.items.joinToString(" · ") { it.label }))
+    SonoraStub(
+        "BottomNav",
+        taps = props.items.map { item ->
+            item.label to props.onChange?.let { change -> { change(item.key) } }
+        },
+    )
 }

@@ -7,6 +7,7 @@ import { LoginQuery, login } from '@auralis/schema';
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
 import { APP_NOTE } from './outputs.js';
 import type { Choices, PageTree, PropValue } from './page.js';
+import { shellHandlers, type ShellAction, type ShellHandlers } from './shell-handlers.js';
 import {
   chrome,
   framePage,
@@ -48,6 +49,12 @@ export interface WebComponents {
   /** The components that take an `onChange` handler. */
   handled: Set<string>;
   /**
+   * The components that open over the page and say when they close (`onOpenChange`). The canvas
+   * may draw one `open`, to show it; the app starts it so and lets it close, holding whether it is
+   * open, so it never covers the page for good.
+   */
+  opened?: Set<string>;
+  /**
    * Each component's props that take one of a fixed set of words (`tone`, `size`). A placeholder's
    * JSON reads as a plain string, so a bound value for one is read as the prop's own type; the
    * canvas check has already refused any value that is not one of its words.
@@ -55,8 +62,30 @@ export interface WebComponents {
   choices?: Choices;
 }
 
-/** What rendering needs beyond the components: each page's route path, for an `<Open>`. */
-type Ctx = WebComponents & { paths: Map<string, string> };
+/**
+ * What rendering needs beyond the components: each page's route path, for an `<Open>`, and the
+ * shell's handlers on its own elements, as the code each handler prop is given.
+ */
+type Ctx = WebComponents & {
+  paths: Map<string, string>;
+  wired: Map<PageTree, Record<string, string>>;
+  /** Whether each menu the page draws with `open` starts open, by its number in the page. */
+  menus: boolean[];
+};
+
+/** Each of the shell's actions, as the web handler that does it through `useShellNav`'s `go`. */
+function spell(action: ShellAction, paths: Map<string, string>): string {
+  switch (action.kind) {
+    case 'close':
+      return `() => go.close('${action.home}')`;
+    case 'destination':
+      return '(key) => go.destination(key)';
+    case 'open':
+      return `() => go.open('${paths.get(action.page)!}')`;
+    case 'tab':
+      return '(tab) => go.tab(tab)';
+  }
+}
 
 const chosen = (tree: PageTree, name: string, components: WebComponents) =>
   tree.kind === 'element' && components.choices?.get(tree.component)?.has(name) === true;
@@ -155,9 +184,31 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
         `${indent})}`,
       ];
     case 'element': {
-      const props = Object.entries(tree.props).map(([name, value]) =>
-        propLines(name, value, inner, components, tree.component, chosen(tree, name, components)),
-      );
+      const props = Object.entries(tree.props)
+        .map(([name, value]) => {
+          if (
+            name === 'open' &&
+            value.kind === 'literal' &&
+            components.opened?.has(tree.component)
+          ) {
+            const n = components.menus.push(value.value === true) - 1;
+            return [
+              `open={opened[${n}]}`,
+              `onOpenChange={(open) => setOpened((all) => ({ ...all, ${n}: open }))}`,
+            ].join(' ');
+          }
+          return propLines(
+            name,
+            value,
+            inner,
+            components,
+            tree.component,
+            chosen(tree, name, components),
+          );
+        })
+        .map((p) => (typeof p === 'string' ? [p] : p));
+      for (const [name, code] of Object.entries(components.wired.get(tree) ?? {}))
+        props.push([`${name}={${code}}`]);
       if (ignored(tree, components)) props.push(['onChange={ignore}']);
       if (components.platformed.has(tree.component) && !('platform' in tree.props)) {
         props.push(['platform={platform}']);
@@ -197,6 +248,16 @@ function chromeEntry(parts: Chrome, components: Ctx): string[] {
 
 const binding = (path: string): PropValue => ({ kind: 'binding', path: path.split('.') });
 
+/** The state holding whether each menu the page draws `open` is open, each starting as drawn. */
+const opener = (menus: boolean[]) =>
+  menus.length === 0
+    ? []
+    : [
+        `  const [opened, setOpened] = useState<Record<number, boolean>>({ ${menus
+          .map((open, n) => `${n}: ${open}`)
+          .join(', ')} });`,
+      ];
+
 export function generateWebPage(
   tree: PageTree,
   id: string,
@@ -204,9 +265,17 @@ export function generateWebPage(
   webComponents: WebComponents,
   { nav, shell, page, now = [] }: WebShell,
 ): string {
-  const components: Ctx = {
-    ...webComponents,
-    paths: new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path])),
+  const paths = new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path]));
+  const components: Ctx = { ...webComponents, paths, wired: new Map(), menus: [] };
+  /** Wires the shell's handlers, `handlers`, into the page; whether it wired any. */
+  const wire = (handlers: ShellHandlers) => {
+    for (const [tree, props] of handlers) {
+      components.wired.set(
+        tree,
+        Object.fromEntries(Object.entries(props).map(([p, a]) => [p, spell(a, paths)])),
+      );
+    }
+    return handlers.size > 0;
   };
   const sheet = page.presentation === 'sheet';
   const root = sheet
@@ -222,10 +291,18 @@ export function generateWebPage(
       });
   const chromes = sheet
     ? []
-    : nav.layouts.map(
-        (layout) =>
-          [layoutId(layout), chrome(nav, shell, page, layout, components.platformed, now)] as const,
-      );
+    : nav.layouts.map((layout) => {
+        const parts = chrome(nav, shell, page, layout, components.platformed, now);
+        return [
+          layoutId(layout),
+          parts,
+          wire(shellHandlers(nav, page, { chrome: parts })),
+        ] as const;
+      });
+  if (sheet) wire(shellHandlers(nav, page, { player: root }));
+  const goes = components.wired.size > 0;
+  const body = render(root, '    ', components);
+  const menus = components.menus;
   const used = new Set<string>();
   drawn(root, used);
   for (const [, parts] of chromes) {
@@ -234,7 +311,11 @@ export function generateWebPage(
   // A page named as a component it draws with, Now Playing's NowPlaying, takes a suffix.
   const name = used.has(componentName(id)) ? `${componentName(id)}Screen` : componentName(id);
   const over = sheet ? componentName(shell.sheetOver!) : undefined;
-  const react = some(root, (n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
+  const fromReact = [
+    ...(some(root, (n) => n.kind === 'each') ? ['Fragment'] : []),
+    ...(menus.length > 0 ? ['useState'] : []),
+  ];
+  const react = fromReact.length > 0 ? [`import { ${fromReact.join(', ')} } from 'react';`] : [];
   const typed = [
     root,
     ...chromes.flatMap(([, parts]) => [parts.rail, parts.leading, parts.player, parts.sheet]),
@@ -278,6 +359,13 @@ export function generateWebPage(
     sheet
       ? "import { useLayout, type LayoutId, type Platform } from '../nav/platform';"
       : "import { useLayout, type Chrome, type LayoutId } from '../nav/platform';",
+    ...(goes
+      ? [
+          sheet
+            ? "import { useShellNav } from '../../shell-nav';"
+            : "import { useShellNav, type ShellNav } from '../../shell-nav';",
+        ]
+      : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     ...(over === undefined ? [] : [`import ${over} from './${over}';`]),
     '',
@@ -309,12 +397,12 @@ export function generateWebPage(
           '};',
         ]
       : [
-          '/** The shell’s parts at each layout, from nav.json. */',
-          'const CHROME: Record<LayoutId, Chrome> = {',
-          ...chromes.flatMap(([layout, parts]) => [
-            `  ${layout}: {`,
+          '/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */',
+          `const CHROME: Record<LayoutId, (${goes ? 'go: ShellNav' : ''}) => Chrome> = {`,
+          ...chromes.flatMap(([layout, parts, wired]) => [
+            `  ${layout}: (${wired ? 'go' : ''}) => ({`,
             ...chromeEntry(parts, components),
-            '  },',
+            '  }),',
           ]),
           '};',
         ]),
@@ -351,8 +439,10 @@ export function generateWebPage(
           '  const layout = given ?? detected;',
           "  const platform: Platform = PANEL[layout] ? 'desktop' : 'mobile';",
           ...(opens ? ['  const navigate = useNavigate();'] : []),
+          ...(goes ? ['  const go = useShellNav();'] : []),
+          ...opener(menus),
           '  const player = (',
-          ...render(root, '    ', components),
+          ...body,
           '  );',
           `  return PANEL[layout] ? <${over} layout={layout} sheet={player} /> : player;`,
           '}',
@@ -360,12 +450,14 @@ export function generateWebPage(
       : [
           `export default function ${name}({ data = placeholder, state = 'full', layout: given, sheet }: ${name}Props) {`,
           '  const detected = useLayout();',
-          '  const chrome = CHROME[given ?? detected];',
+          ...(goes ? ['  const go = useShellNav();'] : []),
+          `  const chrome = CHROME[given ?? detected](${goes ? 'go' : ''});`,
           '  const platform = chrome.platform;',
           '  const panel = sheet ?? chrome.sheet;',
           ...(opens ? ['  const navigate = useNavigate();'] : []),
+          ...opener(menus),
           '  return (',
-          ...render(root, '    ', components),
+          ...body,
           '  );',
           '}',
         ]),

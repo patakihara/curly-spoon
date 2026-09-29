@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  generateNavMap,
   generatePlatform,
   generateRoutes,
   parseNav,
@@ -243,6 +244,39 @@ describe('the web route table', () => {
   });
 
   it('leaves out Android-only pages', () => {
+    expect(out).not.toContain('downloads');
+  });
+});
+
+describe("the web's navigation map, for its stacks", () => {
+  const tiny: Nav = parseNav(
+    small([
+      page({ id: 'music', route: '/music', params: {}, close: 'none', title: 'Music' }),
+      page(),
+      page({ id: 'settings', route: '/settings', params: {}, lights: null, title: 'Settings' }),
+      page({
+        id: 'queue',
+        route: '/playing/queue',
+        params: {},
+        lights: null,
+        close: 'sheet',
+        presentation: 'sheet',
+        title: 'Queue',
+      }),
+      page({ id: 'downloads', route: '/downloads', params: {}, platforms: ['android'] }),
+    ]),
+  );
+  const out = generateNavMap(tiny, ['settings']);
+
+  it("[M0.canvas] gives each destination's home, the rail's foot and each player tab's sheet", () => {
+    expect(out).toContain('  homes: {\n    "music": "/music"\n  },');
+    expect(out).toContain('  foot: {\n    "settings": "/settings"\n  },');
+    expect(out).toContain('  tabs: {\n    "queue": "/playing/queue"\n  },');
+  });
+
+  it('[M0.canvas] gives each web page its path, what it lights and whether it is a sheet', () => {
+    expect(out).toContain("    { path: '/music/albums/:ref', lights: 'music', sheet: false },");
+    expect(out).toContain("    { path: '/playing/queue', lights: null, sheet: true },");
     expect(out).not.toContain('downloads');
   });
 });
