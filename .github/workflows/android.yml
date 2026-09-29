@@ -132,6 +132,7 @@ jobs:
           cat reports/recorded-server.out
           grep -qx ready reports/recorded-server.out
           curl -fsS http://127.0.0.1:8787/api/health
+          echo "AURALIS_PLAYABLE=$(sed -n 's/^ *playable: *//p' reports/recorded-server.out)" >> "$GITHUB_ENV"
 
       - name: Instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -143,7 +144,8 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: android
-          script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest
+          # SmokeTest signs in to that server and plays the item it printed.
+          script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.auralisServer=http://10.0.2.2:8787 -Pandroid.testInstrumentationRunnerArguments.auralisPlayable=${{ env.AURALIS_PLAYABLE }}
 
       - if: ${{ !cancelled() }}
         # The runner names each XML after the device ("TEST-emulator-5554 - 14-_app-.xml"), spaces

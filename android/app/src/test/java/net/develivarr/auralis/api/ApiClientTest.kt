@@ -6,6 +6,7 @@ import net.develivarr.auralis.generated.api.Account
 import net.develivarr.auralis.generated.api.AppToken
 import net.develivarr.auralis.generated.api.TokenBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Request
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -66,6 +67,16 @@ class ApiClientTest {
         }
         assertThrows(ApiException::class.java) { api.get("api/auth/me", Account.serializer()) }
         assertEquals("bearer-2", session.token.value)
+    }
+
+    @Test
+    fun `a request on the authorized client carries the same bearer, and its 401 signs out too`() {
+        server.answer = { 401 to "" }
+        val track = api.resolve("/api/media/abs:item-1/tracks/0")
+        assertEquals("http://127.0.0.1:8787/api/media/abs:item-1/tracks/0", track.toString())
+        api.authorized.newCall(Request.Builder().url(track).build()).execute().close()
+        assertEquals("Bearer bearer-1", server.seen.single().request.header("Authorization"))
+        assertNull(session.token.value)
     }
 
     private companion object {

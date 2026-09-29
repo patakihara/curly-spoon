@@ -11,9 +11,10 @@ import net.develivarr.auralis.auth.KeystoreTokenStore
 import net.develivarr.auralis.auth.Session
 import net.develivarr.auralis.auth.SignIn
 import net.develivarr.auralis.auth.TokenStore
+import net.develivarr.auralis.play.Playback
 import okhttp3.OkHttpClient
 
-/** What the app is wired from: its server, its session, and the API and sign-in over them. */
+/** What the app is wired from: its server, its session, and the API, sign-in and player over them. */
 class AppGraph(
     context: Context,
     server: ServerConfig,
@@ -31,6 +32,8 @@ class AppGraph(
 
     /** Where network work runs, outliving any one activity. */
     val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    val playback = Playback(context, api, background)
 
     companion object {
         /** The preferences file a sign-in in flight keeps its verifier and state in. */
