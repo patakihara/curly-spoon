@@ -11,7 +11,7 @@ part: Delivery
 - Why Lidarr misses music: a month of its warning logs (indexer request limits and outages), its strict edition matching, and your experience of its catalogue (editions mixed together, albums missing). Its matching wasn't tested directly, and the rebuild doesn't use it. How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists is checked when music requests are built.
 - The web multi-file stall is read from code, not reproduced. The Android first-file-only and missing progress sync are unambiguous in code but weren't run.
 - Jellyfin's real lyrics and `ProviderIds` responses and the qBittorrent cookie name are unverified until M0's recordings. So is the current reliability of YouTube Music extraction from this server's IP; M3 starts with a canary.
-- Whether the ThinkPad holds unpushed Auralis work newer than `781efd4`: it was unreachable when the repo was read.
+- Whether the laptop holds unpushed Auralis work newer than `781efd4`: it was unreachable when the repo was read.
 - Which step of the book pipeline is slow. The four `audiobook-*` commands show what imports need fixing by hand, not where the time goes; timing it is the first book task.
 - That Audiobookshelf's folder watcher reliably picks up a new book folder on its own (it's on for the Books library). If it doesn't, Auralis asks for a scan of that one library at a quiet moment instead.
 - Minting per-user tokens is read from ABS 2.36.1 and Jellyfin 10.11.11 source; the M0.sso recordings prove it live.

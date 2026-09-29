@@ -54,7 +54,7 @@ The plan and the progress are two different things, kept apart on purpose. The p
 ### No scars
 
 - **Replacing something deletes the old thing in the same change, everywhere it lives:** code, config, containers, timers, settings, secrets, data folders, docs, map entries, memory notes, scripts on either host. No legacy folders, compatibility shims, commented-out code, "formerly" notes or backups. Git history is the only record.
-- **The old Auralis goes completely.** Its code leaves `main` (kept only at the `legacy` tag), and its leftovers on mediaserver and the ThinkPad are deleted once nothing uses them: the old container setup and data folder, the update timer, the old autorun machinery, old docs and map entries.
+- **The old Auralis goes completely.** Its code leaves `main` (kept only at the `legacy` tag), and its leftovers on mediaserver and the laptop are deleted once nothing uses them: the old container setup and data folder, the update timer, the old autorun machinery, old docs and map entries.
 - **Checked before a milestone counts as done:** a sweep for references to removed things, unused files and settings, and orphaned containers or timers, on top of the dead-code lint.
 
 ### Your ideas, without derailing

@@ -24,13 +24,6 @@ const { mkdirSync } = await import('node:fs');
 mkdirSync(path.join(ROOT, '.render'), { recursive: true });
 const PORT = 8947;
 
-function loadPlaywright() {
-  for (const c of ['playwright', '/home/sofiapata/src/auralis-src/node_modules/playwright', '/home/sofiapata/src/auralis-src/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright']) {
-    try { return require(c); } catch { /* next */ }
-  }
-  throw new Error('playwright not resolvable');
-}
-
 // The PNG is decoded by handing it back to the browser as a data URL and reading it through a
 // canvas, rather than by hand: a hand-rolled unfilter that is subtly wrong produces plausible
 // numbers, which is the one failure mode this probe exists to avoid.
@@ -49,7 +42,7 @@ http.server.HTTPServer(('127.0.0.1', ${PORT}), H).serve_forever()
 `], { cwd: ROOT, stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 800));
 
-const { chromium } = loadPlaywright();
+const { chromium } = require('playwright'); // the repo's own, from its node_modules
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 // Same vendored-CDN trick the render harness uses: the card's script tags carry SRI hashes, so

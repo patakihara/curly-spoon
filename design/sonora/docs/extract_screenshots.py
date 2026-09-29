@@ -10,14 +10,12 @@ Two things it must not confuse with a sent screenshot:
   - images nested inside a tool_result (the card renders read back with the Read tool)
   - anything landscape (every phone screenshot here is portrait)
 
-    python3 docs/extract_screenshots.py [transcript.jsonl]
+    python3 docs/extract_screenshots.py <transcript.jsonl>
 """
 import base64, json, os, struct, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "assets", "reference", "spotify")
-DEFAULT = os.path.expanduser(
-    "~/.claude/projects/-home-sofiapata/2385ed04-b55b-51c3-a8a0-e96f4b66ab38.jsonl")
 
 
 def dimensions(raw):
@@ -57,7 +55,9 @@ def collect(node, found):
 
 
 def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT
+    if len(sys.argv) != 2:
+        sys.exit("usage: python3 docs/extract_screenshots.py <transcript.jsonl>")
+    path = sys.argv[1]
     found = []
     with open(path) as fh:
         for line in fh:

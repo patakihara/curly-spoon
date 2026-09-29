@@ -1,6 +1,7 @@
 /**
  * Nothing removed lingers: a Sonora component deleted from design/sonora is named nowhere in the
- * apps or the canvas, and every exception an ignore file carves out names a file that exists.
+ * apps or the canvas, every exception an ignore file carves out names a file that exists, and no
+ * tracked file names a machine, a user, a home folder or a personal email (the repo is public).
  * Reads Sonora's history, so CI's checkout needs full history (fetch-depth: 0).
  * Run: node --test scripts/repo/leftovers.test.mjs
  */
@@ -57,4 +58,86 @@ test('every exception in .gitignore and .dockerignore names a file that exists',
       .map((path) => `${basename(file)}: !${path}`),
   );
   assert.deepEqual(missing, []);
+});
+
+/** What a public repo must not carry: host names, user names, home folders, personal emails. */
+const PRIVATE = [
+  { what: 'the user name', re: /sofiapata/gi },
+  { what: 'the laptop host name', re: /sofiathinkpad|thinkpad:/gi },
+  { what: 'a home folder', re: /\/home\/[^/\s'"`)]*/g },
+  { what: 'a mediaserver host path', re: /\bmediaserver:[~/][^\s'"`)]*/g },
+  { what: 'a personal email', re: /\bpatakihara@(?!users\.noreply\.github\.com)[\w.-]+/g },
+  { what: 'an email', re: /[\w.%+-]+@[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}\b/g },
+];
+
+/** Emails that name nobody: GitHub's noreply addresses, the commit trailer's, reserved domains. */
+const NOBODY =
+  /(?:@users\.noreply\.github\.com|^noreply@anthropic\.com|@(?:[\w-]+\.)*(?:example\.(?:com|org|net)|example-household\.test|example|invalid|test))$/;
+
+/** The one file allowed to name what the guard looks for: this one. */
+const SELF = 'scripts/repo/leftovers.test.mjs';
+
+/** Where a match is unavoidable: each is a file, the exact text matched, and why it stays. */
+const EXCEPTIONS = [
+  ...['sofiathinkpad', 'sofiathinkpad@sofiathinkpad.local', 'mediaserver@mediaserver.local'].map(
+    (match) => ({
+      file: 'scripts/repo/identities.json',
+      match,
+      why: "Sonora's commit authors, already public in git history, which layout.test.mjs checks",
+    }),
+  ),
+  ...[
+    ['scripts/mediaserver/abs-api-key.test.mjs', '/home/test'],
+    ['server/src/adapters/http/localNames.test.ts', '/home/u'],
+    ['server/src/adapters/http/leaks.test.ts', '/home/alice'],
+    ['server/src/adapters/http/scan.test.ts', '/home/someone'],
+    ['server/src/adapters/http/scrub.test.ts', '/home/someone'],
+    ['server/src/adapters/http/scrub.test.ts', '/home/user'],
+    ['server/src/adapters/http/scrub.ts', '/home/<user>'],
+  ].map(([file, match]) => ({
+    file,
+    match,
+    why: 'a made-up home folder the scrubber is tested on',
+  })),
+  ...[
+    ['server/src/adapters/http/scan.test.ts', 'ab@cd.ef'],
+    ['server/src/adapters/http/scan.test.ts', 'jk@lm.io'],
+    ['server/src/adapters/http/scrub.test.ts', 'ab@cd.ef'],
+    ['server/src/adapters/http/scrub.test.ts', 'jk@lm.io'],
+    ['server/src/adapters/http/scrub.test.ts', 'a@b.com'],
+  ].map(([file, match]) => ({ file, match, why: 'a made-up email the scrubber is tested on' })),
+  { file: 'pnpm-lock.yaml', match: 'i@izs.me', why: "a package's deprecation notice, generated" },
+];
+
+/** Every private-looking match in tracked text files, as `file: match (what)`. */
+function privateMatches() {
+  return lines(git('ls-files'))
+    .filter((file) => file !== SELF && existsSync(join(root, file)))
+    .flatMap((file) => {
+      const text = readFileSync(join(root, file), 'utf8');
+      if (text.includes('\0')) return [];
+      return PRIVATE.flatMap(({ what, re }) =>
+        [...text.matchAll(re)]
+          .map(([match]) => match)
+          .filter((match) => what !== 'an email' || !NOBODY.test(match))
+          .map((match) => ({ file, match, what })),
+      );
+    });
+}
+
+const excepted = (hit) => EXCEPTIONS.some((e) => e.file === hit.file && e.match === hit.match);
+
+test('no tracked file names a host, a user, a home folder or a personal email', () => {
+  const found = privateMatches()
+    .filter((hit) => !excepted(hit))
+    .map(({ file, match, what }) => `${file}: ${match} (${what})`);
+  assert.deepEqual([...new Set(found)], []);
+});
+
+test('every exception to that still matches something', () => {
+  const hits = privateMatches();
+  const stale = EXCEPTIONS.filter(
+    (e) => !hits.some((h) => h.file === e.file && h.match === e.match),
+  );
+  assert.deepEqual(stale, []);
 });

@@ -71,7 +71,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. T
 
 - Sonora is the design source of truth: flat surfaces, one violet accent that nobody picks plus a rose for Now Playing, playback controls and Browse's media filter, nothing green from Spotify, motion by named role, no emoji. From Spotify it takes **affordances, not visual design** (_"not to copy spotify's visual design, but moreso the affordances of the components"_), and no new search bar.
 - **One Auralis repo holds the design and the apps**; the Sonora and canvas artifacts are published from it. You work on the design by commenting on the artifacts or asking in chat.
-- **Some design inputs stay private.** The Spotify reference screenshots and the original Sonora author identities stay out of the public repo. The screenshots stay on the ThinkPad, gitignored.
+- **Some design inputs stay private.** The Spotify reference screenshots and the original Sonora author identities stay out of the public repo. The screenshots stay on the laptop, gitignored.
 :::
 :::
 

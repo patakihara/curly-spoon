@@ -20,8 +20,8 @@ the compose file, the user units, `PATH`, and a search of the home folder for an
    Only `ghcr.io/patakihara/auralis:latest` runs.
 3. `~/docker/arr/auralis-data/auralis.sqlite3`: the old Auralis's database. The rebuild keeps
    its own in `auralis.sqlite` beside it; `secret.key` and `setup-code` there stay.
-4. The Android and JavaScript toolchain once installed to build the old Auralis on
-   mediaserver: `~/.local/share/android-sdk`, `~/.local/share/jdk17`, `~/.local/share/gradle`,
+4. The Android and JavaScript toolchain once installed on mediaserver to build the old Auralis:
+   `~/.local/share/android-sdk`, `~/.local/share/jdk17`, `~/.local/share/gradle`,
    `~/.local/share/kotlin`, `~/.gradle`, `~/.android` and the pnpm store in
    `~/.local/share/pnpm`, about 2.3 GB, untouched since early August. Android builds only on
    GitHub's CI now.

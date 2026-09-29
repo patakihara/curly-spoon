@@ -231,16 +231,14 @@ def _hostname_ok(host):
 def node_binary():
     """Absolute path to a `node` that can run docs/edit_writeback.mjs, or None.
 
-    This process's PATH is whatever the shell that started it handed it, which on this machine
-    need not include the directory node itself lives in. which() still goes first so any node on PATH wins; the
-    literal fallback is this machine's actual install, found once by hand (see CLAUDE.md's
-    operational notes — "node ... may not be on your PATH").
+    This process's PATH is whatever the shell that started it handed it, which need not include
+    the directory node lives in. The NODE environment variable names a node outside PATH; which()
+    is the fallback.
     """
-    found = shutil.which('node')
-    if found:
-        return found
-    fallback = '/home/sofiapata/.local/share/node22/bin/node'
-    return fallback if os.access(fallback, os.X_OK) else None
+    named = os.environ.get('NODE')
+    if named and os.access(named, os.X_OK):
+        return named
+    return shutil.which('node')
 
 
 _WRITEBACK_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'edit_writeback.mjs')
@@ -259,7 +257,7 @@ def run_writeback(payload):
     exe = node_binary()
     if not exe:
         return {'ok': False, 'reason': 'node-not-found',
-                'message': 'no `node` on this process\'s PATH or at the known fallback location'}
+                'message': 'no `node` at $NODE or on this process\'s PATH'}
     try:
         p = subprocess.run(
             [exe, _WRITEBACK_SCRIPT], input=json.dumps(payload), capture_output=True,

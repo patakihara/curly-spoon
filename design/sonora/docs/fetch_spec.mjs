@@ -8,20 +8,9 @@ import { createRequire } from 'node:module';
 import { writeFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
-function loadPlaywright() {
-  for (const c of [
-    'playwright',
-    '/home/sofiapata/src/auralis-src/node_modules/playwright',
-    '/home/sofiapata/src/auralis-src/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright',
-  ]) {
-    try { return require(c); } catch { /* next */ }
-  }
-  throw new Error('playwright not resolvable');
-}
-
 const url = process.argv[2];
 const out = process.argv[3];
-const { chromium } = loadPlaywright();
+const { chromium } = require('playwright'); // the repo's own, from its node_modules
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 1600 } });
 await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 });

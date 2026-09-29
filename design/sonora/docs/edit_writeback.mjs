@@ -32,19 +32,8 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 
-function loadBabelParser() {
-  const candidates = [
-    '@babel/parser',
-    '/home/sofiapata/src/auralis-src/node_modules/@babel/parser',
-    '/home/sofiapata/src/auralis-src/node_modules/.pnpm/@babel+parser@7.29.8/node_modules/@babel/parser',
-  ];
-  for (const c of candidates) {
-    try { return require(c); } catch { /* next */ }
-  }
-  throw new Error('@babel/parser not resolvable from any known location');
-}
-
-const parser = loadBabelParser();
+// The repo's own @babel/standalone carries the parser; resolved from the repo's node_modules.
+const parser = require('@babel/standalone').packages.parser;
 
 const KEBAB_TO_CAMEL = {
   'border-radius': 'borderRadius',

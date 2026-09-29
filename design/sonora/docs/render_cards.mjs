@@ -21,18 +21,6 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
 
-function loadPlaywright() {
-  const candidates = [
-    'playwright',
-    '/home/sofiapata/src/auralis-src/node_modules/playwright',
-    '/home/sofiapata/src/auralis-src/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright',
-  ];
-  for (const c of candidates) {
-    try { return require(c); } catch { /* next */ }
-  }
-  throw new Error('playwright not resolvable from any known location');
-}
-
 // Every card anywhere in the mirror, not just components/ — the Reference group lives in
 // reference/ and is just as capable of shipping a card that renders blank.
 const SKIP = new Set(['.git', '.render', 'node_modules', 'docs', 'assets']);
@@ -84,7 +72,7 @@ server.stdout.destroy();
 server.unref();
 process.on('exit', () => server.kill());
 
-const { chromium } = loadPlaywright();
+const { chromium } = require('playwright'); // the repo's own, from its node_modules
 const browser = await chromium.launch();
 
 // The cards pull React, ReactDOM and Babel from unpkg with pinned SRI hashes. Serve them from a

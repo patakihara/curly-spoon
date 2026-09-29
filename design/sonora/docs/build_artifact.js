@@ -141,7 +141,7 @@ const sizes = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'];
 const leadFor = { xs: 'xs', sm: 'sm', md: 'md', lg: 'lg', xl: 'xl' };
 const tokens = {
   name: 'Sonora', version: 1,
-  meta: { source: 'repo', repo: 'SofiaThinkPad:~/src/sonora', builtBy: 'docs/build_artifact.js', built: new Date().toISOString() },
+  meta: { source: 'repo', repo: 'design/sonora', builtBy: 'docs/build_artifact.js', built: new Date().toISOString() },
   color: { themes: [{ id: 'dark', name: 'Dark' }, { id: 'light', name: 'Light' }], tokens: colorTokens },
   type: {
     fonts: [],
