@@ -27,7 +27,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 #### Sonora: the design system
 
 - Tokens, basic pieces, components and page layouts, each with a `.d.ts`, a card, and dark and light previews. No Auralis data.
-- Grows because the app needs something, but anything that lands here is generic: a `FeatureCard`, not "the podcast digest card".
+- Grows because the app needs something, but anything that lands here is generic: a `MediaCard`, not "the podcast digest card".
 :::
 
 ::: card
@@ -38,14 +38,14 @@ Everything in the app starts as a Sonora component, and every page starts on the
 :::
 :::
 
-**Where the screens come from.** Sonora is the most complete design: its desktop and mobile UI kits, its showcase cards and the 43 Spotify reference screens. The "Auralis redesign kickoff" project, which old Auralis vendored (tag `legacy`, `docs/design/sonora`), adds only its screen list (artist, author, shelf, onboarding); its 9 components are all in Sonora now. The screen map is the union, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. The UI kits move out of Sonora onto the canvas, since screens don't belong in the design system. The Claude Design projects stay as read-only references.
+**Where the screens come from.** Sonora is the most complete design: its UI kit renders, its showcase cards and the 43 Spotify reference screens. The "Auralis redesign kickoff" project, which old Auralis vendored (tag `legacy`, `docs/design/sonora`), adds only its screen list (artist, author, shelf, onboarding); its 9 components are all in Sonora now. The screen map is the union, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. The UI kits left Sonora, since screens don't belong in the design system; their renders stay as the canvas comparisons' sources. The Claude Design projects stay as read-only references.
 
 ### Sonora, pruned and ordered
 
-Sonora has 80 components today, filed by kind (core, forms, layout, media, navigation). 18 of them were added in the Spotify affordance pass (checked in its git history): Button, BrowseCard, ExpanderRow, FollowButton, Rating, SortFilterBar, StatusBanner, BackToTop, DownloadButton, EpisodeRow, FeatureCard, ItemActionBar, ExpandableText, AboutCard, MediaHeader, OutputDeviceButton, SpeedControl and TransportBar. Most of the rest came from the original Claude Design project.
+Sonora has 63 components, filed by level (basic, components, layouts). 12 came from the Spotify affordance pass (checked in its git history): Button, ExpanderRow, FollowButton, SortFilterBar, StatusBanner, DownloadButton, EpisodeRow, ExpandableText, AboutCard, MediaHeader, SpeedControl and TransportBar. Most of the rest came from the original Claude Design project.
 
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (shell, backdrop, shelf, detail and collection pages). The artifact is organised the same way. Pages live only on the canvas.
-- **Pruned against the screens.** Once the canvas has the full screen map, in the foundations milestone, each component lists the pages that use it. Anything no page uses is removed, whichever pass it came from. Candidates to look at first: OutputDeviceButton (only needed for "Play on…", which comes late), FollowButton, Rating, BrowseCard and BackToTop.
+- **Pruned against the screens.** Each component lists the canvas pages that use it, and a test fails on one no page uses. The foundations milestone removed 20 that way, whichever pass they came from, OutputDeviceButton ("Play on…" comes late), Rating, BrowseCard and BackToTop among them; one can return from git history.
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, as every other form component does, so `FieldRow`'s `(next: string)` handler no longer receives a DOM event.
 
 ### From design to both apps
@@ -54,7 +54,7 @@ Sonora has 80 components today, filed by kind (core, forms, layout, media, navig
 ::: card
 #### From Sonora
 
-- **About 80 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader, DetailPage, CollectionPage), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes, OutputDeviceButton), status (StatusBanner, DownloadButton, ProgressRing, Badge).
+- **63 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, EpisodeRow, ResultRow, MediaHeader), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes), status (StatusBanner, DownloadButton, ProgressRing, Badge).
 - **A token exporter**: `export/web/sonora-tokens.css`, `sonora-theme.css` and `export/android/SonoraTokens.kt`, all generated. Motion, scrim, tone and layout families included.
 - **43 Spotify reference screens**, each mapped to the components it motivated. They stay as reference pictures, not components.
 :::
