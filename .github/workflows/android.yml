@@ -124,7 +124,9 @@ jobs:
           script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest
 
       - if: ${{ !cancelled() }}
-        run: node scripts/plan/collect-results.mjs --workflow android --job emulator --out reports/plan-results.json $(find android/app/build/outputs/androidTest-results/connected -name 'TEST-*.xml' 2>/dev/null)
+        # The runner names each XML after the device ("TEST-emulator-5554 - 14-_app-.xml"), spaces
+        # and all, so the paths are passed NUL-separated.
+        run: find android/app/build/outputs/androidTest-results/connected -name 'TEST-*.xml' -print0 | xargs -0 node scripts/plan/collect-results.mjs --workflow android --job emulator --out reports/plan-results.json
 
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
