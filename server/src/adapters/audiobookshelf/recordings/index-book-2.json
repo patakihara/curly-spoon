@@ -1,0 +1,345 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "index-book-2",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/bca54de4-e659-4804-9836-3a332ddba120",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "bca54de4-e659-4804-9836-3a332ddba120",
+        "ino": "45135",
+        "oldLibraryItemId": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+        "path": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic",
+        "relPath": "Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic",
+        "isFile": false,
+        "mtimeMs": 1777744798654,
+        "ctimeMs": 1777744798654,
+        "birthtimeMs": 1777744784562,
+        "addedAt": 1777744798522,
+        "updatedAt": 1778671843394,
+        "lastScan": 1778671843332,
+        "scanVersion": "2.34.0",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "book",
+        "media": {
+          "id": "5fea64bb-3fdf-4386-b2ea-6c21aa036068",
+          "libraryItemId": "bca54de4-e659-4804-9836-3a332ddba120",
+          "metadata": {
+            "title": "The Storm Before the Storm - The Beginning of the End of the Roman Republic",
+            "subtitle": null,
+            "authors": [
+              {
+                "id": "eeb20152-9266-48f2-b86c-b1714053ae2f",
+                "name": "Mike Duncan"
+              }
+            ],
+            "narrators": [
+              "Mike Duncan"
+            ],
+            "series": [],
+            "genres": [
+              "Books & Spoken"
+            ],
+            "publishedYear": "2017",
+            "publishedDate": null,
+            "publisher": null,
+            "description": null,
+            "isbn": null,
+            "asin": null,
+            "language": null,
+            "explicit": false,
+            "abridged": false
+          },
+          "coverPath": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic/cover.jpg",
+          "tags": [],
+          "audioFiles": [
+            {
+              "index": 1,
+              "ino": "45130",
+              "metadata": {
+                "filename": "Mike Duncan - The Storm Before the Storm - The Beginning of the End of the Roman Republic.m4b",
+                "ext": ".m4b",
+                "path": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic/Mike Duncan - The Storm Before the Storm - The Beginning of the End of the Roman Republic.m4b",
+                "relPath": "Mike Duncan - The Storm Before the Storm - The Beginning of the End of the Roman Republic.m4b",
+                "size": 292924104,
+                "mtimeMs": 1777744775321,
+                "ctimeMs": 1777744784578,
+                "birthtimeMs": 1777744606031
+              },
+              "addedAt": 1777744798225,
+              "updatedAt": 1777744798225,
+              "trackNumFromMeta": null,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": null,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "QuickTime / MOV",
+              "duration": 36836.868844,
+              "bitRate": 62795,
+              "language": "und",
+              "codec": "aac",
+              "timeBase": "1/22050",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [
+                {
+                  "start": 0,
+                  "end": 2326.918,
+                  "title": "Prologue: The Triumph of the Roman Republic",
+                  "id": 0
+                },
+                {
+                  "start": 2326.918,
+                  "end": 5278.081,
+                  "title": "The Beasts of Italy",
+                  "id": 1
+                },
+                {
+                  "start": 5278.081,
+                  "end": 7965.619,
+                  "title": "The Stepchildren of Rome",
+                  "id": 2
+                },
+                {
+                  "start": 7965.619,
+                  "end": 11106.815,
+                  "title": "Daggers in the Forum",
+                  "id": 3
+                },
+                {
+                  "start": 11106.815,
+                  "end": 13490.251,
+                  "title": "A City for Sale",
+                  "id": 4
+                },
+                {
+                  "start": 13490.251,
+                  "end": 15697.168,
+                  "title": "The Spoils of Victory",
+                  "id": 5
+                },
+                {
+                  "start": 15697.168,
+                  "end": 17659.116,
+                  "title": "The Golden Earring",
+                  "id": 6
+                },
+                {
+                  "start": 17659.116,
+                  "end": 19820.569,
+                  "title": "Marius's Mules",
+                  "id": 7
+                },
+                {
+                  "start": 19820.569,
+                  "end": 21910.133,
+                  "title": "The Third Founder of Rome",
+                  "id": 8
+                },
+                {
+                  "start": 21910.133,
+                  "end": 25160.462,
+                  "title": "Italia",
+                  "id": 9
+                },
+                {
+                  "start": 25160.462,
+                  "end": 27806.562,
+                  "title": "The Ruins of Carthage",
+                  "id": 10
+                },
+                {
+                  "start": 27806.562,
+                  "end": 30886.978,
+                  "title": "The Spiked Boots",
+                  "id": 11
+                },
+                {
+                  "start": 30886.978,
+                  "end": 33578.868,
+                  "title": "Civil War",
+                  "id": 12
+                },
+                {
+                  "start": 33578.868,
+                  "end": 36836.861,
+                  "title": "Dictator for Life",
+                  "id": 13
+                }
+              ],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Storm Before the Storm",
+                "tagArtist": "Mike Duncan",
+                "tagGenre": "Books & Spoken",
+                "tagTitle": "The Beginning of the End of the Roman Republic",
+                "tagDate": "2017",
+                "tagComposer": "Mike Duncan",
+                "tagEncoder": "Lavf58.76.100"
+              },
+              "mimeType": "audio/mp4"
+            }
+          ],
+          "chapters": [
+            {
+              "start": 0,
+              "end": 2326.918,
+              "title": "Prologue: The Triumph of the Roman Republic",
+              "id": 0
+            },
+            {
+              "start": 2326.918,
+              "end": 5278.081,
+              "title": "The Beasts of Italy",
+              "id": 1
+            },
+            {
+              "start": 5278.081,
+              "end": 7965.619,
+              "title": "The Stepchildren of Rome",
+              "id": 2
+            },
+            {
+              "start": 7965.619,
+              "end": 11106.815,
+              "title": "Daggers in the Forum",
+              "id": 3
+            },
+            {
+              "start": 11106.815,
+              "end": 13490.251,
+              "title": "A City for Sale",
+              "id": 4
+            },
+            {
+              "start": 13490.251,
+              "end": 15697.168,
+              "title": "The Spoils of Victory",
+              "id": 5
+            },
+            {
+              "start": 15697.168,
+              "end": 17659.116,
+              "title": "The Golden Earring",
+              "id": 6
+            },
+            {
+              "start": 17659.116,
+              "end": 19820.569,
+              "title": "Marius's Mules",
+              "id": 7
+            },
+            {
+              "start": 19820.569,
+              "end": 21910.133,
+              "title": "The Third Founder of Rome",
+              "id": 8
+            },
+            {
+              "start": 21910.133,
+              "end": 25160.462,
+              "title": "Italia",
+              "id": 9
+            },
+            {
+              "start": 25160.462,
+              "end": 27806.562,
+              "title": "The Ruins of Carthage",
+              "id": 10
+            },
+            {
+              "start": 27806.562,
+              "end": 30886.978,
+              "title": "The Spiked Boots",
+              "id": 11
+            },
+            {
+              "start": 30886.978,
+              "end": 33578.868,
+              "title": "Civil War",
+              "id": 12
+            },
+            {
+              "start": 33578.868,
+              "end": 36836.861,
+              "title": "Dictator for Life",
+              "id": 13
+            }
+          ],
+          "ebookFile": null
+        },
+        "libraryFiles": [
+          {
+            "ino": "45130",
+            "metadata": {
+              "filename": "Mike Duncan - The Storm Before the Storm - The Beginning of the End of the Roman Republic.m4b",
+              "ext": ".m4b",
+              "path": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic/Mike Duncan - The Storm Before the Storm - The Beginning of the End of the Roman Republic.m4b",
+              "relPath": "Mike Duncan - The Storm Before the Storm - The Beginning of the End of the Roman Republic.m4b",
+              "size": 292924104,
+              "mtimeMs": 1777744775321,
+              "ctimeMs": 1777744784578,
+              "birthtimeMs": 1777744606031
+            },
+            "isSupplementary": null,
+            "addedAt": 1777744796964,
+            "updatedAt": 1777744796964,
+            "fileType": "audio"
+          },
+          {
+            "ino": "45137",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic/metadata.json",
+              "relPath": "metadata.json",
+              "size": 2072,
+              "mtimeMs": 1778671843388,
+              "ctimeMs": 1778671843388,
+              "birthtimeMs": 1777744798654
+            },
+            "isSupplementary": null,
+            "addedAt": 1777744798659,
+            "updatedAt": 1778671843332,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "45136",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 131749,
+              "mtimeMs": 1777744798486,
+              "ctimeMs": 1777744798486,
+              "birthtimeMs": 1777744798486
+            },
+            "isSupplementary": null,
+            "addedAt": 1777744810997,
+            "updatedAt": 1777744810997,
+            "fileType": "image"
+          }
+        ]
+      }
+    }
+  }
+}

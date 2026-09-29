@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { type FetchLike } from './http/fetch.js';
-import { runRecord } from './record-cli.js';
+import { runRecord, SHOW_NOTES_DROPPED } from './record-cli.js';
 
 const BASE = 'http://upstream.invalid:13378';
 
@@ -21,7 +21,9 @@ function fakeAbs(play: unknown) {
     if (pathname === '/api/libraries') {
       return json({ libraries: [{ id: 'lib1', name: 'Books', mediaType: 'book' }] });
     }
-    if (pathname === '/api/libraries/lib1/items') return json({ results: [{ id: 'li1' }] });
+    if (pathname === '/api/libraries/lib1/items') {
+      return json({ total: 1, results: [{ id: 'li1', mediaType: 'book', updatedAt: 1 }] });
+    }
     if (pathname === '/api/items/li1') return json({ id: 'li1', mediaType: 'book', media: {} });
     if (pathname === '/api/items/li1/play') return json(play);
     if (pathname.startsWith('/api/session/')) return new Response('OK', { status: 200 });
@@ -141,7 +143,9 @@ function fakeJellyfin() {
         { Id: 'u2', Policy: { IsAdministrator: true } },
       ]);
     }
-    if (pathname === '/Items') return json({ Items: [{ Id: 'a1', Type: 'MusicAlbum' }] });
+    if (pathname === '/Items') {
+      return json({ Items: [{ Id: 'a1', Type: 'MusicAlbum' }], TotalRecordCount: 1 });
+    }
     if (pathname.startsWith('/Items/')) {
       return json({ Id: pathname.slice('/Items/'.length), Type: 'MusicAlbum' });
     }
@@ -180,5 +184,120 @@ describe('record mode against Jellyfin', () => {
     expect(await runRecord(recordIo)).toBe(0);
     expect(jf.asked).toContain('/Items/b7?userId=u2');
     expect(jf.asked.some((a) => a.startsWith('/Items?'))).toBe(false);
+  });
+});
+
+/** A fake of both upstreams holding one book, one show and one album, for the index calls. */
+function fakeIndexUpstreams() {
+  const asked: string[] = [];
+  const book = {
+    id: 'b1',
+    libraryId: 'books',
+    mediaType: 'book',
+    updatedAt: 1,
+    media: {
+      metadata: { title: 'B', authors: [], narrators: [], series: [], genres: [] },
+      audioFiles: [],
+    },
+  };
+  const show = {
+    id: 's1',
+    libraryId: 'pods',
+    mediaType: 'podcast',
+    updatedAt: 1,
+    media: {
+      metadata: { title: 'S', genres: [] },
+      episodes: [
+        { id: 'e1', title: 'E', updatedAt: 1, description: '<p>Ads at https://ads.example</p>' },
+      ],
+    },
+  };
+  const fetch: FetchLike = async (url, init) => {
+    const { pathname, search } = new URL(url);
+    asked.push(`${init?.method ?? 'GET'} ${pathname}${search}`);
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    const routes: Record<string, unknown> = {
+      '/status': { serverVersion: '2.36.1' },
+      '/api/libraries': {
+        libraries: [
+          { id: 'books', name: 'Books', mediaType: 'book' },
+          { id: 'pods', name: 'Podcasts', mediaType: 'podcast' },
+        ],
+      },
+      '/api/libraries/books/items': {
+        total: 1,
+        results: [{ id: 'b1', mediaType: 'book', updatedAt: 1 }],
+      },
+      '/api/libraries/pods/items': {
+        total: 1,
+        results: [{ id: 's1', mediaType: 'podcast', updatedAt: 1 }],
+      },
+      '/api/items/b1': book,
+      '/api/items/s1': show,
+      '/System/Info/Public': { Version: '10.11.11' },
+      '/Items': search.includes('ParentId=')
+        ? { Items: [{ Id: 't1', Type: 'Audio' }], TotalRecordCount: 1 }
+        : { Items: [{ Id: 'a1', Type: 'MusicAlbum' }], TotalRecordCount: 1 },
+    };
+    return pathname in routes ? json(routes[pathname]) : new Response('no', { status: 404 });
+  };
+  return { fetch, asked };
+}
+
+describe("record mode for the index's calls", () => {
+  const run = async () => {
+    const up = fakeIndexUpstreams();
+    const out: string[] = [];
+    const err: string[] = [];
+    const code = await runRecord({
+      argv: ['--only', 'index', '--abs', BASE, '--jellyfin', BASE, '--dry-run'],
+      stdin: 'ABS_API_KEY=test-abs-key-0000\nJELLYFIN_API_KEY=test-jellyfin-key-0000\n',
+      fetch: up.fetch,
+      out: (line) => out.push(line),
+      err: (line) => err.push(line),
+    });
+    const written = out.map((l) => l.replace(/^wrote /, ''));
+    return { ...up, code, err, written };
+  };
+
+  it('only reads: every call is a GET, none scans, and the Podcasts library is paged', async () => {
+    const { asked, code, err } = await run();
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    for (const call of asked) expect(call).toMatch(/^GET /);
+    for (const call of asked) expect(call).not.toMatch(/scan/i);
+    expect(asked).toContain('GET /api/libraries/pods/items?limit=2&page=4&minified=1&sort=addedAt');
+    expect(asked.some((a) => a.includes('/file/') || a.endsWith('/play'))).toBe(false);
+  });
+
+  it('records a page of each library, each listed item, and each listed album with its tracks', async () => {
+    const { written } = await run();
+    expect(written.map((w) => w.split('/').slice(-3).join('/'))).toEqual([
+      'audiobookshelf/recordings/index-books-page.json',
+      'audiobookshelf/recordings/index-book-1.json',
+      'audiobookshelf/recordings/index-shows-page.json',
+      'audiobookshelf/recordings/index-show-1.json',
+      'jellyfin/recordings/index-albums-page.json',
+      'jellyfin/recordings/index-album-tracks-1.json',
+    ]);
+  });
+
+  it("replaces each episode's show notes and keeps the rest of the answer", async () => {
+    const { written } = await run();
+    const file = written.find((w) => w.endsWith('index-show-1.json')) ?? '';
+    const recording = JSON.parse(readFileSync(file, 'utf8')) as {
+      response: { body: { json: { media: { episodes: { id: string; description: string }[] } } } };
+    };
+    const [episode] = recording.response.body.json.media.episodes;
+    expect(episode).toEqual({
+      id: 'e1',
+      title: 'E',
+      updatedAt: 1,
+      description: SHOW_NOTES_DROPPED,
+    });
   });
 });

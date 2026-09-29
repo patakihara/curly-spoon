@@ -207,6 +207,20 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PUBLIC_ORIGIN: 'audio.example.org' })).toThrow();
   });
 
+  it('runs the library index hourly by default, not at all at 0, and reads ABS with its own key', () => {
+    expect(loadConfig({}).index).toEqual({ everyMinutes: 60, absKeyFile: null });
+    expect(loadConfig({ INDEX_EVERY_MINUTES: '0' }).index.everyMinutes).toBe(0);
+    expect(() => loadConfig({ INDEX_EVERY_MINUTES: '-5' })).toThrow();
+    expect(
+      loadConfig({
+        ABS_URL: 'http://upstream.invalid',
+        ABS_PROVISION_KEY_FILE: '/keys/provision',
+        ABS_INDEX_KEY_FILE: '/keys/index',
+      }).index.absKeyFile,
+    ).toBe('/keys/index');
+    expect(() => loadConfig({ ABS_INDEX_KEY_FILE: '/keys/index' })).toThrow(/ABS_URL/);
+  });
+
   it('reads AURALIS_COMMIT as the full commit the image was built from, empty as none', () => {
     expect(loadConfig({}).commit).toBeNull();
     expect(loadConfig({ AURALIS_COMMIT: '' }).commit).toBeNull();

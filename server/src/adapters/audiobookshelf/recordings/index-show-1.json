@@ -1,0 +1,443 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "index-show-1",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/e6751961-22eb-4064-8987-b75bfe655929",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "e6751961-22eb-4064-8987-b75bfe655929",
+        "ino": "93124",
+        "oldLibraryItemId": null,
+        "libraryId": "c84b79a6-05b2-4cb3-90a0-0bcbda43ecc0",
+        "folderId": "ea3ae8b9-643b-4b9b-87dd-78bd88514823",
+        "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped",
+        "relPath": "Marshall Islands: After the Bomb Dropped",
+        "isFile": false,
+        "mtimeMs": 1786102590755,
+        "ctimeMs": 1786102590755,
+        "birthtimeMs": 1786088196482,
+        "addedAt": 1786088196496,
+        "updatedAt": 1786122534544,
+        "lastScan": 1786122485136,
+        "scanVersion": "2.36.0",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "podcast",
+        "media": {
+          "id": "7516284a-ec60-4506-a6d5-5a30bdc11791",
+          "libraryItemId": "e6751961-22eb-4064-8987-b75bfe655929",
+          "metadata": {
+            "title": "Marshall Islands: After the Bomb Dropped",
+            "author": "Cool Zone Media and iHeartPodcasts",
+            "description": "<p>Conflict journalist James Stout travels to the remote Republic of the Marshall Islands, where the US tested its atomic bombs, to learn how communities are dealing with their nuclear legacy and the uncertainty climate change brings to their future. </p>",
+            "releaseDate": "2023-09-08T04:00:00Z",
+            "genres": [
+              "Society & Culture:Documentary",
+              "Society & Culture:Places & Travel",
+              "News:Politics"
+            ],
+            "feedUrl": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/263f0d81-9fa6-43f0-b350-b2b20161986b/podcast.rss",
+            "imageUrl": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/263f0d81-9fa6-43f0-b350-b2b20161986b/image.jpg?t=1754935243&size=Large",
+            "itunesPageUrl": "https://podcasts.apple.com/us/podcast/marshall-islands-after-the-bomb-dropped/id1833281543?uo=4",
+            "itunesId": "1833281543",
+            "itunesArtistId": null,
+            "explicit": false,
+            "language": "en-US",
+            "type": null
+          },
+          "coverPath": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/cover.jpg",
+          "tags": [],
+          "episodes": [
+            {
+              "libraryItemId": "e6751961-22eb-4064-8987-b75bfe655929",
+              "podcastId": "7516284a-ec60-4506-a6d5-5a30bdc11791",
+              "id": "3b93ba7a-33ef-417f-bb5d-637a272d6107",
+              "oldEpisodeId": null,
+              "index": null,
+              "season": "2",
+              "episode": null,
+              "episodeType": "full",
+              "title": "The Marshall Islands, Part One: For the Good of Humanity and to End All Wars",
+              "subtitle": null,
+              "description": "Show notes dropped by the recorder: they carry third-party links.",
+              "enclosure": {
+                "url": "https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/61efe1aa-d65e-486e-b68b-b073017b8a9d/audio.mp3?utm_source=Podcast&in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b",
+                "type": "audio/mpeg",
+                "length": "23257241"
+              },
+              "guid": null,
+              "pubDate": "2023",
+              "chapters": [],
+              "audioFile": {
+                "index": null,
+                "ino": "95917",
+                "metadata": {
+                  "filename": "The Marshall Islands, Part One - For the Good of Humanity and to End All Wars.mp3",
+                  "ext": ".mp3",
+                  "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part One - For the Good of Humanity and to End All Wars.mp3",
+                  "relPath": "The Marshall Islands, Part One - For the Good of Humanity and to End All Wars.mp3",
+                  "size": 36052884,
+                  "mtimeMs": 1786102749005,
+                  "ctimeMs": 1786102749005,
+                  "birthtimeMs": 1786102590755
+                },
+                "addedAt": 1786102750485,
+                "updatedAt": 1786102750485,
+                "trackNumFromMeta": null,
+                "discNumFromMeta": null,
+                "trackNumFromFilename": null,
+                "discNumFromFilename": null,
+                "manuallyVerified": false,
+                "exclude": false,
+                "error": null,
+                "format": "MP2/3 (MPEG audio layer 2/3)",
+                "duration": 2248.907755,
+                "bitRate": 128000,
+                "language": null,
+                "codec": "mp3",
+                "timeBase": "1/14112000",
+                "channels": 2,
+                "channelLayout": "stereo",
+                "chapters": [],
+                "embeddedCoverArt": "mjpeg",
+                "metaTags": {
+                  "tagAlbum": "It Could Happen Here",
+                  "tagArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagGenre": "Podcast",
+                  "tagTitle": "The Marshall Islands, Part One: For the Good of Humanity and to End All Wars",
+                  "tagAlbumArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagDate": "2023"
+                },
+                "mimeType": "audio/mpeg"
+              },
+              "publishedAt": 1672531200000,
+              "addedAt": 1786102750487,
+              "updatedAt": 1786122486579
+            },
+            {
+              "libraryItemId": "e6751961-22eb-4064-8987-b75bfe655929",
+              "podcastId": "7516284a-ec60-4506-a6d5-5a30bdc11791",
+              "id": "5bd923c1-c515-41b9-b374-50da7958eb11",
+              "oldEpisodeId": null,
+              "index": null,
+              "season": null,
+              "episode": null,
+              "episodeType": null,
+              "title": "The Marshall Islands, Part Four: Water Is Life",
+              "subtitle": null,
+              "description": "Show notes dropped by the recorder: they carry third-party links.",
+              "enclosure": {
+                "url": "https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/db7c0126-10a6-4bb9-95ca-b077000c5f7f/audio.mp3?utm_source=Podcast&in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b",
+                "type": "audio/mpeg",
+                "length": "33541097"
+              },
+              "guid": null,
+              "pubDate": "Fri, 08 Sep 2023 04:00:00 +0000",
+              "chapters": [],
+              "audioFile": {
+                "index": 1,
+                "ino": "95914",
+                "metadata": {
+                  "filename": "The Marshall Islands, Part Four - Water Is Life.mp3",
+                  "ext": ".mp3",
+                  "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part Four - Water Is Life.mp3",
+                  "relPath": "The Marshall Islands, Part Four - Water Is Life.mp3",
+                  "size": 46504760,
+                  "mtimeMs": 1786102579346,
+                  "ctimeMs": 1786102579346,
+                  "birthtimeMs": 1786102579346
+                },
+                "addedAt": 1786122524615,
+                "updatedAt": 1786122524615,
+                "trackNumFromMeta": null,
+                "discNumFromMeta": null,
+                "trackNumFromFilename": null,
+                "discNumFromFilename": null,
+                "manuallyVerified": false,
+                "exclude": false,
+                "error": null,
+                "format": "MP2/3 (MPEG audio layer 2/3)",
+                "duration": 2893.165714,
+                "bitRate": 128000,
+                "language": null,
+                "codec": "mp3",
+                "timeBase": "1/14112000",
+                "channels": 2,
+                "channelLayout": "stereo",
+                "chapters": [],
+                "embeddedCoverArt": "mjpeg",
+                "metaTags": {
+                  "tagAlbum": "It Could Happen Here",
+                  "tagArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagGenre": "Podcast",
+                  "tagTitle": "The Marshall Islands, Part Four: Water Is Life",
+                  "tagAlbumArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagDate": "2023"
+                },
+                "mimeType": "audio/mpeg"
+              },
+              "publishedAt": 1694145600000,
+              "addedAt": 1786122534405,
+              "updatedAt": 1790505294428
+            },
+            {
+              "libraryItemId": "e6751961-22eb-4064-8987-b75bfe655929",
+              "podcastId": "7516284a-ec60-4506-a6d5-5a30bdc11791",
+              "id": "fef398e0-ce0f-48ad-86fe-9b45c96c1911",
+              "oldEpisodeId": null,
+              "index": null,
+              "season": null,
+              "episode": null,
+              "episodeType": null,
+              "title": "The Marshall Islands, Part Three: Climate Change",
+              "subtitle": null,
+              "description": "Show notes dropped by the recorder: they carry third-party links.",
+              "enclosure": {
+                "url": "https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/28c74a14-ffc3-4e36-8bca-b0750182550a/audio.mp3?utm_source=Podcast&in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b",
+                "type": "audio/mpeg",
+                "length": "32087437"
+              },
+              "guid": null,
+              "pubDate": "Thu, 07 Sep 2023 04:00:00 +0000",
+              "chapters": [],
+              "audioFile": {
+                "index": 1,
+                "ino": "95915",
+                "metadata": {
+                  "filename": "The Marshall Islands, Part Three - Climate Change.mp3",
+                  "ext": ".mp3",
+                  "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part Three - Climate Change.mp3",
+                  "relPath": "The Marshall Islands, Part Three - Climate Change.mp3",
+                  "size": 45051100,
+                  "mtimeMs": 1786102583251,
+                  "ctimeMs": 1786102583251,
+                  "birthtimeMs": 1786102583251
+                },
+                "addedAt": 1786122534128,
+                "updatedAt": 1786122534128,
+                "trackNumFromMeta": null,
+                "discNumFromMeta": null,
+                "trackNumFromFilename": null,
+                "discNumFromFilename": null,
+                "manuallyVerified": false,
+                "exclude": false,
+                "error": null,
+                "format": "MP2/3 (MPEG audio layer 2/3)",
+                "duration": 2791.810612,
+                "bitRate": 128000,
+                "language": null,
+                "codec": "mp3",
+                "timeBase": "1/14112000",
+                "channels": 2,
+                "channelLayout": "stereo",
+                "chapters": [],
+                "embeddedCoverArt": "mjpeg",
+                "metaTags": {
+                  "tagAlbum": "It Could Happen Here",
+                  "tagArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagGenre": "Podcast",
+                  "tagTitle": "The Marshall Islands, Part Three: Climate Change",
+                  "tagAlbumArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagDate": "2023"
+                },
+                "mimeType": "audio/mpeg"
+              },
+              "publishedAt": 1694059200000,
+              "addedAt": 1786122534442,
+              "updatedAt": 1790505294518
+            },
+            {
+              "libraryItemId": "e6751961-22eb-4064-8987-b75bfe655929",
+              "podcastId": "7516284a-ec60-4506-a6d5-5a30bdc11791",
+              "id": "35d494f0-defb-4afe-9358-d0cf07a6c53c",
+              "oldEpisodeId": null,
+              "index": null,
+              "season": null,
+              "episode": null,
+              "episodeType": null,
+              "title": "The Marshall Islands, Part Two: For the Good of Humanity and to End All Wars",
+              "subtitle": null,
+              "description": "Show notes dropped by the recorder: they carry third-party links.",
+              "enclosure": {
+                "url": "https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/f5ad2a9e-df19-4c5a-a09a-b0750020cfea/audio.mp3?utm_source=Podcast&in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b",
+                "type": "audio/mpeg",
+                "length": "31584660"
+              },
+              "guid": null,
+              "pubDate": "Wed, 06 Sep 2023 04:00:00 +0000",
+              "chapters": [],
+              "audioFile": {
+                "index": 1,
+                "ino": "95916",
+                "metadata": {
+                  "filename": "The Marshall Islands, Part Two - For the Good of Humanity and to End All Wars.mp3",
+                  "ext": ".mp3",
+                  "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part Two - For the Good of Humanity and to End All Wars.mp3",
+                  "relPath": "The Marshall Islands, Part Two - For the Good of Humanity and to End All Wars.mp3",
+                  "size": 44548323,
+                  "mtimeMs": 1786102587015,
+                  "ctimeMs": 1786102587015,
+                  "birthtimeMs": 1786102587015
+                },
+                "addedAt": 1786122534403,
+                "updatedAt": 1786122534403,
+                "trackNumFromMeta": null,
+                "discNumFromMeta": null,
+                "trackNumFromFilename": null,
+                "discNumFromFilename": null,
+                "manuallyVerified": false,
+                "exclude": false,
+                "error": null,
+                "format": "MP2/3 (MPEG audio layer 2/3)",
+                "duration": 2790.426122,
+                "bitRate": 128000,
+                "language": null,
+                "codec": "mp3",
+                "timeBase": "1/14112000",
+                "channels": 2,
+                "channelLayout": "stereo",
+                "chapters": [],
+                "embeddedCoverArt": "mjpeg",
+                "metaTags": {
+                  "tagAlbum": "It Could Happen Here",
+                  "tagArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagGenre": "Podcast",
+                  "tagTitle": "The Marshall Islands, Part Two: For the Good of Humanity and to End All Wars",
+                  "tagAlbumArtist": "iHeartMedia, Inc. © Any use of this intellectual property for text and data mining or computational analysis including as training material for artificial intelligence systems is strictly prohibited without express written consent from iHeartMedia",
+                  "tagDate": "2023"
+                },
+                "mimeType": "audio/mpeg"
+              },
+              "publishedAt": 1693972800000,
+              "addedAt": 1786122534476,
+              "updatedAt": 1790505294613
+            }
+          ],
+          "autoDownloadEpisodes": false,
+          "autoDownloadSchedule": "0 * * * *",
+          "lastEpisodeCheck": 1786088196487,
+          "maxEpisodesToKeep": 0,
+          "maxNewEpisodesToDownload": 3
+        },
+        "libraryFiles": [
+          {
+            "ino": "93125",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 1241415,
+              "mtimeMs": 1786088196782,
+              "ctimeMs": 1786088196786,
+              "birthtimeMs": 1786088196678
+            },
+            "isSupplementary": null,
+            "addedAt": 1786088196789,
+            "updatedAt": 1786088210880,
+            "fileType": "image"
+          },
+          {
+            "ino": "93127",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/metadata.json",
+              "relPath": "metadata.json",
+              "size": 1174,
+              "mtimeMs": 1786122534541,
+              "ctimeMs": 1786122534541,
+              "birthtimeMs": 1786088210966
+            },
+            "isSupplementary": null,
+            "addedAt": 1786088210969,
+            "updatedAt": 1786088210969,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "95917",
+            "metadata": {
+              "filename": "The Marshall Islands, Part One - For the Good of Humanity and to End All Wars.mp3",
+              "ext": ".mp3",
+              "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part One - For the Good of Humanity and to End All Wars.mp3",
+              "relPath": "The Marshall Islands, Part One - For the Good of Humanity and to End All Wars.mp3",
+              "size": 36052884,
+              "mtimeMs": 1786102749005,
+              "ctimeMs": 1786102749005,
+              "birthtimeMs": 1786102590755
+            },
+            "isSupplementary": null,
+            "addedAt": 1786102591331,
+            "updatedAt": 1786122485136,
+            "fileType": "audio"
+          },
+          {
+            "ino": "95914",
+            "metadata": {
+              "filename": "The Marshall Islands, Part Four - Water Is Life.mp3",
+              "ext": ".mp3",
+              "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part Four - Water Is Life.mp3",
+              "relPath": "The Marshall Islands, Part Four - Water Is Life.mp3",
+              "size": 46504760,
+              "mtimeMs": 1786102579346,
+              "ctimeMs": 1786102579346,
+              "birthtimeMs": 1786102579346
+            },
+            "isSupplementary": null,
+            "addedAt": 1786122485133,
+            "updatedAt": 1786122485133,
+            "fileType": "audio"
+          },
+          {
+            "ino": "95915",
+            "metadata": {
+              "filename": "The Marshall Islands, Part Three - Climate Change.mp3",
+              "ext": ".mp3",
+              "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part Three - Climate Change.mp3",
+              "relPath": "The Marshall Islands, Part Three - Climate Change.mp3",
+              "size": 45051100,
+              "mtimeMs": 1786102583251,
+              "ctimeMs": 1786102583251,
+              "birthtimeMs": 1786102583251
+            },
+            "isSupplementary": null,
+            "addedAt": 1786122485133,
+            "updatedAt": 1786122485133,
+            "fileType": "audio"
+          },
+          {
+            "ino": "95916",
+            "metadata": {
+              "filename": "The Marshall Islands, Part Two - For the Good of Humanity and to End All Wars.mp3",
+              "ext": ".mp3",
+              "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/The Marshall Islands, Part Two - For the Good of Humanity and to End All Wars.mp3",
+              "relPath": "The Marshall Islands, Part Two - For the Good of Humanity and to End All Wars.mp3",
+              "size": 44548323,
+              "mtimeMs": 1786102587015,
+              "ctimeMs": 1786102587015,
+              "birthtimeMs": 1786102587015
+            },
+            "isSupplementary": null,
+            "addedAt": 1786122485133,
+            "updatedAt": 1786122485133,
+            "fileType": "audio"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,1280 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "index-album-tracks-1",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "IncludeItemTypes": "Audio",
+      "ParentId": "65de8562c54b89ceef199f91bacd8709",
+      "SortBy": "ParentIndexNumber,IndexNumber,SortName"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Femininomenon",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7c8b8e35e6ec0f40736aadee1f8979bb",
+            "Etag": "1a64d715cc8decd5caa8831dd6e22c83",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2197107260,
+            "ProductionYear": 2023,
+            "IndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "436a49810142c4f856b033bae929874a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "436a49810142c4f856b033bae929874a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "Red Wine Supernova",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "5130cb0d529d7281f503eb95c427dd7b",
+            "Etag": "792997bc5fe319f44621166229b0ce2f",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 1927209980,
+            "ProductionYear": 2023,
+            "IndexNumber": 2,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "37c0c9a7408df1b9efa552a80905a4a6"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "37c0c9a7408df1b9efa552a80905a4a6": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.7
+          },
+          {
+            "Name": "After Midnight",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a2978bfc8fdc396fc73070e889377ebf",
+            "Etag": "3dad833edf121acd72343729f098071f",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2048570290,
+            "ProductionYear": 2023,
+            "IndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "0eac121416bc6edbfc3616efcc8f4791"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "0eac121416bc6edbfc3616efcc8f4791": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11
+          },
+          {
+            "Name": "Coffee",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "06312a70f4aecee8a36a067f911786ca",
+            "Etag": "b26fad73c76a608f007a2c394df32928",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2055200680,
+            "ProductionYear": 2023,
+            "IndexNumber": 4,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "875d5bcd6ad6c5333786306cb28dbe17"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "875d5bcd6ad6c5333786306cb28dbe17": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.7
+          },
+          {
+            "Name": "Casual",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "c7c085df530eb76f5a0c88aaa2cf5127",
+            "Etag": "837c1e7bab22981b964e0acfcac50ce3",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2327962130,
+            "ProductionYear": 2023,
+            "IndexNumber": 5,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "b4951bd14f56695410c1db6ad8252f01"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "b4951bd14f56695410c1db6ad8252f01": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.6
+          },
+          {
+            "Name": "Super Graphic Ultra Modern Girl",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3df20a2809be65eef5f1aff800df6f66",
+            "Etag": "455e970bbf28c632ece862a40e27608f",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 1838882769,
+            "ProductionYear": 2023,
+            "IndexNumber": 6,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "06a26077baa67333bf8908b97cd43d81"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "06a26077baa67333bf8908b97cd43d81": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.6
+          },
+          {
+            "Name": "HOT TO GO!",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8071c881e99edc4711ee077b24c5b71a",
+            "Etag": "c7eceb2124a10cfa8d8e3a9d5b67d308",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 1848411110,
+            "ProductionYear": 2023,
+            "IndexNumber": 7,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8a13c19b35bd9c385baa96153fcf97cf"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8a13c19b35bd9c385baa96153fcf97cf": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "My Kink Is Karma",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "db34896fff52eedede3094f36a4c76dd",
+            "Etag": "d091dff9bf1e62df385494fcdcf20439",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2225780730,
+            "ProductionYear": 2023,
+            "IndexNumber": 8,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "ea604df8ac1c52330fe82dc2c31bb57b"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "ea604df8ac1c52330fe82dc2c31bb57b": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.2
+          },
+          {
+            "Name": "Picture You",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "060a2b21d35755ef6665948709ae221f",
+            "Etag": "6977960d7c09b524822530ff87c2a3b8",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 1871300680,
+            "ProductionYear": 2023,
+            "IndexNumber": 9,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8b980d063da1319d48a5e04076ca85d5"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8b980d063da1319d48a5e04076ca85d5": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "Kaleidoscope",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "fbe3731b93b760b0f612253d65f25c10",
+            "Etag": "d58fa5815cc81d79fc383d13bdb928f2",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2226507480,
+            "ProductionYear": 2023,
+            "IndexNumber": 10,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5ec7d94c606519594ead056fe2d0046d"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5ec7d94c606519594ead056fe2d0046d": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.9
+          },
+          {
+            "Name": "Pink Pony Club",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "e567a2069096b784d1ff5ba6e890187e",
+            "Etag": "34753892f9a5a433a0b195aa462e4139",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2580347390,
+            "ProductionYear": 2023,
+            "IndexNumber": 11,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "21908d7a414e88b53e5938715df2876e"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "21908d7a414e88b53e5938715df2876e": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9
+          },
+          {
+            "Name": "Naked In Manhattan",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f1decfd60e74d319136cdf27b2f59578",
+            "Etag": "33b6eaed3cd1f55113e53db9113e1009",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2110578230,
+            "ProductionYear": 2023,
+            "IndexNumber": 12,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "eeb9bd78a1459dc30499c4c2d29200c0"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "eeb9bd78a1459dc30499c4c2d29200c0": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.3
+          },
+          {
+            "Name": "California",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "08b94aec010ba3ac304d8c4552e91439",
+            "Etag": "ded753e15014cb33a1d3689d5af3861a",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 1980894780,
+            "ProductionYear": 2023,
+            "IndexNumber": 13,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "4a118c683f43d329c9d89a651ea795a2"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "4a118c683f43d329c9d89a651ea795a2": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.8
+          },
+          {
+            "Name": "Guilty Pleasure",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "82c29a9f186beddd099cbfea04079a80",
+            "Etag": "eeef42cec41369ecf8e48345c76fd7a6",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2245839000,
+            "ProductionYear": 2023,
+            "IndexNumber": 14,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "3f6c09c06a6d55382c480d041817523a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "3f6c09c06a6d55382c480d041817523a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11.7
+          }
+        ],
+        "TotalRecordCount": 14,
+        "StartIndex": 0
+      }
+    }
+  }
+}

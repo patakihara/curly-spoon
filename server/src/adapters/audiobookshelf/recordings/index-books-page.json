@@ -1,0 +1,144 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "index-books-page",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries/e8aa253f-82d0-44ff-b87a-74671278ce9d/items",
+    "query": {
+      "limit": "2",
+      "minified": "1",
+      "page": "4",
+      "sort": "addedAt"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "results": [
+          {
+            "id": "61da2aef-807d-447c-ad49-d8c64c2d97d5",
+            "ino": "45110",
+            "oldLibraryItemId": null,
+            "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+            "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+            "path": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight",
+            "relPath": "Aubrey Gordon/You Just Need to Lose Weight",
+            "isFile": false,
+            "mtimeMs": 1777744682024,
+            "ctimeMs": 1777744682024,
+            "birthtimeMs": 1777744384491,
+            "addedAt": 1777744463199,
+            "updatedAt": 1778671399430,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "book",
+            "media": {
+              "id": "d1555eec-1f47-40ee-ac32-11b2203e09bf",
+              "metadata": {
+                "title": "You Just Need to Lose Weight",
+                "titleIgnorePrefix": "You Just Need to Lose Weight",
+                "subtitle": "And 19 Other Myths About Fat People",
+                "authorName": "Aubrey Gordon",
+                "authorNameLF": "Gordon, Aubrey",
+                "narratorName": "",
+                "seriesName": "",
+                "genres": [
+                  "Sociology"
+                ],
+                "publishedYear": null,
+                "publishedDate": null,
+                "publisher": "Books on Tape",
+                "description": "<b>&ldquo;One of the great thinkers of our generation . . . I feel fresher and smarter and happier for sitting down with her.&rdquo;&mdash;Jameela Jamil, iWeigh Podcast<br>The co-host of the <i>Maintenance Phase</i> podcast and creator of Your Fat Friend equips you with the facts to debunk common anti-fat myths and with tools to take action for fat justice</b><br>The pushback that shows up in conversations about fat justice takes exceedingly predicable form. <i>Losing weight is easy&mdash;calories in, calories out. Fat people are unhealthy. We&rsquo;re in the midst of an obesity epidemic. Fat acceptance &ldquo;glorifies obesity.&rdquo; The BMI is an objective measure of size and health.</i> Yet, these myths are as readily debunked as they are pervasive.<br>In <i>&ldquo;You Just Need to Lose Weight,&rdquo;</i> Aubrey Gordon equips readers with the facts and figures to reframe myths about fatness in order to dismantle the anti-fat bias ingrained in how we think about and treat fat...",
+                "isbn": null,
+                "asin": null,
+                "language": "English",
+                "explicit": false,
+                "abridged": false
+              },
+              "coverPath": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight/cover.jpg",
+              "tags": [],
+              "numTracks": 1,
+              "numAudioFiles": 1,
+              "numChapters": 29,
+              "duration": 25862.67675,
+              "size": 206904938
+            },
+            "numFiles": 3,
+            "size": 207185513
+          },
+          {
+            "id": "bca54de4-e659-4804-9836-3a332ddba120",
+            "ino": "45135",
+            "oldLibraryItemId": null,
+            "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+            "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+            "path": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic",
+            "relPath": "Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic",
+            "isFile": false,
+            "mtimeMs": 1777744798654,
+            "ctimeMs": 1777744798654,
+            "birthtimeMs": 1777744784562,
+            "addedAt": 1777744798522,
+            "updatedAt": 1778671843394,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "book",
+            "media": {
+              "id": "5fea64bb-3fdf-4386-b2ea-6c21aa036068",
+              "metadata": {
+                "title": "The Storm Before the Storm - The Beginning of the End of the Roman Republic",
+                "titleIgnorePrefix": "Storm Before the Storm - The Beginning of the End of the Roman Republic, The",
+                "subtitle": null,
+                "authorName": "Mike Duncan",
+                "authorNameLF": "Duncan, Mike",
+                "narratorName": "Mike Duncan",
+                "seriesName": "",
+                "genres": [
+                  "Books & Spoken"
+                ],
+                "publishedYear": "2017",
+                "publishedDate": null,
+                "publisher": null,
+                "description": null,
+                "isbn": null,
+                "asin": null,
+                "language": null,
+                "explicit": false,
+                "abridged": false
+              },
+              "coverPath": "/data/Books/Mike Duncan/The Storm Before the Storm - The Beginning of the End of the Roman Republic/cover.jpg",
+              "tags": [],
+              "numTracks": 1,
+              "numAudioFiles": 1,
+              "numChapters": 14,
+              "duration": 36836.868844,
+              "size": 292924104
+            },
+            "numFiles": 3,
+            "size": 293057925
+          }
+        ],
+        "total": 233,
+        "limit": 2,
+        "page": 4,
+        "sortBy": "addedAt",
+        "sortDesc": false,
+        "mediaType": "book",
+        "minified": true,
+        "collapseseries": false,
+        "include": "",
+        "offset": 8
+      }
+    }
+  }
+}

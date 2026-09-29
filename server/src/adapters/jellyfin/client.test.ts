@@ -21,7 +21,7 @@ describe('the Jellyfin client', () => {
     const { fetch, sent } = fake({ Items: [album], TotalRecordCount: 1, ...album });
     const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'the-key', fetch });
     await jf.getLibraries();
-    await jf.findAlbums(1);
+    await jf.getAlbums({ limit: 1, startIndex: 0 });
     await jf.getItem('a1');
     expect(sent.map((s) => new URL(s.url).pathname)).toEqual([
       '/Library/MediaFolders',
@@ -36,12 +36,35 @@ describe('the Jellyfin client', () => {
     }
   });
 
-  it('finding an album asks for one recursive MusicAlbum', async () => {
-    const { fetch, sent } = fake({ Items: [album], TotalRecordCount: 1 });
+  it('a page of albums is recursive, oldest added first, with the fields the index reads', async () => {
+    const { fetch, sent } = fake({ Items: [album], TotalRecordCount: 38 });
     const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
-    expect(await jf.findAlbums(1)).toEqual([album]);
-    const query = Object.fromEntries(new URL(sent[0]?.url ?? '').searchParams);
-    expect(query).toEqual({ IncludeItemTypes: 'MusicAlbum', Recursive: 'true', Limit: '1' });
+    expect(await jf.getAlbums({ limit: 2, startIndex: 8 })).toEqual({
+      Items: [album],
+      TotalRecordCount: 38,
+    });
+    expect(Object.fromEntries(new URL(sent[0]?.url ?? '').searchParams)).toEqual({
+      IncludeItemTypes: 'MusicAlbum',
+      Recursive: 'true',
+      SortBy: 'DateCreated,SortName',
+      SortOrder: 'Ascending',
+      StartIndex: '8',
+      Limit: '2',
+      Fields: 'ProviderIds,Genres,Etag',
+    });
+  });
+
+  it("an album's tracks are its Audio children in disc and track order", async () => {
+    const track = { Id: 't1', Name: 'A Track', Type: 'Audio' };
+    const { fetch, sent } = fake({ Items: [track], TotalRecordCount: 1 });
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    expect(await jf.getAlbumTracks('a1')).toEqual([track]);
+    expect(Object.fromEntries(new URL(sent[0]?.url ?? '').searchParams)).toEqual({
+      ParentId: 'a1',
+      IncludeItemTypes: 'Audio',
+      SortBy: 'ParentIndexNumber,IndexNumber,SortName',
+      Fields: 'ProviderIds,Genres,Etag',
+    });
   });
 
   it('an item asked for with the API key names a user, since the key has none of its own', async () => {

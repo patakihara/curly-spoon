@@ -13,6 +13,7 @@ import {
   inoSchema,
   itemIdSchema,
   itemSchema,
+  itemSummarySchema,
   librariesSchema,
   libraryItemsSchema,
   type PlayRequest,
@@ -80,12 +81,28 @@ export class AbsClient {
     return (await this.call('api/libraries', librariesSchema)).libraries;
   }
 
-  async getLibraryItems(
+  /**
+   * One page of a library, minified, in ABS's own order or by `sort`. The index sorts by
+   * `addedAt`, oldest first: a new item lands on the last page, so paging through while items
+   * arrive never skips one.
+   */
+  getLibraryItems(
     libraryId: string,
-    limit: number,
-  ): Promise<z.infer<typeof libraryItemsSchema>['results']> {
+    page: { limit: number; page: number; sort?: 'addedAt' },
+  ): Promise<z.infer<typeof libraryItemsSchema>> {
     const path = `api/libraries/${encodeURIComponent(libraryId)}/items`;
-    return (await this.call(path, libraryItemsSchema, {}, { limit: String(limit) })).results;
+    const query: Record<string, string> = {
+      limit: String(page.limit),
+      page: String(page.page),
+      minified: '1',
+    };
+    if (page.sort !== undefined) query.sort = page.sort;
+    return this.call(path, libraryItemsSchema, {}, query);
+  }
+
+  /** A book or a show as the index reads it: `GET /api/items/:id`, not expanded. */
+  getItemSummary(itemId: string): Promise<z.infer<typeof itemSummarySchema>> {
+    return this.call(`api/items/${encodeURIComponent(itemId)}`, itemSummarySchema);
   }
 
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {

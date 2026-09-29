@@ -1,0 +1,336 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AbsClient } from '../adapters/audiobookshelf/client.js';
+import { type FetchLike } from '../adapters/http/fetch.js';
+import { type Recording, recordingSchema } from '../adapters/http/recording.js';
+import { replayFetch } from '../adapters/http/replay.js';
+import { JellyfinClient } from '../adapters/jellyfin/client.js';
+import { openDatabase, type Db } from '../store/connection.js';
+import { runIndex } from './job.js';
+import { listIndexed, type StoredRow } from './store.js';
+
+const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
+const HOUR = 60 * 60 * 1000;
+const T0 = Date.UTC(2026, 8, 29, 12);
+
+function recording(upstream: string, call: string): Recording {
+  const file = join(ADAPTERS, upstream, 'recordings', `${call}.json`);
+  return recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+}
+
+const ABS_CALLS = [
+  'library-list',
+  'index-books-page',
+  'index-book-1',
+  'index-book-2',
+  'index-shows-page',
+  'index-show-1',
+  'index-show-2',
+] as const;
+const JELLYFIN_CALLS = [
+  'index-albums-page',
+  'index-album-tracks-1',
+  'index-album-tracks-2',
+] as const;
+type AbsCall = (typeof ABS_CALLS)[number];
+type JellyfinCall = (typeof JELLYFIN_CALLS)[number];
+
+/** The committed recordings, as parsed JSON bodies a test may copy and change. */
+function recorded() {
+  return {
+    abs: Object.fromEntries(ABS_CALLS.map((c) => [c, recording('audiobookshelf', c)])) as Record<
+      AbsCall,
+      Recording
+    >,
+    jellyfin: Object.fromEntries(
+      JELLYFIN_CALLS.map((c) => [c, recording('jellyfin', c)]),
+    ) as Record<JellyfinCall, Recording>,
+  };
+}
+
+// The recorded bodies' shapes, as far as these tests read them.
+interface Listing {
+  total: number;
+  results: { id: string; updatedAt: number }[];
+}
+interface AbsBook {
+  id: string;
+  updatedAt: number;
+  media: { metadata: { title: string; authors: { id: string; name: string }[] } };
+}
+interface AbsShow {
+  id: string;
+  updatedAt: number;
+  media: {
+    metadata: { title: string; feedUrl: string; itunesId: string };
+    episodes: { id: string; title: string; updatedAt: number; enclosure: { url: string } }[];
+  };
+}
+interface JfItem {
+  Id: string;
+  Name: string;
+  Etag: string;
+  ProviderIds: Record<string, string>;
+}
+interface JfPage {
+  Items: JfItem[];
+  TotalRecordCount: number;
+}
+
+function body<T>(r: Recording): T {
+  if (r.response.body === null || !('json' in r.response.body)) throw new Error(r.call);
+  return r.response.body.json as T;
+}
+
+/** A copy of `r` whose answer is `edit` applied to a copy of the recorded body. */
+function changed<T>(r: Recording, edit: (json: T) => void): Recording {
+  const json = structuredClone(body<T>(r));
+  edit(json);
+  return { ...r, response: { ...r.response, body: { json } } };
+}
+
+/** Clients on replayed recordings, and every path they asked for. */
+function clients(abs: Recording[], jellyfin: Recording[]) {
+  const asked: string[] = [];
+  const counting =
+    (fetch: FetchLike): FetchLike =>
+    (url, init) => {
+      const { pathname, searchParams } = new URL(url);
+      asked.push(
+        searchParams.has('ParentId') ? `tracks ${searchParams.get('ParentId')}` : pathname,
+      );
+      return fetch(url, init);
+    };
+  const common = { baseUrl: 'http://upstream.invalid', token: '<token>' };
+  return {
+    asked,
+    abs: new AbsClient({ ...common, fetch: counting(replayFetch(abs)) }),
+    jellyfin: new JellyfinClient({ ...common, fetch: counting(replayFetch(jellyfin)) }),
+  };
+}
+
+/** Runs the index on the recorded page (the fifth, of two items per library). */
+async function run(db: Db, at: number, r = recorded()) {
+  const c = clients(Object.values(r.abs), Object.values(r.jellyfin));
+  const result = await runIndex({
+    db,
+    abs: c.abs,
+    jellyfin: c.jellyfin,
+    now: () => at,
+    pageSize: 2,
+    pages: { first: 4, count: 1 },
+  });
+  return { result, asked: c.asked };
+}
+
+const byKey = (rows: StoredRow[]) => new Map(rows.map((row) => [`${row.source}:${row.id}`, row]));
+
+let db: Db;
+beforeEach(() => {
+  db = openDatabase(':memory:');
+});
+afterEach(() => db.close());
+
+describe('[M1.index/a] the index job on the Audiobookshelf and Jellyfin recordings', () => {
+  it('[M1.index/a] indexes every recorded book, show, episode, album and track with its upstream id, and nothing else', async () => {
+    const r = recorded();
+    const { result } = await run(db, T0, r);
+    expect(result.abs?.error).toBeNull();
+    expect(result.jellyfin?.error).toBeNull();
+
+    const expected = [
+      ...body<Listing>(r.abs['index-books-page']).results.map((b) => `abs:book:${b.id}`),
+      ...(['index-show-1', 'index-show-2'] as const).flatMap((call) => {
+        const show = body<AbsShow>(r.abs[call]);
+        return [`abs:show:${show.id}`, ...show.media.episodes.map((e) => `abs:episode:${e.id}`)];
+      }),
+      ...body<JfPage>(r.jellyfin['index-albums-page']).Items.map((a) => `jellyfin:album:${a.Id}`),
+      ...(['index-album-tracks-1', 'index-album-tracks-2'] as const).flatMap((call) =>
+        body<JfPage>(r.jellyfin[call]).Items.map((t) => `jellyfin:track:${t.Id}`),
+      ),
+    ];
+    const indexed = listIndexed(db).map((row) => `${row.source}:${row.kind}:${row.id}`);
+    expect(indexed.sort()).toEqual(expected.sort());
+    // Two books, two shows, their 4 and 15 episodes, two albums and their tracks.
+    expect(expected.filter((k) => k.startsWith('abs:episode:'))).toHaveLength(19);
+  });
+
+  it('[M1.index/a] keeps each book with its authors by upstream id, and each show and episode with its feed and enclosure', async () => {
+    const r = recorded();
+    await run(db, T0, r);
+    const rows = byKey(listIndexed(db));
+
+    for (const call of ['index-book-1', 'index-book-2'] as const) {
+      const book = body<AbsBook>(r.abs[call]);
+      const row = rows.get(`abs:${book.id}`);
+      expect(row?.title).toBe(book.media.metadata.title);
+      expect(row?.creators.filter((c) => c.role === 'author')).toEqual(
+        book.media.metadata.authors.map((a) => ({ id: a.id, name: a.name, role: 'author' })),
+      );
+      expect(row?.duration).toBeGreaterThan(0);
+      expect(row?.upstreamVersion).toBe(String(book.updatedAt));
+    }
+
+    for (const call of ['index-show-1', 'index-show-2'] as const) {
+      const show = body<AbsShow>(r.abs[call]);
+      expect(rows.get(`abs:${show.id}`)?.ids).toEqual({
+        feed_url: show.media.metadata.feedUrl,
+        itunes_id: show.media.metadata.itunesId,
+      });
+      for (const episode of show.media.episodes) {
+        const row = rows.get(`abs:${episode.id}`);
+        expect(row?.parentId).toBe(show.id);
+        expect(row?.title).toBe(episode.title);
+        expect(row?.ids.enclosure_url).toBe(episode.enclosure.url);
+        expect(row?.publishedAt).toEqual(expect.any(Number));
+      }
+    }
+  });
+
+  it('[M1.index/a] keeps each album with its MusicBrainz ids, and each track under its album in disc and track order', async () => {
+    const r = recorded();
+    await run(db, T0, r);
+    const rows = byKey(listIndexed(db));
+
+    const albums = body<JfPage>(r.jellyfin['index-albums-page']).Items;
+    for (const [n, album] of albums.entries()) {
+      const row = rows.get(`jellyfin:${album.Id}`);
+      expect(row?.title).toBe(album.Name);
+      expect(row?.ids.musicbrainz_album).toBe(album.ProviderIds.MusicBrainzAlbum);
+      expect(row?.ids.musicbrainz_release_group).toBe(album.ProviderIds.MusicBrainzReleaseGroup);
+      expect(row?.upstreamVersion).toBe(album.Etag);
+
+      const call = `index-album-tracks-${n + 1}` as JellyfinCall;
+      const tracks = body<JfPage>(r.jellyfin[call]).Items;
+      const indexed = [...rows.values()].filter((t) => t.parentId === album.Id);
+      expect(indexed.map((t) => t.id).sort()).toEqual(tracks.map((t) => t.Id).sort());
+      for (const t of indexed) {
+        expect(t.kind).toBe('track');
+        expect(t.position).toEqual(expect.any(Number));
+        expect(t.duration).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('[M1.index/a] every row starts at version 1, and the run is recorded with its counts', async () => {
+    await run(db, T0);
+    const rows = listIndexed(db);
+    expect(rows.every((row) => row.version === 1 && row.updatedAt === T0)).toBe(true);
+    const runs = db
+      .prepare('SELECT source, complete, error, fetched, inserted FROM index_runs')
+      .all();
+    expect(runs).toEqual([
+      { source: 'abs', complete: 0, error: null, fetched: 4, inserted: 23 },
+      { source: 'jellyfin', complete: 0, error: null, fetched: 2, inserted: rows.length - 23 },
+    ]);
+  });
+});
+
+describe('[M1.index/b] a second run after a recorded change', () => {
+  /**
+   * No upstream change can be made from here (the recordings are read-only calls), so the change
+   * is applied to copies of the real recordings: one show's `updatedAt` moves on and one of its
+   * episodes is renamed, and one album's `Etag` moves on and one of its tracks is renamed.
+   */
+  function withOneChange() {
+    const r = recorded();
+    const show = body<AbsShow>(r.abs['index-show-2']);
+    const album = body<JfPage>(r.jellyfin['index-albums-page']).Items[1]!;
+    const later = show.updatedAt + 60_000;
+    r.abs['index-shows-page'] = changed<Listing>(r.abs['index-shows-page'], (page) => {
+      page.results.find((i) => i.id === show.id)!.updatedAt = later;
+    });
+    r.abs['index-show-2'] = changed<AbsShow>(r.abs['index-show-2'], (s) => {
+      s.updatedAt = later;
+      s.media.episodes[0]!.title = 'Renamed upstream';
+      s.media.episodes[0]!.updatedAt = later;
+    });
+    r.jellyfin['index-albums-page'] = changed<JfPage>(r.jellyfin['index-albums-page'], (p) => {
+      p.Items[1]!.Etag = 'moved-on';
+    });
+    r.jellyfin['index-album-tracks-2'] = changed<JfPage>(
+      r.jellyfin['index-album-tracks-2'],
+      (p) => {
+        p.Items[0]!.Name = 'Renamed upstream';
+      },
+    );
+    return {
+      r,
+      changedKeys: [
+        `abs:${show.id}`,
+        `abs:${show.media.episodes[0]!.id}`,
+        `jellyfin:${album.Id}`,
+        `jellyfin:${body<JfPage>(r.jellyfin['index-album-tracks-2']).Items[0]!.Id}`,
+      ],
+      showId: show.id,
+      albumId: album.Id,
+    };
+  }
+
+  it('[M1.index/b] updates only the changed items, reading only the changed show and album again', async () => {
+    await run(db, T0);
+    const before = byKey(listIndexed(db));
+    const { r, changedKeys, showId, albumId } = withOneChange();
+
+    const { asked } = await run(db, T0 + HOUR, r);
+
+    expect(asked.filter((a) => a.startsWith('/api/items/'))).toEqual([`/api/items/${showId}`]);
+    expect(asked.filter((a) => a.startsWith('tracks '))).toEqual([`tracks ${albumId}`]);
+    const after = byKey(listIndexed(db));
+    expect([...after.keys()].sort()).toEqual([...before.keys()].sort());
+    for (const [key, row] of after) {
+      if (changedKeys.includes(key)) {
+        expect(row.version, key).toBe(2);
+        expect(row.updatedAt, key).toBe(T0 + HOUR);
+      } else {
+        expect(row, key).toEqual(before.get(key));
+      }
+    }
+    expect(after.get(changedKeys[1]!)?.title).toBe('Renamed upstream');
+    expect(after.get(changedKeys[3]!)?.title).toBe('Renamed upstream');
+  });
+
+  it('[M1.index/b] a run with nothing changed reads no item again and writes no row', async () => {
+    await run(db, T0);
+    const before = listIndexed(db);
+    const { asked, result } = await run(db, T0 + HOUR);
+    expect(asked.filter((a) => a.startsWith('/api/items/') || a.startsWith('tracks '))).toEqual([]);
+    expect(listIndexed(db)).toEqual(before);
+    expect(result.abs?.counts).toMatchObject({ fetched: 0, inserted: 0, updated: 0, removed: 0 });
+    expect(result.jellyfin?.counts).toMatchObject({ fetched: 0, inserted: 0, updated: 0 });
+  });
+
+  it('[M1.index/b] a day on, every item is read again, since ABS edits episodes without moving their show, and unchanged rows stay untouched', async () => {
+    await run(db, T0);
+    const before = listIndexed(db);
+    const { asked } = await run(db, T0 + 25 * HOUR);
+    expect(asked.filter((a) => a.startsWith('/api/items/'))).toHaveLength(4);
+    expect(asked.filter((a) => a.startsWith('tracks '))).toHaveLength(2);
+    expect(listIndexed(db)).toEqual(before);
+  });
+
+  it("[M1.index/b] an episode gone from its show's answer is removed, and nothing else", async () => {
+    await run(db, T0);
+    const r = recorded();
+    const show = body<AbsShow>(r.abs['index-show-1']);
+    const gone = show.media.episodes[0]!.id;
+    const later = show.updatedAt + 60_000;
+    r.abs['index-shows-page'] = changed<Listing>(r.abs['index-shows-page'], (page) => {
+      page.results.find((i) => i.id === show.id)!.updatedAt = later;
+    });
+    r.abs['index-show-1'] = changed<AbsShow>(r.abs['index-show-1'], (s) => {
+      s.updatedAt = later;
+      s.media.episodes.shift();
+    });
+    const before = byKey(listIndexed(db));
+
+    await run(db, T0 + HOUR, r);
+
+    const after = byKey(listIndexed(db));
+    expect(after.has(`abs:${gone}`)).toBe(false);
+    expect(after.size).toBe(before.size - 1);
+    expect(after.get(`abs:${show.id}`)?.version).toBe(2);
+  });
+});

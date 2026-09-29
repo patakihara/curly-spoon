@@ -1,5 +1,6 @@
 /**
- * The Jellyfin client: the two calls M0.record records, and the lookups that find their ids. Every request carries the
+ * The Jellyfin client: the calls the recorder records and the index reads, and the lookups that
+ * find their ids. Every request carries the
  * `MediaBrowser` authorization header (see `auth.ts`) with the API key as `Token`, and never
  * reads the environment: `new JellyfinClient({ baseUrl, token, fetch })`.
  */
@@ -9,6 +10,9 @@ import { buildAuthorizationHeader, type JellyfinDeviceInfo } from './auth.js';
 import {
   baseItemDtoSchema,
   baseItemQueryResultSchema,
+  type IndexItem,
+  type IndexQueryResult,
+  indexQueryResultSchema,
   publicSystemInfoSchema,
   userListSchema,
 } from './schemas.js';
@@ -28,6 +32,9 @@ const SERVER_DEVICE: JellyfinDeviceInfo = {
 };
 
 type BaseItemDto = z.infer<typeof baseItemDtoSchema>;
+
+/** The fields the index reads beyond the defaults: external ids, genres and the change tag. */
+const INDEX_FIELDS = 'ProviderIds,Genres,Etag';
 
 export class JellyfinClient {
   private readonly device: JellyfinDeviceInfo;
@@ -66,10 +73,31 @@ export class JellyfinClient {
     return (await this.get('Library/MediaFolders', baseItemQueryResultSchema)).Items;
   }
 
-  /** Up to `limit` albums from anywhere in the libraries. */
-  async findAlbums(limit: number): Promise<BaseItemDto[]> {
-    const query = { IncludeItemTypes: 'MusicAlbum', Recursive: 'true', Limit: String(limit) };
-    return (await this.get('Items', baseItemQueryResultSchema, query)).Items;
+  /**
+   * One page of albums from every library, oldest added first, so a new album lands on the last
+   * page. `Etag` moves when Jellyfin saves the album again, which is what the index compares.
+   */
+  getAlbums(page: { limit: number; startIndex: number }): Promise<IndexQueryResult> {
+    return this.get('Items', indexQueryResultSchema, {
+      IncludeItemTypes: 'MusicAlbum',
+      Recursive: 'true',
+      SortBy: 'DateCreated,SortName',
+      SortOrder: 'Ascending',
+      StartIndex: String(page.startIndex),
+      Limit: String(page.limit),
+      Fields: INDEX_FIELDS,
+    });
+  }
+
+  /** Every track of one album, in disc and track order. */
+  async getAlbumTracks(albumId: string): Promise<IndexItem[]> {
+    const query = {
+      ParentId: albumId,
+      IncludeItemTypes: 'Audio',
+      SortBy: 'ParentIndexNumber,IndexNumber,SortName',
+      Fields: INDEX_FIELDS,
+    };
+    return (await this.get('Items', indexQueryResultSchema, query)).Items;
   }
 
   /** The first administrator's id: `GET /Users`, which only an admin token may call. */

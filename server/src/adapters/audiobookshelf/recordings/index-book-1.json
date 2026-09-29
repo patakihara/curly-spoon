@@ -1,0 +1,351 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "index-book-1",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/61da2aef-807d-447c-ad49-d8c64c2d97d5",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "61da2aef-807d-447c-ad49-d8c64c2d97d5",
+        "ino": "45110",
+        "oldLibraryItemId": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+        "path": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight",
+        "relPath": "Aubrey Gordon/You Just Need to Lose Weight",
+        "isFile": false,
+        "mtimeMs": 1777744682024,
+        "ctimeMs": 1777744682024,
+        "birthtimeMs": 1777744384491,
+        "addedAt": 1777744463199,
+        "updatedAt": 1778671399430,
+        "lastScan": 1777796983546,
+        "scanVersion": "2.34.0",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "book",
+        "media": {
+          "id": "d1555eec-1f47-40ee-ac32-11b2203e09bf",
+          "libraryItemId": "61da2aef-807d-447c-ad49-d8c64c2d97d5",
+          "metadata": {
+            "title": "You Just Need to Lose Weight",
+            "subtitle": "And 19 Other Myths About Fat People",
+            "authors": [
+              {
+                "id": "a4be7cac-011b-4868-8d92-67d8682b4682",
+                "name": "Aubrey Gordon"
+              }
+            ],
+            "narrators": [],
+            "series": [],
+            "genres": [
+              "Sociology"
+            ],
+            "publishedYear": null,
+            "publishedDate": null,
+            "publisher": "Books on Tape",
+            "description": "<b>&ldquo;One of the great thinkers of our generation . . . I feel fresher and smarter and happier for sitting down with her.&rdquo;&mdash;Jameela Jamil, iWeigh Podcast<br>The co-host of the <i>Maintenance Phase</i> podcast and creator of Your Fat Friend equips you with the facts to debunk common anti-fat myths and with tools to take action for fat justice</b><br>The pushback that shows up in conversations about fat justice takes exceedingly predicable form. <i>Losing weight is easy&mdash;calories in, calories out. Fat people are unhealthy. We&rsquo;re in the midst of an obesity epidemic. Fat acceptance &ldquo;glorifies obesity.&rdquo; The BMI is an objective measure of size and health.</i> Yet, these myths are as readily debunked as they are pervasive.<br>In <i>&ldquo;You Just Need to Lose Weight,&rdquo;</i> Aubrey Gordon equips readers with the facts and figures to reframe myths about fatness in order to dismantle the anti-fat bias ingrained in how we think about and treat fat...",
+            "isbn": null,
+            "asin": null,
+            "language": "English",
+            "explicit": false,
+            "abridged": false
+          },
+          "coverPath": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight/cover.jpg",
+          "tags": [],
+          "audioFiles": [
+            {
+              "index": 1,
+              "ino": "45111",
+              "metadata": {
+                "filename": "Aubrey Gordon - You Just Need to Lose Weight.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight/Aubrey Gordon - You Just Need to Lose Weight.mp3",
+                "relPath": "Aubrey Gordon - You Just Need to Lose Weight.mp3",
+                "size": 206904938,
+                "mtimeMs": 1777744419856,
+                "ctimeMs": 1777744419856,
+                "birthtimeMs": 1777744384755
+              },
+              "addedAt": 1777744455899,
+              "updatedAt": 1777744455899,
+              "trackNumFromMeta": 1,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": null,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 25862.67675,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": null,
+              "metaTags": {
+                "tagAlbum": "\"You Just Need to Lose Weight\" - And 19 Other Myths About Fat People",
+                "tagArtist": "Aubrey Gordon",
+                "tagGenre": "Sociology",
+                "tagTitle": "\"You Just Need to Lose Weight\"",
+                "tagTrack": "01",
+                "tagSubtitle": "And 19 Other Myths About Fat People",
+                "tagPublisher": "Books on Tape",
+                "tagComment": "<b>&ldquo;One of the great thinkers of our generation . . . I feel fresher and smarter and happier for sitting down with her.&rdquo;&mdash;Jameela Jamil, iWeigh Podcast<br>The co-host of the <i>Maintenance Phase</i> podcast and creator of Your Fat Friend equips you with the facts to debunk common anti-fat myths and with tools to take action for fat justice</b><br>The pushback that shows up in conversations about fat justice takes exceedingly predicable form. <i>Losing weight is easy&mdash;calories in, calories out. Fat people are unhealthy. We&rsquo;re in the midst of an obesity epidemic. Fat acceptance &ldquo;glorifies obesity.&rdquo; The BMI is an objective measure of size and health.</i> Yet, these myths are as readily debunked as they are pervasive.<br>In <i>&ldquo;You Just Need to Lose Weight,&rdquo;</i> Aubrey Gordon equips readers with the facts and figures to reframe myths about fatness in order to dismantle the anti-fat bias ingrained in how we think about and treat fat...",
+                "tagLanguage": "English",
+                "tagOverdriveMediaMarker": "verDrive MediaMarkers"
+              },
+              "mimeType": "audio/mpeg"
+            }
+          ],
+          "chapters": [
+            {
+              "id": 0,
+              "title": "Opening Credits",
+              "start": 0,
+              "end": 21.345
+            },
+            {
+              "id": 1,
+              "title": "Introduction",
+              "start": 21.345,
+              "end": 552.439
+            },
+            {
+              "id": 2,
+              "title": "How to Use This Book",
+              "start": 552.439,
+              "end": 1064.541
+            },
+            {
+              "id": 3,
+              "title": "A List of Terms",
+              "start": 1064.541,
+              "end": 1925.434
+            },
+            {
+              "id": 4,
+              "title": "Part One: \"Being Fat Is a Choice\"",
+              "start": 1925.434,
+              "end": 1929.979
+            },
+            {
+              "id": 5,
+              "title": "Myth 1 \"Being fat is a choice. If fat people don't like how they're treated, they should just lose weight.\"",
+              "start": 1929.979,
+              "end": 3516.382
+            },
+            {
+              "id": 6,
+              "title": "Myth 2 \"Any fat person can become thin if they try hard enough. It's just a matter of 'calories in, calories out.'\"",
+              "start": 3516.382,
+              "end": 5296.571
+            },
+            {
+              "id": 7,
+              "title": "Myth 3 \"Parents are responsible for their child's weight. Only bad parents let their children get fat.\"",
+              "start": 5296.571,
+              "end": 6312.902
+            },
+            {
+              "id": 8,
+              "title": "Myth 4 \"Thin people should help fat people lose weight.\"",
+              "start": 6312.902,
+              "end": 6925.078
+            },
+            {
+              "id": 9,
+              "title": "Myth 5 \"Weight loss is the result of healthy choices and should be celebrated.\"",
+              "start": 6925.078,
+              "end": 7774.548
+            },
+            {
+              "id": 10,
+              "title": "Part Two: \"But What About Your Health?\"",
+              "start": 7774.548,
+              "end": 7779.548
+            },
+            {
+              "id": 11,
+              "title": "Myth 6 \"Obesity is the leading cause of death in the United States.\"",
+              "start": 7779.548,
+              "end": 8896.943
+            },
+            {
+              "id": 12,
+              "title": "Myth 7 \"The BMI is an objective measure of size and health.\"",
+              "start": 8896.943,
+              "end": 10413.926
+            },
+            {
+              "id": 13,
+              "title": "Myth 8 \"Doctors are unbiased judges of fat people's health. Fat people don't like going to the doctor's office because they don't like hearing the truth.\"",
+              "start": 10413.926,
+              "end": 11837.157
+            },
+            {
+              "id": 14,
+              "title": "Myth 9 \"Fat people are emotionally damaged and cope by 'eating their feelings.'\"",
+              "start": 11837.157,
+              "end": 12804.128
+            },
+            {
+              "id": 15,
+              "title": "Part Three: \"Fat Acceptance Glorifies Obesity\"",
+              "start": 12804.128,
+              "end": 12810.128
+            },
+            {
+              "id": 16,
+              "title": "Myth 10 \"Accepting fat people 'glorifies obesity.'\"",
+              "start": 12810.128,
+              "end": 13696.635
+            },
+            {
+              "id": 17,
+              "title": "Myth 11 \"Body positivity is about feeling better about yourself, as long as you're happy and healthy.\"",
+              "start": 13696.635,
+              "end": 15114.152
+            },
+            {
+              "id": 18,
+              "title": "Myth 12 \"We're in the middle of an obesity epidemic.\"",
+              "start": 15114.152,
+              "end": 16782.727
+            },
+            {
+              "id": 19,
+              "title": "Myth 13 \"Fat people don't experience discrimination.\"",
+              "start": 16782.727,
+              "end": 18013.326
+            },
+            {
+              "id": 20,
+              "title": "Myth 14 \"I don't like gaining weight, but I don't treat fat people differently.\"",
+              "start": 18013.326,
+              "end": 19294.939
+            },
+            {
+              "id": 21,
+              "title": "Part Four: \"Fat People Should . . .\"",
+              "start": 19294.939,
+              "end": 19298.939
+            },
+            {
+              "id": 22,
+              "title": "Myth 15 \"Fat people shouldn't call themselves fat.\"",
+              "start": 19298.939,
+              "end": 20547.431
+            },
+            {
+              "id": 23,
+              "title": "Myth 16 \"People who have never been fat have 'internalized fatphobia.'\"",
+              "start": 20547.431,
+              "end": 21620.847
+            },
+            {
+              "id": 24,
+              "title": "Myth 17 \"No one is attracted to fat people. Anyone who is has a 'fat fetish.'\"",
+              "start": 21620.847,
+              "end": 22661.283
+            },
+            {
+              "id": 25,
+              "title": "Myth 18 \"Fat people should pay for a second airplane seat.\"",
+              "start": 22661.283,
+              "end": 23432.138
+            },
+            {
+              "id": 26,
+              "title": "Myth 19 \"Skinny shaming is just as bad as fat shaming.\"",
+              "start": 23432.138,
+              "end": 24567.046
+            },
+            {
+              "id": 27,
+              "title": "Myth 20 \"Anti-fatness is the last socially acceptable form of discrimination.\"",
+              "start": 24567.046,
+              "end": 25824.872
+            },
+            {
+              "id": 28,
+              "title": "End Credits",
+              "start": 25824.872,
+              "end": 25862.67675
+            }
+          ],
+          "ebookFile": null
+        },
+        "libraryFiles": [
+          {
+            "ino": "45111",
+            "metadata": {
+              "filename": "Aubrey Gordon - You Just Need to Lose Weight.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight/Aubrey Gordon - You Just Need to Lose Weight.mp3",
+              "relPath": "Aubrey Gordon - You Just Need to Lose Weight.mp3",
+              "size": 206904938,
+              "mtimeMs": 1777744419856,
+              "ctimeMs": 1777744419856,
+              "birthtimeMs": 1777744384755
+            },
+            "isSupplementary": null,
+            "addedAt": 1777744439329,
+            "updatedAt": 1777744439329,
+            "fileType": "audio"
+          },
+          {
+            "ino": "45125",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight/metadata.json",
+              "relPath": "metadata.json",
+              "size": 6035,
+              "mtimeMs": 1778671399425,
+              "ctimeMs": 1778671399425,
+              "birthtimeMs": 1777744463397
+            },
+            "isSupplementary": null,
+            "addedAt": 1777744463403,
+            "updatedAt": 1777796983545,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "45133",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Books/Aubrey Gordon/You Just Need to Lose Weight/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 274540,
+              "mtimeMs": 1777744681968,
+              "ctimeMs": 1777744682024,
+              "birthtimeMs": 1777744681944
+            },
+            "isSupplementary": null,
+            "addedAt": 1777744478035,
+            "updatedAt": 1777796983546,
+            "fileType": "image"
+          }
+        ]
+      }
+    }
+  }
+}

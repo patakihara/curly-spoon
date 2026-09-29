@@ -26,8 +26,16 @@ import { createRecorder } from './http/record.js';
 import { recordingSchema } from './http/recording.js';
 import { localNames } from './http/localNames.js';
 import { scanRecording } from './http/scan.js';
+import { type RawExchange } from './http/scrub.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { recordOidc } from './record-oidc.js';
+
+/**
+ * The index calls record one page of two items from each library. The fifth page holds the
+ * Podcasts library's two smallest shows (4 and 15 episodes); its first holds shows of 98 and 400.
+ */
+export const INDEX_PAGE = 4;
+export const INDEX_PAGE_SIZE = 2;
 
 const USAGE = `Usage: <keys on stdin> | pnpm --filter @auralis/server record -- [options]
 
@@ -36,7 +44,8 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
   --jellyfin-item <id> the Jellyfin item to record, instead of the first album
-  --only <name>      record only abs or jellyfin; or oidc, a sign-in and its links
+  --only <name>      record only abs, jellyfin or index; or oidc, a sign-in and its links
+  --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
   --dry-run          write into a temporary folder, not the committed recordings
@@ -133,7 +142,7 @@ async function recordAbs(
   // Never the Podcasts library: opening a podcast stub hydrates it.
   const books = libraries.find((l) => l.mediaType === 'book');
   if (!books) throw new Error('Audiobookshelf has no book library');
-  const [first] = await abs.getLibraryItems(books.id, 1);
+  const [first] = (await abs.getLibraryItems(books.id, { limit: 1, page: 0 })).results;
   if (!first) throw new Error('the book library is empty');
 
   await rec.capture('item-detail', () => abs.getItem(first.id));
@@ -190,10 +199,116 @@ async function recordJellyfin(
   // The API key has no user of its own, so the item is asked for as an administrator.
   const userId = await jf.findAdministratorId();
   if (!userId) throw new Error('Jellyfin has no administrator');
-  const albumId = itemId ?? (await jf.findAlbums(1))[0]?.Id;
+  const albumId = itemId ?? (await jf.getAlbums({ limit: 1, startIndex: 0 })).Items[0]?.Id;
   if (!albumId) throw new Error('Jellyfin has no music album');
   await rec.capture('item-detail', () => jf.getItem(albumId, userId));
   return ['library-list', 'item-detail'].map((c) => join(dir, `${c}.json`));
+}
+
+/** What an episode's show notes are replaced with in a recording. */
+export const SHOW_NOTES_DROPPED =
+  'Show notes dropped by the recorder: they carry third-party links.';
+
+/**
+ * Replaces each episode's `description` in a recorded show. Show notes are published HTML full of
+ * sponsors' and networks' links and addresses, which the scan rightly fails; the index never
+ * reads them. Everything else in the answer stays as recorded.
+ */
+export function dropShowNotes(raw: RawExchange): RawExchange {
+  const body = raw.response.body;
+  if (body === null || !('json' in body)) return raw;
+  const item = body.json as { media?: { episodes?: unknown } } | null;
+  const episodes = item?.media?.episodes;
+  if (!Array.isArray(episodes)) return raw;
+  const media = {
+    ...item?.media,
+    episodes: episodes.map((e: unknown) =>
+      e !== null && typeof e === 'object' && 'description' in e
+        ? { ...e, description: SHOW_NOTES_DROPPED }
+        : e,
+    ),
+  };
+  return { ...raw, response: { ...raw.response, body: { json: { ...item, media } } } };
+}
+
+/**
+ * The index's Audiobookshelf calls, all reads: one page of each library, minified, and each
+ * listed book or show as the index reads it. The Podcasts library is listed and read, never
+ * scanned, and no file is opened, so no podcast stub is hydrated.
+ */
+async function recordIndexAbs(
+  io: RecordIo,
+  baseUrl: string,
+  token: string,
+  dir: string,
+  secrets: string[],
+  page: number,
+) {
+  const upstreamVersion = await new AbsClient({
+    baseUrl,
+    token,
+    fetch: io.fetch,
+  }).getServerVersion();
+  const rec = createRecorder({
+    fetch: io.fetch,
+    dir,
+    upstream: 'audiobookshelf',
+    upstreamVersion,
+    secrets,
+    baseUrl,
+    prepare: dropShowNotes,
+  });
+  const abs = new AbsClient({ baseUrl, token, fetch: rec.fetch });
+  const calls: string[] = [];
+  for (const library of await abs.getLibraries()) {
+    const kind = library.mediaType === 'book' ? 'book' : 'show';
+    const listing = `index-${kind}s-page`;
+    const { results } = await rec.capture(listing, () =>
+      abs.getLibraryItems(library.id, { limit: INDEX_PAGE_SIZE, page, sort: 'addedAt' }),
+    );
+    calls.push(listing);
+    for (const [n, item] of results.entries()) {
+      const call = `index-${kind}-${n + 1}`;
+      await rec.capture(call, () => abs.getItemSummary(item.id));
+      calls.push(call);
+    }
+  }
+  return calls.map((c) => join(dir, `${c}.json`));
+}
+
+/** The index's Jellyfin calls: one page of albums, and each listed album's tracks. */
+async function recordIndexJellyfin(
+  io: RecordIo,
+  baseUrl: string,
+  token: string,
+  dir: string,
+  secrets: string[],
+  page: number,
+) {
+  const upstreamVersion = await new JellyfinClient({
+    baseUrl,
+    token,
+    fetch: io.fetch,
+  }).getServerVersion();
+  const rec = createRecorder({
+    fetch: io.fetch,
+    dir,
+    upstream: 'jellyfin',
+    upstreamVersion,
+    secrets,
+    baseUrl,
+  });
+  const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });
+  const calls = ['index-albums-page'];
+  const albums = await rec.capture('index-albums-page', () =>
+    jf.getAlbums({ limit: INDEX_PAGE_SIZE, startIndex: page * INDEX_PAGE_SIZE }),
+  );
+  for (const [n, album] of albums.Items.entries()) {
+    const call = `index-album-tracks-${n + 1}`;
+    await rec.capture(call, () => jf.getAlbumTracks(album.Id));
+    calls.push(call);
+  }
+  return calls.map((c) => join(dir, `${c}.json`));
 }
 
 /** Runs record mode; resolves to the process exit code. */
@@ -204,6 +319,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       abs: { type: 'string' },
       jellyfin: { type: 'string' },
       'jellyfin-item': { type: 'string' },
+      'index-page': { type: 'string' },
       only: { type: 'string' },
       oidc: { type: 'string' },
       'oidc-version': { type: 'string' },
@@ -216,12 +332,18 @@ export async function runRecord(io: RecordIo): Promise<number> {
     return 0;
   }
   const only = values.only;
-  if (only !== undefined && only !== 'abs' && only !== 'jellyfin' && only !== 'oidc') {
-    io.err(`--only is abs, jellyfin or oidc, not ${only}`);
+  if (only !== undefined && !['abs', 'jellyfin', 'index', 'oidc'].includes(only)) {
+    io.err(`--only is abs, jellyfin, index or oidc, not ${only}`);
+    return 2;
+  }
+  const indexPage = Number(values['index-page'] ?? INDEX_PAGE);
+  if (!Number.isInteger(indexPage) || indexPage < 0) {
+    io.err(`--index-page is a page number from 0, not ${values['index-page']}`);
     return 2;
   }
   const root = values['dry-run'] ? mkdtempSync(join(tmpdir(), 'auralis-record-')) : here;
   if (only === 'oidc') return runOidc(io, values, parseKeys(io.stdin), root);
+  const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
   const keys = parseKeys(io.stdin);
@@ -240,26 +362,34 @@ export async function runRecord(io: RecordIo): Promise<number> {
 
   const secrets = [absKey, jellyfinKey].filter((k): k is string => Boolean(k));
   const written: string[] = [];
-  if (wantAbs) {
-    written.push(
-      ...(await recordAbs(
-        io,
-        values.abs as string,
-        absKey as string,
-        join(root, 'audiobookshelf', 'recordings'),
-        secrets,
-      )),
-    );
+  const absDir = join(root, 'audiobookshelf', 'recordings');
+  const jellyfinDir = join(root, 'jellyfin', 'recordings');
+  if (wantAbs && only !== 'index') {
+    written.push(...(await recordAbs(io, values.abs as string, absKey as string, absDir, secrets)));
   }
-  if (wantJellyfin) {
+  if (wantJellyfin && only !== 'index') {
     written.push(
       ...(await recordJellyfin(
         io,
         values.jellyfin as string,
         jellyfinKey as string,
-        join(root, 'jellyfin', 'recordings'),
+        jellyfinDir,
         secrets,
         values['jellyfin-item'],
+      )),
+    );
+  }
+  if (wantIndex) {
+    const [absUrl, jellyfinUrl] = [values.abs as string, values.jellyfin as string];
+    written.push(
+      ...(await recordIndexAbs(io, absUrl, absKey as string, absDir, secrets, indexPage)),
+      ...(await recordIndexJellyfin(
+        io,
+        jellyfinUrl,
+        jellyfinKey as string,
+        jellyfinDir,
+        secrets,
+        indexPage,
       )),
     );
   }

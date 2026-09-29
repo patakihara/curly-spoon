@@ -212,6 +212,8 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     ABS_PROVISION_KEY_FILE: secret('abs-provision-key'),
     JELLYFIN_URL: JELLYFIN_ORIGIN,
     JELLYFIN_API_KEY_FILE: secret('jellyfin-api-key'),
+    // The recordings hold one page of each library, not the pages a real run starts from.
+    INDEX_EVERY_MINUTES: '0',
   });
 
   const signOn = standInSignOn({

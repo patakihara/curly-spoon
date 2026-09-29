@@ -59,18 +59,31 @@ describe('the Audiobookshelf client', () => {
     const { fetch, sent } = fake({
       ...session,
       libraries: [],
+      total: 0,
       results: [],
       mediaType: 'book',
       media: {},
     });
     const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'the-key', fetch });
     await abs.getLibraries();
-    await abs.getLibraryItems('lib1', 1);
+    await abs.getLibraryItems('lib1', { limit: 1, page: 0 });
     await abs.getItem('li_1');
     await abs.play('li_1', { deviceId: 'd', clientVersion: '0' });
     await abs.closeSession('play_1');
     expect(sent).toHaveLength(5);
     for (const req of sent) expect(req.headers.get('authorization')).toBe('Bearer the-key');
+  });
+
+  it('a library page is minified, and sorted oldest added first only when asked', async () => {
+    const { fetch, sent } = fake({ total: 0, results: [] });
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    await abs.getLibraryItems('lib1', { limit: 2, page: 4, sort: 'addedAt' });
+    await abs.getLibraryItems('lib1', { limit: 1, page: 0 });
+    const queries = sent.map((s) => Object.fromEntries(new URL(s.url).searchParams));
+    expect(queries).toEqual([
+      { limit: '2', page: '4', minified: '1', sort: 'addedAt' },
+      { limit: '1', page: '0', minified: '1' },
+    ]);
   });
 
   it('the server version is read without the key', async () => {

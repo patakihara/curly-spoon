@@ -49,8 +49,17 @@ export interface Finding {
   path: string;
 }
 
-/** Public hosts that published book or album metadata carries: Jellyfin's `ExternalUrls`. */
-export const PUBLIC_HOSTS: readonly string[] = ['musicbrainz.org', 'www.theaudiodb.com'];
+/**
+ * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, and a
+ * podcast's feed, episode enclosures and directory page on Audiobookshelf.
+ */
+export const PUBLIC_HOSTS: readonly string[] = [
+  'musicbrainz.org',
+  'www.theaudiodb.com',
+  'www.omnycontent.com',
+  'podtrac.com',
+  'podcasts.apple.com',
+];
 const ALLOWED_HOSTS = new Set(PUBLIC_HOSTS);
 
 const JWT = /eyJ[\w-]+\.[\w-]+\.[\w-]+/g;

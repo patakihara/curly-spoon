@@ -1,0 +1,146 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "index-shows-page",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries/c84b79a6-05b2-4cb3-90a0-0bcbda43ecc0/items",
+    "query": {
+      "limit": "2",
+      "minified": "1",
+      "page": "4",
+      "sort": "addedAt"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "results": [
+          {
+            "id": "e6751961-22eb-4064-8987-b75bfe655929",
+            "ino": "93124",
+            "oldLibraryItemId": null,
+            "libraryId": "c84b79a6-05b2-4cb3-90a0-0bcbda43ecc0",
+            "folderId": "ea3ae8b9-643b-4b9b-87dd-78bd88514823",
+            "path": "/data/Podcasts/Marshall Islands: After the Bomb Dropped",
+            "relPath": "Marshall Islands: After the Bomb Dropped",
+            "isFile": false,
+            "mtimeMs": 1786102590755,
+            "ctimeMs": 1786102590755,
+            "birthtimeMs": 1786088196482,
+            "addedAt": 1786088196496,
+            "updatedAt": 1786122534544,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "podcast",
+            "media": {
+              "id": "7516284a-ec60-4506-a6d5-5a30bdc11791",
+              "metadata": {
+                "title": "Marshall Islands: After the Bomb Dropped",
+                "author": "Cool Zone Media and iHeartPodcasts",
+                "description": "<p>Conflict journalist James Stout travels to the remote Republic of the Marshall Islands, where the US tested its atomic bombs, to learn how communities are dealing with their nuclear legacy and the uncertainty climate change brings to their future. </p>",
+                "releaseDate": "2023-09-08T04:00:00Z",
+                "genres": [
+                  "Society & Culture:Documentary",
+                  "Society & Culture:Places & Travel",
+                  "News:Politics"
+                ],
+                "feedUrl": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/263f0d81-9fa6-43f0-b350-b2b20161986b/podcast.rss",
+                "imageUrl": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/263f0d81-9fa6-43f0-b350-b2b20161986b/image.jpg?t=1754935243&size=Large",
+                "itunesPageUrl": "https://podcasts.apple.com/us/podcast/marshall-islands-after-the-bomb-dropped/id1833281543?uo=4",
+                "itunesId": "1833281543",
+                "itunesArtistId": null,
+                "explicit": false,
+                "language": "en-US",
+                "type": null,
+                "titleIgnorePrefix": "Marshall Islands: After the Bomb Dropped"
+              },
+              "coverPath": "/data/Podcasts/Marshall Islands: After the Bomb Dropped/cover.jpg",
+              "tags": [],
+              "numEpisodes": 4,
+              "autoDownloadEpisodes": false,
+              "autoDownloadSchedule": "0 * * * *",
+              "lastEpisodeCheck": 1786088196487,
+              "maxEpisodesToKeep": 0,
+              "maxNewEpisodesToDownload": 3,
+              "size": 173399656
+            },
+            "numFiles": 6,
+            "size": 173399656
+          },
+          {
+            "id": "03a7442e-5a4e-40a5-ac40-8bd29b53e7c2",
+            "ino": "93128",
+            "oldLibraryItemId": null,
+            "libraryId": "c84b79a6-05b2-4cb3-90a0-0bcbda43ecc0",
+            "folderId": "ea3ae8b9-643b-4b9b-87dd-78bd88514823",
+            "path": "/data/Podcasts/Megacorp",
+            "relPath": "Megacorp",
+            "isFile": false,
+            "mtimeMs": 1786102674496,
+            "ctimeMs": 1786102674496,
+            "birthtimeMs": 1786088216030,
+            "addedAt": 1786088216040,
+            "updatedAt": 1786122744386,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "podcast",
+            "media": {
+              "id": "8db32ef6-bf91-44e5-ae11-40f1cf8d9eaf",
+              "metadata": {
+                "title": "Megacorp",
+                "author": "Cool Zone Media and iHeartPodcasts",
+                "description": "Megacorp is an investigative podcast series exposing some of the world's most unethical corporations.",
+                "releaseDate": "2025-10-08T04:00:00Z",
+                "genres": [
+                  "Society & Culture",
+                  "True Crime",
+                  "News"
+                ],
+                "feedUrl": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/2921b209-e6d0-4b59-b00a-ae39006db1c9/983c0b83-cc0b-436c-b4e1-ae39006db1d2/podcast.rss",
+                "imageUrl": "https://www.omnycontent.com/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/2921b209-e6d0-4b59-b00a-ae39006db1c9/983c0b83-cc0b-436c-b4e1-ae39006db1d2/image.jpg?t=1644561564&size=Large",
+                "itunesPageUrl": "https://podcasts.apple.com/us/podcast/megacorp/id1596777564?uo=4",
+                "itunesId": "1596777564",
+                "itunesArtistId": null,
+                "explicit": true,
+                "language": "en-US",
+                "type": null,
+                "titleIgnorePrefix": "Megacorp"
+              },
+              "coverPath": "/data/Podcasts/Megacorp/cover.jpg",
+              "tags": [],
+              "numEpisodes": 15,
+              "autoDownloadEpisodes": false,
+              "autoDownloadSchedule": "0 * * * *",
+              "lastEpisodeCheck": 1786088216033,
+              "maxEpisodesToKeep": 0,
+              "maxNewEpisodesToDownload": 3,
+              "size": 470674446
+            },
+            "numFiles": 17,
+            "size": 470674446
+          }
+        ],
+        "total": 16,
+        "limit": 2,
+        "page": 4,
+        "sortBy": "addedAt",
+        "sortDesc": false,
+        "mediaType": "podcast",
+        "minified": true,
+        "collapseseries": false,
+        "include": "",
+        "offset": 8
+      }
+    }
+  }
+}

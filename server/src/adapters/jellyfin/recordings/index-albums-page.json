@@ -1,0 +1,173 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "index-albums-page",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "IncludeItemTypes": "MusicAlbum",
+      "Limit": "2",
+      "Recursive": "true",
+      "SortBy": "DateCreated,SortName",
+      "SortOrder": "Ascending",
+      "StartIndex": "8"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "The Rise and Fall of a Midwest Princess",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "65de8562c54b89ceef199f91bacd8709",
+            "Etag": "582d8655b92bfa99213dc4abc1591c82",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop"
+            ],
+            "RunTimeTicks": 29484592509,
+            "ProductionYear": 2023,
+            "ProviderIds": {
+              "AudioDbAlbum": "2430737",
+              "AudioDbArtist": "179579",
+              "MusicBrainzAlbum": "99b69971-5030-4ab2-bd2a-ba102ed6312d",
+              "MusicBrainzAlbumArtist": "56a55378-f155-48de-80a5-d80104221267",
+              "MusicBrainzReleaseGroup": "eda0f5d3-44eb-42cf-bcfd-5c9f93e05c7a"
+            },
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "aff9ba9d3c57fbf1ac8074b7fc289d22"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -9.9
+          },
+          {
+            "Name": "Rumours",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "Etag": "d90ab2105da8ec6e248afd3d14fdf539",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 23795333319,
+            "ProductionYear": 1977,
+            "ProviderIds": {
+              "AudioDbAlbum": "2110249",
+              "AudioDbArtist": "111280",
+              "MusicBrainzAlbum": "7ec069c0-4424-3169-8ed0-d5e2473e0e84",
+              "MusicBrainzAlbumArtist": "bd13909f-1c29-4c27-a874-d4aaf27c5b1a",
+              "MusicBrainzReleaseGroup": "416bb5e5-c7d1-3977-8fd7-7c9daf6c2be6"
+            },
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "6c89030066601ffa4e5f4fcc63a38456"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": 2.7999992
+          }
+        ],
+        "TotalRecordCount": 38,
+        "StartIndex": 8
+      }
+    }
+  }
+}

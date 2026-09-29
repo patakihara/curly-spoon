@@ -144,6 +144,84 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 5,
+    name: 'library_index',
+    up: (db) => {
+      db.exec(`
+        -- The household's Audiobookshelf and Jellyfin libraries, mirrored by the index job. Files
+        -- are stored once for everyone, so nothing here belongs to one person. A row is keyed like
+        -- a MediaRef; an episode or track points at its show or album and goes with it.
+        CREATE TABLE index_items (
+          source           TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id      TEXT NOT NULL,
+          kind             TEXT NOT NULL
+            CHECK (kind IN ('book', 'show', 'episode', 'album', 'track')),
+          parent_id        TEXT,
+          library_id       TEXT,
+          title            TEXT NOT NULL,
+          creators         TEXT NOT NULL,
+          series           TEXT NOT NULL,
+          genres           TEXT NOT NULL,
+          position         INTEGER,
+          disc             INTEGER,
+          duration         REAL,
+          year             INTEGER,
+          published_at     INTEGER,
+          upstream_version TEXT,
+          -- A hash of everything above: a row is written only when it changes, and then its
+          -- version goes up by one and updated_at moves.
+          content_hash     TEXT NOT NULL,
+          version          INTEGER NOT NULL,
+          created_at       INTEGER NOT NULL,
+          updated_at       INTEGER NOT NULL,
+          PRIMARY KEY (source, upstream_id),
+          FOREIGN KEY (source, parent_id)
+            REFERENCES index_items(source, upstream_id) ON DELETE CASCADE
+        );
+        CREATE INDEX idx_index_items_parent ON index_items(source, parent_id);
+        CREATE INDEX idx_index_items_kind_title ON index_items(kind, title);
+
+        -- External ids by scheme (asin, feed_url, musicbrainz_album, ...), for matching.
+        CREATE TABLE index_ids (
+          source      TEXT NOT NULL,
+          upstream_id TEXT NOT NULL,
+          scheme      TEXT NOT NULL,
+          value       TEXT NOT NULL,
+          PRIMARY KEY (source, upstream_id, scheme),
+          FOREIGN KEY (source, upstream_id)
+            REFERENCES index_items(source, upstream_id) ON DELETE CASCADE
+        );
+        CREATE INDEX idx_index_ids_value ON index_ids(scheme, value);
+
+        -- When each top-level item's full answer was last read, and the change marker it had.
+        CREATE TABLE index_sync (
+          source           TEXT NOT NULL,
+          upstream_id      TEXT NOT NULL,
+          upstream_version TEXT,
+          checked_at       INTEGER NOT NULL,
+          PRIMARY KEY (source, upstream_id),
+          FOREIGN KEY (source, upstream_id)
+            REFERENCES index_items(source, upstream_id) ON DELETE CASCADE
+        );
+
+        -- One row per run of the job and source, for the admin jobs page.
+        CREATE TABLE index_runs (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          started_at  INTEGER NOT NULL,
+          finished_at INTEGER NOT NULL,
+          complete    INTEGER NOT NULL CHECK (complete IN (0, 1)),
+          error       TEXT,
+          fetched     INTEGER NOT NULL,
+          inserted    INTEGER NOT NULL,
+          updated     INTEGER NOT NULL,
+          unchanged   INTEGER NOT NULL,
+          removed     INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

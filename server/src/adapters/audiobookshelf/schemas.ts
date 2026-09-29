@@ -18,9 +18,18 @@ export const librarySchema = z
 /** `GET /api/libraries`. */
 export const librariesSchema = z.object({ libraries: z.array(librarySchema) }).passthrough();
 
-/** `GET /api/libraries/:id/items`. */
+/**
+ * `GET /api/libraries/:id/items?minified=1`: one page of a library, and how many items it holds
+ * in all. Each item's `updatedAt` (ms) moves whenever ABS changes the item or its episodes, which
+ * is what the index compares.
+ */
 export const libraryItemsSchema = z
-  .object({ results: z.array(z.object({ id: z.string() }).passthrough()) })
+  .object({
+    total: z.number().int().nonnegative(),
+    results: z.array(
+      z.object({ id: z.string(), mediaType: mediaTypeSchema, updatedAt: z.number() }).passthrough(),
+    ),
+  })
   .passthrough();
 
 /**
@@ -115,3 +124,89 @@ export type FileHeaders = z.infer<typeof fileHeadersSchema>;
 
 /** `POST /api/session/:id/close` answers a bare 200 (`OK` as text); nothing in it is read. */
 export const closeSessionSchema = z.unknown();
+
+const optionalString = z.string().nullable().optional();
+
+/** A book's metadata as the item answer carries it: people and series come with their ids. */
+const bookMetadataSchema = z
+  .object({
+    title: z.string(),
+    subtitle: optionalString,
+    authors: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
+    narrators: z.array(z.string()),
+    series: z.array(
+      z.object({ id: z.string(), name: z.string(), sequence: optionalString }).passthrough(),
+    ),
+    genres: z.array(z.string()),
+    publishedYear: optionalString,
+    isbn: optionalString,
+    asin: optionalString,
+  })
+  .passthrough();
+
+/** One audio file of an item; a book's length is the sum of the files it plays. */
+const audioFileSchema = z
+  .object({ duration: z.number().nullable().optional(), exclude: z.boolean().optional() })
+  .passthrough();
+
+/**
+ * An episode as a show's item answer lists it. Each carries its own `updatedAt`, which moves
+ * when ABS edits the episode even though the show's `updatedAt` does not (recorded: episodes
+ * edited in September inside a show last updated in August). `guid` is null for episodes ABS
+ * matched without one.
+ */
+const episodeSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    season: optionalString,
+    episode: optionalString,
+    guid: optionalString,
+    enclosure: z.object({ url: z.string() }).passthrough().nullable().optional(),
+    publishedAt: z.number().nullable().optional(),
+    updatedAt: z.number(),
+    audioFile: audioFileSchema.nullable().optional(),
+  })
+  .passthrough();
+
+const itemBase = { id: z.string(), libraryId: z.string(), updatedAt: z.number() };
+
+/**
+ * `GET /api/items/:id`, not expanded: what the index reads of a book or a show. The shapes
+ * follow the index recordings (`index-book-*`, `index-show-*`).
+ */
+export const itemSummarySchema = z.discriminatedUnion('mediaType', [
+  z
+    .object({
+      ...itemBase,
+      mediaType: z.literal('book'),
+      media: z
+        .object({ metadata: bookMetadataSchema, audioFiles: z.array(audioFileSchema) })
+        .passthrough(),
+    })
+    .passthrough(),
+  z
+    .object({
+      ...itemBase,
+      mediaType: z.literal('podcast'),
+      media: z
+        .object({
+          metadata: z
+            .object({
+              title: z.string(),
+              author: optionalString,
+              genres: z.array(z.string()),
+              feedUrl: optionalString,
+              itunesId: optionalString,
+              releaseDate: optionalString,
+            })
+            .passthrough(),
+          episodes: z.array(episodeSchema),
+        })
+        .passthrough(),
+    })
+    .passthrough(),
+]);
+export type ItemSummary = z.infer<typeof itemSummarySchema>;
+export type BookSummary = Extract<ItemSummary, { mediaType: 'book' }>;
+export type ShowSummary = Extract<ItemSummary, { mediaType: 'podcast' }>;

@@ -1,6 +1,6 @@
 /**
  * The whole server from its configuration: the database, the sign-on, each upstream's
- * provisioner and the app, wired as they run. `main.ts` starts it with the network's `fetch`;
+ * provisioner, the app and the library index job, wired as they run. `main.ts` starts it with the network's `fetch`;
  * anything else that runs the server (a harness on recordings) passes its own `fetch` here and
  * changes nothing else.
  */
@@ -15,6 +15,7 @@ import { OidcClient } from './auth/oidc.js';
 import { createProxyTrust } from './auth/proxy.js';
 import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
+import { startIndexJob } from './libraryIndex/start.js';
 import { readSecretFile } from './secretFile.js';
 import { openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
@@ -25,7 +26,7 @@ import { Linker, type Provisioner } from './upstream/links.js';
 export interface Server {
   /** Built and ready, not yet listening. */
   app: FastifyInstance;
-  /** Closes the app, stops the session sweep and closes the database. */
+  /** Closes the app, stops the session sweep and the index job, and closes the database. */
   close(): Promise<void>;
 }
 
@@ -100,11 +101,14 @@ export async function assembleServer(
     app.log.info(`No admin yet: the one-time setup code is in ${setupCodeFile}`);
   }
 
+  const stopIndexJob = startIndexJob(config, { db, fetch, log: app.log });
+
   return {
     app,
     async close() {
       await app.close();
       stopSessionSweep();
+      stopIndexJob();
       db.close();
       app.log.info('Database closed');
     },

@@ -1,0 +1,804 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "index-album-tracks-2",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "IncludeItemTypes": "Audio",
+      "ParentId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+      "SortBy": "ParentIndexNumber,IndexNumber,SortName"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Second Hand News",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "e8f41d8c866537d45dcb8bdd002516ca",
+            "Etag": "cd538c94a2c45b2a37078250ce44fa35",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 1655333330,
+            "ProductionYear": 1977,
+            "IndexNumber": 1,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "255fa52bb64b4cc40c7bbdf50f9c208c"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "255fa52bb64b4cc40c7bbdf50f9c208c": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 1.53
+          },
+          {
+            "Name": "Dreams",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "27bf106342071c8707b61196117d6772",
+            "Etag": "995fd2ecbc8949b23c7aafcc1c7a9a95",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2573333330,
+            "ProductionYear": 1977,
+            "IndexNumber": 2,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "ae80c2aa0191f5f81b90f5d9ac1e62d5"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "ae80c2aa0191f5f81b90f5d9ac1e62d5": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 2.71
+          },
+          {
+            "Name": "Never Going Back Again",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "36591dc142953cb1bcaa2794ef8edba9",
+            "Etag": "8c168ac823ff0112b68a212f25dfc1d9",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 1342000000,
+            "ProductionYear": 1977,
+            "IndexNumber": 3,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "67711303377821ea97e61c783bc9bdaf"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "67711303377821ea97e61c783bc9bdaf": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 6.74
+          },
+          {
+            "Name": "Don't Stop",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "b41f51ca8a9e5b4f667e4cf8f2747c42",
+            "Etag": "41119b06413899566bca5902a063bcd4",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 1928266669,
+            "ProductionYear": 1977,
+            "IndexNumber": 4,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "14ff578eef87c4d2d98a28d504c86b35"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "14ff578eef87c4d2d98a28d504c86b35": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 1.8
+          },
+          {
+            "Name": "Go Your Own Way",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "83484a57230d9e58f96c82758269d468",
+            "Etag": "9ae3e5a64b1a3a0adf234fd9b37359e1",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2191733330,
+            "ProductionYear": 1977,
+            "IndexNumber": 5,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "19ef32ff6099a16feac8d9b904085363"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "19ef32ff6099a16feac8d9b904085363": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 0.47
+          },
+          {
+            "Name": "Songbird",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "55a798d3602683231b0308a972394771",
+            "Etag": "2f920e31c53ac4512cf686d881b1be48",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2012933330,
+            "ProductionYear": 1977,
+            "IndexNumber": 6,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "34acaaa869a2c7d4128ec80df379531c"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "34acaaa869a2c7d4128ec80df379531c": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 9.98
+          },
+          {
+            "Name": "The Chain",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3918ae7a88f285272154b0cfa2c3d5eb",
+            "Etag": "6772c5c3c4592e811f4169ef1f033c83",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2700400000,
+            "ProductionYear": 1977,
+            "IndexNumber": 7,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "73a90d3340f3b8457f5e45038c3dc8de"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "73a90d3340f3b8457f5e45038c3dc8de": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 3
+          },
+          {
+            "Name": "You Make Loving Fun",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "e718a1500e538ab5562e5ff1bd63ea97",
+            "Etag": "356e13ebde8614926457bcf782b24d54",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2168266670,
+            "ProductionYear": 1977,
+            "IndexNumber": 8,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "eeb8577f2c3d69b2517b4224c9e80520"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "eeb8577f2c3d69b2517b4224c9e80520": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 2.48
+          },
+          {
+            "Name": "I Don't Want To Know",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f2220d8aea1fd0911c8779f8126f1c69",
+            "Etag": "45ea5226c4f7ad681b995b0622383212",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 1965333330,
+            "ProductionYear": 1977,
+            "IndexNumber": 9,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "2caa8298eda7dffe1a3a440b43a2e1a7"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "2caa8298eda7dffe1a3a440b43a2e1a7": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 1.44
+          },
+          {
+            "Name": "Oh Daddy",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "95224de43fac30537901e78e1c266936",
+            "Etag": "87312fc283e7e8add962eaf7dc9e22e0",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2330400000,
+            "ProductionYear": 1977,
+            "IndexNumber": 10,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "ef5308e1ac1794d283eb60d155c243f3"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "ef5308e1ac1794d283eb60d155c243f3": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 3.9
+          },
+          {
+            "Name": "Gold Dust Woman",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "6e3b08e9e1130c5ecb813f9536e9c5eb",
+            "Etag": "29372ffbf5efb090845f0abeec87980d",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "1977-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Rock"
+            ],
+            "RunTimeTicks": 2927333330,
+            "ProductionYear": 1977,
+            "IndexNumber": 11,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropItemId": "aa0cc2edfb53c73036b2da94640ea11d",
+            "ParentBackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "Artists": [
+              "Fleetwood Mac"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "Album": "Rumours",
+            "AlbumId": "b9bdc5d1ae184251eabeeaf15bb5c4d6",
+            "AlbumPrimaryImageTag": "6c89030066601ffa4e5f4fcc63a38456",
+            "AlbumArtist": "Fleetwood Mac",
+            "AlbumArtists": [
+              {
+                "Name": "Fleetwood Mac",
+                "Id": "aa0cc2edfb53c73036b2da94640ea11d"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "7f53514e1d444a1a3d43de0fb61be813"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7865ea59907434ceb868276bccd45272",
+            "ImageBlurHashes": {
+              "Primary": {
+                "7f53514e1d444a1a3d43de0fb61be813": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj[",
+                "6c89030066601ffa4e5f4fcc63a38456": "egQ9=hM{~p-:f6%LWCM{oexu?at7IURjayoJt6t7RkRjayoej[WCj["
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              },
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": 7.28
+          }
+        ],
+        "TotalRecordCount": 11,
+        "StartIndex": 0
+      }
+    }
+  }
+}
