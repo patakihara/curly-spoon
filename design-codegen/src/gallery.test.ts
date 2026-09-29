@@ -114,6 +114,46 @@ const y = <List renderRow={() => <Chip label={outside}/>}/>;`),
     expect(list?.uses).toEqual(['Chip', 'List']);
   });
 
+  it.each([
+    [
+      'a module-level let',
+      `let secret = 'x';\nconst x = <List renderRow={({ item }) => <Chip label={secret}/>}/>;`,
+    ],
+    [
+      'a constant that reads a global',
+      `const secret = window.token;\nconst x = <List renderRow={() => <Chip label={secret}/>}/>;`,
+    ],
+    ['a global', `const x = <List renderRow={() => <Chip label={localStorage.token}/>}/>;`],
+    [
+      'a default argument',
+      `let secret = 'x';\nconst x = <List renderRow={({ item = secret }) => <Chip label={item}/>}/>;`,
+    ],
+    [
+      'a local of the enclosing component',
+      `function Demo(){ const [secret] = React.useState('x');\n  return <List renderRow={() => <Chip label={secret}/>}/>; }`,
+    ],
+    [
+      'a block body',
+      `let secret = 'x';\nconst x = <List renderRow={() => { return <Chip label={secret}/>; }}/>;`,
+    ],
+    ['this', `const x = <List renderRow={() => <Chip label={this.secret}/>}/>;`],
+    [
+      'a call on its argument',
+      `const x = <List renderRow={({ item }) => <Chip label={item.constructor.constructor('return document.cookie')()}/>}/>;`,
+    ],
+    [
+      'a function declared at module level',
+      `function secret(){ return document.cookie; }\nconst x = <List renderRow={() => <Chip label={secret}/>}/>;`,
+    ],
+  ])('[M0.tokens/c] refuses a function that closes over %s', (_, body) => {
+    const dir = sonoraOf({
+      ...component('Chip'),
+      ...component('List'),
+      'basic/a.card.html': card(body),
+    });
+    expect(entriesOf(dir).missing).toContain('List');
+  });
+
   it('writes a shorthand property on a constant as a full one', () => {
     const dir = sonoraOf({
       ...component('Chip'),

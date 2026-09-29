@@ -52,3 +52,53 @@ test('[M0.tokens/c] the gallery draws every Sonora component, one screenshot eac
   ).toEqual(COMPONENTS.map((n) => `${n}.png`));
   expect(errors, 'no page or console error').toEqual([]);
 });
+
+test('[M0.tokens/c] the gallery calls no API and reads no stored user data', async ({ page }) => {
+  await page.addInitScript(() => {
+    const reads: string[] = [];
+    (window as unknown as { __userDataReads: string[] }).__userDataReads = reads;
+    for (const name of ['localStorage', 'sessionStorage', 'indexedDB'] as const) {
+      const own = Object.getOwnPropertyDescriptor(window, name);
+      if (own?.get !== undefined) {
+        const get = own.get;
+        Object.defineProperty(window, name, {
+          configurable: true,
+          get() {
+            reads.push(name);
+            return get.call(this);
+          },
+        });
+      }
+    }
+    const cookie = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    if (cookie?.get !== undefined) {
+      const get = cookie.get;
+      Object.defineProperty(Document.prototype, 'cookie', {
+        ...cookie,
+        get() {
+          reads.push('cookie');
+          return get.call(this);
+        },
+      });
+    }
+  });
+  const requests: string[] = [];
+  page.on('request', (r) => requests.push(r.url()));
+  await page.goto('/gallery.html', { waitUntil: 'networkidle' });
+  await expect(page.locator('section[data-component]').first()).toBeVisible();
+
+  const origin = new URL(page.url()).origin;
+  const paths = requests.map((u) => (u.startsWith(origin) ? new URL(u).pathname : u));
+  expect(
+    paths.filter((p) => !p.startsWith('/')),
+    'every request stays on the server',
+  ).toEqual([]);
+  expect(
+    paths.filter((p) => p.startsWith('/api/')),
+    'no API request',
+  ).toEqual([]);
+  expect(
+    await page.evaluate(() => (window as unknown as { __userDataReads: string[] }).__userDataReads),
+    'no cookie, storage or IndexedDB read',
+  ).toEqual([]);
+});
