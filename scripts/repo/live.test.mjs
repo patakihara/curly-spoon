@@ -69,6 +69,12 @@ test(
   { skip },
   async (t) => {
     assert.ok(STAGING, 'AURALIS_STAGING_URL names the staging container');
+    const res = await get(new URL('/api/health', STAGING));
+    assert.equal(res.status, 200, 'staging answers /api/health');
+    const health = await res.json();
+    assert.equal(health?.status, 'ok', 'staging reports ok');
+    assert.match(String(health?.commit), /^[0-9a-f]{40}$/, 'staging reports the commit it runs');
+
     const { workflow_runs: runs } = await github(
       '/actions/workflows/publish.yml/runs?status=success&per_page=50',
     );
@@ -80,11 +86,6 @@ test(
       return;
     }
 
-    const res = await get(new URL('/api/health', STAGING));
-    assert.equal(res.status, 200, 'staging answers /api/health');
-    const health = await res.json();
-    assert.equal(health?.status, 'ok', 'staging reports ok');
-    assert.match(String(health?.commit), /^[0-9a-f]{40}$/, 'staging reports the commit it runs');
     if (health.commit === due.commit) return;
 
     const at = new Date(due.at).toISOString();
