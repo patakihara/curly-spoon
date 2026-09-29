@@ -5,8 +5,9 @@
  * in, the last match winning, a match on a folder covering all of it). `runtimeFiles` is what
  * the server runs: `server/src/main.ts` and everything it imports, with the package manifests.
  *
- * `node scripts/guards/image.mjs` prints the image's repo files, one per line, which CI's
- * container job compares with the files in the built image.
+ * `node scripts/guards/image.mjs` prints what the image must hold, `runtimeFiles`, one per line.
+ * CI's container job compares that with the files in the built image, so a test or recording let
+ * into the image fails there on its own, as well as in this guard's tests.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -85,6 +86,17 @@ export function imageFiles(root) {
   return [...new Set(listFiles(root, sources))].filter((f) => !ignored(f)).sort();
 }
 
+/** True for a file only tests use: a test, a recording, the test key, the recorder or the harness. */
+export function testOnly(file) {
+  return (
+    /\.test\.[cm]?[jt]sx?$/.test(file) ||
+    file.includes('/recordings/') ||
+    file.startsWith('server/e2e/') ||
+    /^server\/src\/adapters\/record-[^/]+$/.test(file) ||
+    (file.startsWith('server/src/adapters/http/') && file !== 'server/src/adapters/http/fetch.ts')
+  );
+}
+
 const WORKSPACE = { '@auralis/schema': 'schema/src/index.ts' };
 const IMPORT = /\bfrom\s*['"]([^'"]+)['"]|\bimport\s*\(?\s*['"]([^'"]+)['"]/g;
 
@@ -111,5 +123,5 @@ export function runtimeFiles(root) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  process.stdout.write(`${imageFiles(root).join('\n')}\n`);
+  process.stdout.write(`${runtimeFiles(root).join('\n')}\n`);
 }

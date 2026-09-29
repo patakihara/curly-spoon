@@ -9,21 +9,40 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_ROOT } from '../plan/testing.mjs';
-import { dockerignore, imageFiles, runtimeFiles } from './image.mjs';
+import { dockerignore, imageFiles, runtimeFiles, testOnly } from './image.mjs';
 
 test('the image copies exactly the files server/src/main.ts runs, and their package manifests', () => {
   assert.deepEqual(imageFiles(REPO_ROOT), runtimeFiles(REPO_ROOT));
 });
 
-test('the image holds no test, recording, test key or recorded-upstreams harness', () => {
-  const offending = imageFiles(REPO_ROOT).filter(
-    (file) =>
-      /\.test\.[cm]?[jt]sx?$/.test(file) ||
-      file.includes('/recordings/') ||
-      file.startsWith('server/e2e/') ||
-      /test-signing-key|sign-in\.json|\.m4a$/.test(file),
-  );
-  assert.deepEqual(offending, []);
+test('the image holds no test, recording, test key, recorder or recorded-upstreams harness', () => {
+  assert.deepEqual(imageFiles(REPO_ROOT).filter(testOnly), []);
+});
+
+test('a test, a recording, the test key, the recorder and the harness are each test-only', () => {
+  for (const file of [
+    'server/src/app.test.ts',
+    'server/src/adapters/jellyfin/recordings/users-list.json',
+    'server/src/adapters/audiobookshelf/recordings/item-file.m4a',
+    'server/src/adapters/http/test-signing-key.json',
+    'server/src/adapters/http/testSigningKey.ts',
+    'server/src/adapters/http/replay.ts',
+    'server/src/adapters/record-cli.ts',
+    'server/src/adapters/record-oidc.ts',
+    'server/e2e/recorded.ts',
+  ]) {
+    assert.equal(testOnly(file), true, file);
+  }
+  for (const file of ['server/src/main.ts', 'server/src/adapters/http/fetch.ts']) {
+    assert.equal(testOnly(file), false, file);
+  }
+});
+
+test('`node scripts/guards/image.mjs` prints what the image must hold: the files main.ts runs', () => {
+  const printed = execFileSync(process.execPath, [join(REPO_ROOT, 'scripts/guards/image.mjs')], {
+    encoding: 'utf8',
+  });
+  assert.deepEqual(printed.trimEnd().split('\n'), runtimeFiles(REPO_ROOT));
 });
 
 test('nothing under server/src imports from server/e2e', () => {

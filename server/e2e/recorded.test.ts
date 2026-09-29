@@ -118,6 +118,34 @@ describe('the recorded-upstreams server', () => {
     expect(res.rawPayload).toEqual(tone.subarray(0, 100));
   });
 
+  it('refuses a callback whose state is not the sign-in it started', async () => {
+    const server = await boot();
+    const login = await server.app.inject({
+      url: `/api/auth/login?client=android&code_challenge=${'a'.repeat(43)}`,
+    });
+    const back = new URL(server.signOn.authorize(String(login.headers.location)));
+    back.searchParams.set('state', randomBytes(24).toString('base64url'));
+    const callback = await server.app.inject({ url: path(back.toString()) });
+    expect(callback.statusCode).toBe(400);
+    expect(callback.json()).toEqual({ error: 'bad_state' });
+  });
+
+  it('refuses a sign-in whose ID token carries another nonce than the one the app sent', async () => {
+    const server = await boot();
+    const verifier = randomBytes(32).toString('base64url');
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+    const login = await server.app.inject({
+      url: `/api/auth/login?client=android&code_challenge=${challenge}`,
+    });
+    const authorize = new URL(String(login.headers.location));
+    authorize.searchParams.set('nonce', randomBytes(24).toString('base64url'));
+    const callback = await server.app.inject({
+      url: path(server.signOn.authorize(authorize.toString())),
+    });
+    expect(callback.statusCode).toBe(400);
+    expect(callback.json()).toEqual({ error: 'bad_token' });
+  });
+
   it('refuses at the stand-in sign-on a sign-in sent back anywhere but the app', async () => {
     const server = await boot();
     const login = await server.app.inject({
