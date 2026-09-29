@@ -427,6 +427,55 @@ describe('a page opening another, on the canvas', () => {
   });
 });
 
+describe('a page with a local search, on the canvas', () => {
+  const searchable = `export default function Book({ data }) {
+  return (
+    <BackdropShell back={<BackLayer search="Search this book's chapters" />}>
+      <PageBody>
+        <MediaHeader title={data.title} />
+      </PageBody>
+    </BackdropShell>
+  );
+}
+`;
+  const drawn: App = {
+    ...app,
+    pages: [
+      { id: 'book', tree: parsePage(searchable, 'book'), placeholder: { title: 'Wind and Truth' } },
+      app.pages[1]!,
+    ],
+  };
+  const out = generateCanvas(drawn, install, now);
+  const order = JSON.parse(out.get('canvas.json') ?? '{}');
+  const searchOut = '"searchOpen":{"kind":"literal","value":true}';
+
+  it('[M0.canvas] shows it out on a third artboard, a phone, after the page’s desktop one', () => {
+    const { phone, desktop } = CANVAS_BOARDS;
+    expect(order.order).toEqual([
+      'structure.dc.html',
+      'flows.dc.html',
+      'book.phone.dc.html',
+      'book.desktop.dc.html',
+      'book.phone-search.dc.html',
+      'settings.phone.dc.html',
+      'settings.desktop.dc.html',
+    ]);
+    expect(order.boards['book.phone-search.dc.html']).toMatchObject({
+      x: phone.width + 80 + desktop.width + 80,
+      y: order.boards['book.phone.dc.html'].y,
+      w: phone.width,
+      h: phone.height,
+      title: 'Book · phone, searching',
+    });
+  });
+
+  it('[M0.canvas] fixes the search out on that artboard alone, leaving the page as the apps draw it', () => {
+    expect(out.get('book.phone-search.dc.html')).toContain(searchOut);
+    expect(out.get('book.phone.dc.html')).not.toContain('searchOpen');
+    expect(out.get('book.desktop.dc.html')).not.toContain('searchOpen');
+  });
+});
+
 describe('the placeholder art', () => {
   const dir = fileURLToPath(new URL(`../../${ART_DIR}/`, import.meta.url));
 

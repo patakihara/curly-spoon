@@ -1,4 +1,4 @@
-<!-- @dsCard group="Reference" viewport="1180x1747" name="S02 · Podcast show — header" subtitle="Show detail page, top of scroll — 4 new, 2 extended, 7 already present" -->
+<!-- @dsCard group="Reference" viewport="1180x2077" name="S02 · Podcast show — header" subtitle="Show detail page, top of scroll — 5 new, 2 extended, 7 already present" -->
 <link rel="stylesheet" href="../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -52,7 +52,7 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <li>An already-downloaded episode shows both its save and download controls filled and toned.</li>
 </ul>
 <h2>Components</h2>
-<div class="row new"><span class="tag">Created</span><code>FollowButton</code> <code>EpisodeRow</code> <code>DownloadButton</code> <code>SortFilterBar</code></div>
+<div class="row new"><span class="tag">Created</span><code>FollowButton</code> <code>Rating</code> <code>EpisodeRow</code> <code>DownloadButton</code> <code>SortFilterBar</code></div>
 <div class="row ext"><span class="tag">Extended</span><code>Badge</code> <code>Button</code></div>
 <div class="row "><span class="tag">Existing</span><code>SearchField</code> <code>MediaHeader</code> <code>TabBar</code> <code>IconButton</code> <code>CoverArt</code> <code>MiniPlayer</code> <code>BottomNav</code></div>
 <h2>Deliberately not built</h2><ul>
@@ -63,11 +63,14 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <div id="root"></div>
 <script type="text/babel">
 const NS = window.SonoraDesignSystem_6c1435 || {};
-const { Badge, Button, DownloadButton, EpisodeRow, FollowButton, SortFilterBar, ViewToggle } = window.SonoraDesignSystem_6c1435 || {};
+const { Badge, Button, DownloadButton, EpisodeRow, FollowButton, Rating, SortFilterBar, ViewToggle } = window.SonoraDesignSystem_6c1435 || {};
 const DOC = document.getElementById('__doc').innerHTML;
 const EXAMPLES = [
   { name: 'FollowButton', role: 'new', uses: ['FollowButton'], node: () => (
 <FollowButton following onChange={() => {}} />
+  ) },
+  { name: 'Rating', role: 'new', uses: ['Rating'], node: () => (
+<Rating value={4.8} count={17700} />
   ) },
   { name: 'EpisodeRow', role: 'new', uses: ['EpisodeRow'], node: () => (
 <div style={{ width: 520, maxWidth: '100%' }}>

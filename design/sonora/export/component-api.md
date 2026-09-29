@@ -158,6 +158,20 @@ One verb in an OverflowMenu.
 | `tone` | `'surface' \| 'scrim'` |  The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
+### PreviewButton
+
+Auditions a sample without committing it — plays without adding the item to the library or displacing whatever is currently playing. The disabled state covers a sample that hasn't loaded yet, a real fourth state alongside idle/sounding/muted.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `kind` | `'episode' \| 'playlist' \| 'audiobook' \| 'track'` | Selects the generated label ("Preview episode") when `label` is not supplied. |
+| `label` | `string` | Overrides the generated label entirely. |
+| `playing` | `boolean` | Sample is playing; the glyph flips to the sounding speaker. |
+| `muted` | `boolean` | Playing with sound off — the resting state a preview starts in. |
+| `disabled` | `boolean` | No sample available: dims the control, not-allowed cursor, aria-disabled. |
+| `onClick` | `() => void` |  |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
 ### ProgressRing
 
 Circular progress indicator. Pass `value` (0–1) for a determinate ring that animates to its position; omit it for an indeterminate arc that rotates and breathes while work is in flight. Used over cover art in ResultRow, and anywhere a small inline "working" state is needed.
@@ -186,6 +200,17 @@ Navigation rail row, following the M3 rail spec. One highlight element morphs fr
 | `wideActive` | `boolean` | Whether the active pill widens to 72px. Defaults to `tabs` — set false in a rail. |
 | `centerIcon` | `boolean` |  Centre the icon against the row's midpoint. Defaults to `tabs`. Must be false wherever the row's width animates (a rail), or the icon slides out and back during the transition.  |
 | `onClick` | `() => void` |  |
+
+### Rating
+
+Aggregate community judgement at a glance — a single star and the value, not five stars; the number carries the information and five glyphs would only decorate it.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `value` *(required)* | `number` | 0–max. |
+| `count` | `number` | Population; formatted compactly next to the value (17700 -> "17.7K"). |
+| `max` | `number` | Scale the value is out of. |
+| `platform` | `'desktop' \| 'mobile'` |  |
 
 ### SearchButton
 
@@ -390,6 +415,26 @@ Collapses a homogeneous group inside an otherwise heterogeneous list — seven v
 | `onToggle` | `(next: boolean) => void` | Called with the next expanded state on click. |
 | `image` | `string` | Optional stacked-art hint, leading the row. |
 
+### FeatureCard
+
+Argues for one item, at length, inside a feed — the description is the point, so this exists for recommendations that need to persuade rather than just be scanned. Tinted from its own artwork so a column of these reads as distinct recommendations, not a list.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `image` | `string` |  |
+| `kind` | `string` | Eyebrow above the title — "Episode", "Playlist", "Audiobook". |
+| `title` *(required)* | `string` |  |
+| `meta` | `string` | e.g. "The LRB Podcast • 1 day ago • 56min". |
+| `description` | `string` | Clamped to 2 lines. |
+| `tint` | `string` | Card surface colour. Defaults to --surface-card. |
+| `explicit` | `boolean` | Renders the "E" marker before the title. |
+| `saved` | `boolean` | The save control shows this state. |
+| `onSave` | `() => void` |  |
+| `onPlay` | `() => void` |  Omit for an audiobook: a sample is the only playback a preview offers there, so when this is absent no play control is rendered at all.  |
+| `onMore` | `() => void` |  |
+| `preview` | `ReactNode` | A PreviewButton, rendered at the start of the bottom actions row. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+
 ### FieldRow
 
 Labelled form field wrapping the system Input. On mobile it supplies the filled pill container the chromeless mobile Input expects to sit on.
@@ -470,6 +515,7 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `onSubtitle` | `() => void` | Makes the subtitle an accent-ink link. |
 | `partOf` | `string` | What the item is one part of, under the subtitle: a book's series and its number. |
 | `onPartOf` | `() => void` | Makes `partOf` an accent-ink link to the whole it names. |
+| `rating` | `ReactNode` | Under the meta line: a `Rating`, the item's community rating, as a book or a show carries one. |
 | `actions` | `ReactNode` |  Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/ overflow). The default cluster renders exactly as it does today when this is absent.  |
 | `menu` | `ReactNode` | After the actions: an `OverflowMenu` with the verbs that get no button, such as Add to library. |
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. |

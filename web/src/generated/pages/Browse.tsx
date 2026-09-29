@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import type { ReactNode } from 'react';
 import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { AboutCard, AccountButton, ArtistCard, BackLayer, BackdropShell, BottomNav, ButtonGroup, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
+import { AboutCard, AccountButton, ArtistCard, BackLayer, BackdropShell, BottomNav, ButtonGroup, FeatureCard, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, PreviewButton, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "sections": [
@@ -44,6 +44,14 @@ const placeholder = {
       "image": "/art/wind-and-truth.jpg"
     }
   ],
+  "feature": {
+    "kind": "Episode",
+    "title": "Salt in the Ledger",
+    "ref": "salt-in-the-ledger",
+    "meta": "The Long Read · 5 Aug 2026 · 47 min",
+    "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
+    "image": "/art/the-long-read.jpg"
+  },
   "recentlyAdded": [
     {
       "title": "Between Lines of Light",
@@ -491,6 +499,20 @@ export default function Browse({ data = placeholder, state = 'full', layout: giv
                 <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={() => navigate(generatePath(routes[pick.page]!, { ref: pick.ref }))} platform={platform} />
               </Fragment>
             ))}
+          </LayoutGrid>
+        </Section>
+        <Section platform={platform}>
+          <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
+            <FeatureCard
+              kind={data.feature.kind}
+              title={data.feature.title}
+              meta={data.feature.meta}
+              description={data.feature.description}
+              image={data.feature.image}
+              onPlay={ignore}
+              preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
+              platform={platform}
+            />
           </LayoutGrid>
         </Section>
         <Section title="Recently added" action="arrow_forward" actionLabel="See all" platform={platform}>

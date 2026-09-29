@@ -1,4 +1,4 @@
-<!-- @dsCard group="Reference" viewport="1180x700" name="S23 · Home — Podcasts, Episodes you might like" subtitle="Home tab, Podcasts, scrolled — 0 new, 0 extended, 4 already present" -->
+<!-- @dsCard group="Reference" viewport="1180x1087" name="S23 · Home — Podcasts, Episodes you might like" subtitle="Home tab, Podcasts, scrolled — 2 new, 0 extended, 4 already present" -->
 <link rel="stylesheet" href="../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -48,7 +48,7 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <li>A card with placeholder artwork still takes a tint, so the layout never loses its rhythm.</li>
 </ul>
 <h2>Components</h2>
-<div class="row"><span class="tag">Created</span><span class="none">none</span></div>
+<div class="row new"><span class="tag">Created</span><code>FeatureCard</code> <code>PreviewButton</code></div>
 <div class="row"><span class="tag">Extended</span><span class="none">none</span></div>
 <div class="row "><span class="tag">Existing</span><code>CoverArt</code> <code>Section</code> <code>MiniPlayer</code> <code>BottomNav</code></div>
 </div></div>
@@ -56,9 +56,34 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <div id="root"></div>
 <script type="text/babel">
 const NS = window.SonoraDesignSystem_6c1435 || {};
-const {  } = window.SonoraDesignSystem_6c1435 || {};
+const { FeatureCard, PreviewButton } = window.SonoraDesignSystem_6c1435 || {};
 const DOC = document.getElementById('__doc').innerHTML;
 const EXAMPLES = [
+  { name: 'FeatureCard', role: 'new', uses: ['FeatureCard', 'PreviewButton'], node: () => (
+<FeatureCard
+  kind="Episode"
+  title="Aftershocks: the second call"
+  meta="Static & Signal • 1 day ago • 48min"
+  description="A dispatcher who walked away from the job three years ago picks the phone back up, once, for the one caller she was never able to refuse."
+  saved
+  onSave={() => {}}
+  onPlay={() => {}}
+  onMore={() => {}}
+  preview={<PreviewButton kind="episode" muted onClick={() => {}} />}
+/>
+  ) },
+  { name: 'PreviewButton', role: 'new', uses: ['PreviewButton'], node: () => (
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 'var(--spacing-lg)',
+  borderRadius: 'var(--radius-md)',
+  background: 'var(--accent)'
+}}>
+  <PreviewButton kind="episode" muted onClick={() => {}} />
+</div>
+  ) },
 ];
 function Page() {
   return <React.Fragment>

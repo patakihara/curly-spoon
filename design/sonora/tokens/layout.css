@@ -49,8 +49,6 @@
 --appbar-height-mobile:60px;
 /* The controls band under the bar strip — chips, sub-tabs, the centred search field */
 --appbar-controls-height:60px;
-/* Bottom app bar — the page-level action row docked opposite the top bar (Now Playing) */
---bottom-app-bar-height:64px;
 /* Cover art on the mobile Now Playing page: capped so the page keeps air around it */
 --now-playing-art-max:300px;
 /* Lyrics/queue preview windows on that page — both the same fixed height, contents clipped */

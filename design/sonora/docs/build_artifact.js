@@ -2,7 +2,7 @@
  * Build the Sonora Design System ARTIFACT (claude.ai "Design System" type) from this repo.
  *
  * This repo is the source of truth; the artifact is a generated view of it, the same way
- * export/ is for curly-spoon. Never hand-edit the artifact: change tokens/, components/ or
+ * export/ is for the web and Android apps. Never hand-edit the artifact: change tokens/, components/ or
  * docs/, rerun this, republish. Output: <out>/project/** ready to publish with the Artifact tool
  * (url + root=<out>, every file under project/), and <out>/canvas/tokens.css for canvas installs.
  * <out> defaults to the Auralis repo's gitignored build/sonora; `pnpm sonora:build` runs both

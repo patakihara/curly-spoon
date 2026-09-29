@@ -10,6 +10,7 @@ export default function Book({ data }) {
             partOf={data.series.label}
             onPartOf={<Open page="series" ref={data.series.ref} />}
             meta={data.meta}
+            rating={<Rating value={data.rating.value} count={data.rating.count} />}
             progress={data.progress}
             image={data.image}
             playLabel="Resume"

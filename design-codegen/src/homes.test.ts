@@ -211,6 +211,23 @@ describe('a card on a library home', () => {
     expect(runs).toBeGreaterThan(new Set(kinds).size);
   });
 
+  it('[M0.canvas] on browse, argues for one episode at length, with a blurb and a Preview, and plays it on the spoken queue', () => {
+    const { tree, data } = read('browse');
+    const [card, ...more] = elements(tree).filter((e) => e.component === 'FeatureCard');
+    expect(more).toEqual([]);
+    const feature = data.feature as Record<string, string>;
+    expect(feature.description!.length).toBeGreaterThan(80);
+    expect(card!.props.description).toEqual({
+      kind: 'binding',
+      path: ['data', 'feature', 'description'],
+    });
+    const preview = card!.props.preview;
+    expect(
+      preview?.kind === 'slot' && preview.tree.kind === 'element' && preview.tree.component,
+    ).toBe('PreviewButton');
+    expect(card!.props.onPlay).toMatchObject({ kind: 'play', queue: 'spoken' });
+  });
+
   it('[M0.canvas] on books, requests a greyed book with a tap, as a series does', () => {
     const { tree } = read('books');
     for (const { card } of cards(tree)) {

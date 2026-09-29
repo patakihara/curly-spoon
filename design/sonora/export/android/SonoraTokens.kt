@@ -154,7 +154,6 @@ object SonoraDimens {
     val appbarHeight = 96.dp
     val appbarHeightMobile = 60.dp
     val appbarControlsHeight = 60.dp
-    val bottomAppBarHeight = 64.dp
     val nowPlayingArtMax = 300.dp
     val nowPlayingPreviewHeight = 204.dp
     val radiusXs = 8.dp

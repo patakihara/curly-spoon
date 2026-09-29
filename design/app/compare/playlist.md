@@ -1,6 +1,6 @@
 ---
 page: playlist
-pageHash: 56208aac37e1020609b7560d476671af4e383b642dae5ad3645b8f1c5b6cb6cf
+pageHash: 14af77612d7027c0e941a75e7d2d64b70afde880a00585f734e49c502d081036
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 
@@ -26,6 +26,12 @@ marked, each ending in a drag handle (`IconButton drag_handle`) for reordering.
 **Empty state**, per nav.json: an empty playlist says songs are added from any song's menu.
 
 ## Differences
+
+- Changed on purpose: the canvas adds a third artboard, a phone with the local search out, since
+  the bar only appears as the page scrolls (the canvas build fixes `BackLayer searchOpen`; the
+  apps leave it to the scroll). Scrolled 400 px in the web app at 390 px, the field grows from the
+  search button across the heading, "Search this playlist" with its close cross, as Sonora's
+  Backdrop Local Search card draws it.
 
 - Changed on purpose: a list of songs, not the kit collection's grid; a playlist is ordered songs.
 - Changed on purpose: the header of an album, without its title, since the heading names it.

@@ -53,6 +53,8 @@ data class MediaHeaderProps(
     val partOf: String? = null,
     /** Makes `partOf` an accent-ink link to the whole it names. */
     val onPartOf: (() -> Unit)? = null,
+    /** Under the meta line: a `Rating`, the item's community rating, as a book or a show carries one. */
+    val rating: (@Composable () -> Unit)? = null,
     /**
      * Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a
      * queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/

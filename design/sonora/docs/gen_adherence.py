@@ -115,8 +115,8 @@ def build():
                 print("  WARN  no interface in components/%s/%s" % (d, f))
                 continue
             # The app keys each file's rules off its FIRST interface, stripping a trailing
-            # "Props" — so a file that declares a helper shape first (BottomAppBarAction,
-            # QueueItem, LibraryView) documents that instead of the component. Reproduced as-is
+            # "Props" — so a file that declares a helper shape first (QueuePage.d.ts's
+            # QueueItem) documents that instead of the component. Reproduced as-is
             # so nothing regresses, then the component's own Props interface is added alongside,
             # which is what actually gets written in JSX.
             targets = [found[0]]
@@ -181,10 +181,10 @@ def main():
 
     cfg["rules"]["no-restricted-syntax"] = [severity] + globals_ + new_comp
 
-    # x-omelette.components is a parallel index of the same names, alphabetical. Existing entries
-    # are preserved rather than rebuilt — their `replaces` lists are the app's, not ours to guess.
+    # x-omelette.components is a parallel index of the same names, alphabetical: an entry keeps its
+    # `replaces` list, and a component that no longer exists loses its entry.
     omelette = cfg.setdefault("x-omelette", {}).setdefault("components", {})
-    names = sorted({comp(r["selector"]) for r in new_comp} | set(omelette))
+    names = sorted({comp(r["selector"]) for r in new_comp})
     cfg["x-omelette"]["components"] = {
         n: omelette.get(n, {"replaces": []}) for n in names
     }

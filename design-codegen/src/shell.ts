@@ -419,7 +419,10 @@ export function framed(
   frame: PageFrame,
   title: string,
   parts: Partial<
-    Record<'rail' | 'leading' | 'player' | 'sheet' | 'sheetOpen' | 'appBar' | 'column', PropValue>
+    Record<
+      'rail' | 'leading' | 'player' | 'sheet' | 'sheetOpen' | 'appBar' | 'column' | 'searchOpen',
+      PropValue
+    >
   >,
 ): PageTree {
   const named = (name: string, tree: PageTree | undefined): Record<string, PropValue> =>
@@ -433,6 +436,9 @@ export function framed(
     ...named('controls', frame.controls),
     ...named('trailing', frame.trailing),
     ...(frame.search === undefined ? {} : { search: lit(frame.search) }),
+    ...(frame.search === undefined || parts.searchOpen === undefined
+      ? {}
+      : { searchOpen: parts.searchOpen }),
   });
   return {
     kind: 'element',

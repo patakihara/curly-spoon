@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import type { ReactNode } from 'react';
 import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { AboutCard, BackLayer, BackdropShell, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
+import { AboutCard, BackLayer, BackdropShell, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, Rating, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "title": "Shadows and Sighs",
@@ -15,7 +15,11 @@ const placeholder = {
     "label": "The Harbour Quartet · Book 2",
     "ref": "the-harbour-quartet"
   },
-  "meta": "Read by Ada Quill · 11 h 40 m · 4 h 12 m left · 4.6 ★",
+  "meta": "Read by Ada Quill · 11 h 40 m · 4 h 12 m left",
+  "rating": {
+    "value": 4.6,
+    "count": 17700
+  },
   "progress": 0.64,
   "image": "/art/shadows-and-sighs.jpg",
   "download": "idle",
@@ -474,6 +478,7 @@ export default function Book({ data = placeholder, state = 'full', layout: given
             partOf={data.series.label}
             onPartOf={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))}
             meta={data.meta}
+            rating={<Rating value={data.rating.value} count={data.rating.count} platform={platform} />}
             progress={data.progress}
             image={data.image}
             playLabel="Resume"

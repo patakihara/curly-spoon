@@ -167,8 +167,7 @@ Babel.registerPlugin('omid', function (babel) {
         // <React.Fragment>/<> elements render no DOM node at all, so a data-om-id here has
         // nowhere to land -- except React actually forwards unknown props straight onto
         // Fragment and warns loudly ("Invalid prop `data-om-id` supplied to `React.Fragment`").
-        // Measured on this corpus: 45 of 70 cards hit this today (19 of them in
-        // ui_kits/mobile/index.html alone). Explicit <React.Fragment> is caught by name; the
+        // Explicit <React.Fragment> is caught by name; the
         // <>...</> shorthand parses as JSXFragment, which never reaches JSXOpeningElement at
         // all, so it needs no guard here.
         var name = path.node.name;

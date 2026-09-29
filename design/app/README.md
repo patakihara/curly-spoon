@@ -12,7 +12,8 @@ the page's `title` there unless the page binds its own from its data (`title={da
 there with `eyebrow`, `image` and `round`, the heading's context form, and has no header of its
 own), what leads it (the account avatar on a phone's destination home, a
 close control on a page that closes), the bottom bar or rail per layout, the mini-player and the
-Now Playing panel.
+Now Playing panel. A local search comes out as the front layer scrolls, so on the canvas a page
+with one gets a third artboard, a phone with it out.
 
 On desktop the rail lights, for a page that is not a destination, the destination its `lights`
 names; with none, Settings for the page at the rail's foot, or else what lights the page that opens

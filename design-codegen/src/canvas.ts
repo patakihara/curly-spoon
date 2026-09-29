@@ -2,7 +2,7 @@
  * The Auralis canvas artifact (claude.ai Design type), drawn from design/app: first the structure
  * row (`structure.dc.html` and `flows.dc.html`, from nav.json), then every drawn page as a
  * phone and a desktop `.dc.html` artboard mounting Sonora's real components from the installed
- * copy under `project/ds/<folder>/`, and `canvas.json`, the index that records which Sonora publish
+ * copy under `project/ds/<folder>/`, a page with a local search adding a phone with it out, and `canvas.json`, the index that records which Sonora publish
  * is installed. Build output only (`pnpm canvas:build`), never committed.
  *
  * Each artboard is the page in the app shell at the layout its width gets. The page's content is
@@ -262,10 +262,15 @@ const build = (n, scope, key) => {
 const bare = (tree: PageTree): unknown =>
   JSON.parse(JSON.stringify(tree, (key, value) => (key === 'line' ? undefined : value)));
 
+/**
+ * A page's artboard at a board's width. `searching` fixes the page's local search out, a still of
+ * what scrolling brings; the apps leave it to the scroll.
+ */
 function artboard(
   app: App,
   page: App['pages'][number],
   board: (typeof CANVAS_BOARDS)[keyof typeof CANVAS_BOARDS],
+  searching = false,
 ): string {
   const entry = app.nav.pages.find((p) => p.id === page.id);
   if (entry === undefined) throw new Error(`${page.id} is not a page in nav.json`);
@@ -284,6 +289,7 @@ function artboard(
         sheetOpen: { kind: 'literal', value: parts.sheetOpen },
         appBar: { kind: 'literal', value: parts.appBar },
         ...(parts.column === undefined ? {} : { column: { kind: 'literal', value: parts.column } }),
+        ...(searching ? { searchOpen: { kind: 'literal', value: true } } : {}),
       }),
       parts.platform,
       app.components.platformed,
@@ -398,15 +404,24 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
   app.pages.forEach((page, row) => {
     const title = app.nav.pages.find((p) => p.id === page.id)?.title ?? page.id;
     let x = 0;
-    for (const board of [phone, desktop]) {
-      const name = `${page.id}.${board.label}.dc.html`;
-      files.set(name, artboard(app, page, board));
+    // A page with a local search also gets a phone with it out, since only scrolling shows it.
+    const searchable = framePage(page.tree).search !== undefined;
+    const drawn = [
+      { board: phone, searching: false, name: phone.label, label: phone.label },
+      { board: desktop, searching: false, name: desktop.label, label: desktop.label },
+      ...(searchable
+        ? [{ board: phone, searching: true, name: 'phone-search', label: 'phone, searching' }]
+        : []),
+    ];
+    for (const { board, searching, name: kind, label } of drawn) {
+      const name = `${page.id}.${kind}.dc.html`;
+      files.set(name, artboard(app, page, board, searching));
       boards[name] = {
         x,
         y: top + row * rowHeight,
         w: board.width,
         h: board.height,
-        title: `${title} · ${board.label}`,
+        title: `${title} · ${label}`,
       };
       x += board.width + GAP_X;
     }

@@ -50,6 +50,8 @@ export interface MediaHeaderProps {
   partOf?: string;
   /** Makes `partOf` an accent-ink link to the whole it names. */
   onPartOf?: () => void;
+  /** Under the meta line: a `Rating`, the item's community rating, as a book or a show carries one. */
+  rating?: ReactNode;
   /**
    * Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a
    * queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/

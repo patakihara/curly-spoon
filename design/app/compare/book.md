@@ -1,6 +1,6 @@
 ---
 page: book
-pageHash: e7834b7fdd4d072d776700304e9672cd6d62fa7ea56457d3de0f53a244fd379f
+pageHash: 3adfe71fa026219b89a7b39bcf695b1c9daed2789d6a668f39b335a9f8dad172
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S35]
 ---
@@ -31,7 +31,7 @@ The heading is the book's name, bound from its data, led by the close control an
 local search's button ("Search this book's chapters"). At the list width, a `MediaHeader` with the
 cover, "AUDIOBOOK", the author as an accent link to their page, and under it the series and its
 number, "The Harbour Quartet · Book 2", a second accent link, to the series' page (Sonora's new
-`partOf`). The meta line: "Read by Ada Quill · 11 h 40 m · 4 h 12 m left · 4.6 ★", the narrator
+`partOf`). The meta line: "Read by Ada Quill · 11 h 40 m · 4 h 12 m left", the narrator
 named because you own a second narration; the resume bar under it. Resume (rose) and Play next, on
 the phone a download control (Sonora's new `download`, never drawn on a desktop), then an
 `OverflowMenu` with Mark as finished and Go to author. "Chapters": twelve numbered `ResultRow`s,
@@ -61,8 +61,9 @@ M0; the greyed and requested states are drawn on the cards.
 - Changed on purpose: rows lead with the chapter number, not the art every chapter shares; the
   current chapter carries what is left of it as a pill, not the equalizer bars, since the book is
   not what is playing.
-- Changed on purpose: the rating sits in the meta line as "4.6 ★"; one value from Audiobookshelf
-  needs no component of its own.
+- Changed on purpose: the rating is a `Rating` on its own line under the meta (`MediaHeader
+rating`): a filled star, 4.6 and the listener count, "(17.7K)", as Sonora's S02 reference draws
+  it; the plan's detail header carries a rating, and the kit has none.
 - Changed on purpose: chapters, bookmarks, speed and sleep controls are not here; they live in the
   player (04-play).
 - Changed on purpose: other narrations are cards opening that narration's own book page, greyed

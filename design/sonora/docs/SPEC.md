@@ -18,8 +18,7 @@ language**, reading Sonora's tokens, not Spotify's greens and blacks.
 
 ## Hard rules
 
-1. **Never edit an existing mockup.** `ui_kits/desktop/index.html`, `ui_kits/mobile/index.html`
-   and every existing `*.card.html` are off limits. New cards only.
+1. **Never edit an existing card.** Every existing `*.card.html` is off limits. New cards only.
 2. **Extensions are strictly additive.** Every new prop is optional and every existing call site
    must render byte-identically when the new prop is absent. No renames, no changed defaults,
    no reordered parameters. This is the single most important constraint in this document — the
@@ -110,24 +109,6 @@ platform?: 'desktop' | 'mobile'
 
 Transparent background, `--surface-fg` label at `--text-md`/700, glyph at `--icon-sm` muted.
 Full width, so `trailing` sits hard right.
-
-## `core/BrowseCard.jsx`
-
-**Affordance: enter a category whose content you can't name yet.** Distinct from `Chip`, which
-*filters an existing result set*; this *navigates into* one. Wide tile in a shade of the accent, with the
-artwork tilted out of the bottom-right corner so the card reads as a stack of content rather than a
-label.
-
-```ts
-title: string
-image?: string                                // tilted thumbnail, bottom-right
-onClick?: () => void
-platform?: 'desktop' | 'mobile'
-```
-
-`--radius-sm`, aspect ~2.6:1, title top-left at `--text-2xl`/900 in `--font-heading`, ink is
-`--accent-contrast`. Thumbnail ~38% of the card height, `rotate(25deg)`, overflowing the corner,
-`--shadow-md`. Hover/focus lifts it `--duration-quick`.
 
 ## `core/StatusBanner.jsx`
 
@@ -244,36 +225,12 @@ meta?: string[]            // parts joined with " • " — ["200K+ plays", "29 
 finished?: boolean         // appends a "Finished" marker with a filled check in --tone-library
 progress?: number | null   // 0–1, part-listened; draws a thin rule under the meta
 explicit?: boolean
-actions?: ReactNode        // an ItemActionBar
+actions?: ReactNode        // the episode's own controls
 onPlay?: () => void
 onClick?: () => void
 divider?: boolean
 platform?: 'desktop' | 'mobile'
 ```
-
-## `media/ItemActionBar.jsx`
-
-**Affordance: the per-item verb set, with each verb's state legible without opening a menu.** Save,
-download, share, more — and crucially save and download are *toggles that show their own state*
-(outlined when not done, filled and `--tone-library` when done). Sonora's `PlayActions` is a
-one-shot queue group with no persistent state, so it cannot express this.
-
-```ts
-saved?: boolean
-onSave?: () => void
-download?: 'idle' | 'downloading' | 'done'
-downloadProgress?: number | null
-onDownload?: () => void
-onShare?: () => void
-onMore?: () => void
-onPlay?: () => void          // trailing filled play circle, pushed to the far edge
-playing?: boolean
-size?: number                // control diameter, default 34
-platform?: 'desktop' | 'mobile'
-```
-
-Only render a control whose handler is supplied. Every control needs a real `aria-label` that states
-the *result*: "Save episode" / "Remove from saved", "Download" / "Remove download".
 
 ## `media/DownloadButton.jsx`
 
@@ -291,25 +248,6 @@ size?: number                // default 34
 
 Compose `NS().ProgressRing` for the downloading state rather than drawing a second ring.
 Glyph `download` (outlined) → ring with a stop square → `download_done` filled in `--tone-library`.
-
-## `layout/BackToTop.jsx`
-
-**Affordance: escape from depth.** A feed that pages in more content has no bottom, so scroll
-position becomes a trap. The control appears only once you are far enough down for it to be a
-kindness.
-
-```ts
-visible?: boolean
-label?: string          // default "Back to the top"
-onClick?: () => void
-offset?: number         // distance from the bottom edge, to clear a docked player
-platform?: 'desktop' | 'mobile'
-```
-
-Floating centred pill, `--radius-pill`, `--surface-fg` on `--surface-bg-alt`, `--shadow-lg`.
-Fades and rises `--duration-quick`; appears instantly under `prefers-reduced-motion`.
-
----
 
 # Extensions — additive only
 
@@ -427,10 +365,10 @@ marker. Use realistic self-hosted-library content, never Spotify's catalogue.
 
 | File | group | name | Covers |
 | --- | --- | --- | --- |
-| `components/media/discovery-cards.card.html` | Components | Discovery & Feature Cards | `FeatureCard` in all three kinds, tinted, explicit marker, disabled preview, audiobook (no play) |
-| `components/components/episode-rows.card.html` | Components | Episode Rows & Item Actions | `EpisodeRow` with finished / part-played / unplayed, `ItemActionBar`, `DownloadButton` all three states |
+| `components/components/discovery-cards.card.html` | Components | Discovery & Feature Cards | `FeatureCard` in all three kinds, tinted, explicit marker, disabled preview, audiobook (no play) |
+| `components/components/episode-rows.card.html` | Components | Episode Rows & Downloads | `EpisodeRow` with finished / part-played / unplayed, `DownloadButton` all three states |
 | `components/components/context-headers.card.html` | Components | Contextual Headers & Controls | extended `SectionHeader` (eyebrow/image/round/actionText), `SortFilterBar`, `Rating`, `FollowButton`, `PreviewButton` |
-| `components/core/browse-and-status.card.html` | Components | Browse, Status & Disclosure | `BrowseCard` grid, `StatusBanner` tones, `ExpanderRow`, `BackToTop` |
+| `components/components/status-and-disclosure.card.html` | Components | Status & Disclosure | `StatusBanner` tones, `ExpanderRow` |
 | `components/components/card-states.card.html` | Components | Card & Tile States | extended `MediaCard` (eyebrow/unplayed/savedBadge/markers), extended `QuickPick` (progress/unplayed), extended `Badge` |
 | `components/basic/filter-rows.card.html` | Components | Overflowing Filter Rows | extended `ButtonGroup` (scroll + leading avatar) in the home, library and search-results configurations |
 
@@ -440,8 +378,8 @@ marker. Use realistic self-hosted-library content, never Spotify's catalogue.
 
 Record these; do not build them.
 
-- **A new search input.** Sofia ruled it out by name. `SearchField` (filled, app-bar) and
-  `SearchBar` (pill, inline) already cover scoped search — "Find in this show" is `SearchField`
+- **A new search input.** Sofia ruled it out by name. `SearchField` already covers scoped
+  search — "Find in this show" is `SearchField`
   with a scoped placeholder.
 - **Camera / scan-to-search.** Spotify scans its own barcodes. Meaningless against a private
   self-hosted library.

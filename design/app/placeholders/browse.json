@@ -36,6 +36,14 @@
       "image": "/art/wind-and-truth.jpg"
     }
   ],
+  "feature": {
+    "kind": "Episode",
+    "title": "Salt in the Ledger",
+    "ref": "salt-in-the-ledger",
+    "meta": "The Long Read · 5 Aug 2026 · 47 min",
+    "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
+    "image": "/art/the-long-read.jpg"
+  },
   "recentlyAdded": [
     {
       "title": "Between Lines of Light",

@@ -78,7 +78,7 @@ describe('Book', () => {
   const narrations = data.narrations as (Row & { narrator: string; absent: boolean })[];
   const more = data.more as Record<string, { title: string; items: Card[] }>;
 
-  it('[M0.canvas] binds only the book: name, kind, author, series, meta, progress, art, download, menu, chapters, about, narrations and more', () => {
+  it('[M0.canvas] binds only the book: name, kind, author, series, meta, rating, progress, art, download, menu, chapters, about, narrations and more', () => {
     expect(dataRoots(tree)).toEqual([
       'about',
       'author',
@@ -92,6 +92,7 @@ describe('Book', () => {
       'more',
       'narrations',
       'progress',
+      'rating',
       'series',
       'title',
     ]);
@@ -118,8 +119,16 @@ describe('Book', () => {
     ]);
     expect(header.props.download).toEqual(bound('data', 'download'));
     expect(header.props.progress).toEqual(bound('data', 'progress'));
-    expect(data.meta).toMatch(/ left · /);
+    expect(data.meta).toMatch(/ left$/);
     expect(slotted(header, 'menu')?.component).toBe('OverflowMenu');
+  });
+
+  it('[M0.canvas] carries its community rating under the meta line, a Rating, not a star in the text', () => {
+    const rating = slotted(header, 'rating')!;
+    expect(rating.component).toBe('Rating');
+    expect(rating.props.value).toEqual(bound('data', 'rating', 'value'));
+    expect(rating.props.count).toEqual(bound('data', 'rating', 'count'));
+    expect(data.meta).not.toContain('★');
   });
 
   it('[M0.canvas] is owned, so nothing on it offers to request it, given or bound', () => {

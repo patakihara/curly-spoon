@@ -41,22 +41,6 @@ Renders the number plus a small `×`. **Takes `--accent-ink` when `value !== 1` 
 `--surface-fg-muted` at 1×** — the point is that a non-default rate is visibly non-default,
 because forgetting you left it at 2× is the failure this control exists to prevent.
 
-## `media/OutputDeviceButton.jsx`
-
-**Affordance: where the audio is going, and at what quality.** Two facts the listener needs
-without leaving the player, and Sonora states neither. Directly useful to Auralis for a
-reason Spotify does not have: this is the natural home for **direct play vs transcode**, which
-`docs/HANDOVER.md` records as invisible today — every Auralis session silently takes the
-transcode path and nothing in the UI says so.
-
-```ts
-device?: string        // "Living room", "RENAULT" — omit when playing locally
-quality?: string       // "Lossless", "Transcoded" — a short badge beside the glyph
-connected?: boolean    // accent ink and a filled glyph while routed to something remote
-glyph?: string         // default 'speaker'; 'cast'/'bluetooth' when the route says so
-onClick?: () => void
-```
-
 ## `media/AboutCard.jsx`
 
 **Affordance: learn about what you are listening to without leaving the player.** The player
@@ -155,7 +139,7 @@ literally, `@dsCard` first line, pinned CDN scripts with integrity unchanged, da
 
 | File | group | name | viewport | Covers |
 | --- | --- | --- | --- | --- |
-| `components/components/spoken-transport.card.html` | Components | Spoken Transport & Routing | 1200x900 | `TransportBar` and the desktop `MiniPlayer` bar in both variants, `SpeedControl` at 1× and 1.5×, `OutputDeviceButton` local / routed / with a quality badge |
+| `components/components/spoken-transport.card.html` | Components | Spoken Transport | 1200x760 | `TransportBar` in both variants, `SpeedControl` at 1× and 1.5× |
 | `components/components/about-cards.card.html` | Components | About Cards & Long Text | 1200x820 | `AboutCard` for an episode, a show (with a `FollowButton` action) and a person (`round`), `ExpandableText` collapsed and expanded, `MediaHeader` with a custom `actions` cluster and `progress` |
 
 ---
@@ -172,8 +156,7 @@ literally, `@dsCard` first line, pinned CDN scripts with integrity unchanged, da
 - **A credits/contributor card.** The affordance — *who made this, and in what role* — is
   already served: `ArtistCard` takes `title` and `sub`, so the role goes in `sub`, laid out by
   `Shelf` under a `Section`. Worth building only if a role-grouped layout is ever wanted.
-- **A share sheet.** Platform-provided; a glyph in `ItemActionBar` (wave 1) is the whole
-  in-app surface.
+- **A share sheet.** Platform-provided.
 - **Queue sheet, lyrics page, sync modes, edit mode, drag reorder.** `QueuePage`, `QueueRow`,
   `LyricsPage`, `Lyrics` and `LyricsSyncButton` already carry all of it, including the `footer`
   slot the timer/speed row sits in and the `editing` handlers behind the Edit button.

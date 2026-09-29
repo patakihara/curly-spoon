@@ -17,8 +17,8 @@ No unified logo exists (and none was invented) — see **Brand marks** below.
 - `guidelines/` — foundation specimen cards (colors, type, spacing, radius, shadows, brand marks)
 - `assets/logos/` — the three real product icons/wordmarks (Feishin, Booming Music, Symphony)
 - `assets/reference/` — real screenshots used as ground truth while building the system
-- `components/basic/` — the basic pieces, built only on tokens: AccountButton, Badge, Button, ButtonGroup, CoverArt, DownloadButton, ExpandableText, FollowButton, IconButton, Input, LyricsSyncButton, OverflowMenu, ProgressRing, RailItem, SearchButton, SearchField, SeekBar, Slider, SortFilterBar, SpeedControl, Switch, TonalIconButton, ViewToggle
-- `components/components/` — cards, rows, transport and headers, built from the basic pieces: AboutCard, ArtistCard, BottomNav, EditableList, EmptyState, EpisodeRow, ExpanderRow, FieldRow, Lyrics, MediaCard, MediaHeader, MiniPlayer, NavRail, PlayActions, QueueRow, QuickPick, ResultRow, SectionHeader, SettingRow, StatusBanner, TabBar, TransportBar, ValueRow
+- `components/basic/` — the basic pieces, built only on tokens: AccountButton, Badge, Button, ButtonGroup, CoverArt, DownloadButton, ExpandableText, FollowButton, IconButton, Input, LyricsSyncButton, OverflowMenu, PreviewButton, ProgressRing, Rating, RailItem, SearchButton, SearchField, SeekBar, Slider, SortFilterBar, SpeedControl, Switch, TonalIconButton, ViewToggle
+- `components/components/` — cards, rows, transport and headers, built from the basic pieces: AboutCard, ArtistCard, BottomNav, EditableList, EmptyState, EpisodeRow, ExpanderRow, FeatureCard, FieldRow, Lyrics, MediaCard, MediaHeader, MiniPlayer, NavRail, PlayActions, QueueRow, QuickPick, ResultRow, SectionHeader, SettingRow, StatusBanner, TabBar, TransportBar, ValueRow
 - `components/layouts/` — the page layouts: the backdrop shell and its layers, sections, shelves, grids and the player's containers and pages: BackLayer, BackdropShell, FrontLayer, FrontLayerHeader, LayoutGrid, LyricsPage, NowPlaying, NowPlayingPage, PageBody, PlayerPanel, PlayerSheet, PlayerSubPage, QueuePage, ScrollArea, Section, Shelf, SideSheet
 - `SKILL.md` — Claude Code / Agent Skills manifest
 
@@ -110,8 +110,8 @@ Explore these directly for anything this summary simplifies — they're the grou
 
 One hierarchy: tokens, then basic pieces, then components, then page layouts. Each level builds only on the levels before it, and the artifact is grouped the same way.
 
-- **Basic**: AccountButton, Badge, Button, ButtonGroup, CoverArt, DownloadButton, ExpandableText, FollowButton, IconButton, Input, LyricsSyncButton, OverflowMenu, ProgressRing, RailItem, SearchButton, SearchField, SeekBar, Slider, SortFilterBar, SpeedControl, Switch, TonalIconButton, ViewToggle
-- **Components**: AboutCard, ArtistCard, BottomNav, EditableList, EmptyState, EpisodeRow, ExpanderRow, FieldRow, Lyrics, MediaCard, MediaHeader, MiniPlayer, NavRail, PlayActions, QueueRow, QuickPick, ResultRow, SectionHeader, SettingRow, StatusBanner, TabBar, TransportBar, ValueRow
+- **Basic**: AccountButton, Badge, Button, ButtonGroup, CoverArt, DownloadButton, ExpandableText, FollowButton, IconButton, Input, LyricsSyncButton, OverflowMenu, PreviewButton, ProgressRing, Rating, RailItem, SearchButton, SearchField, SeekBar, Slider, SortFilterBar, SpeedControl, Switch, TonalIconButton, ViewToggle
+- **Components**: AboutCard, ArtistCard, BottomNav, EditableList, EmptyState, EpisodeRow, ExpanderRow, FeatureCard, FieldRow, Lyrics, MediaCard, MediaHeader, MiniPlayer, NavRail, PlayActions, QueueRow, QuickPick, ResultRow, SectionHeader, SettingRow, StatusBanner, TabBar, TransportBar, ValueRow
 - **Layouts**: BackLayer, BackdropShell, FrontLayer, FrontLayerHeader, LayoutGrid, LyricsPage, NowPlaying, NowPlayingPage, PageBody, PlayerPanel, PlayerSheet, PlayerSubPage, QueuePage, ScrollArea, Section, Shelf, SideSheet
 
 ### Layout & the grid system

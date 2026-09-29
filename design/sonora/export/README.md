@@ -1,13 +1,8 @@
 # Export
 
-Generated views of this design system for downstream codebases. **Every file here is derived —
-never hand-edit one.** Change `tokens/*.css` or a component's `.d.ts`, then regenerate:
-
-```js
-// run_script
-const src = await readFile('export/generate.js');
-await new Function(src + '; return generateExport;')()({ readFile, saveFile, ls, log });
-```
+Generated views of this design system for the Auralis web and Android apps. **Every file here is
+derived — never hand-edit one.** Change `tokens/*.css` or a component's `.d.ts`, then regenerate
+with `node docs/run_generate.mjs` from `design/sonora`, and `pnpm gen` from the Auralis root.
 
 | file | for |
 | --- | --- |
@@ -15,9 +10,6 @@ await new Function(src + '; return generateExport;')()({ readFile, saveFile, ls,
 | `web/sonora-theme.css` | the theme-dependent families, one block per theme — rescope the selectors to your theme root |
 | `android/SonoraTokens.kt` | Compose `Color`/`Dp`/`TextUnit` values plus the motion curve; `package` line is a placeholder |
 | `component-api.md` | every component's props, types and notes, from the `.d.ts` files |
-| `DRIFT.md` | hand-written: what differs from the copy vendored in the consuming repo |
-
-`DRIFT.md` is the one file here that is written, not generated — refresh it when you sync with the repo.
 
 ## What ports and what doesn't
 

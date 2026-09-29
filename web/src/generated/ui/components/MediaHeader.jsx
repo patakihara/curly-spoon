@@ -12,11 +12,11 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * settings/overflow, an episode's saved/downloaded/share/overflow. `progress` states how far into
  * a part-finished item the listener already is. A label given as null leaves its button out, and
  * `menu` follows the actions; with no title, the page's own heading names the item. `partOf` names
- * the whole an item belongs to, a book's series, and on a phone `download` keeps it offline; `addLabel`
+ * the whole an item belongs to, a book's series, `rating` its community rating, and on a phone `download` keeps it offline; `addLabel`
  * adds a round button that saves the item into a list; a list with no art of its own shows its items' `covers`. With no title
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
-export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, covers, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
+export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, covers, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, rating, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
   const glyph = (name) => React.createElement('span', { style: sx("font-family:'Material Symbols Rounded';font-size:20px;line-height:1") }, name);
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
@@ -48,6 +48,8 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
         {subtitle != null && <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium);color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>}
         {partOf != null && <div onClick={onPartOf} style={sx('font-size:var(--text-sm);font-weight:var(--weight-medium);color:' + (onPartOf ? 'var(--accent-ink);cursor:pointer' : fg))}>{partOf}</div>}
         <div style={sx(caption && !mobile ? 'font-size:var(--text-lg);color:' + fg : 'font-size:var(--text-sm);color:' + muted)}>{meta}</div>
+        {/* The item's community rating, a Rating, on its own line under the facts it sums up. */}
+        {rating != null && <div style={sx('display:flex;justify-content:' + (mobile ? 'center' : 'flex-start'))}>{rating}</div>}
         {/* Resume position for a part-finished item — "1h 21m left" lives in `meta` above; this is
             the bar that describes it. Gated the QuickPick/MediaCard way: null (the default) draws
             nothing, not a zero-width rule. */}

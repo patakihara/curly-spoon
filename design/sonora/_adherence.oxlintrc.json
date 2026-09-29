@@ -157,12 +157,32 @@
         "message": "<OverflowMenu> platform must be one of 'desktop' | 'mobile'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:kind|label|playing|muted|disabled|onClick|platform|key|ref|className|style|children)$/]",
+        "message": "<PreviewButton> doesn't accept that prop. Declared props: kind, label, playing, muted, disabled, onClick, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute[name.name='kind'] > Literal[value!=/^(?:episode|playlist|audiobook|track)$/]",
+        "message": "<PreviewButton> kind must be one of 'episode' | 'playlist' | 'audiobook' | 'track'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PreviewButton'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<PreviewButton> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='ProgressRing'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|value|thickness|color|track|label|key|ref|className|style|children)$/]",
         "message": "<ProgressRing> doesn't accept that prop. Declared props: size, value, thickness, color, track, label."
       },
       {
         "selector": "JSXOpeningElement[name.name='RailItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|active|expanded|rowHeight|tabs|wideActive|centerIcon|onClick|key|ref|className|style|children)$/]",
         "message": "<RailItem> doesn't accept that prop. Declared props: icon, label, active, expanded, rowHeight, tabs, wideActive, centerIcon, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Rating'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|count|max|platform|key|ref|className|style|children)$/]",
+        "message": "<Rating> doesn't accept that prop. Declared props: value, count, max, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Rating'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<Rating> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='SearchButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|onToggle|muted|label|key|ref|className|style|children)$/]",
@@ -285,6 +305,14 @@
         "message": "<ExpanderRow> doesn't accept that prop. Declared props: label, actionLabel, expanded, onToggle, image."
       },
       {
+        "selector": "JSXOpeningElement[name.name='FeatureCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:image|kind|title|meta|description|tint|explicit|saved|onSave|onPlay|onMore|preview|platform|key|ref|className|style|children)$/]",
+        "message": "<FeatureCard> doesn't accept that prop. Declared props: image, kind, title, meta, description, tint, explicit, saved, onSave, onPlay, onMore, preview, platform."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FeatureCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<FeatureCard> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='FieldRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|placeholder|value|platform|onChange|key|ref|className|style|children)$/]",
         "message": "<FieldRow> doesn't accept that prop. Declared props: label, placeholder, value, platform, onChange."
       },
@@ -321,8 +349,8 @@
         "message": "<MediaCard> tone must be one of 'progress' | 'request' | 'error'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|image|covers|compactAt|kindLabel|title|subtitle|meta|playLabel|nextLabel|lastLabel|round|onPlay|onPlayNext|onPlayLast|onSubtitle|partOf|onPartOf|actions|menu|progress|download|onDownload|addLabel|onAdd|key|ref|className|style|children)$/]",
-        "message": "<MediaHeader> doesn't accept that prop. Declared props: platform, image, covers, compactAt, kindLabel, title, subtitle, meta, playLabel, nextLabel, lastLabel, round, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, actions, menu, progress, download, onDownload, addLabel, onAdd."
+        "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|image|covers|compactAt|kindLabel|title|subtitle|meta|playLabel|nextLabel|lastLabel|round|onPlay|onPlayNext|onPlayLast|onSubtitle|partOf|onPartOf|rating|actions|menu|progress|download|onDownload|addLabel|onAdd|key|ref|className|style|children)$/]",
+        "message": "<MediaHeader> doesn't accept that prop. Declared props: platform, image, covers, compactAt, kindLabel, title, subtitle, meta, playLabel, nextLabel, lastLabel, round, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, rating, actions, menu, progress, download, onDownload, addLabel, onAdd."
       },
       {
         "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -620,22 +648,10 @@
       "AccountButton": {
         "replaces": []
       },
-      "AlbumArt": {
-        "replaces": []
-      },
-      "AppShell": {
-        "replaces": []
-      },
       "ArtistCard": {
         "replaces": []
       },
       "BackLayer": {
-        "replaces": []
-      },
-      "BackLink": {
-        "replaces": []
-      },
-      "BackToTop": {
         "replaces": []
       },
       "BackdropShell": {
@@ -644,19 +660,10 @@
       "Badge": {
         "replaces": []
       },
-      "BottomAppBar": {
-        "replaces": []
-      },
-      "BottomAppBarAction": {
-        "replaces": []
-      },
       "BottomNav": {
         "replaces": []
       },
       "BottomNavItem": {
-        "replaces": []
-      },
-      "BrowseCard": {
         "replaces": []
       },
       "Button": {
@@ -665,22 +672,7 @@
       "ButtonGroup": {
         "replaces": []
       },
-      "Chip": {
-        "replaces": []
-      },
-      "CircleReveal": {
-        "replaces": []
-      },
-      "CollectionPage": {
-        "replaces": []
-      },
-      "ContentPane": {
-        "replaces": []
-      },
       "CoverArt": {
-        "replaces": []
-      },
-      "DetailPage": {
         "replaces": []
       },
       "DownloadButton": {
@@ -725,16 +717,7 @@
       "Input": {
         "replaces": []
       },
-      "ItemActionBar": {
-        "replaces": []
-      },
       "LayoutGrid": {
-        "replaces": []
-      },
-      "LibraryShell": {
-        "replaces": []
-      },
-      "LibraryView": {
         "replaces": []
       },
       "Lyrics": {
@@ -765,9 +748,6 @@
         "replaces": []
       },
       "NowPlayingPage": {
-        "replaces": []
-      },
-      "OutputDeviceButton": {
         "replaces": []
       },
       "OverflowMenu": {
@@ -809,9 +789,6 @@
       "QuickPick": {
         "replaces": []
       },
-      "RailFooter": {
-        "replaces": []
-      },
       "RailItem": {
         "replaces": []
       },
@@ -822,9 +799,6 @@
         "replaces": []
       },
       "ScrollArea": {
-        "replaces": []
-      },
-      "SearchBar": {
         "replaces": []
       },
       "SearchButton": {
@@ -875,9 +849,6 @@
       "TonalIconButton": {
         "replaces": []
       },
-      "TopAppBar": {
-        "replaces": []
-      },
       "TransportBar": {
         "replaces": []
       },
@@ -897,7 +868,6 @@
       "--appbar-height-mobile",
       "--art-gradient-end",
       "--art-gradient-start",
-      "--bottom-app-bar-height",
       "--breakpoint-compact",
       "--content-min-width",
       "--duration-fast",
@@ -914,8 +884,6 @@
       "--grid-gap",
       "--grid-gutter",
       "--grid-gutter-mobile",
-      "--grid-item-max",
-      "--grid-item-max-mobile",
       "--grid-item-max-wide",
       "--grid-item-max-wide-mobile",
       "--grid-item-min",
@@ -1134,8 +1102,6 @@
       "--grid-item-min-mobile": "spacing",
       "--grid-item-min-wide": "spacing",
       "--grid-item-min-wide-mobile": "spacing",
-      "--grid-item-max": "spacing",
-      "--grid-item-max-mobile": "other",
       "--grid-item-max-wide": "spacing",
       "--grid-item-max-wide-mobile": "other",
       "--grid-max-width": "spacing",
@@ -1151,7 +1117,6 @@
       "--appbar-height": "spacing",
       "--appbar-height-mobile": "spacing",
       "--appbar-controls-height": "spacing",
-      "--bottom-app-bar-height": "spacing",
       "--now-playing-art-max": "spacing",
       "--now-playing-preview-height": "spacing",
       "--radius-xs": "radius",

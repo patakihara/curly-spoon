@@ -8,11 +8,10 @@ apply unchanged and are not repeated here.
 
 ## The bounding constraints — read these before anything else
 
-1. **Add new components. Do not modify a single existing one.** Not `AppShell`, not `TopAppBar`,
-   not `ContentPane`, not `SideSheet`, not `NavRail`. They stay exactly as they are and keep
-   working. The new shell lives beside them.
-2. **Do not alter any existing mockup or card.** `ui_kits/desktop/index.html`,
-   `ui_kits/mobile/index.html` and every existing `*.card.html` are untouchable. You add *new*
+1. **Add new components. Do not modify a single existing one.** Not `SideSheet`, not `NavRail`:
+   they stay exactly as they are and keep working.
+2. **Do not alter any existing mockup or card.** Every existing
+   `*.card.html` is untouchable. You add *new*
    cards showing example configurations.
 3. **No change to page or view logic.** Scroll-position preservation per view, detail pages,
    sub-tab state — all of that must keep working exactly as it does. You are changing which
@@ -46,29 +45,7 @@ From <https://m2.material.io/components/backdrop>, quoted:
   rounded **16dp**, front layer elevation 1dp, back layer 0dp.
 
 The spec says nothing about unrounding the front layer on scroll, and nothing about a second
-surface between the layers. Both of those are things the current implementation invented.
-
-## What the current shell does, and why it is not a backdrop
-
-Read these three files before writing anything — they are the thing being replaced:
-
-- `components/layout/AppShell.jsx` — rail, then a `--surface-bg-alt` column of `bar` + `ContentPane`, then `sheet`, with `player` docked below.
-- `components/navigation/TopAppBar.jsx` — **two** rows. Row 1 is the `--surface-bg-alt` strip (title, search morph). Row 2 is the controls row, and its own comment says it is *"the page surface reaching up behind the bar"*: `background: var(--surface-bg)`, `border-radius: var(--radius-lg) var(--radius-lg) 0 0`.
-- `components/layout/ContentPane.jsx` — `--surface-bg`, top corners `calc(var(--radius-lg) * (1 - p))` where `p` is scroll progress, plus a hairline that fades in with `p`.
-
-Four concrete faults, all visible in `.probe/current-shell.png`:
-
-1. **The secondary header is on the wrong layer.** Tabs and the filter `ButtonGroup` are DOM
-   children of the app bar, but painted to look like the top of the content. In a backdrop they
-   belong to the front layer, as its subheader.
-2. **Two surfaces both claim to be the top of the content.** The controls row rounds its top
-   corners, and `ContentPane` immediately below rounds its top corners again — a visible notch at
-   the left edge where the two curves meet.
-3. **The front layer unrounds on scroll.** Corners animate to square as you scroll. A backdrop's
-   front layer keeps its shape; it is a persistent surface, not a sheet that docks.
-4. **There is no elevation between the layers** — a hairline stands in for the 1dp step.
-
----
+surface between the layers, so the shell does neither.
 
 ## Build this
 
@@ -76,8 +53,7 @@ Four new components in `components/layout/`, each `.jsx` + `.d.ts`.
 
 ### `BackdropShell.jsx`
 
-The frame. Deliberately mirrors `AppShell`'s prop names where the meaning is the same, so a screen
-ports by swapping the component.
+The frame.
 
 ```ts
 back?: ReactNode        // back-layer content: heading row + contextual controls
@@ -116,15 +92,14 @@ squareRight?: boolean
 platform?: 'desktop' | 'mobile'
 ```
 
-- **Top corners are `--radius-lg` and never unround.** No scroll-linked radius. This is the single
-  most important behavioural difference from `ContentPane`.
+- **Top corners are `--radius-lg` and never unround.** No scroll-linked radius. This is its single
+  most important behaviour.
 - Casts a **slight** shadow onto the back layer — the 1dp step. Use `--shadow-sm` or `--shadow-xs`;
   it should read as a lift, not a drop shadow. Nothing heavier.
-- Owns the scrolling and the per-view scroll memory. **Port `ContentPane`'s scroll logic across
-  as-is** — the `saved`/`lastKey` ref bookkeeping, the `useLayoutEffect` restore with the
-  `requestAnimationFrame` retry, the `pageScroller()` lookup for `scroll={false}`, and the
-  `onScrollCapture` guard that ignores horizontal shelves. That code exists because each piece
-  fixed a real bug; re-deriving it will reintroduce them. Copy it, keep its comments.
+- Owns the scrolling and the per-view scroll memory. Its scroll logic is load-bearing: the `saved`/`lastKey` ref bookkeeping,
+  the `useLayoutEffect` restore with the `requestAnimationFrame` retry, the `pageScroller()` lookup
+  for `scroll={false}`, and the `onScrollCapture` guard that ignores horizontal shelves each fixed a
+  real bug, and their comments say which.
 
 ### `FrontLayerHeader.jsx`
 
@@ -140,12 +115,12 @@ platform?: 'desktop' | 'mobile'
 **The divider rule, exactly:**
 
 - When `tabs` is **false**, a hairline fades in with scroll progress along the subheader's bottom
-  edge — the same scroll-linked affordance `ContentPane` has today.
+  edge.
 - When `tabs` is **true**, no hairline. A tab bar already draws an underline indicator, and two
   horizontal rules stacked is noise.
 - **The divider must not span the gutters.** It is inset to the content measure — left and right
   by the page's horizontal padding — so it reads as belonging to the content column rather than
-  cutting the surface in half. This is the opposite of `ContentPane`'s current full-bleed hairline.
+  cutting the surface in half.
 
 ### `BackLayer.jsx`
 
@@ -194,7 +169,7 @@ layer. The front layer squares its right corner where the panel abuts it.
 
 ## Cards
 
-Three new cards, in `components/layout/`. Same rules as `docs/SPEC.md`'s Cards section: copy
+Three new cards, in `components/layouts/`. Same rules as `docs/SPEC.md`'s Cards section: copy
 `components/basic/buttons.card.html` literally, `@dsCard` first line, pinned CDN scripts with
 integrity unchanged, dark + light `Themed()` wrapper, realistic self-hosted-library content
 (reuse Driftwave / Halcyon Bloom / Static & Signal / The Glass Archivist / Rosa Elin).

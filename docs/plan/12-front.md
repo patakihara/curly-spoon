@@ -27,7 +27,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 #### Sonora: the design system
 
 - Tokens, basic pieces, components and page layouts, each with a `.d.ts`, a card, and dark and light previews. No Auralis data.
-- Grows because the app needs something, but anything that lands here is generic: a `MediaCard`, not "the podcast digest card".
+- Grows because the app needs something, but anything that lands here is generic: a `FeatureCard`, not "the podcast digest card".
 :::
 
 ::: card
@@ -38,14 +38,14 @@ Everything in the app starts as a Sonora component, and every page starts on the
 :::
 :::
 
-**Where the screens come from.** Sonora is the most complete design: its UI kit renders, its showcase cards and the 43 Spotify reference screens. The "Auralis redesign kickoff" project, which old Auralis vendored (tag `legacy`, `docs/design/sonora`), adds only its screen list (artist, author, shelf, onboarding); its 9 components are all in Sonora now. The screen map is the union, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. The UI kits left Sonora, since screens don't belong in the design system; their renders stay as the canvas comparisons' sources. The Claude Design projects stay as read-only references.
+**Where the screens come from.** Sonora is the most complete design: its UI kit renders, its showcase cards and the 43 Spotify reference screens. The "Auralis redesign kickoff" project, which old Auralis vendored (tag `legacy`, `docs/design/sonora`), adds only its screen list (artist, author, shelf, onboarding); its 9 components are all in Sonora now. The screen map is the union, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. Screens don't belong in the design system, so the UI kits survive only as renders, the canvas comparisons' sources. The Claude Design projects stay as read-only references.
 
 ### Sonora, pruned and ordered
 
-Sonora has 63 components, filed by level (basic, components, layouts). 12 came from the Spotify affordance pass (checked in its git history): Button, ExpanderRow, FollowButton, SortFilterBar, StatusBanner, DownloadButton, EpisodeRow, ExpandableText, AboutCard, MediaHeader, SpeedControl and TransportBar. Most of the rest came from the original Claude Design project.
+Sonora has 66 components, filed by level (basic, components, layouts).
 
-- **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (shell, backdrop, shelf, detail and collection pages). The artifact is organised the same way. Pages live only on the canvas.
-- **Pruned against the screens.** Each component lists the canvas pages that use it, and a test fails on one no page uses. The foundations milestone removed 20 that way, whichever pass they came from, OutputDeviceButton ("Play on…" comes late), Rating, BrowseCard and BackToTop among them; one can return from git history.
+- **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (backdrop shell, sections, shelves, the player's pages). The artifact is organised the same way. Pages live only on the canvas.
+- **Pruned against the screens.** Each component lists the canvas pages that draw it, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, as every other form component does, so `FieldRow`'s `(next: string)` handler no longer receives a DOM event.
 
 ### From design to both apps
@@ -54,7 +54,7 @@ Sonora has 63 components, filed by level (basic, components, layouts). 12 came f
 ::: card
 #### From Sonora
 
-- **63 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, EpisodeRow, ResultRow, MediaHeader), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes), status (StatusBanner, DownloadButton, ProgressRing, Badge).
+- **66 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes), status (StatusBanner, DownloadButton, ProgressRing, Badge).
 - **A token exporter**: `export/web/sonora-tokens.css`, `sonora-theme.css` and `export/android/SonoraTokens.kt`, all generated. Motion, scrim, tone and layout families included.
 - **43 Spotify reference screens**, each mapped to the components it motivated. They stay as reference pictures, not components.
 :::
@@ -108,7 +108,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Screen | Endpoint | What it returns | Design |
 |---|---|---|---|
 | Browse | `GET /feed` | kind chips, quick picks (progress, unplayed), shelves (eyebrow, subject, subject art, mixed items, availability), feature cards with preview | <span class="pill t-lib">Sonora</span> S05–S30 |
-| Music / Books / Podcasts homes | `GET /library/{music\|books\|podcasts}` | library list with sort and filter, list or grid, pins and downloaded markers | <span class="pill t-lib">Sonora</span> S31 · LibraryShell |
+| Music / Books / Podcasts homes | `GET /library/{music\|books\|podcasts}` | library list with sort and filter, list or grid, pins and downloaded markers | <span class="pill t-lib">Sonora</span> S31 · UI kit library screens |
 | Search | `GET /search/suggest`, `GET /search` | suggestions; library results + outside results, status per row, "more releases" folding | <span class="pill t-lib">Sonora</span> S03–S04, S32 |
 | Book · Show · Episode · Album | `GET /items/{ref}` | MediaHeader data (actions, progress, rating), episodes with sort, chapters or tracks, about text, related, a book's other narrations | <span class="pill t-lib">Sonora</span> S01–S02, S35 |
 | Artist · Author · Series | `GET /people/{ref}`, `GET /series/{ref}` | owned works grouped; unowned works greyed out (on by default) | <span class="pill t-req">mock only</span> |

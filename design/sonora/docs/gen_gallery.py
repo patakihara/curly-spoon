@@ -28,16 +28,9 @@ divergence from the real mechanism remains, deliberately: our iframe lays out at
 own ~728px width, not the card's declared manifest viewport width (the real transform:scale()
 approach renders at native width first and shrinks the whole rendered result, so it never faces
 this tradeoff). A card whose layout assumes something close to its full declared width can overflow
-horizontally at 728px in a way it never would there — confirmed, not hypothetical, for one card:
-ui_kits/desktop/index.html (declared 1400px) overflows by ~481px, pushing its right-hand "Now
-Playing" column outside the visible box (its own layout is a fixed three-column shell, not a
-responsive one). It's still reachable, not lost — the iframe scrolls there on hover the same way
-S02's vertical overflow does (see review_card()) — which is the actual point of an iframe over a
-screenshot: a screenshot could never have shown that column at all. ui_kits/mobile/index.html and
-3 guidelines/* cards checked the same way do NOT overflow. That's 5 of 84 cards actually measured
-(docs/../.probe/preview-width-overflow.mjs, gitignored local scratch, not the full manifest — a
-full sweep is slow and, once both App Screens cards are covered, of thin marginal value), so treat
-this as "at least one real instance exists, here's the shape of it," not "the other 79 are clean."
+horizontally at 728px in a way it never would there. What overflows is still reachable, not lost —
+the iframe scrolls there on hover the same way S02's vertical overflow does (see review_card()) —
+which is the actual point of an iframe over a screenshot.
 Previews also now depend on the network at view time (the CDN-hosted React/ReactDOM/Babel every
 card pulls in) — no such dependency existed for a screenshot.
 
@@ -56,8 +49,7 @@ off the namespace), which a live iframe here will otherwise just render as an em
 diagnostic. Its docs/.render/*.png output now only backs the dev-facing fallback for a card whose
 own path doesn't resolve to a real file (see preview_mount()) — keyed by each card's full relative
 path with '/' replaced by '_' (matching render_cards.mjs's own output naming), not by basename, so
-ui_kits/desktop/index.html and ui_kits/mobile/index.html — which would otherwise collide on the
-same basename 'index.html' — each resolve to their own screenshot.
+two cards in different folders sharing a basename each resolve to their own screenshot.
 
     node docs/build_bundle.js && node docs/render_cards.mjs && python3 docs/gen_gallery.py
 
@@ -148,8 +140,8 @@ def md_to_html(src):
 def png_for(card_path):
     # Keyed by the card's full relative path (slashes -> underscores), matching render_cards.mjs's
     # own `rel.replace(/\//g, '_') + '.png'` naming exactly — NOT os.path.basename(card_path). Two
-    # cards can share a basename (ui_kits/desktop/index.html and ui_kits/mobile/index.html both are
-    # 'index.html'); keying by full path is what lets both resolve to their own screenshot.
+    # cards in different folders can share a basename; keying by full path lets both resolve to
+    # their own screenshot.
     slug = card_path.replace('/', '_')
     p = os.path.join(ROOT, '.render', slug + '.png')
     return p if os.path.exists(p) else None
