@@ -1,0 +1,25 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "hls-segment",
+  "request": {
+    "method": "GET",
+    "path": "/hls/68587e43-d9f3-434f-91a3-dfcb5b8cd28f/output-0.ts",
+    "query": {},
+    "headers": {
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "video/mp2t"
+    },
+    "body": {
+      "bytes": "hls-segment.mp2t",
+      "synthesized": "A 6 s 550 Hz sine tone, MP3 mono 44.1 kHz in MPEG-TS, made by scripts/fixtures/tone.sh. Status and headers are the real answer; the body is not."
+    }
+  }
+}

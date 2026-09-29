@@ -1,10 +1,10 @@
 {
   "upstream": "audiobookshelf",
   "upstreamVersion": "2.37.0",
-  "call": "session-close",
+  "call": "multi-close",
   "request": {
     "method": "POST",
-    "path": "/api/session/80e322ef-b92c-464b-8e76-f52229fb33eb/close",
+    "path": "/api/session/f0b4a5a4-1c89-432b-a463-4b477e1278c4/close",
     "query": {},
     "headers": {
       "accept": "application/json",

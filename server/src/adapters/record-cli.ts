@@ -12,6 +12,10 @@
  *     | pnpm --filter @auralis/server record -- --only oidc --oidc <issuer> --oidc-version <v> \
  *         --abs <url> --jellyfin <url>
  *
+ * `--only play --play-item <id>` records M1.play's calls on one small multi-file book: it played
+ * directly, each file's first two bytes, then the same book transcoded to HLS, its playlist and
+ * first segment. The transcode is closed as soon as it is recorded.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -20,8 +24,8 @@ import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { AbsClient, contentUrlParts } from './audiobookshelf/client.js';
-import { type FetchLike } from './http/fetch.js';
+import { AbsClient, contentUrlParts, hlsSessionOf } from './audiobookshelf/client.js';
+import { AdapterError, type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { recordingSchema } from './http/recording.js';
 import { localNames } from './http/localNames.js';
@@ -47,7 +51,8 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
   --jellyfin-item <id> the Jellyfin item to record, instead of the first album
-  --only <name>      record only abs, jellyfin or index; or oidc, a sign-in and its links
+  --only <name>      record only abs, jellyfin, index or play; or oidc, a sign-in and its links
+  --play-item <id>   the multi-file book --only play records
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
@@ -59,6 +64,22 @@ OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
 const CLIENT_VERSION = '0.0.0';
+
+/** The multi-file book's file calls' stand-in: its files are MP3. */
+export const MULTI_FILE_STAND_IN = {
+  bytes: 'multi-file.mp3',
+  synthesized:
+    'A 5 s 330 Hz sine tone, MP3 mono 44.1 kHz, made by scripts/fixtures/tone.sh. ' +
+    'Status and headers are the real answer to Range: bytes=0-1; the body is not.',
+} as const;
+
+/** The transcode's segment's stand-in: ABS copies an MP3 book's audio into MPEG-TS segments. */
+export const HLS_SEGMENT_STAND_IN = {
+  bytes: 'hls-segment.mp2t',
+  synthesized:
+    'A 6 s 550 Hz sine tone, MP3 mono 44.1 kHz in MPEG-TS, made by scripts/fixtures/tone.sh. ' +
+    'Status and headers are the real answer; the body is not.',
+} as const;
 
 /**
  * The file call's body is never kept: it is a household audio file. Its recording names a
@@ -81,6 +102,8 @@ export interface RecordIo {
   /** For --only oidc: the state, nonce and verifier's bytes, and the time. */
   random?: (bytes: number) => Buffer;
   now?: () => number;
+  /** For --only play: waits between polls for the first segment. */
+  sleep?: (ms: number) => Promise<void>;
   /** People's names from the local, uncommitted names file: the scan fails on any of them. */
   names?: readonly string[];
 }
@@ -208,6 +231,127 @@ async function recordJellyfin(
   return ['library-list', 'item-detail'].map((c) => join(dir, `${c}.json`));
 }
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** Polls, unrecorded, until the transcode's first segment is cut: at most 30 tries a second apart. */
+async function waitForSegment(
+  abs: AbsClient,
+  session: string,
+  wait: (ms: number) => Promise<void>,
+) {
+  for (let tries = 0; tries < 30; tries += 1) {
+    await wait(1000);
+    const ready = await abs.openHlsSegment(session, 'output-0.ts').catch(() => null);
+    if (ready !== null) {
+      await ready.body.cancel();
+      return;
+    }
+  }
+  throw new Error('the first segment was not cut within 30 s');
+}
+
+/**
+ * M1.play's calls on one multi-file book: direct play and each file's first two bytes, then a
+ * forced transcode, its playlist and first segment. Every session opened is closed, the
+ * transcode's as soon as it is recorded, whatever fails. Reads one item; lists no library.
+ */
+async function recordPlay(
+  io: RecordIo,
+  baseUrl: string,
+  token: string,
+  dir: string,
+  secrets: string[],
+  itemId: string,
+) {
+  const upstreamVersion = await new AbsClient({
+    baseUrl,
+    token,
+    fetch: io.fetch,
+  }).getServerVersion();
+  const rec = createRecorder({
+    fetch: io.fetch,
+    dir,
+    upstream: 'audiobookshelf',
+    upstreamVersion,
+    secrets,
+    baseUrl,
+  });
+  const open = new Set<string>();
+  const peekSession: FetchLike = async (url, init) => {
+    const response = await rec.fetch(url, init);
+    if (init?.method === 'POST' && new URL(url).pathname.endsWith('/play')) {
+      const id = rawSessionId(await response.clone().text());
+      if (id !== undefined) open.add(id);
+    }
+    return response;
+  };
+  const abs = new AbsClient({ baseUrl, token, fetch: peekSession });
+  const device = { deviceId: 'auralis-recorder', clientVersion: CLIENT_VERSION };
+  const calls: string[] = [];
+  const close = async (call: string, sessionId: string) => {
+    await rec.capture(call, () => abs.closeSession(sessionId));
+    open.delete(sessionId);
+    calls.push(call);
+  };
+
+  try {
+    const item = await rec.capture('multi-detail', () => abs.getItem(itemId));
+    calls.push('multi-detail');
+    if (item.mediaType !== 'book') throw new Error(`${itemId} is not a book`);
+
+    const direct = await rec.capture('multi-play', () => abs.play(itemId, device));
+    calls.push('multi-play');
+    const files = direct.audioTracks.map((t) => contentUrlParts(t.contentUrl));
+    if (files.length < 2 || files.some((f) => f === null)) {
+      throw new Error('the play answer is not a direct-play book of two or more files');
+    }
+    for (const [n, file] of files.entries()) {
+      const call = `multi-file-${n + 1}`;
+      const opened = await rec.capture(call, () => abs.openFile(file!, 'bytes=0-1'), {
+        standIn: MULTI_FILE_STAND_IN,
+      });
+      await opened.body.cancel();
+      calls.push(call);
+    }
+    await close('multi-close', direct.id);
+
+    const transcode = await rec.capture('hls-play', () =>
+      abs.play(itemId, device, { forceTranscode: true }),
+    );
+    calls.push('hls-play');
+    const [track, ...rest] = transcode.audioTracks;
+    const session = track === undefined || rest.length > 0 ? null : hlsSessionOf(track.contentUrl);
+    if (session === null) throw new Error('the transcode did not answer one HLS track');
+    await rec.capture('hls-playlist', () => abs.getHlsPlaylist(session));
+    calls.push('hls-playlist');
+    // Asked at once, the first segment is not cut yet, and ABS answers 404 until it is.
+    const pending = await rec.capture('hls-segment-pending', () =>
+      abs.openHlsSegment(session, 'output-0.ts').then(
+        async (early) => {
+          await early.body.cancel();
+          throw new Error('the first segment was ready at once; record again');
+        },
+        (error: unknown) => error,
+      ),
+    );
+    if (!(pending instanceof AdapterError && pending.status === 404)) throw pending;
+    calls.push('hls-segment-pending');
+    await waitForSegment(abs, session, io.sleep ?? sleep);
+    const segment = await rec.capture(
+      'hls-segment',
+      () => abs.openHlsSegment(session, 'output-0.ts'),
+      { standIn: HLS_SEGMENT_STAND_IN },
+    );
+    await segment.body.cancel();
+    calls.push('hls-segment');
+    await close('hls-close', transcode.id);
+  } finally {
+    // Never leave a playback session, or its transcode, open on the server, whatever failed.
+    for (const id of open) await abs.closeSession(id).catch(() => undefined);
+  }
+  return calls.map((c) => join(dir, `${c}.json`));
+}
+
 /** What an episode's show notes are replaced with in a recording. */
 export const SHOW_NOTES_DROPPED =
   'Show notes dropped by the recorder: they carry third-party links.';
@@ -331,6 +475,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       abs: { type: 'string' },
       jellyfin: { type: 'string' },
       'jellyfin-item': { type: 'string' },
+      'play-item': { type: 'string' },
       'index-page': { type: 'string' },
       only: { type: 'string' },
       oidc: { type: 'string' },
@@ -344,8 +489,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
     return 0;
   }
   const only = values.only;
-  if (only !== undefined && !['abs', 'jellyfin', 'index', 'oidc'].includes(only)) {
-    io.err(`--only is abs, jellyfin, index or oidc, not ${only}`);
+  if (only !== undefined && !['abs', 'jellyfin', 'index', 'play', 'oidc'].includes(only)) {
+    io.err(`--only is abs, jellyfin, index, play or oidc, not ${only}`);
     return 2;
   }
   const indexPage = Number(values['index-page'] ?? INDEX_PAGE);
@@ -355,6 +500,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   }
   const root = values['dry-run'] ? mkdtempSync(join(tmpdir(), 'auralis-record-')) : here;
   if (only === 'oidc') return runOidc(io, values, parseKeys(io.stdin), root);
+  if (only === 'play') return runPlay(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -426,6 +572,27 @@ function scanWritten(io: RecordIo, written: string[], seen: readonly string[]): 
     return 1;
   }
   return 0;
+}
+
+async function runPlay(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const [absUrl, itemId, key] = [values.abs, values['play-item'], keys.ABS_API_KEY];
+  const missing = [
+    typeof absUrl !== 'string' && '--abs',
+    typeof itemId !== 'string' && '--play-item',
+    key === undefined && 'ABS_API_KEY on stdin',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const dir = join(root, 'audiobookshelf', 'recordings');
+  const written = await recordPlay(io, absUrl as string, key!, dir, [key!], itemId as string);
+  return scanWritten(io, written, []);
 }
 
 async function runOidc(

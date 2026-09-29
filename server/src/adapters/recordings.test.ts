@@ -71,9 +71,10 @@ describe("[M0.record/b] Audiobookshelf's recordings from mediaserver", () => {
     await expect(client.closeSession(session.id)).resolves.toBeUndefined();
   });
 
-  it('[M0.record/b] the recorded play call asked for direct play and got it', () => {
+  it('[M0.record/b] the recorded play call offered the types the clients play, and got direct play', () => {
     const request = json(abs['item-play'].request.body);
-    expect(request.forceDirectPlay).toBe(true);
+    expect(request.forceDirectPlay).toBe(false);
+    expect(request.forceTranscode).toBe(false);
     expect(request.supportedMimeTypes).toEqual(expect.arrayContaining([expect.any(String)]));
 
     const session = json(abs['item-play'].response.body);
@@ -139,6 +140,97 @@ describe("Audiobookshelf's file call, recorded with a synthesized body", () => {
     expect(opened.headers['content-type']).toBe('audio/mp4');
     expect(opened.headers['content-range']).toMatch(/^bytes 0-99\/\d+$/);
     expect((await new Response(opened.body).arrayBuffer()).byteLength).toBe(100);
+  });
+});
+
+/** M1.play's recordings: one small multi-file book, played directly and then transcoded. */
+const PLAY_CALLS = [
+  'multi-detail',
+  'multi-play',
+  'multi-file-1',
+  'multi-file-2',
+  'multi-file-3',
+  'multi-file-4',
+  'multi-close',
+  'hls-play',
+  'hls-playlist',
+  'hls-segment-pending',
+  'hls-segment',
+  'hls-close',
+] as const;
+const play = Object.fromEntries(
+  PLAY_CALLS.map((call) => [call, recording('audiobookshelf', call)]),
+) as Record<(typeof PLAY_CALLS)[number], Recording>;
+
+describe("Audiobookshelf's play calls on a multi-file book, recorded for M1.play", () => {
+  const tracksOf = (r: Recording) =>
+    json(r.response.body).audioTracks as { contentUrl: string; mimeType: string }[];
+
+  it('plays the book directly, one track per file, when every file is a type the clients play', () => {
+    expect(json(play['multi-play'].request.body).forceTranscode).toBe(false);
+    expect(json(play['multi-play'].response.body).playMethod).toBe(0);
+    const tracks = tracksOf(play['multi-play']);
+    expect(tracks.length).toBeGreaterThan(1);
+    expect(tracks.map((t) => t.contentUrl)).toEqual(
+      [1, 2, 3, 4].map((n) => play[`multi-file-${n}` as 'multi-file-1'].request.path),
+    );
+  });
+
+  it('records each file as a two-byte range, with the real headers and a synthesized MP3 body', () => {
+    for (const n of [1, 2, 3, 4]) {
+      const file = play[`multi-file-${n}` as 'multi-file-1'];
+      expect(file.request.headers.range).toBe('bytes=0-1');
+      expect(file.response.status).toBe(206);
+      expect(file.response.headers['content-type']).toBe('audio/mpeg');
+      expect(file.response.body).toMatchObject({ bytes: 'multi-file.mp3' });
+    }
+    const mp3 = readFileSync(join(adapters, 'audiobookshelf', 'recordings', 'multi-file.mp3'));
+    expect(mp3[0]).toBe(0xff);
+    expect(mp3.byteLength).toBeLessThan(50_000);
+  });
+
+  it('transcodes the same book to one HLS track when asked to, and serves its playlist', () => {
+    expect(json(play['hls-play'].request.body).forceTranscode).toBe(true);
+    const session = json(play['hls-play'].response.body);
+    expect(session.playMethod).toBe(2);
+    const [track, ...rest] = tracksOf(play['hls-play']);
+    expect(rest).toEqual([]);
+    expect(track?.contentUrl).toBe(`/hls/${String(session.id)}/output.m3u8`);
+    expect(track?.mimeType).toBe('application/vnd.apple.mpegurl');
+    expect(play['hls-playlist'].request.path).toBe(track?.contentUrl);
+    expect(play['hls-playlist'].response.headers['content-type']).toBe(
+      'application/vnd.apple.mpegurl',
+    );
+  });
+
+  it('answers 404 for a segment not cut yet, then the segment as MPEG-TS', () => {
+    const path = play['hls-segment'].request.path;
+    expect(play['hls-segment-pending'].request.path).toBe(path);
+    expect(play['hls-segment-pending'].response.status).toBe(404);
+    expect(play['hls-segment'].response.status).toBe(200);
+    expect(play['hls-segment'].response.headers['content-type']).toBe('video/mp2t');
+    const ts = readFileSync(join(adapters, 'audiobookshelf', 'recordings', 'hls-segment.mp2t'));
+    expect(ts[0]).toBe(0x47);
+  });
+
+  it('closes both sessions it opened', () => {
+    for (const [played, closed] of [
+      ['multi-play', 'multi-close'],
+      ['hls-play', 'hls-close'],
+    ] as const) {
+      const id = String(json(play[played].response.body).id);
+      expect(play[closed].request.path).toBe(`/api/session/${id}/close`);
+      expect(play[closed].response.status).toBe(200);
+    }
+  });
+
+  it('is a book, never from the Podcasts library', () => {
+    const libraries = json(abs['library-list'].response.body).libraries as {
+      id: string;
+      mediaType: string;
+    }[];
+    const item = json(play['multi-detail'].response.body) as { libraryId: string };
+    expect(libraries.find((l) => l.id === item.libraryId)?.mediaType).toBe('book');
   });
 });
 

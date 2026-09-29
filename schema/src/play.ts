@@ -1,7 +1,7 @@
 /**
- * Playback: what to play in, a plan to play it by out. M0 plays one Audiobookshelf item by direct
- * play; M1.play grows the plan (chapters, a progress target, what comes next, HLS) and the ref
- * (Jellyfin) in place.
+ * Playback: what to play in, a plan to play it by out. An Audiobookshelf item plays by direct
+ * play, one track per file, or, when a file is a type the clients do not play, as one HLS
+ * transcode. M1.progress and the queues fill the progress target and what comes next in place.
  */
 import { z } from './zod.js';
 
@@ -37,11 +37,18 @@ export function parseMediaRefKey(key: string): MediaRef | null {
   return MediaRef.parse({ source: key.slice(0, at), id: key.slice(at + 1) });
 }
 
+/** The mime type of a transcode's one track: an HLS playlist, played with hls.js or Media3's HLS. */
+export const HLS_MIME = 'application/vnd.apple.mpegurl';
+
 /** One audio file to play, streamed through this server. Times are in seconds. */
 export const PlaybackTrack = z
   .object({
-    /** `/api/media/{ref}/tracks/{n}`, sent with the same session or bearer token. */
+    /**
+     * `/api/media/{ref}/tracks/{n}`, or for a transcode `/api/media/{ref}/hls/{playId}/output.m3u8`,
+     * sent with the same session or bearer token.
+     */
     url: z.string().startsWith('/api/'),
+    /** The file's audio type, or `application/vnd.apple.mpegurl` for a transcode. */
     mime: z.string(),
     duration: z.number().nonnegative(),
     /** Where the track starts within the whole item. */
@@ -50,7 +57,10 @@ export const PlaybackTrack = z
   .openapi('PlaybackTrack');
 export type PlaybackTrack = z.infer<typeof PlaybackTrack>;
 
-/** A named span of the whole item, in seconds from its start, across files. */
+/**
+ * A named span of the whole item, in seconds from its start, across files: a chapter in the
+ * second file starts after the whole first file. A track's `offset` finds the file it falls in.
+ */
 export const PlaybackChapter = z
   .object({
     title: z.string(),
@@ -60,14 +70,21 @@ export const PlaybackChapter = z
   .openapi('PlaybackChapter');
 export type PlaybackChapter = z.infer<typeof PlaybackChapter>;
 
-/** Where the player reports its position while this plan plays. */
-export const ProgressTarget = z.object({ playId: z.string() }).openapi('ProgressTarget');
+/** An open playback session's id, as it sits in a path. */
+const PlayId = z.string().regex(/^[\w-]{1,64}$/);
+
+/**
+ * Where the player reports its position while this plan plays: the open playback session. A
+ * transcode lives in it, so the player closes it (`POST /api/play/{playId}/close`) when done.
+ */
+export const ProgressTarget = z.object({ playId: PlayId }).openapi('ProgressTarget');
 export type ProgressTarget = z.infer<typeof ProgressTarget>;
 
 /**
  * How to play an item: its tracks in order, its chapters, where in the item to start, where to
- * report progress, and what plays next. M0 plays one direct-play track and leaves chapters empty,
- * with no progress target and nothing next; M1.play and M1.progress fill them in place.
+ * report progress, and what plays next. Direct play closes its session at once, so it has no
+ * progress target until M1.progress; a transcode keeps its session open and names it. Nothing
+ * plays next until the queues do.
  */
 export const PlaybackPlan = z
   .object({
@@ -87,6 +104,21 @@ export const MediaTrackParams = z.object({
   n: z.string().regex(/^(?:0|[1-9]\d{0,3})$/),
 });
 export type MediaTrackParams = z.infer<typeof MediaTrackParams>;
+
+/** One open playback session, by its id. */
+export const PlayParams = z.object({ playId: PlayId });
+export type PlayParams = z.infer<typeof PlayParams>;
+
+/**
+ * One file of a transcode: its playlist, `output.m3u8`, or a segment it names. The playlist's
+ * segment names are relative, so they resolve under the same route.
+ */
+export const MediaHlsParams = z.object({
+  ref: MediaRefKey,
+  playId: PlayId,
+  file: z.string().regex(/^(?:output\.m3u8|output-\d{1,6}\.(?:ts|m4s)|init\.mp4)$/),
+});
+export type MediaHlsParams = z.infer<typeof MediaHlsParams>;
 
 /** The audio bytes a streamed route answers. */
 export const AudioBytes = z.string().openapi({ format: 'binary' });

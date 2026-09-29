@@ -27,6 +27,8 @@ export {
 export { CommitId, HealthResponse } from './health.js';
 export {
   AudioBytes,
+  HLS_MIME,
+  MediaHlsParams,
   MediaRef,
   MediaRefKey,
   mediaRefKey,
@@ -37,10 +39,12 @@ export {
   PlaybackPlan,
   PlaybackTrack,
   PlayBody,
+  PlayParams,
   ProgressTarget,
 } from './play.js';
 export {
   appToken,
+  closePlay,
   deleteDevice,
   getMe,
   getSetup,
@@ -50,6 +54,7 @@ export {
   login,
   loginCallback,
   logout,
+  mediaHls,
   mediaTrack,
   play,
   postSetup,

@@ -118,6 +118,29 @@ describe('the recorded-upstreams server', () => {
     expect(res.rawPayload).toEqual(tone.subarray(0, 100));
   });
 
+  it('plans the recorded four-file book as four tracks, each answering a range request with 206', async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const planned = await server.app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref: server.multiFile },
+    });
+    expect(planned.statusCode, planned.body).toBe(200);
+    const { tracks, chapters } = planned.json<PlaybackPlan>();
+    expect(tracks).toHaveLength(4);
+    expect(chapters).toHaveLength(4);
+    for (const track of tracks) {
+      const res = await server.app.inject({
+        url: track.url,
+        headers: { ...headers, range: 'bytes=0-9' },
+      });
+      expect(res.statusCode, track.url).toBe(206);
+      expect(res.headers['content-type']).toBe('audio/mpeg');
+    }
+  });
+
   it('refuses a callback whose state is not the sign-in it started', async () => {
     const server = await boot();
     const login = await server.app.inject({

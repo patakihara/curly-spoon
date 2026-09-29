@@ -1,0 +1,25 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.0",
+  "call": "hls-playlist",
+  "request": {
+    "method": "GET",
+    "path": "/hls/68587e43-d9f3-434f-91a3-dfcb5b8cd28f/output.m3u8",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "application/vnd.apple.mpegurl"
+    },
+    "body": {
+      "text": "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-ALLOW-CACHE:NO\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXTINF:6,\noutput-0.ts\n#EXTINF:6,\noutput-1.ts\n#EXTINF:6,\noutput-2.ts\n#EXTINF:6,\noutput-3.ts\n#EXTINF:6,\noutput-4.ts\n#EXTINF:6,\noutput-5.ts\n#EXTINF:6,\noutput-6.ts\n#EXTINF:6,\noutput-7.ts\n#EXTINF:6,\noutput-8.ts\n#EXTINF:6,\noutput-9.ts\n#EXTINF:6,\noutput-10.ts\n#EXTINF:6,\noutput-11.ts\n#EXTINF:6,\noutput-12.ts\n#EXTINF:6,\noutput-13.ts\n#EXTINF:6,\noutput-14.ts\n#EXTINF:6,\noutput-15.ts\n#EXTINF:6,\noutput-16.ts\n#EXTINF:6,\noutput-17.ts\n#EXTINF:6,\noutput-18.ts\n#EXTINF:6,\noutput-19.ts\n#EXTINF:6,\noutput-20.ts\n#EXTINF:6,\noutput-21.ts\n#EXTINF:6,\noutput-22.ts\n#EXTINF:6,\noutput-23.ts\n#EXTINF:6,\noutput-24.ts\n#EXTINF:6,\noutput-25.ts\n#EXTINF:6,\noutput-26.ts\n#EXTINF:5.581502,\noutput-27.ts\n#EXT-X-ENDLIST"
+    }
+  }
+}

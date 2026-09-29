@@ -346,7 +346,8 @@
         "type": "object",
         "properties": {
           "playId": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[\\w-]{1,64}$"
           }
         },
         "required": [
@@ -1116,6 +1117,73 @@
         }
       }
     },
+    "/api/play/{playId}/close": {
+      "post": {
+        "summary": "Close a plan's open playback session, ending its transcode",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "closePlay",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]{1,64}$"
+            },
+            "required": true,
+            "name": "playId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The session is closed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/media/{ref}/tracks/{n}": {
       "get": {
         "summary": "One track of an item, with the signed-in person's own access, ranges and all",
@@ -1240,6 +1308,167 @@
         "responses": {
           "200": {
             "description": "The whole track."
+          },
+          "206": {
+            "description": "The range the request asked for."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
+          },
+          "416": {
+            "description": "The range starts past the end of the file."
+          }
+        }
+      }
+    },
+    "/api/media/{ref}/hls/{playId}/{file}": {
+      "get": {
+        "summary": "A transcode's playlist or one of its segments, with the signed-in person's own access",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getMediaHls",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^abs:[\\w-]{1,64}$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]{1,64}$"
+            },
+            "required": true,
+            "name": "playId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:output\\.m3u8|output-\\d{1,6}\\.(?:ts|m4s)|init\\.mp4)$"
+            },
+            "required": true,
+            "name": "file",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The playlist, its segment names relative to it, or the segment.",
+            "content": {
+              "audio/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "The range the request asked for.",
+            "content": {
+              "audio/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "416": {
+            "description": "The range starts past the end of the file."
+          }
+        }
+      },
+      "head": {
+        "summary": "A transcode's playlist or one of its segments, with the signed-in person's own access",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getMediaHlsHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^abs:[\\w-]{1,64}$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]{1,64}$"
+            },
+            "required": true,
+            "name": "playId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:output\\.m3u8|output-\\d{1,6}\\.(?:ts|m4s)|init\\.mp4)$"
+            },
+            "required": true,
+            "name": "file",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The playlist, its segment names relative to it, or the segment."
           },
           "206": {
             "description": "The range the request asked for."

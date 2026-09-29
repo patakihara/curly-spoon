@@ -1,12 +1,14 @@
 /**
- * Playing one Audiobookshelf item by direct play, through the real routes. Audiobookshelf answers
- * from its recordings: the play session and its close, the item's detail, and the file call (its
- * real status and headers, with the committed tone as its body).
+ * Playing Audiobookshelf items through the real routes. Audiobookshelf answers from its
+ * recordings: a single-file book and a four-file book played directly (their play sessions and
+ * closes, details, and file calls with real status and headers over committed tones), and the
+ * four-file book transcoded (its play session, playlist, a segment before and after it is cut,
+ * and its close).
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type PlaybackPlan } from '@auralis/schema';
+import { HLS_MIME, type PlaybackPlan } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
@@ -31,6 +33,26 @@ const itemPlay = absRecording('item-play');
 const itemDetail = absRecording('item-detail');
 const itemFile = absRecording('item-file');
 const sessionClose = absRecording('session-close');
+const multi = ['multi-play', 'multi-detail', 'multi-close', 1, 2, 3, 4].map((call) =>
+  absRecording(typeof call === 'number' ? `multi-file-${call}` : call),
+);
+const hls = ['hls-play', 'hls-playlist', 'hls-segment', 'hls-close'].map(absRecording);
+const hlsPending = absRecording('hls-segment-pending');
+const jsonOf = <T>(r: Recording) => (r.response.body as { json: T }).json;
+interface RecordedSession {
+  id: string;
+  currentTime: number;
+  chapters: { title: string; start: number; end: number }[];
+  audioTracks: { contentUrl: string; mimeType: string; duration: number; startOffset: number }[];
+}
+const multiSession = jsonOf<RecordedSession>(multi[0]!);
+const multiId = multi[0]!.request.path.split('/')[3] as string;
+const hlsSession = jsonOf<RecordedSession>(hls[0]!);
+const recordedPlaylist = (hls[1]!.response.body as { text: string }).text;
+const segmentTone = readFileSync(
+  join(adapters, 'audiobookshelf', 'recordings', 'hls-segment.mp2t'),
+);
+const mp3Tone = readFileSync(join(adapters, 'audiobookshelf', 'recordings', 'multi-file.mp3'));
 const itemId = itemPlay.request.path.split('/')[3] as string;
 const recordedTrack = (
   (itemPlay.response.body as { json: { audioTracks: Record<string, unknown>[] } }).json
@@ -40,15 +62,15 @@ const tone = readFileSync(join(adapters, 'audiobookshelf', 'recordings', 'item-f
 const trackUrl = (n: number | string, ref = `abs:${itemId}`) => `/api/media/${ref}/tracks/${n}`;
 
 /**
- * The recorded play session with its one track's `contentUrl` pointed at HLS, as a transcoded
- * session would name it: the only change to the recording, to make planning fail after the
+ * The recorded play session with its one track's `contentUrl` pointed somewhere that is neither a
+ * file nor a transcode: the only change to the recording, to make planning fail after the
  * session is open.
  */
-function hlsSession(): Recording {
+function unplayableSession(): Recording {
   const copy = structuredClone(itemPlay);
   const json = (copy.response.body as { json: { audioTracks: { contentUrl: string }[] } }).json;
   for (const track of json.audioTracks) {
-    track.contentUrl = `/hls/${itemId}/output.m3u8`;
+    track.contentUrl = `/elsewhere/${itemId}`;
   }
   return copy;
 }
@@ -70,13 +92,25 @@ interface Sent {
 
 /** Two linked people, kara and otto, each with an app's bearer token; otto can be left unlinked. */
 async function server(
-  options: { ottoLinked?: boolean; play?: Recording; fileFails?: boolean } = {},
+  options: {
+    ottoLinked?: boolean;
+    play?: Recording;
+    fileFails?: boolean;
+    /** Which recorded book Audiobookshelf holds: one file, four files, or four transcoded. */
+    book?: 'single' | 'multi' | 'hls';
+  } = {},
 ) {
   const db = openDatabase(':memory:');
   const sent: Sent[] = [];
-  const replay = replayFetch([options.play ?? itemPlay, itemDetail, itemFile, sessionClose], {
-    readBytes: standInsBeside(adapters),
-  });
+  const recordings = {
+    single: [options.play ?? itemPlay, itemDetail, itemFile, sessionClose],
+    multi,
+    hls,
+  }[options.book ?? 'single'];
+  const replay = replayFetch(recordings, { readBytes: standInsBeside(adapters) });
+  // Each segment is asked for once too early, as ABS answers a segment it has not cut yet.
+  const early = replayFetch([hlsPending]);
+  const askedSegments = new Set<string>();
   const fetch: FetchLike = async (url, init) => {
     const headers = new Headers(init?.headers);
     const path = new URL(url).pathname;
@@ -88,6 +122,10 @@ async function server(
     });
     if (options.fileFails === true && path.includes('/file/')) {
       throw new TypeError(`fetch failed: ${url} with ${headers.get('authorization')}`);
+    }
+    if (path === hlsPending.request.path && !askedSegments.has(path)) {
+      askedSegments.add(path);
+      return early(url, init);
     }
     return replay(url, init);
   };
@@ -121,12 +159,13 @@ async function server(
   });
   apps.push(app);
   const as = (name: string) => ({ authorization: `Bearer ${bearer[name] ?? ''}` });
+  const planned = options.book === undefined || options.book === 'single' ? itemId : multiId;
   const plan = async (name = 'kara') => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/play',
       headers: as(name),
-      payload: { ref: { source: 'abs', id: itemId } },
+      payload: { ref: { source: 'abs', id: planned } },
     });
     expect(res.statusCode, res.body).toBe(200);
     return res.json<PlaybackPlan>();
@@ -156,8 +195,9 @@ describe('[M1.play/b] direct play of an Audiobookshelf item', () => {
 });
 
 describe('playing one Audiobookshelf item by direct play', () => {
-  it("plans the recording's one track by the item's ref and the track's index, with nothing M0 does not fill", async () => {
+  it("plans the recording's one track by the item's ref and the track's index, its chapters, and where to start", async () => {
     const { plan } = await server();
+    const session = jsonOf<RecordedSession>(itemPlay);
     expect(await plan()).toEqual({
       tracks: [
         {
@@ -167,8 +207,8 @@ describe('playing one Audiobookshelf item by direct play', () => {
           offset: recordedTrack?.startOffset,
         },
       ],
-      chapters: [],
-      startAt: 0,
+      chapters: session.chapters.map(({ title, start, end }) => ({ title, start, end })),
+      startAt: session.currentTime,
     });
   });
 
@@ -182,7 +222,7 @@ describe('playing one Audiobookshelf item by direct play', () => {
   });
 
   it('still closes the session when planning fails after it opened', async () => {
-    const { app, sent, as } = await server({ play: hlsSession() });
+    const { app, sent, as } = await server({ play: unplayableSession() });
     const res = await app.inject({
       method: 'POST',
       url: '/api/play',
@@ -190,7 +230,7 @@ describe('playing one Audiobookshelf item by direct play', () => {
       payload: { ref: { source: 'abs', id: itemId } },
     });
     expect(res.statusCode).toBe(502);
-    expect(res.json()).toEqual({ error: 'not_direct_play' });
+    expect(res.json()).toEqual({ error: 'unplayable' });
     expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
       `POST ${itemPlay.request.path}`,
       `POST ${sessionClose.request.path}`,
@@ -340,5 +380,184 @@ describe('playing one Audiobookshelf item by direct play', () => {
     expect(res.json()).toEqual({ error: 'upstream_failed' });
     expect(res.body).not.toContain('upstream.invalid');
     expect(res.body).not.toContain('abs-token');
+  });
+});
+
+describe('[M1.play/b] direct play of a multi-file Audiobookshelf book', () => {
+  it("[M1.play/b] every one of the plan's track URLs answers a range request with 206", async () => {
+    const { app, as, plan } = await server({ book: 'multi' });
+    const { tracks } = await plan();
+    expect(tracks.map((t) => t.url)).toEqual(
+      [0, 1, 2, 3].map((n) => trackUrl(n, `abs:${multiId}`)),
+    );
+    for (const track of tracks) {
+      const res = await app.inject({
+        method: 'GET',
+        url: track.url,
+        headers: { ...as('kara'), range: 'bytes=100-199' },
+      });
+      expect(res.statusCode, track.url).toBe(206);
+      expect(res.headers['content-type']).toBe('audio/mpeg');
+      expect(res.headers['content-range']).toBe(`bytes 100-199/${mp3Tone.byteLength}`);
+      expect(res.rawPayload).toEqual(mp3Tone.subarray(100, 200));
+    }
+  });
+
+  it('plans one track per file, in order, each at the offset where the one before it ends', async () => {
+    const { plan } = await server({ book: 'multi' });
+    const { tracks, progressTarget } = await plan();
+    expect(tracks).toEqual(
+      multiSession.audioTracks.map((t, n) => ({
+        url: trackUrl(n, `abs:${multiId}`),
+        mime: t.mimeType,
+        duration: t.duration,
+        offset: t.startOffset,
+      })),
+    );
+    for (const [n, track] of tracks.entries()) {
+      if (n === 0) continue;
+      const before = tracks[n - 1]!;
+      expect(track.offset).toBeCloseTo(before.offset + before.duration, 3);
+    }
+    expect(progressTarget).toBeUndefined();
+  });
+});
+
+describe('[M1.play/e] chapters across files', () => {
+  it('[M1.play/e] chapters spanning files sit at their absolute positions in the plan', async () => {
+    const { plan } = await server({ book: 'multi' });
+    const { tracks, chapters } = await plan();
+    expect(chapters.map((c) => c.title)).toEqual(multiSession.chapters.map((c) => c.title));
+    // The recorded book has a chapter per file: each starts where its file starts in the whole
+    // book, not at 0 within its file, and ends where the next file starts.
+    for (const [n, chapter] of chapters.entries()) {
+      const track = tracks[n]!;
+      expect(chapter.start, chapter.title).toBeCloseTo(track.offset, 3);
+      expect(chapter.end, chapter.title).toBeCloseTo(track.offset + track.duration, 3);
+    }
+    expect(chapters[2]!.start).toBeGreaterThan(tracks[0]!.duration + tracks[1]!.duration - 0.001);
+    const total = tracks.reduce((sum, t) => sum + t.duration, 0);
+    expect(chapters.at(-1)!.end).toBeCloseTo(total, 3);
+  });
+
+  it('[M1.play/e] a position in the plan falls in the file whose offset span holds it', async () => {
+    const { plan } = await server({ book: 'multi' });
+    const { tracks, chapters } = await plan();
+    const fileAt = (position: number) =>
+      tracks.findLastIndex((t) => t.offset <= position && position < t.offset + t.duration);
+    expect(chapters.map((c) => fileAt((c.start + c.end) / 2))).toEqual([0, 1, 2, 3]);
+  });
+});
+
+describe('[M1.play/a] the HLS path, for a book Audiobookshelf transcodes', () => {
+  const hlsUrl = (file: string) => `/api/media/abs:${multiId}/hls/${hlsSession.id}/${file}`;
+
+  it('[M1.play/a] plans one HLS track the server proxies, and a segment it names returns audio', async () => {
+    const { app, as, plan, sent } = await server({ book: 'hls' });
+    const planned = await plan();
+    expect(planned.tracks).toEqual([
+      {
+        url: hlsUrl('output.m3u8'),
+        mime: HLS_MIME,
+        duration: hlsSession.audioTracks[0]!.duration,
+        offset: 0,
+      },
+    ]);
+
+    const playlist = await app.inject({
+      method: 'GET',
+      url: planned.tracks[0]!.url,
+      headers: as('kara'),
+    });
+    expect(playlist.statusCode).toBe(200);
+    expect(playlist.headers['content-type']).toBe(HLS_MIME);
+    const segments = playlist.body.split('\n').filter((l) => l !== '' && !l.startsWith('#'));
+    expect(segments.length).toBeGreaterThan(20);
+
+    const first = new URL(segments[0]!, `http://auralis.invalid${planned.tracks[0]!.url}`);
+    expect(first.pathname).toBe(hlsUrl('output-0.ts'));
+    const segment = await app.inject({ method: 'GET', url: first.pathname, headers: as('kara') });
+    expect(segment.statusCode).toBe(200);
+    expect(segment.headers['content-type']).toBe('audio/mp2t');
+    expect(segment.rawPayload).toEqual(segmentTone);
+    // Asked once before it was cut (404) and again once it was.
+    expect(sent.filter((s) => s.path.endsWith('/output-0.ts'))).toHaveLength(2);
+  });
+
+  it('keeps the transcode open for playing, names it as the progress target, and closes it on request', async () => {
+    const { app, as, plan, sent } = await server({ book: 'hls' });
+    const planned = await plan();
+    expect(planned.progressTarget).toEqual({ playId: hlsSession.id });
+    expect(planned.chapters.map((c) => c.start)).toEqual(hlsSession.chapters.map((c) => c.start));
+    expect(sent.map((s) => s.method)).toEqual(['POST']);
+
+    const closed = await app.inject({
+      method: 'POST',
+      url: `/api/play/${hlsSession.id}/close`,
+      headers: as('kara'),
+    });
+    expect(closed.statusCode).toBe(200);
+    expect(closed.json()).toEqual({ ok: true });
+    expect(sent.at(-1)).toMatchObject({
+      method: 'POST',
+      path: `/api/session/${hlsSession.id}/close`,
+      authorization: 'Bearer abs-token-kara',
+    });
+  });
+
+  it('passes the playlist on as recorded: segment names only, relative to it', async () => {
+    const { app, as } = await server({ book: 'hls' });
+    const res = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output.m3u8'),
+      headers: as('kara'),
+    });
+    expect(res.body).toBe(recordedPlaylist);
+  });
+
+  it('asks Audiobookshelf with the caller’s own token for the playlist and its segments', async () => {
+    const { app, as, sent } = await server({ book: 'hls' });
+    await app.inject({ method: 'GET', url: hlsUrl('output.m3u8'), headers: as('otto') });
+    await app.inject({ method: 'GET', url: hlsUrl('output-0.ts'), headers: as('otto') });
+    expect(sent.map((s) => s.authorization)).toEqual(
+      Array<string>(3).fill('Bearer abs-token-otto'),
+    );
+  });
+
+  it('refuses a transcode file, session or ref that could change the upstream path, asking nothing', async () => {
+    const { app, as, sent } = await server({ book: 'hls' });
+    const base = `/api/media/abs:${multiId}/hls`;
+    for (const url of [
+      `${base}/${hlsSession.id}/output.m3u8x`,
+      `${base}/${hlsSession.id}/..%2Foutput.m3u8`,
+      `${base}/${hlsSession.id}/output-0.ts%3Ftoken%3Dx`,
+      `${base}/${hlsSession.id}/cover.jpg`,
+      `${base}/..%2F${hlsSession.id}/output.m3u8`,
+      `/api/media/${multiId}/hls/${hlsSession.id}/output.m3u8`,
+    ]) {
+      const res = await app.inject({ method: 'GET', url, headers: as('kara') });
+      expect(res.statusCode, url).toBe(400);
+    }
+    const close = await app.inject({
+      method: 'POST',
+      url: '/api/play/..%2Fusers/close',
+      headers: as('kara'),
+    });
+    expect(close.statusCode).toBe(400);
+    expect(sent).toEqual([]);
+  });
+
+  it('refuses the transcode and its close without a session or a link', async () => {
+    const { app, sent, as } = await server({ book: 'hls', ottoLinked: false });
+    expect((await app.inject({ method: 'GET', url: hlsUrl('output.m3u8') })).statusCode).toBe(401);
+    const unlinked = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output-0.ts'),
+      headers: as('otto'),
+    });
+    expect(unlinked.statusCode).toBe(409);
+    const close = await app.inject({ method: 'POST', url: `/api/play/${hlsSession.id}/close` });
+    expect(close.statusCode).toBe(401);
+    expect(sent).toEqual([]);
   });
 });

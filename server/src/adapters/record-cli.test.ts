@@ -122,6 +122,162 @@ describe('record mode against Audiobookshelf', () => {
   });
 });
 
+/**
+ * A fake Audiobookshelf holding one two-file book, `mb`: it direct-plays by default and transcodes
+ * when asked, and answers 404 for the transcode's first segment twice before it is cut. It keeps
+ * every method and path asked, and each file call's range.
+ */
+function fakePlayAbs(options: { hls?: unknown } = {}) {
+  const asked: string[] = [];
+  const ranges: Record<string, string | null> = {};
+  let bodies: { forceTranscode?: boolean }[] = [];
+  let segmentAsks = 0;
+  const fetch: FetchLike = async (url, init) => {
+    const { pathname } = new URL(url);
+    const method = init?.method ?? 'GET';
+    asked.push(`${method} ${pathname}`);
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    const track = (ino: string, offset: number) => ({
+      contentUrl: `/api/items/mb/file/${ino}`,
+      mimeType: 'audio/mpeg',
+      duration: 10,
+      startOffset: offset,
+    });
+    if (pathname === '/status') return json({ serverVersion: '2.37.0' });
+    if (pathname === '/api/items/mb' && method === 'GET') {
+      return json({
+        id: 'mb',
+        mediaType: 'book',
+        media: { tracks: [track('1', 0), track('2', 10)] },
+      });
+    }
+    if (pathname === '/api/items/mb/play') {
+      const body = JSON.parse(String(init?.body)) as { forceTranscode?: boolean };
+      bodies = [...bodies, body];
+      if (body.forceTranscode === true) {
+        return json(
+          options.hls ?? {
+            id: 'play_h',
+            playMethod: 2,
+            audioTracks: [{ contentUrl: '/hls/play_h/output.m3u8', duration: 20, startOffset: 0 }],
+          },
+        );
+      }
+      return json({ id: 'play_d', playMethod: 0, audioTracks: [track('1', 0), track('2', 10)] });
+    }
+    if (pathname.startsWith('/api/session/')) return new Response('OK', { status: 200 });
+    if (pathname.startsWith('/api/items/mb/file/')) {
+      ranges[pathname] = new Headers(init?.headers).get('range');
+      return new Response('ID', {
+        status: 206,
+        headers: { 'content-type': 'audio/mpeg', 'content-range': 'bytes 0-1/1000' },
+      });
+    }
+    if (pathname === '/hls/play_h/output.m3u8') {
+      return new Response('#EXTM3U\n#EXTINF:6,\noutput-0.ts\n#EXT-X-ENDLIST\n', {
+        headers: { 'content-type': 'application/vnd.apple.mpegurl' },
+      });
+    }
+    if (pathname === '/hls/play_h/output-0.ts') {
+      segmentAsks += 1;
+      if (segmentAsks <= 2) return new Response('Not Found', { status: 404 });
+      return new Response(new Uint8Array([0x47]), { headers: { 'content-type': 'video/mp2t' } });
+    }
+    return new Response('not found', { status: 404 });
+  };
+  return { fetch, asked, ranges, bodies: () => bodies };
+}
+
+function playIo(fetch: FetchLike) {
+  const out: string[] = [];
+  const err: string[] = [];
+  return {
+    io: {
+      argv: ['--abs', BASE, '--only', 'play', '--play-item', 'mb', '--dry-run'],
+      stdin: 'ABS_API_KEY=test-abs-key-0000\n',
+      fetch,
+      out: (line: string) => out.push(line),
+      err: (line: string) => err.push(line),
+      sleep: async () => undefined,
+    },
+    out,
+    err,
+  };
+}
+
+describe("record mode for M1.play's calls", () => {
+  it('records the book direct-played, each of its files as two bytes, and its transcode', async () => {
+    const abs = fakePlayAbs();
+    const { io: recordIo, out, err } = playIo(abs.fetch);
+    const code = await runRecord(recordIo);
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    expect(out.map((l) => l.split('/').pop())).toEqual([
+      'multi-detail.json',
+      'multi-play.json',
+      'multi-file-1.json',
+      'multi-file-2.json',
+      'multi-close.json',
+      'hls-play.json',
+      'hls-playlist.json',
+      'hls-segment-pending.json',
+      'hls-segment.json',
+      'hls-close.json',
+    ]);
+    expect(abs.ranges).toEqual({
+      '/api/items/mb/file/1': 'bytes=0-1',
+      '/api/items/mb/file/2': 'bytes=0-1',
+    });
+    expect(abs.bodies().map((b) => b.forceTranscode)).toEqual([false, true]);
+    const written = (name: string) =>
+      JSON.parse(
+        readFileSync(out.find((l) => l.endsWith(name))!.replace(/^wrote /, ''), 'utf8'),
+      ) as {
+        response: { status: number; body: unknown };
+      };
+    expect(written('hls-segment-pending.json').response.status).toBe(404);
+    expect(written('hls-segment.json').response.body).toEqual({
+      bytes: 'hls-segment.mp2t',
+      synthesized: expect.stringContaining('tone.sh') as unknown,
+    });
+  });
+
+  it('closes each session it opened exactly once, the transcode as soon as it is recorded', async () => {
+    const abs = fakePlayAbs();
+    expect(await runRecord(playIo(abs.fetch).io)).toBe(0);
+    expect(abs.asked.filter((a) => a.endsWith('/close'))).toEqual([
+      'POST /api/session/play_d/close',
+      'POST /api/session/play_h/close',
+    ]);
+    expect(abs.asked.at(-1)).toBe('POST /api/session/play_h/close');
+  });
+
+  it('still closes the transcode when its answer is not HLS', async () => {
+    const abs = fakePlayAbs({
+      hls: { id: 'play_h', playMethod: 0, audioTracks: [{ contentUrl: '/api/items/mb/file/1' }] },
+    });
+    await expect(runRecord(playIo(abs.fetch).io)).rejects.toThrow(/HLS/);
+    expect(abs.asked.filter((a) => a.endsWith('/close'))).toEqual([
+      'POST /api/session/play_d/close',
+      'POST /api/session/play_h/close',
+    ]);
+  });
+
+  it('needs the book to record, and never touches a library listing', async () => {
+    const abs = fakePlayAbs();
+    const { io: recordIo, err } = playIo(abs.fetch);
+    recordIo.argv = ['--abs', BASE, '--only', 'play', '--dry-run'];
+    expect(await runRecord(recordIo)).toBe(2);
+    expect(err.join('\n')).toContain('--play-item');
+    expect(await runRecord(playIo(abs.fetch).io)).toBe(0);
+    expect(abs.asked.some((a) => a.includes('/api/libraries'))).toBe(false);
+  });
+});
+
 /** A fake Jellyfin with one album and one administrator; it keeps every URL asked. */
 function fakeJellyfin() {
   const asked: string[] = [];

@@ -59,8 +59,10 @@ export interface RecordedServer {
   };
   /** The recorded identity every sign-in becomes. */
   user: { username: string; groups: string[] };
-  /** The recorded item that plays. */
+  /** The recorded item that plays: one file. */
   playable: MediaRef;
+  /** The recorded book of four files, played directly. */
+  multiFile: MediaRef;
   listen(): Promise<void>;
   close(): Promise<void>;
 }
@@ -221,7 +223,12 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     clientId,
     redirectUri: config.oidc!.redirectUri,
   });
-  const abs = recordingsOf('audiobookshelf');
+  // The four-file book is recorded twice under one play call, directly and transcoded, and its
+  // first segment twice, before and after it was cut. The server replays direct play and the cut
+  // segment; the transcode's plan is exercised in server/src/play.test.ts.
+  const abs = recordingsOf('audiobookshelf').filter(
+    (r) => r.call !== 'hls-play' && r.call !== 'hls-segment-pending',
+  );
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,
@@ -235,6 +242,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     call(recordingsOf('oidc'), 'userinfo'),
   );
   const itemId = call(abs, 'item-play').request.path.split('/')[3] ?? '';
+  const multiId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
   const signOnHttp = signOnListener(signOn.authorize, signOnOrigin);
 
   return {
@@ -243,6 +251,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     signOn: { origin: signOnOrigin, authorize: signOn.authorize },
     user: { username: userinfo.preferred_username, groups: userinfo.groups },
     playable: { source: 'abs', id: itemId },
+    multiFile: { source: 'abs', id: multiId },
     async listen() {
       await new Promise<void>((resolve, reject) => {
         signOnHttp.once('error', reject).listen(signOnPort, LISTEN_HOST, resolve);

@@ -27,7 +27,8 @@
           "audio/aac",
           "audio/webm"
         ],
-        "forceDirectPlay": true
+        "forceDirectPlay": false,
+        "forceTranscode": false
       }
     }
   },
@@ -38,7 +39,7 @@
     },
     "body": {
       "json": {
-        "id": "1c3d49b4-8966-4e20-98ab-c8500b0b832b",
+        "id": "80e322ef-b92c-464b-8e76-f52229fb33eb",
         "userId": "169161f6-18a9-4b97-804e-4870fe980143",
         "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
         "libraryItemId": "6d9c389e-cc45-4e17-9bcb-6bc33ee88b06",
@@ -167,8 +168,8 @@
         "timeListening": 0,
         "startTime": 0,
         "currentTime": 0,
-        "startedAt": 1790647071784,
-        "updatedAt": 1790647071784,
+        "startedAt": 1790695220987,
+        "updatedAt": 1790695220987,
         "audioTracks": [
           {
             "index": 1,

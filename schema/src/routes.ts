@@ -16,7 +16,14 @@ import {
   UserList,
 } from './auth.js';
 import { HealthResponse } from './health.js';
-import { AudioBytes, MediaTrackParams, PlaybackPlan, PlayBody } from './play.js';
+import {
+  AudioBytes,
+  MediaHlsParams,
+  MediaTrackParams,
+  PlaybackPlan,
+  PlayBody,
+  PlayParams,
+} from './play.js';
 import { type z } from './zod.js';
 
 /**
@@ -209,6 +216,29 @@ export const mediaTrack = {
   stream: true,
 } as const satisfies Route;
 
+export const closePlay = {
+  method: 'POST',
+  path: '/api/play/{playId}/close',
+  operationId: 'closePlay',
+  summary: "Close a plan's open playback session, ending its transcode",
+  responseDescription: 'The session is closed.',
+  response: Ok,
+  access: 'member',
+  params: PlayParams,
+} as const satisfies Route;
+
+export const mediaHls = {
+  method: 'GET',
+  path: '/api/media/{ref}/hls/{playId}/{file}',
+  operationId: 'getMediaHls',
+  summary: "A transcode's playlist or one of its segments, with the signed-in person's own access",
+  responseDescription: 'The playlist, its segment names relative to it, or the segment.',
+  response: AudioBytes,
+  access: 'member',
+  params: MediaHlsParams,
+  stream: true,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -224,5 +254,7 @@ export const routes: readonly Route[] = [
   deleteDevice,
   listUsers,
   play,
+  closePlay,
   mediaTrack,
+  mediaHls,
 ];

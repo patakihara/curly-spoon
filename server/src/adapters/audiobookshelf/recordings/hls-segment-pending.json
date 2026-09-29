@@ -1,24 +1,23 @@
 {
   "upstream": "audiobookshelf",
   "upstreamVersion": "2.37.0",
-  "call": "session-close",
+  "call": "hls-segment-pending",
   "request": {
-    "method": "POST",
-    "path": "/api/session/80e322ef-b92c-464b-8e76-f52229fb33eb/close",
+    "method": "GET",
+    "path": "/hls/68587e43-d9f3-434f-91a3-dfcb5b8cd28f/output-0.ts",
     "query": {},
     "headers": {
-      "accept": "application/json",
       "authorization": "Bearer <token>"
     },
     "body": null
   },
   "response": {
-    "status": 200,
+    "status": 404,
     "headers": {
       "content-type": "text/plain; charset=utf-8"
     },
     "body": {
-      "text": "OK"
+      "text": "Not Found"
     }
   }
 }

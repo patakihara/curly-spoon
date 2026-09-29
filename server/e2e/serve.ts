@@ -38,4 +38,5 @@ out(`  app:      ${server.origin}`);
 out(`  sign-on:  ${server.signOn.origin}`);
 out(`  user:     ${server.user.username} (${server.user.groups.join(', ')}), any sign-in`);
 out(`  playable: ${mediaRefKey(server.playable)}`);
+out(`  four files: ${mediaRefKey(server.multiFile)}`);
 out('ready');

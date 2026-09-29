@@ -33,11 +33,11 @@ export const libraryItemsSchema = z
   .passthrough();
 
 /**
- * What Auralis can play in a browser. ABS direct-plays only when every audio file's mime type is
- * in the request's `supportedMimeTypes` (or `forceDirectPlay` is set):
- * `PlaybackSessionManager` runs `forceDirectPlay || checkCanDirectPlay(supportedMimeTypes)`.
- * An empty body fails that check, so ABS transcodes and answers one HLS track with
- * `metadata: null`, starting an ffmpeg process on the server. Never send an empty play body.
+ * What both clients play as a file. ABS direct-plays when every audio file's mime type is in the
+ * request's `supportedMimeTypes`, and transcodes to HLS otherwise:
+ * `PlaybackSessionManager` runs `forceDirectPlay || (!forceTranscode && checkCanDirectPlay(...))`.
+ * An empty body fails that check, so ABS would transcode everything, starting an ffmpeg process
+ * on the server. Never send an empty play body.
  */
 export const SUPPORTED_MIME_TYPES = [
   'audio/flac',
@@ -52,13 +52,16 @@ export interface PlayRequest {
   deviceInfo: { clientName: 'Auralis'; clientVersion: string; deviceId: string };
   mediaPlayer: 'html5';
   supportedMimeTypes: string[];
-  forceDirectPlay: true;
+  /** Never forced: a file the clients cannot play is transcoded to HLS instead. */
+  forceDirectPlay: false;
+  /** Only record mode sets it, to record the HLS path on a book that would direct-play. */
+  forceTranscode: boolean;
 }
 
 /**
  * A direct-play track carries its file's `metadata` and a `contentUrl` of
- * `/api/items/:id/file/:ino` (recorded); a transcoded HLS track has `metadata: null` (not
- * recorded, since recording it would start a transcode on mediaserver).
+ * `/api/items/:id/file/:ino`; a transcoded session has one track, `contentUrl`
+ * `/hls/:session/output.m3u8`, mime `application/vnd.apple.mpegurl` and no codec (both recorded).
  */
 export const audioTrackSchema = z
   .object({
@@ -83,9 +86,14 @@ export const itemSchema = z
   })
   .passthrough();
 
+/** A book's chapter, in seconds from the start of the whole book, across its files (recorded). */
+export const chapterSchema = z
+  .object({ title: z.string(), start: z.number(), end: z.number() })
+  .passthrough();
+
 /**
- * `POST /api/items/:id/play`: the playback session. `playMethod` 0 is direct play, which the
- * recording shows for the direct-play body.
+ * `POST /api/items/:id/play`: the playback session. `playMethod` 0 is direct play, 2 a transcode
+ * (both recorded).
  */
 export const playSessionSchema = z
   .object({
@@ -94,6 +102,7 @@ export const playSessionSchema = z
     audioTracks: z.array(audioTrackSchema),
     /** Seconds into the item where this person left off. */
     currentTime: z.number().optional(),
+    chapters: z.array(chapterSchema).optional(),
   })
   .passthrough();
 
@@ -121,6 +130,66 @@ export const fileHeadersSchema = z.object({
   'accept-ranges': z.string().optional(),
 });
 export type FileHeaders = z.infer<typeof fileHeadersSchema>;
+
+/** One file of an HLS transcode, as ABS names it under `/hls/:session/`. */
+export const hlsFileSchema = z
+  .string()
+  .regex(/^(?:output\.m3u8|output-\d{1,6}\.(?:ts|m4s)|init\.mp4)$/);
+
+/** The largest playlist read: a 6 s segment is about 30 bytes of it, so this is ~800 hours. */
+const MAX_PLAYLIST_BYTES = 4_000_000;
+/** A segment URI as ABS writes it; some versions append the upstream token as a query. */
+const SEGMENT_URI = /^(output-\d{1,6}\.(?:ts|m4s)|init\.mp4)(?:\?[^\s"]*)?$/;
+const MAP_URI = /URI="([^"]*)"/;
+
+/**
+ * `GET /hls/:session/output.m3u8` (recorded): a VOD media playlist of relative segment names.
+ * Parsed to the same playlist with every URI cut to its bare segment name, so whatever query ABS
+ * put on it (its token, in some versions) never reaches a client. Anything else fails.
+ */
+export const hlsPlaylistSchema = z
+  .string()
+  .max(MAX_PLAYLIST_BYTES)
+  .transform((text, ctx) => {
+    const lines = text.split(/\r?\n/);
+    if (lines[0] !== '#EXTM3U') {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'not an HLS playlist' });
+      return z.NEVER;
+    }
+    const out: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith('#EXT-X-MAP:')) {
+        const uri = MAP_URI.exec(line)?.[1] ?? '';
+        const name = SEGMENT_URI.exec(uri)?.[1];
+        if (name === undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'a map URI that is not init.mp4' });
+          return z.NEVER;
+        }
+        out.push(line.replace(MAP_URI, `URI="${name}"`));
+      } else if (line === '' || line.startsWith('#')) {
+        out.push(line);
+      } else {
+        const name = SEGMENT_URI.exec(line)?.[1];
+        if (name === undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'a URI that is not a segment' });
+          return z.NEVER;
+        }
+        out.push(name);
+      }
+    }
+    return out.join('\n');
+  });
+
+/**
+ * The headers of `GET /hls/:session/<segment>` (recorded): ABS names an MPEG-TS segment
+ * `video/mp2t` and an fMP4 one `video/iso.segment` or `video/mp4` by extension, though a
+ * transcode holds only audio.
+ */
+export const hlsSegmentHeadersSchema = fileHeadersSchema.extend({
+  'content-type': z
+    .string()
+    .regex(/^(?:video\/mp2t|video\/iso\.segment|video\/mp4|audio\/[\w.+-]+)(?:;.*)?$/i),
+});
 
 /** `POST /api/session/:id/close` answers a bare 200 (`OK` as text); nothing in it is read. */
 export const closeSessionSchema = z.unknown();

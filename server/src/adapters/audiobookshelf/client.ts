@@ -10,6 +10,8 @@ import {
   type FileHeaders,
   fileHeadersSchema,
   type FileRef,
+  hlsPlaylistSchema,
+  hlsSegmentHeadersSchema,
   inoSchema,
   itemIdSchema,
   itemSchema,
@@ -27,6 +29,13 @@ export interface UpstreamFile {
   status: 200 | 206;
   headers: FileHeaders;
   body: ReadableStream<Uint8Array>;
+}
+
+/** The session an HLS track's `contentUrl` names; null for anything else. */
+export function hlsSessionOf(contentUrl: string): string | null {
+  const m = /^\/hls\/([^/]+)\/output\.m3u8$/.exec(contentUrl);
+  const session = itemIdSchema.safeParse(m?.[1]);
+  return session.success ? session.data : null;
 }
 
 const FILE_TIMEOUT_MS = 15_000;
@@ -119,10 +128,15 @@ export class AbsClient {
     return this.call(`api/items/${encodeURIComponent(itemId)}`, itemSchema, {}, { expanded: '1' });
   }
 
-  /** Starts a direct-play session. The body is always explicit; see `SUPPORTED_MIME_TYPES`. */
+  /**
+   * Starts a playback session: direct play when every file is a type the clients play, an HLS
+   * transcode otherwise, or always with `forceTranscode`. The body is always explicit; see
+   * `SUPPORTED_MIME_TYPES`.
+   */
   play(
     itemId: string,
     device: { deviceId: string; clientVersion: string },
+    options: { forceTranscode?: boolean } = {},
   ): Promise<z.infer<typeof playSessionSchema>> {
     const json: PlayRequest = {
       deviceInfo: {
@@ -132,7 +146,8 @@ export class AbsClient {
       },
       mediaPlayer: 'html5',
       supportedMimeTypes: [...SUPPORTED_MIME_TYPES],
-      forceDirectPlay: true,
+      forceDirectPlay: false,
+      forceTranscode: options.forceTranscode ?? false,
     };
     return this.call(`api/items/${encodeURIComponent(itemId)}/play`, playSessionSchema, {
       method: 'POST',
@@ -146,12 +161,32 @@ export class AbsClient {
     });
   }
 
-  /**
-   * Opens one audio file, passing `range` through. Only the answer's headers are waited for
-   * (within the timeout); the body streams on to the caller, who must read or cancel it.
-   */
-  async openFile(file: FileRef, range?: string): Promise<UpstreamFile> {
+  /** A transcode's playlist, each segment URI cut to its bare name (see `hlsPlaylistSchema`). */
+  getHlsPlaylist(sessionId: string): Promise<string> {
+    return this.call(`hls/${encodeURIComponent(sessionId)}/output.m3u8`, hlsPlaylistSchema);
+  }
+
+  /** Opens one audio file, passing `range` through; see `openStream`. */
+  openFile(file: FileRef, range?: string): Promise<UpstreamFile> {
     const path = `api/items/${encodeURIComponent(file.itemId)}/file/${encodeURIComponent(file.ino)}`;
+    return this.openStream(path, range, fileHeadersSchema);
+  }
+
+  /** Opens one segment of a transcode, passing `range` through; see `openStream`. */
+  openHlsSegment(sessionId: string, file: string, range?: string): Promise<UpstreamFile> {
+    const path = `hls/${encodeURIComponent(sessionId)}/${encodeURIComponent(file)}`;
+    return this.openStream(path, range, hlsSegmentHeadersSchema);
+  }
+
+  /**
+   * Opens audio bytes, passing `range` through. Only the answer's headers are waited for
+   * (within the timeout) and parsed; the body streams on to the caller, who must read or cancel it.
+   */
+  private async openStream(
+    path: string,
+    range: string | undefined,
+    schema: ZodType<FileHeaders, z.ZodTypeDef, unknown>,
+  ): Promise<UpstreamFile> {
     const url = this.url(path);
     const call = `GET ${new URL(url).pathname}`;
     const headers: Record<string, string> = { authorization: `Bearer ${this.opts.token}` };
@@ -183,7 +218,7 @@ export class AbsClient {
     if ((response.status !== 200 && response.status !== 206) || response.body === null) {
       return fail(new AdapterError('parse', call, `answered ${response.status} with no file`));
     }
-    const parsed = fileHeadersSchema.safeParse(Object.fromEntries(response.headers.entries()));
+    const parsed = schema.safeParse(Object.fromEntries(response.headers.entries()));
     if (!parsed.success) {
       return fail(
         new AdapterError('parse', call, parsed.error.message, response.status, {
