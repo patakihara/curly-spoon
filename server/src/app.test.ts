@@ -24,6 +24,18 @@ describe('GET /api/health', () => {
     expect(res.json()).toEqual({ status: 'ok', commit: COMMIT });
     await app.close();
   });
+
+  it('reports its own commit whatever the request claims', async () => {
+    const other = 'f'.repeat(40);
+    const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:'), commit: COMMIT });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/health?commit=${other}`,
+      headers: { 'x-auralis-commit': other, 'x-commit': other, commit: other },
+    });
+    expect(res.json()).toEqual({ status: 'ok', commit: COMMIT });
+    await app.close();
+  });
 });
 
 describe('the API', () => {
