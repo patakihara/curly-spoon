@@ -180,24 +180,24 @@ fun ShelfReviewPage(navController: NavController, actions: PageActions) {
                                         )
                                         ResultRow(
                                             ResultRowProps(
-                                                title = "Wind and Truth",
-                                                meta = "Book · Brandon Sanderson · Audible",
+                                                title = "The Long Meridian",
+                                                meta = "Book · Tomas Arden · Audible",
                                                 detail = "Audible's listeners also enjoyed it after The Salt Cartographer.",
                                                 status = "In library",
                                                 tone = ResultRowTone.LIBRARY,
-                                                image = "/art/wind-and-truth.jpg",
+                                                image = "/art/the-long-meridian.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
                                             ),
                                         )
                                         ResultRow(
                                             ResultRowProps(
-                                                title = "The Silent Patient",
-                                                meta = "Book · Alex Michaelides · description match",
+                                                title = "The Quiet Lodger",
+                                                meta = "Book · Iris Calloway · description match",
                                                 detail = "Its description reads like The Salt Cartographer's.",
                                                 status = null,
                                                 tone = null,
-                                                image = "/art/the-silent-patient.jpg",
+                                                image = "/art/the-quiet-lodger.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
                                             ),

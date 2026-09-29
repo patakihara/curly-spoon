@@ -17,7 +17,7 @@ skip 15, sleep) and S40 (the lyrics card and About the artist below the transpor
 
 ## What the sources show
 
-- **Mobile kit.** Collapse, "PLAYING FROM INK HEART", the menu; art, title, artist and a favourite;
+- **Mobile kit.** Collapse, "PLAYING FROM" and the book's title, the menu; art, title, artist and a favourite;
   seek; shuffle, previous, pause, next, repeat; Speed and Sleep timer read-outs; a lyrics preview;
   and a bottom app bar with output, lyrics, queue and more.
 - **S33.** Spoken content has its own transport: speed coloured when not 1x, skip back and forward

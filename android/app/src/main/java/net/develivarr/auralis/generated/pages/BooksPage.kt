@@ -198,17 +198,17 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                     )
                                                     MediaCard(
                                                         MediaCardProps(
-                                                            title = "Ink Heart",
-                                                            sub = "Cornelia Funke",
+                                                            title = "The Ink Orchard",
+                                                            sub = "Linnea Frost",
                                                             platform = Platform.MOBILE,
                                                             progress = null,
                                                             width = "100%",
-                                                            image = "/art/ink-heart.jpg",
+                                                            image = "/art/the-ink-orchard.jpg",
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "ink-heart"))
+                                                                navController.navigate(Route.Book(ref = "the-ink-orchard"))
                                                             },
                                                             onRequest = {
-                                                                actions.onRequest("ink-heart")
+                                                                actions.onRequest("the-ink-orchard")
                                                             },
                                                             status = "Downloading · 64%",
                                                             tone = MediaCardTone.PROGRESS,
@@ -252,17 +252,17 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                     )
                                                     MediaCard(
                                                         MediaCardProps(
-                                                            title = "The Silent Patient",
-                                                            sub = "Alex Michaelides",
+                                                            title = "The Quiet Lodger",
+                                                            sub = "Iris Calloway",
                                                             platform = Platform.MOBILE,
                                                             progress = 0.55f,
                                                             width = "100%",
-                                                            image = "/art/the-silent-patient.jpg",
+                                                            image = "/art/the-quiet-lodger.jpg",
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "the-silent-patient"))
+                                                                navController.navigate(Route.Book(ref = "the-quiet-lodger"))
                                                             },
                                                             onRequest = {
-                                                                actions.onRequest("the-silent-patient")
+                                                                actions.onRequest("the-quiet-lodger")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -270,17 +270,17 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                     )
                                                     MediaCard(
                                                         MediaCardProps(
-                                                            title = "Wind and Truth",
-                                                            sub = "Brandon Sanderson",
+                                                            title = "The Long Meridian",
+                                                            sub = "Tomas Arden",
                                                             platform = Platform.MOBILE,
                                                             progress = 0.1f,
                                                             width = "100%",
-                                                            image = "/art/wind-and-truth.jpg",
+                                                            image = "/art/the-long-meridian.jpg",
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "wind-and-truth"))
+                                                                navController.navigate(Route.Book(ref = "the-long-meridian"))
                                                             },
                                                             onRequest = {
-                                                                actions.onRequest("wind-and-truth")
+                                                                actions.onRequest("the-long-meridian")
                                                             },
                                                             status = null,
                                                             tone = null,

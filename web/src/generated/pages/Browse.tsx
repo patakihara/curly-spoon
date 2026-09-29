@@ -17,11 +17,11 @@ const placeholder = {
   ],
   "jumpBackIn": [
     {
-      "title": "The Silent Patient",
+      "title": "The Quiet Lodger",
       "page": "book",
-      "ref": "the-silent-patient",
+      "ref": "the-quiet-lodger",
       "sub": "Book · 6 h 12 m left",
-      "image": "/art/the-silent-patient.jpg"
+      "image": "/art/the-quiet-lodger.jpg"
     },
     {
       "title": "Deep Inertia Radio",
@@ -38,11 +38,11 @@ const placeholder = {
       "image": "/art/between-lines-of-light.jpg"
     },
     {
-      "title": "Wind and Truth",
+      "title": "The Long Meridian",
       "page": "book",
-      "ref": "wind-and-truth",
+      "ref": "the-long-meridian",
       "sub": "Book · 21 h 40 m left",
-      "image": "/art/wind-and-truth.jpg"
+      "image": "/art/the-long-meridian.jpg"
     }
   ],
   "feature": {
@@ -87,11 +87,11 @@ const placeholder = {
       "progress": null
     },
     {
-      "title": "The Silent Patient",
+      "title": "The Quiet Lodger",
       "page": "book",
-      "ref": "the-silent-patient",
-      "sub": "Book · Alex Michaelides",
-      "image": "/art/the-silent-patient.jpg",
+      "ref": "the-quiet-lodger",
+      "sub": "Book · Iris Calloway",
+      "image": "/art/the-quiet-lodger.jpg",
       "progress": 0.55
     },
     {
@@ -111,11 +111,11 @@ const placeholder = {
       "progress": null
     },
     {
-      "title": "Ink Heart",
+      "title": "The Ink Orchard",
       "page": "book",
-      "ref": "ink-heart",
-      "sub": "Book · Cornelia Funke",
-      "image": "/art/ink-heart.jpg",
+      "ref": "the-ink-orchard",
+      "sub": "Book · Linnea Frost",
+      "image": "/art/the-ink-orchard.jpg",
       "progress": null
     }
   ],
@@ -158,11 +158,11 @@ const placeholder = {
   ],
   "pickedForYou": [
     {
-      "title": "Wind and Truth",
+      "title": "The Long Meridian",
       "page": "book",
-      "ref": "wind-and-truth",
-      "sub": "Book · Brandon Sanderson",
-      "image": "/art/wind-and-truth.jpg",
+      "ref": "the-long-meridian",
+      "sub": "Book · Tomas Arden",
+      "image": "/art/the-long-meridian.jpg",
       "progress": 0.12
     },
     {

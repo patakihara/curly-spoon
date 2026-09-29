@@ -146,12 +146,12 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                 children = {
                                                     QuickPick(
                                                         QuickPickProps(
-                                                            title = "The Silent Patient",
+                                                            title = "The Quiet Lodger",
                                                             sub = "Book · 6 h 12 m left",
-                                                            image = "/art/the-silent-patient.jpg",
+                                                            image = "/art/the-quiet-lodger.jpg",
                                                             platform = Platform.MOBILE,
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "the-silent-patient"))
+                                                                navController.navigate(Route.Book(ref = "the-quiet-lodger"))
                                                             },
                                                         ),
                                                     )
@@ -179,12 +179,12 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                     )
                                                     QuickPick(
                                                         QuickPickProps(
-                                                            title = "Wind and Truth",
+                                                            title = "The Long Meridian",
                                                             sub = "Book · 21 h 40 m left",
-                                                            image = "/art/wind-and-truth.jpg",
+                                                            image = "/art/the-long-meridian.jpg",
                                                             platform = Platform.MOBILE,
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "wind-and-truth"))
+                                                                navController.navigate(Route.Book(ref = "the-long-meridian"))
                                                             },
                                                         ),
                                                     )
@@ -293,13 +293,13 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                     )
                                                     MediaCard(
                                                         MediaCardProps(
-                                                            title = "The Silent Patient",
-                                                            sub = "Book · Alex Michaelides",
+                                                            title = "The Quiet Lodger",
+                                                            sub = "Book · Iris Calloway",
                                                             platform = Platform.MOBILE,
                                                             progress = 0.55f,
-                                                            image = "/art/the-silent-patient.jpg",
+                                                            image = "/art/the-quiet-lodger.jpg",
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "the-silent-patient"))
+                                                                navController.navigate(Route.Book(ref = "the-quiet-lodger"))
                                                             },
                                                         ),
                                                     )
@@ -329,13 +329,13 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                     )
                                                     MediaCard(
                                                         MediaCardProps(
-                                                            title = "Ink Heart",
-                                                            sub = "Book · Cornelia Funke",
+                                                            title = "The Ink Orchard",
+                                                            sub = "Book · Linnea Frost",
                                                             platform = Platform.MOBILE,
                                                             progress = null,
-                                                            image = "/art/ink-heart.jpg",
+                                                            image = "/art/the-ink-orchard.jpg",
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "ink-heart"))
+                                                                navController.navigate(Route.Book(ref = "the-ink-orchard"))
                                                             },
                                                         ),
                                                     )
@@ -430,14 +430,14 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                 children = {
                                                     MediaCard(
                                                         MediaCardProps(
-                                                            title = "Wind and Truth",
-                                                            sub = "Book · Brandon Sanderson",
+                                                            title = "The Long Meridian",
+                                                            sub = "Book · Tomas Arden",
                                                             platform = Platform.MOBILE,
                                                             progress = 0.12f,
                                                             size = SizeSmMd.SM,
-                                                            image = "/art/wind-and-truth.jpg",
+                                                            image = "/art/the-long-meridian.jpg",
                                                             onClick = {
-                                                                navController.navigate(Route.Book(ref = "wind-and-truth"))
+                                                                navController.navigate(Route.Book(ref = "the-long-meridian"))
                                                             },
                                                         ),
                                                     )

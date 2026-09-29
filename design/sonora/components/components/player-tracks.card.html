@@ -19,7 +19,7 @@ function Demo(){
     <MiniPlayer platform="desktop" title="Glass Weather" artist="Glass Weather · HALCYON BLOOM"
       playing={playing} onTogglePlay={()=>setPlaying(!playing)} progress={0.42} duration={258} />
     <div style={{maxWidth:620}}>
-      <ResultRow title="The Long Meridian" meta="Maya Lind · Audiobook · 62 h" status="In library" tone="library" />
+      <ResultRow title="The Long Meridian" meta="Tomas Arden · Audiobook · 62 h" status="In library" tone="library" />
       <ResultRow title="Escapes and Moons" meta="Soul Vertex · Single · 3:33" status="Requested · 87%" tone="request" actionGlyph="downloading" />
       <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" />
       <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" />
@@ -46,11 +46,11 @@ function Demo(){
       <ResultRow platform="mobile" title="The Glass Archivist" meta="Book · Rosa Elin · Audible" detail="Listeners who finished The Salt Cartographer went on to this one, the next in its world." status="In library" tone="library" />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Media header — wide pane (≥600px): art beside the text</div>
-    <MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Evelyn Harper" onSubtitle={()=>{}}
+    <MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Linnea Frost" onSubtitle={()=>{}}
       meta="2023 · 18 chapters · 14 h 42 m" onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} />
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Same component in a 412px frame — the breakpoint flips it to stacked and centred</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
-      <MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Evelyn Harper" onSubtitle={()=>{}}
+      <MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Linnea Frost" onSubtitle={()=>{}}
         meta="2023 · 18 chapters · 14 h 42 m" onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Under a page heading that already names the item: no title, one queue button (nextLabel null) and the menu after it, open</div>

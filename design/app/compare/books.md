@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: 20caa9620bb3fee5ef16fe05e1b9e4cd930767626c0f125f23b377cfd7404c90
+pageHash: d886741c79201028dc80b71b5b04e32d40ce5db3a025ba0504af4fa4298f0466
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -29,7 +29,7 @@ search="Search your books and requests"`: out as the front layer scrolls, as on 
 filter row: requests sit among the books, greyed with their status, as the plan says. The subheader
 is the `TabBar` Books, Authors, Series, Narrators, opening on Books, its first tab. The body: the `SortFilterBar` "Title" with the `ViewToggle` opposite, then a `LayoutGrid`
 of `MediaCard`s in title order: 3 across on the phone, filling the front layer on desktop. Owned books carry
-their rose resume bar (Foggy Trails, The Silent Patient, Wind and Truth). Three are requests, their
+their rose resume bar (Foggy Trails, The Quiet Lodger, The Long Meridian). Three are requests, their
 art greyed and a pill in their tone: "Downloading · 64%" and "Downloading · 18%" in the accent
 (the download progress the structure asks for; on a phone card it keeps "64%" with its glyph,
 sized to the pill's text by Sonora's `--icon-2xs`) and

@@ -7,9 +7,9 @@
       "image": "/art/the-salt-cartographer.jpg"
     },
     {
-      "title": "Wind and Truth",
-      "meta": "Book · Brandon Sanderson · 1.3 GB",
-      "image": "/art/wind-and-truth.jpg"
+      "title": "The Long Meridian",
+      "meta": "Book · Tomas Arden · 1.3 GB",
+      "image": "/art/the-long-meridian.jpg"
     },
     {
       "title": "Tears of Ice",
@@ -24,9 +24,9 @@
   ],
   "inProgress": [
     {
-      "title": "Ink Heart",
-      "meta": "Book · Cornelia Funke · 104 of 286 MB",
-      "image": "/art/ink-heart.jpg",
+      "title": "The Ink Orchard",
+      "meta": "Book · Linnea Frost · 104 of 286 MB",
+      "image": "/art/the-ink-orchard.jpg",
       "status": "Downloading · 36%",
       "tone": "progress"
     },

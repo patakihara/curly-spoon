@@ -61,7 +61,7 @@ const placeholder = {
           "title": "Early Light",
           "ref": "early-light",
           "sub": "2015",
-          "image": "/art/the-silent-patient.jpg",
+          "image": "/art/the-quiet-lodger.jpg",
           "absent": true,
           "status": null,
           "tone": null

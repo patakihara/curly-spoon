@@ -15,7 +15,7 @@ row in accent, drag handles, Timer and Speed at its foot) and S37 (the same at f
 
 ## What the sources show
 
-- **Mobile kit.** A Queue page over the player with a close control: "Playing from Ink Heart" beside
+- **Mobile kit.** A Queue page over the player with a close control: "Playing from" and the book's title beside
   the edit toggle, Now playing, then Up next, rows with a flat accent tile for art.
 - **Desktop kit.** The panel's Queue tab: the same rows, the third tab cut to "L…".
 - **S36, S37.** Edit turns on selection and reorder; timer and speed sit at the sheet's foot.

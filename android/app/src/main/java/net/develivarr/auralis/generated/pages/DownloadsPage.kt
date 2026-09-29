@@ -124,9 +124,9 @@ fun DownloadsPage(navController: NavController, actions: PageActions) {
                                         )
                                         ResultRow(
                                             ResultRowProps(
-                                                title = "Wind and Truth",
-                                                meta = "Book · Brandon Sanderson · 1.3 GB",
-                                                image = "/art/wind-and-truth.jpg",
+                                                title = "The Long Meridian",
+                                                meta = "Book · Tomas Arden · 1.3 GB",
+                                                image = "/art/the-long-meridian.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
                                                 trailing = {
@@ -184,11 +184,11 @@ fun DownloadsPage(navController: NavController, actions: PageActions) {
                                     children = {
                                         ResultRow(
                                             ResultRowProps(
-                                                title = "Ink Heart",
-                                                meta = "Book · Cornelia Funke · 104 of 286 MB",
+                                                title = "The Ink Orchard",
+                                                meta = "Book · Linnea Frost · 104 of 286 MB",
                                                 status = "Downloading · 36%",
                                                 tone = ResultRowTone.PROGRESS,
-                                                image = "/art/ink-heart.jpg",
+                                                image = "/art/the-ink-orchard.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
                                                 trailing = {

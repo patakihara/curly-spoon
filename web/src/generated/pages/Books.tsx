@@ -58,10 +58,10 @@ const placeholder = {
       "tone": null
     },
     {
-      "title": "Ink Heart",
-      "ref": "ink-heart",
-      "sub": "Cornelia Funke",
-      "image": "/art/ink-heart.jpg",
+      "title": "The Ink Orchard",
+      "ref": "the-ink-orchard",
+      "sub": "Linnea Frost",
+      "image": "/art/the-ink-orchard.jpg",
       "progress": null,
       "status": "Downloading · 64%",
       "tone": "progress"
@@ -85,19 +85,19 @@ const placeholder = {
       "tone": "progress"
     },
     {
-      "title": "The Silent Patient",
-      "ref": "the-silent-patient",
-      "sub": "Alex Michaelides",
-      "image": "/art/the-silent-patient.jpg",
+      "title": "The Quiet Lodger",
+      "ref": "the-quiet-lodger",
+      "sub": "Iris Calloway",
+      "image": "/art/the-quiet-lodger.jpg",
       "progress": 0.55,
       "status": null,
       "tone": null
     },
     {
-      "title": "Wind and Truth",
-      "ref": "wind-and-truth",
-      "sub": "Brandon Sanderson",
-      "image": "/art/wind-and-truth.jpg",
+      "title": "The Long Meridian",
+      "ref": "the-long-meridian",
+      "sub": "Tomas Arden",
+      "image": "/art/the-long-meridian.jpg",
       "progress": 0.1,
       "status": null,
       "tone": null

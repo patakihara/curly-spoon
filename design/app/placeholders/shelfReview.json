@@ -57,18 +57,18 @@
           "tone": null
         },
         {
-          "title": "Wind and Truth",
-          "meta": "Book · Brandon Sanderson · Audible",
+          "title": "The Long Meridian",
+          "meta": "Book · Tomas Arden · Audible",
           "reason": "Audible's listeners also enjoyed it after The Salt Cartographer.",
-          "image": "/art/wind-and-truth.jpg",
+          "image": "/art/the-long-meridian.jpg",
           "status": "In library",
           "tone": "library"
         },
         {
-          "title": "The Silent Patient",
-          "meta": "Book · Alex Michaelides · description match",
+          "title": "The Quiet Lodger",
+          "meta": "Book · Iris Calloway · description match",
           "reason": "Its description reads like The Salt Cartographer's.",
-          "image": "/art/the-silent-patient.jpg",
+          "image": "/art/the-quiet-lodger.jpg",
           "status": null,
           "tone": null
         }

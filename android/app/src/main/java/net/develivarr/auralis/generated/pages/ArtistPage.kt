@@ -218,7 +218,7 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             platform = Platform.MOBILE,
                                                             absent = true,
                                                             size = SizeSmMd.MD,
-                                                            image = "/art/the-silent-patient.jpg",
+                                                            image = "/art/the-quiet-lodger.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Album(ref = "early-light"))
                                                             },

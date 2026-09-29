@@ -122,11 +122,11 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                         )
                                         ResultRow(
                                             ResultRowProps(
-                                                title = "Ink Heart",
-                                                meta = "Book · Cornelia Funke · AudiobookBay · 286 MB",
+                                                title = "The Ink Orchard",
+                                                meta = "Book · Linnea Frost · AudiobookBay · 286 MB",
                                                 status = "Downloading · 64%",
                                                 tone = ResultRowTone.PROGRESS,
-                                                image = "/art/ink-heart.jpg",
+                                                image = "/art/the-ink-orchard.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
                                                 trailing = {
