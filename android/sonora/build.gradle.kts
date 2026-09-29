@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // Screenshots of the gallery in plain `test`, into build/reports/paparazzi.
+    alias(libs.plugins.paparazzi)
 }
 
 android {

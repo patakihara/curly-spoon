@@ -56,6 +56,16 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      - if: ${{ !cancelled() }}
+        run: find android/sonora/build -name '*.png' -path '*paparazzi*' | sort
+
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: paparazzi-screenshots
+          path: android/sonora/build/reports/paparazzi/**
+          if-no-files-found: warn
+
   # Runs androidTest on an API 34 x86_64 emulator. Hosted Linux runners expose /dev/kvm as
   # root:kvm 0660; the udev rule opens it to the runner user. The AVD's booted snapshot is
   # cached, so a warm run restores it instead of cold-booting. Timings are in the step log.
