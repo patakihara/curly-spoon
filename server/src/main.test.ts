@@ -1,5 +1,5 @@
 /**
- * `main.ts` as the image runs it: a child process on its environment, on loopback, with no
+ * `main.ts` as a process of its own: a child on its environment, on loopback, with no
  * upstream configured, so nothing leaves the machine. It starts, answers its health check, leaves
  * the setup code, and stops on SIGTERM; a malformed environment stops it before it listens.
  */
@@ -12,7 +12,6 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const SERVER_DIR = fileURLToPath(new URL('..', import.meta.url));
-const TSX = join(SERVER_DIR, 'node_modules', '.bin', 'tsx');
 
 let dirs: string[] = [];
 let children: ChildProcess[] = [];
@@ -42,7 +41,9 @@ interface Run {
 }
 
 function start(env: Record<string, string>): Run {
-  const child = spawn(TSX, ['src/main.ts'], {
+  // Node itself runs main.ts, with tsx as its loader, so SIGTERM reaches main.ts's own handler
+  // rather than the tsx CLI's relay, which gives the child 30 ms to answer before killing it.
+  const child = spawn(process.execPath, ['--import', 'tsx', 'src/main.ts'], {
     cwd: SERVER_DIR,
     env: { PATH: process.env.PATH ?? '', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
