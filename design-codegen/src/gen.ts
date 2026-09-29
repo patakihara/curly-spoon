@@ -1,14 +1,15 @@
 /**
  * `pnpm gen`: the web UI package and the Android props classes, from Sonora's components; the
  * web CSS tokens and `SonoraTokens.kt`, from Sonora's token export; the web route table and
- * pages, from the canvas. It fails when Sonora's committed token export is out of date.
+ * pages and the Android nav graph and pages, from the canvas. It fails when Sonora's committed
+ * token export is out of date.
  *
  *   tsx src/gen.ts [--sonora <Sonora dir>] [--app <canvas dir>] [--out <output root>]
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { generateAppWeb, readApp } from './app.js';
+import { generateAppKotlin, generateAppWeb, readApp } from './app.js';
 import { generateKotlin } from './kotlin.js';
 import { APP_DIR, KOTLIN_PACKAGE, OUTPUTS, REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { readProps } from './props.js';
@@ -38,7 +39,9 @@ if (drift.length > 0) {
 
 const components = discoverComponents(sonora);
 const props = readProps(components);
-const app = generateAppWeb(readApp(resolve(values.app), props));
+const canvas = readApp(resolve(values.app), props);
+const app = generateAppWeb(canvas);
+const android = generateAppKotlin(canvas, props);
 const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
   web: generateWeb(components),
   kotlin: generateKotlin(props, KOTLIN_PACKAGE),
@@ -46,6 +49,8 @@ const outputs: Record<keyof typeof OUTPUTS, Map<string, string>> = {
   webPages: app.pages,
   webTokens: tokens.web,
   kotlinTheme: tokens.kotlin,
+  kotlinNav: android.nav,
+  kotlinPages: android.pages,
 };
 
 // Every folder belongs to this generator alone, so a stale file cannot survive a run.

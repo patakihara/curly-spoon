@@ -9,6 +9,8 @@ import {
   splitRoute,
   type Nav,
 } from './nav.js';
+import { readFileSync } from 'node:fs';
+import { graphDestinations } from './nav-kotlin.js';
 import { APP_DIR, OUTPUTS, REPO_ROOT } from './outputs.js';
 
 const nav = readNav(join(REPO_ROOT, APP_DIR));
@@ -53,6 +55,13 @@ describe('nav.json', () => {
       .map((p) => ({ id: p.id, path: splitRoute(p.route).path }));
     expect(mod.pages.map((p) => ({ id: p.id, path: p.path }))).toEqual(expected);
   }, 30_000);
+
+  it("[M0.canvas/a] the Android nav graph's destinations equal nav.json's Android pages", () => {
+    const graph = readFileSync(join(REPO_ROOT, OUTPUTS.kotlinNav, 'AuralisNavGraph.kt'), 'utf8');
+    const expected = nav.pages.filter((p) => p.platforms.includes('android')).map((p) => p.id);
+    expect(expected).toContain('downloads');
+    expect(graphDestinations(graph)).toEqual(expected);
+  });
 
   it('holds the whole screen map: 26 pages, five destinations', () => {
     expect(nav.pages).toHaveLength(26);

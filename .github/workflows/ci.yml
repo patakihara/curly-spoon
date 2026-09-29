@@ -49,7 +49,7 @@ jobs:
       # Untracked output counts as a difference.
       - name: No difference from what is committed
         run: |
-          paths="schema/generated web/src/generated/api android/app/src/main/java/net/develivarr/auralis/generated/api web/src/generated/ui android/app/src/main/java/net/develivarr/auralis/generated/ui web/src/generated/nav web/src/generated/pages web/src/generated/tokens android/sonora/src/main/java/net/develivarr/auralis/generated/theme"
+          paths="schema/generated web/src/generated/api android/app/src/main/java/net/develivarr/auralis/generated/api web/src/generated/ui android/app/src/main/java/net/develivarr/auralis/generated/ui web/src/generated/nav web/src/generated/pages web/src/generated/tokens android/sonora/src/main/java/net/develivarr/auralis/generated/theme android/app/src/main/java/net/develivarr/auralis/generated/nav android/app/src/main/java/net/develivarr/auralis/generated/pages"
           git diff --exit-code -- $paths
           test -z "$(git status --porcelain -- $paths)" || { git status --porcelain -- $paths; exit 1; }
 

@@ -8,9 +8,9 @@ import { GENERATED_NOTE } from './outputs.js';
 import type { ClassDecl, Decl, EnumDecl, KType, Prop, PropsModel, SealedDecl } from './props.js';
 
 const INDENT = '    ';
-const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+export const pascal = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function typeText(type: KType): string {
+export function typeText(type: KType): string {
   switch (type.kind) {
     case 'string':
       return 'String';

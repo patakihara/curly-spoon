@@ -96,6 +96,10 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material3)
+    // BasicText, for a generated page's plain text children.
+    implementation(libs.androidx.foundation)
+    // The generated nav graph's typed routes (generated/nav/AuralisNavGraph.kt).
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)

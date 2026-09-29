@@ -1,6 +1,7 @@
 /**
  * The canvas, `design/app`: nav.json, shell.json, `pages/<id>.page.jsx` and
- * `placeholders/<id>.json`, read and checked, then generated into the web route table and web pages.
+ * `placeholders/<id>.json`, read and checked, then generated into the web route table and web pages
+ * and the Android nav graph and pages.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,7 +15,9 @@ import {
   type Opens,
   type PageTree,
 } from './page.js';
+import { generateKotlinPage } from './page-kotlin.js';
 import { generateWebPage, type WebComponents } from './page-web.js';
+import { androidPages, generateKotlinNav } from './nav-kotlin.js';
 import type { KType, PropsModel } from './props.js';
 import {
   framePage,
@@ -261,6 +264,30 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
             now: app.now,
           }),
         ]),
+    ),
+  };
+}
+
+export function generateAppKotlin(
+  app: App,
+  model: PropsModel,
+): { nav: Map<string, string>; pages: Map<string, string> } {
+  const android = new Set(androidPages(app.nav).map((p) => p.id));
+  const drawn = app.pages.filter(({ id }) => android.has(id));
+  return {
+    nav: new Map([
+      ['AuralisNavGraph.kt', generateKotlinNav(app.nav, new Set(drawn.map(({ id }) => id)))],
+    ]),
+    pages: new Map(
+      drawn.map(({ id, tree, placeholder }) => [
+        `${componentName(id)}Page.kt`,
+        generateKotlinPage(tree, id, placeholder, model, {
+          nav: app.nav,
+          shell: app.shell,
+          page: app.nav.pages.find((p) => p.id === id)!,
+          now: app.now,
+        }),
+      ]),
     ),
   };
 }

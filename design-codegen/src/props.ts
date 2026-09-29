@@ -33,8 +33,11 @@ export type KType =
   | { kind: 'any' }
   /** `DOMRect`, as Compose's `Rect`. */
   | { kind: 'rect' }
-  /** A generated data class, enum or sealed interface. */
-  | { kind: 'named'; name: string; args: KType[] }
+  /**
+   * A generated data class, enum or sealed interface. `shorthand`: the web also takes a string
+   * for it (`string | Obj`), Sonora's shorthand for an item whose key and label are that string.
+   */
+  | { kind: 'named'; name: string; args: KType[]; shorthand?: true }
   | { kind: 'typeParam'; name: string }
   | { kind: 'list'; item: KType }
   | { kind: 'map'; value: KType }
@@ -387,6 +390,7 @@ export function readProps(components: Component[]): PropsModel {
         rest.find((t) => t.kind !== ts.SyntaxKind.StringKeyword)!,
         ctx,
       );
+      if (type.kind === 'named') type = { ...type, shorthand: true };
     } else if (rest.length === 2 && rest.some(ts.isFunctionTypeNode) && rest.some(isReactNode)) {
       // A render prop or plain content: the composable function covers both.
       type = mapFn(rest.find(ts.isFunctionTypeNode)!, ctx, true);

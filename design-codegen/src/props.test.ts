@@ -173,11 +173,11 @@ describe('the props model read from Sonora .d.ts files', () => {
     expect(decls[1]).toEqual({ kind: 'sealed', name: 'XEdgeFade', members: [B, F] });
   });
 
-  it('[M0.uikit/a] string | Obj array items keep only the object', () => {
+  it('[M0.uikit/a] string | Obj array items keep only the object, marked as taking the string shorthand', () => {
     const decls = declsOf('  items: (string | { key: string })[];', '');
     expect((decls[0] as ClassDecl).props[0]!.type).toEqual({
       kind: 'list',
-      item: named('XItem'),
+      item: { ...named('XItem'), shorthand: true },
     });
     expect(decls[1]).toMatchObject({ kind: 'class', name: 'XItem', props: [{ name: 'key' }] });
   });
