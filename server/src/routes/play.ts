@@ -35,6 +35,7 @@ import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import { type Linker, type UpstreamConfig, upstreamFor } from '../upstream/links.js';
 import { signedIn } from './auth.js';
+import { OpenPlays } from './openPlays.js';
 import { type z } from 'zod';
 
 /** What the server needs to act upstream as a person: their tokens' key and the upstreams. */
@@ -47,12 +48,34 @@ export interface UpstreamAccess {
 
 const CLIENT_VERSION = '0.0.0';
 
-/**
- * ABS answers 404 for a segment its transcode has not cut yet (recorded), and players give up
- * on a 404. The proxy asks again for up to this long before passing the 404 on.
- */
-const SEGMENT_WAIT = { tries: 20, everyMs: 500 };
-const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/** How the server holds transcodes open and waits for their segments. */
+export interface PlaybackOptions {
+  /** A transcode nothing has asked for in this long is closed. Default 10 minutes. */
+  idleMs?: number;
+  /**
+   * ABS answers 404 for a segment its transcode has not cut yet (recorded), and players give up
+   * on a 404. The proxy asks again, this many times this far apart, before passing the 404 on,
+   * and stops as soon as the client has gone. Default 20 tries 500 ms apart.
+   */
+  segmentWait?: { tries: number; everyMs: number };
+}
+
+const DEFAULT_IDLE_MS = 10 * 60_000;
+const DEFAULT_SEGMENT_WAIT = { tries: 20, everyMs: 500 };
+/** How often held transcodes are checked for idleness, besides on every playback request. */
+const SWEEP_EVERY_MS = 60_000;
+
+/** Waits `ms`, or less if `signal` aborts first. */
+const wait = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    const timer = setTimeout(done, ms);
+    function done() {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', done);
+      resolve();
+    }
+    signal.addEventListener('abort', done, { once: true });
+  });
 
 type AbsSession = z.infer<typeof playSessionSchema>;
 
@@ -136,46 +159,76 @@ function refusalFor(error: unknown): never {
 
 export function playRoutes(
   app: FastifyInstance,
-  options: { db: Db; upstreams: UpstreamAccess | null },
+  options: {
+    db: Db;
+    upstreams: UpstreamAccess | null;
+    playback?: PlaybackOptions;
+    now?: () => number;
+  },
 ): void {
   const { db, upstreams } = options;
+  const segmentWait = options.playback?.segmentWait ?? DEFAULT_SEGMENT_WAIT;
+  const open = new OpenPlays({
+    idleMs: options.playback?.idleMs ?? DEFAULT_IDLE_MS,
+    now: options.now ?? Date.now,
+  });
+  const sweeper = setInterval(() => void open.sweep(), SWEEP_EVERY_MS);
+  sweeper.unref();
+  app.addHook('onClose', async () => {
+    clearInterval(sweeper);
+    await open.closeAll();
+  });
 
-  const absFor = (request: FastifyRequest): { abs: AbsClient; deviceId: string } => {
+  /** The caller's own Audiobookshelf, after closing any transcode gone idle. */
+  const absFor = async (
+    request: FastifyRequest,
+  ): Promise<{ abs: AbsClient; userId: string; deviceId: string }> => {
+    await open.sweep();
     const user = signedIn(request);
     const abs = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user).abs;
     if (abs === null) throw new Refusal(409, 'not_linked');
-    return { abs, deviceId: user.deviceId };
+    return { abs, userId: user.id, deviceId: user.deviceId };
   };
 
   serve(app, play, async (request, _reply, body) => {
-    const { abs, deviceId } = absFor(request);
+    const { abs, userId, deviceId } = await absFor(request);
     const session = await abs
       .play(body.ref.id, { deviceId, clientVersion: CLIENT_VERSION })
       .catch(refusalFor);
-    let plan: PlaybackPlan | null = null;
-    try {
-      plan = planFor(session, mediaRefKey(body.ref));
-      if (plan === null) throw new Refusal(502, 'unplayable');
-      return plan;
-    } finally {
-      // A transcode lives in its session; anything else is closed now, since nothing reports
+    const ref = mediaRefKey(body.ref);
+    const plan = planFor(session, ref);
+    const target = plan?.progressTarget;
+    if (target === undefined) {
+      // Only a transcode is held open; anything else is closed now, since nothing reports
       // progress yet. A failed close loses nothing.
-      if (plan?.progressTarget === undefined) {
-        await abs.closeSession(session.id).catch(() => undefined);
-      }
+      await abs.closeSession(session.id).catch(() => undefined);
+      await open.closeDevice(userId, deviceId);
+    } else {
+      const playId = target.playId;
+      await open.open({
+        playId,
+        userId,
+        deviceId,
+        ref,
+        close: () => abs.closeSession(playId),
+      });
     }
+    if (plan === null) throw new Refusal(502, 'unplayable');
+    return plan;
   });
 
   serve(app, closePlay, async (request, _reply, _body, { params }) => {
-    const { abs } = absFor(request);
-    await abs.closeSession(params.playId).catch(refusalFor);
+    const { userId, deviceId } = await absFor(request);
+    const held = open.take(params.playId, { userId, deviceId });
+    if (held === null) throw new Refusal(404, 'not_found');
+    await held.close().catch(refusalFor);
     return { ok: true };
   });
 
   serveStream(app, mediaTrack, async (request, { params, range }) => {
     const ref = parseMediaRefKey(params.ref);
     if (ref === null) throw new Refusal(400, 'bad_request');
-    const { abs } = absFor(request);
+    const { abs } = await absFor(request);
     const item = await abs.getItem(ref.id).catch(refusalFor);
     const track = item.media.tracks?.[Number(params.n)];
     const file = track === undefined ? null : contentUrlParts(track.contentUrl);
@@ -183,9 +236,13 @@ export function playRoutes(
     return passOn(await abs.openFile(file, range).catch(refusalFor));
   });
 
-  serveStream(app, mediaHls, async (request, { params, range }) => {
+  serveStream(app, mediaHls, async (request, { params, range, signal }) => {
     if (parseMediaRefKey(params.ref) === null) throw new Refusal(400, 'bad_request');
-    const { abs } = absFor(request);
+    const { abs, userId, deviceId } = await absFor(request);
+    // ABS's HLS route checks no owner: only the device that planned a transcode may reach it.
+    if (open.touch(params.playId, { userId, deviceId, ref: params.ref }) === null) {
+      throw new Refusal(404, 'not_found');
+    }
     if (params.file === 'output.m3u8') {
       const playlist = await abs.getHlsPlaylist(params.playId).catch(refusalFor);
       const bytes = new TextEncoder().encode(playlist);
@@ -202,8 +259,9 @@ export function playRoutes(
         return passOn(opened, params.file.endsWith('.ts') ? 'audio/mp2t' : undefined);
       } catch (error) {
         const notCutYet = error instanceof AdapterError && error.status === 404;
-        if (!notCutYet || tries >= SEGMENT_WAIT.tries) refusalFor(error);
-        await wait(SEGMENT_WAIT.everyMs);
+        if (!notCutYet || tries >= segmentWait.tries || signal.aborted) refusalFor(error);
+        await wait(segmentWait.everyMs, signal);
+        if (signal.aborted) refusalFor(error);
       }
     }
   });

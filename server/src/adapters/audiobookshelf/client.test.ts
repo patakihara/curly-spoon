@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { AdapterError, type FetchLike } from '../http/fetch.js';
 import { AbsClient, contentUrlParts, hlsSessionOf } from './client.js';
-import { hlsPlaylistSchema } from './schemas.js';
+import { hlsPlaylistSchema, MAX_PLAYLIST_BYTES } from './schemas.js';
 
 interface Sent {
   url: string;
@@ -118,6 +118,33 @@ describe('the Audiobookshelf client', () => {
         false,
       );
     }
+  });
+
+  it('stops reading a playlist past its byte cap, as a parse error, without reading the rest', async () => {
+    const chunk = new TextEncoder().encode(`#EXTINF:6,\noutput-0.ts\n`.repeat(2048));
+    let pulled = 0;
+    let cancelled = false;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += chunk.byteLength;
+        controller.enqueue(
+          pulled === chunk.byteLength ? new TextEncoder().encode('#EXTM3U\n') : chunk,
+        );
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const fetch: FetchLike = async () =>
+      new Response(endless, { headers: { 'content-type': 'application/vnd.apple.mpegurl' } });
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    const failure = (await abs.getHlsPlaylist('play_1').catch((e: unknown) => e)) as AdapterError;
+    expect(failure).toBeInstanceOf(AdapterError);
+    expect(failure.kind).toBe('parse');
+    expect(failure.message).toContain('larger than');
+    expect(cancelled).toBe(true);
+    // The stream pulls a chunk or two ahead of the reader; nothing near the whole body.
+    expect(pulled).toBeLessThan(MAX_PLAYLIST_BYTES + 4 * chunk.byteLength);
   });
 
   it('refuses an HLS playlist that is not one, as a parse error', async () => {

@@ -28,6 +28,7 @@ export { CommitId, HealthResponse } from './health.js';
 export {
   AudioBytes,
   HLS_MIME,
+  HLS_SEGMENT,
   MediaHlsParams,
   MediaRef,
   MediaRefKey,

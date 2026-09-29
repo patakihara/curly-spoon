@@ -3,6 +3,7 @@
  * `.passthrough()` keeps the rest: ABS adds fields between versions, and a recording shows the
  * whole answer anyway. The shapes follow mediaserver's recordings in `recordings/` (ABS 2.36.1).
  */
+import { HLS_SEGMENT } from '@auralis/schema';
 import { z } from 'zod';
 
 /** `GET /status`, unauthenticated. */
@@ -131,54 +132,47 @@ export const fileHeadersSchema = z.object({
 });
 export type FileHeaders = z.infer<typeof fileHeadersSchema>;
 
-/** One file of an HLS transcode, as ABS names it under `/hls/:session/`. */
-export const hlsFileSchema = z
-  .string()
-  .regex(/^(?:output\.m3u8|output-\d{1,6}\.(?:ts|m4s)|init\.mp4)$/);
-
 /** The largest playlist read: a 6 s segment is about 30 bytes of it, so this is ~800 hours. */
-const MAX_PLAYLIST_BYTES = 4_000_000;
+export const MAX_PLAYLIST_BYTES = 4_000_000;
 /** A segment URI as ABS writes it; some versions append the upstream token as a query. */
-const SEGMENT_URI = /^(output-\d{1,6}\.(?:ts|m4s)|init\.mp4)(?:\?[^\s"]*)?$/;
+const SEGMENT_URI = new RegExp(`^(${HLS_SEGMENT.source})(?:\\?[^\\s"]*)?$`);
 const MAP_URI = /URI="([^"]*)"/;
 
 /**
  * `GET /hls/:session/output.m3u8` (recorded): a VOD media playlist of relative segment names.
  * Parsed to the same playlist with every URI cut to its bare segment name, so whatever query ABS
- * put on it (its token, in some versions) never reaches a client. Anything else fails.
+ * put on it (its token, in some versions) never reaches a client. Anything else fails. The
+ * client reads at most `MAX_PLAYLIST_BYTES` of it.
  */
-export const hlsPlaylistSchema = z
-  .string()
-  .max(MAX_PLAYLIST_BYTES)
-  .transform((text, ctx) => {
-    const lines = text.split(/\r?\n/);
-    if (lines[0] !== '#EXTM3U') {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'not an HLS playlist' });
-      return z.NEVER;
-    }
-    const out: string[] = [];
-    for (const line of lines) {
-      if (line.startsWith('#EXT-X-MAP:')) {
-        const uri = MAP_URI.exec(line)?.[1] ?? '';
-        const name = SEGMENT_URI.exec(uri)?.[1];
-        if (name === undefined) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'a map URI that is not init.mp4' });
-          return z.NEVER;
-        }
-        out.push(line.replace(MAP_URI, `URI="${name}"`));
-      } else if (line === '' || line.startsWith('#')) {
-        out.push(line);
-      } else {
-        const name = SEGMENT_URI.exec(line)?.[1];
-        if (name === undefined) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'a URI that is not a segment' });
-          return z.NEVER;
-        }
-        out.push(name);
+export const hlsPlaylistSchema = z.string().transform((text, ctx) => {
+  const lines = text.split(/\r?\n/);
+  if (lines[0] !== '#EXTM3U') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'not an HLS playlist' });
+    return z.NEVER;
+  }
+  const out: string[] = [];
+  for (const line of lines) {
+    if (line.startsWith('#EXT-X-MAP:')) {
+      const uri = MAP_URI.exec(line)?.[1] ?? '';
+      const name = SEGMENT_URI.exec(uri)?.[1];
+      if (name === undefined) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'a map URI that is not init.mp4' });
+        return z.NEVER;
       }
+      out.push(line.replace(MAP_URI, `URI="${name}"`));
+    } else if (line === '' || line.startsWith('#')) {
+      out.push(line);
+    } else {
+      const name = SEGMENT_URI.exec(line)?.[1];
+      if (name === undefined) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'a URI that is not a segment' });
+        return z.NEVER;
+      }
+      out.push(name);
     }
-    return out.join('\n');
-  });
+  }
+  return out.join('\n');
+});
 
 /**
  * The headers of `GET /hls/:session/<segment>` (recorded): ABS names an MPEG-TS segment

@@ -96,13 +96,14 @@ const BYTES_RANGE = /^bytes=(?:\d{1,15}-\d{0,15}|-\d{1,15})$/;
  * `serve` does, and `Range` checked to be one plain bytes range (400 `bad_range` if not) before
  * the handler sees it. GET sends the handler's stream on as it arrives, never buffered; HEAD
  * sends the same status and headers and cancels the stream unread. A refusal answers `{ error }`.
+ * The handler's `signal` aborts when the client disconnects first.
  */
 export function serveStream<R extends Route & { stream: true; method: 'GET' }>(
   app: FastifyInstance,
   route: R,
   handler: (
     request: FastifyRequest,
-    input: InputOf<R> & { range: string | undefined },
+    input: InputOf<R> & { range: string | undefined; signal: AbortSignal },
   ) => Promise<StreamAnswer>,
 ): void {
   app.route({
@@ -125,9 +126,18 @@ export function serveStream<R extends Route & { stream: true; method: 'GET' }>(
       if (range !== undefined && !BYTES_RANGE.test(range)) {
         return reply.code(400).send({ error: 'bad_range' });
       }
+      // Aborts when the client goes before the answer is sent, so a handler can stop waiting.
+      const gone = new AbortController();
+      reply.raw.once('close', () => {
+        if (!reply.raw.writableFinished) gone.abort();
+      });
       let answer: StreamAnswer;
       try {
-        answer = await handler(request, { ...(parsed as unknown as InputOf<R>), range });
+        answer = await handler(request, {
+          ...(parsed as unknown as InputOf<R>),
+          range,
+          signal: gone.signal,
+        });
       } catch (err) {
         if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
         throw err;

@@ -12,7 +12,7 @@ import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { deviceRoutes } from './routes/devices.js';
-import { playRoutes, type UpstreamAccess } from './routes/play.js';
+import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { setupRoutes } from './routes/setup.js';
 import { signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
@@ -36,6 +36,8 @@ export interface BuildAppOptions {
   linker?: Linker | null;
   /** Acts upstream as each person; without it, playing answers 409. */
   upstreams?: UpstreamAccess | null;
+  /** How transcodes are held open and their segments waited for. */
+  playback?: PlaybackOptions;
   random?: Random;
   now?: () => number;
   /** The commit the image was built from, reported by the health check; none by default. */
@@ -99,7 +101,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   authRoutes(app, { db, cookieSecure });
   deviceRoutes(app, { db, cookieSecure });
   adminRoutes(app, { db });
-  playRoutes(app, { db, upstreams: options.upstreams ?? null });
+  playRoutes(app, {
+    db,
+    upstreams: options.upstreams ?? null,
+    ...(options.playback ? { playback: options.playback } : {}),
+    ...(options.now ? { now: options.now } : {}),
+  });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

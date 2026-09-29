@@ -17,6 +17,7 @@ import {
   itemSchema,
   itemSummarySchema,
   librariesSchema,
+  MAX_PLAYLIST_BYTES,
   libraryItemsSchema,
   type PlayRequest,
   playSessionSchema,
@@ -163,7 +164,9 @@ export class AbsClient {
 
   /** A transcode's playlist, each segment URI cut to its bare name (see `hlsPlaylistSchema`). */
   getHlsPlaylist(sessionId: string): Promise<string> {
-    return this.call(`hls/${encodeURIComponent(sessionId)}/output.m3u8`, hlsPlaylistSchema);
+    return this.call(`hls/${encodeURIComponent(sessionId)}/output.m3u8`, hlsPlaylistSchema, {
+      maxBytes: MAX_PLAYLIST_BYTES,
+    });
   }
 
   /** Opens one audio file, passing `range` through; see `openStream`. */

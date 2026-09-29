@@ -110,13 +110,19 @@ export const PlayParams = z.object({ playId: PlayId });
 export type PlayParams = z.infer<typeof PlayParams>;
 
 /**
+ * A transcode's segment as Audiobookshelf names it: an MPEG-TS or fMP4 segment, or the fMP4 init.
+ * The server reads playlists by it too, so the names a client is given and may ask for are one.
+ */
+export const HLS_SEGMENT = /output-\d{1,6}\.(?:ts|m4s)|init\.mp4/;
+
+/**
  * One file of a transcode: its playlist, `output.m3u8`, or a segment it names. The playlist's
  * segment names are relative, so they resolve under the same route.
  */
 export const MediaHlsParams = z.object({
   ref: MediaRefKey,
   playId: PlayId,
-  file: z.string().regex(/^(?:output\.m3u8|output-\d{1,6}\.(?:ts|m4s)|init\.mp4)$/),
+  file: z.string().regex(new RegExp(`^(?:output\\.m3u8|${HLS_SEGMENT.source})$`)),
 });
 export type MediaHlsParams = z.infer<typeof MediaHlsParams>;
 

@@ -6,6 +6,9 @@
  * and its close).
  */
 import { readFileSync } from 'node:fs';
+import { get as httpGet } from 'node:http';
+import { type AddressInfo } from 'node:net';
+import { setTimeout as pause } from 'node:timers/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HLS_MIME, type PlaybackPlan } from '@auralis/schema';
@@ -16,6 +19,7 @@ import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
 import { PLACEHOLDER_ORIGIN } from './adapters/http/scrub.js';
 import { buildApp } from './app.js';
+import { type PlaybackOptions } from './routes/play.js';
 import { openDatabase } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
@@ -98,6 +102,14 @@ async function server(
     fileFails?: boolean;
     /** Which recorded book Audiobookshelf holds: one file, four files, or four transcoded. */
     book?: 'single' | 'multi' | 'hls';
+    /** Each transcode after the first gets the next of these ids instead of the recorded one. */
+    laterSessionIds?: string[];
+    /** The recorded playlist with each segment URI carrying this query, as some ABS versions write it. */
+    playlistQuery?: string;
+    /** ABS never cuts the first segment: it answers 404 every time. */
+    segmentNeverCut?: boolean;
+    playback?: PlaybackOptions;
+    now?: () => number;
   } = {},
 ) {
   const db = openDatabase(':memory:');
@@ -107,7 +119,27 @@ async function server(
     multi,
     hls,
   }[options.book ?? 'single'];
-  const replay = replayFetch(recordings, { readBytes: standInsBeside(adapters) });
+  const playlist = structuredClone(hls[1]!);
+  if (options.playlistQuery !== undefined) {
+    const text = (playlist.response.body as { text: string }).text;
+    playlist.response.body = {
+      text: text.replace(/^(output-\d+\.ts)$/gm, `$1${options.playlistQuery}`),
+    };
+  }
+  const replay = replayFetch(
+    recordings.map((r) => (r.call === 'hls-playlist' ? playlist : r)),
+    { readBytes: standInsBeside(adapters) },
+  );
+  const laterIds = [...(options.laterSessionIds ?? [])];
+  let transcodes = 0;
+  /** A later transcode's answer: the recorded one under its next id. */
+  const renamed = async (response: Response): Promise<Response> => {
+    transcodes += 1;
+    const id = transcodes > 1 ? laterIds.shift() : undefined;
+    if (id === undefined) return response;
+    const text = (await response.text()).replaceAll(hlsSession.id, id);
+    return new Response(text, { status: response.status, headers: response.headers });
+  };
   // Each segment is asked for once too early, as ABS answers a segment it has not cut yet.
   const early = replayFetch([hlsPending]);
   const askedSegments = new Set<string>();
@@ -123,9 +155,16 @@ async function server(
     if (options.fileFails === true && path.includes('/file/')) {
       throw new TypeError(`fetch failed: ${url} with ${headers.get('authorization')}`);
     }
-    if (path === hlsPending.request.path && !askedSegments.has(path)) {
+    if (path === hlsPending.request.path && (options.segmentNeverCut || !askedSegments.has(path))) {
       askedSegments.add(path);
       return early(url, init);
+    }
+    const later = (options.laterSessionIds ?? []).find((id) => path.includes(id));
+    if (later !== undefined) {
+      return replay(url.replaceAll(later, hlsSession.id), init);
+    }
+    if (options.book === 'hls' && path === hls[0]!.request.path) {
+      return renamed(await replay(url, init));
     }
     return replay(url, init);
   };
@@ -156,6 +195,8 @@ async function server(
       config: { absUrl: PLACEHOLDER_ORIGIN, jellyfinUrl: undefined },
       fetch,
     },
+    ...(options.playback ? { playback: options.playback } : {}),
+    ...(options.now ? { now: options.now } : {}),
   });
   apps.push(app);
   const as = (name: string) => ({ authorization: `Bearer ${bearer[name] ?? ''}` });
@@ -506,7 +547,8 @@ describe('[M1.play/a] the HLS path, for a book Audiobookshelf transcodes', () =>
   });
 
   it('passes the playlist on as recorded: segment names only, relative to it', async () => {
-    const { app, as } = await server({ book: 'hls' });
+    const { app, as, plan } = await server({ book: 'hls' });
+    await plan();
     const res = await app.inject({
       method: 'GET',
       url: hlsUrl('output.m3u8'),
@@ -515,13 +557,193 @@ describe('[M1.play/a] the HLS path, for a book Audiobookshelf transcodes', () =>
     expect(res.body).toBe(recordedPlaylist);
   });
 
+  it('cuts a query off every segment name, so an upstream token never reaches the client', async () => {
+    const { app, as, plan } = await server({ book: 'hls', playlistQuery: '?token=abs-token-kara' });
+    await plan();
+    const res = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output.m3u8'),
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).not.toContain('token');
+    const uris = res.body.split('\n').filter((l) => l !== '' && !l.startsWith('#'));
+    expect(uris.length).toBeGreaterThan(20);
+    for (const uri of uris) expect(uri).toMatch(/^output-\d+\.ts$/);
+  });
+
   it('asks Audiobookshelf with the caller’s own token for the playlist and its segments', async () => {
-    const { app, as, sent } = await server({ book: 'hls' });
+    const { app, as, sent, plan } = await server({ book: 'hls' });
+    await plan('otto');
     await app.inject({ method: 'GET', url: hlsUrl('output.m3u8'), headers: as('otto') });
     await app.inject({ method: 'GET', url: hlsUrl('output-0.ts'), headers: as('otto') });
     expect(sent.map((s) => s.authorization)).toEqual(
-      Array<string>(3).fill('Bearer abs-token-otto'),
+      Array<string>(4).fill('Bearer abs-token-otto'),
     );
+  });
+
+  it("refuses someone else's transcode, its playlist, segments and close, with 404, asking nothing", async () => {
+    const { app, as, sent, plan } = await server({ book: 'hls' });
+    await plan('kara');
+    const asked = sent.length;
+    for (const url of [hlsUrl('output.m3u8'), hlsUrl('output-0.ts')]) {
+      const res = await app.inject({ method: 'GET', url, headers: as('otto') });
+      expect(res.statusCode, url).toBe(404);
+      expect(res.json()).toEqual({ error: 'not_found' });
+    }
+    const close = await app.inject({
+      method: 'POST',
+      url: `/api/play/${hlsSession.id}/close`,
+      headers: as('otto'),
+    });
+    expect(close.statusCode).toBe(404);
+    expect(sent).toHaveLength(asked);
+    // Still kara's: her playlist answers.
+    const hers = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output.m3u8'),
+      headers: as('kara'),
+    });
+    expect(hers.statusCode).toBe(200);
+  });
+
+  it('refuses a transcode under another ref, and one no plan opened, with 404', async () => {
+    const { app, as, sent, plan } = await server({ book: 'hls' });
+    await plan();
+    const asked = sent.length;
+    for (const url of [
+      `/api/media/abs:${itemId}/hls/${hlsSession.id}/output.m3u8`,
+      `/api/media/abs:${multiId}/hls/never-planned/output.m3u8`,
+    ]) {
+      const res = await app.inject({ method: 'GET', url, headers: as('kara') });
+      expect(res.statusCode, url).toBe(404);
+    }
+    expect(sent).toHaveLength(asked);
+  });
+
+  it('after its close, the transcode is gone: its playlist answers 404', async () => {
+    const { app, as, plan } = await server({ book: 'hls' });
+    await plan();
+    await app.inject({
+      method: 'POST',
+      url: `/api/play/${hlsSession.id}/close`,
+      headers: as('kara'),
+    });
+    const res = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output.m3u8'),
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('closes a transcode nothing has asked for within the idle time, and not one still playing', async () => {
+    let now = 1_000_000;
+    const idleMs = 10 * 60_000;
+    const { app, as, sent, plan } = await server({
+      book: 'hls',
+      laterSessionIds: ['second-play'],
+      playback: { idleMs },
+      now: () => now,
+    });
+    await plan('kara');
+    await plan('otto');
+    const ottos = `/api/media/abs:${multiId}/hls/second-play/output.m3u8`;
+    const closes = () => sent.filter((s) => s.path.endsWith('/close')).map((s) => s.authorization);
+
+    now += idleMs - 1;
+    await app.inject({ method: 'GET', url: ottos, headers: as('otto') });
+    expect(closes()).toEqual([]);
+
+    // Any playback request sweeps, as a timer does every minute: kara's has gone idle.
+    now += 2;
+    expect((await app.inject({ method: 'GET', url: ottos, headers: as('otto') })).statusCode).toBe(
+      200,
+    );
+    expect(closes()).toEqual(['Bearer abs-token-kara']);
+
+    now += idleMs + 1;
+    const late = await app.inject({ method: 'GET', url: ottos, headers: as('otto') });
+    expect(late.statusCode).toBe(404);
+    expect(closes()).toEqual(['Bearer abs-token-kara', 'Bearer abs-token-otto']);
+  });
+
+  it('closes the idle transcode of a person who played, as the one who opened it', async () => {
+    let now = 0;
+    const idleMs = 60_000;
+    const { app, as, sent, plan } = await server({
+      book: 'hls',
+      playback: { idleMs },
+      now: () => now,
+    });
+    await plan('kara');
+    now += idleMs + 1;
+    const res = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output.m3u8'),
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(sent.at(-1)).toMatchObject({
+      method: 'POST',
+      path: `/api/session/${hlsSession.id}/close`,
+      authorization: 'Bearer abs-token-kara',
+    });
+  });
+
+  it("closes a device's open transcode when that device plans something new, and only that one", async () => {
+    const { app, as, sent, plan } = await server({
+      book: 'hls',
+      laterSessionIds: ['second-play', 'third-play'],
+    });
+    await plan('kara');
+    await plan('otto');
+    const second = await plan('kara');
+    expect(second.progressTarget).toEqual({ playId: 'third-play' });
+    expect(sent.filter((s) => s.path.endsWith('/close'))).toEqual([
+      expect.objectContaining({
+        path: `/api/session/${hlsSession.id}/close`,
+        authorization: 'Bearer abs-token-kara',
+      }),
+    ]);
+    const old = await app.inject({
+      method: 'GET',
+      url: hlsUrl('output.m3u8'),
+      headers: as('kara'),
+    });
+    expect(old.statusCode).toBe(404);
+    const otto = await app.inject({
+      method: 'GET',
+      url: `/api/media/abs:${multiId}/hls/second-play/output.m3u8`,
+      headers: as('otto'),
+    });
+    expect(otto.statusCode).toBe(200);
+  });
+
+  it('stops asking for a segment that is not cut yet once the client has gone', async () => {
+    const { app, as, sent, plan } = await server({
+      book: 'hls',
+      segmentNeverCut: true,
+      playback: { segmentWait: { tries: 10_000, everyMs: 10 } },
+    });
+    await plan();
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = app.server.address() as AddressInfo;
+    const asks = () => sent.filter((s) => s.path.endsWith('/output-0.ts')).length;
+    const request = httpGet({
+      host: '127.0.0.1',
+      port,
+      path: hlsUrl('output-0.ts'),
+      headers: as('kara'),
+    });
+    request.on('error', () => undefined);
+    while (asks() < 3) await pause(5);
+    request.destroy();
+    await pause(100);
+    const settled = asks();
+    await pause(200);
+    expect(asks()).toBe(settled);
+    expect(settled).toBeLessThan(40);
   });
 
   it('refuses a transcode file, session or ref that could change the upstream path, asking nothing', async () => {

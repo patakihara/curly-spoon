@@ -32,6 +32,27 @@ export interface RequestInitJson {
   /** Serialized as `application/x-www-form-urlencoded`, as OAuth token endpoints take it. */
   form?: Record<string, string>;
   timeoutMs?: number;
+  /** Reads at most this many bytes of the body, cancelling the rest; a longer body fails. */
+  maxBytes?: number;
+}
+
+/** The body as text, reading no more than `maxBytes` of it when given; null past the cap. */
+async function readText(response: Response, maxBytes: number | undefined): Promise<string | null> {
+  if (maxBytes === undefined || response.body === null) return response.text();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf8');
 }
 
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -71,7 +92,10 @@ export async function requestJson<T>(
     clearTimeout(timer);
   }
 
-  const text = await response.text();
+  const text = await readText(response, init.maxBytes);
+  if (text === null) {
+    throw new AdapterError('parse', call, `the body is larger than ${init.maxBytes} bytes`);
+  }
   if (!response.ok) {
     throw new AdapterError('status', call, `answered ${response.status}`, response.status);
   }

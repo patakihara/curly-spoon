@@ -207,6 +207,12 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PUBLIC_ORIGIN: 'audio.example.org' })).toThrow();
   });
 
+  it('closes an unasked-for transcode after 10 minutes by default, or the minutes set', () => {
+    expect(loadConfig({}).playIdleMinutes).toBe(10);
+    expect(loadConfig({ PLAY_IDLE_MINUTES: '3' }).playIdleMinutes).toBe(3);
+    expect(() => loadConfig({ PLAY_IDLE_MINUTES: '0' })).toThrow();
+  });
+
   it('runs the library index hourly by default, not at all at 0, and reads ABS with its own key', () => {
     expect(loadConfig({}).index).toEqual({ everyMinutes: 60, absKeyFile: null });
     expect(loadConfig({ INDEX_EVERY_MINUTES: '0' }).index.everyMinutes).toBe(0);

@@ -51,6 +51,8 @@ const envSchema = z.object({
   // listen-only Audiobookshelf key, which it reads the libraries with. Jellyfin's key is above.
   INDEX_EVERY_MINUTES: z.coerce.number().int().min(0).default(60),
   ABS_API_KEY_FILE: z.string().min(1).optional(),
+  // How long a transcode may go unasked-for before Auralis closes it upstream.
+  PLAY_IDLE_MINUTES: z.coerce.number().int().min(1).default(10),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
   SECRET_KEY: z.string().min(1).optional(),
   SECRET_KEY_FILE: z.string().min(1).optional(),
@@ -76,6 +78,8 @@ export interface AppConfig {
   abs: UpstreamConfig | null;
   jellyfin: UpstreamConfig | null;
   index: IndexConfig;
+  /** Minutes a transcode may go unasked-for before it is closed upstream. */
+  playIdleMinutes: number;
   secretKey: string | undefined;
   secretKeyFile: string;
   commit: string | null;
@@ -158,6 +162,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
           ? null
           : (required(parsed.ABS_URL, 'ABS_URL', 'with ABS_API_KEY_FILE'), parsed.ABS_API_KEY_FILE),
     },
+    playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,
     secretKeyFile: parsed.SECRET_KEY_FILE ?? join(parsed.DATA_DIR, 'secret.key'),
     commit: parsed.AURALIS_COMMIT ?? null,

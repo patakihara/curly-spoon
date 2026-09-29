@@ -93,6 +93,7 @@ export async function assembleServer(
       fetch,
       linker,
     },
+    playback: { idleMs: config.playIdleMinutes * 60_000 },
     logger: deps.logger ?? true,
   });
 
