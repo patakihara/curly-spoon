@@ -18,7 +18,7 @@ export const Username = z
   .max(64)
   .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/);
 
-/** What GET /setup answers: whether an admin has been claimed yet. */
+/** What GET /api/setup answers: whether an admin has been claimed yet. */
 export const SetupStatus = z.object({ configured: z.boolean() }).openapi('SetupStatus');
 export type SetupStatus = z.infer<typeof SetupStatus>;
 
@@ -52,7 +52,7 @@ export const LinkStatus = z
   .openapi('LinkStatus');
 export type LinkStatus = z.infer<typeof LinkStatus>;
 
-/** What GET /auth/me answers: who is signed in, on which device, and their upstream links. */
+/** What GET /api/auth/me answers: who is signed in, on which device, and their upstream links. */
 export const Account = z
   .object({
     username: z.string(),

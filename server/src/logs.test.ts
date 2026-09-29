@@ -23,19 +23,19 @@ async function logged(url: string): Promise<string> {
 
 describe('the request log', () => {
   it('leaves out the query of a sign-in callback, keeping its path', async () => {
-    const log = await logged('/auth/callback?code=one-time-code-1&state=state-value-1');
-    expect(log).toContain('/auth/callback');
+    const log = await logged('/api/auth/callback?code=one-time-code-1&state=state-value-1');
+    expect(log).toContain('/api/auth/callback');
     expect(log).not.toContain('one-time-code-1');
     expect(log).not.toContain('state-value-1');
   });
 
   it('leaves out the query of every other /auth route too', async () => {
-    const log = await logged('/auth/login?return_to=/private-path&device_id=d-1');
-    expect(log).toContain('/auth/login');
+    const log = await logged('/api/auth/login?return_to=/private-path&device_id=d-1');
+    expect(log).toContain('/api/auth/login');
     expect(log).not.toContain('private-path');
   });
 
   it('keeps the query of other routes', async () => {
-    expect(await logged('/health?probe=1')).toContain('/health?probe=1');
+    expect(await logged('/api/health?probe=1')).toContain('/api/health?probe=1');
   });
 });

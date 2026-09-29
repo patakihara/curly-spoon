@@ -80,7 +80,7 @@ function claim(
 ) {
   return app.inject({
     method: 'POST',
-    url: '/setup',
+    url: '/api/setup',
     payload: { code, username: 'sofia' },
     ...extra,
   });
@@ -101,7 +101,7 @@ function memberCookie(db: Db) {
 const signedIn = (cookie: string, origin = SAME_ORIGIN) => ({ cookie, origin });
 
 function bodyFor(method: string, path: string) {
-  return method === 'POST' && path === '/setup' ? { username: 'kara' } : undefined;
+  return method === 'POST' && path === '/api/setup' ? { username: 'kara' } : undefined;
 }
 
 describe('one-time setup', () => {
@@ -111,21 +111,21 @@ describe('one-time setup', () => {
 
     const noSession = await app.inject({
       method: 'POST',
-      url: '/setup',
+      url: '/api/setup',
       payload: { username: 'mallory' },
     });
     expect(noSession.statusCode).toBe(401);
 
     const oldCode = await app.inject({
       method: 'POST',
-      url: '/setup',
+      url: '/api/setup',
       payload: { code, username: 'mallory' },
     });
     expect(oldCode.statusCode).toBe(401);
 
     const asMember = await app.inject({
       method: 'POST',
-      url: '/setup',
+      url: '/api/setup',
       headers: signedIn(memberCookie(db)),
       payload: { username: 'kara' },
     });
@@ -140,7 +140,7 @@ describe('one-time setup', () => {
 
     const [claimed, codeless] = await Promise.all([
       claim(app, code),
-      app.inject({ method: 'POST', url: '/setup', payload: { username: 'mallory' } }),
+      app.inject({ method: 'POST', url: '/api/setup', payload: { username: 'mallory' } }),
     ]);
 
     expect(claimed.statusCode).toBe(200);
@@ -157,7 +157,7 @@ describe('one-time setup', () => {
     expect(res.statusCode).toBe(403);
     expect(res.headers['set-cookie']).toBeUndefined();
     expect(listUsers(db)).toEqual([]);
-    const status = await app.inject({ method: 'GET', url: '/setup' });
+    const status = await app.inject({ method: 'GET', url: '/api/setup' });
     expect(status.json()).toEqual({ configured: false });
   });
 
@@ -168,7 +168,7 @@ describe('one-time setup', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/setup',
+      url: '/api/setup',
       headers: signedIn(admin),
       payload: { username: 'kara' },
     });
@@ -177,7 +177,7 @@ describe('one-time setup', () => {
     expect(res.json()).toEqual({ username: 'kara', role: 'admin' });
     const list = await app.inject({
       method: 'GET',
-      url: '/admin/users',
+      url: '/api/admin/users',
       headers: { cookie: admin },
     });
     expect(list.json()).toEqual({
@@ -191,7 +191,7 @@ describe('one-time setup', () => {
   it('[M0.security/a] the setup code is written to a 0600 file and removed once claimed', async () => {
     const { app, code, setupCodeFile } = await server();
     expect(statSync(setupCodeFile).mode & 0o777).toBe(0o600);
-    expect((await app.inject({ method: 'GET', url: '/setup' })).json()).toEqual({
+    expect((await app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({
       configured: false,
     });
 
@@ -200,7 +200,7 @@ describe('one-time setup', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ username: 'sofia', role: 'admin' });
     expect(existsSync(setupCodeFile)).toBe(false);
-    expect((await app.inject({ method: 'GET', url: '/setup' })).json()).toEqual({
+    expect((await app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({
       configured: true,
     });
   });
@@ -234,7 +234,7 @@ describe('roles', () => {
     }
   });
 
-  it('[M0.security/b] every route declares its access, and only /health, GET /setup and sign-in are public', async () => {
+  it('[M0.security/b] every route declares its access, and only /api/health, GET /api/setup and sign-in are public', async () => {
     const { app, code } = await server();
     await claimedAdmin(app, code);
 
@@ -242,7 +242,13 @@ describe('roles', () => {
       expect(['public', 'member', 'admin', 'setup'], `${r.method} ${r.path}`).toContain(r.access);
     }
     expect(routes.filter((r) => r.access === 'public').map((r) => `${r.method} ${r.path}`)).toEqual(
-      ['GET /health', 'GET /setup', 'GET /auth/login', 'GET /auth/callback', 'POST /auth/token'],
+      [
+        'GET /api/health',
+        'GET /api/setup',
+        'GET /api/auth/login',
+        'GET /api/auth/callback',
+        'POST /api/auth/token',
+      ],
     );
     for (const r of routes.filter((route) => route.access !== 'public')) {
       const payload = bodyFor(r.method, r.path);
@@ -384,7 +390,7 @@ describe('the session cookie and the proxy', () => {
 
     const me = await app.inject({
       method: 'GET',
-      url: '/auth/me',
+      url: '/api/auth/me',
       remoteAddress: OTHER_IP,
       headers: { cookie: cookieHeader(cookie.value) },
     });
@@ -408,7 +414,7 @@ describe('signed-in writes from another site', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/setup',
+      url: '/api/setup',
       headers: signedIn(admin, 'https://elsewhere.example'),
       payload: { username: 'mallory' },
     });
@@ -419,7 +425,7 @@ describe('signed-in writes from another site', () => {
 
     const allowed = await app.inject({
       method: 'POST',
-      url: '/setup',
+      url: '/api/setup',
       headers: signedIn(admin, PUBLIC),
       payload: { username: 'kara' },
     });
@@ -430,7 +436,7 @@ describe('signed-in writes from another site', () => {
     const { app, code } = await server({ publicOrigin: PUBLIC });
     const admin = await claimedAdmin(app, code);
     const grant = (headers: Record<string, string>) =>
-      app.inject({ method: 'POST', url: '/setup', headers, payload: { username: 'kara' } });
+      app.inject({ method: 'POST', url: '/api/setup', headers, payload: { username: 'kara' } });
 
     expect((await grant({ cookie: admin, referer: `${PUBLIC}/settings` })).statusCode).toBe(200);
     expect(
@@ -445,7 +451,7 @@ describe('signed-in writes from another site', () => {
     const grant = (host: string, origin: string) =>
       app.inject({
         method: 'POST',
-        url: '/setup',
+        url: '/api/setup',
         headers: { cookie: admin, host, origin },
         payload: { username: 'kara' },
       });
@@ -462,7 +468,7 @@ describe('signed-in writes from another site', () => {
 
     const me = await app.inject({
       method: 'GET',
-      url: '/auth/me',
+      url: '/api/auth/me',
       headers: signedIn(admin, 'https://elsewhere.example'),
     });
     expect(me.statusCode).toBe(200);
@@ -474,12 +480,16 @@ describe('signing out', () => {
     const { app, code } = await server();
     const admin = await claimedAdmin(app, code);
 
-    const res = await app.inject({ method: 'POST', url: '/auth/logout', headers: signedIn(admin) });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      headers: signedIn(admin),
+    });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ ok: true });
     expect(sessionCookieOf(res).value).toBe('');
 
-    const me = await app.inject({ method: 'GET', url: '/auth/me', headers: { cookie: admin } });
+    const me = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { cookie: admin } });
     expect(me.statusCode).toBe(401);
   });
 });

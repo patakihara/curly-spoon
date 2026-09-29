@@ -117,7 +117,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
               'OIDC_CLIENT_SECRET_FILE',
               'with OIDC_ISSUER',
             ),
-            redirectUri: `${required(parsed.PUBLIC_ORIGIN, 'PUBLIC_ORIGIN', 'with OIDC_ISSUER')}/auth/callback`,
+            redirectUri: `${required(parsed.PUBLIC_ORIGIN, 'PUBLIC_ORIGIN', 'with OIDC_ISSUER')}/api/auth/callback`,
           },
     abs: upstream(
       parsed.ABS_URL,

@@ -1,7 +1,7 @@
 /**
- * Signing in through the household sign-on. `/auth/login` starts it, `/auth/callback` finishes it
+ * Signing in through the household sign-on. `/api/auth/login` starts it, `/api/auth/callback` finishes it
  * for the browser (a session cookie) or for the Android app (a one-time code for
- * `auralis://auth/callback`, swapped at `/auth/token` for a bearer token). All three are public
+ * `auralis://auth/callback`, swapped at `/api/auth/token` for a bearer token). All three are public
  * and rate-limited per client address.
  */
 

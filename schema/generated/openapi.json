@@ -292,7 +292,7 @@
     "parameters": {}
   },
   "paths": {
-    "/health": {
+    "/api/health": {
       "get": {
         "operationId": "getHealth",
         "summary": "Whether the server is up",
@@ -310,7 +310,7 @@
         }
       }
     },
-    "/setup": {
+    "/api/setup": {
       "get": {
         "operationId": "getSetup",
         "summary": "Whether an admin has been claimed",
@@ -391,7 +391,7 @@
         }
       }
     },
-    "/auth/login": {
+    "/api/auth/login": {
       "get": {
         "operationId": "login",
         "summary": "Start signing in through the household sign-on",
@@ -468,7 +468,7 @@
         }
       }
     },
-    "/auth/callback": {
+    "/api/auth/callback": {
       "get": {
         "operationId": "loginCallback",
         "summary": "Finish signing in: the sign-on sends the browser back here",
@@ -535,7 +535,7 @@
         }
       }
     },
-    "/auth/token": {
+    "/api/auth/token": {
       "post": {
         "operationId": "appToken",
         "summary": "Swap the Android app's one-time code for its bearer token",
@@ -582,7 +582,7 @@
         }
       }
     },
-    "/auth/me": {
+    "/api/auth/me": {
       "get": {
         "operationId": "getMe",
         "summary": "Who is signed in, on which device, and their upstream links",
@@ -628,7 +628,7 @@
         }
       }
     },
-    "/auth/logout": {
+    "/api/auth/logout": {
       "post": {
         "operationId": "logout",
         "summary": "Sign out of this session",
@@ -674,7 +674,7 @@
         }
       }
     },
-    "/devices": {
+    "/api/devices": {
       "get": {
         "operationId": "listDevices",
         "summary": "The signed-in user's own devices",
@@ -720,7 +720,7 @@
         }
       }
     },
-    "/devices/{id}": {
+    "/api/devices/{id}": {
       "patch": {
         "operationId": "renameDevice",
         "summary": "Rename one of your own devices",
@@ -863,7 +863,7 @@
         }
       }
     },
-    "/admin/users": {
+    "/api/admin/users": {
       "get": {
         "operationId": "listUsers",
         "summary": "Who can sign in, and their role",

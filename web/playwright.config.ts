@@ -28,7 +28,7 @@ export default defineConfig({
     webServer: {
       command: 'pnpm --filter @auralis/web build && node_modules/.bin/tsx src/main.ts',
       cwd: join(webDir, '..', 'server'),
-      url: `http://127.0.0.1:${port}/health`,
+      url: `http://127.0.0.1:${port}/api/health`,
       reuseExistingServer: false,
       timeout: 120_000,
       env: {

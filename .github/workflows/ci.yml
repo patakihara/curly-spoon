@@ -123,7 +123,7 @@ jobs:
       - run: pnpm --filter @auralis/web build
 
   container:
-    name: Docker image builds & answers /health
+    name: Docker image builds & answers /api/health
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -140,9 +140,9 @@ jobs:
           done
           echo "health: $status"
           [ "$status" = healthy ]
-      - name: /health answers ok and / serves the web app
+      - name: /api/health answers ok and / serves the web app
         run: |
-          body="$(curl -fsS http://127.0.0.1:8787/health)"
+          body="$(curl -fsS http://127.0.0.1:8787/api/health)"
           echo "$body"
           [ "$body" = '{"status":"ok"}' ]
           curl -fsS http://127.0.0.1:8787/ | grep -q '<title>Auralis</title>'

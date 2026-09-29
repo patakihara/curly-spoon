@@ -49,7 +49,7 @@ export interface Route<Response extends z.ZodTypeAny = z.ZodTypeAny> {
 
 export const health = {
   method: 'GET',
-  path: '/health',
+  path: '/api/health',
   operationId: 'getHealth',
   summary: 'Whether the server is up',
   responseDescription: 'The server is up.',
@@ -59,7 +59,7 @@ export const health = {
 
 export const getSetup = {
   method: 'GET',
-  path: '/setup',
+  path: '/api/setup',
   operationId: 'getSetup',
   summary: 'Whether an admin has been claimed',
   responseDescription: 'Whether setup has run.',
@@ -69,7 +69,7 @@ export const getSetup = {
 
 export const postSetup = {
   method: 'POST',
-  path: '/setup',
+  path: '/api/setup',
   operationId: 'postSetup',
   summary: 'Claim admin with the one-time code, or, as an admin, make another username admin',
   responseDescription: 'The user who is now an admin.',
@@ -80,7 +80,7 @@ export const postSetup = {
 
 export const login = {
   method: 'GET',
-  path: '/auth/login',
+  path: '/api/auth/login',
   operationId: 'login',
   summary: 'Start signing in through the household sign-on',
   responseDescription: 'Sent on to the sign-on.',
@@ -93,7 +93,7 @@ export const login = {
 
 export const loginCallback = {
   method: 'GET',
-  path: '/auth/callback',
+  path: '/api/auth/callback',
   operationId: 'loginCallback',
   summary: 'Finish signing in: the sign-on sends the browser back here',
   responseDescription: 'Signed in: back to the web app, or on to the Android app with a code.',
@@ -106,7 +106,7 @@ export const loginCallback = {
 
 export const appToken = {
   method: 'POST',
-  path: '/auth/token',
+  path: '/api/auth/token',
   operationId: 'appToken',
   summary: "Swap the Android app's one-time code for its bearer token",
   responseDescription: "The app's token and device.",
@@ -118,7 +118,7 @@ export const appToken = {
 
 export const getMe = {
   method: 'GET',
-  path: '/auth/me',
+  path: '/api/auth/me',
   operationId: 'getMe',
   summary: 'Who is signed in, on which device, and their upstream links',
   responseDescription: 'The signed-in user.',
@@ -128,7 +128,7 @@ export const getMe = {
 
 export const logout = {
   method: 'POST',
-  path: '/auth/logout',
+  path: '/api/auth/logout',
   operationId: 'logout',
   summary: 'Sign out of this session',
   responseDescription: 'Signed out.',
@@ -138,7 +138,7 @@ export const logout = {
 
 export const listDevices = {
   method: 'GET',
-  path: '/devices',
+  path: '/api/devices',
   operationId: 'listDevices',
   summary: "The signed-in user's own devices",
   responseDescription: 'Every device this user has signed in from.',
@@ -148,7 +148,7 @@ export const listDevices = {
 
 export const renameDevice = {
   method: 'PATCH',
-  path: '/devices/{id}',
+  path: '/api/devices/{id}',
   operationId: 'renameDevice',
   summary: 'Rename one of your own devices',
   responseDescription: 'The renamed device.',
@@ -160,7 +160,7 @@ export const renameDevice = {
 
 export const deleteDevice = {
   method: 'DELETE',
-  path: '/devices/{id}',
+  path: '/api/devices/{id}',
   operationId: 'deleteDevice',
   summary: 'Remove one of your own devices, signing it out',
   responseDescription: 'The device and its sessions are gone.',
@@ -171,7 +171,7 @@ export const deleteDevice = {
 
 export const listUsers = {
   method: 'GET',
-  path: '/admin/users',
+  path: '/api/admin/users',
   operationId: 'listUsers',
   summary: 'Who can sign in, and their role',
   responseDescription: 'Every user.',

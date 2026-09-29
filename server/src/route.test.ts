@@ -19,7 +19,7 @@ describe('serving a declared route', () => {
   it('answers what the handler returns when it fits the schema', async () => {
     const app = Fastify();
     serve(app, health, () => ({ status: 'ok' as const }));
-    const res = await app.inject({ method: 'GET', url: '/health' });
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ status: 'ok' });
     await app.close();
@@ -28,7 +28,7 @@ describe('serving a declared route', () => {
   it('refuses to answer a shape the schema does not describe', async () => {
     const app = Fastify();
     serve(app, health, () => ({ status: 'down' }) as never);
-    const res = await app.inject({ method: 'GET', url: '/health' });
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(500);
     await app.close();
   });

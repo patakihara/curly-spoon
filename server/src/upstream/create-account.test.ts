@@ -273,11 +273,11 @@ describe('the sign-in decides who may get an account created', () => {
     const app = await buildApp({ webDistDir: null, db, signOn: standIn, linker });
     try {
       for (const code of ['kara', 'rec']) {
-        const login = await app.inject({ url: '/auth/login' });
+        const login = await app.inject({ url: '/api/auth/login' });
         const state = new URL(String(login.headers.location)).searchParams.get('state') ?? '';
         const binding = login.cookies.find((c) => c.name === LOGIN_COOKIE)?.value ?? '';
         const res = await app.inject({
-          url: `/auth/callback?code=${code}&state=${encodeURIComponent(state)}`,
+          url: `/api/auth/callback?code=${code}&state=${encodeURIComponent(state)}`,
           headers: { cookie: `${LOGIN_COOKIE}=${binding}` },
         });
         expect(res.statusCode).toBe(302);

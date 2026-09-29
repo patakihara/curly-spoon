@@ -1,6 +1,6 @@
 import { z } from './zod.js';
 
-/** What GET /health answers while the server is up. */
+/** What GET /api/health answers while the server is up. */
 export const HealthResponse = z
   .object({
     status: z.literal('ok'),

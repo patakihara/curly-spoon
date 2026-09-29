@@ -19,7 +19,7 @@ interface InputOf<R extends Route> {
   query: Parsed<R['query']>;
 }
 
-/** `/devices/{id}` as Fastify writes it: `/devices/:id`. */
+/** `/api/devices/{id}` as Fastify writes it: `/api/devices/:id`. */
 function fastifyPath(path: string): string {
   return path.replace(/\{(\w+)\}/g, ':$1');
 }

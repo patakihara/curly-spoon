@@ -13,7 +13,7 @@ describe('the API client', () => {
     const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
     const health = await fetchHealth(client);
     expect(health).toEqual({ status: 'ok' });
-    expect(calls).toEqual(['http://auralis.test/health']);
+    expect(calls).toEqual(['http://auralis.test/api/health']);
     expectTypeOf(health.status).toEqualTypeOf<'ok'>();
   });
 

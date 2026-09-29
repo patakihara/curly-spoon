@@ -141,15 +141,15 @@ function cookieOf(res: LightMyRequestResponse, name: string): string | undefined
   return res.cookies.find((c) => c.name === name)?.value;
 }
 
-/** `/auth/login` in one browser; the callback comes back to it with the recorded code. */
+/** `/api/auth/login` in one browser; the callback comes back to it with the recorded code. */
 async function login(app: FastifyInstance) {
-  const res = await app.inject({ url: '/auth/login' });
+  const res = await app.inject({ url: '/api/auth/login' });
   expect(res.statusCode).toBe(302);
   const state = new URL(String(res.headers.location)).searchParams.get('state') ?? '';
   const cookie = `${LOGIN_COOKIE}=${String(cookieOf(res, LOGIN_COOKIE))}`;
   const callback = () =>
     app.inject({
-      url: `/auth/callback?code=recorded-code&state=${encodeURIComponent(state)}`,
+      url: `/api/auth/callback?code=recorded-code&state=${encodeURIComponent(state)}`,
       headers: { cookie },
     });
   return { res, state, callback };
@@ -172,7 +172,7 @@ describe('[M0.sso/a] signing in through the recorded sign-on', () => {
     expect(session).toBeDefined();
 
     const me = await app.inject({
-      url: '/auth/me',
+      url: '/api/auth/me',
       headers: { cookie: `${SESSION_COOKIE}=${String(session)}` },
     });
     expect(me.statusCode).toBe(200);

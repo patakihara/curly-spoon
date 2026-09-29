@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { routes } from '@auralis/schema';
@@ -7,10 +7,10 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { openDatabase } from './store/connection.js';
 
-describe('GET /health', () => {
+describe('GET /api/health', () => {
   it('answers ok', async () => {
     const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
-    const res = await app.inject({ method: 'GET', url: '/health' });
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ status: 'ok' });
     await app.close();
@@ -26,6 +26,10 @@ describe('the API', () => {
       expect(app.hasRoute({ method: r.method, url }), `${r.method} ${r.path}`).toBe(true);
     }
     await app.close();
+  });
+
+  it('sits under /api, so no route clashes with a page of the app', () => {
+    for (const r of routes) expect(r.path, `${r.method} ${r.path}`).toMatch(/^\/api\//);
   });
 });
 
@@ -60,6 +64,39 @@ describe('serving the web app', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toContain('<title>Auralis</title>');
+    await app.close();
+  });
+
+  it('hands a browser the app at every page of nav.json, /setup included', async () => {
+    const nav = JSON.parse(
+      readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
+    ) as { pages: { route: string }[] };
+    const app = await appWithDist();
+    for (const { route } of nav.pages) {
+      const url =
+        route === '*' ? '/no-such-page' : route.replace(/\?.*$/, '').replace(/:\w+/g, 'x');
+      const res = await app.inject({ method: 'GET', url, headers: { accept: 'text/html' } });
+      expect(res.statusCode, url).toBe(200);
+      expect(res.body, url).toContain('<title>Auralis</title>');
+    }
+    await app.close();
+  });
+
+  it('answers /api/setup from the API, and an unknown /api path with a JSON 404 even for a browser', async () => {
+    const app = await appWithDist();
+    const setup = await app.inject({
+      method: 'GET',
+      url: '/api/setup',
+      headers: { accept: 'text/html' },
+    });
+    expect(setup.json()).toEqual({ configured: false });
+    const unknown = await app.inject({
+      method: 'GET',
+      url: '/api/no-such-route',
+      headers: { accept: 'text/html' },
+    });
+    expect(unknown.statusCode).toBe(404);
+    expect(unknown.json()).toEqual({ error: 'not_found' });
     await app.close();
   });
 
@@ -138,7 +175,7 @@ describe('[M0.sso/b] loadConfig for the sign-on and the upstreams', () => {
       issuer: 'https://upstream.invalid',
       clientId: 'auralis',
       clientSecretFile: '/run/secrets/oidc',
-      redirectUri: 'https://app.upstream.invalid/auth/callback',
+      redirectUri: 'https://app.upstream.invalid/api/auth/callback',
     });
   });
 

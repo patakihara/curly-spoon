@@ -58,8 +58,8 @@ export function setDeviceCookie(
   });
 }
 
-/** Only `/auth/callback` needs to see it. */
-const LOGIN_COOKIE_PATH = '/auth';
+/** Only `/api/auth/callback` needs to see it. */
+const LOGIN_COOKIE_PATH = '/api/auth';
 
 export function setLoginCookie(
   request: FastifyRequest,

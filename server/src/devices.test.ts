@@ -54,7 +54,7 @@ function stateOf(res: LightMyRequestResponse): string {
 
 /** A web sign-in started in one browser: its state, and the cookie that binds it there. */
 async function startWeb(app: FastifyInstance, query = '') {
-  const res = await app.inject({ url: `/auth/login${query}` });
+  const res = await app.inject({ url: `/api/auth/login${query}` });
   const binding = cookieOf(res, LOGIN_COOKIE);
   expect(binding).toBeDefined();
   return { state: stateOf(res), cookie: `${LOGIN_COOKIE}=${String(binding)}` };
@@ -67,7 +67,7 @@ function callback(
   more?: string,
 ) {
   return app.inject({
-    url: `/auth/callback?code=${code}&state=${encodeURIComponent(started.state)}`,
+    url: `/api/auth/callback?code=${code}&state=${encodeURIComponent(started.state)}`,
     headers: { cookie: more ? `${started.cookie}; ${more}` : started.cookie },
   });
 }
@@ -90,10 +90,10 @@ async function webSignIn(app: FastifyInstance, who: string, deviceCookie?: strin
 
 async function appSignIn(app: FastifyInstance, who: string) {
   const login = await app.inject({
-    url: `/auth/login?client=android&code_challenge=${s256(VERIFIER)}`,
+    url: `/api/auth/login?client=android&code_challenge=${s256(VERIFIER)}`,
   });
   const res = await app.inject({
-    url: `/auth/callback?code=${who}&state=${encodeURIComponent(stateOf(login))}`,
+    url: `/api/auth/callback?code=${who}&state=${encodeURIComponent(stateOf(login))}`,
   });
   expect(res.statusCode).toBe(302);
   const location = new URL(String(res.headers.location));
@@ -102,7 +102,7 @@ async function appSignIn(app: FastifyInstance, who: string) {
   );
   const swap = await app.inject({
     method: 'POST',
-    url: '/auth/token',
+    url: '/api/auth/token',
     payload: { code: location.searchParams.get('code'), codeVerifier: VERIFIER },
   });
   expect(swap.statusCode).toBe(200);
@@ -122,12 +122,12 @@ describe('[M0.sso/b] one user on two devices', () => {
     const android = await appSignIn(app, 'kara');
     expect(web.device).not.toBe(android.deviceId);
 
-    const onWeb = await app.inject({ url: '/auth/me', headers: withCookie(web.session) });
-    const onApp = await app.inject({ url: '/auth/me', headers: withBearer(android.token) });
+    const onWeb = await app.inject({ url: '/api/auth/me', headers: withCookie(web.session) });
+    const onApp = await app.inject({ url: '/api/auth/me', headers: withBearer(android.token) });
     expect(onWeb.json()).toMatchObject({ username: 'kara', deviceId: web.device });
     expect(onApp.json()).toMatchObject({ username: 'kara', deviceId: android.deviceId });
 
-    const list = await app.inject({ url: '/devices', headers: withBearer(android.token) });
+    const list = await app.inject({ url: '/api/devices', headers: withBearer(android.token) });
     expect(list.json().devices).toEqual([
       expect.objectContaining({ id: web.device, kind: 'web', current: false }),
       expect.objectContaining({ id: android.deviceId, kind: 'android', current: true }),
@@ -155,15 +155,15 @@ describe('[M0.sso/b] one user on two devices', () => {
     const android = await appSignIn(app, 'kara');
     const removed = await app.inject({
       method: 'DELETE',
-      url: `/devices/${android.deviceId}`,
+      url: `/api/devices/${android.deviceId}`,
       headers: withCookie(web.session),
     });
     expect(removed.statusCode).toBe(200);
     expect(
-      (await app.inject({ url: '/auth/me', headers: withBearer(android.token) })).statusCode,
+      (await app.inject({ url: '/api/auth/me', headers: withBearer(android.token) })).statusCode,
     ).toBe(401);
     expect(
-      (await app.inject({ url: '/auth/me', headers: withCookie(web.session) })).statusCode,
+      (await app.inject({ url: '/api/auth/me', headers: withCookie(web.session) })).statusCode,
     ).toBe(200);
   });
 
@@ -174,14 +174,14 @@ describe('[M0.sso/b] one user on two devices', () => {
     for (const method of ['DELETE', 'PATCH'] as const) {
       const res = await app.inject({
         method,
-        url: `/devices/${otto.deviceId}`,
+        url: `/api/devices/${otto.deviceId}`,
         headers: withCookie(kara.session),
         ...(method === 'PATCH' ? { payload: { name: 'mine now' } } : {}),
       });
       expect(res.statusCode).toBe(404);
     }
     expect(
-      (await app.inject({ url: '/auth/me', headers: withBearer(otto.token) })).statusCode,
+      (await app.inject({ url: '/api/auth/me', headers: withBearer(otto.token) })).statusCode,
     ).toBe(200);
   });
 
@@ -190,7 +190,7 @@ describe('[M0.sso/b] one user on two devices', () => {
     const android = await appSignIn(app, 'kara');
     const res = await app.inject({
       method: 'PATCH',
-      url: `/devices/${android.deviceId}`,
+      url: `/api/devices/${android.deviceId}`,
       headers: withBearer(android.token),
       payload: { name: 'Phone' },
     });
@@ -206,9 +206,9 @@ describe('[M0.sso/b] signing in', () => {
     const replay = await callback(app, 'kara', started);
     expect(replay.statusCode).toBe(400);
     expect(replay.json()).toEqual({ error: 'bad_state' });
-    expect((await app.inject({ url: '/auth/callback?code=kara&state=made-up' })).statusCode).toBe(
-      400,
-    );
+    expect(
+      (await app.inject({ url: '/api/auth/callback?code=kara&state=made-up' })).statusCode,
+    ).toBe(400);
   });
 
   it('refuses someone outside the household, and makes no user for them', async () => {
@@ -264,7 +264,7 @@ describe('[M0.sso/b] signing in', () => {
 
   it('binds a web sign-in to its browser with a short-lived HttpOnly, SameSite=Lax cookie', async () => {
     const app = await server();
-    const res = await app.inject({ url: '/auth/login' });
+    const res = await app.inject({ url: '/api/auth/login' });
     const binding = res.cookies.find((c) => c.name === LOGIN_COOKIE);
     expect(binding).toMatchObject({ httpOnly: true, sameSite: 'Lax' });
     expect(binding?.maxAge).toBeGreaterThan(0);
@@ -278,7 +278,7 @@ describe('[M0.sso/b] signing in', () => {
     const victim = await startWeb(app);
     for (const cookie of [undefined, victim.cookie]) {
       const res = await app.inject({
-        url: `/auth/callback?code=otto&state=${encodeURIComponent(attacker.state)}`,
+        url: `/api/auth/callback?code=otto&state=${encodeURIComponent(attacker.state)}`,
         ...(cookie ? { headers: { cookie } } : {}),
       });
       expect(res.statusCode).toBe(400);
@@ -306,15 +306,15 @@ describe('[M0.sso/b] signing in', () => {
 
   it('needs the app to send a PKCE challenge, and its verifier to swap the code', async () => {
     const app = await server();
-    expect((await app.inject({ url: '/auth/login?client=android' })).statusCode).toBe(400);
+    expect((await app.inject({ url: '/api/auth/login?client=android' })).statusCode).toBe(400);
     const login = await app.inject({
-      url: `/auth/login?client=android&code_challenge=${s256(VERIFIER)}`,
+      url: `/api/auth/login?client=android&code_challenge=${s256(VERIFIER)}`,
     });
-    const back = await app.inject({ url: `/auth/callback?code=kara&state=${stateOf(login)}` });
+    const back = await app.inject({ url: `/api/auth/callback?code=kara&state=${stateOf(login)}` });
     const code = new URL(String(back.headers.location)).searchParams.get('code');
     const wrong = await app.inject({
       method: 'POST',
-      url: '/auth/token',
+      url: '/api/auth/token',
       payload: { code, codeVerifier: 'x'.repeat(43) },
     });
     expect(wrong.statusCode).toBe(400);
@@ -326,7 +326,7 @@ describe('[M0.sso/b] signing in', () => {
     const web = await webSignIn(app, 'kara');
     const android = await appSignIn(app, 'kara');
     const res = await app.inject({
-      url: '/auth/me',
+      url: '/api/auth/me',
       headers: { ...withCookie(web.session), ...withBearer(android.token) },
     });
     expect(res.statusCode).toBe(400);
@@ -337,16 +337,16 @@ describe('[M0.sso/b] signing in', () => {
     const app = await server();
     const web = await webSignIn(app, 'kara');
     expect(
-      (await app.inject({ url: '/auth/me', headers: withBearer(web.session) })).statusCode,
+      (await app.inject({ url: '/api/auth/me', headers: withBearer(web.session) })).statusCode,
     ).toBe(401);
   });
 
   it('slows down one address after twenty attempts in ten minutes', async () => {
     const app = await server();
     for (let i = 0; i < 20; i += 1) {
-      expect((await app.inject({ url: '/auth/login' })).statusCode).toBe(302);
+      expect((await app.inject({ url: '/api/auth/login' })).statusCode).toBe(302);
     }
-    const limited = await app.inject({ url: '/auth/callback?state=x&code=y' });
+    const limited = await app.inject({ url: '/api/auth/callback?state=x&code=y' });
     expect(limited.statusCode).toBe(429);
     expect(Number(limited.headers['retry-after'])).toBeGreaterThan(0);
   });
@@ -354,7 +354,7 @@ describe('[M0.sso/b] signing in', () => {
   it('answers 404 on every sign-in route when no sign-on is configured', async () => {
     const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
     apps.push(app);
-    const res = await app.inject({ url: '/auth/login' });
+    const res = await app.inject({ url: '/api/auth/login' });
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual({ error: 'sign_on_off' });
   });

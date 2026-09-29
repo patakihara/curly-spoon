@@ -40,13 +40,15 @@ export interface BuildAppOptions {
 }
 
 /**
- * Every `/auth` route's query is left out of the log: the callback's carries the one-time code and
+ * Every `/api/auth` route's query is left out of the log: the callback's carries the one-time code and
  * state, and the others say where a person was going.
  */
 export function loggedUrl(url: string): string {
   const q = url.indexOf('?');
   const path = q === -1 ? url : url.slice(0, q);
-  return q !== -1 && (path === '/auth' || path.startsWith('/auth/')) ? `${path}?<redacted>` : url;
+  return q !== -1 && (path === '/api/auth' || path.startsWith('/api/auth/'))
+    ? `${path}?<redacted>`
+    : url;
 }
 
 function loggerOptions(logger: BuildAppOptions['logger']) {
@@ -120,9 +122,15 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     });
 
     // Client-side routes: a browser navigating to a path the server does not know gets the
-    // app, which routes it. The access hook lets every not-found request through. Anything else (an API client, a missing asset) gets a JSON 404.
+    // app, which routes it. The access hook lets every not-found request through. Anything else
+    // (an API client, a missing asset, any path under /api) gets a JSON 404.
     app.setNotFoundHandler((request, reply) => {
-      if (request.method === 'GET' && (request.headers.accept ?? '').includes('text/html')) {
+      const api = /^\/api(?:[/?]|$)/.test(request.url);
+      if (
+        !api &&
+        request.method === 'GET' &&
+        (request.headers.accept ?? '').includes('text/html')
+      ) {
         return reply.sendFile(INDEX_FILE);
       }
       return reply.code(404).send({ error: 'not_found' });
