@@ -60,6 +60,27 @@ describe('starting the index job with the server', () => {
     expect(asked[1]?.authorization).toMatch(/Token="test-key"/);
   });
 
+  it('reads the listen-only key from the ABS_API_KEY line of the shared keys file', async () => {
+    const shared = join(keys, 'upstream-keys.env');
+    writeFileSync(
+      shared,
+      'ABS_API_KEY=listen-key\nABS_PROVISION_KEY=admin-key\nJELLYFIN_API_KEY=jf-key\n',
+    );
+    const asked: { host: string; authorization: string | null }[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      asked.push({
+        host: new URL(url).host,
+        authorization: new Headers(init?.headers).get('authorization'),
+      });
+      return new Response('{}', { status: 500 });
+    };
+    const { jobs } = start({ everyMinutes: 60, absKeyFile: shared }, fetch);
+    await expect(jobs[0]!.run()).rejects.toThrow(/abs: /);
+    expect(asked.find((a) => a.host === 'abs.upstream.invalid')?.authorization).toBe(
+      'Bearer listen-key',
+    );
+  });
+
   it('indexes Jellyfin alone when no listen-only Audiobookshelf key is configured', async () => {
     const asked: string[] = [];
     const fetch: FetchLike = async (url) => {

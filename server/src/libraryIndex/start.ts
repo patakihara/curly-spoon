@@ -22,7 +22,7 @@ export function startIndexJob(
     config.abs !== null && absKeyFile !== null
       ? new AbsClient({
           baseUrl: config.abs.url,
-          token: readSecretFile(absKeyFile, 'ABS_INDEX_KEY'),
+          token: readSecretFile(absKeyFile, 'ABS_API_KEY'),
           fetch: deps.fetch,
         })
       : undefined;

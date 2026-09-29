@@ -215,10 +215,10 @@ describe('loadConfig', () => {
       loadConfig({
         ABS_URL: 'http://upstream.invalid',
         ABS_PROVISION_KEY_FILE: '/keys/provision',
-        ABS_INDEX_KEY_FILE: '/keys/index',
+        ABS_API_KEY_FILE: '/keys/index',
       }).index.absKeyFile,
     ).toBe('/keys/index');
-    expect(() => loadConfig({ ABS_INDEX_KEY_FILE: '/keys/index' })).toThrow(/ABS_URL/);
+    expect(() => loadConfig({ ABS_API_KEY_FILE: '/keys/index' })).toThrow(/ABS_URL/);
   });
 
   it('reads AURALIS_COMMIT as the full commit the image was built from, empty as none', () => {
