@@ -18,7 +18,7 @@ The old project drifted from its design and its docs. Each rule here is a check 
 ### Keep the artifacts current
 
 - **Every artifact says what it was built from.** Its footer shows the repo commit, and `design/published.json` records the commit and artifact version of each publish.
-- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. Since publishing needs a Claude session, a repo hook stops one finishing while a design change is unpublished.
+- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. Since publishing needs a Claude session, a repo hook stops one finishing with a design change unpublished.
 - **Your side is read first.** Before touching `design/`, the session compares the live artifact with the recorded version. If you've edited it or left comments since, those are pulled in or answered first. Open comments are listed at the start of every session.
 
 ### Keep the plan clean and the progress true
@@ -31,7 +31,7 @@ The plan and the progress are kept apart on purpose.
 
 - Lives in the repo (`docs/plan/`) and is published to this artifact, with the same commit stamp and merge check as the design.
 - Only ever describes the current decision: no dated notes, no "a previous version said". Why something changed is in git history.
-- An adjustment rewrites that sentence where it stands. It's the only place decisions live.
+- An adjustment rewrites that sentence where it stands; decisions live nowhere else.
 - Every item has an id and a concrete **done when**, and a size limit keeps the whole thing readable.
 :::
 
@@ -39,7 +39,7 @@ The plan and the progress are kept apart on purpose.
 #### The progress: computed, never written
 
 - **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so ("you used it for a week") get your sign-off as a git tag.
-- **In progress**: unfinished work lives on a branch, and its "where I stopped, what's next" note is the branch's description. It disappears when the branch merges, so nothing piles up.
+- **In progress**: unfinished work lives on a branch whose description is its "where I stopped, what's next" note. It disappears when the branch merges, so nothing piles up.
 - **Next**: the first unfinished item of the current milestone.
 - No progress file exists, so none can grow or go stale.
 :::
@@ -47,7 +47,7 @@ The plan and the progress are kept apart on purpose.
 
 - **A new session knows where things stand.** A session-start hook in the repo prints a short summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open comments on the artifacts.
 - **You see it too.** When the plan is published, each item gets a done or in-progress badge computed then, so progress shows without the text changing.
-- **Every commit names its plan item** (a `Plan:` line). CI rejects app changes without one. Work that isn't in the plan gets added to it first, in the same commit, so the code can't run ahead of the plan.
+- **Every commit names its plan item** (a `Plan:` line). CI rejects app changes without one. Work that isn't in the plan gets added to it first, in the same commit, so code can't outrun the plan.
 - **Checked with you at every milestone.** The demo ends with the plan read through together; anything that changed is rewritten in place, and the milestone gets your sign-off tag.
 
 ### No scars
@@ -58,7 +58,7 @@ The plan and the progress are kept apart on purpose.
 
 ### Your ideas, without derailing
 
-Anything you say about Auralis, in any session, an artifact comment, or to the running development session, goes through one fixed path. Each step is safe to interrupt.
+Anything you say about Auralis, in any session or artifact comment, goes through one fixed path. Each step is safe to interrupt.
 
 1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from (chat, a comment thread, a direct message), and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress. The only exceptions: you say "do it now", you're answering one of its outbox items, or you're telling the session itself to stop or pause.
 2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands sorting to a subagent in a fresh context, one idea at a time: it reads the idea and the whole plan, and decides which of these it is:
@@ -69,14 +69,14 @@ Anything you say about Auralis, in any session, an artifact comment, or to the r
    - **a call only you can make**: an outbox item with its default, and the idea waits for your answer;
    - **a drop**: only with your OK, asked through the outbox.
 
-   It also lists what else in the plan the change affects, and those edits go in too.
+   It also edits whatever else in the plan the change affects.
 3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash never loses one. The plan checks run on that commit: unique ids, every item has a "done when", the size limit, no dated notes.
 4. **Progress follows by itself.** Nothing is written by hand: a new item shows as planned, a changed item whose check no longer passes shows as not done, and a bug's new check reopens its item. It all appears in the next session-start summary.
 5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the plan page and the session-start summary list recently sorted ideas and where each went.
 
 ### What needs you, without waiting on you
 
-**Almost everything is decided by the session doing the work.** The outbox (`docs/outbox/`) holds only what genuinely needs you, and nothing ever waits on it.
+**Almost everything is decided by the session doing the work.** The outbox (`docs/outbox/`) holds only what genuinely needs you.
 
 - **Five kinds only:** a product call that passes your test ("would she have an opinion, and does the answer change what she gets?"); a name; anything published or shared beyond the machines; anything destructive or irreversible; something only you can physically do (try a milestone build, sign off, export YouTube cookies, test in the car).
 - **Every item carries its default**, and work goes ahead on it: a working name gets used until you rename it, a product call gets the session's best choice, yours to overturn. Only irreversible or outward-facing actions wait for your answer; other work continues around them.
