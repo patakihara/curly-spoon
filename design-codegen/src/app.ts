@@ -11,6 +11,7 @@ import {
   generateNavMap,
   generatePlatform,
   generateRoutes,
+  generateWebShell,
   readNav,
   type Nav,
 } from './nav.js';
@@ -309,7 +310,8 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
   const drawn = new Set(app.pages.map((p) => p.id));
   return {
     nav: new Map([
-      ['routes.tsx', generateRoutes(app.nav, drawn)],
+      ['routes.tsx', generateRoutes(app.nav, drawn, app.shell.sheetOver)],
+      ['Shell.tsx', generateWebShell()],
       ['platform.ts', generatePlatform(app.nav)],
       [
         'stacks.ts',

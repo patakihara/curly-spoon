@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, AccountButton, BackLayer, BackdropShell, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "tabs": [
@@ -323,57 +322,46 @@ const ignore = () => {};
 
 export type BooksData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<BooksData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title="Books" leading={leading} search="Search your books and requests" platform={platform} />,
+  subheader: (data, { platform }) => (
+    <FrontLayerHeader tabs={true} platform={platform}>
+      <TabBar items={data.tabs} value="books" onChange={ignore} platform={platform} />
+    </FrontLayerHeader>
+  ),
+};
+
 export interface BooksProps {
   data?: BooksData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Books({ data = placeholder, state = 'full', layout: given, sheet }: BooksProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Books({ data = placeholder, state = 'full' }: BooksProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title="Books" leading={chrome.leading} search="Search your books and requests" platform={platform} />}
-      subheader={
-        <FrontLayerHeader tabs={true} platform={platform}>
-          <TabBar items={data.tabs} value="books" onChange={ignore} platform={platform} />
-        </FrontLayerHeader>
-      }
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody platform={platform}>
-        <Section platform={platform}>
-          <SortFilterBar
-            icon="swap_vert"
-            label={data.sort.value}
-            trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
-            platform={platform}
-          />
-        </Section>
-        <Section last={true} platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.library.map((book, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+    <PageBody platform={platform}>
+      <Section platform={platform}>
+        <SortFilterBar
+          icon="swap_vert"
+          label={data.sort.value}
+          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          platform={platform}
+        />
+      </Section>
+      <Section last={true} platform={platform}>
+        <LayoutGrid platform={platform}>
+          {data.library.map((book, i) => (
+            <Fragment key={i}>
+              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+            </Fragment>
+          ))}
+        </LayoutGrid>
+      </Section>
+    </PageBody>
   );
 }

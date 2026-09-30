@@ -135,33 +135,48 @@ describe('a generated web page', () => {
 
   it('imports each Sonora component it and its shell use from the web UI package, once', () => {
     expect(out).toContain(
-      "import { BackLayer, BackdropShell, BottomNav, Button, DetailPage, EpisodeRow, IconButton, MediaHeader, MiniPlayer, NavRail } from '../ui/index.js';",
+      "import { BackLayer, BottomNav, Button, DetailPage, EpisodeRow, IconButton, MediaHeader, MiniPlayer, NavRail } from '../ui/index.js';",
     );
   });
 
-  it('takes its data, state and layout, with the placeholder, full and the width as defaults', () => {
+  it('takes its data and state, with the placeholder and full as defaults, at the layout the width calls for', () => {
     expect(out).toContain('const placeholder = {\n  "title": "Wind and Truth",');
     expect(out).toContain(
-      "export default function Book({ data = placeholder, state = 'full', layout: given, sheet }: BookProps) {",
+      "export default function Book({ data = placeholder, state = 'full' }: BookProps) {",
     );
-    expect(out).toContain('  const chrome = CHROME[given ?? detected](go);');
-    expect(out).toContain('  const platform = chrome.platform;');
+    expect(out).toContain('  const platform = PLATFORM[useLayout()];');
   });
 
-  it('sits in the shell: the page’s own back-layer controls and subheader, the shell’s parts by layout', () => {
-    expect(homeOut).toContain('    <BackdropShell\n      rail={chrome.rail}\n      back={');
+  it('[M0.canvas/c] draws only its front layer’s content, the one shell around every page drawing the rest', () => {
+    for (const page of [out, homeOut, formOut, gridOut]) {
+      expect(page).not.toContain('BackdropShell');
+      const body = page.slice(page.indexOf('export default function'));
+      expect(body).not.toMatch(/<(NavRail|BottomNav|MiniPlayer|BackLayer)\b/);
+    }
+    expect(homeOut).toContain('    <PageBody platform={platform} />');
+  });
+
+  it('[M0.canvas/c] hands the shell its frame: its parts by layout, its back-layer controls and its subheader', () => {
+    expect(homeOut).toContain(
+      "import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';",
+    );
+    expect(homeOut).toContain(
+      'export const frame: PageFrame<BooksData> = {\n  placeholder,\n  chrome: CHROME,\n',
+    );
     expect(homeOut).toContain(
       [
-        '        <BackLayer',
-        '          title="Books"',
-        '          leading={chrome.leading}',
-        '          controls={<ButtonGroup items={data.filters} value="All" onChange={ignore} />}',
-        '          platform={platform}',
-        '        />',
+        '  back: (data, { platform, leading }) => (',
+        '    <BackLayer',
+        '      title="Books"',
+        '      leading={leading}',
+        '      controls={<ButtonGroup items={data.filters} value="All" onChange={ignore} />}',
+        '      platform={platform}',
+        '    />',
+        '  ),',
       ].join('\n'),
     );
-    expect(homeOut).toContain('      subheader={<FrontLayerHeader spy={true} />}');
-    expect(homeOut).toContain('      <PageBody platform={platform} />');
+    expect(homeOut).toContain('  subheader: () => <FrontLayerHeader spy={true} />,');
+    expect(out).not.toContain('subheader:');
   });
 
   it('holds the shell’s parts for every layout: the avatar and bottom bar on the phone, the rail wider', () => {
@@ -212,12 +227,10 @@ describe('a generated web page', () => {
 });
 
 describe("the shell's controls on a web page", () => {
-  it('[M0.canvas] wires them to the shell’s navigation, through useShellNav', () => {
-    expect(out).toContain("import { useShellNav, type ShellNav } from '../../shell-nav';");
+  it('[M0.canvas] wires them to the shell’s navigation, which the shell hands its parts', () => {
+    expect(out).toContain("import type { ShellNav } from '../../shell-nav';");
     expect(out).toContain('const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {');
-    expect(out).toContain(
-      '  const go = useShellNav();\n  const chrome = CHROME[given ?? detected](go);',
-    );
+    expect(out).toContain('  chrome: CHROME,');
   });
 
   it('[M0.canvas] closes a page to its opener, or else to the home of the destination it lights', () => {
@@ -279,6 +292,9 @@ describe("the shell's controls on a web page", () => {
       inPlayer('queue'),
     );
     expect(queue).toContain("import { useShellNav } from '../../shell-nav';");
+    expect(queue).toContain("import { PANEL, useLayout, type Platform } from '../nav/platform';");
+    expect(queue).not.toContain("from './Books'");
+    expect(queue).toContain('\n  return (\n    <NowPlaying ');
     expect(queue).toContain('  const go = useShellNav();');
     expect(queue).toContain("onClose={() => go.close('books')}");
     expect(queue).toContain('onTabChange={(tab) => go.tab(tab)}');

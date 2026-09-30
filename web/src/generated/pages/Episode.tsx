@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, BackLayer, BackdropShell, BottomNav, EpisodeRow, ExpandableText, IconButton, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, Section } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, BackLayer, BottomNav, EpisodeRow, ExpandableText, IconButton, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, Section } from '../ui/index.js';
 
 const placeholder = {
   "title": "The Night Ferry",
@@ -297,64 +296,53 @@ const ignore = () => {};
 
 export type EpisodeData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<EpisodeData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title={data.title} leading={leading} platform={platform} />,
+};
+
 export interface EpisodeProps {
   data?: EpisodeData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Episode({ data = placeholder, state = 'full', layout: given, sheet }: EpisodeProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Episode({ data = placeholder, state = 'full' }: EpisodeProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title={data.title} leading={chrome.leading} platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody width="list" platform={platform}>
-        <Section platform={platform}>
-          <MediaHeader
-            kindLabel={data.kind}
-            subtitle={data.show}
-            onSubtitle={() => navigate(generatePath('/podcasts/:ref', { ref: data.showRef }))}
-            meta={data.meta}
-            progress={data.progress}
-            image={data.image}
-            playLabel="Resume"
-            onPlay={ignore}
-            nextLabel="Play next"
-            onPlayNext={ignore}
-            lastLabel={null}
-            addLabel="Add to a list"
-            download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
-            menu={<OverflowMenu items={data.menu} platform={platform} />}
-            platform={platform}
-          />
-        </Section>
-        <Section title="Show notes" platform={platform}>
-          <ExpandableText text={data.notes} lines={4} />
-        </Section>
-        <Section title="More from the show" last={true} platform={platform}>
-          {data.more.map((other, i) => (
-            <Fragment key={i}>
-              <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} onPlay={ignore} divider={true} platform={platform} />
-            </Fragment>
-          ))}
-        </Section>
-      </PageBody>
-    </BackdropShell>
+    <PageBody width="list" platform={platform}>
+      <Section platform={platform}>
+        <MediaHeader
+          kindLabel={data.kind}
+          subtitle={data.show}
+          onSubtitle={() => navigate(generatePath('/podcasts/:ref', { ref: data.showRef }))}
+          meta={data.meta}
+          progress={data.progress}
+          image={data.image}
+          playLabel="Resume"
+          onPlay={ignore}
+          nextLabel="Play next"
+          onPlayNext={ignore}
+          lastLabel={null}
+          addLabel="Add to a list"
+          download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
+          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          platform={platform}
+        />
+      </Section>
+      <Section title="Show notes" platform={platform}>
+        <ExpandableText text={data.notes} lines={4} />
+      </Section>
+      <Section title="More from the show" last={true} platform={platform}>
+        {data.more.map((other, i) => (
+          <Fragment key={i}>
+            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} onPlay={ignore} divider={true} platform={platform} />
+          </Fragment>
+        ))}
+      </Section>
+    </PageBody>
   );
 }

@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, BackLayer, BackdropShell, BottomNav, IconButton, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, ResultRow, Section } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, BackLayer, BottomNav, IconButton, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, ResultRow, Section } from '../ui/index.js';
 
 const placeholder = {
   "shelves": [
@@ -336,46 +335,35 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
 
 export type ShelfReviewData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<ShelfReviewData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title="Shelf review" leading={leading} platform={platform} />,
+};
+
 export interface ShelfReviewProps {
   data?: ShelfReviewData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function ShelfReview({ data = placeholder, state = 'full', layout: given, sheet }: ShelfReviewProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function ShelfReview({ data = placeholder, state = 'full' }: ShelfReviewProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title="Shelf review" leading={chrome.leading} platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody width="list" platform={platform}>
-        {data.shelves.map((shelf, i) => (
-          <Fragment key={i}>
-            <Section eyebrow={shelf.eyebrow} title={shelf.subject} image={shelf.image} round={shelf.round} actionText="Open" onAction={() => navigate(generatePath('/shelves/:id', { id: shelf.id }))} platform={platform}>
-              {shelf.items.map((item, i) => (
-                <Fragment key={i}>
-                  <ResultRow title={item.title} meta={item.meta} detail={item.reason} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />
-                </Fragment>
-              ))}
-            </Section>
-          </Fragment>
-        ))}
-      </PageBody>
-    </BackdropShell>
+    <PageBody width="list" platform={platform}>
+      {data.shelves.map((shelf, i) => (
+        <Fragment key={i}>
+          <Section eyebrow={shelf.eyebrow} title={shelf.subject} image={shelf.image} round={shelf.round} actionText="Open" onAction={() => navigate(generatePath('/shelves/:id', { id: shelf.id }))} platform={platform}>
+            {shelf.items.map((item, i) => (
+              <Fragment key={i}>
+                <ResultRow title={item.title} meta={item.meta} detail={item.reason} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />
+              </Fragment>
+            ))}
+          </Section>
+        </Fragment>
+      ))}
+    </PageBody>
   );
 }

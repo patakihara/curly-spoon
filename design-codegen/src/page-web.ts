@@ -1,7 +1,9 @@
 /**
  * A page tree as a web page: `web/src/generated/pages/<Id>.tsx`, a React component calling the web
- * UI package's Sonora components inside the app shell, with the page's placeholder as its default
- * data. The shell's parts for every layout are constants of the page; the window's width picks one.
+ * UI package's Sonora components for the page's content, with its placeholder as its default data.
+ * The page exports its `frame` for the one shell around every page (`nav/Shell.tsx`): the shell's
+ * parts for every layout, the window's width picking one, and its back layer and subheader. A
+ * player sheet is the player alone; the shell draws it beside the page it is drawn over.
  */
 import { LoginQuery, login } from '@auralis/schema';
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
@@ -12,7 +14,6 @@ import {
   chrome,
   framePage,
   framed,
-  holdsPanel,
   layoutId,
   playerTab,
   playerTree,
@@ -245,6 +246,22 @@ function chromeEntry(parts: Chrome, components: Ctx): string[] {
 
 const binding = (path: string): PropValue => ({ kind: 'binding', path: path.split('.') });
 
+/** What a back layer or subheader may use of what the shell draws it with, in this order. */
+const CONTEXT = ['platform', 'leading', 'navigate', 'state'] as const;
+
+/**
+ * One of the frame's parts, `back` or `subheader`, as a function of the page's data and what the
+ * shell draws it with, taking only the names its code uses.
+ */
+function framePart(name: string, lines: string[]): string[] {
+  const code = lines.join('\n');
+  const uses = (word: string) => new RegExp(`\\b${word}\\b`).test(code);
+  const context = CONTEXT.filter(uses);
+  const args = context.length > 0 ? `data, { ${context.join(', ')} }` : uses('data') ? 'data' : '';
+  if (lines.length === 1) return [`  ${name}: (${args}) => ${lines[0]!.trim()},`];
+  return [`  ${name}: (${args}) => (`, ...lines, '  ),'];
+}
+
 export function generateWebPage(
   tree: PageTree,
   id: string,
@@ -265,17 +282,20 @@ export function generateWebPage(
     return handlers.size > 0;
   };
   const sheet = page.presentation === 'sheet';
-  const root = sheet
-    ? playerTree(playerTab(page), framePage(tree).content)
-    : framed(framePage(tree), page.title, {
-        rail: binding('chrome.rail'),
-        leading: binding('chrome.leading'),
-        player: binding('chrome.player'),
-        sheet: binding('panel'),
-        sheetOpen: binding('chrome.sheetOpen'),
-        appBar: binding('chrome.appBar'),
-        ...(page.presentation === 'bare' ? { column: binding('chrome.column') } : {}),
-      });
+  const frame = framePage(tree);
+  // The page's content alone: the shell draws the frame around it, from the page's `frame`.
+  const shelled = framed(frame, page.title, { leading: binding('leading') });
+  const slot = (name: string) => {
+    const value = shelled.kind === 'element' ? shelled.props[name] : undefined;
+    return value?.kind === 'slot' ? value.tree : undefined;
+  };
+  const back = sheet ? undefined : slot('back');
+  const subheader = sheet ? undefined : slot('subheader');
+  const root: PageTree = sheet
+    ? playerTree(playerTab(page), frame.content)
+    : frame.content.length === 1
+      ? frame.content[0]!
+      : { kind: 'fragment', children: frame.content };
   const chromes = sheet
     ? []
     : nav.layouts.map((layout) => {
@@ -289,17 +309,18 @@ export function generateWebPage(
   if (sheet) wire(shellHandlers(nav, page, { player: root }));
   const goes = components.wired.size > 0;
   const body = render(root, '    ', components);
+  const own = [root, back, subheader].filter((t): t is PageTree => t !== undefined);
+  const inPage = (test: (node: PageTree) => boolean) => own.some((t) => some(t, test));
   const used = new Set<string>();
-  drawn(root, used);
+  for (const t of own) drawn(t, used);
   for (const [, parts] of chromes) {
     for (const key of ['rail', 'leading', 'player', 'sheet'] as const) drawn(parts[key], used);
   }
   // A page named as a component it draws with, Now Playing's NowPlaying, takes a suffix.
   const name = used.has(componentName(id)) ? `${componentName(id)}Screen` : componentName(id);
-  const over = sheet ? componentName(shell.sheetOver!) : undefined;
-  const react = some(root, (n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
+  const react = inPage((n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
   const typed = [
-    root,
+    ...own,
     ...chromes.flatMap(([, parts]) => [parts.rail, parts.leading, parts.player, parts.sheet]),
   ].some(
     (tree) =>
@@ -314,42 +335,35 @@ export function generateWebPage(
       ),
   );
   if (typed) react.push("import type { ComponentProps } from 'react';");
-  const opens = some(
-    root,
-    (n) => n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'open'),
-  );
-  const bound = some(
-    root,
+  const opening = (n: PageTree) =>
+    n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'open');
+  const opens = some(root, opening);
+  const bound = inPage(
     (n) =>
       n.kind === 'element' &&
       Object.values(n.props).some((v) => v.kind === 'open' && Object.keys(v.params).length > 0),
   );
-  const routed = some(
-    root,
+  const routed = inPage(
     (n) =>
       n.kind === 'element' &&
       Object.values(n.props).some((v) => v.kind === 'open' && typeof v.page !== 'string'),
   );
-  if (opens) {
-    const names = bound ? 'generatePath, useNavigate' : 'useNavigate';
-    react.push(`import { ${names} } from 'react-router';`);
-  }
-  if (!sheet) react.push("import type { ReactNode } from 'react';");
+  const router = [...(bound ? ['generatePath'] : []), ...(opens ? ['useNavigate'] : [])];
+  if (router.length > 0) react.push(`import { ${router.join(', ')} } from 'react-router';`);
   return [
     `// ${APP_NOTE}`,
     ...react,
     sheet
-      ? "import { useLayout, type LayoutId, type Platform } from '../nav/platform';"
-      : "import { useLayout, type Chrome, type LayoutId } from '../nav/platform';",
+      ? "import { PANEL, useLayout, type Platform } from '../nav/platform';"
+      : "import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';",
     ...(goes
       ? [
           sheet
             ? "import { useShellNav } from '../../shell-nav';"
-            : "import { useShellNav, type ShellNav } from '../../shell-nav';",
+            : "import type { ShellNav } from '../../shell-nav';",
         ]
       : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
-    ...(over === undefined ? [] : [`import ${over} from './${over}';`]),
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
     '',
@@ -372,12 +386,7 @@ export function generateWebPage(
     `const shell = ${JSON.stringify(shellData(nav, shell), null, 2)};`,
     '',
     ...(sheet
-      ? [
-          '/** Whether each layout holds the player in the side panel, beside the page it is drawn over, or as a full-screen sheet. */',
-          'const PANEL: Record<LayoutId, boolean> = {',
-          ...nav.layouts.map((layout) => `  ${layoutId(layout)}: ${holdsPanel(layout)},`),
-          '};',
-        ]
+      ? []
       : [
           '/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */',
           `const CHROME: Record<LayoutId, (${goes ? 'go: ShellNav' : ''}) => Chrome> = {`,
@@ -387,10 +396,9 @@ export function generateWebPage(
             '  }),',
           ]),
           '};',
+          '',
         ]),
-    '',
-    ...(some(
-      root,
+    ...(inPage(
       (n) =>
         ignored(n, components) ||
         (n.kind === 'element' &&
@@ -400,47 +408,36 @@ export function generateWebPage(
       : []),
     `export type ${name}Data = typeof placeholder;`,
     '',
+    ...(sheet
+      ? []
+      : [
+          '/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */',
+          `export const frame: PageFrame<${name}Data> = {`,
+          '  placeholder,',
+          '  chrome: CHROME,',
+          ...framePart('back', render(back!, '    ', components)),
+          ...(subheader === undefined
+            ? []
+            : framePart('subheader', render(subheader, '    ', components))),
+          '};',
+          '',
+        ]),
     `export interface ${name}Props {`,
     `  data?: ${name}Data;`,
     '  /** Which of the placeholder states to show: M0 draws only `full`. */',
     '  state?: string;',
-    '  /** The layout to draw in; by default, the one the window width calls for. */',
-    '  layout?: LayoutId;',
-    ...(sheet
-      ? []
-      : [
-          '  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */',
-          '  sheet?: ReactNode;',
-        ]),
     '}',
     '',
-    ...(sheet
-      ? [
-          `export default function ${name}({ data = placeholder, state = 'full', layout: given }: ${name}Props) {`,
-          '  const detected = useLayout();',
-          '  const layout = given ?? detected;',
-          "  const platform: Platform = PANEL[layout] ? 'desktop' : 'mobile';",
-          ...(opens ? ['  const navigate = useNavigate();'] : []),
-          ...(goes ? ['  const go = useShellNav();'] : []),
-          '  const player = (',
-          ...body,
-          '  );',
-          `  return PANEL[layout] ? <${over} layout={layout} sheet={player} /> : player;`,
-          '}',
-        ]
-      : [
-          `export default function ${name}({ data = placeholder, state = 'full', layout: given, sheet }: ${name}Props) {`,
-          '  const detected = useLayout();',
-          ...(goes ? ['  const go = useShellNav();'] : []),
-          `  const chrome = CHROME[given ?? detected](${goes ? 'go' : ''});`,
-          '  const platform = chrome.platform;',
-          '  const panel = sheet ?? chrome.sheet;',
-          ...(opens ? ['  const navigate = useNavigate();'] : []),
-          '  return (',
-          ...body,
-          '  );',
-          '}',
-        ]),
+    `export default function ${name}({ data = placeholder, state = 'full' }: ${name}Props) {`,
+    sheet
+      ? "  const platform: Platform = PANEL[useLayout()] ? 'desktop' : 'mobile';"
+      : '  const platform = PLATFORM[useLayout()];',
+    ...(opens ? ['  const navigate = useNavigate();'] : []),
+    ...(sheet && goes ? ['  const go = useShellNav();'] : []),
+    '  return (',
+    ...body,
+    '  );',
+    '}',
     '',
   ].join('\n');
 }

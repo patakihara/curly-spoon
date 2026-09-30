@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, AccountButton, BackLayer, BackdropShell, BottomNav, Button, FrontLayerHeader, Input, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, ViewToggle } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, AccountButton, BackLayer, BottomNav, Button, FrontLayerHeader, Input, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "sections": [
@@ -323,70 +322,59 @@ const ignore = () => {};
 
 export type PodcastsData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<PodcastsData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title="Podcasts" leading={leading} search="Search your shows and their episodes" platform={platform} />,
+  subheader: (data, { platform }) => <FrontLayerHeader spy={true} sections={data.sections} platform={platform} />,
+};
+
 export interface PodcastsProps {
   data?: PodcastsData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Podcasts({ data = placeholder, state = 'full', layout: given, sheet }: PodcastsProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Podcasts({ data = placeholder, state = 'full' }: PodcastsProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title="Podcasts" leading={chrome.leading} search="Search your shows and their episodes" platform={platform} />}
-      subheader={<FrontLayerHeader spy={true} sections={data.sections} platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody platform={platform}>
-        <Section platform={platform}>
-          <SortFilterBar
-            icon="swap_vert"
-            label={data.sort.value}
-            trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
-            platform={platform}
-          />
-        </Section>
-        <Section title="Shows" platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.library.map((show, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
-        <Section title="Lists" platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.lists.map((list, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={() => navigate(generatePath('/lists/:ref', { ref: list.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
-        <Section title="Add a YouTube channel" last={true} platform={platform}>
-          <LayoutGrid columns={1} gap="10px" maxWidth="var(--grid-max-width-form)" platform={platform}>
-            <Input placeholder="Paste a channel link" platform={platform} />
-            <Button variant="secondary" platform={platform}>
-              {"Add as a show"}
-            </Button>
-          </LayoutGrid>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+    <PageBody platform={platform}>
+      <Section platform={platform}>
+        <SortFilterBar
+          icon="swap_vert"
+          label={data.sort.value}
+          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          platform={platform}
+        />
+      </Section>
+      <Section title="Shows" platform={platform}>
+        <LayoutGrid platform={platform}>
+          {data.library.map((show, i) => (
+            <Fragment key={i}>
+              <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+            </Fragment>
+          ))}
+        </LayoutGrid>
+      </Section>
+      <Section title="Lists" platform={platform}>
+        <LayoutGrid platform={platform}>
+          {data.lists.map((list, i) => (
+            <Fragment key={i}>
+              <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={() => navigate(generatePath('/lists/:ref', { ref: list.ref }))} platform={platform} />
+            </Fragment>
+          ))}
+        </LayoutGrid>
+      </Section>
+      <Section title="Add a YouTube channel" last={true} platform={platform}>
+        <LayoutGrid columns={1} gap="10px" maxWidth="var(--grid-max-width-form)" platform={platform}>
+          <Input placeholder="Paste a channel link" platform={platform} />
+          <Button variant="secondary" platform={platform}>
+            {"Add as a show"}
+          </Button>
+        </LayoutGrid>
+      </Section>
+    </PageBody>
   );
 }

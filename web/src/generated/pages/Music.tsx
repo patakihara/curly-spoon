@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, AccountButton, BackLayer, BackdropShell, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "tabs": [
@@ -303,57 +302,46 @@ const ignore = () => {};
 
 export type MusicData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<MusicData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title="Music" leading={leading} search="Search your music and requests" platform={platform} />,
+  subheader: (data, { platform }) => (
+    <FrontLayerHeader tabs={true} platform={platform}>
+      <TabBar items={data.tabs} value="albums" onChange={ignore} platform={platform} />
+    </FrontLayerHeader>
+  ),
+};
+
 export interface MusicProps {
   data?: MusicData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Music({ data = placeholder, state = 'full', layout: given, sheet }: MusicProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Music({ data = placeholder, state = 'full' }: MusicProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title="Music" leading={chrome.leading} search="Search your music and requests" platform={platform} />}
-      subheader={
-        <FrontLayerHeader tabs={true} platform={platform}>
-          <TabBar items={data.tabs} value="albums" onChange={ignore} platform={platform} />
-        </FrontLayerHeader>
-      }
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody platform={platform}>
-        <Section platform={platform}>
-          <SortFilterBar
-            icon="swap_vert"
-            label={data.sort.value}
-            trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
-            platform={platform}
-          />
-        </Section>
-        <Section last={true} platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.library.map((item, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: item.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+    <PageBody platform={platform}>
+      <Section platform={platform}>
+        <SortFilterBar
+          icon="swap_vert"
+          label={data.sort.value}
+          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          platform={platform}
+        />
+      </Section>
+      <Section last={true} platform={platform}>
+        <LayoutGrid platform={platform}>
+          {data.library.map((item, i) => (
+            <Fragment key={i}>
+              <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: item.ref }))} platform={platform} />
+            </Fragment>
+          ))}
+        </LayoutGrid>
+      </Section>
+    </PageBody>
   );
 }

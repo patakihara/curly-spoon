@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, BackLayer, BackdropShell, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, Rating, ResultRow, Section, Shelf } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, BackLayer, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, Rating, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "title": "Shadows and Sighs",
@@ -444,91 +443,80 @@ const ignore = () => {};
 
 export type BookData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<BookData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title={data.title} leading={leading} search="Search this book's chapters" platform={platform} />,
+};
+
 export interface BookProps {
   data?: BookData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Book({ data = placeholder, state = 'full', layout: given, sheet }: BookProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Book({ data = placeholder, state = 'full' }: BookProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title={data.title} leading={chrome.leading} search="Search this book's chapters" platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody width="list" platform={platform}>
-        <Section platform={platform}>
-          <MediaHeader
-            kindLabel={data.kind}
-            subtitle={data.author}
-            onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))}
-            partOf={data.series.label}
-            onPartOf={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))}
-            meta={data.meta}
-            rating={<Rating value={data.rating.value} count={data.rating.count} platform={platform} />}
-            progress={data.progress}
-            image={data.image}
-            playLabel="Resume"
-            nextLabel="Play next"
-            lastLabel={null}
-            download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
-            menu={<OverflowMenu items={data.menu} platform={platform} />}
-            platform={platform}
-          />
-        </Section>
-        <Section title="Chapters" platform={platform}>
-          {data.chapters.map((chapter, i) => (
+    <PageBody width="list" platform={platform}>
+      <Section platform={platform}>
+        <MediaHeader
+          kindLabel={data.kind}
+          subtitle={data.author}
+          onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))}
+          partOf={data.series.label}
+          onPartOf={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))}
+          meta={data.meta}
+          rating={<Rating value={data.rating.value} count={data.rating.count} platform={platform} />}
+          progress={data.progress}
+          image={data.image}
+          playLabel="Resume"
+          nextLabel="Play next"
+          lastLabel={null}
+          download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
+          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          platform={platform}
+        />
+      </Section>
+      <Section title="Chapters" platform={platform}>
+        {data.chapters.map((chapter, i) => (
+          <Fragment key={i}>
+            <ResultRow number={chapter.number} title={chapter.title} meta={chapter.meta} status={chapter.status} tone={chapter.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />
+          </Fragment>
+        ))}
+      </Section>
+      <Section title="About" platform={platform}>
+        <ExpandableText text={data.about} lines={3} />
+      </Section>
+      <Section title="Other narrations" platform={platform}>
+        <Shelf platform={platform}>
+          {data.narrations.map((narration, i) => (
             <Fragment key={i}>
-              <ResultRow number={chapter.number} title={chapter.title} meta={chapter.meta} status={chapter.status} tone={chapter.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />
+              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: narration.ref }))} onRequest={ignore} platform={platform} />
             </Fragment>
           ))}
-        </Section>
-        <Section title="About" platform={platform}>
-          <ExpandableText text={data.about} lines={3} />
-        </Section>
-        <Section title="Other narrations" platform={platform}>
-          <Shelf platform={platform}>
-            {data.narrations.map((narration, i) => (
-              <Fragment key={i}>
-                <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: narration.ref }))} onRequest={ignore} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-        <Section title={data.more.series.title} eyebrow="More in" onSubject={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))} platform={platform}>
-          <Shelf platform={platform}>
-            {data.more.series.items.map((book, i) => (
-              <Fragment key={i}>
-                <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-        <Section title={data.more.author.title} last={true} platform={platform}>
-          <Shelf platform={platform}>
-            {data.more.author.items.map((other, i) => (
-              <Fragment key={i}>
-                <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: other.ref }))} onRequest={ignore} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+        </Shelf>
+      </Section>
+      <Section title={data.more.series.title} eyebrow="More in" onSubject={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))} platform={platform}>
+        <Shelf platform={platform}>
+          {data.more.series.items.map((book, i) => (
+            <Fragment key={i}>
+              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+            </Fragment>
+          ))}
+        </Shelf>
+      </Section>
+      <Section title={data.more.author.title} last={true} platform={platform}>
+        <Shelf platform={platform}>
+          {data.more.author.items.map((other, i) => (
+            <Fragment key={i}>
+              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: other.ref }))} onRequest={ignore} platform={platform} />
+            </Fragment>
+          ))}
+        </Shelf>
+      </Section>
+    </PageBody>
   );
 }

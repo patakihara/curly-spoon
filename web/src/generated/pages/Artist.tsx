@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, ArtistCard, BackLayer, BackdropShell, BottomNav, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, ArtistCard, BackLayer, BottomNav, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "title": "Deep Inertia",
@@ -431,83 +430,72 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
 
 export type ArtistData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<ArtistData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title={data.title} leading={leading} platform={platform} />,
+};
+
 export interface ArtistProps {
   data?: ArtistData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Artist({ data = placeholder, state = 'full', layout: given, sheet }: ArtistProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Artist({ data = placeholder, state = 'full' }: ArtistProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title={data.title} leading={chrome.leading} platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody platform={platform}>
-        <Section platform={platform}>
-          <MediaHeader round={true} kindLabel={data.kind} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
-        </Section>
-        <Section title="In your library" platform={platform}>
-          <Shelf platform={platform}>
-            {data.library.map((item, i) => (
-              <Fragment key={i}>
-                <MediaCard title={item.title} sub={item.sub} image={item.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: item.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-        {data.discography.map((group, i) => (
-          <Fragment key={i}>
-            <Section title={group.name} platform={platform}>
-              <Shelf platform={platform}>
-                {group.items.map((release, i) => (
-                  <Fragment key={i}>
-                    <MediaCard title={release.title} sub={release.sub} image={release.image} size={group.size as Exclude<ComponentProps<typeof MediaCard>['size'], undefined>} absent={release.absent} status={release.status} tone={release.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: release.ref }))} platform={platform} />
-                  </Fragment>
-                ))}
-              </Shelf>
-            </Section>
-          </Fragment>
-        ))}
-        <Section title="Popular" platform={platform}>
-          {data.popular.map((song, i) => (
+    <PageBody platform={platform}>
+      <Section platform={platform}>
+        <MediaHeader round={true} kindLabel={data.kind} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
+      </Section>
+      <Section title="In your library" platform={platform}>
+        <Shelf platform={platform}>
+          {data.library.map((item, i) => (
             <Fragment key={i}>
-              <ResultRow
-                title={song.title}
-                meta={song.meta}
-                image={song.image}
-                divider={true}
-                trailing={<OverflowMenu items={song.menu} platform={platform} />}
-                platform={platform}
-              />
+              <MediaCard title={item.title} sub={item.sub} image={item.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: item.ref }))} platform={platform} />
             </Fragment>
           ))}
-        </Section>
-        <Section title="Similar artists" last={true} platform={platform}>
-          <Shelf platform={platform}>
-            {data.similar.map((artist, i) => (
-              <Fragment key={i}>
-                <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+        </Shelf>
+      </Section>
+      {data.discography.map((group, i) => (
+        <Fragment key={i}>
+          <Section title={group.name} platform={platform}>
+            <Shelf platform={platform}>
+              {group.items.map((release, i) => (
+                <Fragment key={i}>
+                  <MediaCard title={release.title} sub={release.sub} image={release.image} size={group.size as Exclude<ComponentProps<typeof MediaCard>['size'], undefined>} absent={release.absent} status={release.status} tone={release.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: release.ref }))} platform={platform} />
+                </Fragment>
+              ))}
+            </Shelf>
+          </Section>
+        </Fragment>
+      ))}
+      <Section title="Popular" platform={platform}>
+        {data.popular.map((song, i) => (
+          <Fragment key={i}>
+            <ResultRow
+              title={song.title}
+              meta={song.meta}
+              image={song.image}
+              divider={true}
+              trailing={<OverflowMenu items={song.menu} platform={platform} />}
+              platform={platform}
+            />
+          </Fragment>
+        ))}
+      </Section>
+      <Section title="Similar artists" last={true} platform={platform}>
+        <Shelf platform={platform}>
+          {data.similar.map((artist, i) => (
+            <Fragment key={i}>
+              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} platform={platform} />
+            </Fragment>
+          ))}
+        </Shelf>
+      </Section>
+    </PageBody>
   );
 }

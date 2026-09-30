@@ -1,9 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { createElement, type ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { LayoutId } from './generated/nav/platform';
+import { GivenLayout, type LayoutId } from './generated/nav/platform';
+import { pages as table, routes } from './generated/nav/routes';
 
 const dir = new URL('./generated/pages/', import.meta.url);
 /** Every layout of the navigation map, named as the generated pages name them. */
@@ -29,12 +30,16 @@ describe('every drawn canvas page', () => {
         vi.spyOn(console, 'warn').mockImplementation((...args) => void said.push(args));
         const page = (
           (await import(new URL(file, dir).href)) as {
-            default: ComponentType<{ layout?: LayoutId }>;
+            default: ComponentType;
           }
         ).default;
         // A page opens others through the router, as it does in the app.
         const html = renderToString(
-          createElement(MemoryRouter, null, createElement(page, { layout })),
+          createElement(
+            GivenLayout.Provider,
+            { value: layout },
+            createElement(MemoryRouter, null, createElement(page)),
+          ),
         );
         expect(html.length).toBeGreaterThan(0);
         expect(said).toEqual([]);
@@ -54,13 +59,18 @@ describe('the shell around each drawn page', () => {
   const sheets = new Set(nav.pages.filter((p) => p.presentation === 'sheet').map((p) => p.id));
   const bare = new Set(nav.pages.filter((p) => p.presentation === 'bare').map((p) => p.id));
   const idOf = (file: string) => file.replace('.tsx', '').replace(/^./, (c) => c.toLowerCase());
-  const render = async (file: string, layout: LayoutId) => {
-    const page = (
-      (await import(new URL(file, dir).href)) as {
-        default: ComponentType<{ layout?: LayoutId }>;
-      }
-    ).default;
-    return renderToString(createElement(MemoryRouter, null, createElement(page, { layout })));
+  /** The app at the page's route in `layout`, the one shell around it, as the router draws it. */
+  const render = (file: string, layout: LayoutId) => {
+    const path = table.find((p) => p.id === idOf(file))!.path;
+    const at = path === '*' ? '/no-such-page' : path.replace(/:\w+/g, 'sample');
+    const router = createMemoryRouter(routes, { initialEntries: [at] });
+    return renderToString(
+      createElement(
+        GivenLayout.Provider,
+        { value: layout },
+        createElement(RouterProvider, { router }),
+      ),
+    );
   };
   /** The frame's own surface: the back layer's colour, or the page's under a top app bar. */
   const frame = (html: string) => /<div style="[^"]*background:var\((--[\w-]+)\)/.exec(html)?.[1];

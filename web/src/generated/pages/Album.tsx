@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, BackLayer, BackdropShell, BottomNav, ExpanderRow, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, BackLayer, BottomNav, ExpanderRow, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "title": "Tears of Ice",
@@ -418,75 +417,64 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
 
 export type AlbumData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<AlbumData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title={data.title} leading={leading} search="Search this album" platform={platform} />,
+};
+
 export interface AlbumProps {
   data?: AlbumData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Album({ data = placeholder, state = 'full', layout: given, sheet }: AlbumProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Album({ data = placeholder, state = 'full' }: AlbumProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title={data.title} leading={chrome.leading} search="Search this album" platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody width="list" platform={platform}>
-        <Section platform={platform}>
-          <MediaHeader
-            kindLabel={data.kind}
-            subtitle={data.artist}
-            onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}
-            meta={data.meta}
-            image={data.image}
-            nextLabel={null}
-            lastLabel="Add to queue"
-            menu={<OverflowMenu items={data.menu} platform={platform} />}
-            platform={platform}
-          />
-        </Section>
-        <Section platform={platform}>
-          {data.tracks.map((track, i) => (
+    <PageBody width="list" platform={platform}>
+      <Section platform={platform}>
+        <MediaHeader
+          kindLabel={data.kind}
+          subtitle={data.artist}
+          onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}
+          meta={data.meta}
+          image={data.image}
+          nextLabel={null}
+          lastLabel="Add to queue"
+          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          platform={platform}
+        />
+      </Section>
+      <Section platform={platform}>
+        {data.tracks.map((track, i) => (
+          <Fragment key={i}>
+            <ResultRow
+              number={track.number}
+              title={track.title}
+              meta={track.meta}
+              status={track.status}
+              divider={true}
+              trailing={<OverflowMenu items={track.menu} platform={platform} />}
+              platform={platform}
+            />
+          </Fragment>
+        ))}
+      </Section>
+      <Section platform={platform}>
+        <ExpanderRow label={data.editions.label} image={data.image} />
+      </Section>
+      <Section title={data.more.title} last={true} platform={platform}>
+        <Shelf platform={platform}>
+          {data.more.items.map((album, i) => (
             <Fragment key={i}>
-              <ResultRow
-                number={track.number}
-                title={track.title}
-                meta={track.meta}
-                status={track.status}
-                divider={true}
-                trailing={<OverflowMenu items={track.menu} platform={platform} />}
-                platform={platform}
-              />
+              <MediaCard title={album.title} sub={album.sub} image={album.image} platform={platform} />
             </Fragment>
           ))}
-        </Section>
-        <Section platform={platform}>
-          <ExpanderRow label={data.editions.label} image={data.image} />
-        </Section>
-        <Section title={data.more.title} last={true} platform={platform}>
-          <Shelf platform={platform}>
-            {data.more.items.map((album, i) => (
-              <Fragment key={i}>
-                <MediaCard title={album.title} sub={album.sub} image={album.image} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+        </Shelf>
+      </Section>
+    </PageBody>
   );
 }

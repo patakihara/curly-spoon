@@ -5,6 +5,7 @@ import {
   generateNavMap,
   generatePlatform,
   generateRoutes,
+  generateWebShell,
   parseNav,
   readNav,
   splitRoute,
@@ -230,21 +231,74 @@ describe('nav.json', () => {
 describe('the web route table', () => {
   const tiny: Nav = parseNav(
     small([
+      page({ id: 'music', route: '/music', params: {}, close: 'none', title: 'Music' }),
       page(),
       page({ id: 'search', route: '/search?q', params: {}, title: 'Search' }),
+      page({
+        id: 'queue',
+        route: '/playing/queue',
+        params: {},
+        lights: null,
+        close: 'sheet',
+        presentation: 'sheet',
+        title: 'Queue',
+      }),
       page({ id: 'downloads', route: '/downloads', params: {}, platforms: ['android'] }),
     ]),
   );
-  const out = generateRoutes(tiny, new Set(['album']));
+  const out = generateRoutes(tiny, new Set(['music', 'album', 'queue']), 'music');
 
-  it('routes each drawn web page to its generated page, and leaves an undrawn one without', () => {
-    expect(out).toContain("import Album from '../pages/Album';");
-    expect(out).toContain("{ id: 'album', path: '/music/albums/:ref', element: <Album /> }");
-    expect(out).toContain("{ id: 'search', path: '/search' }");
+  it('[M0.canvas/c] holds every page route as a child of the one shell, so the shell stays mounted between pages', () => {
+    expect(out).toContain("import { Shell } from './Shell';");
+    expect(out).toContain("  {\n    id: 'shell',\n    element: <Shell />,\n    children: [\n");
+    const children = out.slice(out.indexOf('children: ['));
+    for (const id of ['music', 'album', 'search', 'queue']) {
+      expect(children).toContain(`{ id: '${id}', path: `);
+    }
+    expect(out.match(/element: <Shell \/>/g)).toHaveLength(1);
+  });
+
+  it("[M0.canvas/c] routes each drawn web page to its content, handing the shell the page's frame", () => {
+    expect(out).toContain("import Album, { frame as AlbumFrame } from '../pages/Album';");
+    expect(out).toContain(
+      "      { id: 'album', path: '/music/albums/:ref', element: <Album />, handle: { frame: AlbumFrame } },",
+    );
+    expect(out).toContain("      { id: 'search', path: '/search' },");
+  });
+
+  it('[M0.canvas/c] hands the shell a player sheet with the page it is drawn over, where the side panel holds it', () => {
+    expect(out).toContain("import Queue from '../pages/Queue';");
+    expect(out).toContain(
+      "      { id: 'queue', path: '/playing/queue', element: <Queue />, handle: { over: { frame: MusicFrame, Page: Music } } },",
+    );
   });
 
   it('leaves out Android-only pages', () => {
     expect(out).not.toContain('downloads');
+  });
+});
+
+describe('the one web shell', () => {
+  const out = generateWebShell();
+
+  it('[M0.canvas/c] draws one BackdropShell from the frame the page showing hands it, its content in the front layer', () => {
+    expect(out.match(/<BackdropShell\b/g)).toHaveLength(1);
+    expect(out).toContain('  const chrome = frame.chrome[layout](go);');
+    expect(out).toContain('      rail={chrome.rail}');
+    expect(out).toContain('      {Over === undefined ? outlet : <Over />}');
+  });
+
+  it('[M0.canvas/c] keeps each location its own scroll, and starts its back layer afresh', () => {
+    expect(out).toContain('      scrollKey={where}');
+    expect(out).toContain('cloneElement(back, { key: where })');
+  });
+
+  it('[M0.canvas/c] draws a player sheet beside the page under it where the panel holds it, and alone elsewhere', () => {
+    expect(out).toContain(
+      '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
+    );
+    expect(out).toContain('  if (frame === undefined) return outlet;');
+    expect(out).toContain('      sheet={over === undefined ? chrome.sheet : outlet}');
   });
 });
 
@@ -303,7 +357,26 @@ describe('the web layout hook', () => {
     expect(out).toContain("  let layout: LayoutId = 'w0';");
   });
 
-  it('draws the widest layout when there is no window', () => {
-    expect(out).toContain("return useSyncExternalStore(subscribe, current, () => 'w1240');");
+  it("[M0.canvas/c] gives each layout's platform, and whether its side panel holds the player", () => {
+    expect(out).toContain(
+      "export const PLATFORM: Record<LayoutId, Platform> = {\n  w0: 'mobile',\n  w600: 'desktop',\n  w1240: 'desktop',\n};",
+    );
+    expect(out).toContain(
+      'export const PANEL: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1240: true,\n};',
+    );
+  });
+
+  it('[M0.canvas/c] describes what a page hands the shell: its parts at each layout, its back layer and subheader', () => {
+    expect(out).toContain('export interface PageFrame<Data> {');
+    expect(out).toContain('  chrome: Record<LayoutId, (go: ShellNav) => Chrome>;');
+    expect(out).toContain('  back(data: Data, context: FrameContext): ReactNode;');
+    expect(out).toContain('  subheader?(data: Data, context: FrameContext): ReactNode;');
+  });
+
+  it('draws the layout given, or else the widest when there is no window', () => {
+    expect(out).toContain(
+      "const detected = useSyncExternalStore<LayoutId>(subscribe, current, () => 'w1240');",
+    );
+    expect(out).toContain('  return given ?? detected;');
   });
 });

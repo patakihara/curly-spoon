@@ -26,9 +26,16 @@ function SignInScreen() {
   return <SignIn data={signInData(query)} />;
 }
 
-/** The generated routes, the sign-in page given its data from the address. */
+/** The generated routes, the sign-in page inside the shell given its data from the address. */
 export function withSignInData(routes: RouteObject[]): RouteObject[] {
   return routes.map((route) =>
-    route.id === 'signIn' ? { ...route, element: <SignInScreen /> } : route,
+    route.children === undefined
+      ? route
+      : {
+          ...route,
+          children: route.children.map((child) =>
+            child.id === 'signIn' ? { ...child, element: <SignInScreen /> } : child,
+          ),
+        },
   );
 }

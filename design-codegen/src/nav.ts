@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { APP_NOTE } from './outputs.js';
-import { PLAYER_TABS } from './shell.js';
+import { holdsPanel, layoutId, platformOf, PLAYER_TABS } from './shell.js';
 
 const Id = z.string().regex(/^[a-z][A-Za-z0-9]*$/, 'a camelCase id');
 
@@ -203,14 +203,27 @@ export const componentName = (id: string) => id[0]!.toUpperCase() + id.slice(1);
 const literal = (value: unknown) => JSON.stringify(value).replaceAll('"', "'");
 
 /**
- * `routes.tsx`: the destinations, layouts and web pages as data, and the React Router table.
- * A page not yet drawn (no `pages/<id>.page.jsx`) gets a route with no element.
+ * `routes.tsx`: the destinations, layouts and web pages as data, and the React Router table: one
+ * pathless route holding the shell, generated as `Shell.tsx`, with every page a child of it, so
+ * the shell and its rail stay mounted from page to page. Each drawn page's route renders its
+ * content and hands the shell its frame; a player sheet's hands it the page it is drawn over,
+ * `over` (shell.json's `sheetOver`), for the layouts whose side panel holds the player. A page
+ * not yet drawn (no `pages/<id>.page.jsx`) gets a route with no element.
  */
-export function generateRoutes(nav: Nav, drawn: Set<string>): string {
+export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): string {
   const pages = nav.pages.filter((p) => p.platforms.includes('web'));
+  const sheet = (p: NavPage) => p.presentation === 'sheet';
+  if (over !== undefined && !drawn.has(over) && pages.some((p) => sheet(p) && drawn.has(p.id))) {
+    throw new Error(`shell.json: sheetOver names ${over}, which is not drawn`);
+  }
   const imports = pages
     .filter((p) => drawn.has(p.id))
-    .map((p) => `import ${componentName(p.id)} from '../pages/${componentName(p.id)}';`);
+    .map((p) => {
+      const name = componentName(p.id);
+      return sheet(p)
+        ? `import ${name} from '../pages/${name}';`
+        : `import ${name}, { frame as ${name}Frame } from '../pages/${name}';`;
+    });
   const rows = pages.map((p) => {
     const { path, query } = splitRoute(p.route);
     return (
@@ -221,12 +234,20 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
   });
   const routes = pages.map((p) => {
     const { path } = splitRoute(p.route);
-    const element = drawn.has(p.id) ? `, element: <${componentName(p.id)} />` : '';
-    return `  { id: ${literal(p.id)}, path: ${literal(path)}${element} },`;
+    const name = componentName(p.id);
+    const under = over === undefined ? undefined : componentName(over);
+    const handle = sheet(p)
+      ? under === undefined
+        ? ''
+        : `, handle: { over: { frame: ${under}Frame, Page: ${under} } }`
+      : `, handle: { frame: ${name}Frame }`;
+    const element = drawn.has(p.id) ? `, element: <${name} />${handle}` : '';
+    return `      { id: ${literal(p.id)}, path: ${literal(path)}${element} },`;
   });
   return [
     `// ${APP_NOTE}`,
     "import type { RouteObject } from 'react-router';",
+    "import { Shell } from './Shell';",
     ...imports,
     '',
     `export const destinations = ${JSON.stringify(nav.destinations, null, 2)} as const;`,
@@ -249,13 +270,79 @@ export function generateRoutes(nav: Nav, drawn: Set<string>): string {
     ...rows,
     '];',
     '',
+    '/** The shell, mounted once, and every page inside it. */',
     'export const routes: RouteObject[] = [',
+    '  {',
+    "    id: 'shell',",
+    '    element: <Shell />,',
+    '    children: [',
     ...routes,
+    '    ],',
+    '  },',
     '];',
     '',
   ].join('\n');
 }
 
+/**
+ * `Shell.tsx`: the one `BackdropShell` around every web page, as Sonora Prime's app holds one
+ * rail whose lit item changes in place. It draws the page showing's frame, handed up by its route:
+ * the shell's parts at the window's layout, the page's back layer and subheader, and the page's
+ * content in the front layer. A player sheet is the side panel beside the page it is drawn over
+ * where the layout holds one, and on its own, full screen, where it does not. The front layer
+ * keeps each location's own scroll, and each location's back layer starts afresh.
+ */
+export function generateWebShell(): string {
+  return [
+    `// ${APP_NOTE}`,
+    "import { cloneElement, isValidElement, type ComponentType } from 'react';",
+    "import { useLocation, useMatches, useNavigate, useOutlet } from 'react-router';",
+    "import { useShellNav } from '../../shell-nav';",
+    "import { BackdropShell } from '../ui/index.js';",
+    "import { PANEL, PLATFORM, useLayout, type PageFrame } from './platform';",
+    '',
+    "/** What a page's route hands the shell: its frame, or, for a player sheet, the page it is drawn over. */",
+    'export interface ShellHandle {',
+    '  frame?: PageFrame<unknown>;',
+    '  over?: { frame: PageFrame<unknown>; Page: ComponentType };',
+    '}',
+    '',
+    'export function Shell() {',
+    '  const layout = useLayout();',
+    '  const go = useShellNav();',
+    '  const navigate = useNavigate();',
+    '  const location = useLocation();',
+    '  const outlet = useOutlet();',
+    '  const handle = useMatches().at(-1)?.handle as ShellHandle | undefined;',
+    '  const over = handle?.over;',
+    '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
+    '  if (frame === undefined) return outlet;',
+    '  const chrome = frame.chrome[layout](go);',
+    '  const platform = PLATFORM[layout];',
+    "  const context = { platform, leading: chrome.leading, navigate, state: 'full' };",
+    '  const where = location.pathname + location.search;',
+    '  const back = frame.back(frame.placeholder, context);',
+    '  const Over = over?.Page;',
+    '  return (',
+    '    <BackdropShell',
+    '      rail={chrome.rail}',
+    '      back={isValidElement(back) ? cloneElement(back, { key: where }) : back}',
+    '      subheader={frame.subheader?.(frame.placeholder, context)}',
+    '      player={chrome.player}',
+    '      sheet={over === undefined ? chrome.sheet : outlet}',
+    '      sheetOpen={over === undefined ? chrome.sheetOpen : true}',
+    '      appBar={chrome.appBar}',
+    '      column={chrome.column}',
+    '      scrollKey={where}',
+    '      platform={platform}',
+    '    >',
+    '      {Over === undefined ? outlet : <Over />}',
+    '    </BackdropShell>',
+    '  );',
+    '}',
+    '',
+  ].join('\n');
+}
 /**
  * `stacks.ts`: what the web's navigation stacks (`web/src/shell-nav.ts`) need of nav.json: each
  * destination's home, the pages at the rail's foot (`foot`, from shell.json), each player tab's
@@ -296,9 +383,10 @@ export function generateNavMap(nav: Nav, foot: string[]): string {
 }
 
 /**
- * `platform.ts`: which of nav.json's layouts the window width calls for, as a hook, and the shape
- * of the shell's parts at a layout, which each generated page fills for itself. The phone's
- * density holds in the bottom bar's layout; every rail draws at desktop density.
+ * `platform.ts`: which of nav.json's layouts the window width calls for, as a hook, each layout's
+ * density and whether its side panel holds the player, and the shape of the frame each generated
+ * page hands the shell: the shell's parts at each layout, its back layer and its subheader. The
+ * phone's density holds in the bottom bar's layout; every rail draws at desktop density.
  */
 export function generatePlatform(nav: Nav): string {
   const [first, ...rest] = nav.layouts;
@@ -307,7 +395,9 @@ export function generatePlatform(nav: Nav): string {
   const widest = nav.layouts[nav.layouts.length - 1]!;
   return [
     `// ${APP_NOTE}`,
-    "import { useSyncExternalStore, type ReactNode } from 'react';",
+    "import { createContext, useContext, useSyncExternalStore, type ReactNode } from 'react';",
+    "import type { NavigateFunction } from 'react-router';",
+    "import type { ShellNav } from '../../shell-nav';",
     '',
     "export type Platform = 'mobile' | 'desktop';",
     '',
@@ -328,6 +418,32 @@ export function generatePlatform(nav: Nav): string {
     "  column?: 'form';",
     '}',
     '',
+    "/** Each layout's density. */",
+    'export const PLATFORM: Record<LayoutId, Platform> = {',
+    ...nav.layouts.map((l) => `  ${layoutId(l)}: '${platformOf(l)}',`),
+    '};',
+    '',
+    '/** Whether each layout holds the player in the side panel, beside the page it is drawn over, or as a full-screen sheet. */',
+    'export const PANEL: Record<LayoutId, boolean> = {',
+    ...nav.layouts.map((l) => `  ${layoutId(l)}: ${holdsPanel(l)},`),
+    '};',
+    '',
+    "/** What a page's back layer and subheader are drawn with, from the shell. */",
+    'export interface FrameContext {',
+    '  platform: Platform;',
+    '  leading?: ReactNode;',
+    '  navigate: NavigateFunction;',
+    '  state: string;',
+    '}',
+    '',
+    "/** What a page hands the shell: its placeholder, the shell's parts at each layout, its back layer and its subheader. */",
+    'export interface PageFrame<Data> {',
+    '  placeholder: Data;',
+    '  chrome: Record<LayoutId, (go: ShellNav) => Chrome>;',
+    '  back(data: Data, context: FrameContext): ReactNode;',
+    '  subheader?(data: Data, context: FrameContext): ReactNode;',
+    '}',
+    '',
     '/** Each layout past the first, with the media query that reaches it, narrowest first. */',
     'const WIDER: readonly (readonly [LayoutId, string])[] = [',
     ...rest.map((l) => `  [${id(l)}, '(min-width: ${l.minWidth}px)'],`),
@@ -345,9 +461,14 @@ export function generatePlatform(nav: Nav): string {
     "  return () => queries.forEach((query) => query.removeEventListener('change', onChange));",
     '}',
     '',
-    '/** The layout the window width calls for; the widest when there is no window. */',
+    "/** A layout to draw in, given in place of the window's, as a still of the app at one width is. */",
+    'export const GivenLayout = createContext<LayoutId | undefined>(undefined);',
+    '',
+    '/** The layout given, or else the one the window width calls for; the widest when there is no window. */',
     'export function useLayout(): LayoutId {',
-    `  return useSyncExternalStore(subscribe, current, () => ${id(widest)});`,
+    '  const given = useContext(GivenLayout);',
+    `  const detected = useSyncExternalStore<LayoutId>(subscribe, current, () => ${id(widest)});`,
+    '  return given ?? detected;',
     '}',
     '',
   ].join('\n');

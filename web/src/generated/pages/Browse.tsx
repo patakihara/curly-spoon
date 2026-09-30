@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, AccountButton, ArtistCard, BackLayer, BackdropShell, BottomNav, ButtonGroup, FeatureCard, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, PreviewButton, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, AccountButton, ArtistCard, BackLayer, BottomNav, ButtonGroup, FeatureCard, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, PreviewButton, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "sections": [
@@ -458,100 +457,89 @@ const ignore = () => {};
 
 export type BrowseData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<BrowseData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => (
+    <BackLayer
+      title="Browse"
+      leading={leading}
+      controls={<ButtonGroup tone="play" items={shell.filters.browse} value="All" onChange={ignore} platform={platform} />}
+      platform={platform}
+    />
+  ),
+  subheader: (data, { platform }) => <FrontLayerHeader spy={true} sections={data.sections} platform={platform} />,
+};
+
 export interface BrowseProps {
   data?: BrowseData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Browse({ data = placeholder, state = 'full', layout: given, sheet }: BrowseProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Browse({ data = placeholder, state = 'full' }: BrowseProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={
-        <BackLayer
-          title="Browse"
-          leading={chrome.leading}
-          controls={<ButtonGroup tone="play" items={shell.filters.browse} value="All" onChange={ignore} platform={platform} />}
-          platform={platform}
-        />
-      }
-      subheader={<FrontLayerHeader spy={true} sections={data.sections} platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody platform={platform}>
-        <Section title="Jump back in" platform={platform}>
-          <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
-            {data.jumpBackIn.map((pick, i) => (
-              <Fragment key={i}>
-                <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={() => navigate(generatePath(routes[pick.page]!, { ref: pick.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
-        <Section platform={platform}>
-          <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
-            <FeatureCard
-              kind={data.feature.kind}
-              title={data.feature.title}
-              meta={data.feature.meta}
-              description={data.feature.description}
-              image={data.feature.image}
-              onPlay={ignore}
-              preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
-              platform={platform}
-            />
-          </LayoutGrid>
-        </Section>
-        <Section title="Recently added" action="arrow_forward" actionLabel="See all" platform={platform}>
-          <Shelf platform={platform}>
-            {data.recentlyAdded.map((item, i) => (
-              <Fragment key={i}>
-                <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-        <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" platform={platform}>
-          <Shelf platform={platform}>
-            {data.people.map((person, i) => (
-              <Fragment key={i}>
-                <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={() => navigate(generatePath(routes[person.page]!, { ref: person.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-        <Section title="Picked for you" action="arrow_forward" actionLabel="See all" platform={platform}>
-          <Shelf platform={platform}>
-            {data.pickedForYou.map((item, i) => (
-              <Fragment key={i}>
-                <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
-              </Fragment>
-            ))}
-          </Shelf>
-        </Section>
-        <Section title="Recently played" last={true} platform={platform}>
-          {data.recentlyPlayed.map((track, i) => (
+    <PageBody platform={platform}>
+      <Section title="Jump back in" platform={platform}>
+        <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
+          {data.jumpBackIn.map((pick, i) => (
             <Fragment key={i}>
-              <ResultRow title={track.title} meta={track.meta} image={track.image} divider={true} platform={platform} />
+              <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={() => navigate(generatePath(routes[pick.page]!, { ref: pick.ref }))} platform={platform} />
             </Fragment>
           ))}
-        </Section>
-      </PageBody>
-    </BackdropShell>
+        </LayoutGrid>
+      </Section>
+      <Section platform={platform}>
+        <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
+          <FeatureCard
+            kind={data.feature.kind}
+            title={data.feature.title}
+            meta={data.feature.meta}
+            description={data.feature.description}
+            image={data.feature.image}
+            onPlay={ignore}
+            preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
+            platform={platform}
+          />
+        </LayoutGrid>
+      </Section>
+      <Section title="Recently added" action="arrow_forward" actionLabel="See all" platform={platform}>
+        <Shelf platform={platform}>
+          {data.recentlyAdded.map((item, i) => (
+            <Fragment key={i}>
+              <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
+            </Fragment>
+          ))}
+        </Shelf>
+      </Section>
+      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" platform={platform}>
+        <Shelf platform={platform}>
+          {data.people.map((person, i) => (
+            <Fragment key={i}>
+              <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={() => navigate(generatePath(routes[person.page]!, { ref: person.ref }))} platform={platform} />
+            </Fragment>
+          ))}
+        </Shelf>
+      </Section>
+      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" platform={platform}>
+        <Shelf platform={platform}>
+          {data.pickedForYou.map((item, i) => (
+            <Fragment key={i}>
+              <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
+            </Fragment>
+          ))}
+        </Shelf>
+      </Section>
+      <Section title="Recently played" last={true} platform={platform}>
+        {data.recentlyPlayed.map((track, i) => (
+          <Fragment key={i}>
+            <ResultRow title={track.title} meta={track.meta} image={track.image} divider={true} platform={platform} />
+          </Fragment>
+        ))}
+      </Section>
+    </PageBody>
   );
 }

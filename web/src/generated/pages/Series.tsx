@@ -2,10 +2,9 @@
 import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
-import type { ReactNode } from 'react';
-import { useLayout, type Chrome, type LayoutId } from '../nav/platform';
-import { useShellNav, type ShellNav } from '../../shell-nav';
-import { AboutCard, BackLayer, BackdropShell, BottomNav, IconButton, LayoutGrid, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section } from '../ui/index.js';
+import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import { AboutCard, BackLayer, BottomNav, IconButton, LayoutGrid, MediaCard, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section } from '../ui/index.js';
 
 const placeholder = {
   "title": "The Harbour Quartet",
@@ -293,47 +292,36 @@ const ignore = () => {};
 
 export type SeriesData = typeof placeholder;
 
+/** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
+export const frame: PageFrame<SeriesData> = {
+  placeholder,
+  chrome: CHROME,
+  back: (data, { platform, leading }) => <BackLayer title={data.title} leading={leading} platform={platform} />,
+};
+
 export interface SeriesProps {
   data?: SeriesData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
-  /** The layout to draw in; by default, the one the window width calls for. */
-  layout?: LayoutId;
-  /** A player sheet drawn over this page, as its side panel in place of the shell’s. */
-  sheet?: ReactNode;
 }
 
-export default function Series({ data = placeholder, state = 'full', layout: given, sheet }: SeriesProps) {
-  const detected = useLayout();
-  const go = useShellNav();
-  const chrome = CHROME[given ?? detected](go);
-  const platform = chrome.platform;
-  const panel = sheet ?? chrome.sheet;
+export default function Series({ data = placeholder, state = 'full' }: SeriesProps) {
+  const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   return (
-    <BackdropShell
-      rail={chrome.rail}
-      back={<BackLayer title={data.title} leading={chrome.leading} platform={platform} />}
-      player={chrome.player}
-      sheet={panel}
-      sheetOpen={chrome.sheetOpen}
-      appBar={chrome.appBar}
-      platform={platform}
-    >
-      <PageBody platform={platform}>
-        <Section platform={platform}>
-          <MediaHeader kindLabel={data.kind} subtitle={data.author} onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
-        </Section>
-        <Section last={true} platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.books.map((book, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
-      </PageBody>
-    </BackdropShell>
+    <PageBody platform={platform}>
+      <Section platform={platform}>
+        <MediaHeader kindLabel={data.kind} subtitle={data.author} onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
+      </Section>
+      <Section last={true} platform={platform}>
+        <LayoutGrid platform={platform}>
+          {data.books.map((book, i) => (
+            <Fragment key={i}>
+              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+            </Fragment>
+          ))}
+        </LayoutGrid>
+      </Section>
+    </PageBody>
   );
 }
