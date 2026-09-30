@@ -14,4 +14,8 @@ does not want). It is kept off the public repo, on the laptop at
 What exists: Sonora's `Button` has hover (opacity 0.85 and a 1 px lift) and `disabled` (opacity
 0.5), no focus ring, no pressed ripple, and a button with no `onClick` still looks enabled.
 
+Why she asks, in a follow-up message:
+
+> And to be clear here, this ask is coming from the fact that the mock Auralis i see on the web has a bunch of buttons that don't do anything, and I shouldn't have to guess which buttons are working
+
 (Sofia, chat with the orchestrator session, 2026-09-30)
