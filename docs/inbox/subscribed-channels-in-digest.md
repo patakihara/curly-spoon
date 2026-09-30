@@ -22,4 +22,14 @@ digest sentence as two rules: playing a digest never clears, replaces or locks t
 episode played from a digest is marked played but never moves her place in a show she is working
 through, oldest-first or newest-first.
 
+Her answer to that proposal:
+
+> > Playing an episode from a digest records that episode as played, but never moves your place in a show you're working through, oldest-first or newest-first.
+>
+> this makes sense; the earlier point i don't know, I don't even understand what that could mean. How do I go back to my queue? I think what I might have been referring to there was the "two queues" concept, in that playing a _podcast_ shouldn't delete my music queue. But I don't think I thought about _how to get back to the music queue_ from there. I need to think on this a bit, but I already have an inkling of an idea.
+
+So the digest rule keeps only the progress half; the queue half is the existing two-queue rule. How
+to switch back to the paused queue is open, and Sofia is thinking it over: it belongs in "Still
+open" until she answers.
+
 (Sofia, comment on the plan artifact, thread 785d7862, 2026-09-30)
