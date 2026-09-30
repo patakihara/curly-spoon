@@ -455,15 +455,27 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
   const bad = pages.find((p) => !PAGE_ID.test(p.id));
   if (bad !== undefined) throw new Error(`${bad.id} is not a canvas page id`);
 
-  /** Lays one canvas page out in a row from 0,0, under a title note as wide as the row. */
+  /**
+   * Lays one canvas page out in a row from 0,0, under a title note as wide as the row. A board
+   * whose links work in Play (`linked`) is marked `is_interactive`, which the Design type needs
+   * for its Play button; the mockups are stills and stay unmarked.
+   */
   const row = (
     page: { id: string; name: string },
-    items: { name: string; html: string; w: number; h: number; title: string }[],
+    items: { name: string; html: string; w: number; h: number; title: string; linked?: true }[],
   ) => {
     let x = 0;
-    for (const { name, html, w, h, title } of items) {
+    for (const { name, html, w, h, title, linked } of items) {
       files.set(name, html);
-      boards[name] = { x, y: 0, w, h, title, page: page.id };
+      boards[name] = {
+        x,
+        y: 0,
+        w,
+        h,
+        title,
+        page: page.id,
+        ...(linked && { is_interactive: true }),
+      };
       x += w + GAP_X;
     }
     notes[`${page.id}-title`] = {
@@ -479,20 +491,35 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
   const flows = generateFlows(app.nav, drawn, head);
   const screens = generateScreens(app.nav, drawn, head);
   row(START_PAGE, [
-    { name: 'flows.dc.html', html: flows.html, w: flows.width, h: flows.height, title: 'Flows' },
-    { name: SCREENS, html: screens.html, w: screens.width, h: screens.height, title: 'Screens' },
+    {
+      name: 'flows.dc.html',
+      html: flows.html,
+      w: flows.width,
+      h: flows.height,
+      title: 'Flows',
+      linked: true,
+    },
+    {
+      name: SCREENS,
+      html: screens.html,
+      w: screens.width,
+      h: screens.height,
+      title: 'Screens',
+      linked: true,
+    },
   ]);
 
   const { phone, desktop } = CANVAS_BOARDS;
   for (const entry of navPages) {
     const structure = generatePageStructure(app.nav, entry, drawn, head);
-    const items = [
+    const items: Parameters<typeof row>[1] = [
       {
         name: structureBoard(entry.id),
         html: structure.html,
         w: structure.width,
         h: structure.height,
         title: `${entry.title} · structure`,
+        linked: true,
       },
     ];
     const page = app.pages.find((p) => p.id === entry.id);

@@ -59,8 +59,11 @@ describe('the screen list, on the start page', () => {
     expect(html).toContain('On the rail: Search, Browse, Music, Books, Podcasts.');
   });
 
-  it('says what back does once, in the header, and nowhere on the page boards', () => {
+  it('says what back does once, in the header, and nowhere on the flowchart or the page boards', () => {
     for (const line of backModel(nav)) expect(html.split(line).length - 1, line).toBe(1);
+    const flows = generateFlows(nav, drawn, head).html;
+    for (const line of backModel(nav)) expect(flows).not.toContain(line);
+    expect(flows).not.toContain('Back: ');
     for (const page of nav.pages) {
       const board = generatePageStructure(nav, page, drawn, head).html;
       for (const line of backModel(nav)) expect(board, page.id).not.toContain(line);
@@ -178,8 +181,7 @@ describe('the flowchart artboard', () => {
     }
   });
 
-  it('says what back does once, in the legend, and nothing about it on the nodes', () => {
-    for (const line of backModel(nav)) expect(html.split(line).length - 1, line).toBe(1);
+  it('says nothing about back, which the screen list says', () => {
     expect(html).not.toContain('back through history');
     expect(html).not.toContain('up to');
   });

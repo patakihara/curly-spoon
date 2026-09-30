@@ -182,6 +182,20 @@ describe('the canvas generated from design/app', () => {
     }
   });
 
+  it('[M0.canvas/f] gives the boards whose links work a Play button: the flowchart, the screen list and every structure board', () => {
+    const playable = Object.keys(index.boards).filter((n) => index.boards[n].is_interactive);
+    expect(playable).toEqual([
+      'flows.dc.html',
+      'screens.dc.html',
+      'book.structure.dc.html',
+      'settings.structure.dc.html',
+      'search.structure.dc.html',
+    ]);
+    for (const name of playable) expect(index.boards[name].is_interactive, name).toBe(true);
+    for (const name of ['book.phone.dc.html', 'book.desktop.dc.html', 'settings.phone.dc.html'])
+      expect(index.boards[name], name).not.toHaveProperty('is_interactive');
+  });
+
   it('lays each canvas page out in a row from 0,0, its structure first, under its title note', () => {
     const { phone, desktop } = CANVAS_BOARDS;
     const structure = index.boards['book.structure.dc.html'];

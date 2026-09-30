@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { sourcesTree } from '../plan/record-publish.mjs';
+import { SOURCES, sourcesTree } from '../plan/record-publish.mjs';
 import { REPO_ROOT, removeTree, write } from '../plan/testing.mjs';
 
 const TSX = join(REPO_ROOT, 'node_modules/.bin/tsx');
@@ -71,9 +71,18 @@ test('[M0.canvas/f] the canvas build puts the flowchart and screen list on the s
       for (const link of page.structure.links)
         assert.ok(structure.includes(`href="${link}.structure.dc.html"`), `${name} to ${link}`);
     }
-    for (const id of pages)
-      for (const board of ['phone', 'desktop'])
-        assert.equal(index.boards[`${id}.${board}.dc.html`].page, id, `${id} ${board} on its page`);
+    const kinds = new Set();
+    for (const [name, board] of Object.entries(index.boards)) {
+      const [id, kind] = name.split('.');
+      if (!pages.includes(id)) continue;
+      kinds.add(kind);
+      assert.equal(board.page, id, `${name} is on its page`);
+      assert.equal(board.is_interactive, kind === 'structure' || undefined, `${name} Play button`);
+    }
+    for (const kind of ['structure', 'phone', 'desktop', 'phone-search', 'phone-menu'])
+      assert.ok(kinds.has(kind), `the real nav.json has ${kind} boards`);
+    for (const name of ['flows.dc.html', 'screens.dc.html'])
+      assert.equal(index.boards[name].is_interactive, true, `${name} has a Play button`);
     for (const file of [
       'tokens.json',
       'tokens.css',
@@ -83,7 +92,7 @@ test('[M0.canvas/f] the canvas build puts the flowchart and screen list on the s
       assert.ok(existsSync(join(out, DS, file)), `${file} is installed`);
     assert.equal(index.designSystems[0].namespace, 'sonoradesignsystem_6c1435');
     const stamp = JSON.parse(readFileSync(join(out, 'stamp.json'), 'utf8'));
-    assert.equal(stamp.tree, sourcesTree(REPO_ROOT, ['design/app', 'web/public/art']));
+    assert.equal(stamp.tree, sourcesTree(REPO_ROOT, SOURCES.canvas));
     assert.equal(stamp.draft, true);
     assert.ok('sonora' in stamp, 'the stamp names the Sonora it installs');
   } finally {

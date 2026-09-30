@@ -4,8 +4,8 @@
  *
  * CLI: node scripts/plan/render.mjs [--out build/plan/index.html] [--results ci|local|none] [--draft] [--root <dir>]
  *
- * It refuses on any lint error, and, without --draft, on uncommitted changes to docs/plan,
- * docs/outbox or scripts/plan. It writes the page and stamp.json beside it.
+ * It refuses on any lint error, and, without --draft, on uncommitted changes to the plan's
+ * sources (SOURCES in record-publish.mjs). It writes the page and stamp.json beside it.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -345,16 +345,7 @@ function main() {
   const { errors } = lintPlan(root);
   if (errors.length) fail(`the plan has lint errors:\n${errors.join('\n')}`);
   if (!values.draft) {
-    const dirty = git(
-      defaultExec,
-      root,
-      'status',
-      '--porcelain',
-      '--',
-      'docs/plan',
-      'docs/outbox',
-      'scripts/plan',
-    );
+    const dirty = git(defaultExec, root, 'status', '--porcelain', '--', ...SOURCES.plan);
     if (dirty) fail(`uncommitted changes (use --draft to render them anyway):\n${dirty}`);
   }
   const progress = computeProgress({ root, results: values.results });

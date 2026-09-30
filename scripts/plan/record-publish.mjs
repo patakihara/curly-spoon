@@ -13,14 +13,45 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 /**
- * The folders each artifact is generated from. The plan page shows the outbox, so an outbox
- * change needs a republish too, and the canvas ships the placeholder art its artboards show. The
- * merge check compares `sourcesTree` to the recorded `tree`.
+ * What each artifact is built from: its content folders and the code that renders them, so a
+ * generator change needs a republish as much as a content change does. The code is listed file by
+ * file, the build's import closure without its tests and fixtures, which change no output. The
+ * stamp code here is left out; a test keeps the lists equal to each build's imports. The plan page
+ * shows the outbox, so it is a source; it also lists docs/inbox, which is left out on purpose,
+ * since filing an idea must not need a publish. The canvas ships the placeholder art its artboards
+ * show. The merge check compares `sourcesTree` to the recorded `tree`.
  */
 export const SOURCES = {
-  plan: ['docs/plan', 'docs/outbox'],
-  sonora: ['design/sonora'],
-  canvas: ['design/app', 'web/public/art'],
+  plan: [
+    'docs/plan',
+    'docs/outbox',
+    'scripts/plan/lint.mjs',
+    'scripts/plan/parse.mjs',
+    'scripts/plan/progress.mjs',
+    'scripts/plan/render.mjs',
+    'scripts/plan/results.mjs',
+  ],
+  sonora: ['design/sonora', 'scripts/sonora/build.mjs'],
+  canvas: [
+    'design/app',
+    'web/public/art',
+    'design-codegen/src/app.ts',
+    'design-codegen/src/canvas.ts',
+    'design-codegen/src/kotlin.ts',
+    'design-codegen/src/nav-kotlin.ts',
+    'design-codegen/src/nav.ts',
+    'design-codegen/src/outputs.ts',
+    'design-codegen/src/page-kotlin.ts',
+    'design-codegen/src/page-web.ts',
+    'design-codegen/src/page.ts',
+    'design-codegen/src/props.ts',
+    'design-codegen/src/shell-handlers.ts',
+    'design-codegen/src/shell.ts',
+    'design-codegen/src/sonora.ts',
+    'design-codegen/src/structure.ts',
+    'scripts/canvas/build.mjs',
+    'scripts/canvas/install.mjs',
+  ],
 };
 
 /**
@@ -42,8 +73,8 @@ export function staleInstalls(artifact, installs, published) {
 }
 
 /**
- * One hash for an artifact's folders: sha1 over a `<path> <git tree|none>` line per folder, so
- * it changes exactly when one of the folders does. Null when none of the folders exists.
+ * One hash for an artifact's sources: sha1 over a `<path> <git tree or blob|none>` line per source,
+ * so it changes exactly when one of them does. Null when none of them exists.
  */
 export function combineTrees(trees) {
   if (trees.every(([, tree]) => !tree)) return null;

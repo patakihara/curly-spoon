@@ -80,7 +80,7 @@ Your rule: nothing frontend reaches code before it is in the published design, S
    - every page must match its generated layout;
    - web and Android must build the same route set;
    - each page's screenshot on both platforms is compared against the design's render of that page;
-   - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora`, or `design/app` with the placeholder art it ships (`web/public/art`), differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
+   - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora`, `design/app` and its art, or the code building either, differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
 
    Adding a screen in code alone fails the build.

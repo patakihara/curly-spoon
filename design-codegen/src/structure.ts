@@ -82,7 +82,7 @@ export function navOrder(nav: Nav): string {
 }
 
 /**
- * nav.json's back model in words, said once on each artboard rather than on every page. Each
+ * nav.json's back model in words, said once, on the screen list, rather than on every page. Each
  * sentence is keyed by the model's value, so a new model fails to type-check until it is worded.
  */
 export function backModel(nav: Nav): string[] {
@@ -457,7 +457,7 @@ export function layoutFlows(nav: Nav): {
     }
     x += w + gap;
   });
-  return { boxes, groups, lines, columns, width: x - gap + pad, height: bottom + 150 };
+  return { boxes, groups, lines, columns, width: x - gap + pad, height: bottom + 110 };
 }
 
 /** `flows.dc.html`: the navigation flowchart, a small tree per column, other links as text. */
@@ -508,7 +508,7 @@ export function generateFlows(
       '</a>',
     );
   }
-  const legendY = height - 110;
+  const legendY = height - 70;
   const lx = pad;
   svg.push(
     `<rect x="${lx}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--accent); stroke-width: 2.5"></rect>`,
@@ -518,10 +518,6 @@ export function generateFlows(
     `<rect x="${lx + 440}" y="${legendY}" width="36" height="22" rx="6" style="fill: var(--surface-card); stroke: var(--surface-fg-muted); stroke-width: 1.25; stroke-dasharray: 6 4"></rect>`,
     `<text x="${lx + 488}" y="${legendY + 16}" style="font-size: 14px; ${muted}">structure only, not drawn yet</text>`,
     `<text x="${lx + 760}" y="${legendY + 16}" style="font-size: 14px; ${muted}">→ its other links</text>`,
-    ...backModel(nav).map(
-      (line, i) =>
-        `<text x="${lx}" y="${legendY + 52 + i * 24}" style="font-size: 16px; fill: var(--surface-fg)">${i === 0 ? 'Back: ' : ''}${escapeText(line)}</text>`,
-    ),
   );
   svg.push('</svg>');
   const html = artboard(head, 'Flows', width, height, '', svg);

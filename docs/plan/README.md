@@ -125,12 +125,16 @@ commit, read the artifact first and fold in any edits or comments, publish
 `node scripts/plan/record-publish.mjs --artifact plan --url <url> --version <v> --stamp build/plan/stamp.json`,
 commit `design/published.json`, and push both commits together before merging. CI never sees a
 plan change without its record. The page shows the outbox, so a `docs/outbox` change needs the
-same publish: the recorded tree covers `docs/plan` and `docs/outbox` together.
+same publish: the recorded tree covers `docs/plan`, `docs/outbox` and the render code in
+`scripts/plan` together, its tests and fixtures aside.
 The page also lists `docs/inbox` ideas waiting to be sorted, but the recorded tree leaves
 `docs/inbox` out on purpose: sessions file ideas without publishing, and that must not turn CI red.
-Sonora (`design/sonora`) and the canvas (`design/app`, with the art in `web/public/art` its
-artboards show) publish the same way, Sonora first: the canvas build installs the recorded Sonora
-publish and stamps its version, and the merge check fails while the canvas installs any other.
+Sonora (`design/sonora`, with `scripts/sonora/build.mjs`) and the canvas (`design/app`, with the art
+in `web/public/art` its artboards show and the generator files in `design-codegen` and
+`scripts/canvas` its build imports) publish the same way, Sonora first: the canvas build installs
+the recorded Sonora publish and stamps its version, and the merge check fails while the canvas
+installs any other. `SOURCES` in `scripts/plan/record-publish.mjs` lists each artifact's sources,
+and a test keeps them equal to what each build imports.
 
 ## Size
 

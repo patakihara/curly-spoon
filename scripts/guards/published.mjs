@@ -4,8 +4,9 @@
  * one fails as never published). An artifact that installs another (the canvas installs Sonora)
  * must have installed the version recorded as that one's current publish. Used by CI (committed trees) and by
  * the Stop hook (working tree, uncommitted changes included). SOURCES in
- * scripts/plan/record-publish.mjs maps each artifact to its folders (the plan's are docs/plan and
- * docs/outbox), and its sourcesTree/combineTrees are the one tree scheme everything compares.
+ * scripts/plan/record-publish.mjs maps each artifact to its sources, content folders and the code
+ * files that render them, and its sourcesTree/combineTrees are the one tree scheme everything
+ * compares.
  *
  * CLI: node scripts/guards/published.mjs [--worktree] [--root <dir>]
  * Exit 0 when everything matches, 1 on drift, 2 on an error.
@@ -39,9 +40,10 @@ export function readChecked(root) {
 }
 
 /**
- * The folders' combined tree at HEAD, or as it would be if committed now (`worktree`),
+ * The sources' combined tree at HEAD, or as it would be if committed now (`worktree`),
  * uncommitted and untracked-but-not-ignored changes included. The worktree form stages into a
- * copy of the index, never the real one. Null when none of the folders exists.
+ * copy of the index, never the real one, and reads a folder as its tree and a file as its blob,
+ * as `sourcesTree` does. Null when none of the sources exists.
  */
 export function currentTree(root, sources, { worktree = false } = {}) {
   if (!worktree) return sourcesTree(root, sources);
@@ -52,13 +54,21 @@ export function currentTree(root, sources, { worktree = false } = {}) {
     const index = join(dir, 'index');
     if (existsSync(real)) copyFileSync(real, index);
     const env = { GIT_INDEX_FILE: index };
-    gitIn(root, ['add', '-A', '--', ...sources], env);
+    const present = sources.filter((source) => existsSync(join(root, source)));
+    const gone = sources.filter((source) => !present.includes(source));
+    if (present.length) gitIn(root, ['add', '-A', '--', ...present], env);
+    if (gone.length)
+      gitIn(root, ['rm', '-r', '-q', '--cached', '--ignore-unmatch', '--', ...gone], env);
     return combineTrees(
       sources.map((source) => {
         try {
           return [source, gitIn(root, ['write-tree', `--prefix=${source}/`], env)];
         } catch {
-          return [source, null];
+          try {
+            return [source, gitIn(root, ['rev-parse', '--verify', '-q', `:${source}`], env)];
+          } catch {
+            return [source, null];
+          }
         }
       }),
     );

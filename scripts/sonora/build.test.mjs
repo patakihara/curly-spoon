@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildStamp, sourcesTree } from '../plan/record-publish.mjs';
+import { SOURCES, buildStamp, sourcesTree } from '../plan/record-publish.mjs';
 import { REPO_ROOT, git, removeTree, write } from '../plan/testing.mjs';
 import { publishedRepo } from '../guards/testing.mjs';
 
@@ -38,7 +38,7 @@ test('the Sonora build writes the artifact, the canvas tokens and a stamp of des
     );
     const stamp = JSON.parse(readFileSync(join(out, 'stamp.json'), 'utf8'));
     assert.equal(stamp.commit, git(REPO_ROOT, 'rev-parse', 'HEAD'));
-    assert.equal(stamp.tree, sourcesTree(REPO_ROOT, ['design/sonora']));
+    assert.equal(stamp.tree, sourcesTree(REPO_ROOT, SOURCES.sonora));
     assert.equal(stamp.draft, true);
   } finally {
     removeTree(out);
@@ -51,7 +51,7 @@ test('a build stamp refuses uncommitted changes to its sources unless it is a dr
     const clean = buildStamp({ root, artifact: 'sonora', now: new Date('2026-01-01T00:00:00Z') });
     assert.deepEqual(clean, {
       commit: git(root, 'rev-parse', 'HEAD'),
-      tree: sourcesTree(root, ['design/sonora']),
+      tree: sourcesTree(root, SOURCES.sonora),
       builtAt: '2026-01-01T00:00:00.000Z',
       draft: false,
     });

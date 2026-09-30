@@ -5,9 +5,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SOURCES, combineTrees, recordPublish, sourcesTree } from './record-publish.mjs';
 import { read, removeTree, REPO_ROOT, write } from './testing.mjs';
@@ -21,9 +21,55 @@ const STAMP = {
   draft: false,
 };
 
-test('[M0.plan/d] design/published.json records the current tree of docs/plan and docs/outbox', () => {
+test('[M0.plan/d] design/published.json records the current tree of the plan’s sources', () => {
   const published = JSON.parse(readFileSync(join(REPO_ROOT, 'design/published.json'), 'utf8'));
   assert.equal(published.plan?.tree, sourcesTree(REPO_ROOT, SOURCES.plan));
+});
+
+/** Every repo file `entry` imports by relative path, itself included, followed transitively. */
+function importClosure(entry) {
+  const seen = new Set();
+  const visit = (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    const text = readFileSync(file, 'utf8');
+    for (const [, spec] of text.matchAll(/^(?:import|export)[^;]*?from\s+'(\.[^']+)'/gm)) {
+      const target = resolve(dirname(file), spec);
+      visit(existsSync(target) ? target : target.replace(/\.js$/, '.ts'));
+    }
+  };
+  visit(join(REPO_ROOT, entry));
+  return [...seen].map((file) => relative(REPO_ROOT, file));
+}
+
+const covered = (sources, file) =>
+  sources.some((source) => file === source || file.startsWith(`${source}/`));
+
+test('each artifact is recorded against every file its build reads, the stamp code aside', () => {
+  const builds = {
+    plan: 'scripts/plan/render.mjs',
+    sonora: 'scripts/sonora/build.mjs',
+    canvas: 'scripts/canvas/build.mjs',
+  };
+  for (const [artifact, entry] of Object.entries(builds)) {
+    const closure = importClosure(entry);
+    assert.ok(closure.length > 1 || artifact === 'sonora', `${entry} imports its code`);
+    for (const file of closure.filter((f) => f !== 'scripts/plan/record-publish.mjs'))
+      assert.ok(covered(SOURCES[artifact], file), `${artifact} is recorded against ${file}`);
+  }
+  assert.ok(covered(SOURCES.canvas, 'design-codegen/src/canvas.ts'));
+  assert.ok(covered(SOURCES.canvas, 'design-codegen/src/structure.ts'));
+  assert.ok(covered(SOURCES.plan, 'scripts/plan/progress.mjs'));
+});
+
+test('no artifact is recorded against its tests, and the plan leaves docs/inbox out', () => {
+  for (const [artifact, sources] of Object.entries(SOURCES)) {
+    for (const source of sources) {
+      assert.doesNotMatch(source, /\.test\.|test-fixtures|testing\.mjs/, `${artifact}: ${source}`);
+      assert.ok(existsSync(join(REPO_ROOT, source)), `${artifact}: ${source} exists`);
+    }
+  }
+  assert.ok(!covered(SOURCES.plan, 'docs/inbox/an-idea.md'), 'filing an idea needs no publish');
 });
 
 test('the combined tree changes when either the plan or the outbox changes', () => {
@@ -64,7 +110,7 @@ test('recording a publish writes the stamp, url and version under the artifact k
         {
           plan: {
             url: URL_,
-            sources: ['docs/plan', 'docs/outbox'],
+            sources: SOURCES.plan,
             commit: STAMP.commit,
             tree: STAMP.tree,
             version: '7',
@@ -89,7 +135,7 @@ test('other artifacts are kept, keys stay sorted, and a design publish records i
     recordPublish({ root, artifact: 'canvas', url: URL_, version: '2', stamp: canvasStamp });
     const published = JSON.parse(read(root, 'design/published.json'));
     assert.deepEqual(Object.keys(published), ['canvas', 'plan', 'sonora']);
-    assert.deepEqual(published.canvas.sources, ['design/app', 'web/public/art']);
+    assert.deepEqual(published.canvas.sources, SOURCES.canvas);
     assert.equal(published.sonora.url, 'u');
   }));
 
