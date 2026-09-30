@@ -181,7 +181,7 @@ describe('a generated web page', () => {
 
   it('holds the shell’s parts for every layout: the avatar and bottom bar on the phone, the rail wider', () => {
     expect(homeOut).toContain(
-      "  w0: (go) => ({\n    platform: 'mobile',\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} />",
+      '  w0: (go) => ({\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} />',
     );
     expect(homeOut).toContain(
       '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',

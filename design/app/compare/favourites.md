@@ -1,6 +1,6 @@
 ---
 page: favourites
-pageHash: fce6a22f8962d614fa08880017d9d1b91b837c03208d45eddae794a0a3310940
+pageHash: 2713f92824359caf2b7bb020ce8690de20ce3cae465d741e2c8aa4a8b0b67631
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 

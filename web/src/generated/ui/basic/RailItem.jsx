@@ -7,10 +7,36 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
   const on = !!active, open = expanded !== false;
   const [hover, setHover] = React.useState(false);
   const labelRef = React.useRef(null);
+  const pillRef = React.useRef(null);
+  const measured = React.useRef(0);
   const [labelW, setLabelW] = React.useState(0);
+  // A new label eases the pill to its width; the same label resizing on its own (its web font
+  // arriving after the first measure) snaps the pill to it instead.
+  const [snap, setSnap] = React.useState(false);
   React.useLayoutEffect(() => {
-    if (labelRef.current) setLabelW(Math.ceil(labelRef.current.scrollWidth));
+    if (!labelRef.current) return;
+    measured.current = Math.ceil(labelRef.current.scrollWidth);
+    setLabelW(measured.current);
   }, [label]);
+  React.useEffect(() => {
+    const el = labelRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => {
+      const w = Math.ceil(el.scrollWidth);
+      if (w === measured.current) return;
+      measured.current = w;
+      setSnap(true);
+      setLabelW(w);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  React.useLayoutEffect(() => {
+    if (!snap) return;
+    // Style the new width with no transition before the transition returns, so it does not ease.
+    if (pillRef.current) pillRef.current.getBoundingClientRect();
+    setSnap(false);
+  }, [snap]);
   const pill = 'color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent))';
   const hoverBg = 'color-mix(in oklch, transparent 92%, var(--surface-fg))';
   const ease = ' var(--duration-slow) var(--ease-standard)';
@@ -27,7 +53,7 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
   return (
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={sx('position:relative;width:100%;height:' + rowHeight + 'px;box-sizing:border-box;cursor:pointer;display:flex;justify-content:' + (open ? 'flex-start' : 'center') + ';transition:color' + ease + ';color:' + (on ? 'var(--accent-ink)' : 'var(--surface-fg-muted)'))}>
-      <span style={sx('flex-shrink:0;pointer-events:none;line-height:0;border-radius:var(--radius-pill);transition:width' + ease + ',height' + ease + ',margin-top' + ease + ',background' + ease + ';margin-top:' + shift + 'px;width:' + w + ';height:' + (open ? rowHeight + 'px' : '32px') + ';background:' + (on ? pill : (hover ? hoverBg : 'transparent')))} />
+      <span ref={pillRef} style={sx('flex-shrink:0;pointer-events:none;line-height:0;border-radius:var(--radius-pill);transition:' + (snap ? '' : 'width' + ease + ',') + 'height' + ease + ',margin-top' + ease + ',background' + ease + ';margin-top:' + shift + 'px;width:' + w + ';height:' + (open ? rowHeight + 'px' : '32px') + ';background:' + (on ? pill : (hover ? hoverBg : 'transparent')))} />
       <span style={sx('position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:height' + ease + ',top' + ease + ';top:' + shift + 'px;left:' + (center ? 'calc(50% - 28px)' : '0px') + ';width:56px;height:' + (open ? rowHeight + 'px' : '32px'))}>
         <span style={sx("font-family:'Material Symbols Rounded';font-size:24px;line-height:1;transition:font-variation-settings" + ease + ";font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{icon}</span>
       </span>

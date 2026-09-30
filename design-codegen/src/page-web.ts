@@ -233,7 +233,7 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
 }
 
 function chromeEntry(parts: Chrome, components: Ctx): string[] {
-  const out = [`    platform: '${parts.platform}',`, `    appBar: ${parts.appBar},`];
+  const out = [`    appBar: ${parts.appBar},`];
   for (const key of ['rail', 'leading', 'player', 'sheet'] as const) {
     const tree = parts[key];
     if (tree === undefined) continue;
@@ -247,7 +247,7 @@ function chromeEntry(parts: Chrome, components: Ctx): string[] {
 const binding = (path: string): PropValue => ({ kind: 'binding', path: path.split('.') });
 
 /** What a back layer or subheader may use of what the shell draws it with, in this order. */
-const CONTEXT = ['platform', 'leading', 'navigate', 'state'] as const;
+const CONTEXT = ['platform', 'leading'] as const;
 
 /**
  * One of the frame's parts, `back` or `subheader`, as a function of the page's data and what the

@@ -398,7 +398,6 @@ const shell = {
 /** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */
 const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w0: (go) => ({
-    platform: 'mobile',
     appBar: false,
     leading: (
       <AccountButton label={shell.account.label} />
@@ -412,7 +411,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     sheetOpen: false,
   }),
   w600: (go) => ({
-    platform: 'desktop',
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
@@ -423,7 +421,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     sheetOpen: false,
   }),
   w1024: (go) => ({
-    platform: 'desktop',
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
@@ -434,7 +431,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     sheetOpen: false,
   }),
   w1240: (go) => ({
-    platform: 'desktop',
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />

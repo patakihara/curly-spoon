@@ -337,3 +337,79 @@ for (const size of SIZES) {
     });
   });
 }
+
+type FontWindow = RailWindow & { __widthTransitions?: string[]; __stop?: () => void };
+
+test.describe('the labelled rail as its web font arrives', () => {
+  test('[M0.canvas/c] each pill hugs its label once Inter loads late, and snaps to it rather than easing', async ({
+    page,
+  }) => {
+    await page.addInitScript(railScript());
+    await page.setViewportSize({ width: 1440, height: 900 });
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/inter-latin(-ext)?-[^/]*\.woff2$/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    await page.goto('/music', { waitUntil: 'domcontentloaded' });
+    await expect(toggle(page)).toBeVisible();
+    await settle(page);
+    expect(
+      await page.evaluate(() => document.fonts.check('600 14px Inter')),
+      'Inter held back',
+    ).toBe(false);
+
+    // Every width transition any pill starts from here until the font has landed.
+    await page.evaluate(() => {
+      const w = window as unknown as FontWindow;
+      const seen = (w.__widthTransitions = [] as string[]);
+      let on = true;
+      w.__stop = () => (on = false);
+      const frame = () => {
+        const rail = w.__findRail();
+        for (const pill of rail === null ? [] : w.__findPills(rail)) {
+          for (const a of pill.getAnimations()) {
+            if (a instanceof CSSTransition && a.transitionProperty === 'width') {
+              seen.push(pill.parentElement?.textContent ?? '');
+            }
+          }
+        }
+        if (on) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+    release();
+    await page.waitForFunction(() => document.fonts.check('600 14px Inter'));
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+    );
+    await settle(page);
+    const swaps = await page.evaluate(() => {
+      const w = window as unknown as FontWindow;
+      w.__stop!();
+      return w.__widthTransitions!;
+    });
+
+    const pills = await page.evaluate(() => {
+      const w = window as unknown as RailWindow;
+      return w.__findPills(w.__findRail()!).map((pill) => {
+        const label = pill.parentElement!.children[3] as HTMLElement;
+        return {
+          label: label.textContent,
+          pill: pill.getBoundingClientRect().width,
+          hugs: 56 + Math.ceil(label.scrollWidth) + 20,
+        };
+      });
+    });
+    expect(pills.length).toBeGreaterThan(0);
+    for (const p of pills) {
+      expect(
+        Math.abs(p.pill - p.hugs),
+        `${p.label}'s pill against its label in Inter`,
+      ).toBeLessThan(0.5);
+    }
+    expect(swaps, 'no pill eases its width as the font lands').toEqual([]);
+  });
+});

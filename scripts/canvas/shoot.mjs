@@ -66,7 +66,8 @@ function cardFile(stem) {
 
 /**
  * Writes a page with no web route as the web generator would, beside a module that mounts it in
- * a memory router; returns that module's path on the dev server.
+ * the one web shell, as a route of a memory router handing the shell its frame; returns that
+ * module's path on the dev server.
  */
 function offRoute(page) {
   const app = readApp(APP, readProps(discoverComponents(SONORA)));
@@ -87,11 +88,20 @@ function offRoute(page) {
     [
       "import { createElement } from 'react';",
       "import { createRoot } from 'react-dom/client';",
-      "import { MemoryRouter } from 'react-router';",
-      `import Page from './${name}';`,
+      "import { createMemoryRouter, RouterProvider } from 'react-router';",
+      "import { Shell } from '../nav/Shell';",
+      page.presentation === 'sheet'
+        ? `import Page from './${name}';`
+        : `import Page, { frame } from './${name}';`,
       '',
       'export function mount(root: HTMLElement) {',
-      '  createRoot(root).render(createElement(MemoryRouter, null, createElement(Page)));',
+      '  const router = createMemoryRouter([',
+      '    {',
+      '      element: createElement(Shell),',
+      `      children: [{ path: '/', element: createElement(Page)${page.presentation === 'sheet' ? '' : ', handle: { frame }'} }],`,
+      '    },',
+      '  ]);',
+      '  createRoot(root).render(createElement(RouterProvider, { router }));',
       '}',
       '',
     ].join('\n'),

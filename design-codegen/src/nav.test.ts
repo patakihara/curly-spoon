@@ -293,6 +293,11 @@ describe('the one web shell', () => {
     expect(out).toContain('cloneElement(back, { key: where })');
   });
 
+  it('[M0.canvas/c] draws the back layer and subheader with the density and what leads the heading', () => {
+    expect(out).toContain('  const context = { platform, leading: chrome.leading };');
+    expect(out).not.toContain('useNavigate');
+  });
+
   it('[M0.canvas/c] draws a player sheet beside the page under it where the panel holds it, and alone elsewhere', () => {
     expect(out).toContain(
       '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
@@ -371,6 +376,18 @@ describe('the web layout hook', () => {
     expect(out).toContain('  chrome: Record<LayoutId, (go: ShellNav) => Chrome>;');
     expect(out).toContain('  back(data: Data, context: FrameContext): ReactNode;');
     expect(out).toContain('  subheader?(data: Data, context: FrameContext): ReactNode;');
+  });
+
+  it('[M0.canvas/c] gives a back layer and subheader only what they draw with: the density and what leads the heading', () => {
+    expect(out).toContain(
+      'export interface FrameContext {\n  platform: Platform;\n  leading?: ReactNode;\n}',
+    );
+    expect(out).not.toContain('NavigateFunction');
+  });
+
+  it("[M0.canvas/c] leaves a layout's density to PLATFORM, not to each page's parts", () => {
+    const chrome = out.slice(out.indexOf('export interface Chrome {'));
+    expect(chrome.slice(0, chrome.indexOf('}'))).not.toContain('platform');
   });
 
   it('draws the layout given, or else the widest when there is no window', () => {
