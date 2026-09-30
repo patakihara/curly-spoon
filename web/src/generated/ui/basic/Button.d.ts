@@ -11,7 +11,9 @@ export interface ButtonProps {
   /** Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). */
   platform?: 'desktop' | 'mobile';
   icon?: ReactNode;
+  /** Drawn disabled: content at 38%, a filled variant's container at 12%, no focus or press. */
   disabled?: boolean;
+  /** The action. Without it the button is drawn disabled. */
   onClick?: () => void;
   /**
    * Marks the button as a toggle and sets `aria-pressed`. For a control whose label states the

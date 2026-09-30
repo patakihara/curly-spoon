@@ -18,5 +18,6 @@ data class ExpandableTextProps(
     val lessLabel: String? = null,
     /** Controlled expanded state. Omit to let the component keep its own. */
     val expanded: Boolean? = null,
+    /** Receives the next expanded state. Without it the toggle is drawn disabled. */
     val onToggle: ((Boolean) -> Unit)? = null,
 )

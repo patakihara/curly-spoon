@@ -12,7 +12,7 @@ data class SortFilterBarProps(
     val icon: String? = null,
     /** The current state, rendered as the control's own label — e.g. "All episodes • Newest". */
     val label: String,
-    /** Opens the sort/filter picker. */
+    /** Opens the sort/filter picker. Without it the control is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /** Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. */
     val trailing: (@Composable () -> Unit)? = null,

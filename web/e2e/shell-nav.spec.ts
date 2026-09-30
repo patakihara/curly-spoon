@@ -38,22 +38,15 @@ const artistLink = (page: Page, name: string) =>
   page.locator('div[style*="cursor: pointer"]', { hasText: new RegExp(`^${name}$`) }).first();
 
 /**
- * The album header's menu: closed as the album opens, it opens from its button; on the phone a
- * sheet over a scrim, which a tap closes back to the album, and anywhere an item closes it.
+ * The album header's menu: the page binds none of its verbs yet, so its button is drawn disabled
+ * (Material's disabled state, M0.states) and the menu stays shut when it is pressed.
  */
-async function useAlbumMenu(page: Page, phone: boolean) {
+async function useAlbumMenu(page: Page) {
   const menu = page.getByRole('menu');
   const button = page.getByRole('button', { name: 'More options', exact: true }).first();
   await expect(menu).toBeHidden();
-  if (phone) {
-    await button.click();
-    await expect(menu).toBeVisible();
-    await page.mouse.click(page.viewportSize()!.width / 2, 40);
-    await expect(menu).toBeHidden();
-  }
-  await button.click();
-  await expect(menu).toBeVisible();
-  await menu.getByRole('menuitem', { name: /Add to library/ }).click();
+  await expect(button).toBeDisabled();
+  await button.click({ force: true });
   await expect(menu).toBeHidden();
 }
 
@@ -77,7 +70,7 @@ for (const size of SIZES) {
     await expect(page).toHaveURL('/music');
     await item(page, 'Between Lines of Light').click();
     await expect(page).toHaveURL('/music/albums/between-lines-of-light');
-    await useAlbumMenu(page, size.phone);
+    await useAlbumMenu(page);
     await expect(page).toHaveURL('/music/albums/between-lines-of-light');
     await artistLink(page, 'Deep Inertia').click();
     await expect(page).toHaveURL('/music/artists/deep-inertia');

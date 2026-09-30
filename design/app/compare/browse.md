@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: ebb973e75a012ef68594c9c408730ef7ec69788f20a1f03d48eee0a5a82ba873
+pageHash: 9f9e47cd5a4b13ae09e34630ea68f79d97399a2f084c592da54599b8745dc078
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -54,6 +54,9 @@ stay put, the document never scrolls, and the front layer is the one scroller.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Changed on purpose, from S15 and S25: after "Jump back in", a `FeatureCard` argues for one
   episode at length, as Browse does in the plan's Discovery section and neither kit draws: art, kind,
   title, show and date, a two-line blurb, a muted `PreviewButton` ("Preview episode") at the start

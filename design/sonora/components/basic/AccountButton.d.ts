@@ -13,6 +13,7 @@ export interface AccountButtonProps {
   label?: string;
   /** Diameter in px. Default 32, the mobile app bar's avatar. */
   size?: number;
+  /** Opens Settings. Without it the button is drawn disabled. */
   onClick?: () => void;
 }
 export declare function AccountButton(props: AccountButtonProps): JSX.Element;

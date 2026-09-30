@@ -70,7 +70,7 @@ function Demo(){
       </Phone>
       <Phone caption="Phone · a shelf: close, the subject's art, the eyebrow over its title; no header below says it again"
         back={<BackLayer platform="mobile" leading={close()} eyebrow="More like" title="Halcyon Bloom" image={art(265)} round
-          trailing={<ViewToggle value="grid" />} />}>
+          trailing={<ViewToggle value="grid" onChange={() => {}} />} />}>
         <Grid platform="mobile" />
       </Phone>
     </div>
@@ -80,7 +80,7 @@ function Demo(){
         <BackdropShell platform="desktop"
           rail={<NavRail items={NAV} active="browse" expanded={false} />}
           back={<BackLayer leading={close()} eyebrow="More like" title="Halcyon Bloom" image={art(265)} round search="Search this shelf"
-            trailing={<ViewToggle value="grid" />} />}>
+            trailing={<ViewToggle value="grid" onChange={() => {}} />} />}>
           <Grid platform="desktop" />
         </BackdropShell>
       </div>

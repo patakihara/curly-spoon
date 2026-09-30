@@ -1,6 +1,6 @@
 ---
 page: series
-pageHash: 72f39e8ef3c264f849667e57278f001ff2f0aec42f7c54bd4753053a9561150b
+pageHash: 2b68ab014304e7f82a7bf048707efacdc34cabb4963e09f96a4457a04d913818
 sonora: [none]
 spotify: []
 ---
@@ -32,6 +32,9 @@ finished, the second part-read with its progress, the third greyed "Not in libra
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches the kits' detail header: art, kind line, the author as an accent link, meta.
 - Changed on purpose: the books are a grid of covers with their number as the eyebrow, not rows,
   so greyed and requested books read the same as on Books and Author.

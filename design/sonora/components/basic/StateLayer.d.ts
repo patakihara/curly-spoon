@@ -1,0 +1,24 @@
+/**
+ * Material's state layer, shared by every interactive Sonora component. Placed as the last child
+ * of the element that shows the state, usually the control itself (a rail item's indicator pill
+ * instead), inside a host carrying the class `sn-int`. It draws a wash of the content colour for
+ * hover (8%), keyboard focus (10%) and press (10%), a focus ring 3px wide and 2px outside the
+ * shape that follows its corners, and a ripple that grows from the pointer and fades on release.
+ * The control's own box, corners and position never change. Text fields and sliders take
+ * `ripple={false}`.
+ *
+ * A control is disabled when `disabled` is set or when its action prop is absent. A disabled
+ * control's content is the surface ink at 38%, and a filled one (class `sn-filled`) sits on the
+ * surface ink at 12%; it takes no focus, no press and no state. A `button` root uses the native
+ * `disabled`; a `div` or `span` root takes a `role`, `tabIndex` of -1 when off, `aria-disabled`
+ * and Enter and Space activation; a wrapper around an input sets `data-disabled`.
+ *
+ * A preview pins a state with `data-sn-force="hovered|focused|pressed|disabled"` on an ancestor.
+ */
+export interface StateLayerProps {
+  /** The control is disabled: the layer shows no state. */
+  disabled?: boolean;
+  /** Whether a press ripples. Default true; false for text fields and sliders. */
+  ripple?: boolean;
+}
+export declare function StateLayer(props: StateLayerProps): JSX.Element;

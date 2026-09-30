@@ -58,6 +58,7 @@ export { SideSheet, type SideSheetProps } from './layouts/SideSheet';
 export { Slider, type SliderProps } from './basic/Slider';
 export { SortFilterBar, type SortFilterBarProps } from './basic/SortFilterBar';
 export { SpeedControl, type SpeedControlProps } from './basic/SpeedControl';
+export { StateLayer, type StateLayerProps } from './basic/StateLayer';
 export { StatusBanner, type StatusBannerProps } from './components/StatusBanner';
 export { Switch, type SwitchProps } from './basic/Switch';
 export { TabBar, type TabBarItem, type TabBarProps } from './components/TabBar';

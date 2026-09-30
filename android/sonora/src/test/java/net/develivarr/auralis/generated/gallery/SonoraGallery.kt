@@ -138,7 +138,7 @@ val componentGallery: List<GalleryEntry> = listOf(
         )
     },
     GalleryEntry("AccountButton") {
-        AccountButton(AccountButtonProps())
+        AccountButton(AccountButtonProps(onClick = {}))
     },
     GalleryEntry("ArtistCard") {
         ArtistCard(
@@ -234,6 +234,7 @@ val componentGallery: List<GalleryEntry> = listOf(
             ButtonProps(
                 variant = ButtonVariant.GHOST,
                 platform = Platform.MOBILE,
+                onClick = {},
                 children = { BasicText("Settings") },
             ),
         )
@@ -292,6 +293,7 @@ val componentGallery: List<GalleryEntry> = listOf(
             ExpandableTextProps(
                 text = "Driftwave was recorded over eleven nights in a converted boathouse, using tape saturation and room mics instead of the click-track setup Halcyon Bloom had used on every prior release. Half the album was written after the sessions started, against material the other players had already laid down — which is the reason the credits list every track as a full-band composition rather than crediting a single writer.",
                 lines = 3f,
+                onToggle = { _ -> },
             ),
         )
     },
@@ -359,7 +361,12 @@ val componentGallery: List<GalleryEntry> = listOf(
     },
     GalleryEntry("IconButton") {
         IconButton(
-            IconButtonProps(muted = true, label = "More", children = { BasicText("more_vert") }),
+            IconButtonProps(
+                muted = true,
+                label = "More",
+                onClick = {},
+                children = { BasicText("more_vert") },
+            ),
         )
     },
     GalleryEntry("Input") {
@@ -368,6 +375,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 placeholder = "Search",
                 icon = { BasicText("search") },
                 platform = Platform.MOBILE,
+                onChange = { _ -> },
             ),
         )
     },
@@ -515,6 +523,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                     OverflowMenuItem(key = "artist", label = "Go to artist", icon = "person"),
                     OverflowMenuItem(key = "share", label = "Share", icon = "share"),
                 ),
+                onSelect = { _ -> },
                 platform = Platform.MOBILE,
             ),
         )
@@ -655,6 +664,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                 ),
                                 OverflowMenuItem(key = "share", label = "Share", icon = "share"),
                             ),
+                            onSelect = { _ -> },
                             platform = Platform.MOBILE,
                         ),
                     )

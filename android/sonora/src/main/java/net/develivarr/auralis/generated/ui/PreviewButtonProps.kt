@@ -15,8 +15,9 @@ data class PreviewButtonProps(
     val playing: Boolean? = null,
     /** Playing with sound off — the resting state a preview starts in. */
     val muted: Boolean? = null,
-    /** No sample available: dims the control, not-allowed cursor, aria-disabled. */
+    /** No sample available: drawn disabled, the fill at 12% and the label at 38% of the surface ink. */
     val disabled: Boolean? = null,
+    /** Plays the sample. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     val platform: Platform? = null,
 )

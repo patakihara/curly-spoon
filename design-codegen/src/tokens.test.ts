@@ -97,6 +97,7 @@ interface KotlinTokens {
   dimens: Map<string, number>;
   type: Map<string, number>;
   motion: Map<string, number>;
+  state: Map<string, number>;
   ease: number[];
   notExported: Map<string, string>;
 }
@@ -123,6 +124,11 @@ function readKotlin(kt: string): KotlinTokens {
     dimens: entries(block(kt, /object SonoraDimens \{\n/), /val (\w+) = ([\d.]+)\.dp/g, Number),
     type: entries(block(kt, /object SonoraType \{\n/), /val (\w+) = ([\d.]+)\.sp/g, Number),
     motion: entries(block(kt, /object SonoraMotion \{\n/), /const val (\w+) = (\d+)$/gm, Number),
+    state: entries(
+      block(kt, /object SonoraState \{\n/),
+      /val (\w+) = ([\d.]+)(?:\.dp|f)$/gm,
+      Number,
+    ),
     ease: ease === null ? [] : ease[1]!.split(',').map((n) => parseFloat(n)),
     notExported: new Map(
       [...block(kt, /Not exported[^\n]*\n/).matchAll(/^ \* {3}(--[a-z0-9-]+): (.*)$/gm)].map(
@@ -135,6 +141,9 @@ function readKotlin(kt: string): KotlinTokens {
 const camel = (name: string) =>
   name.slice(2).replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 const pascal = (name: string) => camel(name).charAt(0).toUpperCase() + camel(name).slice(1);
+/** An interaction-state token: the state layer's opacities and the focus ring's measures. */
+const STATE = /^--(state-layer|disabled|focus-ring)-/;
+const stateName = (name: string) => camel(name.replace(/^--state-layer-/, '--'));
 const cssNumber = (value: string, unit: string) => {
   const m = new RegExp(`^(-?[\\d.]+)${unit}$`).exec(value);
   return m === null ? undefined : Number(m[1]);
@@ -214,6 +223,10 @@ describe('Sonora tokens, generated for web and Android', () => {
           argb(resolved(light, light.get(name)!)),
         );
         matched.add(`dark.${camel(name)}`).add(`light.${camel(name)}`);
+      } else if (STATE.test(name)) {
+        const n = cssNumber(value, 'px') ?? Number(value);
+        expect(kt.state.get(stateName(name)), name).toBe(n);
+        matched.add(`state.${stateName(name)}`);
       } else if (colour !== undefined) {
         expect(kt.palette.get(pascal(name)), name).toBe(colour);
         matched.add(`palette.${pascal(name)}`);
@@ -243,6 +256,7 @@ describe('Sonora tokens, generated for web and Android', () => {
       ...[...kt.dimens.keys()].map((k) => `dimens.${k}`),
       ...[...kt.type.keys()].map((k) => `type.${k}`),
       ...[...kt.motion.keys()].map((k) => `motion.${k}`),
+      ...[...kt.state.keys()].map((k) => `state.${k}`),
     ];
     expect(kotlinNames.filter((k) => !matched.has(k))).toEqual([]);
     expect([...kt.notExported.keys()].filter((k) => !dark.has(k))).toEqual([]);

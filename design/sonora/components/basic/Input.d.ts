@@ -5,6 +5,8 @@ export interface InputProps {
   icon?: ReactNode;
   platform?: 'desktop' | 'mobile';
   value?: string;
-  /** The new text, on every keystroke. */
+  /** The new text, on every keystroke. Without it the field is drawn disabled. */
   onChange?: (next: string) => void;
+  /** Drawn disabled: text at 38%, the fill at 12% of the surface ink, no focus or typing. */
+  disabled?: boolean;
 }

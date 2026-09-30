@@ -59,6 +59,7 @@ data class SonoraColors(
     val surfaceBorder: Color,
     val divider: Color,
     val surfaceHover: Color,
+    val focusRing: Color,
     val scrollEdge: Color,
     val artGradientStart: Color,
     val artGradientEnd: Color
@@ -86,6 +87,7 @@ val SonoraDarkColors = SonoraColors(
     surfaceBorder = Color(0x14FFFFFF),
     divider = Color(0x33FFFFFF),
     surfaceHover = Color(0x1AFFFFFF),
+    focusRing = Color(0xFFE1E1E1),
     scrollEdge = Color(0x38FFFFFF),
     artGradientStart = Color(0xFFB6C4FF),
     artGradientEnd = Color(0xFFFFB7DB)
@@ -113,6 +115,7 @@ val SonoraLightColors = SonoraColors(
     surfaceBorder = Color(0x14000000),
     divider = Color(0x2E000000),
     surfaceHover = Color(0x0F000000),
+    focusRing = Color(0xFF191919),
     scrollEdge = Color(0x2E000000),
     artGradientStart = Color(0xFF4D5C92),
     artGradientEnd = Color(0xFF75546F)
@@ -206,6 +209,17 @@ object SonoraMotion {
     const val durationQuick = 200
     const val durationMedium = 280
     const val durationSlow = 420
+}
+
+/** Interaction states: state-layer opacities over the content colour, and the focus ring. */
+object SonoraState {
+    val hover = 0.08f
+    val focus = 0.1f
+    val pressed = 0.1f
+    val disabledContainer = 0.12f
+    val disabledContent = 0.38f
+    val focusRingWidth = 3.dp
+    val focusRingOffset = 2.dp
 }
 
 /*

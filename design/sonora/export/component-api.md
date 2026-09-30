@@ -15,7 +15,7 @@ The account avatar that leads the phone's top bar: a `BackLayer`'s `leading` on 
 | `image` | `string` | The account's picture. Without it, a person glyph. |
 | `label` | `string` | Accessible name and tooltip. Default "Account". |
 | `size` | `number` | Diameter in px. Default 32, the mobile app bar's avatar. |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | Opens Settings. Without it the button is drawn disabled. |
 
 ### Badge
 
@@ -41,8 +41,8 @@ Small pill for counts, queue positions and status. Colors come from the status t
 | `size` | `'sm' \| 'md' \| 'lg'` |  |
 | `platform` | `'desktop' \| 'mobile'` | Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). |
 | `icon` | `ReactNode` |  |
-| `disabled` | `boolean` |  |
-| `onClick` | `() => void` |  |
+| `disabled` | `boolean` | Drawn disabled: content at 38%, a filled variant's container at 12%, no focus or press. |
+| `onClick` | `() => void` | The action. Without it the button is drawn disabled. |
 | `pressed` | `boolean` |  Marks the button as a toggle and sets `aria-pressed`. For a control whose label states the current state rather than the action it performs — FollowButton's "Following". Leave it undefined for an ordinary button and no attribute is emitted.  |
 
 ### ButtonGroup
@@ -53,7 +53,7 @@ M3 connected button group — a row of segments that read as one control: outer 
 | --- | --- | --- |
 | `items` *(required)* | `(string \| { key: string; label?: string; icon?: string })[]` |  Labels, or `{ key, label?, icon? }` — `icon` is a Material Symbols Rounded glyph name. An item with an icon and no label renders as a square icon-only segment (the label is still used for its accessible name).  |
 | `value` | `string` | Key of the selected segment. |
-| `onChange` | `(next: string) => void` |  |
+| `onChange` | `(next: string) => void` | Receives the chosen segment's key. Without it every segment is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `scroll` | `boolean` | @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. |
 | `tone` | `'accent' \| 'play'` | The selected segment's fill: `accent` (default), or `play` for the Browse media filter (All, Music, Podcasts, Books). |
@@ -77,7 +77,7 @@ Offline availability as a three-state control: idle -> downloading (determinate 
 | --- | --- | --- |
 | `state` | `'idle' \| 'downloading' \| 'done'` |  |
 | `progress` | `number \| null` | 0–1. Indeterminate ring when null and `state` is 'downloading'. |
-| `onClick` | `() => void` | Fires on press in every state: starts, cancels, or removes, depending on `state`. |
+| `onClick` | `() => void` | Fires on press in every state: starts, cancels, or removes, depending on `state`. Without it the button is drawn disabled. |
 | `size` | `number` | Control diameter in px. |
 
 ### ExpandableText
@@ -92,7 +92,7 @@ Long prose that neither dominates nor hides — a paragraph clamped with -webkit
 | `moreLabel` | `string` |  |
 | `lessLabel` | `string` |  |
 | `expanded` | `boolean` | Controlled expanded state. Omit to let the component keep its own. |
-| `onToggle` | `(next: boolean) => void` |  |
+| `onToggle` | `(next: boolean) => void` | Receives the next expanded state. Without it the toggle is drawn disabled. |
 
 ### FollowButton
 
@@ -101,7 +101,7 @@ Subscription toggle whose label states the current state, not the action to take
 | prop | type | notes |
 | --- | --- | --- |
 | `following` | `boolean` |  |
-| `onChange` | `(next: boolean) => void` | Called with the next following state on click. |
+| `onChange` | `(next: boolean) => void` | Called with the next following state on click. Without it the button is drawn disabled. |
 | `labels` | `{ off?: string; on?: string }` | Overrides either label; the unset half falls back to "Follow" / "Following". |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `size` | `'sm' \| 'md' \| 'lg'` |  |
@@ -119,11 +119,12 @@ A round, transparent glyph button: surface ink, muted ink, or the active colour.
 | `tone` | `'accent' \| 'play'` | The colour `active` takes: `accent` (default), or `play` for the transport's play/pause. |
 | `muted` | `boolean` |  |
 | `label` *(required)* | `string` |  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | The action. Without it the button is drawn disabled. |
+| `disabled` | `boolean` | Drawn disabled: the glyph at 38%, no focus or press. |
 
 ### Input
 
-The new text, on every keystroke.
+The new text, on every keystroke. Without it the field is drawn disabled.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -131,7 +132,8 @@ The new text, on every keystroke.
 | `icon` | `ReactNode` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `value` | `string` |  |
-| `onChange` | `(next: string) => void` | The new text, on every keystroke. |
+| `onChange` | `(next: string) => void` | The new text, on every keystroke. Without it the field is drawn disabled. |
+| `disabled` | `boolean` | Drawn disabled: text at 38%, the fill at 12% of the surface ink, no focus or typing. |
 
 ### LyricsSyncButton
 
@@ -141,7 +143,7 @@ The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape).
 | --- | --- | --- |
 | `mode` | `'sync' \| 'dot' \| 'off'` |  |
 | `dot` | `boolean` | Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. |
-| `onChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` | Receives the mode the toggle turns to. |
+| `onChange` | `(mode: 'sync' \| 'dot' \| 'off') => void` | Receives the mode the toggle turns to. Without it the toggle is drawn disabled. |
 
 ### OverflowMenu
 
@@ -153,7 +155,7 @@ One verb in an OverflowMenu.
 | `label` | `string` | The button's accessible name and the menu's. Default "More options". |
 | `open` | `boolean` | Shows the menu open (true) or shut (false), for a still. Omit to let the button decide. |
 | `onOpenChange` | `(next: boolean) => void` | Called with the next open state when the button is pressed or a verb is chosen. |
-| `onSelect` | `(key: string) => void` | Called with the chosen item's key. |
+| `onSelect` | `(key: string) => void` | Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. |
 | `align` | `'start' \| 'end'` | Which edge of the button the menu lines up with. Default 'end'. |
 | `tone` | `'surface' \| 'scrim'` |  The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
@@ -168,8 +170,8 @@ Auditions a sample without committing it — plays without adding the item to th
 | `label` | `string` | Overrides the generated label entirely. |
 | `playing` | `boolean` | Sample is playing; the glyph flips to the sounding speaker. |
 | `muted` | `boolean` | Playing with sound off — the resting state a preview starts in. |
-| `disabled` | `boolean` | No sample available: dims the control, not-allowed cursor, aria-disabled. |
-| `onClick` | `() => void` |  |
+| `disabled` | `boolean` | No sample available: drawn disabled, the fill at 12% and the label at 38% of the surface ink. |
+| `onClick` | `() => void` | Plays the sample. Without it the button is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### ProgressRing
@@ -187,7 +189,7 @@ Circular progress indicator. Pass `value` (0–1) for a determinate ring that an
 
 ### RailItem
 
-Navigation rail row, following the M3 rail spec. One highlight element morphs from a 56×32 icon pill (collapsed) to a pill that hugs the icon and label (expanded), so the selection never jumps; two label copies cross-fade rather than travelling. The highlight is always the width of the item's own content, never of the rail. Rows are 56px tall and stack with no gap in either state. Collapsed: 80px rail, 12px side padding. Expanded: 220–360px rail, 16px side padding. Hovering shows a faint highlight.
+Navigation rail row, following the M3 rail spec. One highlight element morphs from a 56×32 icon pill (collapsed) to a pill that hugs the icon and label (expanded), so the selection never jumps; two label copies cross-fade rather than travelling. The highlight is always the width of the item's own content, never of the rail. Rows are 56px tall and stack with no gap in either state. Collapsed: 80px rail, 12px side padding. Expanded: 220–360px rail, 16px side padding. The pill carries the row's state layer: hover, focus and a press ripple show on it, and the row is drawn disabled without `onClick`.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -199,7 +201,7 @@ Navigation rail row, following the M3 rail spec. One highlight element morphs fr
 | `tabs` | `boolean` | Mobile tab-bar behaviour: inactive tabs hide their label and centre the icon; the active tab keeps its label and gets a wider pill. |
 | `wideActive` | `boolean` | Whether the active pill widens to 72px. Defaults to `tabs` — set false in a rail. |
 | `centerIcon` | `boolean` |  Centre the icon against the row's midpoint. Defaults to `tabs`. Must be false wherever the row's width animates (a rail), or the icon slides out and back during the transition.  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | The destination's action. Without it the row is drawn disabled. |
 
 ### Rating
 
@@ -219,7 +221,7 @@ The app bar's search control: a search icon button that swaps to a close icon wh
 | prop | type | notes |
 | --- | --- | --- |
 | `open` | `boolean` |  |
-| `onToggle` | `(next: boolean) => void` |  |
+| `onToggle` | `(next: boolean) => void` | Receives the next open state. Without it the button is drawn disabled. |
 | `muted` | `boolean` | Muted icon colour (the default in an app bar). |
 | `label` | `string` | Overrides the accessible label, which is otherwise "Search" / "Close search". |
 
@@ -231,7 +233,8 @@ Filled search field with no outline and soft rectangular corners (radius-xs) —
 | --- | --- | --- |
 | `placeholder` | `string` |  |
 | `value` | `string` |  |
-| `onChange` | `(next: string) => void` |  |
+| `onChange` | `(next: string) => void` | The new text, on every keystroke. Without it the field is drawn disabled. |
+| `disabled` | `boolean` | Drawn disabled: text at 38%, the fill at 12% of the surface ink, no focus or typing. |
 | `onSubmit` | `(value: string) => void` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `width` | `string` | Defaults to 100% — cap it with the parent when centering in a bar. |
@@ -249,7 +252,7 @@ Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; val
 | `value` | `number` |  |
 | `duration` | `number` | Track length in seconds. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: number) => void` |  |
+| `onChange` | `(next: number) => void` | Receives the position sought, 0–1. Without it the slider is drawn disabled. |
 | `remainingAsCountdown` | `boolean` | false shows total length on the right instead of a countdown. |
 
 ### Slider
@@ -259,7 +262,7 @@ Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; val
 | prop | type | notes |
 | --- | --- | --- |
 | `value` | `number` | 0–1 |
-| `onChange` | `(next: number) => void` |  |
+| `onChange` | `(next: number) => void` | Receives the new value, from a press on the track or the arrow keys. Without it the slider is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` | Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). |
 | `tone` | `'accent' \| 'play'` | The fill: `accent` (default), or `play` for playback position (SeekBar passes it). |
 
@@ -271,7 +274,7 @@ Reports the active sort/filter state and opens its picker in one control — the
 | --- | --- | --- |
 | `icon` | `string` | Leading glyph. |
 | `label` *(required)* | `string` | The current state, rendered as the control's own label — e.g. "All episodes • Newest". |
-| `onClick` | `() => void` | Opens the sort/filter picker. |
+| `onClick` | `() => void` | Opens the sort/filter picker. Without it the control is drawn disabled. |
 | `trailing` | `ReactNode` | Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
@@ -282,18 +285,27 @@ Playback rate as a first-class transport control: the current multiplier plus a 
 | prop | type | notes |
 | --- | --- | --- |
 | `value` | `number` | 1, 1.25, 1.5 … |
-| `onClick` | `() => void` | Opens the rate picker. |
+| `onClick` | `() => void` | Opens the rate picker. Without it the control is drawn disabled. |
 | `label` | `string` | Accessible name. Defaults to "Playback speed, <value> times". |
 | `size` | `number` | Control diameter in px. |
 
+### StateLayer
+
+Material's state layer, shared by every interactive Sonora component. Placed as the last child of the element that shows the state, usually the control itself (a rail item's indicator pill instead), inside a host carrying the class `sn-int`. It draws a wash of the content colour for hover (8%), keyboard focus (10%) and press (10%), a focus ring 3px wide and 2px outside the shape that follows its corners, and a ripple that grows from the pointer and fades on release. The control's own box, corners and position never change. Text fields and sliders take `ripple={false}`. A control is disabled when `disabled` is set or when its action prop is absent. A disabled control's content is the surface ink at 38%, and a filled one (class `sn-filled`) sits on the surface ink at 12%; it takes no focus, no press and no state. A `button` root uses the native `disabled`; a `div` or `span` root takes a `role`, `tabIndex` of -1 when off, `aria-disabled` and Enter and Space activation; a wrapper around an input sets `data-disabled`. A preview pins a state with `data-sn-force="hovered|focused|pressed|disabled"` on an ancestor.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `disabled` | `boolean` | The control is disabled: the layer shows no state. |
+| `ripple` | `boolean` | Whether a press ripples. Default true; false for text fields and sliders. |
+
 ### Switch
 
-
+Receives the next checked state. Without it the switch is drawn disabled.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `checked` *(required)* | `boolean` |  |
-| `onChange` | `(next: boolean) => void` |  |
+| `onChange` | `(next: boolean) => void` | Receives the next checked state. Without it the switch is drawn disabled. |
 | `label` | `string` |  |
 
 ### TonalIconButton
@@ -304,7 +316,8 @@ Icon button on a tonal (card) fill — a squat pill rather than a circle, for co
 | --- | --- | --- |
 | `glyph` *(required)* | `string` | Material Symbols glyph name. Change it and the icon animates over. |
 | `label` | `string` | Accessible name and tooltip. |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | The action. Without it the button is drawn disabled. |
+| `disabled` | `boolean` | Drawn disabled: the fill at 12% and the glyph at 38% of the surface ink, no focus or press. |
 | `width` | `number` | Default 40×32 with a 16px radius — a pill wider than it is tall. |
 | `height` | `number` |  |
 | `radius` | `string` |  |
@@ -319,7 +332,7 @@ The list ⇄ grid switch for a library page — one icon button showing the view
 | prop | type | notes |
 | --- | --- | --- |
 | `value` | `'list' \| 'grid'` |  |
-| `onChange` | `(value: 'list' \| 'grid') => void` |  |
+| `onChange` | `(value: 'list' \| 'grid') => void` | Receives the view to switch to. Without it the toggle is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ## components

@@ -8,7 +8,7 @@ export interface DownloadButtonProps {
   state?: 'idle' | 'downloading' | 'done';
   /** 0–1. Indeterminate ring when null and `state` is 'downloading'. */
   progress?: number | null;
-  /** Fires on press in every state: starts, cancels, or removes, depending on `state`. */
+  /** Fires on press in every state: starts, cancels, or removes, depending on `state`. Without it the button is drawn disabled. */
   onClick?: () => void;
   /** Control diameter in px. */
   size?: number;

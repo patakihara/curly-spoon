@@ -23,12 +23,12 @@ function Desktop(){
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
     <div>
       <Caption>Shut, at a row's trailing edge: the verbs a row offers beyond playing it.</Caption>
-      <ResultRow platform="desktop" title="Tidal Lines" meta="Harbour Lights · 3:41" trailing={<OverflowMenu platform="desktop" items={VERBS} />} />
+      <ResultRow platform="desktop" title="Tidal Lines" meta="Harbour Lights · 3:41" trailing={<OverflowMenu platform="desktop" items={VERBS} onSelect={() => {}} />} />
     </div>
     <div style={{display:'flex',justifyContent:'flex-end',paddingBottom:200}}>
       <div>
         <Caption>Open on desktop: each verb with its glyph, and a line saying what it does where the label alone would not.</Caption>
-        <div style={{display:'flex',justifyContent:'flex-end'}}><OverflowMenu platform="desktop" items={VERBS} open /></div>
+        <div style={{display:'flex',justifyContent:'flex-end'}}><OverflowMenu platform="desktop" items={VERBS} onSelect={() => {}} open /></div>
       </div>
     </div>
   </div>;
@@ -42,7 +42,7 @@ function Phone(){
       <div style={{padding:'var(--spacing-md)'}}>
         {['Tidal Lines','Salt Water','Low Tide'].map((t, i) => (
           <ResultRow key={t} platform="mobile" title={t} meta="Harbour Lights · 3:41" divider
-            trailing={<OverflowMenu platform="mobile" items={VERBS} open={i === 0} />} />
+            trailing={<OverflowMenu platform="mobile" items={VERBS} onSelect={() => {}} open={i === 0} />} />
         ))}
       </div>
       <div style={{position:'absolute',left:0,right:0,bottom:0,height:64,background:'var(--surface-bg-alt)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--surface-fg-muted)',fontSize:'var(--text-sm)'}}>Bottom bar</div>

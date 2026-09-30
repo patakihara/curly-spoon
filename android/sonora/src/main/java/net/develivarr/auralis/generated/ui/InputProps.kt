@@ -8,6 +8,8 @@ data class InputProps(
     val icon: (@Composable () -> Unit)? = null,
     val platform: Platform? = null,
     val value: String? = null,
-    /** The new text, on every keystroke. */
+    /** The new text, on every keystroke. Without it the field is drawn disabled. */
     val onChange: ((String) -> Unit)? = null,
+    /** Drawn disabled: text at 38%, the fill at 12% of the surface ink, no focus or typing. */
+    val disabled: Boolean? = null,
 )

@@ -4,13 +4,17 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 
 /** The account avatar that leads the phone's top bar, the way into Settings. A round button holding the account's picture, or a person glyph on the card tone without one. Never in a filter row. */
 export function AccountButton({ image, label = 'Account', size = 32, onClick }) {
-  const { CoverArt } = NS();
+  const { CoverArt, StateLayer } = NS();
+  const off = !onClick;
   return (
-    <button type="button" aria-label={label} title={label} onClick={onClick}
-      style={sx('position:relative;overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:50%;cursor:pointer;background:var(--surface-card);color:var(--surface-fg-muted);width:' + size + 'px;height:' + size + 'px')}>
+    <button type="button" className="sn-int sn-filled" aria-label={label} title={label} onClick={off ? undefined : onClick} disabled={off}
+      style={sx('position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:50%;cursor:pointer;background:var(--surface-card);color:var(--surface-fg-muted);width:' + size + 'px;height:' + size + 'px')}>
       {image && CoverArt
-        ? <CoverArt src={image} alt="" />
+        // The picture is clipped to the circle here rather than on the button, whose focus ring
+        // lies outside it.
+        ? <span style={sx('position:absolute;inset:0;overflow:hidden;border-radius:50%')}><CoverArt src={image} alt="" /></span>
         : <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1;font-size:" + Math.round(size * 0.7) + 'px')}>person</span>}
+      {StateLayer && <StateLayer disabled={off} />}
     </button>
   );
 }

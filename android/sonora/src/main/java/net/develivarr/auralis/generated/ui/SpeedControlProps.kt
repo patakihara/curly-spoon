@@ -9,7 +9,7 @@ package net.develivarr.auralis.generated.ui
 data class SpeedControlProps(
     /** 1, 1.25, 1.5 … */
     val value: Float? = null,
-    /** Opens the rate picker. */
+    /** Opens the rate picker. Without it the control is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /** Accessible name. Defaults to "Playback speed, <value> times". */
     val label: String? = null,

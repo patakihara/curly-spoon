@@ -35,7 +35,9 @@ describe("Sonora's FieldRow", () => {
     expect(onChange).toHaveBeenCalledWith('jellyfin.local');
   });
 
-  it('[M0.canvas] leaves typing harmless with no onChange', () => {
-    expect(() => typeInto(<Input placeholder="Search" />, 'x')).not.toThrow();
+  it('[M0.states/c] with no onChange draws a disabled box that nothing types into', () => {
+    const box = find(<Input placeholder="Search" />, (el) => el.type === 'input');
+    expect(box?.props.disabled).toBe(true);
+    expect(box?.props.onChange).toBeUndefined();
   });
 });

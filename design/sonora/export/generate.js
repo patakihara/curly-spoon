@@ -18,7 +18,7 @@
 async function generateExport(env) {
 const readFile = env.readFile, saveFile = env.saveFile, ls = env.ls, log = env.log;
 
-const TOKEN_FILES = ['colors', 'typography', 'spacing', 'layout', 'radius', 'shadows', 'motion', 'fonts'];
+const TOKEN_FILES = ['colors', 'typography', 'spacing', 'layout', 'radius', 'shadows', 'motion', 'states', 'fonts'];
 
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const parseScope = (css, re) => {
@@ -89,6 +89,13 @@ const dimenNames = order.filter((k) => !isColor(k, root) && px(resolve(root[k], 
 const typeNames = order.filter((k) => rem(resolve(root[k], root, 0)));
 const motionNames = order.filter((k) => ms(root[k]));
 const other = order.filter((k) => [].concat(colorNames, dimenNames, typeNames, motionNames).indexOf(k) < 0);
+// Interaction states: the state layer's opacities and the focus ring's measures, one Compose object.
+const stateNames = Object.keys(parseScope(srcs.states || '', /:root\s*\{([\s\S]*?)\n\}/));
+const notState = (k) => stateNames.indexOf(k) < 0;
+const stateValue = (k) => {
+  const v = resolve(root[k], root, 0);
+  return px(v) !== null ? px(v) + '.dp' : parseFloat(v) + 'f';
+};
 
 const HEAD = (what) => '/**\n * GENERATED — ' + what + '\n * Source: the Sonora design system\'s tokens/*.css. Do not hand-edit; regenerate with\n * export/generate.js when tokens change.\n */\n';
 
@@ -127,7 +134,7 @@ const kt = '// GENERATED — Sonora tokens as Compose values.\n'
   + '\n)\n\n'
   + '/** Spacing, icon sizes, radii, and frame measurements. */\n'
   + 'object SonoraDimens {\n'
-  + dimenNames.map((k) => '    val ' + camel(k) + ' = ' + px(resolve(root[k], root, 0)) + '.dp').join('\n')
+  + dimenNames.filter(notState).map((k) => '    val ' + camel(k) + ' = ' + px(resolve(root[k], root, 0)) + '.dp').join('\n')
   + '\n}\n\n'
   + '/** Type scale (rem → sp at 16). */\n'
   + 'object SonoraType {\n'
@@ -138,8 +145,12 @@ const kt = '// GENERATED — Sonora tokens as Compose values.\n'
   + '    val EaseStandard = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)\n'
   + motionNames.map((k) => '    const val ' + camel(k) + ' = ' + ms(root[k])).join('\n')
   + '\n}\n\n'
+  + '/** Interaction states: state-layer opacities over the content colour, and the focus ring. */\n'
+  + 'object SonoraState {\n'
+  + stateNames.map((k) => '    val ' + camel(k.replace(/^--state-layer-/, '--')) + ' = ' + stateValue(k)).join('\n')
+  + '\n}\n\n'
   + '/*\n * Not exported — no single Compose equivalent; read these from the CSS:\n'
-  + other.map((k) => ' *   ' + k + ': ' + root[k]).join('\n')
+  + other.filter(notState).map((k) => ' *   ' + k + ': ' + root[k]).join('\n')
   + '\n */\n';
 await saveFile('export/android/SonoraTokens.kt', kt);
 

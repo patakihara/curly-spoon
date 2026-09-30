@@ -16,5 +16,6 @@ data class AccountButtonProps(
     val label: String? = null,
     /** Diameter in px. Default 32, the mobile app bar's avatar. */
     val size: Float? = null,
+    /** Opens Settings. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
 )

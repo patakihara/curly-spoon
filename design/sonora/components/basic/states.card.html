@@ -1,0 +1,48 @@
+<!-- @dsCard group="Basic" viewport="1200x760" name="States" subtitle="Preview: every basic control enabled, disabled, hovered, focused and pressed" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { StateLayer, Button, IconButton, TonalIconButton, ButtonGroup, Switch, Slider, Input, RailItem } = window.SonoraDesignSystem_6c1435;
+const STATES = ['enabled', 'disabled', 'hovered', 'focused', 'pressed'];
+const CONTROLS = [
+  ['Filled', <Button onClick={() => {}}>Play</Button>],
+  ['Outlined', <Button variant="secondary" onClick={() => {}}>Shuffle</Button>],
+  ['Icon', <IconButton icon="favorite" label="Favourite" onClick={() => {}} />],
+  ['Tonal icon', <TonalIconButton glyph="grid_view" label="Grid" onClick={() => {}} />],
+  ['Segment', <ButtonGroup items={['All']} value="All" onChange={() => {}} />],
+  ['Switch', <Switch checked onChange={() => {}} />],
+  ['Slider', <div style={{width:120}}><Slider value={0.5} onChange={() => {}} /></div>],
+  ['Field', <div style={{width:150}}><Input placeholder="Search" onChange={() => {}} /></div>],
+  ['Rail item', <div style={{width:56}}><RailItem icon="home" label="Home" expanded={false} onClick={() => {}} /></div>],
+];
+function Demo(){
+  return <div style={{display:'flex',flexDirection:'column',gap:6}}>
+    <div style={{display:'flex',alignItems:'center',gap:12,fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:6}}>
+      The layer on its own host:
+      <span className="sn-int" tabIndex={0} style={{display:'inline-flex',alignItems:'center',height:32,padding:'0 16px',borderRadius:'var(--radius-pill)',background:'var(--surface-card)',color:'var(--surface-fg)'}}>Hover or press me<StateLayer /></span>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'80px repeat(5, 1fr)',alignItems:'center',rowGap:10,columnGap:8}}>
+      <span />
+      {STATES.map((s) => <span key={s} style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)'}}>{s}</span>)}
+      {CONTROLS.map(([name, control]) => (
+        <React.Fragment key={name}>
+          <span style={{fontSize:'var(--text-xs)',color:'var(--surface-fg-muted)'}}>{name}</span>
+          {STATES.map((s) => <div key={s} data-sn-force={s === 'enabled' ? undefined : s} style={{padding:6}}>{control}</div>)}
+        </React.Fragment>
+      ))}
+    </div>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 560px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 560px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

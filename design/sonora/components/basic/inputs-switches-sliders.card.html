@@ -20,7 +20,7 @@ function Demo(){
       <SearchField placeholder="Search your Audiobooks" value={q} onChange={setQ} />
       <FieldRow label="Find anything" placeholder="Album, book, podcast…" value={q} onChange={setQ} />
       <FieldRow label="Library folder" platform="mobile" value="/storage/Sonora" />
-      <Input placeholder="Search" icon={<span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)' }}>search</span>} />
+      <Input placeholder="Search" onChange={() => {}} icon={<span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)' }}>search</span>} />
       <Switch checked={on} onChange={setOn} label="Gapless playback" />
       <div><div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',marginBottom:6}}>Desktop</div><Slider value={v} onChange={setV} platform="desktop" /></div>
       <div><div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',marginBottom:6}}>Mobile</div><Slider value={v} onChange={setV} platform="mobile" /></div>

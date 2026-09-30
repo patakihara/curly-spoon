@@ -58,7 +58,7 @@ function Still({caption, open, platform}){
     <div style={{height:230,display:'flex',flexDirection:'column'}}>
       <BackdropShell platform={platform}
         back={<BackLayer platform={platform} title="Books" search="Search your books and requests" searchOpen={open}
-          leading={mobile ? <AccountButton /> : undefined} />}
+          leading={mobile ? <AccountButton onClick={() => {}} /> : undefined} />}
         subheader={<FrontLayerHeader tabs progress={open ? 1 : 0}><TabBar platform={platform} items={TABS} value="books" /></FrontLayerHeader>}>
         <Grid platform={platform} />
       </BackdropShell>

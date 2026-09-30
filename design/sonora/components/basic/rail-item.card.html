@@ -11,12 +11,12 @@ const { RailItem } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{display:'flex',gap:24,alignItems:'flex-start'}}>
     <div style={{width:240,display:'flex',flexDirection:'column'}}>
-      <RailItem icon="explore" label="Browse" active expanded/>
-      <RailItem icon="speaker" label="Music" expanded/>
+      <RailItem icon="explore" label="Browse" active expanded onClick={() => {}}/>
+      <RailItem icon="speaker" label="Music" expanded onClick={() => {}}/>
     </div>
     <div style={{width:80,display:'flex',flexDirection:'column'}}>
-      <RailItem icon="explore" label="Browse" active expanded={false}/>
-      <RailItem icon="podcasts" label="Podcasts" expanded={false}/>
+      <RailItem icon="explore" label="Browse" active expanded={false} onClick={() => {}}/>
+      <RailItem icon="podcasts" label="Podcasts" expanded={false} onClick={() => {}}/>
     </div>
   </div>;
 }

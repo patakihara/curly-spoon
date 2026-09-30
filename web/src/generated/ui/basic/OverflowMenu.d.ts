@@ -26,7 +26,7 @@ export interface OverflowMenuProps {
   open?: boolean;
   /** Called with the next open state when the button is pressed or a verb is chosen. */
   onOpenChange?: (next: boolean) => void;
-  /** Called with the chosen item's key. */
+  /** Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. */
   onSelect?: (key: string) => void;
   /** Which edge of the button the menu lines up with. Default 'end'. */
   align?: 'start' | 'end';

@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 50546331a90adb0f592e30a75e69e592fedffa88fc02acf57e8ed475a4efb2a7
+pageHash: a9a6eba2bed4151c6a52bf61f8834d396870e2942212c222b2edbd8f1857c045
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -39,6 +39,9 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches, after the one-accent change: the switches stay in the violet accent in both kits
   and on the page; settings are not play-related, so nothing here turned rose.
 - Changed on purpose, from the Backdrop cards: the kits draw the old app shell; the page now sits

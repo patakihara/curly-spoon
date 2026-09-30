@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /**
  * Playback rate as a first-class transport control rather than a buried settings row —
@@ -10,15 +11,18 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * because forgetting the rate was left at 2x is exactly the failure this control exists to catch.
  */
 export function SpeedControl({ value = 1, onClick, label, size = 40 }) {
+  const StateLayer = NS().StateLayer;
+  const off = !onClick;
   const nonDefault = value !== 1;
   const ink = nonDefault ? 'var(--play-ink)' : 'var(--surface-fg-muted)';
   const text = String(value);
   const aria = label || 'Playback speed, ' + text + ' times';
   return (
-    <button onClick={onClick} aria-label={aria} title={aria}
+    <button className="sn-int" onClick={off ? undefined : onClick} disabled={off} aria-label={aria} title={aria}
       style={sx('display:inline-flex;align-items:center;justify-content:center;gap:1px;min-width:' + size + 'px;height:' + size + 'px;padding:0 8px;border:none;border-radius:var(--radius-pill);background:transparent;cursor:pointer;color:' + ink + ';font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-sm);transition:color var(--duration-fast) var(--ease-standard)')}>
       {text}
       <span aria-hidden="true" style={sx('font-size:var(--text-xs)')}>×</span>
+      {StateLayer && <StateLayer disabled={off} />}
     </button>
   );
 }

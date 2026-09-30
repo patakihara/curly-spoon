@@ -1,6 +1,6 @@
 ---
 page: author
-pageHash: f2e2bfa2484c24aa896a39f3295d051ce34ac32fb8fda9d5fc1e3f8d971e0214
+pageHash: 837c150aef9b34597aaede9df61a42ff7a6a6080727b5ad53853dd2a8c05c637
 sonora: [none]
 spotify: []
 ---
@@ -34,6 +34,9 @@ card opening its book.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches the Artist page: the round photo and a caption under the name as heading, carousels of
   the catalogue with unowned titles greyed.
 - Changed on purpose: series come first, each in reading order, then every book in a grid, per

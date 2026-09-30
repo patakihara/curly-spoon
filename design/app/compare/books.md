@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: dbda55ce72af2c1f3898d8f8ea3aa74c3d5fcc322691d8f9a6cbc2cf9c78c316
+pageHash: 7de2ec8a853b812db103f7e94469d9620ac7c90b50e2d7dadcd9e50e5df4c4ea
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -49,6 +49,9 @@ Series; the Authors and Series tabs, not drawn, hold those cards.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches: tabs, toggle placement, 3-across phone grid, rose resume bars.
 - Changed on purpose: on desktop the grid fills the front layer, where the kit's stops at 190 px
   columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns

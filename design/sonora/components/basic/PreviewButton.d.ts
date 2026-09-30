@@ -12,8 +12,9 @@ export interface PreviewButtonProps {
   playing?: boolean;
   /** Playing with sound off — the resting state a preview starts in. */
   muted?: boolean;
-  /** No sample available: dims the control, not-allowed cursor, aria-disabled. */
+  /** No sample available: drawn disabled, the fill at 12% and the label at 38% of the surface ink. */
   disabled?: boolean;
+  /** Plays the sample. Without it the button is drawn disabled. */
   onClick?: () => void;
   platform?: 'desktop' | 'mobile';
 }

@@ -13,7 +13,7 @@ export function FollowButton({ following = false, onChange, labels = {}, platfor
       variant={following ? 'secondary' : 'primary'}
       size={size}
       platform={platform}
-      onClick={() => onChange && onChange(!following)}
+      onClick={onChange ? () => onChange(!following) : undefined}
       pressed={following}
     >
       {following ? onLabel : offLabel}

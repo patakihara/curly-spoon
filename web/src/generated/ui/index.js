@@ -58,6 +58,7 @@ export { SideSheet } from './layouts/SideSheet.jsx';
 export { Slider } from './basic/Slider.jsx';
 export { SortFilterBar } from './basic/SortFilterBar.jsx';
 export { SpeedControl } from './basic/SpeedControl.jsx';
+export { StateLayer } from './basic/StateLayer.jsx';
 export { StatusBanner } from './components/StatusBanner.jsx';
 export { Switch } from './basic/Switch.jsx';
 export { TabBar } from './components/TabBar.jsx';

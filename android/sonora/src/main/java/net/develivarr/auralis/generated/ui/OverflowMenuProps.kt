@@ -28,7 +28,7 @@ data class OverflowMenuProps(
     val open: Boolean? = null,
     /** Called with the next open state when the button is pressed or a verb is chosen. */
     val onOpenChange: ((Boolean) -> Unit)? = null,
-    /** Called with the chosen item's key. */
+    /** Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. */
     val onSelect: ((String) -> Unit)? = null,
     /** Which edge of the button the menu lines up with. Default 'end'. */
     val align: OverflowMenuAlign? = null,

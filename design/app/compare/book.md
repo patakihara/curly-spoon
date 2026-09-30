@@ -1,6 +1,6 @@
 ---
 page: book
-pageHash: 82ddbddf5394fc2a15e4a65259b66986358cd40f856b17dc542c19d6a5da4818
+pageHash: 9263cef10d2770be2c666ce7692e8ea016e4d175422ec90913de7df9d105c365
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S35]
 ---
@@ -49,6 +49,9 @@ M0; the greyed and requested states are drawn on the cards.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches: cover, kind line, the author as an accent link, the rose Play (here "Resume"), S35's
   resume figure and bar on the meta line, S35's clamped description with "see more".
 - Changed on purpose: the book's name is the heading and the header has no title, as on Album.

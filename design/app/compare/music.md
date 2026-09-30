@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 98cdde59b1a284e30a58f409552a22d139231a3eb179a06c588126b3b7ab3e1d
+pageHash: 88c0151f67a9dfacb1fcf865e6830c7e53bea57f079c1ce70539cbc4487d80a5
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -51,6 +51,9 @@ Each album card opens its Album page; the Artists tab, not drawn, holds the arti
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Changed on purpose: the kit opens on Songs as a list; the page opens on Albums as a grid, since
   the plan's library is "a 3-across grid on phones, bigger on desktop", and Albums leads the tabs,
   since a tab row opens on its first tab. The list view is the

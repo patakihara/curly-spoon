@@ -1,6 +1,6 @@
 ---
 page: playlist
-pageHash: ae1a4945bc19e5b3a949f207fb5e4bb57971f2a05caf5c61368ee16b769c18c2
+pageHash: 46e10e0ca5cefba706a824532409a84064413a446198047e22a3b6e93891d9ff
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 
@@ -27,6 +27,9 @@ marked, each ending in a drag handle (`IconButton drag_handle`) for reordering.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Changed on purpose: the canvas adds a third artboard, a phone with the local search out, since
   the bar only appears as the page scrolls (the canvas build fixes `BackLayer searchOpen`; the
   apps leave it to the scroll). Scrolled 400 px in the web app at 390 px, the field grows from the

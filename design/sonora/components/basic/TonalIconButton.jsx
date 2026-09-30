@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-tonalicon-css')) {
   const el = document.createElement('style');
@@ -18,8 +19,10 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-tonalico
  */
 export function TonalIconButton({
   glyph, label, onClick, width = 40, height = 32, radius = '16px',
-  iconSize = 'var(--icon-xs)', active = false, background = 'var(--surface-card)',
+  iconSize = 'var(--icon-xs)', active = false, background = 'var(--surface-card)', disabled = false,
 }) {
+  const StateLayer = NS().StateLayer;
+  const off = !!disabled || !onClick;
   // Keep the outgoing glyph mounted for one animation so the two can cross over.
   const [pair, setPair] = React.useState({ current: glyph, prev: null });
   React.useEffect(() => {
@@ -35,13 +38,18 @@ export function TonalIconButton({
         'animation:ti-' + (out ? 'out' : 'in') + ' var(--duration-quick) var(--ease-standard) both')}>{name}</span>
   );
   return (
-    <button onClick={onClick} aria-label={label} title={label}
-      style={sx('position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;border:none;' +
+    <button className="sn-int sn-filled" onClick={off ? undefined : onClick} disabled={off} aria-label={label} title={label}
+      style={sx('position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border:none;' +
         'width:' + width + 'px;height:' + height + 'px;border-radius:' + radius + ';background:' + background + ';' +
         'transition:background var(--duration-fast) ease,color var(--duration-fast) ease;' +
         'color:' + (active ? 'var(--accent-ink)' : 'var(--surface-fg)'))}>
-      {pair.prev && face(pair.prev, true)}
-      {face(pair.current, false)}
+      {/* The turning glyphs are clipped here rather than on the button, whose focus ring lies
+          outside it. */}
+      <span style={sx('position:absolute;inset:0;overflow:hidden;border-radius:inherit;display:flex;align-items:center;justify-content:center')}>
+        {pair.prev && face(pair.prev, true)}
+        {face(pair.current, false)}
+      </span>
+      {StateLayer && <StateLayer disabled={off} />}
     </button>
   );
 }

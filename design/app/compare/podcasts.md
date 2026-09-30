@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: 28f01a0aaca0a36281819539239f52a41ba7bd7b22bf4604a7f50cc1deb31c97
+pageHash: dd94910ddba6eb8a86cddd46ee59dcc83b42ab0894ccf096238f910ed7f19799
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -38,6 +38,9 @@ or to pasting a YouTube channel link, with the Add a YouTube channel row kept.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches: the 3-across phone grid of show covers.
 - Changed on purpose: on desktop the Shows and Lists grids fill the front layer, where the kit's grid stops at 190 px
   columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns

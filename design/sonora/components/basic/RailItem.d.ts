@@ -5,7 +5,8 @@
  * is always the width of the item's own content, never of the rail.
  *
  * Rows are 56px tall and stack with no gap in either state. Collapsed: 80px rail, 12px side
- * padding. Expanded: 220–360px rail, 16px side padding. Hovering shows a faint highlight.
+ * padding. Expanded: 220–360px rail, 16px side padding. The pill carries the row's state layer:
+ * hover, focus and a press ripple show on it, and the row is drawn disabled without `onClick`.
  */
 export interface RailItemProps {
   /** Material Symbols Rounded glyph name. */
@@ -25,6 +26,7 @@ export interface RailItemProps {
    * row's width animates (a rail), or the icon slides out and back during the transition.
    */
   centerIcon?: boolean;
+  /** The destination's action. Without it the row is drawn disabled. */
   onClick?: () => void;
 }
 export declare function RailItem(props: RailItemProps): JSX.Element;

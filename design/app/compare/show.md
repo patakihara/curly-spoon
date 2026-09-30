@@ -1,6 +1,6 @@
 ---
 page: show
-pageHash: 13ac4b47f82420e6dc0cbb63471b953ec3b880deab9d3ee09d69377bb4b83f4e
+pageHash: d1490566432913463cd0a709776573364eae5ef17806cee9f38e74fac90c4c99
 sonora: [card:episode-rows]
 spotify: [S01, S02]
 ---
@@ -45,6 +45,9 @@ provisional "YouTube settings" section, so they are not drawn.
 
 ## Differences
 
+- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
+  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
+  states item binds each such control or leaves it deliberately disabled.
 - Matches the Sonora card: `EpisodeRow` with synopsis, meta chain, the rose progress rule and
   "Finished" with its check; play glyphs white and filled over the art.
 - Changed on purpose: no per-episode verbs under each row, as S01 has. Save and share have no Auralis

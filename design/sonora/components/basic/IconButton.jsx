@@ -1,24 +1,27 @@
 import React from 'react';
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
-export function IconButton({ children, icon, size = 36, active, muted, tone = 'accent', onClick, label }) {
-  const [hover, setHover] = React.useState(false);
+export function IconButton({ children, icon, size = 36, active, muted, tone = 'accent', onClick, label, disabled }) {
+  const StateLayer = NS().StateLayer;
+  const off = !!disabled || !onClick;
   return (
     <button
-      onClick={onClick}
+      className="sn-int"
+      onClick={off ? undefined : onClick}
+      disabled={off}
       aria-label={label}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       style={{
         width: size, height: size, borderRadius: '50%', border: 'none',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        background: hover ? 'var(--surface-hover)' : 'transparent',
+        background: 'transparent',
         color: active ? (tone === 'play' ? 'var(--play)' : 'var(--accent)') : muted ? 'var(--surface-fg-muted)' : 'var(--surface-fg)',
-        cursor: 'pointer', transition: 'background var(--duration-fast) ease, color var(--duration-fast) ease',
+        cursor: 'pointer', transition: 'color var(--duration-fast) ease',
       }}
     >
       {icon
         ? <span aria-hidden="true" style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)', lineHeight: 1 }}>{icon}</span>
         : children}
+      {StateLayer && <StateLayer disabled={off} />}
     </button>
   );
 }

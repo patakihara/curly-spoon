@@ -13,6 +13,9 @@ const DESIGN_FIRST =
 export const HAND_UI_ALLOWED = [
   // Tests may wrap what they render in a harness element; nothing in them ships.
   'web/src/**/*.test.{ts,tsx}',
+  // The states fixture is a browser test's harness, linked from nowhere: it frames each Sonora
+  // control in a tagged cell for web/e2e/states.spec.ts and draws nothing the app shows.
+  'web/src/states.tsx',
 ];
 
 const elementName = (name) =>

@@ -8,7 +8,7 @@ export interface LyricsSyncButtonProps {
   mode?: 'sync' | 'dot' | 'off';
   /** Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. */
   dot?: boolean;
-  /** Receives the mode the toggle turns to. */
+  /** Receives the mode the toggle turns to. Without it the toggle is drawn disabled. */
   onChange?: (mode: 'sync' | 'dot' | 'off') => void;
 }
 export declare function LyricsSyncButton(props: LyricsSyncButtonProps): JSX.Element;

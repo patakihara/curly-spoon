@@ -13,6 +13,6 @@ export function LyricsSyncButton({ mode = 'sync', dot = true, onChange }) {
   return (
     <TonalIconButton glyph={synced ? 'sync_lock' : 'sync_disabled'} active={synced}
       label={synced ? 'Lyrics follow the song: turn sync off' : 'Lyrics not synced: turn sync on'}
-      onClick={() => onChange && onChange(synced ? (dot ? 'dot' : 'off') : 'sync')} />
+      onClick={onChange ? () => onChange(synced ? (dot ? 'dot' : 'off') : 'sync') : undefined} />
   );
 }

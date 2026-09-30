@@ -9,21 +9,25 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * it is a modal bottom sheet over the whole window.
  */
 export function OverflowMenu({ items = [], label = 'More options', open, onOpenChange, onSelect, align = 'end', tone = 'surface', platform = 'desktop' }) {
-  const IconButton = NS().IconButton;
+  const { IconButton, StateLayer } = NS();
+  // The menu's verbs are its action: with nothing to select, the button is drawn disabled.
+  const off = !onSelect;
   const mobile = platform === 'mobile';
   const [own, setOwn] = React.useState(false);
   const shown = open === undefined ? own : open;
   const set = (next) => { if (open === undefined) setOwn(next); if (onOpenChange) onOpenChange(next); };
   const glyph = (name) => React.createElement('span', { 'aria-hidden': 'true', style: sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 0,'wght' 400") }, name);
   const rows = items.map((item) => (
-    <div key={item.key} role="menuitem" tabIndex={0}
+    <div key={item.key} role="menuitem" tabIndex={0} className="sn-int"
       onClick={() => { if (onSelect) onSelect(item.key); set(false); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onSelect) onSelect(item.key); set(false); } }}
       style={sx('display:flex;align-items:center;gap:var(--spacing-' + (mobile ? 'lg' : 'md') + ');padding:var(--spacing-sm) var(--spacing-' + (mobile ? 'xl' : 'lg') + ');min-height:' + (mobile ? '56px' : '44px') + ';box-sizing:border-box;cursor:pointer;color:var(--surface-fg);font-family:var(--font-body)')}>
       {item.icon && <span style={sx('display:flex;color:var(--surface-fg-muted)')}>{glyph(item.icon)}</span>}
       <div style={sx('display:flex;flex-direction:column;gap:2px;min-width:0')}>
         <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);line-height:1.3')}>{item.label}</div>
         {item.sub && <div style={sx('font-size:var(--text-sm);line-height:1.3;color:var(--surface-fg-muted)')}>{item.sub}</div>}
       </div>
+      {StateLayer && <StateLayer />}
     </div>
   ));
   /* On a phone the verbs are a modal bottom sheet, not a menu: fixed to the window, so it covers
@@ -50,11 +54,13 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
       {/* Over artwork the button sits on a scrim in on-scrim ink, as a card's corner button does:
           surface ink would vanish on a dark or a light cover. */}
       {tone === 'scrim'
-        ? <button aria-label={label} title={label} aria-expanded={shown} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }}
+        ? <button className="sn-int sn-filled" aria-label={label} title={label} aria-expanded={shown} disabled={off}
+            onClick={off ? undefined : (e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }}
             style={sx('width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)')}>
             {glyph('more_vert')}
+            {StateLayer && <StateLayer disabled={off} />}
           </button>
-        : IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={() => set(!shown)} />}
+        : IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={off ? undefined : () => set(!shown)} />}
       {mobile ? sheet : menu}
     </div>
   );
