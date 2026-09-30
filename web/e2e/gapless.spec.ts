@@ -1,9 +1,8 @@
-import { type ChildProcess, spawn } from 'node:child_process';
-import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { build, type Rollup } from 'vite';
 import { type PlaybackPlan, type createPlayer } from '../src/playback';
+import { type Recorded, serveRecorded } from './recorded';
 
 /**
  * The web player engine in Chromium, playing the recorded four-file book from the server on
@@ -24,51 +23,15 @@ const MAX_JUMP_SLACK_MS = 100;
 
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } });
 
-let serving: ChildProcess | undefined;
+let recorded: Recorded | undefined;
 let origin: string;
 let multiFile: { source: string; id: string };
 let engine: string;
 
-async function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const probe = createServer();
-    probe.once('error', reject).listen(0, '127.0.0.1', () => {
-      const address = probe.address();
-      probe.close(() => resolve(typeof address === 'object' && address ? address.port : 0));
-    });
-  });
-}
-
-/** Starts the recorded-upstreams server and reads where it is and what it plays from its banner. */
-async function serveRecorded() {
-  const child = spawn('node_modules/.bin/tsx', ['e2e/serve.ts'], {
-    cwd: fileURLToPath(new URL('../../server/', import.meta.url)),
-    env: {
-      ...process.env,
-      AURALIS_E2E_PORT: String(await freePort()),
-      AURALIS_E2E_SIGN_ON_PORT: String(await freePort()),
-    },
-    stdio: ['ignore', 'pipe', 'inherit'],
-  });
-  serving = child;
-  const banner = await new Promise<string>((resolve, reject) => {
-    let out = '';
-    child.once('exit', (code) => reject(new Error(`e2e:serve exited ${code}: ${out}`)));
-    child.stdout!.on('data', (chunk: Buffer) => {
-      out += chunk.toString();
-      if (/^ready$/m.test(out)) resolve(out);
-    });
-  });
-  const line = (label: string) =>
-    new RegExp(`^\\s*${label}:\\s*(\\S+)$`, 'm').exec(banner)?.[1] ?? '';
-  const key = line('four files');
-  origin = line('app');
-  multiFile = { source: key.slice(0, key.indexOf(':')), id: key.slice(key.indexOf(':') + 1) };
-}
-
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  await serveRecorded();
+  recorded = await serveRecorded();
+  ({ origin, multiFile } = recorded);
   const output = (await build({
     configFile: false,
     logLevel: 'silent',
@@ -86,7 +49,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(() => {
-  serving?.kill('SIGTERM');
+  recorded?.stop();
 });
 
 test('[M1.play/c] plays a two-file boundary with no pause, the position running on across it', async ({

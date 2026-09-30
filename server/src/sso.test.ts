@@ -221,11 +221,12 @@ describe('[M0.sso/a] signing in through the recorded sign-on', () => {
     ['another audience', { aud: ['someone-else'] }],
     ['another issuer', { iss: 'https://elsewhere.invalid' }],
   ])(
-    'refuses the recorded ID token re-signed with %s with 400, and makes no user',
+    'refuses the recorded ID token re-signed with %s back to sign-in as a bad token, and makes no user',
     async (_what, change) => {
       const { app, db, asked } = await world(withIdToken(change));
       const back = await (await login(app)).callback();
-      expect(back.statusCode).toBe(400);
+      expect(back.statusCode).toBe(302);
+      expect(back.headers.location).toMatch(/^\/sign-in\?error=bad_token&/);
       expect(cookieOf(back, SESSION_COOKIE)).toBeUndefined();
       expect(listUsers(db)).toEqual([]);
       expect(asked).toEqual([]);

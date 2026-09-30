@@ -211,20 +211,16 @@ describe('[M0.sso/b] signing in', () => {
     ).toBe(400);
   });
 
-  it('refuses someone outside the household, and makes no user for them', async () => {
+  it('refuses someone outside the household on Android with 403, the app having no page to come back to', async () => {
     const app = await server();
-    const res = await callback(app, 'guest', await startWeb(app));
+    const login = await app.inject({
+      url: `/api/auth/login?client=android&code_challenge=${s256(VERIFIER)}`,
+    });
+    const res = await app.inject({
+      url: `/api/auth/callback?code=guest&state=${encodeURIComponent(stateOf(login))}`,
+    });
     expect(res.statusCode).toBe(403);
     expect(res.json()).toEqual({ error: 'not_household' });
-    expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
-  });
-
-  it('refuses a token the sign-on check rejects with 400 and no session', async () => {
-    const app = await server();
-    const res = await callback(app, 'forged', await startWeb(app));
-    expect(res.statusCode).toBe(400);
-    expect(res.json()).toEqual({ error: 'bad_token' });
-    expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
   });
 
   it('sends the browser back only to a path on this site', async () => {
@@ -381,5 +377,40 @@ describe('[M0.sso/b] signing in', () => {
     const res = await app.inject({ url: '/api/auth/login' });
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual({ error: 'sign_on_off' });
+  });
+});
+
+describe('[M0.sso/d] a refused web sign-in', () => {
+  it('refuses someone outside the household back to the sign-in page, saying why', async () => {
+    const app = await server();
+    const res = await callback(app, 'guest', await startWeb(app));
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/sign-in?error=not_household&return_to=%2F');
+    expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
+  });
+
+  it('refuses a token the sign-on check rejects back to the sign-in page, with no session', async () => {
+    const app = await server();
+    const res = await callback(app, 'forged', await startWeb(app));
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/sign-in?error=bad_token&return_to=%2F');
+    expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
+  });
+
+  it('sends a sign-in the sign-on refused back to sign in, still going where it was', async () => {
+    const app = await server();
+    const started = await startWeb(app, `?return_to=${encodeURIComponent('/books?sort=new')}`);
+    const res = await app.inject({
+      url: `/api/auth/callback?error=access_denied&state=${encodeURIComponent(started.state)}`,
+      headers: { cookie: started.cookie },
+    });
+    expect(res.statusCode).toBe(302);
+    const back = new URL(String(res.headers.location), ORIGIN);
+    expect(back.pathname).toBe('/sign-in');
+    expect(Object.fromEntries(back.searchParams)).toEqual({
+      error: 'sign_on_refused',
+      return_to: '/books?sort=new',
+    });
+    expect(cookieOf(res, SESSION_COOKIE)).toBeUndefined();
   });
 });

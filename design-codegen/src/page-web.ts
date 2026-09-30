@@ -108,11 +108,19 @@ const ignored = (tree: PageTree, components: WebComponents) =>
 
 /**
  * Where the web starts signing in: the server's login route, as the web client, coming back to
- * the app's start. The query is parsed with the route's own schema, so it names only what it takes.
+ * where the visitor was going, the sign-in page's own `return_to`, or else the app's start. The
+ * query is parsed with the route's own schema, so it names only what it takes.
  */
-const SIGN_IN = `${login.path}?${new URLSearchParams(
-  LoginQuery.parse({ client: 'web', return_to: '/' }) as Record<string, string>,
-)}`;
+const SIGN_IN_QUERY: Record<string, string> = LoginQuery.parse({ client: 'web', return_to: '/' });
+const RETURN_TO = 'return_to' satisfies keyof typeof SIGN_IN_QUERY & keyof typeof LoginQuery.shape;
+const signInHandler = () => {
+  const fixed = Object.entries(SIGN_IN_QUERY)
+    .filter(([key]) => key !== RETURN_TO)
+    .map(([key, value]) => `${key}: ${JSON.stringify(value)}`);
+  const returnTo = `new URLSearchParams(window.location.search).get(${JSON.stringify(RETURN_TO)}) ?? ${JSON.stringify(SIGN_IN_QUERY[RETURN_TO])}`;
+  const query = `new URLSearchParams({ ${[...fixed, `${RETURN_TO}: ${returnTo}`].join(', ')} })`;
+  return `() => window.location.assign(${JSON.stringify(`${login.path}?`)} + ${query})`;
+};
 
 function propLines(
   name: string,
@@ -137,8 +145,7 @@ function propLines(
   // No player exists yet either: a play does nothing until the player is built.
   if (value.kind === 'play') return [`${name}={ignore}`];
   // Sign-in leaves the app for the server's route, which sends the browser on to the sign-on.
-  if (value.kind === 'signIn')
-    return [`${name}={() => window.location.assign(${JSON.stringify(SIGN_IN)})}`];
+  if (value.kind === 'signIn') return [`${name}={${signInHandler()}}`];
   if (value.kind === 'binding' && choice) {
     return [
       `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,

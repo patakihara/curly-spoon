@@ -1,6 +1,6 @@
 ---
 page: signIn
-pageHash: 8b73ae0edf085d7a3233d4ac7154bf87f90d4823ee9b01db87d2b40cd1d131d3
+pageHash: 13036c0955c484c04f202da08d0ad5f12c469075ab7a3b18cc0356c985486987
 sonora: [none]
 ---
 
@@ -21,9 +21,10 @@ content does. In `PageBody` at the form width, in the structure's order:
 - **Sign in**: an `EmptyState` with the people glyph, "Sign in with your household account", the
   line "Auralis has no accounts or passwords of its own: you sign in where you sign in to
   Audiobookshelf and Jellyfin.", and one primary "Sign in" button, to the household sign-on.
-- **Error**: an error `StatusBanner`, "That account isn't one of the household's, so Auralis can't
-  let it in. Whoever runs the server can add it.", with "Try again". The render shows the page as
-  it comes back from a refused sign-in; a first visit has no banner.
+- **Error**: an error `StatusBanner` for each refusal the page's data holds, "That account isn't
+  one of the household's, so Auralis can't let it in. Whoever runs the server can add it.", with
+  "Try again". The canvas draws the page as it comes back from a refused sign-in; the render is a
+  first visit, with no refusal and so no banner.
 
 **Empty state**, per nav.json (not drawn): someone already signed in goes straight on.
 
@@ -33,8 +34,6 @@ content does. In `PageBody` at the form width, in the structure's order:
   one way on) is the whole page; no other Sonora component centres a single call to act.
 - Changed on purpose: the banner sits inside the form column, where the card's banners run the
   full width of their panel; Sonora's banner now keeps to the column it is given.
-- Open: the error and the first visit are one render until the placeholders gain states in
-  M2.screens.
 - Changed on purpose: with nothing beside it, the page sits in one centred column on desktop,
   Sonora's `BackdropShell column`, and its heading starts at the page margin on both platforms,
   16 px on the phone, level with the content.

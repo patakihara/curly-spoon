@@ -1,3 +1,7 @@
 {
-  "error": "That account isn't one of the household's, so Auralis can't let it in. Whoever runs the server can add it."
+  "errors": [
+    {
+      "message": "That account isn't one of the household's, so Auralis can't let it in. Whoever runs the server can add it."
+    }
+  ]
 }

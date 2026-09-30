@@ -31,6 +31,7 @@ import { BEARER_TTL_MS, createSession } from '../store/sessions.js';
 import {
   issueAppCode,
   LOGIN_TTL_MS,
+  type LoginRequest,
   type Random,
   startLogin,
   takeAppCode,
@@ -48,6 +49,8 @@ export const MEMBER_GROUPS = [HOUSEHOLD_GROUP, SERVICE_GROUP] as const;
 /** Directory admins are Auralis admins. */
 export const ADMIN_GROUP = 'lldap_admin';
 export const APP_REDIRECT = 'auralis://auth/callback';
+/** The web app's sign-in page, where a refused browser sign-in comes back to. */
+export const SIGN_IN_PAGE = '/sign-in';
 
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 20;
@@ -136,6 +139,24 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
     if (query.state === undefined) throw new Refusal(400, 'bad_state');
     const started = takeLogin(db, query.state, request.cookies[LOGIN_COOKIE], now());
     if (started === null) throw new Refusal(400, 'bad_state');
+    try {
+      return await finishSignIn(request, reply, provider, started, query);
+    } catch (error) {
+      // A browser's refused sign-in goes back to the sign-in page, saying why and still going
+      // where it was; the Android app has no page to come back to, so it gets the refusal.
+      if (!(error instanceof Refusal) || started.client !== 'web') throw error;
+      const back = new URLSearchParams({ error: error.error, return_to: started.returnTo });
+      return { location: `${SIGN_IN_PAGE}?${back.toString()}` };
+    }
+  });
+
+  async function finishSignIn(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    provider: SignOn,
+    started: LoginRequest,
+    query: { code?: string | undefined; error?: string | undefined },
+  ): Promise<{ location: string }> {
     if (query.error !== undefined || query.code === undefined) {
       throw new Refusal(400, 'sign_on_refused');
     }
@@ -202,7 +223,7 @@ export function signOnRoutes(app: FastifyInstance, options: SignOnRoutesOptions)
     setDeviceCookie(request, reply, cookieSecure, device.id);
     setSessionCookie(request, reply, cookieSecure, session.token, session.expiresAt);
     return { location: started.returnTo };
-  });
+  }
 
   serve(app, appToken, (request, reply, body) => {
     limit(request, reply);

@@ -138,7 +138,22 @@ describe('Sign in', () => {
     const banner = elements(tree).find((e) => e.component === 'StatusBanner')!;
     expect(literal(banner, 'tone')).toBe('error');
     expect(literal(banner, 'actionLabel')).toBe('Try again');
-    expect(data.error).toMatch(/isn't one of the household's/);
+    const errors = data.errors as Row[];
+    expect(errors).toHaveLength(1);
+    expect(errors[0]!.message).toMatch(/isn't one of the household's/);
+  });
+
+  it('[M0.sso/d] draws the error only for a refusal its data holds, so a first visit shows none', () => {
+    const each = (node: PageTree): PageTree[] =>
+      node.kind === 'each' ? [node] : 'children' in node ? node.children.flatMap(each) : [];
+    const refusals = each(tree).filter(
+      (n) => n.kind === 'each' && n.of.join('.') === 'data.errors',
+    );
+    expect(refusals).toHaveLength(1);
+    const inside = refusals.flatMap((n) => ('children' in n ? n.children : []));
+    expect(inside.flatMap((n) => elements(n)).map((e) => e.component)).toContain('StatusBanner');
+    const outside = elements(tree).filter((e) => e.component === 'StatusBanner');
+    expect(outside).toHaveLength(1);
   });
 
   it('[M0.canvas] draws its structure in order: the sign-in button, then why signing in failed', () => {
@@ -149,8 +164,8 @@ describe('Sign in', () => {
     expect(order).toEqual(['EmptyState', 'StatusBanner']);
   });
 
-  it('[M0.canvas] binds only its error', () => {
-    expect(dataRoots(tree)).toEqual(['error']);
+  it('[M0.canvas] binds only its errors', () => {
+    expect(dataRoots(tree)).toEqual(['errors']);
   });
 });
 

@@ -361,10 +361,22 @@ describe('a page starting sign-in, on the web', () => {
     shellOf('book'),
   );
 
-  it("sends the browser to the server's web sign-in, coming back to the app's start", () => {
-    expect(signingIn).toContain(
-      `onClick={() => window.location.assign("/api/auth/login?client=web&return_to=%2F")}`,
+  it("[M0.sso/d] sends the browser to the server's web sign-in, coming back where the visitor was going", () => {
+    const handler = /onClick=\{(\(\) => window\.location\.assign\(.*\))\}/.exec(signingIn)?.[1];
+    expect(handler).toBeDefined();
+    const visit = (search: string) => {
+      let went = '';
+      const window = { location: { search, assign: (to: string) => (went = to) } };
+      (new Function('window', `(${handler!})()`) as (w: typeof window) => void)(window);
+      return went;
+    };
+    expect(visit('?return_to=%2Fbooks%3Fsort%3Dnew')).toBe(
+      '/api/auth/login?client=web&return_to=%2Fbooks%3Fsort%3Dnew',
     );
+    expect(visit('?error=not_household&return_to=%2Fmusic')).toBe(
+      '/api/auth/login?client=web&return_to=%2Fmusic',
+    );
+    expect(visit('')).toBe('/api/auth/login?client=web&return_to=%2F');
     expect(signingIn).not.toContain('useNavigate');
     expect(signingIn).not.toContain('ignore');
   });

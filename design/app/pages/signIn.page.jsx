@@ -14,11 +14,13 @@ export default function SignIn({ data }) {
             }
           />
         </Section>
-        <Section last>
-          <StatusBanner tone="error" icon="block" actionLabel="Try again">
-            {data.error}
-          </StatusBanner>
-        </Section>
+        <Each of={data.errors} as="error">
+          <Section last>
+            <StatusBanner tone="error" icon="block" actionLabel="Try again">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Each>
       </PageBody>
     </BackdropShell>
   );

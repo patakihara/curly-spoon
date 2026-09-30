@@ -7,12 +7,13 @@ import './generated/tokens/sonora-theme.css';
 import './base.css';
 import { App } from './App';
 import { routes } from './generated/nav/routes';
+import { withSignInData } from './sign-in';
 
 const root = document.getElementById('root');
 if (root !== null) {
   createRoot(root).render(
     <StrictMode>
-      <App router={createBrowserRouter(routes)} />
+      <App router={createBrowserRouter(withSignInData(routes))} />
     </StrictMode>,
   );
 }

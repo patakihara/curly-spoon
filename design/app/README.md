@@ -48,7 +48,8 @@ until the player exists, the web gives it a handler that does nothing. The web p
 router; the Android generator reads the same node as a navigation to the nav graph's destination.
 
 `onClick={<SignIn />}` starts signing in through the household sign-on and takes nothing: the web
-goes to the server's login route as the web client, coming back to the app's start, and Android
+goes to the server's login route as the web client, coming back to the sign-in page's own
+`return_to`, where the visitor was going, or else to the app's start, and Android
 calls the `onSignIn()` it is given, the app's own sign-in. On the canvas every handler does nothing.
 
 A page binds `data.…`, its placeholder, and may bind `shell.…` for what it shows from `nav.json`:

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { health } from '@auralis/schema';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { registerAccess } from './auth/access.js';
 import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
@@ -15,7 +15,7 @@ import { authRoutes } from './routes/auth.js';
 import { deviceRoutes } from './routes/devices.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { setupRoutes } from './routes/setup.js';
-import { signOnRoutes } from './routes/signOn.js';
+import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
 import type { Random } from './store/signIn.js';
 import type { Linker } from './upstream/links.js';
@@ -72,6 +72,9 @@ function loggerOptions(logger: BuildAppOptions['logger']) {
 }
 
 const INDEX_FILE = 'index.html';
+
+/** The pages a signed-out visitor may open: signing in and first-run setup, nav.json's bare pages. */
+export const OPEN_PAGES: readonly string[] = [SIGN_IN_PAGE, '/setup'];
 
 /** A page (index.html, gallery.html): it names hashed assets, so it is never cached. */
 function isPage(path: string): boolean {
@@ -133,9 +136,20 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // handler) piles past Node's warning limit.
     const publicRoute = { config: { access: 'public' as const } };
     retiredWorkerRoute(app);
-    app.get('/', publicRoute, (_request, reply) => {
+    // A signed-out visitor opening a page goes to sign in first, keeping where they were going.
+    // With no sign-on nobody can sign in, so every page is served as it is.
+    const signOnConfigured = (options.signOn ?? null) !== null;
+    const sendPage = (request: FastifyRequest, reply: FastifyReply) => {
+      const path = request.url.split('?')[0]!;
+      const open = OPEN_PAGES.includes(path);
+      if (signOnConfigured && request.user === null && !open) {
+        const query = new URLSearchParams({ return_to: request.url });
+        void reply.redirect(`${SIGN_IN_PAGE}?${query.toString()}`);
+        return;
+      }
       void reply.sendFile(INDEX_FILE);
-    });
+    };
+    app.get('/', publicRoute, sendPage);
     app.route({
       ...publicRoute,
       method: ['GET', 'HEAD'],
@@ -155,7 +169,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         request.method === 'GET' &&
         (request.headers.accept ?? '').includes('text/html')
       ) {
-        void reply.sendFile(INDEX_FILE);
+        sendPage(request, reply);
         return;
       }
       void reply.code(404).send({ error: 'not_found' });
