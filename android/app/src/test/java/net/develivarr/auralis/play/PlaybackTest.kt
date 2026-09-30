@@ -144,7 +144,7 @@ class PlaybackTest {
             ),
         )
         playback.release()
-        val closed = server.seen.single().request
+        val closed = playCalls().single().request
         assertEquals("POST", closed.method)
         assertEquals("/api/play/p-1/close", closed.url.encodedPath)
         assertEquals("Bearer bearer-1", closed.header("Authorization"))
@@ -157,7 +157,7 @@ class PlaybackTest {
             PlaybackPlan(tracks = listOf(track(0, duration = 60.0, offset = 0.0)), chapters = emptyList(), startAt = 0.0),
         )
         playback.release()
-        assertEquals(emptyList<FakeServer.Seen>(), server.seen)
+        assertEquals(emptyList<FakeServer.Seen>(), playCalls())
     }
 
     @Test
@@ -171,7 +171,7 @@ class PlaybackTest {
         )
         playback.start(first)
         playback.start(first.copy(progressTarget = ProgressTarget("p-2")))
-        assertEquals(listOf("/api/play/p-1/close"), server.seen.map { it.request.url.encodedPath })
+        assertEquals(listOf("/api/play/p-1/close"), playCalls().map { it.request.url.encodedPath })
     }
 
     @Test
@@ -262,6 +262,9 @@ class PlaybackTest {
         }
         assertEquals(emptyList<String>(), present)
     }
+
+    /** The calls to the play API, leaving out the tracks the player itself loads meanwhile. */
+    private fun playCalls() = synchronized(server.seen) { server.seen.filter { it.request.url.encodedPath.startsWith("/api/play") } }
 
     private fun said(message: String) = ShadowLog.getLogsForTag("Auralis").any { it.msg == message }
 
