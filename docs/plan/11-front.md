@@ -12,13 +12,13 @@ Everything in the app starts as a Sonora component, and every page starts on the
 ### How you work on the design
 
 - **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), both published from the one Auralis repo: `design/sonora` and `design/app`, next to `server`, `web` and `android`. Sonora's repo on the laptop moves in with its history.
-- **Asking for a change:** comment on either artifact, or ask in chat. Claude changes the repo, regenerates, and republishes the artifact. If you edit an artifact directly, those edits are pulled into the repo before anything else changes there.
-- **How a design change reaches the apps.** Design and apps are in the same repo, so one commit carries both:
+- **Asking for a change:** comment on either artifact, or ask in chat. Claude changes the repo, regenerates, and republishes the artifact. Edits made directly in an artifact are pulled into the repo before anything else changes there.
+- **How a design change reaches the apps.** One commit carries design and apps:
   - colours, spacing and fonts change on both platforms automatically;
   - a component's look changes on web automatically, since web uses Sonora's components directly;
   - a new or changed component option fails the Android build until it's implemented there, so the platforms can't drift;
   - a new or changed page, or navigation, regenerates both apps' routes and page layouts;
-  - screenshots of both apps are compared against the design, and differences are shown to you before they ship.
+  - screenshots of both apps are compared against the design, and you see differences before they ship.
 
 ### Where Sonora ends and the canvas begins
 
@@ -27,7 +27,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 #### Sonora: the design system
 
 - Tokens, basic pieces, components and page layouts, each with a `.d.ts`, a card, and dark and light previews. No Auralis data.
-- Grows because the app needs something, but anything that lands here is generic: a `FeatureCard`, not "the podcast digest card".
+- Grows as the app needs, but stays generic: a `FeatureCard`, not "the podcast digest card".
 :::
 
 ::: card
@@ -57,7 +57,7 @@ Sonora has 66 components, filed by level (basic, components, layouts).
 
 - **66 components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes), status (StatusBanner, DownloadButton, ProgressRing, Badge).
 - **A token exporter**: `export/web/sonora-tokens.css`, `sonora-theme.css` and `export/android/SonoraTokens.kt`, all generated. Motion, scrim, tone and layout families included.
-- **43 Spotify reference screens**, each mapped to the components it motivated. They stay as reference pictures, not components.
+- **43 Spotify reference screens**, each mapped to the components it motivated, kept as reference pictures, not components.
 :::
 
 ::: card
@@ -120,7 +120,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
 
 ::: callout warn
-**Still to design on the Auralis canvas, before their milestone:** the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection in Settings, and loading and empty states per screen. Everything else has a Sonora component and a reference screen. Nobody invents UI in code.
+**Still to design on the Auralis canvas, before their milestone:** the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, and loading and empty states per screen. Everything else has a Sonora component and a reference screen. Nobody invents UI in code.
 :::
 
 ### How parity stays true

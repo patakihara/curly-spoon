@@ -28,7 +28,6 @@ part: The product
 - **To YouTube:** on pause and on stop, Auralis sends YouTube your position, using the same "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
 - **Accounts never mix.** Each person connects their own YouTube account, and their cookies are only ever used for their own sync, writing to their own Audiobookshelf progress. The show feeds themselves are fetched without any account, so they're identical for everyone and carry nothing personal. A person who hasn't connected YouTube just has no sync.
 - **When it breaks:** when the cookies expire, sync pauses and Settings shows a clear "YouTube sign-in expired" warning with how to re-export them. YouTube channels keep updating and playing, since they don't need your account.
-- **Cut episodes, full videos.** Auralis keeps each episode's cut list, so position sync converts between the cut episode and the full YouTube video: 10 minutes into the episode becomes the matching point in the video, and back.
 
 ### Shared files, personal view
 

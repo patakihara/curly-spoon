@@ -55,7 +55,7 @@ stay put, the document never scrolls, and the front layer is the one scroller.
 ## Differences
 
 - Changed on purpose, from S15 and S25: after "Jump back in", a `FeatureCard` argues for one
-  episode at length, as the plan's Browse does (08-discover) and neither kit draws: art, kind,
+  episode at length, as Browse does in the plan's Discovery section and neither kit draws: art, kind,
   title, show and date, a two-line blurb, a muted `PreviewButton` ("Preview episode") at the start
   of its action row and the rose play at its end. S15 draws the same card in Spotify's grey with
   an add button; here it is `--surface-card` and saving is left out until Browse has a save verb.

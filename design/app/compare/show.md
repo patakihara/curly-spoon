@@ -39,7 +39,7 @@ also like", a shelf of shows, each opening its Show page.
 (`EpisodeRow absent`, the art without colour, the title muted); playing one subscribes you.
 **Just subscribed**, the empty state: the episodes arrive within the hour, and the list says so.
 
-**A YouTube show** is the same page with "YOUTUBE" as its kind line, the marker, and the menu gains
+**A YouTube channel** is the same page with "YOUTUBE" as its kind line, the marker, and the menu gains
 a "YouTube settings" verb. nav.json has no page or sheet for those settings, only the Show's
 provisional "YouTube settings" section, so they are not drawn.
 

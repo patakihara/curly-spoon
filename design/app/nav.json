@@ -623,7 +623,7 @@
           },
           {
             "name": "YouTube settings",
-            "holds": "For a YouTube show only: which SponsorBlock segments are cut, and whether Shorts and livestreams come in.",
+            "holds": "For a YouTube channel only: which SponsorBlock segments are cut, and whether Shorts and livestreams come in.",
             "provisional": true
           },
           {

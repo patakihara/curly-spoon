@@ -42,7 +42,7 @@ Queues belong to a device's listening session (see "Library and accounts"), stor
 
 | Queue runs out | What autoplay does |
 |---|---|
-| Music | First version: YouTube Music's own radio for the last track (not personalised, as you noted), mixed with similar music you own. Then the autoplay algorithm in the recommendation section takes over. |
+| Music | First version: YouTube Music's own radio for the last track (not personalised, as you noted), mixed with similar music you own. Then the recommendation algorithm under Discovery takes over. |
 | Spoken | The next unplayed episode of the same show (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
 
 ### Lists that aren't queues
